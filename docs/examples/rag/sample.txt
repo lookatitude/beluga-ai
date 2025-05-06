@@ -1,0 +1,5 @@
+Beluga-ai is a Go framework.
+It helps build AI applications.
+RAG stands for Retrieval-Augmented Generation.
+This process involves retrieving relevant documents.
+Then, the LLM uses these documents to generate a response.
