@@ -285,7 +285,7 @@ func applyAnthropicOptions(defaults anthropic.BetaMessageNewParams, options ...c
 	if choice, ok := config["tool_choice"].(string); ok {
 		switch choice {
 		case "auto":
-			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto())
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto(anthropic.RequestToolChoiceAutoParam{Type: constant.ToolChoiceTypeAuto}))
 		case "any":
 			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAny())
 		default: // Assumed to be a tool name
