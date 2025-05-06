@@ -400,7 +400,7 @@ func (ac *AnthropicChat) Generate(ctx context.Context, messages []schema.Message
 	return aiMsg, nil
 }
 
-func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llms.AIMessageChunk, error) {
+func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Message) (<-chan llms.AIMessageChunk, error) {
 	systemPromptText, anthropicMessages, err := mapMessagesAndExtractSystem(messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map messages for Anthropic streaming: %w", err)
