@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.0.1](https://github.com/lookatitude/beluga-ai/compare/v1.0.0...v1.0.1) (2025-05-06)
+
+
+### Bug Fixes
+
+* correct broken link in API index ([5dda4e8](https://github.com/lookatitude/beluga-ai/commit/5dda4e87e7d8b937c688ff5c0879bb5cc9b55e95))
+* correct import path for ollama embedder in RAG example ([21ffe00](https://github.com/lookatitude/beluga-ai/commit/21ffe00168ec77b5a516536aeaad7a1f3c22d3b7))
+* remove invalid link property from API docs category metadata ([21dbd2a](https://github.com/lookatitude/beluga-ai/commit/21dbd2a72cfc355dc15d089805856c33f1c62775))
+
 ## 1.0.0 (2025-05-06)
 
 
