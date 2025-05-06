@@ -282,8 +282,7 @@ func applyAnthropicOptions(defaults anthropic.BetaMessageNewParams, options ...c
 		req.TopK = param.NewOpt(int64(topK))
 	}
 
-	if choice, ok := config["tool_choice"].(string); ok {
-		switch choice { LATEST
+	if choice, ok := config["tool_choice"].(string); ok {			switch choice {
 		case "auto":
 			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto(anthropic.RequestToolChoiceAutoParam{Type: constant.ToolChoiceTypeAuto}))
 		case "any":
