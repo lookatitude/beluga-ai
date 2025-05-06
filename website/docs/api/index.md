@@ -21,7 +21,7 @@ Beluga-AI is organized into several packages, each focusing on specific function
 
 ## Getting Started
 
-If you're new to Beluga-AI, we recommend starting with the [Introduction](/docs/intro) guide before diving into the API documentation.
+If you're new to Beluga-AI, we recommend starting with the [Introduction](/) guide before diving into the API documentation.
 
 ## API Stability
 
