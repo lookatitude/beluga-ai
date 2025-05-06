@@ -411,7 +411,7 @@ func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Messa
 	req := applyAnthropicOptions(ac.defaultRequest, options...)
 	req.Messages = anthropicMessages
 	if systemPromptText != nil {
-		req.System = param.NewOpt(*systemPromptText)
+		req.System = param.NewOpt([]anthropic.BetaTextBlockParam{{Text: *systemPromptText, Type: constant.TextBlockTypeText}})
 	}
 	// Stream is set by NewStreaming method, not directly in params for that method.
 
