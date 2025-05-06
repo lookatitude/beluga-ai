@@ -42,7 +42,7 @@ module.exports = {
         title: 'Beluga-AI',
         logo: {
           alt: 'Beluga-AI Logo',
-          src: 'img/logo.svg', // We'll need to create this or use a default
+          src: 'img/beluga-logo.svg',
         },
         items: [
           {
