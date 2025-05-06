@@ -86,7 +86,7 @@ func (s *CharacterSplitter) SplitText(ctx context.Context, text string) ([]strin
 
 		// Move start for the next chunk
 		nextStart := start + s.ChunkSize - s.ChunkOverlap
-		// Ensure nextStart doesn't go backward or stay the same if overlap is large or chunksize small
+		// Ensure nextStart doesn_t go backward or stay the same if overlap is large or chunksize small
 		if nextStart <= start {
 			nextStart = start + 1 // Move forward by at least one character
 		}
@@ -112,16 +112,26 @@ func (s *CharacterSplitter) SplitText(ctx context.Context, text string) ([]strin
 func (s *CharacterSplitter) SplitDocuments(ctx context.Context, documents []schema.Document) ([]schema.Document, error) {
 	newDocs := make([]schema.Document, 0)
 	for _, doc := range documents {
-		chunks, err := s.SplitText(ctx, doc.GetContent())
+		chunks, err := s.SplitText(ctx, doc.PageContent) // Assuming PageContent is the field for content
 		if err != nil {
-			return nil, fmt.Errorf("failed to split text for document from source 	%v	: %w", doc.GetMetadata()["source"], err)
+			// Use doc.Metadata directly if GetMetadata is not a method
+			source := "unknown"
+			if doc.Metadata != nil && doc.Metadata["source"] != nil {
+				if srcStr, ok := doc.Metadata["source"].(string); ok {
+					source = srcStr
+				}
+			}
+			return nil, fmt.Errorf("failed to split text for document from source %s: %w", source, err)
 		}
 
 		// Create new documents for each chunk, preserving metadata
 		for i, chunk := range chunks {
 			newMetadata := make(map[string]any)
-			for k, v := range doc.GetMetadata() {
-				newMetadata[k] = v
+			// Use doc.Metadata directly
+			if doc.Metadata != nil {
+				for k, v := range doc.Metadata {
+					newMetadata[k] = v
+				}
 			}
 			// Optionally add chunk number or other split-specific metadata
 			newMetadata["chunk_index"] = i
@@ -145,7 +155,7 @@ func (s *CharacterSplitter) CreateDocuments(ctx context.Context, texts []string,
 		}
 
 		baseMetadata := make(map[string]any)
-		if metadatas != nil {
+		if metadatas != nil && i < len(metadatas) && metadatas[i] != nil { // Added nil check for metadatas[i]
 			baseMetadata = metadatas[i]
 		}
 
@@ -163,3 +173,4 @@ func (s *CharacterSplitter) CreateDocuments(ctx context.Context, texts []string,
 
 // Ensure CharacterSplitter implements the interface.
 var _ rag.Splitter = (*CharacterSplitter)(nil)
+

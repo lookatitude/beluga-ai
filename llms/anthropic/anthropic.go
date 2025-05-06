@@ -13,7 +13,10 @@ import (
 	"sync"
 
 	"github.com/anthropics/anthropic-sdk-go"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/anthropics/anthropic-sdk-go/option"
+	"github.com/anthropics/anthropic-sdk-go/packages/param"
+	"github.com/anthropics/anthropic-sdk-go/shared/constant"
+	core "github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tools"
@@ -23,9 +26,9 @@ import (
 type anthropicChatConfig struct {
 	APIKey               string
 	BaseURL              string
-	APIVersion           string // Note: Anthropic Go SDK v0.2.0-beta.3 does not directly use an API version header in the same way; this might be for older custom setups or future use.
-	ModelName            string
-	DefaultRequest       anthropic.MessageNewParams // Changed from MessagesRequest
+	APIVersion           string
+	ModelName            string // User-provided model name string
+	DefaultRequest       anthropic.BetaMessageNewParams
 	MaxConcurrentBatches int
 }
 
@@ -47,8 +50,6 @@ func WithAnthropicBaseURL(baseURL string) AnthropicOption {
 }
 
 // WithAnthropicAPIVersion sets the API version header.
-// Note: The current SDK might not use this directly for client construction in the same way.
-// It uses anthropic.WithAPIVersion for specific request headers if needed, but not typically for client init.
 func WithAnthropicAPIVersion(version string) AnthropicOption {
 	return func(cfg *anthropicChatConfig) {
 		cfg.APIVersion = version
@@ -63,8 +64,7 @@ func WithAnthropicModel(modelName string) AnthropicOption {
 }
 
 // WithAnthropicDefaultRequest sets the default request parameters.
-// Note: This replaces the entire default request struct.
-func WithAnthropicDefaultRequest(req anthropic.MessageNewParams) AnthropicOption {
+func WithAnthropicDefaultRequest(req anthropic.BetaMessageNewParams) AnthropicOption {
 	return func(cfg *anthropicChatConfig) {
 		cfg.DefaultRequest = req
 	}
@@ -73,10 +73,9 @@ func WithAnthropicDefaultRequest(req anthropic.MessageNewParams) AnthropicOption
 // WithAnthropicMaxConcurrentBatches sets the concurrency limit for Batch.
 func WithAnthropicMaxConcurrentBatches(n int) AnthropicOption {
 	return func(cfg *anthropicChatConfig) {
-		// TODO: Implement concurrency limiting in Batch method
-		// if n > 0 {
-		// 	 cfg.MaxConcurrentBatches = n
-		// }
+		if n > 0 {
+			cfg.MaxConcurrentBatches = n
+		}
 	}
 }
 
@@ -85,88 +84,104 @@ func WithAnthropicMaxConcurrentBatches(n int) AnthropicOption {
 // AnthropicChat represents a chat model client for the Anthropic API.
 type AnthropicChat struct {
 	client               *anthropic.Client
-	modelName            string // Default model name
-	defaultRequest       anthropic.MessageNewParams
-	boundTools           []anthropic.ToolParam // Changed from ToolDefinition to ToolParam
+	modelName            string // Stores the resolved model name as a string
+	defaultRequest       anthropic.BetaMessageNewParams
+	boundTools           []anthropic.BetaToolParam // Changed from BetaToolUnionParam based on mapping
 	maxConcurrentBatches int
 }
 
-// Compile-time check to ensure AnthropicChat implements llms.ChatModel
 var _ llms.ChatModel = (*AnthropicChat)(nil)
+var _ core.Runnable = (*AnthropicChat)(nil)
 
-// NewAnthropicChat creates a new Anthropic chat client.
-// It requires an API key (read from ANTHROPIC_API_KEY env var by default) and accepts functional options.
+const (
+	DefaultAnthropicModelName = "claude-3-haiku-20240307"
+)
+
 func NewAnthropicChat(options ...AnthropicOption) (*AnthropicChat, error) {
 	cfg := &anthropicChatConfig{
 		APIKey:               os.Getenv("ANTHROPIC_API_KEY"),
 		BaseURL:              os.Getenv("ANTHROPIC_BASE_URL"),
 		APIVersion:           os.Getenv("ANTHROPIC_API_VERSION"),
-		ModelName:            string(anthropic.ModelClaude3Haiku), // Default to Haiku
+		ModelName:            DefaultAnthropicModelName,
 		MaxConcurrentBatches: 5,
-		DefaultRequest: anthropic.MessageNewParams{
-			MaxTokens: anthropic.Int(1024),
-		},
+	}
+
+	// Initialize DefaultRequest with a model and MaxTokens
+	cfg.DefaultRequest = anthropic.BetaMessageNewParams{
+		Model:     param.NewOpt(anthropic.BetaMessageNewParamsModelUnion{OfStr: anthropic.String(cfg.ModelName)}),
+		MaxTokens: param.NewOpt[int64](1024),
 	}
 
 	for _, opt := range options {
 		opt(cfg)
 	}
 
-	clientOpts := []anthropic.ClientOption{}
+	// Ensure model is set in DefaultRequest, potentially overriding from cfg.ModelName
+	if cfg.ModelName != "" {
+		cfg.DefaultRequest.Model = param.NewOpt(anthropic.BetaMessageNewParamsModelUnion{OfStr: anthropic.String(cfg.ModelName)})
+	} else if !cfg.DefaultRequest.Model.IsPresent() {
+		// Fallback if ModelName was empty and DefaultRequest.Model wasn't set by WithAnthropicDefaultRequest
+		cfg.DefaultRequest.Model = param.NewOpt(anthropic.BetaMessageNewParamsModelUnion{OfStr: anthropic.String(DefaultAnthropicModelName)})
+	}
+
+	clientOpts := []option.RequestOption{}
 	if cfg.APIKey != "" {
-		clientOpts = append(clientOpts, anthropic.WithAPIKey(cfg.APIKey))
+		clientOpts = append(clientOpts, option.WithAPIKey(cfg.APIKey))
 	}
 	if cfg.BaseURL != "" {
-		clientOpts = append(clientOpts, anthropic.WithBaseURL(cfg.BaseURL))
+		clientOpts = append(clientOpts, option.WithBaseURL(cfg.BaseURL))
 	}
 	if cfg.APIVersion != "" {
-		// The SDK v0.2.0-beta.3 uses anthropic.WithDefaultHeader for arbitrary headers.
-		// If APIVersion is meant to be the "anthropic-version" header:
-		clientOpts = append(clientOpts, anthropic.WithDefaultHeader("anthropic-version", cfg.APIVersion))
+		clientOpts = append(clientOpts, option.WithDefaultHeader("anthropic-version", cfg.APIVersion))
 	}
 
 	client := anthropic.NewClient(clientOpts...)
 
-	ac := &AnthropicChat{
-		client:               client,
-		modelName:            cfg.ModelName,
-		defaultRequest:       cfg.DefaultRequest,
-		maxConcurrentBatches: cfg.MaxConcurrentBatches,
+	resolvedModelName := DefaultAnthropicModelName
+	if cfg.DefaultRequest.Model.IsPresent() && cfg.DefaultRequest.Model.Get().OfStr != nil {
+		resolvedModelName = *cfg.DefaultRequest.Model.Get().OfStr
 	}
 
-	if ac.defaultRequest.Model == "" || ac.defaultRequest.Model == anthropic.MessageNewParamsModel("") {
-		ac.defaultRequest.Model = anthropic.MessageNewParamsModel(ac.modelName)
+	ac := &AnthropicChat{
+		client:               client,
+		modelName:            resolvedModelName,
+		defaultRequest:       cfg.DefaultRequest,
+		maxConcurrentBatches: cfg.MaxConcurrentBatches,
 	}
 
 	return ac, nil
 }
 
-// mapMessagesAndExtractSystem converts Beluga-ai messages to Anthropic format.
-func mapMessagesAndExtractSystem(messages []schema.Message) (anthropic.MessageNewParamsSystem, []anthropic.MessageParam, error) {
-	var systemPrompt anthropic.MessageNewParamsSystem
-	var anthropicMsgs []anthropic.MessageParam
+func mapMessagesAndExtractSystem(messages []schema.Message) (*string, []anthropic.BetaMessageParam, error) {
+	var systemPromptText *string
+	var anthropicMsgs []anthropic.BetaMessageParam
 	processedMessages := messages
 
 	if len(messages) > 0 {
 		if sysMsg, ok := messages[0].(*schema.SystemMessage); ok {
-			systemPrompt = anthropic.MessageNewParamsSystem(sysMsg.GetContent()) // Direct string conversion
+			if sysMsg.GetContent() != "" {
+				content := sysMsg.GetContent()
+				systemPromptText = &content
+			}
 			processedMessages = messages[1:]
 		}
 	}
 
-	anthropicMsgs = make([]anthropic.MessageParam, 0, len(processedMessages))
+	anthropicMsgs = make([]anthropic.BetaMessageParam, 0, len(processedMessages))
 	for _, msg := range processedMessages {
-		var contentBlocks []anthropic.ContentBlockParamUnion
-		var role anthropic.MessageParamRole
+		var contentBlocks []anthropic.BetaContentBlockParamUnion
+		var role constant.MessageRole // Use constant.MessageRole directly
 
 		switch m := msg.(type) {
 		case *schema.HumanMessage:
-			role = anthropic.MessageParamRoleUser
-			contentBlocks = append(contentBlocks, anthropic.NewContentBlockParam(anthropic.NewTextBlock(m.GetContent())))
+			role = constant.MessageRoleUser
+			text := m.GetContent()
+			contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestTextBlock(text))
 		case *schema.AIMessage:
-			role = anthropic.MessageParamRoleAssistant
+			role = constant.MessageRoleAssistant
 			if m.GetContent() != "" {
-				contentBlocks = append(contentBlocks, anthropic.NewContentBlockParam(anthropic.NewTextBlock(m.GetContent())))
+				text := m.GetContent()
+				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestTextBlock(text))
 			}
 			for _, tc := range m.ToolCalls {
 				var inputMap map[string]any
@@ -174,22 +189,40 @@ func mapMessagesAndExtractSystem(messages []schema.Message) (anthropic.MessageNe
 					err := json.Unmarshal([]byte(tc.Arguments), &inputMap)
 					if err != nil {
 						log.Printf("Warning: Failed to unmarshal tool call arguments for %s: %v. Args: %s", tc.Name, err, tc.Arguments)
-						continue
+						// Continue with nil inputMap if unmarshalling fails, or handle as error
+						inputMap = nil // Or some other default / error handling
 					}
 				}
-				contentBlocks = append(contentBlocks, anthropic.NewContentBlockParam(anthropic.ToolUseBlockParam{
-					ID:    anthropic.String(tc.ID),
-					Name:  anthropic.String(tc.Name),
-					Input: inputMap,
-				}))
+				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestToolUseBlock(tc.ID, inputMap, tc.Name))
 			}
 		case *schema.ToolMessage:
-			role = anthropic.MessageParamRoleUser // Tool results are sent as user role
-			contentBlocks = append(contentBlocks, anthropic.NewContentBlockParam(anthropic.ToolResultBlockParam{
-				ToolUseID: anthropic.String(m.ToolCallID),
-				Content:   []anthropic.ToolResultBlockParamContentUnion{anthropic.NewToolResultBlockParamContent(anthropic.NewTextBlock(m.GetContent()))},
-				// IsError: anthropic.Bool(m.IsError), // Assuming schema.ToolMessage has IsError field
+			role = constant.MessageRoleUser // Tool results are sent as user messages
+			toolUseIDStr := m.ToolCallID
+			contentStr := m.GetContent()
+			// For tool results, content can be text or JSON.
+			// We'll try to marshal as JSON first, if not, then as text.
+			var toolResultContent []anthropic.BetaToolResultBlockContentUnionParam
+			var tempMap map[string]any
+			if json.Unmarshal([]byte(contentStr), &tempMap) == nil {
+				toolResultContent = append(toolResultContent, anthropic.BetaToolResultBlockContentUnionParam{
+					OfRequestToolResultBlockContentJSONBlock: &anthropic.BetaToolResultBlockContentJSONBlockParam{
+						JSON: tempMap,
+						Type: constant.JSON,
+					},
+				})
+			} else {
+				toolResultContent = append(toolResultContent, anthropic.BetaToolResultBlockContentUnionParam{
+					OfRequestToolResultBlockContentTextBlock: &anthropic.BetaToolResultBlockContentTextBlockParam{
+						Text: contentStr,
+						Type: constant.Text,
+					},
+				})
+			}
+			contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestToolResultBlock(toolUseIDStr, anthropic.BetaToolResultBlockParam{
+				ToolUseID: toolUseIDStr,
+				Content:   param.NewOpt(toolResultContent),
 			}))
+
 		case *schema.SystemMessage:
 			log.Println("Warning: System message encountered in unexpected position, ignoring.")
 			continue
@@ -199,139 +232,138 @@ func mapMessagesAndExtractSystem(messages []schema.Message) (anthropic.MessageNe
 		}
 
 		if len(contentBlocks) > 0 {
-			anthropicMsgs = append(anthropicMsgs, anthropic.MessageParam{
-				Role:    role,
-				Content: contentBlocks,
+			anthropicMsgs = append(anthropicMsgs, anthropic.BetaMessageParam{
+				Role:    param.NewOpt(role),
+				Content: param.NewOpt(contentBlocks),
 			})
-		} else if role == anthropic.MessageParamRoleAssistant && len(m.(*schema.AIMessage).ToolCalls) > 0 {
-			// Handle assistant message that ONLY contains tool calls (no text content)
-			anthropicMsgs = append(anthropicMsgs, anthropic.MessageParam{
-				Role:    role,
-				Content: contentBlocks, // Will contain only ToolUseBlockParam
-			})
-		} else {
+		} else if role == constant.MessageRoleAssistant && len(m.(*schema.AIMessage).ToolCalls) > 0 {
+			// Assistant message might only contain tool calls, no text content
+			anthropicMsgs = append(anthropicMsgs, anthropic.BetaMessageParam{Role: param.NewOpt(role), Content: param.NewOpt(contentBlocks)})
+		} else if role != constant.MessageRoleAssistant {
 			log.Printf("Warning: Skipping empty message conversion for type %T with role %s", msg, role)
 		}
 	}
 
-	if len(anthropicMsgs) == 0 && systemPrompt == "" {
-		return "", nil, errors.New("no valid messages provided for Anthropic conversion")
+	if len(anthropicMsgs) == 0 && systemPromptText == nil {
+		return nil, nil, errors.New("no valid messages provided for Anthropic conversion")
 	}
-	return systemPrompt, anthropicMsgs, nil
+	return systemPromptText, anthropicMsgs, nil
 }
 
-// applyAnthropicOptions converts core.Option into Anthropic MessageNewParams fields.
-func applyAnthropicOptions(defaults anthropic.MessageNewParams, options ...core.Option) anthropic.MessageNewParams {
+func applyAnthropicOptions(defaults anthropic.BetaMessageNewParams, options ...core.Option) anthropic.BetaMessageNewParams {
 	req := defaults
 	config := make(map[string]any)
 	for _, opt := range options {
 		opt.Apply(&config)
 	}
 
-	if model, ok := config["model_name"].(string); ok {
-		req.Model = anthropic.MessageNewParamsModel(model)
+	if model, ok := config["model_name"].(string); ok && model != "" {
+		req.Model = param.NewOpt(anthropic.BetaMessageNewParamsModelUnion{OfStr: anthropic.String(model)})
 	}
 	if temp, ok := config["temperature"].(float64); ok {
-		req.Temperature = anthropic.Float(temp) // SDK uses *float64
+		req.Temperature = param.NewOpt(temp)
 	} else if temp, ok := config["temperature"].(float32); ok {
-		req.Temperature = anthropic.Float(float64(temp))
+		req.Temperature = param.NewOpt(float64(temp))
 	}
 
 	if maxTokens, ok := config["max_tokens"].(int); ok {
-		req.MaxTokens = anthropic.Int(maxTokens)
+		req.MaxTokens = param.NewOpt(int64(maxTokens))
 	}
 	if stops, ok := config["stop_sequences"].([]string); ok {
-		req.StopSequences = stops
+		req.StopSequences = param.NewOpt(stops)
 	}
 	if topP, ok := config["top_p"].(float64); ok {
-		req.TopP = anthropic.Float(topP)
+		req.TopP = param.NewOpt(topP)
 	} else if topP, ok := config["top_p"].(float32); ok {
-		req.TopP = anthropic.Float(float64(topP))
+		req.TopP = param.NewOpt(float64(topP))
 	}
 
 	if topK, ok := config["top_k"].(int); ok {
-		req.TopK = anthropic.Int(topK)
+		req.TopK = param.NewOpt(int64(topK))
 	}
 
-	if choice, ok := config["tool_choice"]; ok {
-		switch tc := choice.(type) {
-		case string:
-			if tc == "auto" {
-				req.ToolChoice = anthropic.NewToolChoiceAuto()
-			} else if tc == "any" {
-				req.ToolChoice = anthropic.NewToolChoiceAny()
-			} else {
-				req.ToolChoice = anthropic.NewToolChoiceTool(tc)
+	if choice, ok := config["tool_choice"].(string); ok {
+		switch choice {
+		case "auto":
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto())
+		case "any":
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAny())
+		default: // Assumed to be a tool name
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceTool(choice))
+		}
+	} else if choiceMap, ok := config["tool_choice"].(map[string]any); ok {
+		if typeVal, ok := choiceMap["type"].(string); ok && typeVal == "tool" {
+			if nameVal, ok := choiceMap["name"].(string); ok {
+				req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceTool(nameVal))
 			}
-		case map[string]any:
-			if typeVal, ok := tc["type"].(string); ok && typeVal == "tool" {
-				if nameVal, ok := tc["name"].(string); ok {
-					req.ToolChoice = anthropic.NewToolChoiceTool(nameVal)
-				}
-			}
-		default:
-			log.Printf("Warning: Unsupported tool_choice format: %T", choice)
 		}
 	}
 
 	return req
 }
 
-// mapAnthropicTool converts a Beluga-ai tool definition to an Anthropic tool definition.
-func mapAnthropicTool(tool tools.Tool) (anthropic.ToolParam, error) {
-	schemaStr := tool.SchemaDefinition()
-	var paramsSchema anthropic.JSONSchemaDefinition
-	err := json.Unmarshal([]byte(schemaStr), &paramsSchema)
-	if err != nil {
-		if schemaStr == "" || schemaStr == "{}" || schemaStr == "null" {
-			paramsSchema = anthropic.JSONSchemaDefinition{Type: anthropic.JSONSchemaTypeObject, Properties: map[string]anthropic.JSONSchemaDefinition{}}
-			log.Printf("Warning: Tool 		%s		 has empty or invalid schema, using empty object schema.", tool.Name())
-		} else {
-			return anthropic.ToolParam{}, fmt.Errorf("failed to unmarshal tool schema for 		%s		: %w. Schema was: %s", tool.Name(), err, schemaStr)
+func mapAnthropicTool(toolDef tools.ToolDefinition) (anthropic.BetaToolParam, error) {
+	schemaStr := toolDef.InputSchemaJSON
+	var paramsSchema anthropic.BetaSchemaParam
+
+	if schemaStr == "" || schemaStr == "{}" || schemaStr == "null" {
+		paramsSchema = anthropic.BetaSchemaParam{
+			Type:       constant.Object,
+			Properties: param.NewOpt(map[string]anthropic.BetaSchemaParamPropertiesUnion{}),
+		}
+		log.Printf("Warning: Tool %s has empty or invalid schema, using empty object schema.", toolDef.Name)
+	} else {
+		err := json.Unmarshal([]byte(schemaStr), &paramsSchema)
+		if err != nil {
+			return anthropic.BetaToolParam{}, fmt.Errorf("failed to unmarshal tool schema for %s: %w. Schema was: %s", toolDef.Name, err, schemaStr)
 		}
 	}
 
+	// Ensure type is object if not set
 	if paramsSchema.Type == "" {
-		paramsSchema.Type = anthropic.JSONSchemaTypeObject // Default to object if not specified
+		paramsSchema.Type = constant.Object
 	}
-	if paramsSchema.Type == anthropic.JSONSchemaTypeObject && paramsSchema.Properties == nil {
-		paramsSchema.Properties = map[string]anthropic.JSONSchemaDefinition{}
+	// Ensure properties is initialized if type is object and properties is nil
+	if paramsSchema.Type == constant.Object && !paramsSchema.Properties.IsPresent() {
+		paramsSchema.Properties = param.NewOpt(map[string]anthropic.BetaSchemaParamPropertiesUnion{})
 	}
 
-	return anthropic.ToolParam{
-		Name:        anthropic.String(tool.Name()),
-		Description: anthropic.String(tool.Description()),
+	var descOpt param.Opt[string]
+	if toolDef.Description != "" {
+		descOpt = param.NewOpt(toolDef.Description)
+	}
+
+	return anthropic.BetaToolParam{
+		Name:        toolDef.Name,
+		Description: descOpt,
 		InputSchema: paramsSchema,
 	}, nil
 }
 
-// Generate implements the llms.ChatModel interface.
 func (ac *AnthropicChat) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
-	systemPrompt, anthropicMessages, err := mapMessagesAndExtractSystem(messages)
+	systemPromptText, anthropicMessages, err := mapMessagesAndExtractSystem(messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map messages for Anthropic: %w", err)
 	}
 
 	req := applyAnthropicOptions(ac.defaultRequest, options...)
 	req.Messages = anthropicMessages
-	req.System = systemPrompt
+	if systemPromptText != nil {
+		req.System = param.NewOpt(*systemPromptText)
+	}
 
 	if len(ac.boundTools) > 0 {
-		var toolUnionParams []anthropic.ToolUnionParam
-		for _, t := range ac.boundTools {
-			toolUnionParams = append(toolUnionParams, anthropic.ToolUnionParam{OfTool: &t})
-		}
-		req.Tools = toolUnionParams
-		if req.ToolChoice == nil {
-			req.ToolChoice = anthropic.NewToolChoiceAuto()
+		req.Tools = param.NewOpt(ac.boundTools)
+		if !req.ToolChoice.IsPresent() { // Only set default ToolChoice if not already set by options
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto())
 		}
 	}
 
-	if req.MaxTokens == nil || *req.MaxTokens == 0 {
+	if !req.MaxTokens.IsPresent() || req.MaxTokens.Get() == 0 {
 		return nil, errors.New("MaxTokens must be set and non-zero for Anthropic Generate")
 	}
 
-	resp, err := ac.client.Messages.New(ctx, req)
+	resp, err := ac.client.Beta.Messages.New(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("anthropic chat completion failed: %w", err)
 	}
@@ -339,179 +371,136 @@ func (ac *AnthropicChat) Generate(ctx context.Context, messages []schema.Message
 	var responseText string
 	var toolCalls []schema.ToolCall
 
-	for _, block := range resp.Content {
-		switch b := block.AsAny().(type) {
-		case anthropic.TextBlock:
-			responseText += b.Text
-		case anthropic.ToolUseBlock:
-			argsBytes, _ := json.Marshal(b.Input)
-			toolCalls = append(toolCalls, schema.ToolCall{
-				ID:        *b.ID,
-				Name:      *b.Name,
+	for _, blockUnion := range resp.Content {
+		switch content := blockUnion.AsAny().(type) {
+		case anthropic.BetaTextBlock:
+			responseText += content.Text
+		case anthropic.BetaToolUseBlock:
+			argsBytes, _ := json.Marshal(content.Input)
+			toolCall := schema.ToolCall{
+				ID:        content.ID,
+				Name:      content.Name,
 				Arguments: string(argsBytes),
-			})
+			}
+			toolCalls = append(toolCalls, toolCall)
 		}
 	}
 
 	aiMsg := schema.NewAIMessage(responseText)
 	aiMsg.ToolCalls = toolCalls
-	aiMsg.StopReason = string(resp.StopReason)
-	if resp.Usage != nil {
+	if resp.StopReason.IsPresent() {
+		aiMsg.AdditionalArgs["stop_reason"] = string(resp.StopReason.Get())
+	}
+	if resp.Usage.IsPresent() {
+		usage := resp.Usage.Get()
 		aiMsg.AdditionalArgs["usage"] = map[string]int{
-			"input_tokens":  int(resp.Usage.InputTokens),
-			"output_tokens": int(resp.Usage.OutputTokens),
+			"input_tokens":  int(usage.InputTokens),
+			"output_tokens": int(usage.OutputTokens),
 		}
 	}
 
 	return aiMsg, nil
 }
 
-// StreamChat implements the llms.ChatModel interface with streaming.
-func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan schema.ChatResponseChunk, error) {
-	systemPrompt, anthropicMessages, err := mapMessagesAndExtractSystem(messages)
+func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llms.AIMessageChunk, error) {
+	systemPromptText, anthropicMessages, err := mapMessagesAndExtractSystem(messages)
 	if err != nil {
 		return nil, fmt.Errorf("failed to map messages for Anthropic streaming: %w", err)
 	}
 
 	req := applyAnthropicOptions(ac.defaultRequest, options...)
 	req.Messages = anthropicMessages
-	req.System = systemPrompt
+	if systemPromptText != nil {
+		req.System = param.NewOpt(*systemPromptText)
+	}
+	// Stream is set by NewStreaming method, not directly in params for that method.
 
 	if len(ac.boundTools) > 0 {
-		var toolUnionParams []anthropic.ToolUnionParam
-		for _, t := range ac.boundTools {
-			toolUnionParams = append(toolUnionParams, anthropic.ToolUnionParam{OfTool: &t})
-		}
-		req.Tools = toolUnionParams
-		if req.ToolChoice == nil {
-			req.ToolChoice = anthropic.NewToolChoiceAuto()
+		req.Tools = param.NewOpt(ac.boundTools)
+		if !req.ToolChoice.IsPresent() {
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto())
 		}
 	}
 
-	if req.MaxTokens == nil || *req.MaxTokens == 0 {
+	if !req.MaxTokens.IsPresent() || req.MaxTokens.Get() == 0 {
 		return nil, errors.New("MaxTokens must be set and non-zero for Anthropic StreamChat")
 	}
 
-	stream, err := ac.client.Messages.NewStreaming(ctx, req)
+	stream, err := ac.client.Beta.Messages.NewStreaming(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("anthropic stream creation failed: %w", err)
 	}
 
-	outputCh := make(chan schema.ChatResponseChunk)
+	outputCh := make(chan llms.AIMessageChunk)
 
 	go func() {
 		defer close(outputCh)
 		defer stream.Close()
 
-		currentMessage := anthropic.Message{}	// Accumulator for the full message
-		var accumulatedToolCalls []schema.ToolCall
+		currentToolCallChunks := make(map[int]*schema.ToolCallChunk)
 
-		for stream.Next() {
-			event := stream.Current()
-			err := currentMessage.Accumulate(event) // Accumulate into the SDK's message struct
+		for {
+			eventUnion, err := stream.Recv() // eventUnion is anthropic.BetaRawMessageStreamEventUnion
 			if err != nil {
-				outputCh <- schema.ChatResponseChunk{Error: fmt.Errorf("error accumulating stream event: %w", err)}
+				if errors.Is(err, io.EOF) {
+					break
+				}
+				finalChunk := llms.AIMessageChunk{Err: fmt.Errorf("anthropic stream error: %w", err)}
+				outputCh <- finalChunk
 				return
 			}
 
-			chunk := schema.ChatResponseChunk{}
+			chunk := llms.AIMessageChunk{AdditionalArgs: make(map[string]any)}
 
-			switch ev := event.AsAny().(type) {
-			case anthropic.MessageStartEvent:
-				chunk.Delta = "" // No text delta for start event
-				if ev.Message.Usage != nil {
-					chunk.AdditionalArgs = map[string]any{
-						"usage_input_tokens": int(ev.Message.Usage.InputTokens),
+			switch event := eventUnion.AsAny().(type) {
+			case anthropic.BetaMessageStartEvent:
+				chunk.Content = ""
+				if event.Message.Usage.IsPresent() {
+					usage := event.Message.Usage.Get()
+					chunk.AdditionalArgs["usage_input_tokens"] = int(usage.InputTokens)
+				}
+			case anthropic.BetaContentBlockStartEvent:
+				if toolUse := event.ContentBlock.AsResponseToolUseBlock(); toolUse.Type == constant.ToolUse { // Check type explicitly
+					tcc := schema.ToolCallChunk{
+						Index: int(event.Index),
+						ID:    toolUse.ID,
+						Name:  toolUse.Name,
+					}
+					currentToolCallChunks[int(event.Index)] = &tcc
+					chunk.ToolCallChunks = []schema.ToolCallChunk{tcc} // Send initial chunk for the tool call
+				}
+			case anthropic.BetaContentBlockDeltaEvent:
+				switch delta := event.Delta.AsAny().(type) {
+				case anthropic.BetaTextDelta:
+					chunk.Content = delta.Text
+				case anthropic.BetaInputJSONDelta: // This is for tool arguments
+					if tcc, exists := currentToolCallChunks[int(event.Index)]; exists {
+						tcc.Arguments += delta.PartialJSON
+						chunk.ToolCallChunks = []schema.ToolCallChunk{*tcc} // Send updated chunk
 					}
 				}
-			case anthropic.ContentBlockDeltaEvent:
-				if textDelta, ok := ev.Delta.AsTextDelta(); ok {
-					chunk.Delta = textDelta.Text
+			case anthropic.BetaMessageDeltaEvent:
+				if event.Delta.StopReason.IsPresent() {
+					chunk.AdditionalArgs["stop_reason"] = string(event.Delta.StopReason.Get())
 				}
-			case anthropic.ContentBlockStopEvent:
-				// This event signals the end of a content block. We can inspect the accumulated currentMessage here.
-				// For tool calls, they appear fully formed in ContentBlockStartEvent or within the accumulated message.
-			case anthropic.MessageDeltaEvent:
-				// Contains stop reason and usage for the delta
-				chunk.StopReason = string(ev.Delta.StopReason)
-				if ev.Usage != nil {
-					chunk.AdditionalArgs = map[string]any{
-						"usage_output_tokens_delta": int(ev.Usage.OutputTokens),
-					}
+				if event.Usage.OutputTokens.IsPresent() {
+					chunk.AdditionalArgs["usage_output_tokens"] = int(event.Usage.OutputTokens.Get())
 				}
-			case anthropic.MessageStopEvent:
-				// Final event, contains overall stop reason and final usage.
-				// The accumulated `currentMessage` should be complete here.
-				chunk.StopReason = string(currentMessage.StopReason)
-				if currentMessage.Usage != nil {
-					chunk.AdditionalArgs = map[string]any{
-						"usage_input_tokens":  int(currentMessage.Usage.InputTokens),
-						"usage_output_tokens": int(currentMessage.Usage.OutputTokens),
-					}
-				}
-				// Extract final tool calls from the accumulated message
-				for _, block := range currentMessage.Content {
-					if toolUseBlock, ok := block.AsToolUseBlock(); ok {
-						argsBytes, _ := json.Marshal(toolUseBlock.Input)
-						found := false
-						for i, tc := range accumulatedToolCalls {
-							if tc.ID == *toolUseBlock.ID {
-								accumulatedToolCalls[i].Arguments = string(argsBytes) // Update if ID exists
-								found = true
-								break
-							}
-						}
-						if !found {
-							accumulatedToolCalls = append(accumulatedToolCalls, schema.ToolCall{
-								ID:        *toolUseBlock.ID,
-								Name:      *toolUseBlock.Name,
-								Arguments: string(argsBytes),
-							})
-						}
-					}
-				}
-				chunk.ToolCalls = accumulatedToolCalls
-
-			case anthropic.ContentBlockStartEvent:
-				if toolUseBlock, ok := ev.ContentBlock.AsToolUseBlock(); ok {
-					// A new tool use block has started. Capture its ID and Name.
-					// Arguments will come in ContentBlockDeltaEvents.
-					// For streaming, we might send partial tool calls or accumulate.
-					// Let's send a new tool call placeholder.
-					partialToolCall := schema.ToolCall{
-						ID:   *toolUseBlock.ID,
-						Name: *toolUseBlock.Name,
-						// Arguments will be filled by subsequent delta events if applicable
-					}
-					chunk.ToolCalls = []schema.ToolCall{partialToolCall}
-					// Add to accumulated list for final message reconstruction
-					found := false
-					for _, tc := range accumulatedToolCalls {
-						if tc.ID == partialToolCall.ID {
-							found = true
-							break
-						}
-					}
-					if !found {
-						accumulatedToolCalls = append(accumulatedToolCalls, partialToolCall)
-					}
-				}
-			default:
-				// Other event types like PingEvent can be ignored for chat response chunks
-				// log.Printf("Anthropic stream: unhandled event type %T\n", ev)
-				continue // Don't send an empty chunk for unhandled events
+			case anthropic.BetaMessageStopEvent:
+				// Final event, can carry final usage if not already sent.
+				// No specific content for AIMessageChunk here, but good to handle.
+			case anthropic.BetaContentBlockStopEvent:
+				// Marks the end of a content block, useful if tracking specific blocks.
+			case anthropic.BetaPingEvent:
+				// Keep-alive, ignore for AIMessageChunk.
+				continue // Don't send an empty chunk
+			case anthropic.BetaErrorEvent:
+				chunk.Err = fmt.Errorf("anthropic stream error event: %s - %s", event.Error.Type, event.Error.Message)
 			}
 
-			// Send the chunk if it has content or relevant info
-			if chunk.Delta != "" || len(chunk.ToolCalls) > 0 || chunk.StopReason != "" || chunk.Error != nil || len(chunk.AdditionalArgs) > 0 {
+			// Only send if there's content, a tool call chunk, or an error
+			if chunk.Content != "" || len(chunk.ToolCallChunks) > 0 || chunk.Err != nil || len(chunk.AdditionalArgs) > 0 {
 				outputCh <- chunk
-			}
-		}
-
-		if stream.Err() != nil {
-			finalErr := stream.Err()
-			if finalErr != io.EOF { // Don't send EOF as an error chunk
-				outputCh <- schema.ChatResponseChunk{Error: fmt.Errorf("anthropic stream error: %w", finalErr)}
 			}
 		}
 	}()
@@ -519,69 +508,115 @@ func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Messa
 	return outputCh, nil
 }
 
-// BindTools implements the llms.ChatModel interface.
-func (ac *AnthropicChat) BindTools(toolsToBind []tools.Tool) (llms.ChatModel, error) {
-	newClient := *ac // Create a shallow copy
-	newClient.boundTools = make([]anthropic.ToolParam, 0, len(toolsToBind))
-	for _, t := range toolsToBind {
-		anthropicTool, err := mapAnthropicTool(t)
-		if err != nil {
-			return nil, fmt.Errorf("failed to map tool 		%s		 for Anthropic: %w", t.Name(), err)
-		}
-		newClient.boundTools = append(newClient.boundTools, anthropicTool)
+func (ac *AnthropicChat) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	messages, ok := input.([]schema.Message)
+	if !ok {
+		return nil, errors.New("AnthropicChat Invoke expects input to be []schema.Message")
 	}
-	return &newClient, nil
+	return ac.Generate(ctx, messages, options...)
 }
 
-// Invoke implements the llms.ChatModel interface (core.Runnable).
-func (ac *AnthropicChat) Invoke(ctx context.Context, input schema.Message, options ...core.Option) (schema.Message, error) {
-	return ac.Generate(ctx, []schema.Message{input}, options...)
-}
-
-// Batch implements the llms.ChatModel interface (core.Runnable).
-func (ac *AnthropicChat) Batch(ctx context.Context, inputs [][]schema.Message, options ...core.Option) ([][]schema.Message, error) {
-	// TODO: Implement proper batching with concurrency control (ac.maxConcurrentBatches)
-	// For now, simple sequential execution.
-	results := make([][]schema.Message, len(inputs))
+func (ac *AnthropicChat) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	numJobs := len(inputs)
+	results := make([]any, numJobs)
+	errs := make([]error, numJobs)
 	var wg sync.WaitGroup
-	// Create a channel to limit concurrency
-	sem := make(chan struct{}, ac.maxConcurrentBatches)
 
-	for i, msgSet := range inputs {
-		wg.Add(1)
-		sem <- struct{}{} // Acquire a spot
-		go func(idx int, currentMsgSet []schema.Message) {
-			defer wg.Done()
-			defer func() { <-sem }() // Release spot
-
-			// Create a new set of options for each batch invocation to avoid interference
-			// This is important if options contain things like specific tool_choice for that batch
-			currentOptions := make([]core.Option, len(options))
-			copy(currentOptions, options)
-
-			// If options contain a specific "batch_index" or similar, it could be used here.
-			// For now, we assume options apply globally to all batches or are handled by applyAnthropicOptions.
-
-			resp, err := ac.Generate(ctx, currentMsgSet, currentOptions...)
-			if err != nil {
-				// Handle error, perhaps by returning an error message in the result set
-				log.Printf("Error in batch %d: %v", idx, err)
-				// Store error in a way that can be retrieved, or return error immediately if critical
-				// For now, we'll store a generic error message or nil if successful.
-				results[idx] = []schema.Message{schema.NewSystemMessage(fmt.Sprintf("Error processing batch %d: %v", idx, err))}
-			} else {
-				results[idx] = []schema.Message{resp}
-			}
-		}(i, msgSet)
+	// Determine concurrency: use MaxConcurrentBatches or number of jobs if smaller
+	concurrency := ac.maxConcurrentBatches
+	if numJobs < concurrency {
+		concurrency = numJobs
 	}
+	jobChan := make(chan int, numJobs)
+	for i := 0; i < numJobs; i++ {
+		jobChan <- i
+	}
+	close(jobChan)
+
+	for i := 0; i < concurrency; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for jobIndex := range jobChan {
+				messages, ok := inputs[jobIndex].([]schema.Message)
+				if !ok {
+					errs[jobIndex] = fmt.Errorf("input at index %d is not []schema.Message", jobIndex)
+					continue
+				}
+				result, err := ac.Generate(ctx, messages, options...)
+				results[jobIndex] = result
+				errs[jobIndex] = err
+			}
+		}()
+	}
+
 	wg.Wait()
-	// Check if any of the results contain only an error message, and if so, potentially return a single aggregated error.
-	// For now, returning the slice of results which might contain error messages.
-	return results, nil // TODO: Proper error aggregation for batch failures
+
+	// Consolidate errors
+	var combinedErr error
+	for i, err := range errs {
+		if err != nil {
+			if combinedErr == nil {
+				combinedErr = fmt.Errorf("error in batch job %d: %w", i, err)
+			} else {
+				combinedErr = fmt.Errorf("%w; error in batch job %d: %w", combinedErr, i, err)
+			}
+		}
+	}
+
+	return results, combinedErr
 }
 
-// Stream implements the llms.ChatModel interface (core.Runnable).
-func (ac *AnthropicChat) Stream(ctx context.Context, input []schema.Message, options ...core.Option) (<-chan schema.ChatResponseChunk, error) {
-	return ac.StreamChat(ctx, input, options...)
+// Stream implements the core.Runnable interface.
+func (ac *AnthropicChat) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	messages, ok := input.([]schema.Message)
+	if !ok {
+		return nil, errors.New("AnthropicChat Stream expects input to be []schema.Message")
+	}
+
+	aiChunkChan, err := ac.StreamChat(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Adapt llms.AIMessageChunk channel to chan any for core.Runnable
+	outputChan := make(chan any)
+	go func() {
+		defer close(outputChan)
+		for chunk := range aiChunkChan {
+			outputChan <- chunk // Send the AIMessageChunk as is
+		}
+	}()
+	return outputChan, nil
+}
+
+func (ac *AnthropicChat) BindTools(toolsToBind []tools.Tool) llms.ChatModel {
+	anthropicTools := make([]anthropic.BetaToolParam, 0, len(toolsToBind))
+	for _, t := range toolsToBind {
+		// Assuming tools.Tool has a Definition() method that returns tools.ToolDefinition
+		// or directly provides the necessary fields.
+		// For this example, let's assume tools.Tool is directly usable or has a method to get definition.
+		// This part needs to align with the actual structure of tools.Tool.
+		// Let's assume tools.Tool is equivalent to tools.ToolDefinition for now.
+		toolDef := tools.ToolDefinition{
+			Name:            t.Name(),
+			Description:     t.Description(),
+			InputSchemaJSON: t.InputSchemaJSON(), // Assuming this method exists
+		}
+		mappedTool, err := mapAnthropicTool(toolDef)
+		if err != nil {
+			log.Printf("Warning: Failed to map tool %s for Anthropic: %v", t.Name(), err)
+			continue
+		}
+		anthropicTools = append(anthropicTools, mappedTool)
+	}
+
+	newChat := *ac // Create a shallow copy
+	newChat.boundTools = anthropicTools
+	return &newChat
+}
+
+func (ac *AnthropicChat) GetModelName() string {
+	return ac.modelName
 }
 

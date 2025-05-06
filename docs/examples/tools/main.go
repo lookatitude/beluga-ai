@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time" // Added for shell tool timeout
 
 	"github.com/lookatitude/beluga-ai/tools"
 	"github.com/lookatitude/beluga-ai/tools/gofunc"
@@ -13,16 +14,24 @@ import (
 )
 
 // Define a simple Go function to be used as a tool
-func getCurrentWeather(location string, unit string) (string, error) {
+// Updated signature to match what GoFunctionTool expects: (context.Context, map[string]any) -> (any, error)
+func getCurrentWeather(ctx context.Context, args map[string]any) (any, error) {
+	location, okL := args["location"].(string)
+	unit, okU := args["unit"].(string)
+
+	if !okL || !okU {
+		return nil, fmt.Errorf("invalid arguments: location and unit must be strings")
+	}
+
 	// In a real scenario, this would call a weather API
-	 if location == "London" {
-	 	 if unit == "celsius" {
-	 	 	 return `{"temperature": 15, "unit": "celsius", "description": "Cloudy"}`, nil
-	 	 } else {
-	 	 	 return `{"temperature": 59, "unit": "fahrenheit", "description": "Cloudy"}`, nil
-	 	 }
-	 }
-	 return `{"error": "Location not found"}`, fmt.Errorf("location not found: %s", location)
+	if location == "London" {
+		if unit == "celsius" {
+			return `{"temperature": 15, "unit": "celsius", "description": "Cloudy"}`, nil
+		} else {
+			return `{"temperature": 59, "unit": "fahrenheit", "description": "Cloudy"}`, nil
+		}
+	}
+	return `{"error": "Location not found"}`, fmt.Errorf("location not found: %s", location)
 }
 
 // Define the schema for the Go function tool
@@ -43,79 +52,74 @@ var weatherSchema = `{
 }`
 
 func main() {
-	 ctx := context.Background()
+	ctx := context.Background()
 
-	 // --- Go Function Tool Example --- 
-	 fmt.Println("--- Go Function Tool Example ---")
+	// --- Go Function Tool Example --- 
+	fmt.Println("--- Go Function Tool Example ---")
 
-	 // Create the Go function tool
-	 weatherTool, err := gofunc.NewGoFuncTool(
-	 	 "get_current_weather",
-	 	 "Get the current weather in a given location",
-	 	 weatherSchema,
-	 	 getCurrentWeather, // Pass the function directly
-	 )
-	 if err != nil {
-	 	 log.Fatalf("Failed to create weather tool: %v", err)
-	 }
+	// Create the Go function tool
+	weatherTool, err := gofunc.NewGoFunctionTool(
+		"get_current_weather",
+		"Get the current weather in a given location",
+		weatherSchema,
+		getCurrentWeather, // Pass the function directly
+	)
+	if err != nil {
+		log.Fatalf("Failed to create weather tool: %v", err)
+	}
 
-	 // Prepare arguments as a JSON string (as an agent might)
-	 argsWeather := `{"location": "London", "unit": "celsius"}`
+	// Prepare arguments as a map[string]any (as GoFunctionTool Execute expects)
+	argsWeatherMap := map[string]any{"location": "London", "unit": "celsius"}
 
-	 // Execute the tool
-	 resultWeather, err := weatherTool.Execute(ctx, argsWeather)
-	 if err != nil {
-	 	 log.Printf("Weather tool execution failed: %v", err)
-	 } else {
-	 	 fmt.Printf("Weather Tool Result: %s\n", resultWeather)
-	 }
+	// Execute the tool
+	resultWeather, err := weatherTool.Execute(ctx, argsWeatherMap)
+	if err != nil {
+		log.Printf("Weather tool execution failed: %v", err)
+	} else {
+		fmt.Printf("Weather Tool Result: %s\n", resultWeather)
+	}
 
-	 // --- Shell Tool Example --- 
-	 fmt.Println("\n--- Shell Tool Example ---")
+	// --- Shell Tool Example --- 
+	fmt.Println("\n--- Shell Tool Example ---")
 
-	 // Create a shell tool (use with caution!)
-	 // Schema is optional for shell tool, but recommended if arguments are expected
-	 shellToolSchema := `{ 
-		"type": "object",
-		"properties": {
-			"command": {
-				"type": "string",
-				"description": "The shell command to execute."
-			}
-		},
-		"required": ["command"]
-	}`
-	 listFilesTool, err := shell.NewShellTool(
-	 	 "list_files",
-	 	 "Lists files in the current directory using the ls command.",
-	 	 shellToolSchema, // Provide schema if needed
-	 	 shell.WithAllowedCommands([]string{"ls"}), // IMPORTANT: Restrict allowed commands
-	 )
-	 if err != nil {
-	 	 log.Fatalf("Failed to create shell tool: %v", err)
-	 }
+	// Create a shell tool (use with caution!)
+	// NewShellTool now only takes a timeout. Name, description, and schema are defaulted.
+	// AllowedCommands functionality is not present in the current shell.go constructor.
+	listFilesTool, err := shell.NewShellTool(5 * time.Second) // Example timeout
+	if err != nil {
+		log.Fatalf("Failed to create shell tool: %v", err)
+	}
+	// To customize name, description, or schema, you would modify the Def field after creation if needed:
+	// listFilesTool.Def.Name = "list_files_custom"
+	// listFilesTool.Def.Description = "Lists files in the current directory using the ls command (custom)."
+	// For this example, we use the defaults.
 
-	 // Prepare arguments (command to run)
-	 argsShellMap := map[string]string{"command": "ls -la"}
-	 argsShellJSON, _ := json.Marshal(argsShellMap)
+	// Prepare arguments (command to run). ShellTool Execute can take string or map[string]any.
+	argsShell := "ls -la" // Direct string input
 
-	 // Execute the shell tool
-	 resultShell, err := listFilesTool.Execute(ctx, string(argsShellJSON))
-	 if err != nil {
-	 	 log.Printf("Shell tool execution failed: %v", err)
-	 } else {
-	 	 fmt.Printf("Shell Tool Result:\n%s\n", resultShell)
-	 }
+	// Execute the shell tool
+	resultShell, err := listFilesTool.Execute(ctx, argsShell)
+	if err != nil {
+		// ShellTool Execute now returns error as nil and puts command error in the result string.
+		// So, this path might not be hit for command execution errors, only for input validation type errors.
+		log.Printf("Shell tool execution error (unexpected): %v", err)
+		fmt.Printf("Shell Tool Result (with error in output):\n%s\n", resultShell)
+	} else {
+		fmt.Printf("Shell Tool Result:\n%s\n", resultShell)
+	}
 
-	 // --- Using the Base Tool Interface --- 
-	 fmt.Println("\n--- Base Tool Interface Example ---")
-	 // You can treat all tools uniformly using the tools.Tool interface
-	 myTools := []tools.Tool{weatherTool, listFilesTool}
+	// --- Using the Base Tool Interface --- 
+	fmt.Println("\n--- Base Tool Interface Example ---")
+	// You can treat all tools uniformly using the tools.Tool interface
+	myTools := []tools.Tool{weatherTool, listFilesTool}
 
-	 for _, tool := range myTools {
-	 	 fmt.Printf("Tool Name: %s\n", tool.Name())
-	 	 fmt.Printf("Tool Description: %s\n", tool.Description())
-	 	 fmt.Printf("Tool Schema: %s\n", tool.Schema())
-	 }
+	for _, tool := range myTools {
+		definition := tool.Definition()
+		fmt.Printf("Tool Name: %s\n", definition.Name)
+		fmt.Printf("Tool Description: %s\n", definition.Description)
+		// InputSchema is map[string]any, marshal to JSON for printing as string
+		schemaBytes, _ := json.MarshalIndent(definition.InputSchema, "", "  ")
+		fmt.Printf("Tool Schema: %s\n", string(schemaBytes))
+	}
 }
 

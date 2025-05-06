@@ -4,11 +4,12 @@ package gemini
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
+	// "io" // Unused, removing
 	"log"
-	"strings"
+	// "strings" // Unused, removing
 	"sync"
 
 	"github.com/google/generative-ai-go/genai"
@@ -194,8 +195,8 @@ func mapGeminiResponseToAIMessage(resp *genai.GenerateContentResponse) (schema.M
 	 	 // Check for safety blocks
 	 	 if resp != nil && len(resp.Candidates) > 0 && resp.Candidates[0].FinishReason == genai.FinishReasonSafety {
 	 	 	 blockReason := "blocked due to safety settings"
-	 	 	 if len(resp.PromptFeedback.BlockReasonMessage) > 0 {
-	 	 	 	 blockReason = resp.PromptFeedback.BlockReasonMessage
+	 	 	 if resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != genai.BlockReasonUnspecified {
+	 	 	 	 blockReason = resp.PromptFeedback.BlockReason.String() // Use BlockReason.String()
 	 	 	 }
 	 	 	 return schema.NewAIMessage(fmt.Sprintf("Content blocked: %s", blockReason)), nil
 	 	 }
@@ -243,7 +244,7 @@ func mapGeminiResponseToAIMessage(resp *genai.GenerateContentResponse) (schema.M
 	 	 aiMsg.ToolCalls = toolCalls
 	 }
 
-	 // Add usage	// Add usage and finish reason
+	// Add usage and finish reason
 	usageMap := make(map[string]int)
 	hasUsageData := false
 
@@ -252,16 +253,16 @@ func mapGeminiResponseToAIMessage(resp *genai.GenerateContentResponse) (schema.M
 		totalTokens := resp.UsageMetadata.TotalTokenCount
 		outputTokens := 0
 		if totalTokens >= inputTokens {
-			outputTokens = totalTokens - inputTokens
+			outputTokens = int(totalTokens - inputTokens) // Cast to int
 		} else {
 			log.Printf("Warning: Gemini UsageMetadata.PromptTokenCount (%d) > TotalTokenCount (%d). Setting output_tokens to 0.", inputTokens, totalTokens)
 			// If prompt tokens are reported higher than total, output is effectively 0 for this calculation.
 			// Total tokens remains as reported by API, even if inconsistent.
 		}
 
-		usageMap["input_tokens"] = inputTokens
+		usageMap["input_tokens"] = int(inputTokens) // Cast to int
 		usageMap["output_tokens"] = outputTokens
-		usageMap["total_tokens"] = totalTokens // Use API reported total
+		usageMap["total_tokens"] = int(totalTokens) // Cast to int
 		hasUsageData = true
 	} else if candidate.TokenCount > 0 { // Fallback if UsageMetadata is not available
 		// This is less accurate as we only have output tokens from candidate.
@@ -274,7 +275,7 @@ func mapGeminiResponseToAIMessage(resp *genai.GenerateContentResponse) (schema.M
 	if hasUsageData {
 		aiMsg.AdditionalArgs["usage"] = usageMap
 	}
-	aiMsg.AdditionalArgs["finish_reason"] = candidate.FinishReason.String()ng()
+	aiMsg.AdditionalArgs["finish_reason"] = candidate.FinishReason.String() // Corrected line
 
 	 return aiMsg, nil
 }
@@ -286,9 +287,7 @@ func mapGeminiStreamChunkToAIMessageChunk(resp *genai.GenerateContentResponse) (
 	 // Check for prompt feedback / blocking first
 	 if resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != genai.BlockReasonUnspecified {
 	 	 blockReason := resp.PromptFeedback.BlockReason.String()
-	 	 if len(resp.PromptFeedback.BlockReasonMessage) > 0 {
-	 	 	 blockReason = resp.PromptFeedback.BlockReasonMessage
-	 	 }
+	 	 // Removed check for BlockReasonMessage as it does not exist
 	 	 chunk.Err = fmt.Errorf("prompt blocked by safety settings: %s", blockReason)
 	 	 return chunk, chunk.Err
 	 }
@@ -328,9 +327,9 @@ func mapGeminiStreamChunkToAIMessageChunk(resp *genai.GenerateContentResponse) (
 	 	 	 nameCopy := p.Name
 	 	 	 idCopy := p.Name // Placeholder ID
 	 	 	 toolCallChunks = append(toolCallChunks, schema.ToolCallChunk{
-	 	 	 	 ID:        &idCopy,
-	 	 	 	 Name:      &nameCopy,
-	 	 	 	 Arguments: &argsStr,
+	 	 	 	 ID:        idCopy,      // Corrected: remove & if field is string
+	 	 	 	 Name:      &nameCopy,   // Assuming Name is *string as no error was reported for it
+	 	 	 	 Arguments: argsStr,     // Corrected: remove & if field is string
 	 	 	 	 // Index might be needed if calls are chunked
 	 	 	 })
 	 	 default:
@@ -357,25 +356,35 @@ func mapGeminiStreamChunkToAIMessageChunk(resp *genai.GenerateContentResponse) (
 func mapToolsToGemini(toolsToBind []tools.Tool) ([]*genai.Tool, error) {
 	 geminiTools := make([]*genai.Tool, 0, len(toolsToBind))
 	 for _, t := range toolsToBind {
+		toolDef := t.Definition() // Use Definition() to get ToolDefinition
 	 	 decl := &genai.FunctionDeclaration{
-	 	 	 Name:        t.Name(),
-	 	 	 Description: t.Description(),
+	 	 	 Name:        toolDef.Name, // Access Name from ToolDefinition
+	 	 	 Description: toolDef.Description, // Access Description from ToolDefinition
 	 	 }
 
-	 	 schemaStr := t.Schema()
-	 	 if schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
-	 	 	 var openAPISchema genai.Schema
-	 	 	 err := json.Unmarshal([]byte(schemaStr), &openAPISchema)
-	 	 	 if err != nil {
-	 	 	 	 log.Printf("Warning: Failed to unmarshal schema for tool 	%s	 for Gemini binding: %v. Skipping parameters.", t.Name(), err)
-	 	 	 } else {
-	 	 	 	 // Basic validation: Ensure type is object if properties exist
-	 	 	 	 if openAPISchema.Type == genai.TypeUnspecified && len(openAPISchema.Properties) > 0 {
-	 	 	 	 	 openAPISchema.Type = genai.TypeObject
-	 	 	 	 }
-	 	 	 	 decl.Parameters = &openAPISchema
-	 	 	 }
-	 	 }
+		// Access InputSchema from ToolDefinition, which is map[string]any
+		if toolDef.InputSchema != nil {
+			// Convert map[string]any to genai.Schema
+			// This requires careful mapping or assuming a compatible structure.
+			// For simplicity, let's assume direct marshalling/unmarshalling if compatible
+			// or specific field mapping if needed.
+			schemaBytes, err := json.Marshal(toolDef.InputSchema)
+			if err != nil {
+				log.Printf("Warning: Failed to marshal schema for tool 	%s	 for Gemini binding: %v. Skipping parameters.", toolDef.Name, err)
+			} else {
+				var openAPISchema genai.Schema
+				err = json.Unmarshal(schemaBytes, &openAPISchema)
+				if err != nil {
+					log.Printf("Warning: Failed to unmarshal schema into genai.Schema for tool 	%s	: %v. Skipping parameters.", toolDef.Name, err)
+				} else {
+					// Basic validation: Ensure type is object if properties exist
+					if openAPISchema.Type == genai.TypeUnspecified && len(openAPISchema.Properties) > 0 {
+						openAPISchema.Type = genai.TypeObject
+					}
+					decl.Parameters = &openAPISchema
+				}
+			}
+		}
 
 	 	 geminiTools = append(geminiTools, &genai.Tool{
 	 	 	 FunctionDeclarations: []*genai.FunctionDeclaration{decl},
@@ -405,16 +414,16 @@ func (gc *GeminiChat) Generate(ctx context.Context, messages []schema.Message, o
 	 	 opt.Apply(&configMap)
 	 }
 	 if temp, ok := configMap["temperature"].(float32); ok {
-	 	 model.GenerationConfig.Temperature = temp
+	 	 model.GenerationConfig.Temperature = &temp
 	 }
 	 if topP, ok := configMap["top_p"].(float32); ok {
-	 	 model.GenerationConfig.TopP = topP
+	 	 model.GenerationConfig.TopP = &topP
 	 }
 	 if topK, ok := configMap["top_k"].(int32); ok {
-	 	 model.GenerationConfig.TopK = topK
+	 	 model.GenerationConfig.TopK = &topK
 	 }
 	 if maxTokens, ok := configMap["max_tokens"].(int32); ok {
-	 	 model.GenerationConfig.MaxOutputTokens = maxTokens
+	 	 model.GenerationConfig.MaxOutputTokens = &maxTokens
 	 }
 	 if stops, ok := configMap["stop_sequences"].([]string); ok {
 	 	 model.GenerationConfig.StopSequences = stops
@@ -459,16 +468,16 @@ func (gc *GeminiChat) StreamChat(ctx context.Context, messages []schema.Message,
 	 	 opt.Apply(&configMap)
 	 }
 	 if temp, ok := configMap["temperature"].(float32); ok {
-	 	 model.GenerationConfig.Temperature = temp
+	 	 model.GenerationConfig.Temperature = &temp
 	 }
 	 if topP, ok := configMap["top_p"].(float32); ok {
-	 	 model.GenerationConfig.TopP = topP
+	 	 model.GenerationConfig.TopP = &topP
 	 }
 	 if topK, ok := configMap["top_k"].(int32); ok {
-	 	 model.GenerationConfig.TopK = topK
+	 	 model.GenerationConfig.TopK = &topK
 	 }
 	 if maxTokens, ok := configMap["max_tokens"].(int32); ok {
-	 	 model.GenerationConfig.MaxOutputTokens = maxTokens
+	 	 model.GenerationConfig.MaxOutputTokens = &maxTokens
 	 }
 	 if stops, ok := configMap["stop_sequences"].([]string); ok {
 	 	 model.GenerationConfig.StopSequences = stops

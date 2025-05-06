@@ -7,10 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
-	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
 
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/schema"
@@ -27,8 +27,7 @@ type anthropicMessagesRequestBody struct {
 	TopP             *float32               `json:"top_p,omitempty"`
 	TopK             *int                   `json:"top_k,omitempty"`
 	StopSequences    []string               `json:"stop_sequences,omitempty"`
-	Tools            []any                  `json:"tools,omitempty"` 
-	// ToolChoice could be added here if needed, mirroring Anthropic API
+	Tools            []any                  `json:"tools,omitempty"`
 }
 
 type anthropicMessagePart struct {
@@ -39,12 +38,12 @@ type anthropicMessagePart struct {
 type anthropicMessageContent struct {
 	Type               string         `json:"type"`
 	Text               string         `json:"text,omitempty"`
-	ToolUseID          string         `json:"tool_use_id,omitempty"` // Corrected tag based on Anthropic Bedrock docs
-	Name               string         `json:"name,omitempty"`
-	Input              map[string]any `json:"input,omitempty"`
-	ToolUseIDForResult string         `json:"tool_use_id,omitempty"` // Used in tool_result content
-	ContentForResult   any            `json:"content,omitempty"`   // Changed to `any` for flexibility, often string or list of blocks
-	IsError            *bool          `json:"is_error,omitempty"`  // Pointer for optional field
+	ToolUseID          string         `json:"tool_use_id,omitempty"` // For tool_use block
+	Name               string         `json:"name,omitempty"`      // For tool_use block
+	Input              map[string]any `json:"input,omitempty"`     // For tool_use block
+	ToolUseIDForResult string         `json:"tool_use_id,omitempty"` // For tool_result block
+	ContentForResult   any            `json:"content,omitempty"`   // For tool_result block (string or structured)
+	IsError            *bool          `json:"is_error,omitempty"`  // For tool_result block
 }
 
 type anthropicMessagesResponseBody struct {
@@ -53,7 +52,7 @@ type anthropicMessagesResponseBody struct {
 	Role         string                    `json:"role"`
 	Content      []anthropicMessageContent `json:"content"`
 	StopReason   string                    `json:"stop_reason"`
-	StopSequence *string                   `json:"stop_sequence,omitempty"` // Pointer for optional field
+	StopSequence *string                   `json:"stop_sequence,omitempty"`
 	Usage        struct {
 		InputTokens  int `json:"input_tokens"`
 		OutputTokens int `json:"output_tokens"`
@@ -62,21 +61,21 @@ type anthropicMessagesResponseBody struct {
 
 type anthropicStreamChunk struct {
 	Type  string `json:"type"`
-	Index *int   `json:"index,omitempty"`
+	Index *int   `json:"index,omitempty"` // For content_block_start, content_block_delta
 	Delta *struct {
-		Type         string `json:"type"`
+		Type         string `json:"type"` // e.g., "text_delta", "input_json_delta"
 		Text         string `json:"text,omitempty"`
-		PartialJson  string `json:"partial_json,omitempty"`
-		StopReason   string `json:"stop_reason,omitempty"`
-		StopSequence string `json:"stop_sequence,omitempty"`
+		PartialJson  string `json:"partial_json,omitempty"` // For tool input streaming
+		StopReason   string `json:"stop_reason,omitempty"`   // In message_delta
+		StopSequence string `json:"stop_sequence,omitempty"` // In message_delta
 	} `json:"delta,omitempty"`
-	ContentBlock *struct {
-		Type  string `json:"type"`
+	ContentBlock *struct { // For content_block_start
+		Type  string `json:"type"` // e.g., "tool_use"
 		ID    string `json:"id,omitempty"`
 		Name  string `json:"name,omitempty"`
-		Input string `json:"input,omitempty"` // Input for tool_use is a JSON string here
+		Input string `json:"input,omitempty"` // This is usually an empty object string initially for tool_use
 	} `json:"content_block,omitempty"`
-	Message *struct {
+	Message *struct { // For message_start, message_stop
 		ID           string `json:"id"`
 		Type         string `json:"type"`
 		Role         string `json:"role"`
@@ -87,7 +86,7 @@ type anthropicStreamChunk struct {
 			OutputTokens int `json:"output_tokens,omitempty"`
 		} `json:"usage,omitempty"`
 	} `json:"message,omitempty"`
-	Error *struct {
+	Error *struct { // For error type
 		Type    string `json:"type"`
 		Message string `json:"message"`
 	} `json:"error,omitempty"`
@@ -95,8 +94,20 @@ type anthropicStreamChunk struct {
 
 // --- Anthropic specific request/response mappers ---
 
-func (bl *BedrockLLM) invokeAnthropicModel(ctx context.Context, messages []schema.Message, opts schema.CallOptions, stream bool) (json.RawMessage, error) {
-	anthropicTools := mapToolsToAnthropic(opts.Tools)
+func (bl *BedrockLLM) invokeAnthropicModel(ctx context.Context, _ []schema.Message, opts map[string]any, _ bool) (json.RawMessage, error) {
+    messages, ok := opts["messages"].([]schema.Message)
+    if !ok {
+        return nil, errors.New("messages not found or not of correct type in options for Anthropic")
+    }
+
+	var anthropicTools []any
+	if toolsVal, ok := opts["tools"]; ok {
+		if t, ok := toolsVal.([]tools.Tool); ok {
+			anthropicTools = mapToolsToAnthropic(t)
+		} else if t, ok := toolsVal.([]any); ok {
+		    anthropicTools = t
+		}
+	}
 	requestBodyBytes, err := buildAnthropicChatRequest(messages, anthropicTools, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build Anthropic request for Bedrock: %w", err)
@@ -110,22 +121,34 @@ func (bl *BedrockLLM) invokeAnthropicModel(ctx context.Context, messages []schem
 	return resp.Body, nil
 }
 
-func (bl *BedrockLLM) invokeAnthropicModelStream(ctx context.Context, messages []schema.Message, opts schema.CallOptions) (*brtypes.ResponseStream, error) {
-	anthropicTools := mapToolsToAnthropic(opts.Tools)
+func (bl *BedrockLLM) invokeAnthropicModelStream(ctx context.Context, _ []schema.Message, opts map[string]any) (*bedrockruntime.InvokeModelWithResponseStreamEventStream, error) {
+    messages, ok := opts["messages"].([]schema.Message)
+    if !ok {
+        return nil, errors.New("messages not found or not of correct type in options for Anthropic stream")
+    }
+
+	var anthropicTools []any
+	if toolsVal, ok := opts["tools"]; ok {
+		if t, ok := toolsVal.([]tools.Tool); ok {
+			anthropicTools = mapToolsToAnthropic(t)
+		} else if t, ok := toolsVal.([]any); ok {
+		    anthropicTools = t
+		}
+	}
 	requestBodyBytes, err := buildAnthropicChatRequest(messages, anthropicTools, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to build Anthropic stream request for Bedrock: %w", err)
 	}
 
 	bedrockReq := bl.createInvokeModelWithResponseStreamInput(requestBodyBytes)
-	resp, err := bl.client.InvokeModelWithResponseStream(ctx, bedrockReq)
+	output, err := bl.client.InvokeModelWithResponseStream(ctx, bedrockReq)
 	if err != nil {
 		return nil, fmt.Errorf("Bedrock InvokeModelWithResponseStream (Anthropic) failed: %w", err)
 	}
-	return resp.Stream, nil
+	return output.GetStream(), nil
 }
 
-func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, callOpts schema.CallOptions) ([]byte, error) {
+func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, callOpts map[string]any) ([]byte, error) {
 	systemPrompt := ""
 	anthropicMsgs := make([]anthropicMessagePart, 0, len(messages))
 	processedMessages := messages
@@ -174,10 +197,6 @@ func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, cal
 				contentParts = append(contentParts, anthropicMessageContent{Type: "text", Text: m.GetContent()})
 			}
 			if !hasContent && !hasToolCalls {
-				// AIMessage can be empty if it only signals the end of a turn after tool_calls
-				// Or if it_s just a container for tool_calls without preceding text.
-				// Anthropic expects content for assistant messages, even if it_s just to hold tool_use.
-				// If contentParts is still empty, it means no tool_calls were successfully mapped either.
 				if len(contentParts) == 0 {
 					log.Println("Warning: AIMessage has neither text content nor tool calls for Anthropic. This might be an issue.")
 				}
@@ -185,11 +204,18 @@ func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, cal
 
 		case *schema.ToolMessage:
 			role = "user"
+			var toolContentResult any = m.GetContent()
+			contentStr := m.GetContent()
+			if (strings.HasPrefix(contentStr, "{") && strings.HasSuffix(contentStr, "}")) || (strings.HasPrefix(contentStr, "[") && strings.HasSuffix(contentStr, "]")) {
+			    var jsonData any
+			    if err := json.Unmarshal([]byte(contentStr), &jsonData); err == nil {
+			        toolContentResult = jsonData
+			    }
+			}
 			contentParts = append(contentParts, anthropicMessageContent{
 				Type:               "tool_result",
 				ToolUseIDForResult: m.ToolCallID,
-				ContentForResult:   m.GetContent(), // Anthropic expects string or list of blocks for tool_result content
-				// IsError: &m.IsError, // Assuming schema.ToolMessage has IsError field
+				ContentForResult:   toolContentResult,
 			})
 
 		default:
@@ -208,31 +234,46 @@ func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, cal
 		return nil, errors.New("no valid messages or system prompt for Anthropic Bedrock request")
 	}
 
+	maxTokens := 1024
+	if mt, ok := callOpts["max_tokens"].(int); ok && mt > 0 {
+		maxTokens = mt
+	} else if mt, ok := callOpts["max_tokens_to_sample"].(int); ok && mt > 0 { 
+	    maxTokens = mt
+	}
+
 	body := anthropicMessagesRequestBody{
 		AnthropicVersion: "bedrock-2023-05-31",
 		Messages:         anthropicMsgs,
 		System:           systemPrompt,
-		MaxTokens:        callOpts.MaxTokens,
+		MaxTokens:        maxTokens,
 	}
 
-	if callOpts.Temperature != 0 {
-		temp32 := float32(callOpts.Temperature)
-		body.Temperature = &temp32
+	if temp, ok := callOpts["temperature"].(float32); ok {
+		body.Temperature = &temp
+	} else if temp, ok := callOpts["temperature"].(float64); ok {
+	    temp32 := float32(temp)
+	    tbody.Temperature = &temp32
 	}
-	if len(callOpts.StopWords) > 0 {
-		body.StopSequences = callOpts.StopWords
+
+	if stop, ok := callOpts["stop_words"].([]string); ok && len(stop) > 0 {
+		body.StopSequences = stop
+	} else if stop, ok := callOpts["stop_sequences"].([]string); ok && len(stop) > 0 {
+	    tbody.StopSequences = stop
 	}
-	if callOpts.TopP != 0 {
-		topP32 := float32(callOpts.TopP)
-		body.TopP = &topP32
+
+	if topP, ok := callOpts["top_p"].(float32); ok {
+		body.TopP = &topP
+	} else if topP, ok := callOpts["top_p"].(float64); ok {
+	    topP32 := float32(topP)
+	    tbody.TopP = &topP32
 	}
-	if callOpts.TopK != 0 {
-		body.TopK = &callOpts.TopK
+
+	if topK, ok := callOpts["top_k"].(int); ok {
+		body.TopK = &topK
 	}
+
 	if len(mappedTools) > 0 {
 		body.Tools = mappedTools
-		// TODO: Add tool_choice logic from callOpts if needed
-		// if callOpts.ToolChoice != "" { ... }
 	}
 
 	return json.Marshal(body)
@@ -307,7 +348,7 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 			idx := streamEvent.Index
 			idCopy := streamEvent.ContentBlock.ID
 			nameCopy := streamEvent.ContentBlock.Name
-			argsCopy := "" // Placeholder, actual args come in delta
+			argsCopy := ""
 			chunk.ToolCallChunks = []schema.ToolCallChunk{{
 				ID:        &idCopy,
 				Name:      &nameCopy,
@@ -332,15 +373,13 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 			}
 		}
 	case "content_block_stop":
-		// Can be meaningful if it_s the only signal for a tool call ending.
-		isMeaningful = true // Consider it meaningful to ensure stream processing continues.
+		isMeaningful = true
 	case "message_delta":
 		if streamEvent.Delta != nil {
 			if streamEvent.Delta.StopReason != "" {
 				chunk.AdditionalArgs["stop_reason"] = streamEvent.Delta.StopReason
 				isMeaningful = true
 			}
-			// Usage in message_delta is usually output tokens for the current delta, not final.
 		}
 	case "message_stop":
 		if streamEvent.Message != nil && streamEvent.Message.Usage.OutputTokens > 0 {
@@ -348,26 +387,27 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 			isMeaningful = true
 		}
 		if streamEvent.Message != nil && streamEvent.Message.StopReason != "" {
-		    if chunk.AdditionalArgs["stop_reason"] == nil {
+		    if _, ok := chunk.AdditionalArgs["stop_reason"]; !ok {
 		        chunk.AdditionalArgs["stop_reason"] = streamEvent.Message.StopReason
 		    }
 		    isMeaningful = true
 		}
 	case "ping":
-		// Meaningless for content, but keeps stream alive.
+		return nil, nil
 	case "error":
 		if streamEvent.Error != nil {
 			chunk.Err = fmt.Errorf("anthropic stream error (%s): %s", streamEvent.Error.Type, streamEvent.Error.Message)
 		} else {
 			chunk.Err = errors.New("unknown anthropic stream error event")
 		}
-		isMeaningful = true // Error is always meaningful
+		isMeaningful = true
 	default:
-		log.Printf("Warning: Unhandled Anthropic stream event type: %s", streamEvent.Type)
+		log.Printf("Warning: Unhandled Anthropic stream event type: %s. Chunk: %s", streamEvent.Type, string(chunkBytes))
+		return nil, nil
 	}
 
 	if !isMeaningful && chunk.Err == nil {
-		return nil, nil // Return nil if not a meaningful chunk and no error
+		return nil, nil
 	}
 	if len(chunk.AdditionalArgs) == 0 {
 	    chunk.AdditionalArgs = nil
@@ -375,7 +415,6 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 	return &chunk, chunk.Err
 }
 
-// mapToolsToAnthropic converts Beluga tools to the format expected by Anthropic on Bedrock.
 func mapToolsToAnthropic(toolsToBind []tools.Tool) []any {
 	if len(toolsToBind) == 0 {
 		return nil
@@ -392,39 +431,15 @@ func mapToolsToAnthropic(toolsToBind []tools.Tool) []any {
 				continue
 			}
 		} else {
-			paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
-			log.Printf("Warning: Tool %s has empty or null schema for Anthropic binding, using empty object schema.", t.Name())
+			paramsSchema = make(map[string]any)
+			paramsSchema["type"] = "object"
+			paramsSchema["properties"] = make(map[string]any)
 		}
-
-		if _, typeOk := paramsSchema["type"]; !typeOk {
-			if _, propsOk := paramsSchema["properties"]; propsOk {
-				paramsSchema["type"] = "object"
-			} else {
-				log.Printf("Warning: Tool %s schema lacks 'type' and 'properties', ensuring empty object schema for Anthropic.", t.Name())
-				paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
-			}
-		} else if paramsSchema["type"] != "object" {
-		    log.Printf("Warning: Tool %s schema type is '%s', not 'object'. Anthropic expects an object. Attempting to wrap.", t.Name(), paramsSchema["type"])
-		    // This case is tricky. If it_s a scalar, Anthropic might not support it directly.
-		    // For now, we proceed, but this might lead to errors from Anthropic.
-		}
-
-		anthropicToolSpec := map[string]any{
+		anthropicTools = append(anthropicTools, map[string]any{
 			"name":        t.Name(),
 			"description": t.Description(),
-			"input_schema": map[string]any{ // Corrected from inputSchema.json to input_schema
-				"type": "object", // Ensure the input_schema itself is an object containing the JSON schema
-				"properties": paramsSchema["properties"], // Pass the properties of the tool_s schema
-				// "required": paramsSchema["required"], // Pass required if present
-			},
-		}
-		if req, ok := paramsSchema["required"]; ok {
-		    if inputSchema, ok2 := anthropicToolSpec["input_schema"].(map[string]any); ok2 {
-		        inputSchema["required"] = req
-		    }
-		}
-
-		anthropicTools = append(anthropicTools, anthropicToolSpec) // Directly append the spec, not wrapped in "toolSpec"
+			"input_schema": paramsSchema,
+		})
 	}
 	return anthropicTools
 }

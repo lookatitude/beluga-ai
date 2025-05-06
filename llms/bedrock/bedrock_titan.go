@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 
-	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
+	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -22,8 +24,8 @@ type TitanTextRequest struct {
 // TitanTextConfig holds the configuration parameters for Titan Text generation.
 type TitanTextConfig struct {
 	MaxTokenCount      int      `json:"maxTokenCount,omitempty"`
-	Temperature        float64  `json:"temperature,omitempty"` // Changed to float64
-	TopP               float64  `json:"topP,omitempty"`         // Changed to float64
+	Temperature        float64  `json:"temperature,omitempty"` 
+	TopP               float64  `json:"topP,omitempty"`         
 	StopSequences      []string `json:"stopSequences,omitempty"`
 }
 
@@ -43,7 +45,7 @@ type TitanTextResult struct {
 // invokeTitanTextModel handles the invocation of Amazon Titan Text models.
 // Note: Titan Text models are primarily text completion models and do not natively support chat history or tools in the same way as chat models.
 // We will adapt the prompt for a basic chat-like interaction if multiple messages are provided.
-func (bl *BedrockLLM) invokeTitanTextModel(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (json.RawMessage, error) {
+func (bl *BedrockLLM) invokeTitanTextModel(ctx context.Context, _ string, messages []schema.Message, options ...core.Option) (json.RawMessage, error) {
 	var combinedPrompt string
 	if len(messages) > 0 {
 		for _, msg := range messages {
@@ -66,20 +68,33 @@ func (bl *BedrockLLM) invokeTitanTextModel(ctx context.Context, _ string, messag
 	config := &TitanTextConfig{}
 	populatedConfig := false
 
-	if options.MaxTokens > 0 {
-		config.MaxTokenCount = options.MaxTokens
+	requestOptions := make(map[string]any)
+	for _, opt := range options {
+		opt.Apply(&requestOptions)
+	}
+
+	if maxTokens, ok := requestOptions["max_tokens"].(int); ok && maxTokens > 0 {
+		config.MaxTokenCount = maxTokens
 		populatedConfig = true
 	}
-	if options.Temperature > 0 {
-		config.Temperature = float64(options.Temperature) // Use float64 from schema.CallOptions
+	if temp, ok := requestOptions["temperature"].(float64); ok && temp > 0 {
+		config.Temperature = temp
+		populatedConfig = true
+	} else if temp, ok := requestOptions["temperature"].(float32); ok && temp > 0 {
+		config.Temperature = float64(temp)
 		populatedConfig = true
 	}
-	if options.TopP > 0 {
-		config.TopP = float64(options.TopP) // Use float64 from schema.CallOptions
+
+	if topP, ok := requestOptions["top_p"].(float64); ok && topP > 0 {
+		config.TopP = topP
+		populatedConfig = true
+	} else if topP, ok := requestOptions["top_p"].(float32); ok && topP > 0 {
+		config.TopP = float64(topP)
 		populatedConfig = true
 	}
-	if len(options.StopWords) > 0 {
-		config.StopSequences = options.StopWords
+
+	if stopWords, ok := requestOptions["stop_words"].([]string); ok && len(stopWords) > 0 {
+		config.StopSequences = stopWords
 		populatedConfig = true
 	}
 
@@ -146,7 +161,7 @@ type TitanTextStreamResponse struct {
 	} `json:"amazon-bedrock-invocationMetrics,omitempty"`
 }
 
-func (bl *BedrockLLM) invokeTitanTextModelStream(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (*brtypes.ResponseStream, error) {
+func (bl *BedrockLLM) invokeTitanTextModelStream(ctx context.Context, _ string, messages []schema.Message, options ...core.Option) (*bedrockruntime.InvokeModelWithResponseStreamEventStream, error) {
 	var combinedPrompt string
 	if len(messages) > 0 {
 		for _, msg := range messages {
@@ -169,20 +184,33 @@ func (bl *BedrockLLM) invokeTitanTextModelStream(ctx context.Context, _ string, 
 	config := &TitanTextConfig{}
 	populatedConfig := false
 
-	if options.MaxTokens > 0 {
-		config.MaxTokenCount = options.MaxTokens
+	requestOptions := make(map[string]any)
+	for _, opt := range options {
+		opt.Apply(&requestOptions)
+	}
+
+	if maxTokens, ok := requestOptions["max_tokens"].(int); ok && maxTokens > 0 {
+		config.MaxTokenCount = maxTokens
 		populatedConfig = true
 	}
-	if options.Temperature > 0 {
-		config.Temperature = float64(options.Temperature)
+	if temp, ok := requestOptions["temperature"].(float64); ok && temp > 0 {
+		config.Temperature = temp
+		populatedConfig = true
+	} else if temp, ok := requestOptions["temperature"].(float32); ok && temp > 0 {
+		config.Temperature = float64(temp)
 		populatedConfig = true
 	}
-	if options.TopP > 0 {
-		config.TopP = float64(options.TopP)
+
+	if topP, ok := requestOptions["top_p"].(float64); ok && topP > 0 {
+		config.TopP = topP
+		populatedConfig = true
+	} else if topP, ok := requestOptions["top_p"].(float32); ok && topP > 0 {
+		config.TopP = float64(topP)
 		populatedConfig = true
 	}
-	if len(options.StopWords) > 0 {
-		config.StopSequences = options.StopWords
+
+	if stopWords, ok := requestOptions["stop_words"].([]string); ok && len(stopWords) > 0 {
+		config.StopSequences = stopWords
 		populatedConfig = true
 	}
 
@@ -202,7 +230,7 @@ func (bl *BedrockLLM) invokeTitanTextModelStream(ctx context.Context, _ string, 
 	if err != nil {
 		return nil, fmt.Errorf("failed to invoke Titan Text model with response stream: %w", err)
 	}
-	return output.Stream, nil
+	return output.GetStream(), nil
 }
 
 func (bl *BedrockLLM) titanTextStreamChunkToAIMessageChunk(chunkBytes []byte) (*llms.AIMessageChunk, error) {
@@ -245,4 +273,6 @@ func (bl *BedrockLLM) titanTextStreamChunkToAIMessageChunk(chunkBytes []byte) (*
     }
 	return chunk, nil
 }
+
+
 

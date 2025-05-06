@@ -4,6 +4,7 @@ package openai
 
 import (
 	"context"
+	// "encoding/json" // Removed unused import
 	"errors"
 	"fmt"
 	"io"
@@ -210,20 +211,13 @@ func applyOptions(defaults openai.ChatCompletionRequest, options ...core.Option)
 
 // mapTool converts a Beluga-ai tool definition to an OpenAI tool definition.
 func mapTool(tool tools.Tool) (openai.Tool, error) {
-	// Assuming tools expose schema in a JSON Schema format string
-	schemaStr := tool.Schema()
-	var paramsSchema map[string]any // OpenAI expects JSON schema object for Parameters
+	toolDef := tool.Definition()
+	paramsSchema := toolDef.InputSchema // OpenAI expects JSON schema object for Parameters
 
-	// Unmarshal the JSON schema string into a map[string]any
-	if schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
-		err := json.Unmarshal([]byte(schemaStr), &paramsSchema)
-		if err != nil {
-			return openai.Tool{}, fmt.Errorf("failed to unmarshal tool parameters schema for 	%s	: %w. Schema was: %s", tool.Name(), err, schemaStr)
-		}
-	} else {
-		// If schema is empty or effectively null, create a minimal valid schema (empty object)
+	// If schema is nil (not just empty), create a minimal valid schema (empty object)
+	if paramsSchema == nil {
 		paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
-		log.Printf("Warning: Tool 	%s	 has empty or null schema, using empty object schema.", tool.Name())
+		log.Printf("Warning: Tool 	%s	 has nil InputSchema, using empty object schema.", toolDef.Name)
 	}
 
 	// Ensure the schema has a top-level type: object if not present and properties exist
@@ -233,15 +227,15 @@ func mapTool(tool tools.Tool) (openai.Tool, error) {
 		} else {
 			// If no type and no properties, it might be an invalid schema or truly empty.
 			// Defaulting to an empty object schema is a safe bet.
-			log.Printf("Warning: Tool 	%s	 schema lacks 	'type'	 and 	'properties'	, ensuring empty object schema.", tool.Name())
+			log.Printf("Warning: Tool 	%s	 schema lacks 	'type'	 and 	'properties'	, ensuring empty object schema.", toolDef.Name)
 			paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
 		}
 	}
 
 	funcDef := openai.FunctionDefinition{
-		Name:        tool.Name(),
-		Description: tool.Description(),
-		Parameters:  paramsSchema, // Assign the unmarshalled map
+		Name:        toolDef.Name,
+		Description: toolDef.Description,
+		Parameters:  paramsSchema, // Assign the schema map
 	}
 
 	return openai.Tool{
@@ -284,7 +278,7 @@ func (o *OpenAIChat) Generate(ctx context.Context, messages []schema.Message, op
 		aiMsg.ToolCalls = make([]schema.ToolCall, len(choice.ToolCalls))
 		for i, tc := range choice.ToolCalls {
 			if tc.Type != openai.ToolTypeFunction {
-				log.Printf("Warning: Skipping unsupported tool type '%s' in OpenAI response\n", tc.Type)
+				log.Printf("Warning: Skipping unsupported tool type 	%s	 in OpenAI response\n", tc.Type)
 				continue
 			}
 			aiMsg.ToolCalls[i] = schema.ToolCall{
@@ -361,13 +355,16 @@ func (o *OpenAIChat) StreamChat(ctx context.Context, messages []schema.Message, 
 				chunk.ToolCallChunks = make([]schema.ToolCallChunk, len(delta.ToolCalls))
 				for i, tcChunk := range delta.ToolCalls {
 					if tcChunk.Type != openai.ToolTypeFunction {
-						log.Printf("Warning: Skipping unsupported tool type '%s' in OpenAI stream chunk\n", tcChunk.Type)
+						log.Printf("Warning: Skipping unsupported tool type 	%s	 in OpenAI stream chunk\n", tcChunk.Type)
 						continue
 					}
+					// Corrected pointer assignments based on compiler errors
+					choiceIndex := response.Choices[0].Index
+					funcName := tcChunk.Function.Name
 					chunk.ToolCallChunks[i] = schema.ToolCallChunk{
-						Index:        response.Choices[0].Index, // Use choice index for tool chunk index
+						Index:        &choiceIndex, 
 						ID:           tcChunk.ID,
-						Name:         tcChunk.Function.Name,
+						Name:         &funcName,    
 						Arguments:    tcChunk.Function.Arguments,
 					}
 				}
@@ -390,15 +387,15 @@ func (o *OpenAIChat) StreamChat(ctx context.Context, messages []schema.Message, 
 // BindTools implements the llms.ChatModel interface.
 // It creates a *new* OpenAIChat instance with the tools bound.
 func (o *OpenAIChat) BindTools(toolsToBind []tools.Tool) llms.ChatModel {
-	newTools := make([]openai.Tool, len(toolsToBind))
-	for i, t := range toolsToBind {
+	newTools := make([]openai.Tool, 0, len(toolsToBind)) // Initialize with 0 length, but capacity
+	for _, t := range toolsToBind {
 		mappedTool, err := mapTool(t)
 		if err != nil {
 			// Log the error and skip this tool
-			log.Printf("Error mapping tool '%s' for OpenAI binding: %v. Skipping tool.\n", t.Name(), err)
+			log.Printf("Error mapping tool 	%s	 for OpenAI binding: %v. Skipping tool.\n", t.Definition().Name, err)
 			continue // Or return an error? Returning a modified model seems more aligned
 		}
-		newTools[i] = mappedTool
+		newTools = append(newTools, mappedTool) // Append successfully mapped tools
 	}
 
 	// Create a shallow copy and update the tools
@@ -470,37 +467,23 @@ func (o *OpenAIChat) Stream(ctx context.Context, input any, options ...core.Opti
 		return nil, fmt.Errorf("invalid input type for OpenAIChat stream: %w", err)
 	}
 
-	chunkChan, err := o.StreamChat(ctx, messages, options...)
+	aiChunkChan, err := o.StreamChat(ctx, messages, options...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Adapt the llms.AIMessageChunk channel to a generic chan any for the Runnable interface.
-	resultChan := make(chan any)
+	outChan := make(chan any, 1)
 	go func() {
-		defer close(resultChan)
-		for chunk := range chunkChan {
-			// Check if the chunk itself represents an error
-			if chunk.Err != nil {
-				// Propagate the error through the result channel
-				// Note: The receiver needs to type-assert to check for errors.
-				select {
-				case resultChan <- chunk.Err:
-				case <-ctx.Done():
-				}
-				return // Stop processing on error
-			}
-
-			// Send the chunk itself
+		defer close(outChan)
+		for chunk := range aiChunkChan {
 			select {
-			case resultChan <- chunk:
+			case outChan <- chunk:
 			case <-ctx.Done():
-				return // Stop forwarding if context is cancelled
+				return
 			}
 		}
 	}()
-
-	return resultChan, nil
+	return outChan, nil
 }
 
 // Compile-time check to ensure OpenAIChat implements interfaces.

@@ -3,7 +3,7 @@ package retrievers
 
 import (
 	"context"
-	"errors" // Added missing import
+	"errors"
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/core"
@@ -18,8 +18,7 @@ type VectorStoreRetriever struct {
 }
 
 // NewVectorStoreRetriever creates a new VectorStoreRetriever.
-// Options provided here become the default search options, but can be overridden
-// during Invoke/GetRelevantDocuments calls.
+// Options provided here become the default search options.
 func NewVectorStoreRetriever(vectorStore rag.VectorStore, options ...core.Option) *VectorStoreRetriever {
 	return &VectorStoreRetriever{
 		vectorStore: vectorStore,
@@ -27,45 +26,58 @@ func NewVectorStoreRetriever(vectorStore rag.VectorStore, options ...core.Option
 	}
 }
 
-// GetRelevantDocuments retrieves documents from the vector store based on the query.
-func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
-	// Combine default options with call-specific options
-	// Call-specific options take precedence
-	combinedOptions := make(map[string]any)
+// getCombinedOptions merges the retriever's default options with call-specific options.
+// Call-specific options take precedence.
+func (r *VectorStoreRetriever) getCombinedOptions(callOptions ...core.Option) map[string]any {
+	combined := make(map[string]any)
+	// Apply retriever's default options first
 	for _, opt := range r.options {
-		opt.Apply(&combinedOptions)
+		opt.Apply(&combined)
 	}
-	for _, opt := range options {
-		opt.Apply(&combinedOptions)
+	// Then apply call-specific options, potentially overriding defaults
+	for _, opt := range callOptions {
+		opt.Apply(&combined)
 	}
+	return combined
+}
 
-	// Extract common search parameters
+// GetRelevantDocuments retrieves documents from the vector store based on the query.
+// This method now adheres to the rag.Retriever interface and uses the retriever's default options.
+// For call-specific options, use the Invoke method.
+func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
+	// Use the retriever's default options for this interface method.
+	// The Invoke method will handle merging call-specific options.
+	return r.getRelevantDocumentsWithOptions(ctx, query, r.options...)
+}
+
+// getRelevantDocumentsWithOptions is an internal helper that accepts options.
+func (r *VectorStoreRetriever) getRelevantDocumentsWithOptions(ctx context.Context, query string, options ...core.Option) ([]schema.Document, error) {
+	combinedOptionsMap := r.getCombinedOptions(options...)
+
 	k := 4 // Default k value
-	if kOpt, ok := combinedOptions["k"].(int); ok && kOpt > 0 {
+	if kOpt, ok := combinedOptionsMap["k"].(int); ok && kOpt > 0 {
 		k = kOpt
 	}
 
-	// Convert map back to []core.Option for passing to the vector store
-	finalOptions := make([]core.Option, 0, len(combinedOptions))
-	for key, val := range combinedOptions {
-		// This is a bit hacky, assumes options can be reconstructed this way.
-		// A better approach might be to have the VectorStore accept the map directly,
-		// or define specific option types for k, threshold, filter etc.
+	finalVSOptions := make([]core.Option, 0, len(combinedOptionsMap))
+	for key, val := range combinedOptionsMap {
 		switch key {
 		case "score_threshold":
 			if threshold, ok := val.(float32); ok {
-				finalOptions = append(finalOptions, rag.WithScoreThreshold(threshold))
+				finalVSOptions = append(finalVSOptions, rag.WithScoreThreshold(threshold))
 			}
 		case "metadata_filter":
 			if filter, ok := val.(map[string]any); ok {
-				finalOptions = append(finalOptions, rag.WithMetadataFilter(filter))
+				finalVSOptions = append(finalVSOptions, rag.WithMetadataFilter(filter))
 			}
-			// Add other known options here
+		// Note: 'k' is handled separately and passed directly to SimilaritySearch
+		// Add other known options that translate to rag.VectorStore options here
 		}
 	}
 
-	return r.vectorStore.SimilaritySearch(ctx, query, k, finalOptions...)
+	return r.vectorStore.SimilaritySearch(ctx, query, k, finalVSOptions...)
 }
+
 
 // --- core.Runnable Implementation ---
 
@@ -75,12 +87,12 @@ func (r *VectorStoreRetriever) Invoke(ctx context.Context, input any, options ..
 	if !ok {
 		return nil, fmt.Errorf("invalid input type for VectorStoreRetriever: expected string, got %T", input)
 	}
-	return r.GetRelevantDocuments(ctx, query, options...)
+	// Invoke uses the internal helper that can take call-specific options
+	return r.getRelevantDocumentsWithOptions(ctx, query, options...)
 }
 
 // Batch implements the core.Runnable interface.
 func (r *VectorStoreRetriever) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	// Basic batch implementation by calling Invoke sequentially.
 	results := make([]any, len(inputs))
 	var firstErr error
 	for i, input := range inputs {
@@ -102,3 +114,4 @@ func (r *VectorStoreRetriever) Stream(ctx context.Context, input any, options ..
 // Compile-time check to ensure VectorStoreRetriever implements interfaces.
 var _ rag.Retriever = (*VectorStoreRetriever)(nil)
 var _ core.Runnable = (*VectorStoreRetriever)(nil)
+

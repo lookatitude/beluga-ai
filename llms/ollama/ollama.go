@@ -9,6 +9,7 @@ import (
 	"log" // Added for logging warnings
 	"net/url"
 	"sync" // Added for Batch method
+	"time" // Added for timeout
 
 	belugaConfig "github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/core"
@@ -61,7 +62,8 @@ func NewOllamaChat(modelName string, options ...OllamaOption) (*OllamaChat, erro
 		return nil, errors.New("Ollama model name cannot be empty")
 	}
 
-	host := belugaConfig.Cfg.LLMs.Ollama.Host
+	// Corrected to use BaseURL from config
+	host := belugaConfig.Cfg.LLMs.Ollama.BaseURL 
 	if host == "" {
 		host = "http://127.0.0.1:11434" // Default Ollama host
 		log.Printf("Ollama host not found in configuration, defaulting to %s", host)
@@ -81,7 +83,6 @@ func NewOllamaChat(modelName string, options ...OllamaOption) (*OllamaChat, erro
 	var client *api.Client
 	var err error
 
-	// Try ClientFromEnvironment first, which respects OLLAMA_HOST
 	client, err = api.ClientFromEnvironment()
 	if err != nil {
 		log.Printf("Could not create Ollama client from environment (OLLAMA_HOST not set or invalid?): %v. Falling back to configured/default host: %s", err, oc.host)
@@ -89,17 +90,25 @@ func NewOllamaChat(modelName string, options ...OllamaOption) (*OllamaChat, erro
 		if parseErr != nil {
 			return nil, fmt.Errorf("invalid Ollama host URL %q: %w", oc.host, parseErr)
 		}
-		client = api.NewClient(parsedURL, nil) // Use nil for httpClient to use default
+		client = api.NewClient(parsedURL, nil) 
 	}
 	oc.client = client
 
-	// Check if the model exists by trying to get its info
-	// Use a short timeout for this check to avoid hanging if Ollama is unresponsive.
-	ctxShow, cancelShow := context.WithTimeout(context.Background(), core.DefaultShortTimeout)
+	// Define DefaultShortTimeout if not available in core, or use a local constant
+	const defaultShortTimeout = 5 * time.Second 
+
+	ctxShow, cancelShow := context.WithTimeout(context.Background(), defaultShortTimeout)
 	defer cancelShow()
+
+	// Get the actual host the client is configured to use for the error message
+	clientHost := oc.host // Fallback to configured host
+	if envHost := oc.client.Host(); envHost != nil && envHost.String() != "" {
+	    clientHost = envHost.String()
+	}
+
 	_, err = oc.client.Show(ctxShow, &api.ShowRequest{Name: oc.modelName})
 	if err != nil {
-		return nil, fmt.Errorf("failed to find Ollama model %q (is Ollama running at %s and the model pulled?): %w", oc.modelName, oc.client.Host(), err)
+		return nil, fmt.Errorf("failed to find Ollama model %q (is Ollama running at %s and the model pulled?): %w", oc.modelName, clientHost, err)
 	}
 
 	return oc, nil
@@ -118,18 +127,18 @@ func mapOllamaMessages(messages []schema.Message) []api.Message {
 		case schema.MessageTypeAI:
 			role = "assistant"
 		case schema.MessageTypeTool:
-			log.Printf("Warning: Skipping Tool message for Ollama API call as it's not natively supported for input.")
+			log.Printf("Warning: Skipping Tool message for Ollama API call as it_s not natively supported for input.")
 			continue
 		default:
 			log.Printf("Warning: Skipping message of unknown type %s for Ollama API call.", msg.GetType())
 			continue
 		}
-		// Handle images if present in the message (assuming schema.Message supports it)
-		var images [][]byte
-		if msgWithParts, ok := msg.(schema.MessageWithParts); ok {
+		
+		var imagesData []api.ImageData
+		if msgWithParts, ok := msg.(schema.MessageWithParts); ok { // Assuming schema.MessageWithParts exists
 			for _, part := range msgWithParts.GetParts() {
 				if part.MIMEType == "image/jpeg" || part.MIMEType == "image/png" {
-					images = append(images, part.Data)
+					imagesData = append(imagesData, api.ImageData(part.Data)) // Correctly cast to api.ImageData
 				}
 			}
 		}
@@ -137,7 +146,7 @@ func mapOllamaMessages(messages []schema.Message) []api.Message {
 		ollamaMessages = append(ollamaMessages, api.Message{
 			Role:    role,
 			Content: msg.GetContent(),
-			Images:  images,
+			Images:  imagesData,
 		})
 	}
 	return ollamaMessages
@@ -152,6 +161,7 @@ func applyOllamaOptions(defaults api.Options, options ...core.Option) api.Option
 		opt.Apply(&config)
 	}
 
+	// Corrected assignments to use pointers where the API expects them
 	if temp, ok := config["temperature"].(float64); ok { f32 := float32(temp); opts.Temperature = &f32 }
 	if maxTokens, ok := config["max_tokens"].(int); ok { opts.NumPredict = &maxTokens }
 	if stops, ok := config["stop_sequences"].([]string); ok { opts.Stop = stops }
@@ -238,7 +248,7 @@ func (o *OllamaChat) StreamChat(ctx context.Context, messages []schema.Message, 
 		Stream:   core.BoolPtr(true),
 	}
 
-	chunkChan := make(chan llms.AIMessageChunk, 1) // Buffered channel
+	chunkChan := make(chan llms.AIMessageChunk, 1)
 
 	go func() {
 		defer close(chunkChan)
@@ -256,16 +266,14 @@ func (o *OllamaChat) StreamChat(ctx context.Context, messages []schema.Message, 
 				if resp.DoneReason != "" {
 					chunk.AdditionalArgs["finish_reason"] = resp.DoneReason
 				}
-				// Send final chunk with usage/reason then return to signal end of stream for this goroutine
 				select {
 				case chunkChan <- chunk:
 				case <-ctx.Done():
 					return ctx.Err()
 				}
-				return nil // End of stream for this goroutine
+				return nil 
 			}
 
-			// Send intermediate content chunk
 			select {
 			case chunkChan <- chunk:
 			case <-ctx.Done():
@@ -290,10 +298,7 @@ func (o *OllamaChat) StreamChat(ctx context.Context, messages []schema.Message, 
 // BindTools implements the llms.ChatModel interface.
 func (o *OllamaChat) BindTools(toolsToBind []tools.Tool) llms.ChatModel {
 	log.Println("Warning: BindTools called on OllamaChat. Ollama does not natively support API-level tool binding. Tool usage requires agent-level prompting strategies (e.g., ReAct) or specific model fine-tuning.")
-	// Create a new instance to avoid modifying the original
 	newClient := *o
-	// Potentially, one could store the tools here for agent-level logic if the agent
-	// has access to the llms.ChatModel instance, but it doesn't change API behavior.
 	return &newClient
 }
 
@@ -314,7 +319,7 @@ func (o *OllamaChat) Batch(ctx context.Context, inputs []any, options ...core.Op
 	var firstErr error
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, o.maxConcurrentBatches)
-	var mu sync.Mutex // To safely update firstErr
+	var mu sync.Mutex
 
 	for i, input := range inputs {
 		wg.Add(1)
@@ -326,7 +331,7 @@ func (o *OllamaChat) Batch(ctx context.Context, inputs []any, options ...core.Op
 			output, err := o.Invoke(ctx, currentInput, options...)
 			mu.Lock()
 			if err != nil {
-				results[index] = err // Store the error itself
+				results[index] = err 
 				if firstErr == nil {
 					firstErr = fmt.Errorf("error in Ollama batch item %d: %w", index, err)
 				}
@@ -353,16 +358,16 @@ func (o *OllamaChat) Stream(ctx context.Context, input any, options ...core.Opti
 		return nil, err
 	}
 
-	resultChan := make(chan any, 1) // Buffered channel
+	resultChan := make(chan any, 1) 
 	go func() {
 		defer close(resultChan)
 		for chunk := range chunkChan {
 			if chunk.Err != nil {
 				select {
-				case resultChan <- chunk.Err: // Propagate error as the value
+				case resultChan <- chunk.Err: 
 				case <-ctx.Done():
 				}
-				return // Stop on first error
+				return 
 			}
 			select {
 			case resultChan <- chunk:

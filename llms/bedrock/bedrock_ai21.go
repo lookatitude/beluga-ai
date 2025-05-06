@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
-	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -17,8 +17,8 @@ import (
 type AI21Jurassic2Request struct {
 	Prompt           string   `json:"prompt"`
 	MaxTokens        int      `json:"maxTokens,omitempty"`
-	Temperature      float64  `json:"temperature,omitempty"` // Changed to float64 for consistency with schema.CallOptions
-	TopP             float64  `json:"topP,omitempty"`         // Changed to float64
+	Temperature      float64  `json:"temperature,omitempty"`
+	TopP             float64  `json:"topP,omitempty"`
 	StopSequences    []string `json:"stopSequences,omitempty"`
 	CountPenalty     *AI21Penalty `json:"countPenalty,omitempty"`
 	PresencePenalty  *AI21Penalty `json:"presencePenalty,omitempty"`
@@ -28,7 +28,7 @@ type AI21Jurassic2Request struct {
 
 // AI21Penalty defines penalty structures for AI21 models.
 type AI21Penalty struct {
-	Scale            float64 `json:"scale"` // Changed to float64
+	Scale            float64 `json:"scale"`
 	ApplyToNumbers   bool    `json:"applyToNumbers,omitempty"`
 	ApplyToPunctuation bool  `json:"applyToPunctuation,omitempty"`
 	ApplyToStopwords bool    `json:"applyToStopwords,omitempty"`
@@ -81,13 +81,9 @@ type AI21Token struct {
 }
 
 // invokeAI21Jurassic2Model handles the invocation of AI21 Jurassic-2 models.
-// Note: AI21 Jurassic-2 models are primarily text completion models and do not natively support chat history or tools in the same way as chat models.
-// We will adapt the prompt for a basic chat-like interaction if multiple messages are provided.
-func (bl *BedrockLLM) invokeAI21Jurassic2Model(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (json.RawMessage, error) {
+func (bl *BedrockLLM) invokeAI21Jurassic2Model(ctx context.Context, _ string, messages []schema.Message, options map[string]any) (json.RawMessage, error) {
 	var combinedPrompt string
 	if len(messages) > 0 {
-		// For AI21, combine messages into a single prompt string, trying to mimic a conversation.
-		// This is a simplification as it_s not a true chat model.
 		for _, msg := range messages {
 			switch m := msg.(type) {
 			case *schema.HumanMessage:
@@ -96,10 +92,8 @@ func (bl *BedrockLLM) invokeAI21Jurassic2Model(ctx context.Context, _ string, me
 				combinedPrompt += fmt.Sprintf("\nAssistant: %s", m.GetContent())
 			case *schema.SystemMessage:
 				combinedPrompt = fmt.Sprintf("%s%s", m.GetContent(), combinedPrompt) // Prepend system message
-			// ToolMessages are not directly applicable here in the prompt construction for AI21
 			}
 		}
-		// Ensure the prompt ends with an Assistant marker if the last message was Human, to guide completion.
 		if messages[len(messages)-1].GetType() == schema.HumanMessageType {
 		    combinedPrompt += "\nAssistant:"
 		}
@@ -111,17 +105,23 @@ func (bl *BedrockLLM) invokeAI21Jurassic2Model(ctx context.Context, _ string, me
 		Prompt: combinedPrompt,
 	}
 
-	if options.MaxTokens > 0 {
-		requestPayload.MaxTokens = options.MaxTokens
+	if mt, ok := options["max_tokens"].(int); ok && mt > 0 {
+		requestPayload.MaxTokens = mt
 	}
-	if options.Temperature > 0 {
-		requestPayload.Temperature = float64(options.Temperature) // Cast from schema_s float32
+	if temp, ok := options["temperature"].(float64); ok && temp > 0 { // AI21 uses float64
+		requestPayload.Temperature = temp
+	} else if temp, ok := options["temperature"].(float32); ok && temp > 0 {
+		requestPayload.Temperature = float64(temp)
 	}
-	if options.TopP > 0 {
-		requestPayload.TopP = float64(options.TopP) // Cast from schema_s float32
+
+	if topP, ok := options["top_p"].(float64); ok && topP > 0 {
+		requestPayload.TopP = topP
+	} else if topP, ok := options["top_p"].(float32); ok && topP > 0 {
+		requestPayload.TopP = float64(topP)
 	}
-	if len(options.StopWords) > 0 {
-		requestPayload.StopSequences = options.StopWords
+
+	if stop, ok := options["stop_words"].([]string); ok && len(stop) > 0 {
+		requestPayload.StopSequences = stop
 	}
 
 	body, err := json.Marshal(requestPayload)
@@ -153,28 +153,21 @@ func (bl *BedrockLLM) ai21Jurassic2ResponseToAIMessage(body json.RawMessage) (sc
 	aiMsg.AdditionalArgs = make(map[string]any)
 	aiMsg.AdditionalArgs["finish_reason"] = finishReason
 	aiMsg.AdditionalArgs["id"] = resp.ID
-
-	// AI21 Jurassic-2 API on Bedrock does not directly return token counts in the main response body for InvokeModel.
-	// Token counts are typically available in the output stream for InvokeModelWithResponseStream.
 	aiMsg.AdditionalArgs["usage_note"] = "Token usage for AI21 InvokeModel is not directly available in the response payload; use streaming for token counts."
-
-	// AI21 Jurassic-2 does not support tool calls in the Bedrock API.
 	aiMsg.ToolCalls = nil
 
 	return aiMsg, nil
 }
 
-// AI21Jurassic2StreamResponse represents a chunk in the streaming response.
-// Based on Bedrock documentation, the stream for AI21 provides `outputText` and `amazon-bedrock-invocationMetrics`.
+
 type AI21Jurassic2StreamResponse struct {
 	OutputText      string  `json:"outputText,omitempty"`
-	CompletionReason *string `json:"completionReason,omitempty"` // Appears in the last chunk
-	// Bedrock adds these metrics, typically in the last chunk or a separate metadata chunk.
+	CompletionReason *string `json:"completionReason,omitempty"`
 	InputTokenCount  *int `json:"amazon-bedrock-invocationMetrics_inputTokenCount,omitempty"`
 	OutputTokenCount *int `json:"amazon-bedrock-invocationMetrics_outputTokenCount,omitempty"`
 }
 
-func (bl *BedrockLLM) invokeAI21Jurassic2ModelStream(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (*brtypes.ResponseStream, error) {
+func (bl *BedrockLLM) invokeAI21Jurassic2ModelStream(ctx context.Context, _ string, messages []schema.Message, options map[string]any) (*bedrockruntime.InvokeModelWithResponseStreamEventStream, error) {
 	var combinedPrompt string
 	if len(messages) > 0 {
 		for _, msg := range messages {
@@ -198,17 +191,23 @@ func (bl *BedrockLLM) invokeAI21Jurassic2ModelStream(ctx context.Context, _ stri
 		Prompt: combinedPrompt,
 	}
 
-	if options.MaxTokens > 0 {
-		requestPayload.MaxTokens = options.MaxTokens
+	if mt, ok := options["max_tokens"].(int); ok && mt > 0 {
+		requestPayload.MaxTokens = mt
 	}
-	if options.Temperature > 0 {
-		requestPayload.Temperature = float64(options.Temperature)
+	if temp, ok := options["temperature"].(float64); ok && temp > 0 {
+		requestPayload.Temperature = temp
+	} else if temp, ok := options["temperature"].(float32); ok && temp > 0 {
+		requestPayload.Temperature = float64(temp)
 	}
-	if options.TopP > 0 {
-		requestPayload.TopP = float64(options.TopP)
+
+	if topP, ok := options["top_p"].(float64); ok && topP > 0 {
+		requestPayload.TopP = topP
+	} else if topP, ok := options["top_p"].(float32); ok && topP > 0 {
+		requestPayload.TopP = float64(topP)
 	}
-	if len(options.StopWords) > 0 {
-		requestPayload.StopSequences = options.StopWords
+
+	if stop, ok := options["stop_words"].([]string); ok && len(stop) > 0 {
+		requestPayload.StopSequences = stop
 	}
 
 	body, err := json.Marshal(requestPayload)
@@ -220,16 +219,16 @@ func (bl *BedrockLLM) invokeAI21Jurassic2ModelStream(ctx context.Context, _ stri
 	if err != nil {
 		return nil, fmt.Errorf("failed to invoke AI21 Jurassic-2 model with response stream: %w", err)
 	}
-	return output.Stream, nil
+	return output.GetStream(), nil
 }
 
 func (bl *BedrockLLM) ai21Jurassic2StreamChunkToAIMessageChunk(chunkBytes []byte) (*llms.AIMessageChunk, error) {
 	var streamResp AI21Jurassic2StreamResponse
 	if err := json.Unmarshal(chunkBytes, &streamResp); err != nil {
-		// Log the error and the problematic chunk for debugging, but don_t necessarily stop the stream if it_s a non-fatal issue.
-		log.Printf("Warning: failed to unmarshal AI21 stream chunk: %v. Chunk: %s", err, string(chunkBytes))
-		// Return an empty chunk or nil if the chunk is not processable as main content.
-		return nil, nil
+		// If unmarshal fails, it might be a non-JSON chunk or an error. For now, log and skip.
+		// Consider specific error handling or returning the raw chunk if appropriate.
+		// log.Printf("Warning: failed to unmarshal AI21 stream chunk: %v. Chunk: %s", err, string(chunkBytes))
+		return nil, nil // Skip malformed or non-data chunks
 	}
 
 	chunk := llms.NewAIMessageChunk(streamResp.OutputText)
@@ -267,15 +266,15 @@ func (bl *BedrockLLM) ai21Jurassic2StreamChunkToAIMessageChunk(chunkBytes []byte
 		isMeaningful = true
 	}
 
-    // AI21 Jurassic-2 does not support tool calls via Bedrock API.
     chunk.ToolCallChunks = nil
 
 	if !isMeaningful {
-	    return nil, nil // Not a chunk we process into AIMessageChunk directly
+	    return nil, nil
 	}
     if len(chunk.AdditionalArgs) == 0 {
         chunk.AdditionalArgs = nil
     }
 	return chunk, nil
 }
+
 

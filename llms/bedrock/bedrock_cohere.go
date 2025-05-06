@@ -7,7 +7,8 @@ import (
 	"fmt"
 	"log"
 
-	brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tools"
@@ -38,8 +39,6 @@ type CohereCommandRequest struct {
 type CohereChatMessage struct {
 	Role    string `json:"role"` // USER, CHATBOT, SYSTEM, TOOL
 	Message string `json:"message"`
-	// For TOOL role, message is the tool output (JSON string)
-	// For CHATBOT role with tool_calls, message is text preceding tool_calls, tool_calls are separate.
 }
 
 // CohereTool represents a tool definition for Cohere models.
@@ -58,12 +57,11 @@ type CohereToolParameter struct {
 
 // CohereToolResult represents the result of a tool call to be sent to the model.
 type CohereToolResult struct {
-	Call    *CohereToolCallResponse `json:"call"` // Pointer to the tool call that this result corresponds to
-	Outputs []map[string]any      `json:"outputs"` // List of outputs, each output is a JSON object
+	Call    *CohereToolCallResponse `json:"call"`
+	Outputs []map[string]any      `json:"outputs"`
 }
 
 // CohereToolCallResponse is used within CohereToolResult to identify the call.
-// This mirrors the structure of a tool_call received from the model.
 type CohereToolCallResponse struct {
 	Name       string         `json:"name"`
 	Parameters map[string]any `json:"parameters"`
@@ -71,20 +69,16 @@ type CohereToolCallResponse struct {
 
 // CohereCommandResponse represents the response payload from Cohere Command models on Bedrock.
 type CohereCommandResponse struct {
-	ID          string             `json:"id,omitempty"` // Not always present in stream
-	Generations []CohereGeneration `json:"generations,omitempty"` // For non-streaming
-	Prompt      string             `json:"prompt,omitempty"`      // Echoed prompt
-	// Streaming specific fields
+	ID          string             `json:"id,omitempty"`
+	Generations []CohereGeneration `json:"generations,omitempty"`
+	Prompt      string             `json:"prompt,omitempty"`
 	IsFinished   bool               `json:"is_finished,omitempty"`
-	FinishReason string             `json:"finish_reason,omitempty"` // COMPLETE, ERROR, ERROR_TOXIC, ERROR_LIMIT, USER_CANCEL, MAX_TOKENS, TOOL_CALLS
-	Text         string             `json:"text,omitempty"`         // For text generation stream event
-	// Tool call related fields (can appear in non-streaming or streaming final response)
+	FinishReason string             `json:"finish_reason,omitempty"`
+	Text         string             `json:"text,omitempty"`
 	ToolCalls []CohereToolCall `json:"tool_calls,omitempty"`
-	ChatHistory []CohereChatMessage `json:"chat_history,omitempty"` // Updated chat history
-	// Meta information, including token counts
+	ChatHistory []CohereChatMessage `json:"chat_history,omitempty"`
 	Meta *CohereResponseMeta `json:"meta,omitempty"`
-	// Stream event type for differentiating chunks
-	EventType string `json:"event_type,omitempty"` // e.g., "text-generation", "tool-calls", "stream-end"
+	EventType string `json:"event_type,omitempty"` // For streaming
 }
 
 // CohereGeneration represents a single generation in a non-streaming response.
@@ -93,7 +87,6 @@ type CohereGeneration struct {
 	Text         string             `json:"text"`
 	FinishReason string             `json:"finish_reason"`
 	ToolCalls    []CohereToolCall   `json:"tool_calls,omitempty"`
-	ChatHistory  []CohereChatMessage `json:"chat_history,omitempty"` // Bedrock Cohere doesn_t seem to return this in generations
 }
 
 // CohereToolCall represents a tool call made by the Cohere model (part of response).
@@ -111,13 +104,12 @@ type CohereResponseMeta struct {
 		InputTokens  int `json:"input_tokens"`
 		OutputTokens int `json:"output_tokens"`
 	} `json:"billed_units"`
-	Tokens *struct { // Pointer as it might not always be present
+	Tokens *struct { // This field is sometimes present in stream-end events
 		InputTokens  int `json:"input_tokens"`
 		OutputTokens int `json:"output_tokens"`
 	} `json:"tokens,omitempty"`
 }
 
-// Helper to map schema.Messages to CohereChatMessages
 func mapSchemaMessagesToCohereChat(messages []schema.Message, currentToolCalls []schema.ToolCall) ([]CohereChatMessage, []CohereToolResult) {
 	cohereMessages := make([]CohereChatMessage, 0, len(messages))
 	cohereToolResults := []CohereToolResult{}
@@ -130,27 +122,20 @@ func mapSchemaMessagesToCohereChat(messages []schema.Message, currentToolCalls [
 			cohereMessages = append(cohereMessages, CohereChatMessage{Role: role, Message: m.GetContent()})
 		case *schema.AIMessage:
 			role = "CHATBOT"
-			// Cohere expects AI message text and tool_calls separately in history.
-			// If AI message has text, add it.
 			if m.GetContent() != "" {
 				cohereMessages = append(cohereMessages, CohereChatMessage{Role: role, Message: m.GetContent()})
 			}
-			// If AI message has tool calls, they are part of the CHATBOT turn but not directly in CohereChatMessage.Message.
-			// They are implicitly part of the turn that leads to subsequent TOOL messages.
-			// For constructing the *next* request, currentToolCalls from the AIMessage are used to form ToolResults.
 		case *schema.SystemMessage:
 			role = "SYSTEM"
 			cohereMessages = append(cohereMessages, CohereChatMessage{Role: role, Message: m.GetContent()})
 		case *schema.ToolMessage:
-			// This ToolMessage is a *result* to be sent back to Cohere.
-			// Find the corresponding call from `currentToolCalls` (which should be from the *previous* AIMessage)
 			var matchingCall *CohereToolCallResponse
-			for _, prevCall := range currentToolCalls {
+			for _, prevCall := range currentToolCalls { 
 				if prevCall.ID == m.ToolCallID {
 					var params map[string]any
 					if err := json.Unmarshal([]byte(prevCall.Arguments), &params); err != nil {
 						log.Printf("Warning: Could not unmarshal params for tool call ID %s: %v", prevCall.ID, err)
-						params = make(map[string]any) // or skip this tool result
+						params = make(map[string]any) 
 					}
 					matchingCall = &CohereToolCallResponse{Name: prevCall.Name, Parameters: params}
 					break
@@ -163,7 +148,6 @@ func mapSchemaMessagesToCohereChat(messages []schema.Message, currentToolCalls [
 
 			var outputData map[string]any
 			if err := json.Unmarshal([]byte(m.GetContent()), &outputData); err != nil {
-				// If not valid JSON, treat as a simple string output under a default key
 				outputData = map[string]any{"output": m.GetContent()}
 				log.Printf("Warning: Tool result content for %s is not valid JSON, wrapping as simple output: %v", m.ToolCallID, err)
 			}
@@ -178,24 +162,24 @@ func mapSchemaMessagesToCohereChat(messages []schema.Message, currentToolCalls [
 	return cohereMessages, cohereToolResults
 }
 
-func (bl *BedrockLLM) invokeCohereModel(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (json.RawMessage, error) {
+func (bl *BedrockLLM) invokeCohereModel(ctx context.Context, _ string, messages []schema.Message, options map[string]any) (json.RawMessage, error) {
 	requestPayload := CohereCommandRequest{
-		Stream: false,
+		Stream: false, 
 	}
 
 	var lastHumanMessageContent string
-	var previousToolCalls []schema.ToolCall // Tool calls from the *last* AI message, to match with current ToolMessages
+	var previousToolCalls []schema.ToolCall 
 
 	if len(messages) > 0 {
-		// Find the last human message for the `prompt` field
-		// and the tool calls from the immediately preceding AI message for `tool_results`
 		for i := len(messages) - 1; i >= 0; i-- {
 			if hm, ok := messages[i].(*schema.HumanMessage); ok && lastHumanMessageContent == "" {
 				lastHumanMessageContent = hm.GetContent()
 			}
 			if aim, ok := messages[i].(*schema.AIMessage); ok && len(previousToolCalls) == 0 {
-			    if i < len(messages)-1 { // only if it's not the absolute last message
-			        previousToolCalls = aim.ToolCalls
+			    if i < len(messages)-1 { 
+			        if _, isToolMsg := messages[i+1].(*schema.ToolMessage); isToolMsg {
+			             previousToolCalls = aim.ToolCalls 
+			        }
 			    }
 			}
 		}
@@ -204,43 +188,38 @@ func (bl *BedrockLLM) invokeCohereModel(ctx context.Context, _ string, messages 
 	if lastHumanMessageContent != "" {
 		requestPayload.Prompt = lastHumanMessageContent
 	} else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.ToolMessageType {
-	    // If the last message is a tool result, there might not be a new human prompt.
-	    // Cohere might need an empty prompt or a specific instruction.
-	    // For now, let's assume the chat history and tool_results are sufficient.
-	    requestPayload.Prompt = " " // Or some placeholder if required
+	    requestPayload.Prompt = " " 
 	} else {
-	    return nil, fmt.Errorf("Cohere request requires a prompt (last human message) or tool results")
+	    return nil, fmt.Errorf("Cohere request requires a prompt (from last human message) or tool results with context")
 	}
 
 	requestPayload.ChatHistory, requestPayload.ToolResults = mapSchemaMessagesToCohereChat(messages, previousToolCalls)
 
-
-	if options.MaxTokens > 0 {
-		requestPayload.MaxTokens = options.MaxTokens
+	if mt, ok := options["max_tokens"].(int); ok && mt > 0 {
+		requestPayload.MaxTokens = mt
 	}
-	if options.Temperature > 0 {
-		requestPayload.Temperature = float64(options.Temperature)
-	}
-	if options.TopP > 0 {
-		requestPayload.P = float64(options.TopP)
-	}
-	if options.TopK > 0 {
-		requestPayload.K = options.TopK
-	}
-	if len(options.StopWords) > 0 {
-		requestPayload.StopSequences = options.StopWords
+	if temp, ok := options["temperature"].(float64); ok && temp > 0 {
+		requestPayload.Temperature = temp
+	} else if temp, ok := options["temperature"].(float32); ok && temp > 0 {
+		requestPayload.Temperature = float64(temp)
 	}
 
-	if len(options.Tools) > 0 {
-		requestPayload.Tools = mapBelugaToolsToCohere(options.Tools)
-		// Handle tool_choice if Cohere Bedrock supports it via a specific param
-		// For now, if tools are present, Cohere decides when to use them.
-		// If `force_single_step` is needed based on ToolChoice, set it.
-		if options.ToolChoice == "any" || (options.ToolChoice != "" && options.ToolChoice != "none") {
-		    // Assuming if a specific tool is chosen or 'any', we might want to force a step.
-		    // This needs more nuanced handling based on Cohere_s exact API for tool_choice.
-		    // requestPayload.ForceSingleStep = true // Example, might not be correct for all ToolChoice values
-		}
+	if topP, ok := options["top_p"].(float64); ok && topP > 0 {
+		requestPayload.P = topP
+	} else if topP, ok := options["top_p"].(float32); ok && topP > 0 {
+		requestPayload.P = float64(topP)
+	}
+
+	if topK, ok := options["top_k"].(int); ok && topK > 0 {
+		requestPayload.K = topK
+	}
+
+	if stop, ok := options["stop_words"].([]string); ok && len(stop) > 0 {
+		requestPayload.StopSequences = stop
+	}
+
+	if toolsVal, ok := options["tools"].([]tools.Tool); ok && len(toolsVal) > 0 {
+		requestPayload.Tools = mapBelugaToolsToCohere(toolsVal)
 	}
 
 	body, err := json.Marshal(requestPayload)
@@ -263,7 +242,7 @@ func (bl *BedrockLLM) cohereResponseToAIMessage(body json.RawMessage) (schema.Me
 
 	content := ""
 	if len(resp.Generations) > 0 {
-		content = resp.Generations[0].Text // Assuming single generation for chat
+		content = resp.Generations[0].Text 
 	}
 
 	aiMsg := schema.NewAIMessage(content)
@@ -275,7 +254,7 @@ func (bl *BedrockLLM) cohereResponseToAIMessage(body json.RawMessage) (schema.Me
 			"output_tokens": resp.Meta.Tokens.OutputTokens,
 			"total_tokens":  resp.Meta.Tokens.InputTokens + resp.Meta.Tokens.OutputTokens,
 		}
-	} else if resp.Meta != nil && resp.Meta.BilledUnits.InputTokens > 0 { // Fallback
+	} else if resp.Meta != nil && resp.Meta.BilledUnits.InputTokens > 0 { 
 		aiMsg.AdditionalArgs["usage"] = map[string]int{
 			"input_tokens":  resp.Meta.BilledUnits.InputTokens,
 			"output_tokens": resp.Meta.BilledUnits.OutputTokens,
@@ -284,10 +263,9 @@ func (bl *BedrockLLM) cohereResponseToAIMessage(body json.RawMessage) (schema.Me
 	}
 
 	var finalToolCalls []schema.ToolCall
-	// Tool calls can be in Generations or at the top level of the response
-	responseToolCalls := resp.ToolCalls
+	responseToolCalls := resp.ToolCalls 
 	if len(resp.Generations) > 0 && len(resp.Generations[0].ToolCalls) > 0 {
-		responseToolCalls = resp.Generations[0].ToolCalls
+		responseToolCalls = resp.Generations[0].ToolCalls 
 	}
 
 	if len(responseToolCalls) > 0 {
@@ -295,7 +273,7 @@ func (bl *BedrockLLM) cohereResponseToAIMessage(body json.RawMessage) (schema.Me
 		for i, tc := range responseToolCalls {
 			argsBytes, _ := json.Marshal(tc.Parameters)
 			finalToolCalls[i] = schema.ToolCall{
-				ID:        fmt.Sprintf("%s-%d-%s", tc.Name, i, bl.modelID), // Attempt more unique ID
+				ID:        fmt.Sprintf("%s-%d-%s", tc.Name, i, bl.modelID), 
 				Name:      tc.Name,
 				Arguments: string(argsBytes),
 			}
@@ -306,15 +284,16 @@ func (bl *BedrockLLM) cohereResponseToAIMessage(body json.RawMessage) (schema.Me
 	if len(resp.Generations) > 0 {
 	    aiMsg.AdditionalArgs["finish_reason"] = resp.Generations[0].FinishReason
 	} else if resp.FinishReason != "" {
-	    aiMsg.AdditionalArgs["finish_reason"] = resp.FinishReason
+	    aiMsg.AdditionalArgs["finish_reason"] = resp.FinishReason 
 	}
 
 	return aiMsg, nil
 }
 
-func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, messages []schema.Message, options schema.CallOptions) (*brtypes.ResponseStream, error) {
+// For streaming
+func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, messages []schema.Message, options map[string]any) (*bedrockruntime.InvokeModelWithResponseStreamEventStream, error) {
 	requestPayload := CohereCommandRequest{
-		Stream: true,
+		Stream: true, 
 	}
     var lastHumanMessageContent string
     var previousToolCalls []schema.ToolCall
@@ -325,8 +304,10 @@ func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, mes
                 lastHumanMessageContent = hm.GetContent()
             }
             if aim, ok := messages[i].(*schema.AIMessage); ok && len(previousToolCalls) == 0 {
-                 if i < len(messages)-1 { 
-                    previousToolCalls = aim.ToolCalls
+                 if i < len(messages)-1 {
+                    if _, isToolMsg := messages[i+1].(*schema.ToolMessage); isToolMsg {
+                         previousToolCalls = aim.ToolCalls
+                    }
                 }
             }
         }
@@ -335,37 +316,41 @@ func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, mes
     if lastHumanMessageContent != "" {
         requestPayload.Prompt = lastHumanMessageContent
     } else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.ToolMessageType {
-        requestPayload.Prompt = " " 
+        requestPayload.Prompt = " "
     } else {
-        // If no human message and not a tool result continuation, this might be an issue.
-        // However, Cohere might allow starting a stream with just chat history if it_s rich enough.
-        // For now, we allow it and rely on Cohere to error if the prompt is insufficient.
-        if len(messages) == 0 { // Truly empty, this is likely an error for Cohere
+        if len(messages) == 0 { 
              return nil, fmt.Errorf("Cohere stream request requires a prompt or chat history")
         }
-        requestPayload.Prompt = " " // Placeholder if only history is present
+        requestPayload.Prompt = " "
     }
 
     requestPayload.ChatHistory, requestPayload.ToolResults = mapSchemaMessagesToCohereChat(messages, previousToolCalls)
 
-	if options.MaxTokens > 0 {
-		requestPayload.MaxTokens = options.MaxTokens
+	if mt, ok := options["max_tokens"].(int); ok && mt > 0 {
+		requestPayload.MaxTokens = mt
 	}
-	if options.Temperature > 0 {
-		requestPayload.Temperature = float64(options.Temperature)
-	}
-	if options.TopP > 0 {
-		requestPayload.P = float64(options.TopP)
-	}
-	if options.TopK > 0 {
-		requestPayload.K = options.TopK
-	}
-	if len(options.StopWords) > 0 {
-		requestPayload.StopSequences = options.StopWords
+	if temp, ok := options["temperature"].(float64); ok && temp > 0 {
+		requestPayload.Temperature = temp
+	} else if temp, ok := options["temperature"].(float32); ok && temp > 0 {
+		requestPayload.Temperature = float64(temp)
 	}
 
-	if len(options.Tools) > 0 {
-		requestPayload.Tools = mapBelugaToolsToCohere(options.Tools)
+	if topP, ok := options["top_p"].(float64); ok && topP > 0 {
+		requestPayload.P = topP
+	} else if topP, ok := options["top_p"].(float32); ok && topP > 0 {
+		requestPayload.P = float64(topP)
+	}
+
+	if topK, ok := options["top_k"].(int); ok && topK > 0 {
+		requestPayload.K = topK
+	}
+
+	if stop, ok := options["stop_words"].([]string); ok && len(stop) > 0 {
+		requestPayload.StopSequences = stop
+	}
+
+	if toolsVal, ok := options["tools"].([]tools.Tool); ok && len(toolsVal) > 0 {
+		requestPayload.Tools = mapBelugaToolsToCohere(toolsVal)
 	}
 
 	body, err := json.Marshal(requestPayload)
@@ -377,74 +362,72 @@ func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, mes
 	if err != nil {
 		return nil, fmt.Errorf("failed to invoke Cohere Command model with response stream: %w", err)
 	}
-	return output.Stream, nil
+	return output.GetStream(), nil
 }
 
 func (bl *BedrockLLM) cohereStreamChunkToAIMessageChunk(chunkBytes []byte) (*llms.AIMessageChunk, error) {
-	// Cohere Bedrock stream events are directly the CohereCommandResponse structure for each event type.
-	var streamEvent CohereCommandResponse
-	if err := json.Unmarshal(chunkBytes, &streamEvent); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal Cohere stream event: %w, chunk: %s", err, string(chunkBytes))
+	var streamResp CohereCommandResponse
+	if err := json.Unmarshal(chunkBytes, &streamResp); err != nil {
+		// log.Printf("Warning: failed to unmarshal Cohere stream chunk: %v. Chunk: %s", err, string(chunkBytes))
+		return nil, nil 
 	}
 
 	chunk := llms.NewAIMessageChunk("")
 	chunk.AdditionalArgs = make(map[string]any)
 	var isMeaningful bool
 
-	switch streamEvent.EventType {
+	switch streamResp.EventType {
 	case "text-generation":
-		if streamEvent.Text != "" {
-			chunk.Content = streamEvent.Text
+		if streamResp.Text != "" {
+			chunk.Content = streamResp.Text
 			isMeaningful = true
 		}
-	case "tool-calls":
-		if len(streamEvent.ToolCalls) > 0 {
-			schemaToolCallChunks := make([]schema.ToolCallChunk, len(streamEvent.ToolCalls))
-			for i, tc := range streamEvent.ToolCalls {
-				argsBytes, _ := json.Marshal(tc.Parameters)
-				argsStr := string(argsBytes)
-				nameStr := tc.Name
-				// Cohere doesn_t provide an explicit ID for tool calls in the stream's tool-calls event.
-				// We can generate one or rely on the consumer to match by name/index if needed.
-				// For now, we don_t set an ID here, but the schema.ToolCallChunk has an optional ID field.
-				schemaToolCallChunks[i] = schema.ToolCallChunk{
-					Name:      &nameStr,
-					Arguments: &argsStr,
-					// Index might be relevant if Cohere provides it for multi-tool calls in one event
-				}
-			}
-			chunk.ToolCallChunks = schemaToolCallChunks
-			isMeaningful = true
-		}
+	case "tool-calls-generation":
+	    if len(streamResp.ToolCalls) > 0 {
+	        chunk.ToolCallChunks = make([]schema.ToolCallChunk, len(streamResp.ToolCalls))
+	        for i, tc := range streamResp.ToolCalls {
+	            nameCopy := tc.Name
+	            argsBytes, _ := json.Marshal(tc.Parameters)
+	            argsStr := string(argsBytes)
+	            // Cohere tool calls in stream don_t have IDs, generate one or leave nil if not strictly needed for chunking
+	            // For now, we don_t assign an ID to the chunk, as it_s about the delta.
+	            chunk.ToolCallChunks[i] = schema.ToolCallChunk{
+	                Name:      &nameCopy,
+	                Arguments: &argsStr,
+	                // Index might be relevant if multiple tool calls are streamed piecewise, but Cohere seems to send them whole in this event type.
+	            }
+	        }
+	        isMeaningful = true
+	    }
 	case "stream-end":
-		if streamEvent.FinishReason != "" {
-			chunk.AdditionalArgs["finish_reason"] = streamEvent.FinishReason
+		if streamResp.FinishReason != "" {
+			chunk.AdditionalArgs["finish_reason"] = streamResp.FinishReason
 			isMeaningful = true
 		}
-		if streamEvent.Meta != nil && streamEvent.Meta.Tokens != nil {
+		if streamResp.Meta != nil && streamResp.Meta.Tokens != nil {
 			chunk.AdditionalArgs["usage"] = map[string]int{
-				"input_tokens":  streamEvent.Meta.Tokens.InputTokens,
-				"output_tokens": streamEvent.Meta.Tokens.OutputTokens,
-				"total_tokens":  streamEvent.Meta.Tokens.InputTokens + streamEvent.Meta.Tokens.OutputTokens,
+				"input_tokens":  streamResp.Meta.Tokens.InputTokens,
+				"output_tokens": streamResp.Meta.Tokens.OutputTokens,
+				"total_tokens":  streamResp.Meta.Tokens.InputTokens + streamResp.Meta.Tokens.OutputTokens,
 			}
 			isMeaningful = true
-		} else if streamEvent.Meta != nil && streamEvent.Meta.BilledUnits.InputTokens > 0 {
+		} else if streamResp.Meta != nil && streamResp.Meta.BilledUnits.InputTokens > 0 { // Fallback for stream-end
 		    chunk.AdditionalArgs["usage"] = map[string]int{
-				"input_tokens":  streamEvent.Meta.BilledUnits.InputTokens,
-				"output_tokens": streamEvent.Meta.BilledUnits.OutputTokens,
-				"total_tokens":  streamEvent.Meta.BilledUnits.InputTokens + streamEvent.Meta.BilledUnits.OutputTokens,
+				"input_tokens":  streamResp.Meta.BilledUnits.InputTokens,
+				"output_tokens": streamResp.Meta.BilledUnits.OutputTokens,
+				"total_tokens":  streamResp.Meta.BilledUnits.InputTokens + streamResp.Meta.BilledUnits.OutputTokens,
 			}
 		    isMeaningful = true
 		}
-		if streamEvent.IsFinished != nil && *streamEvent.IsFinished {
-			// This confirms the end. Already captured finish_reason and usage.
-			isMeaningful = true
-		}
+
+	case "stream-start", "search-queries-generation", "search-results", "citation-generation":
+		// These are intermediate events, might not always translate to an AIMessageChunk directly
+		// but could be used for logging or more complex state management if needed.
+		// For now, we don_t create a chunk from them unless they carry specific data we need.
+		return nil, nil
 	default:
-		// Other event types like "search-queries-generation", "search-results", "citation-generation"
-		// are not directly mapped to AIMessageChunk content/tool_calls for now.
-		// log.Printf("Cohere stream: Unhandled event type 	%s	", streamEvent.EventType)
-		return nil, nil // Not a chunk we process into AIMessageChunk directly
+		log.Printf("Warning: Unhandled Cohere stream event type: %s. Chunk: %s", streamResp.EventType, string(chunkBytes))
+		return nil, nil
 	}
 
 	if !isMeaningful {
@@ -457,66 +440,53 @@ func (bl *BedrockLLM) cohereStreamChunkToAIMessageChunk(chunkBytes []byte) (*llm
 }
 
 func mapBelugaToolsToCohere(belugaTools []tools.Tool) []CohereTool {
-	if len(belugaTools) == 0 {
-		return nil
-	}
 	cohereTools := make([]CohereTool, len(belugaTools))
-	for i, t := range belugaTools {
-		params := make(map[string]CohereToolParameter)
-		schemaStr := t.Schema()
-		var toolSchema struct {
-			Type       string                              `json:"type"`
-			Properties map[string]tools.JSONSchemaProperty `json:"properties"`
-			Required   []string                            `json:"required"`
-		}
-
+	for i, tool := range belugaTools {
+		var paramDefs map[string]CohereToolParameter
+		schemaStr := tool.Schema()
 		if schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
-			if err := json.Unmarshal([]byte(schemaStr), &toolSchema); err != nil {
-				log.Printf("Error unmarshalling tool schema for %s: %v. Schema: %s", t.Name(), err, schemaStr)
-				// Fallback to empty properties if unmarshal fails but schema was provided
-				toolSchema.Properties = make(map[string]tools.JSONSchemaProperty)
-			} 
-		} else {
-		    // If schema is empty, still create an empty properties map
-		    toolSchema.Properties = make(map[string]tools.JSONSchemaProperty)
+			var schemaProps map[string]json.RawMessage // For initial unmarshal of properties
+			tempSchema := struct {
+				Type       string                            `json:"type"`
+				Properties map[string]json.RawMessage      `json:"properties"`
+				Required   []string                          `json:"required"`
+			}{}
+
+			if err := json.Unmarshal([]byte(schemaStr), &tempSchema); err == nil && tempSchema.Type == "object" {
+				paramDefs = make(map[string]CohereToolParameter)
+				for name, propRaw := range tempSchema.Properties {
+					var propDef struct {
+						Type        string `json:"type"`
+						Description string `json:"description"`
+					}
+					if err := json.Unmarshal(propRaw, &propDef); err == nil {
+						isRequired := false
+						for _, reqName := range tempSchema.Required {
+							if reqName == name {
+								isRequired = true
+								break
+							}
+						}
+						paramDefs[name] = CohereToolParameter{
+							Description: propDef.Description,
+							Type:        propDef.Type,
+							Required:    isRequired,
+						}
+					} else {
+						log.Printf("Warning: Could not unmarshal property definition for %s in tool %s: %v", name, tool.Name(), err)
+					}
+				}
+			} else if err != nil {
+			    log.Printf("Warning: Could not unmarshal tool schema for %s: %v. Schema: %s", tool.Name(), err, schemaStr)
+			}
 		}
 
-		for pk, pv := range toolSchema.Properties {
-			cohereParamType := pv.Type
-			// Basic type mapping, Cohere might have more specific types (e.g. integer vs number)
-			switch pv.Type {
-			case "integer":
-				cohereParamType = "int" // Or number, check Cohere docs
-			case "number":
-				cohereParamType = "float" // Or number
-			case "boolean":
-				cohereParamType = "bool"
-			case "string":
-				cohereParamType = "str"
-			// array and object might need more specific handling or pass through if Cohere supports them directly
-			}
-			params[pk] = CohereToolParameter{
-				Description: pv.Description,
-				Type:        cohereParamType,
-				Required:    contains(toolSchema.Required, pk),
-			}
-		}
 		cohereTools[i] = CohereTool{
-			Name:                 t.Name(),
-			Description:          t.Description(),
-			ParameterDefinitions: params,
+			Name:                 tool.Name(),
+			Description:          tool.Description(),
+			ParameterDefinitions: paramDefs,
 		}
 	}
 	return cohereTools
 }
-
-// Helper function to check if a slice contains a string (already defined, but keep local if needed)
-// func contains(slice []string, item string) bool {
-// 	for _, s := range slice {
-// 		if s == item {
-// 			return true
-// 		}
-// 	}
-// 	return false
-// }
 

@@ -42,7 +42,7 @@ type BedrockLLM struct {
 	provider             string // Determined from modelID
 	region               string
 	maxConcurrentBatches int
-	defaultCallOptions   schema.CallOptions // Store default call options (MaxTokens, Temp, etc.)
+	defaultCallOptions   map[string]any // Store default call options (MaxTokens, Temp, etc.) as a map
 	boundTools           []tools.Tool       // Store tools in a generic format, to be mapped by provider logic
 }
 
@@ -62,10 +62,15 @@ func WithBedrockMaxConcurrentBatches(n int) BedrockOption {
 	}
 }
 
-// WithBedrockDefaultCallOptions sets default call options for the Bedrock client.
-func WithBedrockDefaultCallOptions(opts schema.CallOptions) BedrockOption {
+// WithBedrockDefaultCallOptions sets default call options for the Bedrock client using core.Option.
+func WithBedrockDefaultCallOptions(opts ...core.Option) BedrockOption {
 	return func(bl *BedrockLLM) {
-		bl.defaultCallOptions = opts
+		if bl.defaultCallOptions == nil {
+			bl.defaultCallOptions = make(map[string]any) // Corrected map initialization
+		}
+		for _, opt := range opts {
+			opt.Apply(&bl.defaultCallOptions)
+		}
 	}
 }
 
@@ -87,8 +92,6 @@ func NewBedrockLLM(ctx context.Context, modelID string, options ...BedrockOption
 		cfgOpts = append(cfgOpts, awsconfig.WithRegion(region))
 	}
 
-	// TODO: Add explicit credential provider options from belugaConfig.Cfg.LLMs.Bedrock if set
-
 	cfg, err := awsconfig.LoadDefaultConfig(ctx, cfgOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load AWS configuration: %w", err)
@@ -109,7 +112,7 @@ func NewBedrockLLM(ctx context.Context, modelID string, options ...BedrockOption
 		provider:             provider,
 		region:               region,
 		maxConcurrentBatches: 5, // Default concurrency
-		defaultCallOptions:   schema.CallOptions{}, // Initialize empty
+		defaultCallOptions:   make(map[string]any), // Corrected map initialization
 	}
 
 	// Apply functional options
@@ -117,37 +120,32 @@ func NewBedrockLLM(ctx context.Context, modelID string, options ...BedrockOption
 		opt(bl)
 	}
 
-	// Set provider-specific default call options if not already set by user
-	bl.setDefaultProviderCallOptions()
+	bl.setDefaultProviderCallOptions() // Apply provider-specific defaults to the map
 
 	return bl, nil
 }
 
 func (bl *BedrockLLM) setDefaultProviderCallOptions() {
     // Apply general defaults first if not set
-    if bl.defaultCallOptions.MaxTokens == 0 {
-        bl.defaultCallOptions.MaxTokens = 1024 // A general default
-    }
-    if bl.defaultCallOptions.Temperature == 0 {
-        // Provider specific defaults might be better, but have a fallback
+    if _, ok := bl.defaultCallOptions["max_tokens"]; !ok {
+        bl.defaultCallOptions["max_tokens"] = 1024 // A general default
     }
 
 	switch bl.provider {
 	case ProviderAnthropic:
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.7 }
-		// Anthropic uses "max_tokens_to_sample" or "max_tokens" in API, handled by provider logic
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.7 }
 	case ProviderMeta:
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.5 }
-		if bl.defaultCallOptions.TopP == 0 { bl.defaultCallOptions.TopP = 0.9 }
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.5 }
+		if _, ok := bl.defaultCallOptions["top_p"]; !ok { bl.defaultCallOptions["top_p"] = 0.9 }
 	case ProviderCohere:
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.75 }
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.75 }
 	case ProviderAI21:
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.7 }
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.7 }
 	case ProviderAmazon: // Titan
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.0 }
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.0 }
 	case ProviderMistral:
-		if bl.defaultCallOptions.Temperature == 0 { bl.defaultCallOptions.Temperature = 0.7 }
-		if bl.defaultCallOptions.TopP == 0 { bl.defaultCallOptions.TopP = 1.0 }
+		if _, ok := bl.defaultCallOptions["temperature"]; !ok { bl.defaultCallOptions["temperature"] = 0.7 }
+		if _, ok := bl.defaultCallOptions["top_p"]; !ok { bl.defaultCallOptions["top_p"] = 1.0 }
 	}
 }
 
@@ -181,43 +179,24 @@ func (bl *BedrockLLM) createInvokeModelWithResponseStreamInput(body []byte) *bed
 	}
 }
 
-// mergeCallOptions combines default, bound, and call-specific options.
-func (bl *BedrockLLM) mergeCallOptions(callOptions ...core.Option) schema.CallOptions {
-	finalOpts := bl.defaultCallOptions // Start with client defaults
+// mergeCallOptions combines default, bound, and call-specific options into a map[string]any.
+func (bl *BedrockLLM) mergeCallOptions(callOptions ...core.Option) map[string]any {
+	finalOpts := make(map[string]any)
+	// Start with client defaults
+	for k, v := range bl.defaultCallOptions {
+		finalOpts[k] = v
+	}
 
 	// Apply call-specific options, potentially overriding defaults
-	emphemeralCoreOpts := make(map[string]any)
 	for _, opt := range callOptions {
-		opt.Apply(&ephemeralCoreOpts)
+		opt.Apply(&finalOpts)
 	}
-
-	// Convert core.Option map to schema.CallOptions struct
-	if mt, ok := ephemeralCoreOpts["max_tokens"].(int); ok {
-		finalOpts.MaxTokens = mt
-	}
-	if temp, ok := ephemeralCoreOpts["temperature"].(float32); ok {
-		finalOpts.Temperature = temp
-	}
-	if topP, ok := ephemeralCoreOpts["top_p"].(float32); ok {
-		finalOpts.TopP = topP
-	}
-	if topK, ok := ephemeralCoreOpts["top_k"].(int); ok {
-		finalOpts.TopK = topK
-	}
-	if stop, ok := ephemeralCoreOpts["stop_words"].([]string); ok {
-		finalOpts.StopWords = stop
-	}
-    if tools, ok := ephemeralCoreOpts["tools"].([]tools.Tool); ok {
-        finalOpts.Tools = tools
-    }
-    if toolChoice, ok := ephemeralCoreOpts["tool_choice"].(string); ok {
-        finalOpts.ToolChoice = toolChoice
-    }
-    // Note: ToolResults are usually dynamic and passed directly if needed by the provider logic
 
 	// If tools were bound to the client, and not overridden by call options, use them.
-	if len(bl.boundTools) > 0 && len(finalOpts.Tools) == 0 {
-		finalOpts.Tools = bl.boundTools
+	if len(bl.boundTools) > 0 {
+		if _, toolsOverridden := finalOpts["tools"]; !toolsOverridden {
+			finalOpts["tools"] = bl.boundTools
+		}
 	}
 
 	return finalOpts
@@ -225,25 +204,25 @@ func (bl *BedrockLLM) mergeCallOptions(callOptions ...core.Option) schema.CallOp
 
 // Generate implements the llms.ChatModel interface.
 func (bl *BedrockLLM) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
-	finalOpts := bl.mergeCallOptions(options...)
-	prompt, _ := llms.GetSystemAndHumanPrompts(messages) // Simplified prompt extraction for some models
+	finalOptsMap := bl.mergeCallOptions(options...)
+	// Provider-specific invoke functions will handle message/prompt formatting.
 
 	var responseBody json.RawMessage
 	var err error
 
 	switch bl.provider {
 	case ProviderAnthropic:
-		responseBody, err = bl.invokeAnthropicModel(ctx, messages, finalOpts, false)
+		responseBody, err = bl.invokeAnthropicModel(ctx, messages, finalOptsMap, false)
 	case ProviderMeta:
-		responseBody, err = bl.invokeMetaLlamaModel(ctx, prompt, finalOpts) // Meta Llama uses a single prompt string
+		responseBody, err = bl.invokeMetaLlamaModel(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderCohere:
-		responseBody, err = bl.invokeCohereModel(ctx, prompt, messages, finalOpts)
+		responseBody, err = bl.invokeCohereModel(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderAI21:
-		responseBody, err = bl.invokeAI21Jurassic2Model(ctx, prompt, finalOpts) // AI21 J2 uses a single prompt string
+		responseBody, err = bl.invokeAI21Jurassic2Model(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderAmazon: // Titan Text
-		responseBody, err = bl.invokeTitanTextModel(ctx, prompt, finalOpts) // Titan Text uses a single prompt string
+		responseBody, err = bl.invokeTitanTextModel(ctx, bl.modelID, messages, options...)
 	case ProviderMistral:
-		responseBody, err = bl.invokeMistralModel(ctx, prompt, finalOpts) // Mistral uses a single prompt string
+		responseBody, err = bl.invokeMistralModel(ctx, bl.modelID, messages, finalOptsMap)
 	default:
 		return nil, fmt.Errorf("provider %s not supported for Generate", bl.provider)
 	}
@@ -272,25 +251,25 @@ func (bl *BedrockLLM) Generate(ctx context.Context, messages []schema.Message, o
 
 // StreamChat implements the llms.ChatModel interface.
 func (bl *BedrockLLM) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llms.AIMessageChunk, error) {
-	finalOpts := bl.mergeCallOptions(options...)
-	prompt, _ := llms.GetSystemAndHumanPrompts(messages) // Simplified for some models
+	finalOptsMap := bl.mergeCallOptions(options...)
+	// Provider-specific invoke functions will handle message/prompt formatting.
 
-	var bedrockStream *brtypes.ResponseStream
+	var streamOutputHandler *bedrockruntime.InvokeModelWithResponseStreamEventStream
 	var err error
 
 	switch bl.provider {
 	case ProviderAnthropic:
-		bedrockStream, err = bl.invokeAnthropicModelStream(ctx, messages, finalOpts)
+		streamOutputHandler, err = bl.invokeAnthropicModelStream(ctx, messages, finalOptsMap)
 	case ProviderMeta:
-		bedrockStream, err = bl.invokeMetaLlamaModelStream(ctx, prompt, finalOpts)
+		streamOutputHandler, err = bl.invokeMetaLlamaModelStream(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderCohere:
-		bedrockStream, err = bl.invokeCohereModelStream(ctx, prompt, messages, finalOpts)
+		streamOutputHandler, err = bl.invokeCohereModelStream(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderAI21:
-		bedrockStream, err = bl.invokeAI21Jurassic2ModelStream(ctx, prompt, finalOpts)
+		streamOutputHandler, err = bl.invokeAI21Jurassic2ModelStream(ctx, bl.modelID, messages, finalOptsMap)
 	case ProviderAmazon:
-		bedrockStream, err = bl.invokeTitanTextModelStream(ctx, prompt, finalOpts)
+		streamOutputHandler, err = bl.invokeTitanTextModelStream(ctx, bl.modelID, messages, options...)
 	case ProviderMistral:
-		bedrockStream, err = bl.invokeMistralModelStream(ctx, prompt, finalOpts)
+		streamOutputHandler, err = bl.invokeMistralModelStream(ctx, bl.modelID, messages, finalOptsMap)
 	default:
 		return nil, fmt.Errorf("provider %s not supported for StreamChat", bl.provider)
 	}
@@ -300,25 +279,19 @@ func (bl *BedrockLLM) StreamChat(ctx context.Context, messages []schema.Message,
 	}
 
 	chunkChan := make(chan llms.AIMessageChunk, 1)
-	eventStream := bedrockStream.GetStream()
+	eventChan := streamOutputHandler.Events()
 
 	go func() {
 		defer close(chunkChan)
-		defer func() {
-			if err := eventStream.Close(); err != nil && !errors.Is(err, io.EOF) {
-				log.Printf("Error closing Bedrock event stream: %v", err)
-			}
-		}()
 
 		for {
 			select {
 			case <-ctx.Done():
 				chunkChan <- llms.AIMessageChunk{Err: ctx.Err()}
 				return
-			default:
-				event, ok := <-eventStream.Events()
-				if !ok {
-					if streamErr := eventStream.Err(); streamErr != nil && !errors.Is(streamErr, io.EOF) {
+			case event, ok := <-eventChan:
+				if !ok { // Channel closed
+					if streamErr := streamOutputHandler.Err(); streamErr != nil && !errors.Is(streamErr, io.EOF) {
 						chunkChan <- llms.AIMessageChunk{Err: fmt.Errorf("bedrock stream error: %w", streamErr)}
 					}
 					return
@@ -326,13 +299,13 @@ func (bl *BedrockLLM) StreamChat(ctx context.Context, messages []schema.Message,
 
 				switch v := event.(type) {
 				case *brtypes.ResponseStreamMemberChunk:
-					var chunk *llms.AIMessageChunk // Use pointer to handle nil for non-content chunks
+					var chunk *llms.AIMessageChunk
 					var parseErr error
 					switch bl.provider {
 					case ProviderAnthropic:
 						chunk, parseErr = bl.anthropicStreamChunkToAIMessageChunk(v.Value.Bytes)
 					case ProviderMeta:
-						chunk, parseErr = bl.metaLlamaStreamChunkToAIMessageChunk(v.Value)
+						chunk, parseErr = bl.metaLlamaStreamChunkToAIMessageChunk(v.Value.Bytes)
 					case ProviderCohere:
 						chunk, parseErr = bl.cohereStreamChunkToAIMessageChunk(v.Value.Bytes)
 					case ProviderAI21:
@@ -347,19 +320,25 @@ func (bl *BedrockLLM) StreamChat(ctx context.Context, messages []schema.Message,
 
 					if parseErr != nil {
 						chunkChan <- llms.AIMessageChunk{Err: fmt.Errorf("chunk parse error: %w", parseErr)}
-						continue // Or return, depending on desired error handling
+						continue
 					}
-					if chunk != nil { // Only send if chunk is not nil (e.g. Cohere might return nil for non-content events)
+					if chunk != nil {
 						select {
 						case chunkChan <- *chunk:
 						case <-ctx.Done():
 							return
 						}
 					}
+			  // Removed cases for specific ResponseStreamMember...Exception types as they are not part of the union.
+			  // The streamOutputHandler.Err() check when the channel closes is the primary way to catch terminal stream errors.
 				case *brtypes.UnknownUnionMember:
-					log.Printf("Warning: Unknown Bedrock stream event type: %s", v.Tag)
+					log.Printf("Warning: Unknown Bedrock stream event union member: %s. Value: %v", v.Tag, v.Value)
 				default:
-					log.Printf("Warning: Unexpected Bedrock stream event type: %T", v)
+					// This case handles any other event types that might appear in the stream but are not explicitly handled above.
+					// This could include future additions to the SDK or unexpected event types.
+					// We log it for now. If specific error types *are* part of the ResponseStream union and need explicit handling,
+					// they should be added as specific cases above.
+					log.Printf("Warning: Unexpected Bedrock stream event type: %T. Value: %v", v, v)
 				}
 			}
 		}
@@ -369,16 +348,12 @@ func (bl *BedrockLLM) StreamChat(ctx context.Context, messages []schema.Message,
 }
 
 // BindTools implements the llms.ChatModel interface.
+// Note: This method on BedrockLLM binds tools at the generic BedrockLLM level.
+// The actual conversion and usage of these tools will happen in the provider-specific invoke methods.
 func (bl *BedrockLLM) BindTools(toolsToBind []tools.Tool) llms.ChatModel {
 	newClient := *bl // Create a shallow copy
 	newClient.boundTools = make([]tools.Tool, len(toolsToBind))
 	copy(newClient.boundTools, toolsToBind)
-
-	// Provider-specific tool mapping/validation can happen during request building
-	// or here if there's a common structure to pre-process.
-	// For now, we store the generic tools.Tool and let provider logic handle it.
-	// Example: Anthropic maps these to its specific tool format during request build.
-	// Cohere also has its own tool format.
 
 	log.Printf("Tools bound to Bedrock client for provider %s. Actual tool use support depends on the specific model and provider logic.", bl.provider)
 	return &newClient
@@ -406,7 +381,6 @@ func (bl *BedrockLLM) Batch(ctx context.Context, inputs []any, options ...core.O
 		go func(index int, currentInput any) {
 			defer wg.Done()
 			defer func() { <-sem }()
-			// TODO: Handle per-request options if core.Option can be made to target specific batch items
 			result, err := bl.Invoke(ctx, currentInput, options...)
 			results[index] = result
 			errorsList[index] = err

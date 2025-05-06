@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
+	"github.com/Tnze/go-mc/chat"
+	"github.com/Tnze/go-mc/server"
 	"github.com/jltobler/go-rcon"
 	"github.com/lookatitude/beluga-ai/tools"
 )
@@ -65,13 +67,14 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 	pingCtx, cancel := context.WithTimeout(ctx, 10*time.Second) // 10-second timeout for ping
 	defer cancel()
 
-	resp, delay, err := bot.PingAndListTimeout(pingCtx, host, port)
+	formattedAddress := fmt.Sprintf("%s:%d", host, port)
+	resp, delay, err := bot.PingAndListContext(pingCtx, formattedAddress)
 	if err != nil {
 		return nil, fmt.Errorf("failed to ping server %s: %w", address, err)
 	}
 
 	// Process the response (which is JSON) into a more structured map
-	var status bot.PingInfo
+	var status server.PingInfo
 	err = json.Unmarshal(resp, &status)
 	if err != nil {
 		// Fallback: return raw JSON if unmarshaling fails
@@ -188,7 +191,7 @@ func (t *MCRconTool) Execute(ctx context.Context, input any) (any, error) {
 	}
 	defer conn.Close()
 
-	response, err := conn.Send(rconInput.Command)
+	response, err := conn.SendCommand(rconInput.Command)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send RCON command to %s: %w", rconInput.Address, err)
 	}
