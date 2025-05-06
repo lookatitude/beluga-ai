@@ -191,16 +191,21 @@ func main() {
 			continue
 		}
 
-		var messages []schema.Message
-		// Cohere and Anthropic prefer chat messages, others a single prompt string (handled by BedrockLLM)
-		if strings.HasPrefix(modelID, "cohere.") || strings.HasPrefix(modelID, "anthropic.") {
+		// Cohere, Anthropic, Mistral (with appropriate prompting), and Meta Llama (with appropriate prompting) can handle chat messages.
+		// Other models might prefer a single concatenated prompt string, which BedrockLLM's Generate method attempts to handle
+		// by extracting system and human prompts or by using the provider-specific prompt formatting (e.g., for Llama and Mistral).
+		// For tool use with Mistral/Llama via InvokeModel: this typically requires careful prompt engineering to include tool descriptions
+		// and to parse tool invocation requests from the model's text response. The Beluga framework's `BindTools` feature
+		// stores tools, but their direct invocation by these Bedrock models (Mistral/Llama via InvokeModel) isn't as structured as with Anthropic or the Bedrock Converse API.
+		// For RAG: Retrieved documents should be formatted into the prompt context for these models.
+		if strings.HasPrefix(modelID, "cohere.") || strings.HasPrefix(modelID, "anthropic.") || strings.HasPrefix(modelID, "mistral.") || strings.HasPrefix(modelID, "meta.") {
 			messages = []schema.Message{
-				schema.NewSystemMessage("You are a helpful AI assistant."),
-				schema.NewHumanMessage(fmt.Sprintf("What is one key feature of the %s model family?", name)),
+				schema.NewSystemMessage("You are a helpful AI assistant. If asked about tools, explain that tool descriptions would be in the prompt and you'd respond with a request to use them in text."),
+				schema.NewHumanMessage(fmt.Sprintf("What is one key feature of the %s model family? Also, how would you use a hypothetical 'get_weather' tool if I provided its description?", name)),
 			}
-		} else {
+		} else { // For models like Titan, AI21 that strictly expect a single prompt string
 			messages = []schema.Message{
-				schema.NewHumanMessage(fmt.Sprintf("Describe one key feature of the %s model family.", name)),
+				schema.NewHumanMessage(fmt.Sprintf("Describe one key feature of the %s model family. For RAG, context would be added here.", name)),
 			}
 		}
 

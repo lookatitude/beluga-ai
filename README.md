@@ -73,9 +73,8 @@ The framework loads configuration automatically using the `config.LoadConfig()` 
     *   Viper-based loading from files (YAML) and environment variables (`config` package).
 *   **LLMs (`llms` package):**
     *   `ChatModel` interface.
-    *   Implementations for OpenAI, Anthropic, Ollama, AWS Bedrock (Anthropic provider), Google Gemini, Cohere (including streaming and tool use where applicable).
+    *   Implementations for OpenAI, Anthropic, Ollama, AWS Bedrock (Anthropic, Mistral, and Meta Llama providers), Google Gemini, Cohere (including streaming and tool use where applicable, with tool use for Bedrock Mistral/Meta often relying on prompt engineering with `InvokeModel` or the Bedrock Converse API for more structured interactions).
     *   Consistent token usage tracking (input, output, total tokens) available in `AIMessage.AdditionalArgs["usage"]` for all supported models.
-    *   Basic structure for AWS Bedrock.
     *   Standard `Generate`, `StreamChat`, `BindTools`, `Invoke`, `Batch`, `Stream` methods.
 *   **Tools (`tools` package):**
     *   `Tool` interface.
@@ -102,9 +101,11 @@ The framework loads configuration automatically using the `config.LoadConfig()` 
 ## Future Plans / To Be Implemented
 
 *   **LLMs:**
-    *   Complete AWS Bedrock client implementation.
-    *   Implement token usage tracking more consistently across models. (Implemented)
-*   **Tools:**
+    *   Complete AWS Bedrock client implementation by adding support for remaining providers:
+        *   Cohere (Command R+, etc. via Bedrock)
+        *   AI21 Labs (Jamba, etc. via Bedrock)
+        *   Amazon Titan (Text models via Bedrock, ensuring full feature parity)
+    *   Enhance tool use capabilities for Bedrock models, potentially leveraging Bedrock Converse API where beneficial.
     *   Complete API tool implementation for interacting with external REST/GraphQL APIs.
     *   Complete MCP tool implementation.
     *   Add more built-in tools (e.g., web search, file system operations with safety checks).
