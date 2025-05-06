@@ -354,10 +354,9 @@ func (ac *AnthropicChat) Generate(ctx context.Context, messages []schema.Message
 
 	if len(ac.boundTools) > 0 {
 		req.Tools = param.NewOpt(ac.boundTools)
-		if !req.ToolChoice.IsPresent() { // Only set default ToolChoice if not already set by options
-			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto())
-		}
-	}
+			if !req.ToolChoice.IsPresent() { // Only set default ToolChoice if not already set by options
+				req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto(anthropic.RequestToolChoiceAutoParam{Type: constant.ToolChoiceTypeAuto}))
+			}
 
 	if !req.MaxTokens.IsPresent() || req.MaxTokens.Get() == 0 {
 		return nil, errors.New("MaxTokens must be set and non-zero for Anthropic Generate")
