@@ -7,7 +7,7 @@ import (
 	"log"
 
 	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/rag/embedders/ollama"
+	"github.com/lookatitude/beluga-ai/rag/embedders"
 	"github.com/lookatitude/beluga-ai/rag/loaders"
 	"github.com/lookatitude/beluga-ai/rag/retrievers"
 	"github.com/lookatitude/beluga-ai/rag/splitters"
