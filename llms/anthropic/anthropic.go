@@ -283,12 +283,14 @@ func applyAnthropicOptions(defaults anthropic.BetaMessageNewParams, options ...c
 	}
 
 	if choice, ok := config["tool_choice"].(string); ok {
-		switch choice {
+		switch choice { LATEST
 		case "auto":
-			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto(anthropic.RequestToolChoiceAutoParam{Type: constant.ToolChoiceTypeAuto})		case "any":
+			req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAuto(anthropic.RequestToolChoiceAutoParam{Type: constant.ToolChoiceTypeAuto}))
+		case "any":
 				req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceAny(anthropic.RequestToolChoiceAnyParam{Type: constant.ToolChoiceTypeAny}))
 			default: // Assumed to be a tool name
-				req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceTool(anthropic.RequestToolChoiceToolParam{Name: choice, Type: constant.ToolChoiceTypeTool}))		}
+				req.ToolChoice = param.NewOpt(anthropic.BetaToolChoiceParamOfRequestToolChoiceTool(anthropic.RequestToolChoiceToolParam{Name: choice, Type: constant.ToolChoiceTypeTool}))
+		}
 	} else if choiceMap, ok := config["tool_choice"].(map[string]any); ok {
 		if typeVal, ok := choiceMap["type"].(string); ok && typeVal == "tool" {
 			if nameVal, ok := choiceMap["name"].(string); ok {
