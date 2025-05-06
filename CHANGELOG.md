@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.2](https://github.com/lookatitude/beluga-ai/compare/v1.0.1...v1.0.2) (2025-05-06)
+
+
+### Bug Fixes
+
+* address multiple Go compilation errors ([cdb9bdc](https://github.com/lookatitude/beluga-ai/commit/cdb9bdc51c2e95071b866520a55576dc06e52df4))
+
 ## [1.0.1](https://github.com/lookatitude/beluga-ai/compare/v1.0.0...v1.0.1) (2025-05-06)
 
 
