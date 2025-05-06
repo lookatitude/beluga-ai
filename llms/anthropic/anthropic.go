@@ -349,7 +349,7 @@ func (ac *AnthropicChat) Generate(ctx context.Context, messages []schema.Message
 	req := applyAnthropicOptions(ac.defaultRequest, options...)
 	req.Messages = anthropicMessages
 	if systemPromptText != nil {
-		req.System = param.NewOpt(*systemPromptText)
+		req.System = param.NewOpt([]anthropic.BetaTextBlockParam{{Text: *systemPromptText, Type: constant.TextBlockTypeText}})
 	}
 
 	if len(ac.boundTools) > 0 {
