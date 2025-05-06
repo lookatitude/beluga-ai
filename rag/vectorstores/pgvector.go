@@ -215,10 +215,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 
 	ids := make([]string, len(documents))
 	batch := &pgx.Batch{}
-	results := make([]pgx.BatchResult, len(documents))
-
 	for i, doc := range documents {
-		metadataJSON, err := json.Marshal(doc.GetMetadata())
+		metadataJSON, err := json.Marshal(doc.Metadata)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal metadata for document %d: %w", i, err)
 		}
@@ -300,7 +298,7 @@ func (s *PgVectorStore) similaritySearchInternal(ctx context.Context, queryEmbed
 
 	// Using cosine distance (<=>) - smaller is better (0=identical, 1=orthogonal, 2=opposite)
 	// Other options: L2 distance (<->), inner product (<#>) - larger is better
-	distanceOperator := "<=>"
+	// distanceOperator := "<=>" // This was unused, relying on the default in the query string
 
 	querySQL := fmt.Sprintf(`
 	 	 SELECT %s, %s, %s %s $1 AS distance

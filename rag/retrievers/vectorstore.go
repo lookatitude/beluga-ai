@@ -28,7 +28,7 @@ func NewVectorStoreRetriever(vectorStore rag.VectorStore, options ...core.Option
 }
 
 // GetRelevantDocuments retrieves documents from the vector store based on the query.
-func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string, options ...core.Option) ([]schema.Document, error) {
+func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
 	// Combine default options with call-specific options
 	// Call-specific options take precedence
 	combinedOptions := make(map[string]any)

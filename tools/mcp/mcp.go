@@ -11,9 +11,7 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
-	"github.com/Tnze/go-mc/chat"
 	"github.com/jltobler/go-rcon"
-	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/tools"
 )
 

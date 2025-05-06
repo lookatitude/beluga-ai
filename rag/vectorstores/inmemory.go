@@ -12,6 +12,7 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag"
 	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/rag/retrievers"
 
 	// Need a math library for vector operations (e.g., cosine similarity)
 	"gonum.org/v1/gonum/floats"
@@ -117,9 +118,16 @@ func cosineSimilarity(a, b []float32) (float32, error) {
 	if len(a) != len(b) {
 		return 0, fmt.Errorf("vector lengths do not match: %d vs %d", len(a), len(b))
 	}
-	dotProduct := floats.Dot(a, b)
-	normA := floats.Norm(a, 2)
-	normB := floats.Norm(b, 2)
+	// Convert []float32 to []float64 for gonum functions
+	a64 := make([]float64, len(a))
+	b64 := make([]float64, len(b))
+	for i := range a {
+		a64[i] = float64(a[i])
+		b64[i] = float64(b[i])
+	}
+	dotProduct := floats.Dot(a64, b64)
+	normA := floats.Norm(a64, 2)
+	normB := floats.Norm(b64, 2)
 	if normA == 0 || normB == 0 {
 		return 0, nil // Avoid division by zero
 	}
