@@ -1,0 +1,59 @@
+name: Deploy Docusaurus Website to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Deploy on pushes to the main branch
+    paths:
+      - 'website/**' # Only run if website content changes
+      - '.github/workflows/website_deploy.yml'
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Not needed if lastUpdated is not used
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18' # Or your preferred Docusaurus Node version
+          cache: 'yarn'
+          cache-dependency-path: website/yarn.lock
+
+      - name: Install Docusaurus dependencies
+        working-directory: ./website
+        run: yarn install --frozen-lockfile
+
+      - name: Build Docusaurus website
+        working-directory: ./website
+        run: yarn build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./website/build
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
