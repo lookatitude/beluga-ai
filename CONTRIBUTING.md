@@ -66,6 +66,14 @@ BREAKING CHANGE: `extends` key in config file is now used for extending other co
     Refs #133
     ```
 
+## Release Process
+
+This project uses [release-please](https://github.com/googleapis/release-please) to automate releases. When commits adhering to the Conventional Commits specification are merged into the `main` branch, `release-please` will automatically create a Pull Request proposing the next release version and updating the `CHANGELOG.md`.
+
+Once this Release PR is merged, `release-please` will then tag the release and create a GitHub Release.
+
+For pre-releases (like alpha, beta), ensure your commit messages are clear about the pre-release nature if applicable, though `release-please-config.json` is set up to handle alpha versions automatically.
+
 ## Pull Requests
 
 *   Ensure your branch is up-to-date with the `main` branch before submitting a pull request.
