@@ -264,7 +264,7 @@ func (s *PgVectorStore) DeleteDocuments(ctx context.Context, ids []string, optio
 	for _, idStr := range ids {
 		// Parse string ID to UUID bytes
 		var uuidBytes [16]byte
-		_, err := fmt.Sscan(strings.ReplaceAll(idStr, "-", ""), fmt.Sprintf("%%32x", &uuidBytes))
+		_, err := fmt.Sscanf(strings.ReplaceAll(idStr, "-", ""), "%32x", &uuidBytes)
 		if err != nil {
 			return fmt.Errorf("invalid UUID format for ID 	%s	: %w", idStr, err)
 		}

@@ -53,7 +53,7 @@ func (t *MCPingTool) Name() string {
 func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 	address, ok := input.(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid input type for %s: expected string (server address), got %T", t.Name, input)
+		return nil, fmt.Errorf("invalid input type for %s: expected string (server address), got %T", t.Name(), input)
 	}
 
 	// go-mc ping function needs host and optionally port
@@ -206,21 +206,21 @@ func (t *MCRconTool) Execute(ctx context.Context, input any) (any, error) {
 	if isStr {
 		err = json.Unmarshal([]byte(inputStr), &rconInput)
 		if err != nil {
-			return nil, fmt.Errorf("failed to parse JSON string input for %s: %w. Input: %s", t.Name, err, inputStr)
+			return nil, fmt.Errorf("failed to parse JSON string input for %s: %w. Input: %s", t.Name(), err, inputStr)
 		}
 	} else if isMap {
 		// Convert map to JSON then unmarshal (simple way to handle map)
 		jsonBytes, jsonErr := json.Marshal(inputMap)
 		if jsonErr != nil {
-			return nil, fmt.Errorf("failed to marshal map input for %s: %w", t.Name, jsonErr)
+			return nil, fmt.Errorf("failed to marshal map input for %s: %w", t.Name(), jsonErr)
 		}
 		err = json.Unmarshal(jsonBytes, &rconInput)
 		if err != nil {
 			// Should not happen if marshal succeeded, but check anyway
-			return nil, fmt.Errorf("failed to unmarshal map input after marshaling for %s: %w", t.Name, err)
+			return nil, fmt.Errorf("failed to unmarshal map input after marshaling for %s: %w", t.Name(), err)
 		}
 	} else {
-		return nil, fmt.Errorf("invalid input type for %s: expected JSON string or map[string]any, got %T", t.Name, input)
+		return nil, fmt.Errorf("invalid input type for %s: expected JSON string or map[string]any, got %T", t.Name(), input)
 	}
 
 	if rconInput.Address == "" || rconInput.Password == "" || rconInput.Command == "" {

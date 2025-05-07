@@ -469,8 +469,8 @@ func (ac *AnthropicChat) StreamChat(ctx context.Context, messages []schema.Messa
 	}
 
 	streamResp := ac.client.Beta.Messages.NewStreaming(ctx, req)
-	if streamResp.Err != nil {
-		return nil, fmt.Errorf("anthropic stream creation failed: %w", streamResp.Err)
+	if err := streamResp.Err(); err != nil {
+		return nil, fmt.Errorf("anthropic stream creation failed: %w", err)
 	}
 	stream := streamResp
 	
