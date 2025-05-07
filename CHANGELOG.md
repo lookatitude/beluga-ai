@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.0.3](https://github.com/lookatitude/beluga-ai/compare/v1.0.2...v1.0.3) (2025-05-07)
+
+
+### Bug Fixes
+
+* **agents:** resolve undefined symbols in agent example ([4c685b5](https://github.com/lookatitude/beluga-ai/commit/4c685b5874ee9a6a468e0ae5dbc6c4db9bf6be4c))
+* **agents:** resolve undefined symbols in agent example ([07cb007](https://github.com/lookatitude/beluga-ai/commit/07cb007103ff80679f721375c7eb6157bde6a06f))
+* Corrected syntax error in switch/case block in Anthropic module ([8c2e97f](https://github.com/lookatitude/beluga-ai/commit/8c2e97f4c0c51dfa843baafb2b8b59c256e449e7))
+* Corrected System prompt assignment in Anthropic Generate method ([9ac02d5](https://github.com/lookatitude/beluga-ai/commit/9ac02d5a1bd7f3535bf2f87eaee0bf1564abde7b))
+* Corrected System prompt assignment in Anthropic StreamChat method ([ddbd4df](https://github.com/lookatitude/beluga-ai/commit/ddbd4dfe4084fcec493cd5f756b31c89599ffdf9))
+* Corrected ToolChoiceAny and ToolChoiceTool usage in Anthropic module ([7848ae0](https://github.com/lookatitude/beluga-ai/commit/7848ae0bf797ad83626033a95250cabab3de40c6))
+* Corrected ToolChoiceAuto usage in Anthropic Generate method (second instance) ([cc3163b](https://github.com/lookatitude/beluga-ai/commit/cc3163b942a85ea227a4bda8b40c27fc1af35a4a))
+* Corrected ToolChoiceAuto usage in Anthropic module ([121f0e0](https://github.com/lookatitude/beluga-ai/commit/121f0e0309a782a27dc0e56807d767ead95e3de3))
+* Modified StreamChat function signature in Anthropic module ([163da2e](https://github.com/lookatitude/beluga-ai/commit/163da2ed29b08e57358ebcaa5ed2169e30510145))
+* Modify StreamChat signature (remove ctx) to isolate syntax error ([471f021](https://github.com/lookatitude/beluga-ai/commit/471f021b2fc766ef87cc010692db7166a583edab))
+* Removed 'LATEST' literal from switch/case in Anthropic module ([8c2de7a](https://github.com/lookatitude/beluga-ai/commit/8c2de7aebc5b497fad3debb41e2b95169ba9a9ff))
+* resolve compilation errors in multiple packages ([0522041](https://github.com/lookatitude/beluga-ai/commit/05220411405a280e4c824c0827ad74e2f13d65d8))
+* Restore correct StreamChat function signature in Anthropic module ([75935ac](https://github.com/lookatitude/beluga-ai/commit/75935ac69afc76066787711eb4d93c3e4f5e2ab1))
+* Restore full StreamChat function signature in Anthropic module ([5e8cbc8](https://github.com/lookatitude/beluga-ai/commit/5e8cbc8123fd3dd525dc0bd1010bf11d2483423b))
+* Restore options parameter in StreamChat function signature in Anthropic module ([1a0e0b9](https://github.com/lookatitude/beluga-ai/commit/1a0e0b97905bde8e8ce5db1d790276bdac702da3))
+
 ## [1.0.2](https://github.com/lookatitude/beluga-ai/compare/v1.0.1...v1.0.2) (2025-05-06)
 
 
