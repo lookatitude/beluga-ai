@@ -69,6 +69,16 @@ func (gft *GoFunctionTool) Definition() tools.ToolDefinition {
 	return gft.Def
 }
 
+// Description returns the tool's description.
+func (gft *GoFunctionTool) Description() string {
+	return gft.Definition().Description
+}
+
+// Name returns the tool's name.
+func (gft *GoFunctionTool) Name() string {
+	return gft.Definition().Name
+}
+
 // Execute implements the tools.Tool interface.
 // It calls the wrapped Go function using reflection with the provided arguments.
 // Corrected input type to any
@@ -128,11 +138,24 @@ func (gft *GoFunctionTool) Invoke(ctx context.Context, input any, options ...cor
 }
 
 // Batch implements the core.Runnable interface for GoFunctionTool.
-// It calls Invoke sequentially for each input.
+// It calls Execute sequentially for each input.
 // TODO: Consider if the underlying function supports batching for potential optimization.
-func (gft *GoFunctionTool) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	// Use the embedded BaseTool's Batch implementation
-	return gft.BaseTool.Batch(ctx, inputs, options...)
+// Batch implements the tools.Tool interface
+func (gft *GoFunctionTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := gft.Execute(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("error processing batch item %d: %w", i, err)
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+// Run implements the core.Runnable Batch method with options
+func (gft *GoFunctionTool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	return gft.Batch(ctx, inputs) // Options are ignored for now
 }
 
 // Stream implements the core.Runnable interface for GoFunctionTool.
@@ -153,5 +176,12 @@ func (gft *GoFunctionTool) Stream(ctx context.Context, input any, options ...cor
 }
 
 // Compile-time checks to ensure implementation satisfies interfaces.
+// Make sure interfaces are correctly implemented
 var _ tools.Tool = (*GoFunctionTool)(nil)
-var _ core.Runnable = (*GoFunctionTool)(nil)
+// Define a custom interface that matches what we've implemented
+type batcherWithOptions interface {
+	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
+	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
+	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
+}
+var _ batcherWithOptions = (*GoFunctionTool)(nil)

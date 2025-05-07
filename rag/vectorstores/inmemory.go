@@ -226,7 +226,7 @@ func (s *InMemoryVectorStore) SimilaritySearchByVector(ctx context.Context, embe
 // AsRetriever returns a Retriever instance based on this VectorStore.
 func (s *InMemoryVectorStore) AsRetriever(options ...core.Option) rag.Retriever {
 	// Use the VectorStoreRetriever implementation
-	return NewVectorStoreRetriever(s, options...)
+	return retrievers.NewVectorStoreRetriever(s, options...)
 }
 
 // Ensure InMemoryVectorStore implements the interface.

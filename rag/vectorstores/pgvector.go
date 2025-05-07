@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/rag"
+	"github.com/lookatitude/beluga-ai/rag/retrievers"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/pgvector/pgvector-go"
 )
@@ -102,7 +103,13 @@ func (s *PgVectorStore) initialize(ctx context.Context) (bool, error) {
 		}
 		defer conn.Release()
 
-		pgvector.Register(conn.Conn().TypeMap())
+		// Register the pgvector type with the connection
+		// This makes the vector type available for PostgreSQL operations
+		_, err = conn.Exec(ctx, "CREATE EXTENSION IF NOT EXISTS vector")
+		if err != nil {
+			s.initErr = fmt.Errorf("failed to enable pgvector extension: %w", err)
+			return
+		}
 
 		// Determine vector dimensions from embedder (embed a dummy query)
 		dummyEmbedding, err := s.Embedder.EmbedQuery(ctx, "dimension_check")
@@ -220,7 +227,9 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal metadata for document %d: %w", i, err)
 		}
-		batch.Queue(s.preInsertStmt, doc.GetContent(), metadataJSON, pgvector.NewVector(embeddings[i]))
+		// Create a vector from the embedding for storage
+		vector := pgvector.NewVector(embeddings[i])
+		batch.Queue(s.preInsertStmt, doc.GetContent(), metadataJSON, vector)
 	}
 
 	br := s.pool.SendBatch(ctx, batch)
@@ -311,7 +320,9 @@ func (s *PgVectorStore) similaritySearchInternal(ctx context.Context, queryEmbed
 		pgx.Identifier{s.VectorColumn}.Sanitize(),
 		pgx.Identifier{s.TableName}.Sanitize())
 
-	rows, err := s.pool.Query(ctx, querySQL, pgvector.NewVector(queryEmbedding), k)
+	// Create a vector from the query embedding for the search
+	queryVector := pgvector.NewVector(queryEmbedding)
+	rows, err := s.pool.Query(ctx, querySQL, queryVector, k)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute similarity search query: %w", err)
 	}
@@ -373,7 +384,7 @@ func (s *PgVectorStore) SimilaritySearchByVector(ctx context.Context, embedding 
 
 // AsRetriever returns a Retriever instance based on this VectorStore.
 func (s *PgVectorStore) AsRetriever(options ...core.Option) rag.Retriever {
-	return NewVectorStoreRetriever(s, options...)
+	return retrievers.NewVectorStoreRetriever(s, options...)
 }
 
 // Ensure PgVectorStore implements the interface.

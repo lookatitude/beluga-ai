@@ -6,10 +6,8 @@ import (
 	"context"
 	"errors" // Added missing import
 	"fmt"    // Added missing import
-
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/schema"
 )
 
 // Chain represents a sequence of components (Runnables) executed one after another.
@@ -106,7 +104,6 @@ func (c *SimpleChain) GetMemory() memory.BaseMemory {
 }
 
 func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	currentInput := input
 	var err error
 
 	// Prepare initial memory variables if memory is present
@@ -175,13 +172,8 @@ func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Opt
 				return nil, fmt.Errorf("chain final output type %T cannot be saved to memory expecting multiple output keys: %v", finalOutput, c.GetOutputKeys())
 			}
 		}
-
-		// Ensure input was a map for saving context
-		inputMap, ok := combinedInput.(map[string]any)
-		if !ok {
-			// This shouldn't happen based on earlier checks, but safeguard
-			return nil, errors.New("internal error: chain input was not a map before saving context")
-		}
+		// No need to check if combinedInput is a map[string]any - it already is
+		inputMap := combinedInput
 
 		err = c.Mem.SaveContext(ctx, inputMap, outputMap)
 		if err != nil {

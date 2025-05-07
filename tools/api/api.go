@@ -78,6 +78,16 @@ func (at *APITool) Definition() tools.ToolDefinition {
 	return at.Def
 }
 
+// Description returns the tool's description.
+func (at *APITool) Description() string {
+	return at.Definition().Description
+}
+
+// Name returns the tool's name.
+func (at *APITool) Name() string {
+	return at.Definition().Name
+}
+
 // Execute makes the HTTP request.
 // Corrected input type to any and return type to any
 func (at *APITool) Execute(ctx context.Context, input any) (any, error) {
@@ -188,9 +198,22 @@ func (at *APITool) Invoke(ctx context.Context, input any, options ...core.Option
 }
 
 // Batch implementation
-func (at *APITool) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	// Use the embedded BaseTool's Batch implementation
-	return at.BaseTool.Batch(ctx, inputs, options...)
+// Batch implements the tools.Tool interface
+func (at *APITool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := at.Execute(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("error processing batch item %d: %w", i, err)
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+// Run implements the core.Runnable Batch method with options
+func (at *APITool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	return at.Batch(ctx, inputs) // Options are ignored for now
 }
 
 // Stream is not applicable for standard API calls.
@@ -209,5 +232,12 @@ func (at *APITool) Stream(ctx context.Context, input any, options ...core.Option
 }
 
 // Ensure implementation satisfies interfaces
+// Make sure interfaces are correctly implemented
 var _ tools.Tool = (*APITool)(nil)
-var _ core.Runnable = (*APITool)(nil)
+// Define a custom interface that matches what we've implemented
+type batcherWithOptions interface {
+	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
+	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
+	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
+}
+var _ batcherWithOptions = (*APITool)(nil)

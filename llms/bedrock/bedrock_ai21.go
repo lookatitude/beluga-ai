@@ -94,7 +94,7 @@ func (bl *BedrockLLM) invokeAI21Jurassic2Model(ctx context.Context, _ string, me
 				combinedPrompt = fmt.Sprintf("%s%s", m.GetContent(), combinedPrompt) // Prepend system message
 			}
 		}
-		if messages[len(messages)-1].GetType() == schema.HumanMessageType {
+		if messages[len(messages)-1].GetType() == schema.MessageTypeHuman {
 		    combinedPrompt += "\nAssistant:"
 		}
 	} else {
@@ -180,7 +180,7 @@ func (bl *BedrockLLM) invokeAI21Jurassic2ModelStream(ctx context.Context, _ stri
 				combinedPrompt = fmt.Sprintf("%s%s", m.GetContent(), combinedPrompt)
 			}
 		}
-		if messages[len(messages)-1].GetType() == schema.HumanMessageType {
+		if messages[len(messages)-1].GetType() == schema.MessageTypeHuman {
 		    combinedPrompt += "\nAssistant:"
 		}
 	} else {
@@ -231,7 +231,7 @@ func (bl *BedrockLLM) ai21Jurassic2StreamChunkToAIMessageChunk(chunkBytes []byte
 		return nil, nil // Skip malformed or non-data chunks
 	}
 
-	chunk := llms.NewAIMessageChunk(streamResp.OutputText)
+	chunk := &llms.AIMessageChunk{Content: streamResp.OutputText}
 	chunk.AdditionalArgs = make(map[string]any)
 	var isMeaningful bool
 

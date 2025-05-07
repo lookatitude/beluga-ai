@@ -214,28 +214,31 @@ func mapTool(tool tools.Tool) (openai.Tool, error) {
 	toolDef := tool.Definition()
 	paramsSchema := toolDef.InputSchema // OpenAI expects JSON schema object for Parameters
 
-	// If schema is nil (not just empty), create a minimal valid schema (empty object)
-	if paramsSchema == nil {
-		paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
-		log.Printf("Warning: Tool 	%s	 has nil InputSchema, using empty object schema.", toolDef.Name)
+	// Ensure paramsSchema is a map[string]any
+	schemaMap, ok := paramsSchema.(map[string]any)
+	if !ok || paramsSchema == nil {
+		// If schema is nil or not a map, create a minimal valid schema (empty object)
+		schemaMap = map[string]any{"type": "object", "properties": map[string]any{}}
+		log.Printf("Warning: Tool %s has invalid InputSchema, using empty object schema.", toolDef.Name)
 	}
 
 	// Ensure the schema has a top-level type: object if not present and properties exist
-	if _, typeOk := paramsSchema["type"]; !typeOk {
-		if _, propsOk := paramsSchema["properties"]; propsOk {
-			paramsSchema["type"] = "object"
+	if typeVal, typeOk := schemaMap["type"]; !typeOk || typeVal == nil {
+		// Check if properties exist
+		if _, propsOk := schemaMap["properties"].(map[string]any); propsOk {
+			schemaMap["type"] = "object"
 		} else {
 			// If no type and no properties, it might be an invalid schema or truly empty.
 			// Defaulting to an empty object schema is a safe bet.
-			log.Printf("Warning: Tool 	%s	 schema lacks 	'type'	 and 	'properties'	, ensuring empty object schema.", toolDef.Name)
-			paramsSchema = map[string]any{"type": "object", "properties": map[string]any{}}
+			log.Printf("Warning: Tool %s schema lacks 'type' and 'properties', ensuring empty object schema.", toolDef.Name)
+			schemaMap = map[string]any{"type": "object", "properties": map[string]any{}}
 		}
 	}
 
 	funcDef := openai.FunctionDefinition{
 		Name:        toolDef.Name,
 		Description: toolDef.Description,
-		Parameters:  paramsSchema, // Assign the schema map
+		Parameters:  schemaMap, // Use the validated schemaMap
 	}
 
 	return openai.Tool{

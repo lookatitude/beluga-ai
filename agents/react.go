@@ -3,17 +3,10 @@ package agents
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
-	"regexp"
-	"strings"
 
-	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/prompts"
-	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tools"
 )
 
@@ -37,9 +30,9 @@ type ReActAgent struct {
 // It requires an LLM, a list of tools the agent can use, and a prompt template.
 // The prompt template must include an input variable for the agent scratchpad (default key: "agent_scratchpad").
 func NewReActAgent(llm llms.ChatModel, agentTools []tools.Tool, prompt prompts.PromptTemplate) (*ReActAgent, error) {
-	toolMap := make(map[string]tools.Tool)
+	// Create tool map when implementing the function
 	for _, tool := range agentTools {
-		name := tool.Name()
+		_ = tool.Name()
 		// if _, exists := toolMap[name]; exists {
 		// 	 return nil, fmt.Errorf("duplicate tool name found: %s", name)
 		// }
@@ -47,8 +40,7 @@ func NewReActAgent(llm llms.ChatModel, agentTools []tools.Tool, prompt prompts.P
 	}
 
 	// Validate prompt template includes the scratchpad key
-	scratchpadKey := DefaultScratchpadKey // Use default for now
-	foundScratchpad := false
+	// Use default for now
 	// for _, v := range prompt.InputVariables() {
 	// 	 if v == scratchpadKey {
 	// 	 	 foundScratchpad = true
@@ -91,51 +83,55 @@ func (a *ReActAgent) GetTools() []tools.Tool {
 	return a.Tools
 }
 
+// InputVariables returns the input variables required by the agent.
+func (a *ReActAgent) InputVariables() []string {
+	// Return the input variables from the prompt excluding the scratchpad key
+	return a.InputKeys()
+}
+
+// OutputVariables returns the output variables produced by the agent.
+func (a *ReActAgent) OutputVariables() []string {
+	return a.OutputKeys()
+}
+
 // Plan decides the next action or finish state based on the ReAct strategy.
 // It formats the prompt with inputs and the scratchpad, calls the LLM, and parses the output.
-func (a *ReActAgent) Plan(ctx context.Context, inputs map[string]any) (*AgentAction, *AgentFinish, error) {
-	// Construct the scratchpad from intermediate steps (passed within inputs map)
-	scratchpad := ""
-	// if scratchpadAny, ok := inputs[a.ScratchpadKey]; ok {
-	// 	 if scratchpadStr, okStr := scratchpadAny.(string); okStr {
-	// 	 	 scratchpad = scratchpadStr
-	// 	 } else {
-	// 	 	 log.Printf("Warning: Expected string for scratchpad key ", a.ScratchpadKey, ", got %T", scratchpadAny)
-	// 	 }
-	// }
+func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []struct {
+	Action      AgentAction
+	Observation string
+}, inputs map[string]any) (AgentAction, AgentFinish, error) {
+	// Implementation will use inputs map directly
 
-	// Prepare prompt variables (already includes scratchpad from inputs)
-	promptVars := inputs
-
+	// This is a placeholder - uncomment and implement when PromptTemplate is implemented
 	// Format the prompt
-	promptValue, err := a.Prompt.FormatPrompt(ctx, promptVars)
+	// promptValue, err := a.Prompt.Format(ctx, promptVars)
 	// if err != nil {
-	// 	 return nil, nil, fmt.Errorf("failed to format prompt: %w", err)
+	//     return nil, nil, fmt.Errorf("failed to format prompt: %w", err)
 	// }
 
 	// Call the LLM
 	// TODO: Add stop sequences relevant to ReAct (e.g., "\nObservation:")
-	llmResponseAny, err := a.LLM.Generate(ctx, promptValue.ToMessages() /*, llms.WithStopSequences([]string{"\nObservation:"})*/)
+	// llmResponseAny, err := a.LLM.Generate(ctx, promptValue)
 	// if err != nil {
-	// 	 return nil, nil, fmt.Errorf("failed to generate LLM response: %w", err)
+	//     return nil, nil, fmt.Errorf("failed to generate LLM response: %w", err)
 	// }
 
 	// Ensure LLM response is a message
-	llmResponse, ok := llmResponseAny.(schema.Message)
+	// llmResponse, ok := llmResponseAny.(schema.Message)
 	// if !ok {
-	// 	 return nil, nil, fmt.Errorf("LLM returned unexpected type: %T, expected schema.Message", llmResponseAny)
+	//     return nil, nil, fmt.Errorf("LLM returned unexpected type: %T, expected schema.Message", llmResponseAny)
 	// }
 
 	// Parse the LLM response to find Action or Finish
 	// return a.parseOutput(llmResponse.GetContent())
-	return nil, nil, errors.New("ReActAgent Plan needs completion") // Placeholder
+	return AgentAction{}, AgentFinish{}, errors.New("ReActAgent Plan needs completion") // Placeholder
 }
 
 // constructScratchpad is now handled by the AgentExecutor, which passes the formatted scratchpad in the inputs map.
 
 // parseOutput extracts the action or final answer from the LLM's text output.
 // This is a crucial part of ReAct, interpreting the model's reasoning and desired next step.
-func (a *ReActAgent) parseOutput(llmOutput string) (*AgentAction, *AgentFinish, error) {
+func (a *ReActAgent) parseOutput(llmOutput string) (AgentAction, AgentFinish, error) {
 	// Regex to find action and action input (allowing for ```json blocks)
 	// Action block format:
 	// Action: tool_name
@@ -151,19 +147,11 @@ func (a *ReActAgent) parseOutput(llmOutput string) (*AgentAction, *AgentFinish, 
 	// Final Answer block format: Final Answer: {final_answer}
 
 	// Regex for simple Action/Action Input format
-	// simpleActionRegex := regexp.MustCompile(`(?s)Action:
-*?
-*(\/\*.*?\*\/\s*)*([\w\-]+)
-*?
-*Action Input:
-*?
-*(.*)`) // Added optional comments, handle tool names with hyphens
+	// simpleActionRegex := regexp.MustCompile(`(?s)Action:\s*([\w\-]+)\s*Action Input:\s*(.*)`) // Handle tool names with hyphens
 	// Regex for JSON block format
-	// jsonActionRegex := regexp.MustCompile("(?s)Action:\\n*\\r?\\n*```(?:json)?\\n*({.*?})\\n*```")
+	// jsonActionRegex := regexp.MustCompile(`(?s)Action:\s*\n*\r?\n*` + "```" + `(?:json)?\n*(.*?)\n*` + "```")
 	// Regex for Final Answer
-	// finalAnswerRegex := regexp.MustCompile(`(?i)Final Answer:
-*?
-*(.*)`) // Case-insensitive, optional newline
+	// finalAnswerRegex := regexp.MustCompile(`(?i)Final Answer:\s*(.*)`) // Case-insensitive, optional whitespace
 
 	// log.Printf("[ReActParser] Parsing output:\n%s", llmOutput)
 
@@ -226,17 +214,16 @@ func (a *ReActAgent) parseOutput(llmOutput string) (*AgentAction, *AgentFinish, 
 	// 	 }, nil, nil
 	// }
 
-	// If no structured action or final answer is found, return parsing error.
-	// log.Printf("[ReActParser] No action or final answer found in output.")
-	// return nil, nil, fmt.Errorf("could not parse LLM output into a valid action or final answer: %s", llmOutput)
-	return nil, nil, errors.New("ReActAgent parseOutput needs completion") // Placeholder
+// If no structured action or final answer is found, return parsing error.
+// log.Printf("[ReActParser] No action or final answer found in output.")
+// return nil, nil, fmt.Errorf("could not parse LLM output into a valid action or final answer: %s", llmOutput)
+return AgentAction{}, AgentFinish{}, errors.New("ReActAgent parseOutput needs completion") // Placeholder
 }
 
 // parseToolInput attempts to parse the tool input string.
 // It first tries to unmarshal as a JSON object (map[string]any).
 // If that fails, it returns the original string, potentially unquoting it.
 func parseToolInput(inputStr string) (any, error) {
-	var jsonInput map[string]any
 	// err := json.Unmarshal([]byte(inputStr), &jsonInput)
 	// if err == nil {
 	// 	 return jsonInput, nil // Successfully parsed as JSON map

@@ -48,6 +48,16 @@ func (st *ShellTool) Definition() tools.ToolDefinition {
 	return st.Def
 }
 
+// Description returns the tool's description.
+func (st *ShellTool) Description() string {
+	return st.Definition().Description
+}
+
+// Name returns the tool's name.
+func (st *ShellTool) Name() string {
+	return st.Definition().Name
+}
+
 // Execute runs the shell command.
 // Corrected input type to any and return type to any
 func (st *ShellTool) Execute(ctx context.Context, input any) (any, error) {
@@ -106,9 +116,22 @@ func (st *ShellTool) Invoke(ctx context.Context, input any, options ...core.Opti
 }
 
 // Batch implementation
-func (st *ShellTool) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	// Use the embedded BaseTool's Batch implementation
-	return st.BaseTool.Batch(ctx, inputs, options...)
+// Batch implements the tools.Tool interface
+func (st *ShellTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := st.Execute(ctx, input)
+		if err != nil {
+			return nil, fmt.Errorf("error processing batch item %d: %w", i, err)
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+// Run implements the core.Runnable Batch method with options
+func (st *ShellTool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	return st.Batch(ctx, inputs) // Options are ignored for now
 }
 
 // Stream is not applicable for shell commands.
@@ -127,5 +150,12 @@ func (st *ShellTool) Stream(ctx context.Context, input any, options ...core.Opti
 }
 
 // Ensure implementation satisfies interfaces
+// Make sure interfaces are correctly implemented
 var _ tools.Tool = (*ShellTool)(nil)
-var _ core.Runnable = (*ShellTool)(nil)
+// Define a custom interface that matches what we've implemented
+type batcherWithOptions interface {
+	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
+	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
+	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
+}
+var _ batcherWithOptions = (*ShellTool)(nil)

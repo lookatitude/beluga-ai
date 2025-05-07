@@ -100,11 +100,8 @@ func NewOllamaChat(modelName string, options ...OllamaOption) (*OllamaChat, erro
 	ctxShow, cancelShow := context.WithTimeout(context.Background(), defaultShortTimeout)
 	defer cancelShow()
 
-	// Get the actual host the client is configured to use for the error message
-	clientHost := oc.host // Fallback to configured host
-	if envHost := oc.client.Host(); envHost != nil && envHost.String() != "" {
-	    clientHost = envHost.String()
-	}
+	// Use the configured host for error messages
+	clientHost := oc.host // We'll use the configured host for error messages
 
 	_, err = oc.client.Show(ctxShow, &api.ShowRequest{Name: oc.modelName})
 	if err != nil {
@@ -134,11 +131,23 @@ func mapOllamaMessages(messages []schema.Message) []api.Message {
 			continue
 		}
 		
+		// Check for message parts with images
 		var imagesData []api.ImageData
-		if msgWithParts, ok := msg.(schema.MessageWithParts); ok { // Assuming schema.MessageWithParts exists
-			for _, part := range msgWithParts.GetParts() {
-				if part.MIMEType == "image/jpeg" || part.MIMEType == "image/png" {
-					imagesData = append(imagesData, api.ImageData(part.Data)) // Correctly cast to api.ImageData
+		
+		// Try to access message parts using type assertion
+		// This is a more generic approach that doesn't require a specific interface
+		additionalArgs := make(map[string]interface{})
+		if argsMsg, ok := msg.(interface{ GetAdditionalArgs() map[string]any }); ok {
+			additionalArgs = argsMsg.GetAdditionalArgs()
+		}
+		
+		if parts, ok := additionalArgs["parts"].([]map[string]interface{}); ok {
+			for _, part := range parts {
+				mimeType, hasMimeType := part["mime_type"].(string)
+				data, hasData := part["data"].([]byte)
+				
+				if hasMimeType && hasData && (mimeType == "image/jpeg" || mimeType == "image/png") {
+					imagesData = append(imagesData, api.ImageData(data))
 				}
 			}
 		}
@@ -161,27 +170,141 @@ func applyOllamaOptions(defaults api.Options, options ...core.Option) api.Option
 		opt.Apply(&config)
 	}
 
-	// Corrected assignments to use pointers where the API expects them
-	if temp, ok := config["temperature"].(float64); ok { f32 := float32(temp); opts.Temperature = &f32 }
-	if maxTokens, ok := config["max_tokens"].(int); ok { opts.NumPredict = &maxTokens }
-	if stops, ok := config["stop_sequences"].([]string); ok { opts.Stop = stops }
-	if topP, ok := config["top_p"].(float64); ok { f32 := float32(topP); opts.TopP = &f32 }
-	if topK, ok := config["top_k"].(int); ok { opts.TopK = &topK }
-	if presPenalty, ok := config["presence_penalty"].(float64); ok { f32 := float32(presPenalty); opts.PresencePenalty = &f32 }
-	if freqPenalty, ok := config["frequency_penalty"].(float64); ok { f32 := float32(freqPenalty); opts.FrequencyPenalty = &f32 }
-	if seed, ok := config["seed"].(int); ok { opts.Seed = &seed }
-	if numCtx, ok := config["num_ctx"].(int); ok { opts.NumCtx = &numCtx }
-	if repeatLastN, ok := config["repeat_last_n"].(int); ok { opts.RepeatLastN = &repeatLastN }
-	if repeatPenalty, ok := config["repeat_penalty"].(float64); ok { f32 := float32(repeatPenalty); opts.RepeatPenalty = &f32 }
-	if tfsz, ok := config["tfs_z"].(float64); ok { f32 := float32(tfsz); opts.TFSZ = &f32 }
-	if mirostat, ok := config["mirostat"].(int); ok { opts.Mirostat = &mirostat }
-	if mirostatEta, ok := config["mirostat_eta"].(float64); ok { f32 := float32(mirostatEta); opts.MirostatEta = &f32 }
-	if mirostatTau, ok := config["mirostat_tau"].(float64); ok { f32 := float32(mirostatTau); opts.MirostatTau = &f32 }
-	if numGPU, ok := config["num_gpu"].(int); ok { opts.NumGPU = &numGPU }
-	if mainGPU, ok := config["main_gpu"].(int); ok { opts.MainGPU = &mainGPU }
-	if numThread, ok := config["num_thread"].(int); ok { opts.NumThread = &numThread }
+	// Create proper pointer variables for each option
+	if temp, ok := config["temperature"].(float64); ok {
+		tempF32 := float32(temp)
+		opts.Temperature = tempF32
+	}
+	if maxTokens, ok := config["max_tokens"].(int); ok {
+		mtCopy := maxTokens
+		opts.NumPredict = mtCopy
+	}
+	if stops, ok := config["stop_sequences"].([]string); ok {
+		opts.Stop = stops // This is already a slice, not a pointer
+	}
+	if topP, ok := config["top_p"].(float64); ok {
+		tpF32 := float32(topP)
+		opts.TopP = tpF32
+	}
+	if topK, ok := config["top_k"].(int); ok {
+		tkCopy := topK
+		opts.TopK = tkCopy
+	}
+	if presPenalty, ok := config["presence_penalty"].(float64); ok {
+		ppF32 := float32(presPenalty)
+		opts.PresencePenalty = ppF32
+	}
+	if freqPenalty, ok := config["frequency_penalty"].(float64); ok {
+		fpF32 := float32(freqPenalty)
+		opts.FrequencyPenalty = fpF32
+	}
+	if seed, ok := config["seed"].(int); ok {
+		seedCopy := seed
+		opts.Seed = seedCopy
+	}
+	if numCtx, ok := config["num_ctx"].(int); ok {
+		ncCopy := numCtx
+		opts.NumCtx = ncCopy
+	}
+	if repeatLastN, ok := config["repeat_last_n"].(int); ok {
+		rlnCopy := repeatLastN
+		opts.RepeatLastN = rlnCopy
+	}
+	if repeatPenalty, ok := config["repeat_penalty"].(float64); ok {
+		rpF32 := float32(repeatPenalty)
+		opts.RepeatPenalty = rpF32
+	}
+	// TFSZ is not in the current Ollama API, so we'll skip this setting
+	// if tfsz, ok := config["tfs_z"].(float64); ok {
+	//    tfszF32 := float32(tfsz)
+	//    // opts.TFSZ = tfszF32  // This field doesn't exist
+	// }
+	if mirostat, ok := config["mirostat"].(int); ok {
+		msCopy := mirostat
+		opts.Mirostat = msCopy
+	}
+	if mirostatEta, ok := config["mirostat_eta"].(float64); ok {
+		metaF32 := float32(mirostatEta)
+		opts.MirostatEta = metaF32
+	}
+	if mirostatTau, ok := config["mirostat_tau"].(float64); ok {
+		mtauF32 := float32(mirostatTau)
+		opts.MirostatTau = mtauF32
+	}
+	if numGPU, ok := config["num_gpu"].(int); ok {
+		ngCopy := numGPU
+		opts.NumGPU = ngCopy
+	}
+	if mainGPU, ok := config["main_gpu"].(int); ok {
+		mgCopy := mainGPU
+		opts.MainGPU = mgCopy
+	}
+	if numThread, ok := config["num_thread"].(int); ok {
+		ntCopy := numThread
+		opts.NumThread = ntCopy
+	}
 
 	return opts
+}
+
+// convertOptionsToMap converts api.Options to map[string]any for use in ChatRequest
+func convertOptionsToMap(opts api.Options) map[string]any {
+	optionsMap := make(map[string]any)
+	
+	// Only include non-zero values
+	if opts.Temperature != 0 {
+		optionsMap["temperature"] = opts.Temperature
+	}
+	if opts.NumPredict != 0 {
+		optionsMap["num_predict"] = opts.NumPredict
+	}
+	if len(opts.Stop) > 0 {
+		optionsMap["stop"] = opts.Stop
+	}
+	if opts.TopP != 0 {
+		optionsMap["top_p"] = opts.TopP
+	}
+	if opts.TopK != 0 {
+		optionsMap["top_k"] = opts.TopK
+	}
+	if opts.PresencePenalty != 0 {
+		optionsMap["presence_penalty"] = opts.PresencePenalty
+	}
+	if opts.FrequencyPenalty != 0 {
+		optionsMap["frequency_penalty"] = opts.FrequencyPenalty
+	}
+	if opts.Seed != 0 {
+		optionsMap["seed"] = opts.Seed
+	}
+	if opts.NumCtx != 0 {
+		optionsMap["num_ctx"] = opts.NumCtx
+	}
+	if opts.RepeatLastN != 0 {
+		optionsMap["repeat_last_n"] = opts.RepeatLastN
+	}
+	if opts.RepeatPenalty != 0 {
+		optionsMap["repeat_penalty"] = opts.RepeatPenalty
+	}
+	if opts.Mirostat != 0 {
+		optionsMap["mirostat"] = opts.Mirostat
+	}
+	if opts.MirostatEta != 0 {
+		optionsMap["mirostat_eta"] = opts.MirostatEta
+	}
+	if opts.MirostatTau != 0 {
+		optionsMap["mirostat_tau"] = opts.MirostatTau
+	}
+	if opts.NumGPU != 0 {
+		optionsMap["num_gpu"] = opts.NumGPU
+	}
+	if opts.MainGPU != 0 {
+		optionsMap["main_gpu"] = opts.MainGPU
+	}
+	if opts.NumThread != 0 {
+		optionsMap["num_thread"] = opts.NumThread
+	}
+
+	return optionsMap
 }
 
 // Generate implements the llms.ChatModel interface.
@@ -192,12 +315,16 @@ func (o *OllamaChat) Generate(ctx context.Context, messages []schema.Message, op
 	}
 
 	apiOptions := applyOllamaOptions(o.defaultOptions, options...)
+	
+	// Convert options to map[string]any
+	optionsMap := convertOptionsToMap(apiOptions)
 
+	// Create a chat request with the processed options
 	req := &api.ChatRequest{
 		Model:    o.modelName,
 		Messages: ollamaMessages,
-		Options:  apiOptions,
-		Stream:   core.BoolPtr(false),
+		Options:  optionsMap,
+		Stream:   boolPtr(false),
 	}
 
 	var finalResponse api.ChatResponse
@@ -240,12 +367,16 @@ func (o *OllamaChat) StreamChat(ctx context.Context, messages []schema.Message, 
 	}
 
 	apiOptions := applyOllamaOptions(o.defaultOptions, options...)
+	
+	// Convert options to map[string]any
+	optionsMap := convertOptionsToMap(apiOptions)
 
+	// Create a streaming chat request with the processed options
 	req := &api.ChatRequest{
 		Model:    o.modelName,
 		Messages: ollamaMessages,
-		Options:  apiOptions,
-		Stream:   core.BoolPtr(true),
+		Options:  optionsMap,
+		Stream:   boolPtr(true),
 	}
 
 	chunkChan := make(chan llms.AIMessageChunk, 1)
@@ -293,6 +424,11 @@ func (o *OllamaChat) StreamChat(ctx context.Context, messages []schema.Message, 
 	}()
 
 	return chunkChan, nil
+}
+
+// Helper function to replace core.BoolPtr
+func boolPtr(b bool) *bool {
+	return &b
 }
 
 // BindTools implements the llms.ChatModel interface.

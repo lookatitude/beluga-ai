@@ -1,99 +1,133 @@
-// Package tools defines the interface for tools that agents can use.
+// Package tools defines interfaces and implementations for tools that can be used by agents.
 package tools
 
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/core"
 )
 
-// ToolDefinition describes a tool, including its name, description, and input/output schemas.
-type ToolDefinition struct {
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	InputSchema map[string]any `json:"input_schema,omitempty"` // JSON Schema for input
-	// TODO: Add OutputSchema?
-}
-
-// Tool is the interface that tools must implement.
+// Tool defines the interface for tools that agents can use.
 type Tool interface {
-	// Definition returns the tool's definition.
+	// Name returns the unique identifier for this tool.
+	Name() string
+
+	// Description returns a human-readable description of what this tool does.
+	Description() string
+
+	// Definition returns the complete tool definition including schema, name, and description.
 	Definition() ToolDefinition
 
 	// Execute runs the tool with the given input.
-	// Input can be any type, but specific tools will expect certain types (e.g., string, map[string]any).
-	// Output can be any type, but often tools return strings or structured data (maps, structs).
 	Execute(ctx context.Context, input any) (any, error)
 
-	// Batch executes the tool for multiple inputs.
-	// Provides a default sequential implementation if not overridden.
-	Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
+	// Batch executes multiple inputs in parallel when possible.
+	Batch(ctx context.Context, inputs []any) ([]any, error)
 }
 
-// BaseTool provides a default implementation for the Batch method.
+// ToolDefinition provides metadata about a tool for LLM consumption.
+type ToolDefinition struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	InputSchema interface{} `json:"input_schema"` // Can be string or map[string]any
+}
+
+// BaseTool provides a default implementation of the Tool interface.
+// It can be embedded in tool implementations to simplify implementing the interface.
 type BaseTool struct{}
 
-// Batch provides a default sequential implementation.
-func (t *BaseTool) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	// This requires the concrete type implementing BaseTool to also implement Execute.
-	// We use a type assertion here, which is a bit fragile. A better design might involve
-	// embedding or requiring the Execute method differently.
-	executor, ok := any(t).(interface {
-		Execute(ctx context.Context, input any) (any, error)
-	})
-	if !ok {
-		// This should not happen if BaseTool is embedded correctly in a type implementing Tool.
-		return nil, fmt.Errorf("tool does not implement Execute method correctly")
+// Execute is a placeholder implementation that must be overridden by concrete tool implementations
+func (b *BaseTool) Execute(ctx context.Context, input any) (any, error) {
+    return nil, fmt.Errorf("Execute not implemented in base tool")
+}
+
+// Batch implements parallel execution of multiple inputs.
+// By default, it executes each input sequentially. Override for specialized parallel implementations.
+func (b *BaseTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	// Default implementation: process inputs sequentially
+	results := make([]any, len(inputs))
+	errs := make([]error, len(inputs))
+	var firstErr error
+
+	// Process inputs with basic concurrency
+	var wg sync.WaitGroup
+	for i, input := range inputs {
+		wg.Add(1)
+		go func(idx int, inp any) {
+			defer wg.Done()
+			result, err := b.Execute(ctx, inp)
+			results[idx] = result
+			errs[idx] = err
+		}(i, input)
+	}
+	wg.Wait()
+
+	// Check for errors
+	for i, err := range errs {
+		if err != nil {
+			if firstErr == nil {
+				firstErr = fmt.Errorf("error in batch processing item %d: %w", i, err)
+			}
+		}
 	}
 
-	results := make([]any, len(inputs))
-	var firstErr error
-	for i, input := range inputs {
-		// TODO: Consider concurrency options from core.Option
-		output, err := executor.Execute(ctx, input)
-		// Collect first error but continue processing other inputs
-		if err != nil && firstErr == nil {
-			firstErr = fmt.Errorf("error processing input %d: %w", i, err)
-		}
-		results[i] = output
-	}
 	return results, firstErr
 }
 
-// ToolRegistry holds available tools.
-type ToolRegistry struct {
-	tools map[string]Tool
+// funcOption implements core.Option
+type funcOption struct {
+	f func(*map[string]any)
 }
 
-// NewToolRegistry creates a new registry.
-func NewToolRegistry() *ToolRegistry {
-	return &ToolRegistry{
-		tools: make(map[string]Tool),
-	}
+func (fo *funcOption) Apply(config *map[string]any) {
+	fo.f(config)
 }
 
-// Register adds a tool to the registry.
-func (r *ToolRegistry) Register(tool Tool) error {
-	name := tool.Definition().Name
-	if _, exists := r.tools[name]; exists {
-		return fmt.Errorf("tool with name 	%s	 already registered", name)
-	}
-	r.tools[name] = tool
-	return nil
+// Helper function to create an option
+func newOption(f func(*map[string]any)) core.Option {
+	return &funcOption{f: f}
 }
 
-// Get retrieves a tool by name.
-func (r *ToolRegistry) Get(name string) (Tool, bool) {
-	tool, exists := r.tools[name]
-	return tool, exists
+// WithConcurrency sets the max concurrency for StructuredTool's Batch method.
+func WithConcurrency(n int) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["max_concurrency"] = n
+	})
 }
 
-// List returns all registered tools.
-func (r *ToolRegistry) List() []Tool {
-	list := make([]Tool, 0, len(r.tools))
-	for _, tool := range r.tools {
-		list = append(list, tool)
-	}
-	return list
+// WithTimeout sets a timeout duration for tool execution.
+func WithTimeout(seconds float64) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["timeout"] = seconds
+	})
+}
+
+// WithRetries sets the number of times to retry a tool execution on failure.
+func WithRetries(n int) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["retries"] = n
+	})
+}
+
+// WithEmbedder provides an embedder to use with tools that require one
+func WithEmbedder(embedder interface{}) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["embedder"] = embedder
+	})
+}
+
+// WithK sets the number of items to retrieve
+func WithK(k int) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["k"] = k
+	})
+}
+
+// WithFilter provides a metadata filter
+func WithFilter(filter map[string]any) core.Option {
+	return newOption(func(config *map[string]any) {
+		(*config)["filter"] = filter
+	})
 }

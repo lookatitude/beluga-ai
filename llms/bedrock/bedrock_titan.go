@@ -58,7 +58,7 @@ func (bl *BedrockLLM) invokeTitanTextModel(ctx context.Context, _ string, messag
 				combinedPrompt = fmt.Sprintf("%s%s", m.GetContent(), combinedPrompt) // Prepend system message
 			}
 		}
-		if messages[len(messages)-1].GetType() == schema.HumanMessageType {
+		if messages[len(messages)-1].GetType() == schema.MessageTypeHuman {
 		    combinedPrompt += "\nAssistant:"
 		}
 	} else {
@@ -174,7 +174,7 @@ func (bl *BedrockLLM) invokeTitanTextModelStream(ctx context.Context, _ string, 
 				combinedPrompt = fmt.Sprintf("%s%s", m.GetContent(), combinedPrompt)
 			}
 		}
-		if messages[len(messages)-1].GetType() == schema.HumanMessageType {
+		if messages[len(messages)-1].GetType() == schema.MessageTypeHuman {
 		    combinedPrompt += "\nAssistant:"
 		}
 	} else {
@@ -240,7 +240,7 @@ func (bl *BedrockLLM) titanTextStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 		return nil, nil // Or an empty chunk if preferred
 	}
 
-	chunk := llms.NewAIMessageChunk(streamResp.OutputText)
+	chunk := &llms.AIMessageChunk{Content: streamResp.OutputText}
 	chunk.AdditionalArgs = make(map[string]any)
 	var isMeaningful bool
 

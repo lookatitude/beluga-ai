@@ -252,20 +252,20 @@ func buildAnthropicChatRequest(messages []schema.Message, mappedTools []any, cal
 		body.Temperature = &temp
 	} else if temp, ok := callOpts["temperature"].(float64); ok {
 	    temp32 := float32(temp)
-	    tbody.Temperature = &temp32
+	    body.Temperature = &temp32
 	}
 
 	if stop, ok := callOpts["stop_words"].([]string); ok && len(stop) > 0 {
 		body.StopSequences = stop
 	} else if stop, ok := callOpts["stop_sequences"].([]string); ok && len(stop) > 0 {
-	    tbody.StopSequences = stop
+	    body.StopSequences = stop
 	}
 
 	if topP, ok := callOpts["top_p"].(float32); ok {
 		body.TopP = &topP
 	} else if topP, ok := callOpts["top_p"].(float64); ok {
 	    topP32 := float32(topP)
-	    tbody.TopP = &topP32
+	    body.TopP = &topP32
 	}
 
 	if topK, ok := callOpts["top_k"].(int); ok {
@@ -350,9 +350,9 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 			nameCopy := streamEvent.ContentBlock.Name
 			argsCopy := ""
 			chunk.ToolCallChunks = []schema.ToolCallChunk{{
-				ID:        &idCopy,
+				ID:        idCopy,
 				Name:      &nameCopy,
-				Arguments: &argsCopy,
+				Arguments: argsCopy,
 				Index:     idx,
 			}}
 			isMeaningful = true
@@ -366,7 +366,7 @@ func (bl *BedrockLLM) anthropicStreamChunkToAIMessageChunk(chunkBytes []byte) (*
 				idx := streamEvent.Index
 				argsDelta := streamEvent.Delta.PartialJson
 				chunk.ToolCallChunks = []schema.ToolCallChunk{{
-					Arguments: &argsDelta,
+					Arguments: argsDelta,
 					Index:     idx,
 				}}
 				isMeaningful = true
@@ -421,13 +421,14 @@ func mapToolsToAnthropic(toolsToBind []tools.Tool) []any {
 	}
 	anthropicTools := make([]any, 0, len(toolsToBind))
 	for _, t := range toolsToBind {
-		schemaStr := t.Schema()
+		def := t.Definition()
 		var paramsSchema map[string]any
-
-		if schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
+		
+		schemaStr, ok := def.InputSchema.(string)
+		if ok && schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
 			err := json.Unmarshal([]byte(schemaStr), &paramsSchema)
 			if err != nil {
-				log.Printf("ERROR: Failed to unmarshal schema for tool %s for Anthropic binding: %v. Schema was: %s. Skipping tool.", t.Name(), err, schemaStr)
+				log.Printf("ERROR: Failed to unmarshal schema for tool %s for Anthropic binding: %v. Schema was: %s. Skipping tool.", def.Name, err, schemaStr)
 				continue
 			}
 		} else {
@@ -436,8 +437,8 @@ func mapToolsToAnthropic(toolsToBind []tools.Tool) []any {
 			paramsSchema["properties"] = make(map[string]any)
 		}
 		anthropicTools = append(anthropicTools, map[string]any{
-			"name":        t.Name(),
-			"description": t.Description(),
+			"name":        def.Name,
+			"description": def.Description,
 			"input_schema": paramsSchema,
 		})
 	}

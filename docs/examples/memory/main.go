@@ -16,7 +16,11 @@ func main() {
 
 	 // --- Buffer Memory Example --- 
 	 fmt.Println("--- Buffer Memory Example ---")
-	 bufferMem := memory.NewBufferMemory()
+	 // Create a new chat history
+	 chatHistory := memory.NewBaseChatMessageHistory()
+	 
+	 // Create a new buffer memory with the chat history
+	 bufferMem := memory.NewChatMessageBufferMemory(chatHistory)
 
 	 // Add messages
 	 bufferMem.SaveContext(ctx, map[string]any{"input": "Hello there!"}, map[string]any{"output": "Hi! How can I help you?"})
@@ -27,7 +31,7 @@ func main() {
 	 if err != nil {
 	 	 log.Printf("BufferMemory Load failed: %v", err)
 	 } else {
-	 	 history, _ := memVars[bufferMem.MemoryKey()].([]schema.Message)
+	 	 history, _ := memVars["history"].([]schema.Message)
 	 	 fmt.Println("Buffer Memory History:")
 	 	 for _, msg := range history {
 	 	 	 fmt.Printf(" - %s: %s\n", msg.GetType(), msg.GetContent())
@@ -36,7 +40,11 @@ func main() {
 
 	 // --- Window Buffer Memory Example --- 
 	 fmt.Println("\n--- Window Buffer Memory Example ---")
-	 windowMem := memory.NewWindowBufferMemory(memory.WithWindowK(1)) // Keep only last 1 interaction (2 messages)
+	 // Create a chat history for the window buffer
+	 windowChatHistory := memory.NewBaseChatMessageHistory()
+	 
+	 // Create a window buffer memory with the chat history and k=1
+	 windowMem := memory.NewConversationWindowBufferMemory(windowChatHistory, 1)
 
 	 windowMem.SaveContext(ctx, map[string]any{"input": "First input"}, map[string]any{"output": "First output"})
 	 windowMem.SaveContext(ctx, map[string]any{"input": "Second input"}, map[string]any{"output": "Second output"})
@@ -46,7 +54,7 @@ func main() {
 	 if err != nil {
 	 	 log.Printf("WindowBufferMemory Load failed: %v", err)
 	 } else {
-	 	 history, _ := memVarsWindow[windowMem.MemoryKey()].([]schema.Message)
+	 	 history, _ := memVarsWindow["history"].([]schema.Message)
 	 	 fmt.Println("Window Memory History (k=1):")
 	 	 for _, msg := range history {
 	 	 	 fmt.Printf(" - %s: %s\n", msg.GetType(), msg.GetContent())
@@ -57,7 +65,7 @@ func main() {
 	 fmt.Println("\n--- Clearing Memory ---")
 	 bufferMem.Clear(ctx)
 	 memVarsAfterClear, _ := bufferMem.LoadMemoryVariables(ctx, nil)
-	 historyAfterClear, _ := memVarsAfterClear[bufferMem.MemoryKey()].([]schema.Message)
+	 historyAfterClear, _ := memVarsAfterClear["history"].([]schema.Message)
 	 fmt.Printf("Buffer Memory History after clear (should be empty): %d messages\n", len(historyAfterClear))
 
 	 // Note: SummaryMemory and VectorStoreMemory examples would require

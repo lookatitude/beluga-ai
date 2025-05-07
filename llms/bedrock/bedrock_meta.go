@@ -137,22 +137,26 @@ func (bl *BedrockLLM) metaLlamaResponseToAIMessage(body json.RawMessage) (schema
 		aiMsg.AdditionalArgs["stop_reason"] = llamaResp.StopReason
 	}
 
-	usage := schema.TokenUsage{}
+	usage := map[string]int{
+		"input_tokens":  0,
+		"output_tokens": 0,
+		"total_tokens":  0,
+	}
 	var inputTokensCalculated bool
 	if llamaResp.PromptTokenCount != nil {
-		usage.InputTokens = *llamaResp.PromptTokenCount
+		usage["input_tokens"] = *llamaResp.PromptTokenCount
 		inputTokensCalculated = true
 	}
 	if llamaResp.GenerationTokenCount != nil {
-		usage.OutputTokens = *llamaResp.GenerationTokenCount
+		usage["output_tokens"] = *llamaResp.GenerationTokenCount
 	}
 
 	if !inputTokensCalculated {
 		log.Println("PromptTokenCount not available in Llama response, input tokens not set in usage.")
 	}
 
-	usage.TotalTokens = usage.InputTokens + usage.OutputTokens
-	if usage.InputTokens > 0 || usage.OutputTokens > 0 {
+	usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
+	if usage["input_tokens"] > 0 || usage["output_tokens"] > 0 {
 		aiMsg.AdditionalArgs["usage"] = usage
 	}
 
@@ -173,32 +177,36 @@ func (bl *BedrockLLM) metaLlamaStreamChunkToAIMessageChunk(chunkBytesPayload []b
 
 	if streamResp.StopReason != "" {
 		chunk.AdditionalArgs["stop_reason"] = streamResp.StopReason
-		chunk.IsLast = true
+		// Note: IsLast is not a field of AIMessageChunk, but this would indicate it's the last chunk
 	}
 
-	usage := schema.TokenUsage{}
+	usage := map[string]int{
+		"input_tokens":  0,
+		"output_tokens": 0,
+		"total_tokens":  0,
+	}
 	updatedUsage := false
 	if streamResp.PromptTokenCount != nil {
-		usage.InputTokens = *streamResp.PromptTokenCount
+		usage["input_tokens"] = *streamResp.PromptTokenCount
 		updatedUsage = true
 	}
 	if streamResp.GenerationTokenCount != nil { 
-		usage.OutputTokens = *streamResp.GenerationTokenCount
+		usage["output_tokens"] = *streamResp.GenerationTokenCount
 		updatedUsage = true
 	}
 	if streamResp.AmazonBedrockInvocationMetrics != nil {
 		if streamResp.AmazonBedrockInvocationMetrics.InputTokenCount != nil {
-			usage.InputTokens = *streamResp.AmazonBedrockInvocationMetrics.InputTokenCount
+			usage["input_tokens"] = *streamResp.AmazonBedrockInvocationMetrics.InputTokenCount
 			updatedUsage = true
 		}
 		if streamResp.AmazonBedrockInvocationMetrics.OutputTokenCount != nil {
-			usage.OutputTokens = *streamResp.AmazonBedrockInvocationMetrics.OutputTokenCount
+			usage["output_tokens"] = *streamResp.AmazonBedrockInvocationMetrics.OutputTokenCount
 			updatedUsage = true
 		}
 	}
 
 	if updatedUsage {
-		usage.TotalTokens = usage.InputTokens + usage.OutputTokens
+		usage["total_tokens"] = usage["input_tokens"] + usage["output_tokens"]
 		chunk.AdditionalArgs["usage"] = usage
 	}
 

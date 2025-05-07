@@ -6,7 +6,7 @@ import (
 	"errors" // Import errors package
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/llms"
+	"github.com/lookatitude/beluga-ai/core" // Import core for Runnable
 	"github.com/lookatitude/beluga-ai/prompts"
 	"github.com/lookatitude/beluga-ai/schema"
 )
@@ -15,7 +15,7 @@ import (
 // It keeps a buffer of recent interactions and summarizes older ones using an LLM.
 type ConversationSummaryBufferMemory struct {
 	ChatHistory         ChatMessageHistory     // Underlying storage for all messages
-	LLM                 llms.LLM               // LLM used for generating summaries
+	LLM                 core.Runnable          // LLM used for generating summaries
 	SummaryPrompt       prompts.PromptTemplate // Prompt template used for summarization
 	MemoryKey           string                 // Key name for the combined history/summary variable
 	InputKey            string                 // Key name for the user input variable (optional)
@@ -28,7 +28,7 @@ type ConversationSummaryBufferMemory struct {
 }
 
 // NewConversationSummaryBufferMemory creates a new ConversationSummaryBufferMemory.
-func NewConversationSummaryBufferMemory(history ChatMessageHistory, llm llms.LLM, memoryKey string, maxTokenLimit int) *ConversationSummaryBufferMemory {
+func NewConversationSummaryBufferMemory(history ChatMessageHistory, llm core.Runnable, memoryKey string, maxTokenLimit int) *ConversationSummaryBufferMemory {
 	key := memoryKey
 	if key == "" {
 		key = "history"
@@ -84,22 +84,21 @@ func (m *ConversationSummaryBufferMemory) predictNewSummary(ctx context.Context,
 		return "", fmt.Errorf("failed to format summary prompt: %w", err)
 	}
 
-	// Corrected to use ToString()
-	llmInput := promptValue.ToString()
-	llmOutput, err := m.LLM.Generate(ctx, llmInput)
+	// Pass the prompt value to Invoke
+	llmOutput, err := m.LLM.Invoke(ctx, promptValue.ToString())
 	if err != nil {
 		return "", fmt.Errorf("failed to generate summary with LLM: %w", err)
 	}
 
-	// Corrected type assertion/handling for LLM output
-	newSummary, ok := llmOutput.(string)
-	if !ok {
-		msg, okMsg := llmOutput.(schema.Message)
-		if okMsg {
-			newSummary = msg.GetContent()
-		} else {
-			return "", fmt.Errorf("LLM returned unexpected type for summary: %T", llmOutput)
-		}
+	// Handle different output types
+	var newSummary string
+	switch output := llmOutput.(type) {
+	case string: // Some simple LLMs might return string directly
+		newSummary = output
+	case schema.Message: // ChatModels will return schema.Message
+		newSummary = output.GetContent()
+	default:
+		return "", fmt.Errorf("LLM Invoke returned unexpected type for summary: %T", llmOutput)
 	}
 
 	return newSummary, nil

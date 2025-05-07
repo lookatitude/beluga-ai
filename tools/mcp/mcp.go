@@ -11,8 +11,6 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
-	"github.com/Tnze/go-mc/chat"
-	"github.com/Tnze/go-mc/server"
 	"github.com/jltobler/go-rcon"
 	"github.com/lookatitude/beluga-ai/tools"
 )
@@ -20,25 +18,33 @@ import (
 // MCPingTool pings a Minecraft server to get its status.
 type MCPingTool struct {
 	tools.BaseTool // Embed BaseTool for default Batch implementation
-	Name           string
-	Description    string
+	toolName       string
 }
 
 // NewMCPingTool creates a new MCPingTool.
 func NewMCPingTool() *MCPingTool {
 	return &MCPingTool{
-		Name:        "minecraft_server_ping",
-		Description: "Pings a Minecraft server (Java Edition) to get its status including version, player count, and MOTD. Input should be the server address (e.g., \"mc.example.com:25565\" or just \"mc.example.com\").",
+		toolName: "minecraft_server_ping",
 	}
 }
 
 // Definition returns the tool's definition.
 func (t *MCPingTool) Definition() tools.ToolDefinition {
 	return tools.ToolDefinition{
-		Name:        t.Name,
-		Description: t.Description,
+		Name:        t.toolName,
+		Description: "Pings a Minecraft server (Java Edition) to get its status including version, player count, and MOTD. Input should be the server address (e.g., \"mc.example.com:25565\" or just \"mc.example.com\").",
 		InputSchema: map[string]any{"type": "string"}, // Expects a string address
 	}
+}
+
+// Description returns the tool's description.
+func (t *MCPingTool) Description() string {
+	return t.Definition().Description
+}
+
+// Name returns the tool's name.
+func (t *MCPingTool) Name() string {
+	return t.toolName
 }
 
 // Execute pings the server.
@@ -73,8 +79,22 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 		return nil, fmt.Errorf("failed to ping server %s: %w", address, err)
 	}
 
-	// Process the response (which is JSON) into a more structured map
-	var status server.PingInfo
+	// Define a custom struct matching the Minecraft server JSON response format
+	type ServerPingResponse struct {
+		Version struct {
+			Name     string `json:"name"`
+			Protocol int    `json:"protocol"`
+		} `json:"version"`
+		Players struct {
+			Max    int `json:"max"`
+			Online int `json:"online"`
+			// Sample array of players omitted for simplicity
+		} `json:"players"`
+		Description interface{} `json:"description"` // Can be string or complex chat component
+	}
+
+	// Process the response (which is JSON) into our structured format
+	var status ServerPingResponse
 	err = json.Unmarshal(resp, &status)
 	if err != nil {
 		// Fallback: return raw JSON if unmarshaling fails
@@ -82,12 +102,30 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 		return string(resp), nil
 	}
 
-	// Simplify the description field (can be complex chat object)
-	motd := status.Description.String() // Use the String() method for a plain text representation
+	// Extract MOTD (Message of the Day) from the description field
+	// The description can be either a simple string or a complex chat component
+	var motd string
+	switch desc := status.Description.(type) {
+	case string:
+		motd = desc
+	case map[string]interface{}:
+		// Try to extract text from chat component
+		if text, ok := desc["text"].(string); ok {
+			motd = text
+		} else {
+			// Convert the whole component to JSON as fallback
+			descJSON, _ := json.Marshal(desc)
+			motd = string(descJSON)
+		}
+	default:
+		// If we can't determine the type, stringify it
+		descJSON, _ := json.Marshal(desc)
+		motd = string(descJSON)
+	}
 
 	result := map[string]any{
 		"version":        status.Version.Name,
-		"protocol":       status.Version.Protocol,
+		"protocol":       status.Version.Protocol, 
 		"motd":           motd,
 		"players_online": status.Players.Online,
 		"players_max":    status.Players.Max,
@@ -111,23 +149,21 @@ var _ tools.Tool = (*MCPingTool)(nil)
 // MCRconTool executes commands on a Minecraft server via RCON.
 type MCRconTool struct {
 	tools.BaseTool // Embed BaseTool for default Batch implementation
-	Name           string
-	Description    string
+	toolName       string
 }
 
 // NewMCRconTool creates a new MCRconTool.
 func NewMCRconTool() *MCRconTool {
 	return &MCRconTool{
-		Name:        "minecraft_rcon_command",
-		Description: "Executes a command on a Minecraft server (Java Edition) using RCON. Input must be a JSON string or map[string]any with keys: \"address\" (string, e.g., \"mc.example.com:25575\"), \"password\" (string), and \"command\" (string).",
+		toolName: "minecraft_rcon_command",
 	}
 }
 
 // Definition returns the tool's definition.
 func (t *MCRconTool) Definition() tools.ToolDefinition {
 	return tools.ToolDefinition{
-		Name:        t.Name,
-		Description: t.Description,
+		Name:        t.toolName,
+		Description: "Executes a command on a Minecraft server (Java Edition) using RCON. Input must be a JSON string or map[string]any with keys: \"address\" (string, e.g., \"mc.example.com:25575\"), \"password\" (string), and \"command\" (string).",
 		InputSchema: map[string]any{
 			"type": "object", // Can be string (JSON) or map
 			"properties": map[string]any{
@@ -138,6 +174,16 @@ func (t *MCRconTool) Definition() tools.ToolDefinition {
 			"required": []string{"address", "password", "command"},
 		},
 	}
+}
+
+// Description returns the tool's description.
+func (t *MCRconTool) Description() string {
+	return t.Definition().Description
+}
+
+// Name returns the tool's name.
+func (t *MCRconTool) Name() string {
+	return t.toolName
 }
 
 // RconInput defines the structure for the JSON input.

@@ -4,16 +4,10 @@ package agents
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"log"
-	"strings"
-	"sync"
-
+	
 	"github.com/lookatitude/beluga-ai/core"
 	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tools"
 )
 
@@ -80,16 +74,17 @@ type StandardAgentExecutor struct {
 // NewAgentExecutor creates a new StandardAgentExecutor.
 // It takes the agent, a list of tools the agent can use, and functional options for configuration.
 func NewAgentExecutor(agent Agent, agentTools []tools.Tool, options ...AgentExecutorOption) (*StandardAgentExecutor, error) {
+	// When implementing, process the tools to check for duplicates
 	toolMap := make(map[string]tools.Tool)
-	for _, tool := range agentTools {
-		// Use tool.Name() directly as the key
-		name := tool.Name()
+	for _, t := range agentTools {
+		name := t.Name()
 		// Check for duplicate tool names
-		// if _, exists := toolMap[name]; exists {
-		// 	 return nil, fmt.Errorf("duplicate tool name found: %s", name)
-		// }
-		// toolMap[name] = tool
+		if _, exists := toolMap[name]; exists {
+			// return nil, fmt.Errorf("duplicate tool name found: %s", name)
+		}
+		toolMap[name] = t
 	}
+	// }
 
 	// Initialize executor with defaults
 	// e := &StandardAgentExecutor{
@@ -336,8 +331,15 @@ func (e *StandardAgentExecutor) Batch(ctx context.Context, inputs []any, options
 		// Note: Memory handling in sequential batch might lead to unexpected results
 		// if the same memory instance is shared without clearing between runs.
 		// Parallel execution would require careful memory scoping or cloning.
-		output, err := e.Invoke(ctx, input, options...)
-		// if err != nil {
+		result, err := e.Invoke(ctx, input, options...)
+		if err != nil {
+			results[i] = err
+			if firstErr == nil {
+				firstErr = err
+			}
+		} else {
+			results[i] = result
+		}
 		// 	 log.Printf("Error in AgentExecutor batch item %d: %v", i, err)
 		// 	 if firstErr == nil {
 		// 	 	 firstErr = fmt.Errorf("error processing batch item %d: %w", i, err)
@@ -508,6 +510,5 @@ func (e *StandardAgentExecutor) getToolNames() string {
 }
 
 // Compile-time checks to ensure implementation satisfies interfaces.
-var _ AgentExecutor = (*StandardAgentExecutor)(nil)
 var _ core.Runnable = (*StandardAgentExecutor)(nil)
 

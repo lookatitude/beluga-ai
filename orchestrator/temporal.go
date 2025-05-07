@@ -11,7 +11,6 @@ import (
 	"github.com/lookatitude/beluga-ai/core"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
-	"go.temporal.io/sdk/converter"
 	"go.temporal.io/sdk/worker"
 	"go.temporal.io/sdk/workflow"
 )

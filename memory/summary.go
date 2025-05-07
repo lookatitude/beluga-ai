@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/core" // Import core for Runnable
-	"github.com/lookatitude/beluga-ai/llms"
 	"github.com/lookatitude/beluga-ai/prompts"
 	"github.com/lookatitude/beluga-ai/schema"
 )

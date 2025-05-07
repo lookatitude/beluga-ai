@@ -187,7 +187,7 @@ func (bl *BedrockLLM) invokeCohereModel(ctx context.Context, _ string, messages 
 
 	if lastHumanMessageContent != "" {
 		requestPayload.Prompt = lastHumanMessageContent
-	} else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.ToolMessageType {
+	} else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.MessageTypeTool {
 	    requestPayload.Prompt = " " 
 	} else {
 	    return nil, fmt.Errorf("Cohere request requires a prompt (from last human message) or tool results with context")
@@ -315,7 +315,7 @@ func (bl *BedrockLLM) invokeCohereModelStream(ctx context.Context, _ string, mes
 
     if lastHumanMessageContent != "" {
         requestPayload.Prompt = lastHumanMessageContent
-    } else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.ToolMessageType {
+    } else if len(messages) > 0 && messages[len(messages)-1].GetType() == schema.MessageTypeTool {
         requestPayload.Prompt = " "
     } else {
         if len(messages) == 0 { 
@@ -372,7 +372,7 @@ func (bl *BedrockLLM) cohereStreamChunkToAIMessageChunk(chunkBytes []byte) (*llm
 		return nil, nil 
 	}
 
-	chunk := llms.NewAIMessageChunk("")
+	chunk := &llms.AIMessageChunk{Content: streamResp.Text}
 	chunk.AdditionalArgs = make(map[string]any)
 	var isMeaningful bool
 
@@ -391,9 +391,9 @@ func (bl *BedrockLLM) cohereStreamChunkToAIMessageChunk(chunkBytes []byte) (*llm
 	            argsStr := string(argsBytes)
 	            // Cohere tool calls in stream don_t have IDs, generate one or leave nil if not strictly needed for chunking
 	            // For now, we don_t assign an ID to the chunk, as it_s about the delta.
-	            chunk.ToolCallChunks[i] = schema.ToolCallChunk{
+					chunk.ToolCallChunks[i] = schema.ToolCallChunk{
 	                Name:      &nameCopy,
-	                Arguments: &argsStr,
+	                Arguments: argsStr,
 	                // Index might be relevant if multiple tool calls are streamed piecewise, but Cohere seems to send them whole in this event type.
 	            }
 	        }
@@ -443,9 +443,10 @@ func mapBelugaToolsToCohere(belugaTools []tools.Tool) []CohereTool {
 	cohereTools := make([]CohereTool, len(belugaTools))
 	for i, tool := range belugaTools {
 		var paramDefs map[string]CohereToolParameter
-		schemaStr := tool.Schema()
-		if schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
-			var schemaProps map[string]json.RawMessage // For initial unmarshal of properties
+		toolDef := tool.Definition()
+		schemaStr, ok := toolDef.InputSchema.(string)
+		if ok && schemaStr != "" && schemaStr != "{}" && schemaStr != "null" {
+			// For initial unmarshal of properties
 			tempSchema := struct {
 				Type       string                            `json:"type"`
 				Properties map[string]json.RawMessage      `json:"properties"`
