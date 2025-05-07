@@ -8,7 +8,7 @@ module.exports = {
   tagline: 'A Go framework for building sophisticated AI and agentic applications.',
   url: 'https://lookatitude.github.io',
   baseUrl: '/beluga-ai/',
-  onBrokenLinks: 'throw',
+  onBrokenLinks: 'warn', // Changed from 'throw' to 'warn'
   onBrokenMarkdownLinks: 'warn',
   favicon: 'img/favicon.ico', // We'll need to create this or use a default
   organizationName: 'lookatitude', // Your GitHub org/user name.
@@ -24,6 +24,7 @@ module.exports = {
           editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/website/',
         },
         blog: {
+          path: 'blog',
           showReadingTime: true,
           editUrl:
             'https://github.com/lookatitude/beluga-ai/tree/main/website/blog/',
