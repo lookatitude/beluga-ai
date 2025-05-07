@@ -11,6 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/llms/ollama"
 	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/prompts"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tools"
 	"github.com/lookatitude/beluga-ai/tools/gofunc"
@@ -62,15 +63,15 @@ func main() {
 
 	 // 1. Initialize LLM (using Ollama for local testing)
 	 llm, err := ollama.NewOllamaChat(
-	 	 ollama.WithOllamaBaseURL(config.Cfg.LLMs.Ollama.BaseURL),
-	 	 ollama.WithOllamaModel(config.Cfg.LLMs.Ollama.Model),
+	 	 config.Cfg.LLMs.Ollama.Model,
+	 	 ollama.WithHost(config.Cfg.LLMs.Ollama.BaseURL),
 	 )
 	 if err != nil {
 	 	 log.Fatalf("Failed to create Ollama client: %v", err)
 	 }
 
 	 // 2. Define Tools
-	 weatherTool, err := gofunc.NewGoFuncTool(
+	 weatherTool, err := gofunc.NewGoFunctionTool(
 	 	 "get_current_weather",
 	 	 "Get the current weather in a given location",
 	 	 weatherSchema,
@@ -82,12 +83,29 @@ func main() {
 	 agentTools := []tools.Tool{weatherTool}
 
 	 // 3. Initialize Memory
-	 mem := memory.NewBufferMemory()
+	 // Create an in-memory chat history
+	 chatHistory := &inMemoryChatHistory{messages: []schema.Message{}}
+	 mem := memory.NewChatMessageBufferMemory(chatHistory)
 
 	 // 4. Create Agent Executor
 	 // Using the basic Executor for this example
-	 agentExecutor, err := agents.NewExecutor(
-	 	 llm, 
+	 // Create agent that implements the Agent interface
+	 // Create a prompt template for the agent
+	 templateString := "You are a helpful assistant. Use the following tools to answer the user's question: {{.agent_scratchpad}}\nQuestion: {{.input}}"
+	 promptTemplate, err := prompts.NewStringPromptTemplate(templateString)
+	 if err != nil {
+	 	 log.Fatalf("Failed to create prompt template: %v", err)
+	 }
+	 
+	 // Create the agent
+	 agent, err := agents.NewReActAgent(llm, agentTools, promptTemplate)
+	 if err != nil {
+	 	 log.Fatalf("Failed to create agent: %v", err)
+	 }
+	 
+	 // Create the executor
+	 agentExecutor, err := agents.NewAgentExecutor(
+	 	 agent,
 	 	 agentTools,
 	 	 agents.WithMemory(mem),
 	 	 agents.WithMaxIterations(5), // Limit agent loops
@@ -102,7 +120,7 @@ func main() {
 	 input := "What's the weather like in London in Celsius?"
 	 fmt.Printf("User Input: %s\n", input)
 
-	 result, err := agentExecutor.Run(ctx, input)
+	 result, err := agentExecutor.Invoke(ctx, input)
 	 if err != nil {
 	 	 log.Printf("Agent execution failed: %v", err)
 	 } else {
@@ -112,7 +130,7 @@ func main() {
 	 // --- Inspect Memory --- 
 	 fmt.Println("\n--- Agent Memory --- ")
 	 memVars, _ := mem.LoadMemoryVariables(ctx, nil)
-	 history, _ := memVars[mem.MemoryKey()].([]schema.Message)
+	 history, _ := memVars[mem.MemoryKey].([]schema.Message)
 	 for _, msg := range history {
 	 	 fmt.Printf(" - %s: %s", msg.GetType(), msg.GetContent())
 	 	 // Print tool calls/results if they exist
@@ -128,5 +146,32 @@ func main() {
 
 	 // Note: ReAct agent example would involve creating a ReAct agent instance
 	 // and potentially a different prompt structure.
+}
+
+// Simple in-memory implementation of ChatMessageHistory
+type inMemoryChatHistory struct {
+	messages []schema.Message
+}
+
+func (h *inMemoryChatHistory) AddMessage(ctx context.Context, message schema.Message) error {
+	h.messages = append(h.messages, message)
+	return nil
+}
+
+func (h *inMemoryChatHistory) AddUserMessage(ctx context.Context, content string) error {
+	return h.AddMessage(ctx, schema.NewHumanMessage(content))
+}
+
+func (h *inMemoryChatHistory) AddAIMessage(ctx context.Context, content string) error {
+	return h.AddMessage(ctx, schema.NewAIMessage(content))
+}
+
+func (h *inMemoryChatHistory) GetMessages(ctx context.Context) ([]schema.Message, error) {
+	return h.messages, nil
+}
+
+func (h *inMemoryChatHistory) Clear(ctx context.Context) error {
+	h.messages = []schema.Message{}
+	return nil
 }
 
