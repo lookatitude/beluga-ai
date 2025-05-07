@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.4](https://github.com/lookatitude/beluga-ai/compare/v1.0.3...v1.0.4) (2025-05-07)
+
+
+### Bug Fixes
+
+* updated libraries ([2679ca3](https://github.com/lookatitude/beluga-ai/commit/2679ca3d10fbf66ff082657b6bfae7236fa9fce6))
+
 ## [1.0.3](https://github.com/lookatitude/beluga-ai/compare/v1.0.2...v1.0.3) (2025-05-07)
 
 
