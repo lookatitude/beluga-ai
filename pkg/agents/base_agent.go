@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"github.com/lookatitude/github.com/lookatitude/beluga-ai/pkg/interfaces"
-	"github.com/lookatitude/github.com/lookatitude/beluga-ai/pkg/monitoring"
+	"github.com/lookatitude/beluga-ai/pkg/interfaces"
+	"github.com/lookatitude/beluga-ai/pkg/monitoring"
 )
 
 // AgentState represents the current state of an agent.
