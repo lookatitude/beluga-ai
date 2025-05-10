@@ -8,9 +8,9 @@ import (
 )
 
 // PromptAdapter defines an interface for adapting a generic prompt structure
-// or a set of messages into a format suitable for a specific LLM provider or model.
-// This is crucial because different models (e.g., OpenAI Chat vs. Anthropic Claude)
-// have different expectations for how prompts, system messages, and chat history are formatted.	ype PromptAdapter interface {
+// or a set of messages into a format suitable for a specific LLM provider or model. // This is crucial because different models (e.g., OpenAI Chat vs. Anthropic Claude)
+// have different expectations for how prompts, system messages, and chat history are formatted.
+type PromptAdapter interface {
 	// Format takes a generic prompt input (which could be a string, a list of schema.Message, or a custom struct)
 	// and returns a string or a list of provider-specific message objects suitable for the target LLM.
 	// The `inputs` map can contain variables to be interpolated into the prompt template.
@@ -67,10 +67,10 @@ func (dpa *DefaultPromptAdapter) GetInputVariables() []string {
 var _ PromptAdapter = (*DefaultPromptAdapter)(nil)
 
 // Helper function to create a schema.Message (useful for chat model adapters)
-func NewChatMessage(role schema.ChatMessageType, content string) schema.Message {
-	return schema.Message{
-		Type:    role,
-		Content: content,
+func NewChatMessage(role schema.MessageType, content string) schema.Message {
+	return &schema.ChatMessage{
+		BaseMessage: schema.BaseMessage{Content: content},
+		Role:        string(role),
 	}
 }
 

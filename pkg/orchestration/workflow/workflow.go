@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/pkg/schema" // Assuming schema.Task, schema.Workflow, etc. might be defined here or in a sub-package
+	 // Assuming schema.Task, schema.Workflow, etc. might be defined here or in a sub-package
 	// For now, we will define simple Task and Workflow structs here if not in schema.
 )
 
@@ -141,8 +141,8 @@ func (wf *Workflow) updateWorkflowState() {
 	}
 }
 
-// WorkflowManager defines an interface for managing and executing workflows.
-// This is a placeholder for a more complex orchestration engine.	ype WorkflowManager interface {
+// WorkflowManager defines an interface for managing and executing workflows.// This is a placeholder for a more complex orchestration engine.
+type WorkflowManager interface {
 	// CreateAndRunWorkflow creates a new workflow instance from a definition (or ad-hoc) and starts its execution.
 	// `workflowDefinition` could be a template name, a configuration object, or the tasks themselves.
 	CreateAndRunWorkflow(ctx context.Context, workflowDefinition interface{}, initialInput map[string]interface{}) (*Workflow, error)
