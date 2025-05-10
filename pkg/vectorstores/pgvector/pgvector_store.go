@@ -3,9 +3,10 @@ package pgvector
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 
@@ -103,7 +104,7 @@ func (s *PgVectorStore) ensureTableExists(ctx context.Context) error {
 }
 
 // AddDocuments adds documents to the PgVectorStore.
-func (s *PgVectorStore) AddDocuments(ctx context.Context, docs []schema.Document, embedder embeddings.Embedder) error {
+func (s *PgVectorStore) AddDocuments(ctx context.Context, docs []schema.Document, embedder iface.Embedder) error {
 	if embedder == nil {
 		return fmt.Errorf("pgvector: embedder is required to add documents")
 	}
@@ -202,7 +203,7 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 	for rows.Next() {
 		var doc schema.Document
 		var distance float32
-		var embeddingStr string // pgvector returns embedding as string
+		// var embeddingStr string // pgvector returns embedding as string - This variable is not used in the current logic.
 		var metadataStr sql.NullString // Assuming metadata is stored as JSONB and retrieved as string
 
 		if err := rows.Scan(&doc.ID, &doc.PageContent, &metadataStr, &distance); err != nil {
@@ -213,11 +214,19 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		// For simplicity, we return L2 distance as the "score" here, noting smaller is better.
 		resultScores = append(resultScores, distance)
 
-		if metadataStr.Valid {
-			// Parse metadataStr (JSON) into doc.Metadata map[string]interface{}
-			// For now, placeholder:
-			doc.Metadata = map[string]interface{}{"raw_metadata": metadataStr.String}
-		}
+		// Parse metadataStr (JSON) into doc.Metadata map[string]string
+			if metadataStr.Valid && metadataStr.String != "" && metadataStr.String != "{}" {
+				var parsedMeta map[string]string
+				if err := json.Unmarshal([]byte(metadataStr.String), &parsedMeta); err == nil {
+					doc.Metadata = parsedMeta
+				} else {
+					// Handle error or set a default, e.g., log the error
+					// For now, we can assign the raw string to a special key if parsing fails
+					doc.Metadata = map[string]string{"_raw_pgvector_metadata_error": metadataStr.String, "_parsing_error": err.Error()}
+				}
+			} else {
+				doc.Metadata = make(map[string]string) // Ensure it's not nil
+			}
 		resultDocs = append(resultDocs, doc)
 	}
 
@@ -225,7 +234,7 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 }
 
 // SimilaritySearchByQuery generates an embedding for the query and then performs a similarity search.
-func (s *PgVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder embeddings.Embedder) ([]schema.Document, []float32, error) {
+func (s *PgVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder iface.Embedder) ([]schema.Document, []float32, error) {
 	if embedder == nil {
 		return nil, nil, fmt.Errorf("pgvector: embedder is required for SimilaritySearchByQuery")
 	}

@@ -1,92 +1,172 @@
 package schema
 
-import (
-"encoding/json"
-"fmt"
-)
-
 // MessageType defines the type of a message.
-// @enum MessageType
 type MessageType string
 
+// Constants for MessageType
 const (
-// AIMessageType is a message from an AI.
-AIMessageType MessageType = "ai"
-// HumanMessageType is a message from a human.
-HumanMessageType MessageType = "human"
-// SystemMessageType is a message from the system.
-SystemMessageType MessageType = "system"
-// ChatMessageType is a message that can be stored in a chat history.
-ChatMessageType MessageType = "chat"
-// FunctionMessageType is a message that represents a function call.
-FunctionMessageType MessageType = "function"
-// ToolMessageType is a message that represents a tool call.
-ToolMessageType MessageType = "tool"
+	RoleHuman     MessageType = "human"
+	RoleAssistant MessageType = "ai"
+	RoleSystem    MessageType = "system"
+	RoleTool      MessageType = "tool"
+	RoleFunction  MessageType = "function"
+
+	// Deprecated, use Role* constants where specific roles are intended.
+	// These are kept for broader type categorization if ever needed but might be removed.
+	AIMessageType       MessageType = "ai"
+	HumanMessageType    MessageType = "human"
+	SystemMessageType   MessageType = "system"
+	ChatMessageType     MessageType = "chat" // Generic chat, role specified in ChatMessage
+	FunctionMessageType MessageType = "function"
+	ToolMessageType     MessageType = "tool"
 )
 
 // Message is the interface that all message types must implement.
 type Message interface {
-GetType() MessageType
-String() string
-GetContent() string
+	GetType() MessageType
+	GetContent() string
+	// String() string // Stringer interface, often GetContent or a formatted version
 }
 
-// BaseMessage is a struct that provides a base implementation for the Message interface.
-// It includes the common fields that all messages should have.
+// BaseMessage provides common fields for messages.
 type BaseMessage struct {
-Content string `json:"content"`
-Type    string `json:"type"`
+	Content string `json:"content"`
 }
 
-// NewMessage creates a new message with the given content and type.
-func NewMessage(content string, msgType MessageType) Message {
-switch msgType {
-case AIMessageType:
-return &AIMessage{MessageContent: content}
-case HumanMessageType:
-return &HumanMessage{MessageContent: content}
-case SystemMessageType:
-return &SystemMessage{MessageContent: content}
-case ChatMessageType:
-return &ChatMessage{MessageContent: content}
-case FunctionMessageType:
-return &FunctionMessage{MessageContent: content}
-case ToolMessageType:
-return &ToolMessage{MessageContent: content}
-default:
-panic("Unknown message type")
-}
+// GetContent returns the content of the base message.
+func (bm *BaseMessage) GetContent() string {
+	return bm.Content
 }
 
-// AIMessage is a message from an AI.
-// It includes the content of the message.
+// ToolCall represents a call to a tool by the LLM.
+type ToolCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"` // Typically "function"
+	Function FunctionCall `json:"function"`
+}
+
+// FunctionCall represents the function to be called.
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"` // JSON string of arguments
+}
+
+// ChatMessage represents a message in a chat sequence.
+type ChatMessage struct {
+	BaseMessage
+	Role      MessageType `json:"role"`
+	ToolCalls []ToolCall  `json:"tool_calls,omitempty"` // Used by AIMessage for proposing tool calls
+}
+
+// GetType returns the role of the ChatMessage.
+func (m *ChatMessage) GetType() MessageType {
+	return m.Role
+}
+
+// ToolMessage represents the result of a tool invocation.
+type ToolMessage struct {
+	BaseMessage
+	ToolCallID string `json:"tool_call_id"`
+}
+
+// GetType returns RoleTool.
+func (m *ToolMessage) GetType() MessageType {
+	return RoleTool
+}
+
+// FunctionMessage represents a message related to a function call.
+type FunctionMessage struct {
+	BaseMessage
+	Name string `json:"name"` // Name of the function that was called
+}
+
+// GetType returns RoleFunction.
+func (m *FunctionMessage) GetType() MessageType {
+	return RoleFunction
+}
+
+// AIMessage represents a message from the AI.
+// It can include content and a list of tool calls the AI wants to make.
 type AIMessage struct {
-MessageContent string `json:"content"`
+	BaseMessage
+	// Content is inherited from BaseMessage.
+	// Role is implicitly RoleAssistant, returned by GetType().
+	ToolCalls []ToolCall `json:"tool_calls,omitempty" yaml:"tool_calls,omitempty"`
 }
 
-func (m *AIMessage) GetType() MessageType { return AIMessageType }
-func (m *AIMessage) String() string       { return m.MessageContent }
-func (m *AIMessage) GetContent() string   { return m.MessageContent }
-
-// HumanMessage is a message from a human.
-// It includes the content of the message.
-type HumanMessage struct {
-MessageContent string `json:"content"`
+// GetType returns the message type, which is always RoleAssistant for AIMessage.
+func (m *AIMessage) GetType() MessageType {
+	return RoleAssistant
 }
 
-func (m *HumanMessage) GetType() MessageType { return HumanMessageType }
-func (m *HumanMessage) String() string       { return m.MessageContent }
-func (m *HumanMessage) GetContent() string   { return m.MessageContent }
+// Constructor functions
 
-// SystemMessage is a message from the system.
-// It includes the content of the message.
-type SystemMessage struct {
-MessageContent string `json:"content"`
+// NewChatMessage creates a new ChatMessage.
+func NewChatMessage(role MessageType, content string) Message {
+	return &ChatMessage{
+		BaseMessage: BaseMessage{Content: content},
+		Role:        role,
+	}
 }
 
-func (m *SystemMessage) GetType() MessageType { return SystemMessageType }
-func (m *SystemMessage) String() string       { return m.MessageContent }
-func (m *SystemMessage) GetContent() string   { return m.MessageContent }
+// NewHumanMessage creates a new human message.
+func NewHumanMessage(content string) Message {
+	return &ChatMessage{
+		BaseMessage: BaseMessage{Content: content},
+		Role:        RoleHuman,
+	}
+}
 
-// ChatMessage is a message that can be stored in a chat history.
-// It includes the role of the speaker (e.g., 
+// NewAIMessage creates a new AI message.
+func NewAIMessage(content string) Message {
+	return &AIMessage{ // MODIFIED HERE
+		BaseMessage: BaseMessage{Content: content},
+		// ToolCalls is omitted, so it will be nil (default for a slice)
+	}
+}
+
+// NewSystemMessage creates a new system message.
+func NewSystemMessage(content string) Message {
+	return &ChatMessage{
+		BaseMessage: BaseMessage{Content: content},
+		Role:        RoleSystem,
+	}
+}
+
+// NewToolMessage creates a new tool message.
+func NewToolMessage(content string, toolCallID string) Message {
+	return &ToolMessage{
+		BaseMessage: BaseMessage{Content: content},
+		ToolCallID:  toolCallID,
+	}
+}
+
+// NewFunctionMessage creates a new function message (primarily for function results).
+func NewFunctionMessage(name string, content string) Message {
+    return &FunctionMessage{
+        BaseMessage: BaseMessage{Content: content},
+        Name:        name,
+    }
+}
+
+
+// Ensure all message types implement the Message interface.
+var _ Message = (*ChatMessage)(nil)
+var _ Message = (*ToolMessage)(nil)
+var _ Message = (*FunctionMessage)(nil)
+var _ Message = (*AIMessage)(nil) // ADDED HERE
+
+
+// Generation represents a single generation from an LLM.
+type Generation struct {
+	Text           string                 `json:"text"`
+	Message        Message                `json:"message"` // The actual message object, e.g., a ChatMessage
+	GenerationInfo map[string]interface{} `json:"generation_info,omitempty"`
+}
+
+// LLMResponse represents the response from an LLM.
+type LLMResponse struct {
+	Generations [][]*Generation        `json:"generations"`
+	LLMOutput   map[string]interface{} `json:"llm_output,omitempty"` // Provider-specific output
+}
+

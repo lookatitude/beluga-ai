@@ -50,3 +50,29 @@ type ToolConfig struct {
 	Enabled     bool                   `mapstructure:"enabled" yaml:"enabled"`             // Whether the tool is enabled
 	Config      map[string]interface{} `mapstructure:"config" yaml:"config,omitempty"` // Provider-specific configuration for the tool
 }
+
+
+
+// OpenAILLMConfig holds configuration for the OpenAI LLM provider.
+type OpenAILLMConfig struct {
+	Model            string   `mapstructure:"model_name" yaml:"model_name"`
+	APIKey           string   `mapstructure:"api_key" yaml:"api_key"`
+	Temperature      float64  `mapstructure:"temperature" yaml:"temperature,omitempty"`
+	MaxTokens        int      `mapstructure:"max_tokens" yaml:"max_tokens,omitempty"`
+	TopP             float64  `mapstructure:"top_p" yaml:"top_p,omitempty"`
+	FrequencyPenalty float64  `mapstructure:"frequency_penalty" yaml:"frequency_penalty,omitempty"`
+	PresencePenalty  float64  `mapstructure:"presence_penalty" yaml:"presence_penalty,omitempty"`
+	Stop             []string `mapstructure:"stop" yaml:"stop,omitempty"`
+	Streaming        bool     `mapstructure:"streaming" yaml:"streaming,omitempty"`
+	APIVersion       string   `mapstructure:"api_version" yaml:"api_version,omitempty"`   // Optional: For Azure OpenAI
+	APIEndpoint      string   `mapstructure:"api_endpoint" yaml:"api_endpoint,omitempty"` // Optional: For Azure OpenAI or other proxies
+	Timeout          int      `mapstructure:"timeout_seconds" yaml:"timeout_seconds,omitempty"`
+}
+
+// MockLLMConfig holds configuration for the Mock LLM provider.
+type MockLLMConfig struct {
+	ModelName     string                 `mapstructure:"model_name" yaml:"model_name"`
+	ExpectedError string                 `mapstructure:"expected_error" yaml:"expected_error,omitempty"`
+	Responses     []string               `mapstructure:"responses" yaml:"responses,omitempty"`
+	ToolCalls     []map[string]interface{} `mapstructure:"tool_calls" yaml:"tool_calls,omitempty"` // Simplified for now
+}

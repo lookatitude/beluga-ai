@@ -31,6 +31,19 @@ type Provider interface {
 	// This is a more specific getter for convenience.
 	GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error)
 
+	// GetLLMProvidersConfig retrieves all LLMProviderConfig.
+	GetLLMProvidersConfig() ([]schema.LLMProviderConfig, error) // Added this method
+
+	// GetEmbeddingProvidersConfig retrieves all EmbeddingProviderConfig.
+	// Assuming this method exists or needs to be added for consistency with GetLLMProvidersConfig
+	GetEmbeddingProvidersConfig() ([]schema.EmbeddingProviderConfig, error) // Ensuring this is present
+
+	// GetAgentConfig retrieves a specific AgentConfig by name.
+	GetAgentConfig(name string) (schema.AgentConfig, error) // Assuming AgentConfig is in schema
+
+	// GetToolConfig retrieves a specific ToolConfig by name from the main config.
+	GetToolConfig(name string) (ToolConfig, error) // Using local ToolConfig struct
+
 	// GetMemoryProviderConfig retrieves a specific MemoryProviderConfig by name.
 	// This is a more specific getter for convenience.
 	// GetMemoryProviderConfig(name string) (schema.MemoryProviderConfig, error) // Placeholder for now

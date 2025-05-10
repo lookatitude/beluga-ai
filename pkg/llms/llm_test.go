@@ -10,8 +10,11 @@ import (
 
 // MockLLM is a mock implementation of the LLM interface for testing.
 type MockLLM struct {
-	MockGenerate func(ctx context.Context, prompts []string, options ...schema.LLMOption) (*schema.LLMResponse, error)
-	MockChat     func(ctx context.Context, messages []schema.Message, options ...schema.LLMOption) (*schema.ChatMessage, error)
+	MockInvoke          func(ctx context.Context, prompt string, options ...schema.LLMOption) (string, error)
+	MockGenerate        func(ctx context.Context, prompts []string, options ...schema.LLMOption) (*schema.LLMResponse, error)
+	MockChat            func(ctx context.Context, messages []schema.Message, options ...schema.LLMOption) (*schema.ChatMessage, error)
+	MockGetModelName    func() string
+	MockGetProviderName func() string
 }
 
 func (m *MockLLM) Generate(ctx context.Context, prompts []string, options ...schema.LLMOption) (*schema.LLMResponse, error) {
@@ -69,3 +72,29 @@ func TestProviderConfig(t *testing.T) {
 	assert.True(t, true, "Placeholder for ProviderConfig tests if applicable at this level.")
 }
 
+
+
+
+func (m *MockLLM) GetModelName() string {
+	if m.MockGetModelName != nil {
+		return m.MockGetModelName()
+	}
+	return "mock-model"
+}
+
+func (m *MockLLM) GetProviderName() string {
+	if m.MockGetProviderName != nil {
+		return m.MockGetProviderName()
+	}
+	return "mock-provider"
+}
+
+
+
+func (m *MockLLM) Invoke(ctx context.Context, prompt string, options ...schema.LLMOption) (string, error) {
+	if m.MockInvoke != nil {
+		return m.MockInvoke(ctx, prompt, options...)
+	}
+	// Return a default response or error for the mock if not configured
+	return "mock invoke response", nil
+}

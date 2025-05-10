@@ -9,42 +9,31 @@ import (
 )
 
 // ViperProvider implements the Provider interface using the Viper library.
-// Viper supports reading from JSON, TOML, YAML, HCL, envfile and Java properties config files.
-// It can also read from environment variables, remote config systems (etcd or Consul), and command-line flags.
 type ViperProvider struct {
 	v *viper.Viper
 }
 
 // NewViperProvider creates a new ViperProvider.
-// It initializes Viper with sensible defaults: automatic environment variable binding
-// and a replacer for environment variables (e.g., MY_APP_DB_HOST -> my_app.db.host).
 func NewViperProvider(configName string, configPaths []string, envPrefix string) (*ViperProvider, error) {
 	v := viper.New()
 
 	if configName != "" {
-		v.SetConfigName(configName) // Name of config file (without extension)
-		v.SetConfigType("yaml")     // REQUIRED if the config file does not have the extension in the name
+		v.SetConfigName(configName)
+		v.SetConfigType("yaml")
 		for _, path := range configPaths {
-			v.AddConfigPath(path) // Path to look for the config file in
+			v.AddConfigPath(path)
 		}
 	}
 
 	if envPrefix != "" {
-		v.SetEnvPrefix(envPrefix) // Will be uppercased automatically
+		v.SetEnvPrefix(envPrefix)
 	}
-	v.AutomaticEnv() // Read in environment variables that match
-
-	// Example of a replacer: allows env var DB_HOST to be mapped to db.host
+	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
 
-	// Attempt to read the config file if specified
 	if configName != "" {
 		if err := v.ReadInConfig(); err != nil {
-			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
-				// Config file not found; ignore error if this is acceptable
-				// fmt.Printf("ViperProvider: Config file \t%s\t not found in paths \t%v\t. Relying on defaults/env vars.\n", configName, configPaths)
-			} else {
-				// Config file was found but another error was produced
+			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
 				return nil, fmt.Errorf("failed to read config file: %w", err)
 			}
 		}
@@ -54,7 +43,6 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string)
 }
 
 // Load unmarshals the configuration into the given struct.
-// The struct should have `mapstructure` tags for proper mapping.
 func (vp *ViperProvider) Load(configStruct interface{}) error {
 	if err := vp.v.Unmarshal(configStruct); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
@@ -66,7 +54,6 @@ func (vp *ViperProvider) Load(configStruct interface{}) error {
 func (vp *ViperProvider) UnmarshalKey(key string, rawVal interface{}) error {
 	return vp.v.UnmarshalKey(key, rawVal)
 }
-
 
 // GetString retrieves a string configuration value by key.
 func (vp *ViperProvider) GetString(key string) string {
@@ -101,25 +88,124 @@ func (vp *ViperProvider) IsSet(key string) bool {
 // GetLLMProviderConfig retrieves a specific LLMProviderConfig by name.
 func (vp *ViperProvider) GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error) {
 	var llmConfig schema.LLMProviderConfig
-	// Construct the key for the specific LLM provider configuration.
-	// This assumes LLM provider configs are stored under a top-level key like "llm_providers"
-	// and then indexed by their name, e.g., "llm_providers.openai_default".
-	key := fmt.Sprintf("llm_providers.%s", name)
-
-	if !vp.v.IsSet(key) {
-		return llmConfig, fmt.Errorf("LLM provider configuration for '%s' not found at key '%s'", name, key)
+	llmProviders, err := vp.GetLLMProvidersConfig()
+	if err != nil {
+		return llmConfig, err
 	}
-
-	if err := vp.v.UnmarshalKey(key, &llmConfig); err != nil {
-		return llmConfig, fmt.Errorf("failed to unmarshal LLM provider config for '%s' from key '%s': %w", name, key, err)
+	for _, cfg := range llmProviders {
+		if cfg.Name == name {
+			return cfg, nil
+		}
 	}
-	// Ensure the Name field is populated from the requested name if not set in the config itself
-	if llmConfig.Name == "" {
-		llmConfig.Name = name
-	}
-	return llmConfig, nil
+	return llmConfig, fmt.Errorf("LLM provider configuration for 	%s	 not found", name)
 }
 
-// Ensure ViperProvider implements the Provider interface.
+// GetLLMProvidersConfig retrieves all LLMProviderConfig.
+func (vp *ViperProvider) GetLLMProvidersConfig() ([]schema.LLMProviderConfig, error) {
+    var configs []schema.LLMProviderConfig
+    key := "llm_providers"
+    if !vp.v.IsSet(key) {
+        return configs, nil
+    }
+    if err := vp.v.UnmarshalKey(key, &configs); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal LLM providers config from key 	%s	: %w", key, err)
+    }
+    return configs, nil
+}
+
+// GetEmbeddingProvidersConfig retrieves all EmbeddingProviderConfig.
+func (vp *ViperProvider) GetEmbeddingProvidersConfig() ([]schema.EmbeddingProviderConfig, error) {
+    var configs []schema.EmbeddingProviderConfig
+    key := "embedding_providers"
+    if !vp.v.IsSet(key) {
+        fmt.Println("ViperProvider: embedding_providers key not set")
+        return configs, nil
+    }
+
+    // Debug: Print the raw value from Viper for embedding_providers
+    rawValue := vp.v.Get(key)
+    fmt.Printf("ViperProvider: Raw value for 	%s	: %+v\n", key, rawValue)
+
+    if err := vp.v.UnmarshalKey(key, &configs); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal embedding providers config from key 	%s	: %w", key, err)
+    }
+    
+    // Debug: Print the unmarshalled configs
+    for i, cfg := range configs {
+        fmt.Printf("ViperProvider: Unmarshalled EmbeddingProviderConfig[%d]: Name=	%s	, Provider=	%s	, ModelName=	%s	, APIKey=	%s	 (Length: %d)\n", 
+            i, cfg.Name, cfg.Provider, cfg.ModelName, cfg.APIKey, len(cfg.APIKey))
+    }
+    return configs, nil
+}
+
+// GetVectorStoresConfig retrieves all VectorStoreConfig.
+func (vp *ViperProvider) GetVectorStoresConfig() ([]schema.VectorStoreConfig, error) {
+    var configs []schema.VectorStoreConfig
+    key := "vector_stores"
+    if !vp.v.IsSet(key) {
+        return configs, nil
+    }
+    if err := vp.v.UnmarshalKey(key, &configs); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal vector stores config from key 	%s	: %w", key, err)
+    }
+    return configs, nil
+}
+
+// GetAgentConfig retrieves a specific AgentConfig by name.
+func (vp *ViperProvider) GetAgentConfig(name string) (schema.AgentConfig, error) {
+	var agentConfig schema.AgentConfig
+	agents, err := vp.GetAgentsConfig()
+	if err != nil {
+		return agentConfig, err
+	}
+	for _, cfg := range agents {
+		if cfg.Name == name {
+			return cfg, nil
+		}
+	}
+	return agentConfig, fmt.Errorf("agent configuration for 	%s	 not found", name)
+}
+
+// GetAgentsConfig retrieves all AgentConfig.
+func (vp *ViperProvider) GetAgentsConfig() ([]schema.AgentConfig, error) {
+    var configs []schema.AgentConfig
+    key := "agents"
+    if !vp.v.IsSet(key) {
+        return configs, nil
+    }
+    if err := vp.v.UnmarshalKey(key, &configs); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal agents config from key 	%s	: %w", key, err)
+    }
+    return configs, nil
+}
+
+// GetToolConfig retrieves a specific ToolConfig by name from the main config.
+func (vp *ViperProvider) GetToolConfig(name string) (ToolConfig, error) {
+    var toolConfig ToolConfig
+    tools, err := vp.GetToolsConfig()
+    if err != nil {
+        return toolConfig, err
+    }
+    for _, cfg := range tools {
+        if cfg.Name == name {
+            return cfg, nil
+        }
+    }
+    return toolConfig, fmt.Errorf("tool configuration for 	%s	 not found", name)
+}
+
+// GetToolsConfig retrieves all ToolConfig.
+func (vp *ViperProvider) GetToolsConfig() ([]ToolConfig, error) {
+    var configs []ToolConfig
+    key := "tools"
+    if !vp.v.IsSet(key) {
+        return configs, nil
+    }
+    if err := vp.v.UnmarshalKey(key, &configs); err != nil {
+        return nil, fmt.Errorf("failed to unmarshal tools config from key 	%s	: %w", key, err)
+    }
+    return configs, nil
+}
+
 var _ Provider = (*ViperProvider)(nil)
 

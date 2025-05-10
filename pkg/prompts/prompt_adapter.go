@@ -70,7 +70,7 @@ var _ PromptAdapter = (*DefaultPromptAdapter)(nil)
 func NewChatMessage(role schema.MessageType, content string) schema.Message {
 	return &schema.ChatMessage{
 		BaseMessage: schema.BaseMessage{Content: content},
-		Role:        string(role),
+		Role:        role,
 	}
 }
 

@@ -35,12 +35,12 @@ func (h *BaseChatHistory) AddMessage(message Message) error {
 
 // AddUserMessage adds a user message to the history.
 func (h *BaseChatHistory) AddUserMessage(message string) error {
-	return h.AddMessage(NewMessage(message, HumanMessageType))
+	return h.AddMessage(NewHumanMessage(message))
 }
 
 // AddAIMessage adds an AI message to the history.
 func (h *BaseChatHistory) AddAIMessage(message string) error {
-	return h.AddMessage(NewMessage(message, AIMessageType))
+	return h.AddMessage(NewAIMessage(message))
 }
 
 // Messages returns all messages in the history.

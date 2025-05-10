@@ -43,3 +43,23 @@ type FinalAnswer struct {
 	IntermediateSteps []Step `json:"intermediate_steps,omitempty" yaml:"intermediate_steps,omitempty"`
 }
 
+
+
+
+// AgentFinish represents the final output from an agent when it has completed its task.
+type AgentFinish struct {
+	// ReturnValues is a map of key-value pairs that represent the agent's final output or result.
+	ReturnValues map[string]interface{} `json:"return_values" yaml:"return_values"`
+	// Log is a textual representation of the agent's final thought process or conclusion.
+	Log string `json:"log" yaml:"log"`
+}
+
+
+
+// AgentScratchPadEntry represents an intermediate step in an agent's thought process,
+// consisting of an action and the observation resulting from that action.
+// This is often used for logging or for constructing prompts for the LLM.
+type AgentScratchPadEntry struct {
+	Action      AgentAction `json:"action" yaml:"action"`
+	Observation string      `json:"observation" yaml:"observation"`
+}

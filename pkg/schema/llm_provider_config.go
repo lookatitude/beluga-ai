@@ -33,3 +33,90 @@ type LLMProviderConfig struct {
 	ProviderSpecific map[string]interface{} `yaml:"provider_specific,omitempty" json:"provider_specific,omitempty"`
 }
 
+
+
+
+// LLMOption defines a function type for LLM call options.
+// It allows for flexible configuration of LLM calls.
+type LLMOption func(options *CallOptions)
+
+// CallOptions holds parameters for an LLM call.
+// This struct can be expanded with more common options.
+type CallOptions struct {
+	Temperature      *float64
+	MaxTokens        *int
+	TopP             *float64
+	FrequencyPenalty *float64
+	PresencePenalty  *float64
+	Stop             []string
+	Streaming        bool
+	// ProviderSpecificArgs allows for passing through any other provider-specific options.
+	ProviderSpecificArgs map[string]interface{}
+}
+
+// NewCallOptions creates a new CallOptions with default values.
+func NewCallOptions() *CallOptions {
+	return &CallOptions{
+		ProviderSpecificArgs: make(map[string]interface{}),
+	}
+}
+
+// WithTemperature sets the temperature for the LLM call.
+func WithTemperature(temp float64) LLMOption {
+	return func(o *CallOptions) {
+		o.Temperature = &temp
+	}
+}
+
+// WithMaxTokens sets the max tokens for the LLM call.
+func WithMaxTokens(maxTokens int) LLMOption {
+	return func(o *CallOptions) {
+		o.MaxTokens = &maxTokens
+	}
+}
+
+// WithTopP sets the TopP for the LLM call.
+func WithTopP(topP float64) LLMOption {
+	return func(o *CallOptions) {
+		o.TopP = &topP
+	}
+}
+
+// WithFrequencyPenalty sets the frequency penalty for the LLM call.
+func WithFrequencyPenalty(penalty float64) LLMOption {
+	return func(o *CallOptions) {
+		o.FrequencyPenalty = &penalty
+	}
+}
+
+// WithPresencePenalty sets the presence penalty for the LLM call.
+func WithPresencePenalty(penalty float64) LLMOption {
+	return func(o *CallOptions) {
+		o.PresencePenalty = &penalty
+	}
+}
+
+// WithStopSequences sets the stop sequences for the LLM call.
+func WithStopSequences(stop []string) LLMOption {
+	return func(o *CallOptions) {
+		o.Stop = stop
+	}
+}
+
+// WithStreaming enables or disables streaming for the LLM call.
+func WithStreaming(streaming bool) LLMOption {
+	return func(o *CallOptions) {
+		o.Streaming = streaming
+	}
+}
+
+// WithProviderSpecificArg adds a provider-specific argument.
+func WithProviderSpecificArg(key string, value interface{}) LLMOption {
+	return func(o *CallOptions) {
+		if o.ProviderSpecificArgs == nil {
+			o.ProviderSpecificArgs = make(map[string]interface{})
+		}
+		o.ProviderSpecificArgs[key] = value
+	}
+}
+

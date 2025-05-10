@@ -62,21 +62,21 @@ func (m *mockPhase1LLM) Invoke(ctx context.Context, prompt string, callOptions .
 
 // Chat is a method on the mock, not necessarily on the llms.LLM interface itself.
 // The test will call this method to simulate an agent receiving structured messages from an LLM.
-func (m *mockPhase1LLM) Chat(ctx context.Context, messages []schema.Message, callOptions ...schema.LLMOption) (*schema.AIChatMessage, error) {
+func (m *mockPhase1LLM) Chat(ctx context.Context, messages []schema.Message, callOptions ...schema.LLMOption) (schema.Message, error) {
 	m.callCount++ // This callCount is specific to this Chat method for the test flow.
 	m.t.Logf("MockLLM.Chat called (Chat Call #%d)", m.callCount)
 
 	if m.callCount == 1 {
 		m.t.Log("MockLLM (Chat Call 1): Responding with EchoTool call.")
 		argsJSON := fmt.Sprintf(`{"input": "%s"}`, m.expectedToolInput)
-		return &schema.AIChatMessage{
+		return &schema.ChatMessage{
 			BaseMessage: schema.BaseMessage{Content: "I will use the EchoTool to process your request."},
 			Role:        schema.RoleAssistant,
 			ToolCalls: []schema.ToolCall{
 				{
 					ID:   "mock-tool-call-id-123",
 					Type: "function",
-					Function: schema.ToolFunction{
+					Function: schema.FunctionCall{
 						Name:      "EchoTool",
 						Arguments: argsJSON,
 					},
@@ -96,7 +96,7 @@ func (m *mockPhase1LLM) Chat(ctx context.Context, messages []schema.Message, cal
 		}
 		require.NotEmpty(m.t, observationContent, "LLM did not receive observation from tool in messages")
 		finalAnswer := fmt.Sprintf("The phrase has been echoed by the tool: %s", observationContent)
-		return &schema.AIChatMessage{
+		return &schema.ChatMessage{
 			BaseMessage: schema.BaseMessage{Content: finalAnswer},
 			Role:        schema.RoleAssistant,
 			ToolCalls:   nil,
@@ -192,9 +192,12 @@ func TestPhase1AgentIntegration(t *testing.T) {
 	history1, ok := memOutput1[bufferMemory.MemoryKey].([]schema.Message)
 	require.True(t, ok, "Memory did not return []schema.Message for history1")
 
-	aiResponse1, err := mockLLM.Chat(ctx, history1, schema.WithStreaming(false)) // Pass some LLMOption
+	aiResponse1Message, err := mockLLM.Chat(ctx, history1, schema.WithStreaming(false)) // Pass some LLMOption
 	require.NoError(t, err, "mockLLM.Chat (call 1) failed")
-	require.NotNil(t, aiResponse1, "mockLLM.Chat (call 1) returned nil response")
+	require.NotNil(t, aiResponse1Message, "mockLLM.Chat (call 1) returned nil response")
+	aiResponse1, ok := aiResponse1Message.(*schema.ChatMessage)
+	require.True(t, ok, "mockLLM.Chat (call 1) did not return a ChatMessage, got %T", aiResponse1Message)
+	require.Equal(t, schema.RoleAssistant, aiResponse1.Role, "mockLLM.Chat (call 1) message role mismatch")
 	require.NotEmpty(t, aiResponse1.ToolCalls, "mockLLM.Chat (call 1) did not return tool calls")
 
 	// Save AI's response (tool call proposal) to memory
@@ -223,9 +226,12 @@ func TestPhase1AgentIntegration(t *testing.T) {
 	history2, ok := memOutput2[bufferMemory.MemoryKey].([]schema.Message)
 	require.True(t, ok, "Memory did not return []schema.Message for history2")
 
-	aiResponse2, err := mockLLM.Chat(ctx, history2, schema.WithStreaming(false)) // Pass some LLMOption
+	aiResponse2Message, err := mockLLM.Chat(ctx, history2, schema.WithStreaming(false)) // Pass some LLMOption
 	require.NoError(t, err, "mockLLM.Chat (call 2) failed")
-	require.NotNil(t, aiResponse2, "mockLLM.Chat (call 2) returned nil response")
+	require.NotNil(t, aiResponse2Message, "mockLLM.Chat (call 2) returned nil response")
+	aiResponse2, ok := aiResponse2Message.(*schema.ChatMessage)
+	require.True(t, ok, "mockLLM.Chat (call 2) did not return a ChatMessage, got %T", aiResponse2Message)
+	require.Equal(t, schema.RoleAssistant, aiResponse2.Role, "mockLLM.Chat (call 2) message role mismatch")
 	require.Empty(t, aiResponse2.ToolCalls, "mockLLM.Chat (call 2) should not have tool calls")
 
 	// Save final AI answer to memory
@@ -247,14 +253,16 @@ func TestPhase1AgentIntegration(t *testing.T) {
 	require.True(t, ok, "Final memory did not return []schema.Message")
 	require.Len(t, finalChatHistory, 4, "Incorrect number of messages in history")
 
-	// Message 1: User Input (HumanMessage)
-	humanMsg, ok := finalChatHistory[0].(*schema.HumanMessage)
-	require.True(t, ok, "First message not HumanMessage, got %T", finalChatHistory[0])
+	// Message 1: User Input (ChatMessage with RoleHuman)
+	humanMsg, ok := finalChatHistory[0].(*schema.ChatMessage)
+	require.True(t, ok, "First message not ChatMessage, got %T", finalChatHistory[0])
+	assert.Equal(t, schema.RoleHuman, humanMsg.Role, "First message role mismatch")
 	assert.Equal(t, userInputPhrase, humanMsg.GetContent(), "User input in memory mismatch")
 
-	// Message 2: AI Action (AIChatMessage with ToolCall)
-	aiToolCallMsg, ok := finalChatHistory[1].(*schema.AIChatMessage)
-	require.True(t, ok, "Second message not AIChatMessage, got %T", finalChatHistory[1])
+	// Message 2: AI Action (ChatMessage with RoleAssistant and ToolCall)
+	aiToolCallMsg, ok := finalChatHistory[1].(*schema.ChatMessage)
+	require.True(t, ok, "Second message not ChatMessage, got %T", finalChatHistory[1])
+	assert.Equal(t, schema.RoleAssistant, aiToolCallMsg.Role, "Second message role mismatch")
 	require.Len(t, aiToolCallMsg.ToolCalls, 1, "AI message should have one tool call")
 	assert.Equal(t, "EchoTool", aiToolCallMsg.ToolCalls[0].Function.Name, "Tool call name mismatch")
 	expectedArgsJSON := fmt.Sprintf(`{"input": "%s"}`, userInputPhrase)
@@ -266,9 +274,10 @@ func TestPhase1AgentIntegration(t *testing.T) {
 	assert.Equal(t, fmt.Sprintf("Echo: %s", userInputPhrase), toolResultMsg.GetContent(), "Tool observation content mismatch")
 	assert.Equal(t, "mock-tool-call-id-123", toolResultMsg.ToolCallID, "Tool call ID in observation mismatch")
 
-	// Message 4: AI Final Answer (AIChatMessage)
-	aiFinalAnswerMsg, ok := finalChatHistory[3].(*schema.AIChatMessage)
-	require.True(t, ok, "Fourth message not AIChatMessage, got %T", finalChatHistory[3])
+	// Message 4: AI Final Answer (ChatMessage with RoleAssistant)
+	aiFinalAnswerMsg, ok := finalChatHistory[3].(*schema.ChatMessage)
+	require.True(t, ok, "Fourth message not ChatMessage, got %T", finalChatHistory[3])
+	assert.Equal(t, schema.RoleAssistant, aiFinalAnswerMsg.Role, "Fourth message role mismatch")
 	assert.Equal(t, expectedFinalAnswerContent, aiFinalAnswerMsg.GetContent(), "AI final answer in memory mismatch")
 	assert.Empty(t, aiFinalAnswerMsg.ToolCalls, "Final AI message should not have tool calls")
 

@@ -1,18 +1,20 @@
 package memory
 
 import (
+	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 )
 
 // MockMemory is a mock implementation of the Memory interface for testing.
 type MockMemory struct {
 	MockGetMemoryKey        func() string
-	MockLoadMemoryVariables func(inputs map[string]interface{}) (map[string]interface{}, error)
-	MockSaveContext         func(inputs map[string]interface{}, outputs map[string]string) error
-	MockClear               func() error
+	MockLoadMemoryVariables func(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error)
+	MockSaveContext         func(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error // MODIFIED HERE
+	MockClear               func(ctx context.Context) error
+	MockGetMemoryType       func() string
+	MockGetMemoryVariables  func(ctx context.Context, inputs map[string]interface{}) ([]string, error)
 }
 
 func (m *MockMemory) GetMemoryKey() string {
@@ -22,23 +24,23 @@ func (m *MockMemory) GetMemoryKey() string {
 	return "mock_memory_key"
 }
 
-func (m *MockMemory) LoadMemoryVariables(inputs map[string]interface{}) (map[string]interface{}, error) {
+func (m *MockMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error) {
 	if m.MockLoadMemoryVariables != nil {
-		return m.MockLoadMemoryVariables(inputs)
+		return m.MockLoadMemoryVariables(ctx, inputs)
 	}
 	return map[string]interface{}{"mock_loaded_var": "mock_value"}, nil
 }
 
-func (m *MockMemory) SaveContext(inputs map[string]interface{}, outputs map[string]string) error {
+func (m *MockMemory) SaveContext(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error { // MODIFIED HERE
 	if m.MockSaveContext != nil {
-		return m.MockSaveContext(inputs, outputs)
+		return m.MockSaveContext(ctx, inputs, outputs) // MODIFIED HERE
 	}
 	return nil
 }
 
-func (m *MockMemory) Clear() error {
+func (m *MockMemory) Clear(ctx context.Context) error {
 	if m.MockClear != nil {
-		return m.MockClear()
+		return m.MockClear(ctx)
 	}
 	return nil
 }
@@ -50,22 +52,23 @@ func TestMemoryInterface(t *testing.T) {
 
 	// Example of how to use the mock for a basic test
 	mockMem := &MockMemory{}
+	ctx := context.Background() // ADDED HERE
 
 	// Test GetMemoryKey
 	assert.Equal(t, "mock_memory_key", mockMem.GetMemoryKey())
 
 	// Test LoadMemoryVariables
-	loadedVars, err := mockMem.LoadMemoryVariables(nil)
+	loadedVars, err := mockMem.LoadMemoryVariables(ctx, nil) // MODIFIED HERE
 	assert.NoError(t, err)
 	assert.NotNil(t, loadedVars)
 	assert.Equal(t, "mock_value", loadedVars["mock_loaded_var"])
 
 	// Test SaveContext
-	err = mockMem.SaveContext(nil, nil)
+	err = mockMem.SaveContext(ctx, nil, nil) // MODIFIED HERE
 	assert.NoError(t, err)
 
 	// Test Clear
-	err = mockMem.Clear()
+	err = mockMem.Clear(context.Background())
 	assert.NoError(t, err)
 }
 
@@ -159,5 +162,24 @@ func TestGetPromptInputKey(t *testing.T) {
 	missingKey := "non_existent_key"
 	_, err = GetPromptInputKey(inputs, memoryVariables, &missingKey)
 	assert.Error(t, err)
+}
+
+
+
+
+func (m *MockMemory) GetMemoryType() string {
+	if m.MockGetMemoryType != nil {
+		return m.MockGetMemoryType()
+	}
+	return "mock_memory_type"
+}
+
+
+
+func (m *MockMemory) GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error) {
+	if m.MockGetMemoryVariables != nil {
+		return m.MockGetMemoryVariables(ctx, inputs)
+	}
+	return []string{"mock_memory_variable"}, nil
 }
 

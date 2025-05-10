@@ -35,28 +35,6 @@ func RegisterEmbedderProvider(name string, constructor EmbedderConstructor) {
 	embedderRegistry[name] = constructor
 }
 
-// NewEmbedderProvider creates an instance of an Embedder based on the provided global configuration.
-// It reads the embedder provider choice and uses the registry to find the appropriate constructor.
-func NewEmbedderProvider(appConfig *config.ViperProvider) (iface.Embedder, error) {
-	var factoryCfg EmbedderFactoryConfig
-	factoryCfg.Provider = appConfig.GetString("embeddings.provider")
-	if factoryCfg.Provider == "" && !appConfig.IsSet("embeddings.provider") {
-		// If GetString returns empty and it's not explicitly set to empty, it might mean the key is missing.
-		// Or, GetString might return a zero value if key is not found, depending on Viper's behavior / our wrapper.
-		// A more robust check is IsSet.
-		return nil, fmt.Errorf("embedding provider key 'embeddings.provider' not found in configuration")
-	}
-
-	if factoryCfg.Provider == "" {
-		return nil, fmt.Errorf("embedding provider not specified in configuration under 'embeddings.provider'")
-	}
-
-	constructor, ok := embedderRegistry[factoryCfg.Provider]
-	if !ok {
-		return nil, fmt.Errorf("unknown or unregistered embedding provider specified: %s", factoryCfg.Provider)
-	}
-
-	// The constructor is responsible for unmarshalling its own specific configuration.
-	return constructor(appConfig)
-}
+// NewEmbedderProvider function removed from this file to resolve redeclaration error.
+// The canonical version is in pkg/embeddings/provider.go
 

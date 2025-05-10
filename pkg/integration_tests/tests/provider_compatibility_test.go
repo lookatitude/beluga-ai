@@ -4,148 +4,218 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/factory" // Assuming an agent factory exists
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config"
-	"github.com/lookatitude/beluga-ai/pkg/embeddings"
-	"github.com/lookatitude/beluga-ai/pkg/llms/mock"
+	embeddingsfactory "github.com/lookatitude/beluga-ai/pkg/embeddings/factory"
+	llmsfactory "github.com/lookatitude/beluga-ai/pkg/llms/factory"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/mock" // Ensure mock LLM provider is registered
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	vectorstorefactory "github.com/lookatitude/beluga-ai/pkg/vectorstores/factory"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/inmemory" // Ensure inmemory vector store is registered
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/openai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore tests
-// the compatibility of MockLLM, OpenAIEmbedder, and InMemoryVectorStore through an agent execution flow.
+// createTempCompatTestConfigFile creates a temporary YAML configuration file for compatibility tests.
+func createTempCompatTestConfigFile(t *testing.T) (string, string, func()) {
+	t.Helper()
+	configContent := `
+llm_providers:
+  - name: "mock-chat-for-compat-test"
+    provider: "mock"
+    model_name: "mock-model"
+    api_key: "test-key"
+    provider_specific:
+      responses: 
+        - "I should use a tool for this."
+        - "Tool said: Echo: testing compatibility. The capital is Paris."
+
+embedding_providers:
+  - name: "openai-embed-for-compat-test"
+    provider: "openai"
+    model_name: "text-embedding-ada-002"
+    api_key: "sk-validkey123"
+
+vector_stores:
+  - name: "inmemory-vs-for-compat-test"
+    provider: "inmemory"
+
+agents:
+  - name: "test-compat-agent"
+    llm_provider_name: "mock-chat-for-compat-test"
+    memory_provider_name: "vectorstore-memory-for-compat" 
+    memory_type: "vectorstore"
+    memory_config_name: "vectorstore-memory-for-compat" 
+    tool_names:
+      - "EchoToolCompat"
+
+memory_configs:
+  - name: "vectorstore-memory-for-compat"
+    type: "vectorstore"
+    vector_store_name: "inmemory-vs-for-compat-test"
+    embedding_provider_name: "openai-embed-for-compat-test" 
+    input_key: "user_input"
+    output_key: "agent_output"
+    history_key: "conversation_history"
+    top_k: 2 
+
+tools:
+  - name: "EchoToolCompat"
+    provider: "EchoTool"
+    description: "Echoes input for compatibility test"
+`
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "test_compat_config.yaml")
+	err := os.WriteFile(configFile, []byte(configContent), 0600)
+	require.NoError(t, err)
+	return tempDir, "test_compat_config", func() { os.RemoveAll(tempDir) }
+}
+
+type SimpleToolRegistry struct {
+	tools map[string]tools.Tool
+}
+
+func NewSimpleToolRegistry() *SimpleToolRegistry {
+	return &SimpleToolRegistry{tools: make(map[string]tools.Tool)}
+}
+
+func (r *SimpleToolRegistry) RegisterTool(tool tools.Tool) error {
+	if _, exists := r.tools[tool.GetName()]; exists {
+		return fmt.Errorf("tool %s already registered", tool.GetName())
+	}
+	r.tools[tool.GetName()] = tool
+	return nil
+}
+
+func (r *SimpleToolRegistry) GetTool(name string) (tools.Tool, error) {
+	tool, exists := r.tools[name]
+	if !exists {
+		return nil, fmt.Errorf("tool %s not found", name)
+	}
+	return tool, nil
+}
+
 func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *testing.T) {
 	ctx := context.Background()
 
-	// 1. Setup Configuration
-	cfg := &config.Config{
-		LLMProviders: []config.LLMProviderConfig{
-			{Provider: "mockllm", Name: "mock-chat-for-compat-test", Model: "mock-model", APIKey: "test-key"},
-		},
-		EmbeddingProviders: []config.EmbeddingProviderConfig{
-			{Provider: "openai", Name: "openai-embed-for-compat-test", Model: "text-embedding-ada-002", APIKey: "sk-testkey-openai"},
-		},
-		VectorStores: []config.VectorStoreConfig{
-			{Provider: "inmemory", Name: "inmemory-vs-for-compat-test"},
-		},
-		Agents: []config.AgentConfig{
-			{
-				Name:           "test-compat-agent",
-				LLMProvider:    "mock-chat-for-compat-test",
-				EmbeddingModel: "openai-embed-for-compat-test", // Link to the embedder
-				Memory: config.MemoryConfig{
-					Type:             "vectorstore",
-					VectorStoreName:  "inmemory-vs-for-compat-test", // Link to the vector store
-					InputKey:         "user_input",
-					OutputKey:        "agent_output",
-					HistoryKey:       "conversation_history",
-					VectorStoreTopK:  2,
-				},
-				Tools: []string{"EchoToolCompat"},
-			},
-		},
-		Tools: []config.ToolConfig{
-			{Provider: "EchoTool", Name: "EchoToolCompat"},
-		},
-	}
+	tempDir, configName, cleanup := createTempCompatTestConfigFile(t)
+	defer cleanup()
 
-	// 2. Initialize Components
-	// Mock LLM (can be retrieved via a factory if available, or directly instantiated for tests)
-	mockLLM := mock.NewMockLLMProvider(mock.MockLLMConfig{ModelName: "mock-model"})
-	// Embedder
-	embedderFactory := embeddings.NewEmbedderFactory(cfg)
-	currentEmbedder, err := embedderFactory.GetEmbedder(ctx, "openai-embed-for-compat-test")
-	require.NoError(t, err)
+	// Set a dummy OpenAI API key environment variable for the test - this is a fallback, config should take precedence
+	const dummyEnvApiKey = "sk-envkeyshouldnotbeused"
+	originalApiKey := os.Getenv("OPENAI_API_KEY")
+	os.Setenv("OPENAI_API_KEY", dummyEnvApiKey)
+	defer os.Setenv("OPENAI_API_KEY", originalApiKey) 
+
+	vp, err := config.NewViperProvider(configName, []string{tempDir}, "BELUGA_COMPAT_TEST")
+	require.NoError(t, err, "Failed to create ViperProvider")
+	require.NotNil(t, vp, "ViperProvider is nil")
+
+	llmProviderFactory, err := llmsfactory.NewLLMProviderFactory(vp)
+	require.NoError(t, err, "Failed to create LLMProviderFactory")
+	mockLLM, err := llmProviderFactory.GetProvider("mock-chat-for-compat-test")
+	require.NoError(t, err, "Failed to get mock LLM provider")
+	require.NotNil(t, mockLLM, "Mock LLM provider is nil")
+
+	embedderProviderFactory, err := embeddingsfactory.NewEmbedderProviderFactory(vp)
+	require.NoError(t, err, "Failed to create EmbedderProviderFactory. Check factory logs for APIKey issues.")
+ 
+	currentEmbedder, err := embedderProviderFactory.GetProvider("openai-embed-for-compat-test")
+	require.NoError(t, err, "Failed to get OpenAI embedder provider from factory.")
 	require.NotNil(t, currentEmbedder)
 
-	// Vector Store
-	vsFactory, err := vectorstorefactory.NewVectorStoreFactory(cfg.VectorStores, cfg.EmbeddingProviders, embedderFactory)
-	require.NoError(t, err, "Failed to create vector store factory")
-	vs, err := vsFactory.GetVectorStore(ctx, "inmemory-vs-for-compat-test")
+	vsConfigs, err := vp.GetVectorStoresConfig()
+	require.NoError(t, err)
+	var targetVSConfig schema.VectorStoreConfig
+	foundVS := false
+	for _, vsCfg := range vsConfigs {
+		if vsCfg.Name == "inmemory-vs-for-compat-test" {
+			targetVSConfig = vsCfg
+			foundVS = true
+			break
+		}
+	}
+	require.True(t, foundVS, "Vector store config not found")
+
+	vsFactory := vectorstorefactory.NewVectorStoreFactory()
+	vs, err := vsFactory.Create(targetVSConfig.Provider, targetVSConfig.ProviderSpecific)
 	require.NoError(t, err)
 	require.NotNil(t, vs)
 
-	// Memory (VectorStoreMemory)
+	memInputKey := "user_input"
+	memOutputKey := "agent_output"
+	memHistoryKey := "conversation_history"
+	memTopK := 2
+
 	vectorStoreMemory := memory.NewVectorStoreMemory(
 		currentEmbedder,
 		vs,
-		memory.VectorStoreMemoryWithInputKey("user_input"),
-		memory.VectorStoreMemoryWithOutputKey("agent_output"),
-		memory.VectorStoreMemoryWithMemoryKey("conversation_history"),
-		memory.VectorStoreMemoryWithTopK(2),
+		memory.WithInputKey(memInputKey),
+		memory.WithOutputKey(memOutputKey),
+		memory.WithMemoryKey(memHistoryKey),
+		memory.WithK(memTopK),
 	)
 	require.NotNil(t, vectorStoreMemory)
 
-	// Tool Registry & Tools
-	toolRegistry := providers.NewToolRegistry()
-	echoTool := providers.NewEchoTool()
-	err = toolRegistry.RegisterTool(echoTool, "EchoToolCompat")
+	toolRegistry := NewSimpleToolRegistry()
+	echoToolCfg, err := vp.GetToolConfig("EchoToolCompat")
+	require.NoError(t, err, "Failed to get EchoToolCompat config")
+	echoTool, err := providers.NewEchoTool(echoToolCfg)
+	require.NoError(t, err, "Failed to create EchoTool")
+	err = toolRegistry.RegisterTool(echoTool)
 	require.NoError(t, err)
 
-	// Agent (Simplified instantiation for test - a full agent factory would use the config)
-	// For this test, we manually orchestrate like in phase1_agent_integration_test.go
-	// to focus on provider interactions within memory and tool use.
-
-	// --- Test Scenario ---
 	userInputPhrase := "What is the capital of France?"
-	memoryInput := map[string]interface{}{"user_input": userInputPhrase}
+	memoryInput := map[string]interface{}{memInputKey: userInputPhrase}
 
-	// 1. Save initial user message to VectorStoreMemory
-	err = vectorStoreMemory.SaveContext(ctx, memoryInput, map[string]interface{}{"agent_output": "Thinking..."}) // Simulate initial save
+	err = vectorStoreMemory.SaveContext(ctx, memoryInput, map[string]string{memOutputKey: "Thinking..."})
 	require.NoError(t, err, "Failed to save initial context to VectorStoreMemory")
 
-	// 2. Load memory - should retrieve the saved context via similarity search
-	loadedMemory, err := vectorStoreMemory.LoadMemoryVariables(ctx, memoryInput) // Provide input for potential retrieval context
+	loadedMemory, err := vectorStoreMemory.LoadMemoryVariables(ctx, memoryInput)
 	require.NoError(t, err, "Failed to load memory variables from VectorStoreMemory")
-	retrievedHistory, ok := loadedMemory["conversation_history"].(string) // VectorStoreMemory might return a string summary or formatted history
-	require.True(t, ok, "Memory did not return string for history. Got: %T", loadedMemory["conversation_history"])
+	retrievedHistory, ok := loadedMemory[memHistoryKey].(string)
+	require.True(t, ok, "Memory did not return string for history. Got: %T", loadedMemory[memHistoryKey])
 	assert.Contains(t, retrievedHistory, userInputPhrase, "Retrieved history should contain the user input")
 
-	// 3. Simulate LLM call proposing a tool
-	llmResponseWithToolCall := schema.NewAIChatMessage("I should use a tool for this.")
-	llmResponseWithToolCall.ToolCalls = []schema.ToolCall{
-		{ID: "tool-call-compat-123", Function: schema.ToolFunction{Name: "EchoToolCompat", Arguments: `{"input": "testing compatibility"}`}},
+	aiResponseString, err := mockLLM.Invoke(ctx, userInputPhrase)
+	require.NoError(t, err, "mockLLM.Invoke failed for initial query")
+	require.Equal(t, "I should use a tool for this.", aiResponseString, "Unexpected first LLM response")
+
+	constructedToolCall := schema.ToolCall{
+		ID: "tool-call-compat-123", 
+		Function: schema.FunctionCall{Name: "EchoToolCompat", Arguments: `{"input": "testing compatibility"}`},
 	}
 
-	// 4. Execute the tool
-	toolCall := llmResponseWithToolCall.ToolCalls[0]
+	toolToExecute, err := toolRegistry.GetTool(constructedToolCall.Function.Name)
+	require.NoError(t, err, "Failed to get EchoToolCompat from registry")
+	
 	var toolArgs map[string]interface{}
-	err = json.Unmarshal([]byte(toolCall.Function.Arguments), &toolArgs)
+	err = json.Unmarshal([]byte(constructedToolCall.Function.Arguments), &toolArgs)
 	require.NoError(t, err)
-	toolOutput, err := echoTool.Execute(ctx, toolArgs)
+	toolOutput, err := toolToExecute.Execute(ctx, toolArgs)
 	require.NoError(t, err)
 	assert.Equal(t, "Echo: testing compatibility", toolOutput)
 
-	// 5. Save tool observation and AI response to VectorStoreMemory
-	contextToSave := map[string]interface{}{
-		"user_input": userInputPhrase, // or the relevant input for this turn
-		// schema.ToolMessage and the AI's response would be part of the history saved
-	}
-	outputsToSave := map[string]interface{}{
-		"agent_output": fmt.Sprintf("Tool said: %s. The capital is Paris.", toolOutput), // Final AI response
-	}
+	contextToSave := map[string]interface{}{memInputKey: userInputPhrase} 
+	finalAnswer := "Tool said: Echo: testing compatibility. The capital is Paris." 
+	outputsToSave := map[string]string{memOutputKey: finalAnswer}
 	err = vectorStoreMemory.SaveContext(ctx, contextToSave, outputsToSave)
 	require.NoError(t, err, "Failed to save tool observation and AI response to VectorStoreMemory")
 
-	// 6. Load memory again to see if the new interaction is stored and retrievable
-	loadedMemoryAfterTool, err := vectorStoreMemory.LoadMemoryVariables(ctx, map[string]interface{}{"user_input": "Tell me about that tool use."}) 
+	loadedMemoryAfterTool, err := vectorStoreMemory.LoadMemoryVariables(ctx, map[string]interface{}{memInputKey: "Tell me about that tool use."})
 	require.NoError(t, err)
-	retrievedHistoryAfterTool, ok := loadedMemoryAfterTool["conversation_history"].(string)
+	retrievedHistoryAfterTool, ok := loadedMemoryAfterTool[memHistoryKey].(string)
 	require.True(t, ok)
 	assert.Contains(t, retrievedHistoryAfterTool, "testing compatibility", "Retrieved history should contain tool interaction details")
 	assert.Contains(t, retrievedHistoryAfterTool, "capital is Paris", "Retrieved history should contain final answer")
 
 	t.Log("Provider Compatibility Test (MockLLM, OpenAIEmbedder, InMemoryVectorStore) Passed!")
 }
-
-// TODO: Add more tests for other provider combinations as they become available and testable.
-// For example:
-// - TestProviderCompatibility_OpenAILLM_OpenAIEmbedder_PineconeVectorStore
-// - TestProviderCompatibility_AnthropicLLM_CohereEmbedder_WeaviateVectorStore (once those providers are added)
 

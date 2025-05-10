@@ -10,31 +10,18 @@ import (
 // Memory defines the interface for agent memory systems.
 // It allows agents to store and retrieve information from conversations or other sources.
 type Memory interface {
-	// GetMemoryVariables returns the keys of the variables that this memory class will return.
-	// For example, a BufferMemory might return {"history": "..."}.
 	GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error)
-
-	// LoadMemoryVariables retrieves the context from memory.
-	// The `inputs` map can provide additional context if needed by the memory type (e.g., session ID).
 	LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error)
-
-	// SaveContext stores the given context into memory.
-	// `inputs` are the original inputs to the LLM call, `outputs` are the LLM's response.
 	SaveContext(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error
-
-	// Clear removes all data from the memory.
 	Clear(ctx context.Context) error
-
-	// GetMemoryType returns a string identifier for the type of memory (e.g., "buffer", "vector_store").
 	GetMemoryType() string
 }
 
 // Config is a generic configuration structure for memory providers.
-// Specific providers can embed this and add their own fields.
 type Config struct {
-	Type         string                 // e.g., "buffer", "vector_store", "dynamodb_summary"
-	Name         string                 // A unique name for this memory configuration instance (optional, for lookup)
-	ProviderArgs map[string]interface{} // Provider-specific arguments
+	Type         string                 
+	Name         string                 
+	ProviderArgs map[string]interface{} 
 }
 
 // Factory defines the interface for creating Memory instances.
@@ -42,22 +29,115 @@ type Factory interface {
 	CreateMemory(ctx context.Context, config Config) (Memory, error)
 }
 
+// InputOutputKeys defines the keys for input and output variables in memory.
+type InputOutputKeys struct {
+	InputKey  string
+	OutputKey string
+}
+
+// DefaultInputKey is the default key for the input variable.
+const DefaultInputKey = "input"
+
+// DefaultOutputKey is the default key for the output variable.
+const DefaultOutputKey = "output"
+
+// BaseMemory provides a base implementation for memory types.
+// It handles common aspects like input/output keys and the memory key.
+type BaseMemory struct {
+	InputOutputKeys // Embed InputOutputKeys
+	MemoryKey       string
+}
+
+// NewBaseMemory creates a new BaseMemory instance.
+func NewBaseMemory(inputKey, outputKey, memoryKey string) *BaseMemory {
+	return &BaseMemory{
+		InputOutputKeys: InputOutputKeys{
+			InputKey:  inputKey,
+			OutputKey: outputKey,
+		},
+		MemoryKey: memoryKey,
+	}
+}
+
+// GetMemoryKey returns the memory key for this memory instance.
+func (bm *BaseMemory) GetMemoryKey() string {
+	return bm.MemoryKey
+}
+
+// GetInputOutputKeys determines the input and output keys to use.
+// If specific keys are provided, they are used; otherwise, defaults are used.
+func GetInputOutputKeys(inputKey, outputKey *string) InputOutputKeys {
+	keys := InputOutputKeys{}
+	if inputKey != nil {
+		keys.InputKey = *inputKey
+	} else {
+		keys.InputKey = DefaultInputKey
+	}
+	if outputKey != nil {
+		keys.OutputKey = *outputKey
+	} else {
+		keys.OutputKey = DefaultOutputKey
+	}
+	return keys
+}
+
+// GetPromptInputKey identifies the correct key for the prompt input from a map of inputs.
+// It ensures the chosen key is not one of the memory variables.
+func GetPromptInputKey(inputs map[string]interface{}, memoryVariables []string, inputKey *string) (string, error) {
+	if inputKey != nil {
+		// If a specific input key is provided, validate it.
+		for _, memVar := range memoryVariables {
+			if *inputKey == memVar {
+				return "", fmt.Errorf("input key \"%s\" is one of the memory variables %v", *inputKey, memoryVariables)
+			}
+		}
+		if _, ok := inputs[*inputKey]; !ok {
+			return "", fmt.Errorf("input key \"%s\" not found in inputs %v", *inputKey, inputs)
+		}
+		return *inputKey, nil
+	}
+
+	// If no input key is provided, try to infer it.
+	var candidateKeys []string
+	for k := range inputs {
+		isMemoryVar := false
+		for _, memVar := range memoryVariables {
+			if k == memVar {
+				isMemoryVar = true
+				break
+			}
+		}
+		if !isMemoryVar {
+			candidateKeys = append(candidateKeys, k)
+		}
+	}
+
+	if len(candidateKeys) == 1 {
+		return candidateKeys[0], nil
+	}
+	if len(candidateKeys) == 0 {
+		return "", fmt.Errorf("no input keys found that are not memory variables; inputs: %v, memory variables: %v", inputs, memoryVariables)
+	}
+	return "", fmt.Errorf("multiple input keys found %v; please specify an input key or ensure only one non-memory variable key exists", candidateKeys)
+}
+
+
 // BufferMemory is a simple in-memory buffer for storing conversation history.
 type BufferMemory struct {
-	ChatHistory    *schema.BaseChatHistory // Uses the BaseChatHistory struct from the schema package
-	ReturnMessages bool                    // If true, LoadMemoryVariables returns schema.Message objects, otherwise a formatted string.
-	InputKey       string                  // Key for the input variable in SaveContext, e.g., "input"
-	OutputKey      string                  // Key for the output variable in SaveContext, e.g., "output"
-	MemoryKey      string                  // Key under which the memory is stored and retrieved, e.g., "history"
+	ChatHistory    *schema.BaseChatHistory 
+	ReturnMessages bool                    
+	InputKey       string                  
+	OutputKey      string                  
+	MemoryKey      string                  
 }
 
 // NewBufferMemory creates a new BufferMemory.
 func NewBufferMemory(returnMessages bool, inputKey, outputKey, memoryKey string) *BufferMemory {
 	if memoryKey == "" {
-		memoryKey = "history" // Default memory key
+		memoryKey = "history" 
 	}
 	return &BufferMemory{
-		ChatHistory:    schema.NewBaseChatHistory(), // Initialize with empty history
+		ChatHistory:    schema.NewBaseChatHistory(), 
 		ReturnMessages: returnMessages,
 		InputKey:       inputKey,
 		OutputKey:      outputKey,
@@ -65,12 +145,10 @@ func NewBufferMemory(returnMessages bool, inputKey, outputKey, memoryKey string)
 	}
 }
 
-// GetMemoryVariables returns the key for the chat history.
 func (bm *BufferMemory) GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error) {
 	return []string{bm.MemoryKey}, nil
 }
 
-// LoadMemoryVariables retrieves the chat history.
 func (bm *BufferMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error) {
 	memory := make(map[string]interface{})
 	messages, err := bm.ChatHistory.Messages()
@@ -81,18 +159,15 @@ func (bm *BufferMemory) LoadMemoryVariables(ctx context.Context, inputs map[stri
 	if bm.ReturnMessages {
 		memory[bm.MemoryKey] = messages
 	} else {
-		// Format messages into a single string (simple concatenation for now)
 		var historyStr string
 		for _, msg := range messages {
-			// Ensure msg.Type and msg.Content are valid; msg.String() might be safer if it handles nil/empty gracefully
-			historyStr += fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()) // Use GetType() and GetContent()
+			historyStr += fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()) 
 		}
 		memory[bm.MemoryKey] = historyStr
 	}
 	return memory, nil
 }
 
-// SaveContext adds the input and output to the chat history.
 func (bm *BufferMemory) SaveContext(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error {
 	inputVal, okInput := inputs[bm.InputKey].(string)
 	outputVal, okOutput := outputs[bm.OutputKey]
@@ -115,17 +190,14 @@ func (bm *BufferMemory) SaveContext(ctx context.Context, inputs map[string]inter
 	return nil
 }
 
-// Clear resets the chat history.
 func (bm *BufferMemory) Clear(ctx context.Context) error {
 	bm.ChatHistory = schema.NewBaseChatHistory()
 	return nil
 }
 
-// GetMemoryType returns the type of this memory.
 func (bm *BufferMemory) GetMemoryType() string {
 	return "buffer"
 }
 
-// Ensure BufferMemory implements the Memory interface.
 var _ Memory = (*BufferMemory)(nil)
 

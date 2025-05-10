@@ -6,12 +6,24 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
-	// For a real implementation, a proper vector similarity library would be used.
-	// For this example, we will implement a naive cosine similarity.
+	vsfactory "github.com/lookatitude/beluga-ai/pkg/vectorstores/factory"
 )
+
+func init() {
+	vsfactory.Register("inmemory", func(config map[string]interface{}) (vectorstores.VectorStore, error) {
+		// For InMemoryVectorStore, the config might specify a default embedder name
+		// or other parameters. For now, we assume it might need an embedder, but
+		// the NewInMemoryVectorStore constructor takes an iface.Embedder directly.
+		// This factory function would need to resolve that embedder from a config name if specified.
+		// For simplicity in this example, we pass nil, meaning an embedder must be provided
+		// during AddDocuments or SimilaritySearchByQuery if not set at construction.
+		// A more robust implementation would fetch an embedder from an embedder factory if a name is in config.
+		return NewInMemoryVectorStore(nil), nil // Pass nil for embedder, to be set later or per-call
+	})
+}
 
 // InMemoryVectorStore is a simple in-memory implementation of the VectorStore interface.
 // It is not recommended for production use with large datasets due to performance and memory limitations.
@@ -19,13 +31,13 @@ type InMemoryVectorStore struct {
 	mu         sync.RWMutex
 	documents  []schema.Document
 	embeddings [][]float32
-	embedder   embeddings.Embedder // Store the embedder used if documents are added without pre-computed embeddings
+	embedder   iface.Embedder // Store the embedder used if documents are added without pre-computed embeddings
 	name       string
 }
 
 // NewInMemoryVectorStore creates a new InMemoryVectorStore.
 // Optionally, an embedder can be provided if documents will be added without pre-computed embeddings directly.
-func NewInMemoryVectorStore(embedder embeddings.Embedder) *InMemoryVectorStore {
+func NewInMemoryVectorStore(embedder iface.Embedder) *InMemoryVectorStore {
 	return &InMemoryVectorStore{
 		documents:  make([]schema.Document, 0),
 		embeddings: make([][]float32, 0),
@@ -36,7 +48,7 @@ func NewInMemoryVectorStore(embedder embeddings.Embedder) *InMemoryVectorStore {
 
 // AddDocuments adds documents to the store. If an embedder was provided at construction or here,
 // it will be used to generate embeddings. Otherwise, embeddings must be pre-computed and present in docs.
-func (s *InMemoryVectorStore) AddDocuments(ctx context.Context, docs []schema.Document, embedder embeddings.Embedder) error {
+func (s *InMemoryVectorStore) AddDocuments(ctx context.Context, docs []schema.Document, embedder iface.Embedder) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -63,7 +75,6 @@ func (s *InMemoryVectorStore) AddDocuments(ctx context.Context, docs []schema.Do
 			}
 			docEmbedding = embeds[0]
 		} else {
-			// This case should be caught by the check above, but as a safeguard:
 			return fmt.Errorf("document 	%s	 has no embedding and no embedder is available", doc.ID)
 		}
 
@@ -100,7 +111,6 @@ func (s *InMemoryVectorStore) SimilaritySearch(ctx context.Context, queryVector 
 		scores[i] = scoreDoc{doc: s.documents[i], score: score, index: i}
 	}
 
-	// Sort by score in descending order
 	sort.Slice(scores, func(i, j int) bool {
 		return scores[i].score > scores[j].score
 	})
@@ -121,7 +131,7 @@ func (s *InMemoryVectorStore) SimilaritySearch(ctx context.Context, queryVector 
 }
 
 // SimilaritySearchByQuery generates an embedding for the query and then performs a similarity search.
-func (s *InMemoryVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder embeddings.Embedder) ([]schema.Document, []float32, error) {
+func (s *InMemoryVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder iface.Embedder) ([]schema.Document, []float32, error) {
 	currentEmbedder := s.embedder
 	if embedder != nil {
 		currentEmbedder = embedder
@@ -143,8 +153,6 @@ func (s *InMemoryVectorStore) GetName() string {
 	return s.name
 }
 
-// cosineSimilarity calculates the cosine similarity between two vectors.
-// A proper vector library should be used for optimized calculations in production.
 func cosineSimilarity(a, b []float32) (float32, error) {
 	if len(a) != len(b) {
 		return 0, fmt.Errorf("vectors have different lengths: %d vs %d", len(a), len(b))
@@ -170,16 +178,13 @@ func cosineSimilarity(a, b []float32) (float32, error) {
 	return dotProduct / (sqrt(normA) * sqrt(normB)), nil
 }
 
-// sqrt is a simple float32 square root for demonstration.
-// math.Sqrt operates on float64.
 func sqrt(n float32) float32 {
 	if n < 0 {
-		return 0 // Or handle error appropriately
+		return 0
 	}
-	// Basic Newton-Raphson for float32, not highly accurate but illustrative
 	x := n
 	y := float32(1.0)
-	e := float32(0.000001) // Desired precision
+	e := float32(0.000001)
 	for (x - y) > e {
 		x = (x + y) / 2
 		y = n / x
@@ -187,6 +192,5 @@ func sqrt(n float32) float32 {
 	return x
 }
 
-// Ensure InMemoryVectorStore implements the VectorStore interface.
 var _ vectorstores.VectorStore = (*InMemoryVectorStore)(nil)
 
