@@ -1,7 +1,7 @@
 package agents
 
 import (
-	"github.com/lookatitude/github.com/lookatitude/beluga-ai/pkg/interfaces"
+	"github.com/lookatitude/beluga-ai/pkg/interfaces"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
