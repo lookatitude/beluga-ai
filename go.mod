@@ -14,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/jltobler/go-rcon v0.3.0
+	github.com/lib/pq v1.10.9
 	github.com/ollama/ollama v0.6.8
 	github.com/pgvector/pgvector-go v0.3.0
 	github.com/sashabaranov/go-openai v1.39.1

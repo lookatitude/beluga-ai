@@ -6,30 +6,52 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+
+	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 )
 
-// MockEmbedderConfig holds configuration for the MockEmbedder.
-type MockEmbedderConfig struct {
-	Dimension    int
-	Seed         int64 // Seed for deterministic random number generation
-	RandomizeNil bool  // If true, returns nil for empty texts, otherwise error
+func init() {
+	RegisterEmbedderProvider(ProviderMock, func(appConfig *config.ViperProvider) (iface.Embedder, error) {
+		var mockCfg config.MockEmbedderConfig
+
+		// Populate mockCfg field by field using ViperProvider methods
+		// NewMockEmbedder handles defaulting for Dimension if it's 0.
+		mockCfg.Dimension = appConfig.GetInt("embeddings.mock.dimension")
+		mockCfg.Seed = int64(appConfig.GetInt("embeddings.mock.seed")) // Viper GetInt returns int
+		mockCfg.RandomizeNil = appConfig.GetBool("embeddings.mock.randomize_nil")
+
+		// If specific keys are absolutely required and not defaulted by NewMockEmbedder,
+		// you might add checks here using appConfig.IsSet(), for example:
+		// if !appConfig.IsSet("embeddings.mock.dimension") {
+		// 	 fmt.Println("Warning: embeddings.mock.dimension not explicitly set, relying on NewMockEmbedder defaults or zero value.")
+		// }
+
+		return NewMockEmbedder(mockCfg)
+	})
 }
 
 // MockEmbedder is an implementation of Embedder that returns mock embeddings.
 // Useful for testing and development purposes.
 type MockEmbedder struct {
-	config MockEmbedderConfig
+	config config.MockEmbedderConfig
 	rand   *rand.Rand
 }
 
 // NewMockEmbedder creates a new MockEmbedder with the given configuration.
-func NewMockEmbedder(config MockEmbedderConfig) (*MockEmbedder, error) {
-	if config.Dimension <= 0 {
-		return nil, fmt.Errorf("dimension must be positive, got %d", config.Dimension)
+func NewMockEmbedder(cfg config.MockEmbedderConfig) (*MockEmbedder, error) {
+	if cfg.Dimension < 0 {
+		return nil, fmt.Errorf("dimension must be non-negative, got %d", cfg.Dimension)
 	}
+	// Default dimension if not set or set to 0 by config
+	if cfg.Dimension == 0 {
+		fmt.Println("Warning: MockEmbedder.Dimension is 0 from config, defaulting to 128.")
+		cfg.Dimension = 128
+	}
+
 	return &MockEmbedder{
-		config: config,
-		rand:   rand.New(rand.NewSource(config.Seed)),
+		config: cfg,
+		rand:   rand.New(rand.NewSource(cfg.Seed)),
 	}, nil
 }
 
@@ -81,12 +103,9 @@ func (m *MockEmbedder) GetDimension(_ context.Context) (int, error) {
 }
 
 // generateMockEmbedding creates a deterministic embedding based on the text content and seed.
-// This ensures that the same text always produces the same mock embedding for a given seed.
 func (m *MockEmbedder) generateMockEmbedding(text string) []float32 {
 	embedding := make([]float32, m.config.Dimension)
-	
-	// Use a hash of the text to seed a local random generator for this specific text
-	// This makes the embedding deterministic based on text content, but still pseudo-random looking.
+
 	h := sha256.New()
 	h.Write([]byte(text))
 	hashBytes := h.Sum(nil)
@@ -95,22 +114,18 @@ func (m *MockEmbedder) generateMockEmbedding(text string) []float32 {
 	if len(hashBytes) >= 8 {
 		seed = int64(binary.BigEndian.Uint64(hashBytes[:8]))
 	} else {
-		// Fallback for very short hashes (should not happen with SHA256)
 		var tempBytes [8]byte
 		copy(tempBytes[:], hashBytes)
 		seed = int64(binary.BigEndian.Uint64(tempBytes[:]))
 	}
 
-	// Add the global seed to ensure different MockEmbedder instances can produce different results for the same text if desired.
 	localRand := rand.New(rand.NewSource(m.config.Seed + seed))
 
 	for i := 0; i < m.config.Dimension; i++ {
-		// Generate a float between -1.0 and 1.0
 		embedding[i] = localRand.Float32()*2 - 1
 	}
 	return embedding
 }
 
-// Ensure MockEmbedder implements the Embedder interface.
-var _ Embedder = (*MockEmbedder)(nil)
+var _ iface.Embedder = (*MockEmbedder)(nil)
 

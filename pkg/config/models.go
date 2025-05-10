@@ -30,3 +30,12 @@ type OpenAIEmbedderConfig struct {
 	Timeout     int    `mapstructure:"timeout_seconds"`
 }
 
+
+
+// MockEmbedderConfig holds configuration for the Mock Embedder.
+type MockEmbedderConfig struct {
+	Dimension    int   `mapstructure:"dimension"`
+	Seed         int64 `mapstructure:"seed"`
+	RandomizeNil bool  `mapstructure:"randomize_nil"`
+}
+

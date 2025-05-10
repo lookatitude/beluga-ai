@@ -5,70 +5,78 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewMockEmbedder(t *testing.T) {
 	t.Run("ValidConfig", func(t *testing.T) {
-		config := MockEmbedderConfig{
+		cfg := config.MockEmbedderConfig{
 			Dimension: 10,
 			Seed:      123,
 		}
-		embedder, err := NewMockEmbedder(config)
+		embedder, err := NewMockEmbedder(cfg)
 		require.NoError(t, err)
 		require.NotNil(t, embedder)
-		assert.Equal(t, config.Dimension, embedder.config.Dimension)
-		assert.Equal(t, config.Seed, embedder.config.Seed)
+		assert.Equal(t, cfg.Dimension, embedder.config.Dimension)
+		assert.Equal(t, cfg.Seed, embedder.config.Seed)
 	})
 
-	t.Run("InvalidDimension", func(t *testing.T) {
-		config := MockEmbedderConfig{
+	t.Run("InvalidDimensionZero", func(t *testing.T) {
+		cfg := config.MockEmbedderConfig{
 			Dimension: 0,
 			Seed:      123,
 		}
-		_, err := NewMockEmbedder(config)
-		require.Error(t, err)
-		assert.Contains(t, err.Error(), "dimension must be positive")
+		// NewMockEmbedder now defaults Dimension 0 to 128, so no error is expected here.
+		embedder, err := NewMockEmbedder(cfg)
+		require.NoError(t, err) 
+		require.NotNil(t, embedder)
+		assert.Equal(t, 128, embedder.config.Dimension) // Check it defaulted
+	})
 
-		config.Dimension = -5
-		_, err = NewMockEmbedder(config)
+	t.Run("InvalidDimensionNegative", func(t *testing.T) {
+		cfg := config.MockEmbedderConfig{
+			Dimension: -5,
+			Seed:      123,
+		}
+		_, err := NewMockEmbedder(cfg)
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "dimension must be positive")
+		assert.Contains(t, err.Error(), "dimension must be non-negative")
 	})
 }
 
 func TestMockEmbedder_GetDimension(t *testing.T) {
-	config := MockEmbedderConfig{Dimension: 128, Seed: 1}
-	embedder, _ := NewMockEmbedder(config)
+	cfg := config.MockEmbedderConfig{Dimension: 128, Seed: 1}
+	embedder, _ := NewMockEmbedder(cfg)
 	dim, err := embedder.GetDimension(context.Background())
 	require.NoError(t, err)
 	assert.Equal(t, 128, dim)
 }
 
 func TestMockEmbedder_EmbedQuery(t *testing.T) {
-	config := MockEmbedderConfig{Dimension: 5, Seed: 42}
-	embedder, _ := NewMockEmbedder(config)
+	cfg := config.MockEmbedderConfig{Dimension: 5, Seed: 42}
+	embedder, _ := NewMockEmbedder(cfg)
 
 	t.Run("ValidQuery", func(t *testing.T) {
 		query := "hello world"
 		embedding, err := embedder.EmbedQuery(context.Background(), query)
 		require.NoError(t, err)
 		require.NotNil(t, embedding)
-		assert.Len(t, embedding, config.Dimension)
+		assert.Len(t, embedding, cfg.Dimension)
 	})
 
 	t.Run("EmptyQueryError", func(t *testing.T) {
-		configError := MockEmbedderConfig{Dimension: 5, Seed: 42, RandomizeNil: false}
-		embedderError, _ := NewMockEmbedder(configError)
+		cfgError := config.MockEmbedderConfig{Dimension: 5, Seed: 42, RandomizeNil: false}
+		embedderError, _ := NewMockEmbedder(cfgError)
 		_, err := embedderError.EmbedQuery(context.Background(), "")
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot embed empty query text")
 	})
 
 	t.Run("EmptyQueryNil", func(t *testing.T) {
-		configNil := MockEmbedderConfig{Dimension: 5, Seed: 42, RandomizeNil: true}
-		embedderNil, _ := NewMockEmbedder(configNil)
+		cfgNil := config.MockEmbedderConfig{Dimension: 5, Seed: 42, RandomizeNil: true}
+		embedderNil, _ := NewMockEmbedder(cfgNil)
 		embedding, err := embedderNil.EmbedQuery(context.Background(), "")
 		require.NoError(t, err)
 		assert.Nil(t, embedding)
@@ -83,8 +91,8 @@ func TestMockEmbedder_EmbedQuery(t *testing.T) {
 
 	t.Run("DifferentOutputDifferentSeed", func(t *testing.T) {
 		query := "test query"
-		config2 := MockEmbedderConfig{Dimension: 5, Seed: 43} // Different seed
-		embedder2, _ := NewMockEmbedder(config2)
+		cfg2 := config.MockEmbedderConfig{Dimension: 5, Seed: 43} // Different seed
+		embedder2, _ := NewMockEmbedder(cfg2)
 		embedding1, _ := embedder.EmbedQuery(context.Background(), query)
 		embedding2, _ := embedder2.EmbedQuery(context.Background(), query)
 		assert.NotEqual(t, embedding1, embedding2)
@@ -108,8 +116,8 @@ func TestMockEmbedder_EmbedQuery(t *testing.T) {
 }
 
 func TestMockEmbedder_EmbedDocuments(t *testing.T) {
-	config := MockEmbedderConfig{Dimension: 3, Seed: 77}
-	embedder, _ := NewMockEmbedder(config)
+	cfg := config.MockEmbedderConfig{Dimension: 3, Seed: 77}
+	embedder, _ := NewMockEmbedder(cfg)
 
 	t.Run("ValidDocuments", func(t *testing.T) {
 		docs := []string{"doc1", "doc2", "another document"}
@@ -117,7 +125,7 @@ func TestMockEmbedder_EmbedDocuments(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, embeddings, len(docs))
 		for _, emb := range embeddings {
-			assert.Len(t, emb, config.Dimension)
+			assert.Len(t, emb, cfg.Dimension)
 		}
 	})
 
@@ -128,8 +136,8 @@ func TestMockEmbedder_EmbedDocuments(t *testing.T) {
 	})
 
 	t.Run("EmptyDocumentInListError", func(t *testing.T) {
-		configError := MockEmbedderConfig{Dimension: 3, Seed: 77, RandomizeNil: false}
-		embedderError, _ := NewMockEmbedder(configError)
+		cfgError := config.MockEmbedderConfig{Dimension: 3, Seed: 77, RandomizeNil: false}
+		embedderError, _ := NewMockEmbedder(cfgError)
 		docs := []string{"doc1", "", "doc3"}
 		_, err := embedderError.EmbedDocuments(context.Background(), docs)
 		require.Error(t, err)
@@ -137,8 +145,8 @@ func TestMockEmbedder_EmbedDocuments(t *testing.T) {
 	})
 
 	t.Run("EmptyDocumentInListNil", func(t *testing.T) {
-		configNil := MockEmbedderConfig{Dimension: 3, Seed: 77, RandomizeNil: true}
-		embedderNil, _ := NewMockEmbedder(configNil)
+		cfgNil := config.MockEmbedderConfig{Dimension: 3, Seed: 77, RandomizeNil: true}
+		embedderNil, _ := NewMockEmbedder(cfgNil)
 		docs := []string{"doc1", "", "doc3"}
 		embeddings, err := embedderNil.EmbedDocuments(context.Background(), docs)
 		require.NoError(t, err)
