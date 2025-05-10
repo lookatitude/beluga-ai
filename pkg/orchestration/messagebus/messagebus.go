@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sync"
-
-	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // Message represents a generic message that can be passed on the bus.
@@ -18,10 +16,12 @@ type Message struct {
 }
 
 // HandlerFunc is a function type that processes a message.
-// It receives the context and the message.	ype HandlerFunc func(ctx context.Context, msg Message) error
+// It receives the context and the message.
+type HandlerFunc func(ctx context.Context, msg Message) error
 
 // MessageBus defines the interface for an asynchronous message passing system.
-// This allows different components of the AI framework to communicate in a decoupled manner.	ype MessageBus interface {
+// This allows different components of the AI framework to communicate in a decoupled manner.
+type MessageBus interface {
 	// Publish sends a message to a specific topic.
 	Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error
 
@@ -68,12 +68,15 @@ func NewInMemoryMessageBus() *InMemoryMessageBus {
 // Publish sends a message to all subscribers of the topic.
 // In this simple implementation, handlers are called synchronously.
 func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error {
-	imb.mu.RLock()
-	defer imb.mu.RUnlock()
+	imb.mu.Lock() // Changed from RLock to Lock to allow modification of nextSubID
+	defer imb.mu.Unlock()
+
+	msgID := imb.nextSubID // Get current ID
+	imb.nextSubID++        // Increment for the next message or subscriber
 
 	msg := Message{
 		// ID should be generated, e.g., using uuid.NewString()
-		ID:       fmt.Sprintf("msg-%d", imb.nextSubID), // Simple ID for now
+		ID:       fmt.Sprintf("msg-%d", msgID), // Use the captured msgID
 		Topic:    topic,
 		Payload:  payload,
 		Metadata: metadata,

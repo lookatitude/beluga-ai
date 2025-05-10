@@ -8,7 +8,8 @@ import (
 
 // KeyValueStore defines a generic interface for a simple key-value store.
 // This can be used for various purposes, such as caching, session management,
-// or storing small pieces of data.	ype KeyValueStore interface {
+// or storing small pieces of data.
+type KeyValueStore interface {
 	// Get retrieves a value by its key.
 	// Returns the value and true if the key exists, otherwise nil and false.
 	Get(ctx context.Context, key string) (interface{}, bool, error)
