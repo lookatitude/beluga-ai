@@ -67,3 +67,14 @@ func (a *BaseAgent) GetOutputKeys() []string {
 	return a.OutputKeys
 }
 
+
+
+
+// Execute performs the actions determined by the Plan method.
+// This is a placeholder and should be implemented by specific agent types
+// that embed BaseAgent or by BaseAgent itself if it has a default execution logic.
+func (a *BaseAgent) Execute(actions []tools.ToolAgentAction) (schema.Message, error) {
+	// Placeholder implementation. Specific agents should override this.
+	return schema.NewMessage("BaseAgent Execute method not implemented", schema.SystemMessageType), nil
+}
+
