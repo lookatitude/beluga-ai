@@ -19,3 +19,14 @@ type ComponentConfig struct {
 	Timeout int    `mapstructure:"timeout_seconds"`
 }
 
+
+
+// OpenAIEmbedderConfig holds configuration for the OpenAI Embedder.
+type OpenAIEmbedderConfig struct {
+	APIKey      string `mapstructure:"api_key"`
+	Model       string `mapstructure:"model"`         // e.g., "text-embedding-ada-002"
+	APIVersion  string `mapstructure:"api_version"`   // Optional: For Azure OpenAI
+	APIEndpoint string `mapstructure:"api_endpoint"` // Optional: For Azure OpenAI or other proxies
+	Timeout     int    `mapstructure:"timeout_seconds"`
+}
+
