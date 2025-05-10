@@ -5,104 +5,142 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/pkg/schema" // Assuming schema.Message is defined
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// MessageHandler defines the function signature for handling messages.
-type MessageHandler func(ctx context.Context, message schema.Message) error
+// Message represents a generic message that can be passed on the bus.
+// It includes a topic, a payload, and optional metadata.
+type Message struct {
+	ID       string                 // Unique ID for the message (e.g., UUID)
+	Topic    string                 // The topic this message belongs to (e.g., "agent.action", "task.status")
+	Payload  interface{}            // The actual content of the message (can be any struct, e.g., schema.AgentAction)
+	Metadata map[string]interface{} // Optional metadata (e.g., timestamp, source_agent_id)
+}
 
-// MessageBus defines the interface for a message bus system.
-// It allows for publishing messages to topics and subscribing to topics to receive messages.
-type MessageBus interface {
+// HandlerFunc is a function type that processes a message.
+// It receives the context and the message.	ype HandlerFunc func(ctx context.Context, msg Message) error
+
+// MessageBus defines the interface for an asynchronous message passing system.
+// This allows different components of the AI framework to communicate in a decoupled manner.	ype MessageBus interface {
 	// Publish sends a message to a specific topic.
-	Publish(ctx context.Context, topic string, message schema.Message) error
-	// Subscribe registers a handler for a specific topic.
-	// Multiple handlers can be registered for the same topic.
-	Subscribe(topic string, handler MessageHandler) error
-	// Unsubscribe removes a handler for a specific topic.
-	// This might be more complex in a real system, e.g., requiring a subscription ID.
-	// Unsubscribe(topic string, handler MessageHandler) error 
-	// Start starts the message bus processing (if applicable, e.g., for background dispatching).
+	Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error
+
+	// Subscribe registers a handler function for a given topic.
+	// Multiple handlers can subscribe to the same topic.
+	// The subscriberID is returned and can be used to unsubscribe.
+	Subscribe(ctx context.Context, topic string, handler HandlerFunc) (string, error)
+
+	// Unsubscribe removes a handler for a given topic using its subscriberID.
+	Unsubscribe(ctx context.Context, topic string, subscriberID string) error
+
+	// Start begins processing messages. This might be a no-op for some implementations.
 	Start(ctx context.Context) error
-	// Stop gracefully shuts down the message bus.
-	Stop() error
+
+	// Stop gracefully shuts down the message bus, ensuring all pending messages are processed if possible.
+	Stop(ctx context.Context) error
+
+	// GetName returns the name of the message bus provider (e.g., "inmemory", "kafka", "redis").
+	GetName() string
 }
 
 // InMemoryMessageBus is a simple in-memory implementation of the MessageBus interface.
 // It is suitable for single-process applications or testing.
-// For distributed systems, a more robust message bus like Kafka, RabbitMQ, or NATS would be used.
 type InMemoryMessageBus struct {
-	subscribers map[string][]MessageHandler
 	mu          sync.RWMutex
-	stopChan    chan struct{}
+	subscribers map[string]map[string]HandlerFunc // topic -> subscriberID -> handler
+	nextSubID   int
+	name        string
+	stopChan    chan struct{} // Channel to signal stop
+	// For a more robust in-memory bus, a buffered channel per topic or a central dispatcher goroutine would be used.
+	// This version directly calls handlers upon publish for simplicity.
 }
 
 // NewInMemoryMessageBus creates a new InMemoryMessageBus.
 func NewInMemoryMessageBus() *InMemoryMessageBus {
 	return &InMemoryMessageBus{
-		subscribers: make(map[string][]MessageHandler),
+		subscribers: make(map[string]map[string]HandlerFunc),
+		nextSubID:   1,
+		name:        "inmemory",
 		stopChan:    make(chan struct{}),
 	}
 }
 
-// Publish sends a message to all subscribers of a topic.
-// In this in-memory implementation, handlers are called synchronously.
-// A more advanced bus might use goroutines for asynchronous dispatch.
-func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, message schema.Message) error {
+// Publish sends a message to all subscribers of the topic.
+// In this simple implementation, handlers are called synchronously.
+func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error {
 	imb.mu.RLock()
 	defer imb.mu.RUnlock()
 
-	handlers, ok := imb.subscribers[topic]
-	if !ok {
-		// No subscribers for this topic, or handle as an error if required
-		fmt.Printf("No subscribers for topic: %s\n", topic)
-		return nil
+	msg := Message{
+		// ID should be generated, e.g., using uuid.NewString()
+		ID:       fmt.Sprintf("msg-%d", imb.nextSubID), // Simple ID for now
+		Topic:    topic,
+		Payload:  payload,
+		Metadata: metadata,
 	}
 
-	for _, handler := range handlers {
-		// In a production system, consider error handling and recovery per handler.
-		// Also, consider if handlers should be called concurrently.
-		err := handler(ctx, message)
-		if err != nil {
-			fmt.Printf("Error handling message on topic %s: %v\n", topic, err)
-			// Continue to other handlers or return error based on requirements
+	if topicSubscribers, ok := imb.subscribers[topic]; ok {
+		for _, handler := range topicSubscribers {
+			// In a real async bus, this would be non-blocking (e.g., send to a channel for the handler goroutine)
+			go func(h HandlerFunc, m Message) { // Execute handler in a new goroutine for pseudo-asynchronicity
+				err := h(ctx, m)
+				if err != nil {
+					// TODO: Add proper logging for handler errors
+					fmt.Printf("InMemoryMessageBus: error in handler for topic %s: %v\n", m.Topic, err)
+				}
+			}(handler, msg)
 		}
 	}
 	return nil
 }
 
-// Subscribe registers a handler for a specific topic.
-func (imb *InMemoryMessageBus) Subscribe(topic string, handler MessageHandler) error {
+// Subscribe registers a handler for a topic.
+func (imb *InMemoryMessageBus) Subscribe(ctx context.Context, topic string, handler HandlerFunc) (string, error) {
 	imb.mu.Lock()
 	defer imb.mu.Unlock()
 
-	imb.subscribers[topic] = append(imb.subscribers[topic], handler)
-	fmt.Printf("Handler subscribed to topic: %s\n", topic)
+	if _, ok := imb.subscribers[topic]; !ok {
+		imb.subscribers[topic] = make(map[string]HandlerFunc)
+	}
+
+	subscriberID := fmt.Sprintf("sub-%d", imb.nextSubID)
+	imb.nextSubID++
+	imb.subscribers[topic][subscriberID] = handler
+	return subscriberID, nil
+}
+
+// Unsubscribe removes a handler from a topic.
+func (imb *InMemoryMessageBus) Unsubscribe(ctx context.Context, topic string, subscriberID string) error {
+	imb.mu.Lock()
+	defer imb.mu.Unlock()
+
+	if topicSubscribers, ok := imb.subscribers[topic]; ok {
+		delete(topicSubscribers, subscriberID)
+		if len(topicSubscribers) == 0 {
+			delete(imb.subscribers, topic)
+		}
+	}
 	return nil
 }
 
-// Start for InMemoryMessageBus is a no-op as publishing is synchronous.
-// It can be extended if background processing is added.
+// Start is a no-op for this simple synchronous in-memory bus.
 func (imb *InMemoryMessageBus) Start(ctx context.Context) error {
-	fmt.Println("In-memory message bus started (synchronous dispatch).")
-	// Keep running until context is done or stop is called
-	go func() {
-		select {
-		case <-ctx.Done():
-			fmt.Println("Message bus context cancelled, stopping.")
-			return
-		case <-imb.stopChan:
-			fmt.Println("Message bus received stop signal.")
-			return
-		}
-	}()
+	// For a more complex bus, this would start worker goroutines, etc.
 	return nil
 }
 
 // Stop signals the message bus to stop.
-func (imb *InMemoryMessageBus) Stop() error {
+func (imb *InMemoryMessageBus) Stop(ctx context.Context) error {
 	close(imb.stopChan)
-	fmt.Println("In-memory message bus stop requested.")
+	// Add any cleanup logic if necessary
 	return nil
 }
+
+// GetName returns the name of the message bus.
+func (imb *InMemoryMessageBus) GetName() string {
+	return imb.name
+}
+
+// Ensure InMemoryMessageBus implements the MessageBus interface.
+var _ MessageBus = (*InMemoryMessageBus)(nil)
 
