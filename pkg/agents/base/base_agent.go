@@ -1,6 +1,7 @@
 package base
 
 import (
+	"fmt"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
