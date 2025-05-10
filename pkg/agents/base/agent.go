@@ -10,8 +10,8 @@ import (
 )
 
 // Agent defines the interface for an AI agent.
-// Agents are responsible for planning and executing tasks to achieve a goal.	ype Agent interface {
-	// Plan generates a sequence of steps (actions or direct LLM calls) based on the input and intermediate steps.
+// Agents are responsible for planning and executing tasks to achieve a goal.
+type Agent interface {	// Plan generates a sequence of steps (actions or direct LLM calls) based on the input and intermediate steps.
 	Plan(ctx context.Context, inputs map[string]interface{}, intermediateSteps []schema.Step) ([]schema.Step, error)
 
 	// Execute runs the planned steps. This is typically delegated to an AgentExecutor.

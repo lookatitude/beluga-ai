@@ -2,12 +2,14 @@ package llms
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // LLM defines the interface for a Large Language Model.
-// It provides methods for invoking the model and potentially for streaming responses.	ype LLM interface {
+// It provides methods for invoking the model and potentially for streaming responses.
+type LLM interface {
 	// Invoke sends a single request to the LLM and gets a single response.
 	// The input prompt can be a simple string or a more complex structure depending on the model.
 	// callOptions can be used to override default model parameters like temperature, max_tokens, etc.
@@ -27,7 +29,8 @@ import (
 }
 
 // LLMFactory defines the interface for creating LLM instances.
-// This allows for different LLM providers to be instantiated based on configuration.	ype LLMFactory interface {
+// This allows for different LLM providers to be instantiated based on configuration.
+type LLMFactory interface {
 	CreateLLM(ctx context.Context, config schema.LLMProviderConfig) (LLM, error)
 }
 

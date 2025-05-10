@@ -8,7 +8,8 @@ import (
 )
 
 // Memory defines the interface for agent memory systems.
-// It allows agents to store and retrieve information from conversations or other sources.	ype Memory interface {
+// It allows agents to store and retrieve information from conversations or other sources.
+type Memory interface {
 	// GetMemoryVariables returns the keys of the variables that this memory class will return.
 	// For example, a BufferMemory might return {"history": "..."}.
 	GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error)
@@ -36,17 +37,18 @@ type Config struct {
 	ProviderArgs map[string]interface{} // Provider-specific arguments
 }
 
-// Factory defines the interface for creating Memory instances.	ype Factory interface {
+// Factory defines the interface for creating Memory instances.
+type Factory interface {
 	CreateMemory(ctx context.Context, config Config) (Memory, error)
 }
 
 // BufferMemory is a simple in-memory buffer for storing conversation history.
 type BufferMemory struct {
-	ChatHistory *schema.ChatHistory // Uses the ChatHistory struct from the schema package
-	ReturnMessages bool             // If true, LoadMemoryVariables returns schema.Message objects, otherwise a formatted string.
-	InputKey    string              // Key for the input variable in SaveContext, e.g., "input"
-	OutputKey   string              // Key for the output variable in SaveContext, e.g., "output"
-	MemoryKey   string              // Key under which the memory is stored and retrieved, e.g., "history"
+	ChatHistory    *schema.BaseChatHistory // Uses the BaseChatHistory struct from the schema package
+	ReturnMessages bool                    // If true, LoadMemoryVariables returns schema.Message objects, otherwise a formatted string.
+	InputKey       string                  // Key for the input variable in SaveContext, e.g., "input"
+	OutputKey      string                  // Key for the output variable in SaveContext, e.g., "output"
+	MemoryKey      string                  // Key under which the memory is stored and retrieved, e.g., "history"
 }
 
 // NewBufferMemory creates a new BufferMemory.
@@ -55,7 +57,7 @@ func NewBufferMemory(returnMessages bool, inputKey, outputKey, memoryKey string)
 		memoryKey = "history" // Default memory key
 	}
 	return &BufferMemory{
-		ChatHistory:    schema.NewChatHistory(nil), // Initialize with empty history
+		ChatHistory:    schema.NewBaseChatHistory(), // Initialize with empty history
 		ReturnMessages: returnMessages,
 		InputKey:       inputKey,
 		OutputKey:      outputKey,
@@ -71,13 +73,19 @@ func (bm *BufferMemory) GetMemoryVariables(ctx context.Context, inputs map[strin
 // LoadMemoryVariables retrieves the chat history.
 func (bm *BufferMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error) {
 	memory := make(map[string]interface{})
+	messages, err := bm.ChatHistory.Messages()
+	if err != nil {
+		return nil, fmt.Errorf("failed to retrieve messages from chat history: %w", err)
+	}
+
 	if bm.ReturnMessages {
-		memory[bm.MemoryKey] = bm.ChatHistory.Messages()
+		memory[bm.MemoryKey] = messages
 	} else {
 		// Format messages into a single string (simple concatenation for now)
 		var historyStr string
-		for _, msg := range bm.ChatHistory.Messages() {
-			historyStr += fmt.Sprintf("%s: %s\n", msg.Type, msg.Content)
+		for _, msg := range messages {
+			// Ensure msg.Type and msg.Content are valid; msg.String() might be safer if it handles nil/empty gracefully
+			historyStr += fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()) // Use GetType() and GetContent()
 		}
 		memory[bm.MemoryKey] = historyStr
 	}
@@ -90,20 +98,26 @@ func (bm *BufferMemory) SaveContext(ctx context.Context, inputs map[string]inter
 	outputVal, okOutput := outputs[bm.OutputKey]
 
 	if !okInput {
-		return fmt.Errorf("input key 	%s	 not found in inputs or not a string", bm.InputKey)
+		return fmt.Errorf("input key '%s' not found in inputs or not a string", bm.InputKey)
 	}
 	if !okOutput {
-		return fmt.Errorf("output key 	%s	 not found in outputs", bm.OutputKey)
+		return fmt.Errorf("output key '%s' not found in outputs", bm.OutputKey)
 	}
 
-	bm.ChatHistory.AddUserMessage(inputVal)
-	bm.ChatHistory.AddAIMessage(outputVal)
+	err := bm.ChatHistory.AddUserMessage(inputVal)
+	if err != nil {
+		return fmt.Errorf("failed to add user message to chat history: %w", err)
+	}
+	err = bm.ChatHistory.AddAIMessage(outputVal)
+	if err != nil {
+		return fmt.Errorf("failed to add AI message to chat history: %w", err)
+	}
 	return nil
 }
 
 // Clear resets the chat history.
 func (bm *BufferMemory) Clear(ctx context.Context) error {
-	bm.ChatHistory = schema.NewChatHistory(nil)
+	bm.ChatHistory = schema.NewBaseChatHistory()
 	return nil
 }
 

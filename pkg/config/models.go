@@ -39,3 +39,14 @@ type MockEmbedderConfig struct {
 	RandomizeNil bool  `mapstructure:"randomize_nil"`
 }
 
+
+
+
+// ToolConfig defines the configuration for a specific tool instance.
+type ToolConfig struct {
+	Name        string                 `mapstructure:"name" yaml:"name"`                 // Unique name for this tool instance
+	Description string                 `mapstructure:"description" yaml:"description"`     // Description of what the tool does
+	Provider    string                 `mapstructure:"provider" yaml:"provider"`           // The provider for this tool (e.g., "echo", "calculator")
+	Enabled     bool                   `mapstructure:"enabled" yaml:"enabled"`             // Whether the tool is enabled
+	Config      map[string]interface{} `mapstructure:"config" yaml:"config,omitempty"` // Provider-specific configuration for the tool
+}

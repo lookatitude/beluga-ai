@@ -11,8 +11,8 @@ import (
 )
 
 // BaseAgent provides a foundational struct that can be embedded by concrete agent implementations.
-// It handles common agent functionalities like managing configuration, LLM, tools, and memory.	ype BaseAgent struct {
-	config schema.AgentConfig
+// It handles common agent functionalities like managing configuration, LLM, tools, and memory.
+type BaseAgent struct {	config schema.AgentConfig
 	llm    llms.LLM
 	tools  []tools.Tool
 	memory memory.Memory

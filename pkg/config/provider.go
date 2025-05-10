@@ -1,5 +1,7 @@
 package config
 
+import "github.com/lookatitude/beluga-ai/pkg/schema"
+
 // Provider defines the interface for a configuration provider.
 // It is responsible for loading configuration data from a source (e.g., file, environment variables)
 // into a given struct.
@@ -7,6 +9,10 @@ type Provider interface {
 	// Load populates the given configStruct with configuration values.
 	// The configStruct should be a pointer to a struct that can be unmarshalled into.
 	Load(configStruct interface{}) error
+
+	// UnmarshalKey decodes the configuration at a specific key into a struct.
+	// rawVal should be a pointer to a struct.
+	UnmarshalKey(key string, rawVal interface{}) error
 
 	// GetString retrieves a string configuration value by key.
 	GetString(key string) string
@@ -20,5 +26,13 @@ type Provider interface {
 	GetStringMapString(key string) map[string]string
 	// IsSet checks if a key is set in the configuration.
 	IsSet(key string) bool
+
+	// GetLLMProviderConfig retrieves a specific LLMProviderConfig by name.
+	// This is a more specific getter for convenience.
+	GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error)
+
+	// GetMemoryProviderConfig retrieves a specific MemoryProviderConfig by name.
+	// This is a more specific getter for convenience.
+	// GetMemoryProviderConfig(name string) (schema.MemoryProviderConfig, error) // Placeholder for now
 }
 

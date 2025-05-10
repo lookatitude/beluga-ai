@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/base"
@@ -10,13 +11,13 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/config" // Assuming global config access or specific provider configs
 )
-
-// AgentFactory defines the interface for creating agent instances.	ype AgentFactory interface {
+// AgentFactory defines the interface for creating agent instances.
+type AgentFactory interface {
 	CreateAgent(ctx context.Context, agentConfig schema.AgentConfig) (base.Agent, error)
 }
 
-// ConcreteAgentFactory is a concrete implementation of AgentFactory.
-// It requires factories for LLMs, Memory, and a ToolRegistry to assemble agents.	ype ConcreteAgentFactory struct {
+// ConcreteAgentFactory is a concrete implementation of AgentFactory.// It requires factories for LLMs, Memory, and a ToolRegistry to assemble agents.
+type ConcreteAgentFactory struct {
 	llmFactory    llms.LLMFactory // To get LLM instances based on config
 	memoryFactory memory.Factory  // To get Memory instances based on config
 	toolRegistry  tools.Registry  // To get Tool instances by name

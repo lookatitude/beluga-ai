@@ -2,68 +2,70 @@ package providers
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"regexp"
 	"strconv"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/config"
 )
 
 // CalculatorTool is a tool that can perform basic arithmetic calculations.
-// It expects a string input representing a simple arithmetic expression (e.g., "2 + 2", "10 * 5 / 2").
+// It expects a map input with a key "expression" containing a string
+// representing a simple arithmetic expression (e.g., "2 + 2", "10 * 5 / 2").
 type CalculatorTool struct {
 	tools.BaseTool
 }
 
 // NewCalculatorTool creates a new CalculatorTool.
-func NewCalculatorTool() *CalculatorTool {
+func NewCalculatorTool(cfg config.ToolConfig) (*CalculatorTool, error) {
+	inputSchema := map[string]interface{}{
+		"type": "object",
+		"properties": map[string]interface{}{
+			"expression": map[string]interface{}{
+				"type":        "string",
+				"description": "The arithmetic expression to evaluate. Example: \"10 + 5 * (3 - 1)\"",
+			},
+		},
+		"required": []string{"expression"},
+	}
+
 	return &CalculatorTool{
 		BaseTool: tools.BaseTool{
-			Name:        "calculator",
-			Description: "A tool to perform basic arithmetic calculations. Input should be a simple mathematical expression string (e.g., \"2 + 2\", \"10 * 5 / 2\"). Supports +, -, *, / operations and integers/floats.",
-			InputSchema: `{"type": "string", "description": "The arithmetic expression to evaluate. Example: \"10 + 5 * (3 - 1)\""}`,
+			Name:        cfg.Name,
+			Description: cfg.Description,
+			InputSchema: inputSchema,
 		},
-	}
+	}, nil
 }
 
-// Execute evaluates the arithmetic expression.
-// This is a very simplified and potentially unsafe calculator. For production, use a proper math expression parser/evaluator.
-func (ct *CalculatorTool) Execute(ctx context.Context, input string) (string, error) {
-	// Basic security: allow only numbers, operators, parentheses, and spaces.
-	// This is NOT a substitute for a proper parsing library and is still vulnerable.
-	validPattern := regexp.MustCompile(`^[0-9	 .+\-*/%()]+$`)
-	if !validPattern.MatchString(input) {
-		return "", fmt.Errorf("invalid characters in expression: %s", input)
+// Execute evaluates the arithmetic expression from the input map.
+func (ct *CalculatorTool) Execute(ctx context.Context, inputMap map[string]interface{}) (string, error) {
+	expression, ok := inputMap["expression"].(string)
+	if !ok {
+		inputBytes, err := json.Marshal(inputMap)
+		if err != nil {
+			return "", fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got something unmarshalable: %v", inputMap)
+		}
+		return "", fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got %s", string(inputBytes))
 	}
 
-	// Extremely simplified evaluation logic. This is NOT robust or safe for complex expressions or untrusted input.
-	// It does not handle operator precedence correctly without parentheses and is very basic.
-	// A real implementation should use a proper math expression parsing library (e.g., from go-exprtk or similar).
-	// For now, we will attempt a very naive evaluation for simple cases or suggest using `bc` via shell for safety.
-	// Let's try to evaluate simple two-operand expressions for demonstration.
+	// Basic security: allow only numbers, operators, parentheses, and spaces.
+	validPattern := regexp.MustCompile(`^[0-9\t .+\-*/%()]+$`)
+	if !validPattern.MatchString(expression) {
+		return "", fmt.Errorf("invalid characters in expression: %s", expression)
+	}
 
-	// Attempt to use a more robust (but still limited without external libs) approach for simple expressions.
-	// This is still not a full parser.
-	// For a production system, one would use a library like `github.com/Knetic/govaluate`
-	// or shell out to `bc` for safety and correctness.
-
-	// Given the sandbox environment, shelling out to `bc` is safer and more robust for this example.
-	// However, the Tool interface expects the tool to run in-process.
-	// Let's stick to a very simplified in-process evaluation for now, acknowledging its limitations.
-
-	// This is a placeholder for a real math expression evaluator.
-	// For now, we will return an error and suggest a better approach.
-	// return "", fmt.Errorf("simplified calculator cannot evaluate complex expression: %s. Consider using a dedicated math library or shelling out to 'bc'", input)
-
-	// Let's try a very, very simple evaluation for expressions like "A op B"
-	parts := regexp.MustCompile(`\s*([0-9	.]+)\s*([+\-*/])\s*([0-9	.]+)\s*`).FindStringSubmatch(input)
+	// Simplified evaluation for expressions like "A op B"
+	parts := regexp.MustCompile(`^\s*([0-9\.]+)\s*([+\-*/])\s*([0-9\.]+)\s*$`).FindStringSubmatch(expression)
 	if len(parts) == 4 {
 		val1, err1 := strconv.ParseFloat(parts[1], 64)
 		operator := parts[2]
 		val2, err2 := strconv.ParseFloat(parts[3], 64)
 
 		if err1 != nil || err2 != nil {
-			return "", fmt.Errorf("invalid numbers in expression: %s", input)
+			return "", fmt.Errorf("invalid numbers in expression: %s. Error1: %v, Error2: %v", expression, err1, err2)
 		}
 
 		var result float64
@@ -76,16 +78,16 @@ func (ct *CalculatorTool) Execute(ctx context.Context, input string) (string, er
 			result = val1 * val2
 		case "/":
 			if val2 == 0 {
-				return "", fmt.Errorf("division by zero")
+				return "", fmt.Errorf("division by zero in expression: %s", expression)
 			}
 			result = val1 / val2
 		default:
-			return "", fmt.Errorf("unsupported operator: %s", operator)
+			return "", fmt.Errorf("unsupported operator 	%s	 in expression: %s", operator, expression)
 		}
 		return strconv.FormatFloat(result, 'f', -1, 64), nil
 	}
 
-	return "", fmt.Errorf("calculator tool can only evaluate simple 'number operator number' expressions (e.g., '2 + 3', '10.5 * 2'). For complex expressions, a more robust parser is needed. Input: %s", input)
+	return "", fmt.Errorf("calculator tool can only evaluate simple 'number operator number' expressions (e.g., '2 + 3', '10.5 * 2'). For complex expressions, a more robust parser is needed. Input: %s", expression)
 }
 
 // Ensure CalculatorTool implements the Tool interface.

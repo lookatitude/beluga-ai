@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/spf13/viper"
 )
 
@@ -41,7 +42,7 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string)
 		if err := v.ReadInConfig(); err != nil {
 			if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 				// Config file not found; ignore error if this is acceptable
-				// fmt.Printf("ViperProvider: Config file 	%s	 not found in paths 	%v	. Relying on defaults/env vars.\n", configName, configPaths)
+				// fmt.Printf("ViperProvider: Config file \t%s\t not found in paths \t%v\t. Relying on defaults/env vars.\n", configName, configPaths)
 			} else {
 				// Config file was found but another error was produced
 				return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -60,6 +61,12 @@ func (vp *ViperProvider) Load(configStruct interface{}) error {
 	}
 	return nil
 }
+
+// UnmarshalKey decodes the configuration at a specific key into a struct.
+func (vp *ViperProvider) UnmarshalKey(key string, rawVal interface{}) error {
+	return vp.v.UnmarshalKey(key, rawVal)
+}
+
 
 // GetString retrieves a string configuration value by key.
 func (vp *ViperProvider) GetString(key string) string {
@@ -89,6 +96,28 @@ func (vp *ViperProvider) GetStringMapString(key string) map[string]string {
 // IsSet checks if a key is set in the configuration.
 func (vp *ViperProvider) IsSet(key string) bool {
 	return vp.v.IsSet(key)
+}
+
+// GetLLMProviderConfig retrieves a specific LLMProviderConfig by name.
+func (vp *ViperProvider) GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error) {
+	var llmConfig schema.LLMProviderConfig
+	// Construct the key for the specific LLM provider configuration.
+	// This assumes LLM provider configs are stored under a top-level key like "llm_providers"
+	// and then indexed by their name, e.g., "llm_providers.openai_default".
+	key := fmt.Sprintf("llm_providers.%s", name)
+
+	if !vp.v.IsSet(key) {
+		return llmConfig, fmt.Errorf("LLM provider configuration for '%s' not found at key '%s'", name, key)
+	}
+
+	if err := vp.v.UnmarshalKey(key, &llmConfig); err != nil {
+		return llmConfig, fmt.Errorf("failed to unmarshal LLM provider config for '%s' from key '%s': %w", name, key, err)
+	}
+	// Ensure the Name field is populated from the requested name if not set in the config itself
+	if llmConfig.Name == "" {
+		llmConfig.Name = name
+	}
+	return llmConfig, nil
 }
 
 // Ensure ViperProvider implements the Provider interface.
