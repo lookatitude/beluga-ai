@@ -1,92 +1,88 @@
 package base
 
 import (
+	"context"
 	"fmt"
+
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
-// Agent defines the interface for an AI agent.
-// It outlines the core functionalities that any agent should implement.
-type Agent interface {
-	// Plan generates a sequence of actions based on the input and current state.
-	Plan(input map[string]interface{}, intermediateSteps []schema.Message) ([]tools.ToolAgentAction, error)
-
-	// Execute performs the actions determined by the Plan method.
-	// It interacts with tools and manages the agent's state.
-	Execute(actions []tools.ToolAgentAction) (schema.Message, error)
-
-	// GetInputKeys returns the expected input keys for the agent.
-	GetInputKeys() []string
-
-	// GetOutputKeys returns the expected output keys from the agent.
-	GetOutputKeys() []string
-
-	// GetTools returns the list of tools available to the agent.
-	GetTools() []tools.Tool
-
-	// GetName returns the name of the agent.
-	GetName() string
+// BaseAgent provides a foundational struct that can be embedded by concrete agent implementations.
+// It handles common agent functionalities like managing configuration, LLM, tools, and memory.	ype BaseAgent struct {
+	config schema.AgentConfig
+	llm    llms.LLM
+	tools  []tools.Tool
+	memory memory.Memory
+	// executor is responsible for running the agent's plan. It's not part of the Agent interface directly
+	// but is a common dependency for the Execute method.
+	// It will be set up by the factory or a specific agent implementation.
+	// For now, we acknowledge its conceptual presence here.
 }
 
-// BaseAgent provides a foundational structure for agents.
-// It can be embedded in specific agent implementations to provide common functionality.
-type BaseAgent struct {
-	Name        string
-	Tools       []tools.Tool
-	InputKeys   []string
-	OutputKeys  []string
-}
-
-// NewBaseAgent creates a new BaseAgent.
-func NewBaseAgent(name string, agentTools []tools.Tool, inputKeys []string, outputKeys []string) *BaseAgent {
+// NewBaseAgent creates a new BaseAgent instance.
+// Note: The executor is not passed here; it's typically set up by a factory or a more specific agent constructor.
+func NewBaseAgent(config schema.AgentConfig, llm llms.LLM, tools []tools.Tool, mem memory.Memory) *BaseAgent {
 	return &BaseAgent{
-		Name:       name,
-		Tools:      agentTools,
-		InputKeys:  inputKeys,
-		OutputKeys: outputKeys,
+		config: config,
+		llm:    llm,
+		tools:  tools,
+		memory: mem,
 	}
 }
 
-// GetTools returns the tools available to the agent.
+// GetConfig returns the agent's configuration.
+func (a *BaseAgent) GetConfig() schema.AgentConfig {
+	return a.config
+}
+
+// GetLLM returns the LLM instance used by the agent.
+func (a *BaseAgent) GetLLM() llms.LLM {
+	return a.llm
+}
+
+// GetTools returns the list of tools available to the agent.
 func (a *BaseAgent) GetTools() []tools.Tool {
-	return a.Tools
+	return a.tools
 }
 
-// GetName returns the name of the agent.
-func (a *BaseAgent) GetName() string {
-	return a.Name
+// GetMemory returns the memory module used by the agent.
+func (a *BaseAgent) GetMemory() memory.Memory {
+	return a.memory
 }
 
-// GetInputKeys returns the expected input keys for the agent.
-func (a *BaseAgent) GetInputKeys() []string {
-	return a.InputKeys
+// InputKeys returns the expected input keys for the agent.
+// This is a placeholder and should be overridden by specific agent implementations
+// based on their prompting strategy or requirements.
+func (a *BaseAgent) InputKeys() []string {
+	// Default behavior, can be overridden
+	return []string{"input"} // A common default input key
 }
 
-// GetOutputKeys returns the expected output keys from the agent.
-func (a *BaseAgent) GetOutputKeys() []string {
-	return a.OutputKeys
+// OutputKeys returns the expected output keys from the agent.
+// This is a placeholder and should be overridden by specific agent implementations.
+func (a *BaseAgent) OutputKeys() []string {
+	// Default behavior, can be overridden
+	return []string{"output"} // A common default output key
 }
 
-
-
-
-// Execute performs the actions determined by the Plan method.
-// This is a placeholder and should be implemented by specific agent types
-// that embed BaseAgent or by BaseAgent itself if it has a default execution logic.
-func (a *BaseAgent) Execute(actions []tools.ToolAgentAction) (schema.Message, error) {
-	// Placeholder implementation. Specific agents should override this.
-	return schema.NewMessage("BaseAgent Execute method not implemented", schema.SystemMessageType), nil
+// Plan generates a sequence of steps (actions or direct LLM calls) based on the input and intermediate steps.
+// This is a placeholder implementation and MUST be overridden by concrete agent types.
+func (a *BaseAgent) Plan(ctx context.Context, inputs map[string]interface{}, intermediateSteps []schema.Step) ([]schema.Step, error) {
+	// Concrete agent implementations (e.g., ReActAgent, ConversationalAgent) will define their planning logic here.
+	// This might involve formatting a prompt with inputs, tools, and history, then calling the LLM.
+	return nil, fmt.Errorf("Plan method not implemented in BaseAgent; must be overridden by specific agent type")
 }
 
-
-
-
-// Plan generates a sequence of actions based on the input and current state.
-// This is a placeholder and should be implemented by specific agent types
-// that embed BaseAgent or by BaseAgent itself if it has a default planning logic.
-func (a *BaseAgent) Plan(input map[string]interface{}, intermediateSteps []schema.Message) ([]tools.ToolAgentAction, error) {
-	// Placeholder implementation. Specific agents should override this.
-	return nil, fmt.Errorf("BaseAgent Plan method not implemented")
+// Execute runs the planned steps.
+// This is a placeholder implementation. Typically, this method would delegate to an AgentExecutor.
+// Concrete agent implementations might orchestrate this differently or directly use an executor.
+func (a *BaseAgent) Execute(ctx context.Context, steps []schema.Step) (schema.FinalAnswer, error) {
+	// This method will typically be implemented by an AgentExecutor that the agent uses.
+	// For a BaseAgent, it might be abstract or delegate if an executor is directly associated.
+	// For now, returning an error indicating it needs proper implementation or delegation.
+	return schema.FinalAnswer{}, fmt.Errorf("Execute method not implemented in BaseAgent or not delegated to an executor; must be handled by specific agent type or its executor")
 }
 
