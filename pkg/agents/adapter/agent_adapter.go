@@ -1,8 +1,8 @@
 package adapter
 
 import (
-	"beluga/pkg/interfaces"
-	"beluga/pkg/orchestration"
+	"github.com/lookatitude/beluga-ai/pkg/interfaces"
+	"github.com/lookatitude/beluga-ai/pkg/orchestration"
 	"context"
 	"fmt"
 	"sync"

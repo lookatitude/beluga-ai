@@ -3,8 +3,8 @@ package factory
 import (
 	"fmt"
 
-	"github.com/lookatitude/beluga/pkg/agents/base"
-	"github.com/lookatitude/beluga/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/base"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	// Potentially import specific agent implementations here if the factory creates them directly
 )
 

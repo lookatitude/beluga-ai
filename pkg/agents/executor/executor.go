@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga/pkg/agents/base"
-	"github.com/lookatitude/beluga/pkg/agents/tools"
-	"github.com/lookatitude/beluga/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/base"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // AgentExecutor is responsible for running an agent and executing its planned actions.

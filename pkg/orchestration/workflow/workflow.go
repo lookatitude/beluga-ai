@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga/pkg/schema" // Assuming schema.Message is defined
+	"github.com/lookatitude/beluga-ai/pkg/schema" // Assuming schema.Message is defined
 	// Import other necessary packages like tasks, scheduler, messagebus
 )
 

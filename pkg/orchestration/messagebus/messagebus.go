@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lookatitude/beluga/pkg/schema" // Assuming schema.Message is defined
+	"github.com/lookatitude/beluga-ai/pkg/schema" // Assuming schema.Message is defined
 )
 
 // MessageHandler defines the function signature for handling messages.
