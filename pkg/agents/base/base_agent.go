@@ -78,3 +78,14 @@ func (a *BaseAgent) Execute(actions []tools.ToolAgentAction) (schema.Message, er
 	return schema.NewMessage("BaseAgent Execute method not implemented", schema.SystemMessageType), nil
 }
 
+
+
+
+// Plan generates a sequence of actions based on the input and current state.
+// This is a placeholder and should be implemented by specific agent types
+// that embed BaseAgent or by BaseAgent itself if it has a default planning logic.
+func (a *BaseAgent) Plan(input map[string]interface{}, intermediateSteps []schema.Message) ([]tools.ToolAgentAction, error) {
+	// Placeholder implementation. Specific agents should override this.
+	return nil, fmt.Errorf("BaseAgent Plan method not implemented")
+}
+
