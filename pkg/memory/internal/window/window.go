@@ -116,38 +116,7 @@ func (m *ConversationBufferWindowMemory) SaveContext(ctx context.Context, inputs
 
 // Clear removes all messages from the underlying chat history.
 func (m *ConversationBufferWindowMemory) Clear(ctx context.Context) error {
-	start := time.Now()
-	tracer := memory.GetGlobalTracer()
-	metrics := memory.GetGlobalMetrics()
-
-	// Start tracing span
-	ctx, span := tracer.StartSpan(ctx, "clear", "buffer_window", m.MemoryKey)
-	defer span.End()
-
-	err := m.ChatHistory.Clear(ctx)
-	duration := time.Since(start)
-
-	if err != nil {
-		// Record error metrics and logging
-		if metrics != nil {
-			metrics.RecordError(ctx, "clear", "buffer_window", "storage_error")
-			metrics.RecordOperationDuration(ctx, "clear", "buffer_window", duration)
-			metrics.RecordOperation(ctx, "clear", "buffer_window", false)
-		}
-		memory.LogMemoryOperation(ctx, slog.LevelError, "clear", "buffer_window", m.MemoryKey, 0, duration, err)
-		tracer.RecordSpanError(span, err)
-		return err
-	}
-
-	// Record success metrics and logging
-	if metrics != nil {
-		metrics.RecordOperationDuration(ctx, "clear", "buffer_window", duration)
-		metrics.RecordOperation(ctx, "clear", "buffer_window", true)
-		metrics.RecordMemorySize(ctx, "buffer_window", 0)
-	}
-	memory.LogMemoryOperation(ctx, slog.LevelInfo, "clear", "buffer_window", m.MemoryKey, 0, duration, nil)
-
-	return nil
+	return m.ChatHistory.Clear(ctx)
 }
 
 // getInputOutputKeys determines the input and output keys from the given maps.

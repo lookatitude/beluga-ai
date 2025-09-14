@@ -28,7 +28,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/memory/providers"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
-	"go.opentelemetry.io/otel/metric"
 )
 
 func init() {
