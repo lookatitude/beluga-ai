@@ -19,7 +19,6 @@ require (
 	github.com/sashabaranov/go-openai v1.39.1
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	github.com/trustmaster/goflow v0.0.0-20210928125717-b7d4fd465ab2
 	go.opentelemetry.io/otel v1.29.0
 	go.opentelemetry.io/otel/metric v1.29.0
 	go.opentelemetry.io/otel/trace v1.29.0
