@@ -2,8 +2,13 @@
 // This package follows the Beluga AI Framework design patterns with clean separation
 // of interfaces, implementations, and configuration management.
 //
-// The package supports multiple embedding providers including OpenAI, Ollama, and mock
-// implementations for testing. All implementations include OpenTelemetry tracing and metrics.
+// Key features:
+// - Focused Embedder interface following Interface Segregation Principle (ISP)
+// - Functional options pattern for flexible configuration
+// - Comprehensive error handling with custom error types
+// - OpenTelemetry tracing and metrics integration
+// - Multiple providers: OpenAI, Ollama, and mock for testing
+// - Extensive test coverage with table-driven tests and benchmarks
 package embeddings
 
 import (
@@ -23,10 +28,11 @@ type EmbedderFactory struct {
 	config  *Config
 	metrics *Metrics
 	tracer  trace.Tracer
+	options *optionConfig
 }
 
 // NewEmbedderFactory creates a new embedder factory with the given configuration
-func NewEmbedderFactory(config *Config) (*EmbedderFactory, error) {
+func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error) {
 	if config == nil {
 		return nil, fmt.Errorf("config cannot be nil")
 	}
@@ -38,17 +44,28 @@ func NewEmbedderFactory(config *Config) (*EmbedderFactory, error) {
 	// Set defaults
 	config.SetDefaults()
 
+	// Apply functional options
+	optionCfg := defaultOptionConfig()
+	for _, opt := range opts {
+		opt(optionCfg)
+	}
+
 	// Initialize metrics (assuming global meter is available)
 	meter := otel.Meter("github.com/lookatitude/beluga-ai/pkg/embeddings")
 	metrics := NewMetrics(meter)
 
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
 
-	return &EmbedderFactory{
+	factory := &EmbedderFactory{
 		config:  config,
 		metrics: metrics,
 		tracer:  tracer,
-	}, nil
+	}
+
+	// Store options for later use
+	factory.options = optionCfg
+
+	return factory, nil
 }
 
 // NewEmbedder creates an embedder instance based on the provider type
@@ -91,7 +108,7 @@ func (f *EmbedderFactory) newOpenAIEmbedder() (iface.Embedder, error) {
 // newOllamaEmbedder creates an Ollama embedder instance
 func (f *EmbedderFactory) newOllamaEmbedder() (iface.Embedder, error) {
 	if f.config.Ollama == nil || !f.config.Ollama.Enabled {
-		return nil, fmt.Errorf("Ollama provider is not configured or disabled")
+		return nil, fmt.Errorf("ollama provider is not configured or disabled")
 	}
 
 	if err := f.config.Ollama.Validate(); err != nil {
@@ -113,7 +130,7 @@ func (f *EmbedderFactory) newOllamaEmbedder() (iface.Embedder, error) {
 // newMockEmbedder creates a mock embedder instance
 func (f *EmbedderFactory) newMockEmbedder() (iface.Embedder, error) {
 	if f.config.Mock == nil || !f.config.Mock.Enabled {
-		return nil, fmt.Errorf("Mock provider is not configured or disabled")
+		return nil, fmt.Errorf("mock provider is not configured or disabled")
 	}
 
 	if err := f.config.Mock.Validate(); err != nil {

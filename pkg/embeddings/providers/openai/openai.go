@@ -2,10 +2,8 @@ package openai
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/sashabaranov/go-openai"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,11 +37,11 @@ type OpenAIEmbedder struct {
 // NewOpenAIEmbedder creates a new OpenAIEmbedder with the given configuration.
 func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
 	}
 
 	if config.APIKey == "" {
-		return nil, fmt.Errorf("OpenAI API key is required")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "openai API key is required")
 	}
 
 	clientConfig := openai.DefaultConfig(config.APIKey)
@@ -89,11 +87,11 @@ func (e *OpenAIEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		// Error recorded in span
-		return nil, fmt.Errorf("OpenAI CreateEmbeddings failed: %w", err)
+		return nil, iface.WrapError(err, iface.ErrCodeEmbeddingFailed, "openai create embeddings failed")
 	}
 
 	if len(resp.Data) != len(documents) {
-		err := fmt.Errorf("OpenAI returned %d embeddings for %d documents", len(resp.Data), len(documents))
+		err := iface.NewEmbeddingError(iface.ErrCodeEmbeddingFailed, "openai returned %d embeddings for %d documents", len(resp.Data), len(documents))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
@@ -103,7 +101,7 @@ func (e *OpenAIEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 	embeddings := make([][]float32, len(resp.Data))
 	for i, data := range resp.Data {
 		if data.Index != i {
-			err := fmt.Errorf("OpenAI embedding index mismatch: expected %d, got %d", i, data.Index)
+			err := iface.NewEmbeddingError(iface.ErrCodeEmbeddingFailed, "openai embedding index mismatch: expected %d, got %d", i, data.Index)
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 
@@ -135,7 +133,7 @@ func (e *OpenAIEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 	// Request tracking handled at factory level
 
 	if query == "" {
-		err := fmt.Errorf("query cannot be empty")
+		err := iface.NewEmbeddingError(iface.ErrCodeInvalidParameters, "query cannot be empty")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
@@ -153,11 +151,11 @@ func (e *OpenAIEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		// Error recorded in span
-		return nil, fmt.Errorf("OpenAI CreateEmbeddings for query failed: %w", err)
+		return nil, iface.WrapError(err, iface.ErrCodeEmbeddingFailed, "openai create embeddings for query failed")
 	}
 
 	if len(resp.Data) != 1 {
-		err := fmt.Errorf("OpenAI returned %d embeddings for 1 query", len(resp.Data))
+		err := iface.NewEmbeddingError(iface.ErrCodeEmbeddingFailed, "openai returned %d embeddings for 1 query", len(resp.Data))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
@@ -203,53 +201,7 @@ func (e *OpenAIEmbedder) Check(ctx context.Context) error {
 	return err
 }
 
-// Invoke implements the core.Runnable interface.
-// Input can be a string (for single query) or []string (for batch documents).
-// Output is []float32 for single query or [][]float32 for batch.
-func (e *OpenAIEmbedder) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	switch v := input.(type) {
-	case string:
-		return e.EmbedQuery(ctx, v)
-	case []string:
-		return e.EmbedDocuments(ctx, v)
-	default:
-		return nil, fmt.Errorf("unsupported input type: %T, expected string or []string", input)
-	}
-}
-
-// Batch implements the core.Runnable interface.
-// Each input can be a string or []string, returns corresponding embeddings.
-func (e *OpenAIEmbedder) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	results := make([]any, len(inputs))
-	for i, input := range inputs {
-		result, err := e.Invoke(ctx, input, options...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process input %d: %w", i, err)
-		}
-		results[i] = result
-	}
-	return results, nil
-}
-
-// Stream implements the core.Runnable interface.
-// For embeddings, streaming is not typically meaningful, so we return the result immediately.
-func (e *OpenAIEmbedder) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-	resultCh := make(chan any, 1)
-
-	go func() {
-		defer close(resultCh)
-		result, err := e.Invoke(ctx, input, options...)
-		if err != nil {
-			resultCh <- err
-			return
-		}
-		resultCh <- result
-	}()
-
-	return resultCh, nil
-}
 
 // Ensure OpenAIEmbedder implements the interfaces.
 var _ iface.Embedder = (*OpenAIEmbedder)(nil)
-var _ core.Runnable = (*OpenAIEmbedder)(nil)
 var _ HealthChecker = (*OpenAIEmbedder)(nil)

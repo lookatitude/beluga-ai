@@ -1,16 +1,14 @@
 package iface
 
-import (
-	"context"
-
-	"github.com/lookatitude/beluga-ai/pkg/core"
-)
+import "context"
 
 // Embedder defines the interface for generating text embeddings.
 // Implementations of this interface will provide access to different
 // embedding models (e.g., OpenAI, local models, etc.).
+//
+// Embedder follows the Interface Segregation Principle (ISP) by providing
+// focused methods specific to embedding operations.
 type Embedder interface {
-	core.Runnable // Embed core Runnable for consistency with framework
 	// EmbedDocuments generates embeddings for a batch of documents.
 	// It takes a context for cancellation and deadline propagation, and a slice
 	// of strings (documents) and returns a slice of float32 slices (embeddings)

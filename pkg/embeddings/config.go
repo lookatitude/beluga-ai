@@ -7,6 +7,46 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Option is a functional option for configuring embedders
+type Option func(*optionConfig)
+
+// optionConfig holds the internal configuration options
+type optionConfig struct {
+	timeout    time.Duration
+	maxRetries int
+	model      string
+}
+
+// WithTimeout sets the timeout for embedding operations
+func WithTimeout(timeout time.Duration) Option {
+	return func(c *optionConfig) {
+		c.timeout = timeout
+	}
+}
+
+// WithMaxRetries sets the maximum number of retries for failed operations
+func WithMaxRetries(maxRetries int) Option {
+	return func(c *optionConfig) {
+		c.maxRetries = maxRetries
+	}
+}
+
+// WithModel sets the model to use for embeddings
+func WithModel(model string) Option {
+	return func(c *optionConfig) {
+		c.model = model
+	}
+}
+
+// defaultOptionConfig returns the default option configuration
+func defaultOptionConfig() *optionConfig {
+	return &optionConfig{
+		timeout:    30 * time.Second,
+		maxRetries: 3,
+		model:      "",
+	}
+}
+
 // Config holds configuration for the embeddings package
 type Config struct {
 	// Provider-specific configurations
@@ -47,7 +87,28 @@ type MockConfig struct {
 // Validate validates the configuration
 func (c *Config) Validate() error {
 	validate := validator.New()
-	return validate.Struct(c)
+	if err := validate.Struct(c); err != nil {
+		return err
+	}
+
+	// Validate individual provider configs
+	if c.OpenAI != nil {
+		if err := c.OpenAI.Validate(); err != nil {
+			return err
+		}
+	}
+	if c.Ollama != nil {
+		if err := c.Ollama.Validate(); err != nil {
+			return err
+		}
+	}
+	if c.Mock != nil {
+		if err := c.Mock.Validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // SetDefaults sets default values for the configuration
@@ -95,10 +156,10 @@ func (c *Config) SetDefaults() {
 // ValidateOpenAI validates OpenAI configuration
 func (c *OpenAIConfig) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("OpenAI API key is required")
+		return fmt.Errorf("openai API key is required")
 	}
 	if c.Model == "" {
-		return fmt.Errorf("OpenAI model is required")
+		return fmt.Errorf("openai model is required")
 	}
 	return nil
 }
@@ -106,7 +167,7 @@ func (c *OpenAIConfig) Validate() error {
 // ValidateOllama validates Ollama configuration
 func (c *OllamaConfig) Validate() error {
 	if c.Model == "" {
-		return fmt.Errorf("Ollama model is required")
+		return fmt.Errorf("ollama model is required")
 	}
 	return nil
 }

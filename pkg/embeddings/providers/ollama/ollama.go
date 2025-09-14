@@ -2,11 +2,8 @@ package ollama
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/ollama/ollama/api"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,20 +36,20 @@ type OllamaEmbedder struct {
 // NewOllamaEmbedder creates a new OllamaEmbedder with the given configuration.
 func NewOllamaEmbedder(config *Config, tracer trace.Tracer) (*OllamaEmbedder, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
 	}
 
 	if config.Model == "" {
-		return nil, fmt.Errorf("Ollama model name is required")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "ollama model name is required")
 	}
 
 	client, err := api.ClientFromEnvironment()
 	if err != nil {
-		return nil, fmt.Errorf("failed to create Ollama client: %w", err)
+		return nil, iface.WrapError(err, iface.ErrCodeConnectionFailed, "failed to create ollama client")
 	}
 
 	if client == nil {
-		return nil, errors.New("failed to create Ollama client (nil client returned)")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeConnectionFailed, "failed to create ollama client (nil client returned)")
 	}
 
 	return &OllamaEmbedder{
@@ -102,7 +99,7 @@ func (e *OllamaEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 
 		if err != nil {
 			if firstErr == nil {
-				firstErr = fmt.Errorf("Ollama Embeddings failed for document %d: %w", i, err)
+				firstErr = iface.WrapError(err, iface.ErrCodeEmbeddingFailed, "ollama embeddings failed for document %d", i)
 			}
 
 			embeddings[i] = nil
@@ -149,7 +146,7 @@ func (e *OllamaEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 	}()
 
 	if query == "" {
-		err := fmt.Errorf("query cannot be empty")
+		err := iface.NewEmbeddingError(iface.ErrCodeInvalidParameters, "query cannot be empty")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
@@ -167,7 +164,7 @@ func (e *OllamaEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 
-		return nil, fmt.Errorf("Ollama Embeddings for query failed: %w", err)
+		return nil, iface.WrapError(err, iface.ErrCodeEmbeddingFailed, "ollama embeddings for query failed")
 	}
 
 	// Convert []float64 to []float32
@@ -209,53 +206,7 @@ func (e *OllamaEmbedder) Check(ctx context.Context) error {
 	return err
 }
 
-// Invoke implements the core.Runnable interface.
-// Input can be a string (for single query) or []string (for batch documents).
-// Output is []float32 for single query or [][]float32 for batch.
-func (e *OllamaEmbedder) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	switch v := input.(type) {
-	case string:
-		return e.EmbedQuery(ctx, v)
-	case []string:
-		return e.EmbedDocuments(ctx, v)
-	default:
-		return nil, fmt.Errorf("unsupported input type: %T, expected string or []string", input)
-	}
-}
-
-// Batch implements the core.Runnable interface.
-// Each input can be a string or []string, returns corresponding embeddings.
-func (e *OllamaEmbedder) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	results := make([]any, len(inputs))
-	for i, input := range inputs {
-		result, err := e.Invoke(ctx, input, options...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process input %d: %w", i, err)
-		}
-		results[i] = result
-	}
-	return results, nil
-}
-
-// Stream implements the core.Runnable interface.
-// For embeddings, streaming is not typically meaningful, so we return the result immediately.
-func (e *OllamaEmbedder) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-	resultCh := make(chan any, 1)
-
-	go func() {
-		defer close(resultCh)
-		result, err := e.Invoke(ctx, input, options...)
-		if err != nil {
-			resultCh <- err
-			return
-		}
-		resultCh <- result
-	}()
-
-	return resultCh, nil
-}
 
 // Ensure OllamaEmbedder implements the interfaces.
 var _ iface.Embedder = (*OllamaEmbedder)(nil)
-var _ core.Runnable = (*OllamaEmbedder)(nil)
 var _ HealthChecker = (*OllamaEmbedder)(nil)

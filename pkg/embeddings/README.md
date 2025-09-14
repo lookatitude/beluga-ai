@@ -44,7 +44,7 @@ pkg/embeddings/
 
 ### Key Components
 
-- **`iface.Embedder`**: Core interface defining embedding operations
+- **`iface.Embedder`**: Core interface defining embedding operations (following ISP with focused, embedding-specific methods)
 - **`EmbedderFactory`**: Factory for creating embedder instances
 - **`Config`**: Configuration management with validation
 - **`Metrics`**: OpenTelemetry metrics collection
@@ -117,6 +117,23 @@ type Config struct {
 }
 ```
 
+### Functional Options
+
+The package supports functional options for runtime configuration:
+
+```go
+factory, err := embeddings.NewEmbedderFactory(config,
+    embeddings.WithTimeout(60*time.Second),
+    embeddings.WithMaxRetries(5),
+    embeddings.WithModel("text-embedding-3-small"),
+)
+```
+
+Available options:
+- `WithTimeout(duration)`: Set request timeout
+- `WithMaxRetries(count)`: Set maximum retry attempts
+- `WithModel(name)`: Override the default model
+
 ## Usage
 
 ### Basic Usage
@@ -127,6 +144,7 @@ package main
 import (
     "context"
     "log"
+    "time"
 
     "github.com/lookatitude/beluga-ai/pkg/embeddings"
 )
@@ -140,8 +158,11 @@ func main() {
         },
     }
 
-    // Create factory
-    factory, err := embeddings.NewEmbedderFactory(config)
+    // Create factory with functional options
+    factory, err := embeddings.NewEmbedderFactory(config,
+        embeddings.WithTimeout(30*time.Second),
+        embeddings.WithMaxRetries(3),
+    )
     if err != nil {
         log.Fatal(err)
     }
@@ -353,7 +374,7 @@ The package uses structured logging with context propagation and includes trace/
 
 ### Unit Tests
 
-Each provider includes comprehensive unit tests:
+The package includes comprehensive unit tests with table-driven tests, mocks, and benchmarks:
 
 ```bash
 # Run all embedding tests
@@ -363,7 +384,22 @@ go test ./pkg/embeddings/...
 go test ./pkg/embeddings/providers/openai/
 go test ./pkg/embeddings/providers/ollama/
 go test ./pkg/embeddings/providers/mock/
+
+# Run with coverage
+go test ./pkg/embeddings/... -cover
+
+# Run benchmarks
+go test ./pkg/embeddings/... -bench=.
 ```
+
+Test coverage includes:
+- Configuration validation and defaults
+- Factory creation and provider instantiation
+- Interface compliance verification
+- Error handling with custom error types
+- Functional options pattern
+- Mock provider with deterministic output
+- Performance benchmarks for critical operations
 
 ### Mock Testing
 

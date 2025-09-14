@@ -2,11 +2,9 @@ package mock
 
 import (
 	"context"
-	"fmt"
 	"math/rand"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -36,11 +34,11 @@ type MockEmbedder struct {
 // NewMockEmbedder creates a new MockEmbedder with the given configuration.
 func NewMockEmbedder(config *Config, tracer trace.Tracer) (*MockEmbedder, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
 	}
 
 	if config.Dimension <= 0 {
-		return nil, fmt.Errorf("dimension must be positive")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "dimension must be positive")
 	}
 
 	src := rand.NewSource(config.Seed)
@@ -153,53 +151,7 @@ func (m *MockEmbedder) Check(ctx context.Context) error {
 	return nil
 }
 
-// Invoke implements the core.Runnable interface.
-// Input can be a string (for single query) or []string (for batch documents).
-// Output is []float32 for single query or [][]float32 for batch.
-func (m *MockEmbedder) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	switch v := input.(type) {
-	case string:
-		return m.EmbedQuery(ctx, v)
-	case []string:
-		return m.EmbedDocuments(ctx, v)
-	default:
-		return nil, fmt.Errorf("unsupported input type: %T, expected string or []string", input)
-	}
-}
-
-// Batch implements the core.Runnable interface.
-// Each input can be a string or []string, returns corresponding embeddings.
-func (m *MockEmbedder) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
-	results := make([]any, len(inputs))
-	for i, input := range inputs {
-		result, err := m.Invoke(ctx, input, options...)
-		if err != nil {
-			return nil, fmt.Errorf("failed to process input %d: %w", i, err)
-		}
-		results[i] = result
-	}
-	return results, nil
-}
-
-// Stream implements the core.Runnable interface.
-// For embeddings, streaming is not typically meaningful, so we return the result immediately.
-func (m *MockEmbedder) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-	resultCh := make(chan any, 1)
-
-	go func() {
-		defer close(resultCh)
-		result, err := m.Invoke(ctx, input, options...)
-		if err != nil {
-			resultCh <- err
-			return
-		}
-		resultCh <- result
-	}()
-
-	return resultCh, nil
-}
 
 // Ensure MockEmbedder implements the interface.
 var _ iface.Embedder = (*MockEmbedder)(nil)
-var _ core.Runnable = (*MockEmbedder)(nil)
 var _ HealthChecker = (*MockEmbedder)(nil)
