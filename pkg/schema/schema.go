@@ -47,6 +47,22 @@ type (
 	ChatMessage          = internal.ChatMessage
 	AIMessage            = internal.AIMessage
 	ToolMessage          = internal.ToolMessage
+
+	// A2A Communication Types
+	AgentMessage            = internal.AgentMessage
+	AgentMessageType        = internal.AgentMessageType
+	AgentRequest            = internal.AgentRequest
+	AgentResponse           = internal.AgentResponse
+	AgentError              = internal.AgentError
+
+	// Event Types
+	Event                   = internal.Event
+	AgentLifecycleEvent     = internal.AgentLifecycleEvent
+	AgentLifecycleEventType = internal.AgentLifecycleEventType
+	TaskEvent               = internal.TaskEvent
+	TaskEventType           = internal.TaskEventType
+	WorkflowEvent           = internal.WorkflowEvent
+	WorkflowEventType       = internal.WorkflowEventType
 )
 
 // Re-export MessageType from iface
@@ -59,6 +75,37 @@ const (
 	RoleSystem    = iface.RoleSystem
 	RoleTool      = iface.RoleTool
 	RoleFunction  = iface.RoleFunction
+)
+
+// Re-export A2A Communication constants
+const (
+	AgentMessageRequest     = internal.AgentMessageRequest
+	AgentMessageResponse    = internal.AgentMessageResponse
+	AgentMessageNotification = internal.AgentMessageNotification
+	AgentMessageBroadcast   = internal.AgentMessageBroadcast
+	AgentMessageError       = internal.AgentMessageError
+)
+
+// Re-export Event constants
+const (
+	AgentStarted        = internal.AgentStarted
+	AgentStopped        = internal.AgentStopped
+	AgentPaused         = internal.AgentPaused
+	AgentResumed        = internal.AgentResumed
+	AgentFailed         = internal.AgentFailed
+	AgentConfigUpdated  = internal.AgentConfigUpdated
+
+	TaskStarted     = internal.TaskStarted
+	TaskProgress    = internal.TaskProgress
+	TaskCompleted   = internal.TaskCompleted
+	TaskFailed      = internal.TaskFailed
+	TaskCancelled   = internal.TaskCancelled
+
+	WorkflowStarted        = internal.WorkflowStarted
+	WorkflowStepCompleted  = internal.WorkflowStepCompleted
+	WorkflowCompleted      = internal.WorkflowCompleted
+	WorkflowFailed         = internal.WorkflowFailed
+	WorkflowCancelled      = internal.WorkflowCancelled
 )
 
 // Factory functions for creating messages
@@ -270,6 +317,86 @@ func NewLLMResponse(generations [][]*Generation, llmOutput map[string]interface{
 	return &internal.LLMResponse{
 		Generations: generations,
 		LLMOutput:   llmOutput,
+	}
+}
+
+// Factory functions for A2A communication
+
+// NewAgentMessage creates a new AgentMessage.
+func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType, payload interface{}) AgentMessage {
+	return internal.AgentMessage{
+		FromAgentID: fromAgentID,
+		MessageID:   messageID,
+		Timestamp:   0, // Will be set by caller
+		MessageType: messageType,
+		Payload:     payload,
+		Metadata:    make(map[string]interface{}),
+	}
+}
+
+// NewAgentRequest creates a new AgentRequest.
+func NewAgentRequest(action string, parameters map[string]interface{}) AgentRequest {
+	return internal.AgentRequest{
+		Action:     action,
+		Parameters: parameters,
+	}
+}
+
+// NewAgentResponse creates a new AgentResponse.
+func NewAgentResponse(requestID, status string, result interface{}) AgentResponse {
+	return internal.AgentResponse{
+		RequestID: requestID,
+		Status:    status,
+		Result:    result,
+	}
+}
+
+// NewAgentError creates a new AgentError.
+func NewAgentError(code, message string, details map[string]interface{}) *AgentError {
+	return &internal.AgentError{
+		Code:    code,
+		Message: message,
+		Details: details,
+	}
+}
+
+// Factory functions for events
+
+// NewEvent creates a new Event.
+func NewEvent(eventID, eventType, source string, payload interface{}) Event {
+	return internal.Event{
+		EventID:   eventID,
+		EventType: eventType,
+		Source:    source,
+		Timestamp: 0, // Will be set by caller
+		Version:   "1.0",
+		Payload:   payload,
+		Metadata:  make(map[string]interface{}),
+	}
+}
+
+// NewAgentLifecycleEvent creates a new AgentLifecycleEvent.
+func NewAgentLifecycleEvent(agentID string, eventType AgentLifecycleEventType) AgentLifecycleEvent {
+	return internal.AgentLifecycleEvent{
+		AgentID:   agentID,
+		EventType: eventType,
+	}
+}
+
+// NewTaskEvent creates a new TaskEvent.
+func NewTaskEvent(taskID, agentID string, eventType TaskEventType) TaskEvent {
+	return internal.TaskEvent{
+		TaskID:   taskID,
+		AgentID:  agentID,
+		EventType: eventType,
+	}
+}
+
+// NewWorkflowEvent creates a new WorkflowEvent.
+func NewWorkflowEvent(workflowID string, eventType WorkflowEventType) WorkflowEvent {
+	return internal.WorkflowEvent{
+		WorkflowID: workflowID,
+		EventType:  eventType,
 	}
 }
 

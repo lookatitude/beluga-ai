@@ -171,6 +171,26 @@ func (mr *MockRetriever) Count() int {
 	return len(mr.documents)
 }
 
+// CheckHealth implements the core.HealthChecker interface.
+// It performs a basic health check for the mock retriever.
+func (mr *MockRetriever) CheckHealth(ctx context.Context) error {
+	mr.logger.Info("mock retriever health check", "name", mr.name, "document_count", len(mr.documents))
+
+	// Basic validation
+	if mr.defaultK < 1 {
+		return retrievers.NewRetrieverErrorWithMessage("CheckHealth", nil, retrievers.ErrCodeInvalidConfig,
+			"invalid defaultK configuration")
+	}
+
+	if mr.scoreThreshold < 0 || mr.scoreThreshold > 1 {
+		return retrievers.NewRetrieverErrorWithMessage("CheckHealth", nil, retrievers.ErrCodeInvalidConfig,
+			"invalid scoreThreshold configuration")
+	}
+
+	return nil
+}
+
 // Compile-time check to ensure MockRetriever implements interfaces.
 var _ core.Retriever = (*MockRetriever)(nil)
 var _ core.Runnable = (*MockRetriever)(nil)
+var _ core.HealthChecker = (*MockRetriever)(nil)

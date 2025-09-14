@@ -213,6 +213,66 @@ func (r *VectorStoreRetriever) Stream(ctx context.Context, input any, options ..
 		"streaming is not supported by VectorStoreRetriever")
 }
 
+// CheckHealth implements the core.HealthChecker interface.
+// It performs a basic health check by validating the retriever's configuration and dependencies.
+func (r *VectorStoreRetriever) CheckHealth(ctx context.Context) error {
+	// Create tracing span for health check
+	var span trace.Span
+	if r.enableTracing && r.tracer != nil {
+		ctx, span = r.tracer.Start(ctx, "vector_store_retriever.health_check")
+		defer span.End()
+	}
+
+	// Log health check operation
+	if r.logger != nil {
+		r.logger.Debug("performing health check")
+	}
+
+	// Validate configuration
+	if r.defaultK < 1 || r.defaultK > 100 {
+		err := NewRetrieverErrorWithMessage("CheckHealth", nil, ErrCodeInvalidConfig,
+			"invalid defaultK configuration")
+		if r.enableTracing && span != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		return err
+	}
+
+	if r.scoreThreshold < 0 || r.scoreThreshold > 1 {
+		err := NewRetrieverErrorWithMessage("CheckHealth", nil, ErrCodeInvalidConfig,
+			"invalid scoreThreshold configuration")
+		if r.enableTracing && span != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		return err
+	}
+
+	// Check if vector store is available (basic check)
+	if r.vectorStore == nil {
+		err := NewRetrieverErrorWithMessage("CheckHealth", nil, ErrCodeInvalidConfig,
+			"vector store is not configured")
+		if r.enableTracing && span != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		return err
+	}
+
+	// Log successful health check
+	if r.logger != nil {
+		r.logger.Debug("health check passed")
+	}
+
+	if r.enableTracing && span != nil {
+		span.SetStatus(codes.Ok, "health check passed")
+	}
+
+	return nil
+}
+
 // Compile-time check to ensure VectorStoreRetriever implements interfaces.
 var _ core.Retriever = (*VectorStoreRetriever)(nil)
 var _ core.Runnable = (*VectorStoreRetriever)(nil)
+var _ core.HealthChecker = (*VectorStoreRetriever)(nil)

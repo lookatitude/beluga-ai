@@ -175,6 +175,9 @@ func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Op
 //	}
 //	retriever, err := retrievers.NewVectorStoreRetrieverFromConfig(vectorStore, config)
 func NewVectorStoreRetrieverFromConfig(vectorStore vectorstores.VectorStore, config VectorStoreRetrieverConfig) (*VectorStoreRetriever, error) {
+	// Apply defaults to unset fields
+	config.ApplyDefaults()
+
 	// Validate configuration
 	if err := config.Validate(); err != nil {
 		return nil, NewRetrieverError("NewVectorStoreRetrieverFromConfig", err, ErrCodeInvalidConfig)

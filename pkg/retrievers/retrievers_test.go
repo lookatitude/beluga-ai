@@ -81,7 +81,7 @@ func TestNewVectorStoreRetrieverFromConfig(t *testing.T) {
 		{
 			name: "invalid k value",
 			config: VectorStoreRetrieverConfig{
-				K:              0,
+				K:              -1,
 				ScoreThreshold: 0.7,
 				Timeout:        30 * time.Second,
 			},
@@ -210,6 +210,12 @@ func TestConfigValidation(t *testing.T) {
 				Timeout:        30 * time.Second,
 				EnableTracing:  true,
 				EnableMetrics:  true,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize:       100,
+					EnableMMR:          false,
+					MMRLambda:          0.5,
+					DiversityThreshold: 0.7,
+				},
 			},
 			wantErr: false,
 		},
@@ -220,6 +226,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: 0.7,
 				MaxRetries:     3,
 				Timeout:        30 * time.Second,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -230,6 +239,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: 0.7,
 				MaxRetries:     3,
 				Timeout:        30 * time.Second,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -240,6 +252,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: -0.1,
 				MaxRetries:     3,
 				Timeout:        30 * time.Second,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -250,6 +265,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: 1.1,
 				MaxRetries:     3,
 				Timeout:        30 * time.Second,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -260,6 +278,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: 0.7,
 				MaxRetries:     3,
 				Timeout:        500 * time.Millisecond,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -270,6 +291,9 @@ func TestConfigValidation(t *testing.T) {
 				ScoreThreshold: 0.7,
 				MaxRetries:     3,
 				Timeout:        6 * time.Minute,
+				VectorStoreConfig: VectorStoreConfig{
+					MaxBatchSize: 100,
+				},
 			},
 			wantErr: true,
 		},
@@ -396,5 +420,69 @@ func TestValidateRetrieverConfig(t *testing.T) {
 	}
 }
 
-// Benchmark is removed due to import cycle issues.
-// Benchmarks are located in the providers package.
+// BenchmarkConfigValidation benchmarks configuration validation performance.
+func BenchmarkConfigValidation(b *testing.B) {
+	validConfig := DefaultConfig()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := validConfig.Validate()
+		if err != nil {
+			b.Fatalf("Config.Validate() error = %v", err)
+		}
+	}
+}
+
+// BenchmarkVectorStoreRetrieverConfigValidation benchmarks VectorStoreRetrieverConfig validation.
+func BenchmarkVectorStoreRetrieverConfigValidation(b *testing.B) {
+	config := DefaultVectorStoreRetrieverConfig()
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		err := config.Validate()
+		if err != nil {
+			b.Fatalf("VectorStoreRetrieverConfig.Validate() error = %v", err)
+		}
+	}
+}
+
+// BenchmarkRetrieverOptions benchmarks option application performance.
+func BenchmarkRetrieverOptions(b *testing.B) {
+	options := []Option{
+		WithDefaultK(10),
+		WithMaxRetries(5),
+		WithTimeout(60 * time.Second),
+		WithTracing(true),
+		WithMetrics(true),
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		opts := &RetrieverOptions{
+			DefaultK:       4,
+			ScoreThreshold: 0.0,
+			MaxRetries:     3,
+			Timeout:        30 * time.Second,
+			EnableTracing:  true,
+			EnableMetrics:  true,
+		}
+
+		for _, option := range options {
+			option(opts)
+		}
+	}
+}
+
+// BenchmarkDefaultConfig benchmarks default config creation.
+func BenchmarkDefaultConfig(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = DefaultConfig()
+	}
+}
+
+// BenchmarkDefaultVectorStoreRetrieverConfig benchmarks default VectorStoreRetrieverConfig creation.
+func BenchmarkDefaultVectorStoreRetrieverConfig(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_ = DefaultVectorStoreRetrieverConfig()
+	}
+}

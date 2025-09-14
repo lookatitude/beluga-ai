@@ -32,6 +32,32 @@ type VectorStoreConfig struct {
 	DiversityThreshold float32 `mapstructure:"diversity_threshold" yaml:"diversity_threshold" env:"VECTOR_STORE_DIVERSITY_THRESHOLD" default:"0.7" validate:"min=0,max=1"`
 }
 
+// Validate validates the VectorStoreConfig.
+func (c *VectorStoreConfig) Validate() error {
+	if c.MaxBatchSize < 1 || c.MaxBatchSize > 1000 {
+		return &ValidationError{
+			Field: "MaxBatchSize",
+			Value: c.MaxBatchSize,
+			Msg:   "must be between 1 and 1000",
+		}
+	}
+	if c.MMRLambda < 0 || c.MMRLambda > 1 {
+		return &ValidationError{
+			Field: "MMRLambda",
+			Value: c.MMRLambda,
+			Msg:   "must be between 0 and 1",
+		}
+	}
+	if c.DiversityThreshold < 0 || c.DiversityThreshold > 1 {
+		return &ValidationError{
+			Field: "DiversityThreshold",
+			Value: c.DiversityThreshold,
+			Msg:   "must be between 0 and 1",
+		}
+	}
+	return nil
+}
+
 // VectorStoreRetrieverConfig holds configuration specific to VectorStoreRetriever.
 type VectorStoreRetrieverConfig struct {
 	// Embedder configuration
@@ -67,6 +93,29 @@ func DefaultConfig() Config {
 	}
 }
 
+// ApplyDefaults applies default values to unset fields in the configuration.
+func (c *Config) ApplyDefaults() {
+	if c.DefaultK == 0 {
+		c.DefaultK = 4
+	}
+	if c.MaxRetries == 0 {
+		c.MaxRetries = 3
+	}
+	if c.Timeout == 0 {
+		c.Timeout = 30 * time.Second
+	}
+	// Apply defaults to VectorStoreConfig
+	c.VectorStoreConfig.ApplyDefaults()
+}
+
+// ApplyDefaults applies default values to unset fields in VectorStoreConfig.
+func (c *VectorStoreConfig) ApplyDefaults() {
+	if c.MaxBatchSize == 0 {
+		c.MaxBatchSize = 100
+	}
+	// Other fields have sensible defaults already
+}
+
 // Validate validates the configuration.
 func (c *Config) Validate() error {
 	if c.DefaultK < 1 || c.DefaultK > 100 {
@@ -83,6 +132,13 @@ func (c *Config) Validate() error {
 			Msg:   "must be between 0 and 1",
 		}
 	}
+	if c.MaxRetries < 0 || c.MaxRetries > 10 {
+		return &ValidationError{
+			Field: "MaxRetries",
+			Value: c.MaxRetries,
+			Msg:   "must be between 0 and 10",
+		}
+	}
 	if c.Timeout < time.Second || c.Timeout > 5*time.Minute {
 		return &ValidationError{
 			Field: "Timeout",
@@ -90,7 +146,37 @@ func (c *Config) Validate() error {
 			Msg:   "must be between 1s and 5m",
 		}
 	}
+
+	// Validate VectorStoreConfig
+	if err := c.VectorStoreConfig.Validate(); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// DefaultVectorStoreRetrieverConfig returns a default configuration for VectorStoreRetriever.
+func DefaultVectorStoreRetrieverConfig() VectorStoreRetrieverConfig {
+	return VectorStoreRetrieverConfig{
+		K:              4,
+		ScoreThreshold: 0.0,
+		BatchSize:      10,
+		Timeout:        30 * time.Second,
+	}
+}
+
+// ApplyDefaults applies default values to unset fields in the configuration.
+func (c *VectorStoreRetrieverConfig) ApplyDefaults() {
+	if c.K == 0 {
+		c.K = 4
+	}
+	if c.BatchSize == 0 {
+		c.BatchSize = 10
+	}
+	if c.Timeout == 0 {
+		c.Timeout = 30 * time.Second
+	}
+	// ScoreThreshold defaults to 0.0, which is valid
 }
 
 // Validate validates the VectorStoreRetrieverConfig.

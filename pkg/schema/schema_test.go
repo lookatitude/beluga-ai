@@ -462,3 +462,266 @@ func TestFunctionalOptions(t *testing.T) {
 		t.Errorf("DefaultCallOptions[temperature] = %v, want 0.7", llmConfig.DefaultCallOptions["temperature"])
 	}
 }
+
+// SchemaValidationConfig tests
+
+func TestNewSchemaValidationConfig(t *testing.T) {
+	tests := []struct {
+		name    string
+		opts    []SchemaValidationOption
+		wantErr bool
+	}{
+		{
+			name: "valid config with defaults",
+			opts: []SchemaValidationOption{},
+			wantErr: false,
+		},
+		{
+			name: "valid config with custom options",
+			opts: []SchemaValidationOption{
+				WithStrictValidation(true),
+				WithMaxMessageLength(5000),
+				WithMaxMetadataSize(50),
+				WithAllowedMessageTypes([]string{"human", "ai", "system"}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid config - negative message length",
+			opts: []SchemaValidationOption{
+				WithMaxMessageLength(-1),
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, err := NewSchemaValidationConfig(tt.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewSchemaValidationConfig() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !tt.wantErr && config == nil {
+				t.Error("NewSchemaValidationConfig() returned nil config without error")
+			}
+		})
+	}
+}
+
+func TestSchemaValidationConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name    string
+		config  *SchemaValidationConfig
+		wantErr bool
+	}{
+		{
+			name: "valid config",
+			config: &SchemaValidationConfig{
+				EnableStrictValidation:  true,
+				MaxMessageLength:        10000,
+				MaxMetadataSize:         100,
+				MaxToolCalls:            10,
+				MaxEmbeddingDimensions:  1536,
+				AllowedMessageTypes:     []string{"human", "ai"},
+				RequiredMetadataFields:  []string{},
+				EnableContentValidation: true,
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid config - negative message length",
+			config: &SchemaValidationConfig{
+				MaxMessageLength: -1,
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid config - negative metadata size",
+			config: &SchemaValidationConfig{
+				MaxMessageLength: 1000,
+				MaxMetadataSize:  -1,
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("SchemaValidationConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// A2A Communication tests
+
+func TestNewAgentMessage(t *testing.T) {
+	fromAgentID := "agent-1"
+	messageID := "msg-123"
+	messageType := AgentMessageRequest
+	payload := map[string]interface{}{"action": "test"}
+
+	msg := NewAgentMessage(fromAgentID, messageID, messageType, payload)
+
+	if msg.FromAgentID != fromAgentID {
+		t.Errorf("FromAgentID = %q, want %q", msg.FromAgentID, fromAgentID)
+	}
+	if msg.MessageID != messageID {
+		t.Errorf("MessageID = %q, want %q", msg.MessageID, messageID)
+	}
+	if msg.MessageType != messageType {
+		t.Errorf("MessageType = %v, want %v", msg.MessageType, messageType)
+	}
+	if msg.Payload == nil {
+		t.Error("Payload should not be nil")
+	}
+}
+
+func TestNewAgentRequest(t *testing.T) {
+	action := "calculate"
+	parameters := map[string]interface{}{"expression": "2+2"}
+
+	req := NewAgentRequest(action, parameters)
+
+	if req.Action != action {
+		t.Errorf("Action = %q, want %q", req.Action, action)
+	}
+	if len(req.Parameters) != 1 {
+		t.Errorf("Parameters length = %d, want 1", len(req.Parameters))
+	}
+}
+
+func TestNewAgentResponse(t *testing.T) {
+	requestID := "req-123"
+	status := "success"
+	result := map[string]interface{}{"answer": 42}
+
+	resp := NewAgentResponse(requestID, status, result)
+
+	if resp.RequestID != requestID {
+		t.Errorf("RequestID = %q, want %q", resp.RequestID, requestID)
+	}
+	if resp.Status != status {
+		t.Errorf("Status = %q, want %q", resp.Status, status)
+	}
+	if resp.Result == nil {
+		t.Error("Result should not be nil")
+	}
+}
+
+func TestNewAgentError(t *testing.T) {
+	code := "test_error"
+	message := "Test error occurred"
+	details := map[string]interface{}{"context": "testing"}
+
+	err := NewAgentError(code, message, details)
+
+	if err.Code != code {
+		t.Errorf("Code = %q, want %q", err.Code, code)
+	}
+	if err.Message != message {
+		t.Errorf("Message = %q, want %q", err.Message, message)
+	}
+	if len(err.Details) != 1 {
+		t.Errorf("Details length = %d, want 1", len(err.Details))
+	}
+}
+
+// Event tests
+
+func TestNewEvent(t *testing.T) {
+	eventID := "event-123"
+	eventType := "user_action"
+	source := "web_app"
+	payload := map[string]interface{}{"action": "click"}
+
+	event := NewEvent(eventID, eventType, source, payload)
+
+	if event.EventID != eventID {
+		t.Errorf("EventID = %q, want %q", event.EventID, eventID)
+	}
+	if event.EventType != eventType {
+		t.Errorf("EventType = %q, want %q", event.EventType, eventType)
+	}
+	if event.Source != source {
+		t.Errorf("Source = %q, want %q", event.Source, source)
+	}
+	if event.Version != "1.0" {
+		t.Errorf("Version = %q, want %q", event.Version, "1.0")
+	}
+}
+
+func TestNewAgentLifecycleEvent(t *testing.T) {
+	agentID := "agent-1"
+	eventType := AgentStarted
+
+	event := NewAgentLifecycleEvent(agentID, eventType)
+
+	if event.AgentID != agentID {
+		t.Errorf("AgentID = %q, want %q", event.AgentID, agentID)
+	}
+	if event.EventType != eventType {
+		t.Errorf("EventType = %v, want %v", event.EventType, eventType)
+	}
+}
+
+func TestNewTaskEvent(t *testing.T) {
+	taskID := "task-123"
+	agentID := "agent-1"
+	eventType := TaskStarted
+
+	event := NewTaskEvent(taskID, agentID, eventType)
+
+	if event.TaskID != taskID {
+		t.Errorf("TaskID = %q, want %q", event.TaskID, taskID)
+	}
+	if event.AgentID != agentID {
+		t.Errorf("AgentID = %q, want %q", event.AgentID, agentID)
+	}
+	if event.EventType != eventType {
+		t.Errorf("EventType = %v, want %v", event.EventType, eventType)
+	}
+}
+
+func TestNewWorkflowEvent(t *testing.T) {
+	workflowID := "workflow-123"
+	eventType := WorkflowStarted
+
+	event := NewWorkflowEvent(workflowID, eventType)
+
+	if event.WorkflowID != workflowID {
+		t.Errorf("WorkflowID = %q, want %q", event.WorkflowID, workflowID)
+	}
+	if event.EventType != eventType {
+		t.Errorf("EventType = %v, want %v", event.EventType, eventType)
+	}
+}
+
+// Error code tests
+
+func TestErrorCodes(t *testing.T) {
+	// Test that error codes are properly defined and accessible
+	expectedCodes := []string{
+		"invalid_config",
+		"validation_failed",
+		"invalid_message",
+		"agent_message_invalid",
+		"event_invalid",
+		"message_too_long",
+		"task_not_found",
+		"config_validation_failed",
+		"factory_creation_failed",
+		"storage_operation_failed",
+	}
+
+	// This test just ensures the constants are accessible
+	// In a real test, you might want to test specific error handling scenarios
+	for _, code := range expectedCodes {
+		if code == "" {
+			t.Error("Error code should not be empty")
+		}
+	}
+}

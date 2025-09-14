@@ -228,6 +228,119 @@ func NewChatHistoryConfig(opts ...ChatHistoryOption) (*ChatHistoryConfig, error)
 	return config, nil
 }
 
+// SchemaValidationConfig defines configuration for schema validation rules.
+type SchemaValidationConfig struct {
+	// EnableStrictValidation enables strict validation of all schema constraints
+	EnableStrictValidation bool `yaml:"enable_strict_validation" json:"enable_strict_validation"`
+
+	// MaxMessageLength defines the maximum allowed length for message content
+	MaxMessageLength int `yaml:"max_message_length" json:"max_message_length" validate:"min=1"`
+
+	// MaxMetadataSize defines the maximum size of metadata maps
+	MaxMetadataSize int `yaml:"max_metadata_size" json:"max_metadata_size" validate:"min=1"`
+
+	// MaxToolCalls defines the maximum number of tool calls allowed per message
+	MaxToolCalls int `yaml:"max_tool_calls" json:"max_tool_calls" validate:"min=1"`
+
+	// MaxEmbeddingDimensions defines the maximum dimensions for embedding vectors
+	MaxEmbeddingDimensions int `yaml:"max_embedding_dimensions" json:"max_embedding_dimensions" validate:"min=1"`
+
+	// AllowedMessageTypes defines the allowed message types for validation
+	AllowedMessageTypes []string `yaml:"allowed_message_types" json:"allowed_message_types"`
+
+	// RequiredMetadataFields defines fields that must be present in metadata
+	RequiredMetadataFields []string `yaml:"required_metadata_fields" json:"required_metadata_fields"`
+
+	// EnableContentValidation enables validation of message content format
+	EnableContentValidation bool `yaml:"enable_content_validation" json:"enable_content_validation"`
+
+	// CustomValidationRules holds custom validation rules as key-value pairs
+	CustomValidationRules map[string]interface{} `yaml:"custom_validation_rules" json:"custom_validation_rules"`
+}
+
+// Validate validates the SchemaValidationConfig struct.
+func (c *SchemaValidationConfig) Validate() error {
+	validate := validator.New()
+	return validate.Struct(c)
+}
+
+// NewSchemaValidationConfig creates a new SchemaValidationConfig with validation.
+func NewSchemaValidationConfig(opts ...SchemaValidationOption) (*SchemaValidationConfig, error) {
+	config := &SchemaValidationConfig{
+		EnableStrictValidation:  true,
+		MaxMessageLength:        10000, // sensible default
+		MaxMetadataSize:         100,   // sensible default
+		MaxToolCalls:            10,    // sensible default
+		MaxEmbeddingDimensions:  1536,  // common embedding dimension
+		AllowedMessageTypes:     []string{"human", "ai", "system", "tool", "function"},
+		RequiredMetadataFields:  []string{},
+		EnableContentValidation: true,
+		CustomValidationRules:   make(map[string]interface{}),
+	}
+
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid schema validation config: %w", err)
+	}
+
+	return config, nil
+}
+
+// SchemaValidationOption defines a function type for SchemaValidationConfig options.
+type SchemaValidationOption func(*SchemaValidationConfig)
+
+// WithStrictValidation enables or disables strict validation.
+func WithStrictValidation(enable bool) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.EnableStrictValidation = enable
+	}
+}
+
+// WithMaxMessageLength sets the maximum message length.
+func WithMaxMessageLength(maxLength int) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.MaxMessageLength = maxLength
+	}
+}
+
+// WithMaxMetadataSize sets the maximum metadata size.
+func WithMaxMetadataSize(maxSize int) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.MaxMetadataSize = maxSize
+	}
+}
+
+// WithMaxToolCalls sets the maximum number of tool calls.
+func WithMaxToolCalls(maxCalls int) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.MaxToolCalls = maxCalls
+	}
+}
+
+// WithAllowedMessageTypes sets the allowed message types.
+func WithAllowedMessageTypes(types []string) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.AllowedMessageTypes = types
+	}
+}
+
+// WithRequiredMetadataFields sets required metadata fields.
+func WithRequiredMetadataFields(fields []string) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.RequiredMetadataFields = fields
+	}
+}
+
+// WithContentValidation enables or disables content validation.
+func WithContentValidation(enable bool) SchemaValidationOption {
+	return func(c *SchemaValidationConfig) {
+		c.EnableContentValidation = enable
+	}
+}
+
 // Functional options for configuration
 
 // AgentOption defines a function type for AgentConfig options.
