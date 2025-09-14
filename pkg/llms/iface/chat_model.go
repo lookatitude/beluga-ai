@@ -35,6 +35,10 @@ type ChatModel interface {
 	// GetModelName returns the model name used by this ChatModel instance.
 	// This is useful for logging, metrics, and debugging.
 	GetModelName() string
+
+	// CheckHealth returns the health status information.
+	// This allows monitoring the health of chat model providers.
+	CheckHealth() map[string]interface{}
 }
 
 // AIMessageChunk represents a chunk of an AI message, typically used in streaming.

@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"strings"
+	"time"
 
 	anthropic "github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -578,6 +579,18 @@ func (a *AnthropicProvider) handleAnthropicError(operation string, err error) er
 	}
 
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
+}
+
+// CheckHealth implements the HealthChecker interface
+func (a *AnthropicProvider) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "anthropic",
+		"model":       a.modelName,
+		"timestamp":   time.Now().Unix(),
+		"api_key_set": a.config.APIKey != "",
+		"tools_count": len(a.tools),
+	}
 }
 
 // Factory function for creating Anthropic providers

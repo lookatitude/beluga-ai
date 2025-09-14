@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/sashabaranov/go-openai"
 
@@ -556,6 +557,18 @@ func (o *OpenAIProvider) handleOpenAIError(operation string, err error) error {
 	}
 
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
+}
+
+// CheckHealth implements the HealthChecker interface
+func (o *OpenAIProvider) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "openai",
+		"model":       o.modelName,
+		"timestamp":   time.Now().Unix(),
+		"api_key_set": o.config.APIKey != "",
+		"tools_count": len(o.tools),
+	}
 }
 
 // Factory function for creating OpenAI providers

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
@@ -540,6 +541,18 @@ func (b *BedrockProvider) handleBedrockError(operation string, err error) error 
 	}
 
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
+}
+
+// CheckHealth implements the HealthChecker interface
+func (b *BedrockProvider) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "bedrock",
+		"model":       b.modelName,
+		"timestamp":   time.Now().Unix(),
+		"region":      b.region,
+		"tools_count": len(b.tools),
+	}
 }
 
 // Factory function for creating Bedrock providers

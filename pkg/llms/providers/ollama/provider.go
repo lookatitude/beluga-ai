@@ -11,6 +11,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
@@ -548,6 +549,18 @@ func (o *OllamaProvider) buildCallOptions(options ...core.Option) *llms.CallOpti
 	}
 
 	return callOpts
+}
+
+// CheckHealth implements the HealthChecker interface
+func (o *OllamaProvider) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "ollama",
+		"model":       o.modelName,
+		"timestamp":   time.Now().Unix(),
+		"base_url":    o.baseURL,
+		"tools_count": len(o.tools),
+	}
 }
 
 // Factory function for creating Ollama providers

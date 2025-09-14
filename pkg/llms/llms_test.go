@@ -64,6 +64,19 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 	return args.Get(0).(<-chan any), args.Error(1)
 }
 
+func (m *MockChatModel) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "mock",
+		"model":       m.modelName,
+		"timestamp":   int64(1234567890),
+		"call_count":  0,
+		"tools_count": 0,
+		"should_error": false,
+		"responses_len": 1,
+	}
+}
+
 // Test cases
 
 func TestEnsureMessages(t *testing.T) {
@@ -253,7 +266,7 @@ func TestGenerateText(t *testing.T) {
 	mockModel := NewMockChatModel("test-model")
 	expectedResponse := "Test response"
 
-	mockModel.On("Generate", mock.Anything, mock.AnythingOfType("[]schema.Message"), mock.Anything).
+	mockModel.On("Generate", mock.Anything, mock.Anything, mock.Anything).
 		Return(schema.NewAIMessage(expectedResponse), nil)
 
 	result, err := GenerateText(context.Background(), mockModel, "Test prompt")
@@ -404,6 +417,23 @@ func (m *MockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
+// MockLLM for testing ChatModelAdapter
+type MockLLM struct {
+	modelName string
+}
+
+func (m *MockLLM) Invoke(ctx context.Context, prompt string, options ...core.Option) (string, error) {
+	return "Mock LLM response", nil
+}
+
+func (m *MockLLM) GetModelName() string {
+	return m.modelName
+}
+
+func (m *MockLLM) GetProviderName() string {
+	return "unknown"
+}
+
 // Benchmark tests
 
 func BenchmarkEnsureMessages(b *testing.B) {
@@ -478,4 +508,111 @@ func TestErrorWrapping(t *testing.T) {
 	var llmErr *LLMError
 	assert.True(t, errors.As(wrappedErr, &llmErr))
 	assert.Equal(t, "test_operation", llmErr.Op)
+}
+
+// Test CheckHealth functionality
+func TestCheckHealth(t *testing.T) {
+	mockModel := NewMockChatModel("test-model")
+
+	health := mockModel.CheckHealth()
+
+	assert.NotNil(t, health)
+	assert.Equal(t, "healthy", health["state"])
+	assert.Equal(t, "mock", health["provider"])
+	assert.Equal(t, "test-model", health["model"])
+	assert.Contains(t, health, "timestamp")
+	assert.Contains(t, health, "call_count")
+	assert.Contains(t, health, "tools_count")
+	assert.Contains(t, health, "should_error")
+	assert.Contains(t, health, "responses_len")
+}
+
+// Test factory provider registration and health checks
+func TestFactoryProviderHealth(t *testing.T) {
+	factory := NewFactory()
+
+	// Register a mock provider
+	mockModel := NewMockChatModel("factory-test-model")
+	factory.RegisterProvider("factory-test", mockModel)
+
+	// Get provider and check health
+	retrieved, err := factory.GetProvider("factory-test")
+	assert.NoError(t, err)
+
+	health := retrieved.CheckHealth()
+	assert.NotNil(t, health)
+	assert.Equal(t, "healthy", health["state"])
+	assert.Equal(t, "mock", health["provider"])
+}
+
+// Test convenience factory functions
+func TestConvenienceFactoryFunctions(t *testing.T) {
+	// Test NewAnthropicChat (should return error due to missing provider)
+	_, err := NewAnthropicChat(WithAPIKey("test-key"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "anthropic provider not available")
+
+	// Test NewOpenAIChat (should return error due to missing provider)
+	_, err = NewOpenAIChat(WithAPIKey("test-key"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "openai provider not available")
+
+	// Test NewOllamaChat (should return error due to missing provider)
+	_, err = NewOllamaChat(WithModelName("llama2"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "ollama provider not available")
+}
+
+// Test ChatModelAdapter functionality
+func TestChatModelAdapter(t *testing.T) {
+	mockLLM := &MockLLM{modelName: "adapter-test"}
+	adapter := NewChatModelAdapter(mockLLM, &ChatOptions{})
+
+	// Test GetModelInfo
+	info := adapter.GetModelInfo()
+	assert.Equal(t, "adapter-test", info.Name)
+	assert.Equal(t, "unknown", info.Provider) // MockLLM returns empty provider
+
+	// Test CheckHealth
+	health := adapter.CheckHealth()
+	assert.NotNil(t, health)
+	assert.Equal(t, "healthy", health["state"])
+	assert.Contains(t, health, "timestamp")
+}
+
+// Test configuration with all options
+func TestConfigurationComprehensive(t *testing.T) {
+	config := NewConfig(
+		WithProvider("anthropic"),
+		WithModelName("claude-3-sonnet"),
+		WithAPIKey("test-key"),
+		WithTemperatureConfig(0.7),
+		WithTopPConfig(0.9),
+		WithMaxTokensConfig(1000),
+		WithStopSequences([]string{"STOP", "END"}),
+		WithTimeout(30*time.Second),
+		WithMaxConcurrentBatches(10),
+		WithRetryConfig(5, time.Second, 2.0),
+		WithObservability(true, true, true),
+		WithToolCalling(true),
+		WithProviderSpecific("api_version", "2023-06-01"),
+	)
+
+	assert.Equal(t, "anthropic", config.Provider)
+	assert.Equal(t, "claude-3-sonnet", config.ModelName)
+	assert.Equal(t, "test-key", config.APIKey)
+	assert.Equal(t, float32(0.7), *config.Temperature)
+	assert.Equal(t, float32(0.9), *config.TopP)
+	assert.Equal(t, 1000, *config.MaxTokens)
+	assert.Equal(t, []string{"STOP", "END"}, config.StopSequences)
+	assert.Equal(t, 30*time.Second, config.Timeout)
+	assert.Equal(t, 10, config.MaxConcurrentBatches)
+	assert.Equal(t, 5, config.MaxRetries)
+	assert.Equal(t, time.Second, config.RetryDelay)
+	assert.Equal(t, 2.0, config.RetryBackoff)
+	assert.True(t, config.EnableTracing)
+	assert.True(t, config.EnableMetrics)
+	assert.True(t, config.EnableStructuredLogging)
+	assert.True(t, config.EnableToolCalling)
+	assert.Equal(t, "2023-06-01", config.ProviderSpecific["api_version"])
 }

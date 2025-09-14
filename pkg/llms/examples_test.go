@@ -261,6 +261,19 @@ func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core
 	return results, nil
 }
 
+func (m *MockChatModel) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":       "healthy",
+		"provider":    "mock",
+		"model":       m.modelName,
+		"timestamp":   int64(1234567890),
+		"call_count":  0,
+		"tools_count": 0,
+		"should_error": false,
+		"responses_len": 1,
+	}
+}
+
 func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	ch := make(chan any, 1)
 	ch <- "Mock stream result"

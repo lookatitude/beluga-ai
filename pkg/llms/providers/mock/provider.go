@@ -315,6 +315,20 @@ func (m *MockProvider) AddToolResult(toolName, result string) {
 	m.toolResults[toolName] = result
 }
 
+// CheckHealth implements the HealthChecker interface
+func (m *MockProvider) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"state":         "healthy",
+		"provider":      "mock",
+		"model":         m.modelName,
+		"timestamp":     time.Now().Unix(),
+		"call_count":    m.callCount,
+		"tools_count":   len(m.tools),
+		"should_error":  m.shouldError,
+		"responses_len": len(m.responses),
+	}
+}
+
 // Factory function for creating mock providers
 func NewMockProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {

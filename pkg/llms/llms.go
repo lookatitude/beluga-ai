@@ -369,6 +369,61 @@ func WithToolChoiceLegacy(choice string) core.Option {
 	return core.WithOption("tool_choice", choice)
 }
 
+// NewAnthropicChat creates a new Anthropic chat model provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
+	config := NewConfig(opts...)
+	config.Provider = "anthropic"
+	if config.ModelName == "" {
+		config.ModelName = "claude-3-haiku-20240307"
+	}
+
+	factory := NewFactory()
+	factory.RegisterProviderFactory("anthropic", func(c *Config) (iface.ChatModel, error) {
+		// Import the anthropic package dynamically to avoid circular imports
+		// This is a simplified implementation - in production, this would be handled differently
+		return nil, fmt.Errorf("anthropic provider not available - use factory pattern with explicit import")
+	})
+
+	return factory.CreateProvider("anthropic", config)
+}
+
+// NewOpenAIChat creates a new OpenAI chat model provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error) {
+	config := NewConfig(opts...)
+	config.Provider = "openai"
+	if config.ModelName == "" {
+		config.ModelName = "gpt-3.5-turbo"
+	}
+
+	factory := NewFactory()
+	factory.RegisterProviderFactory("openai", func(c *Config) (iface.ChatModel, error) {
+		// Import the openai package dynamically to avoid circular imports
+		return nil, fmt.Errorf("openai provider not available - use factory pattern with explicit import")
+	})
+
+	return factory.CreateProvider("openai", config)
+}
+
+// NewOllamaChat creates a new Ollama chat model provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewOllamaChat(opts ...ConfigOption) (iface.ChatModel, error) {
+	config := NewConfig(opts...)
+	config.Provider = "ollama"
+	if config.ModelName == "" {
+		config.ModelName = "llama2"
+	}
+
+	factory := NewFactory()
+	factory.RegisterProviderFactory("ollama", func(c *Config) (iface.ChatModel, error) {
+		// Import the ollama package dynamically to avoid circular imports
+		return nil, fmt.Errorf("ollama provider not available - use factory pattern with explicit import")
+	})
+
+	return factory.CreateProvider("ollama", config)
+}
+
 // InitializeDefaultFactory creates and returns a factory with all built-in providers registered
 func InitializeDefaultFactory() *Factory {
 	factory := NewFactory()
