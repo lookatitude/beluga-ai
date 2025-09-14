@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 )
 
 // Tool defines the interface for tools that agents can use.

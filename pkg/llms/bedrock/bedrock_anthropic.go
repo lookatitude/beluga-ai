@@ -12,9 +12,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
 
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools" // Keep for potential future tool mapping
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools" // Keep for potential future tool mapping
 )
 
 // --- Anthropic specific types ---

@@ -8,15 +8,15 @@ import (
 	"log"
 	"strings"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/llms/anthropic"
-	"github.com/lookatitude/beluga-ai/llms/bedrock"
-	"github.com/lookatitude/beluga-ai/llms/gemini"
-	"github.com/lookatitude/beluga-ai/llms/ollama"
-	"github.com/lookatitude/beluga-ai/llms/openai"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/llms/anthropic"
+	"github.com/lookatitude/beluga-ai/pkg/llms/bedrock"
+	"github.com/lookatitude/beluga-ai/pkg/llms/gemini"
+	"github.com/lookatitude/beluga-ai/pkg/llms/ollama"
+	"github.com/lookatitude/beluga-ai/pkg/llms/openai"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 func printUsage(providerName string, aiMsg schema.Message) {

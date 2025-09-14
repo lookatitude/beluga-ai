@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/rag/embedders"
-	"github.com/lookatitude/beluga-ai/rag/loaders"
-	"github.com/lookatitude/beluga-ai/rag/retrievers"
-	"github.com/lookatitude/beluga-ai/rag/splitters"
-	"github.com/lookatitude/beluga-ai/rag/vectorstores"
+	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/rag/embedders"
+	"github.com/lookatitude/beluga-ai/pkg/rag/loaders"
+	"github.com/lookatitude/beluga-ai/pkg/rag/retrievers"
+	"github.com/lookatitude/beluga-ai/pkg/rag/splitters"
+	"github.com/lookatitude/beluga-ai/pkg/rag/vectorstores"
 )
 
 func main() {

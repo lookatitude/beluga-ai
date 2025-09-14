@@ -6,9 +6,9 @@ import (
 	"errors" // Import errors package
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core" // Import core for Runnable
-	"github.com/lookatitude/beluga-ai/prompts"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/core" // Import core for Runnable
+	"github.com/lookatitude/beluga-ai/pkg/prompts"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // ConversationSummaryBufferMemory combines buffer memory with summarization.

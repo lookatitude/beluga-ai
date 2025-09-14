@@ -3,7 +3,7 @@ package memory
 
 import (
 	"context"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // BaseChatMessageHistory implements a simple in-memory message history.

@@ -6,8 +6,8 @@ import (
 	"context"
 	"errors" // Added missing import
 	"fmt"    // Added missing import
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
 )
 
 // Chain represents a sequence of components (Runnables) executed one after another.

@@ -12,7 +12,7 @@ import (
 
 	"github.com/Tnze/go-mc/bot"
 	"github.com/jltobler/go-rcon"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // MCPingTool pings a Minecraft server to get its status.

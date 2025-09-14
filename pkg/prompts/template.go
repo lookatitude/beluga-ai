@@ -9,8 +9,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // PromptValue represents the formatted output of a prompt template.

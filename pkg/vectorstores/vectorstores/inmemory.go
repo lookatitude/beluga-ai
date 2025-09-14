@@ -9,9 +9,9 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/rag"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/rag/retrievers"
 
 	// Need a math library for vector operations (e.g., cosine similarity)

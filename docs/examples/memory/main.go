@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 	// Assuming a mock LLM or a simple implementation for summary memory if needed
 )
 

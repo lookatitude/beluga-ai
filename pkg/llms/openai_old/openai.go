@@ -11,10 +11,10 @@ import (
 	"log"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 
 	openai "github.com/sashabaranov/go-openai"
 )

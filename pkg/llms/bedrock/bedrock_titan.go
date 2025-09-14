@@ -9,9 +9,9 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
 	// brtypes "github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types" // Not directly needed if bedrockruntime is used for stream type
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // TitanTextRequest represents the request payload for Amazon Titan Text models (e.g., titan-text-express-v1, titan-text-lite-v1, titan-text-agile-v1).

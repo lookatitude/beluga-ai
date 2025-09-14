@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"go.temporal.io/sdk/activity"
 	"go.temporal.io/sdk/client"
 	"go.temporal.io/sdk/worker"

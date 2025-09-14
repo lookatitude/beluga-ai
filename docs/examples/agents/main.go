@@ -7,14 +7,14 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/agents"
-	"github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/llms/ollama"
-	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/prompts"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
-	"github.com/lookatitude/beluga-ai/tools/gofunc"
+	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/llms/ollama"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
+	"github.com/lookatitude/beluga-ai/pkg/prompts"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
 )
 
 // --- Tool Definition (from tools example) ---

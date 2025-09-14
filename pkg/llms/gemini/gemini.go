@@ -16,11 +16,11 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	belugaConfig "github.com/lookatitude/beluga-ai/config" // Alias config
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
+	belugaConfig "github.com/lookatitude/beluga-ai/pkg/config" // Alias config
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // GeminiChat represents a chat model client for Google Gemini.

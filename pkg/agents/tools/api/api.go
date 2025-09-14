@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // APITool allows making HTTP requests to external APIs.

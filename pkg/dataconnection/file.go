@@ -8,7 +8,7 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/rag"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // FileLoader loads documents from a single text file.

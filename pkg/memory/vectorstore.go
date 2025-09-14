@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/rag"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // VectorStoreMemory uses a vector store to retrieve relevant context from past interactions.

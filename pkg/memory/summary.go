@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core" // Import core for Runnable
-	"github.com/lookatitude/beluga-ai/prompts"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/core" // Import core for Runnable
+	"github.com/lookatitude/beluga-ai/pkg/prompts"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // DefaultSummaryPrompt is a basic prompt template for summarizing conversations.

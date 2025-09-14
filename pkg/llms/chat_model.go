@@ -6,9 +6,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // ChatModel is the interface for chat models.

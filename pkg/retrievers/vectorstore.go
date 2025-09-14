@@ -6,9 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/rag"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // VectorStoreRetriever implements the rag.Retriever interface using an underlying rag.VectorStore.

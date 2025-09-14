@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // ShellTool allows executing shell commands.

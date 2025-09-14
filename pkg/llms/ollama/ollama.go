@@ -11,11 +11,11 @@ import (
 	"sync" // Added for Batch method
 	"time" // Added for timeout
 
-	belugaConfig "github.com/lookatitude/beluga-ai/config"
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/schema"
-	"github.com/lookatitude/beluga-ai/tools"
+	belugaConfig "github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 
 	"github.com/ollama/ollama/api"
 )

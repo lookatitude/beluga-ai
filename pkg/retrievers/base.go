@@ -6,8 +6,8 @@ package rag
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/schema"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // Loader defines the interface for loading data from various sources (files, URLs, databases, etc.)

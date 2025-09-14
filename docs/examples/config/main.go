@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/config"
+	"github.com/lookatitude/beluga-ai/pkg/config"
 	// Ensure you have your config.yaml or environment variables set
 )
 
