@@ -10,39 +10,39 @@ import (
 // It includes settings for model behavior, generation parameters, and observability.
 type Config struct {
 	// Model configuration
-	DefaultModel       string        `mapstructure:"default_model" yaml:"default_model" default:"gpt-3.5-turbo"`
-	DefaultProvider    string        `mapstructure:"default_provider" yaml:"default_provider" default:"openai"`
-	DefaultTemperature float32       `mapstructure:"default_temperature" yaml:"default_temperature" default:"0.7"`
-	DefaultMaxTokens   int           `mapstructure:"default_max_tokens" yaml:"default_max_tokens" default:"1000"`
-	DefaultTimeout     time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" default:"30s"`
+	DefaultModel       string        `mapstructure:"default_model" yaml:"default_model" env:"CHATMODEL_DEFAULT_MODEL" default:"gpt-3.5-turbo"`
+	DefaultProvider    string        `mapstructure:"default_provider" yaml:"default_provider" env:"CHATMODEL_DEFAULT_PROVIDER" default:"openai"`
+	DefaultTemperature float32       `mapstructure:"default_temperature" yaml:"default_temperature" env:"CHATMODEL_DEFAULT_TEMPERATURE" validate:"gte=0,lte=2" default:"0.7"`
+	DefaultMaxTokens   int           `mapstructure:"default_max_tokens" yaml:"default_max_tokens" env:"CHATMODEL_DEFAULT_MAX_TOKENS" validate:"gt=0" default:"1000"`
+	DefaultTimeout     time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" env:"CHATMODEL_DEFAULT_TIMEOUT" validate:"gt=0" default:"30s"`
 
 	// Generation parameters
-	DefaultTopP            float32  `mapstructure:"default_top_p" yaml:"default_top_p" default:"1.0"`
-	DefaultStopSequences   []string `mapstructure:"default_stop_sequences" yaml:"default_stop_sequences"`
-	DefaultSystemPrompt    string   `mapstructure:"default_system_prompt" yaml:"default_system_prompt"`
-	DefaultFunctionCalling bool     `mapstructure:"default_function_calling" yaml:"default_function_calling" default:"false"`
+	DefaultTopP            float32  `mapstructure:"default_top_p" yaml:"default_top_p" env:"CHATMODEL_DEFAULT_TOP_P" validate:"gte=0,lte=1" default:"1.0"`
+	DefaultStopSequences   []string `mapstructure:"default_stop_sequences" yaml:"default_stop_sequences" env:"CHATMODEL_DEFAULT_STOP_SEQUENCES"`
+	DefaultSystemPrompt    string   `mapstructure:"default_system_prompt" yaml:"default_system_prompt" env:"CHATMODEL_DEFAULT_SYSTEM_PROMPT"`
+	DefaultFunctionCalling bool     `mapstructure:"default_function_calling" yaml:"default_function_calling" env:"CHATMODEL_DEFAULT_FUNCTION_CALLING" default:"false"`
 
 	// Retry and error handling
-	DefaultMaxRetries  int           `mapstructure:"default_max_retries" yaml:"default_max_retries" default:"3"`
-	DefaultRetryDelay  time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" default:"2s"`
-	MaxRetryDelay      time.Duration `mapstructure:"max_retry_delay" yaml:"max_retry_delay" default:"30s"`
-	RetryBackoffFactor float64       `mapstructure:"retry_backoff_factor" yaml:"retry_backoff_factor" default:"2.0"`
+	DefaultMaxRetries  int           `mapstructure:"default_max_retries" yaml:"default_max_retries" env:"CHATMODEL_DEFAULT_MAX_RETRIES" validate:"gte=0" default:"3"`
+	DefaultRetryDelay  time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" env:"CHATMODEL_DEFAULT_RETRY_DELAY" validate:"gt=0" default:"2s"`
+	MaxRetryDelay      time.Duration `mapstructure:"max_retry_delay" yaml:"max_retry_delay" env:"CHATMODEL_MAX_RETRY_DELAY" validate:"gt=0" default:"30s"`
+	RetryBackoffFactor float64       `mapstructure:"retry_backoff_factor" yaml:"retry_backoff_factor" env:"CHATMODEL_RETRY_BACKOFF_FACTOR" validate:"gt=0" default:"2.0"`
 
 	// Observability settings
-	EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-	EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-	MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" default:"beluga_chatmodels"`
-	TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" default:"beluga-chatmodels"`
+	EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"CHATMODEL_ENABLE_METRICS" default:"true"`
+	EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"CHATMODEL_ENABLE_TRACING" default:"true"`
+	MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" env:"CHATMODEL_METRICS_PREFIX" default:"beluga_chatmodels"`
+	TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" env:"CHATMODEL_TRACING_SERVICE_NAME" default:"beluga-chatmodels"`
 
 	// Streaming configuration
-	DefaultStreamingEnabled bool          `mapstructure:"default_streaming_enabled" yaml:"default_streaming_enabled" default:"false"`
-	StreamBufferSize        int           `mapstructure:"stream_buffer_size" yaml:"stream_buffer_size" default:"100"`
-	StreamTimeout           time.Duration `mapstructure:"stream_timeout" yaml:"stream_timeout" default:"5m"`
+	DefaultStreamingEnabled bool          `mapstructure:"default_streaming_enabled" yaml:"default_streaming_enabled" env:"CHATMODEL_DEFAULT_STREAMING_ENABLED" default:"false"`
+	StreamBufferSize        int           `mapstructure:"stream_buffer_size" yaml:"stream_buffer_size" env:"CHATMODEL_STREAM_BUFFER_SIZE" validate:"gt=0" default:"100"`
+	StreamTimeout           time.Duration `mapstructure:"stream_timeout" yaml:"stream_timeout" env:"CHATMODEL_STREAM_TIMEOUT" validate:"gt=0" default:"5m"`
 
 	// Resource limits
-	MaxConcurrentRequests int           `mapstructure:"max_concurrent_requests" yaml:"max_concurrent_requests" default:"100"`
-	RequestTimeout        time.Duration `mapstructure:"request_timeout" yaml:"request_timeout" default:"2m"`
-	ConnectionTimeout     time.Duration `mapstructure:"connection_timeout" yaml:"connection_timeout" default:"10s"`
+	MaxConcurrentRequests int           `mapstructure:"max_concurrent_requests" yaml:"max_concurrent_requests" env:"CHATMODEL_MAX_CONCURRENT_REQUESTS" validate:"gt=0" default:"100"`
+	RequestTimeout        time.Duration `mapstructure:"request_timeout" yaml:"request_timeout" env:"CHATMODEL_REQUEST_TIMEOUT" validate:"gt=0" default:"2m"`
+	ConnectionTimeout     time.Duration `mapstructure:"connection_timeout" yaml:"connection_timeout" env:"CHATMODEL_CONNECTION_TIMEOUT" validate:"gt=0" default:"10s"`
 
 	// Provider-specific configurations
 	Providers map[string]interface{} `mapstructure:"providers" yaml:"providers"`
@@ -50,18 +50,18 @@ type Config struct {
 
 // ProviderConfig represents configuration for a specific provider.
 type ProviderConfig struct {
-	APIKey     string          `mapstructure:"api_key" yaml:"api_key"`
-	BaseURL    string          `mapstructure:"base_url" yaml:"base_url"`
-	Timeout    time.Duration   `mapstructure:"timeout" yaml:"timeout" default:"30s"`
-	MaxRetries int             `mapstructure:"max_retries" yaml:"max_retries" default:"3"`
+	APIKey     string          `mapstructure:"api_key" yaml:"api_key" env:"CHATMODEL_PROVIDER_API_KEY"`
+	BaseURL    string          `mapstructure:"base_url" yaml:"base_url" env:"CHATMODEL_PROVIDER_BASE_URL"`
+	Timeout    time.Duration   `mapstructure:"timeout" yaml:"timeout" env:"CHATMODEL_PROVIDER_TIMEOUT" validate:"gt=0" default:"30s"`
+	MaxRetries int             `mapstructure:"max_retries" yaml:"max_retries" env:"CHATMODEL_PROVIDER_MAX_RETRIES" validate:"gte=0" default:"3"`
 	RateLimit  RateLimitConfig `mapstructure:"rate_limit" yaml:"rate_limit"`
 }
 
 // RateLimitConfig represents rate limiting configuration.
 type RateLimitConfig struct {
-	RequestsPerMinute int `mapstructure:"requests_per_minute" yaml:"requests_per_minute" default:"60"`
-	RequestsPerHour   int `mapstructure:"requests_per_hour" yaml:"requests_per_hour" default:"1000"`
-	BurstSize         int `mapstructure:"burst_size" yaml:"burst_size" default:"10"`
+	RequestsPerMinute int `mapstructure:"requests_per_minute" yaml:"requests_per_minute" env:"CHATMODEL_RATE_LIMIT_REQUESTS_PER_MINUTE" validate:"gt=0" default:"60"`
+	RequestsPerHour   int `mapstructure:"requests_per_hour" yaml:"requests_per_hour" env:"CHATMODEL_RATE_LIMIT_REQUESTS_PER_HOUR" validate:"gt=0" default:"1000"`
+	BurstSize         int `mapstructure:"burst_size" yaml:"burst_size" env:"CHATMODEL_RATE_LIMIT_BURST_SIZE" validate:"gt=0" default:"10"`
 }
 
 // WithTemperature sets the temperature for response generation.

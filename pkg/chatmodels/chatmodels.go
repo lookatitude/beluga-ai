@@ -42,7 +42,8 @@ package chatmodels
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
@@ -92,19 +93,42 @@ func NewChatModel(model string, config *Config, opts ...iface.Option) (iface.Cha
 	for _, opt := range opts {
 		configMap := make(map[string]any)
 		opt.Apply(&configMap)
-		// Apply the config values to options - simplified for now
+		// Apply the config values to options
 		if temp, ok := configMap["temperature"].(float32); ok {
 			options.Temperature = temp
 		}
 		if maxTokens, ok := configMap["max_tokens"].(int); ok {
 			options.MaxTokens = maxTokens
 		}
-		// Add other option mappings as needed
+		if topP, ok := configMap["top_p"].(float32); ok {
+			options.TopP = topP
+		}
+		if stopSequences, ok := configMap["stop_sequences"].([]string); ok {
+			options.StopSequences = stopSequences
+		}
+		if systemPrompt, ok := configMap["system_prompt"].(string); ok {
+			options.SystemPrompt = systemPrompt
+		}
+		if functionCalling, ok := configMap["function_calling"].(bool); ok {
+			options.FunctionCalling = functionCalling
+		}
+		if timeout, ok := configMap["timeout"].(time.Duration); ok {
+			options.Timeout = timeout
+		}
+		if maxRetries, ok := configMap["max_retries"].(int); ok {
+			options.MaxRetries = maxRetries
+		}
+		if enableMetrics, ok := configMap["enable_metrics"].(bool); ok {
+			options.EnableMetrics = enableMetrics
+		}
+		if enableTracing, ok := configMap["enable_tracing"].(bool); ok {
+			options.EnableTracing = enableTracing
+		}
 	}
 
 	// Validate configuration
 	if err := config.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid configuration: %w", err)
+		return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeConfigInvalid, err)
 	}
 
 	// Create provider-specific implementation
@@ -115,7 +139,7 @@ func NewChatModel(model string, config *Config, opts ...iface.Option) (iface.Cha
 		return mock.NewMockChatModel(model, config, options)
 	default:
 		return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeProviderNotSupported,
-			fmt.Errorf("unsupported provider: %s", config.DefaultProvider))
+			errors.New("unsupported provider: "+config.DefaultProvider))
 	}
 }
 
