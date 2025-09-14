@@ -42,16 +42,22 @@ func WrapError(cause error, code, message string, args ...interface{}) *ConfigEr
 
 // Common error codes
 const (
-	ErrCodeInvalidConfig     = "invalid_config"
-	ErrCodeValidationFailed  = "validation_failed"
-	ErrCodeFileNotFound      = "file_not_found"
-	ErrCodeParseFailed       = "parse_failed"
-	ErrCodeUnsupportedFormat = "unsupported_format"
-	ErrCodeMissingRequired   = "missing_required"
-	ErrCodeInvalidProvider   = "invalid_provider"
-	ErrCodeInvalidParameters = "invalid_parameters"
-	ErrCodeLoadFailed        = "load_failed"
-	ErrCodeSaveFailed        = "save_failed"
+	ErrCodeInvalidConfig       = "invalid_config"
+	ErrCodeValidationFailed    = "validation_failed"
+	ErrCodeFileNotFound        = "file_not_found"
+	ErrCodeParseFailed         = "parse_failed"
+	ErrCodeUnsupportedFormat   = "unsupported_format"
+	ErrCodeMissingRequired     = "missing_required"
+	ErrCodeInvalidProvider     = "invalid_provider"
+	ErrCodeInvalidParameters   = "invalid_parameters"
+	ErrCodeLoadFailed          = "load_failed"
+	ErrCodeSaveFailed          = "save_failed"
+	ErrCodeProviderUnavailable = "provider_unavailable"
+	ErrCodeRemoteLoadTimeout   = "remote_load_timeout"
+	ErrCodeAllProvidersFailed  = "all_providers_failed"
+	ErrCodeConfigNotFound      = "config_not_found"
+	ErrCodeKeyNotFound         = "key_not_found"
+	ErrCodeInvalidFormat       = "invalid_format"
 )
 
 // IsConfigError checks if an error is a ConfigError with the given code.

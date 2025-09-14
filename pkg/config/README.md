@@ -4,25 +4,30 @@ The `config` package provides a flexible and extensible configuration management
 
 ## Features
 
-- **Multiple Configuration Sources**: Support for YAML files, environment variables, and programmatic configuration
-- **Validation**: Built-in configuration validation with detailed error messages
-- **Defaults**: Automatic setting of default values for configuration fields
-- **Extensibility**: Easy to extend with new configuration providers
-- **Observability**: OpenTelemetry integration for metrics and tracing
+- **Multiple Configuration Sources**: Support for YAML, JSON, and TOML files, environment variables, and programmatic configuration
+- **Schema-Based Validation**: Integration with the schema package for robust validation of configuration structures
+- **Composite Providers**: Chain multiple providers with fallback logic for flexible configuration hierarchies
+- **Enhanced Error Handling**: Structured error types with specific error codes for programmatic error handling
+- **Observability**: OpenTelemetry integration for metrics and distributed tracing
 - **Type Safety**: Strong typing with Go interfaces and structs
+- **Extensibility**: Easy to extend with new configuration providers and formats
 
 ## Package Structure
 
 ```
 pkg/config/
 ├── iface/              # Public interfaces and types
+│   ├── errors.go       # Error types and codes
 │   ├── provider.go     # Provider interface definitions
-│   └── types.go        # Configuration type definitions
+│   ├── types.go        # Configuration type definitions
+│   └── validation.go   # Validation logic
 ├── internal/           # Private implementation details
 │   └── loader/         # Configuration loading logic
 │       ├── loader.go
 │       └── validation.go
 ├── providers/          # Configuration provider implementations
+│   ├── composite/      # Composite provider for chaining
+│   │   └── composite_provider.go
 │   └── viper/          # Viper-based provider
 │       └── viper_provider.go
 ├── config.go           # Main package interface with factory functions
@@ -130,9 +135,99 @@ func main() {
 }
 ```
 
+## Advanced Features
+
+### Multiple Configuration Formats
+
+The config package supports YAML, JSON, and TOML formats:
+
+```go
+// YAML provider (default)
+yamlProvider, _ := config.NewYAMLProvider("config", []string{"./config"}, "MYAPP")
+
+// JSON provider
+jsonProvider, _ := config.NewJSONProvider("config", []string{"./config"}, "MYAPP")
+
+// TOML provider
+tomlProvider, _ := config.NewTOMLProvider("config", []string{"./config"}, "MYAPP")
+
+// Auto-detect format from file extension
+autoProvider, _ := config.NewAutoDetectProvider("config", []string{"./config"}, "MYAPP")
+```
+
+### Composite Providers with Fallback
+
+Chain multiple providers for flexible configuration hierarchies:
+
+```go
+// Create providers in priority order
+fileProvider, _ := config.NewYAMLProvider("config", []string{"./config"}, "")
+envProvider := &mockEnvProvider{} // Custom environment provider
+
+// Composite provider tries file first, then environment
+compositeProvider := config.NewCompositeProvider(fileProvider, envProvider)
+
+// Load configuration directly from composite provider
+var cfg config.Config
+err := compositeProvider.Load(&cfg)
+if err != nil {
+    log.Printf("Failed to load config: %v", err)
+}
+```
+
+### Schema-Based Validation
+
+Configuration validation uses the schema package for robust type checking:
+
+```go
+cfg, err := config.LoadConfig()
+if err != nil {
+    // Error includes detailed validation information
+    if config.IsConfigError(err, config.ErrCodeValidationFailed) {
+        log.Printf("Validation failed: %v", err)
+    }
+}
+```
+
+### Enhanced Error Handling
+
+The package provides structured error types with specific codes:
+
+```go
+cfg, err := config.LoadConfig()
+if err != nil {
+    var configErr *config.ConfigError
+    if config.AsConfigError(err, &configErr) {
+        switch configErr.Code {
+        case config.ErrCodeFileNotFound:
+            log.Printf("Config file not found: %v", err)
+        case config.ErrCodeValidationFailed:
+            log.Printf("Validation failed: %v", err)
+        default:
+            log.Printf("Config error: %v", err)
+        }
+    }
+}
+```
+
+### Observability Integration
+
+All operations are instrumented with OpenTelemetry metrics and tracing:
+
+```go
+// Metrics are automatically recorded
+cfg, err := config.LoadConfig()
+// Check metrics: config_loads_total, config_load_duration_seconds
+
+// Tracing spans are created automatically
+// Spans include operation details and error information
+```
+
 ## Configuration Format
 
-The configuration uses YAML format with the following structure:
+The configuration supports YAML, JSON, and TOML formats. The structure is the same across all formats:
+
+### YAML Example
 
 ```yaml
 # config.yaml
@@ -171,6 +266,101 @@ agents:
     llm_provider: "openai-gpt4"
     tools:
       - "calculator"
+```
+
+### JSON Example
+
+```json
+{
+  "llm_providers": [
+    {
+      "name": "openai-gpt4",
+      "provider": "openai",
+      "api_key": "${OPENAI_API_KEY}",
+      "model_name": "gpt-4",
+      "default_call_options": {
+        "temperature": 0.7,
+        "max_tokens": 1000
+      }
+    }
+  ],
+  "embedding_providers": [
+    {
+      "name": "openai-embeddings",
+      "provider": "openai",
+      "api_key": "${OPENAI_API_KEY}",
+      "model_name": "text-embedding-ada-002"
+    }
+  ],
+  "vector_stores": [
+    {
+      "name": "chroma-db",
+      "provider": "chroma",
+      "host": "localhost",
+      "port": 8000
+    }
+  ],
+  "tools": [
+    {
+      "name": "calculator",
+      "provider": "calculator",
+      "description": "Performs mathematical calculations",
+      "enabled": true,
+      "config": {
+        "precision": 2
+      }
+    }
+  ],
+  "agents": [
+    {
+      "name": "assistant",
+      "description": "General purpose AI assistant",
+      "llm_provider_name": "openai-gpt4",
+      "tools": ["calculator"]
+    }
+  ]
+}
+```
+
+### TOML Example
+
+```toml
+[[llm_providers]]
+name = "openai-gpt4"
+provider = "openai"
+api_key = "${OPENAI_API_KEY}"
+model_name = "gpt-4"
+
+[llm_providers.default_call_options]
+temperature = 0.7
+max_tokens = 1000
+
+[[embedding_providers]]
+name = "openai-embeddings"
+provider = "openai"
+api_key = "${OPENAI_API_KEY}"
+model_name = "text-embedding-ada-002"
+
+[[vector_stores]]
+name = "chroma-db"
+provider = "chroma"
+host = "localhost"
+port = 8000
+
+[[tools]]
+name = "calculator"
+provider = "calculator"
+description = "Performs mathematical calculations"
+enabled = true
+
+[tools.config]
+precision = 2
+
+[[agents]]
+name = "assistant"
+description = "General purpose AI assistant"
+llm_provider_name = "openai-gpt4"
+tools = ["calculator"]
 ```
 
 ## Environment Variables

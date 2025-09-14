@@ -7,10 +7,17 @@
 package config
 
 import (
+	"context"
 	"fmt"
+	"time"
+
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 	"github.com/lookatitude/beluga-ai/pkg/config/internal/loader"
+	"github.com/lookatitude/beluga-ai/pkg/config/providers/composite"
 	"github.com/lookatitude/beluga-ai/pkg/config/providers/viper"
 )
 
@@ -31,29 +38,119 @@ func NewLoader(options iface.LoaderOptions) (iface.Loader, error) {
 }
 
 // NewProvider creates a new configuration provider.
-// Currently supports Viper-based providers for YAML and environment variable configuration.
-func NewProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
-	return viper.NewViperProvider(configName, configPaths, envPrefix)
+// Currently supports Viper-based providers for YAML, JSON, TOML and environment variable configuration.
+func NewProvider(configName string, configPaths []string, envPrefix string, format string) (iface.Provider, error) {
+	return viper.NewViperProvider(configName, configPaths, envPrefix, format)
+}
+
+// NewYAMLProvider creates a new YAML configuration provider.
+func NewYAMLProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
+	return viper.NewViperProvider(configName, configPaths, envPrefix, "yaml")
+}
+
+// NewJSONProvider creates a new JSON configuration provider.
+func NewJSONProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
+	return viper.NewViperProvider(configName, configPaths, envPrefix, "json")
+}
+
+// NewTOMLProvider creates a new TOML configuration provider.
+func NewTOMLProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
+	return viper.NewViperProvider(configName, configPaths, envPrefix, "toml")
+}
+
+// NewAutoDetectProvider creates a provider that auto-detects format from file extension.
+func NewAutoDetectProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
+	return viper.NewViperProvider(configName, configPaths, envPrefix, "")
+}
+
+// NewCompositeProvider creates a composite provider that tries multiple providers in order.
+// This allows for fallback configurations (e.g., file -> environment -> defaults).
+func NewCompositeProvider(providers ...iface.Provider) iface.Provider {
+	return composite.NewCompositeProvider(providers...)
 }
 
 // LoadConfig loads configuration using default settings.
 // This is a convenience function for simple use cases.
 func LoadConfig() (*iface.Config, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
+	ctx, span := tracer.Start(context.Background(), "LoadConfig")
+	defer span.End()
+
+	start := time.Now()
+	success := false
+	defer func() {
+		GetGlobalMetrics().RecordConfigLoad(ctx, time.Since(start), success, "loader")
+	}()
+
 	loader, err := NewLoader(DefaultLoaderOptions())
 	if err != nil {
+		span.SetStatus(codes.Error, "failed to create loader")
+		span.SetAttributes(attribute.String("error", err.Error()))
 		return nil, fmt.Errorf("failed to create loader: %w", err)
 	}
-	return loader.LoadConfig()
+
+	cfg, err := loader.LoadConfig()
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to load config")
+		span.SetAttributes(attribute.String("error", err.Error()))
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "config loaded successfully")
+	success = true
+	return cfg, nil
 }
 
 // LoadFromEnv loads configuration from environment variables only
 func LoadFromEnv(prefix string) (*iface.Config, error) {
-	return loader.LoadFromEnv(prefix)
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
+	ctx, span := tracer.Start(context.Background(), "LoadFromEnv")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("prefix", prefix))
+
+	start := time.Now()
+	success := false
+	defer func() {
+		GetGlobalMetrics().RecordConfigLoad(ctx, time.Since(start), success, "env")
+	}()
+
+	cfg, err := loader.LoadFromEnv(prefix)
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to load config from env")
+		span.SetAttributes(attribute.String("error", err.Error()))
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "config loaded from env successfully")
+	success = true
+	return cfg, nil
 }
 
 // LoadFromFile loads configuration from a specific file
 func LoadFromFile(filePath string) (*iface.Config, error) {
-	return loader.LoadFromFile(filePath)
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
+	ctx, span := tracer.Start(context.Background(), "LoadFromFile")
+	defer span.End()
+
+	span.SetAttributes(attribute.String("file_path", filePath))
+
+	start := time.Now()
+	success := false
+	defer func() {
+		GetGlobalMetrics().RecordConfigLoad(ctx, time.Since(start), success, "file")
+	}()
+
+	cfg, err := loader.LoadFromFile(filePath)
+	if err != nil {
+		span.SetStatus(codes.Error, "failed to load config from file")
+		span.SetAttributes(attribute.String("error", err.Error()))
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "config loaded from file successfully")
+	success = true
+	return cfg, nil
 }
 
 // MustLoadConfig loads configuration and panics on error.
@@ -68,7 +165,19 @@ func MustLoadConfig() *iface.Config {
 
 // ValidateConfig validates the entire configuration structure
 func ValidateConfig(cfg *iface.Config) error {
-	return iface.ValidateConfig(cfg)
+	start := time.Now()
+	success := false
+	defer func() {
+		GetGlobalMetrics().RecordValidation(context.Background(), time.Since(start), success)
+	}()
+
+	err := iface.ValidateConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	success = true
+	return nil
 }
 
 // SetDefaults sets default values for configuration fields

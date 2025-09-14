@@ -26,6 +26,7 @@ func (l *Loader) LoadConfig() (*iface.Config, error) {
 		l.options.ConfigName,
 		l.options.ConfigPaths,
 		l.options.EnvPrefix,
+		"yaml", // default to yaml for backward compatibility
 	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create config provider: %w", err)
@@ -57,7 +58,7 @@ func (l *Loader) LoadConfig() (*iface.Config, error) {
 
 // LoadFromEnv loads configuration from environment variables only
 func LoadFromEnv(prefix string) (*iface.Config, error) {
-	provider, err := viper.NewViperProvider("", nil, prefix)
+	provider, err := viper.NewViperProvider("", nil, prefix, "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create env config provider: %w", err)
 	}
@@ -85,7 +86,7 @@ func LoadFromFile(filePath string) (*iface.Config, error) {
 	dir := filepath.Dir(filePath)
 	name := strings.TrimSuffix(filepath.Base(filePath), filepath.Ext(filePath))
 
-	provider, err := viper.NewViperProvider(name, []string{dir}, "")
+	provider, err := viper.NewViperProvider(name, []string{dir}, "", "")
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file config provider: %w", err)
 	}

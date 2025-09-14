@@ -15,12 +15,16 @@ type ViperProvider struct {
 }
 
 // NewViperProvider creates a new ViperProvider.
-func NewViperProvider(configName string, configPaths []string, envPrefix string) (*ViperProvider, error) {
+// The format parameter can be "yaml", "json", "toml", or empty for auto-detection.
+func NewViperProvider(configName string, configPaths []string, envPrefix string, format string) (*ViperProvider, error) {
 	v := viper.New()
 
 	if configName != "" {
 		v.SetConfigName(configName)
-		v.SetConfigType("yaml")
+		// Set config type if specified, otherwise let viper auto-detect
+		if format != "" {
+			v.SetConfigType(format)
+		}
 		for _, path := range configPaths {
 			v.AddConfigPath(path)
 		}

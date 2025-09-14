@@ -70,45 +70,15 @@ func ValidateConfig(cfg *Config) error {
 }
 
 func validateLLMProvider(provider schema.LLMProviderConfig) error {
-	if provider.Name == "" {
-		return errors.New("name is required")
-	}
-	if provider.Provider == "" {
-		return errors.New("provider is required")
-	}
-	if provider.APIKey == "" {
-		return errors.New("api_key is required")
-	}
-	if provider.ModelName == "" {
-		return errors.New("model_name is required")
-	}
-	return nil
+	return provider.Validate()
 }
 
 func validateEmbeddingProvider(provider schema.EmbeddingProviderConfig) error {
-	if provider.Name == "" {
-		return errors.New("name is required")
-	}
-	if provider.Provider == "" {
-		return errors.New("provider is required")
-	}
-	if provider.APIKey == "" {
-		return errors.New("api_key is required")
-	}
-	if provider.ModelName == "" {
-		return errors.New("model_name is required")
-	}
-	return nil
+	return provider.Validate()
 }
 
 func validateVectorStore(store schema.VectorStoreConfig) error {
-	if store.Name == "" {
-		return errors.New("name is required")
-	}
-	if store.Provider == "" {
-		return errors.New("provider is required")
-	}
-	return nil
+	return store.Validate()
 }
 
 func validateTool(tool ToolConfig) error {
@@ -122,13 +92,7 @@ func validateTool(tool ToolConfig) error {
 }
 
 func validateAgent(agent schema.AgentConfig) error {
-	if agent.Name == "" {
-		return errors.New("name is required")
-	}
-	if agent.LLMProviderName == "" {
-		return errors.New("llm_provider_name is required")
-	}
-	return nil
+	return agent.Validate()
 }
 
 // SetDefaults sets default values for configuration fields

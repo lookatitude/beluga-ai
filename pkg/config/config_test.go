@@ -49,6 +49,7 @@ func TestValidateConfig(t *testing.T) {
 					{
 						Name:            "test-agent",
 						LLMProviderName: "test-openai",
+						MaxIterations:   10,
 					},
 				},
 			},
@@ -68,13 +69,13 @@ func TestValidateConfig(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid LLM provider - missing API key",
+			name: "invalid LLM provider - missing model name",
 			config: &iface.Config{
 				LLMProviders: []schema.LLMProviderConfig{
 					{
-						Name:      "test-openai",
-						Provider:  "openai",
-						ModelName: "gpt-4",
+						Name:     "test-openai",
+						Provider: "openai",
+						APIKey:   "sk-test",
 					},
 				},
 			},
@@ -120,7 +121,21 @@ func TestValidateConfig(t *testing.T) {
 			config: &iface.Config{
 				Agents: []schema.AgentConfig{
 					{
-						Name: "test-agent",
+						Name:          "test-agent",
+						MaxIterations: 10,
+					},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid agent - invalid max iterations",
+			config: &iface.Config{
+				Agents: []schema.AgentConfig{
+					{
+						Name:            "test-agent",
+						LLMProviderName: "test-openai",
+						MaxIterations:   0,
 					},
 				},
 			},
