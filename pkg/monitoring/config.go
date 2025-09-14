@@ -2,6 +2,7 @@ package monitoring
 
 import (
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -44,13 +45,13 @@ type OpenTelemetryConfig struct {
 	ServiceVersion string            `mapstructure:"service_version" yaml:"service_version" env:"OTEL_SERVICE_VERSION" default:"1.0.0"`
 	Environment    string            `mapstructure:"environment" yaml:"environment" env:"OTEL_ENVIRONMENT" default:"development"`
 	ResourceAttrs  map[string]string `mapstructure:"resource_attrs" yaml:"resource_attrs"`
-	SampleRate     float64           `mapstructure:"sample_rate" yaml:"sample_rate" env:"OTEL_SAMPLE_RATE" default:"1.0" validate:"min=0,max=1"`
+	SampleRate     float64           `mapstructure:"sample_rate" yaml:"sample_rate" env:"OTEL_SAMPLE_RATE" default:"1.0" validate:"samplerate"`
 }
 
 // LoggingConfig configures structured logging
 type LoggingConfig struct {
 	Enabled       bool   `mapstructure:"enabled" yaml:"enabled" env:"LOG_ENABLED" default:"true"`
-	Level         string `mapstructure:"level" yaml:"level" env:"LOG_LEVEL" default:"info" validate:"oneof=debug info warning error fatal"`
+	Level         string `mapstructure:"level" yaml:"level" env:"LOG_LEVEL" default:"info" validate:"loglevel"`
 	Format        string `mapstructure:"format" yaml:"format" env:"LOG_FORMAT" default:"json" validate:"oneof=json text"`
 	OutputFile    string `mapstructure:"output_file" yaml:"output_file" env:"LOG_OUTPUT_FILE"`
 	UseColors     bool   `mapstructure:"use_colors" yaml:"use_colors" env:"LOG_USE_COLORS" default:"true"`
@@ -64,7 +65,7 @@ type LoggingConfig struct {
 // TracingConfig configures distributed tracing
 type TracingConfig struct {
 	Enabled           bool              `mapstructure:"enabled" yaml:"enabled" env:"TRACING_ENABLED" default:"true"`
-	SampleRate        float64           `mapstructure:"sample_rate" yaml:"sample_rate" env:"TRACING_SAMPLE_RATE" default:"1.0" validate:"min=0,max=1"`
+	SampleRate        float64           `mapstructure:"sample_rate" yaml:"sample_rate" env:"TRACING_SAMPLE_RATE" default:"1.0" validate:"samplerate"`
 	MaxSpansPerSecond int               `mapstructure:"max_spans_per_second" yaml:"max_spans_per_second" env:"TRACING_MAX_SPANS_PER_SECOND" default:"1000" validate:"min=1"`
 	SpanBufferSize    int               `mapstructure:"span_buffer_size" yaml:"span_buffer_size" env:"TRACING_SPAN_BUFFER_SIZE" default:"10000" validate:"min=100"`
 	ExportTimeout     time.Duration     `mapstructure:"export_timeout" yaml:"export_timeout" env:"TRACING_EXPORT_TIMEOUT" default:"30s" validate:"min=1s,max=5m"`
@@ -86,7 +87,7 @@ type MetricsConfig struct {
 // SafetyConfig configures safety validation
 type SafetyConfig struct {
 	Enabled            bool                `mapstructure:"enabled" yaml:"enabled" env:"SAFETY_ENABLED" default:"true"`
-	RiskThreshold      float64             `mapstructure:"risk_threshold" yaml:"risk_threshold" env:"SAFETY_RISK_THRESHOLD" default:"0.7" validate:"min=0,max=1"`
+	RiskThreshold      float64             `mapstructure:"risk_threshold" yaml:"risk_threshold" env:"SAFETY_RISK_THRESHOLD" default:"0.7" validate:"samplerate"`
 	AutoBlockHighRisk  bool                `mapstructure:"auto_block_high_risk" yaml:"auto_block_high_risk" env:"SAFETY_AUTO_BLOCK" default:"true"`
 	ToxicityPatterns   []string            `mapstructure:"toxicity_patterns" yaml:"toxicity_patterns"`
 	BiasPatterns       []string            `mapstructure:"bias_patterns" yaml:"bias_patterns"`
@@ -101,7 +102,7 @@ type EthicsConfig struct {
 	Enabled              bool          `mapstructure:"enabled" yaml:"enabled" env:"ETHICS_ENABLED" default:"true"`
 	BiasDetectionEnabled bool          `mapstructure:"bias_detection_enabled" yaml:"bias_detection_enabled" env:"ETHICS_BIAS_ENABLED" default:"true"`
 	PrivacyCheckEnabled  bool          `mapstructure:"privacy_check_enabled" yaml:"privacy_check_enabled" env:"ETHICS_PRIVACY_ENABLED" default:"true"`
-	FairnessThreshold    float64       `mapstructure:"fairness_threshold" yaml:"fairness_threshold" env:"ETHICS_FAIRNESS_THRESHOLD" default:"0.7" validate:"min=0,max=1"`
+	FairnessThreshold    float64       `mapstructure:"fairness_threshold" yaml:"fairness_threshold" env:"ETHICS_FAIRNESS_THRESHOLD" default:"0.7" validate:"samplerate"`
 	CulturalContexts     []string      `mapstructure:"cultural_contexts" yaml:"cultural_contexts"`
 	SensitiveTopics      []string      `mapstructure:"sensitive_topics" yaml:"sensitive_topics"`
 	StakeholderGroups    []string      `mapstructure:"stakeholder_groups" yaml:"stakeholder_groups"`
@@ -221,6 +222,11 @@ func DefaultConfig() Config {
 func (c *Config) Validate() error {
 	validate := validator.New()
 
+	// Register custom validation functions
+	if err := c.registerCustomValidators(validate); err != nil {
+		return fmt.Errorf("failed to register custom validators: %w", err)
+	}
+
 	// Validate main config
 	if err := validate.Struct(c); err != nil {
 		return fmt.Errorf("configuration validation failed: %w", err)
@@ -229,6 +235,163 @@ func (c *Config) Validate() error {
 	// Cross-field validations
 	if err := c.validateCrossFieldRules(); err != nil {
 		return fmt.Errorf("cross-field validation failed: %w", err)
+	}
+
+	// Additional validations
+	if err := c.validateAdditionalRules(); err != nil {
+		return fmt.Errorf("additional validation failed: %w", err)
+	}
+
+	return nil
+}
+
+// registerCustomValidators registers custom validation functions
+func (c *Config) registerCustomValidators(validate *validator.Validate) error {
+	// Register custom validation for log levels
+	if err := validate.RegisterValidation("loglevel", validateLogLevel); err != nil {
+		return err
+	}
+
+	// Register custom validation for sample rates
+	if err := validate.RegisterValidation("samplerate", validateSampleRate); err != nil {
+		return err
+	}
+
+	// Register custom validation for time durations
+	if err := validate.RegisterValidation("duration", validateDuration); err != nil {
+		return err
+	}
+
+	// Register custom validation for file paths
+	if err := validate.RegisterValidation("filepath", validateFilePath); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateLogLevel validates log level values
+func validateLogLevel(fl validator.FieldLevel) bool {
+	level := fl.Field().String()
+	validLevels := []string{"debug", "info", "warning", "error", "fatal"}
+	for _, validLevel := range validLevels {
+		if level == validLevel {
+			return true
+		}
+	}
+	return false
+}
+
+// validateSampleRate validates sample rate values
+func validateSampleRate(fl validator.FieldLevel) bool {
+	rate := fl.Field().Float()
+	return rate >= 0.0 && rate <= 1.0
+}
+
+// validateDuration validates duration values
+func validateDuration(fl validator.FieldLevel) bool {
+	duration := fl.Field().Interface().(time.Duration)
+	return duration > 0
+}
+
+// validateFilePath validates file path format (basic check)
+func validateFilePath(fl validator.FieldLevel) bool {
+	path := fl.Field().String()
+	if path == "" {
+		return true // Empty path is allowed
+	}
+	// Basic validation - no control characters
+	for _, r := range path {
+		if r < 32 {
+			return false
+		}
+	}
+	return true
+}
+
+// validateAdditionalRules performs additional validation rules
+func (c *Config) validateAdditionalRules() error {
+	// Validate OpenTelemetry resource attributes
+	if c.OpenTelemetry.Enabled {
+		for key, value := range c.OpenTelemetry.ResourceAttrs {
+			if key == "" {
+				return fmt.Errorf("opentelemetry resource attribute key cannot be empty")
+			}
+			if len(key) > 256 {
+				return fmt.Errorf("opentelemetry resource attribute key too long: %s", key)
+			}
+			if len(value) > 1024 {
+				return fmt.Errorf("opentelemetry resource attribute value too long for key: %s", key)
+			}
+		}
+	}
+
+	// Validate custom patterns
+	if err := c.validateCustomPatterns(); err != nil {
+		return err
+	}
+
+	// Validate histogram buckets are sorted
+	if err := c.validateHistogramBuckets(); err != nil {
+		return err
+	}
+
+	// Validate health check configuration consistency
+	if err := c.validateHealthCheckConfig(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateCustomPatterns validates safety custom patterns
+func (c *Config) validateCustomPatterns() error {
+	for key, patterns := range c.Safety.CustomPatterns {
+		if key == "" {
+			return fmt.Errorf("custom pattern key cannot be empty")
+		}
+		for _, pattern := range patterns {
+			if pattern == "" {
+				return fmt.Errorf("custom pattern for key '%s' cannot be empty", key)
+			}
+			// Test if pattern compiles as regex
+			if _, err := regexp.Compile(pattern); err != nil {
+				return fmt.Errorf("invalid regex pattern for key '%s': %s", key, pattern)
+			}
+		}
+	}
+	return nil
+}
+
+// validateHistogramBuckets validates that histogram buckets are sorted
+func (c *Config) validateHistogramBuckets() error {
+	buckets := c.Metrics.HistogramBuckets
+	if len(buckets) == 0 {
+		return nil
+	}
+
+	for i := 1; i < len(buckets); i++ {
+		if buckets[i] <= buckets[i-1] {
+			return fmt.Errorf("histogram buckets must be sorted in ascending order")
+		}
+	}
+	return nil
+}
+
+// validateHealthCheckConfig validates health check configuration
+func (c *Config) validateHealthCheckConfig() error {
+	if !c.Health.Enabled {
+		return nil
+	}
+
+	// Timeout should be less than interval
+	if c.Health.Timeout >= c.Health.CheckInterval {
+		return fmt.Errorf("health check timeout must be less than check interval")
+	}
+
+	// Success threshold should not be greater than max retries + 1
+	if c.Health.SuccessThreshold > c.Health.MaxRetries+1 {
+		return fmt.Errorf("health check success threshold cannot be greater than max retries + 1")
 	}
 
 	return nil

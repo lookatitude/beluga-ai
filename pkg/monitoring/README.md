@@ -6,7 +6,7 @@ The `monitoring` package provides comprehensive observability, safety, and ethic
 
 - **Structured Logging**: Context-aware logging with JSON and colored console output
 - **Distributed Tracing**: OpenTelemetry-based tracing with span management
-- **Metrics Collection**: Comprehensive metrics with histograms, counters, and gauges
+- **Enhanced Metrics**: Comprehensive OpenTelemetry metrics including framework-wide counters, histograms, and gauges
 - **Health Monitoring**: Automated health checks for system components
 - **Safety Validation**: Content safety checks with configurable risk thresholds
 - **Ethical AI Monitoring**: Bias detection, privacy protection, and fairness metrics
@@ -14,6 +14,10 @@ The `monitoring` package provides comprehensive observability, safety, and ethic
 - **Multiple Backends**: Support for OpenTelemetry, Prometheus, DataDog, and CloudWatch
 - **Functional Options**: Flexible configuration using functional options pattern
 - **Interface Segregation**: Clean, focused interfaces following SOLID principles
+- **Dependency Injection**: Integration helpers for DIP injection across the framework
+- **Custom Metrics**: Support for custom counters, histograms, and gauges
+- **Enhanced Error Handling**: Structured error types with context, severity, and retry logic
+- **Comprehensive Testing**: Table-driven tests with mocks and benchmarks
 
 ## Installation
 
@@ -92,6 +96,95 @@ if err != nil {
 monitor, err := monitoring.NewMonitor(
     monitoring.WithConfig(config),
 )
+```
+
+## Integration and Dependency Injection
+
+The monitoring package is designed for seamless integration with other framework packages using Dependency Inversion Principle (DIP) injection. Other packages should depend on monitoring interfaces rather than concrete implementations.
+
+### Integration Helper
+
+Use the `IntegrationHelper` for easy integration with monitoring:
+
+```go
+import "github.com/lookatitude/beluga-ai/pkg/monitoring"
+
+// In your service constructor
+func NewMyService(monitor monitoring.Monitor) *MyService {
+    return &MyService{
+        monitor: monitoring.NewIntegrationHelper(monitor),
+    }
+}
+
+// In your service methods
+func (s *MyService) ProcessData(ctx context.Context, data string) error {
+    return s.monitor.WithMonitoringAndContext(ctx, "process_data", func(ctx context.Context) error {
+        // Your business logic here
+
+        // Safety check
+        result, err := s.monitor.CheckSafety(ctx, data, "data_processing")
+        if err != nil {
+            return err
+        }
+        if !result.Safe {
+            return monitoring.WrapErrorWithContext(ctx, err, monitoring.ErrCodeSafetyViolation, "Content flagged as unsafe")
+        }
+
+        // Record custom metrics
+        s.monitor.RecordMetric(ctx, "data_processed", "Data processing operations", 1, map[string]string{
+            "operation": "process_data",
+        })
+
+        // Log with structured data
+        s.monitor.LogEvent(ctx, "info", "Data processed successfully", map[string]interface{}{
+            "data_length": len(data),
+            "processing_time": time.Since(start).String(),
+        })
+
+        return nil
+    })
+}
+```
+
+### Mock Implementations
+
+For testing, use the mock implementations in `internal/mock/`:
+
+```go
+import "github.com/lookatitude/beluga-ai/pkg/monitoring/internal/mock"
+
+func TestMyService(t *testing.T) {
+    mockMonitor := mock.NewMockMonitor()
+    service := NewMyService(mockMonitor)
+
+    // Test your service
+    err := service.ProcessData(context.Background(), "test data")
+    assert.NoError(t, err)
+
+    // Verify monitoring calls
+    assert.Len(t, mockMonitor.LoggerValue.InfoCalls, 1)
+    assert.Len(t, mockMonitor.MetricsValue.CounterCalls, 1)
+}
+```
+
+### Custom Error Handling
+
+The package provides enhanced error handling with structured errors:
+
+```go
+import "github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
+
+// Create structured errors
+err := iface.WrapErrorWithContext(ctx, underlyingErr, iface.ErrCodeValidationFailed, "Validation failed for input").
+    WithOperation("validate_input").
+    WithComponent("input_processor").
+    WithSeverity(iface.SeverityHigh)
+
+// Check if error should be retried
+if err.ShouldRetry() {
+    delay := err.GetRetryDelay()
+    // Retry logic...
+}
 ```
 
 ## Architecture
@@ -526,6 +619,66 @@ customMetrics := monitor.Metrics()
 customMetrics.Counter(ctx, "custom_metric", "Custom metric description", 1, map[string]string{
     "label": "value",
 })
+```
+
+## Enhanced Metrics and Monitoring
+
+The monitoring package provides comprehensive metrics collection for framework-wide observability:
+
+### Framework-Wide Metrics
+
+```go
+// Record API requests
+metrics.RecordAPIRequest(ctx, "POST", "/api/v1/process", map[string]string{
+    "service": "ai-service",
+    "version": "v1",
+})
+
+// Record database operations
+metrics.RecordDatabaseQuery(ctx, "SELECT", "users", 150*time.Millisecond)
+
+// Record cache operations
+metrics.RecordCacheOperation(ctx, "get", "user:123", true) // hit
+metrics.RecordCacheOperation(ctx, "get", "user:456", false) // miss
+
+// Record external API calls
+metrics.RecordExternalAPICall(ctx, "openai", "/v1/chat/completions", 2*time.Second, true)
+```
+
+### Custom Metrics
+
+```go
+// Register custom metrics
+err := metrics.RegisterCustomCounter("ai_requests_total", "Total AI requests processed")
+if err != nil {
+    log.Fatal(err)
+}
+
+err = metrics.RegisterCustomHistogram("ai_processing_duration", "AI processing duration")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Record custom metrics
+metrics.RecordCustomCounter(ctx, "ai_requests_total", 1, map[string]string{
+    "model": "gpt-4",
+    "user_type": "premium",
+})
+
+metrics.RecordCustomHistogram(ctx, "ai_processing_duration", 2.5, map[string]string{
+    "model": "gpt-4",
+})
+```
+
+### Tracing Operations
+
+```go
+// Record tracing operations
+metrics.RecordTracingOperation(ctx, 100*time.Millisecond, true)  // success
+metrics.RecordLoggingOperation(ctx, 5*time.Millisecond, true)    // success
+
+// Record validation operations
+metrics.RecordValidationOperation(ctx, "safety_check", 50*time.Millisecond, true)
 ```
 
 ## Performance Considerations
