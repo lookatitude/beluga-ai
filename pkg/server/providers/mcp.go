@@ -4,18 +4,19 @@ package providers
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/server"
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
+	"github.com/lookatitude/beluga-ai/pkg/server/providers/mcp"
 )
 
 // MCPProvider provides a ready-to-use MCP server implementation
 type MCPProvider struct {
-	server server.MCPServer
+	server iface.MCPServer
 }
 
 // NewMCPProvider creates a new MCP provider with default configuration
-func NewMCPProvider(opts ...server.Option) (*MCPProvider, error) {
+func NewMCPProvider(opts ...iface.Option) (*MCPProvider, error) {
 	// Set default MCP configuration if not provided
 	hasMCPConfig := false
 	for _, opt := range opts {
@@ -25,13 +26,31 @@ func NewMCPProvider(opts ...server.Option) (*MCPProvider, error) {
 	}
 
 	if !hasMCPConfig {
-		defaultOpts := []server.Option{
-			server.WithMCPConfig(server.DefaultMCPConfig()),
+		defaultOpts := []iface.Option{
+			iface.WithMCPConfig(iface.MCPConfig{
+				Config: iface.Config{
+					Host:            "localhost",
+					Port:            8081,
+					ReadTimeout:     30 * time.Second,
+					WriteTimeout:    30 * time.Second,
+					IdleTimeout:     120 * time.Second,
+					MaxHeaderBytes:  1 << 20, // 1MB
+					EnableMetrics:   true,
+					EnableTracing:   true,
+					LogLevel:        "info",
+					ShutdownTimeout: 30 * time.Second,
+				},
+				ServerName:            "beluga-mcp-server",
+				ServerVersion:         "1.0.0",
+				ProtocolVersion:       "2024-11-05",
+				MaxConcurrentRequests: 10,
+				RequestTimeout:        60 * time.Second,
+			}),
 		}
 		opts = append(defaultOpts, opts...)
 	}
 
-	srv, err := NewMCPServer(opts...)
+	srv, err := mcp.NewServer(opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create MCP server: %w", err)
 	}
@@ -62,7 +81,7 @@ func (p *MCPProvider) RegisterResource(resource iface.MCPResource) error {
 }
 
 // GetServer returns the underlying MCP server for advanced usage
-func (p *MCPProvider) GetServer() server.MCPServer {
+func (p *MCPProvider) GetServer() iface.MCPServer {
 	return p.server
 }
 

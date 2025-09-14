@@ -10,13 +10,31 @@ import (
 )
 
 func TestNewRESTServer(t *testing.T) {
-	// Skip this test since NewRESTServer panics - factory functions are implemented by providers
-	t.Skip("NewRESTServer is not implemented in base package. Use providers.NewRESTProvider() instead.")
+	// Test that NewRESTServer returns a valid REST server
+	server, err := NewRESTServer()
+	if err != nil {
+		t.Fatalf("NewRESTServer() returned error: %v", err)
+	}
+	if server == nil {
+		t.Fatal("NewRESTServer() returned nil server")
+	}
+
+	// Test that it implements the RESTServer interface
+	var _ RESTServer = server
 }
 
 func TestNewMCPServer(t *testing.T) {
-	// Skip this test since NewMCPServer panics - factory functions are implemented by providers
-	t.Skip("NewMCPServer is not implemented in base package. Use providers.NewMCPProvider() instead.")
+	// Test that NewMCPServer returns a valid MCP server
+	server, err := NewMCPServer()
+	if err != nil {
+		t.Fatalf("NewMCPServer() returned error: %v", err)
+	}
+	if server == nil {
+		t.Fatal("NewMCPServer() returned nil server")
+	}
+
+	// Test that it implements the MCPServer interface
+	var _ MCPServer = server
 }
 
 func TestDefaultConfigs(t *testing.T) {

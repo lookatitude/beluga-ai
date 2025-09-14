@@ -57,82 +57,29 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
+	"github.com/lookatitude/beluga-ai/pkg/server/providers/rest"
+	"github.com/lookatitude/beluga-ai/pkg/server/providers/mcp"
 )
 
-// Server represents a generic server interface that can be implemented
-// by different server types (REST, MCP, etc.)
-type Server interface {
-	// Start begins serving requests and blocks until the context is cancelled
-	Start(ctx context.Context) error
-	// Stop gracefully shuts down the server
-	Stop(ctx context.Context) error
-	// IsHealthy returns true if the server is healthy and ready to serve requests
-	IsHealthy(ctx context.Context) bool
-}
-
-// RESTServer extends Server with REST-specific functionality
-type RESTServer interface {
-	Server
-	// RegisterHandler registers a streaming handler for a specific resource
-	RegisterHandler(resource string, handler StreamingHandler)
-	// RegisterHTTPHandler registers an HTTP handler for a specific method and path
-	RegisterHTTPHandler(method, path string, handler http.HandlerFunc)
-	// RegisterMiddleware adds middleware to the request processing pipeline
-	RegisterMiddleware(middleware func(http.Handler) http.Handler)
-	// GetMux returns the underlying HTTP router for advanced customization
-	GetMux() interface{}
-}
-
-// StreamingHandler handles HTTP requests that may involve streaming responses
-type StreamingHandler interface {
-	// HandleStreaming processes requests that may return streaming responses
-	HandleStreaming(w http.ResponseWriter, r *http.Request) error
-	// HandleNonStreaming processes regular HTTP requests
-	HandleNonStreaming(w http.ResponseWriter, r *http.Request) error
-}
-
-// MCPTool represents a tool that can be invoked via MCP
-type MCPTool = iface.MCPTool
-
-// MCPResource represents a resource that can be accessed via MCP
-type MCPResource = iface.MCPResource
-
-// MCPServer extends Server with MCP-specific functionality
-type MCPServer interface {
-	Server
-	// RegisterTool registers a tool with the MCP server
-	RegisterTool(tool MCPTool) error
-	// RegisterResource registers a resource with the MCP server
-	RegisterResource(resource MCPResource) error
-	// ListTools returns all registered tools
-	ListTools(ctx context.Context) ([]MCPTool, error)
-	// ListResources returns all registered resources
-	ListResources(ctx context.Context) ([]MCPResource, error)
-	// CallTool executes a tool by name
-	CallTool(ctx context.Context, name string, input map[string]interface{}) (interface{}, error)
-}
 
 // NewRESTServer creates a new REST server instance with the provided options.
 // It implements the RESTServer interface and provides HTTP endpoints with streaming support.
 //
-// Note: This is a factory function that should be implemented by specific providers.
-// Use providers.NewRESTProvider() for a concrete implementation.
-func NewRESTServer(opts ...Option) (RESTServer, error) {
-	panic("NewRESTServer is not implemented in the base server package. Use providers.NewRESTProvider() instead.")
+// This factory function creates the REST server implementation directly.
+func NewRESTServer(opts ...iface.Option) (RESTServer, error) {
+	return rest.NewServer(opts...)
 }
 
 // NewMCPServer creates a new MCP server instance with the provided options.
 // It implements the MCPServer interface and provides MCP protocol support for tools and resources.
 //
-// Note: This is a factory function that should be implemented by specific providers.
-// Use providers.NewMCPProvider() for a concrete implementation.
-func NewMCPServer(opts ...Option) (MCPServer, error) {
-	panic("NewMCPServer is not implemented in the base server package. Use providers.NewMCPProvider() instead.")
+// This factory function creates the MCP server implementation directly.
+func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
+	return mcp.NewServer(opts...)
 }
 
 // Default configurations

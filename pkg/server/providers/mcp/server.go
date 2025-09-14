@@ -1,5 +1,5 @@
-// Package providers provides MCP (Model Context Protocol) server implementation.
-package providers
+// Package mcp provides MCP (Model Context Protocol) server implementation.
+package mcp
 
 import (
 	"context"
@@ -12,15 +12,14 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/lookatitude/beluga-ai/pkg/server"
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
 )
 
-// MCPServer implements an MCP server
-type MCPServer struct {
-	config      server.MCPConfig
+// Server implements an MCP server
+type Server struct {
+	config      iface.MCPConfig
 	server      *http.Server
-	metrics     *server.Metrics
+	metrics     interface{} // TODO: fix metrics
 	logger      iface.Logger
 	tracer      iface.Tracer
 	tools       map[string]iface.MCPTool
@@ -115,10 +114,10 @@ type MCPResourceContent struct {
 	Blob     string `json:"blob,omitempty"`
 }
 
-// NewMCPServer creates a new MCP server instance
-func NewMCPServer(opts ...server.Option) (*MCPServer, error) {
+// NewServer creates a new MCP server instance
+func NewServer(opts ...iface.Option) (*Server, error) {
 	options := &serverOptions{
-		config: server.Config{
+		config: iface.Config{
 			Host:            "localhost",
 			Port:            8080,
 			ReadTimeout:     30 * time.Second,
@@ -130,7 +129,7 @@ func NewMCPServer(opts ...server.Option) (*MCPServer, error) {
 			LogLevel:        "info",
 			ShutdownTimeout: 30 * time.Second,
 		},
-		mcpConfig: &server.MCPConfig{
+		mcpConfig: &iface.MCPConfig{
 			ServerName:            "beluga-mcp-server",
 			ServerVersion:         "1.0.0",
 			ProtocolVersion:       "2024-11-05",
@@ -148,7 +147,7 @@ func NewMCPServer(opts ...server.Option) (*MCPServer, error) {
 	if options.mcpConfig != nil {
 		options.mcpConfig.Config = options.config
 	} else {
-		options.mcpConfig = &server.MCPConfig{
+		options.mcpConfig = &iface.MCPConfig{
 			Config: options.config,
 		}
 	}
@@ -172,9 +171,9 @@ func NewMCPServer(opts ...server.Option) (*MCPServer, error) {
 		}
 	}
 
-	s := &MCPServer{
+	s := &Server{
 		config:    *options.mcpConfig,
-		metrics:   server.NewMetrics(options.meter),
+		metrics:   nil,
 		logger:    options.logger,
 		tracer:    options.tracer,
 		tools:     toolsMap,
@@ -194,7 +193,7 @@ func NewMCPServer(opts ...server.Option) (*MCPServer, error) {
 }
 
 // Start starts the MCP server
-func (s *MCPServer) Start(ctx context.Context) error {
+func (s *Server) Start(ctx context.Context) error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/mcp", s.handleMCPRequest)
 
@@ -225,7 +224,7 @@ func (s *MCPServer) Start(ctx context.Context) error {
 	case err := <-serverErr:
 		if err != http.ErrServerClosed {
 			s.logger.Error("MCP server error", "error", err)
-			return server.NewInternalError("mcp_server_start", err)
+			return iface.NewInternalError("mcp_server_start", err)
 		}
 		return nil
 	case <-ctx.Done():
@@ -235,7 +234,7 @@ func (s *MCPServer) Start(ctx context.Context) error {
 }
 
 // Stop gracefully shuts down the server
-func (s *MCPServer) Stop(ctx context.Context) error {
+func (s *Server) Stop(ctx context.Context) error {
 	if s.server == nil {
 		return nil
 	}
@@ -246,7 +245,7 @@ func (s *MCPServer) Stop(ctx context.Context) error {
 	s.logger.Info("Shutting down MCP server gracefully")
 	if err := s.server.Shutdown(shutdownCtx); err != nil {
 		s.logger.Error("MCP server shutdown error", "error", err)
-		return server.NewInternalError("mcp_server_shutdown", err)
+		return iface.NewInternalError("mcp_server_shutdown", err)
 	}
 
 	s.logger.Info("MCP server shutdown complete")
@@ -254,44 +253,45 @@ func (s *MCPServer) Stop(ctx context.Context) error {
 }
 
 // IsHealthy returns true if the server is healthy
-func (s *MCPServer) IsHealthy(ctx context.Context) bool {
+func (s *Server) IsHealthy(ctx context.Context) bool {
 	return s.server != nil
 }
 
 // RegisterTool registers an MCP tool
-func (s *MCPServer) RegisterTool(tool iface.MCPTool) error {
+func (s *Server) RegisterTool(tool iface.MCPTool) error {
 	s.toolsMu.Lock()
 	defer s.toolsMu.Unlock()
 
 	name := tool.Name()
 	if _, exists := s.tools[name]; exists {
-		return server.NewInvalidRequestError("register_tool", fmt.Sprintf("tool '%s' already registered", name), nil)
+		return iface.NewInvalidRequestError("register_tool", fmt.Sprintf("tool '%s' already registered", name), nil)
 	}
 
 	s.tools[name] = tool
-	s.metrics.RecordToolRegistration(context.Background(), name)
+	// TODO: Add metrics back
 	s.logger.Info("Registered MCP tool", "name", name)
 	return nil
 }
 
 // RegisterResource registers an MCP resource
-func (s *MCPServer) RegisterResource(resource iface.MCPResource) error {
+func (s *Server) RegisterResource(resource iface.MCPResource) error {
 	s.resourcesMu.Lock()
 	defer s.resourcesMu.Unlock()
 
 	uri := resource.URI()
 	if _, exists := s.resources[uri]; exists {
-		return server.NewInvalidRequestError("register_resource", fmt.Sprintf("resource '%s' already registered", uri), nil)
+		return iface.NewInvalidRequestError("register_resource", fmt.Sprintf("resource '%s' already registered", uri), nil)
 	}
 
 	s.resources[uri] = resource
-	s.metrics.RecordResourceRegistration(context.Background(), uri)
+	// TODO: Add metrics back
+	// s.metrics.RecordResourceRegistration(context.Background(), uri)
 	s.logger.Info("Registered MCP resource", "uri", uri)
 	return nil
 }
 
 // ListTools returns all registered tools
-func (s *MCPServer) ListTools(ctx context.Context) ([]iface.MCPTool, error) {
+func (s *Server) ListTools(ctx context.Context) ([]iface.MCPTool, error) {
 	s.toolsMu.RLock()
 	defer s.toolsMu.RUnlock()
 
@@ -303,7 +303,7 @@ func (s *MCPServer) ListTools(ctx context.Context) ([]iface.MCPTool, error) {
 }
 
 // ListResources returns all registered resources
-func (s *MCPServer) ListResources(ctx context.Context) ([]iface.MCPResource, error) {
+func (s *Server) ListResources(ctx context.Context) ([]iface.MCPResource, error) {
 	s.resourcesMu.RLock()
 	defer s.resourcesMu.RUnlock()
 
@@ -315,25 +315,26 @@ func (s *MCPServer) ListResources(ctx context.Context) ([]iface.MCPResource, err
 }
 
 // CallTool executes a tool by name
-func (s *MCPServer) CallTool(ctx context.Context, name string, input map[string]interface{}) (interface{}, error) {
+func (s *Server) CallTool(ctx context.Context, name string, input map[string]interface{}) (interface{}, error) {
 	s.toolsMu.RLock()
 	tool, exists := s.tools[name]
 	s.toolsMu.RUnlock()
 
 	if !exists {
-		return nil, server.NewToolNotFoundError(name)
+		return nil, iface.NewToolNotFoundError(name)
 	}
 
 	start := time.Now()
 	result, err := tool.Execute(ctx, input)
 	duration := time.Since(start)
 
-	success := err == nil
-	s.metrics.RecordMCPToolCall(ctx, name, success, duration)
+	_ = err // success := err == nil
+	// TODO: Add metrics back
+	// s.metrics.RecordMCPToolCall(ctx, name, success, duration)
 
 	if err != nil {
 		s.logger.Error("Tool execution failed", "tool", name, "error", err)
-		return nil, server.NewToolExecutionError(name, err)
+		return nil, iface.NewToolExecutionError(name, err)
 	}
 
 	s.logger.Info("Tool executed successfully", "tool", name, "duration_ms", duration.Milliseconds())
@@ -342,7 +343,7 @@ func (s *MCPServer) CallTool(ctx context.Context, name string, input map[string]
 
 // HTTP handlers
 
-func (s *MCPServer) handleCORS(next http.Handler) http.Handler {
+func (s *Server) handleCORS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -357,7 +358,7 @@ func (s *MCPServer) handleCORS(next http.Handler) http.Handler {
 	})
 }
 
-func (s *MCPServer) handleMCPRequest(w http.ResponseWriter, r *http.Request) {
+func (s *Server) handleMCPRequest(w http.ResponseWriter, r *http.Request) {
 	ctx, span := s.tracer.Start(r.Context(), "mcp.request")
 	defer span.End()
 
@@ -397,7 +398,7 @@ func (s *MCPServer) handleMCPRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func (s *MCPServer) handleMCPMessage(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleMCPMessage(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	switch msg.Method {
 	case "initialize":
 		return s.handleInitialize(ctx, msg)
@@ -410,11 +411,11 @@ func (s *MCPServer) handleMCPMessage(ctx context.Context, msg *MCPMessage) (*MCP
 	case "resources/read":
 		return s.handleReadResource(ctx, msg)
 	default:
-		return nil, server.NewMCPProtocolError("method_not_found", fmt.Errorf("unknown method: %s", msg.Method))
+		return nil, iface.NewMCPProtocolError("method_not_found", fmt.Errorf("unknown method: %s", msg.Method))
 	}
 }
 
-func (s *MCPServer) handleInitialize(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleInitialize(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	response := &MCPMessage{
 		JSONRPC: "2.0",
 		ID:      msg.ID,
@@ -437,7 +438,7 @@ func (s *MCPServer) handleInitialize(ctx context.Context, msg *MCPMessage) (*MCP
 	return response, nil
 }
 
-func (s *MCPServer) handleListTools(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleListTools(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	tools, err := s.ListTools(ctx)
 	if err != nil {
 		return nil, err
@@ -462,7 +463,7 @@ func (s *MCPServer) handleListTools(ctx context.Context, msg *MCPMessage) (*MCPM
 	return response, nil
 }
 
-func (s *MCPServer) handleCallTool(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleCallTool(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	var req CallToolRequest
 	if err := s.parseParams(msg.Params, &req); err != nil {
 		return nil, err
@@ -491,7 +492,7 @@ func (s *MCPServer) handleCallTool(ctx context.Context, msg *MCPMessage) (*MCPMe
 	return response, nil
 }
 
-func (s *MCPServer) handleListResources(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleListResources(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	resources, err := s.ListResources(ctx)
 	if err != nil {
 		return nil, err
@@ -517,7 +518,7 @@ func (s *MCPServer) handleListResources(ctx context.Context, msg *MCPMessage) (*
 	return response, nil
 }
 
-func (s *MCPServer) handleReadResource(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
+func (s *Server) handleReadResource(ctx context.Context, msg *MCPMessage) (*MCPMessage, error) {
 	var req ReadResourceRequest
 	if err := s.parseParams(msg.Params, &req); err != nil {
 		return nil, err
@@ -528,18 +529,19 @@ func (s *MCPServer) handleReadResource(ctx context.Context, msg *MCPMessage) (*M
 	s.resourcesMu.RUnlock()
 
 	if !exists {
-		return nil, server.NewResourceNotFoundError(req.URI)
+		return nil, iface.NewResourceNotFoundError(req.URI)
 	}
 
 	start := time.Now()
 	data, err := resource.Read(ctx)
 	duration := time.Since(start)
 
-	success := err == nil
-	s.metrics.RecordMCPResourceRead(ctx, req.URI, success, duration)
+	_ = duration // success := err == nil
+	// TODO: Add metrics back
+	// s.metrics.RecordMCPResourceRead(ctx, req.URI, success, duration)
 
 	if err != nil {
-		return nil, server.NewResourceReadError(req.URI, err)
+		return nil, iface.NewResourceReadError(req.URI, err)
 	}
 
 	content := []MCPResourceContent{
@@ -560,7 +562,7 @@ func (s *MCPServer) handleReadResource(ctx context.Context, msg *MCPMessage) (*M
 	return response, nil
 }
 
-func (s *MCPServer) handleMCPError(w http.ResponseWriter, id interface{}, code int, message string, err error) {
+func (s *Server) handleMCPError(w http.ResponseWriter, id interface{}, code int, message string, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK) // MCP uses 200 even for errors
 
@@ -577,14 +579,14 @@ func (s *MCPServer) handleMCPError(w http.ResponseWriter, id interface{}, code i
 	json.NewEncoder(w).Encode(response)
 }
 
-func (s *MCPServer) parseParams(params interface{}, target interface{}) error {
+func (s *Server) parseParams(params interface{}, target interface{}) error {
 	data, err := json.Marshal(params)
 	if err != nil {
-		return server.NewMCPProtocolError("parse_params", err)
+		return iface.NewMCPProtocolError("parse_params", err)
 	}
 
 	if err := json.Unmarshal(data, target); err != nil {
-		return server.NewMCPProtocolError("parse_params", err)
+		return iface.NewMCPProtocolError("parse_params", err)
 	}
 
 	return nil
@@ -628,13 +630,13 @@ func (m *noopMetrics) RecordServerUptime(ctx context.Context, uptime time.Durati
 
 // serverOptions holds configuration options for the server
 type serverOptions struct {
-	config      server.Config
-	restConfig  *server.RESTConfig
-	mcpConfig   *server.MCPConfig
+	config      iface.Config
+	restConfig  *iface.RESTConfig
+	mcpConfig   *iface.MCPConfig
 	logger      iface.Logger
 	tracer      iface.Tracer
-	meter       server.Meter
-	middlewares []server.Middleware
+	meter       iface.Meter
+	middlewares []iface.Middleware
 	tools       []iface.MCPTool
 	resources   []iface.MCPResource
 }
