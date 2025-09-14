@@ -28,19 +28,19 @@ type Config struct {
 
 // ChainConfig holds configuration specific to chain orchestration
 type ChainConfig struct {
-	DefaultTimeout      time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" default:"5m"`
-	DefaultRetries      int           `mapstructure:"default_retries" yaml:"default_retries" default:"3"`
-	MaxConcurrentChains int           `mapstructure:"max_concurrent_chains" yaml:"max_concurrent_chains" default:"10"`
+	DefaultTimeout      time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"5m"`
+	DefaultRetries      int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"3"`
+	MaxConcurrentChains int           `mapstructure:"max_concurrent_chains" yaml:"max_concurrent_chains" validate:"min=1,max=10000" default:"10"`
 	EnableMemoryPooling bool          `mapstructure:"enable_memory_pooling" yaml:"enable_memory_pooling" default:"true"`
 }
 
 // GraphConfig holds configuration specific to graph orchestration
 type GraphConfig struct {
-	DefaultTimeout          time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" default:"10m"`
-	DefaultRetries          int           `mapstructure:"default_retries" yaml:"default_retries" default:"3"`
-	MaxWorkers              int           `mapstructure:"max_workers" yaml:"max_workers" default:"5"`
+	DefaultTimeout          time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"10m"`
+	DefaultRetries          int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"3"`
+	MaxWorkers              int           `mapstructure:"max_workers" yaml:"max_workers" validate:"min=1,max=1000" default:"5"`
 	EnableParallelExecution bool          `mapstructure:"enable_parallel_execution" yaml:"enable_parallel_execution" default:"true"`
-	QueueSize               int           `mapstructure:"queue_size" yaml:"queue_size" default:"100"`
+	QueueSize               int           `mapstructure:"queue_size" yaml:"queue_size" validate:"min=1,max=100000" default:"100"`
 }
 
 // ObservabilityConfig holds observability-related configuration
@@ -53,11 +53,11 @@ type ObservabilityConfig struct {
 
 // WorkflowConfig holds configuration specific to workflow orchestration
 type WorkflowConfig struct {
-	DefaultTimeout         time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" default:"30m"`
-	DefaultRetries         int           `mapstructure:"default_retries" yaml:"default_retries" default:"5"`
-	TaskQueue              string        `mapstructure:"task_queue" yaml:"task_queue" default:"beluga-workflows"`
+	DefaultTimeout         time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"30m"`
+	DefaultRetries         int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"5"`
+	TaskQueue              string        `mapstructure:"task_queue" yaml:"task_queue" validate:"required,min=1,max=255" default:"beluga-workflows"`
 	EnablePersistence      bool          `mapstructure:"enable_persistence" yaml:"enable_persistence" default:"false"`
-	MaxConcurrentWorkflows int           `mapstructure:"max_concurrent_workflows" yaml:"max_concurrent_workflows" default:"50"`
+	MaxConcurrentWorkflows int           `mapstructure:"max_concurrent_workflows" yaml:"max_concurrent_workflows" validate:"min=1,max=1000" default:"50"`
 }
 
 // EnabledFeatures holds configuration for enabling/disabling features
