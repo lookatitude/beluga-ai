@@ -84,7 +84,14 @@ func NewMockProvider(config *llms.Config) (*MockProvider, error) {
 func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = m.tracing.StartOperation(ctx, "mock.generate", ProviderName, m.modelName)
-	defer m.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, msg := range messages {
+		inputSize += len(msg.GetContent())
+	}
+	m.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	m.metrics.IncrementActiveRequests(ctx, ProviderName, m.modelName)
@@ -94,8 +101,9 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 
 	// Check if should error
 	if m.shouldError {
+		duration := time.Since(start)
 		err := llms.NewLLMError("mock.generate", llms.ErrCodeInternalError, fmt.Errorf("mock provider configured to error"))
-		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError)
+		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError, duration)
 		m.tracing.RecordError(ctx, err)
 		return nil, err
 	}
@@ -118,8 +126,8 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 		"total_tokens":  len(messages)*10 + len(response)/4,
 	}
 
-	// Record success metrics
-	m.metrics.RecordRequest(ctx, ProviderName, m.modelName, 10*time.Millisecond)
+	duration := time.Since(start)
+	m.metrics.RecordRequest(ctx, ProviderName, m.modelName, duration)
 
 	return aiMsg, nil
 }
@@ -128,7 +136,14 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = m.tracing.StartOperation(ctx, "mock.stream", ProviderName, m.modelName)
-	defer m.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, msg := range messages {
+		inputSize += len(msg.GetContent())
+	}
+	m.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	m.metrics.IncrementActiveRequests(ctx, ProviderName, m.modelName)
@@ -138,8 +153,9 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 
 	// Check if should error
 	if m.shouldError {
+		duration := time.Since(start)
 		err := llms.NewLLMError("mock.stream", llms.ErrCodeInternalError, fmt.Errorf("mock provider configured to error"))
-		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError)
+		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError, duration)
 		m.tracing.RecordError(ctx, err)
 		return nil, err
 	}
@@ -201,10 +217,10 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 		case outputChan <- finalChunk:
 		case <-ctx.Done():
 		}
-	}()
 
-	// Record success metrics
-	m.metrics.RecordRequest(ctx, ProviderName, m.modelName, 0)
+		duration := time.Since(start)
+		m.metrics.RecordStream(ctx, ProviderName, m.modelName, duration)
+	}()
 
 	return outputChan, nil
 }
@@ -227,6 +243,10 @@ func (m *MockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 // GetModelName implements the ChatModel interface
 func (m *MockProvider) GetModelName() string {
 	return m.modelName
+}
+
+func (m *MockProvider) GetProviderName() string {
+	return ProviderName
 }
 
 // Invoke implements the Runnable interface

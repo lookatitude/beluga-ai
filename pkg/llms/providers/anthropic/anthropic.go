@@ -95,7 +95,14 @@ func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error) {
 func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = a.tracing.StartOperation(ctx, "anthropic.generate", ProviderName, a.modelName)
-	defer a.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	a.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	a.metrics.IncrementActiveRequests(ctx, ProviderName, a.modelName)
@@ -114,13 +121,14 @@ func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Mess
 	})
 
 	if retryErr != nil {
-		a.metrics.RecordError(ctx, ProviderName, a.modelName, llms.GetLLMErrorCode(retryErr))
+		duration := time.Since(start)
+		a.metrics.RecordError(ctx, ProviderName, a.modelName, llms.GetLLMErrorCode(retryErr), duration)
 		a.tracing.RecordError(ctx, retryErr)
 		return nil, retryErr
 	}
 
-	// Record success metrics
-	a.metrics.RecordRequest(ctx, ProviderName, a.modelName, 0) // Duration will be recorded by caller
+	duration := time.Since(start)
+	a.metrics.RecordRequest(ctx, ProviderName, a.modelName, duration)
 
 	return result, nil
 }
@@ -130,12 +138,22 @@ func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Me
 	// Start tracing
 	ctx = a.tracing.StartOperation(ctx, "anthropic.stream", ProviderName, a.modelName)
 
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	a.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
+
 	// Apply options and merge with defaults
 	callOpts := a.buildCallOptions(options...)
 
 	// Execute streaming request
 	streamChan, err := a.streamInternal(ctx, messages, callOpts)
 	if err != nil {
+		duration := time.Since(start)
+		a.metrics.RecordError(ctx, ProviderName, a.modelName, llms.GetLLMErrorCode(err), duration)
 		a.tracing.EndSpan(ctx)
 		return nil, err
 	}
@@ -153,6 +171,9 @@ func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Me
 				return
 			}
 		}
+
+		duration := time.Since(start)
+		a.metrics.RecordStream(ctx, ProviderName, a.modelName, duration)
 	}()
 
 	return wrappedChan, nil
@@ -169,6 +190,10 @@ func (a *AnthropicProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel 
 // GetModelName implements the ChatModel interface
 func (a *AnthropicProvider) GetModelName() string {
 	return a.modelName
+}
+
+func (a *AnthropicProvider) GetProviderName() string {
+	return ProviderName
 }
 
 // Invoke implements the Runnable interface

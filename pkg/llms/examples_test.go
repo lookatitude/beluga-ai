@@ -249,6 +249,10 @@ func (m *MockChatModel) GetModelName() string {
 	return m.modelName
 }
 
+func (m *MockChatModel) GetProviderName() string {
+	return "mock"
+}
+
 func (m *MockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return "Mock invoke result", nil
 }

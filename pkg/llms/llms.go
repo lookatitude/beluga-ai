@@ -24,7 +24,7 @@ var (
 // InitMetrics initializes the global metrics instance
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
-		globalMetrics = NewMetrics()
+		globalMetrics = NewMetrics(meter)
 	})
 }
 
@@ -39,6 +39,7 @@ type Factory struct {
 	providers         map[string]iface.ChatModel
 	llms              map[string]iface.LLM
 	providerFactories map[string]func(*Config) (iface.ChatModel, error)
+	llmFactories      map[string]func(*Config) (iface.LLM, error)
 	mu                sync.RWMutex
 }
 
@@ -48,6 +49,7 @@ func NewFactory() *Factory {
 		providers:         make(map[string]iface.ChatModel),
 		llms:              make(map[string]iface.LLM),
 		providerFactories: make(map[string]func(*Config) (iface.ChatModel, error)),
+		llmFactories:      make(map[string]func(*Config) (iface.LLM, error)),
 	}
 }
 
@@ -134,6 +136,25 @@ func (f *Factory) CreateProvider(providerName string, config *Config) (iface.Cha
 	return factory(config)
 }
 
+// CreateLLM creates an LLM instance using the registered factory
+func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, error) {
+	f.mu.RLock()
+	factory, exists := f.llmFactories[providerName]
+	f.mu.RUnlock()
+
+	if !exists {
+		return nil, NewLLMError("CreateLLM", ErrCodeUnsupportedProvider,
+			fmt.Errorf("LLM factory '%s' not registered", providerName))
+	}
+
+	// Set provider name in config if not already set
+	if config.Provider == "" {
+		config.Provider = providerName
+	}
+
+	return factory(config)
+}
+
 // ListAvailableProviders returns a list of all available provider names
 func (f *Factory) ListAvailableProviders() []string {
 	f.mu.RLock()
@@ -151,6 +172,12 @@ func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (if
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.providerFactories[name] = factory
+}
+
+func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.LLM, error)) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.llmFactories[name] = factory
 }
 
 // EnsureMessages ensures the input is a slice of schema.Message.
@@ -377,7 +404,9 @@ func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	if config.ModelName == "" {
 		config.ModelName = "claude-3-haiku-20240307"
 	}
-
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	factory := NewFactory()
 	factory.RegisterProviderFactory("anthropic", func(c *Config) (iface.ChatModel, error) {
 		// Import the anthropic package dynamically to avoid circular imports
@@ -396,13 +425,14 @@ func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	if config.ModelName == "" {
 		config.ModelName = "gpt-3.5-turbo"
 	}
-
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	factory := NewFactory()
 	factory.RegisterProviderFactory("openai", func(c *Config) (iface.ChatModel, error) {
 		// Import the openai package dynamically to avoid circular imports
 		return nil, fmt.Errorf("openai provider not available - use factory pattern with explicit import")
 	})
-
 	return factory.CreateProvider("openai", config)
 }
 
@@ -414,14 +444,105 @@ func NewOllamaChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	if config.ModelName == "" {
 		config.ModelName = "llama2"
 	}
-
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
 	factory := NewFactory()
 	factory.RegisterProviderFactory("ollama", func(c *Config) (iface.ChatModel, error) {
 		// Import the ollama package dynamically to avoid circular imports
 		return nil, fmt.Errorf("ollama provider not available - use factory pattern with explicit import")
 	})
-
 	return factory.CreateProvider("ollama", config)
+}
+
+// NewAnthropicLLM creates a new Anthropic LLM provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewAnthropicLLM(opts ...ConfigOption) (iface.LLM, error) {
+	config := NewConfig(opts...)
+	config.Provider = "anthropic"
+	if config.ModelName == "" {
+		config.ModelName = "claude-3-haiku-20240307"
+	}
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	factory := NewFactory()
+	factory.RegisterLLMFactory("anthropic", func(c *Config) (iface.LLM, error) {
+		return nil, fmt.Errorf("anthropic LLM not available - use factory pattern with explicit import")
+	})
+	return factory.CreateLLM("anthropic", config)
+}
+
+// NewOpenAILLM creates a new OpenAI LLM provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewOpenAILLM(opts ...ConfigOption) (iface.LLM, error) {
+	config := NewConfig(opts...)
+	config.Provider = "openai"
+	if config.ModelName == "" {
+		config.ModelName = "gpt-3.5-turbo"
+	}
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	factory := NewFactory()
+	factory.RegisterLLMFactory("openai", func(c *Config) (iface.LLM, error) {
+		return nil, fmt.Errorf("openai LLM not available - use factory pattern with explicit import")
+	})
+	return factory.CreateLLM("openai", config)
+}
+
+// NewBedrockLLM creates a new Bedrock LLM provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewBedrockLLM(opts ...ConfigOption) (iface.LLM, error) {
+	config := NewConfig(opts...)
+	config.Provider = "bedrock"
+	if config.ModelName == "" {
+		config.ModelName = "amazon.titan-text-express-v1"
+	}
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	factory := NewFactory()
+	factory.RegisterLLMFactory("bedrock", func(c *Config) (iface.LLM, error) {
+		return nil, fmt.Errorf("bedrock LLM not available - use factory pattern with explicit import")
+	})
+	return factory.CreateLLM("bedrock", config)
+}
+
+// NewOllamaLLM creates a new Ollama LLM provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewOllamaLLM(opts ...ConfigOption) (iface.LLM, error) {
+	config := NewConfig(opts...)
+	config.Provider = "ollama"
+	if config.ModelName == "" {
+		config.ModelName = "llama2"
+	}
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	factory := NewFactory()
+	factory.RegisterLLMFactory("ollama", func(c *Config) (iface.LLM, error) {
+		return nil, fmt.Errorf("ollama LLM not available - use factory pattern with explicit import")
+	})
+	return factory.CreateLLM("ollama", config)
+}
+
+// NewMockLLM creates a new Mock LLM provider with the given options.
+// This is a convenience function that internally uses the factory pattern.
+func NewMockLLM(opts ...ConfigOption) (iface.LLM, error) {
+	config := NewConfig(opts...)
+	config.Provider = "mock"
+	if config.ModelName == "" {
+		config.ModelName = "mock-model"
+	}
+	if err := config.Validate(); err != nil {
+		return nil, err
+	}
+	factory := NewFactory()
+	factory.RegisterLLMFactory("mock", func(c *Config) (iface.LLM, error) {
+		return nil, fmt.Errorf("mock LLM not available - use factory pattern with explicit import")
+	})
+	return factory.CreateLLM("mock", config)
 }
 
 // InitializeDefaultFactory creates and returns a factory with all built-in providers registered

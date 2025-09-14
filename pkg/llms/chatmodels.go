@@ -304,7 +304,11 @@ func (c *ChatModelAdapter) GenerateMessages(ctx context.Context, messages []sche
 	}
 
 	// Convert response back to message format
-	responseMsg := schema.NewAIMessage(response)
+	responseStr, ok := response.(string)
+	if !ok {
+		return nil, fmt.Errorf("expected string response from LLM, got %T", response)
+	}
+	responseMsg := schema.NewAIMessage(responseStr)
 	return []schema.Message{responseMsg}, nil
 }
 

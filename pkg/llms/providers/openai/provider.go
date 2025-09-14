@@ -89,7 +89,14 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "openai.generate", ProviderName, o.modelName)
-	defer o.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	o.metrics.IncrementActiveRequests(ctx, ProviderName, o.modelName)
@@ -108,13 +115,14 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 	})
 
 	if retryErr != nil {
-		o.metrics.RecordError(ctx, ProviderName, o.modelName, llms.GetLLMErrorCode(retryErr))
+		duration := time.Since(start)
+		o.metrics.RecordError(ctx, ProviderName, o.modelName, llms.GetLLMErrorCode(retryErr), duration)
 		o.tracing.RecordError(ctx, retryErr)
 		return nil, retryErr
 	}
 
-	// Record success metrics
-	o.metrics.RecordRequest(ctx, ProviderName, o.modelName, 0) // Duration will be recorded by caller
+	duration := time.Since(start)
+	o.metrics.RecordRequest(ctx, ProviderName, o.modelName, duration)
 
 	return result, nil
 }
@@ -123,7 +131,12 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "openai.stream", ProviderName, o.modelName)
-	defer o.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
 
 	// Apply options and merge with defaults
 	callOpts := o.buildCallOptions(options...)
@@ -143,6 +156,10 @@ func (o *OpenAIProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 // GetModelName implements the ChatModel interface
 func (o *OpenAIProvider) GetModelName() string {
 	return o.modelName
+}
+
+func (o *OpenAIProvider) GetProviderName() string {
+	return ProviderName
 }
 
 // Invoke implements the Runnable interface

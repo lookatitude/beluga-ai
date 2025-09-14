@@ -180,6 +180,9 @@ func (f *Factory) GetProvider(name string) (ChatModel, error)
 func (f *Factory) CreateProvider(providerName string, config *Config) (ChatModel, error)
 ```
 
+### Unification with ChatModels
+The ChatModel interface embeds the LLM interface for better composition. This allows ChatModels to be used where an LLM is required, providing greater flexibility.
+
 ## Quick Start
 
 ### Creating a ChatModel

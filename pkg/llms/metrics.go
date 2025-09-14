@@ -3,12 +3,14 @@ package llms
 import (
 	"context"
 	"time"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // MetricsRecorder defines the interface for recording metrics
 type MetricsRecorder interface {
 	RecordRequest(ctx context.Context, provider, model string, duration time.Duration)
-	RecordError(ctx context.Context, provider, model, errorCode string)
+	RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration)
 	RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int)
 	RecordToolCall(ctx context.Context, provider, model, toolName string)
 	RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration)
@@ -32,7 +34,7 @@ func (n *NoOpMetrics) RecordRequest(ctx context.Context, provider, model string,
 }
 
 // RecordError is a no-op implementation
-func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string) {}
+func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {}
 
 // RecordTokenUsage is a no-op implementation
 func (n *NoOpMetrics) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int) {
@@ -63,138 +65,107 @@ func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, mode
 
 // Metrics contains all the metrics for LLM operations
 type Metrics struct {
-	// Counter metrics
-	requestsTotal      int64
-	requestsByProvider map[string]int64
-	requestsByModel    map[string]int64
-	errorsTotal        int64
-	errorsByProvider   map[string]int64
-	errorsByCode       map[string]int64
-	tokenUsageTotal    int64
-	toolCallsTotal     int64
-
-	// Histogram metrics (simplified as maps)
-	requestDurations []time.Duration
-	streamDurations  []time.Duration
-	tokenUsages      []int
-	batchSizes       []int
-
-	// UpDownCounter metrics
-	activeRequests int64
-	activeStreams  int64
+	requests metric.Int64Counter
+	successful metric.Int64Counter
+	errors metric.Int64Counter
+	failed metric.Int64Counter
+	inputTokens metric.Int64Counter
+	outputTokens metric.Int64Counter
+	toolCalls metric.Int64Counter
+	batches metric.Int64Counter
+	streams metric.Int64Counter
+	generationLatency metric.Float64Histogram
+	batchLatency metric.Float64Histogram
+	streamLatency metric.Float64Histogram
+	activeRequests metric.Int64UpDownCounter
+	activeStreams metric.Int64UpDownCounter
 }
 
 // NewMetrics creates a new Metrics instance
-func NewMetrics() *Metrics {
-	return &Metrics{
-		requestsByProvider: make(map[string]int64),
-		requestsByModel:    make(map[string]int64),
-		errorsByProvider:   make(map[string]int64),
-		errorsByCode:       make(map[string]int64),
-		requestDurations:   make([]time.Duration, 0),
-		streamDurations:    make([]time.Duration, 0),
-		tokenUsages:        make([]int, 0),
-		batchSizes:         make([]int, 0),
-	}
+func NewMetrics(meter metric.Meter) *Metrics {
+	m := &Metrics{}
+
+	m.requests, _ = meter.Int64Counter("llm.requests.total", metric.WithDescription("Total LLM requests"))
+	m.successful, _ = meter.Int64Counter("llm.generations.successful", metric.WithDescription("Successful LLM generations"))
+	m.errors, _ = meter.Int64Counter("llm.errors.total", metric.WithDescription("Total LLM errors"))
+	m.failed, _ = meter.Int64Counter("llm.generations.failed", metric.WithDescription("Failed LLM generations"))
+	m.inputTokens, _ = meter.Int64Counter("llm.tokens.input", metric.WithDescription("Input tokens count"))
+	m.outputTokens, _ = meter.Int64Counter("llm.tokens.output", metric.WithDescription("Output tokens count"))
+	m.toolCalls, _ = meter.Int64Counter("llm.tool_calls.total", metric.WithDescription("Total tool calls"))
+	m.batches, _ = meter.Int64Counter("llm.batches.total", metric.WithDescription("Total batch requests"))
+	m.streams, _ = meter.Int64Counter("llm.streams.total", metric.WithDescription("Total stream requests"))
+	m.generationLatency, _ = meter.Float64Histogram("llm.generation.latency", metric.WithDescription("Generation latency"), metric.WithUnit("s"))
+	m.batchLatency, _ = meter.Float64Histogram("llm.batch.latency", metric.WithDescription("Batch latency"), metric.WithUnit("s"))
+	m.streamLatency, _ = meter.Float64Histogram("llm.stream.latency", metric.WithDescription("Stream latency"), metric.WithUnit("s"))
+	m.activeRequests, _ = meter.Int64UpDownCounter("llm.requests.active", metric.WithDescription("Active LLM requests"))
+	m.activeStreams, _ = meter.Int64UpDownCounter("llm.streams.active", metric.WithDescription("Active LLM streams"))
+
+	return m
 }
 
 // RecordRequest records a request metric
 func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, duration time.Duration) {
-	m.requestsTotal++
-	m.requestsByProvider[provider]++
-	m.requestsByModel[model]++
-	m.requestDurations = append(m.requestDurations, duration)
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.requests.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.successful.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributeSet(attrs))
 }
 
 // RecordError records an error metric
-func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string) {
-	m.errorsTotal++
-	m.errorsByProvider[provider]++
-	m.errorsByCode[errorCode]++
+func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model), attribute.String("error_code", errorCode))
+	m.errors.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.failed.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributeSet(attrs))
 }
 
 // RecordTokenUsage records token usage metrics
 func (m *Metrics) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int) {
-	totalTokens := inputTokens + outputTokens
-	m.tokenUsageTotal += int64(totalTokens)
-	m.tokenUsages = append(m.tokenUsages, totalTokens)
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.inputTokens.Add(ctx, int64(inputTokens), metric.WithAttributeSet(attrs))
+	m.outputTokens.Add(ctx, int64(outputTokens), metric.WithAttributeSet(attrs))
 }
 
 // RecordToolCall records a tool call metric
 func (m *Metrics) RecordToolCall(ctx context.Context, provider, model, toolName string) {
-	m.toolCallsTotal++
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model), attribute.String("tool_name", toolName))
+	m.toolCalls.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
 // RecordBatch records batch processing metrics
 func (m *Metrics) RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration) {
-	m.batchSizes = append(m.batchSizes, batchSize)
-	m.requestDurations = append(m.requestDurations, duration)
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model), attribute.Int("batch_size", batchSize))
+	m.batches.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.batchLatency.Record(ctx, duration.Seconds(), metric.WithAttributeSet(attrs))
 }
 
 // RecordStream records streaming metrics
 func (m *Metrics) RecordStream(ctx context.Context, provider, model string, duration time.Duration) {
-	m.streamDurations = append(m.streamDurations, duration)
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.streams.Add(ctx, 1, metric.WithAttributeSet(attrs))
+	m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributeSet(attrs))
 }
 
 // IncrementActiveRequests increments the active requests counter
 func (m *Metrics) IncrementActiveRequests(ctx context.Context, provider, model string) {
-	m.activeRequests++
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.activeRequests.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
 // DecrementActiveRequests decrements the active requests counter
 func (m *Metrics) DecrementActiveRequests(ctx context.Context, provider, model string) {
-	m.activeRequests--
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.activeRequests.Add(ctx, -1, metric.WithAttributeSet(attrs))
 }
 
 // IncrementActiveStreams increments the active streams counter
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model string) {
-	m.activeStreams++
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.activeStreams.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
 // DecrementActiveStreams decrements the active streams counter
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model string) {
-	m.activeStreams--
-}
-
-// GetRequestsTotal returns the total number of requests
-func (m *Metrics) GetRequestsTotal() int64 {
-	return m.requestsTotal
-}
-
-// GetErrorsTotal returns the total number of errors
-func (m *Metrics) GetErrorsTotal() int64 {
-	return m.errorsTotal
-}
-
-// GetTokenUsageTotal returns the total token usage
-func (m *Metrics) GetTokenUsageTotal() int64 {
-	return m.tokenUsageTotal
-}
-
-// GetActiveRequests returns the number of active requests
-func (m *Metrics) GetActiveRequests() int64 {
-	return m.activeRequests
-}
-
-// GetActiveStreams returns the number of active streams
-func (m *Metrics) GetActiveStreams() int64 {
-	return m.activeStreams
-}
-
-// Reset resets all metrics to zero
-func (m *Metrics) Reset() {
-	m.requestsTotal = 0
-	m.requestsByProvider = make(map[string]int64)
-	m.requestsByModel = make(map[string]int64)
-	m.errorsTotal = 0
-	m.errorsByProvider = make(map[string]int64)
-	m.errorsByCode = make(map[string]int64)
-	m.tokenUsageTotal = 0
-	m.toolCallsTotal = 0
-	m.requestDurations = make([]time.Duration, 0)
-	m.streamDurations = make([]time.Duration, 0)
-	m.tokenUsages = make([]int, 0)
-	m.batchSizes = make([]int, 0)
-	m.activeRequests = 0
-	m.activeStreams = 0
+	attrs := attribute.NewSet(attribute.String("provider", provider), attribute.String("model", model))
+	m.activeStreams.Add(ctx, -1, metric.WithAttributeSet(attrs))
 }

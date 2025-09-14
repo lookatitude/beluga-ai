@@ -104,7 +104,14 @@ func NewBedrockLLM(ctx context.Context, modelName string, opts ...llms.ConfigOpt
 func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = b.tracing.StartOperation(ctx, "bedrock.generate", ProviderName, b.modelName)
-	defer b.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	b.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	b.metrics.IncrementActiveRequests(ctx, ProviderName, b.modelName)
@@ -123,13 +130,14 @@ func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Messag
 	})
 
 	if retryErr != nil {
-		b.metrics.RecordError(ctx, ProviderName, b.modelName, llms.GetLLMErrorCode(retryErr))
+		duration := time.Since(start)
+		b.metrics.RecordError(ctx, ProviderName, b.modelName, llms.GetLLMErrorCode(retryErr), duration)
 		b.tracing.RecordError(ctx, retryErr)
 		return nil, retryErr
 	}
 
-	// Record success metrics
-	b.metrics.RecordRequest(ctx, ProviderName, b.modelName, 0) // Duration will be recorded by caller
+	duration := time.Since(start)
+	b.metrics.RecordRequest(ctx, ProviderName, b.modelName, duration)
 
 	return result, nil
 }
@@ -152,6 +160,10 @@ func (b *BedrockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 // GetModelName implements the ChatModel interface
 func (b *BedrockProvider) GetModelName() string {
 	return b.modelName
+}
+
+func (b *BedrockProvider) GetProviderName() string {
+	return ProviderName
 }
 
 // Invoke implements the Runnable interface

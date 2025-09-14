@@ -86,7 +86,14 @@ func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error) {
 func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "ollama.generate", ProviderName, o.modelName)
-	defer o.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Record request metrics
 	o.metrics.IncrementActiveRequests(ctx, ProviderName, o.modelName)
@@ -105,13 +112,14 @@ func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message
 	})
 
 	if retryErr != nil {
-		o.metrics.RecordError(ctx, ProviderName, o.modelName, llms.GetLLMErrorCode(retryErr))
+		duration := time.Since(start)
+		o.metrics.RecordError(ctx, ProviderName, o.modelName, llms.GetLLMErrorCode(retryErr), duration)
 		o.tracing.RecordError(ctx, retryErr)
 		return nil, retryErr
 	}
 
-	// Record success metrics
-	o.metrics.RecordRequest(ctx, ProviderName, o.modelName, 0) // Duration will be recorded by caller
+	duration := time.Since(start)
+	o.metrics.RecordRequest(ctx, ProviderName, o.modelName, duration)
 
 	return result, nil
 }
@@ -120,13 +128,46 @@ func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message
 func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "ollama.stream", ProviderName, o.modelName)
-	defer o.tracing.EndSpan(ctx)
+
+	inputSize := 0
+	for _, m := range messages {
+		inputSize += len(m.GetContent())
+	}
+	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+
+	start := time.Now()
 
 	// Apply options and merge with defaults
 	callOpts := o.buildCallOptions(options...)
 
 	// Execute streaming request
-	return o.streamInternal(ctx, messages, callOpts)
+	outputChan, err := o.streamInternal(ctx, messages, callOpts)
+	if err != nil {
+		duration := time.Since(start)
+		o.metrics.RecordError(ctx, ProviderName, o.modelName, llms.GetLLMErrorCode(err), duration)
+		o.tracing.EndSpan(ctx)
+		return nil, err
+	}
+
+	// Wrapper to add metrics
+	wrappedChan := make(chan iface.AIMessageChunk)
+	go func() {
+		defer close(wrappedChan)
+		defer o.tracing.EndSpan(ctx)
+
+		for chunk := range outputChan {
+			select {
+			case wrappedChan <- chunk:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		duration := time.Since(start)
+		o.metrics.RecordStream(ctx, ProviderName, o.modelName, duration)
+	}()
+
+	return wrappedChan, nil
 }
 
 // BindTools implements the ChatModel interface
@@ -140,6 +181,10 @@ func (o *OllamaProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 // GetModelName implements the ChatModel interface
 func (o *OllamaProvider) GetModelName() string {
 	return o.modelName
+}
+
+func (o *OllamaProvider) GetProviderName() string {
+	return ProviderName
 }
 
 // Invoke implements the Runnable interface

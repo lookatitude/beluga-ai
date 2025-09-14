@@ -19,6 +19,7 @@ const (
 	ErrCodeAuthorization  = "authorization_error"
 	ErrCodeNotFound       = "not_found"
 	ErrCodeInternalError  = "internal_error"
+	ErrCodeInvalidInput   = "invalid_input"
 
 	// Provider-specific errors
 	ErrCodeUnsupportedProvider = "unsupported_provider"

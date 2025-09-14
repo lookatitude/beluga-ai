@@ -15,6 +15,7 @@ import (
 // ChatModel implementations should be thread-safe and support concurrent usage.
 type ChatModel interface {
 	core.Runnable
+	LLM
 
 	// Generate takes a series of messages and returns an AI message.
 	// It is a single call to the model with no streaming.
@@ -55,8 +56,8 @@ type AIMessageChunk struct {
 // This provides a simpler interface for text generation without chat history support.
 type LLM interface {
 	// Invoke sends a single request to the LLM and gets a single response.
-	// The input prompt can be a simple string.
-	Invoke(ctx context.Context, prompt string, options ...core.Option) (string, error)
+	// The input can be any type, but is typically a string prompt. Output is any, typically string.
+	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 
 	// GetModelName returns the specific model name being used by this LLM instance.
 	GetModelName() string

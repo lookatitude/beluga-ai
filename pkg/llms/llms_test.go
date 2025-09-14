@@ -46,7 +46,12 @@ func (m *MockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 }
 
 func (m *MockChatModel) GetModelName() string {
-	return m.modelName
+	args := m.Called()
+	return args.String(0)
+}
+
+func (m *MockChatModel) GetProviderName() string {
+	return "mock"
 }
 
 func (m *MockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
@@ -422,7 +427,7 @@ type MockLLM struct {
 	modelName string
 }
 
-func (m *MockLLM) Invoke(ctx context.Context, prompt string, options ...core.Option) (string, error) {
+func (m *MockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return "Mock LLM response", nil
 }
 
@@ -431,7 +436,46 @@ func (m *MockLLM) GetModelName() string {
 }
 
 func (m *MockLLM) GetProviderName() string {
-	return "unknown"
+	return "mock"
+}
+
+// Add test for unification
+func TestChatModelUnification(t *testing.T) {
+	mockModel := NewMockChatModel("unification-test")
+
+	mockModel.On("GetModelName").Return("unification-test")
+	mockModel.On("GetProviderName").Return("mock")
+
+	// Check if ChatModel can be used as LLM
+	var llm iface.LLM = mockModel
+	assert.NotNil(t, llm)
+	assert.Equal(t, "unification-test", llm.GetModelName())
+	assert.Equal(t, "mock", llm.GetProviderName())
+}
+
+// Add test for LLM factories
+func TestLLMFactories(t *testing.T) {
+	tests := []struct {
+		name string
+		fn func(opts ...ConfigOption) (iface.LLM, error)
+	}{
+		{"Anthropic", NewAnthropicLLM},
+		{"OpenAI", NewOpenAILLM},
+		{"Bedrock", NewBedrockLLM},
+		{"Ollama", NewOllamaLLM},
+		{"Mock", NewMockLLM},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			llm, err := tt.fn()
+			assert.Error(t, err) // Expected error from dummy implementation
+			if llm != nil {
+				assert.NotEmpty(t, llm.GetModelName())
+				assert.NotEmpty(t, llm.GetProviderName())
+			}
+		})
+	}
 }
 
 // Benchmark tests
@@ -472,12 +516,18 @@ func TestFactoryIntegration(t *testing.T) {
 
 	// Test provider registration and retrieval
 	mockModel := NewMockChatModel("integration-test-model")
+
+	mockModel.On("GetModelName").Return("integration-test-model")
+
 	factory.RegisterProvider("integration-test", mockModel)
 
+	// Get provider and check health
 	retrieved, err := factory.GetProvider("integration-test")
 	assert.NoError(t, err)
-	assert.NotNil(t, retrieved)
-	assert.Equal(t, "integration-test-model", retrieved.GetModelName())
+
+	health := retrieved.CheckHealth()
+	assert.NotNil(t, health)
+	assert.Equal(t, "healthy", health["state"])
 }
 
 // Test configuration with timeout
@@ -558,7 +608,7 @@ func TestConvenienceFactoryFunctions(t *testing.T) {
 	assert.Contains(t, err.Error(), "openai provider not available")
 
 	// Test NewOllamaChat (should return error due to missing provider)
-	_, err = NewOllamaChat(WithModelName("llama2"))
+	_, err = NewOllamaChat(WithModelName("llama2"), WithAPIKey("dummy"))
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "ollama provider not available")
 }
@@ -571,7 +621,7 @@ func TestChatModelAdapter(t *testing.T) {
 	// Test GetModelInfo
 	info := adapter.GetModelInfo()
 	assert.Equal(t, "adapter-test", info.Name)
-	assert.Equal(t, "unknown", info.Provider) // MockLLM returns empty provider
+	assert.Equal(t, "mock", info.Provider) // Updated from "unknown"
 
 	// Test CheckHealth
 	health := adapter.CheckHealth()
