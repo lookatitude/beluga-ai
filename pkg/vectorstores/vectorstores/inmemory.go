@@ -10,9 +10,9 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lookatitude/beluga-ai/pkg/core"
-	"github.com/lookatitude/beluga-ai/rag"
+	"github.com/lookatitude/beluga-ai/pkg/dataconnection"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/rag/retrievers"
+	"github.com/lookatitude/beluga-ai/pkg/retrievers"
 
 	// Need a math library for vector operations (e.g., cosine similarity)
 	"gonum.org/v1/gonum/floats"

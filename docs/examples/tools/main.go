@@ -8,9 +8,9 @@ import (
 	"log"
 	"time" // Added for shell tool timeout
 
-	"github.com/lookatitude/beluga-ai/pkg/tools"
-	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
-	"github.com/lookatitude/beluga-ai/pkg/tools/shell"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/shell"
 )
 
 // Define a simple Go function to be used as a tool

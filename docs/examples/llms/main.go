@@ -16,7 +16,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms/ollama"
 	"github.com/lookatitude/beluga-ai/pkg/llms/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 func printUsage(providerName string, aiMsg schema.Message) {

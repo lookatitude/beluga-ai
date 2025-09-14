@@ -14,8 +14,8 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/lookatitude/beluga-ai/pkg/core"
-	"github.com/lookatitude/beluga-ai/rag"
-	"github.com/lookatitude/beluga-ai/rag/retrievers"
+	"github.com/lookatitude/beluga-ai/pkg/dataconnection"
+	"github.com/lookatitude/beluga-ai/pkg/retrievers"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/pgvector/pgvector-go"
 )

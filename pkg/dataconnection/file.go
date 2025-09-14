@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/lookatitude/beluga-ai/rag"
+	"github.com/lookatitude/beluga-ai/pkg/dataconnection"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 

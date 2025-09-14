@@ -6,7 +6,7 @@ import (
 	"errors" // Added missing import
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/rag"
+	"github.com/lookatitude/beluga-ai/pkg/dataconnection"
 	"github.com/sashabaranov/go-openai"
 )
 
