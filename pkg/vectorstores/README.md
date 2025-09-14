@@ -13,7 +13,7 @@ This package implements the Beluga AI Framework design patterns including:
 
 ## Key Features
 
-- **Multiple Vector Store Providers**: In-memory, PostgreSQL (pgvector), Pinecone, and extensible architecture
+- **Multiple Vector Store Providers**: In-memory, PostgreSQL (pgvector), and extensible architecture
 - **Efficient Similarity Search**: Cosine similarity with configurable algorithms
 - **Comprehensive Observability**: Metrics, tracing, and structured logging
 - **Type-Safe Configuration**: Functional options with validation
@@ -213,9 +213,12 @@ store, err := vectorstores.NewPgVectorStore(ctx,
 
 ### Pinecone Provider
 
-**Best for**: Cloud-native, managed vector search
+**Status**: Not yet implemented
+
+**Best for**: Cloud-native, managed vector search (when implemented)
 
 ```go
+// TODO: Implement Pinecone provider
 store, err := vectorstores.NewPineconeStore(ctx,
     vectorstores.WithEmbedder(embedder),
     vectorstores.WithProviderConfig("api_key", "your-api-key"),
@@ -223,6 +226,7 @@ store, err := vectorstores.NewPineconeStore(ctx,
     vectorstores.WithProviderConfig("project_id", "your-project"),
     vectorstores.WithProviderConfig("index_name", "my-index"),
 )
+// Note: This will return an error until the provider is implemented
 ```
 
 ## Configuration

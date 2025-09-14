@@ -9,7 +9,7 @@
 // - Factory pattern for provider registration
 //
 // Key Features:
-// - Multiple vector store providers (in-memory, PostgreSQL, Pinecone, etc.)
+// - Multiple vector store providers (in-memory, PostgreSQL, etc.)
 // - Efficient similarity search with configurable algorithms
 // - Comprehensive observability (metrics, tracing, logging)
 // - Type-safe configuration with validation
@@ -121,10 +121,6 @@ type VectorStore interface {
 	GetName() string
 }
 
-// Option represents a functional option for configuring VectorStore operations.
-// This follows the functional options pattern for flexible configuration.
-type Option func(*Config)
-
 // Config holds configuration options for VectorStore operations.
 // It uses struct tags for viper configuration management and validation.
 type Config struct {
@@ -142,13 +138,9 @@ type Config struct {
 	ProviderConfig map[string]interface{} `mapstructure:"provider_config" yaml:"provider_config" json:"provider_config"`
 }
 
-// Factory defines the interface for creating VectorStore instances.
-// This enables dependency injection and makes testing easier.
-type Factory interface {
-	// CreateVectorStore creates a new VectorStore instance with the given configuration.
-	// The config parameter contains provider-specific settings.
-	CreateVectorStore(ctx context.Context, config Config) (VectorStore, error)
-}
+// Option represents a functional option for configuring VectorStore operations.
+// This follows the functional options pattern for flexible configuration.
+type Option func(*Config)
 
 // NewDefaultConfig creates a new Config with default values.
 func NewDefaultConfig() *Config {
@@ -164,6 +156,83 @@ func ApplyOptions(config *Config, opts ...Option) {
 		opt(config)
 	}
 }
+
+// WithEmbedder sets the embedder to use for generating embeddings.
+func WithEmbedder(embedder Embedder) Option {
+	return func(c *Config) {
+		c.Embedder = embedder
+	}
+}
+
+// WithSearchK sets the number of similar documents to return in search operations.
+func WithSearchK(k int) Option {
+	return func(c *Config) {
+		c.SearchK = k
+	}
+}
+
+// WithScoreThreshold sets the minimum similarity score threshold for search results.
+// Documents with scores below this threshold will be filtered out.
+func WithScoreThreshold(threshold float32) Option {
+	return func(c *Config) {
+		c.ScoreThreshold = threshold
+	}
+}
+
+// WithMetadataFilter adds a metadata filter for search operations.
+// Only documents matching the filter criteria will be considered.
+func WithMetadataFilter(key string, value interface{}) Option {
+	return func(c *Config) {
+		if c.MetadataFilters == nil {
+			c.MetadataFilters = make(map[string]interface{})
+		}
+		c.MetadataFilters[key] = value
+	}
+}
+
+// WithMetadataFilters sets multiple metadata filters for search operations.
+func WithMetadataFilters(filters map[string]interface{}) Option {
+	return func(c *Config) {
+		if c.MetadataFilters == nil {
+			c.MetadataFilters = make(map[string]interface{})
+		}
+		for k, v := range filters {
+			c.MetadataFilters[k] = v
+		}
+	}
+}
+
+// WithProviderConfig sets provider-specific configuration options.
+func WithProviderConfig(key string, value interface{}) Option {
+	return func(c *Config) {
+		if c.ProviderConfig == nil {
+			c.ProviderConfig = make(map[string]interface{})
+		}
+		c.ProviderConfig[key] = value
+	}
+}
+
+// WithProviderConfigs sets multiple provider-specific configuration options.
+func WithProviderConfigs(config map[string]interface{}) Option {
+	return func(c *Config) {
+		if c.ProviderConfig == nil {
+			c.ProviderConfig = make(map[string]interface{})
+		}
+		for k, v := range config {
+			c.ProviderConfig[k] = v
+		}
+	}
+}
+
+
+// Factory defines the interface for creating VectorStore instances.
+// This enables dependency injection and makes testing easier.
+type Factory interface {
+	// CreateVectorStore creates a new VectorStore instance with the given configuration.
+	// The config parameter contains provider-specific settings.
+	CreateVectorStore(ctx context.Context, config Config) (VectorStore, error)
+}
+
 
 // StoreFactory is the global factory for creating vector store instances.
 // It maintains a registry of available providers and their creation functions.
@@ -282,75 +351,6 @@ func AsVectorStoreError(err error, target **VectorStoreError) bool {
 	return false
 }
 
-// Functional options for configuring VectorStore operations.
-// These follow the functional options pattern for flexible and type-safe configuration.
-
-// WithEmbedder sets the embedder to use for generating embeddings.
-func WithEmbedder(embedder Embedder) Option {
-	return func(c *Config) {
-		c.Embedder = embedder
-	}
-}
-
-// WithSearchK sets the number of similar documents to return in search operations.
-func WithSearchK(k int) Option {
-	return func(c *Config) {
-		c.SearchK = k
-	}
-}
-
-// WithScoreThreshold sets the minimum similarity score threshold for search results.
-// Documents with scores below this threshold will be filtered out.
-func WithScoreThreshold(threshold float32) Option {
-	return func(c *Config) {
-		c.ScoreThreshold = threshold
-	}
-}
-
-// WithMetadataFilter adds a metadata filter for search operations.
-// Only documents matching the filter criteria will be considered.
-func WithMetadataFilter(key string, value interface{}) Option {
-	return func(c *Config) {
-		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
-		}
-		c.MetadataFilters[key] = value
-	}
-}
-
-// WithMetadataFilters sets multiple metadata filters for search operations.
-func WithMetadataFilters(filters map[string]interface{}) Option {
-	return func(c *Config) {
-		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
-		}
-		for k, v := range filters {
-			c.MetadataFilters[k] = v
-		}
-	}
-}
-
-// WithProviderConfig sets provider-specific configuration options.
-func WithProviderConfig(key string, value interface{}) Option {
-	return func(c *Config) {
-		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
-		}
-		c.ProviderConfig[key] = value
-	}
-}
-
-// WithProviderConfigs sets multiple provider-specific configuration options.
-func WithProviderConfigs(config map[string]interface{}) Option {
-	return func(c *Config) {
-		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
-		}
-		for k, v := range config {
-			c.ProviderConfig[k] = v
-		}
-	}
-}
 
 // NewInMemoryStore creates a new in-memory vector store with the given options.
 // This is the simplest provider, suitable for development and testing.
@@ -361,6 +361,8 @@ func WithProviderConfigs(config map[string]interface{}) Option {
 //		vectorstores.WithEmbedder(embedder),
 //		vectorstores.WithSearchK(10),
 //	)
+// Note: This function requires the inmemory provider to be imported for registration.
+// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) {
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)
@@ -379,6 +381,8 @@ func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 //		vectorstores.WithProviderConfig("table_name", "documents"),
 //		vectorstores.WithProviderConfig("embedding_dimension", 768),
 //	)
+// Note: This function requires the pgvector provider to be imported for registration.
+// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/pgvector"
 func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) {
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)
@@ -386,6 +390,7 @@ func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 	return globalFactory.Create(ctx, "pgvector", *config)
 }
 
+// TODO: Implement Pinecone provider
 // NewPineconeStore creates a new Pinecone vector store with the given options.
 // Requires Pinecone API credentials and configuration.
 //
@@ -399,10 +404,7 @@ func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 //		vectorstores.WithProviderConfig("index_name", "my-index"),
 //	)
 func NewPineconeStore(ctx context.Context, opts ...Option) (VectorStore, error) {
-	config := NewDefaultConfig()
-	ApplyOptions(config, opts...)
-
-	return globalFactory.Create(ctx, "pinecone", *config)
+	return nil, NewVectorStoreError(ErrCodeUnknownProvider, "Pinecone provider not yet implemented")
 }
 
 // NewVectorStore creates a vector store using the specified provider name.
@@ -436,8 +438,8 @@ func RegisterProvider(name string, creator func(ctx context.Context, config Conf
 //	fmt.Printf("Available providers: %v\n", providers)
 func ListProviders() []string {
 	// This would require adding a method to StoreFactory to list registered providers
-	// For now, return a static list of known providers
-	return []string{"inmemory", "pgvector", "pinecone"}
+	// For now, return a static list of implemented providers
+	return []string{"inmemory", "pgvector"}
 }
 
 // ValidateProvider checks if a provider name is registered and valid.

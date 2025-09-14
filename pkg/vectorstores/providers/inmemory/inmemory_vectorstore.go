@@ -15,10 +15,10 @@
 //
 // Example:
 //
-//	import "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
+//	import "github.com/lookatitude/beluga-ai/pkg/vectorstores"
 //
 //	// Create store
-//	store := inmemory.NewInMemoryVectorStore(embedder)
+//	store, err := vectorstores.NewInMemoryStore(ctx, vectorstores.WithEmbedder(embedder))
 //
 //	// Add documents
 //	docs := []schema.Document{
@@ -41,16 +41,21 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Local type definitions to avoid circular dependency
+// Interfaces and types for the inmemory vector store
+// These are defined locally to avoid import cycles with the main vectorstores package
+
+// Embedder defines the interface for generating vector embeddings from text.
 type Embedder interface {
 	EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error)
 	EmbedQuery(ctx context.Context, text string) ([]float32, error)
 }
 
+// Retriever defines the interface for retrieving documents based on queries.
 type Retriever interface {
 	GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error)
 }
 
+// VectorStore defines the interface for vector storage and retrieval.
 type VectorStore interface {
 	AddDocuments(ctx context.Context, documents []schema.Document, opts ...Option) ([]string, error)
 	DeleteDocuments(ctx context.Context, ids []string, opts ...Option) error
@@ -60,12 +65,36 @@ type VectorStore interface {
 	GetName() string
 }
 
+// Option represents a functional option for configuring operations.
 type Option func(*Config)
 
+// Config holds configuration options for operations.
 type Config struct {
 	Embedder       Embedder
 	SearchK        int
 	ScoreThreshold float32
+}
+
+// NewDefaultConfig creates a new Config with default values.
+func NewDefaultConfig() *Config {
+	return &Config{
+		SearchK:        5,
+		ScoreThreshold: 0.0,
+	}
+}
+
+// ApplyOptions applies a slice of options to a Config.
+func ApplyOptions(config *Config, opts ...Option) {
+	for _, opt := range opts {
+		opt(config)
+	}
+}
+
+// WithSearchK sets the number of similar documents to return.
+func WithSearchK(k int) Option {
+	return func(c *Config) {
+		c.SearchK = k
+	}
 }
 
 // InMemoryVectorStore is a simple in-memory implementation of the VectorStore interface.
@@ -106,13 +135,15 @@ func NewInMemoryVectorStoreFromConfig(ctx context.Context, config Config) (Vecto
 	return store, nil
 }
 
+// Note: Provider registration is handled externally to avoid import cycles.
+// Applications should import this package for side effects to register the provider.
+// import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
+
 // AddDocuments adds documents to the vector store.
 func (s *InMemoryVectorStore) AddDocuments(ctx context.Context, documents []schema.Document, opts ...Option) ([]string, error) {
 	// Apply options
-	config := &Config{}
-	for _, opt := range opts {
-		opt(config)
-	}
+	config := NewDefaultConfig()
+	ApplyOptions(config, opts...)
 
 	// Use embedder from options or stored embedder
 	embedder := config.Embedder
@@ -188,10 +219,8 @@ func (s *InMemoryVectorStore) SimilaritySearch(ctx context.Context, queryVector 
 	}
 
 	// Apply options
-	config := &Config{SearchK: 5, ScoreThreshold: 0.0}
-	for _, opt := range opts {
-		opt(config)
-	}
+	config := NewDefaultConfig()
+	ApplyOptions(config, opts...)
 	if k == 0 {
 		k = config.SearchK
 	}
@@ -330,7 +359,7 @@ type InMemoryRetriever struct {
 // GetRelevantDocuments retrieves relevant documents for a query.
 func (r *InMemoryRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
 	// Apply default search options
-	opts := append(r.opts, func(c *Config) { c.SearchK = 5 })
+	opts := append(r.opts, WithSearchK(5))
 
 	docs, _, err := r.store.SimilaritySearchByQuery(ctx, query, 5, nil, opts...)
 	return docs, err
