@@ -1,5 +1,5 @@
-// Package utils provides common utilities and standardized error handling for the Beluga AI framework.
-package utils
+// Package core provides standardized error handling for the Beluga AI framework.
+package core
 
 import (
 	"fmt"

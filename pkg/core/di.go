@@ -1,10 +1,13 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"reflect"
 	"sync"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -25,6 +28,12 @@ type Container interface {
 
 	// Clear removes all registered dependencies
 	Clear()
+
+	// Singleton registers a singleton instance
+	Singleton(instance interface{})
+
+	// HealthChecker provides health check functionality
+	HealthChecker
 }
 
 // containerImpl is the default implementation of Container
@@ -32,58 +41,129 @@ type containerImpl struct {
 	mu        sync.RWMutex
 	factories map[reflect.Type]interface{}
 	instances map[reflect.Type]interface{}
+
+	// Monitoring components
+	logger         Logger
+	tracerProvider TracerProvider
 }
 
-// NewContainer creates a new dependency injection container
+// NewContainer creates a new dependency injection container with no-op monitoring
 func NewContainer() Container {
 	return &containerImpl{
-		factories: make(map[reflect.Type]interface{}),
-		instances: make(map[reflect.Type]interface{}),
+		factories:      make(map[reflect.Type]interface{}),
+		instances:      make(map[reflect.Type]interface{}),
+		logger:         &noOpLogger{},
+		tracerProvider: trace.NewNoopTracerProvider(),
 	}
+}
+
+// NewContainerWithOptions creates a new dependency injection container with custom options
+func NewContainerWithOptions(opts ...DIOption) Container {
+	config := optionConfig{
+		container:      NewContainer(),
+		logger:         &noOpLogger{},
+		tracerProvider: trace.NewNoopTracerProvider(),
+	}
+
+	for _, opt := range opts {
+		opt(&config)
+	}
+
+	if container, ok := config.container.(*containerImpl); ok {
+		container.logger = config.logger
+		container.tracerProvider = config.tracerProvider
+		return container
+	}
+
+	return config.container
 }
 
 // Register registers a factory function for a type
 func (c *containerImpl) Register(factoryFunc interface{}) error {
+	ctx := context.Background()
+	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "register",
+		trace.WithAttributes(
+			attribute.String("operation", "register"),
+		))
+	defer span.End()
+
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
 	factoryType := reflect.TypeOf(factoryFunc)
 	if factoryType.Kind() != reflect.Func {
-		return fmt.Errorf("factory must be a function, got %s", factoryType.Kind())
+		err := fmt.Errorf("factory must be a function, got %s", factoryType.Kind())
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Register failed", "error", err)
+		return err
 	}
 
 	if factoryType.NumOut() == 0 {
-		return fmt.Errorf("factory function must return at least one value")
+		err := fmt.Errorf("factory function must return at least one value")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Register failed", "error", err)
+		return err
 	}
 
 	returnType := factoryType.Out(0)
 	c.factories[returnType] = factoryFunc
+
+	span.SetAttributes(
+		attribute.String("type", returnType.String()),
+	)
+	span.SetStatus(codes.Ok, "")
+	c.logger.Info("DI Register succeeded", "type", returnType.String())
 
 	return nil
 }
 
 // Resolve resolves a dependency by type
 func (c *containerImpl) Resolve(target interface{}) error {
+	ctx := context.Background()
+	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "resolve",
+		trace.WithAttributes(
+			attribute.String("operation", "resolve"),
+		))
+	defer span.End()
+
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr {
-		return fmt.Errorf("target must be a pointer, got %s", targetValue.Kind())
+		err := fmt.Errorf("target must be a pointer, got %s", targetValue.Kind())
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Resolve failed", "error", err)
+		return err
 	}
 
 	targetType := targetValue.Elem().Type()
+	span.SetAttributes(
+		attribute.String("type", targetType.String()),
+	)
 
 	// Check if we have a cached instance
 	if instance, exists := c.instances[targetType]; exists {
 		targetValue.Elem().Set(reflect.ValueOf(instance))
+		span.SetAttributes(
+			attribute.Bool("cached", true),
+		)
+		span.SetStatus(codes.Ok, "")
+		c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", true)
 		return nil
 	}
 
 	// Check if we have a factory
 	factory, exists := c.factories[targetType]
 	if !exists {
-		return fmt.Errorf("no factory registered for type %s", targetType)
+		err := fmt.Errorf("no factory registered for type %s", targetType)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+		return err
 	}
 
 	factoryValue := reflect.ValueOf(factory)
@@ -103,7 +183,11 @@ func (c *containerImpl) Resolve(target interface{}) error {
 			// Try to recursively resolve the dependency
 			argValue := reflect.New(argType)
 			if err := c.resolveRecursive(argValue.Interface()); err != nil {
-				return fmt.Errorf("failed to resolve dependency %s: %w", argType, err)
+				err = fmt.Errorf("failed to resolve dependency %s: %w", argType, err)
+				span.RecordError(err)
+				span.SetStatus(codes.Error, err.Error())
+				c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+				return err
 			}
 			args[i] = argValue.Elem()
 		}
@@ -116,13 +200,23 @@ func (c *containerImpl) Resolve(target interface{}) error {
 	if len(results) > 1 {
 		lastResult := results[len(results)-1]
 		if lastResult.Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) && !lastResult.IsNil() {
-			return lastResult.Interface().(error)
+			err := lastResult.Interface().(error)
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+			return err
 		}
 	}
 
 	instance := results[0].Interface()
 	c.instances[targetType] = instance
 	targetValue.Elem().Set(results[0])
+
+	span.SetAttributes(
+		attribute.Bool("cached", false),
+	)
+	span.SetStatus(codes.Ok, "")
+	c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", false)
 
 	return nil
 }
@@ -194,6 +288,63 @@ func (c *containerImpl) Clear() {
 	c.instances = make(map[reflect.Type]interface{})
 }
 
+// CheckHealth performs a health check on the DI container
+func (c *containerImpl) CheckHealth(ctx context.Context) error {
+	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "check_health",
+		trace.WithAttributes(
+			attribute.String("operation", "health_check"),
+		))
+	defer span.End()
+
+	c.mu.RLock()
+	factoryCount := len(c.factories)
+	instanceCount := len(c.instances)
+	c.mu.RUnlock()
+
+	// Basic health check - ensure the container has basic functionality
+	span.SetAttributes(
+		attribute.Int("factory_count", factoryCount),
+		attribute.Int("instance_count", instanceCount),
+	)
+
+	// Try to register and resolve a test dependency
+	testType := reflect.TypeOf((*string)(nil)).Elem()
+	testValue := "health_check_test"
+
+	if err := c.Register(func() string { return testValue }); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Health check failed", "error", err)
+		return NewInternalError("DI container health check failed during registration", err)
+	}
+
+	var result string
+	if err := c.Resolve(&result); err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Health check failed", "error", err)
+		return NewInternalError("DI container health check failed during resolution", err)
+	}
+
+	if result != testValue {
+		err := fmt.Errorf("DI container health check failed: expected %q, got %q", testValue, result)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logger.Error("DI Health check failed", "error", err)
+		return NewInternalError("DI container health check failed: incorrect resolution", err)
+	}
+
+	// Clean up the test dependency
+	c.mu.Lock()
+	delete(c.factories, testType)
+	delete(c.instances, testType)
+	c.mu.Unlock()
+
+	span.SetStatus(codes.Ok, "")
+	c.logger.Debug("DI Health check passed")
+	return nil
+}
+
 // Singleton registers a singleton instance
 func (c *containerImpl) Singleton(instance interface{}) {
 	c.mu.Lock()
@@ -207,13 +358,29 @@ func (c *containerImpl) Singleton(instance interface{}) {
 type DIOption func(*optionConfig)
 
 type optionConfig struct {
-	container Container
+	container      Container
+	logger         Logger
+	tracerProvider TracerProvider
 }
 
 // WithContainer sets the DI container
 func WithContainer(container Container) DIOption {
 	return func(config *optionConfig) {
 		config.container = container
+	}
+}
+
+// WithLogger sets the logger for the DI container
+func WithLogger(logger Logger) DIOption {
+	return func(config *optionConfig) {
+		config.logger = logger
+	}
+}
+
+// WithTracerProvider sets the tracer provider for the DI container
+func WithTracerProvider(tracerProvider TracerProvider) DIOption {
+	return func(config *optionConfig) {
+		config.tracerProvider = tracerProvider
 	}
 }
 
@@ -279,6 +446,22 @@ func (b *Builder) RegisterLogger(factory func() Logger) error {
 // RegisterTracerProvider registers a tracer provider factory function
 func (b *Builder) RegisterTracerProvider(factory func() TracerProvider) error {
 	return b.container.Register(factory)
+}
+
+// WithLogger sets the logger for the container (if supported)
+func (b *Builder) WithLogger(logger Logger) *Builder {
+	if container, ok := b.container.(*containerImpl); ok {
+		container.logger = logger
+	}
+	return b
+}
+
+// WithTracerProvider sets the tracer provider for the container (if supported)
+func (b *Builder) WithTracerProvider(tracerProvider TracerProvider) *Builder {
+	if container, ok := b.container.(*containerImpl); ok {
+		container.tracerProvider = tracerProvider
+	}
+	return b
 }
 
 // RegisterMeterProvider registers a meter provider factory function

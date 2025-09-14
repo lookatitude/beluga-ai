@@ -32,3 +32,9 @@ type Retriever interface {
 	// GetRelevantDocuments retrieves documents considered relevant to the given query string.
 	GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error)
 }
+
+// HealthChecker defines the interface for components that can report their health status.
+type HealthChecker interface {
+	// CheckHealth performs a health check and returns an error if the component is unhealthy.
+	CheckHealth(ctx context.Context) error
+}

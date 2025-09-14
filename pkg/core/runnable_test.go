@@ -392,3 +392,80 @@ func TestNoOpLogger(t *testing.T) {
 		t.Error("With() should return the same logger instance")
 	}
 }
+
+func TestFrameworkErrorTypes(t *testing.T) {
+	tests := []struct {
+		name        string
+		constructor func(string, error) *FrameworkError
+		errorType   ErrorType
+	}{
+		{"ValidationError", NewValidationError, ErrorTypeValidation},
+		{"NetworkError", NewNetworkError, ErrorTypeNetwork},
+		{"AuthenticationError", NewAuthenticationError, ErrorTypeAuthentication},
+		{"InternalError", NewInternalError, ErrorTypeInternal},
+		{"ConfigurationError", NewConfigurationError, ErrorTypeConfiguration},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cause := errors.New("test cause")
+			err := tt.constructor("test message", cause)
+
+			if err.Type != tt.errorType {
+				t.Errorf("Error type = %v, expected %v", err.Type, tt.errorType)
+			}
+			if err.Message != "test message" {
+				t.Errorf("Error message = %q, expected %q", err.Message, "test message")
+			}
+			if err.Cause != cause {
+				t.Errorf("Error cause = %v, expected %v", err.Cause, cause)
+			}
+		})
+	}
+}
+
+
+func TestContainerHealthChecker(t *testing.T) {
+	container := NewContainer()
+
+	// Test that container implements HealthChecker
+	var hc HealthChecker = container
+	if hc == nil {
+		t.Error("Container should implement HealthChecker")
+	}
+
+	// Test health check
+	ctx := context.Background()
+	err := hc.CheckHealth(ctx)
+	if err != nil {
+		t.Errorf("CheckHealth() error = %v", err)
+	}
+}
+
+func TestContainerWithMonitoring(t *testing.T) {
+	logger := &testLogger{}
+	tracerProvider := trace.NewNoopTracerProvider()
+
+	container := NewContainerWithOptions(
+		WithLogger(logger),
+		WithTracerProvider(tracerProvider),
+	)
+
+	// Test registration with monitoring
+	err := container.Register(func() string { return "test" })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	// Test resolution with monitoring
+	var result string
+	err = container.Resolve(&result)
+	if err != nil {
+		t.Errorf("Resolve() error = %v", err)
+	}
+
+	if result != "test" {
+		t.Errorf("Resolve() = %q, expected %q", result, "test")
+	}
+}
+
