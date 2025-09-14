@@ -7,6 +7,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
+// Import the core package functions for testing
+var _ = WithMaxTokens
+var _ = WithTemperature
+var _ = EnsureMessages
+
 // MockRunnable is a test implementation of the Runnable interface
 type MockRunnable struct {
 	invokeFunc  func(ctx context.Context, input any, options ...Option) (any, error)
