@@ -76,7 +76,6 @@ func TestMonitorLifecycle(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-
 func TestConfigValidation(t *testing.T) {
 	tests := []struct {
 		name      string

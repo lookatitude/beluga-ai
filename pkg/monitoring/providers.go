@@ -35,11 +35,11 @@ type MetricsProvider interface {
 
 // ProviderRegistry manages monitoring providers
 type ProviderRegistry struct {
-	mu       sync.RWMutex
-	loggers  map[string]LoggerProvider
-	tracers  map[string]TracerProvider
-	metrics  map[string]MetricsProvider
-	current  map[string]string // current provider for each type
+	mu      sync.RWMutex
+	loggers map[string]LoggerProvider
+	tracers map[string]TracerProvider
+	metrics map[string]MetricsProvider
+	current map[string]string // current provider for each type
 }
 
 // NewProviderRegistry creates a new provider registry

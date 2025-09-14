@@ -47,9 +47,9 @@ func (si *ServerIntegration) HealthCheckHandler(w http.ResponseWriter, r *http.R
 	w.WriteHeader(statusCode)
 
 	response := map[string]interface{}{
-		"status":      si.getStatusString(overallHealthy),
-		"timestamp":   time.Now().UTC().Format(time.RFC3339),
-		"checks":      si.formatHealthResults(results),
+		"status":    si.getStatusString(overallHealthy),
+		"timestamp": time.Now().UTC().Format(time.RFC3339),
+		"checks":    si.formatHealthResults(results),
 	}
 
 	json.NewEncoder(w).Encode(response)
@@ -102,7 +102,7 @@ func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.R
 	}
 
 	var request struct {
-		Content     string                 `json:"content"`
+		Content     string               `json:"content"`
 		ContextInfo iface.EthicalContext `json:"context"`
 	}
 
@@ -137,8 +137,8 @@ func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r 
 	}
 
 	var request struct {
-		Data     interface{} `json:"data"`
-		Component string     `json:"component"`
+		Data      interface{} `json:"data"`
+		Component string      `json:"component"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {

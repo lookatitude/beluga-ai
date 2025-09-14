@@ -12,16 +12,16 @@ import (
 // PackageMetrics defines comprehensive metrics for the monitoring package
 type PackageMetrics struct {
 	// System metrics
-	monitorStartTime    time.Time
-	uptime              metric.Float64ObservableGauge
-	memoryUsage         metric.Int64ObservableGauge
-	goroutines          metric.Int64ObservableGauge
+	monitorStartTime time.Time
+	uptime           metric.Float64ObservableGauge
+	memoryUsage      metric.Int64ObservableGauge
+	goroutines       metric.Int64ObservableGauge
 
 	// Request and operation metrics
-	totalRequests       metric.Int64Counter
-	activeOperations    metric.Int64UpDownCounter
-	operationDuration   metric.Float64Histogram
-	requestsPerSecond   metric.Float64ObservableGauge
+	totalRequests     metric.Int64Counter
+	activeOperations  metric.Int64UpDownCounter
+	operationDuration metric.Float64Histogram
+	requestsPerSecond metric.Float64ObservableGauge
 
 	// Component-specific metrics
 	healthCheckDuration metric.Float64Histogram
@@ -31,44 +31,44 @@ type PackageMetrics struct {
 	loggingDuration     metric.Float64Histogram
 
 	// Error metrics
-	totalErrors         metric.Int64Counter
-	safetyErrors        metric.Int64Counter
-	ethicsErrors        metric.Int64Counter
-	healthCheckErrors   metric.Int64Counter
-	tracingErrors       metric.Int64Counter
-	loggingErrors       metric.Int64Counter
+	totalErrors       metric.Int64Counter
+	safetyErrors      metric.Int64Counter
+	ethicsErrors      metric.Int64Counter
+	healthCheckErrors metric.Int64Counter
+	tracingErrors     metric.Int64Counter
+	loggingErrors     metric.Int64Counter
 
 	// Component health metrics
-	loggerHealth          metric.Int64Gauge
-	tracerHealth          metric.Int64Gauge
-	metricsHealth         metric.Int64Gauge
-	healthCheckerHealth   metric.Int64Gauge
-	safetyCheckerHealth   metric.Int64Gauge
-	ethicsCheckerHealth   metric.Int64Gauge
+	loggerHealth        metric.Int64Gauge
+	tracerHealth        metric.Int64Gauge
+	metricsHealth       metric.Int64Gauge
+	healthCheckerHealth metric.Int64Gauge
+	safetyCheckerHealth metric.Int64Gauge
+	ethicsCheckerHealth metric.Int64Gauge
 
 	// Framework-wide metrics
-	apiRequests           metric.Int64Counter
-	databaseQueries       metric.Int64Counter
-	cacheHits             metric.Int64Counter
-	cacheMisses           metric.Int64Counter
-	externalAPICalls      metric.Int64Counter
-	validationOperations  metric.Int64Counter
+	apiRequests          metric.Int64Counter
+	databaseQueries      metric.Int64Counter
+	cacheHits            metric.Int64Counter
+	cacheMisses          metric.Int64Counter
+	externalAPICalls     metric.Int64Counter
+	validationOperations metric.Int64Counter
 
 	// Performance metrics
-	responseTime         metric.Float64Histogram
-	throughput           metric.Float64ObservableGauge
-	errorRate            metric.Float64ObservableGauge
-	availability         metric.Float64ObservableGauge
+	responseTime metric.Float64Histogram
+	throughput   metric.Float64ObservableGauge
+	errorRate    metric.Float64ObservableGauge
+	availability metric.Float64ObservableGauge
 
 	// Resource metrics
-	cpuUsage             metric.Float64ObservableGauge
-	diskUsage            metric.Float64ObservableGauge
-	networkIO            metric.Float64ObservableGauge
+	cpuUsage  metric.Float64ObservableGauge
+	diskUsage metric.Float64ObservableGauge
+	networkIO metric.Float64ObservableGauge
 
 	// Custom business metrics
-	customCounters       map[string]metric.Int64Counter
-	customGauges         map[string]metric.Float64ObservableGauge
-	customHistograms     map[string]metric.Float64Histogram
+	customCounters   map[string]metric.Int64Counter
+	customGauges     map[string]metric.Float64ObservableGauge
+	customHistograms map[string]metric.Float64Histogram
 
 	// Internal fields
 	meter metric.Meter
