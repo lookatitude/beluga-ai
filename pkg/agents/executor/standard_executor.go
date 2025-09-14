@@ -1,14 +1,15 @@
 // Package agents defines interfaces and implementations for autonomous agents
 // that can reason, plan, and execute actions using tools.
-package agents
+package executor
 
 import (
 	"context"
 	"errors"
 	
-	"github.com/lookatitude/beluga-ai/core"
-	"github.com/lookatitude/beluga-ai/memory"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/base"
 )
 
 // AgentExecutorInput defines the expected input structure for the AgentExecutor.
@@ -20,7 +21,7 @@ type AgentExecutorOutput map[string]any
 // AgentExecutorIntermediateStep represents a single step taken by the agent executor,
 // containing the action taken and the resulting observation.
 type AgentExecutorIntermediateStep struct {
-	Action      AgentAction `json:"action"`
+	Action      base.AgentAction `json:"action"`
 	Observation string      `json:"observation"`
 }
 
@@ -61,7 +62,7 @@ func WithHandleParsingErrors(handle bool) AgentExecutorOption {
 // StandardAgentExecutor implements the AgentExecutor interface.
 // It provides the standard loop for running an agent: Plan -> Action -> Observation -> Plan ...
 type StandardAgentExecutor struct {
-	Agent                 Agent        // The agent instance containing the planning logic.
+	Agent                 base.Agent        // The agent instance containing the planning logic.
 	Tools                 []tools.Tool // The list of tools available to the agent during execution.
 	Memory                memory.Memory // Optional: Memory module to manage conversation history.
 	MaxIterations         int          // Maximum number of iterations (Plan -> Action -> Observation cycles) allowed.
@@ -73,7 +74,7 @@ type StandardAgentExecutor struct {
 
 // NewAgentExecutor creates a new StandardAgentExecutor.
 // It takes the agent, a list of tools the agent can use, and functional options for configuration.
-func NewAgentExecutor(agent Agent, agentTools []tools.Tool, options ...AgentExecutorOption) (*StandardAgentExecutor, error) {
+func NewAgentExecutor(agent base.Agent, agentTools []tools.Tool, options ...AgentExecutorOption) (*StandardAgentExecutor, error) {
 	// When implementing, process the tools to check for duplicates
 	toolMap := make(map[string]tools.Tool)
 	for _, t := range agentTools {

@@ -1,8 +1,8 @@
 // Package agents defines interfaces and implementations for AI agents.
-package agents
+package base
 import (
 	"context"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
 // AgentAction represents an action to be taken by the agent.

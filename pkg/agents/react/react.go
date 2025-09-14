@@ -1,13 +1,14 @@
 // Package agents defines interfaces and implementations for AI agents.
-package agents
+package react
 
 import (
 	"context"
 	"errors"
 
-	"github.com/lookatitude/beluga-ai/llms"
-	"github.com/lookatitude/beluga-ai/prompts"
-	"github.com/lookatitude/beluga-ai/tools"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	"github.com/lookatitude/beluga-ai/pkg/prompts"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/base"
 )
 
 // DefaultScratchpadKey is the default key used for the agent scratchpad in prompt templates.
@@ -97,9 +98,9 @@ func (a *ReActAgent) OutputVariables() []string {
 // Plan decides the next action or finish state based on the ReAct strategy.
 // It formats the prompt with inputs and the scratchpad, calls the LLM, and parses the output.
 func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []struct {
-	Action      AgentAction
+	Action      base.AgentAction
 	Observation string
-}, inputs map[string]any) (AgentAction, AgentFinish, error) {
+}, inputs map[string]any) (base.AgentAction, base.AgentFinish, error) {
 	// Implementation will use inputs map directly
 
 	// This is a placeholder - uncomment and implement when PromptTemplate is implemented
@@ -124,14 +125,14 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []struct {
 
 	// Parse the LLM response to find Action or Finish
 	// return a.parseOutput(llmResponse.GetContent())
-	return AgentAction{}, AgentFinish{}, errors.New("ReActAgent Plan needs completion") // Placeholder
+	return base.AgentAction{}, base.AgentFinish{}, errors.New("ReActAgent Plan needs completion") // Placeholder
 }
 
 // constructScratchpad is now handled by the AgentExecutor, which passes the formatted scratchpad in the inputs map.
 
 // parseOutput extracts the action or final answer from the LLM's text output.
 // This is a crucial part of ReAct, interpreting the model's reasoning and desired next step.
-func (a *ReActAgent) parseOutput(llmOutput string) (AgentAction, AgentFinish, error) {
+func (a *ReActAgent) parseOutput(llmOutput string) (base.AgentAction, base.AgentFinish, error) {
 	// Regex to find action and action input (allowing for ```json blocks)
 	// Action block format:
 	// Action: tool_name
@@ -217,7 +218,7 @@ func (a *ReActAgent) parseOutput(llmOutput string) (AgentAction, AgentFinish, er
 // If no structured action or final answer is found, return parsing error.
 // log.Printf("[ReActParser] No action or final answer found in output.")
 // return nil, nil, fmt.Errorf("could not parse LLM output into a valid action or final answer: %s", llmOutput)
-return AgentAction{}, AgentFinish{}, errors.New("ReActAgent parseOutput needs completion") // Placeholder
+return base.AgentAction{}, base.AgentFinish{}, errors.New("ReActAgent parseOutput needs completion") // Placeholder
 }
 
 // parseToolInput attempts to parse the tool input string.
@@ -246,5 +247,5 @@ func parseToolInput(inputStr string) (any, error) {
 }
 
 // Ensure ReActAgent implements Agent interface
-var _ Agent = (*ReActAgent)(nil)
+var _ base.Agent = (*ReActAgent)(nil)
 
