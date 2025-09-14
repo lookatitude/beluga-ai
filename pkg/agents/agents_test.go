@@ -16,7 +16,8 @@ import (
 // mockLLM is a simple mock implementation of the LLM interface for testing
 type mockLLM struct{}
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, options ...core.Option) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	prompt, _ := input.(string) // Assume string for mock
 	return "Mock LLM response to: " + prompt, nil
 }
 
@@ -69,6 +70,10 @@ func (m *mockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel 
 
 func (m *mockChatModel) GetModelName() string {
 	return "mock-chat-model"
+}
+
+func (m *mockChatModel) GetProviderName() string {
+	return "mock-provider"
 }
 
 func (m *mockChatModel) CheckHealth() map[string]interface{} {

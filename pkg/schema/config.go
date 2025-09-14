@@ -39,6 +39,8 @@ type AgentConfig struct {
 	// This is a safety measure to prevent infinite loops.
 	MaxIterations int `yaml:"max_iterations,omitempty" json:"max_iterations,omitempty" validate:"min=1"`
 
+	Settings map[string]interface{} `yaml:"settings,omitempty" json:"settings,omitempty"`
+
 	// PromptTemplate is the main prompt template used by the agent.
 	// It can be a string or a path to a template file.
 	PromptTemplate string `yaml:"prompt_template,omitempty" json:"prompt_template,omitempty"`

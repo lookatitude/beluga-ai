@@ -76,6 +76,7 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 		name:          name,
 		llm:           llm,
 		tools:         agentTools,
+		config:        schema.AgentConfig{Name: name}, // Initialize config with agent name
 		state:         iface.StateInitializing,
 		createdAt:     time.Now(),
 		ctx:           ctx,
@@ -87,8 +88,7 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 
 	// Initialize metrics (use no-op metrics by default to avoid import cycle)
 	// TODO: Pass metrics as dependency injection parameter
-	agent.metrics = nil // Will be set later or use no-op
-
+	agent.metrics = options.Metrics
 	// Register event handlers
 	for eventType, handlers := range options.EventHandlers {
 		for _, handler := range handlers {
@@ -272,6 +272,10 @@ func (a *BaseAgent) Initialize(config map[string]interface{}) error {
 
 	// Update configuration (store in a separate field for now)
 	// TODO: Update schema.AgentConfig to support settings
+	a.config = schema.AgentConfig{
+		Name:     a.name,
+		Settings: config,
+	}
 	a.setState(iface.StateReady)
 
 	// Handle specific configuration options
@@ -299,7 +303,6 @@ func (a *BaseAgent) Execute() error {
 	a.mutex.Unlock()
 
 	start := time.Now()
-	// TODO: Add metrics recording when metrics are implemented
 
 	// Emit execution start event
 	a.emitEvent("execution_started", map[string]interface{}{
@@ -342,6 +345,9 @@ func (a *BaseAgent) Execute() error {
 			"attempts":   a.maxRetries + 1,
 			"total_time": time.Since(start),
 		})
+		if a.metrics != nil {
+			a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), false)
+		}
 		return fmt.Errorf("agent %s execution failed after %d attempts: %w", a.name, a.maxRetries+1, err)
 	}
 
@@ -349,6 +355,9 @@ func (a *BaseAgent) Execute() error {
 	a.emitEvent("execution_completed", map[string]interface{}{
 		"total_time": time.Since(start),
 	})
+	if a.metrics != nil {
+		a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), true)
+	}
 
 	return nil
 }
@@ -420,6 +429,11 @@ func (a *BaseAgent) RegisterEventHandler(eventType string, handler iface.EventHa
 // EmitEvent triggers all registered handlers for the given event type.
 func (a *BaseAgent) EmitEvent(eventType string, payload interface{}) {
 	a.emitEvent(eventType, payload)
+}
+
+// GetMetrics returns the metrics recorder for the agent.
+func (a *BaseAgent) GetMetrics() iface.MetricsRecorder {
+	return a.metrics
 }
 
 // Private methods

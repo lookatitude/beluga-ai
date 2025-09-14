@@ -12,13 +12,13 @@ import (
 
 // MockLLM is a test implementation of the LLM interface
 type MockLLM struct {
-	response string
+	response any
 	err      error
 }
 
-func (m *MockLLM) Invoke(ctx context.Context, prompt string, options ...core.Option) (string, error) {
+func (m *MockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	if m.err != nil {
-		return "", m.err
+		return nil, m.err
 	}
 	return m.response, nil
 }

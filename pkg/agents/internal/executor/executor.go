@@ -64,9 +64,7 @@ func WithHandleParsingErrors(handle bool) ExecutorOption {
 // ExecutePlan executes the given plan for the specified agent.
 // It iterates through the plan steps, executing tools and collecting results.
 func (e *AgentExecutor) ExecutePlan(ctx context.Context, agent iface.Agent, plan []schema.Step) (schema.FinalAnswer, error) {
-	// TODO: Add metrics recording when metrics are implemented
 	start := time.Now()
-	_ = start
 
 	if len(plan) == 0 {
 		return schema.FinalAnswer{Output: "No steps to execute"}, nil
@@ -77,13 +75,18 @@ func (e *AgentExecutor) ExecutePlan(ctx context.Context, agent iface.Agent, plan
 	// Execute each step in the plan
 	for i, step := range plan {
 		if e.maxIterations > 0 && i >= e.maxIterations {
+			if agent.GetMetrics() != nil {
+				agent.GetMetrics().RecordExecutorRun(ctx, "agent_executor", time.Since(start), i, false)
+			}
 			return schema.FinalAnswer{}, fmt.Errorf("execution failed for agent %s: maximum iterations (%d) exceeded", agent.GetConfig().Name, e.maxIterations)
 		}
 
 		// Execute the step
 		observation, err := e.executeStep(ctx, agent, step)
 		if err != nil {
-			// TODO: Add metrics recording when metrics are implemented
+			if agent.GetMetrics() != nil {
+				agent.GetMetrics().RecordExecutorRun(ctx, "agent_executor", time.Since(start), i, false)
+			}
 			return schema.FinalAnswer{}, fmt.Errorf("execution failed for agent %s at step %d: %w", agent.GetConfig().Name, i, err)
 		}
 
@@ -93,8 +96,6 @@ func (e *AgentExecutor) ExecutePlan(ctx context.Context, agent iface.Agent, plan
 			Observation: observation,
 		}
 		intermediateSteps = append(intermediateSteps, intermediateStep)
-
-		// TODO: Add metrics recording when metrics are implemented
 	}
 
 	// Create final answer
@@ -109,6 +110,10 @@ func (e *AgentExecutor) ExecutePlan(ctx context.Context, agent iface.Agent, plan
 
 	if e.returnIntermediateSteps {
 		result.IntermediateSteps = convertToSchemaSteps(intermediateSteps)
+	}
+
+	if agent.GetMetrics() != nil {
+		agent.GetMetrics().RecordExecutorRun(ctx, "agent_executor", time.Since(start), len(plan), true)
 	}
 
 	return result, nil
@@ -133,8 +138,11 @@ func (e *AgentExecutor) executeStep(ctx context.Context, agent iface.Agent, step
 			return "", fmt.Errorf("step requires LLM but agent does not have one")
 		}
 
-		// TODO: Implement LLM call
-		return fmt.Sprintf("LLM response to: %s", step.Action.Log), nil
+		result, err := llm.Invoke(ctx, step.Action.Log)
+		if err != nil {
+			return "", fmt.Errorf("LLM call failed: %w", err)
+		}
+		return fmt.Sprintf("%v", result), nil
 	}
 
 	return "No action or observation defined for this step", nil
@@ -162,8 +170,9 @@ func (e *AgentExecutor) executeTool(ctx context.Context, agent iface.Agent, acti
 	// Execute the tool
 	result, err := selectedTool.Execute(ctx, action.ToolInput)
 
-	// TODO: Add metrics recording when metrics are implemented
-	_ = toolStart
+	if agent.GetMetrics() != nil {
+		agent.GetMetrics().RecordToolCall(ctx, action.Tool, time.Since(toolStart), err == nil)
+	}
 
 	if err != nil {
 		return "", fmt.Errorf("tool execution failed: %w", err)

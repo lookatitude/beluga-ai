@@ -160,9 +160,9 @@ func (mh *MetricsHelper) RecordRequest(ctx context.Context, provider, model stri
 }
 
 // RecordError records error metrics
-func (mh *MetricsHelper) RecordError(ctx context.Context, provider, model, errorCode string) {
+func (mh *MetricsHelper) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
 	if mh.metrics != nil {
-		mh.metrics.RecordError(ctx, provider, model, errorCode)
+		mh.metrics.RecordError(ctx, provider, model, errorCode, duration)
 	}
 }
 

@@ -61,6 +61,9 @@ type Agent interface {
 
 	// GetLLM returns the LLM instance used by the agent.
 	GetLLM() llmsiface.LLM
+
+	// GetMetrics returns the metrics recorder for the agent.
+	GetMetrics() MetricsRecorder
 }
 
 // Executor defines the interface for executing agent plans.
@@ -132,6 +135,7 @@ type Options struct {
 	EnableMetrics bool
 	EnableTracing bool
 	EventHandlers map[string][]EventHandler
+	Metrics       MetricsRecorder
 }
 
 // HealthChecker defines the interface for health checking components.
@@ -150,6 +154,12 @@ type MetricsRecorder interface {
 
 	// RecordPlanningCall records planning operation metrics.
 	RecordPlanningCall(ctx context.Context, agentName string, duration time.Duration, success bool)
+
+	// RecordExecutorRun records executor run metrics.
+	RecordExecutorRun(ctx context.Context, executorType string, duration time.Duration, steps int, success bool)
+
+	// RecordToolCall records tool call metrics.
+	RecordToolCall(ctx context.Context, toolName string, duration time.Duration, success bool)
 }
 
 // SpanEnder defines an interface for span ending operations.

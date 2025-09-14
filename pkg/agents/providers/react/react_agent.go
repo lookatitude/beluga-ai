@@ -43,7 +43,7 @@ type ReActAgent struct {
 //   - Error if initialization fails
 func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.Tool, promptTemplate interface{}, opts ...iface.Option) (*ReActAgent, error) {
 	// Create base agent first
-	baseAgent, err := base.NewBaseAgent(name, nil, agentTools, opts...) // LLM handled separately for ReAct
+	baseAgent, err := base.NewBaseAgent(name, chatLLM, agentTools, opts...) // Pass the ChatModel as it implements LLM interface
 	if err != nil {
 		return nil, fmt.Errorf("failed to create base agent: %w", err)
 	}
@@ -73,9 +73,7 @@ func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.
 // Plan implements the planning phase of the ReAct strategy.
 // It generates the next action or final answer based on the current state.
 func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error) {
-	// TODO: Add metrics recording when metrics are implemented
 	start := time.Now()
-	_ = start
 
 	// Construct scratchpad from intermediate steps
 	scratchpad := a.constructScratchpad(intermediateSteps)
@@ -87,7 +85,14 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 	}
 	promptInputs[a.scratchpadKey] = scratchpad
 
-	// Format prompt (placeholder - needs prompt template implementation)
+	// Add tools description to inputs
+	var toolsDesc strings.Builder
+	for _, tool := range a.tools {
+		toolsDesc.WriteString(fmt.Sprintf("- %s: %s\n", tool.Name(), tool.Description()))
+	}
+	promptInputs["tools"] = toolsDesc.String()
+
+	// Format prompt
 	promptText := a.formatPrompt(promptInputs)
 
 	// Create messages for LLM
@@ -98,13 +103,23 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 	// Call LLM
 	llmResponse, err := a.llm.Generate(ctx, messages)
 	if err != nil {
+		if a.GetMetrics() != nil {
+			a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), false)
+		}
 		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: LLM generation failed: %w", a.GetConfig().Name, err)
 	}
 
 	// Parse LLM response
 	action, finish, err := a.parseResponse(llmResponse.GetContent())
 	if err != nil {
+		if a.GetMetrics() != nil {
+			a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), false)
+		}
 		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: failed to parse LLM response: %w", a.GetConfig().Name, err)
+	}
+
+	if a.GetMetrics() != nil {
+		a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), true)
 	}
 
 	return action, finish, nil
@@ -127,45 +142,21 @@ func (a *ReActAgent) constructScratchpad(intermediateSteps []iface.IntermediateS
 	return scratchpad.String()
 }
 
-// formatPrompt formats the prompt with inputs (placeholder implementation).
+// formatPrompt formats the prompt template with inputs.
 func (a *ReActAgent) formatPrompt(inputs map[string]any) string {
-	// TODO: Implement proper prompt formatting with template
-	// For now, create a simple ReAct prompt
-	var prompt strings.Builder
-
-	prompt.WriteString("You are a helpful AI assistant that can use tools to solve problems.\n\n")
-
-	// Add tool descriptions
-	prompt.WriteString("Available tools:\n")
-	for _, tool := range a.tools {
-		prompt.WriteString(fmt.Sprintf("- %s: %s\n", tool.Name(), tool.Description()))
-	}
-	prompt.WriteString("\n")
-
-	// Add instructions
-	prompt.WriteString("To solve problems, you should:\n")
-	prompt.WriteString("1. Think step by step about what needs to be done\n")
-	prompt.WriteString("2. Choose an appropriate tool if needed\n")
-	prompt.WriteString("3. Use the format: Action: tool_name\\nAction Input: {\"param\": \"value\"}\\n\\n")
-	prompt.WriteString("4. Or provide a final answer: Final Answer: your answer here\n\n")
-
-	// Add scratchpad
-	if scratchpad, ok := inputs["agent_scratchpad"].(string); ok && scratchpad != "" {
-		prompt.WriteString("Previous steps:\n")
-		prompt.WriteString(scratchpad)
-		prompt.WriteString("\n")
+	template, ok := a.prompt.(string)
+	if !ok {
+		// Fallback or error handling
+		return ""
 	}
 
-	// Add current input
-	if input, ok := inputs["input"].(string); ok {
-		prompt.WriteString("Current task: ")
-		prompt.WriteString(input)
-		prompt.WriteString("\n\n")
+	formatted := template
+	for key, value := range inputs {
+		placeholder := "{" + key + "}"
+		formatted = strings.ReplaceAll(formatted, placeholder, fmt.Sprintf("%v", value))
 	}
 
-	prompt.WriteString("What is your next action?")
-
-	return prompt.String()
+	return formatted
 }
 
 // parseResponse parses the LLM response to extract actions or final answers.
@@ -230,9 +221,13 @@ func (a *ReActAgent) parseToolInput(inputStr string) (any, error) {
 
 // GetLLM returns the chat model used by this agent.
 func (a *ReActAgent) GetLLM() llmsiface.LLM {
-	// Note: This returns nil as ChatModel doesn't implement LLM interface.
-	// In a real implementation, an adapter would be needed.
-	return nil
+	// Return the ChatModel from BaseAgent (ChatModel implements LLM interface)
+	return a.BaseAgent.GetLLM()
+}
+
+// GetMetrics returns the metrics recorder for the agent.
+func (a *ReActAgent) GetMetrics() iface.MetricsRecorder {
+	return a.BaseAgent.GetMetrics()
 }
 
 // Ensure ReActAgent implements the required interfaces

@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 )
 
 // GoFunctionTool wraps an arbitrary Go function, allowing it to be used as a Tool
@@ -44,8 +44,24 @@ func NewGoFunctionTool(name, description, inputSchemaJSON string, fn any) (*GoFu
 		return nil, fmt.Errorf("provided fn is not a function, but %T", fn)
 	}
 
-	// TODO: Add more robust validation of the function signature using reflection.
-	//       Check number of inputs/outputs and their types (e.g., context.Context, map[string]any -> string, error).
+	fnType := reflect.TypeOf(fn)
+	if fnType.NumIn() != 2 {
+		return nil, fmt.Errorf("function must have exactly 2 inputs: context.Context and map[string]any")
+	}
+	if fnType.NumOut() != 2 {
+		return nil, fmt.Errorf("function must have exactly 2 outputs: any and error")
+	}
+
+	if fnType.In(0) != reflect.TypeOf((*context.Context)(nil)).Elem() {
+		return nil, fmt.Errorf("first input must be context.Context")
+	}
+	if fnType.In(1) != reflect.TypeOf(map[string]any(nil)) {
+		return nil, fmt.Errorf("second input must be map[string]any")
+	}
+
+	if !fnType.Out(1).Implements(reflect.TypeOf((*error)(nil)).Elem()) {
+		return nil, fmt.Errorf("second output must be error")
+	}
 
 	var inputSchema map[string]any // Changed to map[string]any
 	if inputSchemaJSON != "" {
@@ -178,10 +194,12 @@ func (gft *GoFunctionTool) Stream(ctx context.Context, input any, options ...cor
 // Compile-time checks to ensure implementation satisfies interfaces.
 // Make sure interfaces are correctly implemented
 var _ tools.Tool = (*GoFunctionTool)(nil)
+
 // Define a custom interface that matches what we've implemented
 type batcherWithOptions interface {
 	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 }
+
 var _ batcherWithOptions = (*GoFunctionTool)(nil)

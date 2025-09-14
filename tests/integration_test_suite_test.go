@@ -112,13 +112,13 @@ func TestAgentWithVectorStoreMemoryAndOpenAIEmbedder(t *testing.T) {
 
 	// 2. Initialize Components based on config (simplified for this test)
 	// Mock LLM
-	mockLLMInstance, err := mock.NewMockLLM(config.MockLLMConfig{ModelName: "mock-model", Responses: []string{"Mock response to: Hello, world!"}}) // Use config.MockLLMConfig
+	mockLLMInstance, err := providers.NewMockLLM(config.MockLLMConfig{ModelName: "mock-model", Responses: []string{"Mock response to: Hello, world!"}}) // Use config.MockLLMConfig
 	require.NoError(t, err, "Failed to create MockLLM")
 	require.NotNil(t, mockLLMInstance, "MockLLM instance is nil")
 
 	// Embedder (using factory)
 	mockCfgProvider := &mockConfigProvider{cfg: cfg}
-	embedderF, err := embeddingsFactory.NewEmbedderProviderFactory(mockCfgProvider)
+	embedderF, err := providers.NewEmbedderProviderFactory(mockCfgProvider)
 	require.NoError(t, err, "Failed to create embedder factory")
 	openaiEmbedder, err := embedderF.GetProvider("openai-embed") // Use GetProvider
 	require.NoError(t, err, "Failed to get OpenAI embedder from factory")
