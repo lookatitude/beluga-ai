@@ -60,6 +60,8 @@ const (
 	ErrCodeSerialization   = "serialization_error"
 	ErrCodeDeserialization = "deserialization_error"
 	ErrCodeValidation      = "validation_error"
+	ErrCodeMemoryOverflow  = "memory_overflow"
+	ErrCodeContextCanceled = "context_canceled"
 )
 
 // NewMemoryError creates a new MemoryError with the given parameters.
@@ -149,4 +151,14 @@ func ErrDeserialization(op string, memoryType MemoryType, err error) *MemoryErro
 // ErrValidation returns an error for validation failures.
 func ErrValidation(op string, memoryType MemoryType, err error) *MemoryError {
 	return NewMemoryError(op, memoryType, ErrCodeValidation, err)
+}
+
+// ErrMemoryOverflow returns an error for memory overflow conditions.
+func ErrMemoryOverflow(op string, memoryType MemoryType, err error) *MemoryError {
+	return NewMemoryError(op, memoryType, ErrCodeMemoryOverflow, err)
+}
+
+// ErrContextCanceled returns an error for context cancellation.
+func ErrContextCanceled(op string, memoryType MemoryType, err error) *MemoryError {
+	return NewMemoryError(op, memoryType, ErrCodeContextCanceled, err)
 }

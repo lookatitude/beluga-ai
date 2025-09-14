@@ -13,6 +13,7 @@ package memory
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
@@ -27,7 +28,13 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/memory/providers"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	"go.opentelemetry.io/otel/metric"
 )
+
+func init() {
+	// Initialize global tracer and logger
+	SetGlobalTracer()
+}
 
 // Ensure the main interfaces are imported for external use
 type Memory = iface.Memory
@@ -49,34 +56,83 @@ func NewFactory() Factory {
 // CreateMemory creates a memory instance based on the provided configuration.
 // It validates the configuration and instantiates the appropriate memory implementation.
 func (f *DefaultFactory) CreateMemory(ctx context.Context, config Config) (Memory, error) {
+	start := time.Now()
+	tracer := GetGlobalTracer()
+	metrics := GetGlobalMetrics()
+
+	// Start tracing span
+	ctx, span := tracer.StartSpan(ctx, "create_memory", config.Type, config.MemoryKey)
+	defer span.End()
+
 	// Validate configuration
 	validate := validator.New()
 	if err := validate.Struct(config); err != nil {
+		duration := time.Since(start)
+		if metrics != nil {
+			metrics.RecordError(ctx, "create_memory", config.Type, "invalid_config")
+			metrics.RecordOperationDuration(ctx, "create_memory", config.Type, duration)
+			metrics.RecordOperation(ctx, "create_memory", config.Type, false)
+		}
+		LogError(ctx, err, "create_memory", config.Type, config.MemoryKey)
+		tracer.RecordSpanError(span, err)
 		return nil, fmt.Errorf("invalid memory configuration: %w", err)
 	}
 
 	if !config.Enabled {
 		// Return a no-op memory implementation
+		duration := time.Since(start)
+		if metrics != nil {
+			metrics.RecordOperationDuration(ctx, "create_memory", config.Type, duration)
+			metrics.RecordOperation(ctx, "create_memory", config.Type, true)
+		}
+		LogMemoryLifecycle(ctx, "created_noop_memory", config.Type, config.MemoryKey)
 		return &NoOpMemory{}, nil
 	}
 
 	// Create memory based on type
+	var memory Memory
+	var err error
+
 	switch config.Type {
 	case MemoryTypeBuffer:
-		return f.createBufferMemory(ctx, config)
+		memory, err = f.createBufferMemory(ctx, config)
 	case MemoryTypeBufferWindow:
-		return f.createBufferWindowMemory(ctx, config)
+		memory, err = f.createBufferWindowMemory(ctx, config)
 	case MemoryTypeSummary:
-		return f.createSummaryMemory(ctx, config)
+		memory, err = f.createSummaryMemory(ctx, config)
 	case MemoryTypeSummaryBuffer:
-		return f.createSummaryBufferMemory(ctx, config)
+		memory, err = f.createSummaryBufferMemory(ctx, config)
 	case MemoryTypeVectorStore:
-		return f.createVectorStoreMemory(ctx, config)
+		memory, err = f.createVectorStoreMemory(ctx, config)
 	case MemoryTypeVectorStoreRetriever:
-		return f.createVectorStoreRetrieverMemory(ctx, config)
+		memory, err = f.createVectorStoreRetrieverMemory(ctx, config)
 	default:
-		return nil, fmt.Errorf("unsupported memory type: %s", config.Type)
+		err = fmt.Errorf("unsupported memory type: %s", config.Type)
 	}
+
+	duration := time.Since(start)
+
+	if err != nil {
+		if metrics != nil {
+			metrics.RecordError(ctx, "create_memory", config.Type, "creation_error")
+			metrics.RecordOperationDuration(ctx, "create_memory", config.Type, duration)
+			metrics.RecordOperation(ctx, "create_memory", config.Type, false)
+		}
+		LogError(ctx, err, "create_memory", config.Type, config.MemoryKey)
+		tracer.RecordSpanError(span, err)
+		return nil, err
+	}
+
+	// Record success metrics and logging
+	if metrics != nil {
+		metrics.RecordOperationDuration(ctx, "create_memory", config.Type, duration)
+		metrics.RecordOperation(ctx, "create_memory", config.Type, true)
+		metrics.RecordActiveMemory(ctx, config.Type, 1)
+	}
+	LogMemoryLifecycle(ctx, "created_memory", config.Type, config.MemoryKey,
+		slog.String("memory_variables", fmt.Sprintf("%v", memory.MemoryVariables())))
+
+	return memory, nil
 }
 
 // createBufferMemory creates a buffer memory instance.
@@ -270,9 +326,39 @@ func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) st
 
 // Convenience functions for creating specific memory types
 
-// NewBaseChatMessageHistory creates a new base chat message history.
-func NewBaseChatMessageHistory() iface.ChatMessageHistory {
-	return providers.NewBaseChatMessageHistory()
+// NewBaseChatMessageHistory creates a new base chat message history with functional options.
+func NewBaseChatMessageHistory(options ...providers.BaseHistoryOption) iface.ChatMessageHistory {
+	return providers.NewBaseChatMessageHistory(options...)
+}
+
+// WithMaxHistorySize sets the maximum number of messages for the base history.
+func WithMaxHistorySize(maxSize int) providers.BaseHistoryOption {
+	return providers.WithMaxHistorySize(maxSize)
+}
+
+// NewCompositeChatMessageHistory creates a new composite chat message history with functional options.
+func NewCompositeChatMessageHistory(primary iface.ChatMessageHistory, options ...providers.CompositeHistoryOption) iface.ChatMessageHistory {
+	return providers.NewCompositeChatMessageHistory(primary, options...)
+}
+
+// WithSecondaryHistory sets a secondary history for the composite history.
+func WithSecondaryHistory(secondary iface.ChatMessageHistory) providers.CompositeHistoryOption {
+	return providers.WithSecondaryHistory(secondary)
+}
+
+// WithMaxSize sets the maximum number of messages for the composite history.
+func WithMaxSize(maxSize int) providers.CompositeHistoryOption {
+	return providers.WithMaxSize(maxSize)
+}
+
+// WithOnAddHook sets an add hook for the composite history.
+func WithOnAddHook(hook func(context.Context, schema.Message) error) providers.CompositeHistoryOption {
+	return providers.WithOnAddHook(hook)
+}
+
+// WithOnGetHook sets a get hook for the composite history.
+func WithOnGetHook(hook func(context.Context, []schema.Message) ([]schema.Message, error)) providers.CompositeHistoryOption {
+	return providers.WithOnGetHook(hook)
 }
 
 // NewChatMessageBufferMemory creates a new chat message buffer memory.
