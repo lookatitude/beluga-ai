@@ -1,40 +1,69 @@
-// Package retrievers provides implementations of the rag.Retriever interface.
+// Package retrievers provides implementations of the core.Retriever interface.
 package retrievers
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
-	"github.com/lookatitude/beluga-ai/pkg/dataconnection"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
-// VectorStoreRetriever implements the rag.Retriever interface using an underlying rag.VectorStore.
+// VectorStoreRetriever implements the core.Retriever interface using an underlying vectorstores.VectorStore.
+// It provides configurable retrieval with support for tracing, metrics, and structured logging.
 type VectorStoreRetriever struct {
-	vectorStore rag.VectorStore // The vector store to retrieve from
-	options     []core.Option   // Default options for search (e.g., k, score_threshold, filter)
+	vectorStore    vectorstores.VectorStore // The vector store to retrieve from
+	defaultK       int                      // Default number of documents to retrieve
+	scoreThreshold float32                  // Minimum similarity score threshold
+	maxRetries     int                      // Maximum number of retries for failed operations
+	timeout        time.Duration            // Timeout for operations
+	enableTracing  bool                     // Whether to enable tracing
+	enableMetrics  bool                     // Whether to enable metrics collection
+	logger         *slog.Logger             // Structured logger
+	tracer         trace.Tracer             // OpenTelemetry tracer
+	metrics        *Metrics                 // Metrics collector
 }
 
-// NewVectorStoreRetriever creates a new VectorStoreRetriever.
-// Options provided here become the default search options.
-func NewVectorStoreRetriever(vectorStore rag.VectorStore, options ...core.Option) *VectorStoreRetriever {
+// newVectorStoreRetrieverInternal creates a new VectorStoreRetriever with internal configuration.
+// This is used by the public factory functions in retrievers.go
+func newVectorStoreRetrieverInternal(vectorStore vectorstores.VectorStore, config *RetrieverOptions) *VectorStoreRetriever {
 	return &VectorStoreRetriever{
-		vectorStore: vectorStore,
-		options:     options,
+		vectorStore:    vectorStore,
+		defaultK:       config.DefaultK,
+		scoreThreshold: config.ScoreThreshold,
+		maxRetries:     config.MaxRetries,
+		timeout:        config.Timeout,
+		enableTracing:  config.EnableTracing,
+		enableMetrics:  config.EnableMetrics,
+		logger:         config.Logger,
+		tracer:         config.Tracer,
+		metrics:        config.Metrics,
 	}
 }
 
-// getCombinedOptions merges the retriever's default options with call-specific options.
-// Call-specific options take precedence.
+// getEmbedder extracts an embedder from the options or returns a default.
+func (r *VectorStoreRetriever) getEmbedder(options ...core.Option) iface.Embedder {
+	// TODO: Implement proper embedder extraction from options
+	// For now, return nil - the vector store should handle this
+	return nil
+}
+
+// getCombinedOptions processes call-specific options.
+// Since we now use struct fields for defaults, this mainly handles call-specific overrides.
 func (r *VectorStoreRetriever) getCombinedOptions(callOptions ...core.Option) map[string]any {
 	combined := make(map[string]any)
-	// Apply retriever's default options first
-	for _, opt := range r.options {
-		opt.Apply(&combined)
-	}
-	// Then apply call-specific options, potentially overriding defaults
+	// Set defaults from struct fields
+	combined["k"] = r.defaultK
+	combined["score_threshold"] = r.scoreThreshold
+
+	// Apply call-specific options, potentially overriding defaults
 	for _, opt := range callOptions {
 		opt.Apply(&combined)
 	}
@@ -42,42 +71,112 @@ func (r *VectorStoreRetriever) getCombinedOptions(callOptions ...core.Option) ma
 }
 
 // GetRelevantDocuments retrieves documents from the vector store based on the query.
-// This method now adheres to the rag.Retriever interface and uses the retriever's default options.
+// This method adheres to the core.Retriever interface and uses the retriever's default configuration.
 // For call-specific options, use the Invoke method.
 func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
-	// Use the retriever's default options for this interface method.
-	// The Invoke method will handle merging call-specific options.
-	return r.getRelevantDocumentsWithOptions(ctx, query, r.options...)
+	// Use the retriever's default configuration
+	return r.getRelevantDocumentsWithOptions(ctx, query)
 }
 
 // getRelevantDocumentsWithOptions is an internal helper that accepts options.
 func (r *VectorStoreRetriever) getRelevantDocumentsWithOptions(ctx context.Context, query string, options ...core.Option) ([]schema.Document, error) {
-	combinedOptionsMap := r.getCombinedOptions(options...)
+	startTime := time.Now()
 
-	k := 4 // Default k value
+	// Extract options
+	combinedOptionsMap := r.getCombinedOptions(options...)
+	k := r.defaultK
 	if kOpt, ok := combinedOptionsMap["k"].(int); ok && kOpt > 0 {
 		k = kOpt
 	}
 
-	finalVSOptions := make([]core.Option, 0, len(combinedOptionsMap))
-	for key, val := range combinedOptionsMap {
-		switch key {
-		case "score_threshold":
-			if threshold, ok := val.(float32); ok {
-				finalVSOptions = append(finalVSOptions, rag.WithScoreThreshold(threshold))
-			}
-		case "metadata_filter":
-			if filter, ok := val.(map[string]any); ok {
-				finalVSOptions = append(finalVSOptions, rag.WithMetadataFilter(filter))
-			}
-		// Note: 'k' is handled separately and passed directly to SimilaritySearch
-		// Add other known options that translate to rag.VectorStore options here
-		}
+	// Get embedder from options
+	embedder := r.getEmbedder(options...)
+
+	// Create tracing span
+	var span trace.Span
+	if r.enableTracing && r.tracer != nil {
+		ctx, span = r.tracer.Start(ctx, "vector_store_retriever.retrieve",
+			trace.WithAttributes(
+				attribute.String("retriever.type", "vector_store"),
+				attribute.String("query", query),
+				attribute.Int("k", k),
+				attribute.Float64("score_threshold", float64(r.scoreThreshold)),
+			))
+		defer span.End()
 	}
 
-	return r.vectorStore.SimilaritySearch(ctx, query, k, finalVSOptions...)
-}
+	// Log the retrieval operation
+	if r.logger != nil {
+		r.logger.Info("retrieving documents",
+			"query", query,
+			"k", k,
+			"score_threshold", r.scoreThreshold,
+		)
+	}
 
+	// Use SimilaritySearchByQuery since we have a string query
+	docs, scores, err := r.vectorStore.SimilaritySearchByQuery(ctx, query, k, embedder)
+	duration := time.Since(startTime)
+
+	// Record metrics
+	if r.enableMetrics && r.metrics != nil {
+		avgScore := 0.0
+		if len(scores) > 0 {
+			sum := 0.0
+			for _, score := range scores {
+				sum += float64(score)
+			}
+			avgScore = sum / float64(len(scores))
+		}
+
+		r.metrics.RecordRetrieval(ctx, "vector_store", duration, len(docs), avgScore, err)
+	}
+
+	// Handle errors
+	if err != nil {
+		if r.enableTracing && span != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+		}
+		if r.logger != nil {
+			r.logger.Error("retrieval failed",
+				"error", err,
+				"query", query,
+				"duration", duration,
+			)
+		}
+		return nil, NewRetrieverError("getRelevantDocumentsWithOptions", err, ErrCodeRetrievalFailed)
+	}
+
+	// Apply score threshold filtering
+	if r.scoreThreshold > 0 && len(scores) == len(docs) {
+		filteredDocs := make([]schema.Document, 0, len(docs))
+		for i, score := range scores {
+			if score >= r.scoreThreshold {
+				filteredDocs = append(filteredDocs, docs[i])
+			}
+		}
+		docs = filteredDocs
+	}
+
+	// Log successful retrieval
+	if r.logger != nil {
+		r.logger.Info("retrieval completed",
+			"documents_returned", len(docs),
+			"duration", duration,
+		)
+	}
+
+	if r.enableTracing && span != nil {
+		span.SetAttributes(
+			attribute.Int("documents_returned", len(docs)),
+			attribute.Float64("duration_seconds", duration.Seconds()),
+		)
+		span.SetStatus(codes.Ok, "retrieval completed")
+	}
+
+	return docs, nil
+}
 
 // --- core.Runnable Implementation ---
 
@@ -85,7 +184,8 @@ func (r *VectorStoreRetriever) getRelevantDocumentsWithOptions(ctx context.Conte
 func (r *VectorStoreRetriever) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	query, ok := input.(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid input type for VectorStoreRetriever: expected string, got %T", input)
+		return nil, NewRetrieverErrorWithMessage("Invoke", nil, ErrCodeInvalidInput,
+			fmt.Sprintf("invalid input type for VectorStoreRetriever: expected string, got %T", input))
 	}
 	// Invoke uses the internal helper that can take call-specific options
 	return r.getRelevantDocumentsWithOptions(ctx, query, options...)
@@ -98,7 +198,8 @@ func (r *VectorStoreRetriever) Batch(ctx context.Context, inputs []any, options 
 	for i, input := range inputs {
 		output, err := r.Invoke(ctx, input, options...)
 		if err != nil && firstErr == nil {
-			firstErr = fmt.Errorf("error processing batch item %d: %w", i, err)
+			firstErr = NewRetrieverErrorWithMessage("Batch", err, ErrCodeRetrievalFailed,
+				fmt.Sprintf("error processing batch item %d", i))
 		}
 		results[i] = output
 	}
@@ -108,10 +209,10 @@ func (r *VectorStoreRetriever) Batch(ctx context.Context, inputs []any, options 
 // Stream implements the core.Runnable interface.
 // Streaming is not typically applicable to retrievers, so it returns an error.
 func (r *VectorStoreRetriever) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
-	return nil, errors.New("streaming is not supported by VectorStoreRetriever")
+	return nil, NewRetrieverErrorWithMessage("Stream", nil, ErrCodeInvalidInput,
+		"streaming is not supported by VectorStoreRetriever")
 }
 
 // Compile-time check to ensure VectorStoreRetriever implements interfaces.
-var _ rag.Retriever = (*VectorStoreRetriever)(nil)
+var _ core.Retriever = (*VectorStoreRetriever)(nil)
 var _ core.Runnable = (*VectorStoreRetriever)(nil)
-

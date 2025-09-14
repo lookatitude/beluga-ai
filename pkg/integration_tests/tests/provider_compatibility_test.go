@@ -11,14 +11,17 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config"
-	embeddingsfactory "github.com/lookatitude/beluga-ai/pkg/embeddings/factory"
-	llmsfactory "github.com/lookatitude/beluga-ai/pkg/llms/factory"
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/mock" // Ensure mock LLM provider is registered
+
+	// TODO: Re-enable when factory packages are implemented
+	// embeddingsfactory "github.com/lookatitude/beluga-ai/pkg/embeddings/factory"
+	// _ "github.com/lookatitude/beluga-ai/pkg/embeddings/internal/providers/openai"
+	// llmsfactory "github.com/lookatitude/beluga-ai/pkg/llms/factory"
+	// _ "github.com/lookatitude/beluga-ai/pkg/llms/providers/mock"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	vectorstorefactory "github.com/lookatitude/beluga-ai/pkg/vectorstores/factory"
-	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/inmemory" // Ensure inmemory vector store is registered
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/openai"
+
+	// vectorstorefactory "github.com/lookatitude/beluga-ai/pkg/vectorstores/internal/factory"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory" // Ensure inmemory vector store is registered
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -112,7 +115,7 @@ func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *tes
 	const dummyEnvApiKey = "sk-envkeyshouldnotbeused"
 	originalApiKey := os.Getenv("OPENAI_API_KEY")
 	os.Setenv("OPENAI_API_KEY", dummyEnvApiKey)
-	defer os.Setenv("OPENAI_API_KEY", originalApiKey) 
+	defer os.Setenv("OPENAI_API_KEY", originalApiKey)
 
 	vp, err := config.NewViperProvider(configName, []string{tempDir}, "BELUGA_COMPAT_TEST")
 	require.NoError(t, err, "Failed to create ViperProvider")
@@ -126,7 +129,7 @@ func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *tes
 
 	embedderProviderFactory, err := embeddingsfactory.NewEmbedderProviderFactory(vp)
 	require.NoError(t, err, "Failed to create EmbedderProviderFactory. Check factory logs for APIKey issues.")
- 
+
 	currentEmbedder, err := embedderProviderFactory.GetProvider("openai-embed-for-compat-test")
 	require.NoError(t, err, "Failed to get OpenAI embedder provider from factory.")
 	require.NotNil(t, currentEmbedder)
@@ -189,13 +192,13 @@ func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *tes
 	require.Equal(t, "I should use a tool for this.", aiResponseString, "Unexpected first LLM response")
 
 	constructedToolCall := schema.ToolCall{
-		ID: "tool-call-compat-123", 
+		ID:       "tool-call-compat-123",
 		Function: schema.FunctionCall{Name: "EchoToolCompat", Arguments: `{"input": "testing compatibility"}`},
 	}
 
 	toolToExecute, err := toolRegistry.GetTool(constructedToolCall.Function.Name)
 	require.NoError(t, err, "Failed to get EchoToolCompat from registry")
-	
+
 	var toolArgs map[string]interface{}
 	err = json.Unmarshal([]byte(constructedToolCall.Function.Arguments), &toolArgs)
 	require.NoError(t, err)
@@ -203,8 +206,8 @@ func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *tes
 	require.NoError(t, err)
 	assert.Equal(t, "Echo: testing compatibility", toolOutput)
 
-	contextToSave := map[string]interface{}{memInputKey: userInputPhrase} 
-	finalAnswer := "Tool said: Echo: testing compatibility. The capital is Paris." 
+	contextToSave := map[string]interface{}{memInputKey: userInputPhrase}
+	finalAnswer := "Tool said: Echo: testing compatibility. The capital is Paris."
 	outputsToSave := map[string]string{memOutputKey: finalAnswer}
 	err = vectorStoreMemory.SaveContext(ctx, contextToSave, outputsToSave)
 	require.NoError(t, err, "Failed to save tool observation and AI response to VectorStoreMemory")
@@ -218,4 +221,3 @@ func TestProviderCompatibility_MockLLM_OpenAIEmbedder_InMemoryVectorStore(t *tes
 
 	t.Log("Provider Compatibility Test (MockLLM, OpenAIEmbedder, InMemoryVectorStore) Passed!")
 }
-

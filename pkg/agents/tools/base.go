@@ -36,11 +36,49 @@ type ToolDefinition struct {
 
 // BaseTool provides a default implementation of the Tool interface.
 // It can be embedded in tool implementations to simplify implementing the interface.
-type BaseTool struct{}
+type BaseTool struct {
+	name        string
+	description string
+	inputSchema interface{}
+}
+
+// Name returns the tool's name.
+func (b *BaseTool) Name() string {
+	return b.name
+}
+
+// Description returns the tool's description.
+func (b *BaseTool) Description() string {
+	return b.description
+}
+
+// Definition returns the tool's definition.
+func (b *BaseTool) Definition() ToolDefinition {
+	return ToolDefinition{
+		Name:        b.name,
+		Description: b.description,
+		InputSchema: b.inputSchema,
+	}
+}
+
+// SetName sets the tool's name.
+func (b *BaseTool) SetName(name string) {
+	b.name = name
+}
+
+// SetDescription sets the tool's description.
+func (b *BaseTool) SetDescription(description string) {
+	b.description = description
+}
+
+// SetInputSchema sets the tool's input schema.
+func (b *BaseTool) SetInputSchema(schema interface{}) {
+	b.inputSchema = schema
+}
 
 // Execute is a placeholder implementation that must be overridden by concrete tool implementations
 func (b *BaseTool) Execute(ctx context.Context, input any) (any, error) {
-    return nil, fmt.Errorf("Execute not implemented in base tool")
+	return nil, fmt.Errorf("Execute not implemented in base tool")
 }
 
 // Batch implements parallel execution of multiple inputs.

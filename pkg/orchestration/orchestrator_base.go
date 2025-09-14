@@ -1,11 +1,15 @@
-// Package orchestrator defines interfaces and components for managing complex flows
+// Package orchestration defines interfaces and components for managing complex flows
 // involving multiple steps, agents, or tools. This includes concepts like chains and graphs.
-package orchestrator
+package orchestration
 
 import (
 	"context"
 	"errors" // Added missing import
 	"fmt"    // Added missing import
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 )
@@ -20,7 +24,7 @@ type Chain interface {
 	// GetOutputKeys returns the keys produced by the chain.
 	GetOutputKeys() []string
 	// GetMemory returns the memory associated with the chain, if any.
-	GetMemory() memory.BaseMemory
+	GetMemory() memory.Memory
 }
 
 // Graph represents a more complex orchestration where components can be executed
@@ -77,12 +81,12 @@ type Activity interface {
 // SimpleChain provides a basic implementation of the Chain interface.
 type SimpleChain struct {
 	Steps []core.Runnable
-	Mem   memory.BaseMemory
+	Mem   memory.Memory
 	// TODO: Define input/output keys more explicitly
 }
 
 // NewSimpleChain creates a new SimpleChain.
-func NewSimpleChain(steps []core.Runnable, mem memory.BaseMemory) *SimpleChain {
+func NewSimpleChain(steps []core.Runnable, mem memory.Memory) *SimpleChain {
 	return &SimpleChain{
 		Steps: steps,
 		Mem:   mem,
@@ -99,11 +103,14 @@ func (c *SimpleChain) GetOutputKeys() []string {
 	return []string{"output"} // Placeholder
 }
 
-func (c *SimpleChain) GetMemory() memory.BaseMemory {
+func (c *SimpleChain) GetMemory() memory.Memory {
 	return c.Mem
 }
 
 func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	// Add tracing context
+	span := trace.SpanFromContext(ctx)
+	span.AddEvent("Starting chain execution", trace.WithAttributes(attribute.Int("steps", len(c.Steps))))
 	var err error
 
 	// Prepare initial memory variables if memory is present

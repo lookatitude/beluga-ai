@@ -74,11 +74,124 @@ Once this Release PR is merged, `release-please` will then tag the release and c
 
 For pre-releases (like alpha, beta), ensure your commit messages are clear about the pre-release nature if applicable, though `release-please-config.json` is set up to handle alpha versions automatically.
 
+## Development Guidelines
+
+### Code Quality Standards
+
+*   **Go Best Practices**: Follow [Effective Go](https://golang.org/doc/effective_go.html) guidelines
+*   **Error Handling**: Use explicit error handling with proper context
+*   **Concurrency**: Use channels and sync primitives safely
+*   **Testing**: Write comprehensive unit and integration tests
+*   **Documentation**: Document all exported functions and types
+
+### Advanced Features Usage
+
+#### Dependency Injection
+When adding new components, use the DI container for better testability and flexibility:
+
+```go
+// Register your component in the DI container
+container.Register(func(deps Dependency) (MyComponent, error) {
+    return NewMyComponent(deps), nil
+})
+```
+
+#### Context Propagation
+Always propagate context through function calls for proper cancellation and tracing:
+
+```go
+func (c *MyComponent) Process(ctx context.Context, input interface{}) error {
+    // Use context for timeouts, cancellation, and tracing
+    span := monitoring.SpanFromContext(ctx)
+    if span != nil {
+        span.Log("Processing input", map[string]interface{}{"input_size": len(input)})
+    }
+
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+        // Process input
+    }
+
+    return nil
+}
+```
+
+#### Structured Logging
+Use the structured logger for consistent, searchable logs:
+
+```go
+logger := monitoring.NewStructuredLogger("my-component")
+logger.Info(ctx, "Operation completed", map[string]interface{}{
+    "operation": "data_processing",
+    "records_processed": 1000,
+    "duration_ms": 150,
+})
+```
+
+#### Metrics and Monitoring
+Instrument your code with appropriate metrics:
+
+```go
+metrics := monitoring.NewMetricsCollector()
+timer := metrics.StartTimer(ctx, "operation_duration", map[string]string{
+    "component": "my-component",
+    "operation": "process_data",
+})
+defer timer.Stop(ctx, "Data processing duration")
+
+metrics.Counter(ctx, "operations_total", "Total operations", 1, map[string]string{
+    "component": "my-component",
+    "status": "success",
+})
+```
+
+### Adding New Providers
+
+When implementing new providers (LLMs, VectorStores, etc.), follow this pattern:
+
+1. **Define Interface**: Ensure your provider implements the appropriate interface
+2. **Factory Registration**: Register your provider in the DI container
+3. **Configuration**: Add configuration structs with proper validation tags
+4. **Error Handling**: Use proper error wrapping and context
+5. **Testing**: Write comprehensive tests with mocks
+6. **Documentation**: Document usage and configuration options
+
+Example provider implementation:
+
+```go
+type MyProvider struct {
+    config MyProviderConfig
+    logger *monitoring.StructuredLogger
+}
+
+func NewMyProvider(config MyProviderConfig, logger *monitoring.StructuredLogger) *MyProvider {
+    return &MyProvider{
+        config: config,
+        logger: logger,
+    }
+}
+
+func (p *MyProvider) Process(ctx context.Context, input interface{}) (interface{}, error) {
+    span := monitoring.SpanFromContext(ctx)
+    if span != nil {
+        span.SetTag("provider", "my-provider")
+    }
+
+    // Implementation with proper error handling and logging
+    return result, nil
+}
+```
+
 ## Pull Requests
 
 *   Ensure your branch is up-to-date with the `main` branch before submitting a pull request.
 *   Ensure all tests pass (`go test ./...`).
+*   Run `go vet ./...` and fix any issues.
 *   Ensure your commit messages follow the Conventional Commits format.
+*   Update documentation for any new features or configuration options.
+*   Add appropriate metrics and logging to new components.
 
 Thank you for contributing!
 

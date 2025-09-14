@@ -8,7 +8,7 @@ import (
 	"strconv"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
-	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 )
 
 // CalculatorTool is a tool that can perform basic arithmetic calculations.
@@ -19,7 +19,7 @@ type CalculatorTool struct {
 }
 
 // NewCalculatorTool creates a new CalculatorTool.
-func NewCalculatorTool(cfg config.ToolConfig) (*CalculatorTool, error) {
+func NewCalculatorTool(cfg iface.ToolConfig) (*CalculatorTool, error) {
 	inputSchema := map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
@@ -31,30 +31,34 @@ func NewCalculatorTool(cfg config.ToolConfig) (*CalculatorTool, error) {
 		"required": []string{"expression"},
 	}
 
-	return &CalculatorTool{
-		BaseTool: tools.BaseTool{
-			Name:        cfg.Name,
-			Description: cfg.Description,
-			InputSchema: inputSchema,
-		},
-	}, nil
+	tool := &CalculatorTool{
+		BaseTool: tools.BaseTool{},
+	}
+	tool.SetName(cfg.Name)
+	tool.SetDescription(cfg.Description)
+	tool.SetInputSchema(inputSchema)
+	return tool, nil
 }
 
-// Execute evaluates the arithmetic expression from the input map.
-func (ct *CalculatorTool) Execute(ctx context.Context, inputMap map[string]interface{}) (string, error) {
+// Execute evaluates the arithmetic expression from the input.
+func (ct *CalculatorTool) Execute(ctx context.Context, input any) (any, error) {
+	inputMap, ok := input.(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("input must be a map[string]interface{}, got %T", input)
+	}
 	expression, ok := inputMap["expression"].(string)
 	if !ok {
 		inputBytes, err := json.Marshal(inputMap)
 		if err != nil {
-			return "", fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got something unmarshalable: %v", inputMap)
+			return nil, fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got something unmarshalable: %v", inputMap)
 		}
-		return "", fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got %s", string(inputBytes))
+		return nil, fmt.Errorf("invalid input format for CalculatorTool: expected a map with a string field 'expression', but got %s", string(inputBytes))
 	}
 
 	// Basic security: allow only numbers, operators, parentheses, and spaces.
 	validPattern := regexp.MustCompile(`^[0-9\t .+\-*/%()]+$`)
 	if !validPattern.MatchString(expression) {
-		return "", fmt.Errorf("invalid characters in expression: %s", expression)
+		return nil, fmt.Errorf("invalid characters in expression: %s", expression)
 	}
 
 	// Simplified evaluation for expressions like "A op B"
@@ -65,7 +69,7 @@ func (ct *CalculatorTool) Execute(ctx context.Context, inputMap map[string]inter
 		val2, err2 := strconv.ParseFloat(parts[3], 64)
 
 		if err1 != nil || err2 != nil {
-			return "", fmt.Errorf("invalid numbers in expression: %s. Error1: %v, Error2: %v", expression, err1, err2)
+			return nil, fmt.Errorf("invalid numbers in expression: %s. Error1: %v, Error2: %v", expression, err1, err2)
 		}
 
 		var result float64
@@ -78,18 +82,17 @@ func (ct *CalculatorTool) Execute(ctx context.Context, inputMap map[string]inter
 			result = val1 * val2
 		case "/":
 			if val2 == 0 {
-				return "", fmt.Errorf("division by zero in expression: %s", expression)
+				return nil, fmt.Errorf("division by zero in expression: %s", expression)
 			}
 			result = val1 / val2
 		default:
-			return "", fmt.Errorf("unsupported operator 	%s	 in expression: %s", operator, expression)
+			return nil, fmt.Errorf("unsupported operator %s in expression: %s", operator, expression)
 		}
 		return strconv.FormatFloat(result, 'f', -1, 64), nil
 	}
 
-	return "", fmt.Errorf("calculator tool can only evaluate simple 'number operator number' expressions (e.g., '2 + 3', '10.5 * 2'). For complex expressions, a more robust parser is needed. Input: %s", expression)
+	return nil, fmt.Errorf("calculator tool can only evaluate simple 'number operator number' expressions (e.g., '2 + 3', '10.5 * 2'). For complex expressions, a more robust parser is needed. Input: %s", expression)
 }
 
 // Ensure CalculatorTool implements the Tool interface.
 var _ tools.Tool = (*CalculatorTool)(nil)
-

@@ -8,22 +8,19 @@ import (
 	"path/filepath"
 	"testing"
 
-
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+
 	// "github.com/lookatitude/beluga-ai/pkg/embeddings/iface" // Unused import removed
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	// Ensure provider packages are imported for their init() side effects (registration)
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/mock" // Ensure mock LLM provider is registered
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/openai"
+	// Provider imports removed - they would require internal package access
+	// TODO: Consider moving provider registration to public APIs
 )
 
 // mockPhase1LLM is a mock implementation of the llms.LLM interface for testing.
@@ -283,4 +280,3 @@ func TestPhase1AgentIntegration(t *testing.T) {
 
 	t.Log("Phase 1 Component Integration Test (Manual Orchestration) Passed!")
 }
-

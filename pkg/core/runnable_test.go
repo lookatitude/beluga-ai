@@ -2,16 +2,17 @@ package core
 
 import (
 	"context"
+	"errors"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MockRunnable is a test implementation of the Runnable interface
 type MockRunnable struct {
-	invokeFunc  func(ctx context.Context, input any, options ...Option) (any, error)
-	batchFunc   func(ctx context.Context, inputs []any, options ...Option) ([]any, error)
-	streamFunc  func(ctx context.Context, input any, options ...Option) (<-chan any, error)
+	invokeFunc func(ctx context.Context, input any, options ...Option) (any, error)
+	batchFunc  func(ctx context.Context, inputs []any, options ...Option) ([]any, error)
+	streamFunc func(ctx context.Context, input any, options ...Option) (<-chan any, error)
 }
 
 func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...Option) (any, error) {
@@ -165,5 +166,229 @@ func TestMockRunnable_Batch(t *testing.T) {
 		if result != "mock_result" {
 			t.Errorf("MockRunnable.Batch() result[%d] = %v, expected mock_result", i, result)
 		}
+	}
+}
+
+func TestTracedRunnable_Invoke(t *testing.T) {
+	mock := &MockRunnable{
+		invokeFunc: func(ctx context.Context, input any, options ...Option) (any, error) {
+			return "traced_result", nil
+		},
+	}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	result, err := traced.Invoke(context.Background(), "test_input")
+	if err != nil {
+		t.Errorf("TracedRunnable.Invoke() error = %v", err)
+		return
+	}
+
+	if result != "traced_result" {
+		t.Errorf("TracedRunnable.Invoke() = %v, expected traced_result", result)
+	}
+}
+
+func TestTracedRunnable_InvokeWithError(t *testing.T) {
+	expectedErr := errors.New("test error")
+	mock := &MockRunnable{
+		invokeFunc: func(ctx context.Context, input any, options ...Option) (any, error) {
+			return nil, expectedErr
+		},
+	}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	_, err := traced.Invoke(context.Background(), "test_input")
+	if err != expectedErr {
+		t.Errorf("TracedRunnable.Invoke() error = %v, expected %v", err, expectedErr)
+	}
+}
+
+func TestTracedRunnable_Batch(t *testing.T) {
+	mock := &MockRunnable{
+		batchFunc: func(ctx context.Context, inputs []any, options ...Option) ([]any, error) {
+			results := make([]any, len(inputs))
+			for i := range inputs {
+				results[i] = "traced_batch_result"
+			}
+			return results, nil
+		},
+	}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	inputs := []any{"input1", "input2"}
+	results, err := traced.Batch(context.Background(), inputs)
+	if err != nil {
+		t.Errorf("TracedRunnable.Batch() error = %v", err)
+		return
+	}
+
+	if len(results) != len(inputs) {
+		t.Errorf("TracedRunnable.Batch() returned %d results, expected %d", len(results), len(inputs))
+	}
+
+	for i, result := range results {
+		if result != "traced_batch_result" {
+			t.Errorf("TracedRunnable.Batch() result[%d] = %v, expected traced_batch_result", i, result)
+		}
+	}
+}
+
+func TestTracedRunnable_Stream(t *testing.T) {
+	mock := &MockRunnable{
+		streamFunc: func(ctx context.Context, input any, options ...Option) (<-chan any, error) {
+			ch := make(chan any, 2)
+			go func() {
+				defer close(ch)
+				ch <- "chunk1"
+				ch <- "chunk2"
+			}()
+			return ch, nil
+		},
+	}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	streamChan, err := traced.Stream(context.Background(), "test_input")
+	if err != nil {
+		t.Errorf("TracedRunnable.Stream() error = %v", err)
+		return
+	}
+
+	var chunks []any
+	for chunk := range streamChan {
+		chunks = append(chunks, chunk)
+	}
+
+	if len(chunks) != 2 {
+		t.Errorf("TracedRunnable.Stream() received %d chunks, expected 2", len(chunks))
+	}
+
+	if chunks[0] != "chunk1" || chunks[1] != "chunk2" {
+		t.Errorf("TracedRunnable.Stream() chunks = %v, expected [chunk1, chunk2]", chunks)
+	}
+}
+
+func TestTracedRunnable_StreamWithError(t *testing.T) {
+	expectedErr := errors.New("stream error")
+	mock := &MockRunnable{
+		streamFunc: func(ctx context.Context, input any, options ...Option) (<-chan any, error) {
+			return nil, expectedErr
+		},
+	}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	_, err := traced.Stream(context.Background(), "test_input")
+	if err != expectedErr {
+		t.Errorf("TracedRunnable.Stream() error = %v, expected %v", err, expectedErr)
+	}
+}
+
+func TestRunnableWithTracing(t *testing.T) {
+	mock := &MockRunnable{}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := RunnableWithTracing(mock, tracer, metrics, "test_component")
+
+	if tracedRunnable, ok := traced.(*TracedRunnable); !ok {
+		t.Errorf("RunnableWithTracing() returned %T, expected *TracedRunnable", traced)
+	} else {
+		if tracedRunnable.componentType != "test_component" {
+			t.Errorf("RunnableWithTracing() componentType = %q, expected %q", tracedRunnable.componentType, "test_component")
+		}
+		if tracedRunnable.componentName != "" {
+			t.Errorf("RunnableWithTracing() componentName = %q, expected empty string", tracedRunnable.componentName)
+		}
+	}
+}
+
+func TestRunnableWithTracingAndName(t *testing.T) {
+	mock := &MockRunnable{}
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+	traced := RunnableWithTracingAndName(mock, tracer, metrics, "test_component", "test_name")
+
+	if tracedRunnable, ok := traced.(*TracedRunnable); !ok {
+		t.Errorf("RunnableWithTracingAndName() returned %T, expected *TracedRunnable", traced)
+	} else {
+		if tracedRunnable.componentType != "test_component" {
+			t.Errorf("RunnableWithTracingAndName() componentType = %q, expected %q", tracedRunnable.componentType, "test_component")
+		}
+		if tracedRunnable.componentName != "test_name" {
+			t.Errorf("RunnableWithTracingAndName() componentName = %q, expected %q", tracedRunnable.componentName, "test_name")
+		}
+	}
+}
+
+func TestBuilder_RegisterMonitoringComponents(t *testing.T) {
+	builder := NewBuilder(NewContainer())
+
+	// Test registering no-op monitoring components
+	if err := builder.RegisterNoOpLogger(); err != nil {
+		t.Errorf("RegisterNoOpLogger() error = %v", err)
+	}
+
+	if err := builder.RegisterNoOpTracerProvider(); err != nil {
+		t.Errorf("RegisterNoOpTracerProvider() error = %v", err)
+	}
+
+	if err := builder.RegisterNoOpMetrics(); err != nil {
+		t.Errorf("RegisterNoOpMetrics() error = %v", err)
+	}
+
+	// Test resolving the components
+	var logger Logger
+	if err := builder.Build(&logger); err != nil {
+		t.Errorf("Build(logger) error = %v", err)
+	}
+	if logger == nil {
+		t.Error("Expected logger to be resolved, got nil")
+	}
+
+	var tracerProvider TracerProvider
+	if err := builder.Build(&tracerProvider); err != nil {
+		t.Errorf("Build(tracerProvider) error = %v", err)
+	}
+	if tracerProvider == nil {
+		t.Error("Expected tracerProvider to be resolved, got nil")
+	}
+
+	var metrics *Metrics
+	if err := builder.Build(&metrics); err != nil {
+		t.Errorf("Build(metrics) error = %v", err)
+	}
+	if metrics == nil {
+		t.Error("Expected metrics to be resolved, got nil")
+	}
+}
+
+func TestNoOpLogger(t *testing.T) {
+	logger := &noOpLogger{}
+
+	// These should not panic
+	logger.Debug("debug message")
+	logger.Info("info message")
+	logger.Warn("warn message")
+	logger.Error("error message")
+
+	// With should return the same logger
+	withLogger := logger.With("key", "value")
+	if withLogger != logger {
+		t.Error("With() should return the same logger instance")
 	}
 }

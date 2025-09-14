@@ -7,8 +7,11 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config"
-	embeddingsFactory "github.com/lookatitude/beluga-ai/pkg/embeddings/factory"
-	"github.com/lookatitude/beluga-ai/pkg/llms/mock"
+
+	// TODO: Re-enable when factory packages are implemented
+	// embeddingsFactory "github.com/lookatitude/beluga-ai/pkg/embeddings/factory"
+	// "github.com/lookatitude/beluga-ai/pkg/llms/providers/mock"
+
 	// "github.com/lookatitude/beluga-ai/pkg/memory" // Not used in the current version of the test
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
@@ -26,14 +29,14 @@ var _ config.Provider = (*mockConfigProvider)(nil)
 
 func (m *mockConfigProvider) Load(configStruct interface{}) error { return nil } // Mock implementation
 
-func (m *mockConfigProvider) GetString(key string) string                                { return "" }
-func (m *mockConfigProvider) GetInt(key string) int                                   { return 0 }
-func (m *mockConfigProvider) GetBool(key string) bool                                 { return false }
-func (m *mockConfigProvider) GetFloat64(key string) float64                             { return 0.0 }
-func (m *mockConfigProvider) GetStringSlice(key string) []string                        { return nil } // Added to satisfy potential interface changes
-func (m *mockConfigProvider) GetStringMapString(key string) map[string]string            { return nil } // Added to satisfy potential interface changes
-func (m *mockConfigProvider) IsSet(key string) bool                                   { return false }
-func (m *mockConfigProvider) UnmarshalKey(key string, rawVal interface{}) error         { return nil }
+func (m *mockConfigProvider) GetString(key string) string                       { return "" }
+func (m *mockConfigProvider) GetInt(key string) int                             { return 0 }
+func (m *mockConfigProvider) GetBool(key string) bool                           { return false }
+func (m *mockConfigProvider) GetFloat64(key string) float64                     { return 0.0 }
+func (m *mockConfigProvider) GetStringSlice(key string) []string                { return nil } // Added to satisfy potential interface changes
+func (m *mockConfigProvider) GetStringMapString(key string) map[string]string   { return nil } // Added to satisfy potential interface changes
+func (m *mockConfigProvider) IsSet(key string) bool                             { return false }
+func (m *mockConfigProvider) UnmarshalKey(key string, rawVal interface{}) error { return nil }
 
 func (m *mockConfigProvider) GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error) {
 	for _, llmCfg := range m.cfg.LLMProviders {
@@ -57,13 +60,21 @@ func (m *mockConfigProvider) GetToolsConfig() ([]config.ToolConfig, error) {
 	return m.cfg.Tools, nil
 }
 
+func (m *mockConfigProvider) Validate() error {
+	return nil
+}
+
+func (m *mockConfigProvider) SetDefaults() error {
+	return nil
+}
+
 func (m *mockConfigProvider) GetToolConfig(name string) (config.ToolConfig, error) {
-    for _, toolCfg := range m.cfg.Tools {
-        if toolCfg.Name == name {
-            return toolCfg, nil
-        }
-    }
-    return config.ToolConfig{}, fmt.Errorf("tool config %s not found", name)
+	for _, toolCfg := range m.cfg.Tools {
+		if toolCfg.Name == name {
+			return toolCfg, nil
+		}
+	}
+	return config.ToolConfig{}, fmt.Errorf("tool config %s not found", name)
 }
 
 func (m *mockConfigProvider) GetAgentsConfig() ([]schema.AgentConfig, error) {
@@ -147,4 +158,3 @@ func TestAgentWithVectorStoreMemoryAndOpenAIEmbedder(t *testing.T) {
 
 	t.Log("TestAgentWithVectorStoreMemoryAndOpenAIEmbedder (partially implemented) finished.")
 }
-

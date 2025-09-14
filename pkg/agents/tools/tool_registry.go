@@ -32,13 +32,13 @@ func NewInMemoryToolRegistry() *InMemoryToolRegistry {
 
 // RegisterTool adds a tool to the registry.
 func (r *InMemoryToolRegistry) RegisterTool(tool Tool) error {
-	if tool.GetName() == "" {
+	if tool.Name() == "" {
 		return fmt.Errorf("tool name cannot be empty")
 	}
-	if _, exists := r.tools[tool.GetName()]; exists {
-		return fmt.Errorf("tool with name %s already registered", tool.GetName())
+	if _, exists := r.tools[tool.Name()]; exists {
+		return fmt.Errorf("tool with name %s already registered", tool.Name())
 	}
-	r.tools[tool.GetName()] = tool
+	r.tools[tool.Name()] = tool
 	return nil
 }
 
@@ -65,15 +65,12 @@ func (r *InMemoryToolRegistry) ListTools() []string {
 func (r *InMemoryToolRegistry) GetToolDescriptions() string {
 	var descriptions []string
 	for _, tool := range r.tools {
-		schemaStr, err := tool.GetInputSchemaString() // Use the new method
-		if err != nil {
-			schemaStr = fmt.Sprintf("[error getting schema: %v]", err) // Include error in description
-		}
-		descriptions = append(descriptions, fmt.Sprintf("- %s: %s (Input Schema: %s)", tool.GetName(), tool.GetDescription(), schemaStr))
+		definition := tool.Definition()
+		schemaStr := fmt.Sprintf("%v", definition.InputSchema) // Convert schema to string representation
+		descriptions = append(descriptions, fmt.Sprintf("- %s: %s (Input Schema: %s)", tool.Name(), tool.Description(), schemaStr))
 	}
 	return strings.Join(descriptions, "\n")
 }
 
 // Ensure InMemoryToolRegistry implements the Registry interface.
 var _ Registry = (*InMemoryToolRegistry)(nil)
-

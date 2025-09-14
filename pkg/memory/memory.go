@@ -1,203 +1,306 @@
+// Package memory provides interfaces and implementations for managing conversation history.
+// It follows the Beluga AI Framework design patterns with proper separation of concerns,
+// configuration management, observability, and error handling.
+//
+// The package supports multiple memory types:
+// - Buffer memory for storing all messages
+// - Window buffer memory for keeping a fixed number of recent interactions
+// - Summary memory for condensing conversations using LLMs
+// - Summary buffer memory combining buffer and summarization
+// - Vector store memory for semantic retrieval
 package memory
 
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
+	"github.com/go-playground/validator/v10"
+	"github.com/lookatitude/beluga-ai/pkg/core"
+	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
+	"github.com/lookatitude/beluga-ai/pkg/memory/internal/buffer"
+	"github.com/lookatitude/beluga-ai/pkg/memory/internal/summary"
+	"github.com/lookatitude/beluga-ai/pkg/memory/internal/vectorstore"
+	"github.com/lookatitude/beluga-ai/pkg/memory/internal/window"
+	"github.com/lookatitude/beluga-ai/pkg/memory/providers"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 )
 
-// Memory defines the interface for agent memory systems.
-// It allows agents to store and retrieve information from conversations or other sources.
-type Memory interface {
-	GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error)
-	LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error)
-	SaveContext(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error
-	Clear(ctx context.Context) error
-	GetMemoryType() string
-}
-
-// Config is a generic configuration structure for memory providers.
-type Config struct {
-	Type         string                 
-	Name         string                 
-	ProviderArgs map[string]interface{} 
-}
+// Ensure the main interfaces are imported for external use
+type Memory = iface.Memory
+type ChatMessageHistory = iface.ChatMessageHistory
 
 // Factory defines the interface for creating Memory instances.
 type Factory interface {
 	CreateMemory(ctx context.Context, config Config) (Memory, error)
 }
 
-// InputOutputKeys defines the keys for input and output variables in memory.
-type InputOutputKeys struct {
-	InputKey  string
-	OutputKey string
+// DefaultFactory is the default implementation of the Factory interface.
+type DefaultFactory struct{}
+
+// NewFactory creates a new memory factory.
+func NewFactory() Factory {
+	return &DefaultFactory{}
 }
 
-// DefaultInputKey is the default key for the input variable.
-const DefaultInputKey = "input"
-
-// DefaultOutputKey is the default key for the output variable.
-const DefaultOutputKey = "output"
-
-// BaseMemory provides a base implementation for memory types.
-// It handles common aspects like input/output keys and the memory key.
-type BaseMemory struct {
-	InputOutputKeys // Embed InputOutputKeys
-	MemoryKey       string
-}
-
-// NewBaseMemory creates a new BaseMemory instance.
-func NewBaseMemory(inputKey, outputKey, memoryKey string) *BaseMemory {
-	return &BaseMemory{
-		InputOutputKeys: InputOutputKeys{
-			InputKey:  inputKey,
-			OutputKey: outputKey,
-		},
-		MemoryKey: memoryKey,
-	}
-}
-
-// GetMemoryKey returns the memory key for this memory instance.
-func (bm *BaseMemory) GetMemoryKey() string {
-	return bm.MemoryKey
-}
-
-// GetInputOutputKeys determines the input and output keys to use.
-// If specific keys are provided, they are used; otherwise, defaults are used.
-func GetInputOutputKeys(inputKey, outputKey *string) InputOutputKeys {
-	keys := InputOutputKeys{}
-	if inputKey != nil {
-		keys.InputKey = *inputKey
-	} else {
-		keys.InputKey = DefaultInputKey
-	}
-	if outputKey != nil {
-		keys.OutputKey = *outputKey
-	} else {
-		keys.OutputKey = DefaultOutputKey
-	}
-	return keys
-}
-
-// GetPromptInputKey identifies the correct key for the prompt input from a map of inputs.
-// It ensures the chosen key is not one of the memory variables.
-func GetPromptInputKey(inputs map[string]interface{}, memoryVariables []string, inputKey *string) (string, error) {
-	if inputKey != nil {
-		// If a specific input key is provided, validate it.
-		for _, memVar := range memoryVariables {
-			if *inputKey == memVar {
-				return "", fmt.Errorf("input key \"%s\" is one of the memory variables %v", *inputKey, memoryVariables)
-			}
-		}
-		if _, ok := inputs[*inputKey]; !ok {
-			return "", fmt.Errorf("input key \"%s\" not found in inputs %v", *inputKey, inputs)
-		}
-		return *inputKey, nil
+// CreateMemory creates a memory instance based on the provided configuration.
+// It validates the configuration and instantiates the appropriate memory implementation.
+func (f *DefaultFactory) CreateMemory(ctx context.Context, config Config) (Memory, error) {
+	// Validate configuration
+	validate := validator.New()
+	if err := validate.Struct(config); err != nil {
+		return nil, fmt.Errorf("invalid memory configuration: %w", err)
 	}
 
-	// If no input key is provided, try to infer it.
-	var candidateKeys []string
-	for k := range inputs {
-		isMemoryVar := false
-		for _, memVar := range memoryVariables {
-			if k == memVar {
-				isMemoryVar = true
-				break
-			}
-		}
-		if !isMemoryVar {
-			candidateKeys = append(candidateKeys, k)
-		}
+	if !config.Enabled {
+		// Return a no-op memory implementation
+		return &NoOpMemory{}, nil
 	}
 
-	if len(candidateKeys) == 1 {
-		return candidateKeys[0], nil
-	}
-	if len(candidateKeys) == 0 {
-		return "", fmt.Errorf("no input keys found that are not memory variables; inputs: %v, memory variables: %v", inputs, memoryVariables)
-	}
-	return "", fmt.Errorf("multiple input keys found %v; please specify an input key or ensure only one non-memory variable key exists", candidateKeys)
-}
-
-
-// BufferMemory is a simple in-memory buffer for storing conversation history.
-type BufferMemory struct {
-	ChatHistory    *schema.BaseChatHistory 
-	ReturnMessages bool                    
-	InputKey       string                  
-	OutputKey      string                  
-	MemoryKey      string                  
-}
-
-// NewBufferMemory creates a new BufferMemory.
-func NewBufferMemory(returnMessages bool, inputKey, outputKey, memoryKey string) *BufferMemory {
-	if memoryKey == "" {
-		memoryKey = "history" 
-	}
-	return &BufferMemory{
-		ChatHistory:    schema.NewBaseChatHistory(), 
-		ReturnMessages: returnMessages,
-		InputKey:       inputKey,
-		OutputKey:      outputKey,
-		MemoryKey:      memoryKey,
+	// Create memory based on type
+	switch config.Type {
+	case MemoryTypeBuffer:
+		return f.createBufferMemory(ctx, config)
+	case MemoryTypeBufferWindow:
+		return f.createBufferWindowMemory(ctx, config)
+	case MemoryTypeSummary:
+		return f.createSummaryMemory(ctx, config)
+	case MemoryTypeSummaryBuffer:
+		return f.createSummaryBufferMemory(ctx, config)
+	case MemoryTypeVectorStore:
+		return f.createVectorStoreMemory(ctx, config)
+	case MemoryTypeVectorStoreRetriever:
+		return f.createVectorStoreRetrieverMemory(ctx, config)
+	default:
+		return nil, fmt.Errorf("unsupported memory type: %s", config.Type)
 	}
 }
 
-func (bm *BufferMemory) GetMemoryVariables(ctx context.Context, inputs map[string]interface{}) ([]string, error) {
-	return []string{bm.MemoryKey}, nil
-}
+// createBufferMemory creates a buffer memory instance.
+func (f *DefaultFactory) createBufferMemory(ctx context.Context, config Config) (Memory, error) {
+	history := providers.NewBaseChatMessageHistory()
+	memory := buffer.NewChatMessageBufferMemory(history)
 
-func (bm *BufferMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error) {
-	memory := make(map[string]interface{})
-	messages, err := bm.ChatHistory.Messages()
-	if err != nil {
-		return nil, fmt.Errorf("failed to retrieve messages from chat history: %w", err)
-	}
+	// Apply configuration
+	memory.MemoryKey = config.MemoryKey
+	memory.InputKey = config.InputKey
+	memory.OutputKey = config.OutputKey
+	memory.ReturnMessages = config.ReturnMessages
+	memory.HumanPrefix = config.HumanPrefix
+	memory.AIPrefix = config.AIPrefix
 
-	if bm.ReturnMessages {
-		memory[bm.MemoryKey] = messages
-	} else {
-		var historyStr string
-		for _, msg := range messages {
-			historyStr += fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()) 
-		}
-		memory[bm.MemoryKey] = historyStr
-	}
 	return memory, nil
 }
 
-func (bm *BufferMemory) SaveContext(ctx context.Context, inputs map[string]interface{}, outputs map[string]string) error {
-	inputVal, okInput := inputs[bm.InputKey].(string)
-	outputVal, okOutput := outputs[bm.OutputKey]
+// createBufferWindowMemory creates a buffer window memory instance.
+func (f *DefaultFactory) createBufferWindowMemory(ctx context.Context, config Config) (Memory, error) {
+	history := providers.NewBaseChatMessageHistory()
+	memory := window.NewConversationBufferWindowMemory(history, config.WindowSize, config.MemoryKey, config.ReturnMessages)
 
-	if !okInput {
-		return fmt.Errorf("input key '%s' not found in inputs or not a string", bm.InputKey)
-	}
-	if !okOutput {
-		return fmt.Errorf("output key '%s' not found in outputs", bm.OutputKey)
+	// Apply configuration
+	memory.InputKey = config.InputKey
+	memory.OutputKey = config.OutputKey
+	memory.HumanPrefix = config.HumanPrefix
+	memory.AiPrefix = config.AIPrefix
+
+	return memory, nil
+}
+
+// createSummaryMemory creates a summary memory instance.
+// Note: This requires an LLM to be provided via dependency injection.
+func (f *DefaultFactory) createSummaryMemory(ctx context.Context, config Config) (Memory, error) {
+	// This is a placeholder - in practice, the LLM would need to be injected
+	// through a more sophisticated factory pattern or configuration
+	return nil, fmt.Errorf("summary memory requires LLM dependency injection - use NewConversationSummaryMemory directly")
+}
+
+// createSummaryBufferMemory creates a summary buffer memory instance.
+// Note: This requires an LLM to be provided via dependency injection.
+func (f *DefaultFactory) createSummaryBufferMemory(ctx context.Context, config Config) (Memory, error) {
+	// This is a placeholder - in practice, the LLM would need to be injected
+	return nil, fmt.Errorf("summary buffer memory requires LLM dependency injection - use NewConversationSummaryBufferMemory directly")
+}
+
+// createVectorStoreMemory creates a vector store memory instance.
+// Note: This requires a retriever to be provided via dependency injection.
+func (f *DefaultFactory) createVectorStoreMemory(ctx context.Context, config Config) (Memory, error) {
+	// This is a placeholder - in practice, the retriever would need to be injected
+	return nil, fmt.Errorf("vector store memory requires retriever dependency injection - use NewVectorStoreMemory directly")
+}
+
+// createVectorStoreRetrieverMemory creates a vector store retriever memory instance.
+// Note: This requires embedder and vector store to be provided via dependency injection.
+func (f *DefaultFactory) createVectorStoreRetrieverMemory(ctx context.Context, config Config) (Memory, error) {
+	// This is a placeholder - in practice, the embedder and vector store would need to be injected
+	return nil, fmt.Errorf("vector store retriever memory requires embedder and vector store dependency injection - use NewVectorStoreRetrieverMemory directly")
+}
+
+// NewMemory is a convenience function for creating memory instances with functional options.
+func NewMemory(memoryType MemoryType, options ...Option) (Memory, error) {
+	config := Config{
+		Type:           memoryType,
+		MemoryKey:      "history",
+		InputKey:       "input",
+		OutputKey:      "output",
+		ReturnMessages: false,
+		WindowSize:     5,
+		MaxTokenLimit:  2000,
+		TopK:           4,
+		HumanPrefix:    "Human",
+		AIPrefix:       "AI",
+		Enabled:        true,
+		Timeout:        30 * time.Second,
 	}
 
-	err := bm.ChatHistory.AddUserMessage(inputVal)
-	if err != nil {
-		return fmt.Errorf("failed to add user message to chat history: %w", err)
+	// Apply options
+	for _, option := range options {
+		option(&config)
 	}
-	err = bm.ChatHistory.AddAIMessage(outputVal)
-	if err != nil {
-		return fmt.Errorf("failed to add AI message to chat history: %w", err)
-	}
+
+	factory := NewFactory()
+	ctx := context.Background()
+	return factory.CreateMemory(ctx, config)
+}
+
+// NoOpMemory is a no-op implementation of the Memory interface.
+// It can be used when memory is disabled or for testing purposes.
+type NoOpMemory struct{}
+
+// MemoryVariables returns an empty slice for no-op memory.
+func (m *NoOpMemory) MemoryVariables() []string {
+	return []string{}
+}
+
+// LoadMemoryVariables returns an empty map for no-op memory.
+func (m *NoOpMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error) {
+	return map[string]any{}, nil
+}
+
+// SaveContext does nothing for no-op memory.
+func (m *NoOpMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
 	return nil
 }
 
-func (bm *BufferMemory) Clear(ctx context.Context) error {
-	bm.ChatHistory = schema.NewBaseChatHistory()
+// Clear does nothing for no-op memory.
+func (m *NoOpMemory) Clear(ctx context.Context) error {
 	return nil
 }
 
-func (bm *BufferMemory) GetMemoryType() string {
-	return "buffer"
+// GetInputOutputKeys determines the input and output keys from the given maps.
+// This utility function is exposed for use by memory implementations.
+func GetInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string, error) {
+	if len(inputs) == 0 {
+		return "", "", fmt.Errorf("inputs map is empty")
+	}
+	if len(outputs) == 0 {
+		return "", "", fmt.Errorf("outputs map is empty")
+	}
+
+	// Common input/output key names
+	possibleInputKeys := []string{"input", "query", "question", "human_input", "user_input"}
+	possibleOutputKeys := []string{"output", "result", "answer", "ai_output", "response"}
+
+	// Try to find known input key
+	var inputKey string
+	for _, key := range possibleInputKeys {
+		if _, ok := inputs[key]; ok {
+			inputKey = key
+			break
+		}
+	}
+
+	// If no known input key, use the first key
+	if inputKey == "" {
+		for k := range inputs {
+			inputKey = k
+			break
+		}
+	}
+
+	// Try to find known output key
+	var outputKey string
+	for _, key := range possibleOutputKeys {
+		if _, ok := outputs[key]; ok {
+			outputKey = key
+			break
+		}
+	}
+
+	// If no known output key, use the first key
+	if outputKey == "" {
+		for k := range outputs {
+			outputKey = k
+			break
+		}
+	}
+
+	return inputKey, outputKey, nil
 }
 
-var _ Memory = (*BufferMemory)(nil)
+// GetBufferString formats messages into a text buffer with human/AI prefixes.
+// This utility function is exposed for use by memory implementations.
+func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) string {
+	var buffer strings.Builder
 
+	for _, msg := range messages {
+		switch msg.GetType() {
+		case schema.RoleHuman:
+			buffer.WriteString(fmt.Sprintf("%s: %s\n", humanPrefix, msg.GetContent()))
+		case schema.RoleAssistant:
+			buffer.WriteString(fmt.Sprintf("%s: %s\n", aiPrefix, msg.GetContent()))
+		case schema.RoleSystem:
+			buffer.WriteString(fmt.Sprintf("System: %s\n", msg.GetContent()))
+		case schema.RoleTool:
+			toolMsg, ok := msg.(*schema.ToolMessage)
+			if ok {
+				buffer.WriteString(fmt.Sprintf("Tool (%s): %s\n", toolMsg.ToolCallID, msg.GetContent()))
+			} else {
+				buffer.WriteString(fmt.Sprintf("Tool: %s\n", msg.GetContent()))
+			}
+		default:
+			buffer.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
+		}
+	}
+
+	return buffer.String()
+}
+
+// Convenience functions for creating specific memory types
+
+// NewBaseChatMessageHistory creates a new base chat message history.
+func NewBaseChatMessageHistory() iface.ChatMessageHistory {
+	return providers.NewBaseChatMessageHistory()
+}
+
+// NewChatMessageBufferMemory creates a new chat message buffer memory.
+func NewChatMessageBufferMemory(history iface.ChatMessageHistory) iface.Memory {
+	return buffer.NewChatMessageBufferMemory(history)
+}
+
+// NewConversationBufferWindowMemory creates a new conversation buffer window memory.
+func NewConversationBufferWindowMemory(history iface.ChatMessageHistory, k int, memoryKey string, returnMessages bool) iface.Memory {
+	return window.NewConversationBufferWindowMemory(history, k, memoryKey, returnMessages)
+}
+
+// NewConversationSummaryMemory creates a new conversation summary memory.
+func NewConversationSummaryMemory(history iface.ChatMessageHistory, llm core.Runnable, memoryKey string) iface.Memory {
+	return summary.NewConversationSummaryMemory(history, llm, memoryKey)
+}
+
+// NewConversationSummaryBufferMemory creates a new conversation summary buffer memory.
+func NewConversationSummaryBufferMemory(history iface.ChatMessageHistory, llm core.Runnable, memoryKey string, maxTokenLimit int) iface.Memory {
+	return summary.NewConversationSummaryBufferMemory(history, llm, memoryKey, maxTokenLimit)
+}
+
+// NewVectorStoreMemory creates a new vector store memory.
+func NewVectorStoreMemory(retriever core.Retriever, memoryKey string, returnDocs bool, k int) iface.Memory {
+	return vectorstore.NewVectorStoreMemory(retriever, memoryKey, returnDocs, k)
+}
+
+// NewVectorStoreRetrieverMemory creates a new vector store retriever memory.
+func NewVectorStoreRetrieverMemory(embedder embeddingsiface.Embedder, vectorStore vectorstores.VectorStore, options ...vectorstore.VectorStoreMemoryOption) iface.Memory {
+	return vectorstore.NewVectorStoreRetrieverMemory(embedder, vectorStore, options...)
+}
