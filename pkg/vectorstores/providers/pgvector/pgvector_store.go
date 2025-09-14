@@ -33,6 +33,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 
 	_ "github.com/lib/pq" // PostgreSQL driver
 	// Placeholder for actual pgvector library if one is used, e.g., github.com/pgvector/pgvector-go
@@ -61,7 +62,7 @@ type PgVectorStoreConfig struct {
 
 // NewPgVectorStoreFromConfig creates a new PgVectorStore from configuration.
 // This is used by the factory pattern.
-func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstores.Config) (vectorstores.VectorStore, error) {
+func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract pgvector-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pgvector"]
 	if !ok {
@@ -129,8 +130,8 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstores.Config)
 
 // NewPgVectorStore creates a new PgVectorStore.
 // It requires a database connection string, table name, and embedding dimension.
-// Further configuration can be passed via PgVectorStoreConfig within vectorstores.Config.ProviderArgs.
-func NewPgVectorStore(ctx context.Context, config vectorstores.Config) (*PgVectorStore, error) {
+// Further configuration can be passed via PgVectorStoreConfig within vectorstoresiface.Config.ProviderArgs.
+func NewPgVectorStore(ctx context.Context, config vectorstoresiface.Config) (*PgVectorStore, error) {
 	store, err := NewPgVectorStoreFromConfig(ctx, config)
 	if err != nil {
 		return nil, err

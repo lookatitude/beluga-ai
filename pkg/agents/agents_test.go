@@ -71,6 +71,13 @@ func (m *mockChatModel) GetModelName() string {
 	return "mock-chat-model"
 }
 
+func (m *mockChatModel) CheckHealth() map[string]interface{} {
+	return map[string]interface{}{
+		"status": "healthy",
+		"name":   "mock-chat-model",
+	}
+}
+
 // mockTool is a simple mock implementation of the Tool interface for testing
 type mockTool struct {
 	name        string

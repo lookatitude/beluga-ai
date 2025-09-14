@@ -91,6 +91,23 @@ type VectorStore interface {
 	GetName() string
 }
 
+// Config holds configuration options for VectorStore operations.
+// It uses struct tags for viper configuration management and validation.
+type Config struct {
+	// Embedder to use for generating embeddings (optional, can be overridden per operation)
+	Embedder Embedder `json:"-"` // Skip JSON marshaling for embedder
+
+	// Search configuration
+	SearchK        int     `mapstructure:"search_k" yaml:"search_k" json:"search_k" default:"5"`
+	ScoreThreshold float32 `mapstructure:"score_threshold" yaml:"score_threshold" json:"score_threshold" default:"0"`
+
+	// Metadata filters for search operations
+	MetadataFilters map[string]interface{} `mapstructure:"metadata_filters" yaml:"metadata_filters" json:"metadata_filters"`
+
+	// Provider-specific configuration
+	ProviderConfig map[string]interface{} `mapstructure:"provider_config" yaml:"provider_config" json:"provider_config"`
+}
+
 // Option represents a functional option for configuring VectorStore operations.
 // This follows the functional options pattern for flexible configuration.
 type Option func(*Config)
