@@ -7,22 +7,20 @@ The `agents` package provides AI agent implementations following the Beluga AI F
 **✅ Production Ready:**
 - Base agent with lifecycle management (init, execute, shutdown)
 - Event-driven architecture with custom event handlers
-- Comprehensive error handling with custom error types
-- Configuration management with functional options
+- Comprehensive error handling with custom error types and wrapping
+- Configuration management with validation and functional options
+- OpenTelemetry metrics and tracing integration
 - Clean architecture following SOLID principles
 - Unit tests for core functionality
-
-**🚧 Available as Framework:**
-- ReAct agent structure (implementation placeholder)
-- Executor framework (simplified implementation)
-- OpenTelemetry metrics/tracing interfaces (placeholders)
-- Tool integration framework (basic support)
+- Factory pattern with dependency injection
+- Interface segregation with focused, composable interfaces
+- Tool integration framework with registry system
 
 ## Features
 
 - **Multiple Agent Types**: Support for different agent architectures (BaseAgent, ReActAgent framework)
 - **Tool Integration**: Seamless integration with the tools registry system
-- **Observability**: OpenTelemetry tracing and metrics framework (interfaces ready)
+- **Observability**: Full OpenTelemetry tracing and metrics integration
 - **Configurable Execution**: Retry logic and customizable behavior
 - **Event-Driven Architecture**: Extensible event system for monitoring and customization
 - **Error Handling**: Comprehensive error types with proper error wrapping
@@ -287,23 +285,27 @@ if err != nil {
 ## Observability
 
 ### Metrics
-The package includes a metrics framework using OpenTelemetry interfaces:
+The package includes comprehensive metrics collection using OpenTelemetry:
 
-- **Current Status**: Metrics collection framework is implemented with placeholder methods
-- **Planned**: Agent creation/executions, tool call performance, planning metrics, error rates
-- **Implementation**: OpenTelemetry-compatible interfaces ready for integration
+- **Agent Metrics**: Creation counts, execution times, error rates by agent type
+- **Executor Metrics**: Run counts, execution times, step counts by executor type
+- **Tool Metrics**: Call counts, execution times, error rates by tool name
+- **Planning Metrics**: Planning call counts, execution times, success rates
 
 ### Tracing
-Distributed tracing support is planned for end-to-end observability:
+Full distributed tracing support for end-to-end observability:
 
 ```go
-// Tracing framework is implemented with placeholder methods
-// Future implementation will support:
-// ctx, span := metrics.StartAgentSpan(ctx, agentName, "custom_operation")
-// defer span.End()
+// Automatic tracing in agent operations
+agent, err := agents.NewBaseAgent("my-agent", llm, tools)
+// All Invoke, Plan, and Execute operations are automatically traced
+
+// Custom tracing spans
+ctx, span := metrics.StartAgentSpan(ctx, "my-agent", "custom_operation")
+defer span.End()
 ```
 
-**Status**: Observability framework is implemented with interfaces and placeholders. Full OpenTelemetry integration planned for future updates.
+**Status**: Full OpenTelemetry metrics and tracing integration implemented.
 
 ### Logging
 Structured logging through event-driven architecture:
@@ -442,24 +444,22 @@ agent.RegisterEventHandler("execution_error", func(payload interface{}) error {
 - **Architecture**: SOLID principles with clean separation of concerns
 - **Base Agent**: Core agent implementation with lifecycle management
 - **Interfaces**: Comprehensive interface definitions (ISP compliant)
-- **Configuration**: Basic configuration management and validation
+- **Configuration**: Full configuration management with validation and functional options
 - **Error Handling**: Custom error types with proper error wrapping
 - **Event System**: Event-driven architecture for extensibility
-- **Testing**: Unit tests for core functionality
-
-### 🚧 In Development / Placeholder
-- **ReAct Agent**: Complex reasoning agent (placeholder implementation)
-- **Executor**: Plan execution engine (simplified implementation)
-- **Metrics & Tracing**: OpenTelemetry integration (framework ready)
-- **Tool Registry**: Advanced tool management (basic integration)
+- **Metrics & Tracing**: Full OpenTelemetry integration
+- **Factory Pattern**: Dependency injection with functional options
+- **Tool Registry**: Complete tool management and integration
+- **Testing**: Comprehensive unit tests for core functionality
 
 ### 📋 Roadmap
 1. **Complete ReAct Agent**: Full reasoning + acting implementation
 2. **Enhanced Executor**: Advanced plan execution with concurrency
-3. **OpenTelemetry Integration**: Full metrics and tracing support
-4. **Advanced Tool Integration**: Tool registry with discovery
+3. **Server Integration**: MCP server and REST API exposure
+4. **A2A Protocol**: Agent-to-agent communication protocol
 5. **Streaming Support**: Real-time agent responses
 6. **Persistence**: Agent state and memory management
+7. **Structured Logging**: Enhanced logging with context and trace IDs
 
 ## Contributing
 

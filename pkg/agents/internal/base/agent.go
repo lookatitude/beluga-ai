@@ -50,8 +50,8 @@ type BaseAgent struct {
 	// Event handling
 	eventHandlers map[string][]iface.EventHandler
 
-	// Observability (placeholder - will be implemented later)
-	metrics interface{}
+	// Observability
+	metrics iface.MetricsRecorder
 }
 
 // NewBaseAgent creates a new BaseAgent with the provided configuration.
@@ -85,8 +85,9 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 		eventHandlers: make(map[string][]iface.EventHandler),
 	}
 
-	// Initialize metrics placeholder (will be implemented later)
-	agent.metrics = nil
+	// Initialize metrics (use no-op metrics by default to avoid import cycle)
+	// TODO: Pass metrics as dependency injection parameter
+	agent.metrics = nil // Will be set later or use no-op
 
 	// Register event handlers
 	for eventType, handlers := range options.EventHandlers {
@@ -133,7 +134,27 @@ func (a *BaseAgent) GetLLM() llmsiface.LLM {
 
 // Plan is a placeholder implementation that should be overridden by specific agents.
 func (a *BaseAgent) Plan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error) {
-	return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("Plan method not implemented in BaseAgent; must be overridden by specific agent type")
+	// Start tracing span if metrics are available
+	var planCtx context.Context = ctx
+	var span iface.SpanEnder
+	if a.metrics != nil {
+		planCtx, span = a.metrics.StartAgentSpan(ctx, a.name, "plan")
+		defer func() {
+			if span != nil {
+				span.End()
+			}
+		}()
+	}
+
+	start := time.Now()
+
+	// Placeholder implementation - should be overridden by specific agents
+	err := fmt.Errorf("Plan method not implemented in BaseAgent; must be overridden by specific agent type")
+
+	if a.metrics != nil {
+		a.metrics.RecordPlanningCall(planCtx, a.name, time.Since(start), false)
+	}
+	return iface.AgentAction{}, iface.AgentFinish{}, err
 }
 
 // Runnable interface implementation
@@ -141,9 +162,26 @@ func (a *BaseAgent) Plan(ctx context.Context, intermediateSteps []iface.Intermed
 // Invoke executes the agent with a single input and returns the result.
 // This is the primary method for synchronous execution.
 func (a *BaseAgent) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	// Start tracing span if metrics are available
+	var invokeCtx context.Context = ctx
+	var span iface.SpanEnder
+	if a.metrics != nil {
+		invokeCtx, span = a.metrics.StartAgentSpan(ctx, a.name, "invoke")
+		defer func() {
+			if span != nil {
+				span.End()
+			}
+		}()
+	}
+
+	start := time.Now()
+
 	// Convert input to the expected format
 	inputs, ok := input.(map[string]any)
 	if !ok {
+		if a.metrics != nil {
+			a.metrics.RecordAgentExecution(invokeCtx, a.name, "base", time.Since(start), false)
+		}
 		return nil, fmt.Errorf("input must be a map[string]any, got %T", input)
 	}
 
@@ -154,19 +192,27 @@ func (a *BaseAgent) Invoke(ctx context.Context, input any, options ...core.Optio
 	}
 
 	// Set up execution context with timeout if specified
-	execCtx := ctx
+	execCtx := invokeCtx
 	if timeout, ok := config["timeout"].(time.Duration); ok {
 		var cancel context.CancelFunc
-		execCtx, cancel = context.WithTimeout(ctx, timeout)
+		execCtx, cancel = context.WithTimeout(invokeCtx, timeout)
 		defer cancel()
 	}
 
 	// Execute the agent
 	result, err := a.executeWithInput(execCtx, inputs)
+	duration := time.Since(start)
+
 	if err != nil {
+		if a.metrics != nil {
+			a.metrics.RecordAgentExecution(invokeCtx, a.name, "base", duration, false)
+		}
 		return nil, fmt.Errorf("agent execution failed: %w", err)
 	}
 
+	if a.metrics != nil {
+		a.metrics.RecordAgentExecution(invokeCtx, a.name, "base", duration, true)
+	}
 	return result, nil
 }
 

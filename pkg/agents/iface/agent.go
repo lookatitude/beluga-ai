@@ -9,8 +9,9 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
-	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
+	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // AgentAction represents an action to be taken by the agent.
@@ -59,7 +60,7 @@ type Agent interface {
 	GetConfig() schema.AgentConfig
 
 	// GetLLM returns the LLM instance used by the agent.
-	GetLLM() iface.LLM
+	GetLLM() llmsiface.LLM
 }
 
 // Executor defines the interface for executing agent plans.
@@ -126,6 +127,8 @@ type Option func(*Options)
 type Options struct {
 	MaxRetries    int
 	RetryDelay    time.Duration
+	Timeout       time.Duration
+	MaxIterations int
 	EnableMetrics bool
 	EnableTracing bool
 	EventHandlers map[string][]EventHandler
@@ -135,6 +138,23 @@ type Options struct {
 type HealthChecker interface {
 	// CheckHealth returns the health status information.
 	CheckHealth() map[string]interface{}
+}
+
+// MetricsRecorder defines the interface for recording metrics.
+type MetricsRecorder interface {
+	// StartAgentSpan starts a tracing span for agent operations.
+	StartAgentSpan(ctx context.Context, agentName, operation string) (context.Context, trace.Span)
+
+	// RecordAgentExecution records agent execution metrics.
+	RecordAgentExecution(ctx context.Context, agentName, agentType string, duration time.Duration, success bool)
+
+	// RecordPlanningCall records planning operation metrics.
+	RecordPlanningCall(ctx context.Context, agentName string, duration time.Duration, success bool)
+}
+
+// SpanEnder defines an interface for span ending operations.
+type SpanEnder interface {
+	End(options ...trace.SpanEndOption)
 }
 
 // CompositeAgent combines the core Agent interface with lifecycle management,

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
@@ -279,3 +280,6 @@ func NoOpMetrics() *Metrics {
 		tracer: trace.NewNoopTracerProvider().Tracer("noop"),
 	}
 }
+
+// Ensure Metrics implements the MetricsRecorder interface
+var _ iface.MetricsRecorder = (*Metrics)(nil)

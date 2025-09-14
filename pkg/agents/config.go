@@ -11,16 +11,16 @@ import (
 // It includes settings for agent behavior, execution, and monitoring.
 type Config struct {
 	// Default settings for all agents
-	DefaultMaxRetries    int           `mapstructure:"default_max_retries" yaml:"default_max_retries" default:"3"`
-	DefaultRetryDelay    time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" default:"2s"`
-	DefaultTimeout       time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" default:"30s"`
-	DefaultMaxIterations int           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" default:"15"`
+	DefaultMaxRetries    int           `mapstructure:"default_max_retries" yaml:"default_max_retries" validate:"min=0" default:"3"`
+	DefaultRetryDelay    time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" validate:"min=0" default:"2s"`
+	DefaultTimeout       time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"gt=0" default:"30s"`
+	DefaultMaxIterations int           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" validate:"gt=0" default:"15"`
 
 	// Monitoring and observability settings
 	EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
 	EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-	MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" default:"beluga_agents"`
-	TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" default:"beluga-agents"`
+	MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" validate:"required" default:"beluga_agents"`
+	TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" validate:"required" default:"beluga-agents"`
 
 	// Executor settings
 	ExecutorConfig ExecutorConfig `mapstructure:"executor" yaml:"executor"`
@@ -32,15 +32,15 @@ type Config struct {
 // ExecutorConfig defines configuration for agent execution.
 type ExecutorConfig struct {
 	// Default execution settings
-	DefaultMaxConcurrency int `mapstructure:"default_max_concurrency" yaml:"default_max_concurrency" default:"10"`
+	DefaultMaxConcurrency int `mapstructure:"default_max_concurrency" yaml:"default_max_concurrency" validate:"gt=0" default:"10"`
 
 	// Error handling
 	HandleParsingErrors     bool `mapstructure:"handle_parsing_errors" yaml:"handle_parsing_errors" default:"true"`
 	ReturnIntermediateSteps bool `mapstructure:"return_intermediate_steps" yaml:"return_intermediate_steps" default:"false"`
 
 	// Resource limits
-	MaxConcurrentExecutions int           `mapstructure:"max_concurrent_executions" yaml:"max_concurrent_executions" default:"100"`
-	ExecutionTimeout        time.Duration `mapstructure:"execution_timeout" yaml:"execution_timeout" default:"5m"`
+	MaxConcurrentExecutions int           `mapstructure:"max_concurrent_executions" yaml:"max_concurrent_executions" validate:"gt=0" default:"100"`
+	ExecutionTimeout        time.Duration `mapstructure:"execution_timeout" yaml:"execution_timeout" validate:"gt=0" default:"5m"`
 }
 
 // Option represents a functional option for configuring agents.
@@ -74,14 +74,14 @@ func WithRetryDelay(delay time.Duration) iface.Option {
 // WithTimeout sets the timeout for agent operations.
 func WithTimeout(timeout time.Duration) iface.Option {
 	return func(o *iface.Options) {
-		// TODO: Add timeout support to iface.Options
+		o.Timeout = timeout
 	}
 }
 
 // WithMaxIterations sets the maximum number of iterations for agent planning.
 func WithMaxIterations(iterations int) iface.Option {
 	return func(o *iface.Options) {
-		// TODO: Add max iterations support to iface.Options
+		o.MaxIterations = iterations
 	}
 }
 
