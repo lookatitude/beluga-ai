@@ -17,8 +17,8 @@ func TestConfig_Validate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "empty config",
-			config: &Config{},
+			name:    "empty config",
+			config:  &Config{},
 			wantErr: false, // Empty config is valid, providers just won't be available
 		},
 		{
@@ -190,8 +190,8 @@ func TestOllamaConfig_Validate(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "missing model",
-			config: &OllamaConfig{},
+			name:    "missing model",
+			config:  &OllamaConfig{},
 			wantErr: true,
 		},
 	}

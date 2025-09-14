@@ -206,7 +206,6 @@ func (e *OllamaEmbedder) Check(ctx context.Context) error {
 	return err
 }
 
-
 // Ensure OllamaEmbedder implements the interfaces.
 var _ iface.Embedder = (*OllamaEmbedder)(nil)
 var _ HealthChecker = (*OllamaEmbedder)(nil)

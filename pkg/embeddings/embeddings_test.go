@@ -189,8 +189,8 @@ func TestEmbedderFactory_CheckHealth(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	tests := []struct {
-		name string
-		opts []Option
+		name  string
+		opts  []Option
 		check func(*optionConfig) bool
 	}{
 		{

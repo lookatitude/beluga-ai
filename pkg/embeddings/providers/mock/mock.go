@@ -151,7 +151,6 @@ func (m *MockEmbedder) Check(ctx context.Context) error {
 	return nil
 }
 
-
 // Ensure MockEmbedder implements the interface.
 var _ iface.Embedder = (*MockEmbedder)(nil)
 var _ HealthChecker = (*MockEmbedder)(nil)

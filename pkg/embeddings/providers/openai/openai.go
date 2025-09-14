@@ -201,7 +201,6 @@ func (e *OpenAIEmbedder) Check(ctx context.Context) error {
 	return err
 }
 
-
 // Ensure OpenAIEmbedder implements the interfaces.
 var _ iface.Embedder = (*OpenAIEmbedder)(nil)
 var _ HealthChecker = (*OpenAIEmbedder)(nil)
