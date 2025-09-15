@@ -1,0 +1,172 @@
+# Example LLM Configuration File
+# This demonstrates how to configure multiple LLM providers in production
+
+llms:
+  # Primary production provider
+  primary_provider: "anthropic-claude"
+
+  providers:
+    - name: "anthropic-claude"
+      provider: "anthropic"
+      model_name: "claude-3-sonnet-20240229"
+      api_key: "${ANTHROPIC_API_KEY}"  # Environment variable substitution
+      base_url: "https://api.anthropic.com"
+      temperature: 0.7
+      top_p: 0.9
+      max_tokens: 2048
+      stop_sequences:
+        - "\n\nHuman:"
+        - "\n\nAssistant:"
+      max_concurrent_batches: 10
+      retry_config:
+        max_retries: 3
+        delay: "1s"
+        backoff: 2.0
+      observability:
+        tracing: true
+        metrics: true
+        structured_logging: true
+      provider_specific:
+        api_version: "2023-06-01"
+
+    - name: "openai-gpt4"
+      provider: "openai"
+      model_name: "gpt-4-turbo-preview"
+      api_key: "${OPENAI_API_KEY}"
+      base_url: "https://api.openai.com/v1"
+      temperature: 0.8
+      top_p: 1.0
+      max_tokens: 4096
+      frequency_penalty: 0.1
+      presence_penalty: 0.1
+      stop_sequences:
+        - "\n\n"
+      max_concurrent_batches: 5
+      retry_config:
+        max_retries: 5
+        delay: "2s"
+        backoff: 1.5
+      observability:
+        tracing: true
+        metrics: true
+        structured_logging: true
+      provider_specific:
+        organization: "${OPENAI_ORG_ID}"
+
+    - name: "aws-bedrock"
+      provider: "bedrock"
+      model_name: "anthropic.claude-3-sonnet-20240229-v1:0"
+      base_url: "https://bedrock-runtime.${AWS_REGION}.amazonaws.com"
+      temperature: 0.6
+      top_p: 0.95
+      max_tokens: 1024
+      max_concurrent_batches: 3
+      retry_config:
+        max_retries: 2
+        delay: "500ms"
+        backoff: 2.0
+      observability:
+        tracing: true
+        metrics: true
+        structured_logging: true
+      provider_specific:
+        region: "${AWS_REGION}"
+        profile: "${AWS_PROFILE}"
+
+    - name: "ollama-local"
+      provider: "ollama"
+      model_name: "llama2:13b"
+      base_url: "http://localhost:11434"
+      temperature: 0.5
+      top_p: 0.9
+      max_tokens: 512
+      max_concurrent_batches: 1
+      retry_config:
+        max_retries: 1
+        delay: "100ms"
+        backoff: 1.0
+      observability:
+        tracing: false  # Disable for local development
+        metrics: true
+        structured_logging: false
+
+    - name: "mock-testing"
+      provider: "mock"
+      model_name: "test-model"
+      temperature: 0.7
+      max_tokens: 256
+      max_concurrent_batches: 100  # High concurrency for testing
+      retry_config:
+        max_retries: 0  # No retries for mock
+        delay: "0s"
+        backoff: 1.0
+      observability:
+        tracing: false
+        metrics: false
+        structured_logging: false
+      provider_specific:
+        responses:
+          - "This is a mock response for testing purposes."
+          - "Mock AI assistant response number 2."
+          - "Another mock response for comprehensive testing."
+          - "Final mock response in the test suite."
+        should_error: false
+
+# Global configuration
+global:
+  # Default settings applied to all providers
+  defaults:
+    timeout: "30s"
+    enable_streaming: true
+    enable_tool_calling: true
+
+  # Observability configuration
+  observability:
+    metrics_enabled: true
+    tracing_enabled: true
+    logging_enabled: true
+    metrics_exporter: "prometheus"
+    tracing_exporter: "jaeger"
+    log_level: "info"
+
+  # Error handling configuration
+  error_handling:
+    enable_retry: true
+    enable_circuit_breaker: true
+    circuit_breaker_threshold: 5
+    circuit_breaker_timeout: "60s"
+
+  # Provider failover configuration
+  failover:
+    enabled: true
+    strategy: "priority"  # priority, round-robin, least-loaded
+    health_check_interval: "30s"
+    unhealthy_threshold: 3
+
+# Environment-specific overrides
+environments:
+  development:
+    llms:
+      primary_provider: "mock-testing"
+      global:
+        observability:
+          tracing_enabled: false
+          metrics_enabled: false
+
+  staging:
+    llms:
+      primary_provider: "ollama-local"
+      global:
+        observability:
+          tracing_enabled: true
+          metrics_enabled: true
+
+  production:
+    llms:
+      primary_provider: "anthropic-claude"
+      global:
+        observability:
+          tracing_enabled: true
+          metrics_enabled: true
+          metrics_exporter: "prometheus"
+          tracing_exporter: "jaeger"

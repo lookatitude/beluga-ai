@@ -1,0 +1,172 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+# Beluga AI Framework - Package Design Patterns
+
+This document outlines the design patterns, conventions, and rules for packages in the Beluga AI Framework to ensure consistency, extendability, configuration, and observability.
+
+## Quick Summary (TL;DR)
+
+- **Core Principles**: ISP (small interfaces), DIP (depend on abstractions), SRP (one responsibility), Composition over Inheritance.
+- **Structure**: Standard layout with optional providers/ for multi-backend pkgs (e.g., llms). Include config.go, metrics.go, tests.
+- **Interfaces**: Focused, noun/verb-er named; factories with options; embed for compatibility.
+- **Config**: Structs with tags (mapstructure, yaml, env, validate); functional options; validate at creation.
+- **Observability**: OTEL traces/metrics in public methods; structured logging with context; health checks.
+- **Errors**: Custom types with codes; wrap errors; respect context cancellation.
+- **Dependencies**: Group imports; inject via constructors; specify versions.
+- **Testing**: Table-driven; mocks in internal/mock/; benchmarks for perf-critical.
+- **Docs**: Package comments, function docs with examples; README for complex pkgs.
+- **Code Gen**: For mocks, validation, metrics.
+- **Evolution**: SemVer; deprecate with notices; migration guides.
+
+For quick architecting, use Guidelines below. See sections for details.
+
+## Guidelines for AI Framework Architects
+
+As an AI acting as the Go framework architect for Beluga AI, follow these concise guidelines to ensure consistency, efficiency, and adherence to best practices:
+
+1. **Adhere to Core Principles First**: Always check against ISP, DIP, SRP, and composition over inheritance before proposing any structure or code.
+2. **Be Concise**: Provide minimal viable implementations; avoid boilerplate unless necessary. Use factories and options for flexibility.
+3. **Efficient Decision-Making**:
+   - New features: Define small interfaces, inject dependencies, add config/validation.
+   - Extensions: Embed interfaces for backward compatibility; deprecate thoughtfully.
+   - Providers: Use providers/ only if multiple backends (e.g., llms); else internal/.
+4. **Observability by Default**: Include OTEL traces/metrics and structured logging in all public methods.
+5. **Error Handling**: Use custom errors with codes; always respect context.
+6. **Testing**: Mandate table-driven tests and mocks for every component.
+7. **Review Checklist**: Before finalizing, verify: config validation, health checks (if applicable), docs, no breaking changes.
+
+Use this as a quick reference to architect packages efficiently without full document context.
+
+## Table of Contents
+
+1. [Core Principles](#core-principles)
+2. [Package Structure](#package-structure)
+3. [Interface Design](#interface-design)
+4. [Configuration Management](#configuration-management)
+5. [Observability and Monitoring](#observability-and-monitoring)
+6. [Error Handling](#error-handling)
+7. [Dependency Management](#dependency-management)
+8. [Testing Patterns](#testing-patterns)
+9. [Documentation Standards](#documentation-standards)
+10. [Code Generation and Automation](#code-generation-and-automation)
+11. [Migration and Evolution](#migration-and-evolution)
+
+## Core Principles
+
+1. **Interface Segregation Principle (ISP)**: Small, focused interfaces.
+2. **Dependency Inversion Principle (DIP)**: Depend on abstractions; use constructor injection.
+3. **Single Responsibility Principle (SRP)**: One responsibility per package/struct.
+4. **Composition over Inheritance**: Embed interfaces; use functional options.
+
+## Package Structure
+
+### Standard Package Layout
+
+```
+pkg/{package_name}/
+├── iface/           # Interfaces (optional)
+├── internal/        # Private details
+├── config.go        # Config structs/validation
+├── {package_name}.go # Main interfaces/factories
+├── providers/       # Optional: For multi-backends (e.g., llms)
+├── metrics.go       # Metrics
+└── {package_name}_test.go # Tests
+```
+
+### Example for Multi-Provider Package (llms)
+
+```
+pkg/llms/
+├── internal/
+│   ├── openai/
+│   ├── anthropic/
+│   └── mock/
+├── iface/
+│   └── llm.go
+├── providers/
+│   ├── openai.go
+│   ├── anthropic.go
+│   └── mock.go
+├── config.go
+├── metrics.go
+├── llms.go
+└── llms_test.go
+```
+
+For single-provider packages, omit providers/ and place impl in internal/ or main file.
+
+## Interface Design
+
+- **Naming**: "er" for single-method (Embedder); noun for multi (VectorStore).
+- **Stability**: Embed for extensions without breaking changes.
+- **Factory Pattern**: Use NewXXX with options.
+
+Example factory:
+
+```go
+func NewLLM(caller LLMCaller, opts ...Option) (*LLM, error) { /* impl */ }
+```
+
+## Configuration Management
+
+- **Structs**: In config.go with tags (mapstructure, yaml, env, validate); defaults.
+- **Options**: Functional for runtime config.
+- **Validation**: Use validator lib at creation.
+
+Example config:
+
+```go
+type Config struct {
+    APIKey string `mapstructure:"api_key" validate:"required"`
+    // ...
+}
+```
+
+## Observability and Monitoring
+
+- **Tracing**: Spans for public methods with attributes; handle errors.
+- **Metrics**: Define in metrics.go using OTEL; counters/histograms with labels.
+- **Logging**: Structured with context/trace IDs.
+- **Health Checks**: Implement HealthChecker interface where appropriate.
+
+## Error Handling
+
+- **Types**: Custom structs with Op, Err, Code.
+- **Codes**: Constants for common failures (e.g., ErrCodeRateLimit).
+- **Context**: Use WithTimeout; check Done().
+
+## Dependency Management
+
+- **Imports**: Group std, third-party, internal.
+- **Injection**: Via interfaces in constructors.
+- **Versions**: Constraints in go.mod; document breaks.
+
+## Testing Patterns
+
+- **Structure**: Table-driven in *_test.go.
+- **Mocking**: Interfaces with mocks in internal/mock/.
+- **Benchmarking**: For perf-critical code.
+
+## Documentation Standards
+
+- **Package**: Comment explaining purpose.
+- **Functions**: Describe params, returns, errors, examples.
+- **README**: For complex packages with setup/usage.
+
+## Code Generation and Automation
+
+- Generate mocks, validation, metrics for consistency.
+- Automate repetitive tasks.
+
+## Migration and Evolution
+
+- **Compatibility**: No breaks in stable APIs; deprecate with migrations.
+- **Versioning**: SemVer; support transitions.
+- **Deprecation**: Notices and replacement APIs.
+
+---
+
+This optimized version is concise for models with limited context like grok-code-fast. Use summaries/guidelines first.

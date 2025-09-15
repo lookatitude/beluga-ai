@@ -1,3 +1,5 @@
+# Beluga AI Framework - README (Augmented for Extensibility)
+
 <div align="center">
   <img src="./assets/beluga-logo.svg" alt="Beluga-AI Logo" width="300"/>
 </div>
@@ -8,17 +10,55 @@
 
 **Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
 
+This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
+
 ## Overview
 
-The goal of Beluga-ai is to offer a Go-native alternative for creating complex AI workflows, including:
+The goal of Beluga-ai is to offer a Go-native alternative for creating complex AI workflows. The recent refactoring has focused on establishing a clear, layered architecture with well-defined interfaces to support:
 
-*   **LLM Integration:** Seamlessly connect to various LLM providers with a unified interface.
-*   **Agent Creation:** Build autonomous agents capable of reasoning, planning, and executing tasks.
-*   **Tool Management:** Define, integrate, and manage tools for agents to use.
-*   **Memory Management:** Equip agents with different types of memory to maintain context.
-*   **Retrieval-Augmented Generation (RAG):** Implement RAG pipelines for knowledge-intensive tasks.
-*   **Orchestration:** Define and manage complex workflows (future).
+*   **Extensible LLM Integration:** Seamlessly connect to various LLM providers (e.g., OpenAI, Anthropic, Google Gemini) with a unified interface and provider-specific adapters.
+*   **Agent Creation:** Build autonomous agents capable of reasoning, planning, and executing tasks using a modular agent framework.
+*   **Extensible Tool Management:** Define, integrate, and manage diverse tools (e.g., Shell, Go Functions, API callers) for agents to use through a common interface.
+*   **Extensible Memory Management:** Equip agents with different types of memory, supporting various backends, including multiple vector database providers (e.g., InMemory, pgvector, Pinecone, Weaviate).
+*   **Retrieval-Augmented Generation (RAG):** Implement RAG pipelines with swappable components for data loading, splitting, embedding, and retrieval.
+*   **Extensible Orchestration:** Define and manage complex workflows with a flexible engine, potentially integrating with external orchestrators.
 *   **Communication:** Establish protocols for inter-agent communication (future).
+
+## Core Principle: Extensibility via Provider Interfaces
+
+Beluga-ai is built with extensibility at its core. Key components are designed around Go interfaces, allowing developers to easily implement and integrate their own providers or third-party services. This is typically achieved through:
+
+1.  **Provider-Agnostic Interfaces:** Clear Go interfaces for LLMs, Tools, Memory, VectorStores, Workflow Engines, etc.
+2.  **Provider-Specific Implementations:** Concrete structs that implement these interfaces for specific services (e.g., `OpenAI_LLM`, `PgVectorStore`).
+3.  **Configuration-Driven Selection:** YAML configuration files allow users to specify which provider to use for each component.
+4.  **Factory Patterns:** Factories instantiate the correct provider implementation based on the configuration.
+
+See the [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md) for more details on how to extend specific components.
+
+## Key Architectural Features (Post-Refactoring)
+
+The refactored Beluga-ai framework emphasizes a modular and interface-driven design with advanced features for production readiness. Key components are now organized within the `pkg` directory:
+
+*   **`pkg/schema`:** Centralized definitions for all core data structures.
+*   **`pkg/core`:** Foundational utilities, dependency injection container, and core model definitions.
+*   **`pkg/llms`:** `LLM` interface, provider implementations (e.g., `openai`, `anthropic`), and `LLMProviderFactory`.
+*   **`pkg/prompts`:** `PromptAdapter` interface and implementations for model-specific prompt formatting.
+*   **`pkg/agents`:** Comprehensive toolkit for agent development (`base`, `tools`, `executor`, `factory`).
+    *   `pkg/agents/tools/providers`: Contains implementations for various tool types (e.g., `shell_tool.go`, `gofunction_tool.go`).
+*   **`pkg/memory`:** `Memory` interface, basic implementations, and `VectorStoreMemory`.
+    *   `pkg/vectorstores`: `VectorStore` interface, provider implementations (e.g., `inmemory`, `pgvector`, `pinecone`), and `VectorStoreProviderFactory`.
+    *   `pkg/embeddings`: `Embedder` interface and implementations (e.g., `openai`).
+*   **`pkg/orchestration`:** Advanced components for managing complex task sequences.
+    *   Enhanced scheduler with worker pools, retry mechanisms, and circuit breakers.
+    *   `pkg/orchestration/workflow/factory`: `WorkflowProviderFactory` for different workflow engines.
+*   **`pkg/config`:** Advanced configuration management with validation, environment variable support, and defaults.
+*   **`pkg/monitoring`:** Comprehensive observability suite including:
+    *   Structured logging with context propagation.
+    *   Metrics collection and statistical analysis.
+    *   Distributed tracing with span support.
+    *   Health checking and alerting.
+
+For a complete breakdown of the architecture, please refer to [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
 
 ## Installation
 
@@ -28,98 +68,208 @@ go get github.com/lookatitude/beluga-ai
 
 ## Examples
 
-Detailed usage examples for each package and feature can be found in the [docs/examples](./docs/examples) directory.
+Detailed usage examples, including how to configure and use different providers for LLMs, VectorStores, and Tools, can be found in the `/examples` directory (to be populated as features are implemented).
 
 ## Configuration
 
-Beluga-ai uses Viper for configuration management, supporting YAML files and environment variables. See the [configuration example](./docs/examples/config/main.go) and `config.yml.example` for details.
+Beluga-ai uses Viper for advanced configuration management with validation, environment variable support, and automatic defaults. Configuration can be provided via YAML files, environment variables, or programmatically.
 
-## Implemented Features (MVP - Alpha)
+### Configuration Sources (in order of precedence):
+1. Environment variables (prefixed with `BELUGA_`)
+2. Configuration files (YAML/JSON)
+3. Default values
 
-*   **Core:**
-    *   `Runnable` interface for composable components.
-    *   Schema definitions (`Message`, `Document`, `ToolCall`, etc.).
-*   **Configuration (`config` package):**
-    *   Viper-based loading from files (YAML) and environment variables.
-*   **LLMs (`llms` package):**
-    *   `ChatModel` interface with standard methods: `Generate`, `StreamChat`, `BindTools`, `Invoke`, `Batch`, `Stream`.
-    *   Implementations for:
-        *   OpenAI (GPT-3.5, GPT-4, etc.)
-        *   Anthropic (Claude models)
-        *   Ollama (Local LLMs like Llama 3, Mistral, etc.)
-        *   Google Gemini
-        *   Cohere (Command R, etc.)
-        *   AWS Bedrock:
-            *   Anthropic Claude
-            *   Mistral AI (e.g., Mistral 7B Instruct)
-            *   Meta Llama (e.g., Llama 3 8B Instruct)
-    *   Consistent token usage tracking (`AIMessage.AdditionalArgs["usage"]`).
-    *   Tool use support (provider-dependent, may require prompt engineering for some Bedrock models via `InvokeModel`).
-*   **Tools (`tools` package):**
-    *   `Tool` interface.
-    *   Implementations for Go Functions (`gofunc`) and Shell commands (`shell`).
-*   **Memory (`memory` package):**
-    *   `Memory` interface.
-    *   Implementations for Buffer Memory and Window Buffer Memory.
-*   **Agents (`agents` package):**
-    *   `Agent` interface.
-    *   `Executor` for running agents with tools and memory.
-    *   Basic structure for ReAct agent logic.
-*   **RAG (`rag` package):**
-    *   Interfaces: `Loader`, `Splitter`, `Embedder`, `VectorStore`, `Retriever`.
-    *   Implementations: `FileLoader`, `CharacterSplitter`, `OllamaEmbedder`, `InMemoryVectorStore`, `VectorStoreRetriever`.
+### Example Configuration File (`config.yaml`):
+
+```yaml
+# Global settings
+app_name: "beluga-ai-app"
+log_level: "info"
+server_port: 8080
+
+# LLM Providers
+llm_providers:
+  - name: "openai-gpt4"
+    provider: "openai"
+    model_name: "gpt-4"
+    api_key: "${OPENAI_API_KEY}"  # Environment variable reference
+    default_call_options:
+      temperature: 0.7
+      max_tokens: 1000
+
+# Embedding Providers
+embedding_providers:
+  - name: "openai-embeddings"
+    provider: "openai"
+    model_name: "text-embedding-ada-002"
+    api_key: "${OPENAI_API_KEY}"
+
+# Vector Stores
+vector_stores:
+  - name: "pinecone-store"
+    provider: "pinecone"
+    api_key: "${PINECONE_API_KEY}"
+    index_name: "beluga-index"
+
+# Tools
+tools:
+  - name: "calculator"
+    provider: "calculator"
+    enabled: true
+
+# Agents
+agents:
+  - name: "data-analyzer"
+    type: "AnalyzerAgent"
+    max_retries: 3
+```
+
+### Environment Variables:
+```bash
+export BELUGA_APP_NAME="my-beluga-app"
+export BELUGA_LOG_LEVEL="debug"
+export BELUGA_OPENAI_API_KEY="your-api-key-here"
+export BELUGA_PINECONE_API_KEY="your-pinecone-key"
+```
+
+### Configuration Validation:
+The framework automatically validates configuration on load and provides detailed error messages for missing required fields or invalid values.
+
+## Advanced Features
+
+### Dependency Injection
+Beluga-ai includes a comprehensive dependency injection system with functional options patterns:
+
+```go
+// Create an agent factory with DI
+factory, err := agents.NewAgentFactoryWithOptions(
+    agents.WithConfigProvider(configProvider),
+    agents.WithContainer(diContainer),
+)
+
+// Create agents using fluent builders
+agent, err := agents.NewAgentBuilder(factory).
+    WithName("data-analyzer").
+    WithType("AnalyzerAgent").
+    WithAnalysisType("comprehensive").
+    Build()
+```
+
+### Asynchronous Processing
+Advanced orchestration with worker pools, retry mechanisms, and circuit breakers:
+
+```go
+// Create enhanced scheduler with worker pool
+scheduler := orchestration.NewEnhancedScheduler(10) // 10 workers
+scheduler.Start()
+defer scheduler.Stop()
+
+// Add tasks with retry configuration
+task := &orchestration.EnhancedTask{
+    Task: orchestration.Task{
+        ID: "data-processing",
+        Execute: processData,
+    },
+    MaxRetries: 3,
+    Timeout: 30 * time.Second,
+    RequiresCircuitBreaker: true,
+}
+
+scheduler.AddEnhancedTask(task)
+
+// Run asynchronously
+stats := scheduler.RunAsync()
+fmt.Printf("Processed %d tasks\n", stats.CompletedTasks)
+```
+
+### Observability & Monitoring
+Comprehensive observability suite with structured logging, metrics, and tracing:
+
+```go
+// Structured logging with context
+logger := monitoring.NewStructuredLogger("my-service",
+    monitoring.WithJSONOutput(),
+    monitoring.WithFileOutput("logs/app.log"))
+
+ctx, span := tracer.StartSpan(ctx, "process-request")
+defer tracer.FinishSpan(span)
+
+logger.Info(ctx, "Processing request", map[string]interface{}{
+    "user_id": 12345,
+    "request_type": "data_analysis",
+})
+
+// Metrics collection
+metrics := monitoring.NewMetricsCollector()
+timer := metrics.StartTimer(ctx, "request_duration", map[string]string{
+    "endpoint": "/api/process",
+})
+defer timer.Stop(ctx, "Request processing time")
+
+metrics.Counter(ctx, "requests_total", "Total requests", 1, map[string]string{
+    "method": "POST",
+    "status": "200",
+})
+```
+
+## Current Status
+
+Beluga AI Framework has completed a comprehensive redesign following Go best practices and SOLID principles. All core packages have been refactored with:
+
+✅ **Completed Phases:**
+- **Phase 1 (Foundational):** Core, Schema, Config packages with comprehensive error handling, metrics, and validation
+- **Phase 2 (Observability):** Monitoring package with OTEL tracing, metrics, logging, and health checks
+- **Phase 3 (AI Components):** LLMs, ChatModels, Embeddings, Prompts, Memory, Retrievers, VectorStores with unified interfaces
+- **Phase 4 (Agents):** Complete agent framework with ReAct agents, tool integration, and executor
+- **Phase 5 (Orchestration):** Workflow engine with Chain, Graph, and Workflow support
+- **Phase 6 (Server):** REST and MCP server implementations
+- **Phase 7 (Cross-Package/Global):** Standardized package structure with iface/, config.go, metrics.go, errors.go
+
+🔧 **Architecture Improvements:**
+- Interface Segregation Principle (ISP) throughout
+- Dependency Inversion Principle (DIP) with constructor injection
+- Single Responsibility Principle (SRP) for focused packages
+- Composition over Inheritance patterns
+- Factory patterns for provider registration
+- Functional options for configuration
+- OpenTelemetry integration for observability
+- Structured error handling with custom error types
+- Comprehensive test coverage with table-driven tests
+
+## Implemented Features
+
+*   **LLMs (`pkg/llms`):** ✅ Unified ChatModel/LLM interfaces with OpenAI, Anthropic, Bedrock providers
+*   **ChatModels (`pkg/chatmodels`):** ✅ ChatModel interface with OpenAI provider and Runnable implementation
+*   **Embeddings (`pkg/embeddings`):** ✅ Embedder interface with OpenAI, Ollama providers and Runnable implementation
+*   **Prompts (`pkg/prompts`):** ✅ Prompt template system with dynamic loading and rendering
+*   **Memory (`pkg/memory`):** ✅ Memory interface with BufferMemory, SummaryMemory, and VectorStoreMemory
+*   **Retrievers (`pkg/retrievers`):** ✅ Retriever interface with Runnable implementation and vectorstore integration
+*   **VectorStores (`pkg/vectorstores`):** ✅ VectorStore interface with InMemory, PgVector, Pinecone providers
+*   **Agents (`pkg/agents`):** ✅ Complete agent framework with ReAct agents, tool integration, and executor
+*   **Tools (`pkg/agents/tools`):** ✅ Tool interface with Echo, Calculator, Shell, and GoFunction implementations
+*   **Orchestration (`pkg/orchestration`):** ✅ Workflow engine with Chain, Graph, and Workflow support
+*   **Server (`pkg/server`):** ✅ REST and MCP server implementations with streaming support
+*   **Configuration Management (`pkg/config`):** ✅ Advanced configuration with validation, environment variables, and schema support
+*   **Observability (`pkg/monitoring`):** ✅ Comprehensive monitoring with OTEL tracing, metrics, logging, and health checks
+*   **Schema (`pkg/schema`):** ✅ Centralized data structures with validation and type safety
 
 ## Future Plans (Post-MVP / v1.1 and Beyond)
 
-*   **LLMs:**
-    *   Complete AWS Bedrock client by adding full support for:
-        *   Cohere (Command R+, etc. via Bedrock, ensuring full feature parity with native client)
-        *   AI21 Labs (Jamba, etc. via Bedrock)
-        *   Amazon Titan (Text models via Bedrock, ensuring full feature parity)
-    *   Enhance and standardize tool use capabilities across all Bedrock models, potentially leveraging Bedrock Converse API where beneficial.
-*   **Tools:**
-    *   Complete API tool implementation for interacting with external REST/GraphQL APIs.
-    *   Complete MCP (Multi-Cloud Provider) tool implementation.
-    *   Add more built-in tools (e.g., web search, file system operations with safety checks).
-*   **Memory:**
-    *   Complete Summary Memory (requires LLM for summarization).
-    *   Complete Summary Buffer Memory.
-    *   Complete Vector Store Memory (integrating `VectorStore` into memory interface).
-*   **Agents:**
-    *   Complete ReAct (Reasoning and Acting) agent implementation.
-    *   Explore and implement other agent types (e.g., Plan-and-Execute).
-    *   Develop more sophisticated agent executors with better error handling, planning, and state management.
-*   **RAG:**
-    *   Complete OpenAI Embedder implementation.
-    *   Complete PgVector `VectorStore` implementation.
-    *   Add support for other vector databases (e.g., Chroma, Pinecone) via interfaces.
-    *   Add more document loaders (e.g., Web Loader, PDF Loader).
-    *   Add more text splitters (e.g., Token Splitter, Recursive Character Splitter).
-    *   Implement document transformers (e.g., metadata extraction, summarization).
-*   **Orchestration (`orchestrator` package):**
-    *   Complete Temporal workflow integration for robust agent/task orchestration.
-    *   Implement simpler orchestration patterns (e.g., Sequential Chains, basic routing).
-*   **Communication (`communication` package):**
-    *   Define and implement protocols and mechanisms for inter-agent communication.
-*   **Callbacks & Tracing:**
-    *   Implement a comprehensive callback system for logging, monitoring, and tracing execution steps.
-    *   Integrate with tracing systems (e.g., OpenTelemetry).
-*   **Prompt Templating:**
-    *   Enhance prompt template management and formatting capabilities, including support for chat templates.
-*   **Evaluation:**
-    *   Add tools and frameworks for evaluating the performance of LLMs, agents, and RAG pipelines.
-*   **Testing:**
-    *   Achieve comprehensive unit and integration test coverage across all packages.
-*   **Examples & Documentation:**
-    *   Develop more complex and diverse usage examples showcasing real-world applications.
-    *   Refine all documentation, add tutorials, and generate comprehensive API docs.
-    *   Create a dedicated documentation website (GitHub Pages).
+The refactored architecture and focus on extensibility provide a stronger foundation for achieving these future goals:
+
+*   **Provider Implementations:** Systematically add more providers for LLMs, VectorStores, Tools, and Workflow Engines as outlined in the developer tasks.
+*   **Enhanced RAG:** Complete diverse loaders, splitters, and retriever implementations.
+*   **Advanced Agent Types:** Explore and implement more sophisticated agent types (e.g., ReAct, planning agents).
+*   **Inter-Agent Communication:** Define and implement robust protocols.
+*   **Callbacks, Tracing, Evaluation:** Implement comprehensive systems for these aspects.
+*   **Comprehensive Testing & Documentation:** Achieve high test coverage and create detailed documentation for users and developers, especially on extending the framework.
 
 ## Contributing
 
-Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to contribute to Beluga-ai.
+Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to contribute to Beluga-ai, including how to add new provider implementations.
 
 ## License
 
-Beluga-ai is licensed under the [Apache 2.0 License](./LICENSE). *(Link to be verified/updated after LICENSE file check)*
+Beluga-ai is licensed under the [Apache 2.0 License](./LICENSE).
+
 
