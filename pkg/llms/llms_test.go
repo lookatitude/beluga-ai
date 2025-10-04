@@ -71,13 +71,13 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 
 func (m *MockChatModel) CheckHealth() map[string]interface{} {
 	return map[string]interface{}{
-		"state":       "healthy",
-		"provider":    "mock",
-		"model":       m.modelName,
-		"timestamp":   int64(1234567890),
-		"call_count":  0,
-		"tools_count": 0,
-		"should_error": false,
+		"state":         "healthy",
+		"provider":      "mock",
+		"model":         m.modelName,
+		"timestamp":     int64(1234567890),
+		"call_count":    0,
+		"tools_count":   0,
+		"should_error":  false,
 		"responses_len": 1,
 	}
 }
@@ -397,30 +397,7 @@ func TestToolBinding(t *testing.T) {
 	mockModel.AssertExpectations(t)
 }
 
-// MockTool for testing
-type MockTool struct {
-	name string
-}
-
-func (m *MockTool) Name() string        { return m.name }
-func (m *MockTool) Description() string { return "Mock tool for testing" }
-func (m *MockTool) Definition() tools.ToolDefinition {
-	return tools.ToolDefinition{
-		Name:        m.name,
-		Description: m.Description(),
-		InputSchema: "{}",
-	}
-}
-func (m *MockTool) Execute(ctx context.Context, input interface{}) (interface{}, error) {
-	return "mock result", nil
-}
-func (m *MockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
-	results := make([]any, len(inputs))
-	for i := range inputs {
-		results[i] = "mock batch result"
-	}
-	return results, nil
-}
+// Note: MockTool is defined in test_utils.go
 
 // MockLLM for testing ChatModelAdapter
 type MockLLM struct {
@@ -457,7 +434,7 @@ func TestChatModelUnification(t *testing.T) {
 func TestLLMFactories(t *testing.T) {
 	tests := []struct {
 		name string
-		fn func(opts ...ConfigOption) (iface.LLM, error)
+		fn   func(opts ...ConfigOption) (iface.LLM, error)
 	}{
 		{"Anthropic", NewAnthropicLLM},
 		{"OpenAI", NewOpenAILLM},

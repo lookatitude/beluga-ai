@@ -2,110 +2,366 @@ package orchestration
 
 import (
 	"context"
+	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics holds all orchestration-related metrics
 type Metrics struct {
 	// Chain metrics
-	chainExecutions int64
-	chainDuration   []float64
-	chainErrors     int64
-	activeChains    int64
+	chainExecutions metric.Int64Counter
+	chainDuration   metric.Float64Histogram
+	chainErrors     metric.Int64Counter
+	activeChains    metric.Int64UpDownCounter
 
 	// Graph metrics
-	graphExecutions int64
-	graphDuration   []float64
-	graphErrors     int64
-	activeGraphs    int64
-	graphNodes      []float64
+	graphExecutions metric.Int64Counter
+	graphDuration   metric.Float64Histogram
+	graphErrors     metric.Int64Counter
+	activeGraphs    metric.Int64UpDownCounter
+	graphNodes      metric.Int64Histogram
 
 	// Workflow metrics
-	workflowExecutions int64
-	workflowDuration   []float64
-	workflowErrors     int64
-	activeWorkflows    int64
+	workflowExecutions metric.Int64Counter
+	workflowDuration   metric.Float64Histogram
+	workflowErrors     metric.Int64Counter
+	activeWorkflows    metric.Int64UpDownCounter
 
 	// General metrics
-	totalExecutions int64
-	totalErrors     int64
+	totalExecutions metric.Int64Counter
+	totalErrors     metric.Int64Counter
+
+	// Tracer for span creation
+	tracer trace.Tracer
 }
 
-// NewMetrics creates a new metrics instance
-func NewMetrics(meter any, prefix string) *Metrics {
-	// For now, we'll implement a simple in-memory metrics collection
-	// In a real implementation, this would integrate with OpenTelemetry
-	return &Metrics{
-		chainDuration:    make([]float64, 0),
-		graphDuration:    make([]float64, 0),
-		workflowDuration: make([]float64, 0),
-		graphNodes:       make([]float64, 0),
+// NewMetrics creates a new metrics instance with OTEL instrumentation
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
+	m := &Metrics{tracer: tracer}
+
+	var err error
+
+	// Initialize chain metrics
+	m.chainExecutions, err = meter.Int64Counter(
+		"orchestration_chain_executions_total",
+		metric.WithDescription("Total number of chain executions"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
 	}
+
+	m.chainDuration, err = meter.Float64Histogram(
+		"orchestration_chain_duration_seconds",
+		metric.WithDescription("Duration of chain executions"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.chainErrors, err = meter.Int64Counter(
+		"orchestration_chain_errors_total",
+		metric.WithDescription("Total number of chain execution errors"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.activeChains, err = meter.Int64UpDownCounter(
+		"orchestration_active_chains",
+		metric.WithDescription("Number of currently active chains"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize graph metrics
+	m.graphExecutions, err = meter.Int64Counter(
+		"orchestration_graph_executions_total",
+		metric.WithDescription("Total number of graph executions"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.graphDuration, err = meter.Float64Histogram(
+		"orchestration_graph_duration_seconds",
+		metric.WithDescription("Duration of graph executions"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.graphErrors, err = meter.Int64Counter(
+		"orchestration_graph_errors_total",
+		metric.WithDescription("Total number of graph execution errors"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.activeGraphs, err = meter.Int64UpDownCounter(
+		"orchestration_active_graphs",
+		metric.WithDescription("Number of currently active graphs"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.graphNodes, err = meter.Int64Histogram(
+		"orchestration_graph_nodes",
+		metric.WithDescription("Number of nodes in executed graphs"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize workflow metrics
+	m.workflowExecutions, err = meter.Int64Counter(
+		"orchestration_workflow_executions_total",
+		metric.WithDescription("Total number of workflow executions"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.workflowDuration, err = meter.Float64Histogram(
+		"orchestration_workflow_duration_seconds",
+		metric.WithDescription("Duration of workflow executions"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.workflowErrors, err = meter.Int64Counter(
+		"orchestration_workflow_errors_total",
+		metric.WithDescription("Total number of workflow execution errors"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.activeWorkflows, err = meter.Int64UpDownCounter(
+		"orchestration_active_workflows",
+		metric.WithDescription("Number of currently active workflows"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Initialize general metrics
+	m.totalExecutions, err = meter.Int64Counter(
+		"orchestration_executions_total",
+		metric.WithDescription("Total number of orchestration executions"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	m.totalErrors, err = meter.Int64Counter(
+		"orchestration_errors_total",
+		metric.WithDescription("Total number of orchestration errors"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return m, nil
 }
 
 // RecordChainExecution records a chain execution
-func (m *Metrics) RecordChainExecution(ctx context.Context, duration float64, success bool, chainName string) {
-	m.chainExecutions++
-	m.totalExecutions++
-	m.chainDuration = append(m.chainDuration, duration)
+func (m *Metrics) RecordChainExecution(ctx context.Context, duration time.Duration, success bool, chainName string) {
+	if m == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("chain_name", chainName),
+		attribute.Bool("success", success),
+	}
+
+	if m.chainExecutions != nil {
+		m.chainExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.totalExecutions != nil {
+		m.totalExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.chainDuration != nil {
+		m.chainDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 
 	if !success {
-		m.chainErrors++
-		m.totalErrors++
+		if m.chainErrors != nil {
+			m.chainErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		if m.totalErrors != nil {
+			m.totalErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
 	}
 }
 
 // RecordChainActive records active chain count changes
 func (m *Metrics) RecordChainActive(ctx context.Context, delta int64, chainName string) {
-	m.activeChains += delta
+	if m == nil || m.activeChains == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("chain_name", chainName),
+	}
+
+	m.activeChains.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
 // RecordGraphExecution records a graph execution
-func (m *Metrics) RecordGraphExecution(ctx context.Context, duration float64, success bool, graphName string, nodeCount int) {
-	m.graphExecutions++
-	m.totalExecutions++
-	m.graphDuration = append(m.graphDuration, duration)
-	m.graphNodes = append(m.graphNodes, float64(nodeCount))
+func (m *Metrics) RecordGraphExecution(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int) {
+	if m == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("graph_name", graphName),
+		attribute.Bool("success", success),
+	}
+
+	if m.graphExecutions != nil {
+		m.graphExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.totalExecutions != nil {
+		m.totalExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.graphDuration != nil {
+		m.graphDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
+	if m.graphNodes != nil {
+		m.graphNodes.Record(ctx, int64(nodeCount), metric.WithAttributes(attrs...))
+	}
 
 	if !success {
-		m.graphErrors++
-		m.totalErrors++
+		if m.graphErrors != nil {
+			m.graphErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		if m.totalErrors != nil {
+			m.totalErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
 	}
 }
 
 // RecordGraphActive records active graph count changes
 func (m *Metrics) RecordGraphActive(ctx context.Context, delta int64, graphName string) {
-	m.activeGraphs += delta
+	if m == nil || m.activeGraphs == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("graph_name", graphName),
+	}
+
+	m.activeGraphs.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
 // RecordWorkflowExecution records a workflow execution
-func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration float64, success bool, workflowName string) {
-	m.workflowExecutions++
-	m.totalExecutions++
-	m.workflowDuration = append(m.workflowDuration, duration)
+func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration time.Duration, success bool, workflowName string) {
+	if m == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("workflow_name", workflowName),
+		attribute.Bool("success", success),
+	}
+
+	if m.workflowExecutions != nil {
+		m.workflowExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.totalExecutions != nil {
+		m.totalExecutions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.workflowDuration != nil {
+		m.workflowDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 
 	if !success {
-		m.workflowErrors++
-		m.totalErrors++
+		if m.workflowErrors != nil {
+			m.workflowErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
+		if m.totalErrors != nil {
+			m.totalErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+		}
 	}
 }
 
 // RecordWorkflowActive records active workflow count changes
 func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflowName string) {
-	m.activeWorkflows += delta
+	if m == nil || m.activeWorkflows == nil {
+		return
+	}
+
+	attrs := []attribute.KeyValue{
+		attribute.String("workflow_name", workflowName),
+	}
+
+	m.activeWorkflows.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
-// GetMetricsSummary returns a summary of current metrics
-func (m *Metrics) GetMetricsSummary() map[string]interface{} {
-	return map[string]interface{}{
-		"metrics_type": "orchestration",
-		"description":  "Comprehensive orchestration metrics including chains, graphs, and workflows",
-		"features": []string{
-			"chain_execution_tracking",
-			"graph_execution_tracking",
-			"workflow_execution_tracking",
-			"active_instance_counting",
-			"error_rate_monitoring",
-			"performance_histograms",
-		},
+// StartChainSpan starts a new span for chain execution
+func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation string) (context.Context, trace.Span) {
+	if m.tracer == nil {
+		return ctx, trace.SpanFromContext(ctx)
 	}
+
+	return m.tracer.Start(ctx, "orchestration.chain."+operation,
+		trace.WithAttributes(
+			attribute.String("chain.name", chainName),
+		),
+	)
+}
+
+// StartGraphSpan starts a new span for graph execution
+func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation string) (context.Context, trace.Span) {
+	if m.tracer == nil {
+		return ctx, trace.SpanFromContext(ctx)
+	}
+
+	return m.tracer.Start(ctx, "orchestration.graph."+operation,
+		trace.WithAttributes(
+			attribute.String("graph.name", graphName),
+		),
+	)
+}
+
+// StartWorkflowSpan starts a new span for workflow execution
+func (m *Metrics) StartWorkflowSpan(ctx context.Context, workflowName, operation string) (context.Context, trace.Span) {
+	if m.tracer == nil {
+		return ctx, trace.SpanFromContext(ctx)
+	}
+
+	return m.tracer.Start(ctx, "orchestration.workflow."+operation,
+		trace.WithAttributes(
+			attribute.String("workflow.name", workflowName),
+		),
+	)
+}
+
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
+	return &Metrics{}
 }

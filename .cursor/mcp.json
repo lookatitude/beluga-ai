@@ -1,0 +1,17 @@
+{
+    "mcpServers": {
+        "MCP_DOCKER": {
+            "command": "docker",
+            "args": [
+                "mcp",
+                "gateway",
+                "run"
+            ],
+            "env": {
+                "LOCALAPPDATA": "/mnt/c/Users/swift/AppData/Local",
+                "ProgramData": "/mnt/c/ProgramData",
+                "ProgramFiles": "/mnt/c/Program Files"
+            }
+        }
+    }
+}

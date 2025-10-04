@@ -164,18 +164,18 @@ func (pc *PrivacyChecker) CheckPrivacy(content string) []iface.PrivacyIssue {
 // classifyPII classifies the type of PII detected
 func (pc *PrivacyChecker) classifyPII(pattern string) string {
 	switch {
-	case strings.Contains(pattern, "email"):
+	case strings.Contains(pattern, "email") || strings.Contains(pattern, "@"):
 		return "email"
-	case strings.Contains(pattern, "@"):
-		return "email"
-	case strings.Contains(pattern, "SSN") || strings.Contains(pattern, "\\d{3}-\\d{2}-\\d{4}"):
+	case strings.Contains(pattern, "\\d{3}-\\d{2}-\\d{4}"):
 		return "ssn"
-	case strings.Contains(pattern, "card") || strings.Contains(pattern, "\\d{4}"):
+	case strings.Contains(pattern, "\\d{4}[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}"):
 		return "credit_card"
-	case strings.Contains(pattern, "phone") || strings.Contains(pattern, "\\d{3}"):
+	case strings.Contains(pattern, "\\d{3}[-.]?\\d{3}[-.]?\\d{4}"):
 		return "phone"
-	case strings.Contains(pattern, "zip") || strings.Contains(pattern, "\\d{5}"):
+	case strings.Contains(pattern, "\\d{5}"):
 		return "zip_code"
+	case strings.Contains(pattern, "\\d{1,2}/\\d{1,2}/\\d{4}"):
+		return "date_of_birth"
 	default:
 		return "unknown"
 	}
@@ -194,8 +194,9 @@ func (gbd *GenderBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 		message string
 	}{
 		{`(?i)\b(he|him|his)\b.*\b(she|her|hers)\b|\b(she|her|hers)\b.*\b(he|him|his)\b`, "Gender binary assumptions"},
-		{`(?i)\b(men|man|male)\b.*\b(should|must|always)\b`, "Stereotypical gender roles"},
-		{`(?i)\b(women|woman|female)\b.*\b(should|must|always)\b`, "Stereotypical gender roles"},
+		{`(?i)\b(men|man|male|men|boys)\b.*\b(should|must|always|are|better|superior|inferior|worse)\b`, "Stereotypical gender roles"},
+		{`(?i)\b(women|woman|female|girls)\b.*\b(should|must|always|are|better|superior|inferior|worse)\b`, "Stereotypical gender roles"},
+		{`(?i)\b(all|every)\b.*\b(women?|men|male|female|girls?|boys?)\b.*\b(are|should|must|always)\b`, "Generalized gender stereotypes"},
 	}
 
 	for _, p := range patterns {

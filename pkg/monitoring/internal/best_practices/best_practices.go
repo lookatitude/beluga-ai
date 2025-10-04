@@ -4,6 +4,7 @@ package best_practices
 import (
 	"context"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 
@@ -238,8 +239,7 @@ func containsSecurityIssues(code string) bool {
 
 func containsPattern(text, pattern string) bool {
 	// Simple substring check - in production, use regex
-	return len(text) > 0 && len(pattern) > 0 &&
-		len(text) >= len(pattern) // Basic bounds check
+	return strings.Contains(text, pattern)
 }
 
 // PerformanceMonitor monitors performance metrics

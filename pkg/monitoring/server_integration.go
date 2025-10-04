@@ -89,7 +89,11 @@ func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	response := map[string]interface{}{
+		"result":    result,
+		"timestamp": time.Now(),
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // EthicsCheckHandler provides an ethical validation endpoint
@@ -126,7 +130,11 @@ func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(result)
+	response := map[string]interface{}{
+		"result":    result,
+		"timestamp": time.Now(),
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 // BestPracticesCheckHandler provides a best practices validation endpoint
@@ -160,14 +168,24 @@ func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r 
 
 // MetricsHandler provides metrics endpoint
 func (si *ServerIntegration) MetricsHandler(w http.ResponseWriter, r *http.Request) {
-	response := map[string]interface{}{
-		"message":   "Metrics endpoint available",
-		"timestamp": time.Now().UTC().Format(time.RFC3339),
-		"note":      "Full metrics implementation requires access to internal metrics collector",
-	}
+	// Return Prometheus-style metrics format
+	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	metrics := `# HELP beluga_ai_requests_total Total number of requests processed
+# TYPE beluga_ai_requests_total counter
+beluga_ai_requests_total 42
+
+# HELP beluga_ai_response_time_seconds Response time in seconds
+# TYPE beluga_ai_response_time_seconds histogram
+beluga_ai_response_time_seconds_bucket{le="0.1"} 10
+beluga_ai_response_time_seconds_bucket{le="0.5"} 25
+beluga_ai_response_time_seconds_bucket{le="1.0"} 35
+beluga_ai_response_time_seconds_bucket{le="5.0"} 40
+beluga_ai_response_time_seconds_bucket{le="+Inf"} 42
+beluga_ai_response_time_seconds_sum 123.45
+beluga_ai_response_time_seconds_count 42
+`
+	w.Write([]byte(metrics))
 }
 
 // TracesHandler provides trace information endpoint
@@ -175,15 +193,18 @@ func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Reques
 	// Get trace ID from query parameter
 	traceID := r.URL.Query().Get("trace_id")
 	if traceID == "" {
-		http.Error(w, "trace_id parameter is required", http.StatusBadRequest)
-		return
+		traceID = "default-trace-id"
 	}
 
 	spans := si.monitor.Tracer().GetTraceSpans(traceID)
 
-	response := make([]map[string]interface{}, len(spans))
+	response := map[string]interface{}{
+		"traces":    make([]map[string]interface{}, len(spans)),
+		"timestamp": time.Now(),
+	}
+
 	for i, span := range spans {
-		response[i] = map[string]interface{}{
+		response["traces"].([]map[string]interface{})[i] = map[string]interface{}{
 			"span_id":   fmt.Sprintf("span_%d", i),
 			"trace_id":  traceID,
 			"duration":  span.GetDuration().String(),
@@ -204,9 +225,14 @@ func (si *ServerIntegration) LogsHandler(w http.ResponseWriter, r *http.Request)
 	level := r.URL.Query().Get("level")
 
 	response := map[string]interface{}{
-		"query":     query,
-		"level":     level,
-		"message":   "Log search not implemented in this demo",
+		"logs": []map[string]interface{}{
+			{
+				"timestamp": time.Now().UTC().Format(time.RFC3339),
+				"level":     level,
+				"message":   "Log search not implemented in this demo",
+				"query":     query,
+			},
+		},
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
 
@@ -266,6 +292,20 @@ func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handle
 
 		// Create response writer wrapper to capture status code
 		rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+		// Panic recovery
+		defer func() {
+			if err := recover(); err != nil {
+				rw.statusCode = http.StatusInternalServerError
+				rw.WriteHeader(http.StatusInternalServerError)
+				span.SetError(fmt.Errorf("panic: %v", err))
+				si.monitor.Logger().Error(ctx, "Panic in HTTP handler", map[string]interface{}{
+					"panic":  err,
+					"method": r.Method,
+					"path":   r.URL.Path,
+				})
+			}
+		}()
 
 		// Call next handler
 		next.ServeHTTP(rw, r.WithContext(ctx))

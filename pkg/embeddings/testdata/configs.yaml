@@ -1,0 +1,89 @@
+# Test configurations for different scenarios
+
+# Basic configuration with all providers enabled
+basic_config: |
+  embeddings:
+    openai:
+      api_key: "sk-test123456789"
+      model: "text-embedding-ada-002"
+      timeout: "30s"
+      max_retries: 3
+      enabled: true
+    ollama:
+      server_url: "http://localhost:11434"
+      model: "nomic-embed-text"
+      timeout: "30s"
+      max_retries: 3
+      enabled: true
+    mock:
+      dimension: 128
+      seed: 42
+      enabled: true
+
+# Configuration with only mock provider for testing
+mock_only_config: |
+  embeddings:
+    openai:
+      enabled: false
+    ollama:
+      enabled: false
+    mock:
+      dimension: 256
+      seed: 12345
+      enabled: true
+
+# High-performance configuration
+performance_config: |
+  embeddings:
+    openai:
+      api_key: "sk-test123456789"
+      model: "text-embedding-3-large"
+      timeout: "60s"
+      max_retries: 5
+      enabled: true
+    ollama:
+      server_url: "http://localhost:11434"
+      model: "nomic-embed-text"
+      timeout: "120s"
+      max_retries: 2
+      enabled: true
+    mock:
+      dimension: 3072
+      seed: 999
+      enabled: false
+
+# Minimal configuration for quick testing
+minimal_config: |
+  embeddings:
+    mock:
+      dimension: 64
+      seed: 1
+      enabled: true
+
+# Configuration with custom timeouts
+timeout_config: |
+  embeddings:
+    openai:
+      api_key: "sk-test123456789"
+      model: "text-embedding-ada-002"
+      timeout: "10s"
+      max_retries: 1
+      enabled: true
+    ollama:
+      server_url: "http://localhost:11434"
+      model: "nomic-embed-text"
+      timeout: "45s"
+      max_retries: 2
+      enabled: true
+    mock:
+      dimension: 128
+      seed: 42
+      enabled: false
+
+# Configuration for load testing
+load_test_config: |
+  embeddings:
+    mock:
+      dimension: 512
+      seed: 0
+      enabled: true

@@ -109,10 +109,19 @@ func IsLLMError(err error) bool {
 	return errors.As(err, &llmErr)
 }
 
-// GetLLMErrorCode extracts the error code from an LLMError
-func GetLLMErrorCode(err error) string {
+// GetLLMError extracts an LLMError from an error if it exists
+func GetLLMError(err error) *LLMError {
 	var llmErr *LLMError
 	if errors.As(err, &llmErr) {
+		return llmErr
+	}
+	return nil
+}
+
+// GetLLMErrorCode extracts the error code from an LLMError
+func GetLLMErrorCode(err error) string {
+	llmErr := GetLLMError(err)
+	if llmErr != nil {
 		return llmErr.Code
 	}
 	return ""
