@@ -341,6 +341,19 @@ func (c *AdvancedMockConfigProvider) GetFloat64(key string) float64 {
 	return 0.0
 }
 
+func (c *AdvancedMockConfigProvider) GetStringMapString(key string) map[string]string {
+	value := c.Get(key)
+	if m, ok := value.(map[string]string); ok {
+		return m
+	}
+	// Return default test map
+	return map[string]string{
+		"provider": "mock",
+		"name":     c.name,
+		"type":     c.providerType,
+	}
+}
+
 func (c *AdvancedMockConfigProvider) GetDuration(key string) time.Duration {
 	value := c.Get(key)
 	if d, ok := value.(time.Duration); ok {
