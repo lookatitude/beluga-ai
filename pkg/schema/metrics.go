@@ -2,7 +2,11 @@ package schema
 
 import (
 	"context"
+	"sync"
+	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
+	"github.com/lookatitude/beluga-ai/pkg/schema/internal"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 )
@@ -35,33 +39,33 @@ type Metrics struct {
 	configErrors      metric.Int64Counter
 
 	// A2A Communication metrics
-	agentMessagesSent       metric.Int64Counter
-	agentMessagesReceived   metric.Int64Counter
-	agentRequestsSent       metric.Int64Counter
-	agentRequestsReceived   metric.Int64Counter
-	agentResponsesSent      metric.Int64Counter
-	agentResponsesReceived  metric.Int64Counter
-	a2aCommunicationErrors  metric.Int64Counter
+	agentMessagesSent      metric.Int64Counter
+	agentMessagesReceived  metric.Int64Counter
+	agentRequestsSent      metric.Int64Counter
+	agentRequestsReceived  metric.Int64Counter
+	agentResponsesSent     metric.Int64Counter
+	agentResponsesReceived metric.Int64Counter
+	a2aCommunicationErrors metric.Int64Counter
 
 	// Event metrics
-	eventsPublished         metric.Int64Counter
-	eventsConsumed          metric.Int64Counter
-	agentLifecycleEvents    metric.Int64Counter
-	taskEvents              metric.Int64Counter
-	workflowEvents          metric.Int64Counter
-	eventProcessingErrors   metric.Int64Counter
+	eventsPublished       metric.Int64Counter
+	eventsConsumed        metric.Int64Counter
+	agentLifecycleEvents  metric.Int64Counter
+	taskEvents            metric.Int64Counter
+	workflowEvents        metric.Int64Counter
+	eventProcessingErrors metric.Int64Counter
 
 	// Validation metrics
-	schemaValidations       metric.Int64Counter
-	schemaValidationErrors  metric.Int64Counter
-	messageValidations      metric.Int64Counter
-	messageValidationErrors metric.Int64Counter
-	documentValidations     metric.Int64Counter
+	schemaValidations        metric.Int64Counter
+	schemaValidationErrors   metric.Int64Counter
+	messageValidations       metric.Int64Counter
+	messageValidationErrors  metric.Int64Counter
+	documentValidations      metric.Int64Counter
 	documentValidationErrors metric.Int64Counter
 
 	// Factory metrics
-	factoryCreations        metric.Int64Counter
-	factoryErrors           metric.Int64Counter
+	factoryCreations metric.Int64Counter
+	factoryErrors    metric.Int64Counter
 }
 
 // NewMetrics creates a new Metrics instance with OpenTelemetry instruments.
@@ -377,40 +381,40 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	}
 
 	return &Metrics{
-		messagesCreated:         messagesCreated,
-		messageErrors:           messageErrors,
-		documentsCreated:        documentsCreated,
-		documentErrors:          documentErrors,
-		historyOperations:       historyOperations,
-		historySize:             historySize,
-		agentActions:            agentActions,
-		agentObservations:       agentObservations,
-		stepsCreated:            stepsCreated,
-		generationsCreated:      generationsCreated,
-		llmResponsesCreated:     llmResponsesCreated,
-		configValidations:       configValidations,
-		configErrors:            configErrors,
-		agentMessagesSent:       agentMessagesSent,
-		agentMessagesReceived:   agentMessagesReceived,
-		agentRequestsSent:       agentRequestsSent,
-		agentRequestsReceived:   agentRequestsReceived,
-		agentResponsesSent:      agentResponsesSent,
-		agentResponsesReceived:  agentResponsesReceived,
-		a2aCommunicationErrors:  a2aCommunicationErrors,
-		eventsPublished:         eventsPublished,
-		eventsConsumed:          eventsConsumed,
-		agentLifecycleEvents:    agentLifecycleEvents,
-		taskEvents:              taskEvents,
-		workflowEvents:          workflowEvents,
-		eventProcessingErrors:   eventProcessingErrors,
-		schemaValidations:       schemaValidations,
-		schemaValidationErrors:  schemaValidationErrors,
-		messageValidations:      messageValidations,
-		messageValidationErrors: messageValidationErrors,
-		documentValidations:     documentValidations,
+		messagesCreated:          messagesCreated,
+		messageErrors:            messageErrors,
+		documentsCreated:         documentsCreated,
+		documentErrors:           documentErrors,
+		historyOperations:        historyOperations,
+		historySize:              historySize,
+		agentActions:             agentActions,
+		agentObservations:        agentObservations,
+		stepsCreated:             stepsCreated,
+		generationsCreated:       generationsCreated,
+		llmResponsesCreated:      llmResponsesCreated,
+		configValidations:        configValidations,
+		configErrors:             configErrors,
+		agentMessagesSent:        agentMessagesSent,
+		agentMessagesReceived:    agentMessagesReceived,
+		agentRequestsSent:        agentRequestsSent,
+		agentRequestsReceived:    agentRequestsReceived,
+		agentResponsesSent:       agentResponsesSent,
+		agentResponsesReceived:   agentResponsesReceived,
+		a2aCommunicationErrors:   a2aCommunicationErrors,
+		eventsPublished:          eventsPublished,
+		eventsConsumed:           eventsConsumed,
+		agentLifecycleEvents:     agentLifecycleEvents,
+		taskEvents:               taskEvents,
+		workflowEvents:           workflowEvents,
+		eventProcessingErrors:    eventProcessingErrors,
+		schemaValidations:        schemaValidations,
+		schemaValidationErrors:   schemaValidationErrors,
+		messageValidations:       messageValidations,
+		messageValidationErrors:  messageValidationErrors,
+		documentValidations:      documentValidations,
 		documentValidationErrors: documentValidationErrors,
-		factoryCreations:        factoryCreations,
-		factoryErrors:           factoryErrors,
+		factoryCreations:         factoryCreations,
+		factoryErrors:            factoryErrors,
 	}, nil
 }
 
@@ -1067,4 +1071,122 @@ func RecordFactoryError(ctx context.Context, objectType string, err error) {
 	if globalMetrics != nil {
 		globalMetrics.RecordFactoryError(ctx, objectType, err)
 	}
+}
+
+// T026: Implement health monitoring for metrics collection in metrics.go enhancement
+
+// MetricsHealthMonitor implements health monitoring for OTEL metrics collection
+type MetricsHealthMonitor struct {
+	mu             sync.RWMutex
+	metrics        *Metrics
+	lastCheck      time.Time
+	operationCount int64
+	errorCount     int64
+	isEnabled      bool
+	config         iface.HealthConfig
+}
+
+// NewMetricsHealthMonitor creates a new metrics health monitor
+func NewMetricsHealthMonitor(metrics *Metrics, config iface.HealthConfig) *MetricsHealthMonitor {
+	return &MetricsHealthMonitor{
+		metrics:   metrics,
+		lastCheck: time.Now(),
+		isEnabled: config.EnableHealthChecks,
+		config:    config,
+	}
+}
+
+// CheckHealth implements the HealthChecker interface for metrics collection
+func (mhm *MetricsHealthMonitor) CheckHealth(ctx context.Context) iface.HealthStatus {
+	mhm.mu.RLock()
+	defer mhm.mu.RUnlock()
+
+	start := time.Now()
+	status := iface.HealthStatus{
+		Component:     "metrics_collection",
+		LastChecked:   start,
+		CheckDuration: time.Since(start),
+		Details:       make(map[string]interface{}),
+	}
+
+	status.OperationCount = mhm.operationCount
+	status.ErrorCount = mhm.errorCount
+
+	// Calculate success rate
+	if mhm.operationCount > 0 {
+		status.SuccessRate = float64(mhm.operationCount-mhm.errorCount) / float64(mhm.operationCount)
+	} else {
+		status.SuccessRate = 1.0
+	}
+
+	// Determine health status based on metrics collection performance
+	switch {
+	case status.SuccessRate >= mhm.config.MinSuccessRate:
+		status.Status = iface.HealthStatusHealthy
+	case status.SuccessRate >= mhm.config.MinSuccessRate*0.8:
+		status.Status = iface.HealthStatusDegraded
+		status.Warnings = append(status.Warnings, "Metrics collection success rate below optimal")
+	default:
+		status.Status = iface.HealthStatusUnhealthy
+		status.Errors = append(status.Errors, "Metrics collection failing at unacceptable rate")
+	}
+
+	// Add OTEL-specific health information
+	status.Details["metrics_instance"] = mhm.metrics != nil
+	status.Details["operation_count"] = mhm.operationCount
+	status.Details["error_count"] = mhm.errorCount
+	status.Details["success_rate"] = status.SuccessRate
+
+	return status
+}
+
+// IsHealthy implements the HealthChecker interface
+func (mhm *MetricsHealthMonitor) IsHealthy(ctx context.Context) bool {
+	status := mhm.CheckHealth(ctx)
+	return status.Status == iface.HealthStatusHealthy
+}
+
+// GetLastHealthCheck implements the HealthChecker interface
+func (mhm *MetricsHealthMonitor) GetLastHealthCheck() time.Time {
+	mhm.mu.RLock()
+	defer mhm.mu.RUnlock()
+	return mhm.lastCheck
+}
+
+// RecordMetricsOperation records a metrics operation for health monitoring
+func (mhm *MetricsHealthMonitor) RecordMetricsOperation(success bool) {
+	if !mhm.isEnabled {
+		return
+	}
+
+	mhm.mu.Lock()
+	defer mhm.mu.Unlock()
+
+	mhm.operationCount++
+	if !success {
+		mhm.errorCount++
+	}
+}
+
+// Global metrics health monitor instance
+var (
+	globalMetricsHealth *MetricsHealthMonitor
+	metricsHealthOnce   sync.Once
+)
+
+// InitializeMetricsHealthMonitoring initializes health monitoring for metrics collection
+func InitializeMetricsHealthMonitoring(metrics *Metrics, config iface.HealthConfig) {
+	metricsHealthOnce.Do(func() {
+		globalMetricsHealth = NewMetricsHealthMonitor(metrics, config)
+
+		// Register with global health manager if available
+		if globalHealthManager := internal.GetGlobalHealthManager(); globalHealthManager != nil {
+			globalHealthManager.RegisterComponent("otel_metrics", globalMetricsHealth)
+		}
+	})
+}
+
+// GetGlobalMetricsHealth returns the global metrics health monitor
+func GetGlobalMetricsHealth() *MetricsHealthMonitor {
+	return globalMetricsHealth
 }

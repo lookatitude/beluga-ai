@@ -2,16 +2,18 @@ package internal
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 )
 
 // BaseChatHistory provides a basic implementation of the ChatHistory interface.
-// It stores messages in memory.
+// It stores messages in memory with thread-safe concurrent access.
 type BaseChatHistory struct {
 	config   *ChatHistoryConfig
 	messages []iface.Message
+	mu       sync.RWMutex // Protects concurrent access to messages
 }
 
 // NewBaseChatHistory creates a new BaseChatHistory.
@@ -22,8 +24,11 @@ func NewBaseChatHistory(config *ChatHistoryConfig) *BaseChatHistory {
 	}
 }
 
-// AddMessage adds a message to the history.
+// AddMessage adds a message to the history with thread-safe access.
 func (h *BaseChatHistory) AddMessage(message iface.Message) error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	// Check max messages limit
 	if h.config != nil && h.config.MaxMessages > 0 && len(h.messages) >= h.config.MaxMessages {
 		// Remove oldest message
@@ -49,15 +54,52 @@ func (h *BaseChatHistory) AddAIMessage(message string) error {
 	})
 }
 
-// Messages returns all messages in the history.
+// Messages returns all messages in the history with thread-safe access.
 func (h *BaseChatHistory) Messages() ([]iface.Message, error) {
-	return h.messages, nil
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	// Return a copy to prevent external modification
+	result := make([]iface.Message, len(h.messages))
+	copy(result, h.messages)
+	return result, nil
 }
 
-// Clear removes all messages from the history.
+// Clear removes all messages from the history with thread-safe access.
 func (h *BaseChatHistory) Clear() error {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+
 	h.messages = make([]iface.Message, 0)
 	return nil
+}
+
+// Size returns the number of messages in the history.
+func (h *BaseChatHistory) Size() int {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return len(h.messages)
+}
+
+// GetLast returns the last message in the history, or nil if empty.
+func (h *BaseChatHistory) GetLast() iface.Message {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	if len(h.messages) == 0 {
+		return nil
+	}
+	return h.messages[len(h.messages)-1]
+}
+
+// GetMessages returns all messages in the history (alias for Messages for backward compatibility).
+func (h *BaseChatHistory) GetMessages() []iface.Message {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+
+	result := make([]iface.Message, len(h.messages))
+	copy(result, h.messages)
+	return result
 }
 
 // ChatHistoryConfig defines configuration options for chat history implementations.

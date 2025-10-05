@@ -1,0 +1,22 @@
+# Mockery configuration for schema package mock generation
+# T003: Configure benchmark infrastructure and mock generation
+
+with-expecter: false
+mockname: "Mock{{.InterfaceName}}"
+filename: "{{.InterfaceName | snakecase}}_mock.go"
+outpkg: mocks
+packages:
+  github.com/lookatitude/beluga-ai/pkg/schema/iface:
+    interfaces:
+      Message:
+        config:
+          filename: "message_mock.go"
+          mockname: "MockMessage"
+      ChatHistory:
+        config:
+          filename: "chat_history_mock.go"
+          mockname: "MockChatHistory"
+      SchemaValidator:
+        config:
+          filename: "validator_mock.go"
+          mockname: "MockSchemaValidator"
