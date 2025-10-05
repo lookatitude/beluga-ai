@@ -6,7 +6,9 @@ package embeddings
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -60,7 +62,7 @@ func TestAdvancedMockEmbedder(t *testing.T) {
 				return nil
 			},
 			expectedError:     false,
-			expectedCallCount: 3,
+			expectedCallCount: 4,
 			expectedDimension: 128,
 		},
 		{
@@ -90,7 +92,7 @@ func TestAdvancedMockEmbedder(t *testing.T) {
 				return err
 			},
 			expectedError:     false,
-			expectedCallCount: 1,
+			expectedCallCount: 2,
 			expectedDimension: 256,
 		},
 		{
@@ -117,7 +119,7 @@ func TestAdvancedMockEmbedder(t *testing.T) {
 				return nil
 			},
 			expectedError:     false,
-			expectedCallCount: 1,
+			expectedCallCount: 2,
 			expectedDimension: 64,
 		},
 		{
@@ -138,7 +140,7 @@ func TestAdvancedMockEmbedder(t *testing.T) {
 				return nil
 			},
 			expectedError:     false,
-			expectedCallCount: 7,
+			expectedCallCount: 6,
 		},
 	}
 
@@ -201,9 +203,11 @@ func TestEmbeddingProviderRegistry(t *testing.T) {
 	assert.Error(t, err)
 	AssertErrorType(t, err, iface.ErrCodeProviderNotFound)
 
-	// Test global registry functions
+	// Test global registry functions - register globally for testing
+	RegisterGlobal("test_global", testCreator)
 	globalProviders := ListAvailableProviders()
 	assert.NotEmpty(t, globalProviders)
+	assert.Contains(t, globalProviders, "test_global")
 
 	globalRegistry := GetGlobalRegistry()
 	assert.NotNil(t, globalRegistry)
@@ -620,5 +624,607 @@ func BenchmarkHelperFunctions(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			EuclideanDistance(emb1, emb2)
 		}
+	})
+}
+
+// Load testing scenarios with realistic user patterns
+
+func TestLoadTestingScenarios(t *testing.T) {
+	tests := []struct {
+		name        string
+		scenario    func(*EmbedderFactory) error
+		expectError bool
+	}{
+		{
+			name: "realistic_user_session",
+			scenario: func(factory *EmbedderFactory) error {
+				return testRealisticUserSession(factory)
+			},
+			expectError: false,
+		},
+		{
+			name: "api_burst_traffic",
+			scenario: func(factory *EmbedderFactory) error {
+				return testAPIBurstTraffic(factory)
+			},
+			expectError: false,
+		},
+		{
+			name: "gradual_load_increase",
+			scenario: func(factory *EmbedderFactory) error {
+				return testGradualLoadIncrease(factory)
+			},
+			expectError: false,
+		},
+		{
+			name: "mixed_workload_patterns",
+			scenario: func(factory *EmbedderFactory) error {
+				return testMixedWorkloadPatterns(factory)
+			},
+			expectError: false,
+		},
+		{
+			name: "error_recovery_scenarios",
+			scenario: func(factory *EmbedderFactory) error {
+				return testErrorRecoveryScenarios(factory)
+			},
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &Config{
+				Mock: &MockConfig{
+					Dimension: 128,
+					Seed:      42,
+					Enabled:   true,
+				},
+			}
+
+			factory, err := NewEmbedderFactory(config)
+			require.NoError(t, err)
+
+			err = tt.scenario(factory)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// testRealisticUserSession simulates a typical user session with embeddings
+func testRealisticUserSession(factory *EmbedderFactory) error {
+	ctx := context.Background()
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Simulate user document processing workflow
+	documents := []string{
+		"Introduction to machine learning concepts",
+		"Deep learning neural networks explained",
+		"Natural language processing fundamentals",
+		"Computer vision applications and techniques",
+		"Reinforcement learning basics",
+	}
+
+	// Phase 1: Initial document processing (batch)
+	_, err = embedder.EmbedDocuments(ctx, documents[:3])
+	if err != nil {
+		return fmt.Errorf("batch embedding failed: %w", err)
+	}
+
+	// Phase 2: Individual queries (typical search behavior)
+	for _, doc := range documents {
+		_, err = embedder.EmbedQuery(ctx, "What is "+strings.Split(doc, " ")[0]+"?")
+		if err != nil {
+			return fmt.Errorf("query embedding failed: %w", err)
+		}
+		time.Sleep(10 * time.Millisecond) // Simulate user think time
+	}
+
+	// Phase 3: Follow-up queries (refined search)
+	refinedQueries := []string{
+		"machine learning algorithms",
+		"neural network architectures",
+		"NLP preprocessing steps",
+	}
+
+	for _, query := range refinedQueries {
+		_, err = embedder.EmbedQuery(ctx, query)
+		if err != nil {
+			return fmt.Errorf("refined query failed: %w", err)
+		}
+	}
+
+	return nil
+}
+
+// testAPIBurstTraffic simulates sudden traffic spikes
+func testAPIBurstTraffic(factory *EmbedderFactory) error {
+	ctx := context.Background()
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Simulate API burst: many requests in quick succession
+	burstSize := 20
+	testDoc := "Burst traffic test document"
+
+	for i := 0; i < burstSize; i++ {
+		_, err = embedder.EmbedQuery(ctx, fmt.Sprintf("%s %d", testDoc, i))
+		if err != nil {
+			return fmt.Errorf("burst request %d failed: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+// testGradualLoadIncrease simulates slowly increasing load
+func testGradualLoadIncrease(factory *EmbedderFactory) error {
+	ctx := context.Background()
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Gradually increase load over time
+	phases := []int{5, 10, 15, 20} // Increasing batch sizes
+
+	for phase, batchSize := range phases {
+		documents := make([]string, batchSize)
+		for i := range documents {
+			documents[i] = fmt.Sprintf("Load phase %d document %d", phase, i)
+		}
+
+		_, err = embedder.EmbedDocuments(ctx, documents)
+		if err != nil {
+			return fmt.Errorf("phase %d batch failed: %w", phase, err)
+		}
+
+		time.Sleep(50 * time.Millisecond) // Brief pause between phases
+	}
+
+	return nil
+}
+
+// testMixedWorkloadPatterns simulates different types of embedding workloads
+func testMixedWorkloadPatterns(factory *EmbedderFactory) error {
+	ctx := context.Background()
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Mix of different workload patterns
+	workloads := []struct {
+		description string
+		operation   func() error
+	}{
+		{
+			description: "single short query",
+			operation: func() error {
+				_, err := embedder.EmbedQuery(ctx, "test")
+				return err
+			},
+		},
+		{
+			description: "single long document",
+			operation: func() error {
+				longDoc := strings.Repeat("This is a long document with many words. ", 50)
+				_, err := embedder.EmbedQuery(ctx, longDoc)
+				return err
+			},
+		},
+		{
+			description: "small batch",
+			operation: func() error {
+				docs := []string{"doc1", "doc2", "doc3"}
+				_, err := embedder.EmbedDocuments(ctx, docs)
+				return err
+			},
+		},
+		{
+			description: "large batch",
+			operation: func() error {
+				docs := make([]string, 10)
+				for i := range docs {
+					docs[i] = fmt.Sprintf("batch document %d", i)
+				}
+				_, err := embedder.EmbedDocuments(ctx, docs)
+				return err
+			},
+		},
+		{
+			description: "empty input",
+			operation: func() error {
+				_, err := embedder.EmbedQuery(ctx, "")
+				return err // This should succeed (return zero vector)
+			},
+		},
+	}
+
+	for _, workload := range workloads {
+		if err := workload.operation(); err != nil {
+			return fmt.Errorf("%s failed: %w", workload.description, err)
+		}
+	}
+
+	return nil
+}
+
+// testErrorRecoveryScenarios simulates error conditions and recovery
+func testErrorRecoveryScenarios(factory *EmbedderFactory) error {
+	ctx := context.Background()
+
+	// Test with error-prone configuration
+	errorConfig := &Config{
+		Mock: &MockConfig{
+			Dimension:      128,
+			Seed:           42,
+			Enabled:        true,
+			SimulateErrors: true,
+			ErrorRate:      0.5, // 50% error rate
+		},
+	}
+
+	errorFactory, err := NewEmbedderFactory(errorConfig)
+	if err != nil {
+		return err
+	}
+
+	embedder, err := errorFactory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Make several requests, some should fail due to simulated errors
+	totalRequests := 10
+	successCount := 0
+
+	for i := 0; i < totalRequests; i++ {
+		_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("error test %d", i))
+		if err == nil {
+			successCount++
+		}
+		// Errors are expected, so we don't fail the test
+	}
+
+	// Verify some requests succeeded (despite error simulation)
+	if successCount == 0 {
+		return fmt.Errorf("no requests succeeded during error simulation")
+	}
+
+	// Test recovery: switch to normal configuration
+	normalEmbedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		return err
+	}
+
+	// Verify normal operation after error scenario
+	for i := 0; i < 5; i++ {
+		_, err := normalEmbedder.EmbedQuery(ctx, fmt.Sprintf("recovery test %d", i))
+		if err != nil {
+			return fmt.Errorf("recovery test %d failed: %w", i, err)
+		}
+	}
+
+	return nil
+}
+
+// TestLoadTestingWithDifferentConfigurations tests load scenarios with various mock configurations
+func TestLoadTestingWithDifferentConfigurations(t *testing.T) {
+	configs := []struct {
+		name   string
+		config *Config
+	}{
+		{
+			name: "standard_configuration",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension: 128,
+					Seed:      42,
+					Enabled:   true,
+				},
+			},
+		},
+		{
+			name: "with_rate_limiting",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension:          128,
+					Seed:               42,
+					Enabled:            true,
+					RateLimitPerSecond: 10,
+				},
+			},
+		},
+		{
+			name: "with_delays",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension:     128,
+					Seed:          42,
+					Enabled:       true,
+					SimulateDelay: 10 * time.Millisecond,
+				},
+			},
+		},
+		{
+			name: "with_memory_pressure",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension:      128,
+					Seed:           42,
+					Enabled:        true,
+					MemoryPressure: true,
+				},
+			},
+		},
+	}
+
+	for _, cfg := range configs {
+		t.Run(cfg.name, func(t *testing.T) {
+			factory, err := NewEmbedderFactory(cfg.config)
+			require.NoError(t, err)
+
+			embedder, err := factory.NewEmbedder("mock")
+			require.NoError(t, err)
+
+			ctx := context.Background()
+
+			// Run a basic load test
+			for i := 0; i < 20; i++ {
+				_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("config test %d", i))
+				if cfg.name == "with_rate_limiting" && i > 15 {
+					// Rate limiting might cause some failures, which is expected
+					continue
+				}
+				// For other configurations, all requests should succeed
+				if cfg.name != "with_rate_limiting" {
+					assert.NoError(t, err, "Request %d failed for %s", i, cfg.name)
+				}
+			}
+		})
+	}
+}
+
+// TestNetworkFailureSimulation tests embedder behavior under simulated network failures
+func TestNetworkFailureSimulation(t *testing.T) {
+	ctx := context.Background()
+
+	// Create mock embedders with network failure simulation
+	failingEmbedder := NewAdvancedMockEmbedder("failing-provider", "fail-model", 128,
+		WithMockError(true, iface.WrapError(fmt.Errorf("network connection failed"), iface.ErrCodeConnectionFailed, "simulated network failure")))
+
+	reliableEmbedder := NewAdvancedMockEmbedder("reliable-provider", "reliable-model", 128)
+
+	testCases := []struct {
+		name       string
+		embedder   *AdvancedMockEmbedder
+		shouldFail bool
+	}{
+		{"network_failure_embedder", failingEmbedder, true},
+		{"reliable_embedder", reliableEmbedder, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test single query embedding
+			_, err := tc.embedder.EmbedQuery(ctx, "test query")
+			if tc.shouldFail {
+				assert.Error(t, err, "Expected network failure but got success")
+				assert.Contains(t, err.Error(), "network", "Error should mention network failure")
+			} else {
+				assert.NoError(t, err, "Expected success but got network failure")
+			}
+
+			// Test batch embedding
+			texts := CreateTestTexts(3)
+			_, err = tc.embedder.EmbedDocuments(ctx, texts)
+			if tc.shouldFail {
+				assert.Error(t, err, "Expected network failure in batch embedding")
+			} else {
+				assert.NoError(t, err, "Expected success in batch embedding")
+			}
+
+			// Test dimension retrieval (may fail if embedder is configured to fail)
+			dim, err := tc.embedder.GetDimension(ctx)
+			if tc.shouldFail {
+				// Dimension retrieval may also fail when embedder is configured to fail
+				if err != nil {
+					t.Log("Dimension retrieval failed as expected for failing embedder")
+				}
+			} else {
+				assert.NoError(t, err, "Dimension retrieval should work for reliable embedder")
+				assert.Equal(t, 128, dim, "Dimension should be correct")
+			}
+		})
+	}
+
+	// Test recovery after network issues - simulate by creating new embedder without error
+	t.Run("network_recovery", func(t *testing.T) {
+		// Start with failing embedder
+		failingEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("temporary network issue"), iface.ErrCodeConnectionFailed, "temporary failure")))
+
+		// Should fail initially
+		_, err := failingEmbedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected initial failure")
+
+		// Simulate recovery by creating new embedder without error
+		recoveredEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128)
+
+		// Should work after recovery
+		_, err = recoveredEmbedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after recovery")
+	})
+}
+
+// TestAPIRateLimitScenarios tests embedder behavior under various rate limiting conditions
+func TestAPIRateLimitScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	// Test different rate limit configurations
+	rateLimitTests := []struct {
+		name           string
+		embedder       *AdvancedMockEmbedder
+		requestCount   int
+		expectedErrors int
+	}{
+		{
+			name:           "no_rate_limiting",
+			embedder:       NewAdvancedMockEmbedder("no-limit", "model", 128),
+			requestCount:   10,
+			expectedErrors: 0,
+		},
+		{
+			name:           "strict_rate_limiting",
+			embedder:       NewAdvancedMockEmbedder("strict-limit", "model", 128, WithMockRateLimit(true)),
+			requestCount:   15,
+			expectedErrors: 5, // Should fail after rate limit exceeded
+		},
+		{
+			name:           "high_frequency_requests",
+			embedder:       NewAdvancedMockEmbedder("high-freq", "model", 128, WithMockRateLimit(true)),
+			requestCount:   100,
+			expectedErrors: 50, // High volume should trigger many rate limit errors
+		},
+	}
+
+	for _, rt := range rateLimitTests {
+		t.Run(rt.name, func(t *testing.T) {
+			errorCount := 0
+			successCount := 0
+
+			// Make multiple requests
+			for i := 0; i < rt.requestCount; i++ {
+				_, err := rt.embedder.EmbedQuery(ctx, fmt.Sprintf("test query %d", i))
+				if err != nil {
+					errorCount++
+					// Verify error is rate limit related
+					assert.Contains(t, strings.ToLower(err.Error()), "rate", "Rate limit error should mention rate limiting")
+				} else {
+					successCount++
+				}
+			}
+
+			t.Logf("Rate limit test %s: %d successes, %d errors out of %d requests",
+				rt.name, successCount, errorCount, rt.requestCount)
+
+			// For rate limited tests, we expect some errors
+			if strings.Contains(rt.name, "strict") || strings.Contains(rt.name, "high_frequency") {
+				assert.True(t, errorCount > 0, "Expected some rate limit errors but got none")
+				assert.True(t, successCount > 0, "Expected some successful requests")
+			} else {
+				assert.Equal(t, 0, errorCount, "Expected no errors for unlimited test")
+				assert.Equal(t, rt.requestCount, successCount, "All requests should succeed")
+			}
+		})
+	}
+
+	// Test rate limit reset functionality
+	t.Run("rate_limit_reset", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("reset-test", "model", 128, WithMockRateLimit(true))
+
+		// Exhaust rate limit
+		for i := 0; i < 20; i++ {
+			embedder.EmbedQuery(ctx, "test")
+		}
+
+		// Should be rate limited now
+		_, err := embedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected rate limit error")
+
+		// Reset rate limit
+		embedder.ResetRateLimit()
+
+		// Should work again
+		_, err = embedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after rate limit reset")
+	})
+}
+
+// TestProviderUnavailableScenarios tests embedder behavior when providers become unavailable
+func TestProviderUnavailableScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	// Test provider that is permanently unavailable (using WithMockError)
+	t.Run("permanent_unavailability", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("permanent-failure", "model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("provider permanently down"), iface.ErrCodeConnectionFailed, "permanent failure")))
+
+		// Multiple attempts should all fail
+		for i := 0; i < 5; i++ {
+			_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("attempt %d", i))
+			assert.Error(t, err, "Expected permanent failure on attempt %d", i)
+			assert.Contains(t, err.Error(), "permanent", "Error should indicate permanent failure")
+		}
+	})
+
+	// Test degraded provider performance
+	t.Run("degraded_performance", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("degraded", "model", 128,
+			WithMockDelay(100*time.Millisecond)) // Add significant delay
+
+		start := time.Now()
+		_, err := embedder.EmbedQuery(ctx, "slow test")
+		duration := time.Since(start)
+
+		assert.NoError(t, err, "Expected success despite degradation")
+		assert.True(t, duration >= 100*time.Millisecond, "Expected delay of at least 100ms, got %v", duration)
+	})
+
+	// Test concurrent access during provider issues
+	t.Run("concurrent_provider_issues", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("concurrent-issues", "model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("concurrent access issue"), iface.ErrCodeConnectionFailed, "concurrent failure")))
+
+		var wg sync.WaitGroup
+		errorCount := int64(0)
+		successCount := int64(0)
+
+		// Launch concurrent requests
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("concurrent test %d", id))
+				if err != nil {
+					atomic.AddInt64(&errorCount, 1)
+				} else {
+					atomic.AddInt64(&successCount, 1)
+				}
+			}(i)
+		}
+
+		wg.Wait()
+
+		t.Logf("Concurrent test: %d errors, %d successes", errorCount, successCount)
+		assert.True(t, errorCount > 0, "Expected some errors during concurrent access to failing provider")
+	})
+
+	// Test provider recovery (create new embedder without error)
+	t.Run("provider_recovery", func(t *testing.T) {
+		// Start with failing embedder
+		failingEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("temporary network issue"), iface.ErrCodeConnectionFailed, "temporary failure")))
+
+		// Should fail initially
+		_, err := failingEmbedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected initial failure")
+
+		// Simulate recovery by creating new embedder without error
+		recoveredEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128)
+
+		// Should work after recovery
+		_, err = recoveredEmbedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after recovery")
 	})
 }

@@ -2,6 +2,8 @@ package ollama
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
@@ -188,19 +190,69 @@ func (e *OllamaEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 }
 
 // GetDimension returns the dimensionality of embeddings.
-// For Ollama, this might vary by model, so we return 0 as unknown.
+// Attempts to query model information from Ollama to determine dimensions.
 func (e *OllamaEmbedder) GetDimension(ctx context.Context) (int, error) {
-	_, span := e.tracer.Start(ctx, "ollama.get_dimension",
+	ctx, span := e.tracer.Start(ctx, "ollama.get_dimension",
 		trace.WithAttributes(
 			attribute.String("provider", "ollama"),
 			attribute.String("model", e.config.Model),
 		))
 	defer span.End()
 
-	// TODO: This could be improved by querying the model info from Ollama
-	// For now, return 0 indicating unknown dimension
-	span.SetAttributes(attribute.String("dimension_status", "unknown"))
+	// Try to query model information from Ollama
+	showReq := &api.ShowRequest{
+		Name: e.config.Model,
+	}
+
+	showResp, err := e.client.Show(ctx, showReq)
+	if err != nil {
+		// If we can't query model info, log the error but don't fail
+		span.RecordError(err)
+		span.SetAttributes(
+			attribute.String("dimension_status", "query_failed"),
+			attribute.String("error", err.Error()),
+		)
+		return 0, nil
+	}
+
+	// Try to extract dimension information from the modelfile
+	dimension := extractEmbeddingDimension(showResp.Modelfile)
+	if dimension > 0 {
+		span.SetAttributes(
+			attribute.String("dimension_status", "discovered"),
+			attribute.Int("dimension", dimension),
+		)
+		return dimension, nil
+	}
+
+	// If we can't extract dimensions, return 0 (unknown)
+	span.SetAttributes(attribute.String("dimension_status", "not_found_in_modelfile"))
 	return 0, nil
+}
+
+// extractEmbeddingDimension attempts to extract embedding dimension from Ollama modelfile
+func extractEmbeddingDimension(modelfile string) int {
+	// Simple parsing for common patterns in Ollama modelfiles
+	lines := strings.Split(modelfile, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		line = strings.ToLower(line)
+
+		// Look for patterns like "embedding dimensions: 768" or "# dimensions: 384"
+		if strings.Contains(line, "dimension") {
+			// Extract number after dimension keyword
+			parts := strings.Fields(line)
+			for i, part := range parts {
+				if strings.Contains(part, "dimension") && i+1 < len(parts) {
+					if dim, err := strconv.Atoi(parts[i+1]); err == nil && dim > 0 {
+						return dim
+					}
+				}
+			}
+		}
+	}
+
+	return 0 // Could not extract dimension
 }
 
 // Check performs a health check on the Ollama embedder

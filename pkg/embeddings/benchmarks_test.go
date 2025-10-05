@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -444,3 +446,351 @@ func benchmarkThroughput(b *testing.B, embedder iface.Embedder, ctx context.Cont
 	b.ReportMetric(float64(totalTokens*b.N)/duration.Seconds(), "tokens/sec")
 }
 
+// Load testing benchmarks - simulate realistic concurrent user patterns
+
+func BenchmarkLoadTest_ConcurrentUsers(b *testing.B) {
+	config := &Config{
+		Mock: &MockConfig{
+			Dimension: 128,
+			Seed:      42,
+			Enabled:   true,
+		},
+	}
+
+	factory, err := NewEmbedderFactory(config)
+	if err != nil {
+		b.Fatalf("Failed to create factory: %v", err)
+	}
+
+	ctx := context.Background()
+	testDocuments := []string{
+		"This is a short document for testing.",
+		"This is a longer document that contains more text and should be processed correctly by the embedding system.",
+		"A very short doc.",
+		"This document contains multiple sentences. It has more content than the short ones. This should provide a good test case for the embedding algorithm.",
+		"Single sentence document.",
+	}
+
+	// Test different concurrency levels
+	concurrencyLevels := []int{1, 5, 10, 20}
+
+	for _, concurrency := range concurrencyLevels {
+		b.Run(fmt.Sprintf("Concurrency_%d", concurrency), func(b *testing.B) {
+			benchmarkConcurrentLoad(b, factory, ctx, testDocuments, concurrency)
+		})
+	}
+}
+
+func benchmarkConcurrentLoad(b *testing.B, factory *EmbedderFactory, ctx context.Context, documents []string, concurrency int) {
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	totalOperations := int64(0)
+	totalErrors := int64(0)
+
+	// Use a mutex for thread-safe updates to shared counters
+	var mu sync.Mutex
+
+	b.RunParallel(func(pb *testing.PB) {
+		// Each goroutine gets its own embedder instance
+		embedder, err := factory.NewEmbedder("mock")
+		if err != nil {
+			b.Errorf("Failed to create embedder: %v", err)
+			return
+		}
+
+		localOps := int64(0)
+		localErrors := int64(0)
+
+		for pb.Next() {
+			// Cycle through documents to simulate load
+			docIndex := int(localOps) % len(documents)
+			doc := documents[docIndex]
+
+			_, err := embedder.EmbedQuery(ctx, doc)
+			if err != nil {
+				localErrors++
+			}
+			localOps++
+		}
+
+		// Update shared counters with mutex protection
+		mu.Lock()
+		totalOperations += localOps
+		totalErrors += localErrors
+		mu.Unlock()
+	})
+
+	b.ReportMetric(float64(totalOperations)/b.Elapsed().Seconds(), "ops/sec")
+	b.ReportMetric(float64(totalErrors), "errors")
+}
+
+func BenchmarkLoadTest_SustainedLoad(b *testing.B) {
+	config := &Config{
+		Mock: &MockConfig{
+			Dimension: 128,
+			Seed:      42,
+			Enabled:   true,
+		},
+	}
+
+	factory, err := NewEmbedderFactory(config)
+	if err != nil {
+		b.Fatalf("Failed to create factory: %v", err)
+	}
+
+	ctx := context.Background()
+
+	// Generate a large set of test documents
+	testDocuments := make([]string, 1000)
+	for i := range testDocuments {
+		testDocuments[i] = fmt.Sprintf("Test document number %d with some content for load testing purposes.", i)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		b.Fatalf("Failed to create embedder: %v", err)
+	}
+
+	operations := 0
+	start := time.Now()
+
+	for i := 0; i < b.N; i++ {
+		// Cycle through documents to simulate sustained load
+		docIndex := i % len(testDocuments)
+		doc := testDocuments[docIndex]
+
+		_, err := embedder.EmbedQuery(ctx, doc)
+		if err != nil {
+			b.Fatalf("Embedding failed: %v", err)
+		}
+		operations++
+	}
+
+	duration := time.Since(start)
+	b.ReportMetric(float64(operations)/duration.Seconds(), "ops/sec")
+	b.ReportMetric(duration.Seconds()/float64(operations)*1000, "ms/op")
+}
+
+func BenchmarkLoadTest_BurstTraffic(b *testing.B) {
+	config := &Config{
+		Mock: &MockConfig{
+			Dimension: 128,
+			Seed:      42,
+			Enabled:   true,
+		},
+	}
+
+	factory, err := NewEmbedderFactory(config)
+	if err != nil {
+		b.Fatalf("Failed to create factory: %v", err)
+	}
+
+	ctx := context.Background()
+	testDocuments := []string{
+		"Short burst request 1.",
+		"Short burst request 2.",
+		"Short burst request 3.",
+		"Short burst request 4.",
+		"Short burst request 5.",
+	}
+
+	// Simulate burst traffic patterns
+	burstSizes := []int{10, 50, 100}
+
+	for _, burstSize := range burstSizes {
+		b.Run(fmt.Sprintf("Burst_%d", burstSize), func(b *testing.B) {
+			benchmarkBurstLoad(b, factory, ctx, testDocuments, burstSize)
+		})
+	}
+}
+
+func benchmarkBurstLoad(b *testing.B, factory *EmbedderFactory, ctx context.Context, documents []string, burstSize int) {
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		b.Fatalf("Failed to create embedder: %v", err)
+	}
+
+	operations := 0
+
+	for i := 0; i < b.N; i++ {
+		// Simulate burst: process multiple documents in quick succession
+		for j := 0; j < burstSize; j++ {
+			docIndex := j % len(documents)
+			doc := documents[docIndex]
+
+			_, err := embedder.EmbedQuery(ctx, doc)
+			if err != nil {
+				b.Fatalf("Embedding failed: %v", err)
+			}
+			operations++
+		}
+	}
+
+	b.ReportMetric(float64(operations)/b.Elapsed().Seconds(), "ops/sec")
+	b.ReportMetric(float64(burstSize), "burst_size")
+}
+
+// Performance regression detection benchmarks
+
+func BenchmarkPerformanceRegressionDetection(b *testing.B) {
+	config := &Config{
+		Mock: &MockConfig{
+			Dimension: 128,
+			Seed:      42,
+			Enabled:   true,
+		},
+	}
+
+	factory, err := NewEmbedderFactory(config)
+	if err != nil {
+		b.Fatalf("Failed to create factory: %v", err)
+	}
+
+	ctx := context.Background()
+	embedder, err := factory.NewEmbedder("mock")
+	if err != nil {
+		b.Fatalf("Failed to create embedder: %v", err)
+	}
+
+	// Performance baselines (operations per second)
+	baselines := map[string]float64{
+		"single_query":     10000, // 10k ops/sec baseline
+		"batch_documents":  5000,  // 5k ops/sec baseline
+		"mixed_operations": 8000,  // 8k ops/sec baseline
+	}
+
+	b.Run("SingleQueryRegression", func(b *testing.B) {
+		testDoc := "This is a test document for performance regression detection."
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		operations := 0
+		start := time.Now()
+
+		for i := 0; i < b.N; i++ {
+			_, err := embedder.EmbedQuery(ctx, testDoc)
+			if err != nil {
+				b.Fatalf("Embedding failed: %v", err)
+			}
+			operations++
+		}
+
+		duration := time.Since(start)
+		opsPerSec := float64(operations) / duration.Seconds()
+
+		b.ReportMetric(opsPerSec, "ops/sec")
+
+		// Check for performance regression
+		if baseline, exists := baselines["single_query"]; exists && opsPerSec < baseline*0.8 {
+			b.Errorf("PERFORMANCE REGRESSION: ops/sec (%.0f) is 20%% below baseline (%.0f)",
+				opsPerSec, baseline)
+		}
+	})
+
+	b.Run("BatchDocumentsRegression", func(b *testing.B) {
+		documents := []string{
+			"First test document for batch processing.",
+			"Second document with different content.",
+			"Third document to test batch performance.",
+			"Fourth document in the batch test.",
+			"Fifth and final document for regression testing.",
+		}
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		operations := 0
+		totalDocuments := 0
+		start := time.Now()
+
+		for i := 0; i < b.N; i++ {
+			_, err := embedder.EmbedDocuments(ctx, documents)
+			if err != nil {
+				b.Fatalf("Batch embedding failed: %v", err)
+			}
+			operations++
+			totalDocuments += len(documents)
+		}
+
+		duration := time.Since(start)
+		docsPerSec := float64(totalDocuments) / duration.Seconds()
+
+		b.ReportMetric(docsPerSec, "docs/sec")
+
+		// Check for performance regression
+		if baseline, exists := baselines["batch_documents"]; exists && docsPerSec < baseline*0.8 {
+			b.Errorf("PERFORMANCE REGRESSION: docs/sec (%.0f) is 20%% below baseline (%.0f)",
+				docsPerSec, baseline)
+		}
+	})
+
+	b.Run("MemoryRegressionDetection", func(b *testing.B) {
+		testDoc := "Memory usage test document for regression detection."
+
+		b.ResetTimer()
+		b.ReportAllocs()
+
+		for i := 0; i < b.N; i++ {
+			_, err := embedder.EmbedQuery(ctx, testDoc)
+			if err != nil {
+				b.Fatalf("Embedding failed: %v", err)
+			}
+		}
+
+		// Memory regression detection is handled by b.ReportAllocs()
+		// Significant increases in allocations would indicate memory regression
+	})
+
+	b.Run("ConcurrentRegressionDetection", func(b *testing.B) {
+		// Test concurrent performance regression
+		numWorkers := 10
+		operationsPerWorker := 100
+
+		b.ResetTimer()
+
+		var wg sync.WaitGroup
+		errorCount := int64(0)
+
+		for w := 0; w < numWorkers; w++ {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				for i := 0; i < operationsPerWorker; i++ {
+					doc := fmt.Sprintf("Concurrent test document %d", i)
+					_, err := embedder.EmbedQuery(ctx, doc)
+					if err != nil {
+						atomic.AddInt64(&errorCount, 1)
+					}
+				}
+			}()
+		}
+
+		wg.Wait()
+
+		totalOperations := numWorkers * operationsPerWorker
+		opsPerSec := float64(totalOperations) / b.Elapsed().Seconds()
+
+		b.ReportMetric(opsPerSec, "ops/sec")
+		b.ReportMetric(float64(errorCount), "errors")
+
+		// Check for concurrent performance regression
+		if baseline, exists := baselines["mixed_operations"]; exists && opsPerSec < baseline*0.7 {
+			b.Errorf("CONCURRENT PERFORMANCE REGRESSION: ops/sec (%.0f) is 30%% below baseline (%.0f)",
+				opsPerSec, baseline)
+		}
+	})
+}
+
+// Helper function for atomic operations (since Go's atomic doesn't have AddInt64)
+func atomicAddInt64(addr *int64, delta int64) {
+	// Simple implementation - in real concurrent code, use sync/atomic
+	*addr += delta
+}

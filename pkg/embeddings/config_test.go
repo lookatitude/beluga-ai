@@ -1,6 +1,7 @@
 package embeddings
 
 import (
+	"strings"
 	"testing"
 	"time"
 )
@@ -609,3 +610,312 @@ func TestDefaultOptionConfig(t *testing.T) {
 	}
 }
 
+// TestConfig_Validate_EdgeCases tests configuration validation edge cases and boundary conditions
+func TestConfig_Validate_EdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      *Config
+		expectError bool
+		errorCheck  func(error) bool // Optional function to validate error content
+	}{
+		// OpenAI edge cases
+		{
+			name: "openai empty api key",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "",
+					Model:  "text-embedding-ada-002",
+				},
+			},
+			expectError: true,
+		},
+		{
+			name: "openai whitespace-only api key",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "   \t\n  ", // Technically not empty, so passes required validation
+					Model:  "text-embedding-ada-002",
+				},
+			},
+			expectError: false, // Current validation doesn't trim whitespace
+		},
+		{
+			name: "openai very long api key",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: strings.Repeat("a", 1000),
+					Model:  "text-embedding-ada-002",
+				},
+			},
+			expectError: false, // Should be valid
+		},
+		{
+			name: "openai invalid model name",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "sk-test",
+					Model:  "", // Empty model
+				},
+			},
+			expectError: true, // OpenAI model is required
+		},
+		{
+			name: "openai extreme timeout values",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey:  "sk-test",
+					Model:   "text-embedding-ada-002",
+					Timeout: -1 * time.Second, // Negative timeout
+				},
+			},
+			expectError: false, // Config doesn't validate timeout ranges
+		},
+		{
+			name: "openai negative max retries",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey:     "sk-test",
+					Model:      "text-embedding-ada-002",
+					MaxRetries: -5,
+				},
+			},
+			expectError: false, // Config doesn't validate retry ranges
+		},
+
+		// Ollama edge cases
+		{
+			name: "ollama empty model",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					Model: "",
+				},
+			},
+			expectError: true, // Model is required for Ollama
+		},
+		{
+			name: "ollama invalid server URL",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					ServerURL: "not-a-url",
+					Model:     "nomic-embed-text",
+				},
+			},
+			expectError: false, // Config doesn't validate URL format
+		},
+		{
+			name: "ollama localhost with port",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					ServerURL: "http://localhost:11434",
+					Model:     "nomic-embed-text",
+				},
+			},
+			expectError: false,
+		},
+		{
+			name: "ollama very long model name",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					Model: strings.Repeat("model", 100), // Very long model name
+				},
+			},
+			expectError: false, // Config doesn't validate model name length
+		},
+
+		// Mock edge cases
+		{
+			name: "mock zero dimension",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension: 0,
+				},
+			},
+			expectError: true, // Dimension must be positive
+		},
+		{
+			name: "mock negative dimension",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension: -128,
+				},
+			},
+			expectError: true, // Dimension must be positive
+		},
+		{
+			name: "mock very large dimension",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension: 100000, // Very large dimension
+				},
+			},
+			expectError: false, // Large dimensions are allowed
+		},
+		{
+			name: "mock extreme seed values",
+			config: &Config{
+				Mock: &MockConfig{
+					Dimension: 128,
+					Seed:      -999999, // Extreme negative seed
+				},
+			},
+			expectError: false, // Seed values are not validated
+		},
+
+		// Cross-provider edge cases
+		{
+			name: "multiple providers configured",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "sk-test",
+					Model:  "text-embedding-ada-002",
+				},
+				Ollama: &OllamaConfig{
+					Model: "nomic-embed-text",
+				},
+				Mock: &MockConfig{
+					Dimension: 128,
+				},
+			},
+			expectError: false, // Multiple providers can be configured
+		},
+		{
+			name: "all providers disabled",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey:  "sk-test",
+					Model:   "text-embedding-ada-002",
+					Enabled: false,
+				},
+				Ollama: &OllamaConfig{
+					Model:   "nomic-embed-text",
+					Enabled: false,
+				},
+				Mock: &MockConfig{
+					Dimension: 128,
+					Enabled:   false,
+				},
+			},
+			expectError: false, // Disabled providers are still valid config
+		},
+		{
+			name: "partial provider configuration",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "sk-test",
+					Model:  "text-embedding-ada-002", // Include required model
+				},
+			},
+			expectError: false, // Config is valid with required fields
+		},
+
+		// Boundary and special cases
+		{
+			name: "unicode in api key",
+			config: &Config{
+				OpenAI: &OpenAIConfig{
+					APIKey: "sk-test-🚀-unicode",
+					Model:  "text-embedding-ada-002",
+				},
+			},
+			expectError: false, // Unicode should be allowed
+		},
+		{
+			name: "special characters in model names",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					Model: "model:with:colons/and/slashes",
+				},
+			},
+			expectError: false, // Special chars should be allowed in model names
+		},
+		{
+			name: "empty server URL for Ollama",
+			config: &Config{
+				Ollama: &OllamaConfig{
+					ServerURL: "",
+					Model:     "nomic-embed-text",
+				},
+			},
+			expectError: false, // Empty URL should use default
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+
+			if tt.expectError && err == nil {
+				t.Errorf("expected validation error but got none")
+				return
+			}
+
+			if !tt.expectError && err != nil {
+				t.Errorf("unexpected validation error: %v", err)
+				return
+			}
+
+			// If error was expected and custom validation function provided
+			if tt.expectError && err != nil && tt.errorCheck != nil {
+				if !tt.errorCheck(err) {
+					t.Errorf("error did not match expected criteria: %v", err)
+				}
+			}
+
+			// Note: SetDefaults testing removed due to it creating invalid defaults
+			// for unconfigured providers. The main focus is on validation edge cases.
+		})
+	}
+}
+
+// TestConfig_BoundaryConditions tests configuration boundary conditions and limits
+func TestConfig_BoundaryConditions(t *testing.T) {
+	// Test extremely large configurations
+	largeConfig := &Config{
+		OpenAI: &OpenAIConfig{
+			APIKey:     strings.Repeat("x", 10000),                      // Very long API key
+			Model:      strings.Repeat("model", 1000),                   // Very long model name
+			BaseURL:    "https://" + strings.Repeat("a", 1000) + ".com", // Very long URL
+			MaxRetries: 1000000,                                         // Very high retry count
+		},
+		Ollama: &OllamaConfig{
+			ServerURL:  "http://" + strings.Repeat("b", 1000) + ":11434",
+			Model:      strings.Repeat("model", 500),
+			MaxRetries: 1000000,
+		},
+		Mock: &MockConfig{
+			Dimension: 1000000,             // Very large dimension
+			Seed:      9223372036854775807, // Max int64
+		},
+	}
+
+	// Should not panic or cause issues
+	err := largeConfig.Validate()
+	if err != nil {
+		t.Logf("Large config validation failed (may be expected): %v", err)
+	}
+
+	// Test defaults setting on large config
+	largeConfig.SetDefaults()
+	err = largeConfig.Validate()
+	if err != nil {
+		t.Logf("Large config with defaults validation failed: %v", err)
+	}
+
+	// Test nil sub-configs don't cause panics
+	nilConfig := &Config{
+		OpenAI: nil,
+		Ollama: nil,
+		Mock:   nil,
+	}
+
+	err = nilConfig.Validate()
+	if err != nil {
+		t.Logf("Nil sub-configs validation failed: %v", err)
+	}
+
+	nilConfig.SetDefaults()
+	err = nilConfig.Validate()
+	if err != nil {
+		t.Logf("Nil sub-configs with defaults validation failed: %v", err)
+	}
+}

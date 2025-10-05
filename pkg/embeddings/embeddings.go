@@ -52,7 +52,10 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 
 	// Initialize metrics (assuming global meter is available)
 	meter := otel.Meter("github.com/lookatitude/beluga-ai/pkg/embeddings")
-	metrics := NewMetrics(meter)
+	metrics, err := NewMetrics(meter)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize metrics for embeddings package: %w", err)
+	}
 
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
 
