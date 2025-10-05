@@ -29,21 +29,14 @@ type HealthChecker interface {
 
 // OpenAIEmbedder implements the iface.Embedder interface using the OpenAI API.
 type OpenAIEmbedder struct {
-	client *openai.Client
+	client Client
 	config *Config
 	tracer trace.Tracer
 }
 
 // NewOpenAIEmbedder creates a new OpenAIEmbedder with the given configuration.
+// It creates an OpenAI client from the configuration.
 func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, error) {
-	if config == nil {
-		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
-	}
-
-	if config.APIKey == "" {
-		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "openai API key is required")
-	}
-
 	clientConfig := openai.DefaultConfig(config.APIKey)
 	if config.BaseURL != "" {
 		clientConfig.BaseURL = config.BaseURL
@@ -54,6 +47,23 @@ func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, er
 	}
 
 	client := openai.NewClientWithConfig(clientConfig)
+	return NewOpenAIEmbedderWithClient(config, tracer, client)
+}
+
+// NewOpenAIEmbedderWithClient creates a new OpenAIEmbedder with a provided client.
+// This is primarily used for testing with mocked clients.
+func NewOpenAIEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*OpenAIEmbedder, error) {
+	if config == nil {
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
+	}
+
+	if config.APIKey == "" {
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "openai API key is required")
+	}
+
+	if client == nil {
+		return nil, iface.NewEmbeddingError(iface.ErrCodeConnectionFailed, "client cannot be nil")
+	}
 
 	return &OpenAIEmbedder{
 		client: client,

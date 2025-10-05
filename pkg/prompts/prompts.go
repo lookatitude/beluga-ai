@@ -8,9 +8,11 @@ package prompts
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/prompts/iface"
 	"github.com/lookatitude/beluga-ai/pkg/prompts/internal"
+	"go.opentelemetry.io/otel"
 )
 
 // PromptManager is the main entry point for the prompts package.
@@ -39,8 +41,14 @@ func NewPromptManager(opts ...Option) (*PromptManager, error) {
 	if options.Config.EnableMetrics {
 		if options.Metrics == nil {
 			// Create default metrics if not provided
-			// For now, pass nil as meter - in production this would be a real meter
-			metrics = NewMetrics(nil)
+			meter := otel.Meter("beluga.prompts")
+			tracer := otel.Tracer("beluga.prompts")
+			otelMetrics, err := NewMetrics(meter, tracer)
+			if err != nil {
+				return nil, fmt.Errorf("failed to create metrics: %w", err)
+			}
+			// Wrap OTEL metrics to implement iface.Metrics interface
+			metrics = &MetricsWrapper{otelMetrics: otelMetrics}
 		} else {
 			metrics = options.Metrics
 		}

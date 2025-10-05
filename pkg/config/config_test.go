@@ -1,6 +1,8 @@
 package config
 
 import (
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -313,5 +315,478 @@ func TestGetFieldName(t *testing.T) {
 				t.Errorf("GetFieldName() = %q, want %q", result, tt.expected)
 			}
 		})
+	}
+}
+
+func TestLoadConfig(t *testing.T) {
+	// Create a temporary config file
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.yaml")
+	configContent := `
+llm_providers:
+  - name: "test-openai"
+    provider: "openai"
+    api_key: "sk-test"
+    model_name: "gpt-4"
+`
+	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test config file: %v", err)
+	}
+
+	// Change to temp directory to test default config loading
+	oldWd, _ := os.Getwd()
+	os.Chdir(tempDir)
+	defer os.Chdir(oldWd)
+
+	cfg, err := LoadConfig()
+	if err != nil {
+		t.Fatalf("LoadConfig() error = %v", err)
+	}
+
+	if cfg == nil {
+		t.Fatal("LoadConfig() returned nil config")
+	}
+
+	if len(cfg.LLMProviders) != 1 {
+		t.Errorf("expected 1 LLM provider, got %d", len(cfg.LLMProviders))
+	}
+
+	if cfg.LLMProviders[0].Name != "test-openai" {
+		t.Errorf("expected LLM provider name 'test-openai', got %s", cfg.LLMProviders[0].Name)
+	}
+}
+
+func TestLoadFromEnv(t *testing.T) {
+	// Set up test environment variables
+	testEnvVars := map[string]string{
+		"TEST_LLM_PROVIDERS_0_NAME":       "env-openai",
+		"TEST_LLM_PROVIDERS_0_PROVIDER":   "openai",
+		"TEST_LLM_PROVIDERS_0_API_KEY":    "sk-env-test",
+		"TEST_LLM_PROVIDERS_0_MODEL_NAME": "gpt-4",
+	}
+
+	// Set environment variables
+	for key, value := range testEnvVars {
+		os.Setenv(key, value)
+		defer os.Unsetenv(key)
+	}
+
+	cfg, err := LoadFromEnv("TEST")
+	if err != nil {
+		t.Fatalf("LoadFromEnv() error = %v", err)
+	}
+
+	if cfg == nil {
+		t.Fatal("LoadFromEnv() returned nil config")
+	}
+
+	if len(cfg.LLMProviders) != 1 {
+		t.Errorf("expected 1 LLM provider from env vars, got %d", len(cfg.LLMProviders))
+	}
+
+	if cfg.LLMProviders[0].Name != "env-openai" {
+		t.Errorf("expected LLM provider name 'env-openai', got %s", cfg.LLMProviders[0].Name)
+	}
+
+	if cfg.LLMProviders[0].APIKey != "sk-env-test" {
+		t.Errorf("expected API key 'sk-env-test', got %s", cfg.LLMProviders[0].APIKey)
+	}
+}
+
+func TestLoadFromFile(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name        string
+		fileName    string
+		content     string
+		expectError bool
+	}{
+		{
+			name:     "load from YAML file",
+			fileName: "test.yaml",
+			content: `
+llm_providers:
+  - name: "yaml-openai"
+    provider: "openai"
+    api_key: "sk-yaml-test"
+    model_name: "gpt-4"
+`,
+			expectError: false,
+		},
+		{
+			name:     "load from JSON file",
+			fileName: "test.json",
+			content: `{
+  "llm_providers": [
+    {
+      "name": "json-openai",
+      "provider": "openai",
+      "api_key": "sk-json-test",
+      "model_name": "gpt-4"
+    }
+  ]
+}`,
+			expectError: false,
+		},
+		{
+			name:        "load from non-existent file",
+			fileName:    "nonexistent.yaml",
+			content:     "",
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filePath := filepath.Join(tempDir, tt.fileName)
+
+			if tt.content != "" {
+				err := os.WriteFile(filePath, []byte(tt.content), 0644)
+				if err != nil {
+					t.Fatalf("failed to create test file: %v", err)
+				}
+			}
+
+			cfg, err := LoadFromFile(filePath)
+			if tt.expectError && err == nil {
+				t.Error("expected error but got none")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("expected no error but got: %v", err)
+			}
+			if !tt.expectError && cfg == nil {
+				t.Error("expected config but got nil")
+			}
+
+			// Verify config content for successful cases
+			if !tt.expectError && cfg != nil && len(cfg.LLMProviders) > 0 {
+				expectedName := "yaml-openai"
+				if tt.fileName == "test.json" {
+					expectedName = "json-openai"
+				}
+				if cfg.LLMProviders[0].Name != expectedName {
+					t.Errorf("expected LLM provider name %s, got %s", expectedName, cfg.LLMProviders[0].Name)
+				}
+			}
+		})
+	}
+}
+
+func TestMustLoadConfig(t *testing.T) {
+	// Create a temporary config file
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.yaml")
+	configContent := `
+llm_providers:
+  - name: "must-load-openai"
+    provider: "openai"
+    api_key: "sk-must-test"
+    model_name: "gpt-4"
+`
+	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test config file: %v", err)
+	}
+
+	// Change to temp directory
+	oldWd, _ := os.Getwd()
+	os.Chdir(tempDir)
+	defer os.Chdir(oldWd)
+
+	cfg := MustLoadConfig()
+	if cfg == nil {
+		t.Fatal("MustLoadConfig() returned nil config")
+	}
+
+	if len(cfg.LLMProviders) != 1 {
+		t.Errorf("expected 1 LLM provider, got %d", len(cfg.LLMProviders))
+	}
+}
+
+func TestDefaultLoaderOptions(t *testing.T) {
+	options := DefaultLoaderOptions()
+
+	if options.ConfigName != "config" {
+		t.Errorf("expected ConfigName 'config', got %s", options.ConfigName)
+	}
+
+	if len(options.ConfigPaths) != 2 {
+		t.Errorf("expected 2 config paths, got %d", len(options.ConfigPaths))
+	}
+
+	if options.ConfigPaths[0] != "./config" {
+		t.Errorf("expected first config path './config', got %s", options.ConfigPaths[0])
+	}
+
+	if options.ConfigPaths[1] != "." {
+		t.Errorf("expected second config path '.', got %s", options.ConfigPaths[1])
+	}
+
+	if options.EnvPrefix != "BELUGA" {
+		t.Errorf("expected EnvPrefix 'BELUGA', got %s", options.EnvPrefix)
+	}
+
+	if !options.Validate {
+		t.Error("expected Validate to be true")
+	}
+
+	if !options.SetDefaults {
+		t.Error("expected SetDefaults to be true")
+	}
+}
+
+func TestNewLoader(t *testing.T) {
+	options := DefaultLoaderOptions()
+	loader, err := NewLoader(options)
+
+	if err != nil {
+		t.Fatalf("NewLoader() error = %v", err)
+	}
+
+	if loader == nil {
+		t.Fatal("NewLoader() returned nil")
+	}
+}
+
+func TestNewProvider_FactoryFunctions(t *testing.T) {
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name        string
+		factoryFunc func(string, []string, string) (iface.Provider, error)
+		expectError bool
+	}{
+		{"NewYAMLProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
+			return NewYAMLProvider(name, paths, prefix)
+		}, false},
+		{"NewJSONProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
+			return NewJSONProvider(name, paths, prefix)
+		}, false},
+		{"NewTOMLProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
+			return NewTOMLProvider(name, paths, prefix)
+		}, false},
+		{"NewAutoDetectProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
+			return NewAutoDetectProvider(name, paths, prefix)
+		}, false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			provider, err := tt.factoryFunc("test", []string{tempDir}, "TEST")
+			if tt.expectError && err == nil {
+				t.Error("expected error but got none")
+			}
+			if !tt.expectError && err != nil {
+				t.Errorf("expected no error but got: %v", err)
+			}
+			if !tt.expectError && provider == nil {
+				t.Error("expected provider but got nil")
+			}
+		})
+	}
+}
+
+func TestNewCompositeProvider(t *testing.T) {
+	tempDir := t.TempDir()
+	provider1, _ := NewYAMLProvider("test1", []string{tempDir}, "TEST1")
+	provider2, _ := NewJSONProvider("test2", []string{tempDir}, "TEST2")
+
+	composite := NewCompositeProvider(provider1, provider2)
+	if composite == nil {
+		t.Fatal("NewCompositeProvider() returned nil")
+	}
+}
+
+func TestValidateConfig_Integration(t *testing.T) {
+	// Test ValidateConfig function from main package
+	validConfig := &iface.Config{
+		LLMProviders: []schema.LLMProviderConfig{
+			{
+				Name:      "test-llm",
+				Provider:  "openai",
+				ModelName: "gpt-4",
+				APIKey:    "sk-test",
+			},
+		},
+	}
+
+	err := ValidateConfig(validConfig)
+	if err != nil {
+		t.Errorf("ValidateConfig() expected no error for valid config, got: %v", err)
+	}
+
+	invalidConfig := &iface.Config{
+		LLMProviders: []schema.LLMProviderConfig{
+			{
+				Name:     "", // Missing required name
+				Provider: "openai",
+				APIKey:   "sk-test",
+			},
+		},
+	}
+
+	err = ValidateConfig(invalidConfig)
+	if err == nil {
+		t.Error("ValidateConfig() expected error for invalid config, got none")
+	}
+}
+
+func TestSetDefaults_Integration(t *testing.T) {
+	// Test SetDefaults function from main package
+	config := &iface.Config{
+		LLMProviders: []schema.LLMProviderConfig{
+			{
+				Name:      "test-llm",
+				Provider:  "openai",
+				ModelName: "gpt-4",
+				APIKey:    "sk-test",
+			},
+		},
+	}
+
+	SetDefaults(config)
+
+	if config.LLMProviders[0].DefaultCallOptions == nil {
+		t.Error("expected DefaultCallOptions to be initialized")
+	}
+
+	// Check temperature default
+	if temp, ok := config.LLMProviders[0].DefaultCallOptions["temperature"]; !ok || temp != 0.7 {
+		t.Errorf("expected temperature 0.7, got %v", temp)
+	}
+
+	// Check max_tokens default
+	if maxTokens, ok := config.LLMProviders[0].DefaultCallOptions["max_tokens"]; !ok || maxTokens != 1000.0 {
+		t.Errorf("expected max_tokens 1000, got %v", maxTokens)
+	}
+}
+
+func TestGetEnvConfigMap(t *testing.T) {
+	// Set up test environment variables
+	testEnvVars := map[string]string{
+		"APP_VAR1":  "value1",
+		"APP_VAR2":  "value2",
+		"OTHER_VAR": "other_value",
+	}
+
+	// Set environment variables
+	for key, value := range testEnvVars {
+		os.Setenv(key, value)
+		defer os.Unsetenv(key)
+	}
+
+	envMap := GetEnvConfigMap("APP")
+
+	if len(envMap) != 2 {
+		t.Errorf("expected 2 env vars with APP prefix, got %d", len(envMap))
+	}
+
+	if envMap["var1"] != "value1" {
+		t.Errorf("expected var1=value1, got %s", envMap["var1"])
+	}
+
+	if envMap["var2"] != "value2" {
+		t.Errorf("expected var2=value2, got %s", envMap["var2"])
+	}
+}
+
+func TestEnvVarName(t *testing.T) {
+	tests := []struct {
+		name     string
+		prefix   string
+		key      string
+		expected string
+	}{
+		{
+			name:     "simple conversion",
+			prefix:   "APP",
+			key:      "database.host",
+			expected: "APP_DATABASE_HOST",
+		},
+		{
+			name:     "empty prefix",
+			prefix:   "",
+			key:      "simple.key",
+			expected: "_SIMPLE_KEY",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := EnvVarName(tt.prefix, tt.key)
+			if result != tt.expected {
+				t.Errorf("EnvVarName(%s, %s) = %s, want %s", tt.prefix, tt.key, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestConfigKey(t *testing.T) {
+	tests := []struct {
+		name     string
+		prefix   string
+		envVar   string
+		expected string
+	}{
+		{
+			name:     "simple conversion",
+			prefix:   "APP",
+			envVar:   "APP_DATABASE_HOST",
+			expected: "database.host",
+		},
+		{
+			name:     "empty prefix",
+			prefix:   "",
+			envVar:   "_SIMPLE_KEY",
+			expected: "simple.key",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ConfigKey(tt.prefix, tt.envVar)
+			if result != tt.expected {
+				t.Errorf("ConfigKey(%s, %s) = %s, want %s", tt.prefix, tt.envVar, result, tt.expected)
+			}
+		})
+	}
+}
+
+func TestOption_Functions(t *testing.T) {
+	// Test the option functions (they're no-ops for now but test they don't panic)
+	config := &iface.Config{}
+
+	WithConfigName("test-config")(config)
+	WithConfigPaths("./config", "/etc/app")(config)
+	WithEnvPrefix("MYAPP")(config)
+
+	// Since they're no-ops, we just verify they don't panic
+}
+
+func TestLoadConfig_WithInvalidConfig(t *testing.T) {
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "invalid.yaml")
+	configContent := `
+llm_providers:
+  - name: ""  # Invalid: empty name
+    provider: "openai"
+    api_key: "sk-test"
+    model_name: "gpt-4"
+`
+	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test config file: %v", err)
+	}
+
+	oldWd, _ := os.Getwd()
+	os.Chdir(tempDir)
+	defer os.Chdir(oldWd)
+
+	// This should fail during validation
+	_, err = LoadConfig()
+	if err == nil {
+		t.Error("expected error for invalid config, got none")
 	}
 }

@@ -2,8 +2,12 @@ package core
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"reflect"
+	"sync"
 	"testing"
+	"time"
 
 	"go.opentelemetry.io/otel/trace"
 )
@@ -286,4 +290,516 @@ func (t *testLogger) Error(msg string, args ...interface{}) {
 
 func (t *testLogger) With(args ...interface{}) Logger {
 	return t
+}
+
+// Concurrency tests for DI container
+
+func TestContainer_ConcurrentRegistration(t *testing.T) {
+	container := NewContainer()
+	numGoroutines := 10
+	numRegistrations := 100
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < numRegistrations; j++ {
+				key := id*numRegistrations + j
+				container.Register(func() int { return key })
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Verify that all registrations were successful
+	if impl, ok := container.(*containerImpl); ok {
+		if len(impl.factories) != numGoroutines*numRegistrations {
+			t.Errorf("Expected %d registrations, got %d", numGoroutines*numRegistrations, len(impl.factories))
+		}
+	}
+}
+
+func TestContainer_ConcurrentResolution(t *testing.T) {
+	container := NewContainer()
+
+	// Register a single service that returns a constant value
+	container.Register(func() int { return 42 })
+
+	numGoroutines := 10
+	numResolutions := 100
+	results := make([][]int, numGoroutines)
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(goroutineID int) {
+			defer wg.Done()
+			results[goroutineID] = make([]int, numResolutions)
+			for j := 0; j < numResolutions; j++ {
+				var result int
+				err := container.Resolve(&result)
+				if err != nil {
+					t.Errorf("Concurrent resolution failed: %v", err)
+					return
+				}
+				results[goroutineID][j] = result
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// All results should be the same (singleton behavior)
+	for i := 0; i < numGoroutines; i++ {
+		for j := 0; j < numResolutions; j++ {
+			if results[i][j] != 42 {
+				t.Errorf("Expected all resolutions to return 42, got %d", results[i][j])
+			}
+		}
+	}
+}
+
+func TestContainer_ConcurrentMixedOperations(t *testing.T) {
+	container := NewContainer()
+	numGoroutines := 20
+	operationsPerGoroutine := 50
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(goroutineID int) {
+			defer wg.Done()
+			for j := 0; j < operationsPerGoroutine; j++ {
+				switch j % 4 {
+				case 0: // Register
+					container.Register(func() string { return "service" })
+				case 1: // Resolve
+					var result string
+					container.Resolve(&result)
+				case 2: // Has
+					container.Has(reflect.TypeOf(""))
+				case 3: // Singleton
+					container.Singleton("singleton_value")
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Container should still be in a valid state
+	err := container.CheckHealth(context.Background())
+	if err != nil {
+		t.Errorf("Container health check failed after concurrent operations: %v", err)
+	}
+}
+
+func TestContainer_ConcurrentHealthChecks(t *testing.T) {
+	container := NewContainer()
+	numGoroutines := 5
+	healthChecksPerGoroutine := 20
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+	var errors []error
+
+	for i := 0; i < numGoroutines; i++ {
+		go func() {
+			defer wg.Done()
+			for j := 0; j < healthChecksPerGoroutine; j++ {
+				err := container.CheckHealth(context.Background())
+				if err != nil {
+					errors = append(errors, err)
+				}
+				time.Sleep(time.Millisecond) // Small delay to increase chance of race conditions
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if len(errors) > 0 {
+		t.Errorf("Concurrent health checks failed: %v", errors)
+	}
+}
+
+func TestContainer_ConcurrentBuilderOperations(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	numGoroutines := 10
+	operationsPerGoroutine := 25
+
+	var wg sync.WaitGroup
+	wg.Add(numGoroutines)
+
+	for i := 0; i < numGoroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < operationsPerGoroutine; j++ {
+				switch j % 3 {
+				case 0: // Register
+					builder.Register(func() int { return id*operationsPerGoroutine + j })
+				case 1: // Singleton
+					builder.Singleton(fmt.Sprintf("singleton_%d_%d", id, j))
+				case 2: // Build
+					var result int
+					builder.Build(&result)
+				}
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	// Builder should still be functional
+	var result int
+	err := builder.Build(&result)
+	if err != nil {
+		t.Errorf("Builder failed after concurrent operations: %v", err)
+	}
+}
+
+// Builder integration tests
+
+func TestBuilder_FluentInterface(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Test fluent interface chaining
+	result := builder.
+		WithLogger(&testLogger{}).
+		WithTracerProvider(trace.NewNoopTracerProvider())
+
+	if result != builder {
+		t.Error("Fluent interface methods should return the builder instance")
+	}
+}
+
+func TestBuilder_RegisterMultipleServices(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register multiple services
+	err := builder.Register(func() string { return "service1" })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	err = builder.Register(func() int { return 42 })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	err = builder.Register(func() bool { return true })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	// Verify all services can be resolved
+	var s string
+	err = builder.Build(&s)
+	if err != nil {
+		t.Errorf("Build(string) error = %v", err)
+	}
+	if s != "service1" {
+		t.Errorf("Expected 'service1', got %q", s)
+	}
+
+	var i int
+	err = builder.Build(&i)
+	if err != nil {
+		t.Errorf("Build(int) error = %v", err)
+	}
+	if i != 42 {
+		t.Errorf("Expected 42, got %d", i)
+	}
+
+	var b bool
+	err = builder.Build(&b)
+	if err != nil {
+		t.Errorf("Build(bool) error = %v", err)
+	}
+	if !b {
+		t.Error("Expected true, got false")
+	}
+}
+
+func TestBuilder_ServiceDependencies(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register service with dependency
+	err := builder.Register(func() string { return "dependency" })
+	if err != nil {
+		t.Errorf("Register(dependency) error = %v", err)
+	}
+
+	err = builder.Register(func(s string) ServiceWithDep { return &serviceWithDepImpl{dep: s} })
+	if err != nil {
+		t.Errorf("Register(service) error = %v", err)
+	}
+
+	// Resolve service with dependency
+	var service ServiceWithDep
+	err = builder.Build(&service)
+	if err != nil {
+		t.Errorf("Build(service) error = %v", err)
+	}
+
+	if service.GetDep() != "dependency" {
+		t.Errorf("Expected dependency 'dependency', got %q", service.GetDep())
+	}
+}
+
+func TestBuilder_SingletonServices(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register singleton
+	builder.Singleton("singleton_value")
+
+	// Resolve multiple times
+	var s1 string
+	err := builder.Build(&s1)
+	if err != nil {
+		t.Errorf("Build(s1) error = %v", err)
+	}
+
+	var s2 string
+	err = builder.Build(&s2)
+	if err != nil {
+		t.Errorf("Build(s2) error = %v", err)
+	}
+
+	// Both should be the same instance
+	if s1 != s2 {
+		t.Errorf("Singleton services should return same instance: %q != %q", s1, s2)
+	}
+}
+
+func TestBuilder_RegisterMonitoringComponents(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register monitoring components
+	err := builder.RegisterLogger(func() Logger { return &testLogger{} })
+	if err != nil {
+		t.Errorf("RegisterLogger() error = %v", err)
+	}
+
+	err = builder.RegisterTracerProvider(func() TracerProvider { return trace.NewNoopTracerProvider() })
+	if err != nil {
+		t.Errorf("RegisterTracerProvider() error = %v", err)
+	}
+
+	err = builder.RegisterMetrics(func() (*Metrics, error) { return NoOpMetrics(), nil })
+	if err != nil {
+		t.Errorf("RegisterMetrics() error = %v", err)
+	}
+
+	// Resolve monitoring components
+	var logger Logger
+	err = builder.Build(&logger)
+	if err != nil {
+		t.Errorf("Build(logger) error = %v", err)
+	}
+	if logger == nil {
+		t.Error("Logger should not be nil")
+	}
+
+	var tracerProvider TracerProvider
+	err = builder.Build(&tracerProvider)
+	if err != nil {
+		t.Errorf("Build(tracerProvider) error = %v", err)
+	}
+	if tracerProvider == nil {
+		t.Error("TracerProvider should not be nil")
+	}
+
+	var metrics *Metrics
+	err = builder.Build(&metrics)
+	if err != nil {
+		t.Errorf("Build(metrics) error = %v", err)
+	}
+	if metrics == nil {
+		t.Error("Metrics should not be nil")
+	}
+}
+
+func TestBuilder_NoOpMonitoringComponents(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register no-op monitoring components
+	err := builder.RegisterNoOpLogger()
+	if err != nil {
+		t.Errorf("RegisterNoOpLogger() error = %v", err)
+	}
+
+	err = builder.RegisterNoOpTracerProvider()
+	if err != nil {
+		t.Errorf("RegisterNoOpTracerProvider() error = %v", err)
+	}
+
+	err = builder.RegisterNoOpMetrics()
+	if err != nil {
+		t.Errorf("RegisterNoOpMetrics() error = %v", err)
+	}
+
+	// Verify no-op components work
+	var logger Logger
+	err = builder.Build(&logger)
+	if err != nil {
+		t.Errorf("Build(logger) error = %v", err)
+	}
+
+	var tracerProvider TracerProvider
+	err = builder.Build(&tracerProvider)
+	if err != nil {
+		t.Errorf("Build(tracerProvider) error = %v", err)
+	}
+
+	var metrics *Metrics
+	err = builder.Build(&metrics)
+	if err != nil {
+		t.Errorf("Build(metrics) error = %v", err)
+	}
+
+	// Test that no-op components don't panic
+	logger.Debug("test")
+	logger.Info("test")
+	logger.Warn("test")
+	logger.Error("test")
+}
+
+func TestBuilder_ErrorHandling(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Test registering invalid factory
+	err := builder.Register("not a function")
+	if err == nil {
+		t.Error("Expected error when registering non-function")
+	}
+
+	// Test registering function with error
+	err = builder.Register(func() (string, error) { return "", errors.New("factory error") })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	// Test resolving service that fails
+	var result string
+	err = builder.Build(&result)
+	if err == nil {
+		t.Error("Expected error when resolving failing service")
+	}
+}
+
+func TestBuilder_MixedRegistrationTypes(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Register mix of factories and singletons
+	err := builder.Register(func() string { return "factory" })
+	if err != nil {
+		t.Errorf("Register() error = %v", err)
+	}
+
+	builder.Singleton(42)
+
+	// Both should be resolvable
+	var s string
+	err = builder.Build(&s)
+	if err != nil {
+		t.Errorf("Build(string) error = %v", err)
+	}
+	if s != "factory" {
+		t.Errorf("Expected 'factory', got %q", s)
+	}
+
+	var i int
+	err = builder.Build(&i)
+	if err != nil {
+		t.Errorf("Build(int) error = %v", err)
+	}
+	if i != 42 {
+		t.Errorf("Expected 42, got %d", i)
+	}
+}
+
+func TestBuilder_ComplexDependencyChain(t *testing.T) {
+	container := NewContainer()
+	builder := NewBuilder(container)
+
+	// Create a complex dependency chain: A -> B -> C
+	err := builder.Register(func() string { return "C" })
+	if err != nil {
+		t.Errorf("Register(C) error = %v", err)
+	}
+
+	err = builder.Register(func(c string) ServiceB { return &serviceBImpl{dep: c} })
+	if err != nil {
+		t.Errorf("Register(B) error = %v", err)
+	}
+
+	err = builder.Register(func(b ServiceB) ServiceA { return &serviceAImpl{dep: b} })
+	if err != nil {
+		t.Errorf("Register(A) error = %v", err)
+	}
+
+	// Resolve the top-level service
+	var service ServiceA
+	err = builder.Build(&service)
+	if err != nil {
+		t.Errorf("Build(A) error = %v", err)
+	}
+
+	// Verify dependency chain
+	if service.GetB().GetDep() != "C" {
+		t.Errorf("Expected dependency chain A->B->C, got A->B->%q", service.GetB().GetDep())
+	}
+}
+
+// Test interfaces and implementations for dependency testing
+type ServiceWithDep interface {
+	GetDep() string
+}
+
+type serviceWithDepImpl struct {
+	dep string
+}
+
+func (s *serviceWithDepImpl) GetDep() string {
+	return s.dep
+}
+
+type ServiceA interface {
+	GetB() ServiceB
+}
+
+type ServiceB interface {
+	GetDep() string
+}
+
+type serviceAImpl struct {
+	dep ServiceB
+}
+
+func (s *serviceAImpl) GetB() ServiceB {
+	return s.dep
+}
+
+type serviceBImpl struct {
+	dep string
+}
+
+func (s *serviceBImpl) GetDep() string {
+	return s.dep
 }

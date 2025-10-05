@@ -46,7 +46,12 @@ func NewOrchestrator(config *Config) (*Orchestrator, error) {
 	var metrics *Metrics
 	if config.Observability.EnableMetrics {
 		meter := otel.Meter("beluga.orchestration")
-		metrics = NewMetrics(meter, config.Observability.MetricsPrefix)
+		tracer := otel.Tracer("beluga.orchestration")
+		var err error
+		metrics, err = NewMetrics(meter, tracer)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create metrics: %w", err)
+		}
 	}
 
 	return &Orchestrator{

@@ -50,7 +50,21 @@ func (re *RetryExecutor) ExecuteWithRetry(ctx context.Context, operation func() 
 		default:
 		}
 
-		err := operation()
+		// Execute operation with panic recovery
+		var err error
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					if panicErr, ok := r.(error); ok {
+						err = panicErr
+					} else {
+						err = fmt.Errorf("panic: %v", r)
+					}
+				}
+			}()
+			err = operation()
+		}()
+
 		if err == nil {
 			return nil // Success
 		}

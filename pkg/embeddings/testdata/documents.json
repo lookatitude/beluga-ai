@@ -1,0 +1,102 @@
+{
+  "documents": [
+    {
+      "id": "doc_001",
+      "title": "Introduction to Machine Learning",
+      "content": "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience without being explicitly programmed. It focuses on developing algorithms that can learn patterns from data.",
+      "category": "education",
+      "tags": ["machine learning", "AI", "algorithms"]
+    },
+    {
+      "id": "doc_002",
+      "title": "Vector Databases Explained",
+      "content": "Vector databases are specialized databases designed to store and query high-dimensional vectors efficiently. They use advanced indexing techniques like HNSW or IVF to enable fast similarity search operations.",
+      "category": "technology",
+      "tags": ["vector database", "similarity search", "HNSW"]
+    },
+    {
+      "id": "doc_003",
+      "title": "Natural Language Processing Fundamentals",
+      "content": "Natural Language Processing (NLP) is a field of AI that focuses on enabling computers to understand, interpret, and generate human language. Key techniques include tokenization, part-of-speech tagging, and semantic analysis.",
+      "category": "linguistics",
+      "tags": ["NLP", "language processing", "tokenization"]
+    },
+    {
+      "id": "doc_004",
+      "title": "Neural Network Architectures",
+      "content": "Neural networks are computing systems inspired by biological neural networks. Common architectures include feedforward networks, convolutional neural networks (CNNs), and recurrent neural networks (RNNs).",
+      "category": "deep learning",
+      "tags": ["neural networks", "CNN", "RNN", "deep learning"]
+    },
+    {
+      "id": "doc_005",
+      "title": "Semantic Search vs Keyword Search",
+      "content": "Semantic search understands the intent and context behind queries, going beyond simple keyword matching. It uses embeddings and vector similarity to find content that is conceptually related rather than just lexically similar.",
+      "category": "search technology",
+      "tags": ["semantic search", "embeddings", "information retrieval"]
+    },
+    {
+      "id": "doc_006",
+      "title": "Large Language Models",
+      "content": "Large Language Models (LLMs) are transformer-based models trained on vast amounts of text data. They can generate human-like text, answer questions, and perform various language tasks. Examples include GPT, BERT, and T5.",
+      "category": "AI models",
+      "tags": ["LLM", "transformers", "GPT", "BERT"]
+    },
+    {
+      "id": "doc_007",
+      "title": "Embedding Techniques",
+      "content": "Text embeddings convert words, sentences, or documents into dense vector representations. Popular techniques include Word2Vec, GloVe, and contextual embeddings from transformer models like BERT.",
+      "category": "embeddings",
+      "tags": ["embeddings", "Word2Vec", "BERT", "vectorization"]
+    },
+    {
+      "id": "doc_008",
+      "title": "Retrieval-Augmented Generation",
+      "content": "Retrieval-Augmented Generation (RAG) combines the strengths of retrieval systems and generative models. It retrieves relevant information from a knowledge base and uses it to generate more accurate and contextual responses.",
+      "category": "AI applications",
+      "tags": ["RAG", "retrieval", "generation", "knowledge base"]
+    }
+  ],
+  "queries": [
+    {
+      "id": "query_001",
+      "text": "How do machine learning algorithms work?",
+      "expected_category": "education"
+    },
+    {
+      "id": "query_002",
+      "text": "What are the best databases for storing embeddings?",
+      "expected_category": "technology"
+    },
+    {
+      "id": "query_003",
+      "text": "How can computers understand human language?",
+      "expected_category": "linguistics"
+    },
+    {
+      "id": "query_004",
+      "text": "What's the difference between CNN and RNN?",
+      "expected_category": "deep learning"
+    },
+    {
+      "id": "query_005",
+      "text": "Why is semantic search better than keyword search?",
+      "expected_category": "search technology"
+    },
+    {
+      "id": "query_006",
+      "text": "What are some popular large language models?",
+      "expected_category": "AI models"
+    },
+    {
+      "id": "query_007",
+      "text": "How do you convert text into vectors?",
+      "expected_category": "embeddings"
+    },
+    {
+      "id": "query_008",
+      "text": "What is retrieval-augmented generation?",
+      "expected_category": "AI applications"
+    }
+  ]
+}

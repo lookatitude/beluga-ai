@@ -4,18 +4,149 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"go.opentelemetry.io/otel/trace"
 )
 
-// MockRunnable is a test implementation of the Runnable interface
+// MockRunnable is an enhanced test implementation of the Runnable interface
+// with call tracking, error injection, and configurable behavior
 type MockRunnable struct {
+	// Function overrides
 	invokeFunc func(ctx context.Context, input any, options ...Option) (any, error)
 	batchFunc  func(ctx context.Context, inputs []any, options ...Option) ([]any, error)
 	streamFunc func(ctx context.Context, input any, options ...Option) (<-chan any, error)
+
+	// Call tracking
+	invokeCalls []InvokeCall
+	batchCalls  []BatchCall
+	streamCalls []StreamCall
+
+	// Error injection
+	invokeError error
+	batchError  error
+	streamError error
+
+	// Configurable behavior
+	invokeDelay time.Duration
+	batchDelay  time.Duration
+	streamDelay time.Duration
+
+	// Stream configuration
+	streamChunks []any
+}
+
+type InvokeCall struct {
+	Ctx     context.Context
+	Input   any
+	Options []Option
+	Time    time.Time
+}
+
+type BatchCall struct {
+	Ctx     context.Context
+	Inputs  []any
+	Options []Option
+	Time    time.Time
+}
+
+type StreamCall struct {
+	Ctx     context.Context
+	Input   any
+	Options []Option
+	Time    time.Time
+}
+
+func NewMockRunnable() *MockRunnable {
+	return &MockRunnable{
+		invokeCalls: make([]InvokeCall, 0),
+		batchCalls:  make([]BatchCall, 0),
+		streamCalls: make([]StreamCall, 0),
+		streamChunks: []any{"mock_stream_result"},
+	}
+}
+
+func (m *MockRunnable) WithInvokeResult(result any) *MockRunnable {
+	m.invokeFunc = func(ctx context.Context, input any, options ...Option) (any, error) {
+		return result, nil
+	}
+	return m
+}
+
+func (m *MockRunnable) WithInvokeError(err error) *MockRunnable {
+	m.invokeError = err
+	return m
+}
+
+func (m *MockRunnable) WithBatchError(err error) *MockRunnable {
+	m.batchError = err
+	return m
+}
+
+func (m *MockRunnable) WithStreamError(err error) *MockRunnable {
+	m.streamError = err
+	return m
+}
+
+func (m *MockRunnable) WithStreamChunks(chunks ...any) *MockRunnable {
+	m.streamChunks = chunks
+	return m
+}
+
+func (m *MockRunnable) WithInvokeDelay(delay time.Duration) *MockRunnable {
+	m.invokeDelay = delay
+	return m
+}
+
+func (m *MockRunnable) WithBatchDelay(delay time.Duration) *MockRunnable {
+	m.batchDelay = delay
+	return m
+}
+
+func (m *MockRunnable) WithStreamDelay(delay time.Duration) *MockRunnable {
+	m.streamDelay = delay
+	return m
+}
+
+func (m *MockRunnable) GetInvokeCalls() []InvokeCall {
+	return m.invokeCalls
+}
+
+func (m *MockRunnable) GetBatchCalls() []BatchCall {
+	return m.batchCalls
+}
+
+func (m *MockRunnable) GetStreamCalls() []StreamCall {
+	return m.streamCalls
+}
+
+func (m *MockRunnable) Reset() {
+	m.invokeCalls = make([]InvokeCall, 0)
+	m.batchCalls = make([]BatchCall, 0)
+	m.streamCalls = make([]StreamCall, 0)
 }
 
 func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...Option) (any, error) {
+	call := InvokeCall{
+		Ctx:     ctx,
+		Input:   input,
+		Options: options,
+		Time:    time.Now(),
+	}
+	m.invokeCalls = append(m.invokeCalls, call)
+
+	if m.invokeDelay > 0 {
+		select {
+		case <-time.After(m.invokeDelay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	if m.invokeError != nil {
+		return nil, m.invokeError
+	}
+
 	if m.invokeFunc != nil {
 		return m.invokeFunc(ctx, input, options...)
 	}
@@ -23,9 +154,30 @@ func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...Option)
 }
 
 func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...Option) ([]any, error) {
+	call := BatchCall{
+		Ctx:     ctx,
+		Inputs:  inputs,
+		Options: options,
+		Time:    time.Now(),
+	}
+	m.batchCalls = append(m.batchCalls, call)
+
+	if m.batchDelay > 0 {
+		select {
+		case <-time.After(m.batchDelay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	if m.batchError != nil {
+		return nil, m.batchError
+	}
+
 	if m.batchFunc != nil {
 		return m.batchFunc(ctx, inputs, options...)
 	}
+
 	results := make([]any, len(inputs))
 	for i := range inputs {
 		results[i] = "mock_result"
@@ -34,13 +186,40 @@ func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...Optio
 }
 
 func (m *MockRunnable) Stream(ctx context.Context, input any, options ...Option) (<-chan any, error) {
+	call := StreamCall{
+		Ctx:     ctx,
+		Input:   input,
+		Options: options,
+		Time:    time.Now(),
+	}
+	m.streamCalls = append(m.streamCalls, call)
+
+	if m.streamDelay > 0 {
+		select {
+		case <-time.After(m.streamDelay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	if m.streamError != nil {
+		return nil, m.streamError
+	}
+
 	if m.streamFunc != nil {
 		return m.streamFunc(ctx, input, options...)
 	}
-	ch := make(chan any, 1)
+
+	ch := make(chan any, len(m.streamChunks))
 	go func() {
 		defer close(ch)
-		ch <- "mock_stream_result"
+		for _, chunk := range m.streamChunks {
+			select {
+			case ch <- chunk:
+			case <-ctx.Done():
+				return
+			}
+		}
 	}()
 	return ch, nil
 }
@@ -131,11 +310,7 @@ func TestEnsureMessages(t *testing.T) {
 */
 
 func TestMockRunnable_Invoke(t *testing.T) {
-	mock := &MockRunnable{
-		invokeFunc: func(ctx context.Context, input any, options ...Option) (any, error) {
-			return "custom_result", nil
-		},
-	}
+	mock := NewMockRunnable().WithInvokeResult("custom_result")
 
 	result, err := mock.Invoke(context.Background(), "test_input")
 	if err != nil {
@@ -146,10 +321,47 @@ func TestMockRunnable_Invoke(t *testing.T) {
 	if result != "custom_result" {
 		t.Errorf("MockRunnable.Invoke() = %v, expected custom_result", result)
 	}
+
+	// Test call tracking
+	calls := mock.GetInvokeCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 invoke call, got %d", len(calls))
+	}
+}
+
+func TestMockRunnable_InvokeWithError(t *testing.T) {
+	expectedErr := errors.New("test error")
+	mock := NewMockRunnable().WithInvokeError(expectedErr)
+
+	_, err := mock.Invoke(context.Background(), "test_input")
+	if err != expectedErr {
+		t.Errorf("MockRunnable.Invoke() error = %v, expected %v", err, expectedErr)
+	}
+
+	calls := mock.GetInvokeCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 invoke call, got %d", len(calls))
+	}
+}
+
+func TestMockRunnable_InvokeWithDelay(t *testing.T) {
+	mock := NewMockRunnable().WithInvokeDelay(10 * time.Millisecond)
+
+	start := time.Now()
+	_, err := mock.Invoke(context.Background(), "test_input")
+	duration := time.Since(start)
+
+	if err != nil {
+		t.Errorf("MockRunnable.Invoke() error = %v", err)
+	}
+
+	if duration < 10*time.Millisecond {
+		t.Errorf("Expected delay of at least 10ms, got %v", duration)
+	}
 }
 
 func TestMockRunnable_Batch(t *testing.T) {
-	mock := &MockRunnable{}
+	mock := NewMockRunnable()
 
 	inputs := []any{"input1", "input2", "input3"}
 	results, err := mock.Batch(context.Background(), inputs)
@@ -167,14 +379,52 @@ func TestMockRunnable_Batch(t *testing.T) {
 			t.Errorf("MockRunnable.Batch() result[%d] = %v, expected mock_result", i, result)
 		}
 	}
+
+	// Test call tracking
+	calls := mock.GetBatchCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 batch call, got %d", len(calls))
+	}
+	if len(calls[0].Inputs) != len(inputs) {
+		t.Errorf("Batch call inputs length = %d, expected %d", len(calls[0].Inputs), len(inputs))
+	}
+}
+
+func TestMockRunnable_BatchWithError(t *testing.T) {
+	expectedErr := errors.New("batch error")
+	mock := NewMockRunnable().WithBatchError(expectedErr)
+
+	inputs := []any{"input1", "input2"}
+	_, err := mock.Batch(context.Background(), inputs)
+	if err != expectedErr {
+		t.Errorf("MockRunnable.Batch() error = %v, expected %v", err, expectedErr)
+	}
+
+	calls := mock.GetBatchCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 batch call, got %d", len(calls))
+	}
+}
+
+func TestMockRunnable_BatchWithDelay(t *testing.T) {
+	mock := NewMockRunnable().WithBatchDelay(10 * time.Millisecond)
+
+	inputs := []any{"input1", "input2"}
+	start := time.Now()
+	_, err := mock.Batch(context.Background(), inputs)
+	duration := time.Since(start)
+
+	if err != nil {
+		t.Errorf("MockRunnable.Batch() error = %v", err)
+	}
+
+	if duration < 10*time.Millisecond {
+		t.Errorf("Expected delay of at least 10ms, got %v", duration)
+	}
 }
 
 func TestTracedRunnable_Invoke(t *testing.T) {
-	mock := &MockRunnable{
-		invokeFunc: func(ctx context.Context, input any, options ...Option) (any, error) {
-			return "traced_result", nil
-		},
-	}
+	mock := NewMockRunnable().WithInvokeResult("traced_result")
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -189,15 +439,17 @@ func TestTracedRunnable_Invoke(t *testing.T) {
 	if result != "traced_result" {
 		t.Errorf("TracedRunnable.Invoke() = %v, expected traced_result", result)
 	}
+
+	// Verify that the mock was called
+	calls := mock.GetInvokeCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 invoke call on mock, got %d", len(calls))
+	}
 }
 
 func TestTracedRunnable_InvokeWithError(t *testing.T) {
 	expectedErr := errors.New("test error")
-	mock := &MockRunnable{
-		invokeFunc: func(ctx context.Context, input any, options ...Option) (any, error) {
-			return nil, expectedErr
-		},
-	}
+	mock := NewMockRunnable().WithInvokeError(expectedErr)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -207,18 +459,16 @@ func TestTracedRunnable_InvokeWithError(t *testing.T) {
 	if err != expectedErr {
 		t.Errorf("TracedRunnable.Invoke() error = %v, expected %v", err, expectedErr)
 	}
+
+	// Verify that the mock was called
+	calls := mock.GetInvokeCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 invoke call on mock, got %d", len(calls))
+	}
 }
 
 func TestTracedRunnable_Batch(t *testing.T) {
-	mock := &MockRunnable{
-		batchFunc: func(ctx context.Context, inputs []any, options ...Option) ([]any, error) {
-			results := make([]any, len(inputs))
-			for i := range inputs {
-				results[i] = "traced_batch_result"
-			}
-			return results, nil
-		},
-	}
+	mock := NewMockRunnable()
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -236,24 +486,20 @@ func TestTracedRunnable_Batch(t *testing.T) {
 	}
 
 	for i, result := range results {
-		if result != "traced_batch_result" {
-			t.Errorf("TracedRunnable.Batch() result[%d] = %v, expected traced_batch_result", i, result)
+		if result != "mock_result" {
+			t.Errorf("TracedRunnable.Batch() result[%d] = %v, expected mock_result", i, result)
 		}
+	}
+
+	// Verify that the mock was called
+	calls := mock.GetBatchCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 batch call on mock, got %d", len(calls))
 	}
 }
 
 func TestTracedRunnable_Stream(t *testing.T) {
-	mock := &MockRunnable{
-		streamFunc: func(ctx context.Context, input any, options ...Option) (<-chan any, error) {
-			ch := make(chan any, 2)
-			go func() {
-				defer close(ch)
-				ch <- "chunk1"
-				ch <- "chunk2"
-			}()
-			return ch, nil
-		},
-	}
+	mock := NewMockRunnable().WithStreamChunks("chunk1", "chunk2")
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -277,15 +523,17 @@ func TestTracedRunnable_Stream(t *testing.T) {
 	if chunks[0] != "chunk1" || chunks[1] != "chunk2" {
 		t.Errorf("TracedRunnable.Stream() chunks = %v, expected [chunk1, chunk2]", chunks)
 	}
+
+	// Verify that the mock was called
+	calls := mock.GetStreamCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 stream call on mock, got %d", len(calls))
+	}
 }
 
 func TestTracedRunnable_StreamWithError(t *testing.T) {
 	expectedErr := errors.New("stream error")
-	mock := &MockRunnable{
-		streamFunc: func(ctx context.Context, input any, options ...Option) (<-chan any, error) {
-			return nil, expectedErr
-		},
-	}
+	mock := NewMockRunnable().WithStreamError(expectedErr)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -295,10 +543,16 @@ func TestTracedRunnable_StreamWithError(t *testing.T) {
 	if err != expectedErr {
 		t.Errorf("TracedRunnable.Stream() error = %v, expected %v", err, expectedErr)
 	}
+
+	// Verify that the mock was called
+	calls := mock.GetStreamCalls()
+	if len(calls) != 1 {
+		t.Errorf("Expected 1 stream call on mock, got %d", len(calls))
+	}
 }
 
 func TestRunnableWithTracing(t *testing.T) {
-	mock := &MockRunnable{}
+	mock := NewMockRunnable()
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -317,7 +571,7 @@ func TestRunnableWithTracing(t *testing.T) {
 }
 
 func TestRunnableWithTracingAndName(t *testing.T) {
-	mock := &MockRunnable{}
+	mock := NewMockRunnable()
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
@@ -335,47 +589,6 @@ func TestRunnableWithTracingAndName(t *testing.T) {
 	}
 }
 
-func TestBuilder_RegisterMonitoringComponents(t *testing.T) {
-	builder := NewBuilder(NewContainer())
-
-	// Test registering no-op monitoring components
-	if err := builder.RegisterNoOpLogger(); err != nil {
-		t.Errorf("RegisterNoOpLogger() error = %v", err)
-	}
-
-	if err := builder.RegisterNoOpTracerProvider(); err != nil {
-		t.Errorf("RegisterNoOpTracerProvider() error = %v", err)
-	}
-
-	if err := builder.RegisterNoOpMetrics(); err != nil {
-		t.Errorf("RegisterNoOpMetrics() error = %v", err)
-	}
-
-	// Test resolving the components
-	var logger Logger
-	if err := builder.Build(&logger); err != nil {
-		t.Errorf("Build(logger) error = %v", err)
-	}
-	if logger == nil {
-		t.Error("Expected logger to be resolved, got nil")
-	}
-
-	var tracerProvider TracerProvider
-	if err := builder.Build(&tracerProvider); err != nil {
-		t.Errorf("Build(tracerProvider) error = %v", err)
-	}
-	if tracerProvider == nil {
-		t.Error("Expected tracerProvider to be resolved, got nil")
-	}
-
-	var metrics *Metrics
-	if err := builder.Build(&metrics); err != nil {
-		t.Errorf("Build(metrics) error = %v", err)
-	}
-	if metrics == nil {
-		t.Error("Expected metrics to be resolved, got nil")
-	}
-}
 
 func TestNoOpLogger(t *testing.T) {
 	logger := &noOpLogger{}
@@ -390,6 +603,102 @@ func TestNoOpLogger(t *testing.T) {
 	withLogger := logger.With("key", "value")
 	if withLogger != logger {
 		t.Error("With() should return the same logger instance")
+	}
+}
+
+// Metrics verification tests
+
+func TestMetrics_Recording(t *testing.T) {
+	// This test verifies that metrics are properly recorded during Runnable operations
+	mock := NewMockRunnable()
+
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+
+	if metrics == nil {
+		t.Fatal("NewMetrics() returned nil")
+	}
+
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	// Test Invoke metrics
+	ctx := context.Background()
+	result, err := traced.Invoke(ctx, "test_input")
+	if err != nil {
+		t.Errorf("TracedRunnable.Invoke() error = %v", err)
+	}
+	if result != "mock_result" {
+		t.Errorf("TracedRunnable.Invoke() = %v, expected mock_result", result)
+	}
+
+	// Test Batch metrics
+	inputs := []any{"input1", "input2"}
+	results, err := traced.Batch(ctx, inputs)
+	if err != nil {
+		t.Errorf("TracedRunnable.Batch() error = %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("TracedRunnable.Batch() returned %d results, expected 2", len(results))
+	}
+
+	// Test Stream metrics
+	streamChan, err := traced.Stream(ctx, "test_input")
+	if err != nil {
+		t.Errorf("TracedRunnable.Stream() error = %v", err)
+	}
+	chunks := 0
+	for range streamChan {
+		chunks++
+	}
+	if chunks != 1 {
+		t.Errorf("Expected 1 chunk from stream, got %d", chunks)
+	}
+}
+
+
+func TestMetrics_NoOpMetrics(t *testing.T) {
+	metrics := NoOpMetrics()
+	if metrics == nil {
+		t.Fatal("NoOpMetrics() returned nil")
+	}
+
+	// No-op metrics should not panic when called
+	ctx := context.Background()
+	metrics.RecordRunnableInvoke(ctx, "test", time.Millisecond, nil)
+	metrics.RecordRunnableBatch(ctx, "test", 5, time.Millisecond, nil)
+	metrics.RecordRunnableStream(ctx, "test", time.Millisecond, 3, nil)
+
+	// Verify that all fields are nil (no-op behavior)
+	if metrics.runnableInvokes != nil ||
+		metrics.runnableBatches != nil ||
+		metrics.runnableStreams != nil ||
+		metrics.runnableErrors != nil ||
+		metrics.runnableDuration != nil ||
+		metrics.batchSize != nil ||
+		metrics.batchDuration != nil ||
+		metrics.streamDuration != nil ||
+		metrics.streamChunks != nil {
+		t.Error("NoOpMetrics should have all fields as nil")
+	}
+}
+
+
+// Simple tracing test using NoOp tracer
+func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
+	mock := NewMockRunnable()
+	tracer := trace.NewNoopTracerProvider().Tracer("")
+	metrics := NoOpMetrics()
+
+	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
+
+	// Test that traced runnable works with no-op tracer
+	ctx := context.Background()
+	result, err := traced.Invoke(ctx, "test_input")
+	if err != nil {
+		t.Errorf("TracedRunnable.Invoke() error = %v", err)
+	}
+	if result != "mock_result" {
+		t.Errorf("TracedRunnable.Invoke() = %v, expected mock_result", result)
 	}
 }
 

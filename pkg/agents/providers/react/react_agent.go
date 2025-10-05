@@ -42,6 +42,11 @@ type ReActAgent struct {
 //   - New ReAct agent instance
 //   - Error if initialization fails
 func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.Tool, promptTemplate interface{}, opts ...iface.Option) (*ReActAgent, error) {
+	// Validate required parameters
+	if chatLLM == nil {
+		return nil, fmt.Errorf("chatLLM cannot be nil")
+	}
+
 	// Create base agent first
 	baseAgent, err := base.NewBaseAgent(name, chatLLM, agentTools, opts...) // Pass the ChatModel as it implements LLM interface
 	if err != nil {

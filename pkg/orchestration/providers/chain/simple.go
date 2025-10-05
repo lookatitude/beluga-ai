@@ -3,6 +3,7 @@ package chain
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -11,6 +12,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
+	scheduler "github.com/lookatitude/beluga-ai/pkg/orchestration/internal/scheduler"
 )
 
 // SimpleChain provides a basic implementation of the Chain interface
@@ -48,21 +50,26 @@ func (c *SimpleChain) GetMemory() memory.Memory {
 }
 
 func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	ctx, span := c.tracer.Start(ctx, "chain.invoke",
-		trace.WithAttributes(
-			attribute.String("chain.name", c.config.Name),
-			attribute.Int("chain.steps", len(c.config.Steps)),
-		))
-	defer span.End()
+	var span trace.Span
+	if c.tracer != nil {
+		ctx, span = c.tracer.Start(ctx, "chain.invoke",
+			trace.WithAttributes(
+				attribute.String("chain.name", c.config.Name),
+				attribute.Int("chain.steps", len(c.config.Steps)),
+			))
+		defer span.End()
+	}
 
 	startTime := time.Now()
 	var err error
 	defer func() {
 		duration := time.Since(startTime).Seconds()
-		if err != nil {
-			span.RecordError(err)
+		if c.tracer != nil && span != nil {
+			if err != nil {
+				span.RecordError(err)
+			}
+			span.SetAttributes(attribute.Float64("chain.duration", duration))
 		}
-		span.SetAttributes(attribute.Float64("chain.duration", duration))
 	}()
 
 	// Apply timeout if configured
@@ -119,22 +126,71 @@ func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Opt
 
 	// Execute steps sequentially
 	for i, step := range c.config.Steps {
-		stepCtx, stepSpan := c.tracer.Start(ctx, fmt.Sprintf("chain.step.%d", i),
-			trace.WithAttributes(
-				attribute.String("step.type", fmt.Sprintf("%T", step)),
-				attribute.Int("step.index", i),
-			))
+		stepCtx := ctx
+		var stepSpan trace.Span
+		if c.tracer != nil {
+			stepCtx, stepSpan = c.tracer.Start(ctx, fmt.Sprintf("chain.step.%d", i),
+				trace.WithAttributes(
+					attribute.String("step.type", fmt.Sprintf("%T", step)),
+					attribute.Int("step.index", i),
+				))
+			defer stepSpan.End()
+		}
 		stepStart := time.Now()
 
-		currentStepOutput, err = step.Invoke(stepCtx, currentStepOutput, options...)
-		stepDuration := time.Since(stepStart)
+		// Execute step with retry logic
+		var stepOutput any
+		var attemptCount int64
 
-		stepSpan.SetAttributes(attribute.Float64("step.duration", stepDuration.Seconds()))
-		stepSpan.End()
+		retryConfig := scheduler.RetryConfig{
+			MaxAttempts:   c.config.Retries,
+			InitialDelay:  100 * time.Millisecond,
+			MaxDelay:      5 * time.Second,
+			BackoffFactor: 2.0,
+			JitterFactor:  0.1,
+		}
+		retryExecutor := scheduler.NewRetryExecutor(retryConfig)
 
-		if err != nil {
+		err = retryExecutor.ExecuteWithRetry(stepCtx, func() error {
+			atomic.AddInt64(&attemptCount, 1)
+			var invokeErr error
+			stepOutput, invokeErr = step.Invoke(stepCtx, currentStepOutput, options...)
+			return invokeErr
+		})
+
+		// If we got an error and it's not retryable, don't retry
+		if err != nil && !iface.IsRetryable(err) && attemptCount == 1 {
+			// This is a non-retryable error, don't wrap it as a retry failure
 			err = iface.ErrExecutionFailed("chain.invoke", fmt.Errorf("error in chain step %d (%T): %w", i, step, err))
 			return nil, err
+		}
+
+		// Update current step output if successful
+		if err == nil {
+			currentStepOutput = stepOutput
+		}
+
+		if err != nil {
+			stepDuration := time.Since(stepStart)
+			if c.tracer != nil && stepSpan != nil {
+				stepSpan.SetAttributes(
+					attribute.Float64("step.duration", stepDuration.Seconds()),
+					attribute.Int64("step.attempts", attemptCount),
+					attribute.Bool("step.success", false),
+				)
+				stepSpan.RecordError(err)
+			}
+			err = iface.ErrExecutionFailed("chain.invoke", fmt.Errorf("error in chain step %d (%T) after %d attempts: %w", i, step, attemptCount, err))
+			return nil, err
+		}
+
+		stepDuration := time.Since(stepStart)
+		if c.tracer != nil && stepSpan != nil {
+			stepSpan.SetAttributes(
+				attribute.Float64("step.duration", stepDuration.Seconds()),
+				attribute.Int64("step.attempts", attemptCount),
+				attribute.Bool("step.success", true),
+			)
 		}
 	}
 

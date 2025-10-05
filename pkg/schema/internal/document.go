@@ -42,7 +42,7 @@ func (d Document) GetContent() string {
 
 // ToolCalls returns an empty slice for documents.
 func (d Document) ToolCalls() []ToolCall {
-	return nil
+	return []ToolCall{}
 }
 
 // AdditionalArgs returns an empty map for documents.

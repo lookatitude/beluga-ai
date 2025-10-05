@@ -102,22 +102,27 @@ func (g *BasicGraph) SetFinishPoint(nodeNames []string) error {
 }
 
 func (g *BasicGraph) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
-	ctx, span := g.tracer.Start(ctx, "graph.invoke",
-		trace.WithAttributes(
-			attribute.String("graph.name", g.config.Name),
-			attribute.Int("graph.nodes", len(g.nodes)),
-			attribute.Int("graph.edges", g.countEdges()),
-		))
-	defer span.End()
+	var span trace.Span
+	if g.tracer != nil {
+		ctx, span = g.tracer.Start(ctx, "graph.invoke",
+			trace.WithAttributes(
+				attribute.String("graph.name", g.config.Name),
+				attribute.Int("graph.nodes", len(g.nodes)),
+				attribute.Int("graph.edges", g.countEdges()),
+			))
+		defer span.End()
+	}
 
 	startTime := time.Now()
 	var err error
 	defer func() {
 		duration := time.Since(startTime).Seconds()
-		if err != nil {
-			span.RecordError(err)
+		if g.tracer != nil && span != nil {
+			if err != nil {
+				span.RecordError(err)
+			}
+			span.SetAttributes(attribute.Float64("graph.duration", duration))
 		}
-		span.SetAttributes(attribute.Float64("graph.duration", duration))
 	}()
 
 	// Apply timeout if configured
@@ -156,11 +161,16 @@ func (g *BasicGraph) executeSequential(ctx context.Context, input any, options .
 		}
 
 		// Execute current node
-		nodeCtx, nodeSpan := g.tracer.Start(ctx, "graph.node.execute",
-			trace.WithAttributes(
-				attribute.String("node.name", currentNode),
-				attribute.String("node.type", fmt.Sprintf("%T", g.nodes[currentNode])),
-			))
+		nodeCtx := ctx
+		var nodeSpan trace.Span
+		if g.tracer != nil {
+			nodeCtx, nodeSpan = g.tracer.Start(ctx, "graph.node.execute",
+				trace.WithAttributes(
+					attribute.String("node.name", currentNode),
+					attribute.String("node.type", fmt.Sprintf("%T", g.nodes[currentNode])),
+				))
+			defer nodeSpan.End()
+		}
 		nodeStart := time.Now()
 
 		var nodeInput any = input
@@ -172,8 +182,9 @@ func (g *BasicGraph) executeSequential(ctx context.Context, input any, options .
 		output, err := g.nodes[currentNode].Invoke(nodeCtx, nodeInput, options...)
 		nodeDuration := time.Since(nodeStart)
 
-		nodeSpan.SetAttributes(attribute.Float64("node.duration", nodeDuration.Seconds()))
-		nodeSpan.End()
+		if g.tracer != nil && nodeSpan != nil {
+			nodeSpan.SetAttributes(attribute.Float64("node.duration", nodeDuration.Seconds()))
+		}
 
 		if err != nil {
 			return nil, iface.ErrExecutionFailed("graph.execute_sequential",

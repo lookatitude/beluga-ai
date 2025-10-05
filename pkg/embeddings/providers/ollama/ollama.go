@@ -28,13 +28,25 @@ type HealthChecker interface {
 
 // OllamaEmbedder implements the iface.Embedder interface using a local Ollama instance.
 type OllamaEmbedder struct {
-	client *api.Client
+	client Client
 	config *Config
 	tracer trace.Tracer
 }
 
 // NewOllamaEmbedder creates a new OllamaEmbedder with the given configuration.
+// It creates an Ollama client from environment variables.
 func NewOllamaEmbedder(config *Config, tracer trace.Tracer) (*OllamaEmbedder, error) {
+	client, err := api.ClientFromEnvironment()
+	if err != nil {
+		return nil, iface.WrapError(err, iface.ErrCodeConnectionFailed, "failed to create ollama client")
+	}
+
+	return NewOllamaEmbedderWithClient(config, tracer, client)
+}
+
+// NewOllamaEmbedderWithClient creates a new OllamaEmbedder with a provided client.
+// This is primarily used for testing with mocked clients.
+func NewOllamaEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*OllamaEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
 	}
@@ -43,13 +55,8 @@ func NewOllamaEmbedder(config *Config, tracer trace.Tracer) (*OllamaEmbedder, er
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "ollama model name is required")
 	}
 
-	client, err := api.ClientFromEnvironment()
-	if err != nil {
-		return nil, iface.WrapError(err, iface.ErrCodeConnectionFailed, "failed to create ollama client")
-	}
-
 	if client == nil {
-		return nil, iface.NewEmbeddingError(iface.ErrCodeConnectionFailed, "failed to create ollama client (nil client returned)")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeConnectionFailed, "client cannot be nil")
 	}
 
 	return &OllamaEmbedder{

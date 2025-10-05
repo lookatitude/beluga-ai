@@ -32,12 +32,12 @@ func (bm *BaseMessage) GetContent() string {
 
 // ToolCalls returns an empty slice by default.
 func (bm *BaseMessage) ToolCalls() []ToolCall {
-	return nil
+	return []ToolCall{}
 }
 
 // AdditionalArgs returns an empty map by default.
 func (bm *BaseMessage) AdditionalArgs() map[string]interface{} {
-	return nil
+	return make(map[string]interface{})
 }
 
 // GetAdditionalArgs is an alias for AdditionalArgs for backward compatibility.
@@ -69,6 +69,9 @@ func (m *ChatMessage) GetType() MessageType {
 
 // ToolCalls returns the tool calls in this message.
 func (m *ChatMessage) ToolCalls() []ToolCall {
+	if m.ToolCalls_ == nil {
+		return []ToolCall{}
+	}
 	return m.ToolCalls_
 }
 
@@ -90,7 +93,7 @@ func (m *ToolMessage) GetType() MessageType {
 
 // ToolCalls returns an empty slice for ToolMessage.
 func (m *ToolMessage) ToolCalls() []ToolCall {
-	return nil
+	return []ToolCall{}
 }
 
 // AdditionalArgs returns an empty map for ToolMessage.
@@ -111,7 +114,7 @@ func (m *FunctionMessage) GetType() MessageType {
 
 // ToolCalls returns an empty slice for FunctionMessage.
 func (m *FunctionMessage) ToolCalls() []ToolCall {
-	return nil
+	return []ToolCall{}
 }
 
 // AdditionalArgs returns an empty map for FunctionMessage.
@@ -136,6 +139,9 @@ func (m *AIMessage) GetType() MessageType {
 
 // ToolCalls returns the tool calls in this message.
 func (m *AIMessage) ToolCalls() []ToolCall {
+	if m.ToolCalls_ == nil {
+		return []ToolCall{}
+	}
 	return m.ToolCalls_
 }
 
