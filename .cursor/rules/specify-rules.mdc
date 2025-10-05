@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - Go 1.21+ + OpenTelemetry (go.opentelemetry.io/otel), testify (github.com/stretchr/testify), validator (github.com/go-playground/validator) (001-for-the-core)
 - Go 1.24.0 + go-playground/validator/v10, go.opentelemetry.io/otel (metric/trace), github.com/stretchr/testify (mock/assert) (002-for-the-schema)
 - N/A (schema/data structures package) (002-for-the-schema)
+- Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure (003-for-the-config)
+- Configuration files (YAML/JSON/TOML), environment variables (003-for-the-config)
 
 ## Project Structure
 ```
@@ -35,6 +37,7 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 003-for-the-config: Added Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure
 - 002-for-the-schema: Added Go 1.24.0 + go-playground/validator/v10, go.opentelemetry.io/otel (metric/trace), github.com/stretchr/testify (mock/assert)
 - 001-for-the-core: Added Go 1.21+ + OpenTelemetry (go.opentelemetry.io/otel), testify (github.com/stretchr/testify), validator (github.com/go-playground/validator)
 
