@@ -23,6 +23,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - N/A (schema/data structures package) (002-for-the-schema)
 - Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure (003-for-the-config)
 - Configuration files (YAML/JSON/TOML), environment variables (003-for-the-config)
+- Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry, testify/mock, providers (OpenAI SDK, Anthropic SDK, AWS Bedrock SDK, Ollama client) (004-for-the-llms)
+- N/A (LLM provider APIs - no persistent storage required) (004-for-the-llms)
 
 ## Project Structure
 ```
@@ -37,9 +39,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 004-for-the-llms: Added Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry, testify/mock, providers (OpenAI SDK, Anthropic SDK, AWS Bedrock SDK, Ollama client)
 - 003-for-the-config: Added Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure
 - 002-for-the-schema: Added Go 1.24.0 + go-playground/validator/v10, go.opentelemetry.io/otel (metric/trace), github.com/stretchr/testify (mock/assert)
-- 001-for-the-core: Added Go 1.21+ + OpenTelemetry (go.opentelemetry.io/otel), testify (github.com/stretchr/testify), validator (github.com/go-playground/validator)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
