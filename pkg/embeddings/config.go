@@ -82,6 +82,13 @@ type MockConfig struct {
 	Seed         int64 `mapstructure:"seed" yaml:"seed" env:"MOCK_EMBEDDING_SEED" default:"0"`
 	RandomizeNil bool  `mapstructure:"randomize_nil" yaml:"randomize_nil" env:"MOCK_EMBEDDING_RANDOMIZE_NIL" default:"false"`
 	Enabled      bool  `mapstructure:"enabled" yaml:"enabled" env:"MOCK_EMBEDDING_ENABLED" default:"true"`
+	// Load simulation settings
+	SimulateDelay      time.Duration `mapstructure:"simulate_delay" yaml:"simulate_delay" env:"MOCK_SIMULATE_DELAY" default:"0s"`
+	SimulateErrors     bool          `mapstructure:"simulate_errors" yaml:"simulate_errors" env:"MOCK_SIMULATE_ERRORS" default:"false"`
+	ErrorRate          float64       `mapstructure:"error_rate" yaml:"error_rate" env:"MOCK_ERROR_RATE" default:"0.0"`
+	RateLimitPerSecond int           `mapstructure:"rate_limit_per_second" yaml:"rate_limit_per_second" env:"MOCK_RATE_LIMIT_PER_SECOND" default:"0"`
+	MemoryPressure     bool          `mapstructure:"memory_pressure" yaml:"memory_pressure" env:"MOCK_MEMORY_PRESSURE" default:"false"`
+	PerformanceDegrade bool          `mapstructure:"performance_degrade" yaml:"performance_degrade" env:"MOCK_PERFORMANCE_DEGRADE" default:"false"`
 }
 
 // Validate validates the configuration

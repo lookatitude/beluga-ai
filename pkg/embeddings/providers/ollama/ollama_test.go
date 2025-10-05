@@ -3,6 +3,7 @@ package ollama
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
@@ -94,12 +95,12 @@ func TestOllamaEmbedder_EmbedDocuments(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name            string
-		documents       []string
-		mockSetup       func(*mock.OllamaClientMock)
-		wantErr         bool
-		expectedCount   int
-		expectedDim     int
+		name          string
+		documents     []string
+		mockSetup     func(*mock.OllamaClientMock)
+		wantErr       bool
+		expectedCount int
+		expectedDim   int
 	}{
 		{
 			name:      "empty documents",
@@ -293,24 +294,55 @@ func TestOllamaEmbedder_EmbedQuery(t *testing.T) {
 }
 
 func TestOllamaEmbedder_GetDimension(t *testing.T) {
-	tracer := otel.Tracer("test")
-	ctx := context.Background()
-
-	config := &Config{Model: "test-model"}
-	mockClient := mock.NewOllamaClientMock()
-	embedder, err := NewOllamaEmbedderWithClient(config, tracer, mockClient)
-	if err != nil {
-		t.Fatalf("Failed to create embedder: %v", err)
+	tests := []struct {
+		name        string
+		model       string
+		expectedDim int
+	}{
+		{
+			name:        "nomic-embed-text model",
+			model:       "nomic-embed-text",
+			expectedDim: 768, // Expected dimension for nomic-embed-text
+		},
+		{
+			name:        "all-minilm model",
+			model:       "all-minilm",
+			expectedDim: 384, // Expected dimension for all-minilm
+		},
+		{
+			name:        "unknown model",
+			model:       "unknown-embedding-model",
+			expectedDim: 0, // Should return 0 for unknown models
+		},
 	}
 
-	dimension, err := embedder.GetDimension(ctx)
-	if err != nil {
-		t.Fatalf("GetDimension() failed: %v", err)
-	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tracer := otel.Tracer("test")
+			ctx := context.Background()
 
-	// Ollama returns 0 for unknown dimension
-	if dimension != 0 {
-		t.Errorf("Expected dimension 0 (unknown), got %d", dimension)
+			config := &Config{Model: tt.model}
+			mockClient := mock.NewOllamaClientMock()
+
+			// Set up mock to return model info with dimensions for known models
+			if tt.expectedDim > 0 {
+				mockClient.SetShowResponse(fmt.Sprintf("# embedding dimensions: %d\nFROM llama2:7b", tt.expectedDim))
+			}
+
+			embedder, err := NewOllamaEmbedderWithClient(config, tracer, mockClient)
+			if err != nil {
+				t.Fatalf("Failed to create embedder: %v", err)
+			}
+
+			dimension, err := embedder.GetDimension(ctx)
+			if err != nil {
+				t.Fatalf("GetDimension() failed: %v", err)
+			}
+
+			if dimension != tt.expectedDim {
+				t.Errorf("Expected dimension %d, got %d", tt.expectedDim, dimension)
+			}
+		})
 	}
 }
 

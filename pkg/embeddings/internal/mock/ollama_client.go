@@ -12,12 +12,18 @@ type OllamaClientMock struct {
 	mu sync.Mutex
 
 	// Embeddings behavior
-	EmbeddingsFunc func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
+	EmbeddingsFunc  func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
 	EmbeddingsCalls []EmbeddingsCall
+
+	// Show behavior
+	ShowFunc  func(ctx context.Context, req *api.ShowRequest) (*api.ShowResponse, error)
+	ShowCalls []ShowCall
 
 	// Error injection
 	ShouldFailEmbeddings bool
 	EmbeddingsError      error
+	ShouldFailShow       bool
+	ShowError            error
 }
 
 // EmbeddingsCall records a call to Embeddings
@@ -26,10 +32,17 @@ type EmbeddingsCall struct {
 	Req *api.EmbeddingRequest
 }
 
+// ShowCall records a call to Show
+type ShowCall struct {
+	Ctx context.Context
+	Req *api.ShowRequest
+}
+
 // NewOllamaClientMock creates a new mock Ollama client
 func NewOllamaClientMock() *OllamaClientMock {
 	return &OllamaClientMock{
 		EmbeddingsCalls: make([]EmbeddingsCall, 0),
+		ShowCalls:       make([]ShowCall, 0),
 	}
 }
 
@@ -69,9 +82,13 @@ func (m *OllamaClientMock) Reset() {
 	defer m.mu.Unlock()
 
 	m.EmbeddingsCalls = make([]EmbeddingsCall, 0)
+	m.ShowCalls = make([]ShowCall, 0)
 	m.ShouldFailEmbeddings = false
 	m.EmbeddingsError = nil
 	m.EmbeddingsFunc = nil
+	m.ShouldFailShow = false
+	m.ShowError = nil
+	m.ShowFunc = nil
 }
 
 // SetEmbeddingsResponse sets a custom response function for embeddings
@@ -83,8 +100,47 @@ func (m *OllamaClientMock) SetEmbeddingsResponse(embedding []float64) {
 	}
 }
 
+// Show mocks the Ollama show API call
+func (m *OllamaClientMock) Show(ctx context.Context, req *api.ShowRequest) (*api.ShowResponse, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	m.ShowCalls = append(m.ShowCalls, ShowCall{
+		Ctx: ctx,
+		Req: req,
+	})
+
+	if m.ShouldFailShow {
+		return nil, m.ShowError
+	}
+
+	if m.ShowFunc != nil {
+		return m.ShowFunc(ctx, req)
+	}
+
+	// Default behavior: return mock model info
+	return &api.ShowResponse{
+		Modelfile: "# Mock model configuration\nFROM llama2:7b\nPARAMETER temperature 0.8",
+	}, nil
+}
+
 // SetEmbeddingsError sets the mock to return an error
 func (m *OllamaClientMock) SetEmbeddingsError(err error) {
 	m.ShouldFailEmbeddings = true
 	m.EmbeddingsError = err
+}
+
+// SetShowResponse sets a custom response function for show
+func (m *OllamaClientMock) SetShowResponse(modelfile string) {
+	m.ShowFunc = func(ctx context.Context, req *api.ShowRequest) (*api.ShowResponse, error) {
+		return &api.ShowResponse{
+			Modelfile: modelfile,
+		}, nil
+	}
+}
+
+// SetShowError sets the mock to return an error for show
+func (m *OllamaClientMock) SetShowError(err error) {
+	m.ShouldFailShow = true
+	m.ShowError = err
 }
