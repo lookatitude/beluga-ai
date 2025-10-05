@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -30,9 +31,9 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 
 		// Create providers with different token characteristics
 		providers := map[string]iface.ChatModel{
-			"efficient-provider":   createMockProviderWithTokenCharacteristics("efficient", "model", 1.2),   // Low token usage
-			"verbose-provider":     createMockProviderWithTokenCharacteristics("verbose", "model", 2.5),     // High token usage
-			"balanced-provider":    createMockProviderWithTokenCharacteristics("balanced", "model", 1.8),    // Moderate usage
+			"efficient-provider": createMockProviderWithTokenCharacteristics("efficient", "model", 1.2), // Low token usage
+			"verbose-provider":   createMockProviderWithTokenCharacteristics("verbose", "model", 2.5),   // High token usage
+			"balanced-provider":  createMockProviderWithTokenCharacteristics("balanced", "model", 1.8),  // Moderate usage
 		}
 
 		// Test prompts with known complexity levels
@@ -44,17 +45,17 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 
 		// Analyze token usage for each provider and prompt
 		var analysisResults []*benchmarks.TokenAnalysisResult
-		
+
 		for providerName, provider := range providers {
 			for _, prompt := range testPrompts {
-				result, err := optimizer.AnalyzeTokenUsage(ctx, provider, prompt.Content, 
+				result, err := optimizer.AnalyzeTokenUsage(ctx, provider, prompt.Content,
 					benchmarks.TokenAnalysisOptions{
-						MaxTokens:           prompt.MaxTokens,
-						CalculateCost:       true,
-						GenerateHints:       true,
-						CompareToBaseline:   true,
+						MaxTokens:         prompt.MaxTokens,
+						CalculateCost:     true,
+						GenerateHints:     true,
+						CompareToBaseline: true,
 					})
-				assert.NoError(t, err, "Token analysis for %s with %s prompt should succeed", 
+				assert.NoError(t, err, "Token analysis for %s with %s prompt should succeed",
 					providerName, prompt.ExpectedComplexity)
 				assert.NotNil(t, result, "Analysis result should not be nil")
 
@@ -93,17 +94,17 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 
 		// Create provider with known pricing characteristics
 		provider := createMockProviderWithPricing("cost-test", "gpt-4", benchmarks.PricingModel{
-			InputTokenCostPer1K:  0.03,  // $0.03 per 1K input tokens
-			OutputTokenCostPer1K: 0.06,  // $0.06 per 1K output tokens
+			InputTokenCostPer1K:  0.03, // $0.03 per 1K input tokens
+			OutputTokenCostPer1K: 0.06, // $0.06 per 1K output tokens
 		})
 
 		// Test cost calculation with known token counts
 		testCases := []struct {
-			prompt        string
-			expectedInput int
+			prompt         string
+			expectedInput  int
 			expectedOutput int
 		}{
-			{"Short prompt", 10, 25},                    // Simple case
+			{"Short prompt", 10, 25},                      // Simple case
 			{"Medium length prompt with details", 25, 75}, // Medium case
 			{"Very detailed and comprehensive prompt requiring extensive analysis and explanation", 50, 200}, // Complex case
 		}
@@ -111,7 +112,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 		for _, testCase := range testCases {
 			result, err := optimizer.AnalyzeTokenUsage(ctx, provider, testCase.prompt,
 				benchmarks.TokenAnalysisOptions{
-					CalculateCost:     true,
+					CalculateCost:        true,
 					ExpectedInputTokens:  testCase.expectedInput,
 					ExpectedOutputTokens: testCase.expectedOutput,
 				})
@@ -128,7 +129,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 			}
 
 			t.Logf("Prompt: '%s' -> %d input, %d output tokens, $%.4f",
-				testCase.prompt, result.TokenUsage.InputTokens, 
+				testCase.prompt, result.TokenUsage.InputTokens,
 				result.TokenUsage.OutputTokens, result.CostAnalysis.TotalCostUSD)
 		}
 	})
@@ -155,13 +156,13 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 				expected: []string{"prompt_optimization", "output_length_control"},
 			},
 			{
-				name:     "inefficient-input", 
+				name:     "inefficient-input",
 				provider: createMockProviderWithTokenCharacteristics("inefficient", "model", 1.1),
 				prompt:   "This is a very long and unnecessarily detailed prompt that could be made much more concise while maintaining the same meaning and intent, which would reduce token usage and cost significantly.", // Verbose prompt
 				expected: []string{"prompt_simplification", "input_optimization"},
 			},
 			{
-				name:     "cost-inefficient",
+				name: "cost-inefficient",
 				provider: createMockProviderWithPricing("expensive", "premium-model", benchmarks.PricingModel{
 					InputTokenCostPer1K:  0.10, // Very expensive
 					OutputTokenCostPer1K: 0.20,
@@ -182,7 +183,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 				assert.NoError(t, err, "Token analysis should succeed")
 
 				// Verify optimization hints are generated
-				assert.NotEmpty(t, result.OptimizationHints, 
+				assert.NotEmpty(t, result.OptimizationHints,
 					"Should generate optimization hints")
 
 				// Check for expected hint categories
@@ -193,7 +194,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 
 				for _, expectedCategory := range scenario.expected {
 					if hintCategories[expectedCategory] {
-						t.Logf("Scenario %s correctly generated %s hint", 
+						t.Logf("Scenario %s correctly generated %s hint",
 							scenario.name, expectedCategory)
 					}
 				}
@@ -225,7 +226,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 		for i := 0; i < numHistoricalPoints; i++ {
 			// Gradually increase prompt complexity to show trend
 			complexity := i + 5 // Start with some base complexity
-			historicalPrompts[i] = fmt.Sprintf("Prompt with complexity level %d requiring analysis of %d factors", 
+			historicalPrompts[i] = fmt.Sprintf("Prompt with complexity level %d requiring analysis of %d factors",
 				complexity, complexity*2)
 		}
 
@@ -249,7 +250,7 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 		assert.NotNil(t, trendAnalysis, "Trend analysis should not be nil")
 
 		// Verify trend analysis
-		assert.Equal(t, numHistoricalPoints, trendAnalysis.DataPoints, 
+		assert.Equal(t, numHistoricalPoints, trendAnalysis.DataPoints,
 			"Should analyze all historical points")
 		assert.GreaterOrEqual(t, trendAnalysis.ConfidenceLevel, 0.7,
 			"Should have reasonable confidence in trend")
@@ -272,9 +273,9 @@ func TestTokenOptimizationIntegration(t *testing.T) {
 // Helper types and functions for token optimization testing
 
 type TokenTestPrompt struct {
-	Content           string
+	Content            string
 	ExpectedComplexity string
-	MaxTokens         int
+	MaxTokens          int
 }
 
 func createMockProviderWithTokenCharacteristics(provider, model string, verbosityMultiplier float64) iface.ChatModel {

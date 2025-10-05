@@ -198,14 +198,14 @@ type PerformanceProfile struct {
 
 // TrendAnalysis provides temporal analysis of performance characteristics
 type TrendAnalysis struct {
-	TrendID           string    `json:"trend_id" validate:"required"`
-	DataPoints        int       `json:"data_points" validate:"min=3"`
-	ConfidenceLevel   float64   `json:"confidence_level" validate:"min=0,max=1"`
-	LatencyTrend      string    `json:"latency_trend"` // "improving", "degrading", "stable"
-	ThroughputTrend   string    `json:"throughput_trend"`
-	CostTrend         string    `json:"cost_trend"`
-	TrendSummary      string    `json:"trend_summary"`
-	TokenUsageTrend   string    `json:"token_usage_trend"`
+	TrendID         string  `json:"trend_id" validate:"required"`
+	DataPoints      int     `json:"data_points" validate:"min=3"`
+	ConfidenceLevel float64 `json:"confidence_level" validate:"min=0,max=1"`
+	LatencyTrend    string  `json:"latency_trend"` // "improving", "degrading", "stable"
+	ThroughputTrend string  `json:"throughput_trend"`
+	CostTrend       string  `json:"cost_trend"`
+	TrendSummary    string  `json:"trend_summary"`
+	TokenUsageTrend string  `json:"token_usage_trend"`
 }
 
 // Configuration types for benchmark components
@@ -229,7 +229,7 @@ type MetricsCollectorOptions struct {
 	EnableLatencyTracking bool `json:"enable_latency_tracking"`
 	EnableTokenTracking   bool `json:"enable_token_tracking"`
 	EnableMemoryTracking  bool `json:"enable_memory_tracking"`
-	BufferSize           int  `json:"buffer_size" validate:"min=100"`
+	BufferSize            int  `json:"buffer_size" validate:"min=100"`
 }
 
 // ProfileManagerOptions configures the profile manager
@@ -238,6 +238,7 @@ type ProfileManagerOptions struct {
 	MaxProfiles  int           `json:"max_profiles" validate:"min=1"`
 	ArchiveAfter time.Duration `json:"archive_after" validate:"min=1h"`
 	EnableTrends bool          `json:"enable_trends"`
+	MinTrendData int           `json:"min_trend_data" validate:"min=1"`
 }
 
 // MockConfiguratorOptions configures the mock configurator
@@ -297,12 +298,12 @@ type LoadTestConfig struct {
 
 // StandardScenarioConfig configures standard benchmark scenarios
 type StandardScenarioConfig struct {
-	TestPrompts      []string      `json:"test_prompts" validate:"required,min=1"`
-	OperationCount   int           `json:"operation_count" validate:"min=1"`
-	ConcurrencyLevel int           `json:"concurrency_level" validate:"min=1"`
-	TimeoutDuration  time.Duration `json:"timeout_duration" validate:"min=1s"`
-	RequiresTools    bool          `json:"requires_tools"`
-	RequiresStreaming bool         `json:"requires_streaming"`
+	TestPrompts       []string      `json:"test_prompts" validate:"required,min=1"`
+	OperationCount    int           `json:"operation_count" validate:"min=1"`
+	ConcurrencyLevel  int           `json:"concurrency_level" validate:"min=1"`
+	TimeoutDuration   time.Duration `json:"timeout_duration" validate:"min=1s"`
+	RequiresTools     bool          `json:"requires_tools"`
+	RequiresStreaming bool          `json:"requires_streaming"`
 }
 
 // Analysis result types
@@ -321,11 +322,11 @@ type PerformanceAnalysis struct {
 	ReliabilityScore    float64 `json:"reliability_score" validate:"min=0,max=100"`
 
 	// Analysis Components
-	LatencyAnalysis     *LatencyMetrics      `json:"latency_analysis,omitempty"`
-	StatisticalSummary  *StatisticalSummary  `json:"statistical_summary,omitempty"`
-	KeyInsights         []string             `json:"key_insights"`
-	PerformanceIssues   []PerformanceIssue   `json:"performance_issues"`
-	Recommendations     []OptimizationRecommendation `json:"recommendations"`
+	LatencyAnalysis    *LatencyMetrics              `json:"latency_analysis,omitempty"`
+	StatisticalSummary *StatisticalSummary          `json:"statistical_summary,omitempty"`
+	KeyInsights        []string                     `json:"key_insights"`
+	PerformanceIssues  []PerformanceIssue           `json:"performance_issues"`
+	Recommendations    []OptimizationRecommendation `json:"recommendations"`
 }
 
 // StatisticalSummary provides statistical confidence information
@@ -343,21 +344,21 @@ type ConfidenceInterval struct {
 
 // ProviderComparison provides detailed comparison between providers
 type ProviderComparison struct {
-	ComparisonID       string                    `json:"comparison_id" validate:"required"`
-	CreatedAt          time.Time                 `json:"created_at" validate:"required"`
-	ProviderRankings   map[string]ProviderRanking `json:"provider_rankings" validate:"required"`
-	PerformanceMatrix  *PerformanceMatrix        `json:"performance_matrix"`
-	WinnerByCategory   map[string]string         `json:"winner_by_category"`
-	OverallWinner      string                    `json:"overall_winner"`
+	ComparisonID      string                     `json:"comparison_id" validate:"required"`
+	CreatedAt         time.Time                  `json:"created_at" validate:"required"`
+	ProviderRankings  map[string]ProviderRanking `json:"provider_rankings" validate:"required"`
+	PerformanceMatrix *PerformanceMatrix         `json:"performance_matrix"`
+	WinnerByCategory  map[string]string          `json:"winner_by_category"`
+	OverallWinner     string                     `json:"overall_winner"`
 }
 
 // ProviderRanking represents a provider's ranking in comparison
 type ProviderRanking struct {
-	Rank         int     `json:"rank" validate:"min=1"`
-	OverallScore float64 `json:"overall_score" validate:"min=0,max=100"`
-	LatencyRank  int     `json:"latency_rank" validate:"min=1"`
-	CostRank     int     `json:"cost_rank" validate:"min=1"`
-	ReliabilityRank int  `json:"reliability_rank" validate:"min=1"`
+	Rank            int     `json:"rank" validate:"min=1"`
+	OverallScore    float64 `json:"overall_score" validate:"min=0,max=100"`
+	LatencyRank     int     `json:"latency_rank" validate:"min=1"`
+	CostRank        int     `json:"cost_rank" validate:"min=1"`
+	ReliabilityRank int     `json:"reliability_rank" validate:"min=1"`
 }
 
 // PerformanceMatrix provides detailed performance comparison data
@@ -394,40 +395,40 @@ type OptimizationRecommendation struct {
 
 // TokenAnalysisResult represents the outcome of token usage analysis
 type TokenAnalysisResult struct {
-	AnalysisID         string                    `json:"analysis_id" validate:"required"`
-	ProviderName       string                    `json:"provider_name" validate:"required"`
-	ModelName          string                    `json:"model_name" validate:"required"`
-	PromptText         string                    `json:"prompt_text" validate:"required"`
-	Timestamp          time.Time                 `json:"timestamp" validate:"required"`
-	TokenUsage         TokenUsage                `json:"token_usage" validate:"required"`
-	CostAnalysis       CostAnalysis              `json:"cost_analysis" validate:"required"`
-	EfficiencyScore    float64                   `json:"efficiency_score" validate:"min=0,max=100"`
-	OptimizationHints  []TokenOptimizationHint   `json:"optimization_hints"`
+	AnalysisID        string                  `json:"analysis_id" validate:"required"`
+	ProviderName      string                  `json:"provider_name" validate:"required"`
+	ModelName         string                  `json:"model_name" validate:"required"`
+	PromptText        string                  `json:"prompt_text" validate:"required"`
+	Timestamp         time.Time               `json:"timestamp" validate:"required"`
+	TokenUsage        TokenUsage              `json:"token_usage" validate:"required"`
+	CostAnalysis      CostAnalysis            `json:"cost_analysis" validate:"required"`
+	EfficiencyScore   float64                 `json:"efficiency_score" validate:"min=0,max=100"`
+	OptimizationHints []TokenOptimizationHint `json:"optimization_hints"`
 }
 
 // TokenOptimizationHint provides specific advice for token usage optimization
 type TokenOptimizationHint struct {
-	Category       string `json:"category" validate:"required"`
-	Description    string `json:"description" validate:"required"`
-	Recommendation string `json:"recommendation" validate:"required"`
-	Impact         string `json:"impact" validate:"oneof=low medium high"`
+	Category         string  `json:"category" validate:"required"`
+	Description      string  `json:"description" validate:"required"`
+	Recommendation   string  `json:"recommendation" validate:"required"`
+	Impact           string  `json:"impact" validate:"oneof=low medium high"`
 	PotentialSavings float64 `json:"potential_savings" validate:"min=0,max=100"` // Percentage
 }
 
 // OptimizationReport provides comprehensive token usage optimization analysis
 type OptimizationReport struct {
-	ReportID                     string                            `json:"report_id" validate:"required"`
-	CreatedAt                    time.Time                         `json:"created_at" validate:"required"`
-	Recommendations              []TokenOptimizationHint           `json:"recommendations" validate:"required"`
-	ProviderEfficiencyComparison map[string]float64                `json:"provider_efficiency_comparison" validate:"required"`
-	CostOptimizationSuggestions  []CostOptimizationSuggestion      `json:"cost_optimization_suggestions"`
+	ReportID                     string                       `json:"report_id" validate:"required"`
+	CreatedAt                    time.Time                    `json:"created_at" validate:"required"`
+	Recommendations              []TokenOptimizationHint      `json:"recommendations" validate:"required"`
+	ProviderEfficiencyComparison map[string]float64           `json:"provider_efficiency_comparison" validate:"required"`
+	CostOptimizationSuggestions  []CostOptimizationSuggestion `json:"cost_optimization_suggestions"`
 }
 
 // CostOptimizationSuggestion provides cost reduction recommendations
 type CostOptimizationSuggestion struct {
-	Type               string  `json:"type" validate:"required"`
-	Description        string  `json:"description" validate:"required"`
-	EstimatedSavings   float64 `json:"estimated_savings" validate:"min=0"` // USD amount
+	Type               string   `json:"type" validate:"required"`
+	Description        string   `json:"description" validate:"required"`
+	EstimatedSavings   float64  `json:"estimated_savings" validate:"min=0"` // USD amount
 	ImplementationTips []string `json:"implementation_tips"`
 }
 
@@ -445,45 +446,45 @@ type TTFTResult struct {
 
 // StreamingThroughputResult represents streaming throughput analysis
 type StreamingThroughputResult struct {
-	ProviderName        string              `json:"provider_name" validate:"required"`
-	ModelName           string              `json:"model_name" validate:"required"`
-	TokensPerSecond     float64             `json:"tokens_per_second" validate:"min=0"`
-	TotalStreamingTime  time.Duration       `json:"total_streaming_time" validate:"min=0"`
-	TotalTokensStreamed int                 `json:"total_tokens_streamed" validate:"min=0"`
-	ThroughputCurve     []ThroughputPoint   `json:"throughput_curve"`
-	Timestamp           time.Time           `json:"timestamp" validate:"required"`
+	ProviderName        string            `json:"provider_name" validate:"required"`
+	ModelName           string            `json:"model_name" validate:"required"`
+	TokensPerSecond     float64           `json:"tokens_per_second" validate:"min=0"`
+	TotalStreamingTime  time.Duration     `json:"total_streaming_time" validate:"min=0"`
+	TotalTokensStreamed int               `json:"total_tokens_streamed" validate:"min=0"`
+	ThroughputCurve     []ThroughputPoint `json:"throughput_curve"`
+	Timestamp           time.Time         `json:"timestamp" validate:"required"`
 }
 
 // BackpressureResult represents backpressure handling analysis
 type BackpressureResult struct {
-	ProviderName        string        `json:"provider_name" validate:"required"`
-	ModelName           string        `json:"model_name" validate:"required"`
-	BackpressureEvents  int           `json:"backpressure_events" validate:"min=0"`
-	MaxBufferSize       int64         `json:"max_buffer_size" validate:"min=0"`
-	RecoveryTime        time.Duration `json:"recovery_time" validate:"min=0"`
-	BufferUtilization   float64       `json:"buffer_utilization" validate:"min=0,max=1"`
-	Timestamp           time.Time     `json:"timestamp" validate:"required"`
+	ProviderName       string        `json:"provider_name" validate:"required"`
+	ModelName          string        `json:"model_name" validate:"required"`
+	BackpressureEvents int           `json:"backpressure_events" validate:"min=0"`
+	MaxBufferSize      int64         `json:"max_buffer_size" validate:"min=0"`
+	RecoveryTime       time.Duration `json:"recovery_time" validate:"min=0"`
+	BufferUtilization  float64       `json:"buffer_utilization" validate:"min=0,max=1"`
+	Timestamp          time.Time     `json:"timestamp" validate:"required"`
 }
 
 // StreamingMemoryResult represents memory analysis during streaming
 type StreamingMemoryResult struct {
-	ProviderName           string    `json:"provider_name" validate:"required"`
-	ModelName              string    `json:"model_name" validate:"required"`
-	PeakMemoryUsage        int64     `json:"peak_memory_usage" validate:"min=0"`
-	AverageMemoryUsage     int64     `json:"average_memory_usage" validate:"min=0"`
-	MemoryGrowthRate       float64   `json:"memory_growth_rate"`
-	MemoryEfficiencyScore  float64   `json:"memory_efficiency_score" validate:"min=0,max=100"`
-	GCPressure             float64   `json:"gc_pressure" validate:"min=0,max=1"`
-	Timestamp              time.Time `json:"timestamp" validate:"required"`
+	ProviderName          string    `json:"provider_name" validate:"required"`
+	ModelName             string    `json:"model_name" validate:"required"`
+	PeakMemoryUsage       int64     `json:"peak_memory_usage" validate:"min=0"`
+	AverageMemoryUsage    int64     `json:"average_memory_usage" validate:"min=0"`
+	MemoryGrowthRate      float64   `json:"memory_growth_rate"`
+	MemoryEfficiencyScore float64   `json:"memory_efficiency_score" validate:"min=0,max=100"`
+	GCPressure            float64   `json:"gc_pressure" validate:"min=0,max=1"`
+	Timestamp             time.Time `json:"timestamp" validate:"required"`
 }
 
 // Pricing and cost analysis types
 
 // PricingModel represents provider pricing structure
 type PricingModel struct {
-	InputTokenCostPer1K  float64 `json:"input_token_cost_per_1k" validate:"min=0"`
-	OutputTokenCostPer1K float64 `json:"output_token_cost_per_1k" validate:"min=0"`
-	ModelTier            string  `json:"model_tier"`
+	InputTokenCostPer1K  float64   `json:"input_token_cost_per_1k" validate:"min=0"`
+	OutputTokenCostPer1K float64   `json:"output_token_cost_per_1k" validate:"min=0"`
+	ModelTier            string    `json:"model_tier"`
 	EffectiveDate        time.Time `json:"effective_date"`
 }
 
@@ -528,7 +529,7 @@ func (br *BenchmarkResult) Validate() error {
 	if br.OperationCount <= 0 {
 		return fmt.Errorf("operation count must be positive")
 	}
-	if br.SuccessfulOps + br.FailedOps != br.OperationCount {
+	if br.SuccessfulOps+br.FailedOps != br.OperationCount {
 		return fmt.Errorf("successful + failed operations must equal total operations")
 	}
 	if br.ErrorRate < 0 || br.ErrorRate > 1 {
@@ -542,7 +543,7 @@ func (tu *TokenUsage) Validate() error {
 	if tu.InputTokens < 0 || tu.OutputTokens < 0 {
 		return fmt.Errorf("token counts must be non-negative")
 	}
-	if tu.TotalTokens != tu.InputTokens + tu.OutputTokens {
+	if tu.TotalTokens != tu.InputTokens+tu.OutputTokens {
 		return fmt.Errorf("total tokens must equal input + output tokens")
 	}
 	if tu.TokensPerSecond < 0 {

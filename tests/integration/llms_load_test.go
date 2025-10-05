@@ -4,7 +4,6 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -24,16 +23,16 @@ func TestLoadTestingIntegration(t *testing.T) {
 	t.Run("SustainedLoadTesting", func(t *testing.T) {
 		// Create load tester
 		loadTester, err := benchmarks.NewLoadTester(benchmarks.LoadTesterOptions{
-			MaxConcurrency:     50,
-			DefaultTimeout:     30 * time.Second,
-			EnableMetrics:      true,
-			EnableStressMode:   false, // Normal load testing
+			MaxConcurrency:   50,
+			DefaultTimeout:   30 * time.Second,
+			EnableMetrics:    true,
+			EnableStressMode: false, // Normal load testing
 		})
 		require.NoError(t, err, "LoadTester creation should succeed")
 
 		// Create test provider
 		provider := createMockProviderForLoad("load-test", "model", 100*time.Millisecond)
-		
+
 		// Configure load test
 		loadConfig := benchmarks.LoadTestConfig{
 			Duration:       5 * time.Second,
@@ -96,11 +95,11 @@ func TestLoadTestingIntegration(t *testing.T) {
 		// Verify stress test handles high load
 		assert.GreaterOrEqual(t, stressResult.TotalOperations, 100,
 			"Should execute many operations under stress")
-		
+
 		// Error rate might be higher under stress, but should be tracked
 		errorRate := float64(stressResult.FailedOps) / float64(stressResult.TotalOperations)
 		assert.LessOrEqual(t, errorRate, 0.5, "Error rate under stress should be ≤50%")
-		
+
 		// Should still achieve reasonable performance
 		if stressResult.ActualRPS > 0 {
 			efficiencyPercent := (stressResult.ActualRPS / float64(stressConfig.TargetRPS)) * 100
@@ -144,7 +143,7 @@ func TestLoadTestingIntegration(t *testing.T) {
 
 		// Calculate overall error rate
 		overallErrorRate := float64(loadResult.FailedOps) / float64(loadResult.TotalOperations)
-		assert.InDelta(t, 0.1, overallErrorRate, 0.05, 
+		assert.InDelta(t, 0.1, overallErrorRate, 0.05,
 			"Overall error rate should be close to configured 10%")
 
 		t.Logf("Load test with errors: %.1f%% error rate (%d/%d operations)",
@@ -251,13 +250,13 @@ func TestLoadTestingMultiProvider(t *testing.T) {
 			wg.Add(1)
 			go func(name string, p iface.ChatModel) {
 				defer wg.Done()
-				
+
 				result, err := loadTester.RunLoadTest(ctx, p, loadConfig)
 				if err != nil {
 					t.Logf("Provider %s failed as expected: %v", name, err)
 					return
 				}
-				
+
 				if result != nil {
 					results = append(results, result)
 				}
@@ -272,12 +271,12 @@ func TestLoadTestingMultiProvider(t *testing.T) {
 		// Verify that failing provider behavior is captured
 		for _, result := range results {
 			assert.NotEmpty(t, result.TestID, "Result should have test ID")
-			
+
 			// Check if error rate increased over time (indicating failure)
 			if len(result.ErrorRateOverTime) > 1 {
 				firstErrorRate := result.ErrorRateOverTime[0].ErrorRate
 				lastErrorRate := result.ErrorRateOverTime[len(result.ErrorRateOverTime)-1].ErrorRate
-				
+
 				if lastErrorRate > firstErrorRate {
 					t.Logf("Detected error rate increase from %.1f%% to %.1f%% (failure captured)",
 						firstErrorRate*100, lastErrorRate*100)
@@ -329,7 +328,7 @@ func TestLoadTestingPerformance(t *testing.T) {
 			"Should achieve at least 70% of target operations")
 
 		t.Logf("Load test efficiency: %.1f%% (%d/%d ops), overhead: %v",
-			actualOpsPercent, result.TotalOperations, expectedOps, 
+			actualOpsPercent, result.TotalOperations, expectedOps,
 			totalDuration-(loadConfig.Duration+loadConfig.RampUpDuration))
 	})
 
@@ -354,7 +353,7 @@ func TestLoadTestingPerformance(t *testing.T) {
 			assert.Less(t, memoryPerOp, int64(1024*1024), // <1MB per operation
 				"Memory per operation should be reasonable")
 
-			memoryEfficiency := float64(result.MemoryMetrics.AverageUsageBytes) / 
+			memoryEfficiency := float64(result.MemoryMetrics.AverageUsageBytes) /
 				float64(result.MemoryMetrics.PeakUsageBytes) * 100
 			assert.GreaterOrEqual(t, memoryEfficiency, 60.0,
 				"Memory efficiency should be ≥60%")
@@ -392,7 +391,7 @@ func TestLoadTestingPerformance(t *testing.T) {
 			wg.Add(1)
 			go func(name string, p iface.ChatModel) {
 				defer wg.Done()
-				
+
 				result, err := loadTester.RunLoadTest(ctx, p, loadConfig)
 				if err != nil {
 					errors <- err

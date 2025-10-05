@@ -4,6 +4,7 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -12,7 +13,6 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/llms/benchmarks"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
-	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 // TestStreamingPerformanceIntegration tests streaming benchmark integration
@@ -23,15 +23,15 @@ func TestStreamingPerformanceIntegration(t *testing.T) {
 	t.Run("TTFTMeasurement", func(t *testing.T) {
 		// Create streaming analyzer
 		analyzer, err := benchmarks.NewStreamingAnalyzer(benchmarks.StreamingAnalyzerOptions{
-			EnableTTFTTracking:      true,
+			EnableTTFTTracking:       true,
 			EnableThroughputTracking: true,
-			SampleRate:              1.0, // Track all operations
+			SampleRate:               1.0, // Track all operations
 		})
 		require.NoError(t, err, "StreamingAnalyzer creation should succeed")
 
 		// Create mock streaming provider
 		streamingProvider := createMockStreamingProvider("streaming-test", "model", 50*time.Millisecond)
-		
+
 		// Test TTFT measurement
 		ttftResult, err := analyzer.MeasureTTFT(ctx, streamingProvider, "Test streaming prompt for TTFT")
 		assert.NoError(t, err, "TTFT measurement should succeed")
@@ -50,14 +50,14 @@ func TestStreamingPerformanceIntegration(t *testing.T) {
 	t.Run("StreamingThroughputAnalysis", func(t *testing.T) {
 		analyzer, err := benchmarks.NewStreamingAnalyzer(benchmarks.StreamingAnalyzerOptions{
 			EnableThroughputTracking: true,
-			ThroughputWindowSize:    time.Second,
+			ThroughputWindowSize:     time.Second,
 		})
 		require.NoError(t, err)
 
 		streamingProvider := createMockStreamingProvider("throughput-test", "model", 25*time.Millisecond)
 
 		// Analyze streaming throughput
-		throughputResult, err := analyzer.AnalyzeThroughput(ctx, streamingProvider, 
+		throughputResult, err := analyzer.AnalyzeThroughput(ctx, streamingProvider,
 			"Long streaming prompt to analyze throughput characteristics over extended period")
 		assert.NoError(t, err, "Throughput analysis should succeed")
 		assert.NotNil(t, throughputResult, "Throughput result should not be nil")
@@ -132,9 +132,9 @@ func TestStreamingBenchmarkPerformance(t *testing.T) {
 	// Test streaming benchmark suite performance
 	t.Run("StreamingBenchmarkSuitePerformance", func(t *testing.T) {
 		analyzer, err := benchmarks.NewStreamingAnalyzer(benchmarks.StreamingAnalyzerOptions{
-			EnableTTFTTracking:      true,
+			EnableTTFTTracking:       true,
 			EnableThroughputTracking: true,
-			EnableMemoryTracking:    true,
+			EnableMemoryTracking:     true,
 		})
 		require.NoError(t, err)
 
@@ -171,7 +171,7 @@ func TestStreamingBenchmarkPerformance(t *testing.T) {
 		assert.Less(t, totalDuration, 15*time.Second,
 			"Streaming benchmark suite should complete in <15s (took %v)", totalDuration)
 
-		t.Logf("Completed streaming benchmarks for %d providers in %v", 
+		t.Logf("Completed streaming benchmarks for %d providers in %v",
 			len(streamingProviders), totalDuration)
 	})
 
@@ -233,7 +233,7 @@ func TestStreamingBenchmarkPerformance(t *testing.T) {
 				"TTFT result %d should have provider name", i)
 		}
 
-		t.Logf("Completed %d concurrent streaming benchmarks in %v", 
+		t.Logf("Completed %d concurrent streaming benchmarks in %v",
 			numConcurrentStreams, concurrentDuration)
 	})
 }

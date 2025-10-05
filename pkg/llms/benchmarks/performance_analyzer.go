@@ -1,7 +1,6 @@
 package benchmarks
 
 import (
-	"context"
 	"fmt"
 	"math"
 	"sort"
@@ -150,7 +149,7 @@ func (pa *PerformanceAnalyzer) GenerateOptimizationRecommendations(analysis *Per
 		recommendations = append(recommendations, OptimizationRecommendation{
 			Priority:        "high",
 			Category:        "latency",
-			Title:           "Improve Response Latency", 
+			Title:           "Improve Response Latency",
 			Description:     "High latency detected in benchmark results",
 			Implementation:  "Consider provider optimization, request batching, or caching",
 			ExpectedImpact:  "20-40% latency reduction",
@@ -405,10 +404,10 @@ func (pa *PerformanceAnalyzer) calculateStatisticalSummary(results []*BenchmarkR
 
 	mean := pa.calculateMean(latencies)
 	stdDev := pa.calculateStandardDeviation(latencies, mean)
-	
+
 	// Calculate confidence interval
 	marginOfError := pa.calculateMarginOfError(stdDev, len(latencies), pa.options.ConfidenceLevel)
-	
+
 	return &StatisticalSummary{
 		SampleSize:      len(results),
 		ConfidenceLevel: pa.options.ConfidenceLevel,
@@ -432,7 +431,7 @@ func (pa *PerformanceAnalyzer) aggregateLatencyMetrics(results []*BenchmarkResul
 		latency := result.LatencyMetrics.Mean
 		allLatencies = append(allLatencies, latency)
 		totalLatency += latency
-		
+
 		if i == 0 {
 			minLatency = latency
 			maxLatency = latency
@@ -452,7 +451,7 @@ func (pa *PerformanceAnalyzer) aggregateLatencyMetrics(results []*BenchmarkResul
 	})
 
 	meanLatency := totalLatency / time.Duration(len(results))
-	
+
 	return &LatencyMetrics{
 		P50:  allLatencies[len(allLatencies)*50/100],
 		P95:  allLatencies[len(allLatencies)*95/100],
@@ -469,7 +468,7 @@ func (pa *PerformanceAnalyzer) calculateMean(values []float64) float64 {
 	if len(values) == 0 {
 		return 0
 	}
-	
+
 	var sum float64
 	for _, v := range values {
 		sum += v
@@ -487,7 +486,7 @@ func (pa *PerformanceAnalyzer) calculateStandardDeviation(values []float64, mean
 		diff := v - mean
 		sumSquares += diff * diff
 	}
-	
+
 	variance := sumSquares / float64(len(values)-1)
 	return math.Sqrt(variance)
 }
@@ -501,7 +500,7 @@ func (pa *PerformanceAnalyzer) calculateMarginOfError(stdDev float64, sampleSize
 	} else if confidence > 0.98 {
 		zScore = 2.33 // For 98% confidence
 	}
-	
+
 	return zScore * stdDev / math.Sqrt(float64(sampleSize))
 }
 
@@ -520,7 +519,7 @@ func (pa *PerformanceAnalyzer) analyzeTrend(results []*BenchmarkResult, extracto
 	lastThird := pa.calculateMean(values[len(values)*2/3:])
 
 	improvementThreshold := 0.05 // 5% improvement threshold
-	
+
 	if lastThird > firstThird*(1+improvementThreshold) {
 		return "improving"
 	} else if lastThird < firstThird*(1-improvementThreshold) {
@@ -536,9 +535,9 @@ func (pa *PerformanceAnalyzer) generateTrendSummary(trends *TrendAnalysis) strin
 	stable := 0
 
 	trends_map := map[string]string{
-		"latency":     trends.LatencyTrend,
-		"throughput":  trends.ThroughputTrend,
-		"cost":        trends.CostTrend,
+		"latency":    trends.LatencyTrend,
+		"throughput": trends.ThroughputTrend,
+		"cost":       trends.CostTrend,
 	}
 
 	for _, trend := range trends_map {
@@ -637,8 +636,8 @@ func (pa *PerformanceAnalyzer) rankByCost(results map[string]*BenchmarkResult) m
 
 func (pa *PerformanceAnalyzer) rankByReliability(results map[string]*BenchmarkResult) map[string]int {
 	type providerReliability struct {
-		name       string
-		errorRate  float64
+		name      string
+		errorRate float64
 	}
 
 	var providers []providerReliability
@@ -693,7 +692,7 @@ func (pa *PerformanceAnalyzer) calculateProviderScore(result *BenchmarkResult) f
 	latencyScore := math.Max(0, 100-float64(result.LatencyMetrics.Mean.Milliseconds())/10)
 	throughputScore := math.Min(100, result.ThroughputRPS*10)
 	reliabilityScore := (1 - result.ErrorRate) * 100
-	
+
 	// Weighted average
 	return latencyScore*0.4 + throughputScore*0.3 + reliabilityScore*0.3
 }
@@ -786,7 +785,7 @@ func (pa *PerformanceAnalyzer) calculateAverageErrorRate(results []*BenchmarkRes
 	for _, result := range results {
 		totalErrorRate += result.ErrorRate
 	}
-	
+
 	return totalErrorRate / float64(len(results))
 }
 
@@ -799,7 +798,7 @@ func (pa *PerformanceAnalyzer) calculateAverageThroughput(results []*BenchmarkRe
 	for _, result := range results {
 		totalThroughput += result.ThroughputRPS
 	}
-	
+
 	return totalThroughput / float64(len(results))
 }
 

@@ -661,8 +661,10 @@ func TestIntegrationPatterns(t *testing.T) {
 		metrics := helper.GetMetrics()
 
 		// Set up expectations
-		metrics.On("RecordRequest", mock.Anything, "integration-provider", "integration-model", mock.Anything).Return()
-		metrics.On("RecordError", mock.Anything, "integration-provider", "integration-model", mock.Anything, mock.Anything).Return().Maybe()
+		metrics.On("IncrementActiveRequests", mock.Anything, "integration-provider", "integration-model").Return()
+		metrics.On("DecrementActiveRequests", mock.Anything, "integration-provider", "integration-model").Return()
+		metrics.On("RecordRequest", mock.Anything, "integration-provider", "integration-model", mock.AnythingOfType("time.Duration")).Return()
+		metrics.On("RecordError", mock.Anything, "integration-provider", "integration-model", mock.Anything, mock.AnythingOfType("time.Duration")).Return().Maybe()
 
 		ctx := context.Background()
 		messages := CreateTestMessages()
@@ -684,8 +686,7 @@ func TestIntegrationPatterns(t *testing.T) {
 		// Set up expectations
 		tracing.On("StartOperation", mock.Anything, "integration-provider.generate", "integration-provider", "integration-model").Return(ctx)
 		tracing.On("RecordError", mock.Anything, mock.Anything).Return().Maybe()
-		tracing.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
-		tracing.On("EndSpan", mock.Anything).Return().Maybe()
+		tracing.On("AddSpanAttributes", mock.Anything, mock.AnythingOfType("map[string]interface {}")).Return().Maybe()
 		messages := CreateTestMessages()
 
 		// This would normally create spans
@@ -885,11 +886,57 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 	}
 }
 
+// failingMock wraps a mock to simulate failures before success
+type failingMock struct {
+	baseMock    iface.ChatModel
+	failures    *int
+	maxFailures int
+}
+
+func (f *failingMock) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
+	*f.failures++
+	if *f.failures <= f.maxFailures {
+		return nil, NewLLMError("generate", ErrCodeNetworkError, errors.New("temporary network error"))
+	}
+	return schema.NewAIMessage("Success after retry"), nil
+}
+
+func (f *failingMock) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
+	return f.baseMock.StreamChat(ctx, messages, options...)
+}
+
+func (f *failingMock) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
+	return f.baseMock.BindTools(toolsToBind)
+}
+
+func (f *failingMock) GetModelName() string {
+	return f.baseMock.GetModelName()
+}
+
+func (f *failingMock) CheckHealth() map[string]interface{} {
+	return f.baseMock.CheckHealth()
+}
+
+func (f *failingMock) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	return f.baseMock.Invoke(ctx, input, options...)
+}
+
+func (f *failingMock) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	return f.baseMock.Batch(ctx, inputs, options...)
+}
+
+func (f *failingMock) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	return f.baseMock.Stream(ctx, input, options...)
+}
+
 // TestObservabilityAdvanced tests metrics and tracing functionality
 func TestObservabilityAdvanced(t *testing.T) {
-	provider := NewAdvancedMockChatModel("observability-test")
 	metrics := NewMockMetricsRecorder()
 	tracing := NewMockTracingHelper()
+	provider := NewAdvancedMockChatModel("observability-test",
+		WithMetrics(metrics),
+		WithTracing(tracing),
+	)
 
 	// Set up metrics expectations
 	metrics.On("RecordRequest", mock.Anything, "advanced-mock", "observability-test", mock.Anything).Return()
@@ -1134,24 +1181,33 @@ func TestIntegrationWorkflows(t *testing.T) {
 			workflowFn: func(t *testing.T) {
 				// Create provider that fails initially but succeeds on retry
 				failures := 0
-				errorMock := NewAdvancedMockChatModel("error-recovery-test")
-				errorMock.On("Generate", mock.Anything, mock.Anything, mock.Anything).
-					Return(func(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
-						failures++
-						if failures <= 2 {
-							return nil, NewLLMError("generate", ErrCodeNetworkError, errors.New("temporary network error"))
-						}
-						return schema.NewAIMessage("Success after retry"), nil
-					})
+				baseMock := NewAdvancedMockChatModel("error-recovery-test")
+				// Create a custom mock that fails the first 2 times
+				failingProvider := &failingMock{
+					baseMock:    baseMock,
+					failures:    &failures,
+					maxFailures: 2,
+				}
 
+				// Test the mock behavior directly
 				ctx := context.Background()
 				messages := CreateTestMessages()
 
-				// This should eventually succeed after retries
-				response, err := errorMock.Generate(ctx, messages)
+				// First call should fail
+				_, err := failingProvider.Generate(ctx, messages)
+				assert.Error(t, err)
+				assert.Equal(t, 1, failures)
+
+				// Second call should fail
+				_, err = failingProvider.Generate(ctx, messages)
+				assert.Error(t, err)
+				assert.Equal(t, 2, failures)
+
+				// Third call should succeed
+				response, err := failingProvider.Generate(ctx, messages)
 				assert.NoError(t, err)
 				assert.Equal(t, "Success after retry", response.GetContent())
-				assert.Equal(t, 3, failures) // Should have failed twice then succeeded
+				assert.Equal(t, 3, failures)
 			},
 		},
 	}

@@ -4,6 +4,7 @@ package benchmarks
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -20,7 +21,7 @@ func TestMetricsCollector_Contract(t *testing.T) {
 		EnableLatencyTracking: true,
 		EnableTokenTracking:   true,
 		EnableMemoryTracking:  true,
-		BufferSize:           1000,
+		BufferSize:            1000,
 	})
 	require.NoError(t, err, "MetricsCollector creation should succeed")
 	require.NotNil(t, collector, "MetricsCollector should not be nil")
@@ -87,7 +88,7 @@ func TestMetricsCollector_Contract(t *testing.T) {
 	t.Run("ConcurrentCollection", func(t *testing.T) {
 		const numConcurrent = 5
 		benchmarkIDs := make([]string, numConcurrent)
-		
+
 		// Start multiple concurrent collections
 		for i := 0; i < numConcurrent; i++ {
 			benchmarkIDs[i] = fmt.Sprintf("concurrent-benchmark-%d", i)
@@ -173,7 +174,7 @@ func TestMetricsCollector_Performance(t *testing.T) {
 	collector, err := NewMetricsCollector(MetricsCollectorOptions{
 		EnableLatencyTracking: true,
 		EnableTokenTracking:   true,
-		BufferSize:           10000,
+		BufferSize:            10000,
 	})
 	require.NoError(t, err)
 
@@ -204,7 +205,7 @@ func TestMetricsCollector_Performance(t *testing.T) {
 		avgRecordingTime := recordingDuration / numRecordings
 
 		// Stop collection
-		_, err := collector.StopCollection(ctx, benchmarkID)
+		_, err = collector.StopCollection(ctx, benchmarkID)
 		assert.NoError(t, err, "Collection should complete")
 
 		t.Logf("Average recording time: %v", avgRecordingTime)
@@ -259,10 +260,10 @@ func TestMetricsCollector_ErrorHandling(t *testing.T) {
 	// Test duplicate start collection
 	t.Run("DuplicateStartCollection", func(t *testing.T) {
 		benchmarkID := "duplicate-test"
-		
+
 		err := collector.StartCollection(ctx, benchmarkID)
 		assert.NoError(t, err, "First start should succeed")
-		
+
 		err = collector.StartCollection(ctx, benchmarkID)
 		assert.Error(t, err, "Duplicate start should fail")
 	})
@@ -286,14 +287,14 @@ func TestMetricsCollector_ErrorHandling(t *testing.T) {
 	// Test context cancellation
 	t.Run("ContextCancellation", func(t *testing.T) {
 		cancelCtx, cancel := context.WithCancel(ctx)
-		
+
 		benchmarkID := "cancel-test"
 		err := collector.StartCollection(cancelCtx, benchmarkID)
 		assert.NoError(t, err, "Start should succeed")
-		
+
 		// Cancel context
 		cancel()
-		
+
 		// Try to record - should handle cancellation gracefully
 		err = collector.RecordLatency(cancelCtx, time.Millisecond, "cancel-test-op")
 		if err != nil {

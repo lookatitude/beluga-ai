@@ -44,12 +44,12 @@ func (sa *StreamingAnalyzer) MeasureTTFT(ctx context.Context, provider iface.Cha
 
 	// Start timing
 	start := time.Now()
-	
+
 	// For testing, simulate streaming behavior
 	// In real implementation, would integrate with actual streaming
 	firstTokenTime := start.Add(50 * time.Millisecond) // Simulate first token delay
 	lastTokenTime := start.Add(500 * time.Millisecond) // Simulate completion
-	
+
 	result.TimeToFirstToken = firstTokenTime.Sub(start)
 	result.TotalStreamTime = lastTokenTime.Sub(start)
 	result.FirstTokenLatency = result.TimeToFirstToken
@@ -71,11 +71,11 @@ func (sa *StreamingAnalyzer) AnalyzeThroughput(ctx context.Context, provider ifa
 
 	// Simulate streaming analysis
 	start := time.Now()
-	
+
 	// Simulate streaming with throughput measurement
 	streamingDuration := 2 * time.Second
 	tokensStreamed := 150 // Simulate token generation
-	
+
 	result.TotalStreamingTime = streamingDuration
 	result.TotalTokensStreamed = tokensStreamed
 	result.TokensPerSecond = float64(tokensStreamed) / streamingDuration.Seconds()
@@ -85,7 +85,7 @@ func (sa *StreamingAnalyzer) AnalyzeThroughput(ctx context.Context, provider ifa
 	for i := 0; i < numPoints; i++ {
 		timestamp := start.Add(time.Duration(i) * streamingDuration / time.Duration(numPoints))
 		rps := result.TokensPerSecond * (0.8 + 0.4*float64(i)/float64(numPoints)) // Simulate ramp-up
-		
+
 		result.ThroughputCurve = append(result.ThroughputCurve, ThroughputPoint{
 			Timestamp:   timestamp,
 			RPS:         rps,
@@ -132,11 +132,11 @@ func (sa *StreamingAnalyzer) AnalyzeStreamingMemory(ctx context.Context, provide
 	}
 
 	// Simulate memory analysis during streaming
-	result.PeakMemoryUsage = 5 * 1024 * 1024        // 5MB peak
-	result.AverageMemoryUsage = 3 * 1024 * 1024     // 3MB average
-	result.MemoryGrowthRate = 0.02                  // 2% growth rate
-	result.MemoryEfficiencyScore = 85.0             // 85% efficiency
-	result.GCPressure = 0.1                         // 10% GC pressure
+	result.PeakMemoryUsage = 5 * 1024 * 1024    // 5MB peak
+	result.AverageMemoryUsage = 3 * 1024 * 1024 // 3MB average
+	result.MemoryGrowthRate = 0.02              // 2% growth rate
+	result.MemoryEfficiencyScore = 85.0         // 85% efficiency
+	result.GCPressure = 0.1                     // 10% GC pressure
 
 	return result, nil
 }

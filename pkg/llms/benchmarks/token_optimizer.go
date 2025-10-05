@@ -110,7 +110,7 @@ func (to *TokenOptimizer) AnalyzeTrends(historicalResults []*TokenAnalysisResult
 	// Sort by timestamp
 	sortedResults := make([]*TokenAnalysisResult, len(historicalResults))
 	copy(sortedResults, historicalResults)
-	
+
 	for i := 0; i < len(sortedResults)-1; i++ {
 		for j := 0; j < len(sortedResults)-i-1; j++ {
 			if sortedResults[j].Timestamp.After(sortedResults[j+1].Timestamp) {
@@ -126,7 +126,7 @@ func (to *TokenOptimizer) AnalyzeTrends(historicalResults []*TokenAnalysisResult
 	}
 
 	// Analyze token usage trend
-	trends.TokenUsageTrend = to.analyzeTokenTrend(sortedResults)
+	trends.TokenUsageTrend = to.analyzeTokenUsageTrendHelper(sortedResults)
 
 	// Analyze cost trend
 	trends.CostTrend = to.analyzeCostTrend(sortedResults)
@@ -142,10 +142,10 @@ func (to *TokenOptimizer) AnalyzeTrends(historicalResults []*TokenAnalysisResult
 func (to *TokenOptimizer) simulateTokenUsage(prompt string, options TokenAnalysisOptions) TokenUsage {
 	// Simulate token usage based on prompt length and complexity
 	promptLength := len(prompt)
-	
+
 	// Simple heuristic for token estimation (real implementation would use tokenizer)
 	estimatedInputTokens := promptLength / 4 // ~4 characters per token average
-	
+
 	// Use expected tokens if provided, otherwise estimate
 	inputTokens := estimatedInputTokens
 	if options.ExpectedInputTokens > 0 {
@@ -226,7 +226,7 @@ func (to *TokenOptimizer) calculateEfficiencyScore(tokenUsage TokenUsage, prompt
 	promptUtilization := float64(tokenUsage.InputTokens) / float64(promptLength/4) // ~4 chars per token
 
 	// Combine factors into efficiency score
-	efficiency := (outputRatio * 0.6 + promptUtilization * 0.4) * 100
+	efficiency := (outputRatio*0.6 + promptUtilization*0.4) * 100
 	return math.Min(100, math.Max(0, efficiency))
 }
 
@@ -237,11 +237,11 @@ func (to *TokenOptimizer) calculateCostEfficiency(totalCost float64, totalTokens
 
 	// Lower cost per token = higher efficiency
 	costPerToken := totalCost / float64(totalTokens)
-	
+
 	// Normalize to 0-100 scale (assuming $0.0001 per token is baseline)
 	baselineCostPerToken := 0.0001
 	efficiency := (1 - (costPerToken / baselineCostPerToken)) * 100
-	
+
 	return math.Min(100, math.Max(0, efficiency))
 }
 
@@ -385,42 +385,6 @@ func (to *TokenOptimizer) generateCostOptimizationSuggestions(results []*TokenAn
 	return suggestions
 }
 
-// AnalyzeTrends analyzes token usage trends over time
-func (to *TokenOptimizer) AnalyzeTrends(historicalResults []*TokenAnalysisResult) (*TrendAnalysis, error) {
-	if len(historicalResults) < 3 {
-		return nil, fmt.Errorf("need at least 3 data points for trend analysis")
-	}
-
-	// Sort by timestamp
-	sortedResults := make([]*TokenAnalysisResult, len(historicalResults))
-	copy(sortedResults, historicalResults)
-	
-	for i := 0; i < len(sortedResults)-1; i++ {
-		for j := 0; j < len(sortedResults)-i-1; j++ {
-			if sortedResults[j].Timestamp.After(sortedResults[j+1].Timestamp) {
-				sortedResults[j], sortedResults[j+1] = sortedResults[j+1], sortedResults[j]
-			}
-		}
-	}
-
-	trends := &TrendAnalysis{
-		TrendID:         fmt.Sprintf("token-trend-%d", time.Now().UnixNano()),
-		DataPoints:      len(historicalResults),
-		ConfidenceLevel: 0.8,
-	}
-
-	// Analyze token usage trend
-	trends.TokenUsageTrend = to.analyzeTokenUsageTrendHelper(sortedResults)
-
-	// Analyze cost trend
-	trends.CostTrend = to.analyzeCostTrend(sortedResults)
-
-	// Generate summary
-	trends.TrendSummary = to.generateTokenTrendSummary(trends)
-
-	return trends, nil
-}
-
 // Helper methods
 
 func (to *TokenOptimizer) extractProviderName(provider iface.ChatModel) string {
@@ -441,7 +405,7 @@ func (to *TokenOptimizer) analyzeTokenUsageTrendHelper(results []*TokenAnalysisR
 	lastThirdStart := len(results) * 2 / 3
 
 	var firstThirdAvg, lastThirdAvg float64
-	
+
 	for i := 0; i < firstThirdEnd; i++ {
 		firstThirdAvg += float64(results[i].TokenUsage.TotalTokens)
 	}
@@ -454,7 +418,7 @@ func (to *TokenOptimizer) analyzeTokenUsageTrendHelper(results []*TokenAnalysisR
 
 	// Determine trend direction
 	threshold := 0.1 // 10% change threshold
-	
+
 	if lastThirdAvg > firstThirdAvg*(1+threshold) {
 		return "increasing"
 	} else if lastThirdAvg < firstThirdAvg*(1-threshold) {
@@ -474,7 +438,7 @@ func (to *TokenOptimizer) analyzeCostTrend(results []*TokenAnalysisResult) strin
 	lastThirdStart := len(results) * 2 / 3
 
 	var firstThirdAvg, lastThirdAvg float64
-	
+
 	for i := 0; i < firstThirdEnd; i++ {
 		firstThirdAvg += results[i].CostAnalysis.TotalCostUSD
 	}
@@ -486,11 +450,11 @@ func (to *TokenOptimizer) analyzeCostTrend(results []*TokenAnalysisResult) strin
 	lastThirdAvg /= float64(len(results) - lastThirdStart)
 
 	threshold := 0.1 // 10% change threshold
-	
+
 	if lastThirdAvg > firstThirdAvg*(1+threshold) {
 		return "increasing"
 	} else if lastThirdAvg < firstThirdAvg*(1-threshold) {
-		return "decreasing"  
+		return "decreasing"
 	} else {
 		return "stable"
 	}

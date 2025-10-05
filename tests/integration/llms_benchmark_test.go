@@ -4,13 +4,13 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/benchmarks"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
@@ -25,14 +25,14 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 		runner, err := benchmarks.NewBenchmarkRunner(benchmarks.BenchmarkRunnerOptions{
 			EnableMetrics:  true,
 			MaxConcurrency: 10,
-			Timeout:       60 * time.Second,
+			Timeout:        60 * time.Second,
 		})
 		require.NoError(t, err, "BenchmarkRunner creation should succeed")
 
 		analyzer, err := benchmarks.NewPerformanceAnalyzer(benchmarks.PerformanceAnalyzerOptions{
 			EnableTrendAnalysis: true,
-			MinSampleSize:      3,
-			ConfidenceLevel:    0.95,
+			MinSampleSize:       3,
+			ConfidenceLevel:     0.95,
 		})
 		require.NoError(t, err, "PerformanceAnalyzer creation should succeed")
 
@@ -47,10 +47,10 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 				"Write a short story about a robot learning to paint.",
 				"Analyze the following data and provide insights: [1,2,3,4,5]",
 			},
-			OperationCount:   20,
-			ConcurrencyLevel: 3,
-			TimeoutDuration:  30 * time.Second,
-			RequiresTools:    false,
+			OperationCount:    20,
+			ConcurrencyLevel:  3,
+			TimeoutDuration:   30 * time.Second,
+			RequiresTools:     false,
 			RequiresStreaming: false,
 		})
 
@@ -76,14 +76,14 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 		assert.NotNil(t, comparison, "Comparison should not be nil")
 
 		// Verify comparison results
-		assert.Len(t, comparison.ProviderRankings, len(providers), 
+		assert.Len(t, comparison.ProviderRankings, len(providers),
 			"Should rank all providers")
-		assert.NotNil(t, comparison.PerformanceMatrix, 
+		assert.NotNil(t, comparison.PerformanceMatrix,
 			"Should have performance comparison matrix")
 
 		// Verify metrics make sense
 		for providerName, ranking := range comparison.ProviderRankings {
-			assert.Contains(t, providers, providerName, 
+			assert.Contains(t, providers, providerName,
 				"Ranking should be for tested provider")
 			assert.GreaterOrEqual(t, ranking.OverallScore, 0.0,
 				"Provider score should be non-negative")
@@ -91,7 +91,7 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 				"Provider score should be ≤100")
 		}
 
-		t.Logf("Successfully compared %d providers with %d total operations", 
+		t.Logf("Successfully compared %d providers with %d total operations",
 			len(providers), len(allResults))
 	})
 
@@ -127,7 +127,7 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 
 		// Verify we have results from all runs
 		expectedResults := numRuns * len(providers)
-		assert.Len(t, aggregatedResults, expectedResults, 
+		assert.Len(t, aggregatedResults, expectedResults,
 			"Should have results from all runs and providers")
 
 		// Analyze aggregated results
@@ -212,18 +212,18 @@ func TestCrossProviderBenchmarkIntegration(t *testing.T) {
 
 		// Verify each benchmark produced valid results
 		for i, benchmarkResult := range allConcurrentResults {
-			assert.NotEmpty(t, benchmarkResult, 
+			assert.NotEmpty(t, benchmarkResult,
 				"Concurrent benchmark %d should have results", i)
-			
+
 			for providerName, result := range benchmarkResult {
-				assert.NotNil(t, result, 
+				assert.NotNil(t, result,
 					"Result for provider %s in benchmark %d should not be nil", providerName, i)
 				assert.Greater(t, result.Duration, time.Duration(0),
 					"Duration should be positive")
 			}
 		}
 
-		t.Logf("Completed %d concurrent benchmarks in %v", 
+		t.Logf("Completed %d concurrent benchmarks in %v",
 			numConcurrentBenchmarks, totalDuration)
 	})
 }

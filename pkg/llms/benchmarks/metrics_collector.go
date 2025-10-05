@@ -9,8 +9,8 @@ import (
 
 // MetricsCollector implements detailed metrics collection during benchmark execution
 type MetricsCollector struct {
-	options         MetricsCollectorOptions
-	mu              sync.RWMutex
+	options           MetricsCollectorOptions
+	mu                sync.RWMutex
 	activeCollections map[string]*collectionState
 }
 
@@ -218,11 +218,11 @@ func (mc *MetricsCollector) StopCollection(ctx context.Context, benchmarkID stri
 
 	// Aggregate metrics
 	result := &BenchmarkResult{
-		BenchmarkID:      benchmarkID,
-		Timestamp:        collection.startTime,
-		Duration:         time.Since(collection.startTime),
-		OperationCount:   len(collection.operations),
-		Environment:      mc.captureEnvironment(),
+		BenchmarkID:    benchmarkID,
+		Timestamp:      collection.startTime,
+		Duration:       time.Since(collection.startTime),
+		OperationCount: len(collection.operations),
+		Environment:    mc.captureEnvironment(),
 	}
 
 	// Aggregate latency metrics
@@ -303,7 +303,7 @@ func (mc *MetricsCollector) aggregateLatencyMetrics(latencies []latencyRecord) L
 	// Extract durations and sort for percentile calculation
 	durations := make([]time.Duration, len(latencies))
 	var total time.Duration
-	
+
 	for i, record := range latencies {
 		durations[i] = record.latency
 		total += record.latency
@@ -348,7 +348,7 @@ func (mc *MetricsCollector) aggregateTokenUsage(tokenUsages []TokenUsage) TokenU
 	if numUsages > 0 {
 		aggregated.AverageInputSize = float64(aggregated.InputTokens) / float64(numUsages)
 		aggregated.AverageOutputSize = float64(aggregated.OutputTokens) / float64(numUsages)
-		
+
 		if aggregated.InputTokens > 0 {
 			aggregated.EfficiencyRatio = float64(aggregated.OutputTokens) / float64(aggregated.InputTokens)
 		}
@@ -388,12 +388,12 @@ func (mc *MetricsCollector) aggregateMemoryMetrics(memorySnapshots []memorySnaps
 
 // OperationMetrics contains detailed metrics for a single LLM operation
 type OperationMetrics struct {
-	OperationType    string        `json:"operation_type"`
-	StartTime        time.Time     `json:"start_time"`
-	EndTime          time.Time     `json:"end_time"`
-	TokensUsed       TokenUsage    `json:"tokens_used"`
-	BytesTransferred int64         `json:"bytes_transferred"`
-	MemoryUsed       int64         `json:"memory_used"`
-	ErrorOccurred    bool          `json:"error_occurred"`
-	ErrorType        string        `json:"error_type,omitempty"`
+	OperationType    string     `json:"operation_type"`
+	StartTime        time.Time  `json:"start_time"`
+	EndTime          time.Time  `json:"end_time"`
+	TokensUsed       TokenUsage `json:"tokens_used"`
+	BytesTransferred int64      `json:"bytes_transferred"`
+	MemoryUsed       int64      `json:"memory_used"`
+	ErrorOccurred    bool       `json:"error_occurred"`
+	ErrorType        string     `json:"error_type,omitempty"`
 }

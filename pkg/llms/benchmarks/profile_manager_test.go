@@ -4,6 +4,7 @@ package benchmarks
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
@@ -17,10 +18,10 @@ func TestProfileManager_Contract(t *testing.T) {
 
 	// Create profile manager (will fail until implemented)
 	manager, err := NewProfileManager(ProfileManagerOptions{
-		StorageType:    "memory",
-		MaxProfiles:    1000,
-		ArchiveAfter:   30 * 24 * time.Hour, // 30 days
-		EnableTrends:   true,
+		StorageType:  "memory",
+		MaxProfiles:  1000,
+		ArchiveAfter: 30 * 24 * time.Hour, // 30 days
+		EnableTrends: true,
 	})
 	require.NoError(t, err, "ProfileManager creation should succeed")
 	require.NotNil(t, manager, "ProfileManager should not be nil")
@@ -30,7 +31,7 @@ func TestProfileManager_Contract(t *testing.T) {
 		profile, err := manager.CreateProfile(ctx, "openai", "gpt-4")
 		assert.NoError(t, err, "Profile creation should succeed")
 		assert.NotNil(t, profile, "Profile should not be nil")
-		
+
 		// Verify profile structure
 		assert.Equal(t, "openai", profile.ProviderName, "Should have correct provider name")
 		assert.Equal(t, "gpt-4", profile.ModelName, "Should have correct model name")
@@ -47,7 +48,7 @@ func TestProfileManager_Contract(t *testing.T) {
 
 		// Create benchmark result to add
 		result := createBenchmarkResult("anthropic", "claude-3", 120*time.Millisecond)
-		
+
 		err = manager.UpdateProfile(ctx, profile.ProfileID, result)
 		assert.NoError(t, err, "Profile update should succeed")
 
@@ -55,7 +56,7 @@ func TestProfileManager_Contract(t *testing.T) {
 		updatedProfile, err := manager.GetProfile(ctx, "anthropic", "claude-3")
 		assert.NoError(t, err, "Getting updated profile should succeed")
 		assert.NotNil(t, updatedProfile, "Updated profile should not be nil")
-		
+
 		// Verify update
 		assert.Len(t, updatedProfile.BenchmarkResults, 1, "Should have one benchmark result")
 		assert.Equal(t, result.BenchmarkID, updatedProfile.BenchmarkResults[0].BenchmarkID,
@@ -87,9 +88,9 @@ func TestProfileManager_Contract(t *testing.T) {
 		openaiFilter := ProfileFilter{ProviderNames: []string{"openai"}}
 		openaiProfiles, err := manager.ListProfiles(ctx, openaiFilter)
 		assert.NoError(t, err, "Filtering by provider should succeed")
-		
+
 		for _, profile := range openaiProfiles {
-			assert.Equal(t, "openai", profile.ProviderName, 
+			assert.Equal(t, "openai", profile.ProviderName,
 				"Filtered profiles should match provider")
 		}
 
@@ -98,7 +99,7 @@ func TestProfileManager_Contract(t *testing.T) {
 		timeFilter := ProfileFilter{CreatedAfter: recentTime}
 		recentProfiles, err := manager.ListProfiles(ctx, timeFilter)
 		assert.NoError(t, err, "Filtering by time should succeed")
-		
+
 		for _, profile := range recentProfiles {
 			assert.True(t, profile.CreatedAt.After(recentTime),
 				"Filtered profiles should be after filter time")
@@ -109,10 +110,10 @@ func TestProfileManager_Contract(t *testing.T) {
 	t.Run("ArchiveOldResults", func(t *testing.T) {
 		// Archive very old results (1 hour ago)
 		archiveTime := time.Now().Add(-1 * time.Hour)
-		
+
 		err := manager.ArchiveOldResults(ctx, archiveTime)
 		assert.NoError(t, err, "Archiving should succeed")
-		
+
 		// Since we just created profiles, nothing should be archived yet
 		// This tests the archiving mechanism works without errors
 	})
@@ -136,10 +137,10 @@ func TestProfileManager_TrendAnalysis(t *testing.T) {
 		// Add multiple benchmark results over time
 		baseTime := time.Now().Add(-24 * time.Hour)
 		for i := 0; i < 10; i++ {
-			result := createBenchmarkResult("trend-test", "model", 
+			result := createBenchmarkResult("trend-test", "model",
 				time.Duration(100+i*5)*time.Millisecond) // Gradual performance degradation
 			result.Timestamp = baseTime.Add(time.Duration(i) * time.Hour)
-			
+
 			err := manager.UpdateProfile(ctx, profile.ProfileID, result)
 			assert.NoError(t, err, "Adding result %d should succeed", i)
 		}
@@ -172,21 +173,21 @@ func TestProfileManager_Performance(t *testing.T) {
 	// Test profile operation performance
 	t.Run("ProfileOperationPerformance", func(t *testing.T) {
 		const numProfiles = 50
-		
-		// Create multiple profiles
+
+		// Create multiple unique profiles
 		start := time.Now()
 		for i := 0; i < numProfiles; i++ {
 			providerName := fmt.Sprintf("provider-%d", i%5) // 5 different providers
-			modelName := fmt.Sprintf("model-%d", i%3)       // 3 different models
-			
+			modelName := fmt.Sprintf("model-%d", i/5)       // Unique model per provider
+
 			_, err := manager.CreateProfile(ctx, providerName, modelName)
 			assert.NoError(t, err, "Profile creation should succeed")
 		}
 		creationDuration := time.Since(start)
 
-		t.Logf("Created %d profiles in %v (avg: %v per profile)", 
+		t.Logf("Created %d profiles in %v (avg: %v per profile)",
 			numProfiles, creationDuration, creationDuration/numProfiles)
-		
+
 		// Profile creation should be fast
 		avgCreationTime := creationDuration / numProfiles
 		assert.Less(t, avgCreationTime, 10*time.Millisecond,
@@ -196,7 +197,7 @@ func TestProfileManager_Performance(t *testing.T) {
 		start = time.Now()
 		profiles, err := manager.ListProfiles(ctx, ProfileFilter{})
 		listingDuration := time.Since(start)
-		
+
 		assert.NoError(t, err, "Listing should succeed")
 		assert.GreaterOrEqual(t, len(profiles), numProfiles, "Should list all profiles")
 		assert.Less(t, listingDuration, 100*time.Millisecond,
@@ -219,7 +220,7 @@ func TestProfileManager_Performance(t *testing.T) {
 	t.Run("ConcurrentAccess", func(t *testing.T) {
 		const numGoroutines = 20
 		results := make(chan error, numGoroutines)
-		
+
 		for i := 0; i < numGoroutines; i++ {
 			go func(id int) {
 				// Mix of operations

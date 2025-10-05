@@ -68,10 +68,10 @@ func (br *BenchmarkRunner) RunBenchmark(ctx context.Context, provider iface.Chat
 	defer cancel()
 
 	start := time.Now()
-	
+
 	// Run operations with concurrency control
 	err := br.executeOperations(benchmarkCtx, provider, prompts, config, result)
-	
+
 	result.Duration = time.Since(start)
 
 	if err != nil {
@@ -102,7 +102,7 @@ func (br *BenchmarkRunner) RunComparisonBenchmark(ctx context.Context, providers
 		wg.Add(1)
 		go func(name string, prov iface.ChatModel) {
 			defer wg.Done()
-			
+
 			result, err := br.RunBenchmark(ctx, prov, scenario)
 			if err != nil {
 				// Log error but continue with other providers
@@ -163,7 +163,7 @@ func (br *BenchmarkRunner) RunLoadTest(ctx context.Context, provider iface.ChatM
 func (br *BenchmarkRunner) GetSupportedMetrics() []string {
 	return []string{
 		"latency",
-		"throughput", 
+		"throughput",
 		"tokens",
 		"errors",
 		"memory",
@@ -179,7 +179,7 @@ func (br *BenchmarkRunner) executeOperations(ctx context.Context, provider iface
 	semaphore := make(chan struct{}, config.ConcurrencyLevel)
 	var wg sync.WaitGroup
 	var mu sync.Mutex
-	
+
 	var successfulOps, failedOps int
 	var totalLatencies []time.Duration
 	var totalTokens TokenUsage
@@ -196,7 +196,7 @@ func (br *BenchmarkRunner) executeOperations(ctx context.Context, provider iface
 				defer func() { <-semaphore }()
 
 				prompt := prompts[opIndex%len(prompts)]
-				
+
 				opStart := time.Now()
 				response, err := provider.Invoke(ctx, prompt)
 				opDuration := time.Since(opStart)
@@ -209,7 +209,7 @@ func (br *BenchmarkRunner) executeOperations(ctx context.Context, provider iface
 				} else {
 					successfulOps++
 					totalLatencies = append(totalLatencies, opDuration)
-					
+
 					// Extract token usage if available
 					if response != nil {
 						// Simulate token extraction - would integrate with actual response
@@ -250,7 +250,7 @@ func (br *BenchmarkRunner) executeLoadTest(ctx context.Context, provider iface.C
 
 	// Start time tracking
 	endTime := time.Now().Add(config.Duration)
-	
+
 	// Ramp up phase
 	if config.RampUpDuration > 0 {
 		// Implement gradual ramp up to target RPS
@@ -286,9 +286,9 @@ func (br *BenchmarkRunner) executeLoadTest(ctx context.Context, provider iface.C
 					} else {
 						successfulOps++
 					}
-					
+
 					totalOps := successfulOps + failedOps + timeoutOps
-					
+
 					// Record throughput and error rate periodically
 					if totalOps%10 == 0 {
 						currentRPS := float64(totalOps) / time.Since(time.Now().Add(-config.Duration)).Seconds()
@@ -335,7 +335,7 @@ func (br *BenchmarkRunner) calculateLatencyMetrics(latencies []time.Duration) La
 	// Sort latencies for percentile calculation
 	sorted := make([]time.Duration, len(latencies))
 	copy(sorted, latencies)
-	
+
 	// Simple bubble sort for small datasets (would use proper sorting for larger)
 	for i := 0; i < len(sorted)-1; i++ {
 		for j := 0; j < len(sorted)-i-1; j++ {
@@ -373,8 +373,8 @@ func (br *BenchmarkRunner) captureEnvironment() Environment {
 		OS:                   runtime.GOOS,
 		Architecture:         runtime.GOARCH,
 		CPUCores:             runtime.NumCPU(),
-		MemoryTotalGB:        8, // Default - would get actual memory in real implementation
-		NetworkLatencyMS:     10, // Default - would measure actual latency
+		MemoryTotalGB:        8,   // Default - would get actual memory in real implementation
+		NetworkLatencyMS:     10,  // Default - would measure actual latency
 		BandwidthMbps:        100, // Default - would measure actual bandwidth
 		SystemLoadAverage:    0.5, // Default - would get actual load
 		ConcurrentBenchmarks: 1,
@@ -398,32 +398,36 @@ func (br *BenchmarkRunner) calculateDerivedMetrics(result *BenchmarkResult) {
 
 	// Set memory usage (would integrate with actual memory tracking)
 	result.MemoryUsage = MemoryMetrics{
-		PeakUsageBytes:     1024 * 1024 * 5, // 5MB default
-		AverageUsageBytes:  1024 * 1024 * 3, // 3MB default
-		BaselineBytes:      1024 * 1024 * 1, // 1MB default
+		PeakUsageBytes:     1024 * 1024 * 5,   // 5MB default
+		AverageUsageBytes:  1024 * 1024 * 3,   // 3MB default
+		BaselineBytes:      1024 * 1024 * 1,   // 1MB default
 		MemoryPerOperation: int64(1024 * 500), // 500KB per op
 	}
 }
 
 func (br *BenchmarkRunner) extractProviderName(provider iface.ChatModel) string {
 	// Extract provider name from the provider implementation
-	// This would integrate with the actual provider interface
-	return "mock-provider" // Default for testing
+	if provider != nil {
+		return provider.GetProviderName()
+	}
+	return "unknown-provider"
 }
 
 func (br *BenchmarkRunner) extractModelName(provider iface.ChatModel) string {
 	// Extract model name from the provider implementation
-	// This would integrate with the actual provider interface
-	return "mock-model" // Default for testing
+	if provider != nil {
+		return provider.GetModelName()
+	}
+	return "unknown-model"
 }
 
 func (br *BenchmarkRunner) extractTokenUsage(response interface{}) TokenUsage {
 	// Extract token usage from the response
 	// This would integrate with the actual response structure
 	return TokenUsage{
-		InputTokens:  25,  // Default for testing
-		OutputTokens: 50,  // Default for testing
-		TotalTokens:  75,  // Default for testing
+		InputTokens:  25, // Default for testing
+		OutputTokens: 50, // Default for testing
+		TotalTokens:  75, // Default for testing
 	}
 }
 
@@ -460,11 +464,11 @@ func NewStandardScenario(name string, config StandardScenarioConfig) *StandardSc
 }
 
 // BenchmarkScenario interface implementation
-func (s *StandardScenario) GetName() string                          { return s.name }
-func (s *StandardScenario) GetDescription() string                   { return s.description }
-func (s *StandardScenario) GetTestPrompts() []string                 { return s.prompts }
-func (s *StandardScenario) GetConfiguration() ScenarioConfig         { return s.config }
-func (s *StandardScenario) ValidateProvider(provider iface.ChatModel) error { 
+func (s *StandardScenario) GetName() string                  { return s.name }
+func (s *StandardScenario) GetDescription() string           { return s.description }
+func (s *StandardScenario) GetTestPrompts() []string         { return s.prompts }
+func (s *StandardScenario) GetConfiguration() ScenarioConfig { return s.config }
+func (s *StandardScenario) ValidateProvider(provider iface.ChatModel) error {
 	if provider == nil {
 		return fmt.Errorf("provider cannot be nil")
 	}

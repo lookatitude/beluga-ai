@@ -99,7 +99,6 @@ func (lt *LoadTester) executeLoadTest(ctx context.Context, provider iface.ChatMo
 			case <-metricsTicker.C:
 				// Record current metrics
 				currentOps := atomic.LoadInt64(&totalOps)
-				currentSuccessful := atomic.LoadInt64(&successfulOps)
 				currentFailed := atomic.LoadInt64(&failedOps)
 				currentTimeouts := atomic.LoadInt64(&timeoutOps)
 
@@ -159,7 +158,7 @@ func (lt *LoadTester) executeLoadTest(ctx context.Context, provider iface.ChatMo
 						}
 					} else {
 						atomic.AddInt64(&successfulOps, 1)
-						
+
 						// Record latency for successful operations
 						latenciesMu.Lock()
 						latencies = append(latencies, opDuration)
@@ -228,7 +227,7 @@ func (lt *LoadTester) calculateLatencyMetrics(latencies []time.Duration) Latency
 	// Sort latencies
 	sorted := make([]time.Duration, len(latencies))
 	copy(sorted, latencies)
-	
+
 	for i := 0; i < len(sorted)-1; i++ {
 		for j := 0; j < len(sorted)-i-1; j++ {
 			if sorted[j] > sorted[j+1] {

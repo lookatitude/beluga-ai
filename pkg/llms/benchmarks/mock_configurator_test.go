@@ -8,6 +8,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
 // TestMockConfigurator_Contract tests the MockConfigurator interface contract
@@ -15,8 +17,8 @@ func TestMockConfigurator_Contract(t *testing.T) {
 	// Create mock configurator (will fail until implemented)
 	configurator, err := NewMockConfigurator(MockConfiguratorOptions{
 		EnableLatencySimulation: true,
-		EnableErrorInjection:   true,
-		EnableMemorySimulation: true,
+		EnableErrorInjection:    true,
+		EnableMemorySimulation:  true,
 	})
 	require.NoError(t, err, "MockConfigurator creation should succeed")
 	require.NotNil(t, configurator, "MockConfigurator should not be nil")
@@ -93,7 +95,7 @@ func TestMockConfigurator_Contract(t *testing.T) {
 		// Configure realistic memory usage
 		baseUsage := int64(1024 * 1024) // 1MB base
 		streamingMultiplier := 2.0      // 2x for streaming
-		
+
 		err := configurator.ConfigureMemoryUsage(baseUsage, streamingMultiplier)
 		assert.NoError(t, err, "Memory configuration should succeed")
 
@@ -117,7 +119,7 @@ func TestMockConfigurator_Contract(t *testing.T) {
 		// Configure with non-default values
 		err := configurator.ConfigureLatency(500*time.Millisecond, 0.5)
 		require.NoError(t, err)
-		
+
 		err = configurator.ConfigureErrorInjection(0.2, []string{"timeout"})
 		require.NoError(t, err)
 
@@ -138,15 +140,15 @@ func TestMockConfigurator_RealisticSimulation(t *testing.T) {
 	// Test provider-specific realistic configurations
 	t.Run("OpenAIRealisticConfig", func(t *testing.T) {
 		// Configure to simulate OpenAI characteristics
-		err := configurator.ConfigureLatency(200*time.Millisecond, 0.3)     // OpenAI typical latency
+		err := configurator.ConfigureLatency(200*time.Millisecond, 0.3) // OpenAI typical latency
 		assert.NoError(t, err)
-		
-		err = configurator.ConfigureTokenGeneration(40, 0.2)                // ~40 tokens/sec with variation
+
+		err = configurator.ConfigureTokenGeneration(40, 0.2) // ~40 tokens/sec with variation
 		assert.NoError(t, err)
-		
-		err = configurator.ConfigureMemoryUsage(2*1024*1024, 1.5)          // 2MB base, 1.5x for streaming
+
+		err = configurator.ConfigureMemoryUsage(2*1024*1024, 1.5) // 2MB base, 1.5x for streaming
 		assert.NoError(t, err)
-		
+
 		err = configurator.ConfigureErrorInjection(0.02, []string{"rate_limit", "timeout"}) // 2% error rate
 		assert.NoError(t, err)
 	})
@@ -154,15 +156,15 @@ func TestMockConfigurator_RealisticSimulation(t *testing.T) {
 	// Test Anthropic realistic configuration
 	t.Run("AnthropicRealisticConfig", func(t *testing.T) {
 		// Configure to simulate Anthropic characteristics
-		err := configurator.ConfigureLatency(150*time.Millisecond, 0.25)    // Anthropic typical latency
+		err := configurator.ConfigureLatency(150*time.Millisecond, 0.25) // Anthropic typical latency
 		assert.NoError(t, err)
-		
-		err = configurator.ConfigureTokenGeneration(35, 0.15)               // ~35 tokens/sec
+
+		err = configurator.ConfigureTokenGeneration(35, 0.15) // ~35 tokens/sec
 		assert.NoError(t, err)
-		
-		err = configurator.ConfigureMemoryUsage(1.5*1024*1024, 2.0)        // Different memory profile
+
+		err = configurator.ConfigureMemoryUsage(1.5*1024*1024, 2.0) // Different memory profile
 		assert.NoError(t, err)
-		
+
 		err = configurator.ConfigureErrorInjection(0.01, []string{"quota_exceeded", "auth_error"}) // 1% error rate
 		assert.NoError(t, err)
 	})
@@ -172,17 +174,17 @@ func TestMockConfigurator_RealisticSimulation(t *testing.T) {
 		// Very slow provider simulation
 		err := configurator.ConfigureLatency(5*time.Second, 0.8)
 		assert.NoError(t, err, "Very slow configuration should be valid")
-		
+
 		err = configurator.ConfigureTokenGeneration(1, 0) // Very slow token generation
 		assert.NoError(t, err)
 
 		// Reset and test very fast provider
 		err = configurator.ResetToDefaults()
 		require.NoError(t, err)
-		
+
 		err = configurator.ConfigureLatency(10*time.Millisecond, 0.05) // Very fast
 		assert.NoError(t, err)
-		
+
 		err = configurator.ConfigureTokenGeneration(200, 0.1) // Very fast generation
 		assert.NoError(t, err)
 	})
@@ -198,7 +200,7 @@ func TestMockConfigurator_Integration(t *testing.T) {
 		// Configure realistic behavior
 		err := configurator.ConfigureLatency(100*time.Millisecond, 0.2)
 		require.NoError(t, err)
-		
+
 		err = configurator.ConfigureErrorInjection(0.1, []string{"timeout", "rate_limit"})
 		require.NoError(t, err)
 
@@ -216,10 +218,10 @@ func TestMockConfigurator_Integration(t *testing.T) {
 		testLatency := 250 * time.Millisecond
 		testVariability := 0.3
 		testErrorRate := 0.05
-		
+
 		err := configurator.ConfigureLatency(testLatency, testVariability)
 		require.NoError(t, err)
-		
+
 		err = configurator.ConfigureErrorInjection(testErrorRate, []string{"network_error"})
 		require.NoError(t, err)
 
@@ -235,7 +237,14 @@ func TestMockConfigurator_Integration(t *testing.T) {
 // Helper functions (will be implemented later)
 
 func createConfiguredMockProvider(configurator MockConfigurator) interface{} {
-	// This will create a mock provider with the configurator's settings
-	// For now, returning nil - will be implemented when MockConfigurator exists
-	return nil
+	// Create a mock provider with some default applied settings
+	// Note: Full configuration integration would require extending the interface with getters
+
+	// Create mock provider with basic settings
+	mock := llms.NewAdvancedMockChatModel("configured-model",
+		llms.WithProviderName("configured-provider"),
+		llms.WithStreamingDelay(50*time.Millisecond), // Default latency
+	)
+
+	return mock
 }

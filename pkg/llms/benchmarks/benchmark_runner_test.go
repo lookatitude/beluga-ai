@@ -4,12 +4,14 @@ package benchmarks
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
@@ -19,9 +21,9 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 
 	// Create benchmark runner (will fail until implemented)
 	runner, err := NewBenchmarkRunner(BenchmarkRunnerOptions{
-		EnableMetrics: true,
+		EnableMetrics:  true,
 		MaxConcurrency: 10,
-		Timeout: 30 * time.Second,
+		Timeout:        30 * time.Second,
 	})
 	require.NoError(t, err, "BenchmarkRunner creation should succeed")
 	require.NotNil(t, runner, "BenchmarkRunner should not be nil")
@@ -30,10 +32,10 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 	t.Run("RunBenchmark", func(t *testing.T) {
 		// Create mock provider (will use existing mock infrastructure)
 		mockProvider := createMockChatModel(t, "test-provider", "test-model")
-		
+
 		// Create test scenario
 		scenario := &TestBenchmarkScenario{
-			name: "basic-test",
+			name:    "basic-test",
 			prompts: []string{"Test prompt 1", "Test prompt 2"},
 			config: ScenarioConfig{
 				OperationCount:   5,
@@ -46,10 +48,10 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 		result, err := runner.RunBenchmark(ctx, mockProvider, scenario)
 		assert.NoError(t, err, "Benchmark execution should succeed")
 		assert.NotNil(t, result, "Benchmark result should not be nil")
-		
+
 		// Verify result structure
 		assert.NotEmpty(t, result.TestName, "Result should have test name")
-		assert.NotEmpty(t, result.ProviderName, "Result should have provider name") 
+		assert.NotEmpty(t, result.ProviderName, "Result should have provider name")
 		assert.NotEmpty(t, result.ModelName, "Result should have model name")
 		assert.Positive(t, result.Duration, "Result should have positive duration")
 		assert.NotZero(t, result.Timestamp, "Result should have timestamp")
@@ -64,7 +66,7 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 		}
 
 		scenario := &TestBenchmarkScenario{
-			name: "comparison-test",
+			name:    "comparison-test",
 			prompts: []string{"Comparison prompt"},
 			config: ScenarioConfig{
 				OperationCount:   3,
@@ -78,7 +80,7 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 		assert.NoError(t, err, "Comparison benchmark should succeed")
 		assert.NotNil(t, results, "Comparison results should not be nil")
 		assert.Len(t, results, 2, "Should have results for both providers")
-		
+
 		// Verify each result
 		for providerName, result := range results {
 			assert.NotNil(t, result, "Result for %s should not be nil", providerName)
@@ -89,7 +91,7 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 	// Test load testing
 	t.Run("RunLoadTest", func(t *testing.T) {
 		mockProvider := createMockChatModel(t, "load-test-provider", "load-test-model")
-		
+
 		loadConfig := LoadTestConfig{
 			Duration:       2 * time.Second,
 			TargetRPS:      10,
@@ -101,7 +103,7 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 		result, err := runner.RunLoadTest(ctx, mockProvider, loadConfig)
 		assert.NoError(t, err, "Load test should succeed")
 		assert.NotNil(t, result, "Load test result should not be nil")
-		
+
 		// Verify load test results
 		assert.NotEmpty(t, result.TestID, "Load test should have ID")
 		assert.Equal(t, loadConfig.Duration, result.Duration, "Duration should match config")
@@ -113,7 +115,7 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 	t.Run("GetSupportedMetrics", func(t *testing.T) {
 		metrics := runner.GetSupportedMetrics()
 		assert.NotEmpty(t, metrics, "Should support some metrics")
-		
+
 		expectedMetrics := []string{"latency", "throughput", "tokens", "errors", "memory"}
 		for _, expectedMetric := range expectedMetrics {
 			assert.Contains(t, metrics, expectedMetric, "Should support %s metric", expectedMetric)
@@ -124,22 +126,22 @@ func TestBenchmarkRunner_Contract(t *testing.T) {
 // TestBenchmarkRunner_ErrorHandling tests error handling scenarios
 func TestBenchmarkRunner_ErrorHandling(t *testing.T) {
 	ctx := context.Background()
-	
+
 	runner, err := NewBenchmarkRunner(BenchmarkRunnerOptions{})
 	require.NoError(t, err)
 
 	// Test with nil provider
 	t.Run("NilProvider", func(t *testing.T) {
 		scenario := &TestBenchmarkScenario{name: "nil-test"}
-		
+
 		_, err := runner.RunBenchmark(ctx, nil, scenario)
 		assert.Error(t, err, "Should fail with nil provider")
 	})
 
-	// Test with nil scenario  
+	// Test with nil scenario
 	t.Run("NilScenario", func(t *testing.T) {
 		mockProvider := createMockChatModel(t, "test", "test")
-		
+
 		_, err := runner.RunBenchmark(ctx, mockProvider, nil)
 		assert.Error(t, err, "Should fail with nil scenario")
 	})
@@ -148,7 +150,7 @@ func TestBenchmarkRunner_ErrorHandling(t *testing.T) {
 	t.Run("CancelledContext", func(t *testing.T) {
 		cancelCtx, cancel := context.WithCancel(ctx)
 		cancel() // Cancel immediately
-		
+
 		mockProvider := createMockChatModel(t, "test", "test")
 		scenario := &TestBenchmarkScenario{
 			name: "cancel-test",
@@ -157,7 +159,7 @@ func TestBenchmarkRunner_ErrorHandling(t *testing.T) {
 				TimeoutDuration: 10 * time.Second,
 			},
 		}
-		
+
 		_, err := runner.RunBenchmark(cancelCtx, mockProvider, scenario)
 		assert.Error(t, err, "Should fail with cancelled context")
 	})
@@ -166,9 +168,9 @@ func TestBenchmarkRunner_ErrorHandling(t *testing.T) {
 // TestBenchmarkRunner_Performance tests performance constraints
 func TestBenchmarkRunner_Performance(t *testing.T) {
 	ctx := context.Background()
-	
+
 	runner, err := NewBenchmarkRunner(BenchmarkRunnerOptions{
-		EnableMetrics: true,
+		EnableMetrics:  true,
 		MaxConcurrency: 20,
 	})
 	require.NoError(t, err)
@@ -182,7 +184,7 @@ func TestBenchmarkRunner_Performance(t *testing.T) {
 		}
 
 		scenario := &TestBenchmarkScenario{
-			name: "performance-test",
+			name:    "performance-test",
 			prompts: []string{"Performance test prompt"},
 			config: ScenarioConfig{
 				OperationCount:   10,
@@ -194,21 +196,21 @@ func TestBenchmarkRunner_Performance(t *testing.T) {
 		start := time.Now()
 		results, err := runner.RunComparisonBenchmark(ctx, providers, scenario)
 		duration := time.Since(start)
-		
+
 		assert.NoError(t, err, "Performance benchmark should succeed")
 		assert.Len(t, results, 4, "Should have results for all providers")
-		
+
 		// Performance target: <30s for full provider comparison
-		assert.Less(t, duration, 30*time.Second, 
+		assert.Less(t, duration, 30*time.Second,
 			"Full provider comparison should complete in <30s (took %v)", duration)
 	})
 
 	// Test memory overhead (<10MB target)
 	t.Run("MemoryOverhead", func(t *testing.T) {
 		mockProvider := createMockChatModel(t, "memory-test", "model")
-		
+
 		scenario := &TestBenchmarkScenario{
-			name: "memory-test",
+			name:    "memory-test",
 			prompts: []string{"Memory test prompt"},
 			config: ScenarioConfig{
 				OperationCount:   50,
@@ -220,7 +222,7 @@ func TestBenchmarkRunner_Performance(t *testing.T) {
 		// Run benchmark and verify memory usage is reasonable
 		result, err := runner.RunBenchmark(ctx, mockProvider, scenario)
 		assert.NoError(t, err, "Memory test benchmark should succeed")
-		
+
 		if result != nil && result.MemoryUsage.PeakUsageBytes > 0 {
 			// Memory overhead should be <10MB (10485760 bytes)
 			assert.Less(t, result.MemoryUsage.PeakUsageBytes, int64(10485760),
@@ -238,15 +240,23 @@ type TestBenchmarkScenario struct {
 	config  ScenarioConfig
 }
 
-func (s *TestBenchmarkScenario) GetName() string                      { return s.name }
-func (s *TestBenchmarkScenario) GetDescription() string               { return fmt.Sprintf("Test scenario: %s", s.name) }
-func (s *TestBenchmarkScenario) GetTestPrompts() []string             { return s.prompts }
-func (s *TestBenchmarkScenario) GetConfiguration() ScenarioConfig     { return s.config }
+func (s *TestBenchmarkScenario) GetName() string { return s.name }
+func (s *TestBenchmarkScenario) GetDescription() string {
+	return fmt.Sprintf("Test scenario: %s", s.name)
+}
+func (s *TestBenchmarkScenario) GetTestPrompts() []string                        { return s.prompts }
+func (s *TestBenchmarkScenario) GetConfiguration() ScenarioConfig                { return s.config }
 func (s *TestBenchmarkScenario) ValidateProvider(provider iface.ChatModel) error { return nil }
 
 // Helper function to create mock ChatModel (using existing infrastructure)
 func createMockChatModel(t *testing.T, provider, model string) iface.ChatModel {
-	// This will use the existing AdvancedMockChatModel from test_utils.go
-	// For now, returning nil - will be implemented when BenchmarkRunner exists
-	return nil
+	// Use the existing AdvancedMockChatModel from test_utils.go
+	mock := llms.NewAdvancedMockChatModel(model, llms.WithProviderName(provider))
+	require.NotNil(t, mock, "Mock provider should not be nil")
+
+	// Debug: check that provider name is set correctly
+	actualProvider := mock.GetProviderName()
+	require.Equal(t, provider, actualProvider, "Mock provider name should be set correctly")
+
+	return mock
 }

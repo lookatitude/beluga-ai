@@ -45,6 +45,10 @@ type AdvancedMockChatModel struct {
 	// Health check data
 	healthState     string
 	lastHealthCheck time.Time
+
+	// Observability
+	metrics MetricsRecorder
+	tracing *MockTracingHelper
 }
 
 // NewAdvancedMockChatModel creates a new advanced mock with configurable behavior
@@ -122,30 +126,120 @@ func WithToolResults(results map[string]interface{}) MockOption {
 	}
 }
 
+// WithMetrics sets the metrics recorder for the mock
+func WithMetrics(metrics MetricsRecorder) MockOption {
+	return func(m *AdvancedMockChatModel) {
+		m.metrics = metrics
+	}
+}
+
+// WithTracing sets the tracing helper for the mock
+func WithTracing(tracing *MockTracingHelper) MockOption {
+	return func(m *AdvancedMockChatModel) {
+		m.tracing = tracing
+	}
+}
+
 // Generate implements the ChatModel interface
 func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
+	start := time.Now()
+
+	// Check context cancellation before starting
+	select {
+	case <-ctx.Done():
+		err := ctx.Err()
+		if m.metrics != nil {
+			m.metrics.RecordError(ctx, m.providerName, m.modelName, GetLLMErrorCode(err), time.Since(start))
+		}
+		if m.tracing != nil {
+			m.tracing.RecordError(ctx, err)
+		}
+		return nil, err
+	default:
+	}
+
+	// Simulate processing time to allow context timeout
+	if m.simulateNetworkDelay {
+		select {
+		case <-time.After(m.streamingDelay):
+			// Processing delay completed
+		case <-ctx.Done():
+			err := ctx.Err()
+			if m.metrics != nil {
+				m.metrics.RecordError(ctx, m.providerName, m.modelName, GetLLMErrorCode(err), time.Since(start))
+			}
+			if m.tracing != nil {
+				m.tracing.RecordError(ctx, err)
+			}
+			return nil, err
+		}
+	}
+
+	// Start tracing if configured
+	if m.tracing != nil {
+		ctx = m.tracing.StartOperation(ctx, fmt.Sprintf("%s.generate", m.providerName), m.providerName, m.modelName)
+		// Add some span attributes
+		m.tracing.AddSpanAttributes(ctx, map[string]interface{}{
+			"input_message_count": len(messages),
+			"model_name":          m.modelName,
+		})
+	}
+
+	// Record request metrics if metrics are configured
+	if m.metrics != nil {
+		m.metrics.IncrementActiveRequests(ctx, m.providerName, m.modelName)
+		defer m.metrics.DecrementActiveRequests(ctx, m.providerName, m.modelName)
+	}
+
 	// Check if mock expectations are set up
 	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
+			if m.metrics != nil {
+				duration := time.Since(start)
+				m.metrics.RecordRequest(ctx, m.providerName, m.modelName, duration)
+			}
 			return args.Get(0).(schema.Message), args.Error(1)
 		}
 	}
 
 	if m.shouldError {
 		if m.errorToReturn != nil {
+			if m.metrics != nil {
+				duration := time.Since(start)
+				m.metrics.RecordError(ctx, m.providerName, m.modelName, GetLLMErrorCode(m.errorToReturn), duration)
+			}
+			if m.tracing != nil {
+				m.tracing.RecordError(ctx, m.errorToReturn)
+			}
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		err := fmt.Errorf("mock error")
+		if m.metrics != nil {
+			duration := time.Since(start)
+			m.metrics.RecordError(ctx, m.providerName, m.modelName, ErrCodeInternalError, duration)
+		}
+		if m.tracing != nil {
+			m.tracing.RecordError(ctx, err)
+		}
+		return nil, err
 	}
 
 	// Default behavior
 	response := m.getNextResponse()
-	return schema.NewAIMessage(response), nil
+	aiMsg := schema.NewAIMessage(response)
+
+	// Record successful request metrics
+	if m.metrics != nil {
+		duration := time.Since(start)
+		m.metrics.RecordRequest(ctx, m.providerName, m.modelName, duration)
+	}
+
+	return aiMsg, nil
 }
 
 // StreamChat implements the ChatModel interface with realistic streaming

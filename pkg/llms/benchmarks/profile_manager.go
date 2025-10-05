@@ -45,7 +45,7 @@ func (pm *ProfileManager) CreateProfile(ctx context.Context, providerName, model
 	defer pm.mu.Unlock()
 
 	profileKey := fmt.Sprintf("%s:%s", providerName, modelName)
-	
+
 	// Check if profile already exists
 	if _, exists := pm.profiles[profileKey]; exists {
 		return nil, fmt.Errorf("profile already exists for provider %s, model %s", providerName, modelName)
@@ -97,7 +97,7 @@ func (pm *ProfileManager) UpdateProfile(ctx context.Context, profileID string, r
 
 	// Validate result matches profile
 	if result.ProviderName != targetProfile.ProviderName {
-		return fmt.Errorf("result provider %s does not match profile provider %s", 
+		return fmt.Errorf("result provider %s does not match profile provider %s",
 			result.ProviderName, targetProfile.ProviderName)
 	}
 	if result.ModelName != targetProfile.ModelName {
@@ -142,7 +142,7 @@ func (pm *ProfileManager) GetProfile(ctx context.Context, providerName, modelNam
 	profileCopy := *profile
 	profileCopy.BenchmarkResults = make([]*BenchmarkResult, len(profile.BenchmarkResults))
 	copy(profileCopy.BenchmarkResults, profile.BenchmarkResults)
-	
+
 	if profile.TrendAnalysis != nil {
 		trendCopy := *profile.TrendAnalysis
 		profileCopy.TrendAnalysis = &trendCopy
@@ -189,7 +189,7 @@ func (pm *ProfileManager) ArchiveOldResults(ctx context.Context, olderThan time.
 
 		// Update profile with remaining results
 		profile.BenchmarkResults = keepResults
-		
+
 		// Recalculate trend analysis if results were removed
 		if pm.options.EnableTrends && len(keepResults) >= 3 {
 			trendAnalysis, err := pm.calculateTrendAnalysis(keepResults)
@@ -256,7 +256,7 @@ func (pm *ProfileManager) calculateTrendAnalysis(results []*BenchmarkResult) (*T
 	// Sort results by timestamp
 	sortedResults := make([]*BenchmarkResult, len(results))
 	copy(sortedResults, results)
-	
+
 	for i := 0; i < len(sortedResults)-1; i++ {
 		for j := 0; j < len(sortedResults)-i-1; j++ {
 			if sortedResults[j].Timestamp.After(sortedResults[j+1].Timestamp) {
@@ -360,13 +360,13 @@ func (pm *ProfileManager) generateTrendSummary(trends *TrendAnalysis) string {
 	}
 
 	if improving > degrading {
-		return fmt.Sprintf("Overall improvement: %d metrics improving, %d stable, %d degrading", 
+		return fmt.Sprintf("Overall improvement: %d metrics improving, %d stable, %d degrading",
 			improving, stable, degrading)
 	} else if degrading > improving {
-		return fmt.Sprintf("Performance degradation: %d metrics degrading, %d stable, %d improving", 
+		return fmt.Sprintf("Performance degradation: %d metrics degrading, %d stable, %d improving",
 			degrading, stable, improving)
 	} else {
-		return fmt.Sprintf("Stable performance: %d metrics stable, %d improving, %d degrading", 
+		return fmt.Sprintf("Stable performance: %d metrics stable, %d improving, %d degrading",
 			stable, improving, degrading)
 	}
 }

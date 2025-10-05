@@ -97,6 +97,10 @@ type IntegrationTestHelper struct {
 	providers    map[string]iface.ChatModel
 	requestCount int
 	lastRequest  time.Time
+
+	// Cached mock instances for consistent testing
+	metrics *MockMetricsRecorder
+	tracing *MockTracingHelper
 }
 
 // NewIntegrationTestHelper creates a new integration test helper
@@ -109,6 +113,9 @@ func NewIntegrationTestHelper() *IntegrationTestHelper {
 		factory:      factory,
 		providers:    make(map[string]iface.ChatModel),
 		requestCount: 0,
+		lastRequest:  time.Now(),
+		metrics:      NewMockMetricsRecorder(),
+		tracing:      NewMockTracingHelper(),
 	}
 }
 
@@ -212,17 +219,26 @@ func (h *IntegrationTestHelper) RateLimit() {
 // SetupMockProvider sets up a mock provider for integration testing
 func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string, opts ...interface{}) iface.ChatModel {
 	// Create a mock provider directly using the test utilities
-	mockOpts := make([]MockOption, 0, len(opts))
+	mockOpts := make([]MockOption, 0, len(opts)+2) // +2 for metrics and tracing
 	for _, opt := range opts {
 		if mockOpt, ok := opt.(MockOption); ok {
 			mockOpts = append(mockOpts, mockOpt)
 		}
 	}
 
+	// Add metrics recorder and tracing helper to the mock options
+	mockOpts = append(mockOpts, WithMetrics(h.GetMetrics()))
+	mockOpts = append(mockOpts, WithTracing(h.GetTracing()))
+
 	mockProvider := NewAdvancedMockChatModel(modelName, mockOpts...)
 
 	// Register it with the factory for consistency
 	h.factory.RegisterProvider(providerName, mockProvider)
+
+	// Also register a factory function for CreateProvider to work
+	h.factory.RegisterProviderFactory(providerName, func(config *Config) (iface.ChatModel, error) {
+		return mockProvider, nil
+	})
 
 	return mockProvider
 }
@@ -247,12 +263,12 @@ func (h *IntegrationTestHelper) GetConfig() *Config {
 
 // GetMetrics returns a mock metrics recorder
 func (h *IntegrationTestHelper) GetMetrics() *MockMetricsRecorder {
-	return NewMockMetricsRecorder()
+	return h.metrics
 }
 
 // GetTracing returns a mock tracing helper
 func (h *IntegrationTestHelper) GetTracing() *MockTracingHelper {
-	return NewMockTracingHelper()
+	return h.tracing
 }
 
 // TestProviderIntegration tests a provider with basic integration tests
