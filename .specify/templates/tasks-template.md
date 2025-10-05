@@ -3,44 +3,124 @@
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), research.md, data-model.md, contracts/
 
+## Task Type Classification (CRITICAL - Read First!)
+
+**IDENTIFY THE TASK TYPE** before generating tasks:
+
+### 1️⃣ NEW FEATURE IMPLEMENTATION (`specs/NNN-feature-name/`)
+- **Goal**: Create NEW code in `pkg/`, `cmd/`, `internal/` directories
+- **File Targets**: All tasks write to actual codebase files (`.go`, `.py`, etc.)
+- **Example Paths**: `pkg/{package}/*.go`, `pkg/{package}/providers/*.go`, `cmd/{app}/main.go`
+- **Task Verbs**: Create, Implement, Add, Build, Write
+- **Validation**: Run tests on actual implementation files
+- **When**: Building new packages, features, or capabilities from scratch
+
+### 2️⃣ ANALYSIS/AUDIT (`specs/NNN-for-the-{package}/`)
+- **Goal**: Document findings about EXISTING code without modifying it
+- **File Targets**: All tasks write to `specs/` directory only (`.md` files)
+- **Example Paths**: `specs/NNN-for-the-{package}/findings/*.md`, `specs/NNN-for-the-{package}/analysis/*.md`
+- **Task Verbs**: Verify, Analyze, Validate, Document, Review, Audit
+- **Validation**: Ensure comprehensive documentation of current state
+- **When**: Auditing existing packages for compliance, understanding architecture
+
+### 3️⃣ CORRECTION/ENHANCEMENT (follows analysis)
+- **Goal**: Fix/improve EXISTING code in `pkg/` based on analysis findings
+- **File Targets**: All tasks modify actual codebase files in `pkg/` directory
+- **Example Paths**: `pkg/{package}/errors.go`, `pkg/{package}/providers/openai.go`
+- **Task Verbs**: Fix, Update, Enhance, Refactor, Improve, Correct
+- **Validation**: Run tests to verify fixes, check for regressions
+- **When**: Applying fixes after analysis phase completes
+
+**⚠️ IMPORTANT**: Analysis tasks (Type 2) NEVER modify `pkg/` files. Only Type 1 and Type 3 modify actual code.
+
 ## Execution Flow (main)
 ```
-1. Load plan.md from feature directory
+1. Identify task type (NEW FEATURE, ANALYSIS, or CORRECTION)
+   → Check spec directory name pattern
+   → NEW FEATURE: specs/NNN-feature-name/
+   → ANALYSIS: specs/NNN-for-the-{package}/
+   → CORRECTION: specs/NNN-fix-{package}-{issue}/
+2. Load plan.md from feature directory
    → If not found: ERROR "No implementation plan found"
-   → Extract: tech stack, libraries, structure
-2. Load optional design documents:
-   → data-model.md: Extract entities → model tasks
-   → contracts/: Each file → contract test task
-   → research.md: Extract decisions → setup tasks
-3. Generate tasks by category:
-   → Setup: project init, dependencies, linting
-   → Tests: contract tests, integration tests
-   → Core: models, services, CLI commands
-   → Integration: DB, middleware, logging
-   → Polish: unit tests, performance, docs
-4. Apply task rules:
+   → Extract: tech stack, libraries, structure, task type
+3. Load optional design documents:
+   → data-model.md: Extract entities → model/analysis tasks
+   → contracts/: Each file → contract test/verification task
+   → research.md: Extract decisions → setup/analysis tasks
+4. Generate tasks by category AND type:
+   
+   FOR NEW FEATURES:
+   → Setup: project init in pkg/{package}/, dependencies, config files
+   → Tests: test files in pkg/{package}/*_test.go
+   → Core: implementation files in pkg/{package}/*.go
+   → Integration: registry, factory patterns
+   → Polish: benchmarks, README.md, documentation
+   
+   FOR ANALYSIS:
+   → Setup: analysis tools, verification scripts
+   → Verification: contract checks → findings/*.md
+   → Analysis: entity examination → analysis/*.md
+   → Validation: scenario testing → validation/*.md
+   → Reporting: consolidated reports → report/*.md
+   
+   FOR CORRECTIONS:
+   → Setup: test environment, reproduction
+   → Tests: add missing tests in pkg/{package}/*_test.go
+   → Fixes: modify code in pkg/{package}/*.go
+   → Verification: run test suite, check regressions
+   → Documentation: update README.md, godoc
+5. Apply task rules:
    → Different files = mark [P] for parallel
    → Same file = sequential (no [P])
-   → Tests before implementation (TDD)
-5. Number tasks sequentially (T001, T002...)
-6. Generate dependency graph
-7. Create parallel execution examples
-8. Validate task completeness:
+   → Tests before implementation (TDD for features/corrections)
+   → Verification before fixes (for corrections)
+6. Number tasks sequentially (T001, T002...)
+7. Generate dependency graph
+8. Create parallel execution examples
+9. Validate task completeness based on type:
+   
+   NEW FEATURES:
    → All contracts have tests?
    → All entities have models?
    → All endpoints implemented?
-9. Return: SUCCESS (tasks ready for execution)
+   → Constitutional files present (config.go, metrics.go, errors.go)?
+   
+   ANALYSIS:
+   → All contracts verified with findings?
+   → All entities analyzed?
+   → All scenarios validated?
+   → Reports comprehensive?
+   
+   CORRECTIONS:
+   → All issues have test coverage?
+   → All fixes target correct files?
+   → No regressions possible?
+10. Return: SUCCESS (tasks ready for execution)
 ```
 
-## Format: `[ID] [P?] Description`
+## Format: `[ID] [P?] Description with file path`
 - **[P]**: Can run in parallel (different files, no dependencies)
-- Include exact file paths in descriptions
+- **MUST include exact file paths** in every task description
+- Use action verbs matching task type (Create/Fix/Analyze)
 
-## Path Conventions
-- **Single project**: `src/`, `tests/` at repository root
-- **Web app**: `backend/src/`, `frontend/src/`
-- **Mobile**: `api/src/`, `ios/src/` or `android/src/`
-- Paths shown below assume single project - adjust based on plan.md structure
+## Path Conventions by Task Type
+
+### For NEW FEATURES (Create new code):
+- **Go packages**: `pkg/{package}/*.go`, `pkg/{package}/providers/*.go`, `pkg/{package}/internal/*.go`
+- **Tests**: `pkg/{package}/*_test.go`, `tests/integration/{package}_test.go`
+- **Commands**: `cmd/{app}/main.go`, `cmd/{app}/commands/*.go`
+- **Config**: `pkg/{package}/config.go`, `configs/{package}.yaml`
+
+### For ANALYSIS (Document existing code):
+- **Findings**: `specs/NNN-for-the-{package}/findings/{topic}-finding.md`
+- **Analysis**: `specs/NNN-for-the-{package}/analysis/{entity}-analysis.md`
+- **Validation**: `specs/NNN-for-the-{package}/validation/{scenario}-validation.md`
+- **Reports**: `specs/NNN-for-the-{package}/report/{report-type}.md`
+
+### For CORRECTIONS (Fix existing code):
+- **Code fixes**: `pkg/{package}/*.go` (existing files being modified)
+- **Test additions**: `pkg/{package}/*_test.go` (add missing tests)
+- **Documentation**: `pkg/{package}/README.md`, godoc comments
 
 ## Phase 3.1: Setup
 - [ ] T001 Create project structure per implementation plan
@@ -198,5 +278,15 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
 
+## Quick Task Type Reference
+
+| Task Type | File Targets | Task Verbs | Example |
+|-----------|-------------|------------|---------|
+| **NEW FEATURE** | `pkg/`, `cmd/`, `internal/` | Create, Implement, Add, Build, Write | T001 Create Embedder interface in pkg/embeddings/iface/embedder.go |
+| **ANALYSIS** | `specs/NNN-for-the-{package}/` | Verify, Analyze, Validate, Document, Review | T001 Analyze error handling patterns in specs/008-for-the-embeddings/findings/error-handling.md |
+| **CORRECTION** | `pkg/` (existing files) | Fix, Update, Enhance, Refactor, Improve | T001 Fix error wrapping in pkg/embeddings/providers/openai.go |
+
+**REMEMBER**: Analysis tasks write to `specs/` only. Implementation/Correction tasks write to `pkg/` only.
+
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`*

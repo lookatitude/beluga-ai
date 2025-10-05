@@ -1,0 +1,41 @@
+{
+  "contract_id": "EMB-INTERFACE-001",
+  "contract_type": "design_principle_verification",
+  "description": "Verify embeddings package follows Interface Segregation Principle and design patterns",
+  "requirements": [
+    {
+      "requirement_id": "ISP-001",
+      "description": "Embedder interface must be small and focused with 'er' suffix naming convention",
+      "validation_method": "interface_analysis",
+      "severity": "critical",
+      "testable": true
+    },
+    {
+      "requirement_id": "DIP-001",
+      "description": "Dependencies must be injected via constructors, no global state except registries",
+      "validation_method": "dependency_analysis",
+      "severity": "critical",
+      "testable": true
+    },
+    {
+      "requirement_id": "SRP-001",
+      "description": "Each struct/function must have single responsibility, clear package boundaries",
+      "validation_method": "responsibility_analysis",
+      "severity": "high",
+      "testable": true
+    },
+    {
+      "requirement_id": "COMP-001",
+      "description": "Functional options pattern must be used for flexible configuration",
+      "validation_method": "pattern_recognition",
+      "severity": "high",
+      "testable": true
+    }
+  ],
+  "expected_outcome": "All design principles must be properly implemented",
+  "failure_actions": [
+    "Identify specific pattern violations",
+    "Document refactoring recommendations",
+    "Ensure backward compatibility in corrections"
+  ]
+}

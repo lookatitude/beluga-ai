@@ -1,160 +1,137 @@
-# Data Model: Embeddings Package Corrections
+# Data Model: Embeddings Package Enhancements
 
-**Date**: October 5, 2025
-**Purpose**: Define entities and data structures for embeddings package analysis and corrections
+**Feature**: Embeddings Package Enhancements | **Date**: October 5, 2025
+
+## Overview
+This document outlines the data entities and models for the embeddings package enhancements, focusing on achieving full constitutional compliance with 80%+ test coverage and production monitoring capabilities.
 
 ## Core Entities
 
 ### Analysis Findings
-**Purpose**: Records of pattern compliance verification and identified issues
+**Purpose**: Records of pattern compliance verification, violations found, and recommendations
 **Fields**:
-- `finding_id`: string (unique identifier)
-- `component`: string (provider/factory/interface/etc.)
-- `severity`: enum (HIGH/MEDIUM/LOW)
-- `category`: enum (STRUCTURE/PRINCIPLE/OBSERVABILITY/TESTING/DOCUMENTATION)
-- `description`: string (detailed finding description)
-- `impact`: string (business/technical impact)
-- `recommendation`: string (suggested correction)
-- `status`: enum (IDENTIFIED/PLANNED/IMPLEMENTED/VERIFIED)
-- `created_at`: timestamp
-- `updated_at`: timestamp
+- `finding_id`: string (unique identifier for each finding)
+- `category`: string (structure/interface/error_handling/observability/testing/documentation)
+- `severity`: string (critical/high/medium/low)
+- `description`: string (detailed description of the finding)
+- `location`: string (file path and line number where issue was found)
+- `recommendation`: string (suggested correction or improvement)
+- `status`: string (open/in_progress/resolved)
+- `validation_method`: string (how the finding was verified)
 
 **Relationships**:
-- Many-to-one with `Correction Plan` (findings grouped by correction areas)
-- One-to-many with `Test Results` (findings validated by test outcomes)
+- 1:N with Performance Metrics (each finding may reference performance data)
+- 1:N with Provider Configurations (findings may be provider-specific)
 
 **Validation Rules**:
-- `finding_id` must be unique and follow pattern `EMB-{category}-{number}`
-- `severity` cannot be null
-- `description` and `recommendation` must be non-empty strings
-- `status` must transition logically (IDENTIFIED → PLANNED → IMPLEMENTED → VERIFIED)
-
-### Correction Plan
-**Purpose**: Structured roadmap for implementing identified corrections
-**Fields**:
-- `plan_id`: string (unique identifier)
-- `title`: string (correction area title)
-- `description`: string (detailed plan description)
-- `priority`: enum (HIGH/MEDIUM/LOW)
-- `effort_estimate`: enum (SMALL/MEDIUM/LARGE)
-- `dependencies`: []string (list of dependent correction plan IDs)
-- `status`: enum (PLANNED/IN_PROGRESS/COMPLETED)
-- `assigned_to`: string (optional assignee)
-- `due_date`: timestamp (optional)
-- `created_at`: timestamp
-- `updated_at`: timestamp
-
-**Relationships**:
-- One-to-many with `Analysis Findings` (plans address multiple findings)
-- Many-to-one with `Implementation Task` (plans broken into tasks)
+- `finding_id` must be unique and follow format `EMB-{category}-{number}`
+- `category` must be one of the predefined values
+- `severity` must follow framework severity guidelines
+- `status` defaults to "open"
 
 ### Performance Metrics
-**Purpose**: Benchmark results and performance baselines
+**Purpose**: Benchmark results, coverage statistics, and performance baselines
 **Fields**:
 - `metric_id`: string (unique identifier)
-- `test_name`: string (benchmark test identifier)
-- `provider`: string (openai/ollama/mock)
-- `operation`: string (embed_query/embed_documents/get_dimension)
-- `batch_size`: int (number of documents for batch operations)
-- `duration_ms`: float64 (operation duration in milliseconds)
-- `memory_mb`: float64 (memory usage in MB)
-- `success`: bool (operation success flag)
-- `error_message`: string (error details if failed)
-- `timestamp`: timestamp
+- `benchmark_name`: string (name of the benchmark test)
+- `operation_type`: string (factory_creation/embed_generation/memory_usage/concurrency/throughput)
+- `value`: float64 (measured value)
+- `unit`: string (ms/ops/sec/MB/req/s/etc)
+- `timestamp`: time.Time (when measurement was taken)
+- `environment`: string (test environment details)
 
 **Relationships**:
-- Many-to-one with `Test Results` (metrics collected during test execution)
-- Referenced by performance validation requirements
+- N:1 with Analysis Findings (metrics support findings validation)
 
-### Test Results
-**Purpose**: Comprehensive test execution outcomes
-**Fields**:
-- `test_id`: string (unique identifier)
-- `test_type`: enum (UNIT/INTEGRATION/BENCHMARK/LOAD)
-- `component`: string (specific component being tested)
-- `test_name`: string (test function/method name)
-- `status`: enum (PASS/FAIL/SKIP)
-- `duration_ms`: float64 (test execution time)
-- `coverage_percent`: float64 (code coverage percentage)
-- `error_message`: string (failure details)
-- `timestamp`: timestamp
-
-**Relationships**:
-- One-to-many with `Performance Metrics` (benchmark tests generate metrics)
-- Many-to-one with `Analysis Findings` (tests validate findings)
+**Validation Rules**:
+- `metric_id` follows format `PERF-{operation}-{timestamp}`
+- `value` must be positive number
+- `unit` must be valid measurement unit
 
 ### Provider Configurations
-**Purpose**: Settings for different embedding providers
+**Purpose**: Settings for OpenAI, Ollama, and mock providers with validation rules
 **Fields**:
-- `config_id`: string (unique identifier)
-- `provider_type`: enum (OPENAI/OLLAMA/MOCK)
-- `model_name`: string (specific model identifier)
-- `api_key`: string (encrypted/sensitive - OpenAI only)
-- `server_url`: string (Ollama server endpoint)
-- `timeout_seconds`: int (request timeout)
-- `max_retries`: int (retry attempts)
-- `enabled`: bool (provider availability flag)
-- `created_at`: timestamp
-- `updated_at`: timestamp
+- `provider_type`: string (openai/ollama/mock)
+- `config_section`: string (main provider configuration section)
+- `setting_name`: string (individual configuration parameter)
+- `setting_value`: interface{} (current configured value)
+- `validation_rule`: string (validation constraints)
+- `compliance_status`: string (compliant/needs_correction)
+- `correction_needed`: string (description of required changes)
 
 **Relationships**:
-- Referenced by provider implementations
-- Validated against framework configuration standards
+- 1:N with Analysis Findings (configuration issues become findings)
+
+**Validation Rules**:
+- `provider_type` must be one of supported providers
+- `compliance_status` must be validated against framework standards
+
+### Test Results
+**Purpose**: Coverage reports, benchmark outputs, and compliance verification outcomes
+**Fields**:
+- `test_id`: string (unique test identifier)
+- `test_type`: string (unit/integration/benchmark/compliance)
+- `test_name`: string (specific test function or scenario)
+- `status`: string (pass/fail/error)
+- `coverage_percentage`: float64 (code coverage achieved)
+- `execution_time`: time.Duration (how long test took to run)
+- `error_message`: string (failure details if applicable)
+
+**Relationships**:
+- N:1 with Analysis Findings (test results validate findings)
+
+**Validation Rules**:
+- `coverage_percentage` must be >= 80% for framework compliance
+- `status` must be tracked for all test executions
 
 ## State Transitions
 
-### Analysis Finding States
-```
-IDENTIFIED → PLANNED → IMPLEMENTED → VERIFIED
-     ↓         ↓
-  CANCELLED  DEFERRED
-```
+### Analysis Workflow States
+1. **Initialized** → Analysis setup complete
+2. **Scanning** → Code structure examination in progress
+3. **Validating** → Compliance checks being performed
+4. **Reporting** → Findings being documented
+5. **Complete** → Analysis finished with recommendations
 
-### Correction Plan States
-```
-PLANNED → IN_PROGRESS → COMPLETED
-           ↓
-       CANCELLED
-```
-
-### Test Result States
-```
-QUEUED → RUNNING → PASS|FAIL|SKIP
-```
+### Finding Resolution States
+1. **Open** → Finding identified and documented
+2. **In_Progress** → Correction work underway
+3. **Resolved** → Finding addressed successfully
+4. **Closed** → Finding reviewed and accepted as-is
 
 ## Validation Rules Summary
 
-### Business Rules
-1. High-severity findings must be addressed before medium/low priority items
-2. All correction plans must have at least one associated finding
-3. Performance metrics must meet established baselines (<100ms p95, <100MB memory)
-4. Test coverage must maintain 90%+ across all components
+### Structural Compliance
+- Package must follow exact framework layout
+- All required files must be present
+- Directory structure must match constitution requirements
 
-### Data Integrity Rules
-1. All timestamps must be valid and in chronological order
-2. Finding IDs must follow the prescribed format
-3. Provider configurations must pass validation before use
-4. Error messages must be non-empty when status is FAIL
+### Interface Compliance
+- Embedder interface must follow ISP principles
+- Method signatures must be focused and minimal
+- Naming conventions must be followed
 
-### Framework Compliance Rules
-1. All entities must support OTEL observability
-2. Error handling must follow Op/Err/Code pattern
-3. Configuration must use functional options
-4. Testing must include table-driven tests and mocks
+### Error Handling Compliance
+- All errors must use Op/Err/Code pattern
+- Error chains must be preserved through wrapping
+- Error codes must be standardized
 
-## Integration Points
+### Testing Compliance
+- Test coverage must be >= 80%
+- Benchmarks must cover performance-critical paths
+- Table-driven tests must be used for complex logic
 
-### With Framework Monitoring
-- Performance metrics feed into framework-wide observability
-- Test results integrate with CI/CD quality gates
-- Configuration changes trigger validation workflows
+## Data Flow
 
-### With Development Workflow
-- Findings generate automated task creation
-- Correction plans integrate with project management
-- Test results drive development priorities
+### Analysis Process Flow
+1. Code Structure Scanning → Entity extraction
+2. Compliance Validation → Rule application
+3. Finding Generation → Documentation
+4. Recommendation Creation → Action items
+5. Report Generation → Stakeholder delivery
 
-### With Other Packages
-- Embeddings configurations integrate with vector store requirements
-- Performance baselines inform scaling decisions
-- Test patterns provide templates for other packages
+### Validation Data Flow
+1. Source Code → Static Analysis → Findings
+2. Test Execution → Coverage Metrics → Compliance Status
+3. Benchmark Runs → Performance Data → Optimization Opportunities
+4. Manual Review → Expert Validation → Final Assessment

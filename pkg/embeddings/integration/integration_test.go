@@ -4,12 +4,14 @@ package integration
 
 import (
 	"context"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
-	"github.com/lookatitude/beluga-ai/pkg/embeddings/testutils"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 )
 
 // TestEmbedderFactory_Integration tests the embedder factory with real providers
@@ -369,5 +371,311 @@ func TestLoadTest_Integration(t *testing.T) {
 
 	if totalProcessed == 0 {
 		t.Error("No documents were processed successfully")
+	}
+}
+
+// TestCrossProviderCompatibility tests that different providers can be used interchangeably
+func TestCrossProviderCompatibility(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping cross-provider compatibility test in short mode")
+	}
+
+	ctx := context.Background()
+	testText := "This is a test document for cross-provider compatibility."
+
+	// Test data that should work across all providers
+	compatibleProviders := []struct {
+		name   string
+		config *embeddings.Config
+	}{
+		{
+			name: "mock",
+			config: &embeddings.Config{
+				Mock: &embeddings.MockConfig{
+					Dimension: 128,
+				},
+			},
+		},
+	}
+
+	// Add OpenAI if API key is available
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		compatibleProviders = append(compatibleProviders, struct {
+			name   string
+			config *embeddings.Config
+		}{
+			name: "openai",
+			config: &embeddings.Config{
+				OpenAI: &embeddings.OpenAIConfig{
+					APIKey: os.Getenv("OPENAI_API_KEY"),
+					Model:  "text-embedding-ada-002",
+				},
+			},
+		})
+	}
+
+	// Add Ollama if available
+	if os.Getenv("OLLAMA_SERVER_URL") != "" || isOllamaServerAvailable() {
+		compatibleProviders = append(compatibleProviders, struct {
+			name   string
+			config *embeddings.Config
+		}{
+			name: "ollama",
+			config: &embeddings.Config{
+				Ollama: &embeddings.OllamaConfig{
+					Model: "nomic-embed-text",
+				},
+			},
+		})
+	}
+
+	if len(compatibleProviders) < 2 {
+		t.Skip("Need at least 2 providers for cross-provider compatibility test")
+	}
+
+	results := make(map[string][]float32)
+
+	// Test each provider with the same input
+	for _, provider := range compatibleProviders {
+		t.Run(fmt.Sprintf("embed_%s", provider.name), func(t *testing.T) {
+			embedder, err := embeddings.NewEmbedder(ctx, provider.name, *provider.config)
+			if err != nil {
+				t.Fatalf("Failed to create %s embedder: %v", provider.name, err)
+			}
+
+			vectors, err := embedder.EmbedQuery(ctx, testText)
+			if err != nil {
+				t.Fatalf("Failed to embed with %s: %v", provider.name, err)
+			}
+
+			if len(vectors) == 0 {
+				t.Errorf("%s returned empty embedding", provider.name)
+			}
+
+			results[provider.name] = vectors
+			t.Logf("%s produced embedding with %d dimensions", provider.name, len(vectors))
+		})
+	}
+
+	// Verify results are reasonable (same text should produce embeddings)
+	for provider, vectors := range results {
+		if len(vectors) == 0 {
+			t.Errorf("%s produced empty embedding", provider)
+		}
+
+		// Check for NaN or infinite values
+		for i, v := range vectors {
+			if fmt.Sprintf("%f", v) == "NaN" {
+				t.Errorf("%s embedding[%d] is NaN", provider, i)
+			}
+		}
+	}
+
+	t.Logf("Cross-provider compatibility test completed with %d providers", len(results))
+}
+
+// TestEndToEndWorkflow tests complete embedding workflows from creation to usage
+func TestEndToEndWorkflow(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping end-to-end workflow test in short mode")
+	}
+
+	ctx := context.Background()
+
+	// Test documents
+	documents := []string{
+		"The quick brown fox jumps over the lazy dog.",
+		"Machine learning is transforming technology.",
+		"Artificial intelligence enables automation.",
+		"Natural language processing understands text.",
+		"Computer vision recognizes images and patterns.",
+	}
+
+	workflows := []struct {
+		name     string
+		config   embeddings.Config
+		testFunc func(t *testing.T, embedder iface.Embedder)
+	}{
+		{
+			name: "mock_workflow",
+			config: embeddings.Config{
+				Mock: &embeddings.MockConfig{
+					Dimension: 128,
+				},
+			},
+			testFunc: func(t *testing.T, embedder iface.Embedder) {
+				testEmbedderWorkflow(t, ctx, embedder, documents)
+			},
+		},
+	}
+
+	// Add real provider workflows if available
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		workflows = append(workflows, struct {
+			name     string
+			config   embeddings.Config
+			testFunc func(t *testing.T, embedder iface.Embedder)
+		}{
+			name: "openai_workflow",
+			config: embeddings.Config{
+				OpenAI: &embeddings.OpenAIConfig{
+					APIKey: os.Getenv("OPENAI_API_KEY"),
+					Model:  "text-embedding-ada-002",
+				},
+			},
+			testFunc: func(t *testing.T, embedder iface.Embedder) {
+				testEmbedderWorkflow(t, ctx, embedder, documents)
+			},
+		})
+	}
+
+	for _, workflow := range workflows {
+		t.Run(workflow.name, func(t *testing.T) {
+			embedder, err := embeddings.NewEmbedder(ctx, strings.TrimSuffix(workflow.name, "_workflow"), workflow.config)
+			if err != nil {
+				t.Fatalf("Failed to create embedder for %s: %v", workflow.name, err)
+			}
+
+			workflow.testFunc(t, embedder)
+		})
+	}
+}
+
+// testEmbedderWorkflow performs a complete embedding workflow test
+func testEmbedderWorkflow(t *testing.T, ctx context.Context, embedder iface.Embedder, documents []string) {
+	// Test dimension retrieval
+	dimension, err := embedder.GetDimension(ctx)
+	if err != nil {
+		t.Fatalf("Failed to get dimension: %v", err)
+	}
+	if dimension <= 0 {
+		t.Errorf("Invalid dimension: %d", dimension)
+	}
+
+	// Test batch embedding
+	batchVectors, err := embedder.EmbedDocuments(ctx, documents)
+	if err != nil {
+		t.Fatalf("Failed to embed documents: %v", err)
+	}
+
+	if len(batchVectors) != len(documents) {
+		t.Errorf("Expected %d embeddings, got %d", len(documents), len(batchVectors))
+	}
+
+	// Verify each document produced an embedding
+	for i, vectors := range batchVectors {
+		if len(vectors) != dimension {
+			t.Errorf("Document %d: expected dimension %d, got %d", i, dimension, len(vectors))
+		}
+
+		// Check for valid float values
+		for j, v := range vectors {
+			if fmt.Sprintf("%f", v) == "NaN" {
+				t.Errorf("Document %d, dimension %d: NaN value", i, j)
+			}
+		}
+	}
+
+	// Test single query embedding
+	query := "What is artificial intelligence?"
+	queryVector, err := embedder.EmbedQuery(ctx, query)
+	if err != nil {
+		t.Fatalf("Failed to embed query: %v", err)
+	}
+
+	if len(queryVector) != dimension {
+		t.Errorf("Query embedding: expected dimension %d, got %d", dimension, len(queryVector))
+	}
+
+	// Verify query embedding has valid values
+	for i, v := range queryVector {
+		if fmt.Sprintf("%f", v) == "NaN" {
+			t.Errorf("Query embedding dimension %d: NaN value", i)
+		}
+	}
+
+	t.Logf("Workflow completed: %d documents + 1 query embedded successfully", len(documents))
+}
+
+// TestProviderSwitching tests the ability to switch between providers dynamically
+func TestProviderSwitching(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping provider switching test in short mode")
+	}
+
+	ctx := context.Background()
+	testText := "Provider switching test document."
+
+	providers := []string{"mock"}
+
+	// Add real providers if available
+	if os.Getenv("OPENAI_API_KEY") != "" {
+		providers = append(providers, "openai")
+	}
+
+	if len(providers) < 2 {
+		t.Skip("Need at least 2 providers for switching test")
+	}
+
+	configs := map[string]embeddings.Config{
+		"mock": {
+			Mock: &embeddings.MockConfig{
+				Dimension: 128,
+			},
+		},
+		"openai": {
+			OpenAI: &embeddings.OpenAIConfig{
+				APIKey: os.Getenv("OPENAI_API_KEY"),
+				Model:  "text-embedding-ada-002",
+			},
+		},
+	}
+
+	// Test switching between providers
+	for i, provider1 := range providers {
+		for j, provider2 := range providers {
+			if i == j {
+				continue // Skip same provider
+			}
+
+			t.Run(fmt.Sprintf("switch_%s_to_%s", provider1, provider2), func(t *testing.T) {
+				// Create first embedder
+				embedder1, err := embeddings.NewEmbedder(ctx, provider1, configs[provider1])
+				if err != nil {
+					t.Fatalf("Failed to create %s embedder: %v", provider1, err)
+				}
+
+				// Create second embedder
+				embedder2, err := embeddings.NewEmbedder(ctx, provider2, configs[provider2])
+				if err != nil {
+					t.Fatalf("Failed to create %s embedder: %v", provider2, err)
+				}
+
+				// Embed with first provider
+				vector1, err := embedder1.EmbedQuery(ctx, testText)
+				if err != nil {
+					t.Fatalf("Failed to embed with %s: %v", provider1, err)
+				}
+
+				// Embed with second provider
+				vector2, err := embedder2.EmbedQuery(ctx, testText)
+				if err != nil {
+					t.Fatalf("Failed to embed with %s: %v", provider2, err)
+				}
+
+				// Verify both embeddings are valid
+				if len(vector1) == 0 {
+					t.Errorf("%s produced empty embedding", provider1)
+				}
+				if len(vector2) == 0 {
+					t.Errorf("%s produced empty embedding", provider2)
+				}
+
+				// Embeddings from different providers should generally have different dimensions
+				// (This is a sanity check, not a requirement)
+				t.Logf("Provider switch test: %s (%d dims) → %s (%d dims)",
+					provider1, len(vector1), provider2, len(vector2))
+			})
+		}
 	}
 }

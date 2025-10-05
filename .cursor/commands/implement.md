@@ -12,6 +12,7 @@ $ARGUMENTS
 
 2. Load and analyze the implementation context:
    - **REQUIRED**: Read tasks.md for the complete task list and execution plan
+   - **CRITICAL**: Identify task type from tasks.md header (NEW FEATURE, ANALYSIS, or CORRECTION)
    - **REQUIRED**: Read plan.md for tech stack, architecture, and file structure
    - **IF EXISTS**: Read data-model.md for entities and relationships
    - **IF EXISTS**: Read contracts/ for API specifications and test requirements
@@ -19,19 +20,37 @@ $ARGUMENTS
    - **IF EXISTS**: Read quickstart.md for integration scenarios
 
 3. Parse tasks.md structure and extract:
-   - **Task phases**: Setup, Tests, Core, Integration, Polish
+   - **Task type classification**: NEW FEATURE (create code) vs ANALYSIS (document) vs CORRECTION (fix code)
+   - **File targets**: Verify tasks target correct directories based on type
+     * NEW FEATURE/CORRECTION: Tasks MUST modify `pkg/`, `cmd/`, `internal/` files
+     * ANALYSIS: Tasks MUST write to `specs/` directory only
+   - **Task phases**: Setup, Tests/Verification, Core/Analysis, Integration/Validation, Polish/Reporting
    - **Task dependencies**: Sequential vs parallel execution rules
-   - **Task details**: ID, description, file paths, parallel markers [P]
+   - **Task details**: ID, description, EXACT file paths, parallel markers [P]
    - **Execution flow**: Order and dependency requirements
 
-4. Execute implementation following the task plan:
-   - **Phase-by-phase execution**: Complete each phase before moving to the next
-   - **Respect dependencies**: Run sequential tasks in order, parallel tasks [P] can run together  
-   - **Follow TDD approach**: Execute test tasks before their corresponding implementation tasks
-   - **File-based coordination**: Tasks affecting the same files must run sequentially
-   - **Validation checkpoints**: Verify each phase completion before proceeding
+4. Execute implementation following the task plan BY TYPE:
+   
+   **For NEW FEATURES** (create code in `pkg/`):
+   - Phase-by-phase: Setup → Tests → Core → Integration → Polish
+   - Respect TDD: Write failing tests BEFORE implementation
+   - Constitutional compliance: Ensure config.go, metrics.go, errors.go, test_utils.go
+   - Validation: Run `go test ./pkg/{package}/... -v` after each phase
+   
+   **For ANALYSIS** (document in `specs/`):
+   - Phase-by-phase: Setup → Verification → Analysis → Validation → Reporting
+   - Read-only: NEVER modify `pkg/` files during analysis
+   - Document findings: Write all results to `specs/NNN-for-the-{package}/`
+   - Validation: Ensure comprehensive documentation of current state
+   
+   **For CORRECTIONS** (fix code in `pkg/`):
+   - Phase-by-phase: Setup → Tests → Fixes → Verification → Documentation
+   - Test first: Add missing tests to verify issue exists
+   - Fix implementation: Modify actual code in `pkg/` to pass tests
+   - Validation: Run full test suite to check for regressions
 
 5. Implementation execution rules:
+   - **Verify task type first**: Confirm file targets match task type classification
    - **Setup first**: Initialize project structure, dependencies, configuration
    - **Tests before code**: If you need to write tests for contracts, entities, and integration scenarios
    - **Core development**: Implement models, services, CLI commands, endpoints

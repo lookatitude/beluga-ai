@@ -1,11 +1,12 @@
 <!-- 
 Sync Impact Report:
-Version change: NEW → 1.0.0 (Initial constitution establishment)
-Modified principles: N/A (new constitution)
-Added sections: Core Principles (4), Implementation Standards, Testing & Quality Assurance, Governance
-Removed sections: N/A
-Templates requiring updates: ✅ plan-template.md updated, ✅ spec-template.md verified, ✅ tasks-template.md verified
-Follow-up TODOs: None - all placeholders filled
+Version change: 1.0.0 → 1.1.0 (Task execution clarification)
+Modified principles: Implementation Standards completely restructured
+Added sections: Task Execution Requirements with feature type classification, Implementation Workflow Steps
+Removed sections: None
+Templates requiring updates: ✅ tasks-template.md (add task type classification), ✅ implement.md (clarify execution rules)
+Follow-up TODOs: Review existing specs for proper task classification (analysis vs implementation)
+Key Changes: Added explicit distinction between NEW FEATURE, ANALYSIS, and CORRECTION tasks with clear file path requirements
 -->
 
 # Beluga AI Framework Constitution
@@ -116,18 +117,153 @@ ALL packages MUST implement enterprise-grade testing with 100% compliance:
 
 ## Implementation Standards
 
+### Task Execution Requirements (MANDATORY)
+
+#### Feature Type Classification
+ALL task implementations MUST be classified and executed according to their type:
+
+1. **NEW FEATURE IMPLEMENTATION** (`specs/NNN-feature-name/`):
+   - **PRIMARY GOAL**: Create NEW files in `pkg/`, `cmd/`, `internal/` directories
+   - **TASKS MUST**: Implement actual Go code following package design patterns
+   - **FILE TARGETS**: `pkg/{package}/`, `pkg/{package}/providers/`, `pkg/{package}/internal/`
+   - **TESTING**: Create test files in same directories as implementation
+   - **SPEC USAGE**: Write planning docs (plan.md, research.md, contracts/) THEN implement code
+   - **VALIDATION**: Run tests, verify functionality works end-to-end
+   - **EXAMPLE**: "Create embeddings package" → writes files to `pkg/embeddings/*.go`
+
+2. **ANALYSIS/AUDIT TASKS** (`specs/NNN-for-the-{package}/`):
+   - **PRIMARY GOAL**: Document findings about EXISTING code in `pkg/{package}/`
+   - **TASKS MUST**: Read existing files, write analysis to `specs/` directory only
+   - **FILE TARGETS**: `specs/NNN-for-the-{package}/findings/`, `specs/NNN-for-the-{package}/analysis/`
+   - **NO CODE CHANGES**: Analysis tasks document only, never modify `pkg/` files
+   - **VALIDATION**: Ensure analysis is comprehensive and actionable
+   - **EXAMPLE**: "Analyze embeddings package" → writes to `specs/008-for-the-embeddings/findings/*.md`
+
+3. **CORRECTION/ENHANCEMENT TASKS** (follow analysis):
+   - **PRIMARY GOAL**: Apply fixes/improvements to EXISTING `pkg/` files based on analysis findings
+   - **TASKS MUST**: Modify actual Go files in `pkg/` directories following patterns
+   - **FILE TARGETS**: `pkg/{package}/*.go`, `pkg/{package}/providers/*.go`, etc.
+   - **PREREQUISITE**: Completed analysis phase with documented findings
+   - **TESTING**: Update/fix existing tests, add missing coverage
+   - **VALIDATION**: Run full test suite, verify no regressions
+   - **EXAMPLE**: After analysis, "Fix error handling in pkg/embeddings/providers/openai.go"
+
+#### Implementation Workflow Steps (ENFORCED)
+
+**For NEW FEATURES**:
+```
+1. /specify → Create spec.md with feature requirements
+2. /plan → Generate research.md, contracts/, data-model.md, quickstart.md
+3. /tasks → Generate tasks.md with implementation tasks
+4. EXECUTE TASKS:
+   Phase 3.1 (Setup): Create directory structure in pkg/
+   Phase 3.2 (Tests): Write failing tests in pkg/{package}/*_test.go
+   Phase 3.3 (Core): Implement code in pkg/{package}/*.go to pass tests
+   Phase 3.4 (Integration): Add to registries, wire dependencies
+   Phase 3.5 (Polish): Documentation, benchmarks, README.md
+5. Run tests: go test ./pkg/{package}/... -v -cover
+6. Commit, push, PR to develop branch
+```
+
+**For ANALYSIS (Audit Existing Code)**:
+```
+1. /specify → Create spec.md describing analysis scope
+2. /plan → Generate research.md with analysis approach
+3. /tasks → Generate analysis tasks (all write to specs/ directory)
+4. EXECUTE ANALYSIS TASKS:
+   Phase 3.1: Setup analysis tools
+   Phase 3.2: Verify contracts (write findings to specs/)
+   Phase 3.3: Analyze entities (write analysis to specs/)
+   Phase 3.4: Validate scenarios (write validation to specs/)
+   Phase 3.5: Generate reports (write reports to specs/)
+5. Review findings → create SEPARATE correction spec if needed
+```
+
+**For CORRECTIONS (Fix Existing Code)**:
+```
+1. Start from analysis findings in specs/NNN-for-the-{package}/
+2. Create NEW spec: specs/MMM-fix-{package}-{issue}/
+3. Generate correction tasks targeting pkg/{package}/ files
+4. EXECUTE CORRECTION TASKS:
+   Phase 3.1: Setup test environment
+   Phase 3.2: Add missing tests (TDD approach)
+   Phase 3.3: Fix actual code in pkg/ to pass tests
+   Phase 3.4: Verify no regressions with full suite
+   Phase 3.5: Update documentation
+5. Run tests: go test ./pkg/{package}/... -v -cover
+6. Commit, push, PR to develop branch
+```
+
+#### Critical Rules for Task Definitions
+
+1. **EXPLICIT FILE PATHS**: Every task MUST specify exact file paths being created/modified
+   - ✅ GOOD: "Implement Embedder interface in pkg/embeddings/iface/embedder.go"
+   - ✅ GOOD: "Verify error handling in pkg/embeddings/providers/openai.go"
+   - ❌ BAD: "Implement embedder interface" (no path specified)
+   - ❌ BAD: "Verify error handling" (no target files)
+
+2. **CLEAR ACTION VERBS**: Use precise verbs indicating file operations
+   - **For NEW features**: Create, Implement, Add, Build, Write
+   - **For ANALYSIS**: Verify, Analyze, Validate, Document, Review
+   - **For CORRECTIONS**: Fix, Update, Enhance, Refactor, Improve
+
+3. **PACKAGE COMPLIANCE**: All implementation tasks MUST reference package design patterns
+   - Every task must verify ISP, DIP, SRP compliance
+   - All tasks must implement OTEL metrics, error handling patterns
+   - Factory pattern for multi-provider packages (mandatory reference)
+
 ### Post-Implementation Workflow (MANDATORY)
-ALL feature implementations MUST follow the standardized post-implementation workflow to ensure consistent integration:
+ALL feature implementations MUST follow the standardized post-implementation workflow:
 
-1. **Comprehensive Commit Message**: Create detailed commit message documenting constitutional compliance, performance achievements, and key enhancements
-2. **Branch Push**: Push feature branch to origin with all changes committed  
-3. **Pull Request Creation**: Create PR from feature branch to `develop` branch with implementation summary
-4. **Merge to Develop**: Merge PR to develop branch after all tests pass
-5. **Post-Merge Validation**: Verify functionality and run comprehensive tests post-merge
+1. **Verify Implementation Completeness**:
+   - ✅ All files in `pkg/` directories created/modified as specified
+   - ✅ Tests passing: `go test ./pkg/{package}/... -v -cover`
+   - ✅ Linter clean: `golangci-lint run ./pkg/{package}/...`
+   - ✅ Documentation updated (README.md, godoc comments)
 
-This workflow ensures systematic integration through the develop branch and maintains constitutional compliance across all feature implementations.
+2. **Comprehensive Commit Message**:
+   ```
+   feat({package}): [concise description]
 
-**Rationale**: Consistent workflow enables quality gates, proper documentation, and systematic integration of constitutional compliance features.
+   CONSTITUTIONAL COMPLIANCE:
+   ✅ ISP: [interface segregation achievements]
+   ✅ DIP: [dependency injection implementation]
+   ✅ SRP: [single responsibility adherence]
+   ✅ Composition: [functional options usage]
+
+   IMPLEMENTATION DETAILS:
+   - [key file changes with paths]
+   - [test coverage statistics]
+   - [observability integration]
+
+   FILES MODIFIED:
+   - pkg/{package}/file1.go: [what changed]
+   - pkg/{package}/file2.go: [what changed]
+
+   TESTING:
+   - go test ./pkg/{package}/... → PASS
+   - Coverage: XX%
+   ```
+
+3. **Branch Push**: `git push origin {branch-name}`
+
+4. **Pull Request Creation**: PR from feature branch to `develop` with:
+   - Implementation summary
+   - Constitutional compliance checklist
+   - Test results and coverage report
+   - Breaking changes (if any)
+
+5. **Merge to Develop**: After CI passes and review approval
+
+6. **Post-Merge Validation**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   go test ./... -v -cover
+   go test ./... -bench=. -benchmem
+   ```
+
+**Rationale**: Clear task classification prevents confusion between analysis documentation and actual implementation. Explicit file paths ensure accountability and traceability.
 
 ## Governance
 
@@ -150,4 +286,4 @@ Constitution amendments require:
 - **MINOR**: New principles added or material expansions
 - **PATCH**: Clarifications, wording improvements, typo fixes
 
-**Version**: 1.0.0 | **Ratified**: 2025-01-05 | **Last Amended**: 2025-01-05
+**Version**: 1.1.0 | **Ratified**: 2025-01-05 | **Last Amended**: 2025-10-05

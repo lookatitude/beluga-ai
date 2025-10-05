@@ -31,6 +31,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - Configuration files (YAML, JSON, TOML), environment variables, no persistent storage required (006-for-the-config)
 - Go 1.21+ + go.opentelemetry.io/otel, github.com/go-playground/validator/v10, github.com/sashabaranov/go-openai, github.com/ollama/ollama/api (008-for-the-embeddings)
 - N/A (stateless embedding operations) (008-for-the-embeddings)
+- Go 1.21+ (Beluga AI Framework standard) + OpenTelemetry, go-playground/validator, testify (008-for-the-embeddings)
+- N/A (embeddings service - no persistent storage) (008-for-the-embeddings)
 
 ## Project Structure
 ```
@@ -45,9 +47,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 008-for-the-embeddings: Added Go 1.21+ (Beluga AI Framework standard) + OpenTelemetry, go-playground/validator, testify
 - 008-for-the-embeddings: Added Go 1.21+ + go.opentelemetry.io/otel, github.com/go-playground/validator/v10, github.com/sashabaranov/go-openai, github.com/ollama/ollama/api
 - 006-for-the-config: Added Go 1.21+ (existing Beluga AI Framework requirement) + Viper (spf13/viper), OpenTelemetry (go.opentelemetry.io/otel), testify (github.com/stretchr/testify), validator (go-playground/validator), schema package integration
-- 005-for-the-chatmodels: Added Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry (metrics, tracing, logging), testify/mock (testing), existing ChatModel providers (OpenAI)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
