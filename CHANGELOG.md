@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.1.0](https://github.com/lookatitude/beluga-ai/compare/v1.0.4...v1.1.0) (2025-10-05)
+
+
+### Features
+
+* **agents:** complete package redesign per framework guidelines ([9d706a6](https://github.com/lookatitude/beluga-ai/commit/9d706a6859c0e7c7064e81a8c30066b4b95d0b10))
+* align memory package with Beluga AI Framework design patterns ([d36356e](https://github.com/lookatitude/beluga-ai/commit/d36356e504d87c803947354dc28c21ee00153ff1))
+* align memory package with Beluga AI Framework design patterns ([5e434cf](https://github.com/lookatitude/beluga-ai/commit/5e434cf06cb94caaace23df99df5f21abc36ba3c))
+* Complete framework standardization and comprehensive testing infrastructure ([a2174d1](https://github.com/lookatitude/beluga-ai/commit/a2174d1072c03783076ca1f7454dd5cdd098c13b))
+* complete orchestration package redesign and fixes ([a7773b9](https://github.com/lookatitude/beluga-ai/commit/a7773b95ccb3fd67d10315bd5edec77394b7b819))
+* comprehensive monitoring package redesign and enhancement ([4cf109e](https://github.com/lookatitude/beluga-ai/commit/4cf109eb231fba4ed77891f7e6ac5d20d2f04360))
+* comprehensive monitoring package redesign and enhancement ([437ab2a](https://github.com/lookatitude/beluga-ai/commit/437ab2a1096c14ed8cb0eb05428d5ee36a2a3694))
+* comprehensively redesign config package with advanced features ([a7cd839](https://github.com/lookatitude/beluga-ai/commit/a7cd83971c866c1e9cc8044ae4767d643768cb05))
+* **core:** complete core package redesign as framework glue layer ([81e20f8](https://github.com/lookatitude/beluga-ai/commit/81e20f8ffd66e9d0909cfe4fd40cf37c377cd92f))
+* **embeddings:** complete package redesign and fixes ([0446346](https://github.com/lookatitude/beluga-ai/commit/04463469e626fcb4387974bf81fb918d490af519))
+* **embeddings:** complete package redesign and fixes ([26a0de2](https://github.com/lookatitude/beluga-ai/commit/26a0de2ce25ddeb0b3d26db0d3ecf0ddf527475c))
+* **embeddings:** Implement Embedder Factory with registry pattern and decoupled interface ([ba24fe0](https://github.com/lookatitude/beluga-ai/commit/ba24fe03258bb360af3171234da1cd229d256df3))
+* **embeddings:** Implement Embedder interface and MockEmbedder provider ([581af31](https://github.com/lookatitude/beluga-ai/commit/581af3193bf97db7738aeaebd3929569e9aa46d3))
+* **embeddings:** Implement OpenAIEmbedder provider and tests ([8cf8636](https://github.com/lookatitude/beluga-ai/commit/8cf8636a2463f365a9b95d71893515fc034ae4f8))
+* enhance chatmodels package with comprehensive improvements ([a112f81](https://github.com/lookatitude/beluga-ai/commit/a112f81a7b45ecd3d2fb4e2966c64639969f997d))
+* enhance retrievers package to align with Beluga AI Framework design patterns ([f6dd697](https://github.com/lookatitude/beluga-ai/commit/f6dd6973d6bc0f11dc36eb7d4123c869121e3c17))
+* **llms:** complete package redesign and fix all tests ([235faea](https://github.com/lookatitude/beluga-ai/commit/235faeac77cdf3bcfba58b9db571a0840b30a576))
+
+
+### Bug Fixes
+
+* resolve linter errors in agents and vectorstores packages ([5059b8b](https://github.com/lookatitude/beluga-ai/commit/5059b8be982b4bc0cb5ab1816207a391efbb6896))
+
 ## [1.0.4](https://github.com/lookatitude/beluga-ai/compare/v1.0.3...v1.0.4) (2025-05-07)
 
 
