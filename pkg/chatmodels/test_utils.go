@@ -25,6 +25,7 @@ type AdvancedMockChatModel struct {
 	modelName    string
 	providerName string
 	callCount    int
+	id           string // Unique identifier for instance comparison
 	mu           sync.RWMutex
 
 	// Configurable behavior
@@ -49,6 +50,7 @@ func NewAdvancedMockChatModel(modelName, providerName string, options ...MockCha
 	mock := &AdvancedMockChatModel{
 		modelName:           modelName,
 		providerName:        providerName,
+		id:                  fmt.Sprintf("%s-%s-%d", modelName, providerName, time.Now().UnixNano()),
 		responses:           []schema.Message{},
 		conversationHistory: []schema.Message{},
 		toolsSupported:      true,
@@ -258,8 +260,15 @@ func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.Ch
 	newMock := &AdvancedMockChatModel{
 		modelName:           m.modelName,
 		providerName:        m.providerName,
+		id:                  fmt.Sprintf("%s-%s-bound-%d", m.modelName, m.providerName, time.Now().UnixNano()),
+		callCount:           0, // New instance should have fresh call count
+		shouldError:         m.shouldError,
+		errorToReturn:       m.errorToReturn,
 		responses:           make([]schema.Message, len(m.responses)),
-		conversationHistory: make([]schema.Message, len(m.conversationHistory)),
+		responseIndex:       0, // Reset response index for new instance
+		streamingDelay:      m.streamingDelay,
+		simulateFailures:    m.simulateFailures,
+		conversationHistory: make([]schema.Message, len(m.conversationHistory)), // Start with empty conversation for new instance
 		toolsSupported:      true,
 		healthState:         m.healthState,
 	}
