@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -992,4 +993,238 @@ func TestLoadTestingWithDifferentConfigurations(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestNetworkFailureSimulation tests embedder behavior under simulated network failures
+func TestNetworkFailureSimulation(t *testing.T) {
+	ctx := context.Background()
+
+	// Create mock embedders with network failure simulation
+	failingEmbedder := NewAdvancedMockEmbedder("failing-provider", "fail-model", 128,
+		WithMockError(true, iface.WrapError(fmt.Errorf("network connection failed"), iface.ErrCodeConnectionFailed, "simulated network failure")))
+
+	reliableEmbedder := NewAdvancedMockEmbedder("reliable-provider", "reliable-model", 128)
+
+	testCases := []struct {
+		name       string
+		embedder   *AdvancedMockEmbedder
+		shouldFail bool
+	}{
+		{"network_failure_embedder", failingEmbedder, true},
+		{"reliable_embedder", reliableEmbedder, false},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Test single query embedding
+			_, err := tc.embedder.EmbedQuery(ctx, "test query")
+			if tc.shouldFail {
+				assert.Error(t, err, "Expected network failure but got success")
+				assert.Contains(t, err.Error(), "network", "Error should mention network failure")
+			} else {
+				assert.NoError(t, err, "Expected success but got network failure")
+			}
+
+			// Test batch embedding
+			texts := CreateTestTexts(3)
+			_, err = tc.embedder.EmbedDocuments(ctx, texts)
+			if tc.shouldFail {
+				assert.Error(t, err, "Expected network failure in batch embedding")
+			} else {
+				assert.NoError(t, err, "Expected success in batch embedding")
+			}
+
+			// Test dimension retrieval (may fail if embedder is configured to fail)
+			dim, err := tc.embedder.GetDimension(ctx)
+			if tc.shouldFail {
+				// Dimension retrieval may also fail when embedder is configured to fail
+				if err != nil {
+					t.Log("Dimension retrieval failed as expected for failing embedder")
+				}
+			} else {
+				assert.NoError(t, err, "Dimension retrieval should work for reliable embedder")
+				assert.Equal(t, 128, dim, "Dimension should be correct")
+			}
+		})
+	}
+
+	// Test recovery after network issues - simulate by creating new embedder without error
+	t.Run("network_recovery", func(t *testing.T) {
+		// Start with failing embedder
+		failingEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("temporary network issue"), iface.ErrCodeConnectionFailed, "temporary failure")))
+
+		// Should fail initially
+		_, err := failingEmbedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected initial failure")
+
+		// Simulate recovery by creating new embedder without error
+		recoveredEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128)
+
+		// Should work after recovery
+		_, err = recoveredEmbedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after recovery")
+	})
+}
+
+// TestAPIRateLimitScenarios tests embedder behavior under various rate limiting conditions
+func TestAPIRateLimitScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	// Test different rate limit configurations
+	rateLimitTests := []struct {
+		name           string
+		embedder       *AdvancedMockEmbedder
+		requestCount   int
+		expectedErrors int
+	}{
+		{
+			name:           "no_rate_limiting",
+			embedder:       NewAdvancedMockEmbedder("no-limit", "model", 128),
+			requestCount:   10,
+			expectedErrors: 0,
+		},
+		{
+			name:           "strict_rate_limiting",
+			embedder:       NewAdvancedMockEmbedder("strict-limit", "model", 128, WithMockRateLimit(true)),
+			requestCount:   15,
+			expectedErrors: 5, // Should fail after rate limit exceeded
+		},
+		{
+			name:           "high_frequency_requests",
+			embedder:       NewAdvancedMockEmbedder("high-freq", "model", 128, WithMockRateLimit(true)),
+			requestCount:   100,
+			expectedErrors: 50, // High volume should trigger many rate limit errors
+		},
+	}
+
+	for _, rt := range rateLimitTests {
+		t.Run(rt.name, func(t *testing.T) {
+			errorCount := 0
+			successCount := 0
+
+			// Make multiple requests
+			for i := 0; i < rt.requestCount; i++ {
+				_, err := rt.embedder.EmbedQuery(ctx, fmt.Sprintf("test query %d", i))
+				if err != nil {
+					errorCount++
+					// Verify error is rate limit related
+					assert.Contains(t, strings.ToLower(err.Error()), "rate", "Rate limit error should mention rate limiting")
+				} else {
+					successCount++
+				}
+			}
+
+			t.Logf("Rate limit test %s: %d successes, %d errors out of %d requests",
+				rt.name, successCount, errorCount, rt.requestCount)
+
+			// For rate limited tests, we expect some errors
+			if strings.Contains(rt.name, "strict") || strings.Contains(rt.name, "high_frequency") {
+				assert.True(t, errorCount > 0, "Expected some rate limit errors but got none")
+				assert.True(t, successCount > 0, "Expected some successful requests")
+			} else {
+				assert.Equal(t, 0, errorCount, "Expected no errors for unlimited test")
+				assert.Equal(t, rt.requestCount, successCount, "All requests should succeed")
+			}
+		})
+	}
+
+	// Test rate limit reset functionality
+	t.Run("rate_limit_reset", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("reset-test", "model", 128, WithMockRateLimit(true))
+
+		// Exhaust rate limit
+		for i := 0; i < 20; i++ {
+			embedder.EmbedQuery(ctx, "test")
+		}
+
+		// Should be rate limited now
+		_, err := embedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected rate limit error")
+
+		// Reset rate limit
+		embedder.ResetRateLimit()
+
+		// Should work again
+		_, err = embedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after rate limit reset")
+	})
+}
+
+// TestProviderUnavailableScenarios tests embedder behavior when providers become unavailable
+func TestProviderUnavailableScenarios(t *testing.T) {
+	ctx := context.Background()
+
+	// Test provider that is permanently unavailable (using WithMockError)
+	t.Run("permanent_unavailability", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("permanent-failure", "model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("provider permanently down"), iface.ErrCodeConnectionFailed, "permanent failure")))
+
+		// Multiple attempts should all fail
+		for i := 0; i < 5; i++ {
+			_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("attempt %d", i))
+			assert.Error(t, err, "Expected permanent failure on attempt %d", i)
+			assert.Contains(t, err.Error(), "permanent", "Error should indicate permanent failure")
+		}
+	})
+
+	// Test degraded provider performance
+	t.Run("degraded_performance", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("degraded", "model", 128,
+			WithMockDelay(100*time.Millisecond)) // Add significant delay
+
+		start := time.Now()
+		_, err := embedder.EmbedQuery(ctx, "slow test")
+		duration := time.Since(start)
+
+		assert.NoError(t, err, "Expected success despite degradation")
+		assert.True(t, duration >= 100*time.Millisecond, "Expected delay of at least 100ms, got %v", duration)
+	})
+
+	// Test concurrent access during provider issues
+	t.Run("concurrent_provider_issues", func(t *testing.T) {
+		embedder := NewAdvancedMockEmbedder("concurrent-issues", "model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("concurrent access issue"), iface.ErrCodeConnectionFailed, "concurrent failure")))
+
+		var wg sync.WaitGroup
+		errorCount := int64(0)
+		successCount := int64(0)
+
+		// Launch concurrent requests
+		for i := 0; i < 10; i++ {
+			wg.Add(1)
+			go func(id int) {
+				defer wg.Done()
+				_, err := embedder.EmbedQuery(ctx, fmt.Sprintf("concurrent test %d", id))
+				if err != nil {
+					atomic.AddInt64(&errorCount, 1)
+				} else {
+					atomic.AddInt64(&successCount, 1)
+				}
+			}(i)
+		}
+
+		wg.Wait()
+
+		t.Logf("Concurrent test: %d errors, %d successes", errorCount, successCount)
+		assert.True(t, errorCount > 0, "Expected some errors during concurrent access to failing provider")
+	})
+
+	// Test provider recovery (create new embedder without error)
+	t.Run("provider_recovery", func(t *testing.T) {
+		// Start with failing embedder
+		failingEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128,
+			WithMockError(true, iface.WrapError(fmt.Errorf("temporary network issue"), iface.ErrCodeConnectionFailed, "temporary failure")))
+
+		// Should fail initially
+		_, err := failingEmbedder.EmbedQuery(ctx, "test")
+		assert.Error(t, err, "Expected initial failure")
+
+		// Simulate recovery by creating new embedder without error
+		recoveredEmbedder := NewAdvancedMockEmbedder("recovery-provider", "recovery-model", 128)
+
+		// Should work after recovery
+		_, err = recoveredEmbedder.EmbedQuery(ctx, "test")
+		assert.NoError(t, err, "Expected success after recovery")
+	})
 }

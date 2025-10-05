@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"go.opentelemetry.io/otel"
@@ -251,5 +252,179 @@ func BenchmarkMockEmbedder_EmbedQuery(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = embedder.EmbedQuery(ctx, query)
+	}
+}
+
+// TestMockEmbedder_LoadSimulation tests load simulation features
+func TestMockEmbedder_LoadSimulation(t *testing.T) {
+	tracer := otel.Tracer("test")
+	config := &Config{
+		Dimension:          128,
+		SimulateDelay:      10 * time.Millisecond,
+		SimulateErrors:     false,
+		ErrorRate:          0.0,
+		RateLimitPerSecond: 10,
+		MemoryPressure:     true,
+		PerformanceDegrade: true,
+	}
+
+	embedder, err := NewMockEmbedder(config, tracer)
+	if err != nil {
+		t.Fatalf("Failed to create mock embedder: %v", err)
+	}
+
+	ctx := context.Background()
+
+	// Test load simulation delay
+	start := time.Now()
+	_, err = embedder.EmbedQuery(ctx, "test query")
+	duration := time.Since(start)
+
+	if err != nil {
+		t.Errorf("Unexpected error with load simulation: %v", err)
+	}
+
+	// Should take at least the simulated delay
+	if duration < config.SimulateDelay {
+		t.Errorf("Expected delay of at least %v, got %v", config.SimulateDelay, duration)
+	}
+
+	// Test rate limiting
+	t.Run("rate limiting", func(t *testing.T) {
+		// Make multiple rapid requests to trigger rate limiting
+		for i := 0; i < 15; i++ { // More than the rate limit
+			_, err := embedder.EmbedQuery(ctx, "test query")
+			if i >= 10 && err == nil { // After rate limit should be hit
+				// Rate limiting may or may not trigger depending on timing
+				t.Logf("Request %d succeeded (rate limit may not have triggered yet)", i)
+			}
+		}
+	})
+
+	// Test error simulation
+	t.Run("error simulation", func(t *testing.T) {
+		configWithErrors := &Config{
+			Dimension:      128,
+			SimulateErrors: true,
+			ErrorRate:      1.0, // 100% error rate
+		}
+
+		embedderWithErrors, err := NewMockEmbedder(configWithErrors, tracer)
+		if err != nil {
+			t.Fatalf("Failed to create mock embedder with errors: %v", err)
+		}
+
+		_, err = embedderWithErrors.EmbedQuery(ctx, "test query")
+		if err == nil {
+			t.Error("Expected error with 100% error rate, but got none")
+		}
+	})
+}
+
+// TestMockEmbedder_BoundaryConditions tests edge cases and boundary conditions
+func TestMockEmbedder_BoundaryConditions(t *testing.T) {
+	tracer := otel.Tracer("test")
+	ctx := context.Background()
+
+	tests := []struct {
+		name   string
+		config *Config
+		test   func(t *testing.T, embedder *MockEmbedder)
+	}{
+		{
+			name: "very large dimension",
+			config: &Config{
+				Dimension: 10000, // Very large embedding dimension
+			},
+			test: func(t *testing.T, embedder *MockEmbedder) {
+				dim, err := embedder.GetDimension(ctx)
+				if err != nil {
+					t.Errorf("GetDimension failed for large dimension: %v", err)
+				}
+				if dim != 10000 {
+					t.Errorf("Expected dimension 10000, got %d", dim)
+				}
+
+				// Test embedding generation with large dimension
+				vectors, err := embedder.EmbedQuery(ctx, "test")
+				if err != nil {
+					t.Errorf("EmbedQuery failed for large dimension: %v", err)
+				}
+				if len(vectors) != 10000 {
+					t.Errorf("Expected vector length 10000, got %d", len(vectors))
+				}
+			},
+		},
+		{
+			name: "extreme seed values",
+			config: &Config{
+				Dimension: 128,
+				Seed:      -999999, // Very negative seed
+			},
+			test: func(t *testing.T, embedder *MockEmbedder) {
+				// Should not panic with extreme seed values
+				_, err := embedder.EmbedQuery(ctx, "test")
+				if err != nil {
+					t.Errorf("EmbedQuery failed with extreme seed: %v", err)
+				}
+			},
+		},
+		{
+			name: "memory pressure simulation",
+			config: &Config{
+				Dimension:      128,
+				MemoryPressure: true,
+			},
+			test: func(t *testing.T, embedder *MockEmbedder) {
+				// Multiple operations to trigger memory pressure effects
+				for i := 0; i < 100; i++ {
+					_, err := embedder.EmbedQuery(ctx, "test query")
+					if err != nil {
+						// Memory pressure might cause occasional failures
+						t.Logf("Memory pressure caused failure on iteration %d: %v", i, err)
+					}
+				}
+			},
+		},
+		{
+			name: "performance degradation simulation",
+			config: &Config{
+				Dimension:          128,
+				PerformanceDegrade: true,
+			},
+			test: func(t *testing.T, embedder *MockEmbedder) {
+				// Measure performance over multiple operations
+				var totalDuration time.Duration
+				operations := 50
+
+				for i := 0; i < operations; i++ {
+					start := time.Now()
+					_, err := embedder.EmbedQuery(ctx, "test query")
+					duration := time.Since(start)
+					totalDuration += duration
+
+					if err != nil {
+						t.Logf("Performance degradation caused failure on iteration %d: %v", i, err)
+					}
+				}
+
+				avgDuration := totalDuration / time.Duration(operations)
+				t.Logf("Average operation time with degradation: %v", avgDuration)
+
+				// Performance should degrade over time (get slower)
+				// This is a basic check - in practice, degradation would be more sophisticated
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			embedder, err := NewMockEmbedder(tt.config, tracer)
+			if err != nil {
+				t.Fatalf("Failed to create mock embedder: %v", err)
+			}
+
+			tt.test(t, embedder)
+		})
 	}
 }

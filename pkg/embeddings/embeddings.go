@@ -52,9 +52,11 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 
 	// Initialize metrics (assuming global meter is available)
 	meter := otel.Meter("github.com/lookatitude/beluga-ai/pkg/embeddings")
-	metrics := NewMetrics(meter)
-
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create metrics: %w", err)
+	}
 
 	factory := &EmbedderFactory{
 		config:  config,

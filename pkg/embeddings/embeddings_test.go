@@ -2,6 +2,10 @@ package embeddings
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -574,6 +578,155 @@ func TestEmbedderFactory_MultipleProviders(t *testing.T) {
 		}
 		if provider == "ollama" && dimension != 0 {
 			t.Logf("Ollama returned dimension %d (unexpected but not an error)", dimension)
+		}
+	}
+}
+
+// TestNewEmbedder_ErrorPaths tests comprehensive error handling for the global NewEmbedder function
+func TestNewEmbedder_ErrorPaths(t *testing.T) {
+	ctx := context.Background()
+
+	// Test the basic unknown provider case (doesn't require provider registration)
+	t.Run("unknown provider", func(t *testing.T) {
+		_, err := NewEmbedder(ctx, "nonexistent", Config{})
+		if err == nil {
+			t.Error("expected error for unknown provider")
+			return
+		}
+
+		var embErr *iface.EmbeddingError
+		if errors.As(err, &embErr) {
+			if embErr.Code != iface.ErrCodeProviderNotFound {
+				t.Errorf("expected error code %s, got %s", iface.ErrCodeProviderNotFound, embErr.Code)
+			}
+		} else {
+			t.Errorf("expected EmbeddingError, got %T", err)
+		}
+	})
+
+	// Test with a registered mock provider to verify success case
+	t.Run("registered mock provider", func(t *testing.T) {
+		// Register a mock provider for testing
+		RegisterGlobal("test_mock", func(ctx context.Context, config Config) (iface.Embedder, error) {
+			if config.Mock == nil {
+				return nil, iface.WrapError(fmt.Errorf("mock config is nil"), iface.ErrCodeInvalidConfig, "missing mock configuration")
+			}
+			return NewAdvancedMockEmbedder("test", "mock-model", config.Mock.Dimension), nil
+		})
+		defer func() {
+			// Cleanup: remove the test provider
+			registry := GetGlobalRegistry()
+			registry.mu.Lock()
+			delete(registry.creators, "test_mock")
+			registry.mu.Unlock()
+		}()
+
+		embedder, err := NewEmbedder(ctx, "test_mock", Config{
+			Mock: &MockConfig{
+				Dimension: 128,
+			},
+		})
+
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+			return
+		}
+
+		if embedder == nil {
+			t.Error("expected valid embedder but got nil")
+			return
+		}
+
+		// Test basic functionality
+		dimension, err := embedder.GetDimension(ctx)
+		if err != nil {
+			t.Errorf("GetDimension failed: %v", err)
+		} else if dimension != 128 {
+			t.Errorf("expected dimension 128, got %d", dimension)
+		}
+	})
+}
+
+// TestProviderRegistry_ConcurrencyStress tests registry behavior under high concurrency
+func TestProviderRegistry_ConcurrencyStress(t *testing.T) {
+	ctx := context.Background()
+	registry := NewProviderRegistry()
+
+	// Number of concurrent operations
+	numGoroutines := 50
+	numOperations := 100
+
+	var wg sync.WaitGroup
+	errChan := make(chan error, numGoroutines*numOperations)
+
+	// Start concurrent operations
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(goroutineID int) {
+			defer wg.Done()
+
+			for j := 0; j < numOperations; j++ {
+				operationType := j % 3 // 0=register, 1=retrieve, 2=list
+
+				switch operationType {
+				case 0: // Register operation
+					providerName := fmt.Sprintf("stress_provider_%d_%d", goroutineID, j)
+					registry.Register(providerName, func(ctx context.Context, config Config) (iface.Embedder, error) {
+						return NewAdvancedMockEmbedder(providerName, "stress-model", 128), nil
+					})
+
+				case 1: // Retrieve operation
+					providerName := fmt.Sprintf("stress_provider_%d_%d", goroutineID%5, j%10) // Use some existing providers
+					_, err := registry.Create(ctx, providerName, Config{
+						Mock: &MockConfig{Dimension: 128},
+					})
+					// Ignore "not found" errors as some providers may not exist
+					if err != nil && !strings.Contains(err.Error(), "not found") {
+						errChan <- fmt.Errorf("create failed: %v", err)
+					}
+
+				case 2: // List operation
+					providers := registry.ListProviders()
+					if providers == nil {
+						errChan <- fmt.Errorf("list returned nil")
+					}
+				}
+			}
+		}(i)
+	}
+
+	// Wait for all operations to complete
+	wg.Wait()
+	close(errChan)
+
+	// Check for any errors
+	var errors []error
+	for err := range errChan {
+		errors = append(errors, err)
+	}
+
+	if len(errors) > 0 {
+		t.Errorf("encountered %d errors during concurrency stress test:", len(errors))
+		for i, err := range errors {
+			t.Errorf("  %d: %v", i+1, err)
+		}
+	}
+
+	// Verify registry is in a consistent state
+	finalProviders := registry.ListProviders()
+	t.Logf("Final registry state: %d providers registered", len(finalProviders))
+
+	// Test that we can still perform basic operations
+	testEmbedder, err := registry.Create(ctx, "stress_provider_0_0", Config{
+		Mock: &MockConfig{Dimension: 128},
+	})
+	if err != nil {
+		t.Errorf("post-stress registry operation failed: %v", err)
+	} else {
+		// Test basic functionality
+		dimension, err := testEmbedder.GetDimension(ctx)
+		if err != nil || dimension != 128 {
+			t.Errorf("post-stress embedder functionality failed: dim=%d, err=%v", dimension, err)
 		}
 	}
 }
