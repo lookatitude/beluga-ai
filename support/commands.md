@@ -1,6 +1,11 @@
 # Sequence of / Commands to Execute
 Paste these commands one-by-one into your AI agent (e.g., Claude) after project init. They form a logical sequence: framework principles first, then per-package analysis/planning/correction. I've included detailed prompts based on the attached files (e.g., standards from package_design_patterns.md, current status from README.md). Replace <attach-files> with actual file attachments if the AI supports it.
 
+## Implementation Note
+Each feature implementation will automatically include the standardized post-implementation workflow (commit, push, PR creation, merge to develop) as defined in the specify system templates.
+
+## Framework Establishment
+
 Establish Framework-Wide Principles (Based on Core Principles, Package Structure, etc., from package_design_patterns.md):
 
 ```
@@ -217,9 +222,29 @@ text/tasks For the 'monitoring' package: Tasks.
 
 text/implement For the 'monitoring' package: Execute.
 
-
 # Post-Sequence Steps
-Review generated branches/files in the repo.
-Run tests: go test ./pkg/... -v and integration tests as per README.md.
-Merge features: Use Git to merge branches into main.
-If issues, use free-form AI prompts or /clarify for refinements.
+
+## Final Integration and Validation
+1. **Review all feature branches**: Verify all 14 packages have been implemented and merged to `develop`
+2. **Run comprehensive tests**: 
+   ```bash
+   go test ./pkg/... -v
+   go test ./tests/integration/... -v
+   go test ./tests/contract/... -v
+   ```
+3. **Validate constitutional compliance**: Ensure all packages follow the established standards
+4. **Performance benchmarks**: Run package-specific benchmarks to verify performance targets
+5. **Final merge to main**: Once all packages are complete and tested, merge `develop` to `main`
+6. **Documentation update**: Update main README.md with the completed constitutional compliance status
+
+## Troubleshooting
+- **For implementation issues**: Use free-form AI prompts or `/clarify` for refinements
+- **For merge conflicts**: Resolve conflicts maintaining constitutional compliance
+- **For test failures**: Address failures before proceeding with PR merges
+- **For performance issues**: Review benchmarks and optimize as needed
+
+## Branch Management
+- **Feature branches**: Named as `XXX-for-the-<package>` (e.g., `001-for-the-core`)
+- **Development branch**: `develop` (integration branch for all features)
+- **Main branch**: `main` (production-ready code after full validation)
+- **PR workflow**: Feature → `develop` → `main`

@@ -204,7 +204,8 @@ directories captured above]
 
 **Phase 3**: Task execution (/tasks command creates tasks.md)  
 **Phase 4**: Implementation (execute tasks.md following constitutional principles)  
-**Phase 5**: Validation (run tests, execute quickstart.md, performance validation)
+**Phase 5**: Post-Implementation Workflow (mandatory commit, push, PR, merge to develop process)
+**Phase 6**: Validation (run tests, execute quickstart.md, performance validation)
 
 ## Complexity Tracking
 *Fill ONLY if Constitution Check has violations that must be justified*

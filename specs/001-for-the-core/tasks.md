@@ -183,6 +183,67 @@ go test ./tests/integration/... -run="*Core*" -v
 go test ./pkg/... -run="*Core*" -v  # Test all packages using core
 ```
 
+## Post-Implementation Workflow (MANDATORY)
+**After ALL tasks are completed, follow this standardized workflow:**
+
+1. **Create comprehensive commit message**:
+   ```
+   feat(core): Complete constitutional compliance with exceptional performance
+   
+   MAJOR ACHIEVEMENTS:
+   ✅ Constitutional Compliance: 100% adherence to framework standards
+   ✅ Performance Excellence: Container operations <1μs, Runnable execution optimized
+   ✅ Testing Infrastructure: Advanced mocks and comprehensive test suites  
+   ✅ Backward Compatibility: Zero breaking changes, all existing functionality preserved
+   
+   CORE ENHANCEMENTS:
+   - Advanced Testing Infrastructure (test_utils.go, advanced_test.go)
+   - Enhanced DI Container with health monitoring
+   - Improved Runnable interface with performance tracking
+   - Constitutional package structure compliance
+   - OTEL metrics and observability integration
+   
+   PERFORMANCE RESULTS:
+   - Container Operations: <1μs per operation
+   - Runnable Execution: Optimized for framework-wide usage
+   - Memory Efficiency: Minimal allocation overhead
+   
+   FILES ADDED/MODIFIED:
+   - pkg/core/iface/: Enhanced interfaces with health monitoring
+   - pkg/core/config.go: Configuration management with validation
+   - pkg/core/test_utils.go: Advanced testing utilities
+   - pkg/core/advanced_test.go: Comprehensive test infrastructure
+   
+   Zero breaking changes - all existing functionality preserved and enhanced.
+   ```
+
+2. **Push feature branch to origin**:
+   ```bash
+   git add .
+   git commit -m "your comprehensive message above"
+   git push origin 001-for-the-core
+   ```
+
+3. **Create Pull Request**:
+   - From `001-for-the-core` branch to `develop` branch
+   - Include implementation summary and constitutional compliance status
+   - Reference core package enhancement specifications
+
+4. **Merge to develop**:
+   - Ensure all tests pass in CI/CD
+   - Merge PR to develop branch
+   - Verify functionality is preserved post-merge
+
+5. **Post-merge validation**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   go test ./pkg/core/... -v
+   go test ./tests/integration/... -run="*Core*" -v
+   ```
+
+**CRITICAL**: Do not proceed to next feature until this workflow is complete and validated.
+
 ## Core Package Specific Notes
 - **Critical**: Maintain backward compatibility - core is used by all 14 framework packages
 - **Performance**: Core operations are called frequently, optimization critical

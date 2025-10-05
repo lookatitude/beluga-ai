@@ -108,6 +108,60 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - Commit after each task
 - Avoid: vague tasks, same file conflicts
 
+## Post-Implementation Workflow (MANDATORY)
+**After ALL tasks are completed, follow this standardized workflow:**
+
+1. **Create comprehensive commit message**:
+   ```
+   feat([package]): Complete constitutional compliance with [achievements]
+   
+   MAJOR ACHIEVEMENTS:
+   ✅ Constitutional Compliance: [compliance summary]
+   ✅ Performance Excellence: [performance results]
+   ✅ Testing Infrastructure: [testing achievements]
+   ✅ [Other key achievements]
+   
+   CORE ENHANCEMENTS:
+   - [List major enhancements]
+   - [Include file additions/modifications]
+   
+   PERFORMANCE RESULTS:
+   - [Specific performance metrics]
+   - [Benchmark results vs targets]
+   
+   FILES ADDED/MODIFIED:
+   - [List of key files with descriptions]
+   
+   Zero breaking changes - all existing functionality preserved and enhanced.
+   ```
+
+2. **Push feature branch to origin**:
+   ```bash
+   git add .
+   git commit -m "your comprehensive message above"
+   git push origin [feature-branch-name]
+   ```
+
+3. **Create Pull Request**:
+   - From feature branch to `develop` branch
+   - Include implementation summary and constitutional compliance status
+   - Reference any issues or specifications addressed
+
+4. **Merge to develop**:
+   - Ensure all tests pass in CI/CD
+   - Merge PR to develop branch
+   - Verify functionality is preserved post-merge
+
+5. **Post-merge validation**:
+   ```bash
+   git checkout develop
+   git pull origin develop
+   go test ./pkg/... -v
+   go test ./tests/integration/... -v
+   ```
+
+**CRITICAL**: Do not proceed to next feature until this workflow is complete and validated.
+
 ## Task Generation Rules
 *Applied during main() execution*
 

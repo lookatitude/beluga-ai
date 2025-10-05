@@ -114,6 +114,21 @@ ALL packages MUST implement enterprise-grade testing with 100% compliance:
 
 **Status**: Complete testing infrastructure implemented across all packages.
 
+## Implementation Standards
+
+### Post-Implementation Workflow (MANDATORY)
+ALL feature implementations MUST follow the standardized post-implementation workflow to ensure consistent integration:
+
+1. **Comprehensive Commit Message**: Create detailed commit message documenting constitutional compliance, performance achievements, and key enhancements
+2. **Branch Push**: Push feature branch to origin with all changes committed  
+3. **Pull Request Creation**: Create PR from feature branch to `develop` branch with implementation summary
+4. **Merge to Develop**: Merge PR to develop branch after all tests pass
+5. **Post-Merge Validation**: Verify functionality and run comprehensive tests post-merge
+
+This workflow ensures systematic integration through the develop branch and maintains constitutional compliance across all feature implementations.
+
+**Rationale**: Consistent workflow enables quality gates, proper documentation, and systematic integration of constitutional compliance features.
+
 ## Governance
 
 ### Amendment Procedure
