@@ -25,6 +25,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - Configuration files (YAML/JSON/TOML), environment variables (003-for-the-config)
 - Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry, testify/mock, providers (OpenAI SDK, Anthropic SDK, AWS Bedrock SDK, Ollama client) (004-for-the-llms)
 - N/A (LLM provider APIs - no persistent storage required) (004-for-the-llms)
+- Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry (metrics, tracing, logging), testify/mock (testing), existing ChatModel providers (OpenAI) (005-for-the-chatmodels)
+- N/A (chat model provider APIs - no persistent storage required) (005-for-the-chatmodels)
 
 ## Project Structure
 ```
@@ -39,9 +41,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 005-for-the-chatmodels: Added Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry (metrics, tracing, logging), testify/mock (testing), existing ChatModel providers (OpenAI)
 - 004-for-the-llms: Added Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry, testify/mock, providers (OpenAI SDK, Anthropic SDK, AWS Bedrock SDK, Ollama client)
 - 003-for-the-config: Added Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure
-- 002-for-the-schema: Added Go 1.24.0 + go-playground/validator/v10, go.opentelemetry.io/otel (metric/trace), github.com/stretchr/testify (mock/assert)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
