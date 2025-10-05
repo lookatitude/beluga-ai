@@ -5,16 +5,14 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
 func TestNewMetrics(t *testing.T) {
-	// Test with valid meter and tracer
+	// Test with valid meter
 	meter := noop.Meter{}
-	tracer := otel.Tracer("test")
 
-	metrics, err := NewMetrics(&meter, tracer)
+	metrics, err := NewMetrics(&meter)
 	if err != nil {
 		t.Fatalf("NewMetrics failed: %v", err)
 	}

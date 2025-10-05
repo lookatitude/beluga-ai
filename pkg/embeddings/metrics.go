@@ -6,7 +6,6 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics holds the metrics for the embeddings package
@@ -19,7 +18,7 @@ type Metrics struct {
 }
 
 // NewMetrics creates a new metrics instance
-func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
+func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	requestsTotal, err := meter.Int64Counter(
 		"embeddings_requests_total",
 		metric.WithDescription("Total number of embedding requests"),
