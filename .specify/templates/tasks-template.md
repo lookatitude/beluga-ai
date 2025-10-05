@@ -199,4 +199,4 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] No task modifies same file as another [P] task
 
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v2.0.0 - See `.specify/memory/constitution.md`*
