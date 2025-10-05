@@ -7,11 +7,17 @@
 // - Factory pattern for creating instances
 // - Functional options for configuration
 // - OpenTelemetry integration for observability
+
+//go:generate mockery --name=Message --dir=./iface --output=./internal/mock --filename=message_mock_generated.go
+//go:generate mockery --name=ChatHistory --dir=./iface --output=./internal/mock --filename=chat_history_mock_generated.go
+//go:generate mockery --name=HealthChecker --dir=./iface --output=./internal/mock --filename=health_checker_mock_generated.go
+
 package schema
 
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema/internal"
@@ -49,11 +55,11 @@ type (
 	ToolMessage          = internal.ToolMessage
 
 	// A2A Communication Types
-	AgentMessage            = internal.AgentMessage
-	AgentMessageType        = internal.AgentMessageType
-	AgentRequest            = internal.AgentRequest
-	AgentResponse           = internal.AgentResponse
-	AgentError              = internal.AgentError
+	AgentMessage     = internal.AgentMessage
+	AgentMessageType = internal.AgentMessageType
+	AgentRequest     = internal.AgentRequest
+	AgentResponse    = internal.AgentResponse
+	AgentError       = internal.AgentError
 
 	// Event Types
 	Event                   = internal.Event
@@ -79,33 +85,33 @@ const (
 
 // Re-export A2A Communication constants
 const (
-	AgentMessageRequest     = internal.AgentMessageRequest
-	AgentMessageResponse    = internal.AgentMessageResponse
+	AgentMessageRequest      = internal.AgentMessageRequest
+	AgentMessageResponse     = internal.AgentMessageResponse
 	AgentMessageNotification = internal.AgentMessageNotification
-	AgentMessageBroadcast   = internal.AgentMessageBroadcast
-	AgentMessageError       = internal.AgentMessageError
+	AgentMessageBroadcast    = internal.AgentMessageBroadcast
+	AgentMessageError        = internal.AgentMessageError
 )
 
 // Re-export Event constants
 const (
-	AgentStarted        = internal.AgentStarted
-	AgentStopped        = internal.AgentStopped
-	AgentPaused         = internal.AgentPaused
-	AgentResumed        = internal.AgentResumed
-	AgentFailed         = internal.AgentFailed
-	AgentConfigUpdated  = internal.AgentConfigUpdated
+	AgentStarted       = internal.AgentStarted
+	AgentStopped       = internal.AgentStopped
+	AgentPaused        = internal.AgentPaused
+	AgentResumed       = internal.AgentResumed
+	AgentFailed        = internal.AgentFailed
+	AgentConfigUpdated = internal.AgentConfigUpdated
 
-	TaskStarted     = internal.TaskStarted
-	TaskProgress    = internal.TaskProgress
-	TaskCompleted   = internal.TaskCompleted
-	TaskFailed      = internal.TaskFailed
-	TaskCancelled   = internal.TaskCancelled
+	TaskStarted   = internal.TaskStarted
+	TaskProgress  = internal.TaskProgress
+	TaskCompleted = internal.TaskCompleted
+	TaskFailed    = internal.TaskFailed
+	TaskCancelled = internal.TaskCancelled
 
-	WorkflowStarted        = internal.WorkflowStarted
-	WorkflowStepCompleted  = internal.WorkflowStepCompleted
-	WorkflowCompleted      = internal.WorkflowCompleted
-	WorkflowFailed         = internal.WorkflowFailed
-	WorkflowCancelled      = internal.WorkflowCancelled
+	WorkflowStarted       = internal.WorkflowStarted
+	WorkflowStepCompleted = internal.WorkflowStepCompleted
+	WorkflowCompleted     = internal.WorkflowCompleted
+	WorkflowFailed        = internal.WorkflowFailed
+	WorkflowCancelled     = internal.WorkflowCancelled
 )
 
 // Factory functions for creating messages
@@ -122,6 +128,16 @@ func NewHumanMessage(content string) Message {
 func NewAIMessage(content string) Message {
 	return &internal.AIMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
+	}
+}
+
+// NewAIMessageWithToolCalls creates a new AI message with tool calls.
+func NewAIMessageWithToolCalls(content string, toolCalls ...ToolCall) Message {
+	return &internal.AIMessage{
+		BaseMessage: internal.BaseMessage{
+			Content: content,
+		},
+		ToolCalls_: toolCalls,
 	}
 }
 
@@ -322,12 +338,12 @@ func NewLLMResponse(generations [][]*Generation, llmOutput map[string]interface{
 
 // Factory functions for A2A communication
 
-// NewAgentMessage creates a new AgentMessage.
+// NewAgentMessage creates a new AgentMessage with automatic timestamp.
 func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType, payload interface{}) AgentMessage {
 	return internal.AgentMessage{
 		FromAgentID: fromAgentID,
 		MessageID:   messageID,
-		Timestamp:   0, // Will be set by caller
+		Timestamp:   time.Now().Unix(), // Set current timestamp
 		MessageType: messageType,
 		Payload:     payload,
 		Metadata:    make(map[string]interface{}),
@@ -362,13 +378,13 @@ func NewAgentError(code, message string, details map[string]interface{}) *AgentE
 
 // Factory functions for events
 
-// NewEvent creates a new Event.
+// NewEvent creates a new Event with automatic timestamp.
 func NewEvent(eventID, eventType, source string, payload interface{}) Event {
 	return internal.Event{
 		EventID:   eventID,
 		EventType: eventType,
 		Source:    source,
-		Timestamp: 0, // Will be set by caller
+		Timestamp: time.Now().Unix(), // Set current timestamp
 		Version:   "1.0",
 		Payload:   payload,
 		Metadata:  make(map[string]interface{}),
@@ -386,8 +402,8 @@ func NewAgentLifecycleEvent(agentID string, eventType AgentLifecycleEventType) A
 // NewTaskEvent creates a new TaskEvent.
 func NewTaskEvent(taskID, agentID string, eventType TaskEventType) TaskEvent {
 	return internal.TaskEvent{
-		TaskID:   taskID,
-		AgentID:  agentID,
+		TaskID:    taskID,
+		AgentID:   agentID,
 		EventType: eventType,
 	}
 }

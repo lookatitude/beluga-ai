@@ -44,7 +44,7 @@ type Message interface {
 }
 
 // ChatHistory defines the interface for storing and retrieving chat messages.
-// It provides methods for managing conversation history.
+// It provides methods for managing conversation history with thread-safe operations.
 type ChatHistory interface {
 	// AddMessage adds a message to the history
 	AddMessage(message Message) error
@@ -57,6 +57,15 @@ type ChatHistory interface {
 
 	// Messages returns all messages in the history
 	Messages() ([]Message, error)
+
+	// GetMessages returns all messages in the history (backward compatibility)
+	GetMessages() []Message
+
+	// GetLast returns the last message in the history, or nil if empty
+	GetLast() Message
+
+	// Size returns the number of messages in the history
+	Size() int
 
 	// Clear removes all messages from the history
 	Clear() error
