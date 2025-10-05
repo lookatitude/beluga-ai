@@ -1,0 +1,203 @@
+openapi: 3.0.3
+info:
+  title: Embeddings Package Correction Requirements Contract
+  version: 1.0.0
+  description: Contract defining requirements that must be verified and corrected in the embeddings package
+
+paths:
+  /corrections/ollama-dimensions:
+    post:
+      summary: Verify and correct Ollama dimension handling
+      description: Ensure Ollama provider attempts to query actual embedding dimensions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionRequest'
+      responses:
+        '200':
+          description: Correction verified successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CorrectionResult'
+        '400':
+          description: Correction failed validation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /corrections/test-reliability:
+    post:
+      summary: Fix failing advanced tests
+      description: Resolve test failures in advanced_test.go for reliable test suite
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionRequest'
+      responses:
+        '200':
+          description: Tests fixed successfully
+        '400':
+          description: Test fixes failed
+
+  /corrections/performance-testing:
+    post:
+      summary: Add comprehensive load testing
+      description: Implement sustained load testing with realistic concurrency patterns
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionRequest'
+      responses:
+        '200':
+          description: Load testing implemented
+        '400':
+          description: Load testing implementation failed
+
+  /corrections/documentation:
+    post:
+      summary: Enhance documentation completeness
+      description: Add comprehensive configuration examples and troubleshooting guides
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CorrectionRequest'
+      responses:
+        '200':
+          description: Documentation enhanced
+        '400':
+          description: Documentation enhancement failed
+
+components:
+  schemas:
+
+    CorrectionRequest:
+      type: object
+      required:
+        - correction_id
+        - component
+        - requirements
+      properties:
+        correction_id:
+          type: string
+          description: Unique identifier for the correction
+        component:
+          type: string
+          enum: ["ollama-provider", "test-suite", "performance-testing", "documentation", "integration-tests"]
+          description: Component requiring correction
+        requirements:
+          type: array
+          items:
+            type: string
+          description: Specific requirements that must be met
+        priority:
+          type: string
+          enum: ["HIGH", "MEDIUM", "LOW"]
+          default: "MEDIUM"
+
+    CorrectionResult:
+      type: object
+      required:
+        - correction_id
+        - status
+        - verified_requirements
+      properties:
+        correction_id:
+          type: string
+        status:
+          type: string
+          enum: ["SUCCESS", "PARTIAL", "FAILED"]
+        verified_requirements:
+          type: array
+          items:
+            type: object
+            properties:
+              requirement:
+                type: string
+              status:
+                type: string
+                enum: ["PASSED", "FAILED", "NOT_APPLICABLE"]
+              details:
+                type: string
+        issues_found:
+          type: array
+          items:
+            type: object
+            properties:
+              severity:
+                type: string
+                enum: ["HIGH", "MEDIUM", "LOW"]
+              description:
+                type: string
+              recommendation:
+                type: string
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum: ["VALIDATION_FAILED", "IMPLEMENTATION_FAILED", "TEST_FAILED"]
+        message:
+          type: string
+        details:
+          type: object
+          description: Additional error context
+
+    CorrectionPriority:
+      type: object
+      description: Priority levels for correction implementation
+      properties:
+        HIGH:
+          type: object
+          properties:
+            timeline: { type: string, example: "Immediate - blocks releases" }
+            impact: { type: string, example: "Affects functionality or compliance" }
+        MEDIUM:
+          type: object
+          properties:
+            timeline: { type: string, example: "Next sprint" }
+            impact: { type: string, example: "Improves reliability/performance" }
+        LOW:
+          type: object
+          properties:
+            timeline: { type: string, example: "Backlog" }
+            impact: { type: string, example: "Enhances documentation/usability" }
+
+    FrameworkCompliance:
+      type: object
+      description: Constitution compliance requirements for embeddings package
+      properties:
+        isp_compliance:
+          type: boolean
+          description: Interface Segregation Principle - focused interfaces
+        dip_compliance:
+          type: boolean
+          description: Dependency Inversion Principle - dependency injection
+        srp_compliance:
+          type: boolean
+          description: Single Responsibility Principle - focused packages
+        composition_compliance:
+          type: boolean
+          description: Composition over inheritance with functional options
+        observability_compliance:
+          type: boolean
+          description: OTEL tracing and metrics implementation
+        error_handling_compliance:
+          type: boolean
+          description: Op/Err/Code error pattern implementation
+        testing_compliance:
+          type: boolean
+          description: Comprehensive testing with mocks and benchmarks

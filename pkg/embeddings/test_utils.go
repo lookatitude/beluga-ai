@@ -5,6 +5,8 @@ package embeddings
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
+	"math"
 	"math/rand"
 	"sync"
 	"testing"
@@ -55,10 +57,7 @@ func NewAdvancedMockEmbedder(providerName, modelName string, dimension int, opti
 		opt(mock)
 	}
 
-	// Generate default embeddings if none provided
-	if len(mock.embeddings) == 0 {
-		mock.generateDefaultEmbeddings(10) // Generate 10 default embeddings
-	}
+	// Don't generate default embeddings - use deterministic generation instead
 
 	return mock
 }
@@ -120,7 +119,7 @@ func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []strin
 		time.Sleep(e.simulateDelay)
 	}
 
-	if e.simulateRateLimit && e.rateLimitCount > 5 {
+	if e.simulateRateLimit && e.rateLimitCount >= 5 {
 		return nil, fmt.Errorf("rate limit exceeded")
 	}
 	e.rateLimitCount++
@@ -159,7 +158,7 @@ func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]f
 		time.Sleep(e.simulateDelay)
 	}
 
-	if e.simulateRateLimit && e.rateLimitCount > 5 {
+	if e.simulateRateLimit && e.rateLimitCount >= 5 {
 		return nil, fmt.Errorf("rate limit exceeded")
 	}
 	e.rateLimitCount++
@@ -176,10 +175,13 @@ func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]f
 		return embedding, nil
 	}
 
-	// Generate random embedding if we run out
+	// Generate deterministic embedding based on text hash for consistency
 	embedding := make([]float32, e.dimension)
+	// Use text hash as seed for deterministic but varied embeddings
+	textHash := hashString(text)
+	r := rand.New(rand.NewSource(int64(textHash)))
 	for j := 0; j < e.dimension; j++ {
-		embedding[j] = rand.Float32()*2 - 1
+		embedding[j] = float32(r.Float64()*2 - 1) // Values between -1 and 1
 	}
 	return embedding, nil
 }
@@ -370,7 +372,14 @@ func CosineSimilarity(a, b []float32) float32 {
 		return 0.0
 	}
 
-	return dotProduct / (sqrt(normA) * sqrt(normB))
+	return dotProduct / (float32(math.Sqrt(float64(normA))) * float32(math.Sqrt(float64(normB))))
+}
+
+// hashString creates a simple hash of a string for deterministic seeding
+func hashString(s string) uint32 {
+	h := fnv.New32a()
+	h.Write([]byte(s))
+	return h.Sum32()
 }
 
 // EuclideanDistance calculates Euclidean distance between two embeddings
@@ -385,7 +394,7 @@ func EuclideanDistance(a, b []float32) float32 {
 		sum += diff * diff
 	}
 
-	return sqrt(sum)
+	return float32(math.Sqrt(float64(sum)))
 }
 
 // Helper functions for float operations
@@ -664,4 +673,226 @@ func (q *EmbeddingQualityTester) TestSemanticSimilarity(ctx context.Context, sim
 	}
 
 	return totalSimilarity / float32(pairCount), nil
+}
+
+// ConcurrentLoadTestResult holds results from concurrent load testing
+type ConcurrentLoadTestResult struct {
+	TotalOperations int64
+	TotalErrors     int64
+	Duration        time.Duration
+	OpsPerSecond    float64
+	ErrorRate       float64
+}
+
+// ConcurrentLoadTestConfig configures concurrent load testing parameters
+type ConcurrentLoadTestConfig struct {
+	NumWorkers          int
+	OperationsPerWorker int
+	TestDocuments       []string
+	Timeout             time.Duration
+}
+
+// RunConcurrentLoadTest executes concurrent embedding operations under load
+func RunConcurrentLoadTest(ctx context.Context, embedder iface.Embedder, config ConcurrentLoadTestConfig) (*ConcurrentLoadTestResult, error) {
+	if config.NumWorkers <= 0 {
+		config.NumWorkers = 5
+	}
+	if config.OperationsPerWorker <= 0 {
+		config.OperationsPerWorker = 100
+	}
+	if len(config.TestDocuments) == 0 {
+		config.TestDocuments = []string{
+			"This is a test document for concurrent load testing.",
+			"Another document with different content for variety.",
+			"Short text.",
+			"A longer document that contains more words and provides better testing coverage for the embedding system under concurrent load conditions.",
+		}
+	}
+	if config.Timeout == 0 {
+		config.Timeout = 30 * time.Second
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, config.Timeout)
+	defer cancel()
+
+	result := &ConcurrentLoadTestResult{}
+	start := time.Now()
+
+	// Channel to collect results from workers
+	results := make(chan WorkerResult, config.NumWorkers)
+
+	// Start workers
+	for i := 0; i < config.NumWorkers; i++ {
+		go func(workerID int) {
+			workerResult := runWorkerLoadTest(ctx, embedder, workerID, config)
+			results <- workerResult
+		}(i)
+	}
+
+	// Collect results
+	for i := 0; i < config.NumWorkers; i++ {
+		workerResult := <-results
+		result.TotalOperations += workerResult.Operations
+		result.TotalErrors += workerResult.Errors
+	}
+
+	result.Duration = time.Since(start)
+	result.OpsPerSecond = float64(result.TotalOperations) / result.Duration.Seconds()
+	if result.TotalOperations > 0 {
+		result.ErrorRate = float64(result.TotalErrors) / float64(result.TotalOperations)
+	}
+
+	return result, nil
+}
+
+// WorkerResult holds results from a single worker in load testing
+type WorkerResult struct {
+	WorkerID   int
+	Operations int64
+	Errors     int64
+}
+
+// runWorkerLoadTest executes load testing operations for a single worker
+func runWorkerLoadTest(ctx context.Context, embedder iface.Embedder, workerID int, config ConcurrentLoadTestConfig) WorkerResult {
+	result := WorkerResult{WorkerID: workerID}
+	operationCount := int64(0)
+
+	for operationCount < int64(config.OperationsPerWorker) {
+		select {
+		case <-ctx.Done():
+			return result
+		default:
+			// Select document based on operation count for deterministic cycling
+			docIndex := int(operationCount) % len(config.TestDocuments)
+			document := config.TestDocuments[docIndex]
+
+			// Alternate between single query and batch operations
+			if operationCount%2 == 0 {
+				// Single query operation
+				_, err := embedder.EmbedQuery(ctx, document)
+				operationCount++
+				if err != nil {
+					result.Errors++
+				}
+			} else {
+				// Batch operation with 2-3 documents
+				batchSize := 2 + int(operationCount%2) // Alternate between 2 and 3
+				if docIndex+batchSize > len(config.TestDocuments) {
+					batchSize = len(config.TestDocuments) - docIndex
+				}
+				if batchSize < 1 {
+					batchSize = 1
+				}
+
+				documents := config.TestDocuments[docIndex : docIndex+batchSize]
+				_, err := embedder.EmbedDocuments(ctx, documents)
+				operationCount++
+				if err != nil {
+					result.Errors++
+				}
+			}
+
+			result.Operations = operationCount
+		}
+	}
+
+	return result
+}
+
+// LoadPattern represents different load testing patterns
+type LoadPattern int
+
+const (
+	ConstantLoad LoadPattern = iota
+	BurstLoad
+	RampUpLoad
+	RandomLoad
+)
+
+// LoadTestScenario defines a complete load testing scenario
+type LoadTestScenario struct {
+	Name         string
+	Pattern      LoadPattern
+	Duration     time.Duration
+	Concurrency  int
+	TargetOpsSec int
+	WarmupPeriod time.Duration
+}
+
+// RunLoadTestScenario executes a comprehensive load testing scenario
+func RunLoadTestScenario(ctx context.Context, embedder iface.Embedder, scenario LoadTestScenario, progressCallback func(*ConcurrentLoadTestResult)) error {
+	ctx, cancel := context.WithTimeout(ctx, scenario.Duration)
+	defer cancel()
+
+	start := time.Now()
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	totalResult := &ConcurrentLoadTestResult{}
+
+	for {
+		select {
+		case <-ctx.Done():
+			if progressCallback != nil {
+				progressCallback(totalResult)
+			}
+			return nil
+		case <-ticker.C:
+			// Calculate current concurrency based on pattern
+			elapsed := time.Since(start)
+			currentConcurrency := calculateConcurrencyForPattern(scenario, elapsed)
+
+			// Run a short burst of operations
+			config := ConcurrentLoadTestConfig{
+				NumWorkers:          currentConcurrency,
+				OperationsPerWorker: 10, // Short burst
+				Timeout:             100 * time.Millisecond,
+			}
+
+			result, err := RunConcurrentLoadTest(ctx, embedder, config)
+			if err != nil {
+				continue // Skip this measurement if it fails
+			}
+
+			// Accumulate results
+			totalResult.TotalOperations += result.TotalOperations
+			totalResult.TotalErrors += result.TotalErrors
+			totalResult.Duration = time.Since(start)
+			totalResult.OpsPerSecond = float64(totalResult.TotalOperations) / totalResult.Duration.Seconds()
+			if totalResult.TotalOperations > 0 {
+				totalResult.ErrorRate = float64(totalResult.TotalErrors) / float64(totalResult.TotalOperations)
+			}
+
+			if progressCallback != nil {
+				progressCallback(totalResult)
+			}
+		}
+	}
+}
+
+// calculateConcurrencyForPattern determines concurrency level based on load pattern
+func calculateConcurrencyForPattern(scenario LoadTestScenario, elapsed time.Duration) int {
+	progress := float64(elapsed) / float64(scenario.Duration)
+	if progress > 1.0 {
+		progress = 1.0
+	}
+
+	switch scenario.Pattern {
+	case ConstantLoad:
+		return scenario.Concurrency
+	case BurstLoad:
+		// Alternate between high and low concurrency
+		if int(elapsed.Seconds())%10 < 5 {
+			return scenario.Concurrency * 2
+		}
+		return scenario.Concurrency / 2
+	case RampUpLoad:
+		// Linear ramp up from 1 to target concurrency
+		return 1 + int(float64(scenario.Concurrency-1)*progress)
+	case RandomLoad:
+		// Random concurrency between 1 and target
+		return 1 + rand.Intn(scenario.Concurrency)
+	default:
+		return scenario.Concurrency
+	}
 }

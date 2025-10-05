@@ -1,0 +1,228 @@
+openapi: 3.0.3
+info:
+  title: Embeddings Package Interface Contract
+  version: 1.0.0
+  description: Contract definition for the Embedder interface in Beluga AI Framework
+
+paths: {}
+
+components:
+  schemas:
+
+    EmbedderInterface:
+      type: object
+      description: Core embedding interface contract that must be maintained for compatibility
+      properties:
+        EmbedDocuments:
+          type: object
+          required:
+            - ctx
+            - texts
+          properties:
+            ctx:
+              $ref: '#/components/schemas/Context'
+            texts:
+              type: array
+              items:
+                type: string
+              minItems: 1
+              description: Array of document texts to embed
+          responses:
+            success:
+              type: array
+              items:
+                type: array
+                items:
+                  type: number
+                  format: float
+                  description: float32 embedding vector
+              description: Array of embedding vectors, one per input text
+            error:
+              $ref: '#/components/schemas/EmbeddingError'
+
+        EmbedQuery:
+          type: object
+          required:
+            - ctx
+            - text
+          properties:
+            ctx:
+              $ref: '#/components/schemas/Context'
+            text:
+              type: string
+              minLength: 1
+              description: Single query text to embed
+          responses:
+            success:
+              type: array
+              items:
+                type: number
+                format: float
+                description: float32 embedding vector
+            error:
+              $ref: '#/components/schemas/EmbeddingError'
+
+        GetDimension:
+          type: object
+          required:
+            - ctx
+          properties:
+            ctx:
+              $ref: '#/components/schemas/Context'
+          responses:
+            success:
+              type: integer
+              minimum: 0
+              description: Embedding dimension size, 0 if unknown
+            error:
+              $ref: '#/components/schemas/EmbeddingError'
+
+    Context:
+      type: object
+      description: Go context for cancellation and tracing
+      externalDocs:
+        url: https://pkg.go.dev/context
+
+    EmbeddingError:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          enum:
+            - invalid_config
+            - provider_not_found
+            - provider_disabled
+            - embedding_failed
+            - connection_failed
+            - invalid_parameters
+          description: Standardized error codes for programmatic handling
+        message:
+          type: string
+          description: Human-readable error message
+        cause:
+          type: object
+          description: Underlying error that caused this error (optional)
+      description: Structured error type following Op/Err/Code pattern
+
+    ProviderRegistry:
+      type: object
+      description: Global registry for embedder provider registration and creation
+      properties:
+        Register:
+          type: object
+          required:
+            - name
+            - creator
+          properties:
+            name:
+              type: string
+              description: Provider name (e.g., "openai", "ollama")
+            creator:
+              type: object
+              description: Factory function returning Embedder interface
+
+        Create:
+          type: object
+          required:
+            - ctx
+            - name
+            - config
+          properties:
+            ctx:
+              $ref: '#/components/schemas/Context'
+            name:
+              type: string
+            config:
+              $ref: '#/components/schemas/Config'
+          responses:
+            success:
+              $ref: '#/components/schemas/EmbedderInterface'
+            error:
+              $ref: '#/components/schemas/EmbeddingError'
+
+    Config:
+      type: object
+      description: Configuration structure for embeddings package
+      properties:
+        openai:
+          $ref: '#/components/schemas/OpenAIConfig'
+        ollama:
+          $ref: '#/components/schemas/OllamaConfig'
+        mock:
+          $ref: '#/components/schemas/MockConfig'
+
+    OpenAIConfig:
+      type: object
+      properties:
+        api_key:
+          type: string
+          description: OpenAI API key (required)
+        model:
+          type: string
+          default: "text-embedding-ada-002"
+          enum: ["text-embedding-ada-002", "text-embedding-3-small", "text-embedding-3-large"]
+        base_url:
+          type: string
+          format: uri
+        timeout:
+          type: string
+          default: "30s"
+          pattern: "^\\d+s$"
+        max_retries:
+          type: integer
+          minimum: 0
+          default: 3
+        enabled:
+          type: boolean
+          default: true
+
+    OllamaConfig:
+      type: object
+      properties:
+        server_url:
+          type: string
+          format: uri
+          default: "http://localhost:11434"
+        model:
+          type: string
+          description: Ollama model name (required)
+        timeout:
+          type: string
+          default: "30s"
+        max_retries:
+          type: integer
+          minimum: 0
+          default: 3
+        keep_alive:
+          type: string
+          default: "5m"
+        enabled:
+          type: boolean
+          default: true
+
+    MockConfig:
+      type: object
+      properties:
+        dimension:
+          type: integer
+          minimum: 1
+          default: 128
+        seed:
+          type: integer
+          default: 0
+        randomize_nil:
+          type: boolean
+          default: false
+        enabled:
+          type: boolean
+          default: true
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: OpenAI API key authentication

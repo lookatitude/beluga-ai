@@ -9,4 +9,5 @@ import (
 // Client defines the interface for Ollama API client operations
 type Client interface {
 	Embeddings(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
+	Show(ctx context.Context, req *api.ShowRequest) (*api.ShowResponse, error)
 }
