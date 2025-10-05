@@ -24,7 +24,7 @@ func TestFrameworkError_Error(t *testing.T) {
 			err: &FrameworkError{
 				Type:    ErrorTypeNetwork,
 				Message: "Connection failed",
-				Cause:   errors.New("timeout"),
+				Err:     errors.New("timeout"),
 			},
 			expected: "[network] Connection failed: timeout",
 		},
@@ -54,7 +54,7 @@ func TestFrameworkError_Unwrap(t *testing.T) {
 	err := &FrameworkError{
 		Type:    ErrorTypeInternal,
 		Message: "Wrapped error",
-		Cause:   cause,
+		Err:     cause,
 	}
 
 	if err.Unwrap() != cause {
@@ -72,8 +72,8 @@ func TestNewValidationError(t *testing.T) {
 	if err.Message != "Input validation failed" {
 		t.Errorf("NewValidationError() Message = %q, expected %q", err.Message, "Input validation failed")
 	}
-	if err.Cause != cause {
-		t.Errorf("NewValidationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Err != cause {
+		t.Errorf("NewValidationError() Cause = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -87,8 +87,8 @@ func TestNewNetworkError(t *testing.T) {
 	if err.Message != "Network connection failed" {
 		t.Errorf("NewNetworkError() Message = %q, expected %q", err.Message, "Network connection failed")
 	}
-	if err.Cause != cause {
-		t.Errorf("NewNetworkError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Err != cause {
+		t.Errorf("NewNetworkError() Cause = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -102,8 +102,8 @@ func TestNewAuthenticationError(t *testing.T) {
 	if err.Message != "Authentication failed" {
 		t.Errorf("NewAuthenticationError() Message = %q, expected %q", err.Message, "Authentication failed")
 	}
-	if err.Cause != cause {
-		t.Errorf("NewAuthenticationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Err != cause {
+		t.Errorf("NewAuthenticationError() Cause = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -117,8 +117,8 @@ func TestNewInternalError(t *testing.T) {
 	if err.Message != "Internal system error" {
 		t.Errorf("NewInternalError() Message = %q, expected %q", err.Message, "Internal system error")
 	}
-	if err.Cause != cause {
-		t.Errorf("NewInternalError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Err != cause {
+		t.Errorf("NewInternalError() Cause = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -132,8 +132,8 @@ func TestNewConfigurationError(t *testing.T) {
 	if err.Message != "Configuration error" {
 		t.Errorf("NewConfigurationError() Message = %q, expected %q", err.Message, "Configuration error")
 	}
-	if err.Cause != cause {
-		t.Errorf("NewConfigurationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Err != cause {
+		t.Errorf("NewConfigurationError() Cause = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -229,7 +229,7 @@ func TestUnwrapError(t *testing.T) {
 		{
 			name: "error with Unwrap method",
 			err: &FrameworkError{
-				Cause: errors.New("underlying"),
+				Err: errors.New("underlying"),
 			},
 			expected: errors.New("underlying"),
 		},
@@ -387,7 +387,7 @@ func TestFrameworkError_NilCause(t *testing.T) {
 	err := &FrameworkError{
 		Type:    ErrorTypeValidation,
 		Message: "test message",
-		Cause:   nil,
+		Err:     nil,
 	}
 
 	errorMsg := err.Error()
@@ -420,8 +420,8 @@ func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
 
 	// Test with nil cause
 	err = NewFrameworkErrorWithCode(ErrorTypeNetwork, ErrorCodeTimeout, "message", nil)
-	if err.Cause != nil {
-		t.Errorf("Expected nil cause, got %v", err.Cause)
+	if err.Err != nil {
+		t.Errorf("Expected nil cause, got %v", err.Err)
 	}
 
 	// Test with context
@@ -433,10 +433,10 @@ func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
 
 func TestIsErrorType_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
+		name      string
+		err       error
 		errorType ErrorType
-		expected bool
+		expected  bool
 	}{
 		{
 			name:      "nil error",
@@ -529,13 +529,13 @@ func TestUnwrapError_EdgeCases(t *testing.T) {
 			err: &FrameworkError{
 				Type:    ErrorTypeInternal,
 				Message: "test",
-				Cause:   nil,
+				Err:     nil,
 			},
 			expected: nil,
 		},
 		{
 			name:     "FrameworkError with cause",
-			err:      &FrameworkError{Cause: errors.New("underlying")},
+			err:      &FrameworkError{Err: errors.New("underlying")},
 			expected: errors.New("underlying"),
 		},
 	}
@@ -603,8 +603,8 @@ func TestWrapError_EdgeCases(t *testing.T) {
 					if fwErr.Type != ErrorTypeInternal {
 						t.Errorf("WrapError() type = %v, expected %v", fwErr.Type, ErrorTypeInternal)
 					}
-					if fwErr.Cause != tt.err {
-						t.Errorf("WrapError() cause = %v, expected %v", fwErr.Cause, tt.err)
+					if fwErr.Err != tt.err {
+						t.Errorf("WrapError() cause = %v, expected %v", fwErr.Err, tt.err)
 					}
 				}
 			}
@@ -642,7 +642,7 @@ func TestErrorConstructors_EdgeCases(t *testing.T) {
 
 	// Test with nil cause
 	err1 := NewValidationError("message", nil)
-	if err1.Cause != nil {
+	if err1.Err != nil {
 		t.Errorf("NewValidationError() with nil cause should have nil Cause")
 	}
 
@@ -677,8 +677,8 @@ func TestErrorConstructors_EdgeCases(t *testing.T) {
 		if err.Message != "test message" {
 			t.Errorf("Constructor %d: Message = %q, expected %q", i, err.Message, "test message")
 		}
-		if err.Cause != cause {
-			t.Errorf("Constructor %d: Cause = %v, expected %v", i, err.Cause, cause)
+		if err.Err != cause {
+			t.Errorf("Constructor %d: Cause = %v, expected %v", i, err.Err, cause)
 		}
 	}
 }

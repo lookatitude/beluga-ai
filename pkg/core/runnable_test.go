@@ -59,9 +59,9 @@ type StreamCall struct {
 
 func NewMockRunnable() *MockRunnable {
 	return &MockRunnable{
-		invokeCalls: make([]InvokeCall, 0),
-		batchCalls:  make([]BatchCall, 0),
-		streamCalls: make([]StreamCall, 0),
+		invokeCalls:  make([]InvokeCall, 0),
+		batchCalls:   make([]BatchCall, 0),
+		streamCalls:  make([]StreamCall, 0),
 		streamChunks: []any{"mock_stream_result"},
 	}
 }
@@ -589,7 +589,6 @@ func TestRunnableWithTracingAndName(t *testing.T) {
 	}
 }
 
-
 func TestNoOpLogger(t *testing.T) {
 	logger := &noOpLogger{}
 
@@ -655,7 +654,6 @@ func TestMetrics_Recording(t *testing.T) {
 	}
 }
 
-
 func TestMetrics_NoOpMetrics(t *testing.T) {
 	metrics := NoOpMetrics()
 	if metrics == nil {
@@ -681,7 +679,6 @@ func TestMetrics_NoOpMetrics(t *testing.T) {
 		t.Error("NoOpMetrics should have all fields as nil")
 	}
 }
-
 
 // Simple tracing test using NoOp tracer
 func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
@@ -726,13 +723,12 @@ func TestFrameworkErrorTypes(t *testing.T) {
 			if err.Message != "test message" {
 				t.Errorf("Error message = %q, expected %q", err.Message, "test message")
 			}
-			if err.Cause != cause {
-				t.Errorf("Error cause = %v, expected %v", err.Cause, cause)
+			if err.Err != cause {
+				t.Errorf("Error cause = %v, expected %v", err.Err, cause)
 			}
 		})
 	}
 }
-
 
 func TestContainerHealthChecker(t *testing.T) {
 	container := NewContainer()
@@ -777,4 +773,3 @@ func TestContainerWithMonitoring(t *testing.T) {
 		t.Errorf("Resolve() = %q, expected %q", result, "test")
 	}
 }
-

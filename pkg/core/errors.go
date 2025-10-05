@@ -32,25 +32,31 @@ const (
 )
 
 // FrameworkError represents a standardized error in the Beluga AI framework.
+// T017: Enhanced to ensure full Op/Err/Code pattern compliance
 type FrameworkError struct {
-	Type    ErrorType
-	Message string
-	Cause   error
-	Code    string // Optional error code for programmatic handling
-	Context map[string]interface{} // Additional context information
+	Op      string                 `json:"op"`                // Operation that failed (constitutional requirement)
+	Err     error                  `json:"err"`               // Underlying error (constitutional requirement)
+	Code    string                 `json:"code"`              // Error code for programmatic handling (constitutional requirement)
+	Type    ErrorType              `json:"type"`              // Error category
+	Message string                 `json:"message"`           // Human-readable message
+	Context map[string]interface{} `json:"context,omitempty"` // Additional context information
 }
 
-// Error implements the error interface.
+// Error implements the error interface with Op/Err/Code pattern.
 func (e *FrameworkError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("[%s] %s: %v", e.Type, e.Message, e.Cause)
+	if e.Op != "" && e.Err != nil {
+		return fmt.Sprintf("core.%s: %s (code: %s): %v", e.Op, e.Message, e.Code, e.Err)
+	} else if e.Err != nil {
+		return fmt.Sprintf("[%s] %s (code: %s): %v", e.Type, e.Message, e.Code, e.Err)
+	} else if e.Op != "" {
+		return fmt.Sprintf("core.%s: %s (code: %s)", e.Op, e.Message, e.Code)
 	}
-	return fmt.Sprintf("[%s] %s", e.Type, e.Message)
+	return fmt.Sprintf("[%s] %s (code: %s)", e.Type, e.Message, e.Code)
 }
 
 // Unwrap returns the underlying cause of the error.
 func (e *FrameworkError) Unwrap() error {
-	return e.Cause
+	return e.Err
 }
 
 // NewValidationError creates a new validation error.
@@ -58,7 +64,7 @@ func NewValidationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeValidation,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 	}
 }
 
@@ -67,7 +73,7 @@ func NewNetworkError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeNetwork,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 	}
 }
 
@@ -76,7 +82,7 @@ func NewAuthenticationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeAuthentication,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 	}
 }
 
@@ -85,7 +91,7 @@ func NewInternalError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeInternal,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 	}
 }
 
@@ -94,7 +100,7 @@ func NewConfigurationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeConfiguration,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 	}
 }
 
@@ -142,7 +148,7 @@ func WrapError(err error, message string) error {
 	return &FrameworkError{
 		Type:    ErrorTypeInternal,
 		Message: message,
-		Cause:   err,
+		Err:     err,
 	}
 }
 
@@ -174,7 +180,7 @@ func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message stri
 	return &FrameworkError{
 		Type:    errorType,
 		Message: message,
-		Cause:   cause,
+		Err:     cause,
 		Code:    string(code),
 		Context: make(map[string]interface{}),
 	}
