@@ -5,28 +5,28 @@ project_name: beluga-ai
 
 # Build configuration
 # Note: This is primarily a library, so we focus on source archives
-# If executables are added later, uncomment the builds section
-builds:
-  # Uncomment when you have executables to build
-  # - id: beluga-ai
-  #   main: ./cmd/beluga-ai
-  #   binary: beluga-ai
-  #   goos:
-  #     - linux
-  #     - darwin
-  #     - windows
-  #   goarch:
-  #     - amd64
-  #     - arm64
-  #   env:
-  #     - CGO_ENABLED=0
-  #   flags:
-  #     - -trimpath
-  #   ldflags:
-  #     - -s -w
-  #     - -X main.version={{.Version}}
-  #     - -X main.commit={{.Commit}}
-  #     - -X main.date={{.Date}}
+# If executables are added later, replace "builds: []" with the configuration below:
+# builds:
+#   - id: beluga-ai
+#     main: ./cmd/beluga-ai
+#     binary: beluga-ai
+#     goos:
+#       - linux
+#       - darwin
+#       - windows
+#     goarch:
+#       - amd64
+#       - arm64
+#     env:
+#       - CGO_ENABLED=0
+#     flags:
+#       - -trimpath
+#     ldflags:
+#       - -s -w
+#       - -X main.version={{.Version}}
+#       - -X main.commit={{.Commit}}
+#       - -X main.date={{.Date}}
+builds: []
 
 # Archive configuration for source code
 archives:
