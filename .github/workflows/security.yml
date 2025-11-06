@@ -33,21 +33,24 @@ jobs:
       - name: Run gosec security scanner
         uses: securego/gosec@master
         with:
-          args: '-fmt json -out gosec-report.json -exclude-dir=specs,examples ./...'
+          args: '-fmt sarif -out gosec-report.sarif -exclude-dir=specs,examples ./...'
         continue-on-error: true
 
       - name: Upload gosec results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: gosec-report.json
+          sarif_file: gosec-report.sarif
           wait-for-processing: true
 
       - name: Display gosec results
         run: |
-          if [ -f gosec-report.json ]; then
+          if [ -f gosec-report.sarif ]; then
             echo "## gosec Security Scan Results" >> $GITHUB_STEP_SUMMARY
-            cat gosec-report.json | jq -r '.Issues[] | "- \(.severity | ascii_upcase): \(.rule_id) - \(.details)"' >> $GITHUB_STEP_SUMMARY || true
+            echo "gosec scan completed. Check GitHub Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "## gosec Security Scan Results" >> $GITHUB_STEP_SUMMARY
+            echo "No security issues found or report not generated." >> $GITHUB_STEP_SUMMARY
           fi
 
   govulncheck:
