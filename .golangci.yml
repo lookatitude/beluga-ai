@@ -19,7 +19,8 @@ run:
   # Skip files
   skip-files:
     - ".*\\.pb\\.go$"  # Generated protobuf files
-    - ".*_test\\.go$"  # Skip test files for some strict linters
+    # Note: Test files are included (tests: true) but specific linters
+    # are excluded for test files via exclude-rules below
 
 output:
   # Output format
