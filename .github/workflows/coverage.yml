@@ -46,6 +46,7 @@ jobs:
           go tool cover -html=coverage/coverage.out -o coverage/coverage.html
 
       - name: Generate coverage summary
+        id: coverage
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -56,6 +57,10 @@ jobs:
           TOTAL_COVERAGE=$(go tool cover -func=coverage/coverage.out | tail -1 | awk '{print $3}')
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Total Coverage: $TOTAL_COVERAGE" >> $GITHUB_STEP_SUMMARY
+          
+          # Store coverage data for PR comment
+          echo "coverage_percentage=$TOTAL_COVERAGE" >> $GITHUB_OUTPUT
+          go tool cover -func=coverage/coverage.out > coverage/summary.txt
 
       - name: Upload coverage HTML
         uses: actions/upload-artifact@v4
@@ -80,23 +85,40 @@ jobs:
       #     name: codecov-umbrella
       #     fail_ci_if_error: false
 
+      # Generate PR comment message
+      - name: Generate PR comment message
+        if: github.event_name == 'pull_request'
+        id: pr-comment
+        run: |
+          TOTAL_COVERAGE="${{ steps.coverage.outputs.coverage_percentage }}"
+          COVERAGE_SUMMARY=$(cat coverage/summary.txt)
+          
+          # Create the comment message
+          cat > coverage/comment.txt << EOF
+          ## 📊 Coverage Report
+          
+          Total coverage: **${TOTAL_COVERAGE}**
+          
+          View detailed coverage report in the workflow artifacts.
+          
+          ### Coverage Summary
+          \`\`\`
+          ${COVERAGE_SUMMARY}
+          \`\`\`
+          
+          Run \`make test-coverage\` locally to generate an HTML report.
+          EOF
+          
+          # Output the message content for the action
+          echo "message<<EOF" >> $GITHUB_OUTPUT
+          cat coverage/comment.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       # Comment coverage on PR
       - name: Comment PR with coverage
         if: github.event_name == 'pull_request'
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           recreate: true
-          message: |
-            ## 📊 Coverage Report
-            
-            Total coverage: **${{ github.run_number }}**
-            
-            View detailed coverage report in the workflow artifacts.
-            
-            ### Coverage Summary
-            ```
-            ${{ github.run_id }}
-            ```
-            
-            Run `make test-coverage` locally to generate an HTML report.
+          message: ${{ steps.pr-comment.outputs.message }}
 
