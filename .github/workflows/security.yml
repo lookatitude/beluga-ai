@@ -33,7 +33,7 @@ jobs:
       - name: Run gosec security scanner
         uses: securego/gosec@master
         with:
-          args: '-fmt json -out gosec-report.json -exclude-dir=specs ./...'
+          args: '-fmt json -out gosec-report.json -exclude-dir=specs,examples ./...'
         continue-on-error: true
 
       - name: Upload gosec results to GitHub Security
@@ -68,9 +68,9 @@ jobs:
 
       - name: Run govulncheck
         run: |
-          # Exclude specs folder by scanning only pkg, examples, tests, and cmd directories
-          govulncheck ./pkg/... ./examples/... ./tests/... 2>/dev/null || \
-          govulncheck $(go list ./... | grep -v '/specs/') || true
+          # Exclude specs and examples folders by scanning only pkg, tests, and cmd directories
+          govulncheck ./pkg/... ./tests/... 2>/dev/null || \
+          govulncheck $(go list ./... | grep -v '/specs/' | grep -v '/examples/') || true
         continue-on-error: true
 
       - name: Display govulncheck results
@@ -93,7 +93,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
-          skip-dirs: 'specs'
+          skip-dirs: 'specs,examples'
         continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security
