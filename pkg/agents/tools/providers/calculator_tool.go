@@ -34,9 +34,9 @@ func NewCalculatorTool(cfg iface.ToolConfig) (*CalculatorTool, error) {
 	tool := &CalculatorTool{
 		BaseTool: tools.BaseTool{},
 	}
-	tool.SetName(cfg.Name)
-	tool.SetDescription(cfg.Description)
-	tool.SetInputSchema(inputSchema)
+	tool.BaseTool.SetName(cfg.Name)
+	tool.BaseTool.SetDescription(cfg.Description)
+	tool.BaseTool.SetInputSchema(inputSchema)
 	return tool, nil
 }
 

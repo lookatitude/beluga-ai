@@ -107,24 +107,25 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 
 	// Call LLM
 	llmResponse, err := a.llm.Generate(ctx, messages)
+	agentName := a.BaseAgent.GetConfig().Name
 	if err != nil {
 		if a.GetMetrics() != nil {
-			a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), false)
+			a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), false)
 		}
-		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: LLM generation failed: %w", a.GetConfig().Name, err)
+		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: LLM generation failed: %w", agentName, err)
 	}
 
 	// Parse LLM response
 	action, finish, err := a.parseResponse(llmResponse.GetContent())
 	if err != nil {
 		if a.GetMetrics() != nil {
-			a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), false)
+			a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), false)
 		}
-		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: failed to parse LLM response: %w", a.GetConfig().Name, err)
+		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("plan failed for agent %s: failed to parse LLM response: %w", agentName, err)
 	}
 
 	if a.GetMetrics() != nil {
-		a.GetMetrics().RecordPlanningCall(ctx, a.GetConfig().Name, time.Since(start), true)
+		a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), true)
 	}
 
 	return action, finish, nil

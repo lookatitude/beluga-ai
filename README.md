@@ -17,7 +17,7 @@
 
 **Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
 
-This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
+This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Architecture Documentation](./docs/architecture.md).
 
 ## Overview
 
@@ -40,7 +40,7 @@ Beluga-ai is built with extensibility at its core. Key components are designed a
 3.  **Configuration-Driven Selection:** YAML configuration files allow users to specify which provider to use for each component.
 4.  **Factory Patterns:** Factories instantiate the correct provider implementation based on the configuration.
 
-See the [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md) for more details on how to extend specific components.
+See the [Architecture Documentation](./docs/architecture.md) for more details on how to extend specific components.
 
 ## Key Architectural Features (Post-Refactoring)
 
@@ -65,7 +65,11 @@ The refactored Beluga-ai framework emphasizes a modular and interface-driven des
     *   Distributed tracing with span support.
     *   Health checking and alerting.
 
-For a complete breakdown of the architecture, please refer to [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
+For a complete breakdown of the architecture, please refer to [Architecture Documentation](./docs/architecture.md).
+
+## Quick Start
+
+New to Beluga AI? Get started in minutes with our **[Quick Start Guide](./docs/QUICKSTART.md)**!
 
 ## Installation
 

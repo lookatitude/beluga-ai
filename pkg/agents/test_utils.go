@@ -362,10 +362,12 @@ type MockTool struct {
 }
 
 func NewMockTool(name, description string) *MockTool {
-	tool := &MockTool{}
-	tool.SetName(name)
-	tool.SetDescription(description)
-	tool.SetInputSchema(map[string]interface{}{
+	tool := &MockTool{
+		BaseTool: tools.BaseTool{},
+	}
+	tool.BaseTool.SetName(name)
+	tool.BaseTool.SetDescription(description)
+	tool.BaseTool.SetInputSchema(map[string]interface{}{
 		"type":        "string",
 		"description": "Tool input",
 	})
@@ -377,7 +379,7 @@ func (t *MockTool) Execute(ctx context.Context, input any) (any, error) {
 	defer t.mu.Unlock()
 	t.callCount++
 
-	return fmt.Sprintf("Tool %s executed with input: %v", t.Name(), input), nil
+	return fmt.Sprintf("Tool %s executed with input: %v", t.BaseTool.Name(), input), nil
 }
 
 func (t *MockTool) GetCallCount() int {

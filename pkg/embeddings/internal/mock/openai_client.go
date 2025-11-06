@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sashabaranov/go-openai"
+	openaiClient "github.com/sashabaranov/go-openai"
 )
 
 // OpenAIClientMock implements the OpenAI API client interface for testing
@@ -12,7 +12,7 @@ type OpenAIClientMock struct {
 	mu sync.Mutex
 
 	// CreateEmbeddings behavior
-	CreateEmbeddingsFunc  func(ctx context.Context, req openai.EmbeddingRequestConverter) (openai.EmbeddingResponse, error)
+	CreateEmbeddingsFunc  func(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error)
 	CreateEmbeddingsCalls []CreateEmbeddingsCall
 
 	// Error injection
@@ -23,7 +23,7 @@ type OpenAIClientMock struct {
 // CreateEmbeddingsCall records a call to CreateEmbeddings
 type CreateEmbeddingsCall struct {
 	Ctx context.Context
-	Req openai.EmbeddingRequestConverter
+	Req openaiClient.EmbeddingRequestConverter
 }
 
 // NewOpenAIClientMock creates a new mock OpenAI client
@@ -34,7 +34,7 @@ func NewOpenAIClientMock() *OpenAIClientMock {
 }
 
 // CreateEmbeddings mocks the OpenAI embeddings API call
-func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openai.EmbeddingRequestConverter) (openai.EmbeddingResponse, error) {
+func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -44,7 +44,7 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openai.Embe
 	})
 
 	if m.ShouldFailEmbeddings {
-		return openai.EmbeddingResponse{}, m.EmbeddingsError
+		return openaiClient.EmbeddingResponse{}, m.EmbeddingsError
 	}
 
 	if m.CreateEmbeddingsFunc != nil {
@@ -57,7 +57,7 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openai.Embe
 	// For basic cases, return a single embedding.
 	dimension := 1536 // Default ada-002 dimension
 
-	embeddings := []openai.Embedding{
+	embeddings := []openaiClient.Embedding{
 		{
 			Object:    "embedding",
 			Embedding: make([]float32, dimension),
@@ -70,11 +70,11 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openai.Embe
 		embeddings[0].Embedding[j] = float32(j) / float32(dimension)
 	}
 
-	return openai.EmbeddingResponse{
+	return openaiClient.EmbeddingResponse{
 		Object: "list",
 		Data:   embeddings,
 		Model:  "text-embedding-ada-002",
-		Usage: openai.Usage{
+		Usage: openaiClient.Usage{
 			PromptTokens: 5,
 			TotalTokens:  5,
 		},
@@ -93,8 +93,8 @@ func (m *OpenAIClientMock) Reset() {
 }
 
 // SetCreateEmbeddingsResponse sets a custom response function for embeddings
-func (m *OpenAIClientMock) SetCreateEmbeddingsResponse(response openai.EmbeddingResponse) {
-	m.CreateEmbeddingsFunc = func(ctx context.Context, req openai.EmbeddingRequestConverter) (openai.EmbeddingResponse, error) {
+func (m *OpenAIClientMock) SetCreateEmbeddingsResponse(response openaiClient.EmbeddingResponse) {
+	m.CreateEmbeddingsFunc = func(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error) {
 		return response, nil
 	}
 }

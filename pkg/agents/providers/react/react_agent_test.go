@@ -23,7 +23,7 @@ func TestReActAgentGetConfig(t *testing.T) {
 	// This should compile without errors
 	_ = func() {
 		if agent != nil {
-			_ = agent.GetConfig()
+			_ = agent.BaseAgent.GetConfig()
 		}
 	}
 }
