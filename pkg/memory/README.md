@@ -102,6 +102,7 @@ type ChatMessageHistory interface {
 - **`Memory`**: Core memory interface for storing and retrieving conversation context
 - **`ChatMessageHistory`**: Interface for managing chat message sequences
 - **`Factory`**: Factory pattern for creating memory instances
+- **`MemoryRegistry`**: Global registry for managing memory types
 - **`Option`**: Functional options for memory configuration
 
 ## Quick Start
@@ -181,6 +182,30 @@ mem, err := factory.CreateMemory(ctx, config)
 if err != nil {
     log.Fatal(err)
 }
+```
+
+### Using Global Registry
+
+```go
+// Use the global registry to create memory
+mem, err := memory.CreateMemory(
+    ctx,
+    string(memory.MemoryTypeBuffer),
+    config,
+)
+
+// List available memory types
+types := memory.ListAvailableMemoryTypes()
+// Returns: ["buffer", "buffer_window", "summary", "summary_buffer", "vector_store", "vector_store_retriever"]
+
+// Register a custom memory type
+memory.RegisterMemoryType("custom", func(ctx context.Context, config memory.Config) (memory.Memory, error) {
+    // Custom memory creation logic
+    return customMemory, nil
+})
+
+// Get the global registry for advanced usage
+registry := memory.GetGlobalMemoryRegistry()
 ```
 
 ### Creating Custom Memory with Functional Options

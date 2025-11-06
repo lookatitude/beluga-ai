@@ -267,13 +267,13 @@ func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core
 
 func (m *MockChatModel) CheckHealth() map[string]interface{} {
 	return map[string]interface{}{
-		"state":       "healthy",
-		"provider":    "mock",
-		"model":       m.modelName,
-		"timestamp":   int64(1234567890),
-		"call_count":  0,
-		"tools_count": 0,
-		"should_error": false,
+		"state":         "healthy",
+		"provider":      "mock",
+		"model":         m.modelName,
+		"timestamp":     int64(1234567890),
+		"call_count":    0,
+		"tools_count":   0,
+		"should_error":  false,
 		"responses_len": 1,
 	}
 }

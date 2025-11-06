@@ -6,6 +6,10 @@ on:
       - main # Deploy on pushes to the main branch
     paths:
       - 'website/**' # Only run if website content changes
+      - 'docs/**' # Also run if documentation changes
+      - 'pkg/**' # Also run if package code changes (affects API docs)
+      - 'scripts/generate-docs.sh' # Also run if doc generation script changes
+      - 'Makefile' # Also run if Makefile changes (affects docs targets)
       - '.github/workflows/website_deploy.yml'
   workflow_dispatch: # Allow manual triggering
 
@@ -29,6 +33,15 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Not needed if lastUpdated is not used
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: go.sum
+
+      - name: Generate API documentation
+        run: make docs-generate
 
       - name: Set up Node.js
         uses: actions/setup-node@v4

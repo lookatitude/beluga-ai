@@ -2,9 +2,9 @@ package llms
 
 import (
 	"context"
-	"time"
-	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+	"time"
 )
 
 // MetricsRecorder defines the interface for recording metrics
@@ -34,7 +34,8 @@ func (n *NoOpMetrics) RecordRequest(ctx context.Context, provider, model string,
 }
 
 // RecordError is a no-op implementation
-func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {}
+func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
+}
 
 // RecordTokenUsage is a no-op implementation
 func (n *NoOpMetrics) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int) {
@@ -65,20 +66,20 @@ func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, mode
 
 // Metrics contains all the metrics for LLM operations
 type Metrics struct {
-	requests metric.Int64Counter
-	successful metric.Int64Counter
-	errors metric.Int64Counter
-	failed metric.Int64Counter
-	inputTokens metric.Int64Counter
-	outputTokens metric.Int64Counter
-	toolCalls metric.Int64Counter
-	batches metric.Int64Counter
-	streams metric.Int64Counter
+	requests          metric.Int64Counter
+	successful        metric.Int64Counter
+	errors            metric.Int64Counter
+	failed            metric.Int64Counter
+	inputTokens       metric.Int64Counter
+	outputTokens      metric.Int64Counter
+	toolCalls         metric.Int64Counter
+	batches           metric.Int64Counter
+	streams           metric.Int64Counter
 	generationLatency metric.Float64Histogram
-	batchLatency metric.Float64Histogram
-	streamLatency metric.Float64Histogram
-	activeRequests metric.Int64UpDownCounter
-	activeStreams metric.Int64UpDownCounter
+	batchLatency      metric.Float64Histogram
+	streamLatency     metric.Float64Histogram
+	activeRequests    metric.Int64UpDownCounter
+	activeStreams     metric.Int64UpDownCounter
 }
 
 // NewMetrics creates a new Metrics instance

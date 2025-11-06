@@ -6,11 +6,18 @@
 
 # Beluga-ai
 
+[![Go CI](https://github.com/lookatitude/beluga-ai/workflows/Go%20CI/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/go_ci.yml)
+[![Coverage](https://github.com/lookatitude/beluga-ai/workflows/Coverage%20Report/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/coverage.yml)
+[![Security Scanning](https://github.com/lookatitude/beluga-ai/workflows/Security%20Scanning/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/security.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lookatitude/beluga-ai)](https://goreportcard.com/report/github.com/lookatitude/beluga-ai)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.24+-00ADD8.svg)](https://golang.org)
+
 **🚀 PRODUCTION READY: Beluga-ai has completed comprehensive standardization and is now enterprise-grade with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.**
 
 **Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
 
-This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
+This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Architecture Documentation](./docs/architecture.md).
 
 ## Overview
 
@@ -33,7 +40,7 @@ Beluga-ai is built with extensibility at its core. Key components are designed a
 3.  **Configuration-Driven Selection:** YAML configuration files allow users to specify which provider to use for each component.
 4.  **Factory Patterns:** Factories instantiate the correct provider implementation based on the configuration.
 
-See the [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md) for more details on how to extend specific components.
+See the [Architecture Documentation](./docs/architecture.md) for more details on how to extend specific components.
 
 ## Key Architectural Features (Post-Refactoring)
 
@@ -58,13 +65,90 @@ The refactored Beluga-ai framework emphasizes a modular and interface-driven des
     *   Distributed tracing with span support.
     *   Health checking and alerting.
 
-For a complete breakdown of the architecture, please refer to [Beluga_Refactored_Architecture.md](./Beluga_Refactored_Architecture.md).
+For a complete breakdown of the architecture, please refer to [Architecture Documentation](./docs/architecture.md).
+
+## Quick Start
+
+New to Beluga AI? Get started in minutes with our **[Quick Start Guide](./docs/QUICKSTART.md)**!
 
 ## Installation
 
 ```bash
 go get github.com/lookatitude/beluga-ai
 ```
+
+## Development
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/lookatitude/beluga-ai.git
+cd beluga-ai
+
+# Install dependencies
+go mod download
+
+# Install development tools
+make install-tools
+
+# Run tests
+make test
+
+# Run all quality checks
+make all
+```
+
+### Development Workflow
+
+The framework includes comprehensive development tooling:
+
+**Quality Assurance:**
+```bash
+make fmt          # Format code
+make lint         # Run linters
+make vet          # Run go vet
+make test         # Run tests
+make test-race    # Run tests with race detection
+make test-coverage # Generate coverage report
+```
+
+**Security:**
+```bash
+make security     # Run security scans (gosec, govulncheck)
+```
+
+**Build:**
+```bash
+make build        # Build all packages
+make clean        # Clean build artifacts
+```
+
+**All Checks:**
+```bash
+make all          # Run format, vet, lint, and test
+make ci           # Run all CI checks including coverage and security
+```
+
+### Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality:
+
+```bash
+# Install pre-commit (requires Python)
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+```
+
+Hooks automatically run on commit and verify:
+- Code formatting
+- Linting
+- Security checks
+- Tests
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
 
 ## Examples
 

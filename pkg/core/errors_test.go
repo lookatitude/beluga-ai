@@ -433,10 +433,10 @@ func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
 
 func TestIsErrorType_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name     string
-		err      error
+		name      string
+		err       error
 		errorType ErrorType
-		expected bool
+		expected  bool
 	}{
 		{
 			name:      "nil error",

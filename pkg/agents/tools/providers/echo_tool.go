@@ -33,9 +33,9 @@ func NewEchoTool(cfg iface.ToolConfig) (*EchoTool, error) {
 	tool := &EchoTool{
 		BaseTool: tools.BaseTool{},
 	}
-	tool.SetName(cfg.Name)
-	tool.SetDescription(cfg.Description)
-	tool.SetInputSchema(inputSchema)
+	tool.BaseTool.SetName(cfg.Name)
+	tool.BaseTool.SetDescription(cfg.Description)
+	tool.BaseTool.SetInputSchema(inputSchema)
 	return tool, nil
 }
 

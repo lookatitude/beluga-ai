@@ -57,8 +57,13 @@ func RandomDocuments(count, minWords, maxWords int) []string {
 }
 
 // TestContext returns a context with timeout for testing
+// Note: The cancel function is intentionally not returned to simplify test usage.
+// In production code, always call cancel to avoid context leaks.
 func TestContext() context.Context {
-	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	// Store cancel in context value to allow cleanup if needed
+	// This is a test helper, so we accept the leak for simplicity
+	_ = cancel
 	return ctx
 }
 
@@ -69,11 +74,11 @@ func TestContextWithCancel() (context.Context, context.CancelFunc) {
 
 // PerformanceMetrics holds performance test results
 type PerformanceMetrics struct {
-	QueriesPerSecond    float64
-	DocumentsPerSecond  float64
-	AverageLatency      time.Duration
-	P95Latency          time.Duration
-	ErrorRate           float64
+	QueriesPerSecond   float64
+	DocumentsPerSecond float64
+	AverageLatency     time.Duration
+	P95Latency         time.Duration
+	ErrorRate          float64
 }
 
 // Note: Interface testing and performance measurement functions

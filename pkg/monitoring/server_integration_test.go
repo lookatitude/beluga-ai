@@ -323,11 +323,11 @@ func TestServerIntegrationFormatHealthResults(t *testing.T) {
 
 	results := map[string]iface.HealthCheckResult{
 		"check1": {
-			Status:     iface.StatusHealthy,
-			Message:    "Check 1 passed",
-			CheckName:  "check1",
-			Timestamp:  time.Now(),
-			Details:    map[string]interface{}{"detail": "value"},
+			Status:    iface.StatusHealthy,
+			Message:   "Check 1 passed",
+			CheckName: "check1",
+			Timestamp: time.Now(),
+			Details:   map[string]interface{}{"detail": "value"},
 		},
 		"check2": {
 			Status:    iface.StatusUnhealthy,

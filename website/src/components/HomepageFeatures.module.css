@@ -1,11 +1,30 @@
 .features {
   display: flex;
   align-items: center;
-  padding: 2rem 0;
+  padding: 4rem 0;
   width: 100%;
+  background: var(--ifm-background-surface-color);
+}
+
+.featuresSubtitle {
+  font-size: 1.2rem;
+  color: var(--ifm-color-content-secondary);
+  margin-bottom: 3rem;
 }
 
 .featureSvg {
   height: 200px;
   width: 200px;
+  margin-bottom: 1rem;
+}
+
+@media screen and (max-width: 966px) {
+  .features {
+    padding: 2rem 0;
+  }
+  
+  .featureSvg {
+    height: 150px;
+    width: 150px;
+  }
 }

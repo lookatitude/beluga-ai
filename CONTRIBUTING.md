@@ -74,6 +74,151 @@ Once this Release PR is merged, `release-please` will then tag the release and c
 
 For pre-releases (like alpha, beta), ensure your commit messages are clear about the pre-release nature if applicable, though `release-please-config.json` is set up to handle alpha versions automatically.
 
+## Local Development Setup
+
+### Prerequisites
+
+*   **Go 1.24+**: The framework requires Go 1.24 or later
+*   **Make**: Required for build automation (available on most systems)
+*   **Git**: Version control
+
+### Initial Setup
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/lookatitude/beluga-ai.git
+   cd beluga-ai
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   go mod download
+   go mod verify
+   ```
+
+3. **Install development tools:**
+   ```bash
+   make install-tools
+   ```
+   This installs:
+   - `golangci-lint` - Comprehensive linter
+   - `gosec` - Security scanner
+   - `govulncheck` - Vulnerability checker
+   - `gofumpt` - Stricter formatter
+   - `benchstat` - Benchmark comparison tool
+
+4. **Set up pre-commit hooks (recommended):**
+   ```bash
+   # Install pre-commit (requires Python)
+   pip install pre-commit
+   
+   # Install git hooks
+   pre-commit install
+   
+   # Or manually install hooks
+   pre-commit install --hook-type pre-commit --hook-type pre-push
+   ```
+
+### Development Workflow
+
+#### Running Tests
+
+```bash
+# Run all tests
+make test
+
+# Run tests with race detection
+make test-race
+
+# Generate coverage report
+make test-coverage
+# Opens coverage/coverage.html in browser
+
+# Run integration tests
+go test -v ./tests/integration/...
+
+# Run benchmarks
+make bench
+```
+
+#### Code Quality Checks
+
+```bash
+# Run all checks (format, vet, lint, test)
+make all
+
+# Or run individually:
+make fmt          # Format code
+make fmt-check     # Check formatting without fixing
+make vet          # Run go vet
+make lint         # Run golangci-lint
+```
+
+#### Security Scanning
+
+```bash
+# Run all security scans
+make security
+
+# This runs:
+# - gosec (static security analysis)
+# - govulncheck (dependency vulnerabilities)
+```
+
+#### Building
+
+```bash
+# Build all packages
+make build
+
+# Clean build artifacts
+make clean
+```
+
+### Pre-commit Hooks
+
+Pre-commit hooks automatically run checks before commits. They verify:
+- Code formatting (gofmt, goimports)
+- Linting (golangci-lint)
+- Security (gosec)
+- Tests (quick unit tests)
+- File formatting (YAML, JSON, TOML)
+
+To manually run hooks:
+```bash
+pre-commit run --all-files
+```
+
+### Making Changes
+
+1. **Create a feature branch:**
+   ```bash
+   git checkout -b feat/your-feature-name
+   ```
+
+2. **Make your changes** following the [Development Guidelines](#development-guidelines)
+
+3. **Run quality checks:**
+   ```bash
+   make all
+   ```
+
+4. **Run security scans:**
+   ```bash
+   make security
+   ```
+
+5. **Commit your changes** (hooks will run automatically):
+   ```bash
+   git add .
+   git commit -m "feat(scope): your feature description"
+   ```
+
+6. **Push and create a Pull Request:**
+   ```bash
+   git push origin feat/your-feature-name
+   ```
+
 ## Development Guidelines
 
 ### Code Quality Standards
@@ -83,6 +228,8 @@ For pre-releases (like alpha, beta), ensure your commit messages are clear about
 *   **Concurrency**: Use channels and sync primitives safely
 *   **Testing**: Write comprehensive unit and integration tests
 *   **Documentation**: Document all exported functions and types
+*   **Linting**: All code must pass `golangci-lint` checks
+*   **Formatting**: Code must be formatted with `gofmt` or `gofumpt`
 
 ### Advanced Features Usage
 
@@ -186,12 +333,141 @@ func (p *MyProvider) Process(ctx context.Context, input interface{}) (interface{
 
 ## Pull Requests
 
-*   Ensure your branch is up-to-date with the `main` branch before submitting a pull request.
-*   Ensure all tests pass (`go test ./...`).
-*   Run `go vet ./...` and fix any issues.
-*   Ensure your commit messages follow the Conventional Commits format.
-*   Update documentation for any new features or configuration options.
-*   Add appropriate metrics and logging to new components.
+### Before Submitting
+
+Before submitting a pull request, ensure:
+
+1. **Your branch is up-to-date:**
+   ```bash
+   git checkout main
+   git pull origin main
+   git checkout your-branch
+   git rebase main  # or merge main
+   ```
+
+2. **All checks pass:**
+   ```bash
+   make all          # Run all quality checks
+   make security     # Run security scans
+   make test-race    # Run tests with race detection
+   ```
+
+3. **Code quality:**
+   - All code passes `golangci-lint` checks
+   - Code is properly formatted (`make fmt-check`)
+   - All tests pass (`make test`)
+   - No security issues (`make security`)
+
+4. **Documentation:**
+   - Update README.md for user-facing changes
+   - Update package documentation for new APIs
+   - Add examples if adding new features
+
+5. **Commit messages:**
+   - Follow Conventional Commits format
+   - Include scope when applicable
+   - Mark breaking changes with `BREAKING CHANGE:`
+
+### PR Checklist
+
+When creating a pull request, ensure:
+
+*   ✅ All tests pass (`make test`)
+*   ✅ Tests pass with race detection (`make test-race`)
+*   ✅ Code passes linting (`make lint`)
+*   ✅ Code is properly formatted (`make fmt-check`)
+*   ✅ No security issues (`make security`)
+*   ✅ Commit messages follow Conventional Commits format
+*   ✅ Documentation is updated
+*   ✅ Appropriate metrics and logging added to new components
+*   ✅ Integration tests added for complex features
+
+### CI/CD Pipeline
+
+When you create a PR, the following checks run automatically:
+
+1. **Build**: Builds on multiple Go versions (1.22, 1.23, 1.24)
+2. **Format Check**: Verifies code formatting
+3. **Lint**: Runs golangci-lint
+4. **Vet**: Runs go vet
+5. **Tests**: Runs tests on multiple Go versions
+6. **Race Detection**: Runs tests with race detector
+7. **Integration Tests**: Runs integration test suite
+8. **Coverage**: Generates and reports code coverage
+9. **Security**: Runs security scans (gosec, govulncheck)
+
+All checks must pass before merging.
+
+## Release Process (Maintainers)
+
+This project uses [release-please](https://github.com/googleapis/release-please) for automated releases.
+
+### Automatic Releases
+
+1. Commits following Conventional Commits are automatically processed
+2. Release-please creates a PR with version bump and CHANGELOG updates
+3. When the PR is merged, the release is automatically created
+
+### Manual Release Process
+
+If needed, maintainers can trigger releases manually:
+
+1. **Tag the release:**
+   ```bash
+   git tag -a v1.0.0 -m "Release v1.0.0"
+   git push origin v1.0.0
+   ```
+
+2. **Release workflow:**
+   - The `.github/workflows/release.yml` workflow runs automatically on tag push
+   - It uses goreleaser to create release artifacts
+   - GitHub release is created with artifacts and changelog
+
+### Version Management
+
+*   **Major** (1.0.0): Breaking changes
+*   **Minor** (0.1.0): New features (backward compatible)
+*   **Patch** (0.0.1): Bug fixes (backward compatible)
+
+## Troubleshooting
+
+### Common Issues
+
+**Pre-commit hooks failing:**
+```bash
+# Run hooks manually to see detailed errors
+pre-commit run --all-files
+
+# Skip hooks for a commit (not recommended)
+git commit --no-verify
+```
+
+**Linting errors:**
+```bash
+# Auto-fix some issues
+golangci-lint run --fix ./...
+
+# Check specific package
+make lint
+```
+
+**Test failures:**
+```bash
+# Run tests with verbose output
+go test -v ./pkg/your-package
+
+# Run specific test
+go test -v -run TestYourTest ./pkg/your-package
+```
+
+**Go version mismatch:**
+```bash
+# Check required version
+make check-go-version
+
+# Update Go version
+# See: https://go.dev/doc/install
+```
 
 Thank you for contributing!
 

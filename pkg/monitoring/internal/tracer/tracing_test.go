@@ -165,7 +165,7 @@ func TestSpanOperations(t *testing.T) {
 	t.Run("log", func(t *testing.T) {
 		span.Log("Simple log message")
 		span.Log("Log with fields", map[string]interface{}{
-			"step": 1,
+			"step":   1,
 			"status": "processing",
 		})
 

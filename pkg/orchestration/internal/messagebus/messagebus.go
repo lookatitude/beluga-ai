@@ -146,4 +146,3 @@ func (imb *InMemoryMessageBus) GetName() string {
 
 // Ensure InMemoryMessageBus implements the MessageBus interface.
 var _ MessageBus = (*InMemoryMessageBus)(nil)
-

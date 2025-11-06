@@ -44,8 +44,8 @@ func TestEthicalAICheckerCheckContent(t *testing.T) {
 			"age_group": "25-34",
 			"region":    "US",
 		},
-		ContentType:   "text",
-		Domain:        "social_media",
+		ContentType:     "text",
+		Domain:          "social_media",
 		CulturalContext: "western",
 	}
 
@@ -88,45 +88,45 @@ func TestPrivacyCheckerCheckPrivacy(t *testing.T) {
 	privacyChecker := NewPrivacyChecker(mockLogger.(*logger.StructuredLogger))
 
 	tests := []struct {
-		name            string
-		content         string
-		expectIssues    bool
+		name             string
+		content          string
+		expectIssues     bool
 		expectedDataType string
 	}{
 		{
-			name:            "no PII",
-			content:         "This is a normal message without any personal information.",
-			expectIssues:    false,
+			name:             "no PII",
+			content:          "This is a normal message without any personal information.",
+			expectIssues:     false,
 			expectedDataType: "",
 		},
 		{
-			name:            "email address",
-			content:         "Contact me at test@example.com",
-			expectIssues:    true,
+			name:             "email address",
+			content:          "Contact me at test@example.com",
+			expectIssues:     true,
 			expectedDataType: "email",
 		},
 		{
-			name:            "social security number",
-			content:         "My SSN is 123-45-6789",
-			expectIssues:    true,
+			name:             "social security number",
+			content:          "My SSN is 123-45-6789",
+			expectIssues:     true,
 			expectedDataType: "ssn",
 		},
 		{
-			name:            "credit card number",
-			content:         "Card: 1234-5678-9012-3456",
-			expectIssues:    true,
+			name:             "credit card number",
+			content:          "Card: 1234-5678-9012-3456",
+			expectIssues:     true,
 			expectedDataType: "credit_card",
 		},
 		{
-			name:            "phone number",
-			content:         "Call me at 555-123-4567",
-			expectIssues:    true,
+			name:             "phone number",
+			content:          "Call me at 555-123-4567",
+			expectIssues:     true,
 			expectedDataType: "phone",
 		},
 		{
-			name:            "date of birth",
-			content:         "Born on 01/15/1990",
-			expectIssues:    true,
+			name:             "date of birth",
+			content:          "Born on 01/15/1990",
+			expectIssues:     true,
 			expectedDataType: "",
 		},
 	}
@@ -330,11 +330,11 @@ func TestBiasDetectorNames(t *testing.T) {
 
 func TestCalculateOverallRisk(t *testing.T) {
 	tests := []struct {
-		name           string
-		biasIssues     int
-		privacyIssues  int
-		fairnessScore  float64
-		expectedRisk   string
+		name          string
+		biasIssues    int
+		privacyIssues int
+		fairnessScore float64
+		expectedRisk  string
 	}{
 		{"low risk", 0, 0, 1.0, "low"},
 		{"medium risk - bias", 1, 0, 0.8, "medium"},
@@ -364,70 +364,70 @@ func TestCalculateOverallRisk(t *testing.T) {
 
 func TestGenerateRecommendations(t *testing.T) {
 	tests := []struct {
-		name            string
-		biasIssues      int
-		privacyIssues   int
-		fairnessScore   float64
-		overallRisk     string
-		expectBiasRec   bool
-		expectPrivacyRec bool
+		name              string
+		biasIssues        int
+		privacyIssues     int
+		fairnessScore     float64
+		overallRisk       string
+		expectBiasRec     bool
+		expectPrivacyRec  bool
 		expectFairnessRec bool
-		expectRiskRec   bool
+		expectRiskRec     bool
 	}{
 		{
-			name:             "no issues",
-			biasIssues:       0,
-			privacyIssues:    0,
-			fairnessScore:    1.0,
-			overallRisk:      "low",
-			expectBiasRec:    false,
-			expectPrivacyRec: false,
+			name:              "no issues",
+			biasIssues:        0,
+			privacyIssues:     0,
+			fairnessScore:     1.0,
+			overallRisk:       "low",
+			expectBiasRec:     false,
+			expectPrivacyRec:  false,
 			expectFairnessRec: false,
-			expectRiskRec:    false,
+			expectRiskRec:     false,
 		},
 		{
-			name:             "bias issues",
-			biasIssues:       1,
-			privacyIssues:    0,
-			fairnessScore:    1.0,
-			overallRisk:      "low",
-			expectBiasRec:    true,
-			expectPrivacyRec: false,
+			name:              "bias issues",
+			biasIssues:        1,
+			privacyIssues:     0,
+			fairnessScore:     1.0,
+			overallRisk:       "low",
+			expectBiasRec:     true,
+			expectPrivacyRec:  false,
 			expectFairnessRec: false,
-			expectRiskRec:    false,
+			expectRiskRec:     false,
 		},
 		{
-			name:             "privacy issues",
-			biasIssues:       0,
-			privacyIssues:    1,
-			fairnessScore:    1.0,
-			overallRisk:      "low",
-			expectBiasRec:    false,
-			expectPrivacyRec: true,
+			name:              "privacy issues",
+			biasIssues:        0,
+			privacyIssues:     1,
+			fairnessScore:     1.0,
+			overallRisk:       "low",
+			expectBiasRec:     false,
+			expectPrivacyRec:  true,
 			expectFairnessRec: false,
-			expectRiskRec:    false,
+			expectRiskRec:     false,
 		},
 		{
-			name:             "low fairness",
-			biasIssues:       0,
-			privacyIssues:    0,
-			fairnessScore:    0.6,
-			overallRisk:      "low",
-			expectBiasRec:    false,
-			expectPrivacyRec: false,
+			name:              "low fairness",
+			biasIssues:        0,
+			privacyIssues:     0,
+			fairnessScore:     0.6,
+			overallRisk:       "low",
+			expectBiasRec:     false,
+			expectPrivacyRec:  false,
 			expectFairnessRec: true,
-			expectRiskRec:    false,
+			expectRiskRec:     false,
 		},
 		{
-			name:             "high risk",
-			biasIssues:       0,
-			privacyIssues:    0,
-			fairnessScore:    1.0,
-			overallRisk:      "high",
-			expectBiasRec:    false,
-			expectPrivacyRec: false,
+			name:              "high risk",
+			biasIssues:        0,
+			privacyIssues:     0,
+			fairnessScore:     1.0,
+			overallRisk:       "high",
+			expectBiasRec:     false,
+			expectPrivacyRec:  false,
 			expectFairnessRec: false,
-			expectRiskRec:    true,
+			expectRiskRec:     true,
 		},
 	}
 
@@ -477,8 +477,8 @@ func TestHumanInTheLoopShouldTriggerReview(t *testing.T) {
 	hitl := NewHumanInTheLoopIntegration(mockLogger.(*logger.StructuredLogger))
 
 	tests := []struct {
-		name         string
-		overallRisk  string
+		name          string
+		overallRisk   string
 		fairnessScore float64
 		biasIssues    int
 		privacyIssues int
@@ -495,10 +495,10 @@ func TestHumanInTheLoopShouldTriggerReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			analysis := &iface.EthicalAnalysis{
-				OverallRisk:     tt.overallRisk,
-				FairnessScore:   tt.fairnessScore,
-				BiasIssues:      make([]iface.BiasIssue, tt.biasIssues),
-				PrivacyIssues:   make([]iface.PrivacyIssue, tt.privacyIssues),
+				OverallRisk:   tt.overallRisk,
+				FairnessScore: tt.fairnessScore,
+				BiasIssues:    make([]iface.BiasIssue, tt.biasIssues),
+				PrivacyIssues: make([]iface.PrivacyIssue, tt.privacyIssues),
 			}
 
 			result := hitl.ShouldTriggerReview(analysis)

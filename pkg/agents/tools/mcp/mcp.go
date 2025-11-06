@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/Tnze/go-mc/bot"
-	"github.com/jltobler/go-rcon"
+	rconClient "github.com/jltobler/go-rcon"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 )
 
@@ -125,7 +125,7 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 
 	result := map[string]any{
 		"version":        status.Version.Name,
-		"protocol":       status.Version.Protocol, 
+		"protocol":       status.Version.Protocol,
 		"motd":           motd,
 		"players_online": status.Players.Online,
 		"players_max":    status.Players.Max,
@@ -231,7 +231,7 @@ func (t *MCRconTool) Execute(ctx context.Context, input any) (any, error) {
 	// rconCtx, cancel := context.WithTimeout(ctx, 15*time.Second) // Use parent context for now
 	// defer cancel()
 
-	conn, err := rcon.Dial(rconInput.Address, rconInput.Password)
+	conn, err := rconClient.Dial(rconInput.Address, rconInput.Password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect via RCON to %s: %w", rconInput.Address, err)
 	}

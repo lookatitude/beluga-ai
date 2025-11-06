@@ -36,7 +36,7 @@ type FrameworkError struct {
 	Type    ErrorType
 	Message string
 	Cause   error
-	Code    string // Optional error code for programmatic handling
+	Code    string                 // Optional error code for programmatic handling
 	Context map[string]interface{} // Additional context information
 }
 

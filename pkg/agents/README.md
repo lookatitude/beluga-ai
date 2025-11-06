@@ -88,6 +88,8 @@ type CompositeAgent interface {
 - **`LifecycleManager`**: Agent lifecycle operations (init, shutdown)
 - **`EventEmitter`**: Event-driven architecture support
 - **`HealthChecker`**: Health monitoring and status reporting
+- **`AgentRegistry`**: Global registry for managing agent types
+- **`tools.Registry`**: Tool registry interface for tool management
 
 ## Quick Start
 
@@ -341,6 +343,39 @@ if err != nil {
 // List all available tools
 toolNames := registry.ListTools()
 log.Printf("Available tools: %v", toolNames)
+
+// Get formatted tool descriptions for LLM context
+descriptions := registry.GetToolDescriptions()
+log.Printf("Tool descriptions:\n%s", descriptions)
+```
+
+## Agent Registry
+
+The package provides a global registry system for managing agent types:
+
+```go
+// Use the global registry to create agents
+agent, err := agents.CreateAgent(
+    ctx,
+    agents.AgentTypeBase,  // or agents.AgentTypeReAct
+    "my-agent",
+    llm,
+    tools,
+    config,
+)
+
+// List available agent types
+types := agents.ListAvailableAgentTypes()
+// Returns: ["base", "react"]
+
+// Register a custom agent type
+agents.RegisterAgentType("custom", func(ctx context.Context, name string, llm interface{}, tools []tools.Tool, config agents.Config) (iface.CompositeAgent, error) {
+    // Custom agent creation logic
+    return customAgent, nil
+})
+
+// Get the global registry for advanced usage
+registry := agents.GetGlobalAgentRegistry()
 ```
 
 ## Health Monitoring
@@ -449,6 +484,7 @@ agent.RegisterEventHandler("execution_error", func(payload interface{}) error {
 - **Event System**: Event-driven architecture for extensibility
 - **Metrics & Tracing**: Full OpenTelemetry integration
 - **Factory Pattern**: Dependency injection with functional options
+- **Agent Registry**: Global registry system for agent type management
 - **Tool Registry**: Complete tool management and integration
 - **Testing**: Comprehensive unit tests for core functionality
 

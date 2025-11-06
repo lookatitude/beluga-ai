@@ -3,6 +3,7 @@ package executor
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
@@ -271,8 +272,8 @@ func TestExecutePlan_MaxIterationsExceeded(t *testing.T) {
 		t.Error("Expected error for max iterations exceeded")
 	}
 
-	if !errors.Is(err, errors.New("execution failed")) {
-		t.Errorf("Expected 'execution failed' error, got: %v", err)
+	if err != nil && !strings.Contains(err.Error(), "execution failed") {
+		t.Errorf("Expected error containing 'execution failed', got: %v", err)
 	}
 }
 
@@ -301,8 +302,8 @@ func TestExecutePlan_ToolNotFound(t *testing.T) {
 		t.Error("Expected error for tool not found")
 	}
 
-	if !errors.Is(err, errors.New("execution failed")) {
-		t.Errorf("Expected 'execution failed' error, got: %v", err)
+	if err != nil && !strings.Contains(err.Error(), "execution failed") {
+		t.Errorf("Expected error containing 'execution failed', got: %v", err)
 	}
 }
 
@@ -332,8 +333,8 @@ func TestExecutePlan_ToolExecutionError(t *testing.T) {
 		t.Error("Expected error for tool execution failure")
 	}
 
-	if !errors.Is(err, errors.New("execution failed")) {
-		t.Errorf("Expected 'execution failed' error, got: %v", err)
+	if err != nil && !strings.Contains(err.Error(), "execution failed") {
+		t.Errorf("Expected error containing 'execution failed', got: %v", err)
 	}
 }
 
@@ -488,8 +489,8 @@ func TestExecuteTool_ToolNotFound(t *testing.T) {
 	}
 
 	expectedErr := "tool 'non_existent_tool' not found"
-	if !errors.Is(err, errors.New(expectedErr)) && !errors.Is(err, errors.New("tool execution failed")) {
-		t.Errorf("Expected error containing '%s', got: %v", expectedErr, err)
+	if err != nil && !strings.Contains(err.Error(), expectedErr) && !strings.Contains(err.Error(), "tool execution failed") {
+		t.Errorf("Expected error containing '%s' or 'tool execution failed', got: %v", expectedErr, err)
 	}
 }
 
@@ -516,7 +517,7 @@ func TestExecuteTool_ExecutionError(t *testing.T) {
 	}
 
 	expectedErr := "tool execution failed"
-	if !errors.Is(err, errors.New(expectedErr)) {
+	if err != nil && !strings.Contains(err.Error(), expectedErr) {
 		t.Errorf("Expected error containing '%s', got: %v", expectedErr, err)
 	}
 }

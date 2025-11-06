@@ -53,7 +53,7 @@ module.exports = {
             label: 'Documentation',
           },
           // {to: '/examples', label: 'Examples', position: 'left'}, // We will create this later
-          {to: '/blog', label: 'Blog', position: 'left'},
+          // {to: '/blog', label: 'Blog', position: 'left'}, // Hidden until we have proper content
           {
             href: 'https://github.com/lookatitude/beluga-ai',
             label: 'GitHub',
@@ -90,10 +90,10 @@ module.exports = {
           {
             title: 'More',
             items: [
-              {
-                label: 'Blog',
-                to: '/blog',
-              },
+              // {
+              //   label: 'Blog',
+              //   to: '/blog',
+              // }, // Hidden until we have proper content
               {
                 label: 'GitHub',
                 href: 'https://github.com/lookatitude/beluga-ai',

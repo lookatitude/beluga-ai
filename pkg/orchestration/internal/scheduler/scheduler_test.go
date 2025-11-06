@@ -65,7 +65,7 @@ func TestScheduler_Run(t *testing.T) {
 	}
 
 	task2 := &Task{
-		ID:      "task2",
+		ID: "task2",
 		Execute: func() error {
 			executedTasks["task2"] = true
 			return nil
@@ -113,7 +113,7 @@ func TestScheduler_Run_WithTaskFailure(t *testing.T) {
 	}
 
 	task2 := &Task{
-		ID:      "task2",
+		ID: "task2",
 		Execute: func() error {
 			return nil
 		},

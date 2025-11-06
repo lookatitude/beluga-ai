@@ -443,4 +443,3 @@ func benchmarkThroughput(b *testing.B, embedder iface.Embedder, ctx context.Cont
 	b.ReportMetric(float64(operations)/duration.Seconds(), "ops/sec")
 	b.ReportMetric(float64(totalTokens*b.N)/duration.Seconds(), "tokens/sec")
 }
-

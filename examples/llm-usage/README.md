@@ -17,7 +17,7 @@ This example application demonstrates how to use the refactored Beluga AI LLM pa
 
 ### Prerequisites
 
-1. Go 1.21 or later
+1. Go 1.24 or later
 2. Access to the Beluga AI Framework
 
 ### Installation

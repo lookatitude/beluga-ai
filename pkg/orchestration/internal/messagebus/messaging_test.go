@@ -289,7 +289,7 @@ func TestSerializeMessage_Success(t *testing.T) {
 func TestSerializeMessage_ComplexPayload(t *testing.T) {
 	complexPayload := map[string]interface{}{
 		"nested": map[string]interface{}{
-			"array": []string{"item1", "item2"},
+			"array":  []string{"item1", "item2"},
 			"number": 123,
 		},
 		"simple": "value",

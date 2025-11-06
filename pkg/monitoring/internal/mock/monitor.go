@@ -64,11 +64,11 @@ func (m *MockMonitor) IsHealthy(ctx context.Context) bool {
 
 // MockLogger provides a mock implementation of the Logger interface
 type MockLogger struct {
-	DebugCalls   []DebugCall
-	InfoCalls    []InfoCall
-	WarningCalls []WarningCall
-	ErrorCalls   []ErrorCall
-	FatalCalls   []FatalCall
+	DebugCalls      []DebugCall
+	InfoCalls       []InfoCall
+	WarningCalls    []WarningCall
+	ErrorCalls      []ErrorCall
+	FatalCalls      []FatalCall
 	WithFieldsCalls []WithFieldsCall
 }
 
@@ -181,9 +181,9 @@ func (m *MockContextLogger) Error(ctx context.Context, message string, fields ..
 
 // MockTracer provides a mock implementation of the Tracer interface
 type MockTracer struct {
-	StartSpanCalls   []StartSpanCall
-	FinishSpanCalls  []iface.Span
-	GetSpanCalls     []string
+	StartSpanCalls     []StartSpanCall
+	FinishSpanCalls    []iface.Span
+	GetSpanCalls       []string
 	GetTraceSpansCalls []string
 }
 
@@ -266,58 +266,58 @@ func (m *MockSpan) SetTag(key string, value interface{}) {
 
 // MockMetricsCollector provides a mock implementation of the MetricsCollector interface
 type MockMetricsCollector struct {
-	CounterCalls   []CounterCall
-	GaugeCalls     []GaugeCall
-	HistogramCalls []HistogramCall
-	TimingCalls    []TimingCall
-	IncrementCalls []IncrementCall
+	CounterCalls    []CounterCall
+	GaugeCalls      []GaugeCall
+	HistogramCalls  []HistogramCall
+	TimingCalls     []TimingCall
+	IncrementCalls  []IncrementCall
 	StartTimerCalls []StartTimerCall
 }
 
 type CounterCall struct {
-	Ctx       context.Context
-	Name      string
+	Ctx         context.Context
+	Name        string
 	Description string
-	Value     float64
-	Labels    map[string]string
+	Value       float64
+	Labels      map[string]string
 }
 
 type GaugeCall struct {
-	Ctx       context.Context
-	Name      string
+	Ctx         context.Context
+	Name        string
 	Description string
-	Value     float64
-	Labels    map[string]string
+	Value       float64
+	Labels      map[string]string
 }
 
 type HistogramCall struct {
-	Ctx       context.Context
-	Name      string
+	Ctx         context.Context
+	Name        string
 	Description string
-	Value     float64
-	Labels    map[string]string
+	Value       float64
+	Labels      map[string]string
 }
 
 type TimingCall struct {
-	Ctx       context.Context
-	Name      string
+	Ctx         context.Context
+	Name        string
 	Description string
-	Duration  time.Duration
-	Labels    map[string]string
+	Duration    time.Duration
+	Labels      map[string]string
 }
 
 type IncrementCall struct {
-	Ctx       context.Context
-	Name      string
+	Ctx         context.Context
+	Name        string
 	Description string
-	Labels    map[string]string
+	Labels      map[string]string
 }
 
 type StartTimerCall struct {
-	Ctx       context.Context
-	Name      string
-	Labels    map[string]string
-	Return    iface.Timer
+	Ctx    context.Context
+	Name   string
+	Labels map[string]string
+	Return iface.Timer
 }
 
 func (m *MockMetricsCollector) Counter(ctx context.Context, name, description string, value float64, labels map[string]string) {
@@ -364,7 +364,7 @@ type MockTimer struct {
 }
 
 type StopCall struct {
-	Ctx       context.Context
+	Ctx         context.Context
 	Description string
 }
 
@@ -380,8 +380,8 @@ type MockHealthChecker struct {
 }
 
 type RegisterCheckCall struct {
-	Name string
-	Check iface.HealthCheckFunc
+	Name   string
+	Check  iface.HealthCheckFunc
 	Return error
 }
 
@@ -415,16 +415,16 @@ func (m *MockHealthChecker) IsHealthy(ctx context.Context) bool {
 
 // MockSafetyChecker provides a mock implementation of the SafetyChecker interface
 type MockSafetyChecker struct {
-	CheckContentCalls []CheckContentCall
+	CheckContentCalls       []CheckContentCall
 	RequestHumanReviewCalls []RequestHumanReviewCall
 }
 
 type CheckContentCall struct {
-	Ctx        context.Context
-	Content    string
+	Ctx         context.Context
+	Content     string
 	ContextInfo string
-	Return     iface.SafetyResult
-	Error      error
+	Return      iface.SafetyResult
+	Error       error
 }
 
 type RequestHumanReviewCall struct {
@@ -440,7 +440,7 @@ func (m *MockSafetyChecker) CheckContent(ctx context.Context, content string, co
 	call := CheckContentCall{
 		Ctx: ctx, Content: content, ContextInfo: contextInfo,
 		Return: iface.SafetyResult{Content: content, Safe: true, RiskScore: 0.0},
-		Error: nil,
+		Error:  nil,
 	}
 	m.CheckContentCalls = append(m.CheckContentCalls, call)
 	return call.Return, call.Error
@@ -450,7 +450,7 @@ func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content stri
 	call := RequestHumanReviewCall{
 		Ctx: ctx, Content: content, ContextInfo: contextInfo, RiskScore: riskScore,
 		Return: iface.ReviewDecision{Approved: true},
-		Error: nil,
+		Error:  nil,
 	}
 	m.RequestHumanReviewCalls = append(m.RequestHumanReviewCalls, call)
 	return call.Return, call.Error
@@ -473,7 +473,7 @@ func (m *MockEthicalChecker) CheckContent(ctx context.Context, content string, e
 	call := EthicalCheckContentCall{
 		Ctx: ctx, Content: content, EthicalCtx: ethicalCtx,
 		Return: iface.EthicalAnalysis{Content: content, OverallRisk: "low"},
-		Error: nil,
+		Error:  nil,
 	}
 	m.CheckContentCalls = append(m.CheckContentCalls, call)
 	return call.Return, call.Error
@@ -481,15 +481,15 @@ func (m *MockEthicalChecker) CheckContent(ctx context.Context, content string, e
 
 // MockBestPracticesChecker provides a mock implementation of the BestPracticesChecker interface
 type MockBestPracticesChecker struct {
-	ValidateCalls []ValidateCall
+	ValidateCalls     []ValidateCall
 	AddValidatorCalls []iface.Validator
 }
 
 type ValidateCall struct {
-	Ctx      context.Context
-	Data     interface{}
+	Ctx       context.Context
+	Data      interface{}
 	Component string
-	Return   []iface.ValidationIssue
+	Return    []iface.ValidationIssue
 }
 
 func (m *MockBestPracticesChecker) Validate(ctx context.Context, data interface{}, component string) []iface.ValidationIssue {

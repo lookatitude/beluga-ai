@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sashabaranov/go-openai"
+	openaiClient "github.com/sashabaranov/go-openai"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
@@ -35,7 +35,7 @@ const (
 // OpenAIProvider implements the ChatModel interface for OpenAI GPT models
 type OpenAIProvider struct {
 	config      *llms.Config
-	client      *openai.Client
+	client      *openaiClient.Client
 	modelName   string
 	tools       []tools.Tool
 	metrics     llms.MetricsRecorder
@@ -57,7 +57,7 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 	}
 
 	// Build client configuration
-	openaiConfig := openai.DefaultConfig(config.APIKey)
+	openaiConfig := openaiClient.DefaultConfig(config.APIKey)
 	if config.BaseURL != "" {
 		openaiConfig.BaseURL = config.BaseURL
 	}
@@ -67,7 +67,7 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 		openaiConfig.OrgID = orgID
 	}
 
-	client := openai.NewClientWithConfig(openaiConfig)
+	client := openaiClient.NewClientWithConfig(openaiConfig)
 
 	provider := &OpenAIProvider{
 		config:    config,
@@ -88,7 +88,7 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 // Generate implements the ChatModel interface
 func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
-	ctx = o.tracing.StartOperation(ctx, "openai.generate", ProviderName, o.modelName)
+	ctx = o.tracing.StartOperation(ctx, "openaiClient.generate", ProviderName, o.modelName)
 
 	inputSize := 0
 	for _, m := range messages {
@@ -109,7 +109,7 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 	var result schema.Message
 	var err error
 
-	retryErr := common.RetryWithBackoff(ctx, o.retryConfig, "openai.generate", func() error {
+	retryErr := common.RetryWithBackoff(ctx, o.retryConfig, "openaiClient.generate", func() error {
 		result, err = o.generateInternal(ctx, messages, callOpts)
 		return err
 	})
@@ -130,7 +130,7 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 // StreamChat implements the ChatModel interface
 func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
-	ctx = o.tracing.StartOperation(ctx, "openai.stream", ProviderName, o.modelName)
+	ctx = o.tracing.StartOperation(ctx, "openaiClient.stream", ProviderName, o.modelName)
 
 	inputSize := 0
 	for _, m := range messages {
@@ -291,7 +291,7 @@ func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.M
 					break
 				}
 				finalChunk := iface.AIMessageChunk{
-					Err: llms.WrapError("openai.stream", err),
+					Err: llms.WrapError("openaiClient.stream", err),
 				}
 				select {
 				case outputChan <- finalChunk:
@@ -304,7 +304,7 @@ func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.M
 			chunk, err := o.convertOpenAIStreamResponse(&response)
 			if err != nil {
 				finalChunk := iface.AIMessageChunk{
-					Err: llms.WrapError("openai.stream.convert", err),
+					Err: llms.WrapError("openaiClient.stream.convert", err),
 				}
 				select {
 				case outputChan <- finalChunk:
@@ -327,39 +327,39 @@ func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.M
 }
 
 // convertMessages converts schema messages to OpenAI format
-func (o *OpenAIProvider) convertMessages(messages []schema.Message) ([]openai.ChatCompletionMessage, error) {
-	openaiMessages := make([]openai.ChatCompletionMessage, 0, len(messages))
+func (o *OpenAIProvider) convertMessages(messages []schema.Message) ([]openaiClient.ChatCompletionMessage, error) {
+	openaiMessages := make([]openaiClient.ChatCompletionMessage, 0, len(messages))
 
 	for _, msg := range messages {
-		var openaiMsg openai.ChatCompletionMessage
+		var openaiMsg openaiClient.ChatCompletionMessage
 
 		switch m := msg.(type) {
 		case *schema.ChatMessage:
 			switch m.GetType() {
 			case schema.RoleSystem:
-				openaiMsg.Role = openai.ChatMessageRoleSystem
+				openaiMsg.Role = openaiClient.ChatMessageRoleSystem
 				openaiMsg.Content = m.GetContent()
 			case schema.RoleHuman:
-				openaiMsg.Role = openai.ChatMessageRoleUser
+				openaiMsg.Role = openaiClient.ChatMessageRoleUser
 				openaiMsg.Content = m.GetContent()
 			case schema.RoleAssistant:
-				openaiMsg.Role = openai.ChatMessageRoleAssistant
+				openaiMsg.Role = openaiClient.ChatMessageRoleAssistant
 				openaiMsg.Content = m.GetContent()
 			default:
 				continue // Skip unknown roles
 			}
 		case *schema.AIMessage:
-			openaiMsg.Role = openai.ChatMessageRoleAssistant
+			openaiMsg.Role = openaiClient.ChatMessageRoleAssistant
 			openaiMsg.Content = m.GetContent()
 
 			// Add tool calls if present
 			if len(m.ToolCalls()) > 0 {
-				openaiMsg.ToolCalls = make([]openai.ToolCall, len(m.ToolCalls()))
+				openaiMsg.ToolCalls = make([]openaiClient.ToolCall, len(m.ToolCalls()))
 				for i, tc := range m.ToolCalls() {
-					openaiMsg.ToolCalls[i] = openai.ToolCall{
+					openaiMsg.ToolCalls[i] = openaiClient.ToolCall{
 						ID:   tc.ID,
 						Type: "function",
-						Function: openai.FunctionCall{
+						Function: openaiClient.FunctionCall{
 							Name:      tc.Name,
 							Arguments: tc.Arguments,
 						},
@@ -381,8 +381,8 @@ func (o *OpenAIProvider) convertMessages(messages []schema.Message) ([]openai.Ch
 }
 
 // buildOpenAIRequest builds the OpenAI API request
-func (o *OpenAIProvider) buildOpenAIRequest(messages []openai.ChatCompletionMessage, opts *llms.CallOptions) openai.ChatCompletionRequest {
-	req := openai.ChatCompletionRequest{
+func (o *OpenAIProvider) buildOpenAIRequest(messages []openaiClient.ChatCompletionMessage, opts *llms.CallOptions) openaiClient.ChatCompletionRequest {
+	req := openaiClient.ChatCompletionRequest{
 		Model:    o.modelName,
 		Messages: messages,
 	}
@@ -416,18 +416,18 @@ func (o *OpenAIProvider) buildOpenAIRequest(messages []openai.ChatCompletionMess
 }
 
 // convertTools converts tools to OpenAI format
-func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openai.Tool {
+func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openaiClient.Tool {
 	if len(tools) == 0 {
 		return nil
 	}
 
-	openaiTools := make([]openai.Tool, 0, len(tools))
+	openaiTools := make([]openaiClient.Tool, 0, len(tools))
 	for _, tool := range tools {
 		def := tool.Definition()
 
-		openaiTool := openai.Tool{
+		openaiTool := openaiClient.Tool{
 			Type: "function",
-			Function: &openai.FunctionDefinition{
+			Function: &openaiClient.FunctionDefinition{
 				Name:        def.Name,
 				Description: def.Description,
 			},
@@ -450,7 +450,7 @@ func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openai.Tool {
 }
 
 // convertOpenAIResponse converts OpenAI response to schema.Message
-func (o *OpenAIProvider) convertOpenAIResponse(resp *openai.ChatCompletionResponse) (schema.Message, error) {
+func (o *OpenAIProvider) convertOpenAIResponse(resp *openaiClient.ChatCompletionResponse) (schema.Message, error) {
 	if len(resp.Choices) == 0 {
 		return nil, fmt.Errorf("empty response from OpenAI")
 	}
@@ -490,7 +490,7 @@ func (o *OpenAIProvider) convertOpenAIResponse(resp *openai.ChatCompletionRespon
 }
 
 // convertOpenAIStreamResponse converts OpenAI stream response to AIMessageChunk
-func (o *OpenAIProvider) convertOpenAIStreamResponse(resp *openai.ChatCompletionStreamResponse) (*iface.AIMessageChunk, error) {
+func (o *OpenAIProvider) convertOpenAIStreamResponse(resp *openaiClient.ChatCompletionStreamResponse) (*iface.AIMessageChunk, error) {
 	if len(resp.Choices) == 0 {
 		return nil, nil
 	}

@@ -32,7 +32,7 @@ Each subdirectory there typically focuses on a specific package or concept:
     cd docs/examples/llms
     ```
 3.  **Set Up Configuration (if needed):**
-    Many examples rely on API keys or specific model configurations. Ensure you have a `config.yaml` file set up in one of the expected locations (current directory, `$HOME/.beluga-ai/`, or `/etc/beluga-ai/`) or have the necessary environment variables exported (e.g., `BELUGA_LLMS_OPENAI_APIKEY`). Refer to the main [README.md](https://github.com/lookatitude/beluga-ai/blob/main/README.md) or the [Configuration](./getting-started/configuration.md) documentation page for more details.
+    Many examples rely on API keys or specific model configurations. Ensure you have a `config.yaml` file set up in one of the expected locations (current directory, `$HOME/.beluga-ai/`, or `/etc/beluga-ai/`) or have the necessary environment variables exported (e.g., `BELUGA_LLMS_OPENAI_APIKEY`). Refer to the main [README.md](https://github.com/lookatitude/beluga-ai/blob/main/README) or the [Installation Guide](./getting-started/installation) documentation page for more details.
 4.  **Run the Go Program:**
     ```bash
     go run main.go
@@ -40,7 +40,7 @@ Each subdirectory there typically focuses on a specific package or concept:
 
 ## Contributing Examples
 
-We welcome contributions of new examples! If you build something interesting with Beluga-AI or want to showcase a feature not yet covered, please feel free to open a Pull Request. Refer to our [CONTRIBUTING.md](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md) guide.
+We welcome contributions of new examples! If you build something interesting with Beluga-AI or want to showcase a feature not yet covered, please feel free to open a Pull Request. Refer to our [CONTRIBUTING.md](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING) guide.
 
 We believe these examples will provide a solid starting point for exploring the capabilities of Beluga-AI. As the framework matures, we will continue to add more complex and diverse examples.
 

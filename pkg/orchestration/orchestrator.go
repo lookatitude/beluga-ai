@@ -1,5 +1,51 @@
 // Package orchestration provides comprehensive orchestration capabilities for Beluga AI.
 // It supports chains, graphs, and workflows with full observability and configuration management.
+//
+// This package follows the Beluga AI Framework design patterns with:
+// - Interface segregation for focused, single-responsibility interfaces
+// - Dependency inversion through constructor injection
+// - Factory pattern with functional options for configuration
+// - Comprehensive error handling and observability integration
+//
+// Key Features:
+//   - Chain orchestration: Sequential execution of runnable components
+//   - Graph orchestration: Complex workflows with nodes and edges
+//   - Workflow orchestration: Long-running distributed workflows (Temporal integration)
+//   - Full observability: OpenTelemetry tracing and metrics
+//   - Configurable execution: Timeouts, retries, and error handling
+//
+// Basic Usage:
+//
+//	import "github.com/lookatitude/beluga-ai/pkg/orchestration"
+//
+//	// Create an orchestrator
+//	config := orchestration.DefaultConfig()
+//	orchestrator, err := orchestration.NewOrchestrator(config)
+//	if err != nil {
+//		log.Fatal(err)
+//	}
+//
+//	// Create a chain
+//	chain, err := orchestrator.CreateChain(steps,
+//		orchestration.WithChainName("my-chain"),
+//		orchestration.WithChainTimeout(30*time.Second),
+//	)
+//
+//	// Execute the chain
+//	result, err := chain.Invoke(ctx, input)
+//
+// Advanced Usage:
+//
+//	// Create a graph with multiple nodes
+//	graph, err := orchestrator.CreateGraph(
+//		orchestration.WithGraphName("my-graph"),
+//		orchestration.WithGraphNode("node1", runnable1),
+//		orchestration.WithGraphNode("node2", runnable2),
+//		orchestration.WithGraphEdge("node1", "node2"),
+//	)
+//
+//	// Execute the graph
+//	result, err := graph.Invoke(ctx, input)
 package orchestration
 
 import (

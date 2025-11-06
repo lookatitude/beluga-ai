@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 )
 
 // ShellTool allows executing shell commands.
@@ -152,10 +152,12 @@ func (st *ShellTool) Stream(ctx context.Context, input any, options ...core.Opti
 // Ensure implementation satisfies interfaces
 // Make sure interfaces are correctly implemented
 var _ tools.Tool = (*ShellTool)(nil)
+
 // Define a custom interface that matches what we've implemented
 type batcherWithOptions interface {
 	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 	Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 }
+
 var _ batcherWithOptions = (*ShellTool)(nil)

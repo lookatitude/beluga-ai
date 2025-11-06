@@ -94,12 +94,12 @@ func TestOllamaEmbedder_EmbedDocuments(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name            string
-		documents       []string
-		mockSetup       func(*mock.OllamaClientMock)
-		wantErr         bool
-		expectedCount   int
-		expectedDim     int
+		name          string
+		documents     []string
+		mockSetup     func(*mock.OllamaClientMock)
+		wantErr       bool
+		expectedCount int
+		expectedDim   int
 	}{
 		{
 			name:      "empty documents",

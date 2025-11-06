@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-
 // Integration tests that combine multiple components
 
 func TestContainerWithTracedRunnable_Integration(t *testing.T) {

@@ -263,7 +263,6 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 	return ids, nil
 }
 
-
 // SimilaritySearch performs a similarity search using a pre-computed query vector.
 func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []float32, k int, opts ...vectorstores.Option) ([]schema.Document, []float32, error) {
 	if len(queryVector) != s.embeddingDim {

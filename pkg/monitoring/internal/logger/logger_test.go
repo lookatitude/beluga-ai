@@ -254,7 +254,7 @@ func TestStructuredLogger(t *testing.T) {
 	t.Run("JSON logging", func(t *testing.T) {
 		buf.Reset()
 		logger.Info(ctx, "Test message", map[string]interface{}{
-			"key": "value",
+			"key":   "value",
 			"count": 42,
 		})
 

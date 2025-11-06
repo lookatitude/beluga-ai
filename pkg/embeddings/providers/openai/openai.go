@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
-	"github.com/sashabaranov/go-openai"
+	openaiClient "github.com/sashabaranov/go-openai"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -37,7 +37,7 @@ type OpenAIEmbedder struct {
 // NewOpenAIEmbedder creates a new OpenAIEmbedder with the given configuration.
 // It creates an OpenAI client from the configuration.
 func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, error) {
-	clientConfig := openai.DefaultConfig(config.APIKey)
+	clientConfig := openaiClient.DefaultConfig(config.APIKey)
 	if config.BaseURL != "" {
 		clientConfig.BaseURL = config.BaseURL
 	}
@@ -46,7 +46,7 @@ func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, er
 		// This would need to be handled differently if needed
 	}
 
-	client := openai.NewClientWithConfig(clientConfig)
+	client := openaiClient.NewClientWithConfig(clientConfig)
 	return NewOpenAIEmbedderWithClient(config, tracer, client)
 }
 
@@ -74,7 +74,7 @@ func NewOpenAIEmbedderWithClient(config *Config, tracer trace.Tracer, client Cli
 
 // EmbedDocuments creates embeddings for a batch of document texts.
 func (e *OpenAIEmbedder) EmbedDocuments(ctx context.Context, documents []string) ([][]float32, error) {
-	ctx, span := e.tracer.Start(ctx, "openai.embed_documents",
+	ctx, span := e.tracer.Start(ctx, "openaiClient.embed_documents",
 		trace.WithAttributes(
 			attribute.String("provider", "openai"),
 			attribute.String("model", e.config.Model),
@@ -86,9 +86,9 @@ func (e *OpenAIEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 		return [][]float32{}, nil
 	}
 
-	req := openai.EmbeddingRequest{
+	req := openaiClient.EmbeddingRequest{
 		Input: documents,
-		Model: openai.EmbeddingModel(e.config.Model),
+		Model: openaiClient.EmbeddingModel(e.config.Model),
 		User:  "", // Could be added to config if needed
 	}
 
@@ -132,7 +132,7 @@ func (e *OpenAIEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 
 // EmbedQuery creates an embedding for a single query string.
 func (e *OpenAIEmbedder) EmbedQuery(ctx context.Context, query string) ([]float32, error) {
-	ctx, span := e.tracer.Start(ctx, "openai.embed_query",
+	ctx, span := e.tracer.Start(ctx, "openaiClient.embed_query",
 		trace.WithAttributes(
 			attribute.String("provider", "openai"),
 			attribute.String("model", e.config.Model),
@@ -150,9 +150,9 @@ func (e *OpenAIEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 		return nil, err
 	}
 
-	req := openai.EmbeddingRequest{
+	req := openaiClient.EmbeddingRequest{
 		Input: []string{query},
-		Model: openai.EmbeddingModel(e.config.Model),
+		Model: openaiClient.EmbeddingModel(e.config.Model),
 		User:  "", // Could be added to config if needed
 	}
 
@@ -181,7 +181,7 @@ func (e *OpenAIEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 
 // GetDimension returns the dimensionality of embeddings.
 func (e *OpenAIEmbedder) GetDimension(ctx context.Context) (int, error) {
-	_, span := e.tracer.Start(ctx, "openai.get_dimension",
+	_, span := e.tracer.Start(ctx, "openaiClient.get_dimension",
 		trace.WithAttributes(
 			attribute.String("provider", "openai"),
 			attribute.String("model", e.config.Model),
@@ -203,7 +203,7 @@ func (e *OpenAIEmbedder) GetDimension(ctx context.Context) (int, error) {
 
 // Check performs a health check on the OpenAI embedder
 func (e *OpenAIEmbedder) Check(ctx context.Context) error {
-	_, span := e.tracer.Start(ctx, "openai.health_check")
+	_, span := e.tracer.Start(ctx, "openaiClient.health_check")
 	defer span.End()
 
 	// Perform a lightweight embedding request for health check

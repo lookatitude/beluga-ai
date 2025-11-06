@@ -316,13 +316,13 @@ func TestLoadConfig(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "load config with service name",
-			opts: []ConfigOption{WithServiceName("test-service")},
+			name:    "load config with service name",
+			opts:    []ConfigOption{WithServiceName("test-service")},
 			wantErr: false,
 		},
 		{
-			name: "load config with OpenTelemetry",
-			opts: []ConfigOption{WithOpenTelemetry("localhost:4317")},
+			name:    "load config with OpenTelemetry",
+			opts:    []ConfigOption{WithOpenTelemetry("localhost:4317")},
 			wantErr: false,
 		},
 	}
@@ -511,7 +511,7 @@ func TestIntegrationHelperWithRealisticScenarios(t *testing.T) {
 
 			if !safetyResult.Safe {
 				helper.LogEvent(ctx, "warning", "Unsafe content detected", map[string]interface{}{
-					"content": userInput,
+					"content":    userInput,
 					"risk_score": safetyResult.RiskScore,
 				})
 				return errors.New("content flagged as unsafe")
@@ -520,7 +520,7 @@ func TestIntegrationHelperWithRealisticScenarios(t *testing.T) {
 			// Simulate processing
 			helper.LogEvent(ctx, "info", "Processing user input", map[string]interface{}{
 				"input_length": len(userInput),
-				"operation": operationName,
+				"operation":    operationName,
 			})
 
 			// Simulate best practices validation
@@ -532,7 +532,7 @@ func TestIntegrationHelperWithRealisticScenarios(t *testing.T) {
 			// Record success metric
 			helper.RecordMetric(ctx, "ai_operations_total", "Total AI operations", 1.0, map[string]string{
 				"operation": operationName,
-				"status": "success",
+				"status":    "success",
 			})
 
 			return nil

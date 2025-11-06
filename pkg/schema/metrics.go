@@ -35,33 +35,33 @@ type Metrics struct {
 	configErrors      metric.Int64Counter
 
 	// A2A Communication metrics
-	agentMessagesSent       metric.Int64Counter
-	agentMessagesReceived   metric.Int64Counter
-	agentRequestsSent       metric.Int64Counter
-	agentRequestsReceived   metric.Int64Counter
-	agentResponsesSent      metric.Int64Counter
-	agentResponsesReceived  metric.Int64Counter
-	a2aCommunicationErrors  metric.Int64Counter
+	agentMessagesSent      metric.Int64Counter
+	agentMessagesReceived  metric.Int64Counter
+	agentRequestsSent      metric.Int64Counter
+	agentRequestsReceived  metric.Int64Counter
+	agentResponsesSent     metric.Int64Counter
+	agentResponsesReceived metric.Int64Counter
+	a2aCommunicationErrors metric.Int64Counter
 
 	// Event metrics
-	eventsPublished         metric.Int64Counter
-	eventsConsumed          metric.Int64Counter
-	agentLifecycleEvents    metric.Int64Counter
-	taskEvents              metric.Int64Counter
-	workflowEvents          metric.Int64Counter
-	eventProcessingErrors   metric.Int64Counter
+	eventsPublished       metric.Int64Counter
+	eventsConsumed        metric.Int64Counter
+	agentLifecycleEvents  metric.Int64Counter
+	taskEvents            metric.Int64Counter
+	workflowEvents        metric.Int64Counter
+	eventProcessingErrors metric.Int64Counter
 
 	// Validation metrics
-	schemaValidations       metric.Int64Counter
-	schemaValidationErrors  metric.Int64Counter
-	messageValidations      metric.Int64Counter
-	messageValidationErrors metric.Int64Counter
-	documentValidations     metric.Int64Counter
+	schemaValidations        metric.Int64Counter
+	schemaValidationErrors   metric.Int64Counter
+	messageValidations       metric.Int64Counter
+	messageValidationErrors  metric.Int64Counter
+	documentValidations      metric.Int64Counter
 	documentValidationErrors metric.Int64Counter
 
 	// Factory metrics
-	factoryCreations        metric.Int64Counter
-	factoryErrors           metric.Int64Counter
+	factoryCreations metric.Int64Counter
+	factoryErrors    metric.Int64Counter
 }
 
 // NewMetrics creates a new Metrics instance with OpenTelemetry instruments.
@@ -377,40 +377,40 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	}
 
 	return &Metrics{
-		messagesCreated:         messagesCreated,
-		messageErrors:           messageErrors,
-		documentsCreated:        documentsCreated,
-		documentErrors:          documentErrors,
-		historyOperations:       historyOperations,
-		historySize:             historySize,
-		agentActions:            agentActions,
-		agentObservations:       agentObservations,
-		stepsCreated:            stepsCreated,
-		generationsCreated:      generationsCreated,
-		llmResponsesCreated:     llmResponsesCreated,
-		configValidations:       configValidations,
-		configErrors:            configErrors,
-		agentMessagesSent:       agentMessagesSent,
-		agentMessagesReceived:   agentMessagesReceived,
-		agentRequestsSent:       agentRequestsSent,
-		agentRequestsReceived:   agentRequestsReceived,
-		agentResponsesSent:      agentResponsesSent,
-		agentResponsesReceived:  agentResponsesReceived,
-		a2aCommunicationErrors:  a2aCommunicationErrors,
-		eventsPublished:         eventsPublished,
-		eventsConsumed:          eventsConsumed,
-		agentLifecycleEvents:    agentLifecycleEvents,
-		taskEvents:              taskEvents,
-		workflowEvents:          workflowEvents,
-		eventProcessingErrors:   eventProcessingErrors,
-		schemaValidations:       schemaValidations,
-		schemaValidationErrors:  schemaValidationErrors,
-		messageValidations:      messageValidations,
-		messageValidationErrors: messageValidationErrors,
-		documentValidations:     documentValidations,
+		messagesCreated:          messagesCreated,
+		messageErrors:            messageErrors,
+		documentsCreated:         documentsCreated,
+		documentErrors:           documentErrors,
+		historyOperations:        historyOperations,
+		historySize:              historySize,
+		agentActions:             agentActions,
+		agentObservations:        agentObservations,
+		stepsCreated:             stepsCreated,
+		generationsCreated:       generationsCreated,
+		llmResponsesCreated:      llmResponsesCreated,
+		configValidations:        configValidations,
+		configErrors:             configErrors,
+		agentMessagesSent:        agentMessagesSent,
+		agentMessagesReceived:    agentMessagesReceived,
+		agentRequestsSent:        agentRequestsSent,
+		agentRequestsReceived:    agentRequestsReceived,
+		agentResponsesSent:       agentResponsesSent,
+		agentResponsesReceived:   agentResponsesReceived,
+		a2aCommunicationErrors:   a2aCommunicationErrors,
+		eventsPublished:          eventsPublished,
+		eventsConsumed:           eventsConsumed,
+		agentLifecycleEvents:     agentLifecycleEvents,
+		taskEvents:               taskEvents,
+		workflowEvents:           workflowEvents,
+		eventProcessingErrors:    eventProcessingErrors,
+		schemaValidations:        schemaValidations,
+		schemaValidationErrors:   schemaValidationErrors,
+		messageValidations:       messageValidations,
+		messageValidationErrors:  messageValidationErrors,
+		documentValidations:      documentValidations,
 		documentValidationErrors: documentValidationErrors,
-		factoryCreations:        factoryCreations,
-		factoryErrors:           factoryErrors,
+		factoryCreations:         factoryCreations,
+		factoryErrors:            factoryErrors,
 	}, nil
 }
 

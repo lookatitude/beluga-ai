@@ -7,7 +7,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/internal/mock"
-	"github.com/sashabaranov/go-openai"
+	openaiClient "github.com/sashabaranov/go-openai"
 	"go.opentelemetry.io/otel"
 )
 
@@ -48,7 +48,7 @@ func TestNewOpenAIEmbedder(t *testing.T) {
 			config: &Config{
 				APIKey:  "sk-test123",
 				Model:   "text-embedding-ada-002",
-				BaseURL: "https://custom.openai.com",
+				BaseURL: "https://custom.openaiClient.com",
 			},
 			wantErr: false,
 		},
@@ -106,20 +106,20 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name            string
-		documents       []string
-		mockSetup       func(*mock.OpenAIClientMock)
-		wantErr         bool
-		expectedCount   int
-		expectedDim     int
+		name          string
+		documents     []string
+		mockSetup     func(*mock.OpenAIClientMock)
+		wantErr       bool
+		expectedCount int
+		expectedDim   int
 	}{
 		{
 			name:      "empty documents",
 			documents: []string{},
 			mockSetup: func(m *mock.OpenAIClientMock) {
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data:   []openai.Embedding{},
+					Data:   []openaiClient.Embedding{},
 					Model:  "text-embedding-ada-002",
 				}
 				m.SetCreateEmbeddingsResponse(response)
@@ -135,9 +135,9 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 				for i := range embedding {
 					embedding[i] = float32(i) / 1536.0
 				}
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{
 							Object:    "embedding",
 							Embedding: embedding,
@@ -156,19 +156,19 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 			name:      "multiple documents",
 			documents: []string{"First doc", "Second doc", "Third doc"},
 			mockSetup: func(m *mock.OpenAIClientMock) {
-				data := make([]openai.Embedding, 3)
+				data := make([]openaiClient.Embedding, 3)
 				for i := 0; i < 3; i++ {
 					embedding := make([]float32, 1536)
 					for j := range embedding {
 						embedding[j] = float32(i+j) / 1536.0
 					}
-					data[i] = openai.Embedding{
+					data[i] = openaiClient.Embedding{
 						Object:    "embedding",
 						Embedding: embedding,
 						Index:     i,
 					}
 				}
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
 					Data:   data,
 					Model:  "text-embedding-ada-002",
@@ -193,9 +193,9 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 			mockSetup: func(m *mock.OpenAIClientMock) {
 				// Return only 1 embedding for 2 documents
 				embedding := make([]float32, 1536)
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{
 							Object:    "embedding",
 							Embedding: embedding,
@@ -213,9 +213,9 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 			documents: []string{"Doc 1"},
 			mockSetup: func(m *mock.OpenAIClientMock) {
 				embedding := make([]float32, 1536)
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{
 							Object:    "embedding",
 							Embedding: embedding,
@@ -300,9 +300,9 @@ func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
 				for i := range embedding {
 					embedding[i] = float32(i) / 3072.0
 				}
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{
 							Object:    "embedding",
 							Embedding: embedding,
@@ -331,9 +331,9 @@ func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
 			mockSetup: func(m *mock.OpenAIClientMock) {
 				// Return 2 embeddings for 1 query
 				embedding := make([]float32, 1536)
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{Object: "embedding", Embedding: embedding, Index: 0},
 						{Object: "embedding", Embedding: embedding, Index: 1},
 					},
@@ -390,9 +390,9 @@ func TestOpenAIEmbedder_GetDimension(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name      string
-		model     string
-		expected  int
+		name     string
+		model    string
+		expected int
 	}{
 		{
 			name:     "ada-002 model",
@@ -450,9 +450,9 @@ func TestOpenAIEmbedder_Check(t *testing.T) {
 			name: "successful health check",
 			mockSetup: func(m *mock.OpenAIClientMock) {
 				embedding := make([]float32, 1536)
-				response := openai.EmbeddingResponse{
+				response := openaiClient.EmbeddingResponse{
 					Object: "list",
-					Data: []openai.Embedding{
+					Data: []openaiClient.Embedding{
 						{Object: "embedding", Embedding: embedding, Index: 0},
 					},
 					Model: "text-embedding-ada-002",
@@ -543,9 +543,9 @@ func TestOpenAIEmbedder_ConcurrentAccess(t *testing.T) {
 			mockClient := mock.NewOpenAIClientMock()
 			// Set up mock with appropriate response for this embedder
 			embedding := make([]float32, 1536)
-			response := openai.EmbeddingResponse{
+			response := openaiClient.EmbeddingResponse{
 				Object: "list",
-				Data: []openai.Embedding{
+				Data: []openaiClient.Embedding{
 					{Object: "embedding", Embedding: embedding, Index: 0},
 				},
 				Model: "text-embedding-ada-002",
@@ -588,9 +588,9 @@ func BenchmarkOpenAIEmbedder_EmbedQuery(b *testing.B) {
 
 	mockClient := mock.NewOpenAIClientMock()
 	embedding := make([]float32, 1536)
-	response := openai.EmbeddingResponse{
+	response := openaiClient.EmbeddingResponse{
 		Object: "list",
-		Data: []openai.Embedding{
+		Data: []openaiClient.Embedding{
 			{Object: "embedding", Embedding: embedding, Index: 0},
 		},
 		Model: "text-embedding-ada-002",
@@ -616,16 +616,16 @@ func BenchmarkOpenAIEmbedder_EmbedDocuments(b *testing.B) {
 	ctx := context.Background()
 
 	mockClient := mock.NewOpenAIClientMock()
-	embeddings := make([]openai.Embedding, 5)
+	embeddings := make([]openaiClient.Embedding, 5)
 	for i := 0; i < 5; i++ {
 		embedding := make([]float32, 1536)
-		embeddings[i] = openai.Embedding{
+		embeddings[i] = openaiClient.Embedding{
 			Object:    "embedding",
 			Embedding: embedding,
 			Index:     i,
 		}
 	}
-	response := openai.EmbeddingResponse{
+	response := openaiClient.EmbeddingResponse{
 		Object: "list",
 		Data:   embeddings,
 		Model:  "text-embedding-ada-002",

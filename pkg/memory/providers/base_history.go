@@ -82,11 +82,11 @@ var _ iface.ChatMessageHistory = (*BaseChatMessageHistory)(nil)
 // CompositeChatMessageHistory provides a composable wrapper around other chat message histories.
 // It allows chaining multiple histories and adding middleware-like functionality.
 type CompositeChatMessageHistory struct {
-	primary    iface.ChatMessageHistory
-	secondary  iface.ChatMessageHistory // Optional secondary history for fallback or additional storage
-	maxSize    int                      // Maximum number of messages to keep
-	onAddHook  func(context.Context, schema.Message) error // Hook called before adding a message
-	onGetHook  func(context.Context, []schema.Message) ([]schema.Message, error) // Hook called after getting messages
+	primary   iface.ChatMessageHistory
+	secondary iface.ChatMessageHistory                                          // Optional secondary history for fallback or additional storage
+	maxSize   int                                                               // Maximum number of messages to keep
+	onAddHook func(context.Context, schema.Message) error                       // Hook called before adding a message
+	onGetHook func(context.Context, []schema.Message) ([]schema.Message, error) // Hook called after getting messages
 }
 
 // CompositeHistoryOption is a functional option for configuring CompositeChatMessageHistory.
