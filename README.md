@@ -6,6 +6,13 @@
 
 # Beluga-ai
 
+[![Go CI](https://github.com/lookatitude/beluga-ai/workflows/Go%20CI/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/go_ci.yml)
+[![Coverage](https://github.com/lookatitude/beluga-ai/workflows/Coverage%20Report/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/coverage.yml)
+[![Security Scanning](https://github.com/lookatitude/beluga-ai/workflows/Security%20Scanning/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/security.yml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lookatitude/beluga-ai)](https://goreportcard.com/report/github.com/lookatitude/beluga-ai)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![Go Version](https://img.shields.io/badge/go-1.24+-00ADD8.svg)](https://golang.org)
+
 **🚀 PRODUCTION READY: Beluga-ai has completed comprehensive standardization and is now enterprise-grade with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.**
 
 **Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
@@ -65,6 +72,79 @@ For a complete breakdown of the architecture, please refer to [Beluga_Refactored
 ```bash
 go get github.com/lookatitude/beluga-ai
 ```
+
+## Development
+
+### Quick Start
+
+```bash
+# Clone the repository
+git clone https://github.com/lookatitude/beluga-ai.git
+cd beluga-ai
+
+# Install dependencies
+go mod download
+
+# Install development tools
+make install-tools
+
+# Run tests
+make test
+
+# Run all quality checks
+make all
+```
+
+### Development Workflow
+
+The framework includes comprehensive development tooling:
+
+**Quality Assurance:**
+```bash
+make fmt          # Format code
+make lint         # Run linters
+make vet          # Run go vet
+make test         # Run tests
+make test-race    # Run tests with race detection
+make test-coverage # Generate coverage report
+```
+
+**Security:**
+```bash
+make security     # Run security scans (gosec, govulncheck)
+```
+
+**Build:**
+```bash
+make build        # Build all packages
+make clean        # Clean build artifacts
+```
+
+**All Checks:**
+```bash
+make all          # Run format, vet, lint, and test
+make ci           # Run all CI checks including coverage and security
+```
+
+### Pre-commit Hooks
+
+The project uses pre-commit hooks to ensure code quality:
+
+```bash
+# Install pre-commit (requires Python)
+pip install pre-commit
+
+# Install hooks
+pre-commit install
+```
+
+Hooks automatically run on commit and verify:
+- Code formatting
+- Linting
+- Security checks
+- Tests
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
 
 ## Examples
 

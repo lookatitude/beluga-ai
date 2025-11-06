@@ -1,0 +1,96 @@
+# Pre-commit hooks configuration for Beluga AI Framework
+# Install with: pip install pre-commit && pre-commit install
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        exclude: ^(website/|\.md$)
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe]
+      - id: check-json
+      - id: check-toml
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  # Go-specific hooks
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      # Format Go code
+      - id: go-fmt
+        args: [-w]
+      
+      # Run goimports
+      - id: go-imports
+        args: [-w, -local, github.com/lookatitude/beluga-ai]
+      
+      # Run go vet
+      - id: go-vet
+        args: [-v, ./...]
+      
+      # Run go mod tidy
+      - id: go-mod-tidy
+      
+      # Run go mod verify
+      - id: go-mod-verify
+      
+      # Run unit tests (quick mode)
+      - id: go-unit-tests
+        args: [-short, -race, -timeout=30s]
+        pass_filenames: false
+        always_run: true
+
+  # golangci-lint hook
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v1.55.2
+    hooks:
+      - id: golangci-lint
+        args: [--timeout=5m]
+        types: [go]
+        pass_filenames: false
+        always_run: true
+
+  # Security checks
+  - repo: https://github.com/securego/gosec
+    rev: v2.19.0
+    hooks:
+      - id: gosec
+        args: [-quiet]
+        types: [go]
+        pass_filenames: false
+        always_run: true
+
+  # YAML formatting
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v4.0.0-alpha.8
+    hooks:
+      - id: prettier
+        types: [yaml]
+        exclude: ^(\.github/workflows/|\.goreleaser\.yml)
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.39.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+        exclude: ^(website/|CHANGELOG\.md)
+
+# Configuration
+default_language_version:
+  python: python3
+
+# Minimum pre-commit version
+minimum_pre_commit_version: 3.0.0
+

@@ -1,0 +1,261 @@
+# golangci-lint configuration for Beluga AI Framework
+# Comprehensive linting setup for production-ready Go framework
+
+run:
+  # Timeout for analysis
+  timeout: 5m
+  
+  # Include test files in linting
+  tests: true
+  
+  # Skip directories
+  skip-dirs:
+    - vendor
+    - examples
+    - website
+    - .github
+    - .git
+  
+  # Skip files
+  skip-files:
+    - ".*\\.pb\\.go$"  # Generated protobuf files
+    - ".*_test\\.go$"  # Skip test files for some strict linters
+
+output:
+  # Output format
+  format: colored-line-number
+  
+  # Print issues count
+  print-issued-lines: true
+  print-linter-name: true
+  
+  # Sort results
+  sort-results: true
+
+linters-settings:
+  # errcheck settings
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    check-asserts: true
+  
+  # gosec settings - security linter
+  gosec:
+    # Security check types to enable
+    severity: medium
+    confidence: medium
+    # Exclude specific rules if needed
+    excludes:
+      - G104  # Errors unhandled (we handle errors explicitly)
+      - G307  # Deferring unsafe method (we use defer safely)
+  
+  # govet settings
+  govet:
+    check-shadowing: true
+    enable-all: true
+  
+  # staticcheck settings
+  staticcheck:
+    checks: ["all"]
+  
+  # gocritic settings - code quality
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport  # Allow duplicate imports in some cases
+      - ifElseChain  # Allow if-else chains
+  
+  # revive settings - Go linter
+  revive:
+    min-confidence: 0.8
+    rules:
+      - name: exported
+      - name: var-naming
+      - name: package-comments
+      - name: range
+      - name: if-return
+      - name: error-return
+      - name: error-naming
+      - name: increment-decrement
+      - name: var-declaration
+      - name: range-val-in-closure
+      - name: range-val-address
+      - name: waitgroup-by-value
+  
+  # gocyclo settings - cyclomatic complexity
+  gocyclo:
+    min-complexity: 15  # Warn on functions with complexity > 15
+  
+  # dupl settings - code duplication
+  dupl:
+    threshold: 100  # Threshold for code duplication detection
+  
+  # funlen settings - function length
+  funlen:
+    lines: 100
+    statements: 50
+  
+  # goconst settings - constant detection
+  goconst:
+    min-len: 3
+    min-occurrences: 2
+  
+  # misspell settings
+  misspell:
+    locale: US
+  
+  # lll settings - line length
+  lll:
+    line-length: 120  # Allow longer lines for Go code
+  
+  # unused settings
+  unused:
+    check-exported: true
+  
+  # ineffassign settings
+  ineffassign:
+    check-exported: true
+  
+  # exhaustive - enum exhaustiveness
+  exhaustive:
+    default-signifies-exhaustive: false
+  
+  # forbidigo - forbid certain identifiers
+  forbidigo:
+    forbid:
+      - ^fmt\.Print.*$  # Prefer structured logging
+      - ^print$  # Prefer structured logging
+  
+  # nolintlint - linter for nolint directives
+  nolintlint:
+    allow-leading-space: true
+    allow-unused: false
+    require-explanation: true
+    require-specific: true
+
+linters:
+  # Enable comprehensive set of linters
+  enable:
+    # Error checking
+    - errcheck
+    - errorlint
+    - errname
+    
+    # Security
+    - gosec
+    - gosimple
+    
+    # Code quality
+    - govet
+    - staticcheck
+    - gocritic
+    - revive
+    - ineffassign
+    - unused
+    - unparam
+    - unconvert
+    
+    # Style
+    - gofmt
+    - goimports
+    - misspell
+    - goconst
+    - gofumpt
+    
+    # Complexity
+    - gocyclo
+    - funlen
+    - lll
+    
+    # Duplication
+    - dupl
+    
+    # Documentation
+    - godot
+    - godox
+    
+    # Performance
+    - prealloc
+    - makezero
+    
+    # Best practices
+    - exportloopref
+    - exhaustive
+    - forbidigo
+    - nolintlint
+    - tenv
+    - contextcheck
+    - containedctx
+    - importas
+    - ifshort
+    - nakedret
+    - noctx
+    - nolintlint
+    - rowserrcheck
+    - sqlclosecheck
+    - thelper
+    - wastedassign
+
+issues:
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  max-same-issues: 50
+  
+  # Exclude following linters from limiting of issues count
+  exclude-rules:
+    # Exclude some linters from exclusion rules
+    - path: _test\.go
+      linters:
+        - errcheck
+        - gocyclo
+        - funlen
+        - dupl
+    
+    # Exclude generated files
+    - path: ".*\\.pb\\.go$"
+      linters:
+        - all
+    
+    # Allow certain patterns in test files
+    - path: _test\.go
+      text: "func.*testing\\.T"
+      linters:
+        - gocyclo
+    
+    # Exclude common false positives
+    - text: "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|.*Println) is not checked"
+      linters:
+        - errcheck
+    
+    # Allow empty blocks in test files
+    - path: _test\.go
+      text: "empty block"
+      linters:
+        - revive
+    
+    # Allow underscore in error variables in test files
+    - path: _test\.go
+      text: "error var.*should have name"
+      linters:
+        - revive
+
+severity:
+  # Default severity for issues
+  default-severity: error
+  
+  # Rules to change severity
+  rules:
+    - linters:
+        - gocyclo
+        - funlen
+        - dupl
+      severity: warning
+    - linters:
+        - misspell
+      severity: warning
+

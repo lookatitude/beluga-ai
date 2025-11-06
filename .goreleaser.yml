@@ -1,0 +1,158 @@
+# goreleaser configuration for Beluga AI Framework
+# Configured for Go library/framework distribution
+
+project_name: beluga-ai
+
+# Build configuration
+# Note: This is primarily a library, so we focus on source archives
+# If executables are added later, uncomment the builds section
+builds:
+  # Uncomment when you have executables to build
+  # - id: beluga-ai
+  #   main: ./cmd/beluga-ai
+  #   binary: beluga-ai
+  #   goos:
+  #     - linux
+  #     - darwin
+  #     - windows
+  #   goarch:
+  #     - amd64
+  #     - arm64
+  #   env:
+  #     - CGO_ENABLED=0
+  #   flags:
+  #     - -trimpath
+  #   ldflags:
+  #     - -s -w
+  #     - -X main.version={{.Version}}
+  #     - -X main.commit={{.Commit}}
+  #     - -X main.date={{.Date}}
+
+# Archive configuration for source code
+archives:
+  - id: source
+    name_template: "{{ .ProjectName }}_{{ .Version }}_source"
+    format_overrides:
+      - goos: '*'
+        format: tar.gz
+    files:
+      - LICENSE
+      - README.md
+      - CHANGELOG.md
+      - CONTRIBUTING.md
+      - go.mod
+      - go.sum
+      - '**/*.go'
+      - '!**/_test.go'
+      - '!**/testdata/**'
+      - '!**/examples/**'
+      - '!**/website/**'
+      - '!**/.github/**'
+      - '!**/.git/**'
+      - '!**/vendor/**'
+    exclude:
+      - '**/*_test.go'
+      - '**/testdata/**'
+      - '**/examples/**'
+      - '**/website/**'
+
+# Checksum generation
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+
+# GitHub release configuration
+release:
+  # GitHub repository owner/name
+  github:
+    owner: lookatitude
+    name: beluga-ai
+  
+  # Release mode
+  mode: replace
+  
+  # Release name template
+  name_template: "{{ .Tag }}"
+  
+  # Release header
+  header: |
+    ## Beluga AI Framework {{ .Tag }}
+    
+    See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+  
+  # Release footer
+  footer: |
+    ## Installation
+    
+    ```bash
+    go get github.com/lookatitude/beluga-ai@{{ .Tag }}
+    ```
+    
+    ## Documentation
+    
+    Full documentation is available at: https://lookatitude.github.io/beluga-ai/
+  
+  # Draft releases (set to false for automatic releases)
+  draft: false
+  
+  # Prerelease detection
+  prerelease: auto
+
+# Changelog configuration
+changelog:
+  # Use git to generate changelog
+  use: git
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+      - Merge pull request
+      - Merge branch
+
+# Snapshot configuration
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+# Milestones configuration (optional)
+# milestones:
+#   - name_template: "{{ .Tag }}"
+#     close: true
+
+# Homebrew tap (optional - uncomment if creating Homebrew formula)
+# brews:
+#   - name: beluga-ai
+#     homepage: https://github.com/lookatitude/beluga-ai
+#     description: "Beluga AI Framework - A comprehensive Go framework for building AI applications"
+#     license: "Apache-2.0"
+#     test: |
+#       system "#{bin}/beluga-ai --version"
+
+# Docker (optional - uncomment if creating Docker images)
+# dockers:
+#   - goos: linux
+#     goarch: amd64
+#     image_templates:
+#       - "beluga-ai:{{ .Tag }}"
+#       - "beluga-ai:latest"
+
+# Universal binaries (for macOS)
+universal_binaries:
+  - replace: true
+
+# Environment variables
+env:
+  - CGO_ENABLED=0
+  - GOFLAGS=-trimpath
+
+# Before hooks (optional)
+# before:
+#   hooks:
+#     - go mod download
+#     - go generate ./...
+
+# After hooks (optional)
+# after:
+#   hooks:
+#     - echo "Release {{ .Tag }} completed successfully!"
+
