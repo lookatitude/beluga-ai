@@ -177,11 +177,11 @@ type AdvancedMockVariableValidator struct {
 
 // ValidationCall represents a call to Validate or ValidateTypes
 type ValidationCall struct {
-	Method          string
-	Required        []string
-	Provided        map[string]interface{}
-	Variables       map[string]interface{}
-	Timestamp       int64
+	Method    string
+	Required  []string
+	Provided  map[string]interface{}
+	Variables map[string]interface{}
+	Timestamp int64
 }
 
 // NewAdvancedMockVariableValidator creates a new advanced mock validator

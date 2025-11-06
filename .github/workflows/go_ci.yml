@@ -48,7 +48,7 @@ jobs:
         run: go mod verify
 
       - name: Build
-        run: go build -v ./...
+        run: go build -v $(go list ./... | grep -v -E '(specs|examples)')
 
   # Linting job - runs separately for faster feedback
   lint:
@@ -107,7 +107,7 @@ jobs:
           cache-dependency-path: go.sum
 
       - name: Run go vet
-        run: go vet ./...
+        run: go vet $(go list ./... | grep -v -E '(specs|examples)')
 
   # Test job with matrix strategy
   test:
@@ -141,7 +141,7 @@ jobs:
         run: go mod download
 
       - name: Run tests
-        run: go test -v -race ./...
+        run: go test -v -race $(go list ./... | grep -v -E '(specs|examples)')
 
   # Race detection job - more thorough
   test-race:
@@ -168,7 +168,7 @@ jobs:
             ${{ runner.os }}-go-test-
 
       - name: Run tests with race detection
-        run: go test -race -timeout=10m ./...
+        run: go test -race -timeout=10m $(go list ./... | grep -v -E '(specs|examples)')
 
   # Integration tests job
   integration-test:
@@ -224,7 +224,7 @@ jobs:
       - name: Generate coverage report
         run: |
           mkdir -p coverage
-          go test -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          go test -coverprofile=coverage/coverage.out -covermode=atomic $(go list ./... | grep -v -E '(specs|examples)')
 
       - name: Upload coverage to artifacts
         uses: actions/upload-artifact@v4

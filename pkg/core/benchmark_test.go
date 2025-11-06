@@ -254,7 +254,9 @@ func BenchmarkBuilder_ComplexDependencyChain(b *testing.B) {
 
 	// Create a dependency chain
 	builder.Register(func() string { return "dep1" })
-	builder.Register(func(s string) BenchmarkServiceB { return &benchmarkServiceBImpl{dep: &benchmarkServiceCImpl{dep: &benchmarkServiceDImpl{dep: s}}} })
+	builder.Register(func(s string) BenchmarkServiceB {
+		return &benchmarkServiceBImpl{dep: &benchmarkServiceCImpl{dep: &benchmarkServiceDImpl{dep: s}}}
+	})
 	builder.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} })
 
 	b.ResetTimer()

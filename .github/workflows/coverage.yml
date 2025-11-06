@@ -42,7 +42,7 @@ jobs:
       - name: Generate coverage report
         run: |
           mkdir -p coverage
-          go test -coverprofile=coverage/coverage.out -covermode=atomic ./...
+          go test -coverprofile=coverage/coverage.out -covermode=atomic $(go list ./... | grep -v -E '(specs|examples)')
           go tool cover -html=coverage/coverage.out -o coverage/coverage.html
 
       - name: Generate coverage summary

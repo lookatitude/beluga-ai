@@ -75,8 +75,8 @@ import (
 	"context"
 	"fmt"
 
-	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 )
 
 // Embedder defines the interface for generating vector embeddings from text.
@@ -121,7 +121,6 @@ type VectorStore interface {
 	// This is used for logging, metrics, and debugging purposes.
 	GetName() string
 }
-
 
 // Option represents a functional option for configuring VectorStore operations.
 // This follows the functional options pattern for flexible configuration.
@@ -209,7 +208,6 @@ func WithProviderConfigs(config map[string]interface{}) Option {
 	}
 }
 
-
 // Factory defines the interface for creating VectorStore instances.
 // This enables dependency injection and makes testing easier.
 type Factory interface {
@@ -217,7 +215,6 @@ type Factory interface {
 	// The config parameter contains provider-specific settings.
 	CreateVectorStore(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error)
 }
-
 
 // StoreFactory is the global factory for creating vector store instances.
 // It maintains a registry of available providers and their creation functions.
@@ -336,7 +333,6 @@ func AsVectorStoreError(err error, target **VectorStoreError) bool {
 	return false
 }
 
-
 // NewInMemoryStore creates a new in-memory vector store with the given options.
 // This is the simplest provider, suitable for development and testing.
 //
@@ -346,6 +342,7 @@ func AsVectorStoreError(err error, target **VectorStoreError) bool {
 //		vectorstores.WithEmbedder(embedder),
 //		vectorstores.WithSearchK(10),
 //	)
+//
 // Note: This function requires the inmemory provider to be imported for registration.
 // Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) {
@@ -366,6 +363,7 @@ func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 //		vectorstores.WithProviderConfig("table_name", "documents"),
 //		vectorstores.WithProviderConfig("embedding_dimension", 768),
 //	)
+//
 // Note: This function requires the pgvector provider to be imported for registration.
 // Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/pgvector"
 func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) {

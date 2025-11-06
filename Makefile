@@ -20,20 +20,20 @@ help: ## Show this help message
 
 build: ## Build all packages
 	@echo "Building all packages..."
-	@go build -v ./...
+	@go build -v $$(go list ./... | grep -v -E '(specs|examples)')
 
 test: ## Run all tests
 	@echo "Running tests..."
-	@go test -v ./...
+	@go test -v $$(go list ./... | grep -v -E '(specs|examples)')
 
 test-race: ## Run tests with race detection
 	@echo "Running tests with race detection..."
-	@go test -race -v ./...
+	@go test -race -v $$(go list ./... | grep -v -E '(specs|examples)')
 
 test-coverage: ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@mkdir -p $(COVERAGE_DIR)
-	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v -E '(specs|examples)')
 	@go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 	@go tool cover -func=$(COVERAGE_FILE)
 	@echo ""
@@ -42,7 +42,7 @@ test-coverage: ## Generate test coverage report
 test-coverage-ci: ## Generate test coverage for CI (JSON output)
 	@echo "Generating test coverage for CI..."
 	@mkdir -p $(COVERAGE_DIR)
-	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./...
+	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v -E '(specs|examples)')
 	@go tool cover -func=$(COVERAGE_FILE)
 
 lint: ## Run golangci-lint
@@ -51,7 +51,7 @@ lint: ## Run golangci-lint
 		echo "golangci-lint not found. Installing..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
 	fi
-	@golangci-lint run ./...
+	@golangci-lint run $$(go list ./... | grep -v -E '(specs|examples)')
 
 fmt: ## Format code with gofmt
 	@echo "Formatting code..."
@@ -73,7 +73,7 @@ fmt-check: ## Check if code is properly formatted
 
 vet: ## Run go vet
 	@echo "Running go vet..."
-	@go vet ./...
+	@go vet $$(go list ./... | grep -v -E '(specs|examples)')
 
 security: ## Run security scans (gosec and govulncheck)
 	@echo "Running security scans..."
@@ -81,15 +81,15 @@ security: ## Run security scans (gosec and govulncheck)
 		echo "gosec not found. Installing..."; \
 		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
-	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json ./... || true
-	@gosec ./...
+	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json $$(go list ./... | grep -v -E '(specs|examples)') || true
+	@gosec $$(go list ./... | grep -v -E '(specs|examples)')
 	@echo ""
 	@echo "Running govulncheck..."
 	@if ! command -v govulncheck >/dev/null 2>&1; then \
 		echo "govulncheck not found. Installing..."; \
 		go install golang.org/x/vuln/cmd/govulncheck@latest; \
 	fi
-	@govulncheck ./...
+	@govulncheck $$(go list ./... | grep -v -E '(specs|examples)')
 
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."

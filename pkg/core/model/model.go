@@ -26,4 +26,3 @@ func (m *ExampleModel) Process(data string) (string, error) {
 	// Implementation logic here
 	return "processed: " + data, nil
 }
-

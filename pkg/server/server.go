@@ -61,10 +61,9 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
-	"github.com/lookatitude/beluga-ai/pkg/server/providers/rest"
 	"github.com/lookatitude/beluga-ai/pkg/server/providers/mcp"
+	"github.com/lookatitude/beluga-ai/pkg/server/providers/rest"
 )
-
 
 // NewRESTServer creates a new REST server instance with the provided options.
 // It implements the RESTServer interface and provides HTTP endpoints with streaming support.

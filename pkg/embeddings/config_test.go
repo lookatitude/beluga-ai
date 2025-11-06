@@ -608,4 +608,3 @@ func TestDefaultOptionConfig(t *testing.T) {
 		t.Errorf("Expected default model empty, got %s", config.model)
 	}
 }
-

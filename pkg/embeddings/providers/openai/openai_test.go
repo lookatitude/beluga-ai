@@ -106,12 +106,12 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name            string
-		documents       []string
-		mockSetup       func(*mock.OpenAIClientMock)
-		wantErr         bool
-		expectedCount   int
-		expectedDim     int
+		name          string
+		documents     []string
+		mockSetup     func(*mock.OpenAIClientMock)
+		wantErr       bool
+		expectedCount int
+		expectedDim   int
 	}{
 		{
 			name:      "empty documents",
@@ -390,9 +390,9 @@ func TestOpenAIEmbedder_GetDimension(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name      string
-		model     string
-		expected  int
+		name     string
+		model    string
+		expected int
 	}{
 		{
 			name:     "ada-002 model",

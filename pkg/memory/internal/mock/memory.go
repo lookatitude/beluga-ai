@@ -10,12 +10,12 @@ import (
 
 // MockChatMessageHistory is a mock implementation of ChatMessageHistory for testing.
 type MockChatMessageHistory struct {
-	MockAddMessage      func(ctx context.Context, message schema.Message) error
-	MockAddUserMessage  func(ctx context.Context, content string) error
-	MockAddAIMessage    func(ctx context.Context, content string) error
-	MockGetMessages     func(ctx context.Context) ([]schema.Message, error)
-	MockClear           func(ctx context.Context) error
-	messages            []schema.Message
+	MockAddMessage     func(ctx context.Context, message schema.Message) error
+	MockAddUserMessage func(ctx context.Context, content string) error
+	MockAddAIMessage   func(ctx context.Context, content string) error
+	MockGetMessages    func(ctx context.Context) ([]schema.Message, error)
+	MockClear          func(ctx context.Context) error
+	messages           []schema.Message
 }
 
 // NewMockChatMessageHistory creates a new mock chat message history.

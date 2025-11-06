@@ -223,4 +223,3 @@ func TestInMemoryMessageBus_MessageIDGeneration(t *testing.T) {
 		t.Fatal("Handlers were not called within timeout for ID test")
 	}
 }
-

@@ -59,4 +59,3 @@ func (f *VectorStoreFactory) Create(name string, config map[string]interface{}) 
 	}
 	return creator(config)
 }
-

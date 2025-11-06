@@ -53,20 +53,20 @@ const (
 	ErrCodeInvalidParameters     = "invalid_parameters"
 
 	// A2A Communication error codes
-	ErrCodeAgentMessageInvalid     = "agent_message_invalid"
-	ErrCodeAgentRequestInvalid     = "agent_request_invalid"
-	ErrCodeAgentResponseInvalid    = "agent_response_invalid"
-	ErrCodeAgentNotFound           = "agent_not_found"
-	ErrCodeMessageTimeout          = "message_timeout"
-	ErrCodeCommunicationFailed     = "communication_failed"
-	ErrCodeConversationNotFound    = "conversation_not_found"
+	ErrCodeAgentMessageInvalid  = "agent_message_invalid"
+	ErrCodeAgentRequestInvalid  = "agent_request_invalid"
+	ErrCodeAgentResponseInvalid = "agent_response_invalid"
+	ErrCodeAgentNotFound        = "agent_not_found"
+	ErrCodeMessageTimeout       = "message_timeout"
+	ErrCodeCommunicationFailed  = "communication_failed"
+	ErrCodeConversationNotFound = "conversation_not_found"
 
 	// Event error codes
-	ErrCodeEventInvalid            = "event_invalid"
-	ErrCodeEventPublishFailed      = "event_publish_failed"
-	ErrCodeEventConsumeFailed      = "event_consume_failed"
-	ErrCodeEventHandlerNotFound    = "event_handler_not_found"
-	ErrCodeEventValidationFailed   = "event_validation_failed"
+	ErrCodeEventInvalid          = "event_invalid"
+	ErrCodeEventPublishFailed    = "event_publish_failed"
+	ErrCodeEventConsumeFailed    = "event_consume_failed"
+	ErrCodeEventHandlerNotFound  = "event_handler_not_found"
+	ErrCodeEventValidationFailed = "event_validation_failed"
 
 	// Task and Workflow error codes
 	ErrCodeTaskNotFound            = "task_not_found"
@@ -87,21 +87,21 @@ const (
 	ErrCodeContentValidationFailed = "content_validation_failed"
 
 	// Configuration error codes
-	ErrCodeConfigValidationFailed  = "config_validation_failed"
-	ErrCodeConfigLoadFailed        = "config_load_failed"
-	ErrCodeConfigParseFailed       = "config_parse_failed"
-	ErrCodeInvalidConfigFormat     = "invalid_config_format"
+	ErrCodeConfigValidationFailed = "config_validation_failed"
+	ErrCodeConfigLoadFailed       = "config_load_failed"
+	ErrCodeConfigParseFailed      = "config_parse_failed"
+	ErrCodeInvalidConfigFormat    = "invalid_config_format"
 
 	// Factory error codes
-	ErrCodeFactoryCreationFailed   = "factory_creation_failed"
-	ErrCodeFactoryNotFound         = "factory_not_found"
-	ErrCodeInvalidFactoryConfig    = "invalid_factory_config"
+	ErrCodeFactoryCreationFailed = "factory_creation_failed"
+	ErrCodeFactoryNotFound       = "factory_not_found"
+	ErrCodeInvalidFactoryConfig  = "invalid_factory_config"
 
 	// Storage and persistence error codes
-	ErrCodeStorageOperationFailed  = "storage_operation_failed"
-	ErrCodePersistenceFailed       = "persistence_failed"
-	ErrCodeHistoryOperationFailed  = "history_operation_failed"
-	ErrCodeCacheOperationFailed    = "cache_operation_failed"
+	ErrCodeStorageOperationFailed = "storage_operation_failed"
+	ErrCodePersistenceFailed      = "persistence_failed"
+	ErrCodeHistoryOperationFailed = "history_operation_failed"
+	ErrCodeCacheOperationFailed   = "cache_operation_failed"
 )
 
 // IsSchemaError checks if an error is a SchemaError with the given code.

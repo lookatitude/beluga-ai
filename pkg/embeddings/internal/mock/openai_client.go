@@ -12,7 +12,7 @@ type OpenAIClientMock struct {
 	mu sync.Mutex
 
 	// CreateEmbeddings behavior
-	CreateEmbeddingsFunc func(ctx context.Context, req openai.EmbeddingRequestConverter) (openai.EmbeddingResponse, error)
+	CreateEmbeddingsFunc  func(ctx context.Context, req openai.EmbeddingRequestConverter) (openai.EmbeddingResponse, error)
 	CreateEmbeddingsCalls []CreateEmbeddingsCall
 
 	// Error injection
@@ -75,8 +75,8 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openai.Embe
 		Data:   embeddings,
 		Model:  "text-embedding-ada-002",
 		Usage: openai.Usage{
-			PromptTokens:     5,
-			TotalTokens:      5,
+			PromptTokens: 5,
+			TotalTokens:  5,
 		},
 	}, nil
 }

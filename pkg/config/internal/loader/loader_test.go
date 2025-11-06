@@ -122,9 +122,9 @@ llm_providers:
 func TestLoadFromEnv(t *testing.T) {
 	// Set up test environment variables
 	testEnvVars := map[string]string{
-		"TEST_LLM_PROVIDERS_0_NAME":      "env-llm",
-		"TEST_LLM_PROVIDERS_0_PROVIDER":  "openai",
-		"TEST_LLM_PROVIDERS_0_API_KEY":   "env-key",
+		"TEST_LLM_PROVIDERS_0_NAME":       "env-llm",
+		"TEST_LLM_PROVIDERS_0_PROVIDER":   "openai",
+		"TEST_LLM_PROVIDERS_0_API_KEY":    "env-key",
 		"TEST_LLM_PROVIDERS_0_MODEL_NAME": "gpt-4",
 	}
 

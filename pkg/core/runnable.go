@@ -29,7 +29,6 @@ func WithOption(key string, value any) Option {
 	})
 }
 
-
 // Runnable is the central abstraction in Beluga-ai, inspired by LangChain.
 // It represents a component that can be invoked with input to produce output.
 // Most components, including LLMs, PromptTemplates, Tools, Retrievers, Agents,
@@ -65,4 +64,3 @@ type Runnable interface {
 	// TODO: Consider adding Async versions or event streaming (like LangChain_s astream_events)
 	//       for more fine-grained observability and control over asynchronous execution.
 }
-

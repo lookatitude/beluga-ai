@@ -12,6 +12,7 @@ run:
   skip-dirs:
     - vendor
     - examples
+    - specs
     - website
     - .github
     - .git

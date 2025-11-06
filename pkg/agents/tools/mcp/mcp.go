@@ -125,7 +125,7 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 
 	result := map[string]any{
 		"version":        status.Version.Name,
-		"protocol":       status.Version.Protocol, 
+		"protocol":       status.Version.Protocol,
 		"motd":           motd,
 		"players_online": status.Players.Online,
 		"players_max":    status.Players.Max,

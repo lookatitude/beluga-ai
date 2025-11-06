@@ -12,7 +12,7 @@ type OllamaClientMock struct {
 	mu sync.Mutex
 
 	// Embeddings behavior
-	EmbeddingsFunc func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
+	EmbeddingsFunc  func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
 	EmbeddingsCalls []EmbeddingsCall
 
 	// Error injection

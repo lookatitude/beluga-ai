@@ -62,7 +62,7 @@ func TestWorkerPool_SubmitTaskWhenNotRunning(t *testing.T) {
 	// Don't start the pool
 
 	task := Task{
-		ID: "test-task",
+		ID:      "test-task",
 		Execute: func() error { return nil },
 	}
 

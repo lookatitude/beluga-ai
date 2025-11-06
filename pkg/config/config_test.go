@@ -382,7 +382,7 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 
 	if len(cfg.LLMProviders) != 1 {
-		t.Errorf("expected 1 LLM provider from env vars, got %d", len(cfg.LLMProviders))
+		t.Fatalf("expected 1 LLM provider from env vars, got %d", len(cfg.LLMProviders))
 	}
 
 	if cfg.LLMProviders[0].Name != "env-openai" {
