@@ -17,6 +17,7 @@ permissions:
 jobs:
   release:
     name: Create Release
+    needs: [pre-release]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
