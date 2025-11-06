@@ -158,6 +158,24 @@ docs: ## Generate documentation
 	@echo "Generating documentation..."
 	@go doc -all ./...
 
+docs-generate: ## Generate API documentation using gomarkdoc
+	@echo "Generating API documentation..."
+	@./scripts/generate-docs.sh
+
+docs-verify: ## Verify API documentation is up to date
+	@echo "Verifying API documentation..."
+	@if ! ./scripts/generate-docs.sh > /tmp/docs-generated.md 2>&1; then \
+		echo "Documentation generation failed"; \
+		exit 1; \
+	fi
+	@if git diff --quiet website/docs/api/packages/ 2>/dev/null; then \
+		echo "Documentation is up to date"; \
+	else \
+		echo "Documentation is out of date. Run 'make docs-generate' to update."; \
+		git diff website/docs/api/packages/ || true; \
+		exit 1; \
+	fi
+
 # License check
 license-check: ## Check license compatibility
 	@echo "Checking license compatibility..."

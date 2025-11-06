@@ -11,7 +11,7 @@ In this tutorial, you'll learn how to make your first LLM (Large Language Model)
 
 ## Prerequisites
 
-- Go 1.24+ installed
+- Go 1.24 or later installed
 - API key for at least one provider (or Ollama for local models)
 - Beluga AI Framework installed
 

@@ -17,7 +17,7 @@ This guide provides comprehensive installation instructions for the Beluga AI Fr
 
 ### Minimum Requirements
 
-- **Go**: Version 1.24.0 or later
+- **Go**: Version 1.24 or later
 - **Operating System**: Linux, macOS, or Windows (including WSL)
 - **Memory**: 2GB RAM minimum (4GB+ recommended)
 - **Disk Space**: 500MB for framework and dependencies
@@ -80,7 +80,7 @@ make test
 #### Ubuntu/Debian
 
 ```bash
-# Install Go 1.24+ (if not already installed)
+# Install Go 1.24 or later (if not already installed)
 wget https://go.dev/dl/go1.24.2.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.24.2.linux-amd64.tar.gz
 
@@ -503,7 +503,7 @@ volumes:
 
 2. **Configure Go SDK:**
    - File → Settings → Go → GOROOT
-   - Ensure Go 1.24+ is selected
+   - Ensure Go 1.24 or later is selected
 
 3. **Configure code style:**
    - File → Settings → Editor → Code Style → Go

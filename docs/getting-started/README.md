@@ -18,7 +18,7 @@ This series consists of 7 progressive tutorials that build upon each other:
 
 Before starting, ensure you have:
 
-- ✅ **Go 1.24+** installed ([Installation Guide](../INSTALLATION.md))
+- ✅ **Go 1.24 or later** installed ([Installation Guide](../INSTALLATION.md))
 - ✅ **API Keys** for at least one LLM provider:
   - OpenAI: [Get API Key](https://platform.openai.com/api-keys)
   - Anthropic: [Get API Key](https://console.anthropic.com/)

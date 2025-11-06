@@ -7,14 +7,12 @@ This directory contains detailed documentation for all Beluga AI Framework provi
 ### LLM Providers
 - [OpenAI](./llms/openai.md) - GPT models
 - [Anthropic](./llms/anthropic.md) - Claude models
-- [AWS Bedrock](./llms/bedrock.md) - AWS foundation models
+- AWS Bedrock - See API documentation for details
 - [Ollama](./llms/ollama.md) - Local models
 - [Provider Comparison](./llms/comparison.md) - Compare all LLM providers
 
 ### Vector Store Providers
-- [InMemory](./vectorstores/inmemory.md) - In-memory vector store
 - [PgVector](./vectorstores/pgvector.md) - PostgreSQL with pgvector
-- [Pinecone](./vectorstores/pinecone.md) - Managed vector database
 - [Provider Comparison](./vectorstores/comparison.md) - Compare all vector stores
 
 ### Embedding Providers

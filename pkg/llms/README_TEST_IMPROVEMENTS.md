@@ -407,7 +407,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Run Unit Tests
         run: go test ./pkg/llms/ -v
@@ -422,7 +422,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.24'
 
       - name: Run Integration Tests
         env:

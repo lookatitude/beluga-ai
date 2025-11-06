@@ -11,7 +11,7 @@ Welcome to Beluga AI! This guide will help you get started with the framework in
 
 Before you begin, ensure you have:
 
-- **Go 1.21 or later** installed ([Download Go](https://golang.org/dl/))
+- **Go 1.24 or later** installed ([Download Go](https://golang.org/dl/))
 - **API Keys** for at least one LLM provider:
   - OpenAI: [Get API Key](https://platform.openai.com/api-keys)
   - Anthropic: [Get API Key](https://console.anthropic.com/)
@@ -20,7 +20,7 @@ Before you begin, ensure you have:
 Verify your Go installation:
 ```bash
 go version
-# Should output: go version go1.21.x or later
+# Should output: go version go1.24.x or later
 ```
 
 ## Step 1: Installation
@@ -70,7 +70,7 @@ func main() {
 
 	// Create provider using factory
 	factory := llms.NewFactory()
-	provider, err := factory.CreateProvider(config)
+	provider, err := factory.CreateProvider("openai", config)
 	if err != nil {
 		fmt.Printf("Error creating provider: %v\n", err)
 		return
@@ -154,24 +154,30 @@ Load configuration in your code:
 
 ```go
 import (
+	"log"
+	
 	"github.com/lookatitude/beluga-ai/pkg/config"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
-// Load configuration
-cfgProvider, err := config.NewViperProvider("config.yaml")
+// Load configuration from YAML file
+cfgProvider, err := config.NewYAMLProvider("config", []string{"."}, "")
 if err != nil {
 	log.Fatal(err)
 }
 
-// Get LLM config from loaded configuration
+// Get LLM config from loaded configuration using UnmarshalKey
 var llmConfig llms.Config
-if err := cfgProvider.Get("llm_providers.0", &llmConfig); err != nil {
+if err := cfgProvider.UnmarshalKey("llm_providers.0", &llmConfig); err != nil {
 	log.Fatal(err)
 }
 
 // Use the config
 factory := llms.NewFactory()
-provider, err := factory.CreateProvider(&llmConfig)
+provider, err := factory.CreateProvider("openai", &llmConfig)
+if err != nil {
+	log.Fatal(err)
+}
 ```
 
 ## Step 4: Create Your First Agent
@@ -203,7 +209,7 @@ func main() {
 	)
 
 	factory := llms.NewFactory()
-	llmProvider, err := factory.CreateProvider(llmConfig)
+	llmProvider, err := factory.CreateProvider("openai", llmConfig)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return

@@ -16,32 +16,66 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Extensible LLM Integration',
     image: '/img/undraw_docusaurus_mountain.svg',
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Seamlessly connect to various LLM providers (OpenAI, Anthropic, Google Gemini, 
+        AWS Bedrock, Ollama) with a unified interface. Switch providers without changing 
+        your code.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'Agent Framework',
     image: '/img/undraw_docusaurus_tree.svg',
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Build autonomous agents capable of reasoning, planning, and executing tasks. 
+        Includes ReAct agents, tool integration, and memory management for sophisticated 
+        AI applications.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Production Ready',
     image: '/img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Enterprise-grade observability with OpenTelemetry, comprehensive testing, 
+        structured logging, metrics, and distributed tracing. Built for large-scale 
+        deployment.
+      </>
+    ),
+  },
+  {
+    title: 'RAG Pipeline',
+    image: '/img/undraw_docusaurus_mountain.svg',
+    description: (
+      <>
+        Implement Retrieval-Augmented Generation with swappable components for data loading, 
+        splitting, embedding, and retrieval. Support for multiple vector stores including 
+        pgvector, Pinecone, and Weaviate.
+      </>
+    ),
+  },
+  {
+    title: 'Flexible Orchestration',
+    image: '/img/undraw_docusaurus_tree.svg',
+    description: (
+      <>
+        Define and manage complex workflows with a flexible engine. Event-driven architecture 
+        with worker pools, retry mechanisms, and circuit breakers for reliable execution.
+      </>
+    ),
+  },
+  {
+    title: 'Go-Native & Performant',
+    image: '/img/undraw_docusaurus_react.svg',
+    description: (
+      <>
+        Built with Go best practices, focusing on performance, type safety, and idiomatic 
+        Go patterns. Leverage Go&apos;s concurrency model for high-performance AI applications.
       </>
     ),
   },
@@ -65,6 +99,16 @@ export default function HomepageFeatures(): JSX.Element {
   return (
     <section className={styles.features}>
       <div className="container">
+        <div className="row">
+          <div className="col col--12">
+            <div className="text--center margin-bottom--lg">
+              <h2>Key Features</h2>
+              <p className={styles.featuresSubtitle}>
+                Everything you need to build production-ready AI applications in Go
+              </p>
+            </div>
+          </div>
+        </div>
         <div className="row">
           {FeatureList.map((props, idx) => (
             <Feature key={idx} {...props} />

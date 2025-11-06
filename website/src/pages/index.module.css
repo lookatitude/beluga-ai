@@ -10,9 +10,36 @@
   overflow: hidden;
 }
 
+.heroContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.heroImage {
+  margin-bottom: 1rem;
+}
+
+.logo {
+  height: 120px;
+  width: auto;
+  margin-bottom: 1rem;
+}
+
+.taglineHighlight {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  font-weight: 300;
+}
+
 @media screen and (max-width: 966px) {
   .heroBanner {
     padding: 2rem;
+  }
+  
+  .logo {
+    height: 80px;
   }
 }
 
@@ -20,4 +47,59 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.description {
+  padding: 4rem 0;
+  background: var(--ifm-background-color);
+}
+
+.descriptionContent {
+  text-align: left;
+}
+
+.descriptionContent h2 {
+  margin-bottom: 1.5rem;
+  color: var(--ifm-heading-color);
+}
+
+.descriptionContent p {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 1.5rem;
+  color: var(--ifm-font-color-base);
+}
+
+.highlightBox {
+  background: var(--ifm-color-primary-lightest);
+  border-left: 4px solid var(--ifm-color-primary);
+  padding: 1.5rem;
+  border-radius: 4px;
+  margin-top: 2rem;
+}
+
+.highlightBox p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+@media screen and (max-width: 966px) {
+  .description {
+    padding: 2rem 0;
+  }
+  
+  .descriptionContent p {
+    font-size: 1rem;
+  }
+  
+  .buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+  
+  .buttons a {
+    width: 100%;
+  }
 }

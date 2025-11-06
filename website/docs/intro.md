@@ -1,21 +1,21 @@
 ---
 sidebar_position: 1
-slug: / # Make this the root of the docs
+id: intro
 ---
 
 # Welcome to Beluga-AI
 
-**<font color='red'>IMPORTANT NOTE: Beluga-ai is currently in an experimental state. APIs and features may change without notice. It is not recommended for production use at this stage.</font>**
+**🚀 PRODUCTION READY:** Beluga AI Framework has completed comprehensive standardization and is now enterprise-grade with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.
 
-**Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by pioneering frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
+**Beluga-ai** is a comprehensive, production-ready framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by pioneering frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
 
 ## Our Vision
 
-The goal of Beluga-ai is to offer a Go-native, performant, and flexible alternative for creating complex AI workflows. We aim to empower Go developers to build next-generation AI applications with ease and confidence.
+The goal of Beluga-ai is to offer a Go-native, performant, and flexible alternative for creating complex AI workflows. We aim to empower Go developers to build next-generation AI applications with enterprise-grade observability, comprehensive testing, and production-ready patterns.
 
-## Key Features (MVP - Alpha)
+## Key Features
 
-Beluga-AI offers a modular and extensible architecture. Here's a glimpse of what's currently available in our alpha release:
+Beluga-AI offers a modular and extensible architecture with enterprise-grade capabilities. Here's what's available in the framework:
 
 *   **Core Abstractions:**
     *   A `Runnable` interface promoting composable and reusable components.
@@ -50,7 +50,7 @@ Beluga-AI offers a modular and extensible architecture. Here's a glimpse of what
     *   Core interfaces: `Loader`, `Splitter`, `Embedder`, `VectorStore`, and `Retriever`.
     *   Implementations including: `FileLoader`, `CharacterSplitter`, `OllamaEmbedder` (for local embeddings), `InMemoryVectorStore`, and `VectorStoreRetriever`.
 
-For a complete list of currently implemented features and our exciting roadmap, please refer to the main [README.md](https://github.com/lookatitude/beluga-ai/blob/main/README.md) on our GitHub repository.
+For a complete list of currently implemented features and our exciting roadmap, please refer to the main [README.md](https://github.com/lookatitude/beluga-ai/blob/main/README) on our GitHub repository.
 
 ## Inspiration
 
@@ -63,5 +63,5 @@ While inspired by these and other projects, Beluga-AI aims to carve its own nich
 
 ## Getting Started
 
-Dive into the [Installation](./getting-started/installation.md) guide to set up Beluga-AI in your Go environment, or explore the [Examples Overview](./examples-overview.md) to see it in action.
+Dive into the [Installation](./getting-started/installation) guide to set up Beluga-AI in your Go environment, or explore the [Examples Overview](./examples-overview) to see it in action.
 

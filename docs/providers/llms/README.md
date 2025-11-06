@@ -6,7 +6,7 @@ This directory contains detailed guides for each LLM provider supported by Belug
 
 - [OpenAI](./openai.md) - GPT-3.5, GPT-4, and variants
 - [Anthropic](./anthropic.md) - Claude models
-- [AWS Bedrock](./bedrock.md) - AWS foundation models
+- AWS Bedrock - See API documentation for details
 - [Ollama](./ollama.md) - Local models
 - [Provider Comparison](./comparison.md) - Compare all providers
 
