@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/lookatitude/beluga-ai/compare/v1.1.0...v1.2.0) (2025-11-06)
+
+
+### Features
+
+* **ci:** add production-ready CI/CD infrastructure ([b6eaa34](https://github.com/lookatitude/beluga-ai/commit/b6eaa3472baae3759a645bac866de035994a0021))
+
+
+### Bug Fixes
+
+* change gosec output format from JSON to SARIF ([2cee8d7](https://github.com/lookatitude/beluga-ai/commit/2cee8d7f80f4a879948acac707f9f6a8cd2f511f))
+* **ci:** display actual coverage data in PR comments ([4ffd82b](https://github.com/lookatitude/beluga-ai/commit/4ffd82b0b173bd19c74dcd9e27b5bcea30afb0b0))
+* **ci:** exclude specs folder from security scans ([a4c462b](https://github.com/lookatitude/beluga-ai/commit/a4c462b252f35c1830405bb712fb1afbe6c0c540))
+* **ci:** replace non-existent golang/vuln-action with direct govulncheck installation ([a77a563](https://github.com/lookatitude/beluga-ai/commit/a77a563ad180f06917dc9176093e1f8c52805dc2))
+* remove gosec SARIF upload due to invalid format ([955474d](https://github.com/lookatitude/beluga-ai/commit/955474d809127f62436fb14cea57e6fb6b34ffb5))
+* resolve golangci-lint configuration conflict ([ee0c78a](https://github.com/lookatitude/beluga-ai/commit/ee0c78a90b34056e90cd8d817c7a56971d333f40))
+* resolve shell variable scope issue in check-go-version target ([e45be01](https://github.com/lookatitude/beluga-ai/commit/e45be01f7d0d2aafb1a2855c4aa705e39535521e))
+* set builds to empty array in goreleaser config ([ab33c08](https://github.com/lookatitude/beluga-ai/commit/ab33c0840e42129ef74668b0ec63e4dda914db6b))
+
 ## [1.1.0](https://github.com/lookatitude/beluga-ai/compare/v1.0.4...v1.1.0) (2025-10-05)
 
 
