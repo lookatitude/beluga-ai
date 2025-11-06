@@ -44,7 +44,7 @@ jobs:
         run: make docs-generate
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '18' # Or your preferred Docusaurus Node version
           cache: 'yarn'
