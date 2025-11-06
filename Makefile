@@ -119,7 +119,7 @@ bench-cmp: ## Compare benchmarks (requires benchstat)
 
 install-tools: ## Install all required tools
 	@echo "Installing required tools..."
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
 	@go install mvdan.cc/gofumpt@latest
@@ -150,8 +150,8 @@ check-go-version: ## Check if Go version matches requirements
 	if [ "$$GO_VERSION_CURRENT" != "$(GO_VERSION)" ]; then \
 		echo "Warning: Go version mismatch. Expected $(GO_VERSION), found $$GO_VERSION_CURRENT"; \
 		exit 1; \
-	fi
-	@echo "Go version check passed: $$GO_VERSION_CURRENT"
+	fi; \
+	echo "Go version check passed: $$GO_VERSION_CURRENT"
 
 # Documentation
 docs: ## Generate documentation
