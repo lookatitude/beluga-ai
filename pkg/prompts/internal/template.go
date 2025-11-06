@@ -84,9 +84,7 @@ func (b *BaseTemplate) Validate() error {
 	if b.name == "" {
 		return iface.NewValidationError("validate", "template name cannot be empty", nil)
 	}
-	if len(b.variables) == 0 {
-		return iface.NewValidationError("validate", "template must have at least one variable", nil)
-	}
+	// Templates without variables are allowed (static templates)
 	return nil
 }
 
@@ -203,6 +201,12 @@ func (spt *StringPromptTemplate) validateVariables(variables map[string]interfac
 		// Basic type validation - can be extended
 		if variables[required] == nil {
 			return iface.NewVariableInvalidError("validate_variables", required, "non-nil", "nil")
+		}
+		// Strict type checking: require string type when enabled
+		if spt.config != nil && spt.config.StrictVariableCheck {
+			if _, ok := variables[required].(string); !ok {
+				return iface.NewVariableInvalidError("validate_variables", required, "string", fmt.Sprintf("%T", variables[required]))
+			}
 		}
 	}
 

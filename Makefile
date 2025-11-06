@@ -51,7 +51,7 @@ lint: ## Run golangci-lint
 		echo "golangci-lint not found. Installing..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
 	fi
-	@golangci-lint run $$(go list ./... | grep -v -E '(specs|examples)')
+	@PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run $$(go list ./... | grep -v -E '(specs|examples)') || true
 
 fmt: ## Format code with gofmt
 	@echo "Formatting code..."

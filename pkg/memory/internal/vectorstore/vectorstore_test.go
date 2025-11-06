@@ -744,7 +744,7 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling(t *testing
 		{
 			name: "Vector store error",
 			setupVectorStore: func(vs *MockVectorStore) {
-				vs.similaritySearchError = errors.New("similarity search failed")
+				vs.similaritySearchByQueryError = errors.New("similarity search failed")
 			},
 			inputs:        map[string]any{"input": "query"},
 			expectedError: "error",

@@ -133,13 +133,15 @@ func (m *VectorStoreMemory) LoadMemoryVariables(ctx context.Context, inputs map[
 func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
-	var err error
 
 	// Determine input/output keys if not explicitly set
 	if inputKey == "" || outputKey == "" {
-		inputKey, outputKey = getInputOutputKeys(inputs, outputs)
-		if err != nil {
-			return fmt.Errorf("error")
+		detectedInputKey, detectedOutputKey := getInputOutputKeys(inputs, outputs)
+		if inputKey == "" {
+			inputKey = detectedInputKey
+		}
+		if outputKey == "" {
+			outputKey = detectedOutputKey
 		}
 	}
 
@@ -175,6 +177,10 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 	// Add the document to the vector store via the retriever (if it supports adding)
 	// This assumes the retriever might wrap a vector store that has an AddDocuments method.
 	// This is a conceptual dependency and might need a different approach, e.g., direct VectorStore access.
+	if m.Retriever == nil {
+		return fmt.Errorf("retriever is nil")
+	}
+
 	type DocumentAdder interface {
 		AddDocuments(ctx context.Context, documents []schema.Document) ([]string, error)
 	}
@@ -187,7 +193,7 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 		return nil // Or return an error if saving is critical
 	}
 
-	_, err = adder.AddDocuments(ctx, []schema.Document{doc})
+	_, err := adder.AddDocuments(ctx, []schema.Document{doc})
 	if err != nil {
 		return fmt.Errorf("error")
 	}

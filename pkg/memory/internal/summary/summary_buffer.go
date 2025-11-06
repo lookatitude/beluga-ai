@@ -87,7 +87,15 @@ func (m *ConversationSummaryBufferMemory) predictNewSummary(ctx context.Context,
 	}
 
 	// Pass the prompt value to Invoke
-	llmOutput, err := m.LLM.Invoke(ctx, promptValue.(string))
+	var promptStr string
+	if pv, ok := promptValue.(promptsiface.PromptValue); ok {
+		promptStr = pv.ToString()
+	} else if str, ok := promptValue.(string); ok {
+		promptStr = str
+	} else {
+		return "", fmt.Errorf("unexpected prompt value type: %T", promptValue)
+	}
+	llmOutput, err := m.LLM.Invoke(ctx, promptStr)
 	if err != nil {
 		return "", errors.New("error")
 	}
@@ -112,12 +120,14 @@ func (m *ConversationSummaryBufferMemory) predictNewSummary(ctx context.Context,
 func (m *ConversationSummaryBufferMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
-	var err error
 
 	if inputKey == "" || outputKey == "" {
-		inputKey, outputKey = getInputOutputKeys(inputs, outputs)
-		if err != nil {
-			return errors.New("error")
+		detectedInputKey, detectedOutputKey := getInputOutputKeys(inputs, outputs)
+		if inputKey == "" {
+			inputKey = detectedInputKey
+		}
+		if outputKey == "" {
+			outputKey = detectedOutputKey
 		}
 	}
 
@@ -138,7 +148,7 @@ func (m *ConversationSummaryBufferMemory) SaveContext(ctx context.Context, input
 	}
 
 	// Add messages to chat history
-	err = m.ChatHistory.AddUserMessage(ctx, inputStr)
+	err := m.ChatHistory.AddUserMessage(ctx, inputStr)
 	if err != nil {
 		return errors.New("error")
 	}

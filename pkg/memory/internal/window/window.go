@@ -74,12 +74,22 @@ func (m *ConversationBufferWindowMemory) LoadMemoryVariables(ctx context.Context
 // SaveContext adds the latest user input and AI output to the chat history.
 // Pruning happens during loading, not saving.
 func (m *ConversationBufferWindowMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+	if m.ChatHistory == nil {
+		return fmt.Errorf("chat history is nil")
+	}
+
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
 
 	// Determine input/output keys if not explicitly set
 	if inputKey == "" || outputKey == "" {
-		inputKey, outputKey = getInputOutputKeys(inputs, outputs)
+		detectedInputKey, detectedOutputKey := getInputOutputKeys(inputs, outputs)
+		if inputKey == "" {
+			inputKey = detectedInputKey
+		}
+		if outputKey == "" {
+			outputKey = detectedOutputKey
+		}
 	}
 
 	inputVal, inputOk := inputs[inputKey]

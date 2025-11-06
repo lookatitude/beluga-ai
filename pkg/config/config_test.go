@@ -212,8 +212,8 @@ func TestValidationError_Error(t *testing.T) {
 
 func TestValidationErrors_Error(t *testing.T) {
 	errs := iface.ValidationErrors{
-		{Field: "field1", Message: "error1"},
-		{Field: "field2", Message: "error2"},
+		iface.ValidationError{Field: "field1", Message: "error1"},
+		iface.ValidationError{Field: "field2", Message: "error2"},
 	}
 
 	result := errs.Error()

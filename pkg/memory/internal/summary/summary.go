@@ -79,7 +79,15 @@ func (m *ConversationSummaryMemory) predictNewSummary(ctx context.Context, newLi
 	// For summarization, this is typically a list of messages or a direct prompt string.
 	// We are passing a string prompt (promptValue.ToString()) to a ChatModel's Invoke method.
 	// This will be handled by llms.EnsureMessages in the ChatModel's Invoke.
-	llmOutput, err := m.LLM.Invoke(ctx, promptValue.(string))
+	var promptStr string
+	if pv, ok := promptValue.(promptsiface.PromptValue); ok {
+		promptStr = pv.ToString()
+	} else if str, ok := promptValue.(string); ok {
+		promptStr = str
+	} else {
+		return "", fmt.Errorf("unexpected prompt value type: %T", promptValue)
+	}
+	llmOutput, err := m.LLM.Invoke(ctx, promptStr)
 	if err != nil {
 		return "", fmt.Errorf("error")
 	}
@@ -102,12 +110,14 @@ func (m *ConversationSummaryMemory) predictNewSummary(ctx context.Context, newLi
 func (m *ConversationSummaryMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
-	var err error
 
 	if inputKey == "" || outputKey == "" {
-		inputKey, outputKey = getInputOutputKeys(inputs, outputs)
-		if err != nil {
-			return fmt.Errorf("error")
+		detectedInputKey, detectedOutputKey := getInputOutputKeys(inputs, outputs)
+		if inputKey == "" {
+			inputKey = detectedInputKey
+		}
+		if outputKey == "" {
+			outputKey = detectedOutputKey
 		}
 	}
 

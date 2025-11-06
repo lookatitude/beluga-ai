@@ -41,6 +41,9 @@ func WithMaxHistorySize(maxSize int) BaseHistoryOption {
 
 // AddMessage adds a generic message to the history.
 func (h *BaseChatMessageHistory) AddMessage(ctx context.Context, message schema.Message) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	h.messages = append(h.messages, message)
 
 	// Apply size limit if configured
@@ -64,6 +67,9 @@ func (h *BaseChatMessageHistory) AddAIMessage(ctx context.Context, content strin
 
 // GetMessages returns all messages in the history.
 func (h *BaseChatMessageHistory) GetMessages(ctx context.Context) ([]schema.Message, error) {
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	// Return a copy to prevent modification
 	messagesCopy := make([]schema.Message, len(h.messages))
 	copy(messagesCopy, h.messages)
@@ -72,6 +78,9 @@ func (h *BaseChatMessageHistory) GetMessages(ctx context.Context) ([]schema.Mess
 
 // Clear removes all messages from the history.
 func (h *BaseChatMessageHistory) Clear(ctx context.Context) error {
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 	h.messages = h.messages[:0] // Efficient way to clear a slice
 	return nil
 }

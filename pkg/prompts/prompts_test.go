@@ -1651,7 +1651,7 @@ func TestErrorEdgeCases(t *testing.T) {
 				_, err := NewStringPromptTemplate("test", "")
 				return err
 			},
-			expectError: true,
+			expectError: false, // Empty templates are allowed (static templates)
 		},
 		{
 			name: "template with only whitespace",
@@ -2232,7 +2232,7 @@ func TestConcurrency_ChatAdapterFormatting(t *testing.T) {
 
 			for j := 0; j < numIterations; j++ {
 				inputs := map[string]interface{}{
-					"id":       goroutineID,
+					"id":       fmt.Sprintf("%d", goroutineID), // Convert to string as adapter expects strings
 					"question": fmt.Sprintf("What is %d?", j),
 				}
 

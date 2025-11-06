@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/lookatitude/beluga-ai/pkg/memory/internal/buffer"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -533,7 +534,9 @@ func TestMemoryLifecycle(t *testing.T) {
 
 	// Create memory
 	history := NewBaseChatMessageHistory()
-	memory := NewChatMessageBufferMemory(history)
+	bufferMemory := buffer.NewChatMessageBufferMemory(history)
+	bufferMemory.ReturnMessages = false // Return formatted string instead of messages
+	memory := bufferMemory
 
 	// Test initial state
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
@@ -698,7 +701,9 @@ func TestMemoryIntegration(t *testing.T) {
 
 	t.Run("BufferMemoryWorkflow", func(t *testing.T) {
 		history := NewBaseChatMessageHistory()
-		memory := NewChatMessageBufferMemory(history)
+		bufferMemory := buffer.NewChatMessageBufferMemory(history)
+		bufferMemory.ReturnMessages = false // Return formatted string instead of messages
+		memory := bufferMemory
 
 		// Simulate a conversation
 		conversation := []struct {
@@ -745,14 +750,16 @@ func TestMemoryIntegration(t *testing.T) {
 			assert.NoError(t, err)
 		}
 
-		// Load and verify only last 3 interactions are kept
+		// Load and verify only last 3 messages are kept (window size is 3 messages, not interactions)
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 		assert.NoError(t, err)
 
 		historyStr := vars["history"].(string)
-		assert.Contains(t, historyStr, "Message 2")
-		assert.Contains(t, historyStr, "Message 3")
+		// With 5 interactions (10 messages: M0, R0, M1, R1, M2, R2, M3, R3, M4, R4) and window of 3
+		// Should contain the last 3 messages: R3, M4, R4
+		assert.Contains(t, historyStr, "Response 3")
 		assert.Contains(t, historyStr, "Message 4")
+		assert.Contains(t, historyStr, "Response 4")
 		assert.NotContains(t, historyStr, "Message 0")
 		assert.NotContains(t, historyStr, "Message 1")
 	})

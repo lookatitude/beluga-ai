@@ -313,11 +313,12 @@ func TestPromptScenarios(t *testing.T) {
 				ctx := context.Background()
 				runner := NewPromptScenarioRunner(template, manager)
 
-				// Test different input combinations
+				// Test different input combinations - use variables that match the template
+				// Template is "Test template with {{.input}}", so provide "input" variable
 				inputSets := []map[string]interface{}{
-					{"name": "Alice", "age": "25", "role": "developer"},
-					{"name": "Bob", "age": "30", "role": "manager"},
-					{"name": "Charlie", "age": "35", "role": "architect"},
+					{"input": "Alice"},
+					{"input": "Bob"},
+					{"input": "Charlie"},
 				}
 
 				results, err := runner.RunTemplateFormattingScenario(ctx, inputSets)

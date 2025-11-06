@@ -5,6 +5,7 @@ package prompts
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"sync"
 	"testing"
 	"time"
@@ -346,15 +347,27 @@ func CreateTestPromptMessages(count int) []schema.Message {
 // Helper functions
 
 func extractVariablesFromTemplate(template string) []string {
-	// Simple variable extraction for testing (looks for {{.variable}} pattern)
-	variables := []string{}
-
-	// Basic extraction - in real implementation would use proper parsing
-	if len(template) > 0 {
-		variables = append(variables, "input") // Default variable
+	// Extract variables from template string using regex (similar to real implementation)
+	variables := make(map[string]struct{})
+	re := regexp.MustCompile(`{{\.([\w]+)}}`)
+	matches := re.FindAllStringSubmatch(template, -1)
+	for _, match := range matches {
+		if len(match) > 1 {
+			variables[match[1]] = struct{}{}
+		}
 	}
 
-	return variables
+	// If no variables found and template is not empty, add default "input"
+	if len(variables) == 0 && len(template) > 0 {
+		variables["input"] = struct{}{}
+	}
+
+	varList := make([]string, 0, len(variables))
+	for v := range variables {
+		varList = append(varList, v)
+	}
+
+	return varList
 }
 
 // Assertion helpers

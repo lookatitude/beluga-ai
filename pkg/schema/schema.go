@@ -12,6 +12,7 @@ package schema
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema/internal"
@@ -327,7 +328,7 @@ func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType
 	return internal.AgentMessage{
 		FromAgentID: fromAgentID,
 		MessageID:   messageID,
-		Timestamp:   0, // Will be set by caller
+		Timestamp:   time.Now().Unix(),
 		MessageType: messageType,
 		Payload:     payload,
 		Metadata:    make(map[string]interface{}),
@@ -368,7 +369,7 @@ func NewEvent(eventID, eventType, source string, payload interface{}) Event {
 		EventID:   eventID,
 		EventType: eventType,
 		Source:    source,
-		Timestamp: 0, // Will be set by caller
+		Timestamp: time.Now().Unix(),
 		Version:   "1.0",
 		Payload:   payload,
 		Metadata:  make(map[string]interface{}),

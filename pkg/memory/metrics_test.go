@@ -209,8 +209,9 @@ func TestGlobalMetricsFunctions(t *testing.T) {
 
 // TestGlobalTracerFunctions tests global tracer functions
 func TestGlobalTracerFunctions(t *testing.T) {
-	// Initially should be nil
-	assert.Nil(t, GetGlobalTracer())
+	// Tracer is initialized in init(), so it should not be nil
+	// (The init() function calls SetGlobalTracer())
+	assert.NotNil(t, GetGlobalTracer())
 
 	// Set global tracer
 	SetGlobalTracer()

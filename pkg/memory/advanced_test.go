@@ -93,8 +93,15 @@ func TestAdvancedMockMemory(t *testing.T) {
 					return err
 				}
 
-				historyContent := vars["test_history"]
-				if historyContent == nil || historyContent == "" {
+				historyContent := vars["preloaded_memory"]
+				if historyContent == nil {
+					return fmt.Errorf("expected preloaded messages in history")
+				}
+				// Check if it's a string (formatted) or slice (messages)
+				if str, ok := historyContent.(string); ok && str == "" {
+					return fmt.Errorf("expected preloaded messages in history")
+				}
+				if msgs, ok := historyContent.([]schema.Message); ok && len(msgs) == 0 {
 					return fmt.Errorf("expected preloaded messages in history")
 				}
 

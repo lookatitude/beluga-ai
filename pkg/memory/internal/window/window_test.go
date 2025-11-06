@@ -118,9 +118,12 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages(t *te
 	messages, ok := vars["history"].([]schema.Message)
 	assert.True(t, ok)
 	assert.Len(t, messages, 3) // Should only return last 3 messages due to window size
-	assert.Equal(t, "User message 2", messages[0].GetContent())
-	assert.Equal(t, "AI message 2", messages[1].GetContent())
-	assert.Equal(t, "User message 3", messages[2].GetContent())
+	// With 10 messages (5 user + 5 AI) and window of 3, should return last 3 messages
+	// Messages are: User0, AI0, User1, AI1, User2, AI2, User3, AI3, User4, AI4
+	// Last 3: AI3, User4, AI4
+	assert.Equal(t, "AI message 3", messages[0].GetContent())
+	assert.Equal(t, "User message 4", messages[1].GetContent())
+	assert.Equal(t, "AI message 4", messages[2].GetContent())
 }
 
 // TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedString tests loading with ReturnMessages=false

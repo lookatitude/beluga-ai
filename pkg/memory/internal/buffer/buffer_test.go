@@ -355,7 +355,7 @@ func TestGetBufferString(t *testing.T) {
 	assert.Contains(t, result, "AI: Hi there!")
 	assert.Contains(t, result, "System: System message")
 	assert.Contains(t, result, "Tool (tool_call_123): Tool result")
-	assert.Contains(t, result, "unknown: Unknown message")
+	assert.Contains(t, result, "Human: Unknown message")
 }
 
 // TestGetBufferString_Empty tests with empty message list

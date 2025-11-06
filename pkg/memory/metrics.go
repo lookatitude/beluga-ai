@@ -73,7 +73,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 
 // RecordOperation records a memory operation with its attributes.
 func (m *Metrics) RecordOperation(ctx context.Context, operation string, memoryType MemoryType, success bool) {
-	if m.operationCounter == nil {
+	if m == nil || m.operationCounter == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{
@@ -86,6 +86,9 @@ func (m *Metrics) RecordOperation(ctx context.Context, operation string, memoryT
 
 // RecordOperationDuration records the duration of a memory operation.
 func (m *Metrics) RecordOperationDuration(ctx context.Context, operation string, memoryType MemoryType, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	var histogram metric.Float64Histogram
 	switch operation {
 	case "load":
@@ -110,7 +113,7 @@ func (m *Metrics) RecordOperationDuration(ctx context.Context, operation string,
 
 // RecordError records a memory error.
 func (m *Metrics) RecordError(ctx context.Context, operation string, memoryType MemoryType, errorType string) {
-	if m.errorCounter == nil {
+	if m == nil || m.errorCounter == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{
@@ -123,7 +126,7 @@ func (m *Metrics) RecordError(ctx context.Context, operation string, memoryType 
 
 // RecordMemorySize records the size/length of memory content.
 func (m *Metrics) RecordMemorySize(ctx context.Context, memoryType MemoryType, size int) {
-	if m.memorySizeGauge == nil {
+	if m == nil || m.memorySizeGauge == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{
@@ -134,7 +137,7 @@ func (m *Metrics) RecordMemorySize(ctx context.Context, memoryType MemoryType, s
 
 // RecordActiveMemory records the creation or deletion of a memory instance.
 func (m *Metrics) RecordActiveMemory(ctx context.Context, memoryType MemoryType, delta int64) {
-	if m.activeMemoryGauge == nil {
+	if m == nil || m.activeMemoryGauge == nil {
 		return
 	}
 	attrs := []attribute.KeyValue{
@@ -157,11 +160,17 @@ func NewTracer() *Tracer {
 
 // StartSpan starts a new span for a memory operation.
 func (t *Tracer) StartSpan(ctx context.Context, operation string, memoryType MemoryType, memoryKey string) (context.Context, trace.Span) {
+	if t == nil || t.tracer == nil {
+		return ctx, nil
+	}
 	return t.tracer.Start(ctx, "memory."+operation)
 }
 
 // RecordSpanError records an error on the span.
 func (t *Tracer) RecordSpanError(span trace.Span, err error) {
+	if t == nil || span == nil {
+		return
+	}
 	if err != nil {
 		span.RecordError(err)
 	}
@@ -211,6 +220,9 @@ func NewLogger(logger *slog.Logger) *Logger {
 
 // LogMemoryOperation logs memory operations with context.
 func (l *Logger) LogMemoryOperation(ctx context.Context, level slog.Level, operation string, memoryType MemoryType, memoryKey string, messageCount int, duration time.Duration, err error) {
+	if l == nil || l.logger == nil {
+		return
+	}
 	attrs := []slog.Attr{
 		slog.String("operation", operation),
 		slog.String("memory_type", string(memoryType)),
@@ -236,6 +248,9 @@ func (l *Logger) LogMemoryOperation(ctx context.Context, level slog.Level, opera
 
 // LogMemoryLifecycle logs memory lifecycle events.
 func (l *Logger) LogMemoryLifecycle(ctx context.Context, event string, memoryType MemoryType, memoryKey string, additionalAttrs ...slog.Attr) {
+	if l == nil || l.logger == nil {
+		return
+	}
 	attrs := []slog.Attr{
 		slog.String("event", event),
 		slog.String("memory_type", string(memoryType)),
@@ -257,6 +272,9 @@ func (l *Logger) LogMemoryLifecycle(ctx context.Context, event string, memoryTyp
 
 // LogError logs errors with context.
 func (l *Logger) LogError(ctx context.Context, err error, operation string, memoryType MemoryType, memoryKey string, additionalAttrs ...slog.Attr) {
+	if l == nil || l.logger == nil {
+		return
+	}
 	attrs := []slog.Attr{
 		slog.String("operation", operation),
 		slog.String("memory_type", string(memoryType)),

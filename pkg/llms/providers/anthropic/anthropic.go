@@ -388,14 +388,14 @@ func (a *AnthropicProvider) convertMessages(messages []schema.Message) (*string,
 		case *schema.ChatMessage:
 			if m.GetType() == schema.RoleHuman {
 				role = "user"
-				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestTextBlock(m.GetContent()))
+				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfText(m.GetContent()))
 			} else if m.GetType() == schema.RoleAssistant {
 				role = "assistant"
-				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestTextBlock(m.GetContent()))
+				contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfText(m.GetContent()))
 			}
 		case *schema.AIMessage:
 			role = "assistant"
-			contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfRequestTextBlock(m.GetContent()))
+			contentBlocks = append(contentBlocks, anthropic.BetaContentBlockParamOfText(m.GetContent()))
 		default:
 			log.Printf("Warning: Skipping unsupported message type for Anthropic: %T", msg)
 			continue

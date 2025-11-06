@@ -661,8 +661,8 @@ func TestIntegrationPatterns(t *testing.T) {
 		metrics := helper.GetMetrics()
 
 		// Set up expectations
-		metrics.On("RecordRequest", mock.Anything, "integration-provider", "integration-model", mock.Anything).Return()
-		metrics.On("RecordError", mock.Anything, "integration-provider", "integration-model", mock.Anything, mock.Anything).Return().Maybe()
+		metrics.Mock.On("RecordRequest", mock.Anything, "integration-provider", "integration-model", mock.Anything).Return()
+		metrics.Mock.On("RecordError", mock.Anything, "integration-provider", "integration-model", mock.Anything, mock.Anything).Return().Maybe()
 
 		ctx := context.Background()
 		messages := CreateTestMessages()
@@ -672,7 +672,7 @@ func TestIntegrationPatterns(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify metrics expectations
-		metrics.AssertExpectations(t)
+		metrics.Mock.AssertExpectations(t)
 	})
 
 	// Test tracing integration
@@ -682,10 +682,10 @@ func TestIntegrationPatterns(t *testing.T) {
 		ctx := context.Background()
 
 		// Set up expectations
-		tracing.On("StartOperation", mock.Anything, "integration-provider.generate", "integration-provider", "integration-model").Return(ctx)
-		tracing.On("RecordError", mock.Anything, mock.Anything).Return().Maybe()
-		tracing.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
-		tracing.On("EndSpan", mock.Anything).Return().Maybe()
+		tracing.Mock.On("StartOperation", mock.Anything, "integration-provider.generate", "integration-provider", "integration-model").Return(ctx)
+		tracing.Mock.On("RecordError", mock.Anything, mock.Anything).Return().Maybe()
+		tracing.Mock.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
+		tracing.Mock.On("EndSpan", mock.Anything).Return().Maybe()
 		messages := CreateTestMessages()
 
 		// This would normally create spans
@@ -693,7 +693,7 @@ func TestIntegrationPatterns(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Verify tracing expectations
-		tracing.AssertExpectations(t)
+		tracing.Mock.AssertExpectations(t)
 	})
 }
 
@@ -892,17 +892,17 @@ func TestObservabilityAdvanced(t *testing.T) {
 	tracing := NewMockTracingHelper()
 
 	// Set up metrics expectations
-	metrics.On("RecordRequest", mock.Anything, "advanced-mock", "observability-test", mock.Anything).Return()
-	metrics.On("RecordError", mock.Anything, "advanced-mock", "observability-test", mock.Anything, mock.Anything).Return().Maybe()
-	metrics.On("RecordStream", mock.Anything, "advanced-mock", "observability-test", mock.Anything).Return().Maybe()
-	metrics.On("IncrementActiveRequests", mock.Anything, "advanced-mock", "observability-test").Return()
-	metrics.On("DecrementActiveRequests", mock.Anything, "advanced-mock", "observability-test").Return()
+	metrics.Mock.On("RecordRequest", mock.Anything, "advanced-mock", "observability-test", mock.Anything).Return()
+	metrics.Mock.On("RecordError", mock.Anything, "advanced-mock", "observability-test", mock.Anything, mock.Anything).Return().Maybe()
+	metrics.Mock.On("RecordStream", mock.Anything, "advanced-mock", "observability-test", mock.Anything).Return().Maybe()
+	metrics.Mock.On("IncrementActiveRequests", mock.Anything, "advanced-mock", "observability-test").Return()
+	metrics.Mock.On("DecrementActiveRequests", mock.Anything, "advanced-mock", "observability-test").Return()
 
 	// Set up tracing expectations
-	tracing.On("StartOperation", mock.Anything, mock.Anything, "advanced-mock", "observability-test").Return(context.Background())
-	tracing.On("RecordError", mock.Anything, mock.Anything).Return().Maybe()
-	tracing.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
-	tracing.On("EndSpan", mock.Anything).Return().Maybe()
+	tracing.Mock.On("StartOperation", mock.Anything, mock.Anything, "advanced-mock", "observability-test").Return(context.Background())
+	tracing.Mock.On("RecordError", mock.Anything, mock.Anything).Return().Maybe()
+	tracing.Mock.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
+	tracing.Mock.On("EndSpan", mock.Anything).Return().Maybe()
 
 	ctx := context.Background()
 	messages := CreateTestMessages()
@@ -933,8 +933,8 @@ func TestObservabilityAdvanced(t *testing.T) {
 	})
 
 	// Verify expectations
-	metrics.AssertExpectations(t)
-	tracing.AssertExpectations(t)
+	metrics.Mock.AssertExpectations(t)
+	tracing.Mock.AssertExpectations(t)
 }
 
 // BenchmarkAdvancedMockOperations provides performance benchmarks
