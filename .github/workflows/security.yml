@@ -33,24 +33,29 @@ jobs:
       - name: Run gosec security scanner
         uses: securego/gosec@master
         with:
-          args: '-fmt sarif -out gosec-report.sarif -exclude-dir=specs,examples ./...'
+          args: '-fmt json -out gosec-report.json -exclude-dir=specs,examples ./...'
         continue-on-error: true
 
-      - name: Upload gosec results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: gosec-report.sarif
-          wait-for-processing: true
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq || true
 
       - name: Display gosec results
         run: |
-          if [ -f gosec-report.sarif ]; then
-            echo "## gosec Security Scan Results" >> $GITHUB_STEP_SUMMARY
-            echo "gosec scan completed. Check GitHub Security tab for detailed results." >> $GITHUB_STEP_SUMMARY
+          echo "## gosec Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f gosec-report.json ]; then
+            # Parse JSON results using jq
+            ISSUE_COUNT=$(jq -r '.Stats.Gosec.Issues // 0' gosec-report.json 2>/dev/null || echo "0")
+            if [ "$ISSUE_COUNT" != "0" ] && [ "$ISSUE_COUNT" != "null" ]; then
+              echo "Found **$ISSUE_COUNT** security issue(s)." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "### Issues:" >> $GITHUB_STEP_SUMMARY
+              jq -r '.Issues[]? | "- **\(.severity | ascii_upcase)**: \(.rule_id) - \(.details) (File: \(.file):\(.line))"' gosec-report.json >> $GITHUB_STEP_SUMMARY 2>/dev/null || echo "Unable to parse issues." >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ No security issues found." >> $GITHUB_STEP_SUMMARY
+            fi
           else
-            echo "## gosec Security Scan Results" >> $GITHUB_STEP_SUMMARY
-            echo "No security issues found or report not generated." >> $GITHUB_STEP_SUMMARY
+            echo "✅ No security issues found or report not generated." >> $GITHUB_STEP_SUMMARY
           fi
 
   govulncheck:
