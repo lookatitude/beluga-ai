@@ -308,7 +308,7 @@ func (a *BaseAgent) Execute() error {
 	a.state = iface.StateRunning
 	a.lastActiveTime = time.Now()
 	a.mutex.Unlock()
-	
+
 	// Emit state change event after releasing lock
 	a.emitEvent("state_change", iface.StateRunning)
 
@@ -329,7 +329,7 @@ func (a *BaseAgent) Execute() error {
 			a.state = iface.StateError
 			a.lastActiveTime = time.Now()
 			a.mutex.Unlock()
-			
+
 			// Emit events after releasing lock
 			a.emitEvent("state_change", iface.StateError)
 			a.emitEvent("execution_cancelled", map[string]interface{}{
@@ -357,7 +357,7 @@ func (a *BaseAgent) Execute() error {
 				a.state = iface.StateError
 				a.lastActiveTime = time.Now()
 				a.mutex.Unlock()
-				
+
 				// Emit events after releasing lock
 				a.emitEvent("state_change", iface.StateError)
 				a.emitEvent("execution_cancelled", map[string]interface{}{
@@ -391,7 +391,7 @@ func (a *BaseAgent) Execute() error {
 		a.state = iface.StateError
 		a.lastActiveTime = time.Now()
 		a.mutex.Unlock()
-		
+
 		// Emit events after releasing lock
 		a.emitEvent("state_change", iface.StateError)
 		a.emitEvent("execution_failed", map[string]interface{}{
@@ -408,7 +408,7 @@ func (a *BaseAgent) Execute() error {
 	a.state = iface.StateReady
 	a.lastActiveTime = time.Now()
 	a.mutex.Unlock()
-	
+
 	// Emit events after releasing lock
 	a.emitEvent("state_change", iface.StateReady)
 	a.emitEvent("execution_completed", map[string]interface{}{
@@ -439,11 +439,11 @@ func (a *BaseAgent) Shutdown() error {
 	a.state = iface.StateShutdown
 	a.lastActiveTime = time.Now()
 	a.mutex.Unlock()
-	
+
 	// Give Execute() a brief moment to respond to context cancellation
 	// This prevents race conditions where Execute() might still be emitting events
 	time.Sleep(10 * time.Millisecond)
-	
+
 	// Emit events after releasing lock and allowing Execute() to finish
 	a.emitEvent("shutdown_started", map[string]interface{}{
 		"time": time.Now(),

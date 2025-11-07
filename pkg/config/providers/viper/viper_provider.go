@@ -36,7 +36,7 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string,
 	}
 	v.AutomaticEnv()
 	v.SetEnvKeyReplacer(strings.NewReplacer(".", "_", "-", "_"))
-	
+
 	// Enable type inference for better array/slice handling from env vars
 	v.SetTypeByDefaultValue(true)
 
@@ -47,7 +47,7 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string,
 			}
 		}
 	}
-	
+
 	// If loading from env only (no config file), manually construct arrays from env vars
 	if configName == "" && envPrefix != "" {
 		constructArraysFromEnv(v, envPrefix)
@@ -60,16 +60,16 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string,
 // This is needed because Viper doesn't automatically build arrays from indexed env vars
 func constructArraysFromEnv(v *viper.Viper, prefix string) {
 	prefixUpper := strings.ToUpper(prefix) + "_"
-	
+
 	// We'll manually parse common array structures
 	// For each array type, find the highest index and construct the array
 	arrayTypes := []string{"llm_providers", "embedding_providers", "vector_stores", "agents", "tools"}
-	
+
 	for _, arrayType := range arrayTypes {
 		arrayTypeUpper := strings.ToUpper(strings.ReplaceAll(arrayType, "_", "_"))
 		maxIndex := -1
 		envMap := make(map[string]string) // key: "index_field", value: env value
-		
+
 		// Find the maximum index and collect all env vars for this array type
 		for _, env := range os.Environ() {
 			if strings.HasPrefix(env, prefixUpper+arrayTypeUpper+"_") {
@@ -96,7 +96,7 @@ func constructArraysFromEnv(v *viper.Viper, prefix string) {
 				}
 			}
 		}
-		
+
 		// If we found array elements, construct the array structure and set values
 		if maxIndex >= 0 {
 			// Build array as a slice of maps
@@ -131,7 +131,7 @@ func (vp *ViperProvider) Load(configStruct interface{}) error {
 	if err := vp.v.Unmarshal(configStruct); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
-	
+
 	// For Config structs, also try UnmarshalKey for each array section
 	// This ensures arrays are properly unmarshaled even if the main Unmarshal fails
 	if cfg, ok := configStruct.(*iface.Config); ok {
@@ -141,7 +141,7 @@ func (vp *ViperProvider) Load(configStruct interface{}) error {
 		_ = vp.v.UnmarshalKey("agents", &cfg.Agents)
 		_ = vp.v.UnmarshalKey("tools", &cfg.Tools)
 	}
-	
+
 	return nil
 }
 

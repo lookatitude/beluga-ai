@@ -177,23 +177,23 @@ func (sv *SecurityValidator) Validate(ctx context.Context, data interface{}) []i
 // Helper functions for pattern detection
 func containsUnsafePatterns(code string) bool {
 	patterns := []string{
-		"go func()",      // Uncontrolled goroutines
-		"defer",          // Check for defer with mutex
-		"mu.Unlock()",    // Mutex unlock in defer (can cause deadlocks)
-		"sync.Mutex",     // Mutex usage
-		"close.*nil",     // Closing nil channels (simple check)
+		"go func()",   // Uncontrolled goroutines
+		"defer",       // Check for defer with mutex
+		"mu.Unlock()", // Mutex unlock in defer (can cause deadlocks)
+		"sync.Mutex",  // Mutex usage
+		"close.*nil",  // Closing nil channels (simple check)
 	}
 
 	// Check for "go func()" pattern
 	if strings.Contains(code, "go func()") {
 		return true
 	}
-	
+
 	// Check for defer with mutex unlock (common deadlock pattern)
 	if strings.Contains(code, "defer") && (strings.Contains(code, "Unlock") || strings.Contains(code, "mu.Unlock")) {
 		return true
 	}
-	
+
 	// Check for other patterns
 	for _, pattern := range patterns {
 		if strings.Contains(code, pattern) {
@@ -394,4 +394,3 @@ func (dd *DeadlockDetector) checkForDeadlocks() {
 		}
 	}
 }
-

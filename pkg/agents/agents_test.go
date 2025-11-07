@@ -625,7 +625,7 @@ func TestAgentCreationErrors(t *testing.T) {
 func TestAgentFactoryComprehensive(t *testing.T) {
 	config := agents.DefaultConfig()
 	config.DefaultMaxRetries = 10
-	config.EnableMetrics = true  // Enable metrics for the test
+	config.EnableMetrics = true // Enable metrics for the test
 	config.EnableTracing = false
 
 	factory := agents.NewAgentFactory(config)
@@ -708,8 +708,8 @@ func TestAgentLifecycle(t *testing.T) {
 
 	// Test initialization
 	config := map[string]interface{}{
-		"max_retries": 1,  // Use fewer retries for faster test
-		"retry_delay": 1 * time.Millisecond,  // Use very short delay for test
+		"max_retries": 1,                    // Use fewer retries for faster test
+		"retry_delay": 1 * time.Millisecond, // Use very short delay for test
 		"timeout":     "30s",
 	}
 	err = agent.Initialize(config)
@@ -725,13 +725,13 @@ func TestAgentLifecycle(t *testing.T) {
 	// Use a timeout context to prevent hanging
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	// Execute in a goroutine with timeout
 	done := make(chan error, 1)
 	go func() {
 		done <- agent.Execute()
 	}()
-	
+
 	select {
 	case err = <-done:
 		// Execution completed
