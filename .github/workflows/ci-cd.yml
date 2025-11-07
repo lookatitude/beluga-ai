@@ -91,7 +91,8 @@ jobs:
         run: |
           echo "Running go vet..."
           go vet $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee vet-report.txt
-          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+          vet_status=${PIPESTATUS[0]}
+          if [ "$vet_status" -ne 0 ]; then
             echo "::error::go vet found issues"
             cat vet-report.txt
             exit 1
