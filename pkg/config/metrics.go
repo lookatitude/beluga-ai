@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Metrics holds the metrics for the config package
+// Metrics holds the metrics for the config package.
 type Metrics struct {
 	configLoadsTotal      metric.Int64Counter
 	configLoadDuration    metric.Float64Histogram
@@ -18,7 +18,7 @@ type Metrics struct {
 	validationErrorsTotal metric.Int64Counter
 }
 
-// NewMetrics creates a new metrics instance for the config package
+// NewMetrics creates a new metrics instance for the config package.
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	configLoadsTotal, err := meter.Int64Counter(
 		"config_loads_total",
@@ -80,7 +80,7 @@ func NoOpMetrics() *Metrics {
 	return &Metrics{}
 }
 
-// RecordConfigLoad records a configuration load operation
+// RecordConfigLoad records a configuration load operation.
 func (m *Metrics) RecordConfigLoad(ctx context.Context, duration time.Duration, success bool, source string) {
 	if m == nil {
 		return
@@ -108,7 +108,7 @@ func (m *Metrics) RecordConfigLoad(ctx context.Context, duration time.Duration, 
 	}
 }
 
-// RecordValidation records a configuration validation operation
+// RecordValidation records a configuration validation operation.
 func (m *Metrics) RecordValidation(ctx context.Context, duration time.Duration, success bool) {
 	if m == nil {
 		return
@@ -122,12 +122,15 @@ func (m *Metrics) RecordValidation(ctx context.Context, duration time.Duration, 
 	}
 }
 
-// Global metrics instance - initialized lazily
-var globalMetrics *Metrics
+// Global metrics instance - initialized lazily.
+var (
+	globalMetrics              *Metrics
+	globalMetricsExplicitlySet bool
+)
 
-// GetGlobalMetrics returns the global metrics instance, creating it if necessary
+// GetGlobalMetrics returns the global metrics instance, creating it if necessary.
 func GetGlobalMetrics() *Metrics {
-	if globalMetrics == nil {
+	if globalMetrics == nil && !globalMetricsExplicitlySet {
 		if metrics, err := NewMetrics(otel.Meter("github.com/lookatitude/beluga-ai/pkg/config")); err == nil {
 			globalMetrics = metrics
 		} else {
@@ -135,10 +138,16 @@ func GetGlobalMetrics() *Metrics {
 			globalMetrics = NoOpMetrics()
 		}
 	}
+	// If explicitly set to nil, return nil (for testing)
+	// Otherwise, if still nil, return no-op metrics (shouldn't happen, but safety check)
+	if globalMetrics == nil && !globalMetricsExplicitlySet {
+		globalMetrics = NoOpMetrics()
+	}
 	return globalMetrics
 }
 
-// SetGlobalMetrics allows setting a custom metrics instance for testing
+// SetGlobalMetrics allows setting a custom metrics instance for testing.
 func SetGlobalMetrics(m *Metrics) {
 	globalMetrics = m
+	globalMetricsExplicitlySet = true // Always mark as explicitly set, even if nil
 }

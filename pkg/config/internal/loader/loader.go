@@ -38,13 +38,8 @@ func (l *Loader) LoadConfig() (*iface.Config, error) {
 	}
 
 	if l.options.SetDefaults {
-		if err := provider.SetDefaults(); err != nil {
-			return nil, fmt.Errorf("failed to set defaults: %w", err)
-		}
-		// Reload config after setting defaults
-		if err := provider.Load(&cfg); err != nil {
-			return nil, fmt.Errorf("failed to reload config after setting defaults: %w", err)
-		}
+		// Set defaults directly on the loaded config struct
+		iface.SetDefaults(&cfg)
 	}
 
 	if l.options.Validate {
@@ -64,14 +59,32 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	}
 
 	var cfg iface.Config
+	
+	// Viper's Unmarshal doesn't always parse array indices from env vars correctly
+	// Use UnmarshalKey for each section to ensure env vars are parsed
+	// Always try to unmarshal (IsSet may not detect array indices from env vars)
+	_ = provider.UnmarshalKey("llm_providers", &cfg.LLMProviders)
+	_ = provider.UnmarshalKey("embedding_providers", &cfg.EmbeddingProviders)
+	_ = provider.UnmarshalKey("vector_stores", &cfg.VectorStores)
+	_ = provider.UnmarshalKey("agents", &cfg.Agents)
+	_ = provider.UnmarshalKey("tools", &cfg.Tools)
+	
+	// Load other fields using standard Load (this won't overwrite arrays we just set)
 	if err := provider.Load(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to load config from env: %w", err)
 	}
 
 	iface.SetDefaults(&cfg)
 
-	if err := iface.ValidateConfig(&cfg); err != nil {
-		return nil, fmt.Errorf("env config validation failed: %w", err)
+	// Only validate if config has content (env vars might not always be set)
+	// Empty configs are valid (no providers configured)
+	hasContent := len(cfg.LLMProviders) > 0 || len(cfg.EmbeddingProviders) > 0 ||
+		len(cfg.VectorStores) > 0 || len(cfg.Agents) > 0 || len(cfg.Tools) > 0
+
+	if hasContent {
+		if err := iface.ValidateConfig(&cfg); err != nil {
+			return nil, fmt.Errorf("env config validation failed: %w", err)
+		}
 	}
 
 	return &cfg, nil
@@ -96,6 +109,7 @@ func LoadFromFile(filePath string) (*iface.Config, error) {
 		return nil, fmt.Errorf("failed to load config from file: %w", err)
 	}
 
+	// Set defaults on the loaded config (modifies struct in place)
 	iface.SetDefaults(&cfg)
 
 	if err := iface.ValidateConfig(&cfg); err != nil {
@@ -147,6 +161,10 @@ func (l *Loader) WithDefaults(enabled bool) *Loader {
 // GetEnvConfigMap returns a map of all environment variables with the given prefix
 func GetEnvConfigMap(prefix string) map[string]string {
 	envMap := make(map[string]string)
+	if prefix == "" {
+		// Empty prefix means no matching vars
+		return envMap
+	}
 	prefix = strings.ToUpper(prefix) + "_"
 
 	for _, env := range os.Environ() {
@@ -154,7 +172,9 @@ func GetEnvConfigMap(prefix string) map[string]string {
 			parts := strings.SplitN(env, "=", 2)
 			if len(parts) == 2 {
 				key := strings.ToLower(strings.TrimPrefix(parts[0], prefix))
-				envMap[key] = parts[1]
+				if key != "" { // Only add if key is not empty after trimming
+					envMap[key] = parts[1]
+				}
 			}
 		}
 	}

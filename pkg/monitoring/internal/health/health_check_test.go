@@ -124,6 +124,7 @@ func TestHealthCheckRunCheck(t *testing.T) {
 
 		hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
 		hc.Timeout = 50 * time.Millisecond
+		hc.MaxRetries = 0 // Disable retries for timeout test
 
 		hc.RunCheck()
 
@@ -164,6 +165,8 @@ func TestHealthCheckRegisterAlert(t *testing.T) {
 	assert.Len(t, hc.Alerts, 1)
 
 	hc.RunCheck()
+	// Give time for goroutine to execute
+	time.Sleep(10 * time.Millisecond)
 	assert.True(t, alertCalled)
 }
 
@@ -302,9 +305,8 @@ func TestHealthCheckManagerGetCheckResults(t *testing.T) {
 }
 
 func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
-	manager := NewHealthCheckManager()
-
 	t.Run("all healthy", func(t *testing.T) {
+		manager := NewHealthCheckManager()
 		healthyCheck := NewHealthCheck("healthy", "component", time.Minute, func() *HealthCheckResult {
 			return &HealthCheckResult{
 				Status:    StatusHealthy,
@@ -320,6 +322,17 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 	})
 
 	t.Run("mixed status", func(t *testing.T) {
+		manager := NewHealthCheckManager()
+		healthyCheck := NewHealthCheck("healthy", "component", time.Minute, func() *HealthCheckResult {
+			return &HealthCheckResult{
+				Status:    StatusHealthy,
+				Message:   "All good",
+				CheckName: "healthy",
+			}
+		})
+		manager.AddCheck(healthyCheck)
+		healthyCheck.RunCheck()
+
 		degradedCheck := NewHealthCheck("degraded", "component2", time.Minute, func() *HealthCheckResult {
 			return &HealthCheckResult{
 				Status:    StatusDegraded,
@@ -328,6 +341,8 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 			}
 		})
 		manager.AddCheck(degradedCheck)
+		// Run the check so it has a result
+		degradedCheck.RunCheck()
 
 		overallStatus, results := manager.CheckSystemHealth()
 		assert.Equal(t, StatusDegraded, overallStatus)
@@ -335,6 +350,7 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 	})
 
 	t.Run("unhealthy status", func(t *testing.T) {
+		manager := NewHealthCheckManager()
 		unhealthyCheck := NewHealthCheck("unhealthy", "component3", time.Minute, func() *HealthCheckResult {
 			return &HealthCheckResult{
 				Status:    StatusUnhealthy,
@@ -343,26 +359,25 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 			}
 		})
 		manager.AddCheck(unhealthyCheck)
+		unhealthyCheck.RunCheck()
 
 		overallStatus, results := manager.CheckSystemHealth()
 		assert.Equal(t, StatusUnhealthy, overallStatus)
-		assert.Len(t, results, 3)
+		assert.Len(t, results, 1)
 	})
 }
 
 func TestCreateAgentHealthCheckFunc(t *testing.T) {
-	getHealthFunc := func() map[string]interface{} {
-		return map[string]interface{}{
-			"state":         "running",
-			"error_count":   2,
-			"name":          "test_agent",
-			"response_time": 150,
-		}
-	}
-
-	checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
-
 	t.Run("healthy agent", func(t *testing.T) {
+		getHealthFunc := func() map[string]interface{} {
+			return map[string]interface{}{
+				"state":         "running",
+				"error_count":   0,
+				"name":          "test_agent",
+				"response_time": 150,
+			}
+		}
+		checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
 		result := checkFunc()
 		assert.NotNil(t, result)
 		assert.Equal(t, StatusHealthy, result.Status)
@@ -371,40 +386,40 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 	})
 
 	t.Run("error state agent", func(t *testing.T) {
-		getHealthFunc = func() map[string]interface{} {
+		getHealthFunc := func() map[string]interface{} {
 			return map[string]interface{}{
 				"state": "error",
 				"name":  "test_agent",
 			}
 		}
-
+		checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
 		result := checkFunc()
 		assert.Equal(t, StatusUnhealthy, result.Status)
 		assert.Contains(t, result.Message, "error state")
 	})
 
 	t.Run("paused agent", func(t *testing.T) {
-		getHealthFunc = func() map[string]interface{} {
+		getHealthFunc := func() map[string]interface{} {
 			return map[string]interface{}{
 				"state": "paused",
 				"name":  "test_agent",
 			}
 		}
-
+		checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
 		result := checkFunc()
 		assert.Equal(t, StatusDegraded, result.Status)
 		assert.Contains(t, result.Message, "paused")
 	})
 
 	t.Run("high error count", func(t *testing.T) {
-		getHealthFunc = func() map[string]interface{} {
+		getHealthFunc := func() map[string]interface{} {
 			return map[string]interface{}{
 				"state":       "running",
 				"error_count": 10,
 				"name":        "test_agent",
 			}
 		}
-
+		checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
 		result := checkFunc()
 		assert.Equal(t, StatusUnhealthy, result.Status)
 		assert.Contains(t, result.Message, "high error count")

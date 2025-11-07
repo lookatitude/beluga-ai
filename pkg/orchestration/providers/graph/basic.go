@@ -148,14 +148,40 @@ func (g *BasicGraph) executeSequential(ctx context.Context, input any, options .
 	nodeOutputs := make(map[string]any)
 
 	// Start with entry nodes
-	queue := make([]string, len(g.entryNodes))
-	copy(queue, g.entryNodes)
+	queue := make([]string, 0, len(g.entryNodes))
+	for _, entryNode := range g.entryNodes {
+		if !visited[entryNode] {
+			queue = append(queue, entryNode)
+		}
+	}
+
+	// Maximum iteration limit as safety net (allows for some redundancy but prevents infinite loops)
+	maxIterations := len(g.nodes) * 2
+	if maxIterations < 10 {
+		maxIterations = 10 // Minimum safety limit
+	}
+	iterationCount := 0
 
 	// Process nodes in topological order (simplified)
 	for len(queue) > 0 {
+		// Check context cancellation
+		select {
+		case <-ctx.Done():
+			return nil, iface.ErrTimeout("graph.execute_sequential", ctx.Err())
+		default:
+		}
+
+		// Safety check: prevent infinite loops
+		iterationCount++
+		if iterationCount > maxIterations {
+			return nil, iface.ErrExecutionFailed("graph.execute_sequential",
+				fmt.Errorf("maximum iterations (%d) exceeded, possible cycle detected in graph", maxIterations))
+		}
+
 		currentNode := queue[0]
 		queue = queue[1:]
 
+		// Skip if already visited (cycle detection)
 		if visited[currentNode] {
 			continue
 		}
@@ -194,9 +220,13 @@ func (g *BasicGraph) executeSequential(ctx context.Context, input any, options .
 		nodeOutputs[currentNode] = output
 		visited[currentNode] = true
 
-		// Add dependent nodes to queue
+		// Add dependent nodes to queue (only if not already visited to prevent cycles)
 		if targets, exists := g.edges[currentNode]; exists {
-			queue = append(queue, targets...)
+			for _, target := range targets {
+				if !visited[target] {
+					queue = append(queue, target)
+				}
+			}
 		}
 	}
 

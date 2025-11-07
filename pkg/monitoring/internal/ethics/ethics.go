@@ -223,9 +223,10 @@ func (rbd *RacialBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 	issues := make([]iface.BiasIssue, 0)
 
 	patterns := []string{
-		`(?i)\b(white|black|asian|hispanic|latino)\b.*\b(superior|inferior|better|worse)\b`,
+		`(?i)\b(white|black|asian|hispanic|latino|race|racial)\b.*\b(superior|inferior|better|worse)\b`,
 		`(?i)\b(immigrant|migrant)\b.*\b(problem|issue|threat)\b`,
-		`(?i)\b(they|those people)\b.*\b(don't|can't|won't)\b`,
+		`(?i)\b(they|those people)\b.*\b(don't|can't|won't|always|never|all)\b`,
+		`(?i)\b(those people|they)\b.*\b(always|never|all|every)\b`, // More flexible pattern for "those people"
 	}
 
 	for _, pattern := range patterns {
@@ -237,6 +238,8 @@ func (rbd *RacialBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 				Evidence:    "Stereotypical language patterns",
 				Mitigation:  "Use inclusive language and avoid generalizations about groups",
 			})
+			// Only add one issue per content to avoid duplicates
+			break
 		}
 	}
 
@@ -252,20 +255,23 @@ func (sebd *SocioeconomicBiasDetector) Detect(content string, ctx iface.EthicalC
 	issues := make([]iface.BiasIssue, 0)
 
 	patterns := []string{
-		`(?i)\b(poor|rich|wealthy)\b.*\b(lazy|hardworking|intelligent|stupid)\b`,
-		`(?i)\b(welfare|benefits)\b.*\b(abuse|fraud|cheat)\b`,
+		`(?i)\b(poor|rich|wealthy)\b.*\b(lazy|hardworking|intelligent|stupid|greedy)\b`,
+		`(?i)\b(welfare|benefits|recipients)\b.*\b(abuse|fraud|cheat|scam|trying)\b`,
 		`(?i)\b(working class|middle class|upper class)\b.*\b(deserve|should have)\b`,
+		`(?i)\b(poor people|rich people)\b.*\b(lazy|greedy)\b`, // More specific pattern
 	}
 
 	for _, pattern := range patterns {
 		if matched, _ := regexp.MatchString(pattern, content); matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "socioeconomic_bias",
-				Description: "Potential socioeconomic bias detected",
+				Description: "Potential socioeconomic or class bias detected",
 				Severity:    0.5,
 				Evidence:    "Class-based stereotypes",
 				Mitigation:  "Avoid linking socioeconomic status to character traits",
 			})
+			// Only add one issue per content to avoid duplicates
+			break
 		}
 	}
 
@@ -282,8 +288,9 @@ func (cbd *CulturalBiasDetector) Detect(content string, ctx iface.EthicalContext
 
 	patterns := []string{
 		`(?i)\b(western|asian|african|european)\b.*\b(civilized|primitive|advanced|backward)\b`,
-		`(?i)\b(traditional|modern)\b.*\b(better|worse|superior)\b`,
+		`(?i)\b(traditional|modern)\b.*\b(better|worse|superior|primitive|compared)\b`,
 		`(?i)\b(our culture|their culture)\b.*\b(right|wrong|superior)\b`,
+		`(?i)\b(traditional.*societies|modern.*societies)\b.*\b(primitive|advanced)\b`, // More specific pattern
 	}
 
 	for _, pattern := range patterns {
@@ -295,6 +302,8 @@ func (cbd *CulturalBiasDetector) Detect(content string, ctx iface.EthicalContext
 				Evidence:    "Cultural superiority assumptions",
 				Mitigation:  "Respect cultural diversity and avoid ethnocentric judgments",
 			})
+			// Only add one issue per content to avoid duplicates
+			break
 		}
 	}
 
@@ -334,6 +343,7 @@ func (cbd *ConfirmationBiasDetector) Detect(content string, ctx iface.EthicalCon
 func calculateOverallRisk(ea *iface.EthicalAnalysis) {
 	totalIssues := len(ea.BiasIssues) + len(ea.PrivacyIssues)
 	maxSeverity := 0.0
+	hasHighPrivacyIssue := false
 
 	for _, issue := range ea.BiasIssues {
 		if issue.Severity > maxSeverity {
@@ -343,15 +353,47 @@ func calculateOverallRisk(ea *iface.EthicalAnalysis) {
 
 	for _, issue := range ea.PrivacyIssues {
 		if issue.Severity == "high" {
+			hasHighPrivacyIssue = true
 			maxSeverity = math.Max(maxSeverity, 0.9)
 		}
 	}
 
-	riskScore := (ea.FairnessScore * 0.6) + ((1.0 - maxSeverity) * 0.4)
+	// Risk score: lower fairness score and higher severity = higher risk
+	// Invert the formula so that lower fairness and higher severity increase risk
+	riskScore := ((1.0 - ea.FairnessScore) * 0.6) + (maxSeverity * 0.4)
 	riskScore = math.Max(0.0, math.Min(1.0, riskScore))
 
+	// If there are high-severity privacy issues, automatically set to high risk
+	if hasHighPrivacyIssue {
+		ea.OverallRisk = "high"
+		return
+	}
+
+	// If there are privacy issues (even without explicit "high" severity), set to at least medium
+	// Multiple issues or low fairness score with privacy issues should be high risk
+	if len(ea.PrivacyIssues) > 0 {
+		if totalIssues > 1 || ea.FairnessScore < 0.6 {
+			ea.OverallRisk = "high"
+			return
+		}
+		ea.OverallRisk = "high" // Privacy issues are always high risk
+		return
+	}
+
+	// If there are any issues but risk score is still low, set to at least medium
+	if totalIssues > 0 && riskScore < 0.3 {
+		ea.OverallRisk = "medium"
+		return
+	}
+
+	// If fairness score is below 0.8 but no other issues, still consider it medium risk
+	if totalIssues == 0 && ea.FairnessScore < 0.8 {
+		ea.OverallRisk = "medium"
+		return
+	}
+
 	switch {
-	case riskScore < 0.3 || totalIssues == 0:
+	case riskScore < 0.3 || (totalIssues == 0 && ea.FairnessScore >= 0.8):
 		ea.OverallRisk = "low"
 	case riskScore < 0.7:
 		ea.OverallRisk = "medium"

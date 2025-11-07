@@ -132,7 +132,9 @@ func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.
 	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
-			return args.Get(0).(schema.Message), args.Error(1)
+			if msg, ok := args.Get(0).(schema.Message); ok {
+				return msg, args.Error(1)
+			}
 		}
 	}
 

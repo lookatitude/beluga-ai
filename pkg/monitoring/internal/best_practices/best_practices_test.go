@@ -82,9 +82,10 @@ func TestConcurrencyValidator(t *testing.T) {
 			time.Sleep(time.Second)
 		}()`
 		issues := validator.Validate(context.Background(), data)
-		assert.NotEmpty(t, issues)
-		assert.Equal(t, "concurrency", issues[0].Validator)
-		assert.Contains(t, strings.ToLower(issues[0].Issue), "concurrency")
+		if assert.NotEmpty(t, issues, "Expected at least one issue for uncontrolled goroutine") {
+			assert.Equal(t, "concurrency", issues[0].Validator)
+			assert.Contains(t, strings.ToLower(issues[0].Issue), "concurrency")
+		}
 	})
 
 	t.Run("mutex in defer", func(t *testing.T) {
@@ -93,8 +94,9 @@ func TestConcurrencyValidator(t *testing.T) {
 		defer mu.Unlock() // This can cause deadlocks
 		`
 		issues := validator.Validate(context.Background(), data)
-		assert.NotEmpty(t, issues)
-		assert.Equal(t, "concurrency", issues[0].Validator)
+		if assert.NotEmpty(t, issues, "Expected at least one issue for mutex in defer") {
+			assert.Equal(t, "concurrency", issues[0].Validator)
+		}
 	})
 }
 
@@ -252,9 +254,14 @@ func TestPerformanceMonitor(t *testing.T) {
 		assert.True(t, duration >= 10*time.Millisecond)
 
 		// Check if metrics were recorded
-		metric, exists := mockMetrics.GetMetric("operation_duration", nil)
+		// The metric is recorded with labels, so we need to match them
+		metric, exists := mockMetrics.GetMetric("operation_duration", map[string]string{
+			"operation": "test_operation",
+		})
 		assert.True(t, exists)
-		assert.True(t, metric.Value >= 0.01) // At least 10ms
+		if exists {
+			assert.True(t, metric.Value >= 0.01) // At least 10ms
+		}
 	})
 
 	t.Run("monitor operation with error", func(t *testing.T) {

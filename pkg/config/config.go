@@ -21,7 +21,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/config/providers/viper"
 )
 
-// DefaultLoaderOptions returns default loader options for typical usage
+// DefaultLoaderOptions returns default loader options for typical usage.
 func DefaultLoaderOptions() iface.LoaderOptions {
 	return iface.LoaderOptions{
 		ConfigName:  "config",
@@ -32,7 +32,7 @@ func DefaultLoaderOptions() iface.LoaderOptions {
 	}
 }
 
-// NewLoader creates a new configuration loader with the given options
+// NewLoader creates a new configuration loader with the given options.
 func NewLoader(options iface.LoaderOptions) (iface.Loader, error) {
 	return loader.NewLoader(options)
 }
@@ -101,7 +101,7 @@ func LoadConfig() (*iface.Config, error) {
 	return cfg, nil
 }
 
-// LoadFromEnv loads configuration from environment variables only
+// LoadFromEnv loads configuration from environment variables only.
 func LoadFromEnv(prefix string) (*iface.Config, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
 	ctx, span := tracer.Start(context.Background(), "LoadFromEnv")
@@ -127,7 +127,7 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	return cfg, nil
 }
 
-// LoadFromFile loads configuration from a specific file
+// LoadFromFile loads configuration from a specific file.
 func LoadFromFile(filePath string) (*iface.Config, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
 	ctx, span := tracer.Start(context.Background(), "LoadFromFile")
@@ -163,7 +163,7 @@ func MustLoadConfig() *iface.Config {
 	return cfg
 }
 
-// ValidateConfig validates the entire configuration structure
+// ValidateConfig validates the entire configuration structure.
 func ValidateConfig(cfg *iface.Config) error {
 	start := time.Now()
 	success := false
@@ -180,30 +180,30 @@ func ValidateConfig(cfg *iface.Config) error {
 	return nil
 }
 
-// SetDefaults sets default values for configuration fields
+// SetDefaults sets default values for configuration fields.
 func SetDefaults(cfg *iface.Config) {
 	iface.SetDefaults(cfg)
 }
 
-// GetEnvConfigMap returns a map of all environment variables with the given prefix
+// GetEnvConfigMap returns a map of all environment variables with the given prefix.
 func GetEnvConfigMap(prefix string) map[string]string {
 	return loader.GetEnvConfigMap(prefix)
 }
 
-// EnvVarName converts a config key to environment variable name
+// EnvVarName converts a config key to environment variable name.
 func EnvVarName(prefix, key string) string {
 	return loader.EnvVarName(prefix, key)
 }
 
-// ConfigKey converts an environment variable name to config key
+// ConfigKey converts an environment variable name to config key.
 func ConfigKey(prefix, envVar string) string {
 	return loader.ConfigKey(prefix, envVar)
 }
 
-// Option is a functional option for configuring components
+// Option is a functional option for configuring components.
 type Option func(*iface.Config)
 
-// WithConfigName sets the configuration file name (without extension)
+// WithConfigName sets the configuration file name (without extension).
 func WithConfigName(name string) Option {
 	return func(c *iface.Config) {
 		// This is a no-op for now as it's handled by the loader
@@ -212,7 +212,7 @@ func WithConfigName(name string) Option {
 	}
 }
 
-// WithConfigPaths sets the paths to search for configuration files
+// WithConfigPaths sets the paths to search for configuration files.
 func WithConfigPaths(paths ...string) Option {
 	return func(c *iface.Config) {
 		// This is a no-op for now as it's handled by the loader
@@ -221,7 +221,7 @@ func WithConfigPaths(paths ...string) Option {
 	}
 }
 
-// WithEnvPrefix sets the environment variable prefix
+// WithEnvPrefix sets the environment variable prefix.
 func WithEnvPrefix(prefix string) Option {
 	return func(c *iface.Config) {
 		// This is a no-op for now as it's handled by the loader

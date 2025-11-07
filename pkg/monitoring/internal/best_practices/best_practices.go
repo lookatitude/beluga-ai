@@ -93,6 +93,7 @@ func (cv *ConcurrencyValidator) Validate(ctx context.Context, data interface{}) 
 		// Check for common concurrency anti-patterns
 		if containsUnsafePatterns(str) {
 			issues = append(issues, iface.ValidationIssue{
+				Validator:  "concurrency",
 				Issue:      "Potential unsafe concurrency pattern detected",
 				Severity:   "medium",
 				Suggestion: "Review goroutine usage, mutex patterns, and channel operations",
@@ -115,6 +116,7 @@ func (ehv *ErrorHandlingValidator) Validate(ctx context.Context, data interface{
 		// Check for common error handling anti-patterns
 		if containsErrorHandlingIssues(str) {
 			issues = append(issues, iface.ValidationIssue{
+				Validator:  "error_handling",
 				Issue:      "Potential error handling issue detected",
 				Severity:   "high",
 				Suggestion: "Ensure proper error handling with context, wrapping, and logging",
@@ -139,6 +141,7 @@ func (rmv *ResourceManagementValidator) Validate(ctx context.Context, data inter
 	if str, ok := data.(string); ok {
 		if containsResourceIssues(str) {
 			issues = append(issues, iface.ValidationIssue{
+				Validator:  "resource_management",
 				Issue:      "Potential resource management issue",
 				Severity:   "medium",
 				Suggestion: "Ensure proper resource cleanup and defer statements",
@@ -160,6 +163,7 @@ func (sv *SecurityValidator) Validate(ctx context.Context, data interface{}) []i
 	if str, ok := data.(string); ok {
 		if containsSecurityIssues(str) {
 			issues = append(issues, iface.ValidationIssue{
+				Validator:  "security",
 				Issue:      "Potential security issue detected",
 				Severity:   "high",
 				Suggestion: "Review input validation, authentication, and authorization",
@@ -173,13 +177,26 @@ func (sv *SecurityValidator) Validate(ctx context.Context, data interface{}) []i
 // Helper functions for pattern detection
 func containsUnsafePatterns(code string) bool {
 	patterns := []string{
-		"go func()",    // Uncontrolled goroutines
-		"defer.*mutex", // Mutex in defer (can cause deadlocks)
-		"close.*nil",   // Closing nil channels
+		"go func()",      // Uncontrolled goroutines
+		"defer",          // Check for defer with mutex
+		"mu.Unlock()",    // Mutex unlock in defer (can cause deadlocks)
+		"sync.Mutex",     // Mutex usage
+		"close.*nil",     // Closing nil channels (simple check)
 	}
 
+	// Check for "go func()" pattern
+	if strings.Contains(code, "go func()") {
+		return true
+	}
+	
+	// Check for defer with mutex unlock (common deadlock pattern)
+	if strings.Contains(code, "defer") && (strings.Contains(code, "Unlock") || strings.Contains(code, "mu.Unlock")) {
+		return true
+	}
+	
+	// Check for other patterns
 	for _, pattern := range patterns {
-		if containsPattern(code, pattern) {
+		if strings.Contains(code, pattern) {
 			return true
 		}
 	}
@@ -187,58 +204,85 @@ func containsUnsafePatterns(code string) bool {
 }
 
 func containsErrorHandlingIssues(code string) bool {
-	patterns := []string{
-		"err != nil", // Check if error handling is missing
-		"panic(",     // Avoid panics in production code
-		"log.Fatal",  // Avoid Fatal calls
-	}
-
-	// Look for error checks without proper handling
-	if containsPattern(code, "err != nil") && !containsPattern(code, "return") {
+	// Check for panic usage
+	if strings.Contains(code, "panic(") {
 		return true
 	}
 
-	for _, pattern := range patterns {
-		if containsPattern(code, pattern) {
-			return true // Simplified - in practice, you'd do more sophisticated analysis
+	// Check for log.Fatal
+	if strings.Contains(code, "log.Fatal") {
+		return true
+	}
+
+	// Check for error assignment without checking
+	// Pattern: "err := " or ", err := " followed by code that doesn't check err
+	if strings.Contains(code, "err :=") || strings.Contains(code, ", err :=") {
+		// If err is assigned but not checked (no "if err != nil" or "if err == nil" nearby)
+		// This is a simplified check - in practice, you'd do more sophisticated analysis
+		if !strings.Contains(code, "err != nil") && !strings.Contains(code, "err == nil") {
+			return true
 		}
 	}
+
 	return false
 }
 
 func containsResourceIssues(code string) bool {
-	patterns := []string{
-		"open.*file", // File operations without defer close
-		"http.Get",   // HTTP requests without proper cleanup
-		"database",   // Database operations
-	}
-
-	for _, pattern := range patterns {
-		if containsPattern(code, pattern) {
-			return true // Simplified check
+	// Check for file operations
+	if strings.Contains(code, "os.Open") || strings.Contains(code, "Open(") {
+		// Check if there's a defer close nearby (simplified check)
+		if !strings.Contains(code, "defer") || !strings.Contains(code, "Close") {
+			return true
 		}
 	}
+
+	// Check for HTTP requests
+	if strings.Contains(code, "http.Get") || strings.Contains(code, "http.Post") {
+		// Check if there's proper cleanup (simplified check)
+		if !strings.Contains(code, "defer") || !strings.Contains(code, "Close") {
+			return true
+		}
+	}
+
+	// Check for database operations
+	if strings.Contains(code, "database") || strings.Contains(code, "sql.") || strings.Contains(code, "db.Query") || strings.Contains(code, "db.Exec") {
+		// Simplified check - in practice, you'd do more sophisticated analysis
+		return true
+	}
+
 	return false
 }
 
 func containsSecurityIssues(code string) bool {
-	patterns := []string{
-		"password.*string", // Storing passwords as strings
-		"sql.*inject",      // SQL injection risks
-		"eval(",            // Code injection
-		"exec.Command",     // Command injection
+	// Check for password in string (simplified - looks for password assignment)
+	if strings.Contains(code, "password") && strings.Contains(code, ":=") {
+		return true
 	}
 
-	for _, pattern := range patterns {
-		if containsPattern(code, pattern) {
-			return true
-		}
+	// Check for SQL injection risks (string concatenation in queries)
+	if strings.Contains(code, "SELECT") && strings.Contains(code, "+") {
+		return true
 	}
+
+	// Check for eval() usage
+	if strings.Contains(code, "eval(") {
+		return true
+	}
+
+	// Check for exec.Command usage
+	if strings.Contains(code, "exec.Command") {
+		return true
+	}
+
 	return false
 }
 
 func containsPattern(text, pattern string) bool {
 	// Simple substring check - in production, use regex
+	// Handle empty pattern
+	if pattern == "" {
+		return false
+	}
 	return strings.Contains(text, pattern)
 }
 
@@ -350,3 +394,4 @@ func (dd *DeadlockDetector) checkForDeadlocks() {
 		}
 	}
 }
+

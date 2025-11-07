@@ -26,6 +26,9 @@ func (cp *CompositeProvider) Load(configStruct interface{}) error {
 	var lastErr error
 
 	for i, provider := range cp.providers {
+		if provider == nil {
+			return iface.NewConfigError(iface.ErrCodeInvalidParameters, "provider %d is nil", i)
+		}
 		if err := provider.Load(configStruct); err != nil {
 			lastErr = fmt.Errorf("provider %d failed: %w", i, err)
 			continue
@@ -55,8 +58,11 @@ func (cp *CompositeProvider) UnmarshalKey(key string, rawVal interface{}) error 
 
 // GetString retrieves a string value from the first provider that has it.
 func (cp *CompositeProvider) GetString(key string) string {
+	if cp == nil {
+		return ""
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return provider.GetString(key)
 		}
 	}
@@ -65,8 +71,11 @@ func (cp *CompositeProvider) GetString(key string) string {
 
 // GetInt retrieves an int value from the first provider that has it.
 func (cp *CompositeProvider) GetInt(key string) int {
+	if cp == nil {
+		return 0
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return provider.GetInt(key)
 		}
 	}
@@ -75,8 +84,11 @@ func (cp *CompositeProvider) GetInt(key string) int {
 
 // GetBool retrieves a bool value from the first provider that has it.
 func (cp *CompositeProvider) GetBool(key string) bool {
+	if cp == nil {
+		return false
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return provider.GetBool(key)
 		}
 	}
@@ -85,8 +97,11 @@ func (cp *CompositeProvider) GetBool(key string) bool {
 
 // GetFloat64 retrieves a float64 value from the first provider that has it.
 func (cp *CompositeProvider) GetFloat64(key string) float64 {
+	if cp == nil {
+		return 0.0
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return provider.GetFloat64(key)
 		}
 	}
@@ -95,8 +110,11 @@ func (cp *CompositeProvider) GetFloat64(key string) float64 {
 
 // GetStringMapString retrieves a map[string]string value from the first provider that has it.
 func (cp *CompositeProvider) GetStringMapString(key string) map[string]string {
+	if cp == nil {
+		return nil
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return provider.GetStringMapString(key)
 		}
 	}
@@ -105,8 +123,11 @@ func (cp *CompositeProvider) GetStringMapString(key string) map[string]string {
 
 // IsSet checks if a key is set in any of the providers.
 func (cp *CompositeProvider) IsSet(key string) bool {
+	if cp == nil {
+		return false
+	}
 	for _, provider := range cp.providers {
-		if provider.IsSet(key) {
+		if provider != nil && provider.IsSet(key) {
 			return true
 		}
 	}
@@ -125,10 +146,16 @@ func (cp *CompositeProvider) GetLLMProviderConfig(name string) (schema.LLMProvid
 
 // GetLLMProvidersConfig retrieves all LLM provider configs, merging from all providers.
 func (cp *CompositeProvider) GetLLMProvidersConfig() ([]schema.LLMProviderConfig, error) {
+	if cp == nil {
+		return nil, nil
+	}
 	var allConfigs []schema.LLMProviderConfig
 	configMap := make(map[string]schema.LLMProviderConfig)
 
 	for _, provider := range cp.providers {
+		if provider == nil {
+			continue
+		}
 		if configs, err := provider.GetLLMProvidersConfig(); err == nil {
 			for _, config := range configs {
 				configMap[config.Name] = config
@@ -245,7 +272,13 @@ func (cp *CompositeProvider) GetToolsConfig() ([]iface.ToolConfig, error) {
 
 // Validate validates using all providers.
 func (cp *CompositeProvider) Validate() error {
+	if cp == nil {
+		return nil
+	}
 	for i, provider := range cp.providers {
+		if provider == nil {
+			continue
+		}
 		if err := provider.Validate(); err != nil {
 			return iface.WrapError(err, iface.ErrCodeValidationFailed, "provider %d validation failed", i)
 		}

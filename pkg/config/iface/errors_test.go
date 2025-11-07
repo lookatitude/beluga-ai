@@ -2,6 +2,7 @@ package iface
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -208,7 +209,9 @@ func TestAsConfigError_EdgeCases(t *testing.T) {
 			return WrapError(WrapError(NewConfigError("code", "msg"), "middle", "msg"), "outer", "msg")
 		}(), true},
 		{"config error wrapped in regular error", func() error {
-			return WrapError(errors.New("regular"), "wrapper", "msg")
+			// Actually wrap a ConfigError in a regular error using fmt.Errorf
+			configErr := NewConfigError("inner", "inner msg")
+			return fmt.Errorf("regular error: %w", configErr)
 		}(), false},
 	}
 
@@ -315,8 +318,9 @@ func TestWrapError_Formatting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := WrapError(tt.cause, tt.code, tt.message, tt.args...)
-			if err.Message != tt.expected {
-				t.Errorf("WrapError() message = %q, want %q", err.Message, tt.expected)
+			// Test the Error() method which combines message and cause
+			if err.Error() != tt.expected {
+				t.Errorf("WrapError() Error() = %q, want %q", err.Error(), tt.expected)
 			}
 			if err.Code != tt.code {
 				t.Errorf("WrapError() code = %q, want %q", err.Code, tt.code)

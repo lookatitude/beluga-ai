@@ -3,6 +3,7 @@ package providers
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -45,16 +46,16 @@ func (m *ThreadSafeMockTemplateEngine) Parse(name, template string) (iface.Parse
 
 // ExtractVariables extracts variables from a template string (thread-safe mock implementation)
 func (m *ThreadSafeMockTemplateEngine) ExtractVariables(template string) ([]string, error) {
-	// Simple mock extraction
+	// Extract all variables using regex
 	vars := []string{}
-	if strings.Contains(template, "{{.name}}") {
-		vars = append(vars, "name")
-	}
-	if strings.Contains(template, "{{.value}}") {
-		vars = append(vars, "value")
-	}
-	if strings.Contains(template, "{{.test}}") {
-		vars = append(vars, "test")
+	re := regexp.MustCompile(`\{\{\.(\w+)\}\}`)
+	matches := re.FindAllStringSubmatch(template, -1)
+	seen := make(map[string]bool)
+	for _, match := range matches {
+		if len(match) > 1 && !seen[match[1]] {
+			vars = append(vars, match[1])
+			seen[match[1]] = true
+		}
 	}
 	return vars, nil
 }
@@ -67,13 +68,16 @@ func (m *MockTemplateEngine) Parse(name, template string) (iface.ParsedTemplate,
 
 // ExtractVariables extracts variables from a template string (mock implementation)
 func (m *MockTemplateEngine) ExtractVariables(template string) ([]string, error) {
-	// Simple mock extraction
+	// Extract all variables using regex
 	vars := []string{}
-	if strings.Contains(template, "{{.name}}") {
-		vars = append(vars, "name")
-	}
-	if strings.Contains(template, "{{.value}}") {
-		vars = append(vars, "value")
+	re := regexp.MustCompile(`\{\{\.(\w+)\}\}`)
+	matches := re.FindAllStringSubmatch(template, -1)
+	seen := make(map[string]bool)
+	for _, match := range matches {
+		if len(match) > 1 && !seen[match[1]] {
+			vars = append(vars, match[1])
+			seen[match[1]] = true
+		}
 	}
 	return vars, nil
 }

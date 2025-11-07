@@ -208,6 +208,19 @@ func IsRetryable(err error) bool {
 		return execErr.Retryable
 	}
 
+	// Check for AgentError with retryable error codes
+	var agentErr *AgentError
+	if errors.As(err, &agentErr) {
+		switch agentErr.Code {
+		case ErrCodeTimeout, ErrCodeAgentTimeout, ErrCodeResourceExhausted,
+			ErrCodeToolExecution, ErrCodeLLMError, ErrCodeExecution:
+			return true
+		case ErrCodeInvalidInput, ErrCodeConfigInvalid, ErrCodeInvalidAction,
+			ErrCodeStateTransition, ErrCodeShutdown:
+			return false
+		}
+	}
+
 	// Check for common retryable error conditions
 	if errors.Is(err, ErrTimeout) || errors.Is(err, ErrAgentTimeout) ||
 		errors.Is(err, ErrResourceExhausted) || errors.Is(err, ErrToolExecution) {

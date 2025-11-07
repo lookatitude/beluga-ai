@@ -61,26 +61,42 @@ const (
 )
 
 // IsConfigError checks if an error is a ConfigError with the given code.
+// It unwraps the error chain to find any ConfigError with the matching code.
 func IsConfigError(err error, code string) bool {
-	var cfgErr *ConfigError
-	if !AsConfigError(err, &cfgErr) {
-		return false
-	}
-	return cfgErr.Code == code
-}
-
-// AsConfigError attempts to cast an error to ConfigError.
-func AsConfigError(err error, target **ConfigError) bool {
 	for err != nil {
 		if cfgErr, ok := err.(*ConfigError); ok {
-			*target = cfgErr
-			return true
-		}
-		if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
+			if cfgErr.Code == code {
+				return true
+			}
+			// Continue unwrapping to check inner ConfigErrors
+			err = cfgErr.Unwrap()
+		} else if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
 			err = unwrapper.Unwrap()
 		} else {
 			break
 		}
+	}
+	return false
+}
+
+// AsConfigError attempts to cast an error to ConfigError.
+// It unwraps ConfigErrors to find nested ConfigErrors, but does not unwrap
+// regular errors (like fmt.Errorf) that might wrap ConfigErrors.
+func AsConfigError(err error, target **ConfigError) bool {
+	for err != nil {
+		if cfgErr, ok := err.(*ConfigError); ok {
+			*target = cfgErr
+			// Unwrap to check for nested ConfigErrors
+			err = cfgErr.Unwrap()
+			if err == nil {
+				return true
+			}
+			// Continue loop to check nested ConfigErrors
+			continue
+		}
+		// For non-ConfigError types, stop here - don't unwrap
+		// This prevents finding ConfigErrors wrapped in regular errors (like fmt.Errorf)
+		break
 	}
 	return false
 }

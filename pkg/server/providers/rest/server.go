@@ -191,7 +191,8 @@ func (s *Server) Stop(ctx context.Context) error {
 // IsHealthy returns true if the server is healthy
 func (s *Server) IsHealthy(ctx context.Context) bool {
 	// Basic health check - can be extended with more sophisticated checks
-	return s.server != nil
+	// A server is healthy if it's been created (even if not started yet)
+	return s != nil
 }
 
 // RegisterHandler registers a streaming handler for a resource

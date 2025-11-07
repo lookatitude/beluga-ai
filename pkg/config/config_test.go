@@ -329,7 +329,7 @@ llm_providers:
     api_key: "sk-test"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -443,7 +443,7 @@ llm_providers:
 			filePath := filepath.Join(tempDir, tt.fileName)
 
 			if tt.content != "" {
-				err := os.WriteFile(filePath, []byte(tt.content), 0644)
+				err := os.WriteFile(filePath, []byte(tt.content), 0o644)
 				if err != nil {
 					t.Fatalf("failed to create test file: %v", err)
 				}
@@ -485,7 +485,7 @@ llm_providers:
     api_key: "sk-must-test"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -540,7 +540,6 @@ func TestDefaultLoaderOptions(t *testing.T) {
 func TestNewLoader(t *testing.T) {
 	options := DefaultLoaderOptions()
 	loader, err := NewLoader(options)
-
 	if err != nil {
 		t.Fatalf("NewLoader() error = %v", err)
 	}
@@ -658,8 +657,25 @@ func TestSetDefaults_Integration(t *testing.T) {
 	}
 
 	// Check max_tokens default
-	if maxTokens, ok := config.LLMProviders[0].DefaultCallOptions["max_tokens"]; !ok || maxTokens != 1000.0 {
-		t.Errorf("expected max_tokens 1000, got %v", maxTokens)
+	if maxTokens, ok := config.LLMProviders[0].DefaultCallOptions["max_tokens"]; !ok {
+		t.Errorf("expected max_tokens to be set, got missing")
+	} else {
+		// Convert to float64 for comparison (could be int or float64)
+		var maxTokensFloat float64
+		switch v := maxTokens.(type) {
+		case float64:
+			maxTokensFloat = v
+		case int:
+			maxTokensFloat = float64(v)
+		case int64:
+			maxTokensFloat = float64(v)
+		default:
+			t.Errorf("expected max_tokens to be numeric, got %T", maxTokens)
+			return
+		}
+		if maxTokensFloat != 1000.0 {
+			t.Errorf("expected max_tokens 1000, got %v", maxTokensFloat)
+		}
 	}
 }
 
@@ -767,15 +783,15 @@ func TestOption_Functions(t *testing.T) {
 
 func TestLoadConfig_WithInvalidConfig(t *testing.T) {
 	tempDir := t.TempDir()
-	configFile := filepath.Join(tempDir, "invalid.yaml")
+	configFile := filepath.Join(tempDir, "config.yaml")
+	// Use a config with missing required fields that won't be filtered out
 	configContent := `
 llm_providers:
-  - name: ""  # Invalid: empty name
-    provider: "openai"
+  - name: "test-llm"
+    # Missing required fields: provider and model_name
     api_key: "sk-test"
-    model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}

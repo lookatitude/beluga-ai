@@ -65,7 +65,7 @@ func (r *AgentRegistry) ListAgentTypes() []string {
 	return names
 }
 
-// Global registry instance for easy access
+// Global registry instance for easy access.
 var globalAgentRegistry = NewAgentRegistry()
 
 // RegisterAgentType registers an agent type with the global registry.
@@ -88,20 +88,20 @@ func GetGlobalAgentRegistry() *AgentRegistry {
 	return globalAgentRegistry
 }
 
-// Built-in agent type constants
+// Built-in agent type constants.
 const (
 	AgentTypeBase  = "base"
 	AgentTypeReAct = "react"
 )
 
-// init registers the built-in agent types
+// init registers the built-in agent types.
 func init() {
 	// Register built-in agent types
 	RegisterAgentType(AgentTypeBase, createBaseAgent)
 	RegisterAgentType(AgentTypeReAct, createReActAgent)
 }
 
-// Built-in agent creators
+// Built-in agent creators.
 func createBaseAgent(ctx context.Context, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	baseLLM, ok := llm.(llmsiface.LLM)
 	if !ok {

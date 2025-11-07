@@ -234,7 +234,12 @@ func (m *mockProvider) IsSet(key string) bool {
 }
 
 func (m *mockProvider) GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error) {
-	return schema.LLMProviderConfig{}, nil
+	for _, cfg := range m.llmConfigs {
+		if cfg.Name == name {
+			return cfg, nil
+		}
+	}
+	return schema.LLMProviderConfig{}, iface.NewConfigError(iface.ErrCodeConfigNotFound, "LLM provider config %s not found", name)
 }
 
 func (m *mockProvider) GetLLMProvidersConfig() ([]schema.LLMProviderConfig, error) {
@@ -266,6 +271,9 @@ func (m *mockProvider) GetToolsConfig() ([]iface.ToolConfig, error) {
 }
 
 func (m *mockProvider) Validate() error {
+	if !m.success {
+		return iface.NewConfigError(m.errorCode, "validation failed")
+	}
 	return nil
 }
 

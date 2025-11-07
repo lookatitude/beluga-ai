@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// mockMeterProvider implements a simple meter provider for testing
+// mockMeterProvider implements a simple meter provider for testing.
 type mockMeterProvider struct{}
 
 func (m *mockMeterProvider) Meter(name string, opts ...interface{}) interface{} {
@@ -326,7 +326,7 @@ func TestMetrics_EdgeCases(t *testing.T) {
 	})
 }
 
-// Test that Metrics implements the MetricsRecorder interface
+// Test that Metrics implements the MetricsRecorder interface.
 func TestMetrics_InterfaceCompliance(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
@@ -336,7 +336,7 @@ func TestMetrics_InterfaceCompliance(t *testing.T) {
 	var _ iface.MetricsRecorder = metrics
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkNewMetrics(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")

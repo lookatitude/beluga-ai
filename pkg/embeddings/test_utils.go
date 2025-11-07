@@ -403,6 +403,9 @@ func sqrt(f float32) float32 {
 	if f < 0 {
 		return 0
 	}
+	if f == 0 {
+		return 0
+	}
 	// Simple approximation for testing purposes
 	x := f
 	for i := 0; i < 10; i++ {

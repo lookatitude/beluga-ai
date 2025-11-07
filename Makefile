@@ -1,7 +1,7 @@
 # Makefile for Beluga AI Framework
 # Standard build, test, and quality assurance targets
 
-.PHONY: help build test test-race test-coverage lint fmt vet security clean all install-tools bench
+.PHONY: help build test test-race test-coverage lint lint-fix fmt vet security clean all install-tools bench
 
 # Variables
 GO_VERSION := 1.24
@@ -49,9 +49,23 @@ lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not found. Installing..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.55.2; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.60.1; \
 	fi
 	@PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run $$(go list ./... | grep -v -E '(specs|examples)') || true
+
+lint-fix: ## Run golangci-lint with auto-fix
+	@echo "Running golangci-lint with auto-fix..."
+	@if ! command -v golangci-lint >/dev/null 2>&1; then \
+		echo "golangci-lint not found. Installing..."; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.60.1; \
+	fi
+	@if [ -n "$(PKG)" ]; then \
+		echo "Fixing lint errors in $(PKG)..."; \
+		PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run --fix $(PKG) || true; \
+	else \
+		echo "Fixing lint errors in all packages..."; \
+		PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run --fix $$(go list ./... | grep -v -E '(specs|examples)') || true; \
+	fi
 
 fmt: ## Format code with gofmt
 	@echo "Formatting code..."
@@ -119,7 +133,7 @@ bench-cmp: ## Compare benchmarks (requires benchstat)
 
 install-tools: ## Install all required tools
 	@echo "Installing required tools..."
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.55.2
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.1
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
 	@go install mvdan.cc/gofumpt@latest

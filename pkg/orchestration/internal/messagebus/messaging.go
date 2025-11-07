@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -30,11 +31,19 @@ func (ms *MessagingSystem) SendMessage(msg Message) error {
 
 // SendMessageWithRetry sends a message with retry logic.
 func (ms *MessagingSystem) SendMessageWithRetry(msg Message, retries int, backoff time.Duration) error {
-	for i := 0; i <= retries; i++ {
+	// Ensure at least one attempt is made, even if retries is negative
+	maxAttempts := retries + 1
+	if maxAttempts < 1 {
+		maxAttempts = 1
+	}
+	
+	for i := 0; i < maxAttempts; i++ {
 		if err := ms.SendMessage(msg); err != nil {
-			log.Printf("Failed to send message (attempt %d): %v", i+1, err)
-			time.Sleep(backoff)
-			backoff *= 2 // Exponential backoff
+			if i < maxAttempts-1 {
+				log.Printf("Failed to send message (attempt %d): %v", i+1, err)
+				time.Sleep(backoff)
+				backoff *= 2 // Exponential backoff
+			}
 		} else {
 			return nil
 		}
@@ -52,6 +61,10 @@ func (ms *MessagingSystem) ReceiveMessage() (Message, error) {
 func ValidateMessage(msg Message) error {
 	if msg.ID == "" || msg.Topic == "" {
 		return fmt.Errorf("invalid message: missing required fields")
+	}
+	// Check for whitespace-only strings
+	if strings.TrimSpace(msg.ID) == "" || strings.TrimSpace(msg.Topic) == "" {
+		return fmt.Errorf("invalid message: ID and Topic cannot be whitespace-only")
 	}
 	return nil
 }
