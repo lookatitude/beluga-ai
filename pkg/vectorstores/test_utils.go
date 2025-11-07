@@ -206,10 +206,14 @@ func (v *AdvancedMockVectorStore) DeleteDocuments(ctx context.Context, ids []str
 }
 
 func (v *AdvancedMockVectorStore) SimilaritySearch(ctx context.Context, queryVector []float32, k int, opts ...vectorstoresiface.Option) ([]schema.Document, []float32, error) {
+	// Increment callCount with write lock
+	v.mu.Lock()
+	v.callCount++
+	v.mu.Unlock()
+
+	// Use read lock for the rest of the method
 	v.mu.RLock()
 	defer v.mu.RUnlock()
-
-	v.callCount++
 
 	if v.simulateDelay > 0 {
 		time.Sleep(v.simulateDelay)
@@ -277,14 +281,20 @@ func (v *AdvancedMockVectorStore) SimilaritySearch(ctx context.Context, queryVec
 }
 
 func (v *AdvancedMockVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder vectorstoresiface.Embedder, opts ...vectorstoresiface.Option) ([]schema.Document, []float32, error) {
+	// Increment callCount with write lock
+	v.mu.Lock()
 	v.callCount++
+	shouldError := v.shouldError
+	errorToReturn := v.errorToReturn
+	simulateDelay := v.simulateDelay
+	v.mu.Unlock()
 
-	if v.simulateDelay > 0 {
-		time.Sleep(v.simulateDelay)
+	if simulateDelay > 0 {
+		time.Sleep(simulateDelay)
 	}
 
-	if v.shouldError {
-		return nil, nil, v.errorToReturn
+	if shouldError {
+		return nil, nil, errorToReturn
 	}
 
 	// Generate embedding for query
