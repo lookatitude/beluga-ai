@@ -188,12 +188,12 @@ jobs:
           chmod +x gitleaks
           
           echo "Running gitleaks secret detection..."
-          ./gitleaks detect --no-banner --redact --report-path=coverage/gitleaks-report.json || true
+          ./gitleaks detect --no-banner --redact --config=.gitleaks.toml --report-path=coverage/gitleaks-report.json || true
           
           # Check results
           if [ -f coverage/gitleaks-report.json ] && [ -s coverage/gitleaks-report.json ] && [ "$(cat coverage/gitleaks-report.json)" != "[]" ]; then
             echo "::error::Secrets detected by gitleaks"
-            ./gitleaks detect --no-banner --redact
+            ./gitleaks detect --no-banner --redact --config=.gitleaks.toml
             exit 1
           fi
           echo "✅ No secrets detected"

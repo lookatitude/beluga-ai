@@ -145,10 +145,10 @@ security: ## Run security scans (gosec, govulncheck, and gitleaks)
 			exit 1; \
 		fi; \
 	fi
-	@gitleaks detect --no-banner --redact --report-path=$(COVERAGE_DIR)/gitleaks-report.json || true
+	@gitleaks detect --no-banner --redact --config=.gitleaks.toml --report-path=$(COVERAGE_DIR)/gitleaks-report.json || true
 	@if [ -f $(COVERAGE_DIR)/gitleaks-report.json ] && [ -s $(COVERAGE_DIR)/gitleaks-report.json ] && [ "$$(cat $(COVERAGE_DIR)/gitleaks-report.json)" != "[]" ]; then \
 		echo "❌ Secrets detected by gitleaks"; \
-		gitleaks detect --no-banner --redact; \
+		gitleaks detect --no-banner --redact --config=.gitleaks.toml; \
 		exit 1; \
 	fi
 	@echo "✅ No secrets detected"
