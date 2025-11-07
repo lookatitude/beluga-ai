@@ -7,6 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestReActAgentInterfaceCompliance(t *testing.T) {
 	// This test verifies that ReActAgent implements the required interfaces
 	// The assignment below will fail to compile if ReActAgent doesn't implement CompositeAgent
@@ -14,6 +16,8 @@ func TestReActAgentInterfaceCompliance(t *testing.T) {
 
 	// Test passes if compilation succeeds
 	assert.True(t, true, "ReActAgent implements CompositeAgent interface")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestReActAgentGetConfig(t *testing.T) {

@@ -8,6 +8,8 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewMetrics(t *testing.T) {
 	// Test with noop meter (doesn't require actual OTEL setup)
 	meter := noop.Meter{}
@@ -37,6 +39,8 @@ func TestNewMetrics(t *testing.T) {
 	if metrics.validationErrorsTotal == nil {
 		t.Error("validationErrorsTotal should be initialized")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNoOpMetrics(t *testing.T) {
@@ -60,6 +64,8 @@ func TestNoOpMetrics(t *testing.T) {
 		t.Error("validationDuration should be nil in NoOpMetrics")
 	}
 	if metrics.validationErrorsTotal != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Error("validationErrorsTotal should be nil in NoOpMetrics")
 	}
 }
@@ -91,6 +97,8 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 			metrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
 
 			// Test with nil metrics (should not panic)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			var nilMetrics *Metrics
 			nilMetrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
 		})
@@ -120,6 +128,8 @@ func TestMetrics_RecordValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// This should not panic even with nil metrics
 			metrics.RecordValidation(ctx, duration, tt.success)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			// Test with nil metrics (should not panic)
 			var nilMetrics *Metrics
@@ -141,6 +151,8 @@ func TestGetGlobalMetrics(t *testing.T) {
 	// First call should create metrics
 	metrics1 := GetGlobalMetrics()
 	if metrics1 == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Fatal("GetGlobalMetrics() returned nil")
 	}
 
@@ -163,6 +175,8 @@ func TestSetGlobalMetrics(t *testing.T) {
 	SetGlobalMetrics(testMetrics)
 
 	// Verify that GetGlobalMetrics returns our test instance
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	retrievedMetrics := GetGlobalMetrics()
 	if retrievedMetrics != testMetrics {
 		t.Error("SetGlobalMetrics() did not set the global metrics instance correctly")
@@ -185,6 +199,8 @@ func TestGlobalMetrics_NoOpFallback(t *testing.T) {
 	}()
 
 	// Reset global metrics and flag to test lazy initialization
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	globalMetrics = nil
 	globalMetricsExplicitlySet = false
 
@@ -201,6 +217,8 @@ func TestGlobalMetrics_NoOpFallback(t *testing.T) {
 // Simple test using noop meter which is sufficient for our testing needs.
 func TestMetrics_WithNoOpMeter(t *testing.T) {
 	// Use noop meter which implements the full interface
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	meter := noop.Meter{}
 
 	metrics, err := NewMetrics(meter)
@@ -229,6 +247,8 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 
 	ctx := context.Background()
 	duration := 150 * time.Millisecond
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test various combinations of success/source
 	testCases := []struct {
@@ -243,6 +263,8 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 
 	for _, tc := range testCases {
 		// Just ensure it doesn't panic
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		metrics.RecordConfigLoad(ctx, duration, tc.success, tc.source)
 	}
 }
@@ -257,6 +279,8 @@ func BenchmarkMetrics_RecordConfigLoad(b *testing.B) {
 	ctx := context.Background()
 	duration := 100 * time.Millisecond
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		metrics.RecordConfigLoad(ctx, duration, true, "benchmark")

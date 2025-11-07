@@ -18,6 +18,8 @@ import (
 )
 
 // TestAdvancedMockChatModel tests the advanced mock chat model functionality
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAdvancedMockChatModel(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -144,6 +146,8 @@ func TestAdvancedMockChatModel(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestChatModelStreaming tests streaming functionality specifically
 func TestChatModelStreaming(t *testing.T) {
@@ -230,6 +234,8 @@ func TestChatModelStreaming(t *testing.T) {
 			t.Logf("Streaming test: %d chunks in %v (total: %v)",
 				len(chunks), chunkDuration, totalDuration)
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -272,6 +278,8 @@ func TestChatModelConversationFlow(t *testing.T) {
 			AssertConversationFlow(t, history, expectedMinMessages)
 
 			// Verify call count
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			assert.Equal(t, tt.conversationTurns, chatModel.GetCallCount())
 		})
 	}
@@ -332,6 +340,8 @@ func TestChatModelToolIntegration(t *testing.T) {
 				schema.NewHumanMessage("Use the available tools to help me"),
 			}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			response, err := chatModel.Generate(ctx, messages)
 			assert.NoError(t, err)
 			assert.NotNil(t, response)
@@ -425,6 +435,8 @@ func TestConcurrencyAdvanced(t *testing.T) {
 		close(errChan)
 
 		// Check for errors
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for err := range errChan {
 			t.Errorf("Concurrent streaming error: %v", err)
 		}
@@ -444,6 +456,8 @@ func TestLoadTesting(t *testing.T) {
 
 	const numOperations = 50
 	const concurrency = 8
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("chat_model_load_test", func(t *testing.T) {
 		RunLoadTest(t, chatModel, numOperations, concurrency)
@@ -520,6 +534,8 @@ func TestChatModelScenarios(t *testing.T) {
 					response, err := chatModel.Generate(ctx, []schema.Message{msg})
 					require.NoError(t, err, "Code query %d failed", i+1)
 					AssertChatResponse(t, response, 10)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				}
 			},
 		},
@@ -553,6 +569,8 @@ func TestChatModelIntegrationTestHelper(t *testing.T) {
 	messages := []schema.Message{schema.NewHumanMessage("Test message")}
 
 	_, err := gptModel.Generate(ctx, messages)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NoError(t, err)
 
 	_, err = claudeModel.Generate(ctx, messages)
@@ -596,6 +614,8 @@ func TestChatModelErrorHandling(t *testing.T) {
 			},
 			operation: func(chatModel *AdvancedMockChatModel) error {
 				ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				messages := []schema.Message{schema.NewHumanMessage("Test stream")}
 				_, err := chatModel.StreamChat(ctx, messages)
 				return err
@@ -641,6 +661,8 @@ func BenchmarkChatModelOperations(b *testing.B) {
 			}
 
 			// Consume stream
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			for chunk := range streamCh {
 				if chunk.Err != nil {
 					b.Errorf("Stream chunk error: %v", chunk.Err)

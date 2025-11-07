@@ -214,6 +214,8 @@ func (w *TestWorkflowStep) Stream(ctx context.Context, input any, opts ...core.O
 }
 
 // Integration test: Complete data processing pipeline
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestDataProcessingPipelineIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -240,6 +242,8 @@ func TestDataProcessingPipelineIntegration(t *testing.T) {
 	assert.Contains(t, resultMap, "final_result")
 	assert.Equal(t, true, resultMap["final_result"])
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // Integration test: Batch processing pipeline
 func TestBatchProcessingPipelineIntegration(t *testing.T) {
@@ -273,6 +277,8 @@ func TestBatchProcessingPipelineIntegration(t *testing.T) {
 		assert.Contains(t, resultMap, "validated_data")
 		assert.Contains(t, resultMap, "valid")
 		assert.Equal(t, true, resultMap["valid"])
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -325,6 +331,8 @@ func TestGraphWorkflowIntegration(t *testing.T) {
 
 	resultMap, ok := result.(map[string]any)
 	assert.True(t, ok)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, resultMap, "workflow_data")
 	assert.Contains(t, resultMap, "step")
 	assert.Equal(t, "reporter", resultMap["step"])
@@ -383,6 +391,8 @@ func TestParallelProcessingGraphIntegration(t *testing.T) {
 
 	// Should complete faster than sequential execution
 	// (processor1 + processor2 in parallel should be faster than sequential)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.True(t, duration < 100*time.Millisecond, "Parallel execution took too long: %v", duration)
 
 	resultMap, ok := result.(map[string]any)
@@ -429,6 +439,8 @@ func TestTimeoutHandlingIntegration(t *testing.T) {
 
 	// Use a short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	defer cancel()
 
 	input := map[string]any{"data": "timeout-test"}
@@ -474,6 +486,8 @@ func TestConcurrentOrchestrationIntegration(t *testing.T) {
 			_, err = chain.Invoke(context.Background(), input)
 			results <- err
 		}(i)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	wg.Wait()
@@ -530,6 +544,8 @@ func TestComplexGraphIntegration(t *testing.T) {
 	require.NoError(t, err)
 	err = graph.SetFinishPoint([]string{"converge"})
 	require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Execute complex workflow
 	input := map[string]any{"data": "complex-input"}
@@ -587,6 +603,8 @@ func TestResourceCleanupIntegration(t *testing.T) {
 
 	// Verify resources are tracked
 	finalMetrics := orch.GetMetrics()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, initialChains+numChains, finalMetrics.GetActiveChains())
 	assert.Equal(t, initialGraphs+numGraphs, finalMetrics.GetActiveGraphs())
 
@@ -620,6 +638,8 @@ func TestPerformanceMonitoringIntegration(t *testing.T) {
 	// Execute with timing
 	input := map[string]any{"data": "perf-test"}
 	start := time.Now()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	result, err := chain.Invoke(context.Background(), input)
 	duration := time.Since(start)
 

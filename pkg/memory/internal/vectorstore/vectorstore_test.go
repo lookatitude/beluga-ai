@@ -242,6 +242,8 @@ func (m *MockVectorStore) GetName() string {
 }
 
 // TestNewVectorStoreMemory tests the constructor
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewVectorStoreMemory(t *testing.T) {
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "test_memory", false, 5)
@@ -252,6 +254,8 @@ func TestNewVectorStoreMemory(t *testing.T) {
 	assert.False(t, memory.ReturnDocs)
 	assert.Equal(t, 5, memory.NumDocsToKeep)
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestNewVectorStoreMemory_Defaults tests default values
 func TestNewVectorStoreMemory_Defaults(t *testing.T) {
@@ -260,6 +264,8 @@ func TestNewVectorStoreMemory_Defaults(t *testing.T) {
 
 	assert.Equal(t, "history", memory.MemoryKey) // Default memory key
 	assert.True(t, memory.ReturnDocs)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, 4, memory.NumDocsToKeep) // Default number of documents
 }
 
@@ -267,6 +273,8 @@ func TestNewVectorStoreMemory_Defaults(t *testing.T) {
 func TestVectorStoreMemory_MemoryVariables(t *testing.T) {
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "custom_memory", false, 5)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	variables := memory.MemoryVariables()
 	assert.Equal(t, []string{"custom_memory"}, variables)
@@ -293,6 +301,8 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs(t *testing.T) {
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
 	assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, vars, "memory")
 
 	docs, ok := vars["memory"].([]schema.Document)
@@ -320,6 +330,8 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
 	assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, vars, "memory")
 
 	formatted, ok := vars["memory"].(string)
@@ -367,6 +379,8 @@ func TestVectorStoreMemory_LoadMemoryVariables_AutoDetectInputKey(t *testing.T) 
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			vars, err := memory.LoadMemoryVariables(ctx, tc.inputs)
 			if tc.expected != "" {
 				assert.NoError(t, err)
@@ -430,6 +444,8 @@ func TestVectorStoreMemory_LoadMemoryVariables_ErrorHandling(t *testing.T) {
 			if tc.setupRetriever != nil {
 				tc.setupRetriever(retriever)
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			memory := NewVectorStoreMemory(retriever, "memory", false, 5)
 			if tc.setupMemory != nil {
@@ -456,6 +472,8 @@ func TestVectorStoreMemory_SaveContext(t *testing.T) {
 	}
 
 	memory := NewVectorStoreMemory(retriever, "memory", false, 5)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	memory.InputKey = "input"
 	memory.OutputKey = "output"
 
@@ -475,6 +493,8 @@ func TestVectorStoreMemory_SaveContext(t *testing.T) {
 func TestVectorStoreMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	retriever.addDocumentsFunc = func(ctx context.Context, documents []schema.Document) ([]string, error) {
 		return []string{"doc_1"}, nil
@@ -566,6 +586,8 @@ func TestVectorStoreMemory_SaveContext_ErrorHandling(t *testing.T) {
 			ctx := context.Background()
 			retriever := NewMockRetriever()
 			if tc.setupRetriever != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				tc.setupRetriever(retriever)
 			}
 
@@ -575,6 +597,8 @@ func TestVectorStoreMemory_SaveContext_ErrorHandling(t *testing.T) {
 			}
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if tc.expectedError != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedError)
@@ -586,10 +610,14 @@ func TestVectorStoreMemory_SaveContext_ErrorHandling(t *testing.T) {
 }
 
 // TestVectorStoreMemory_Clear tests the Clear method
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestVectorStoreMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "memory", false, 5)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Clear should not error (it's currently a no-op)
 	err := memory.Clear(ctx)
@@ -606,6 +634,8 @@ func TestFormatDocuments(t *testing.T) {
 	result := formatDocuments(docs)
 	assert.Contains(t, result, "Relevant context:")
 	assert.Contains(t, result, "- Document 1")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, result, "- Document 2")
 }
 
@@ -626,6 +656,8 @@ func TestNewVectorStoreRetrieverMemory(t *testing.T) {
 	assert.Equal(t, embedder, memory.Embedder)
 	assert.Equal(t, vectorStore, memory.VectorStore)
 	assert.Equal(t, "history", memory.MemoryKey)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "input", memory.InputKey)
 	assert.Equal(t, "output", memory.OutputKey)
 	assert.False(t, memory.ReturnDocs)
@@ -635,6 +667,8 @@ func TestNewVectorStoreRetrieverMemory(t *testing.T) {
 
 // TestNewVectorStoreRetrieverMemory_WithOptions tests constructor with options
 func TestNewVectorStoreRetrieverMemory_WithOptions(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
 
@@ -668,6 +702,8 @@ func TestVectorStoreRetrieverMemory_MemoryVariables(t *testing.T) {
 
 // TestVectorStoreRetrieverMemory_LoadMemoryVariables tests loading memory variables
 func TestVectorStoreRetrieverMemory_LoadMemoryVariables(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
@@ -692,6 +728,8 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables(t *testing.T) {
 	// Check formatted string
 	history, ok := vars["history"].(string)
 	assert.True(t, ok)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, history, "Relevant document 1")
 	assert.Contains(t, history, "Relevant document 2")
 
@@ -735,6 +773,8 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling(t *testing
 		setupVectorStore func(*MockVectorStore)
 		inputs           map[string]any
 		expectedError    string
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}{
 		{
 			name:          "Non-string input",
@@ -763,6 +803,8 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling(t *testing
 			memory := NewVectorStoreRetrieverMemory(embedder, vectorStore)
 			if tc.setupMemory != nil {
 				tc.setupMemory(memory)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 
 			_, err := memory.LoadMemoryVariables(ctx, tc.inputs)
@@ -811,6 +853,8 @@ func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 		outputs          map[string]any
 		expectedError    string
 	}{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		{
 			name:          "Non-string input",
 			inputs:        map[string]any{"input": 123},
@@ -822,6 +866,8 @@ func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 			inputs:        map[string]any{"input": "query"},
 			outputs:       map[string]any{"output": 456},
 			expectedError: "error",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		},
 		{
 			name: "Vector store error",
@@ -835,6 +881,8 @@ func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Run(tc.name, func(t *testing.T) {
 			ctx := context.Background()
 			embedder := NewMockEmbedder()
@@ -856,6 +904,8 @@ func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 func TestVectorStoreRetrieverMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	vectorStore := NewMockVectorStore()
 
 	memory := NewVectorStoreRetrieverMemory(embedder, vectorStore)

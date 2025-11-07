@@ -11,6 +11,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestChainedTask_Run_Success_NoNext(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
@@ -37,6 +39,8 @@ func TestChainedTask_Run_Success_NoNext(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Contains(t, output, "Task test-task succeeded with output: success_output")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestChainedTask_Run_Success_WithNext(t *testing.T) {
@@ -72,6 +76,8 @@ func TestChainedTask_Run_Success_WithNext(t *testing.T) {
 	output := buf.String()
 
 	assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, output, "Task first-task succeeded with output: first_output")
 	assert.Contains(t, output, "Task next-task succeeded with output: next_output")
 }
@@ -99,6 +105,8 @@ func TestChainedTask_Run_Error_NoFallback(t *testing.T) {
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
 	output := buf.String()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "task execution failed")
@@ -135,6 +143,8 @@ func TestChainedTask_Run_Error_WithFallback(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	output := buf.String()
 
 	assert.NoError(t, err) // Should succeed due to fallback
@@ -172,6 +182,8 @@ func TestChainedTask_Run_FallbackAlsoFails(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	io.Copy(&buf, r)
 	output := buf.String()
 
@@ -217,6 +229,8 @@ func TestChainedTask_Run_ChainWithMultipleTasks(t *testing.T) {
 	// Restore stdout
 	w.Close()
 	os.Stdout = oldStdout
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Read captured output
 	var buf bytes.Buffer
@@ -277,6 +291,8 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 	w.Close()
 	os.Stdout = oldStdout
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, r)
@@ -287,6 +303,8 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 	assert.Contains(t, output, "Task failing-task failed: middle task failed")
 	assert.Contains(t, output, "Executing fallback for task failing-task")
 	assert.Contains(t, output, "Task fallback-middle succeeded with output: fallback_output")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Contains(t, output, "Task after-fallback succeeded with output: after_fallback_output")
 	assert.NotContains(t, output, "should_not_reach")
 }
@@ -313,6 +331,8 @@ func TestChainedTask_Run_EmptyID(t *testing.T) {
 		ID: "",
 		Execute: func(input interface{}) (interface{}, error) {
 			return "output", nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		},
 	}
 
@@ -339,6 +359,8 @@ func TestChainedTask_Run_SpecialCharacters(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "task:with:colons@domain.com",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		Execute: func(input interface{}) (interface{}, error) {
 			return "special!@#$%^&*()_output", nil
 		},
@@ -368,6 +390,8 @@ func TestChainedTask_Run_NilInput(t *testing.T) {
 	task := &ChainedTask{
 		ID: "nil-input-task",
 		Execute: func(input interface{}) (interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if input == nil {
 				return "handled_nil", nil
 			}
@@ -406,6 +430,8 @@ func TestChainedTask_Run_ComplexDataTypes(t *testing.T) {
 					"count":     len(slice),
 					"first":     slice[0],
 				}, nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 			return nil, errors.New("expected slice input")
 		},
@@ -438,6 +464,8 @@ func TestChainedTask_Run_CircularReferencePrevention(t *testing.T) {
 			return "task1_output", nil
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	task2 := &ChainedTask{
 		ID: "task2",
@@ -500,6 +528,8 @@ func TestChainedTask_Run_OutputTypeHandling(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Capture stdout
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			oldStdout := os.Stdout
 			r, w, _ := os.Pipe()
 			os.Stdout = w
@@ -515,6 +545,8 @@ func TestChainedTask_Run_OutputTypeHandling(t *testing.T) {
 
 			// Restore stdout
 			w.Close()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			os.Stdout = oldStdout
 
 			// Read captured output

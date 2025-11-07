@@ -8,6 +8,8 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewMockEmbedder(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -56,6 +58,8 @@ func TestNewMockEmbedder(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestMockEmbedder_EmbedDocuments(t *testing.T) {
@@ -105,6 +109,8 @@ func TestMockEmbedder_EmbedDocuments(t *testing.T) {
 			if embeddings[i][j] != embeddings2[i][j] {
 				t.Errorf("Embeddings differ at position [%d][%d]: %f != %f", i, j, embeddings[i][j], embeddings2[i][j])
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 	}
 }
@@ -156,6 +162,8 @@ func TestMockEmbedder_EmbedQuery(t *testing.T) {
 
 	// Should be all zeros
 	for i, val := range zeroEmbedding {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		if val != 0.0 {
 			t.Errorf("Zero embedding at position %d should be 0.0, got %f", i, val)
 		}
@@ -175,6 +183,8 @@ func TestMockEmbedder_GetDimension(t *testing.T) {
 	ctx := context.Background()
 	dimension, err := embedder.GetDimension(ctx)
 	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Fatalf("GetDimension failed: %v", err)
 	}
 
@@ -190,6 +200,8 @@ func TestMockEmbedder_Check(t *testing.T) {
 	tracer := otel.Tracer("test")
 	embedder, err := NewMockEmbedder(config, tracer)
 	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Fatalf("Failed to create embedder: %v", err)
 	}
 
@@ -204,6 +216,8 @@ func TestMockEmbedder_InterfaceCompliance(t *testing.T) {
 	config := &Config{
 		Dimension: 128,
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	tracer := otel.Tracer("test")
 	embedder, err := NewMockEmbedder(config, tracer)
 	if err != nil {
@@ -221,6 +235,8 @@ func BenchmarkMockEmbedder_EmbedDocuments(b *testing.B) {
 		Dimension: 128,
 	}
 	tracer := otel.Tracer("benchmark")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	embedder, err := NewMockEmbedder(config, tracer)
 	if err != nil {
 		b.Fatalf("Failed to create embedder: %v", err)

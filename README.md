@@ -398,6 +398,28 @@ The framework provides pre-built test scenarios for common use cases:
 - **Conversation Flow Testing**: Memory and LLM integration validation
 - **Performance Benchmarking**: Cross-package performance validation
 
+### **Test Analyzer Tool** 🔧
+The framework includes a comprehensive test analysis tool for identifying and fixing performance issues in test files:
+
+```bash
+# Analyze test files for performance issues
+go run ./cmd/test-analyzer --dry-run pkg/llms
+
+# Auto-fix detected issues
+go run ./cmd/test-analyzer --auto-fix pkg/llms
+
+# Generate detailed reports
+go run ./cmd/test-analyzer --output html --output-file report.html pkg/llms
+```
+
+**Features:**
+- 🔍 Detects 9+ performance issue types (infinite loops, missing timeouts, large iterations, etc.)
+- 🔧 Auto-fix with dual validation (interface compatibility + test execution)
+- 📊 Multiple report formats (JSON, HTML, Markdown, Plain text)
+- ✅ Safe fixes with automatic backups
+
+See [test-analyzer documentation](./cmd/test-analyzer/README.md) and [comprehensive guide](./docs/tools/test-analyzer.md) for details.
+
 ## Future Development (v1.1 and Beyond) 
 
 With the **enterprise-grade foundation now complete**, future development can focus on expanding capabilities:

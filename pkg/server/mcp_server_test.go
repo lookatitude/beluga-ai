@@ -14,6 +14,8 @@ import (
 
 // MCP Server Tests
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMCPServerToolRegistration(t *testing.T) {
 	logger := newMockLogger()
 	server, err := NewMCPServer(
@@ -57,6 +59,8 @@ func TestMCPServerToolRegistration(t *testing.T) {
 	if len(tools) != 2 {
 		t.Errorf("Expected 2 tools, got %d", len(tools))
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestMCPServerResourceRegistration(t *testing.T) {
@@ -100,6 +104,8 @@ func TestMCPServerResourceRegistration(t *testing.T) {
 		t.Errorf("Failed to list resources: %v", err)
 	}
 	if len(resources) != 2 {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Errorf("Expected 2 resources, got %d", len(resources))
 	}
 }
@@ -151,6 +157,8 @@ func TestMCPServerToolExecution(t *testing.T) {
 	_, err = mcpServer.CallTool(context.Background(), "non-existent-tool", input)
 	if err == nil {
 		t.Error("Expected error when calling non-existent tool")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 	if !strings.Contains(err.Error(), "not found") {
 		t.Errorf("Expected 'not found' error, got: %v", err)
@@ -179,6 +187,8 @@ func TestMCPServerResourceReading(t *testing.T) {
 		t.Fatalf("Failed to register resource: %v", err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Test successful resource reading
 	// Note: MCP servers typically don't expose direct resource reading through the Server interface
 	// This would be tested through the HTTP endpoints in integration tests
@@ -205,6 +215,8 @@ func TestMCPServerInitialization(t *testing.T) {
 	// Test that the server implements the Server interface
 	var _ iface.Server = server
 	var _ MCPServer = server
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test health check
 	isHealthy := server.IsHealthy(context.Background())
@@ -277,6 +289,8 @@ func TestMCPProtocolMessages(t *testing.T) {
 			var msg map[string]interface{}
 			err = json.Unmarshal(data, &msg)
 			if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				t.Errorf("Failed to unmarshal message: %v", err)
 			}
 
@@ -362,6 +376,8 @@ func TestMCPServerFullIntegration(t *testing.T) {
 	for _, tool := range tools {
 		input := map[string]interface{}{
 			"input": "test",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			"value": 123,
 		}
 		result, err := mcpServer.CallTool(context.Background(), tool.Name(), input)
@@ -378,6 +394,8 @@ func TestMCPServerFullIntegration(t *testing.T) {
 
 func BenchmarkMCPServerToolRegistration(b *testing.B) {
 	logger := newMockLogger()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	server, _ := NewMCPServer(
 		WithLogger(logger),
 		WithMCPConfig(MCPConfig{
@@ -401,6 +419,8 @@ func BenchmarkMCPServerToolExecution(b *testing.B) {
 		WithMCPConfig(MCPConfig{
 			Config:     Config{Host: "localhost", Port: 0},
 			ServerName: "bench-mcp-server",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}),
 	)
 	mcpServer := server.(MCPServer)

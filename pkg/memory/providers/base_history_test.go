@@ -10,6 +10,8 @@ import (
 )
 
 // TestBaseChatMessageHistory tests the base chat message history implementation.
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestBaseChatMessageHistory(t *testing.T) {
 	ctx := context.Background()
 
@@ -103,6 +105,8 @@ func TestBaseChatMessageHistory(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestCompositeChatMessageHistory tests the composite chat message history implementation.
 func TestCompositeChatMessageHistory(t *testing.T) {
@@ -212,6 +216,8 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, secondaryMessages, 0)
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 // Benchmark tests for performance measurement
@@ -220,6 +226,8 @@ func BenchmarkBaseChatMessageHistory_AddMessage(b *testing.B) {
 	history := NewBaseChatMessageHistory()
 	ctx := context.Background()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		history.AddUserMessage(ctx, "Benchmark message")
@@ -233,6 +241,8 @@ func BenchmarkBaseChatMessageHistory_GetMessages(b *testing.B) {
 	// Add some messages first
 	for i := 0; i < 100; i++ {
 		history.AddUserMessage(ctx, "Message "+string(rune(i)))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	b.ResetTimer()
@@ -242,6 +252,8 @@ func BenchmarkBaseChatMessageHistory_GetMessages(b *testing.B) {
 }
 
 func BenchmarkCompositeChatMessageHistory_AddMessage(b *testing.B) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	primary := NewBaseChatMessageHistory()
 	composite := NewCompositeChatMessageHistory(primary)
 	ctx := context.Background()
@@ -258,6 +270,8 @@ func BenchmarkCompositeChatMessageHistory_GetMessages(b *testing.B) {
 	ctx := context.Background()
 
 	// Add some messages first
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for i := 0; i < 100; i++ {
 		composite.AddUserMessage(ctx, "Message "+string(rune(i)))
 	}

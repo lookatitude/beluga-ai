@@ -195,12 +195,16 @@ func createTestScores(count int) []float32 {
 	return scores
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMain(m *testing.M) {
 	// Set up test logger to discard logs during tests
 	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelError}))
 	slog.SetDefault(logger)
 
 	os.Exit(m.Run())
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewVectorStoreRetriever(t *testing.T) {
@@ -243,6 +247,8 @@ func TestNewVectorStoreRetriever(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewVectorStoreRetriever() error = %v, wantErr %v", err, tt.wantErr)
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -295,6 +301,8 @@ func TestNewVectorStoreRetrieverFromConfig(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := NewVectorStoreRetrieverFromConfig(nil, tt.config)
 			if (err != nil) != tt.wantErr {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				t.Errorf("NewVectorStoreRetrieverFromConfig() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -371,6 +379,8 @@ func TestRetrieverOptions(t *testing.T) {
 			}
 			if opts.EnableMetrics != tt.expected.EnableMetrics {
 				t.Errorf("EnableMetrics = %v, want %v", opts.EnableMetrics, tt.expected.EnableMetrics)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 		})
 	}
@@ -483,6 +493,8 @@ func TestConfigValidation(t *testing.T) {
 		},
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -530,6 +542,8 @@ func TestCustomErrorTypes(t *testing.T) {
 
 	t.Run("TimeoutError", func(t *testing.T) {
 		timeout := 30 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		underlyingErr := NewRetrieverError("underlying", nil, ErrCodeTimeout)
 		err := NewTimeoutError("test operation", timeout, underlyingErr)
 
@@ -554,6 +568,8 @@ func TestMetrics(t *testing.T) {
 	if metrics == nil {
 		t.Error("NewMetrics() returned nil")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test recording retrieval metrics
 	ctx := context.Background()
@@ -573,6 +589,8 @@ func TestGetRetrieverTypes(t *testing.T) {
 
 	if len(types) == 0 {
 		t.Error("GetRetrieverTypes() returned empty slice")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	// Check that "vector_store" is included
@@ -587,6 +605,8 @@ func TestGetRetrieverTypes(t *testing.T) {
 	if !found {
 		t.Error("GetRetrieverTypes() should include 'vector_store'")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestValidateRetrieverConfig(t *testing.T) {
@@ -668,6 +688,8 @@ func TestVectorStoreRetriever_GetRelevantDocuments(t *testing.T) {
 			ctx := context.Background()
 			docs, err := retriever.GetRelevantDocuments(ctx, tt.query)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if tt.expectError {
 				if err == nil {
 					t.Error("Expected error but got none")
@@ -739,6 +761,8 @@ func TestVectorStoreRetriever_Invoke(t *testing.T) {
 				if err == nil {
 					t.Error("Expected error but got none")
 				}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				return
 			}
 
@@ -821,6 +845,8 @@ func TestVectorStoreRetriever_Batch(t *testing.T) {
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 
 			if len(results) != len(tt.inputs) {
@@ -844,6 +870,8 @@ func TestVectorStoreRetriever_Batch(t *testing.T) {
 	}
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 // TestVectorStoreRetriever_Stream tests the Runnable interface Stream method.
 func TestVectorStoreRetriever_Stream(t *testing.T) {
 	mockStore := NewMockVectorStore()
@@ -918,6 +946,8 @@ func TestVectorStoreRetriever_CheckHealth(t *testing.T) {
 				ScoreThreshold: 0.0,
 				EnableTracing:  false,
 				EnableMetrics:  false,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			},
 			expectError: true,
 		},
@@ -1018,6 +1048,8 @@ func TestVectorStoreRetriever_ErrorHandling(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to create retriever: %v", err)
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			ctx := context.Background()
 			if tt.name == "context timeout" {
@@ -1056,6 +1088,8 @@ func TestVectorStoreRetriever_Observability(t *testing.T) {
 
 	// Create no-op tracer and meter for testing
 	var tracer trace.Tracer // nil tracer for testing
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	meter := noop.NewMeterProvider().Meter("test")
 
 	retriever, err := NewVectorStoreRetriever(mockStore,
@@ -1094,6 +1128,8 @@ func TestVectorStoreRetriever_CallOptions(t *testing.T) {
 	mockStore := NewMockVectorStore().WithSimilarityResults(docs, scores)
 
 	retriever, err := NewVectorStoreRetriever(mockStore,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		WithDefaultK(2), // Default small K
 		WithMetrics(false),
 		WithTracing(false),
@@ -1168,6 +1204,8 @@ func TestVectorStoreRetriever_IntegrationStyle(t *testing.T) {
 			t.Errorf("Query %d: expected 5 documents, got %d", i, len(docs))
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test batch processing
 	batchInputs := make([]any, len(queries))
@@ -1179,6 +1217,8 @@ func TestVectorStoreRetriever_IntegrationStyle(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Batch processing failed: %v", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	if len(batchResults) != len(queries) {
 		t.Errorf("Expected %d batch results, got %d", len(queries), len(batchResults))
@@ -1190,6 +1230,8 @@ func TestVectorStoreRetriever_IntegrationStyle(t *testing.T) {
 		if !ok {
 			t.Errorf("Batch result %d: expected []schema.Document, got %T", i, result)
 			continue
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 		if len(batchDocs) != len(results[i]) {
 			t.Errorf("Batch result %d length mismatch: expected %d, got %d", i, len(results[i]), len(batchDocs))
@@ -1215,11 +1257,15 @@ func BenchmarkConfigValidation(b *testing.B) {
 		}
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // BenchmarkVectorStoreRetrieverConfigValidation benchmarks VectorStoreRetrieverConfig validation.
 func BenchmarkVectorStoreRetrieverConfigValidation(b *testing.B) {
 	config := DefaultVectorStoreRetrieverConfig()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		err := config.Validate()

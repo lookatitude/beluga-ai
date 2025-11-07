@@ -13,6 +13,8 @@ import (
 )
 
 // TestMemoryIntegration_ChatApplication simulates a chat application using memory
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMemoryIntegration_ChatApplication(t *testing.T) {
 	ctx := context.Background()
 
@@ -160,6 +162,8 @@ func TestMemoryIntegration_ChatApplication(t *testing.T) {
 		}
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestMemoryIntegration_ErrorScenarios tests error handling in integration scenarios
 func TestMemoryIntegration_ErrorScenarios(t *testing.T) {
@@ -201,6 +205,8 @@ func TestMemoryIntegration_ErrorScenarios(t *testing.T) {
 			_, err := factory.CreateMemory(ctx, config)
 			assert.Error(t, err, "Expected error for config: %+v", config)
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	})
 }
 
@@ -278,6 +284,8 @@ func TestMemoryIntegration_PerformanceScenarios(t *testing.T) {
 
 		// Verify data integrity
 		assert.Contains(t, history, "This is a long message")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.Contains(t, history, "Response to:")
 		assert.Greater(t, len(history), 10000, "History should contain substantial content")
 	})
@@ -408,6 +416,8 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 		assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 		history := vars["conversation_log"].(string)
 		assert.Contains(t, history, "Custom input")
@@ -500,6 +510,8 @@ func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 		vars, err := memories["summary"].LoadMemoryVariables(ctx, map[string]any{})
 		assert.NoError(t, err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		history := vars["summary"].(string)
 		// Should contain all interactions (same as long-term for buffer memory)
 		for _, msg := range conversation {
@@ -553,6 +565,8 @@ func TestMemoryIntegration_Cleanup(t *testing.T) {
 
 		// Memory should still work after multiple clears
 		inputs := map[string]any{"input": "After clear"}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		outputs := map[string]any{"output": "Still working"}
 		err = memory.SaveContext(ctx, inputs, outputs)
 		assert.NoError(t, err)

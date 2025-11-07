@@ -13,6 +13,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewWorkflowMonitor(t *testing.T) {
 	monitor := NewWorkflowMonitor()
 
@@ -20,6 +22,8 @@ func TestNewWorkflowMonitor(t *testing.T) {
 	assert.NotNil(t, monitor.state)
 	assert.NotNil(t, monitor.logChan)
 	assert.Equal(t, 100, cap(monitor.logChan)) // Check buffer size
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestWorkflowMonitor_UpdateState(t *testing.T) {
@@ -32,6 +36,8 @@ func TestWorkflowMonitor_UpdateState(t *testing.T) {
 
 	// Verify states
 	assert.Equal(t, "completed", monitor.GetState("task1"))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "completed", monitor.GetState("task2"))
 	assert.Equal(t, "", monitor.GetState("nonexistent")) // Non-existent task should return empty string
 }
@@ -48,6 +54,8 @@ func TestWorkflowMonitor_GetState(t *testing.T) {
 
 	// After updating state
 	monitor.UpdateState("task1", "completed")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "completed", monitor.GetState("task1"))
 
 	// Non-existent task
@@ -84,6 +92,8 @@ func TestWorkflowMonitor_StartLogging(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	io.Copy(&buf, r)
 	output := buf.String()
 
@@ -116,6 +126,8 @@ func TestWorkflowMonitor_ConcurrentAccess(t *testing.T) {
 	// Wait for all goroutines to complete
 	wg.Wait()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Verify that all states were set correctly
 	for i := 0; i < numGoroutines; i++ {
 		for j := 0; j < updatesPerGoroutine; j++ {
@@ -130,6 +142,8 @@ func TestWorkflowMonitor_BufferedChannel(t *testing.T) {
 	monitor := NewWorkflowMonitor()
 
 	// Fill the log channel buffer
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for i := 0; i < 100; i++ {
 		monitor.UpdateState(fmt.Sprintf("task%d", i), fmt.Sprintf("state%d", i))
 	}
@@ -144,6 +158,8 @@ func TestWorkflowMonitor_BufferedChannel(t *testing.T) {
 
 func TestWorkflowMonitor_MultipleStateUpdates(t *testing.T) {
 	monitor := NewWorkflowMonitor()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	taskID := "test-task"
 	states := []string{"pending", "running", "processing", "completed", "failed", "retrying", "completed"}
@@ -154,6 +170,8 @@ func TestWorkflowMonitor_MultipleStateUpdates(t *testing.T) {
 		assert.Equal(t, state, monitor.GetState(taskID))
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Final state should be the last one
 	assert.Equal(t, "completed", monitor.GetState(taskID))
 }
@@ -163,6 +181,8 @@ func TestWorkflowMonitor_EmptyTaskID(t *testing.T) {
 
 	// Test with empty task ID
 	monitor.UpdateState("", "empty-state")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "empty-state", monitor.GetState(""))
 
 	// Test with whitespace task ID
@@ -180,6 +200,8 @@ func TestWorkflowMonitor_SpecialCharacters(t *testing.T) {
 
 	assert.Equal(t, state, monitor.GetState(taskID))
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestWorkflowMonitor_LargeNumberOfTasks(t *testing.T) {
 	monitor := NewWorkflowMonitor()
@@ -196,6 +218,8 @@ func TestWorkflowMonitor_LargeNumberOfTasks(t *testing.T) {
 	for i := 0; i < numTasks; i++ {
 		taskID := fmt.Sprintf("task-%d", i)
 		expectedState := fmt.Sprintf("state-%d", i)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.Equal(t, expectedState, monitor.GetState(taskID))
 	}
 }
@@ -219,6 +243,8 @@ func TestWorkflowMonitor_StartLogging_MultipleTimes(t *testing.T) {
 }
 
 func TestWorkflowMonitor_LogChannelClosure(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	monitor := NewWorkflowMonitor()
 
 	// Close the log channel
@@ -235,6 +261,8 @@ func TestWorkflowMonitor_LogChannelClosure(t *testing.T) {
 		// This might panic if the channel is closed and we try to send to it
 		defer func() {
 			if r := recover(); r != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				// Expected if channel is closed
 				t.Logf("Panic recovered: %v", r)
 			}

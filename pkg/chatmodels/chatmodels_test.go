@@ -73,6 +73,8 @@ func assertModelCreated(t *testing.T, model iface.ChatModel, err error) {
 	}
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewChatModel(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -261,6 +263,8 @@ func TestNewChatModel(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewOpenAIChatModel(t *testing.T) {
@@ -326,6 +330,8 @@ func TestNewOpenAIChatModel(t *testing.T) {
 			} else {
 				assertModelCreated(t, model, err)
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -372,6 +378,8 @@ func TestNewMockChatModel(t *testing.T) {
 					t.Errorf("expected error but got none")
 				}
 			} else {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				assertModelCreated(t, model, err)
 			}
 		})
@@ -600,6 +608,8 @@ func TestChatModel_StreamMessages(t *testing.T) {
 					receivedMessages = append(receivedMessages, msg)
 				}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				if tt.validateStream != nil {
 					tt.validateStream(t, receivedMessages)
 				}
@@ -654,6 +664,8 @@ func TestChatModel_GetModelInfo(t *testing.T) {
 			model, err := NewMockChatModel(tt.modelName)
 			if err != nil {
 				t.Fatalf("Failed to create mock model: %v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 
 			info := model.GetModelInfo()
@@ -723,6 +735,8 @@ func TestChatModel_CheckHealth(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			model, err := NewMockChatModel(tt.modelName)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if err != nil {
 				t.Fatalf("Failed to create mock model: %v", err)
 			}
@@ -800,6 +814,8 @@ func TestConfig_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			err := tt.config.Validate()
 			if tt.wantError {
 				if err == nil {
@@ -820,6 +836,8 @@ func TestGetSupportedProviders(t *testing.T) {
 	expectedProviders := []string{"openai", "mock"}
 	if len(providers) != len(expectedProviders) {
 		t.Errorf("Expected %d providers, got %d", len(expectedProviders), len(providers))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	for _, expected := range expectedProviders {
@@ -862,6 +880,8 @@ func TestGetSupportedModels(t *testing.T) {
 			if len(models) != len(tt.expectedModels) {
 				t.Errorf("Expected %d models for provider %s, got %d",
 					len(tt.expectedModels), tt.provider, len(models))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 
 			for _, expected := range tt.expectedModels {
@@ -887,6 +907,8 @@ func TestFunctionalOptions(t *testing.T) {
 
 	model, err := NewChatModel("test-model", config,
 		WithTemperature(0.8),
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		WithMaxTokens(2000),
 		WithTopP(0.9),
 		WithStopSequences([]string{"\n", "END"}),
@@ -926,6 +948,8 @@ func TestErrorHandling(t *testing.T) {
 		t.Fatal("Expected error for unsupported provider")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	var chatErr *ChatModelError
 	if !errors.As(err, &chatErr) {
 		t.Fatalf("Expected ChatModelError, got %T", err)
@@ -972,6 +996,8 @@ func TestIsRetryable(t *testing.T) {
 		{
 			name:     "authentication error",
 			err:      NewChatModelError("test", "model", "provider", ErrCodeAuthentication, errors.New("auth failed")),
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			expected: false,
 		},
 		{
@@ -983,6 +1009,8 @@ func TestIsRetryable(t *testing.T) {
 			name:     "standard rate limit error",
 			err:      ErrRateLimitExceeded,
 			expected: true,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		},
 	}
 
@@ -999,6 +1027,8 @@ func TestIsRetryable(t *testing.T) {
 func TestIsValidationError(t *testing.T) {
 	validErr := NewValidationError("field", "message")
 	invalidErr := errors.New("regular error")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	if !IsValidationError(validErr) {
 		t.Error("Expected validation error to be recognized")
@@ -1018,6 +1048,8 @@ func TestIsAuthenticationError(t *testing.T) {
 		t.Error("Expected authentication error to be recognized")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if IsAuthenticationError(regularErr) {
 		t.Error("Expected non-auth error to not be recognized as auth error")
 	}
@@ -1033,6 +1065,8 @@ func TestHealthCheck(t *testing.T) {
 		t.Fatalf("Failed to create mock model: %v", err)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	health := HealthCheck(model)
 	if health == nil {
 		t.Fatal("Expected health map to be non-nil")
@@ -1082,6 +1116,8 @@ func TestGenerateMessages(t *testing.T) {
 	}
 
 	if len(response) == 0 {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Fatal("Expected at least one response message")
 	}
 }
@@ -1135,6 +1171,8 @@ func TestConcurrentUsage(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < numRequestsPerGoroutine; j++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				ctx := context.Background()
 				messages := []schema.Message{
 					schema.NewHumanMessage("Concurrent test message " + string(rune('A'+j))),
@@ -1196,6 +1234,8 @@ func TestContextCancellation(t *testing.T) {
 			model, err := NewMockChatModel("cancel-test-model")
 			if err != nil {
 				t.Fatalf("Failed to create mock model: %v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -1275,6 +1315,8 @@ func TestErrorScenarios(t *testing.T) {
 					DefaultProvider:    "mock",
 					DefaultTemperature: -1, // Invalid temperature
 					DefaultMaxTokens:   1000,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 					DefaultTimeout:     time.Second,
 					DefaultMaxRetries:  3,
 				})
@@ -1349,6 +1391,8 @@ func TestOptionValidation(t *testing.T) {
 				WithMaxTokens(100000),
 			},
 			expectErr: false,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		},
 		{
 			name: "empty stop sequences",
@@ -1394,6 +1438,8 @@ func TestOptionValidation(t *testing.T) {
 func TestMetricsAndTracing(t *testing.T) {
 	// Test that models can be created with metrics and tracing enabled/disabled
 	tests := []struct {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		name          string
 		enableMetrics bool
 		enableTracing bool
@@ -1438,6 +1484,8 @@ func TestMetricsAndTracing(t *testing.T) {
 	}
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestRunnableInterface(t *testing.T) {
 	model, err := NewMockChatModel("runnable-test-model")
 	if err != nil {
@@ -1494,6 +1542,8 @@ func TestInterfaceCompliance(t *testing.T) {
 	// Compile-time checks (these will fail at compile time if interfaces aren't satisfied)
 	var _ iface.ChatModel = model
 	var _ iface.MessageGenerator = model
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	var _ iface.StreamMessageHandler = model
 	var _ iface.ModelInfoProvider = model
 	var _ iface.HealthChecker = model
@@ -1510,6 +1560,8 @@ func TestInterfaceCompliance(t *testing.T) {
 	}
 
 	// Test StreamMessageHandler interface
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	stream, err := model.StreamMessages(ctx, messages)
 	if err != nil {
 		t.Errorf("StreamMessageHandler.StreamMessages failed: %v", err)
@@ -1530,6 +1582,8 @@ func TestInterfaceCompliance(t *testing.T) {
 	if health == nil {
 		t.Error("HealthChecker.CheckHealth returned nil")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test core.Runnable interface
 	result, err := model.Invoke(ctx, messages)

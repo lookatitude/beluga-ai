@@ -9,11 +9,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewTracer(t *testing.T) {
 	tracer := NewTracer("test-service")
 	assert.NotNil(t, tracer)
 	assert.Equal(t, "test-service", tracer.service)
 	assert.NotNil(t, tracer.spans)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestTracerStartSpan(t *testing.T) {
@@ -68,6 +72,8 @@ func TestTracerStartSpan(t *testing.T) {
 		assert.Equal(t, "test", spanImpl.Tags["env"])
 		assert.Equal(t, "1.0", spanImpl.Tags["version"])
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		tracer.FinishSpan(span)
 	})
 }
@@ -86,6 +92,8 @@ func TestTracerFinishSpan(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	tracer.FinishSpan(span)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NotNil(t, spanImpl.EndTime)
 	assert.NotNil(t, spanImpl.SpanDuration)
 	assert.True(t, *spanImpl.SpanDuration >= 10*time.Millisecond)
@@ -105,6 +113,8 @@ func TestTracerGetSpan(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, span, retrievedSpan)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Test getting non-existent span
 	nonExistentSpan, exists := tracer.GetSpan("non-existent-id")
 	assert.False(t, exists)
@@ -134,6 +144,8 @@ func TestTracerGetTraceSpans(t *testing.T) {
 		require.True(t, ok)
 		assert.Equal(t, span1Impl.TraceID, spanImpl.TraceID)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test with non-existent trace
 	emptySpans := tracer.GetTraceSpans("non-existent-trace")
@@ -200,6 +212,8 @@ func TestSpanOperations(t *testing.T) {
 		finishedDuration := span.GetDuration()
 		assert.True(t, finishedDuration >= duration)
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("is finished", func(t *testing.T) {
 		assert.True(t, span.IsFinished())
@@ -227,6 +241,8 @@ func TestSpanOptions(t *testing.T) {
 	t.Run("WithTags", func(t *testing.T) {
 		tags := map[string]interface{}{
 			"key1": "value1",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			"key2": 42,
 		}
 		option := WithTags(tags)
@@ -275,6 +291,8 @@ func TestSpanContext(t *testing.T) {
 	})
 
 	t.Run("SpanIDFromContext", func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		ctx, span := tracer.StartSpan(ctx, "test_operation")
 		spanImpl, ok := span.(*spanImpl)
 		require.True(t, ok)
@@ -290,6 +308,8 @@ func TestSpanContext(t *testing.T) {
 		tracer.FinishSpan(span)
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestTraceFunc(t *testing.T) {
 	tracer := NewTracer("test-service")
@@ -309,6 +329,8 @@ func TestTraceFunc(t *testing.T) {
 }
 
 func TestTraceMethod(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	tracer := NewTracer("test-service")
 	ctx := context.Background()
 
@@ -331,6 +353,8 @@ func TestTraceMethod(t *testing.T) {
 
 func TestGenerateID(t *testing.T) {
 	id1 := generateID()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	id2 := generateID()
 
 	assert.NotEmpty(t, id1)
@@ -339,6 +363,8 @@ func TestGenerateID(t *testing.T) {
 	assert.Len(t, id1, 16) // 8 bytes * 2 hex chars per byte
 
 	// Verify it's valid hex
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.True(t, isValidHex(id1))
 	assert.True(t, isValidHex(id2))
 }
@@ -349,6 +375,8 @@ func isValidHex(s string) bool {
 			return false
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	return true
 }
 
@@ -362,6 +390,8 @@ func BenchmarkTracer_StartSpan(b *testing.B) {
 		tracer.FinishSpan(span)
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func BenchmarkTracer_StartSpanWithTags(b *testing.B) {
 	tracer := NewTracer("bench-service")
@@ -372,6 +402,8 @@ func BenchmarkTracer_StartSpanWithTags(b *testing.B) {
 		span.SetTag("iteration", i)
 		span.SetTag("service", "bench")
 		tracer.FinishSpan(span)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 

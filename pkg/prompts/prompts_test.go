@@ -16,6 +16,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestPromptManager_NewStringTemplate(t *testing.T) {
 	tests := []struct {
 		name         string
@@ -115,6 +117,8 @@ func TestPromptManager_NewStringTemplate(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestPromptManager_NewDefaultAdapter(t *testing.T) {
@@ -196,6 +200,8 @@ func TestPromptManager_NewDefaultAdapter(t *testing.T) {
 					}
 				}
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -319,6 +325,8 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			}
 
 			if actual != tt.expected {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				t.Errorf("Format() = %q, want %q", actual, tt.expected)
 			}
 		})
@@ -388,6 +396,8 @@ func TestPromptManager_NewChatAdapter(t *testing.T) {
 				t.Errorf("NewChatAdapter() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			if !tt.wantErr && adapter == nil {
 				t.Error("NewChatAdapter() returned nil adapter")
@@ -536,6 +546,8 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			// Find the user message (it should be the last one)
 			userMsg := messages[len(messages)-1]
 			if userMsg.GetType() != "user" {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				t.Errorf("Last message type = %s, want user", userMsg.GetType())
 			}
 
@@ -547,6 +559,8 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 }
 
 func TestPromptManager_HealthCheck(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	manager, err := NewPromptManager()
 	if err != nil {
 		t.Fatalf("Failed to create prompt manager: %v", err)
@@ -689,6 +703,8 @@ func TestStringTemplate_Format(t *testing.T) {
 				return
 			}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			actual := stringValue.ToString()
 			if actual != tt.expected {
 				t.Errorf("Format() = %q, want %q", actual, tt.expected)
@@ -725,6 +741,8 @@ func TestStringTemplate_Validate(t *testing.T) {
 			expectError: false,
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -740,6 +758,8 @@ func TestStringTemplate_Validate(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestNewStringPromptTemplate_ConvenienceFunction(t *testing.T) {
 	template, err := NewStringPromptTemplate("test", "Hello {{.name}}!")
@@ -755,6 +775,8 @@ func TestNewStringPromptTemplate_ConvenienceFunction(t *testing.T) {
 	expected := []string{"name"}
 	if len(variables) != len(expected) || variables[0] != expected[0] {
 		t.Errorf("GetInputVariables() = %v, want %v", variables, expected)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -776,6 +798,8 @@ func TestNewDefaultPromptAdapter_ConvenienceFunction(t *testing.T) {
 }
 
 func TestConfig_WithOptions(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Test configuration with various options
 	config := DefaultConfig()
 	config.EnableMetrics = false
@@ -924,6 +948,8 @@ func TestVariableValidation(t *testing.T) {
 					var promptErr *PromptError
 					if errors.As(err, &promptErr) {
 						if promptErr.Code != tt.errorType {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 							t.Errorf("Expected error type %s, got %s", tt.errorType, promptErr.Code)
 						}
 					} else {
@@ -946,6 +972,8 @@ func TestVariableValidation(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestErrorHandling(t *testing.T) {
@@ -964,6 +992,8 @@ func TestErrorHandling(t *testing.T) {
 	_, err = manager.NewDefaultAdapter("", "Test {{.value}}", []string{"value"})
 	if err == nil {
 		t.Error("Expected error for empty adapter name")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	_, err = manager.NewDefaultAdapter("test", "", []string{"value"})
@@ -986,6 +1016,8 @@ func BenchmarkStringPromptTemplate_Format(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := template.Format(ctx, inputs)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -1010,6 +1042,8 @@ func BenchmarkStringPromptTemplate_Format_Complex(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := template.Format(ctx, inputs)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -1028,6 +1062,8 @@ func BenchmarkStringPromptTemplate_Format_LargeTemplate(b *testing.B) {
 		}
 		templateStr.WriteString(fmt.Sprintf("{{.field%d}}", i))
 		inputs[fmt.Sprintf("field%d", i)] = fmt.Sprintf("value%d", i)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	template, _ := NewStringPromptTemplate("bench_large", templateStr.String())
@@ -1051,6 +1087,8 @@ func BenchmarkDefaultPromptAdapter_Format(b *testing.B) {
 		"language": "Spanish",
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -1071,6 +1109,8 @@ func BenchmarkDefaultPromptAdapter_Format_LongText(b *testing.B) {
 	for i := 0; i < 1000; i++ {
 		longText.WriteString(fmt.Sprintf("Word%d ", i))
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	inputs := map[string]interface{}{
 		"text": longText.String(),
@@ -1099,6 +1139,8 @@ func BenchmarkChatPromptAdapter_Format(b *testing.B) {
 	}
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1111,6 +1153,8 @@ func BenchmarkChatPromptAdapter_Format(b *testing.B) {
 
 func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
 	adapter, _ := NewChatPromptAdapter("bench_chat_history",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		"You are a helpful assistant.",
 		"{{.question}}",
 		[]string{"question"})
@@ -1124,6 +1168,8 @@ func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
 	}
 
 	inputs := map[string]interface{}{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		"question": "What are the applications?",
 		"history":  history,
 	}
@@ -1135,6 +1181,8 @@ func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
 		_, err := adapter.Format(ctx, inputs)
 		if err != nil {
 			b.Fatal(err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 	}
 }
@@ -1145,6 +1193,8 @@ func BenchmarkPromptManager_NewStringTemplate(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		name := fmt.Sprintf("template_%d", i)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		template := fmt.Sprintf("Hello {{.name%d}}!", i)
 		_, err := manager.NewStringTemplate(name, template)
 		if err != nil {
@@ -1156,6 +1206,8 @@ func BenchmarkPromptManager_NewStringTemplate(b *testing.B) {
 func BenchmarkPromptManager_NewDefaultAdapter(b *testing.B) {
 	manager, _ := NewPromptManager()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		name := fmt.Sprintf("adapter_%d", i)
@@ -1178,6 +1230,8 @@ func BenchmarkPromptManager_HealthCheck(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -1211,6 +1265,8 @@ func BenchmarkVariableValidation(b *testing.B) {
 	config.ValidateVariables = true
 	manager, _ := NewPromptManager(WithConfig(config))
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	template, _ := manager.NewStringTemplate("bench_validation", "Hello {{.name}}, {{.age}}, {{.city}}!")
 
 	inputs := map[string]interface{}{
@@ -1275,6 +1331,8 @@ func TestCacheConfiguration(t *testing.T) {
 		expectCacheTTL     time.Duration
 		expectMaxCacheSize int
 	}{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		{
 			name:               "default cache settings",
 			enableCache:        true,
@@ -1294,6 +1352,8 @@ func TestCacheConfiguration(t *testing.T) {
 			expectMaxCacheSize: 200,
 		},
 		{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			name:               "custom cache settings",
 			enableCache:        true,
 			cacheTTL:           30 * time.Minute,
@@ -1355,6 +1415,8 @@ func TestCacheMetrics(t *testing.T) {
 func TestTemplateCachingBehavior(t *testing.T) {
 	// Test that demonstrates expected caching behavior
 	// Note: This test documents the expected behavior for when caching is implemented
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	config := DefaultConfig()
 	config.EnableTemplateCache = true
@@ -1388,6 +1450,8 @@ func TestTemplateCachingBehavior(t *testing.T) {
 	if template1 == template2 {
 		t.Log("Note: Templates are identical instances - caching may be implemented")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Both should work identically
 	inputs := map[string]interface{}{"name": "Test"}
@@ -1422,6 +1486,8 @@ func TestCacheSizeLimits(t *testing.T) {
 	config.MaxCacheSize = 3 // Very small cache
 
 	manager, err := NewPromptManager(WithConfig(config))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if err != nil {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
@@ -1440,6 +1506,8 @@ func TestCacheSizeLimits(t *testing.T) {
 
 		// Test that template works
 		inputs := map[string]interface{}{"value": fmt.Sprintf("test%d", i)}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		_, err = template.Format(ctx, inputs)
 		if err != nil {
 			t.Fatalf("Failed to format template %d: %v", i, err)
@@ -1546,6 +1614,8 @@ func TestErrorTypesAndContext(t *testing.T) {
 			checkContext: func(t *testing.T, err error) {
 				var promptErr *PromptError
 				if errors.As(err, &promptErr) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 					if promptErr.Context == nil {
 						t.Error("Expected context in variable missing error")
 						return
@@ -1569,6 +1639,8 @@ func TestErrorTypesAndContext(t *testing.T) {
 			},
 			expectedCode: "variable_invalid",
 			checkContext: func(t *testing.T, err error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				var promptErr *PromptError
 				if errors.As(err, &promptErr) {
 					if promptErr.Context == nil {
@@ -1651,6 +1723,8 @@ func TestErrorEdgeCases(t *testing.T) {
 				_, err := NewStringPromptTemplate("test", "")
 				return err
 			},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			expectError: false, // Empty templates are allowed (static templates)
 		},
 		{
@@ -1688,6 +1762,8 @@ func TestErrorEdgeCases(t *testing.T) {
 			name: "template with special characters",
 			testFunc: func() error {
 				_, err := NewStringPromptTemplate("special", "Price: ${{.price}} ({{.currency}})")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				return err
 			},
 			expectError: false,
@@ -1744,6 +1820,8 @@ func TestErrorRecovery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create valid template after error: %v", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Format the valid template (should work)
 	result, err := template.Format(ctx, map[string]interface{}{"name": "Alice"})
@@ -1765,6 +1843,8 @@ func TestErrorRecovery(t *testing.T) {
 func TestConfigurationError(t *testing.T) {
 	// Test configuration-related errors
 	tests := []struct {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		name        string
 		configFunc  func() *Config
 		expectError bool
@@ -1900,6 +1980,8 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 		adapter, err := manager.NewDefaultAdapter("translator", "Translate '{{.text}}' to {{.language}}.", []string{"text", "language"})
 		if err != nil {
 			t.Fatalf("Failed to create default adapter: %v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 
 		inputs := map[string]interface{}{
@@ -1931,6 +2013,8 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 			[]string{"role", "question"})
 		if err != nil {
 			t.Fatalf("Failed to create chat adapter: %v", err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 
 		inputs := map[string]interface{}{
@@ -1958,6 +2042,8 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 			t.Errorf("First message type = %s, want system", systemMsg.GetType())
 		}
 		if systemMsg.GetContent() != "You are a helpful assistant." {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			t.Errorf("System message = %q, want %q", systemMsg.GetContent(), "You are a helpful assistant.")
 		}
 
@@ -2004,6 +2090,8 @@ func TestIntegration_ErrorPropagation(t *testing.T) {
 	}
 
 	var promptErr *PromptError
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if !errors.As(err, &promptErr) {
 		t.Errorf("Expected PromptError, got %T", err)
 	}
@@ -2050,6 +2138,8 @@ func TestConcurrency_TemplateFormatting(t *testing.T) {
 	}
 
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	numGoroutines := runtime.NumCPU() * 2
 	numIterations := 100
 
@@ -2118,6 +2208,8 @@ func TestConcurrency_AdapterFormatting(t *testing.T) {
 				_, err := adapter.Format(ctx, inputs)
 				if err != nil {
 					errors <- err
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				}
 			}
 		}(i)
@@ -2180,6 +2272,8 @@ func TestConcurrency_ManagerOperations(t *testing.T) {
 				if err != nil {
 					errors <- fmt.Errorf("format template: %w", err)
 					continue
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				}
 
 				// Health check occasionally

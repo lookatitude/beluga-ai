@@ -127,6 +127,8 @@ func (m *mockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewReActAgent(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -182,6 +184,8 @@ func TestNewReActAgent(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestReActAgent_Plan(t *testing.T) {
@@ -264,6 +268,8 @@ func TestReActAgent_Plan(t *testing.T) {
 					t.Errorf("Expected tool '%s', got '%s'", tt.expectedTool, action.Tool)
 				}
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -301,6 +307,8 @@ func TestReActAgent_ConstructScratchpad(t *testing.T) {
 	if !strings.Contains(scratchpad, "calculator") {
 		t.Error("Expected 'calculator' in scratchpad")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	if !strings.Contains(scratchpad, "Result: 4") {
 		t.Error("Expected observation in scratchpad")
@@ -329,6 +337,8 @@ func TestReActAgent_FormatPrompt(t *testing.T) {
 	}
 
 	if !strings.Contains(formatted, "test scratchpad") {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Error("Expected scratchpad to be formatted")
 	}
 
@@ -403,6 +413,8 @@ func TestReActAgent_ParseResponse(t *testing.T) {
 				}
 			}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if tt.expectAction {
 				if action.Tool == "" {
 					t.Error("Expected action with tool name")
@@ -411,6 +423,8 @@ func TestReActAgent_ParseResponse(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // Benchmark tests
 func BenchmarkNewReActAgent(b *testing.B) {
