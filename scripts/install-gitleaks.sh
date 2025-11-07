@@ -114,8 +114,8 @@ else
     exit 1
 fi
 
-mv "$BINARY_NAME" "$INSTALL_DIR/gitleaks"
-echo "✅ gitleaks installed to $INSTALL_DIR/gitleaks"
+mv "$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
+echo "✅ gitleaks installed to $INSTALL_DIR/$BINARY_NAME"
 
 # Cleanup
 cd -
