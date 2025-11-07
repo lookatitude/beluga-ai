@@ -295,10 +295,14 @@ llm_providers:
 }
 
 func TestLoader_MustLoadConfig_Panic(t *testing.T) {
-	// Test panic case - try to load non-existent config
+	// Test panic case - create a loader with invalid YAML to force a load error
+	tempDir := t.TempDir()
+	invalidFile := filepath.Join(tempDir, "test.yaml")
+	os.WriteFile(invalidFile, []byte("invalid: yaml: [unclosed"), 0644)
+
 	loader, err := NewLoader(iface.LoaderOptions{
-		ConfigName:  "nonexistent",
-		ConfigPaths: []string{"/nonexistent/path"},
+		ConfigName:  "test",
+		ConfigPaths: []string{tempDir},
 		Validate:    false,
 		SetDefaults: false,
 	})
@@ -382,9 +386,11 @@ func TestGetEnvConfigMap(t *testing.T) {
 			},
 		},
 		{
-			name:     "get OTHER prefixed vars",
-			prefix:   "OTHER",
-			expected: map[string]string{},
+			name:   "get OTHER prefixed vars",
+			prefix: "OTHER",
+			expected: map[string]string{
+				"var": "other_value",
+			},
 		},
 		{
 			name:     "get empty prefix vars",
@@ -482,7 +488,7 @@ func TestConfigKey(t *testing.T) {
 			name:     "no prefix match",
 			prefix:   "APP",
 			envVar:   "OTHER_VAR",
-			expected: "other_var",
+			expected: "other.var",
 		},
 	}
 

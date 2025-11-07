@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// mockLLM is a simple mock implementation of the LLM interface for testing
+// mockLLM is a simple mock implementation of the LLM interface for testing.
 type mockLLM struct{}
 
 func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
@@ -33,7 +33,7 @@ func (m *mockLLM) GetProviderName() string {
 	return "mock-provider"
 }
 
-// mockChatModel is a simple mock implementation of the ChatModel interface for testing
+// mockChatModel is a simple mock implementation of the ChatModel interface for testing.
 type mockChatModel struct{}
 
 func (m *mockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
@@ -87,7 +87,7 @@ func (m *mockChatModel) CheckHealth() map[string]interface{} {
 	}
 }
 
-// mockTool is a simple mock implementation of the Tool interface for testing
+// mockTool is a simple mock implementation of the Tool interface for testing.
 type mockTool struct {
 	name        string
 	description string
@@ -128,7 +128,7 @@ func createMockTools() []tools.Tool {
 	}
 }
 
-// mockErrorLLM simulates LLM errors for testing error scenarios
+// mockErrorLLM simulates LLM errors for testing error scenarios.
 type mockErrorLLM struct {
 	err error
 }
@@ -145,7 +145,7 @@ func (m *mockErrorLLM) GetProviderName() string {
 	return "mock-error-provider"
 }
 
-// mockErrorTool simulates tool errors for testing error scenarios
+// mockErrorTool simulates tool errors for testing error scenarios.
 type mockErrorTool struct {
 	name        string
 	description string
@@ -176,7 +176,7 @@ func (m *mockErrorTool) Batch(ctx context.Context, inputs []any) ([]any, error) 
 	return nil, m.err
 }
 
-// mockMetricsRecorder implements the MetricsRecorder interface for testing
+// mockMetricsRecorder implements the MetricsRecorder interface for testing.
 type mockMetricsRecorder struct {
 	agentExecutions int
 	planningCalls   int
@@ -217,7 +217,7 @@ type mockSpan struct{}
 
 func (m *mockSpan) End(options ...trace.SpanEndOption) {}
 
-// createMockMetricsRecorder creates a new mock metrics recorder
+// createMockMetricsRecorder creates a new mock metrics recorder.
 func createMockMetricsRecorder() *mockMetricsRecorder {
 	return &mockMetricsRecorder{}
 }
@@ -522,7 +522,7 @@ func TestGetAgentStateString(t *testing.T) {
 	}
 }
 
-// Test agent as Runnable interface
+// Test agent as Runnable interface.
 func TestAgentAsRunnable(t *testing.T) {
 	llm := &mockLLM{}
 	tools := createMockTools()
@@ -567,7 +567,7 @@ func TestAgentAsRunnable(t *testing.T) {
 	}
 }
 
-// Test error scenarios for agent creation
+// Test error scenarios for agent creation.
 func TestAgentCreationErrors(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -621,11 +621,11 @@ func TestAgentCreationErrors(t *testing.T) {
 	}
 }
 
-// Test comprehensive agent factory scenarios
+// Test comprehensive agent factory scenarios.
 func TestAgentFactoryComprehensive(t *testing.T) {
 	config := agents.DefaultConfig()
 	config.DefaultMaxRetries = 10
-	config.EnableMetrics = false
+	config.EnableMetrics = true  // Enable metrics for the test
 	config.EnableTracing = false
 
 	factory := agents.NewAgentFactory(config)
@@ -692,7 +692,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 	})
 }
 
-// Test agent lifecycle management
+// Test agent lifecycle management.
 func TestAgentLifecycle(t *testing.T) {
 	llm := &mockLLM{}
 	tools := createMockTools()
@@ -708,7 +708,8 @@ func TestAgentLifecycle(t *testing.T) {
 
 	// Test initialization
 	config := map[string]interface{}{
-		"max_retries": 3,
+		"max_retries": 1,  // Use fewer retries for faster test
+		"retry_delay": 1 * time.Millisecond,  // Use very short delay for test
 		"timeout":     "30s",
 	}
 	err = agent.Initialize(config)
@@ -721,7 +722,22 @@ func TestAgentLifecycle(t *testing.T) {
 	}
 
 	// Test execution (will fail since BaseAgent doesn't implement doExecute)
-	err = agent.Execute()
+	// Use a timeout context to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	
+	// Execute in a goroutine with timeout
+	done := make(chan error, 1)
+	go func() {
+		done <- agent.Execute()
+	}()
+	
+	select {
+	case err = <-done:
+		// Execution completed
+	case <-ctx.Done():
+		t.Fatal("Execute() timed out")
+	}
 	if err == nil {
 		t.Error("Expected execution to fail for BaseAgent (not implemented)")
 	}
@@ -737,7 +753,7 @@ func TestAgentLifecycle(t *testing.T) {
 	}
 }
 
-// Test comprehensive configuration scenarios
+// Test comprehensive configuration scenarios.
 func TestConfigurationScenarios(t *testing.T) {
 	t.Run("DefaultConfigValidation", func(t *testing.T) {
 		config := agents.DefaultConfig()
@@ -824,7 +840,7 @@ func TestConfigurationScenarios(t *testing.T) {
 	})
 }
 
-// Test tool registry functionality
+// Test tool registry functionality.
 func TestToolRegistry(t *testing.T) {
 	registry := agents.NewToolRegistry()
 	if registry == nil {
@@ -883,7 +899,7 @@ func TestToolRegistry(t *testing.T) {
 	}
 }
 
-// Test error handling and custom error types
+// Test error handling and custom error types.
 func TestErrorHandling(t *testing.T) {
 	t.Run("AgentErrorCreation", func(t *testing.T) {
 		originalErr := errors.New("original error")
@@ -938,7 +954,7 @@ func TestErrorHandling(t *testing.T) {
 	})
 }
 
-// Test event handling scenarios
+// Test event handling scenarios.
 func TestEventHandling(t *testing.T) {
 	llm := &mockLLM{}
 	tools := createMockTools()
@@ -1004,7 +1020,7 @@ func TestEventHandling(t *testing.T) {
 	})
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkNewBaseAgent(b *testing.B) {
 	llm := &mockLLM{}
 	tools := createMockTools()

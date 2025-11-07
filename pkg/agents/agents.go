@@ -107,6 +107,13 @@ func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llm
 		WithTracing(f.config.EnableTracing),
 	}
 
+	// Add factory metrics if enabled
+	if f.config.EnableMetrics && f.metrics != nil {
+		allOpts = append(allOpts, func(o *iface.Options) {
+			o.Metrics = f.metrics
+		})
+	}
+
 	// Add user-provided options
 	allOpts = append(allOpts, opts...)
 
@@ -318,7 +325,7 @@ func GetAgentStateString(state iface.AgentState) string {
 
 // Option functions for configuring agents are defined in config.go
 
-// Compile-time checks to ensure implementations satisfy interfaces
+// Compile-time checks to ensure implementations satisfy interfaces.
 var (
 	_ iface.CompositeAgent = (*base.BaseAgent)(nil)
 	_ iface.Executor       = (*executor.AgentExecutor)(nil)

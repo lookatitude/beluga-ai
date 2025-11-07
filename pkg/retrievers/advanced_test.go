@@ -160,6 +160,8 @@ func TestRetrieverScenarios(t *testing.T) {
 				runner := NewRetrieverScenarioRunner(retriever)
 				err := runner.RunRelevanceTestScenario(context.Background(), pairs)
 				// Note: Mock retriever may not implement actual relevance, so we test the interface
+				// The mock generates documents based on the query, so it may not match exact expected documents
+				// We just verify the interface works without errors
 				assert.NoError(t, err)
 			},
 		},
@@ -490,6 +492,10 @@ func TestErrorHandling(t *testing.T) {
 			err := tt.operation(retriever)
 
 			assert.Error(t, err)
+			// For timeout_error, verify it's a context deadline exceeded error
+			if tt.name == "timeout_error" {
+				assert.ErrorContains(t, err, "context deadline exceeded")
+			}
 		})
 	}
 }

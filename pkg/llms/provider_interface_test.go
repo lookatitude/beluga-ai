@@ -555,6 +555,7 @@ func TestMethodSignatures(t *testing.T) {
 			inputTypes: []reflect.Type{
 				reflect.TypeOf((*context.Context)(nil)).Elem(),
 				reflect.TypeOf([]schema.Message{}),
+				reflect.TypeOf([]core.Option{}), // Variadic options parameter
 			},
 			outputTypes: []reflect.Type{
 				reflect.TypeOf((*schema.Message)(nil)).Elem(),
@@ -565,6 +566,7 @@ func TestMethodSignatures(t *testing.T) {
 			inputTypes: []reflect.Type{
 				reflect.TypeOf((*context.Context)(nil)).Elem(),
 				reflect.TypeOf([]schema.Message{}),
+				reflect.TypeOf([]core.Option{}), // Variadic options parameter
 			},
 			outputTypes: []reflect.Type{
 				reflect.TypeOf((<-chan iface.AIMessageChunk)(nil)),
@@ -575,6 +577,7 @@ func TestMethodSignatures(t *testing.T) {
 			inputTypes: []reflect.Type{
 				reflect.TypeOf((*context.Context)(nil)).Elem(),
 				reflect.TypeOf((*interface{})(nil)).Elem(),
+				reflect.TypeOf([]core.Option{}), // Variadic options parameter
 			},
 			outputTypes: []reflect.Type{
 				reflect.TypeOf((*interface{})(nil)).Elem(),

@@ -56,6 +56,10 @@ type BaseAgent struct {
 
 // NewBaseAgent creates a new BaseAgent with the provided configuration.
 func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts ...iface.Option) (*BaseAgent, error) {
+	if llm == nil {
+		return nil, fmt.Errorf("LLM cannot be nil")
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Apply default options
@@ -86,7 +90,7 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 		eventHandlers: make(map[string][]iface.EventHandler),
 	}
 
-	// Initialize metrics (use no-op metrics by default to avoid import cycle)
+	// Initialize metrics (use provided metrics or nil if not enabled)
 	// TODO: Pass metrics as dependency injection parameter
 	agent.metrics = options.Metrics
 	// Register event handlers
@@ -263,20 +267,17 @@ func (a *BaseAgent) executeWithInput(ctx context.Context, inputs map[string]any)
 
 // Initialize sets up the agent with necessary configurations.
 func (a *BaseAgent) Initialize(config map[string]interface{}) error {
-	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
 	if config == nil {
 		return fmt.Errorf("config cannot be nil")
 	}
 
+	a.mutex.Lock()
 	// Update configuration (store in a separate field for now)
 	// TODO: Update schema.AgentConfig to support settings
 	a.config = schema.AgentConfig{
 		Name:     a.name,
 		Settings: config,
 	}
-	a.setState(iface.StateReady)
 
 	// Handle specific configuration options
 	if maxRetries, ok := config["max_retries"].(int); ok {
@@ -286,7 +287,13 @@ func (a *BaseAgent) Initialize(config map[string]interface{}) error {
 		a.retryDelay = retryDelay
 	}
 
-	// Emit initialization event
+	// Update state while holding lock
+	a.state = iface.StateReady
+	a.lastActiveTime = time.Now()
+	a.mutex.Unlock()
+
+	// Emit events after releasing lock to avoid deadlock
+	a.emitEvent("state_change", iface.StateReady)
 	a.emitEvent("initialized", map[string]interface{}{
 		"config": config,
 		"time":   time.Now(),
@@ -298,9 +305,12 @@ func (a *BaseAgent) Initialize(config map[string]interface{}) error {
 // Execute performs the main task of the agent with retry logic.
 func (a *BaseAgent) Execute() error {
 	a.mutex.Lock()
-	a.setState(iface.StateRunning)
+	a.state = iface.StateRunning
 	a.lastActiveTime = time.Now()
 	a.mutex.Unlock()
+	
+	// Emit state change event after releasing lock
+	a.emitEvent("state_change", iface.StateRunning)
 
 	start := time.Now()
 
@@ -312,12 +322,53 @@ func (a *BaseAgent) Execute() error {
 	// Implement retry logic
 	var err error
 	for attempt := 0; attempt <= a.maxRetries; attempt++ {
+		// Check context cancellation before each attempt
+		select {
+		case <-a.ctx.Done():
+			a.mutex.Lock()
+			a.state = iface.StateError
+			a.lastActiveTime = time.Now()
+			a.mutex.Unlock()
+			
+			// Emit events after releasing lock
+			a.emitEvent("state_change", iface.StateError)
+			a.emitEvent("execution_cancelled", map[string]interface{}{
+				"attempt":    attempt,
+				"total_time": time.Since(start),
+			})
+			if a.metrics != nil {
+				a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), false)
+			}
+			return fmt.Errorf("agent %s execution cancelled: %w", a.name, a.ctx.Err())
+		default:
+		}
+
 		if attempt > 0 {
 			a.emitEvent("retry", map[string]interface{}{
 				"attempt": attempt,
 				"delay":   a.retryDelay,
 			})
-			time.Sleep(a.retryDelay)
+			// Use context-aware sleep to allow cancellation during retry delay
+			select {
+			case <-time.After(a.retryDelay):
+				// Continue with retry
+			case <-a.ctx.Done():
+				a.mutex.Lock()
+				a.state = iface.StateError
+				a.lastActiveTime = time.Now()
+				a.mutex.Unlock()
+				
+				// Emit events after releasing lock
+				a.emitEvent("state_change", iface.StateError)
+				a.emitEvent("execution_cancelled", map[string]interface{}{
+					"attempt":    attempt,
+					"total_time": time.Since(start),
+				})
+				if a.metrics != nil {
+					a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), false)
+				}
+				return fmt.Errorf("agent %s execution cancelled during retry delay: %w", a.name, a.ctx.Err())
+			}
 		}
 
 		err = a.doExecute()
@@ -336,10 +387,13 @@ func (a *BaseAgent) Execute() error {
 	}
 
 	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
 	if err != nil {
-		a.setState(iface.StateError)
+		a.state = iface.StateError
+		a.lastActiveTime = time.Now()
+		a.mutex.Unlock()
+		
+		// Emit events after releasing lock
+		a.emitEvent("state_change", iface.StateError)
 		a.emitEvent("execution_failed", map[string]interface{}{
 			"error":      err.Error(),
 			"attempts":   a.maxRetries + 1,
@@ -351,7 +405,12 @@ func (a *BaseAgent) Execute() error {
 		return fmt.Errorf("agent %s execution failed after %d attempts: %w", a.name, a.maxRetries+1, err)
 	}
 
-	a.setState(iface.StateReady)
+	a.state = iface.StateReady
+	a.lastActiveTime = time.Now()
+	a.mutex.Unlock()
+	
+	// Emit events after releasing lock
+	a.emitEvent("state_change", iface.StateReady)
 	a.emitEvent("execution_completed", map[string]interface{}{
 		"total_time": time.Since(start),
 	})
@@ -370,19 +429,26 @@ func (a *BaseAgent) doExecute() error {
 // Shutdown gracefully stops the agent and cleans up resources.
 func (a *BaseAgent) Shutdown() error {
 	a.mutex.Lock()
-	defer a.mutex.Unlock()
-
 	if a.state == iface.StateShutdown {
+		a.mutex.Unlock()
 		return nil
 	}
 
+	// Cancel context first to signal Execute() to stop
+	a.cancelFunc()
+	a.state = iface.StateShutdown
+	a.lastActiveTime = time.Now()
+	a.mutex.Unlock()
+	
+	// Give Execute() a brief moment to respond to context cancellation
+	// This prevents race conditions where Execute() might still be emitting events
+	time.Sleep(10 * time.Millisecond)
+	
+	// Emit events after releasing lock and allowing Execute() to finish
 	a.emitEvent("shutdown_started", map[string]interface{}{
 		"time": time.Now(),
 	})
-
-	a.cancelFunc()
-	a.setState(iface.StateShutdown)
-
+	a.emitEvent("state_change", iface.StateShutdown)
 	a.emitEvent("shutdown_completed", map[string]interface{}{
 		"time": time.Now(),
 	})

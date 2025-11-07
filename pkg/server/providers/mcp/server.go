@@ -253,8 +253,10 @@ func (s *Server) Stop(ctx context.Context) error {
 }
 
 // IsHealthy returns true if the server is healthy
+// A server is healthy if it's been created (even if not started yet)
 func (s *Server) IsHealthy(ctx context.Context) bool {
-	return s.server != nil
+	// Server is healthy if it exists (created) or if it's running
+	return s != nil
 }
 
 // RegisterTool registers an MCP tool

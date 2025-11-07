@@ -209,7 +209,6 @@ func TestExecutePlan_Success(t *testing.T) {
 
 	ctx := context.Background()
 	result, err := executor.ExecutePlan(ctx, agent, plan)
-
 	if err != nil {
 		t.Errorf("ExecutePlan failed: %v", err)
 	}
@@ -236,7 +235,6 @@ func TestExecutePlan_EmptyPlan(t *testing.T) {
 
 	ctx := context.Background()
 	result, err := executor.ExecutePlan(ctx, agent, plan)
-
 	if err != nil {
 		t.Errorf("ExecutePlan with empty plan failed: %v", err)
 	}
@@ -360,7 +358,6 @@ func TestExecutePlan_WithIntermediateSteps(t *testing.T) {
 
 	ctx := context.Background()
 	result, err := executor.ExecutePlan(ctx, agent, plan)
-
 	if err != nil {
 		t.Errorf("ExecutePlan failed: %v", err)
 	}
@@ -398,7 +395,6 @@ func TestExecuteStep_ToolExecution(t *testing.T) {
 
 	ctx := context.Background()
 	observation, err := executor.executeStep(ctx, agent, step)
-
 	if err != nil {
 		t.Errorf("executeStep failed: %v", err)
 	}
@@ -429,7 +425,6 @@ func TestExecuteStep_NonToolAction(t *testing.T) {
 
 	ctx := context.Background()
 	observation, err := executor.executeStep(ctx, agent, step)
-
 	if err != nil {
 		t.Errorf("executeStep failed: %v", err)
 	}
@@ -457,7 +452,6 @@ func TestExecuteTool_Success(t *testing.T) {
 
 	ctx := context.Background()
 	result, err := executor.executeTool(ctx, agent, action)
-
 	if err != nil {
 		t.Errorf("executeTool failed: %v", err)
 	}

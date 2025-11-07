@@ -172,14 +172,14 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 
 // Helper functions are no longer needed with the compatibility layer
 
-// Agent creation metrics
+// Agent creation metrics.
 func (m *Metrics) RecordAgentCreation(ctx context.Context, agentType string) {
 	m.agentCreations.Add(ctx, 1, metric.WithAttributes(
 		attribute.String("agent_type", agentType),
 	))
 }
 
-// Agent execution metrics
+// Agent execution metrics.
 func (m *Metrics) RecordAgentExecution(ctx context.Context, agentName, agentType string, duration time.Duration, success bool) {
 	attrs := metric.WithAttributes(
 		attribute.String("agent_name", agentName),
@@ -195,7 +195,7 @@ func (m *Metrics) RecordAgentExecution(ctx context.Context, agentName, agentType
 	}
 }
 
-// Executor metrics
+// Executor metrics.
 func (m *Metrics) RecordExecutorRun(ctx context.Context, executorType string, duration time.Duration, steps int, success bool) {
 	attrs := metric.WithAttributes(
 		attribute.String("executor_type", executorType),
@@ -211,7 +211,7 @@ func (m *Metrics) RecordExecutorRun(ctx context.Context, executorType string, du
 	}
 }
 
-// Tool metrics
+// Tool metrics.
 func (m *Metrics) RecordToolCall(ctx context.Context, toolName string, duration time.Duration, success bool) {
 	attrs := metric.WithAttributes(
 		attribute.String("tool_name", toolName),
@@ -226,7 +226,7 @@ func (m *Metrics) RecordToolCall(ctx context.Context, toolName string, duration 
 	}
 }
 
-// Planning metrics
+// Planning metrics.
 func (m *Metrics) RecordPlanningCall(ctx context.Context, agentName string, duration time.Duration, success bool) {
 	attrs := metric.WithAttributes(
 		attribute.String("agent_name", agentName),
@@ -241,7 +241,7 @@ func (m *Metrics) RecordPlanningCall(ctx context.Context, agentName string, dura
 	}
 }
 
-// Tracing helpers
+// Tracing helpers.
 func (m *Metrics) StartAgentSpan(ctx context.Context, agentName, operation string) (context.Context, trace.Span) {
 	return m.tracer.Start(ctx, "agent."+operation,
 		trace.WithAttributes(
@@ -281,5 +281,5 @@ func NoOpMetrics() *Metrics {
 	}
 }
 
-// Ensure Metrics implements the MetricsRecorder interface
+// Ensure Metrics implements the MetricsRecorder interface.
 var _ iface.MetricsRecorder = (*Metrics)(nil)

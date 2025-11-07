@@ -183,10 +183,13 @@ func TestMessagingSystem_SendMessageWithRetry_ExponentialBackoff(t *testing.T) {
 	}
 
 	// Mock all attempts fail to test timing
-	mockBus.On("Publish", mock.Anything, "test.topic", mock.Anything, mock.Anything).Return(assert.AnError).Times(3)
+	// With retries=3, we get 4 attempts total: initial + 3 retries
+	// Backoff: 10ms (after attempt 1), 20ms (after attempt 2), 40ms (after attempt 3)
+	// Total: 10ms + 20ms + 40ms = 70ms
+	mockBus.On("Publish", mock.Anything, "test.topic", mock.Anything, mock.Anything).Return(assert.AnError).Times(4)
 
 	start := time.Now()
-	err := system.SendMessageWithRetry(msg, 2, 10*time.Millisecond)
+	err := system.SendMessageWithRetry(msg, 3, 10*time.Millisecond)
 	duration := time.Since(start)
 
 	assert.Error(t, err)
@@ -311,7 +314,14 @@ func TestSerializeMessage_ComplexPayload(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, msg.ID, deserialized.ID)
 	assert.Equal(t, msg.Topic, deserialized.Topic)
-	assert.Equal(t, complexPayload, deserialized.Payload)
+	// JSON unmarshaling converts numbers to float64, so we need to compare carefully
+	deserializedPayload, ok := deserialized.Payload.(map[string]interface{})
+	assert.True(t, ok, "Payload should be a map")
+	nested, ok := deserializedPayload["nested"].(map[string]interface{})
+	assert.True(t, ok, "Nested should be a map")
+	// Compare number as float64 (JSON unmarshaling converts int to float64)
+	assert.Equal(t, float64(123), nested["number"])
+	assert.Equal(t, "value", deserializedPayload["simple"])
 }
 
 func TestSerializeMessage_InvalidPayload(t *testing.T) {

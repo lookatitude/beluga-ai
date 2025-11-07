@@ -176,14 +176,17 @@ func TestSetGlobalMetrics(t *testing.T) {
 }
 
 func TestGlobalMetrics_NoOpFallback(t *testing.T) {
-	// Save original global metrics
+	// Save original state
 	originalMetrics := globalMetrics
+	originalExplicitlySet := globalMetricsExplicitlySet
 	defer func() {
 		globalMetrics = originalMetrics
+		globalMetricsExplicitlySet = originalExplicitlySet
 	}()
 
-	// Reset global metrics
+	// Reset global metrics and flag to test lazy initialization
 	globalMetrics = nil
+	globalMetricsExplicitlySet = false
 
 	// Mock a scenario where NewMetrics might fail
 	// Since we're using noop meter in tests, this should work fine
@@ -195,7 +198,7 @@ func TestGlobalMetrics_NoOpFallback(t *testing.T) {
 	}
 }
 
-// Simple test using noop meter which is sufficient for our testing needs
+// Simple test using noop meter which is sufficient for our testing needs.
 func TestMetrics_WithNoOpMeter(t *testing.T) {
 	// Use noop meter which implements the full interface
 	meter := noop.Meter{}

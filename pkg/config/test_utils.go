@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockConfigProvider provides a comprehensive mock implementation for testing
+// AdvancedMockConfigProvider provides a comprehensive mock implementation for testing.
 type AdvancedMockConfigProvider struct {
 	mock.Mock
 
@@ -40,7 +40,7 @@ type AdvancedMockConfigProvider struct {
 	lastHealthCheck time.Time
 }
 
-// ConfigChange represents a configuration change event
+// ConfigChange represents a configuration change event.
 type ConfigChange struct {
 	Key       string
 	OldValue  interface{}
@@ -48,7 +48,7 @@ type ConfigChange struct {
 	Timestamp time.Time
 }
 
-// NewAdvancedMockConfigProvider creates a new advanced mock with configurable behavior
+// NewAdvancedMockConfigProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockConfigProvider(name, providerType string, options ...MockConfigOption) *AdvancedMockConfigProvider {
 	mock := &AdvancedMockConfigProvider{
 		name:           name,
@@ -79,10 +79,10 @@ func NewAdvancedMockConfigProvider(name, providerType string, options ...MockCon
 	return mock
 }
 
-// MockConfigOption defines functional options for mock configuration
+// MockConfigOption defines functional options for mock configuration.
 type MockConfigOption func(*AdvancedMockConfigProvider)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockConfigOption {
 	return func(c *AdvancedMockConfigProvider) {
 		c.shouldError = shouldError
@@ -90,7 +90,7 @@ func WithMockError(shouldError bool, err error) MockConfigOption {
 	}
 }
 
-// WithMockConfigValues sets predefined configuration values
+// WithMockConfigValues sets predefined configuration values.
 func WithMockConfigValues(values map[string]interface{}) MockConfigOption {
 	return func(c *AdvancedMockConfigProvider) {
 		c.configValues = make(map[string]interface{})
@@ -100,21 +100,21 @@ func WithMockConfigValues(values map[string]interface{}) MockConfigOption {
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockConfigOption {
 	return func(c *AdvancedMockConfigProvider) {
 		c.simulateDelay = delay
 	}
 }
 
-// WithStrictValidation enables strict validation mode
+// WithStrictValidation enables strict validation mode.
 func WithStrictValidation(strict bool) MockConfigOption {
 	return func(c *AdvancedMockConfigProvider) {
 		c.validateStrict = strict
 	}
 }
 
-// Mock implementation methods for Provider interface
+// Mock implementation methods for Provider interface.
 func (c *AdvancedMockConfigProvider) Load(configStruct interface{}) error {
 	if c.shouldError {
 		return c.errorToReturn
@@ -254,7 +254,7 @@ func (c *AdvancedMockConfigProvider) SetDefaults() error {
 	return nil
 }
 
-// Additional methods for extended functionality
+// Additional methods for extended functionality.
 func (c *AdvancedMockConfigProvider) Get(key string) interface{} {
 	c.mu.Lock()
 	c.callCount++
@@ -388,7 +388,7 @@ func (c *AdvancedMockConfigProvider) Validate() error {
 	return nil
 }
 
-// Additional helper methods for testing
+// Additional helper methods for testing.
 func (c *AdvancedMockConfigProvider) GetName() string {
 	return c.name
 }
@@ -441,7 +441,7 @@ func (c *AdvancedMockConfigProvider) CheckHealth() map[string]interface{} {
 
 // Test data creation helpers
 
-// CreateTestConfig creates a comprehensive test configuration
+// CreateTestConfig creates a comprehensive test configuration.
 func CreateTestConfig() map[string]interface{} {
 	return map[string]interface{}{
 		// Provider settings
@@ -473,7 +473,7 @@ func CreateTestConfig() map[string]interface{} {
 	}
 }
 
-// CreateTestProviderConfigs creates test configurations for different providers
+// CreateTestProviderConfigs creates test configurations for different providers.
 func CreateTestProviderConfigs() map[string]map[string]interface{} {
 	return map[string]map[string]interface{}{
 		"openai": {
@@ -499,7 +499,7 @@ func CreateTestProviderConfigs() map[string]map[string]interface{} {
 	}
 }
 
-// CreateTestEnvironmentVars creates test environment variables
+// CreateTestEnvironmentVars creates test environment variables.
 func CreateTestEnvironmentVars() map[string]string {
 	return map[string]string{
 		"BELUGA_ENVIRONMENT":    "test",
@@ -513,7 +513,7 @@ func CreateTestEnvironmentVars() map[string]string {
 
 // Assertion helpers
 
-// AssertConfigValue validates configuration value retrieval using Provider interface
+// AssertConfigValue validates configuration value retrieval using Provider interface.
 func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expectedValue interface{}, valueType string) {
 	switch valueType {
 	case "string":
@@ -536,7 +536,7 @@ func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expect
 	}
 }
 
-// AssertProviderStructs validates provider configuration structure loading
+// AssertProviderStructs validates provider configuration structure loading.
 func AssertProviderStructs(t *testing.T, provider iface.Provider) {
 	// Test LLM provider config loading
 	llmConfigs, err := provider.GetLLMProvidersConfig()
@@ -559,7 +559,7 @@ func AssertProviderStructs(t *testing.T, provider iface.Provider) {
 	assert.NotNil(t, toolConfigs, "Tool configs should not be nil")
 }
 
-// AssertConfigValidation validates configuration validation
+// AssertConfigValidation validates configuration validation.
 func AssertConfigValidation(t *testing.T, provider iface.Provider, shouldPass bool) {
 	err := provider.Validate()
 
@@ -570,7 +570,7 @@ func AssertConfigValidation(t *testing.T, provider iface.Provider, shouldPass bo
 	}
 }
 
-// AssertConfigHealth validates configuration provider health check
+// AssertConfigHealth validates configuration provider health check.
 func AssertConfigHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
@@ -579,7 +579,7 @@ func AssertConfigHealth(t *testing.T, health map[string]interface{}, expectedSta
 	assert.Contains(t, health, "config_keys")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
 	assert.Error(t, err)
 	var configErr *iface.ConfigError
@@ -590,7 +590,7 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs config tests concurrently for performance testing
+// ConcurrentTestRunner runs config tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
 	NumGoroutines int
 	TestDuration  time.Duration
@@ -649,7 +649,7 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on config provider
+// RunLoadTest executes a load test scenario on config provider.
 func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperations int, concurrency int) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
@@ -667,16 +667,17 @@ func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperatio
 
 			key := testKeys[opID%len(testKeys)]
 
-			if opID%4 == 0 {
+			switch opID % 4 {
+			case 0:
 				// Test GetString
 				_ = provider.GetString(key)
-			} else if opID%4 == 1 {
+			case 1:
 				// Test GetInt
 				_ = provider.GetInt(key)
-			} else if opID%4 == 2 {
+			case 2:
 				// Test GetBool
 				_ = provider.GetBool(key)
-			} else {
+			default:
 				// Test IsSet
 				_ = provider.IsSet(key)
 			}
@@ -696,7 +697,7 @@ func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperatio
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	providers map[string]*AdvancedMockConfigProvider
 }
@@ -723,7 +724,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// ConfigScenarioRunner runs common configuration scenarios
+// ConfigScenarioRunner runs common configuration scenarios.
 type ConfigScenarioRunner struct {
 	provider iface.Provider
 }
@@ -779,7 +780,7 @@ func (r *ConfigScenarioRunner) RunConfigReloadScenario(reloadCount int) error {
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for configuration
+// BenchmarkHelper provides benchmarking utilities for configuration.
 type BenchmarkHelper struct {
 	provider   iface.Provider
 	testKeys   []string

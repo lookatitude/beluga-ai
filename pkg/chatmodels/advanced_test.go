@@ -34,7 +34,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				schema.NewHumanMessage("Hello, how are you?"),
 			},
 			expectedError:     false,
-			expectedCallCount: 1,
+			expectedCallCount: 2, // Generate + StreamChat
 			expectedResponse:  true,
 		},
 		{
@@ -70,7 +70,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				schema.NewHumanMessage("Test with delay"),
 			},
 			expectedError:     false,
-			expectedCallCount: 1,
+			expectedCallCount: 2, // Generate + StreamChat
 			expectedResponse:  true,
 		},
 		{
@@ -78,7 +78,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 			chatModel:         NewAdvancedMockChatModel("conversation-model", "conversation-provider"),
 			messages:          CreateTestMessages(3), // 3-turn conversation (6 messages)
 			expectedError:     false,
-			expectedCallCount: 1,
+			expectedCallCount: 2, // Generate + StreamChat
 			expectedResponse:  true,
 		},
 	}
@@ -317,7 +317,13 @@ func TestChatModelToolIntegration(t *testing.T) {
 			if tt.toolCount > 0 {
 				boundModel := chatModel.BindTools(testTools)
 				assert.NotNil(t, boundModel, "BindTools should return a chat model")
-				assert.NotEqual(t, chatModel, boundModel, "BindTools should return a new instance")
+				// Verify it's a different instance by checking pointer address
+				// Use fmt.Sprintf to compare addresses since assert.NotEqual does deep comparison
+				originalAddr := fmt.Sprintf("%p", chatModel)
+				boundAddr := fmt.Sprintf("%p", boundModel)
+				if originalAddr == boundAddr {
+					t.Error("BindTools should return a new instance, but got the same pointer")
+				}
 			}
 
 			// Test generation with potential tool calls
