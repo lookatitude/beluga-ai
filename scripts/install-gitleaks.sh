@@ -104,7 +104,7 @@ if [ -w "/usr/local/bin" ]; then
 elif [ -w "$HOME/.local/bin" ]; then
     INSTALL_DIR="$HOME/.local/bin"
     mkdir -p "$INSTALL_DIR"
-elif [ -w "$(go env GOPATH)/bin" ]; then
+elif command -v go >/dev/null 2>&1 && [ -w "$(go env GOPATH)/bin" ]; then
     INSTALL_DIR="$(go env GOPATH)/bin"
     mkdir -p "$INSTALL_DIR"
 else
