@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/lookatitude/beluga-ai/compare/v1.2.0...v1.2.1) (2025-11-07)
+
+
+### Bug Fixes
+
+* resolve context timeout test failures and fix three critical bugs ([e991d61](https://github.com/lookatitude/beluga-ai/commit/e991d611e46b2c3e6f947023500d50bc41924e1c))
+
 ## [1.2.0](https://github.com/lookatitude/beluga-ai/compare/v1.1.0...v1.2.0) (2025-11-06)
 
 
