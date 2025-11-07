@@ -32,8 +32,9 @@ if [ "$OS" = "darwin" ] && [ "$ARCH" = "x64" ]; then
     fi
 fi
 
-# Download URL
-DOWNLOAD_URL="https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${OS}_${ARCH}.tar.gz"
+# Download URL (note: filename uses version without 'v' prefix)
+VERSION_NUMBER=$(echo "$GITLEAKS_VERSION" | sed 's/^v//')
+DOWNLOAD_URL="https://github.com/gitleaks/gitleaks/releases/download/${GITLEAKS_VERSION}/gitleaks_${VERSION_NUMBER}_${OS}_${ARCH}.tar.gz"
 
 echo "Installing gitleaks ${GITLEAKS_VERSION} for ${OS}/${ARCH}..."
 echo "Download URL: ${DOWNLOAD_URL}"
@@ -43,16 +44,57 @@ TMP_DIR=$(mktemp -d)
 cd "$TMP_DIR"
 
 # Download and extract
+echo "Downloading gitleaks from $DOWNLOAD_URL..."
 if command -v curl >/dev/null 2>&1; then
-    curl -sSL -o gitleaks.tar.gz "$DOWNLOAD_URL"
+    if ! curl -sSL -f -o gitleaks.tar.gz "$DOWNLOAD_URL"; then
+        echo "Error: Download failed"
+        if [ -f gitleaks.tar.gz ]; then
+            echo "Response received:"
+            head -20 gitleaks.tar.gz
+            rm -f gitleaks.tar.gz
+        fi
+        exit 1
+    fi
 elif command -v wget >/dev/null 2>&1; then
-    wget -q -O gitleaks.tar.gz "$DOWNLOAD_URL"
+    if ! wget -q -O gitleaks.tar.gz "$DOWNLOAD_URL"; then
+        echo "Error: Download failed"
+        rm -f gitleaks.tar.gz
+        exit 1
+    fi
 else
     echo "Error: Neither curl nor wget is available"
     exit 1
 fi
 
-tar -xzf gitleaks.tar.gz
+# Check if file was downloaded and has content
+if [ ! -f gitleaks.tar.gz ] || [ ! -s gitleaks.tar.gz ]; then
+    echo "Error: Download failed - file is empty or missing"
+    exit 1
+fi
+
+# Verify the downloaded file is actually a gzip archive
+if ! file gitleaks.tar.gz | grep -q "gzip\|compressed"; then
+    echo "Error: Downloaded file is not a valid gzip archive"
+    echo "File type: $(file gitleaks.tar.gz)"
+    echo "First 100 bytes:"
+    head -c 100 gitleaks.tar.gz
+    rm -f gitleaks.tar.gz
+    exit 1
+fi
+
+echo "Extracting gitleaks..."
+tar -xzf gitleaks.tar.gz || {
+    echo "Error: Failed to extract archive"
+    rm -f gitleaks.tar.gz
+    exit 1
+}
+
+if [ ! -f "$BINARY_NAME" ]; then
+    echo "Error: Binary $BINARY_NAME not found after extraction"
+    ls -la
+    exit 1
+fi
+
 chmod +x "$BINARY_NAME"
 
 # Install to a location in PATH
