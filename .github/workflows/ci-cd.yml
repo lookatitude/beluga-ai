@@ -670,7 +670,7 @@ jobs:
   ci-summary:
     name: ✅ CI Summary
     runs-on: ubuntu-latest
-    needs: [policy, lint, security, unit-tests, integration-tests, coverage, build, package]
+    needs: [lint, security, unit-tests, integration-tests, coverage, build, package]
     if: always()
     steps:
       - name: Generate CI Summary
