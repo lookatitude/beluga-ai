@@ -16,15 +16,17 @@ import (
 // ChannelMessageBus implements MessageBus using Go channels for local communication.
 // Note: This implementation uses the MessageBus interface from messagebus.go
 type ChannelMessageBus struct {
-	subs   map[string]chan Message // Map topic to their message channel
-	mu     sync.RWMutex
-	closed bool
+	subs        map[string]chan Message                    // Map topic to their message channel
+	subscribers map[string]map[string]context.CancelFunc // Map topic -> subscriberID -> cancel function
+	mu          sync.RWMutex
+	closed      bool
 }
 
 // NewChannelMessageBus creates a new in-memory message bus.
 func NewChannelMessageBus() *ChannelMessageBus {
 	return &ChannelMessageBus{
-		subs: make(map[string]chan Message),
+		subs:        make(map[string]chan Message),
+		subscribers: make(map[string]map[string]context.CancelFunc),
 	}
 }
 
@@ -62,23 +64,85 @@ func (b *ChannelMessageBus) Publish(ctx context.Context, topic string, payload i
 // Subscribe creates a subscription for the topic.
 func (b *ChannelMessageBus) Subscribe(ctx context.Context, topic string, handler HandlerFunc) (string, error) {
 	b.mu.Lock()
-	defer b.mu.Unlock()
 	if b.closed {
+		b.mu.Unlock()
 		return "", errors.New("message bus is closed")
 	}
 
 	if _, exists := b.subs[topic]; !exists {
 		b.subs[topic] = make(chan Message, 100)
 	}
+	subChan := b.subs[topic]
+	subID := fmt.Sprintf("sub-%d", time.Now().UnixNano())
+	
+	// Create a cancellable context for this subscriber to allow cleanup
+	subCtx, cancel := context.WithCancel(ctx)
+	
+	// Track the subscriber for cleanup
+	if b.subscribers[topic] == nil {
+		b.subscribers[topic] = make(map[string]context.CancelFunc)
+	}
+	b.subscribers[topic][subID] = cancel
+	
+	b.mu.Unlock()
 
-	// For this simple implementation, we don't track individual subscribers
-	// In a real implementation, you'd need to track subscriber IDs
-	return fmt.Sprintf("sub-%d", time.Now().UnixNano()), nil
+	// Start a goroutine to process messages for this subscriber
+	go func() {
+		defer func() {
+			// Ensure goroutine exits cleanly
+		}()
+		for {
+			select {
+			case msg, ok := <-subChan:
+				if !ok {
+					// Channel closed, exit goroutine
+					return
+				}
+				// Check context before processing message
+				select {
+				case <-subCtx.Done():
+					return
+				default:
+					_ = handler(subCtx, msg)
+				}
+			case <-subCtx.Done():
+				return
+			}
+		}
+	}()
+
+	return subID, nil
 }
 
-// Unsubscribe is not implemented in this simple version.
+// Unsubscribe removes a subscription and cancels its goroutine.
 func (b *ChannelMessageBus) Unsubscribe(ctx context.Context, topic string, subscriberID string) error {
-	return fmt.Errorf("unsubscribe not implemented")
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.closed {
+		return errors.New("message bus is closed")
+	}
+
+	// Cancel the subscriber's context to stop the goroutine
+	if topicSubscribers, ok := b.subscribers[topic]; ok {
+		if cancel, exists := topicSubscribers[subscriberID]; exists {
+			cancel() // This will cause the goroutine to exit
+			delete(topicSubscribers, subscriberID)
+			
+			// Clean up empty topic entries
+			if len(topicSubscribers) == 0 {
+				delete(b.subscribers, topic)
+				// Close and remove the channel if no more subscribers
+				if ch, exists := b.subs[topic]; exists {
+					close(ch)
+					delete(b.subs, topic)
+				}
+			}
+			return nil
+		}
+	}
+	
+	return fmt.Errorf("subscriber %s not found for topic %s", subscriberID, topic)
 }
 
 // Start is a no-op.
@@ -106,6 +170,16 @@ func (b *ChannelMessageBus) Close() error {
 	}
 
 	b.closed = true
+	
+	// Cancel all subscriber contexts to stop goroutines
+	for _, topicSubscribers := range b.subscribers {
+		for _, cancel := range topicSubscribers {
+			cancel()
+		}
+	}
+	b.subscribers = make(map[string]map[string]context.CancelFunc)
+	
+	// Close all channels
 	for id, ch := range b.subs {
 		delete(b.subs, id)
 		close(ch)

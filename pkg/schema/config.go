@@ -10,36 +10,36 @@ import (
 // AgentConfig defines the configuration for an agent.
 // This can include settings for the LLM, tools, memory, and other agent-specific parameters.
 type AgentConfig struct {
-	Name string `yaml:"name" json:"name" validate:"required"` // Unique name for this agent configuration
+	Name string `mapstructure:"name" yaml:"name" json:"name" validate:"required"` // Unique name for this agent configuration
 
 	// LLMProviderName specifies the name of the LLMProviderConfig to use for this agent.
 	// This should correspond to a name defined in the LLM provider configurations.
-	LLMProviderName string `yaml:"llm_provider_name" json:"llm_provider_name" validate:"required"`
+	LLMProviderName string `mapstructure:"llm_provider_name" yaml:"llm_provider_name" json:"llm_provider_name" validate:"required"`
 
 	// LLMProviderConfigName is an alias or specific field for the LLM provider config name.
 	// It seems the factory was expecting this exact name.
-	LLMProviderConfigName string `yaml:"llm_provider_config_name,omitempty" json:"llm_provider_config_name,omitempty"`
+	LLMProviderConfigName string `mapstructure:"llm_provider_config_name" yaml:"llm_provider_config_name,omitempty" json:"llm_provider_config_name,omitempty"`
 
 	// ToolNames lists the names of the tools available to this agent.
 	// These names should correspond to tool configurations.
-	ToolNames []string `yaml:"tool_names,omitempty" json:"tool_names,omitempty"`
+	ToolNames []string `mapstructure:"tool_names" yaml:"tool_names,omitempty" json:"tool_names,omitempty"`
 
 	// MemoryProviderName specifies the name of the MemoryProviderConfig to use for this agent.
 	// This should correspond to a name defined in the memory provider configurations.
-	MemoryProviderName string `yaml:"memory_provider_name,omitempty" json:"memory_provider_name,omitempty"`
+	MemoryProviderName string `mapstructure:"memory_provider_name" yaml:"memory_provider_name,omitempty" json:"memory_provider_name,omitempty"`
 
 	// MemoryType specifies the type of memory to use (e.g., "buffer", "vector").
-	MemoryType string `yaml:"memory_type,omitempty" json:"memory_type,omitempty"`
+	MemoryType string `mapstructure:"memory_type" yaml:"memory_type,omitempty" json:"memory_type,omitempty"`
 
 	// MemoryConfigName specifies the name of the specific memory configuration to use.
 	// This would correspond to a named configuration within the memory provider settings.
-	MemoryConfigName string `yaml:"memory_config_name,omitempty" json:"memory_config_name,omitempty"`
+	MemoryConfigName string `mapstructure:"memory_config_name" yaml:"memory_config_name,omitempty" json:"memory_config_name,omitempty"`
 
 	// MaxIterations defines the maximum number of steps the agent can take before stopping.
 	// This is a safety measure to prevent infinite loops.
-	MaxIterations int `yaml:"max_iterations,omitempty" json:"max_iterations,omitempty" validate:"min=1"`
+	MaxIterations int `mapstructure:"max_iterations" yaml:"max_iterations,omitempty" json:"max_iterations,omitempty" validate:"min=1"`
 
-	Settings map[string]interface{} `yaml:"settings,omitempty" json:"settings,omitempty"`
+	Settings map[string]interface{} `mapstructure:"settings" yaml:"settings,omitempty" json:"settings,omitempty"`
 
 	// PromptTemplate is the main prompt template used by the agent.
 	// It can be a string or a path to a template file.
@@ -92,12 +92,12 @@ type LLMProviderConfig struct {
 
 // EmbeddingProviderConfig defines the configuration for a specific embedding provider instance.
 type EmbeddingProviderConfig struct {
-	Name             string                 `yaml:"name" json:"name" validate:"required"`
-	Provider         string                 `yaml:"provider" json:"provider" validate:"required"`
-	ModelName        string                 `yaml:"model_name" json:"model_name" validate:"required"`
-	APIKey           string                 `yaml:"api_key" json:"api_key" validate:"required"`
-	BaseURL          string                 `yaml:"base_url,omitempty" json:"base_url,omitempty"`
-	ProviderSpecific map[string]interface{} `yaml:"provider_specific,omitempty" json:"provider_specific,omitempty"`
+	Name             string                 `mapstructure:"name" yaml:"name" json:"name" validate:"required"`
+	Provider         string                 `mapstructure:"provider" yaml:"provider" json:"provider" validate:"required"`
+	ModelName        string                 `mapstructure:"model_name" yaml:"model_name" json:"model_name" validate:"required"`
+	APIKey           string                 `mapstructure:"api_key" yaml:"api_key" json:"api_key" validate:"required"`
+	BaseURL          string                 `mapstructure:"base_url" yaml:"base_url,omitempty" json:"base_url,omitempty"`
+	ProviderSpecific map[string]interface{} `mapstructure:"provider_specific" yaml:"provider_specific,omitempty" json:"provider_specific,omitempty"`
 }
 
 // VectorStoreConfig defines the configuration for a vector store provider.
