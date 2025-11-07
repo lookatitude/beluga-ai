@@ -125,7 +125,7 @@ security: ## Run security scans (gosec, govulncheck, and gitleaks)
 		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
 	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json $$(go list ./... | grep -v -E '(specs|examples)') || true
-	@gosec $$(go list ./... | grep -v -E '(specs|examples)') || true
+	@gosec $$(go list ./... | grep -v -E '(specs|examples)')
 	@echo ""
 	@echo "Running govulncheck..."
 	@if ! command -v govulncheck >/dev/null 2>&1; then \
