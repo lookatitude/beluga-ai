@@ -156,8 +156,12 @@ func convertPerformanceIssues(issues []PerformanceIssue) []cli.PerformanceIssue 
 	result := make([]cli.PerformanceIssue, len(issues))
 	for i, issue := range issues {
 		result[i] = cli.PerformanceIssue{
-			Type:     cli.IssueType(issue.Type),
-			Severity: cli.Severity(issue.Severity),
+			Type:        cli.IssueType(issue.Type),
+			Severity:    cli.Severity(issue.Severity),
+			Location:    convertLocationToCLI(issue.Location),
+			Description: issue.Description,
+			Context:     issue.Context,
+			Fixable:     issue.Fixable,
 		}
 	}
 	return result
@@ -165,8 +169,36 @@ func convertPerformanceIssues(issues []PerformanceIssue) []cli.PerformanceIssue 
 
 func convertPerformanceIssueFromCLI(issue cli.PerformanceIssue) PerformanceIssue {
 	return PerformanceIssue{
-		Type:     IssueType(issue.Type),
-		Severity: Severity(issue.Severity),
+		Type:        IssueType(issue.Type),
+		Severity:    Severity(issue.Severity),
+		Location:    convertLocationFromCLI(issue.Location),
+		Description: issue.Description,
+		Context:     issue.Context,
+		Fixable:     issue.Fixable,
+	}
+}
+
+func convertLocationToCLI(loc Location) cli.Location {
+	return cli.Location{
+		Package:     loc.Package,
+		File:        loc.File,
+		Function:    loc.Function,
+		LineStart:   loc.LineStart,
+		LineEnd:     loc.LineEnd,
+		ColumnStart: loc.ColumnStart,
+		ColumnEnd:   loc.ColumnEnd,
+	}
+}
+
+func convertLocationFromCLI(loc cli.Location) Location {
+	return Location{
+		Package:     loc.Package,
+		File:        loc.File,
+		Function:    loc.Function,
+		LineStart:   loc.LineStart,
+		LineEnd:     loc.LineEnd,
+		ColumnStart: loc.ColumnStart,
+		ColumnEnd:   loc.ColumnEnd,
 	}
 }
 

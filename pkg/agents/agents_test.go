@@ -222,6 +222,8 @@ func createMockMetricsRecorder() *mockMetricsRecorder {
 	return &mockMetricsRecorder{}
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewBaseAgent(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -272,6 +274,8 @@ func TestNewBaseAgent(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewReActAgent(t *testing.T) {
@@ -317,6 +321,8 @@ func TestNewReActAgent(t *testing.T) {
 			if err == nil && agent == nil {
 				t.Error("NewReActAgent() returned nil agent without error")
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -347,11 +353,15 @@ func TestAgentFactory(t *testing.T) {
 			t.Errorf("AgentFactory.CreateReActAgent() error = %v", err)
 			return
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		if agent == nil {
 			t.Error("AgentFactory.CreateReActAgent() returned nil agent")
 		}
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestNewAgentExecutor(t *testing.T) {
 	executor := agents.NewAgentExecutor()
@@ -367,11 +377,15 @@ func TestNewAgentExecutorWithOptions(t *testing.T) {
 	}
 
 	executor2 := agents.NewExecutorWithReturnIntermediateSteps(true)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if executor2 == nil {
 		t.Error("NewExecutorWithReturnIntermediateSteps() returned nil")
 	}
 
 	executor3 := agents.NewExecutorWithHandleParsingErrors(false)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if executor3 == nil {
 		t.Error("NewExecutorWithHandleParsingErrors() returned nil")
 	}
@@ -388,6 +402,8 @@ func TestDefaultConfig(t *testing.T) {
 	config := agents.DefaultConfig()
 	if config == nil {
 		t.Error("DefaultConfig() returned nil")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	// Test default values
@@ -429,6 +445,8 @@ func TestValidateConfig(t *testing.T) {
 				DefaultMaxRetries:    3,
 				DefaultRetryDelay:    2 * time.Second,
 				DefaultTimeout:       0,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				DefaultMaxIterations: 15,
 			},
 			wantErr: true,
@@ -458,6 +476,8 @@ func TestHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize test agent: %v", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	status := agents.HealthCheck(agent)
 	if status == nil {
@@ -478,6 +498,8 @@ func TestHealthCheck(t *testing.T) {
 
 func TestListAgentStates(t *testing.T) {
 	states := agents.ListAgentStates()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	expectedStates := []iface.AgentState{
 		iface.StateInitializing,
 		iface.StateReady,
@@ -546,6 +568,8 @@ func TestAgentAsRunnable(t *testing.T) {
 	if err == nil {
 		t.Error("Agent.Batch() expected error for unimplemented executeWithInput")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test Stream - expect error since BaseAgent doesn't implement executeWithInput
 	stream, err := agent.Stream(ctx, input)
@@ -598,6 +622,8 @@ func TestAgentCreationErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
 			agent, err := agents.NewBaseAgent("test-agent", tt.llm, tt.tools)
 			if tt.wantErr {
@@ -728,6 +754,8 @@ func TestAgentLifecycle(t *testing.T) {
 
 	// Execute in a goroutine with timeout
 	done := make(chan error, 1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	go func() {
 		done <- agent.Execute()
 	}()
@@ -813,6 +841,8 @@ func TestConfigurationScenarios(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := agents.ValidateConfig(tt.config)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				if tt.wantErr && err == nil {
 					t.Errorf("Expected validation error for config: %v", tt.name)
 				}
@@ -870,6 +900,8 @@ func TestToolRegistry(t *testing.T) {
 	// Test getting tools
 	retrievedTool, err := registry.GetTool("tool1")
 	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Errorf("Failed to get tool1: %v", err)
 	}
 	if retrievedTool != tool1 {
@@ -923,6 +955,8 @@ func TestErrorHandling(t *testing.T) {
 		valErr := agents.NewValidationError("test_field", "test message")
 		if valErr.Field != "test_field" {
 			t.Errorf("Expected field 'test_field', got '%s'", valErr.Field)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 		if valErr.Message != "test message" {
 			t.Errorf("Expected message 'test message', got '%s'", valErr.Message)
@@ -987,6 +1021,8 @@ func TestEventHandling(t *testing.T) {
 	t.Run("MultipleEventHandlers", func(t *testing.T) {
 		handler1Called := false
 		handler2Called := false
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 		handler1 := func(payload interface{}) error {
 			handler1Called = true
@@ -995,6 +1031,8 @@ func TestEventHandling(t *testing.T) {
 		handler2 := func(payload interface{}) error {
 			handler2Called = true
 			return nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 
 		agent.RegisterEventHandler("multi_event", handler1)
@@ -1009,6 +1047,8 @@ func TestEventHandling(t *testing.T) {
 	t.Run("EventHandlerError", func(t *testing.T) {
 		handlerErr := errors.New("handler error")
 		handler := func(payload interface{}) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			return handlerErr
 		}
 

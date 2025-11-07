@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewBestPracticesChecker(t *testing.T) {
 	mockLogger := logger.NewStructuredLogger("bp_test")
 	mockMetrics := metrics.NewMetricsCollector()
@@ -21,6 +23,8 @@ func TestNewBestPracticesChecker(t *testing.T) {
 	assert.NotNil(t, checker.logger)
 	assert.NotNil(t, checker.metrics)
 	assert.Len(t, checker.validators, 4) // concurrency, error_handling, resource_management, security
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestBestPracticesCheckerValidate(t *testing.T) {
@@ -49,6 +53,8 @@ func TestBestPracticesCheckerValidate(t *testing.T) {
 
 		assert.NotNil(t, issues)
 		// May still have some issues depending on the validation logic
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.IsType(t, []iface.ValidationIssue{}, issues)
 	})
 }
@@ -61,6 +67,8 @@ func TestBestPracticesCheckerAddValidator(t *testing.T) {
 	initialCount := len(checker.validators)
 
 	customValidator := &MockValidator{name: "custom"}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	checker.AddValidator(customValidator)
 
 	assert.Len(t, checker.validators, initialCount+1)
@@ -92,6 +100,8 @@ func TestConcurrencyValidator(t *testing.T) {
 		data := `
 		var mu sync.Mutex
 		defer mu.Unlock() // This can cause deadlocks
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		`
 		issues := validator.Validate(context.Background(), data)
 		if assert.NotEmpty(t, issues, "Expected at least one issue for mutex in defer") {
@@ -130,6 +140,8 @@ func TestErrorHandlingValidator(t *testing.T) {
 		issues := validator.Validate(context.Background(), data)
 		assert.NotEmpty(t, issues)
 		assert.Equal(t, "error_handling", issues[0].Validator)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	})
 
 	t.Run("log.Fatal usage", func(t *testing.T) {
@@ -166,6 +178,8 @@ func TestResourceManagementValidator(t *testing.T) {
 	t.Run("HTTP requests", func(t *testing.T) {
 		data := `resp, err := http.Get("http://example.com")`
 		issues := validator.Validate(context.Background(), data)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.NotEmpty(t, issues)
 		assert.Equal(t, "resource_management", issues[0].Validator)
 	})
@@ -203,6 +217,8 @@ func TestSecurityValidator(t *testing.T) {
 	})
 
 	t.Run("code injection", func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		data := `eval(userInput)`
 		issues := validator.Validate(context.Background(), data)
 		assert.NotEmpty(t, issues)
@@ -221,6 +237,8 @@ func TestValidatorNames(t *testing.T) {
 	validators := []iface.Validator{
 		&ConcurrencyValidator{},
 		&ErrorHandlingValidator{},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		&ResourceManagementValidator{},
 		&SecurityValidator{},
 	}
@@ -257,6 +275,8 @@ func TestPerformanceMonitor(t *testing.T) {
 		// The metric is recorded with labels, so we need to match them
 		metric, exists := mockMetrics.GetMetric("operation_duration", map[string]string{
 			"operation": "test_operation",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 		assert.True(t, exists)
 		if exists {
@@ -269,6 +289,8 @@ func TestPerformanceMonitor(t *testing.T) {
 		err := monitor.MonitorOperation(context.Background(), "failing_operation", func() error {
 			return testErr
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 		assert.Error(t, err)
 		assert.Equal(t, testErr, err)
@@ -291,6 +313,8 @@ func TestPerformanceMonitorGoroutines(t *testing.T) {
 
 func TestDeadlockDetector(t *testing.T) {
 	mockLogger := logger.NewStructuredLogger("deadlock_test")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	detector := NewDeadlockDetector(mockLogger.(*logger.StructuredLogger), time.Minute)
 
 	assert.NotNil(t, detector)
@@ -330,6 +354,8 @@ func TestContainsPattern(t *testing.T) {
 			result := containsPattern(tt.text, tt.pattern)
 			assert.Equal(t, tt.expected, result)
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -343,6 +369,8 @@ func (mv *MockValidator) Name() string {
 }
 
 func (mv *MockValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	return []iface.ValidationIssue{
 		{
 			Validator:  mv.name,
@@ -357,6 +385,8 @@ func (mv *MockValidator) Validate(ctx context.Context, data interface{}) []iface
 func BenchmarkBestPracticesChecker_Validate(b *testing.B) {
 	mockLogger := logger.NewStructuredLogger("bench_test")
 	mockMetrics := metrics.NewMetricsCollector()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	checker := NewBestPracticesChecker(mockLogger.(*logger.StructuredLogger), mockMetrics)
 	ctx := context.Background()
 
@@ -372,6 +402,8 @@ func BenchmarkBestPracticesChecker_Validate(b *testing.B) {
 func BenchmarkConcurrencyValidator_Validate(b *testing.B) {
 	validator := &ConcurrencyValidator{}
 	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	data := `go func() {
 		defer mu.Unlock() // Potential deadlock
@@ -385,6 +417,8 @@ func BenchmarkConcurrencyValidator_Validate(b *testing.B) {
 	}
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func BenchmarkErrorHandlingValidator_Validate(b *testing.B) {
 	validator := &ErrorHandlingValidator{}
 	ctx := context.Background()
@@ -399,6 +433,8 @@ func BenchmarkErrorHandlingValidator_Validate(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		issues := validator.Validate(ctx, data)
 		_ = issues
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 

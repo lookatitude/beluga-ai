@@ -9,6 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMonitoringError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -39,6 +41,8 @@ func TestMonitoringError_Error(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.err.Error())
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestMonitoringError_Unwrap(t *testing.T) {
@@ -48,6 +52,8 @@ func TestMonitoringError_Unwrap(t *testing.T) {
 		Message: "Test error message",
 		Cause:   underlying,
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	assert.Equal(t, underlying, err.Unwrap())
 }
@@ -56,12 +62,16 @@ func TestNewMonitoringError(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message %s", "arg1")
 
 	assert.Equal(t, "test_code", err.Code)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "Test message arg1", err.Message)
 	assert.NotZero(t, err.Timestamp)
 	assert.Equal(t, SeverityMedium, err.Severity)
 	assert.NotNil(t, err.Metadata)
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewMonitoringErrorWithContext(t *testing.T) {
 	ctx := context.Background()
 	err := NewMonitoringErrorWithContext(ctx, "test_code", "Test message")
@@ -69,6 +79,8 @@ func TestNewMonitoringErrorWithContext(t *testing.T) {
 	assert.Equal(t, "test_code", err.Code)
 	assert.Equal(t, ctx, err.Context)
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestWrapError(t *testing.T) {
 	underlying := errors.New("underlying error")
@@ -77,30 +89,40 @@ func TestWrapError(t *testing.T) {
 	assert.Equal(t, "test_code", err.Code)
 	assert.Equal(t, "Wrapped message", err.Message)
 	assert.Equal(t, underlying, err.Cause)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestWrapErrorWithContext(t *testing.T) {
 	ctx := context.Background()
 	underlying := errors.New("underlying error")
 	err := WrapErrorWithContext(ctx, underlying, "test_code", "Wrapped message")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	assert.Equal(t, "test_code", err.Code)
 	assert.Equal(t, ctx, err.Context)
 	assert.Equal(t, underlying, err.Cause)
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMonitoringError_WithOperation(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message")
 	result := err.WithOperation("test_operation")
 
 	assert.Equal(t, err, result) // Should return self for chaining
 	assert.Equal(t, "test_operation", err.Operation)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestMonitoringError_WithComponent(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message")
 	result := err.WithComponent("test_component")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, err, result)
 	assert.Equal(t, "test_component", err.Component)
 }
@@ -112,6 +134,8 @@ func TestMonitoringError_WithSeverity(t *testing.T) {
 	assert.Equal(t, err, result)
 	assert.Equal(t, SeverityHigh, err.Severity)
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestMonitoringError_WithMetadata(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message")
@@ -125,6 +149,8 @@ func TestMonitoringError_WithMetadataMap(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message")
 	metadata := map[string]interface{}{
 		"key1": "value1",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		"key2": 42,
 	}
 	result := err.WithMetadataMap(metadata)
@@ -133,6 +159,8 @@ func TestMonitoringError_WithMetadataMap(t *testing.T) {
 	assert.Equal(t, "value1", err.Metadata["key1"])
 	assert.Equal(t, 42, err.Metadata["key2"])
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestMonitoringError_Getters(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message").
@@ -143,6 +171,8 @@ func TestMonitoringError_Getters(t *testing.T) {
 
 	assert.Equal(t, "test_op", err.GetOperation())
 	assert.Equal(t, "test_comp", err.GetComponent())
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, SeverityCritical, err.GetSeverity())
 
 	metadata := err.GetMetadata()
@@ -163,6 +193,8 @@ func TestMonitoringError_IsHighSeverity(t *testing.T) {
 	criticalErr := NewMonitoringError("test", "msg").WithSeverity(SeverityCritical)
 	highErr := NewMonitoringError("test", "msg").WithSeverity(SeverityHigh)
 	mediumErr := NewMonitoringError("test", "msg").WithSeverity(SeverityMedium)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	lowErr := NewMonitoringError("test", "msg").WithSeverity(SeverityLow)
 
 	assert.True(t, criticalErr.IsHighSeverity())
@@ -182,6 +214,8 @@ func TestMonitoringError_ShouldRetry(t *testing.T) {
 		{"service unavailable should retry", ErrCodeServiceUnavailable, true},
 		{"rate limit should retry", ErrCodeRateLimitExceeded, true},
 		{"invalid config should not retry", ErrCodeInvalidConfig, false},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		{"internal error should not retry", ErrCodeInternalError, false},
 	}
 
@@ -189,6 +223,8 @@ func TestMonitoringError_ShouldRetry(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := NewMonitoringError(tt.code, "test message")
 			assert.Equal(t, tt.expected, err.ShouldRetry())
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -205,6 +241,8 @@ func TestMonitoringError_GetRetryDelay(t *testing.T) {
 		{"service unavailable delay", ErrCodeServiceUnavailable, 10 * time.Second},
 		{"no retry delay", ErrCodeInvalidConfig, 0},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -222,15 +260,21 @@ func TestIsMonitoringError(t *testing.T) {
 	assert.False(t, IsMonitoringError(monErr, "wrong_code"))
 	assert.False(t, IsMonitoringError(regularErr, "test_code"))
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestAsMonitoringError(t *testing.T) {
 	monErr := NewMonitoringError("test_code", "test message")
 	var target *MonitoringError
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test successful cast
 	assert.True(t, AsMonitoringError(monErr, &target))
 	assert.Equal(t, monErr, target)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Test wrapped error - should return the wrapped error, not the original
 	wrappedErr := WrapError(monErr, "wrap_code", "wrapped message")
 	assert.True(t, AsMonitoringError(wrappedErr, &target))

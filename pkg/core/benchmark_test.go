@@ -11,6 +11,8 @@ import (
 
 // Benchmark tests for performance measurement
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func BenchmarkContainer_Resolve(b *testing.B) {
 	container := NewContainer()
 	container.Register(func() string { return "benchmark_value" })
@@ -28,6 +30,8 @@ func BenchmarkContainer_Resolve(b *testing.B) {
 			b.Fatalf("Expected 'benchmark_value', got %q", result)
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func BenchmarkContainer_Resolve_WithDependencyChain(b *testing.B) {
@@ -48,6 +52,8 @@ func BenchmarkContainer_Resolve_WithDependencyChain(b *testing.B) {
 		err := container.Resolve(&result)
 		if err != nil {
 			b.Fatal(err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 	}
 }
@@ -64,6 +70,8 @@ func BenchmarkContainer_ConcurrentResolve(b *testing.B) {
 			var result string
 			err := container.Resolve(&result)
 			if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				b.Fatal(err)
 			}
 		}
@@ -73,6 +81,8 @@ func BenchmarkContainer_ConcurrentResolve(b *testing.B) {
 func BenchmarkContainer_Register(b *testing.B) {
 	container := NewContainer()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	b.ReportAllocs()
 
@@ -89,6 +99,8 @@ func BenchmarkRunnable_Invoke(b *testing.B) {
 
 	ctx := context.Background()
 	for i := 0; i < b.N; i++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		result, err := mock.Invoke(ctx, "input")
 		if err != nil {
 			b.Fatal(err)
@@ -107,6 +119,8 @@ func BenchmarkRunnable_Batch(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	ctx := context.Background()
 	for i := 0; i < b.N; i++ {
 		results, err := mock.Batch(ctx, inputs)
@@ -126,6 +140,8 @@ func BenchmarkTracedRunnable_Invoke(b *testing.B) {
 	traced := NewTracedRunnable(mock, tracer, metrics, "benchmark", "test")
 
 	b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ReportAllocs()
 
 	ctx := context.Background()
@@ -151,6 +167,8 @@ func BenchmarkTracedRunnable_Stream(b *testing.B) {
 
 	ctx := context.Background()
 	for i := 0; i < b.N; i++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		streamChan, err := traced.Stream(ctx, "input")
 		if err != nil {
 			b.Fatal(err)
@@ -165,6 +183,8 @@ func BenchmarkTracedRunnable_Stream(b *testing.B) {
 			b.Fatalf("Expected 3 chunks, got %d", chunks)
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func BenchmarkContainer_CheckHealth(b *testing.B) {
@@ -180,6 +200,8 @@ func BenchmarkContainer_CheckHealth(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -192,6 +214,8 @@ func BenchmarkErrorHandling(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		err := NewInternalError("benchmark error", testErr)
 		if err == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			b.Fatal("Expected error")
 		}
 		if err.Type != ErrorTypeInternal {
@@ -203,6 +227,8 @@ func BenchmarkErrorHandling(b *testing.B) {
 func BenchmarkErrorTypeChecking(b *testing.B) {
 	err := NewValidationError("test", nil)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	b.ReportAllocs()
 
@@ -222,6 +248,8 @@ func BenchmarkMetrics_Recording(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for i := 0; i < b.N; i++ {
 		metrics.RecordRunnableInvoke(ctx, "benchmark", time.Microsecond*100, nil)
 	}
@@ -245,6 +273,8 @@ func BenchmarkBuilder_Build(b *testing.B) {
 		if result != "builder_test" {
 			b.Fatalf("Expected 'builder_test', got %q", result)
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -266,6 +296,8 @@ func BenchmarkBuilder_ComplexDependencyChain(b *testing.B) {
 		var result BenchmarkServiceA
 		err := builder.Build(&result)
 		if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			b.Fatal(err)
 		}
 	}

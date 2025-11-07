@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewEthicalAIChecker(t *testing.T) {
 	mockLogger := logger.NewStructuredLogger("ethics_test")
 	checker := NewEthicalAIChecker(mockLogger.(*logger.StructuredLogger))
@@ -22,6 +24,8 @@ func TestNewEthicalAIChecker(t *testing.T) {
 
 	// Should have initialized bias detectors
 	assert.Len(t, checker.biasDetectors, 5) // gender, racial, socioeconomic, cultural, confirmation
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewPrivacyChecker(t *testing.T) {
@@ -30,6 +34,8 @@ func TestNewPrivacyChecker(t *testing.T) {
 
 	assert.NotNil(t, privacyChecker)
 	assert.NotNil(t, privacyChecker.logger)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NotNil(t, privacyChecker.piiPatterns)
 	assert.True(t, len(privacyChecker.piiPatterns) > 0)
 }
@@ -77,6 +83,8 @@ func TestEthicalAICheckerCheckContent(t *testing.T) {
 		analysis, err := checker.CheckContent(ctx, content, ethicalCtx)
 
 		assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.NotNil(t, analysis)
 		assert.True(t, len(analysis.PrivacyIssues) > 0)
 		assert.Contains(t, analysis.OverallRisk, "high") // Privacy issues should increase risk
@@ -146,6 +154,8 @@ func TestPrivacyCheckerCheckPrivacy(t *testing.T) {
 						}
 					}
 					assert.True(t, found, "Expected data type %s in issues", tt.expectedDataType)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				}
 			} else {
 				assert.Empty(t, issues, "Expected no privacy issues for: %s", tt.content)
@@ -175,6 +185,8 @@ func TestGenderBiasDetector(t *testing.T) {
 		assert.Equal(t, "gender_bias", issues[0].Type)
 		assert.True(t, issues[0].Severity > 0)
 		assert.Contains(t, strings.ToLower(issues[0].Description), "gender")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	})
 
 	t.Run("gender binary assumptions", func(t *testing.T) {
@@ -203,6 +215,8 @@ func TestRacialBiasDetector(t *testing.T) {
 		content := "Those people are always causing trouble in the neighborhood."
 		issues := detector.Detect(content, ethicalCtx)
 		assert.NotEmpty(t, issues)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.Equal(t, "racial_bias", issues[0].Type)
 		assert.True(t, issues[0].Severity > 0)
 	})
@@ -231,6 +245,8 @@ func TestSocioeconomicBiasDetector(t *testing.T) {
 
 	t.Run("class stereotypes", func(t *testing.T) {
 		content := "Poor people are lazy and rich people are greedy."
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		issues := detector.Detect(content, ethicalCtx)
 		assert.NotEmpty(t, issues)
 		assert.Equal(t, "socioeconomic_bias", issues[0].Type)
@@ -259,6 +275,8 @@ func TestCulturalBiasDetector(t *testing.T) {
 		assert.Empty(t, issues)
 	})
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	t.Run("cultural superiority", func(t *testing.T) {
 		content := "Western culture is clearly more advanced than Eastern cultures."
 		issues := detector.Detect(content, ethicalCtx)
@@ -288,6 +306,8 @@ func TestConfirmationBiasDetector(t *testing.T) {
 		issues := detector.Detect(content, ethicalCtx)
 		assert.Empty(t, issues)
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("confirmation bias language", func(t *testing.T) {
 		content := "As expected, this proves that my theory was correct all along."
@@ -308,6 +328,8 @@ func TestConfirmationBiasDetector(t *testing.T) {
 
 func TestBiasDetectorNames(t *testing.T) {
 	detectors := []BiasDetector{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		&GenderBiasDetector{},
 		&RacialBiasDetector{},
 		&SocioeconomicBiasDetector{},
@@ -340,6 +362,8 @@ func TestCalculateOverallRisk(t *testing.T) {
 		{"medium risk - bias", 1, 0, 0.8, "medium"},
 		{"medium risk - fairness", 0, 0, 0.7, "medium"},
 		{"high risk - privacy", 0, 1, 1.0, "high"},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		{"high risk - multiple", 2, 1, 0.5, "high"},
 	}
 
@@ -437,6 +461,8 @@ func TestGenerateRecommendations(t *testing.T) {
 				BiasIssues:      make([]iface.BiasIssue, tt.biasIssues),
 				PrivacyIssues:   make([]iface.PrivacyIssue, tt.privacyIssues),
 				FairnessScore:   tt.fairnessScore,
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				OverallRisk:     tt.overallRisk,
 				Recommendations: make([]string, 0),
 			}
@@ -446,6 +472,8 @@ func TestGenerateRecommendations(t *testing.T) {
 			recommendations := strings.Join(analysis.Recommendations, " ")
 
 			if tt.expectBiasRec {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				assert.Contains(t, recommendations, "biased language")
 			}
 			if tt.expectPrivacyRec {
@@ -479,6 +507,8 @@ func TestHumanInTheLoopShouldTriggerReview(t *testing.T) {
 	tests := []struct {
 		name          string
 		overallRisk   string
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		fairnessScore float64
 		biasIssues    int
 		privacyIssues int
@@ -495,6 +525,8 @@ func TestHumanInTheLoopShouldTriggerReview(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			analysis := &iface.EthicalAnalysis{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				OverallRisk:   tt.overallRisk,
 				FairnessScore: tt.fairnessScore,
 				BiasIssues:    make([]iface.BiasIssue, tt.biasIssues),
@@ -513,6 +545,8 @@ func TestHumanInTheLoopRequestReview(t *testing.T) {
 	ctx := context.Background()
 
 	analysis := &iface.EthicalAnalysis{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		OverallRisk:     "high",
 		FairnessScore:   0.8,
 		BiasIssues:      make([]iface.BiasIssue, 1),
@@ -524,6 +558,8 @@ func TestHumanInTheLoopRequestReview(t *testing.T) {
 	assert.NoError(t, err) // Should not error even without actual reviewers
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 // Benchmark tests
 func BenchmarkEthicalAIChecker_CheckContent(b *testing.B) {
 	mockLogger := logger.NewStructuredLogger("bench_test")
@@ -546,6 +582,8 @@ func BenchmarkEthicalAIChecker_CheckContent(b *testing.B) {
 }
 
 func BenchmarkPrivacyChecker_CheckPrivacy(b *testing.B) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockLogger := logger.NewStructuredLogger("bench_test")
 	privacyChecker := NewPrivacyChecker(mockLogger.(*logger.StructuredLogger))
 

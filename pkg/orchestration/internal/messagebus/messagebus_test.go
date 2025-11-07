@@ -10,6 +10,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewInMemoryMessageBus(t *testing.T) {
 	bus := NewInMemoryMessageBus()
 	require.NotNil(t, bus, "NewInMemoryMessageBus should not return nil")
@@ -105,6 +107,8 @@ func TestInMemoryMessageBus_MultipleSubscribers(t *testing.T) {
 
 	assert.True(t, handler1Called, "Handler 1 should have been called")
 	assert.True(t, handler2Called, "Handler 2 should have been called")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestInMemoryMessageBus_Unsubscribe(t *testing.T) {
@@ -145,6 +149,8 @@ func TestInMemoryMessageBus_Unsubscribe(t *testing.T) {
 	assert.NoError(t, err, "Unsubscribing a non-existent ID should not error")
 
 	// Test unsubscribe from non-existent topic
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	err = bus.Unsubscribe(ctx, "non-existent-topic", subID)
 	assert.NoError(t, err, "Unsubscribing from a non-existent topic should not error")
 }
@@ -153,6 +159,8 @@ func TestInMemoryMessageBus_PublishToTopicWithNoSubscribers(t *testing.T) {
 	bus := NewInMemoryMessageBus()
 	ctx := context.Background()
 	topic := "no.subscribers.topic"
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	payload := "no_sub_payload"
 
 	err := bus.Publish(ctx, topic, payload, nil)
@@ -170,6 +178,8 @@ func TestInMemoryMessageBus_StartAndStop(t *testing.T) {
 	assert.NoError(t, err, "Stop should not return an error for InMemoryMessageBus")
 
 	// Check if stopChan is closed
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	select {
 	case <-bus.stopChan:
 		// Expected, channel is closed

@@ -476,6 +476,8 @@ func (s *ProviderInterfaceTestSuite) testConcurrentAccess(t *testing.T) {
 }
 
 // TestAllProviderInterfaces tests interface compliance for multiple providers
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAllProviderInterfaces(t *testing.T) {
 	providers := []struct {
 		name   string
@@ -500,6 +502,8 @@ func TestAllProviderInterfaces(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestInterfaceReflection provides detailed reflection-based interface testing
 func TestInterfaceReflection(t *testing.T) {
@@ -540,6 +544,8 @@ func TestInterfaceReflection(t *testing.T) {
 				}
 			}
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -623,6 +629,8 @@ func TestMethodSignatures(t *testing.T) {
 					assert.Equal(t, expectedType, methodType.Out(i),
 						"Method %s return value %d should have correct type", methodName, i)
 				}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 		})
 	}
@@ -656,6 +664,8 @@ func TestProviderContract(t *testing.T) {
 
 	// Test that health checks don't affect functionality
 	_ = provider.CheckHealth()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	response4, err4 := provider.Generate(ctx, messages)
 
 	assert.NoError(t, err4)
@@ -695,6 +705,8 @@ func TestProviderLifecycle(t *testing.T) {
 	assert.Equal(t, 0, resetHealth["call_count"])
 
 	// Test continued functionality after reset
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	response, err := provider.Generate(ctx, messages)
 	assert.NoError(t, err)
 	assert.NotNil(t, response)
@@ -743,6 +755,8 @@ func TestProviderRobustness(t *testing.T) {
 
 // generateLargeMessages creates a slice of messages for testing
 func generateLargeMessages(count int) []schema.Message {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	messages := make([]schema.Message, count)
 	for i := 0; i < count; i++ {
 		if i%2 == 0 {

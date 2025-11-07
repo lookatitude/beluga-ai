@@ -16,6 +16,8 @@ import (
 )
 
 // TestAdvancedMockMemory tests the advanced mock memory functionality
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAdvancedMockMemory(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -140,6 +142,8 @@ func TestAdvancedMockMemory(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestMemoryTypes tests different memory type implementations
 func TestMemoryTypes(t *testing.T) {
@@ -235,6 +239,8 @@ func TestMemoryTypes(t *testing.T) {
 			err = memory.Clear(ctx)
 			assert.NoError(t, err)
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -330,6 +336,8 @@ func TestChatMessageHistory(t *testing.T) {
 
 				// Verify call count
 				assert.Greater(t, tt.history.GetCallCount(), 0)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			}
 		})
 	}
@@ -364,6 +372,8 @@ func TestMemoryRegistry(t *testing.T) {
 	AssertErrorType(t, err, ErrCodeTypeMismatch)
 
 	// Test global registry functions
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	globalTypes := ListAvailableMemoryTypes()
 	assert.NotEmpty(t, globalTypes)
 
@@ -414,6 +424,8 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 		// Check for errors
 		for err := range errChan {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			t.Errorf("Concurrent operation error: %v", err)
 		}
 
@@ -433,6 +445,8 @@ func TestLoadTesting(t *testing.T) {
 
 	const numOperations = 100
 	const concurrency = 10
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("memory_load_test", func(t *testing.T) {
 		RunLoadTest(t, memory, numOperations, concurrency)
@@ -508,6 +522,8 @@ func TestMemoryScenarios(t *testing.T) {
 				_, err = memory.LoadMemoryVariables(ctx, inputs1)
 				assert.NoError(t, err)
 				// After clear, memory should be empty or reset
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			},
 		},
 	}
@@ -542,6 +558,8 @@ func TestIntegrationTestHelper(t *testing.T) {
 	// Test operations
 	ctx := context.Background()
 	inputs, outputs := CreateTestInputOutput("test input", "test output")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	err := bufferMemory.SaveContext(ctx, inputs, outputs)
 	assert.NoError(t, err)
@@ -595,6 +613,8 @@ func TestMemoryErrorHandling(t *testing.T) {
 				return NewAdvancedMockMemory("error_memory", MemoryTypeBuffer,
 					WithMockError(true, fmt.Errorf("clear failed")))
 			},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			operation: func(memory iface.Memory) error {
 				ctx := context.Background()
 				return memory.Clear(ctx)
@@ -638,6 +658,8 @@ func BenchmarkAdvancedMemoryOperations(b *testing.B) {
 		memory.SaveContext(ctx, inputs, outputs)
 
 		b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for i := 0; i < b.N; i++ {
 			_, err := memory.LoadMemoryVariables(ctx, inputs)
 			if err != nil {
@@ -678,6 +700,8 @@ func BenchmarkChatMessageHistory(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			err := history.AddUserMessage(ctx, fmt.Sprintf("User message %d", i))
 			if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				b.Errorf("AddUserMessage error: %v", err)
 			}
 		}

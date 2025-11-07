@@ -12,6 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewSafetyChecker(t *testing.T) {
 	mockLogger := logger.NewStructuredLogger("safety_test")
 	safetyChecker := NewSafetyChecker(mockLogger.(*logger.StructuredLogger))
@@ -22,6 +24,8 @@ func TestNewSafetyChecker(t *testing.T) {
 	assert.NotNil(t, safetyChecker.harmfulPatterns)
 	assert.NotNil(t, safetyChecker.logger)
 	assert.NotNil(t, safetyChecker.humanInLoop)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestSafetyCheckerCheckContent(t *testing.T) {
@@ -90,6 +94,8 @@ func TestSafetyCheckerCheckContent(t *testing.T) {
 			assert.True(t, result.RiskScore >= tt.minRiskScore,
 				"Risk score %f should be >= %f", result.RiskScore, tt.minRiskScore)
 			assert.NotZero(t, result.Timestamp)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -119,6 +125,8 @@ func TestSafetyCheckerCheckPatterns(t *testing.T) {
 		assert.Contains(t, strings.ToLower(issues[0].Description), "harmful")
 	})
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	t.Run("no matches", func(t *testing.T) {
 		issues := safetyChecker.checkPatterns("This is a completely safe message", safetyChecker.toxicityPatterns, "toxicity")
 		assert.Empty(t, issues)
@@ -140,6 +148,8 @@ func TestSafetyCheckerGetSeverity(t *testing.T) {
 		{"", "low"},
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.issueType, func(t *testing.T) {
 			severity := safetyChecker.getSeverity(tt.issueType)
@@ -178,6 +188,8 @@ func TestSafetyCheckerRequestHumanReview(t *testing.T) {
 		}
 	})
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	t.Run("context cancellation", func(t *testing.T) {
 		cancelledCtx, cancel := context.WithCancel(ctx)
 		cancel()
@@ -187,6 +199,8 @@ func TestSafetyCheckerRequestHumanReview(t *testing.T) {
 		assert.Contains(t, err.Error(), "context canceled")
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestNewHumanInLoop(t *testing.T) {
 	mockLogger := logger.NewStructuredLogger("human_in_loop_test")
@@ -196,6 +210,8 @@ func TestNewHumanInLoop(t *testing.T) {
 	assert.NotNil(t, hil.reviewQueue)
 	assert.NotNil(t, hil.reviewers)
 	assert.Equal(t, 0.7, hil.reviewThreshold)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, 0.3, hil.autoApproveBelow)
 }
 
@@ -219,12 +235,16 @@ func TestHumanInLoopSimulateHumanReview(t *testing.T) {
 		RiskScore: 0.6,
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	decision := hil.simulateHumanReview(request)
 	assert.NotNil(t, decision)
 	assert.Equal(t, "simulated-reviewer", decision.ReviewerID)
 	assert.NotZero(t, decision.Timestamp)
 	assert.Contains(t, decision.Comments, "Review completed")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// For risk score < 0.8, should be approved
 	assert.True(t, decision.Approved)
 
@@ -273,11 +293,15 @@ func TestEthicalFilterFilterContent(t *testing.T) {
 			modified: true,
 		},
 		{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			name:     "multiple terms",
 			input:    "Learn to hack and crack passwords",
 			expected: "Learn to modify and access passwords",
 			modified: true,
 		},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	for _, tt := range tests {
@@ -337,9 +361,11 @@ func TestConcurrencyLimiterExecute(t *testing.T) {
 	t.Run("concurrency limit exceeded", func(t *testing.T) {
 		// Fill up the limiter
 		blockingFuncs := make([]func() error, limiter.maxConcurrent+1)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for i := 0; i < limiter.maxConcurrent; i++ {
 			blockingFuncs[i] = func() error {
-				time.Sleep(200 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 				return nil
 			}
 		}
@@ -385,6 +411,8 @@ func TestConcurrencyLimiterGetCurrentConcurrency(t *testing.T) {
 	concurrency := limiter.GetCurrentConcurrency()
 	assert.Equal(t, 2, concurrency)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	wg.Wait()
 
 	// After completion, should be back to 0
@@ -399,6 +427,8 @@ type MockReviewer struct {
 
 func (mr *MockReviewer) Review(ctx context.Context, request *ReviewRequest) (iface.ReviewDecision, error) {
 	return iface.ReviewDecision{
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		Approved:   true,
 		ReviewerID: mr.id,
 		Comments:   "Mock review",
@@ -413,6 +443,8 @@ func (mr *MockReviewer) GetID() string {
 // Benchmark tests
 func BenchmarkSafetyChecker_CheckContent(b *testing.B) {
 	mockLogger := logger.NewStructuredLogger("bench_test")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	safetyChecker := NewSafetyChecker(mockLogger.(*logger.StructuredLogger))
 	ctx := context.Background()
 

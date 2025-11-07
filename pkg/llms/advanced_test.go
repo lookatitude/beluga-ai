@@ -21,6 +21,8 @@ import (
 )
 
 // TestEnsureMessagesAdvanced provides advanced table-driven tests for EnsureMessages
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestEnsureMessagesAdvanced(t *testing.T) {
 	tests := []struct {
 		name        string

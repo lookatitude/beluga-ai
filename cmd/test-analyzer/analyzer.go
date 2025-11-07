@@ -178,6 +178,12 @@ func (a *analyzer) DetectIssues(ctx context.Context, function *TestFunction) ([]
 		MixedUsage:             function.MixedUsage,
 		AST:                    funcAST,
 	}
+	// Set File field if available
+	if function.File != nil {
+		internalFunc.File = &patterns.TestFileInfo{
+			Path: function.File.Path,
+		}
+	}
 
 	// Use pattern detector to find all issues
 	internalIssues, err := a.detector.DetectAll(ctx, internalFunc)

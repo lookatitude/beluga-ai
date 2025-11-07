@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -47,6 +48,11 @@ func (f *fixer) ApplyFix(ctx context.Context, issue *PerformanceIssue) (*Fix, er
 	fixType := f.determineFixType(issue)
 	if fixType == FixTypeUnknown {
 		return nil, fmt.Errorf("cannot determine fix type for issue: %v", issue.Type)
+	}
+
+	// Validate that file path is set
+	if issue.Location.File == "" {
+		return nil, fmt.Errorf("issue location file is empty for issue type %v in function %s", issue.Type, issue.Location.Function)
 	}
 
 	// Create backup before modification
@@ -184,7 +190,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 			timeoutDuration = duration
 		}
 		
-		oldCode, newCode, err := fixes.GenerateTimeoutFix(ctx, issue.Location.Function, issue.Location.LineStart, issue.Location.LineEnd, timeoutDuration)
+		oldCode, newCode, err := fixes.GenerateTimeoutFix(ctx, issue.Location.File, issue.Location.Function, issue.Location.LineStart, issue.Location.LineEnd, timeoutDuration)
 		if err != nil {
 			return nil, fmt.Errorf("generating timeout fix: %w", err)
 		}
@@ -198,7 +204,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 		})
 
 	case FixTypeAddLoopExit:
-		oldCode, newCode, err := fixes.GenerateLoopExitFix(ctx, issue.Location.LineStart, issue.Location.LineEnd)
+		oldCode, newCode, err := fixes.GenerateLoopExitFix(ctx, issue.Location.File, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating loop exit fix: %w", err)
 		}
@@ -223,7 +229,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 			}
 		}
 		
-		oldCode, newCode, err := fixes.GenerateIterationFix(ctx, oldCount, newCount, issue.Location.LineStart, issue.Location.LineEnd)
+		oldCode, newCode, err := fixes.GenerateIterationFix(ctx, issue.Location.File, oldCount, newCount, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating iteration fix: %w", err)
 		}
@@ -248,7 +254,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 			}
 		}
 		
-		oldCode, newCode, err := fixes.GenerateSleepFix(ctx, oldDuration, newDuration, issue.Location.LineStart, issue.Location.LineEnd)
+		oldCode, newCode, err := fixes.GenerateSleepFix(ctx, issue.Location.File, oldDuration, newDuration, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating sleep fix: %w", err)
 		}
@@ -269,7 +275,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 		}
 		mockName := strings.ToLower(componentName) + "Mock"
 		
-		oldCode, newCode, err := fixes.GenerateMockReplacementFix(ctx, componentName, mockName, issue.Location.LineStart, issue.Location.LineEnd)
+		oldCode, newCode, err := fixes.GenerateMockReplacementFix(ctx, issue.Location.File, componentName, mockName, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating mock replacement fix: %w", err)
 		}
@@ -301,14 +307,22 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 		if err != nil {
 			return nil, fmt.Errorf("generating mock creation fix: %w", err)
 		}
-		// For mock creation, we need to create a new file or append to existing mock file
-		// This is a simplified version - in practice, this would be more complex
-		mockFile := issue.Location.File[:strings.LastIndex(issue.Location.File, "_test.go")] + "_mock.go"
+		// For mock creation, we need to create a new file
+		// Determine mock file path from test file path
+		testFile := issue.Location.File
+		mockFile := testFile
+		if strings.Contains(testFile, "_test.go") {
+			mockFile = testFile[:strings.LastIndex(testFile, "_test.go")] + "_mock.go"
+		} else {
+			// Fallback: create mock file in same directory
+			mockFile = filepath.Join(filepath.Dir(testFile), strings.ToLower(componentName)+"_mock.go")
+		}
+		
 		changes = append(changes, CodeChange{
 			File:        mockFile,
 			LineStart:   1,
 			LineEnd:     1,
-			OldCode:     "",
+			OldCode:     "", // Empty OldCode signals new file creation
 			NewCode:     mockCode,
 			Description: fmt.Sprintf("Create mock for %s", componentName),
 		})

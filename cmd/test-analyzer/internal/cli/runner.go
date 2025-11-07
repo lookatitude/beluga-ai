@@ -41,8 +41,22 @@ type TestFunction struct {
 }
 
 type PerformanceIssue struct {
-	Type     IssueType
-	Severity Severity
+	Type        IssueType
+	Severity    Severity
+	Location    Location
+	Description string
+	Context     map[string]interface{}
+	Fixable     bool
+}
+
+type Location struct {
+	Package     string
+	File        string
+	Function    string
+	LineStart   int
+	LineEnd     int
+	ColumnStart int
+	ColumnEnd   int
 }
 
 type IssueType int
@@ -117,6 +131,10 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 				if shouldFixIssue(*issue, config) {
 					fix, err := fixer.ApplyFix(ctx, issue)
 					if err != nil {
+						if !config.Quiet {
+							fmt.Fprintf(os.Stderr, "Failed to apply fix for issue in %s: %v\n", 
+								pkg, err)
+						}
 						totalFailedFixes++
 						continue
 					}
@@ -125,6 +143,10 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 					if !config.SkipValidation {
 						_, err := fixer.ValidateFix(ctx, fix)
 						if err != nil {
+							if !config.Quiet {
+								fmt.Fprintf(os.Stderr, "Failed to validate fix in %s: %v\n", 
+									pkg, err)
+							}
 							_ = fixer.RollbackFix(ctx, fix)
 							totalFailedFixes++
 							continue

@@ -10,6 +10,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMockRetriever(t *testing.T) {
 	// Create test documents
 	docs := []schema.Document{
@@ -144,6 +146,8 @@ func TestMockRetriever(t *testing.T) {
 			t.Errorf("Clear() count = %d, want 0", mockRetriever.Count())
 		}
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func BenchmarkMockRetriever_GetRelevantDocuments(b *testing.B) {

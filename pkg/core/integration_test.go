@@ -13,6 +13,8 @@ import (
 
 // Integration tests that combine multiple components
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestContainerWithTracedRunnable_Integration(t *testing.T) {
 	// Create a container with monitoring components
 	container := NewContainerWithOptions(
@@ -58,6 +60,8 @@ func TestContainerWithTracedRunnable_Integration(t *testing.T) {
 	if err != nil {
 		t.Errorf("Container health check failed: %v", err)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestBuilderWithComplexDependencies_Integration(t *testing.T) {
@@ -125,6 +129,8 @@ func TestBuilderWithComplexDependencies_Integration(t *testing.T) {
 	// Test service functionality
 	err = service.Execute(context.Background())
 	if err != nil {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Errorf("ComplexService.Execute() error = %v", err)
 	}
 }
@@ -158,6 +164,8 @@ func TestConcurrentContainerOperations_Integration(t *testing.T) {
 	wg.Wait()
 
 	// Verify container is still functional
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	err := container.CheckHealth(context.Background())
 	if err != nil {
 		t.Errorf("Container health check failed after concurrent operations: %v", err)
@@ -195,6 +203,8 @@ func TestErrorPropagationThroughLayers_Integration(t *testing.T) {
 	err = depSvc.Execute(context.Background())
 	if err == nil {
 		t.Error("Expected error to propagate through layers")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	// Verify error type
@@ -247,6 +257,8 @@ func TestRunnableChainWithTracing_Integration(t *testing.T) {
 			t.Errorf("Step %d: expected %v, got %v", i, expectedResult, results[i])
 		}
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Verify call tracking
 	for i, runnable := range []*MockRunnable{runnable1, runnable2, runnable3} {

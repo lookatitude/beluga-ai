@@ -16,6 +16,8 @@ import (
 )
 
 // TestAdvancedMockEmbedder tests the advanced mock embedder functionality
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAdvancedMockEmbedder(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -173,6 +175,8 @@ func TestAdvancedMockEmbedder(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestEmbeddingProviderRegistry tests the provider registry functionality
 func TestEmbeddingProviderRegistry(t *testing.T) {
@@ -210,6 +214,8 @@ func TestEmbeddingProviderRegistry(t *testing.T) {
 	// List available providers (may be empty if none registered)
 	globalProviders := ListAvailableProviders()
 	// Just verify the function works, don't require it to be non-empty
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	_ = globalProviders
 }
 
@@ -249,6 +255,8 @@ func TestEmbeddingQuality(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			score, err := tt.testFunc()
 			assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			assert.GreaterOrEqual(t, score, tt.minExpected)
 		})
 	}
@@ -277,6 +285,8 @@ func TestEmbeddingHelperFunctions(t *testing.T) {
 
 	distance = EuclideanDistance(emb1, emb3)
 	assert.InDelta(t, 1.414, distance, 0.1, "Expected distance for orthogonal unit vectors")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test different length embeddings
 	emb4 := []float32{1.0, 0.0}
@@ -327,6 +337,8 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 		// Check for errors
 		for err := range errChan {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			t.Errorf("Concurrent operation error: %v", err)
 		}
 
@@ -346,6 +358,8 @@ func TestLoadTesting(t *testing.T) {
 
 	const numOperations = 50
 	const concurrency = 5
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("embedding_load_test", func(t *testing.T) {
 		RunLoadTest(t, embedder, numOperations, concurrency)
@@ -447,6 +461,8 @@ func TestEmbeddingScenarios(t *testing.T) {
 				for i, doc := range docs {
 					assert.Len(t, doc, expectedDim, "Document %d has wrong dimension", i)
 				}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			},
 		},
 	}
@@ -480,6 +496,8 @@ func TestIntegrationTestHelper(t *testing.T) {
 	_, err := openaiEmbedder.EmbedQuery(ctx, "test query")
 	assert.NoError(t, err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	_, err = ollamaEmbedder.EmbedDocuments(ctx, CreateTestTexts(2))
 	assert.NoError(t, err)
 
@@ -538,6 +556,8 @@ func TestEmbeddingConfiguration(t *testing.T) {
 				assert.True(t, config.Mock.Enabled)
 
 				err := config.Mock.Validate()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				assert.NoError(t, err)
 			},
 		},
@@ -573,6 +593,8 @@ func BenchmarkEmbeddingOperations(b *testing.B) {
 	b.Run("EmbedDocuments", func(b *testing.B) {
 		texts := CreateTestTexts(5)
 		b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for i := 0; i < b.N; i++ {
 			_, err := embedder.EmbedDocuments(ctx, texts)
 			if err != nil {
@@ -591,6 +613,8 @@ func BenchmarkEmbeddingOperations(b *testing.B) {
 		}
 	})
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // BenchmarkEmbeddingBenchmark tests the embedding benchmark utility
 func BenchmarkEmbeddingBenchmark(b *testing.B) {

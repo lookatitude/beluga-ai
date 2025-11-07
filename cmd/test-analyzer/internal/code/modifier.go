@@ -67,7 +67,39 @@ func (m *modifier) CreateBackup(ctx context.Context, filePath string) (string, e
 
 // ApplyCodeChange implements CodeModifier.ApplyCodeChange.
 func (m *modifier) ApplyCodeChange(ctx context.Context, change *CodeChange) error {
-	// Read file content
+	// Check if file exists
+	_, err := os.Stat(change.File)
+	fileExists := err == nil
+
+	// If file doesn't exist and OldCode is empty, this is a new file creation
+	if !fileExists && change.OldCode == "" {
+		// Create directory if it doesn't exist
+		dir := filepath.Dir(change.File)
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("creating directory: %w", err)
+		}
+
+		// Format and write new file
+		formatted, err := m.FormatCode(ctx, change.NewCode)
+		if err != nil {
+			// If formatting fails, use unformatted code
+			formatted = change.NewCode
+		}
+
+		// Add package declaration if missing
+		if !strings.Contains(formatted, "package ") {
+			// Extract package name from directory or use default
+			packageName := filepath.Base(dir)
+			formatted = fmt.Sprintf("package %s\n\n%s", packageName, formatted)
+		}
+
+		if err := os.WriteFile(change.File, []byte(formatted), 0644); err != nil {
+			return fmt.Errorf("writing file: %w", err)
+		}
+		return nil
+	}
+
+	// File exists or we're modifying existing file
 	content, err := os.ReadFile(change.File)
 	if err != nil {
 		return fmt.Errorf("reading file: %w", err)

@@ -10,11 +10,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewRetryExecutor(t *testing.T) {
 	config := DefaultRetryConfig()
 	executor := NewRetryExecutor(config)
 	require.NotNil(t, executor)
 	assert.Equal(t, config, executor.config)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestRetryExecutor_ExecuteWithRetry_Success(t *testing.T) {
@@ -39,6 +43,8 @@ func TestRetryExecutor_ExecuteWithRetry_Success(t *testing.T) {
 	ctx := context.Background()
 	err := executor.ExecuteWithRetry(ctx, operation)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NoError(t, err)
 	assert.Equal(t, 2, callCount)
 }
@@ -87,6 +93,8 @@ func TestRetryExecutor_ExecuteWithRetry_ContextCancelled(t *testing.T) {
 	defer cancel()
 
 	err := executor.ExecuteWithRetry(ctx, operation)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cancelled")
@@ -112,6 +120,8 @@ func TestRetryExecutor_CalculateDelay(t *testing.T) {
 	assert.Equal(t, 200*time.Millisecond, delay2) // 100 * 2^(2-1) = 100 * 2
 
 	// Test third retry (attempt 3)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	delay3 := executor.calculateDelay(3)
 	assert.Equal(t, 400*time.Millisecond, delay3) // 100 * 2^(3-1) = 100 * 4
 
@@ -130,6 +140,8 @@ func TestRetryExecutor_IsRetryableError(t *testing.T) {
 	// Test retryable errors
 	assert.True(t, executor.isRetryableError(errors.New("network_error")))
 	assert.True(t, executor.isRetryableError(errors.New("timeout")))
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	// Test non-retryable error
 	assert.False(t, executor.isRetryableError(errors.New("validation_error")))
@@ -162,6 +174,8 @@ func TestCircuitBreaker(t *testing.T) {
 
 	// Test circuit breaker open
 	err = cb.Call(func() error { return nil })
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "circuit breaker is open")
 
@@ -193,6 +207,8 @@ func TestBulkhead(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Test capacity exceeded - should fail immediately
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	err := bulkhead.Execute(ctx, func() error { return nil })
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "bulkhead capacity exceeded")
@@ -205,6 +221,8 @@ func TestBulkhead(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 	err = bulkhead.Execute(ctx, func() error { return nil })
 	assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestBulkhead_SerialExecution(t *testing.T) {
@@ -229,6 +247,8 @@ func TestBulkhead_GetStats(t *testing.T) {
 
 	ctx := context.Background()
 	done := make(chan bool)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	go func() {
 		bulkhead.Execute(ctx, func() error {

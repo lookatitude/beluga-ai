@@ -44,6 +44,8 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, opts ...core.Optio
 	return ch, nil
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewOrchestrator(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -53,6 +55,8 @@ func TestNewOrchestrator(t *testing.T) {
 	if orch == nil {
 		t.Fatal("Orchestrator should not be nil")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestChainCreation(t *testing.T) {
@@ -73,6 +77,8 @@ func TestChainCreation(t *testing.T) {
 	result, err := chain.Invoke(context.Background(), input)
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Logf("Chain execution result: %v", result)
 }
@@ -107,6 +113,8 @@ func TestGraphCreation(t *testing.T) {
 	// Test graph execution
 	input := map[string]any{"data": "test"}
 	result, err := graph.Invoke(context.Background(), input)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
@@ -126,6 +134,8 @@ func TestConfiguration(t *testing.T) {
 		}),
 	)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	require.NoError(t, err)
 
 	assert.Equal(t, 30*time.Second, config.Chain.DefaultTimeout)
@@ -143,6 +153,8 @@ func TestOrchestratorWithOptions(t *testing.T) {
 	)
 
 	require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.NotNil(t, orch)
 
 	// Test that the orchestrator works with the custom configuration
@@ -219,6 +231,8 @@ func TestConfigurationValidation(t *testing.T) {
 				if err != nil {
 					var orchErr *iface.OrchestratorError
 					assert.ErrorAs(t, err, &orchErr)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 					if orchErr != nil {
 						assert.Equal(t, tc.errorCode, orchErr.Code)
 					}
@@ -384,6 +398,8 @@ func TestChainOrchestrationScenarios(t *testing.T) {
 
 		inputs := []any{
 			map[string]any{"batch": "item1"},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			map[string]any{"batch": "item2"},
 			map[string]any{"batch": "item3"},
 		}
@@ -528,6 +544,8 @@ func TestGraphOrchestrationScenarios(t *testing.T) {
 
 		err = graph.SetEntryPoint([]string{"start"})
 		require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		err = graph.SetFinishPoint([]string{"path1", "path2"})
 		require.NoError(t, err)
 
@@ -574,6 +592,8 @@ func TestOrchestratorFeatureToggles(t *testing.T) {
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "graphs_disabled")
 	})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("workflows disabled", func(t *testing.T) {
 		orch, err := NewOrchestratorWithOptions(
@@ -603,6 +623,8 @@ func TestOrchestratorMetrics(t *testing.T) {
 	assert.Equal(t, 0, metrics.GetActiveWorkflows())
 
 	// Create some chains
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	chain1, err := orch.CreateChain([]core.Runnable{&MockRunnable{name: "test1"}})
 	require.NoError(t, err)
 	assert.NotNil(t, chain1)
@@ -611,6 +633,8 @@ func TestOrchestratorMetrics(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotNil(t, chain2)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Create a graph
 	graph, err := orch.CreateGraph()
 	require.NoError(t, err)
@@ -648,6 +672,8 @@ func TestConcurrentOrchestration(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < chainsPerGoroutine; j++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				chain, err := orch.CreateChain([]core.Runnable{
 					&MockRunnable{name: fmt.Sprintf("step-%d-%d", id, j)},
 				})
@@ -679,6 +705,8 @@ func TestOrchestratorConfigurationEdgeCases(t *testing.T) {
 		assert.Contains(t, err.Error(), "config cannot be nil")
 	})
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	t.Run("invalid timeout values", func(t *testing.T) {
 		_, err := NewConfig(WithChainTimeout(-1))
 		assert.Error(t, err)
@@ -706,6 +734,8 @@ func TestOrchestratorConfigurationEdgeCases(t *testing.T) {
 
 // Test orchestrator with various input types
 func TestOrchestratorInputTypes(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
 
@@ -732,6 +762,8 @@ func TestOrchestratorInputTypes(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // Test orchestrator performance characteristics
 func TestOrchestratorPerformance(t *testing.T) {

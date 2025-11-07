@@ -1,0 +1,30 @@
+{
+  "generated_at": "2025-11-07T20:52:53Z",
+  "issues_by_package": {
+    "pkg/agents": 0,
+    "pkg/chatmodels": 0,
+    "pkg/config": 0,
+    "pkg/core": 0,
+    "pkg/embeddings": 0,
+    "pkg/llms": 0,
+    "pkg/memory": 0,
+    "pkg/monitoring": 0,
+    "pkg/orchestration": 0,
+    "pkg/prompts": 0,
+    "pkg/retrievers": 0,
+    "pkg/schema": 0,
+    "pkg/server": 0,
+    "pkg/vectorstores": 0
+  },
+  "issues_by_severity": {},
+  "issues_by_type": {},
+  "summary": {
+    "execution_time": "27.541698ms",
+    "files_analyzed": 1,
+    "fixes_applied": 0,
+    "fixes_failed": 0,
+    "functions_analyzed": 0,
+    "issues_found": 0,
+    "packages_analyzed": 14
+  }
+}

@@ -163,7 +163,7 @@ func TestServerGracefulShutdown(t *testing.T) {
 	}()
 
 	// Give server time to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// Request graceful shutdown
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 3*time.Second)
@@ -221,7 +221,7 @@ func TestRESTServerHTTPEndpointsE2E(t *testing.T) {
 	server.RegisterHTTPHandler("GET", "/api/v1/test", agentHandler.handleTest)
 
 	// Start server
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 110*time.Millisecond)
 	defer cancel()
 
 	go func() {
@@ -229,7 +229,7 @@ func TestRESTServerHTTPEndpointsE2E(t *testing.T) {
 	}()
 
 	// Give server time to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// Get server address (this would need to be extracted from the server in a real implementation)
 	// For now, we'll assume the server is running on localhost with a known port
@@ -270,7 +270,7 @@ func TestMCPServerHTTPEndpointsE2E(t *testing.T) {
 	mcpServer.RegisterResource(resource)
 
 	// Start server
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 110*time.Millisecond)
 	defer cancel()
 
 	go func() {
@@ -278,7 +278,7 @@ func TestMCPServerHTTPEndpointsE2E(t *testing.T) {
 	}()
 
 	// Give server time to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// Test MCP protocol endpoints (would need actual HTTP client calls)
 	// This would include testing:
@@ -324,7 +324,7 @@ func TestRESTServerLoad(t *testing.T) {
 	})
 
 	// Start server
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 310*time.Millisecond)
 	defer cancel()
 
 	go func() {
@@ -332,7 +332,7 @@ func TestRESTServerLoad(t *testing.T) {
 	}()
 
 	// Give server time to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// Simulate load (in a real test, you'd make concurrent HTTP requests)
 	// For now, just verify the server can handle basic operations under concurrency
@@ -375,7 +375,7 @@ func TestServerStressWithManyRequests(t *testing.T) {
 	})
 
 	// Start server
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 310*time.Millisecond)
 	defer cancel()
 
 	go func() {
@@ -383,7 +383,7 @@ func TestServerStressWithManyRequests(t *testing.T) {
 	}()
 
 	// Give server time to start
-	time.Sleep(200 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	// In a real stress test, you'd make thousands of concurrent requests
 	// For now, just verify basic functionality
@@ -396,6 +396,8 @@ func TestServerStressWithManyRequests(t *testing.T) {
 
 // Configuration Validation Tests
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestServerConfigurationValidation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -506,6 +508,8 @@ func makeHTTPRequest(method, url string, body io.Reader) (*http.Response, error)
 	return client.Do(req)
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 // Benchmark tests for integration scenarios
 
 func BenchmarkServerStartupShutdown(b *testing.B) {
@@ -525,6 +529,8 @@ func BenchmarkServerStartupShutdown(b *testing.B) {
 		// Quick health check
 		if !server.IsHealthy(context.Background()) {
 			b.Error("Server should be healthy")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 	}
 }

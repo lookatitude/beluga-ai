@@ -3,30 +3,43 @@ package fixes
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 )
 
-// AddTimeoutFix adds a timeout mechanism to a test function.
-func AddTimeoutFix(ctx context.Context, functionName string, lineStart, lineEnd int, timeoutDuration string) (string, error) {
-	// Generate code to add context.WithTimeout
-	// This would be called from fixer.generateCodeChanges
-	
-	newCode := fmt.Sprintf(`	ctx, cancel := context.WithTimeout(context.Background(), %s)
-	defer cancel()
-`, timeoutDuration)
-	
-	return newCode, nil
-}
-
 // GenerateTimeoutFix generates the complete fix for adding a timeout.
-func GenerateTimeoutFix(ctx context.Context, functionName string, lineStart, lineEnd int, timeoutDuration string) (oldCode, newCode string, err error) {
-	// This would analyze the function and generate appropriate timeout code
-	// For now, return placeholder
-	
-	oldCode = "" // Would extract existing function start
-	newCode = fmt.Sprintf(`	ctx, cancel := context.WithTimeout(context.Background(), %s)
-	defer cancel()
-`, timeoutDuration)
-	
-	return oldCode, newCode, nil
-}
+// It reads the file and adds context.WithTimeout at the start of the function body.
+func GenerateTimeoutFix(ctx context.Context, filePath, functionName string, lineStart, lineEnd int, timeoutDuration string) (oldCode, newCode string, err error) {
+	// Read the file
+	content, err := os.ReadFile(filePath)
+	if err != nil {
+		return "", "", fmt.Errorf("reading file: %w", err)
+	}
 
+	lines := strings.Split(string(content), "\n")
+
+	// Extract the actual code at the specified line range
+	if lineStart > 0 && lineStart <= len(lines) {
+		// Get the line(s) to replace
+		endLine := lineEnd
+		if endLine < lineStart {
+			endLine = lineStart
+		}
+		if endLine > len(lines) {
+			endLine = len(lines)
+		}
+
+		// Extract old code
+		oldCodeLines := lines[lineStart-1:endLine]
+		oldCode = strings.Join(oldCodeLines, "\n")
+
+		// Generate the timeout code
+		timeoutCode := fmt.Sprintf("\tctx, cancel := context.WithTimeout(context.Background(), %s)\n\tdefer cancel()", timeoutDuration)
+
+		// Generate new code: add timeout code before the existing code
+		newCode = timeoutCode + "\n" + oldCode
+		return oldCode, newCode, nil
+	}
+
+	return "", "", fmt.Errorf("could not extract code from line %d", lineStart)
+}

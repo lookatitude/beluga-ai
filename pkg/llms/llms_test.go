@@ -84,6 +84,8 @@ func (m *MockChatModel) CheckHealth() map[string]interface{} {
 
 // Test cases
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestEnsureMessages(t *testing.T) {
 	tests := []struct {
 		name     string

@@ -10,6 +10,8 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewOllamaEmbedder(t *testing.T) {
 	tracer := otel.Tracer("test")
 
@@ -69,6 +71,8 @@ func TestNewOllamaEmbedder(t *testing.T) {
 			}
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewOllamaEmbedderWithClient_NilClient(t *testing.T) {
@@ -85,6 +89,8 @@ func TestNewOllamaEmbedderWithClient_NilClient(t *testing.T) {
 		t.Errorf("Expected EmbeddingError, got %T", err)
 	}
 	if embErr.Code != iface.ErrCodeConnectionFailed {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Errorf("Expected error code %s, got %s", iface.ErrCodeConnectionFailed, embErr.Code)
 	}
 }
@@ -194,6 +200,8 @@ func TestOllamaEmbedder_EmbedDocuments(t *testing.T) {
 					if call.Req.Prompt != tt.documents[i] {
 						t.Errorf("Call %d: expected prompt %q, got %q", i, tt.documents[i], call.Req.Prompt)
 					}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				}
 			}
 		})
@@ -284,6 +292,8 @@ func TestOllamaEmbedder_EmbedQuery(t *testing.T) {
 						t.Errorf("Expected model %s, got %s", config.Model, call.Req.Model)
 					}
 					if call.Req.Prompt != tt.query {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 						t.Errorf("Expected prompt %q, got %q", tt.query, call.Req.Prompt)
 					}
 				}
@@ -304,6 +314,8 @@ func TestOllamaEmbedder_GetDimension(t *testing.T) {
 	}
 
 	dimension, err := embedder.GetDimension(ctx)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if err != nil {
 		t.Fatalf("GetDimension() failed: %v", err)
 	}
@@ -347,6 +359,8 @@ func TestOllamaEmbedder_Check(t *testing.T) {
 
 			config := &Config{Model: "test-model"}
 			embedder, err := NewOllamaEmbedderWithClient(config, tracer, mockClient)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if err != nil {
 				t.Fatalf("Failed to create embedder: %v", err)
 			}
@@ -360,6 +374,8 @@ func TestOllamaEmbedder_Check(t *testing.T) {
 }
 
 func TestOllamaEmbedder_InterfaceCompliance(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	tracer := otel.Tracer("test")
 	config := &Config{Model: "test-model"}
 	mockClient := mock.NewOllamaClientMock()
@@ -383,6 +399,8 @@ func TestOllamaEmbedder_ContextCancellation(t *testing.T) {
 
 	mockClient := mock.NewOllamaClientMock()
 	mockClient.SetEmbeddingsError(context.Canceled) // Simulate cancellation
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	config := &Config{Model: "test-model"}
 	embedder, err := NewOllamaEmbedderWithClient(config, tracer, mockClient)
@@ -424,6 +442,8 @@ func TestOllamaEmbedder_ConcurrentAccess(t *testing.T) {
 		if err != nil {
 			t.Errorf("Concurrent query 1 failed: %v", err)
 		}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		done <- true
 	}()
 
@@ -447,6 +467,8 @@ func BenchmarkOllamaEmbedder_EmbedQuery(b *testing.B) {
 	ctx := context.Background()
 
 	mockClient := mock.NewOllamaClientMock()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	embedding := make([]float64, 768)
 	for i := range embedding {
 		embedding[i] = float64(i) / 768.0

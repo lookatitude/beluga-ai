@@ -386,6 +386,8 @@ func setupTestProviders() {
 }
 
 // Table-driven tests for VectorStore operations using mocks
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestVectorStoreOperations(t *testing.T) {
 	tests := []struct {
 		name       string
@@ -504,6 +506,8 @@ func TestVectorStoreOperations(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestMockEmbedder tests the MockEmbedder functionality
 func TestMockEmbedder(t *testing.T) {
@@ -596,6 +600,8 @@ func TestMockEmbedder(t *testing.T) {
 			embedder := tt.setupFunc()
 			tt.testFunc(t, embedder)
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -680,6 +686,8 @@ func TestMockVectorStore(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			store := tt.setupFunc()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			tt.testFunc(t, store)
 		})
 	}
@@ -787,6 +795,8 @@ func TestConfigOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			config := NewDefaultConfig()
 			ApplyOptions(config, tt.options...)
 			tt.validateFunc(t, config)
@@ -858,6 +868,8 @@ func TestErrorHandling(t *testing.T) {
 			},
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -908,6 +920,8 @@ func TestObservability(t *testing.T) {
 	})
 
 	t.Run("Logger", func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		mockLogger := &MockLogger{}
 
 		mockLogger.LogAttrs(ctx, slog.LevelInfo, "test message",
@@ -974,6 +988,8 @@ func TestFactoryAndProviders(t *testing.T) {
 		// Test registering with global factory
 		mockCreator := func(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error) {
 			return &MockVectorStore{}, nil
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 
 		RegisterProvider("test-global", mockCreator)
@@ -999,6 +1015,8 @@ func TestGlobalInstances(t *testing.T) {
 	})
 
 	t.Run("GlobalTracer", func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		tracer := NewTracerProvider("test")
 		SetGlobalTracer(tracer)
 
@@ -1050,6 +1068,8 @@ func TestConvenienceFunctions(t *testing.T) {
 	t.Run("DeleteDocumentsConvenience", func(t *testing.T) {
 		mockStore := &MockVectorStore{}
 		ids := []string{"test-id"}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 		// Delete using convenience function
 		err := DeleteDocuments(ctx, mockStore, ids)
@@ -1108,6 +1128,8 @@ func TestEdgeCases(t *testing.T) {
 		mockStore := &MockVectorStore{}
 		docs := []schema.Document{
 			schema.NewDocument("large batch test", nil),
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 
 		ids, err := BatchAddDocuments(ctx, mockStore, docs, 1000, embedder)
@@ -1148,12 +1170,18 @@ func TestIntegrationTemplate(t *testing.T) {
 				schema.NewDocument("Integration test document 2", map[string]string{"category": "test"}),
 			}
 			ids, err := store.AddDocuments(ctx, docs)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			require.NoError(t, err)
 			assert.Len(t, ids, 2)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			// 3. Search documents
 			results, scores, err := store.SimilaritySearchByQuery(ctx, "integration test", 10, &MockEmbedder{})
 			require.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			assert.Greater(t, len(results), 0)
 			assert.Len(t, scores, len(results))
 
@@ -1179,6 +1207,8 @@ func BenchmarkBatchOperations(b *testing.B) {
 	b.Skip("Skipping batch operations benchmark due to type compatibility issues with inmemory store")
 	// TODO: Re-enable when inmemory store implements main VectorStore interface
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func BenchmarkMockEmbedder(b *testing.B) {
 	embedder := &MockEmbedder{}
@@ -1203,6 +1233,8 @@ func BenchmarkMockEmbedder(b *testing.B) {
 
 		for i := 0; i < b.N; i++ {
 			embedder.EmbedQuery(ctx, query)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		}
 	})
 }

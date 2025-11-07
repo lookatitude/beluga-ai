@@ -11,6 +11,8 @@ import (
 
 // Middleware Chain Tests
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestMiddlewareChain(t *testing.T) {
 	logger := newMockLogger()
 
@@ -57,6 +59,8 @@ func TestMiddlewareChain(t *testing.T) {
 	if !logger.hasLog("INFO", "HTTP Request") {
 		t.Error("Expected HTTP request to be logged")
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestCORSMiddlewareWithMultipleOrigins(t *testing.T) {
@@ -122,6 +126,8 @@ func TestCORSMiddlewareWithMultipleOrigins(t *testing.T) {
 			if tt.expectAllow && tt.expectedOrigin != "" && actualOrigin != tt.expectedOrigin && !contains(tt.allowedOrigins, "*") {
 				t.Errorf("Expected origin %s, got %s", tt.expectedOrigin, actualOrigin)
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -143,6 +149,8 @@ func TestLoggingMiddlewareWithErrors(t *testing.T) {
 	if w.Code != http.StatusInternalServerError {
 		t.Errorf("Expected status 500, got %d", w.Code)
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	if !logger.hasLog("INFO", "HTTP Request") {
 		t.Error("Expected HTTP request to be logged even with error")
@@ -164,6 +172,8 @@ func TestRecoveryMiddlewarePanic(t *testing.T) {
 	handler.ServeHTTP(w, req)
 
 	if w.Code != http.StatusInternalServerError {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Errorf("Expected status 500 for panic, got %d", w.Code)
 	}
 
@@ -186,6 +196,8 @@ func TestRecoveryMiddlewareNoPanic(t *testing.T) {
 
 	handler.ServeHTTP(w, req)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	if w.Code != http.StatusOK {
 		t.Errorf("Expected status 200, got %d", w.Code)
 	}
@@ -241,6 +253,8 @@ func TestCustomMiddleware(t *testing.T) {
 		t.Errorf("Expected path header '/api/custom', got '%s'", pathHeader)
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Verify CORS still works
 	corsHeader := w.Header().Get("Access-Control-Allow-Origin")
 	if corsHeader != "http://example.com" {
@@ -310,6 +324,8 @@ func TestMiddlewareOrder(t *testing.T) {
 	}
 
 	for i, expected := range expectedOrder {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		var actual string
 		if i < len(executionOrder) {
 			actual = executionOrder[i]
@@ -324,6 +340,8 @@ func TestMiddlewareOrder(t *testing.T) {
 
 // Benchmark tests for middleware
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func BenchmarkCORSMiddleware(b *testing.B) {
 	middleware := CORSMiddleware([]string{"http://example.com", "*"})
 	handler := middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -339,6 +357,8 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 		handler.ServeHTTP(w, req)
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func BenchmarkLoggingMiddleware(b *testing.B) {
 	logger := newMockLogger()
@@ -353,6 +373,8 @@ func BenchmarkLoggingMiddleware(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		handler.ServeHTTP(w, req)
 	}
 }
@@ -380,6 +402,8 @@ func BenchmarkMiddlewareChain3(b *testing.B) {
 		LoggingMiddleware(logger),
 		RecoveryMiddleware(logger),
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	baseHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

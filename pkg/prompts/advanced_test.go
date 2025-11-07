@@ -17,6 +17,8 @@ import (
 )
 
 // TestAdvancedMockTemplate tests the advanced mock template functionality
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAdvancedMockTemplate(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -143,6 +145,8 @@ func TestAdvancedMockTemplate(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestTemplateManager tests template management functionality
 func TestTemplateManager(t *testing.T) {
@@ -220,6 +224,8 @@ func TestTemplateManager(t *testing.T) {
 			finalCount := manager.GetTemplateCount()
 			assert.Equal(t, tt.expectedCount, finalCount, "Final template count should match expected")
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -262,6 +268,8 @@ func TestPromptValue(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			AssertPromptValue(t, tt.promptValue, tt.expectedString, tt.expectedMsgs)
 		})
 	}
@@ -294,6 +302,8 @@ func TestPromptsIntegrationTestHelper(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Test reset
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	helper.Reset()
 
 	// Verify reset worked
@@ -380,6 +390,8 @@ func TestPromptScenarios(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
 			template := NewAdvancedMockTemplate("scenario-template", "Test template with {{.input}}")
 			manager := NewAdvancedMockTemplateManager()
@@ -437,6 +449,8 @@ func TestTemplateQuality(t *testing.T) {
 
 			if tt.expectedOK {
 				assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				assert.True(t, ok, "Quality test should pass")
 			} else {
 				// Test may fail for specific scenarios
@@ -531,6 +545,8 @@ func TestConcurrencyAdvanced(t *testing.T) {
 		}
 
 		wg.Wait()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		close(errChan)
 
 		// Check for errors
@@ -550,6 +566,8 @@ func TestLoadTesting(t *testing.T) {
 		t.Skip("Skipping load tests in short mode")
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	template := NewAdvancedMockTemplate("load-test", "Load test template with {{.input}}")
 
 	const numOperations = 75
@@ -604,6 +622,8 @@ func TestPromptErrorHandling(t *testing.T) {
 			},
 			operation: func(template iface.Template) error {
 				ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				inputs := map[string]interface{}{"optional": "present"} // missing "required"
 				_, err := template.Format(ctx, inputs)
 				return err
@@ -639,6 +659,8 @@ func BenchmarkPromptOperations(b *testing.B) {
 
 	b.Run("TemplateValidation", func(b *testing.B) {
 		b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for i := 0; i < b.N; i++ {
 			err := template.Validate()
 			if err != nil {
@@ -682,6 +704,8 @@ func BenchmarkTemplateManager(b *testing.B) {
 
 	b.Run("ListTemplates", func(b *testing.B) {
 		b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		for i := 0; i < b.N; i++ {
 			templates := manager.ListTemplates()
 			if len(templates) != 10 {

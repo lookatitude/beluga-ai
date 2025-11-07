@@ -14,6 +14,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewMonitor(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -49,6 +51,8 @@ func TestNewMonitor(t *testing.T) {
 			assert.NotNil(t, monitor.BestPracticesChecker(), "BestPracticesChecker should be initialized")
 		})
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestNewMonitorWithConfig(t *testing.T) {
@@ -88,6 +92,8 @@ func TestNewMonitorWithConfig(t *testing.T) {
 				assert.NotNil(t, monitor.Logger())
 				assert.NotNil(t, monitor.Tracer())
 			}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		})
 	}
 }
@@ -130,6 +136,8 @@ func TestMonitorLifecycle(t *testing.T) {
 			assert.NoError(t, err)
 
 			// Test IsHealthy after stop (should still be true as components are just stopped)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			healthy = monitor.IsHealthy(ctx)
 			assert.True(t, healthy, "Monitor should still report healthy after stopping")
 		})
@@ -147,6 +155,8 @@ func TestMonitorLifecycleWithCancellation(t *testing.T) {
 	cancel()
 
 	err = monitor.Start(cancelledCtx)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Start doesn't check context, so it should succeed
 	assert.NoError(t, err)
 
@@ -298,6 +308,8 @@ func TestConfigValidation(t *testing.T) {
 			err := tt.config.Validate()
 			if tt.wantErr {
 				assert.Error(t, err, "Expected validation to fail for config: %+v", tt.config)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 				if tt.errString != "" {
 					assert.Contains(t, err.Error(), tt.errString, "Error message should contain expected string")
 				}
@@ -334,6 +346,8 @@ func TestLoadConfig(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config, err := LoadConfig(tt.opts...)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Equal(t, Config{}, config)
@@ -369,6 +383,8 @@ func TestLoadFromMainConfig(t *testing.T) {
 		},
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config, err := LoadFromMainConfig(tt.mainConfig)
@@ -410,6 +426,8 @@ func TestValidateWithMainConfig(t *testing.T) {
 				return c
 			}(),
 			mainConfig: &configIface.Config{},
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			wantErr:    true,
 		},
 	}
@@ -429,6 +447,8 @@ func TestValidateWithMainConfig(t *testing.T) {
 func TestLogLevelString(t *testing.T) {
 	tests := []struct {
 		level    LogLevel
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		expected string
 	}{
 		{DEBUG, "DEBUG"},
@@ -478,6 +498,8 @@ func TestIntegrationHelper(t *testing.T) {
 
 	t.Run("ValidateBestPractices", func(t *testing.T) {
 		issues := helper.ValidateBestPractices(ctx, "test code", "test component")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.NotNil(t, issues)
 		assert.IsType(t, []iface.ValidationIssue{}, issues)
 	})
@@ -538,6 +560,8 @@ func TestIntegrationHelperWithRealisticScenarios(t *testing.T) {
 				"operation": operationName,
 				"status":    "success",
 			})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			return nil
 		})
@@ -640,15 +664,21 @@ func TestMonitorComponentIntegration(t *testing.T) {
 		assert.NotNil(t, result)
 	})
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	t.Run("Ethical checker integration", func(t *testing.T) {
 		ethicalChecker := monitor.EthicalChecker()
 		assert.NotNil(t, ethicalChecker)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		// Test ethical analysis
 		analysis, err := ethicalChecker.CheckContent(context.Background(), "This is ethical content", iface.EthicalContext{
 			ContentType: "text",
 			Domain:      "general",
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		assert.NoError(t, err)
 		assert.NotNil(t, analysis)
 	})
@@ -656,10 +686,14 @@ func TestMonitorComponentIntegration(t *testing.T) {
 	t.Run("Best practices checker integration", func(t *testing.T) {
 		bestPracticesChecker := monitor.BestPracticesChecker()
 		assert.NotNil(t, bestPracticesChecker)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 		// Test best practices validation
 		issues := bestPracticesChecker.Validate(context.Background(), "sample code", "test_component")
 		assert.IsType(t, []iface.ValidationIssue{}, issues)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	})
 }
 
@@ -671,6 +705,8 @@ func BenchmarkNewMonitor(b *testing.B) {
 }
 
 func BenchmarkNewMonitorWithOptions(b *testing.B) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		NewMonitor()
@@ -680,6 +716,8 @@ func BenchmarkNewMonitorWithOptions(b *testing.B) {
 func BenchmarkConfigValidation(b *testing.B) {
 	config := DefaultConfig()
 	b.ResetTimer()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	for i := 0; i < b.N; i++ {
 		config.Validate()

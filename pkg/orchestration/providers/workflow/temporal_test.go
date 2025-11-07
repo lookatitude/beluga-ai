@@ -102,6 +102,8 @@ func (m *MockSpan) TracerProvider() trace.TracerProvider {
 
 // Use temporal SDK mocks for WorkflowRun and Value as well
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestNewTemporalWorkflow(t *testing.T) {
 	config := iface.WorkflowConfig{
 		Name:      "test-workflow",
@@ -122,6 +124,8 @@ func TestNewTemporalWorkflow(t *testing.T) {
 	assert.Equal(t, mockClient, temporalWorkflow.client)
 	assert.Equal(t, mockTracer, temporalWorkflow.tracer)
 	assert.NotNil(t, temporalWorkflow.workflowFn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 }
 
 func TestTemporalWorkflow_Execute_Success(t *testing.T) {
@@ -158,6 +162,8 @@ func TestTemporalWorkflow_Execute_Success(t *testing.T) {
 
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockSpan.AssertExpectations(t)
 	mockWorkflowRun.AssertExpectations(t)
 }
@@ -191,6 +197,8 @@ func TestTemporalWorkflow_Execute_Error(t *testing.T) {
 	assert.Empty(t, workflowID)
 	assert.Empty(t, runID)
 	assert.Contains(t, err.Error(), "temporal execution failed")
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
@@ -222,6 +230,8 @@ func TestTemporalWorkflow_GetResult_Success(t *testing.T) {
 	result, err := temporalWorkflow.GetResult(context.Background(), "workflow-id", "run-id")
 
 	assert.NoError(t, err)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Equal(t, "workflow_result", result)
 
 	mockClient.AssertExpectations(t)
@@ -252,6 +262,8 @@ func TestTemporalWorkflow_GetResult_Error(t *testing.T) {
 
 	result, err := temporalWorkflow.GetResult(context.Background(), "workflow-id", "run-id")
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	assert.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "workflow not found")
@@ -275,6 +287,8 @@ func TestTemporalWorkflow_Signal_Success(t *testing.T) {
 	// Setup mocks
 	mockTracer.On("Start", mock.Anything, "temporal_workflow.signal", mock.Anything).Return(context.Background(), mockSpan)
 	mockSpan.On("End", mock.Anything).Return()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockClient.On("SignalWorkflow", mock.Anything, "workflow-id", "run-id", "test-signal", "signal-data").Return(nil)
 
 	temporalWorkflow := NewTemporalWorkflow(config, mockClient, mockTracer, nil)
@@ -301,6 +315,8 @@ func TestTemporalWorkflow_Signal_Error(t *testing.T) {
 	mockTracer.On("Start", mock.Anything, "temporal_workflow.signal", mock.Anything).Return(context.Background(), mockSpan)
 	mockSpan.On("RecordError", mock.Anything, mock.Anything).Return()
 	mockSpan.On("End", mock.Anything).Return()
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockClient.On("SignalWorkflow", mock.Anything, "workflow-id", "run-id", "test-signal", "signal-data").Return(errors.New("signal failed"))
 
 	temporalWorkflow := NewTemporalWorkflow(config, mockClient, mockTracer, nil)
@@ -330,6 +346,8 @@ func TestTemporalWorkflow_Query_Success(t *testing.T) {
 	mockTracer.On("Start", mock.Anything, "temporal_workflow.query", mock.Anything).Return(context.Background(), mockSpan)
 	mockClient.On("QueryWorkflow", mock.Anything, "workflow-id", "run-id", "test-query", mock.Anything).Return(mockValue, nil)
 	mockValue.On("Get", mock.AnythingOfType("*interface {}")).Run(func(args mock.Arguments) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		resultPtr := args.Get(0).(*interface{})
 		*resultPtr = "query_result"
 	}).Return(nil)
@@ -354,6 +372,8 @@ func TestTemporalWorkflow_Query_Error(t *testing.T) {
 
 	mockClient := &mocks.Client{}
 	mockTracer := &MockTracer{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockSpan := &MockSpan{}
 
 	// Setup mocks
@@ -376,6 +396,8 @@ func TestTemporalWorkflow_Cancel_Success(t *testing.T) {
 	config := iface.WorkflowConfig{
 		Name:      "test-workflow",
 		TaskQueue: "test-queue",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 
 	mockClient := &mocks.Client{}
@@ -399,6 +421,8 @@ func TestTemporalWorkflow_Cancel_Success(t *testing.T) {
 func TestTemporalWorkflow_Cancel_Error(t *testing.T) {
 	config := iface.WorkflowConfig{
 		Name:      "test-workflow",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		TaskQueue: "test-queue",
 	}
 
@@ -421,6 +445,8 @@ func TestTemporalWorkflow_Cancel_Error(t *testing.T) {
 	mockTracer.AssertExpectations(t)
 }
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestTemporalWorkflow_Terminate_Success(t *testing.T) {
 	config := iface.WorkflowConfig{
 		Name:      "test-workflow",
@@ -444,6 +470,8 @@ func TestTemporalWorkflow_Terminate_Success(t *testing.T) {
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 func TestTemporalWorkflow_Terminate_Error(t *testing.T) {
 	config := iface.WorkflowConfig{
@@ -453,6 +481,8 @@ func TestTemporalWorkflow_Terminate_Error(t *testing.T) {
 
 	mockClient := &mocks.Client{}
 	mockTracer := &MockTracer{}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockSpan := &MockSpan{}
 
 	// Setup mocks
@@ -471,6 +501,8 @@ func TestTemporalWorkflow_Terminate_Error(t *testing.T) {
 }
 
 func TestNewTemporalActivityWrapper(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	mockRunnable := &MockRunnable{name: "test-activity"}
 	mockTracer := &MockTracer{}
 
@@ -490,6 +522,8 @@ func TestTemporalActivityWrapper_Execute_Success(t *testing.T) {
 	mockTracer.On("Start", mock.Anything, "temporal_activity.execute", mock.Anything).Return(context.Background(), mockSpan)
 	mockRunnable.On("Invoke", mock.Anything, "test-input", mock.Anything).Return("activity_result", nil)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	wrapper := NewTemporalActivityWrapper(mockRunnable, mockTracer)
 
 	result, err := wrapper.Execute(context.Background(), "test-input")

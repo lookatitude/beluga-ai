@@ -17,6 +17,8 @@ import (
 )
 
 // TestAdvancedMockRetriever tests the advanced mock retriever functionality
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 func TestAdvancedMockRetriever(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -108,6 +110,8 @@ func TestAdvancedMockRetriever(t *testing.T) {
 		})
 	}
 }
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 // TestRetrieverScenarios tests real-world retrieval scenarios
 func TestRetrieverScenarios(t *testing.T) {
@@ -196,6 +200,8 @@ func TestRetrieverScenarios(t *testing.T) {
 
 			tt.scenario(t, retriever)
 		})
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	}
 }
 
@@ -242,6 +248,8 @@ func TestRetrieverConfiguration(t *testing.T) {
 			results, err := retriever.GetRelevantDocuments(ctx, "test query")
 			assert.NoError(t, err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			tt.validate(t, retriever, results)
 		})
 	}
@@ -291,6 +299,8 @@ func TestRetrieverPerformance(t *testing.T) {
 			duration := time.Since(start)
 			assert.LessOrEqual(t, duration, tt.maxDuration,
 				"Performance test should complete within %v, took %v", tt.maxDuration, duration)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 			t.Logf("Retriever performance: %d documents, %d queries in %v (avg: %v per query)",
 				tt.documentsCount, tt.queries, duration, duration/time.Duration(tt.queries))
@@ -334,6 +344,8 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 		// Check for errors
 		for err := range errChan {
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			t.Errorf("Concurrent retrieval error: %v", err)
 		}
 
@@ -354,6 +366,8 @@ func TestLoadTesting(t *testing.T) {
 
 	const numOperations = 100
 	const concurrency = 10
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	t.Run("retriever_load_test", func(t *testing.T) {
 		RunLoadTest(t, retriever, numOperations, concurrency)
@@ -380,6 +394,8 @@ func TestRetrieverIntegrationTestHelper(t *testing.T) {
 	assert.Equal(t, vectorRetriever, helper.GetRetriever("vector"))
 	assert.Equal(t, keywordRetriever, helper.GetRetriever("keyword"))
 
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 	// Test operations
 	ctx := context.Background()
 	_, err := vectorRetriever.GetRelevantDocuments(ctx, "test query")
@@ -485,6 +501,8 @@ func TestErrorHandling(t *testing.T) {
 			},
 		},
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -513,6 +531,8 @@ func BenchmarkRetrieverOperations(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			query := queries[i%len(queries)]
 			_, err := retriever.GetRelevantDocuments(ctx, query)
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 			if err != nil {
 				b.Errorf("GetRelevantDocuments error: %v", err)
 			}
@@ -533,6 +553,8 @@ func BenchmarkRetrieverOperations(b *testing.B) {
 // BenchmarkRetrieverBenchmark tests the benchmark helper utility
 func BenchmarkRetrieverBenchmark(b *testing.B) {
 	retriever := NewAdvancedMockRetriever("benchmark-helper", "vector_store",
+	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	defer cancel()
 		WithMockDocuments(CreateTestRetrievalDocuments(200)))
 
 	helper := NewBenchmarkHelper(retriever, 20)
