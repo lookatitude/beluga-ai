@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/lookatitude/beluga-ai/compare/v1.2.1...v1.3.0) (2025-11-07)
+
+
+### Features
+
+* implement test-analyzer tool for identifying and fixing long-running tests ([67c92d9](https://github.com/lookatitude/beluga-ai/commit/67c92d978dc5da661f5e30e8885e9ec2ec572a30))
+
 ## [1.2.1](https://github.com/lookatitude/beluga-ai/compare/v1.2.0...v1.2.1) (2025-11-07)
 
 
