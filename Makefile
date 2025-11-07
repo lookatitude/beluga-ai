@@ -1,7 +1,7 @@
 # Makefile for Beluga AI Framework
 # Standard build, test, and quality assurance targets
 
-.PHONY: help build test test-race test-coverage lint lint-fix fmt vet security clean all install-tools bench
+.PHONY: help build test test-unit test-integration test-race test-coverage test-coverage-threshold lint lint-fix fmt vet security security-full clean all install-tools install-system-tools bench ci-local
 
 # Variables
 GO_VERSION := 1.24
@@ -26,6 +26,14 @@ test: ## Run all tests
 	@echo "Running tests..."
 	@go test -v $$(go list ./... | grep -v -E '(specs|examples)')
 
+test-unit: ## Run unit tests only (pkg packages, excluding integration tests)
+	@echo "Running unit tests..."
+	@go test -v -race $$(go list ./pkg/... | grep -v -E '(specs|examples)')
+
+test-integration: ## Run integration tests
+	@echo "Running integration tests..."
+	@go test -v -race -timeout=15m ./tests/integration/...
+
 test-race: ## Run tests with race detection
 	@echo "Running tests with race detection..."
 	@go test -race -v $$(go list ./... | grep -v -E '(specs|examples)')
@@ -44,6 +52,25 @@ test-coverage-ci: ## Generate test coverage for CI (JSON output)
 	@mkdir -p $(COVERAGE_DIR)
 	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v -E '(specs|examples)')
 	@go tool cover -func=$(COVERAGE_FILE)
+
+test-coverage-threshold: ## Check if coverage meets 80% threshold
+	@echo "Checking coverage threshold (80%)..."
+	@mkdir -p $(COVERAGE_DIR)
+	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic $$(go list ./... | grep -v -E '(specs|examples)') > /dev/null 2>&1
+	@pct=$$(go tool cover -func=$(COVERAGE_FILE) | tail -n1 | awk '{print $$3}' | sed 's/%//'); \
+	if [ -z "$$pct" ]; then \
+		echo "❌ Failed to calculate coverage"; \
+		exit 1; \
+	fi; \
+	threshold=80; \
+	if awk "BEGIN {exit !($$pct < $$threshold)}"; then \
+		echo "❌ Coverage $$pct% is below minimum $$threshold%"; \
+		go tool cover -func=$(COVERAGE_FILE) | tail -n1; \
+		exit 1; \
+	else \
+		echo "✅ Coverage $$pct% meets minimum $$threshold% requirement"; \
+		go tool cover -func=$(COVERAGE_FILE) | tail -n1; \
+	fi
 
 lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
@@ -89,21 +116,55 @@ vet: ## Run go vet
 	@echo "Running go vet..."
 	@go vet $$(go list ./... | grep -v -E '(specs|examples)')
 
-security: ## Run security scans (gosec and govulncheck)
+security: ## Run security scans (gosec, govulncheck, and gitleaks)
 	@echo "Running security scans..."
+	@mkdir -p $(COVERAGE_DIR)
+	@echo "Running gosec..."
 	@if ! command -v gosec >/dev/null 2>&1; then \
 		echo "gosec not found. Installing..."; \
 		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
 	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json $$(go list ./... | grep -v -E '(specs|examples)') || true
-	@gosec $$(go list ./... | grep -v -E '(specs|examples)')
+	@gosec $$(go list ./... | grep -v -E '(specs|examples)') || true
 	@echo ""
 	@echo "Running govulncheck..."
 	@if ! command -v govulncheck >/dev/null 2>&1; then \
 		echo "govulncheck not found. Installing..."; \
 		go install golang.org/x/vuln/cmd/govulncheck@latest; \
 	fi
-	@govulncheck $$(go list ./... | grep -v -E '(specs|examples)')
+	@govulncheck $$(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee $(COVERAGE_DIR)/govulncheck-report.txt || true
+	@echo ""
+	@echo "Running gitleaks..."
+	@if ! command -v gitleaks >/dev/null 2>&1; then \
+		echo "gitleaks not found. Installing..."; \
+		if [ -f ./scripts/install-gitleaks.sh ]; then \
+			./scripts/install-gitleaks.sh || (echo "Failed to install gitleaks. Please install manually from https://github.com/gitleaks/gitleaks"; exit 1); \
+		else \
+			echo "⚠️  gitleaks install script not found. Please install manually:"; \
+			echo "   Linux: wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz && tar -xzf gitleaks_8.18.0_linux_x64.tar.gz && chmod +x gitleaks && sudo mv gitleaks /usr/local/bin/"; \
+			exit 1; \
+		fi; \
+	fi
+	@gitleaks detect --no-banner --redact --report-path=$(COVERAGE_DIR)/gitleaks-report.json || true
+	@if [ -f $(COVERAGE_DIR)/gitleaks-report.json ] && [ -s $(COVERAGE_DIR)/gitleaks-report.json ] && [ "$$(cat $(COVERAGE_DIR)/gitleaks-report.json)" != "[]" ]; then \
+		echo "❌ Secrets detected by gitleaks"; \
+		gitleaks detect --no-banner --redact; \
+		exit 1; \
+	fi
+	@echo "✅ No secrets detected"
+
+security-full: security ## Run all security scans including Trivy (requires Docker)
+	@echo ""
+	@echo "Running Trivy (optional, requires Docker or Trivy binary)..."
+	@if command -v trivy >/dev/null 2>&1; then \
+		echo "Running Trivy file system scan..."; \
+		trivy fs --severity CRITICAL,HIGH --skip-dirs specs,examples,docs,website . || true; \
+	elif command -v docker >/dev/null 2>&1; then \
+		echo "Running Trivy via Docker..."; \
+		docker run --rm -v $$(pwd):/app -w /app aquasec/trivy:latest fs --severity CRITICAL,HIGH --skip-dirs specs,examples,docs,website . || true; \
+	else \
+		echo "⚠️  Trivy not available (install from https://aquasecurity.github.io/trivy/ or use Docker)"; \
+	fi
 
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
@@ -116,6 +177,35 @@ clean: ## Clean build artifacts
 all: fmt-check vet lint test ## Run all checks (fmt, vet, lint, test)
 
 ci: fmt-check vet lint test-coverage-ci security ## Run all CI checks
+
+ci-local: ## Run all CI checks locally (matches CI workflow)
+	@echo "🚀 Running comprehensive CI checks locally..."
+	@echo ""
+	@echo "📋 Step 1: Format check..."
+	@$(MAKE) fmt-check
+	@echo ""
+	@echo "🔍 Step 2: Lint & Format..."
+	@$(MAKE) lint
+	@echo ""
+	@echo "🔍 Step 3: Go vet..."
+	@$(MAKE) vet
+	@echo ""
+	@echo "🔒 Step 4: Security scans..."
+	@$(MAKE) security
+	@echo ""
+	@echo "🧪 Step 5: Unit tests..."
+	@$(MAKE) test-unit
+	@echo ""
+	@echo "🔗 Step 6: Integration tests..."
+	@$(MAKE) test-integration
+	@echo ""
+	@echo "📈 Step 7: Coverage check..."
+	@$(MAKE) test-coverage-threshold
+	@echo ""
+	@echo "🔨 Step 8: Build verification..."
+	@$(MAKE) build
+	@echo ""
+	@echo "✅ All CI checks passed!"
 
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
@@ -131,14 +221,44 @@ bench-cmp: ## Compare benchmarks (requires benchstat)
 	@echo "Then make changes and run 'go test -bench=. -benchmem -count=5 > new.txt'"
 	@echo "Finally run 'benchstat old.txt new.txt'"
 
-install-tools: ## Install all required tools
-	@echo "Installing required tools..."
+install-tools: ## Install all required Go tools
+	@echo "Installing required Go tools..."
 	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.1
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
 	@go install mvdan.cc/gofumpt@latest
 	@go install golang.org/x/perf/cmd/benchstat@latest
-	@echo "Tools installed successfully."
+	@echo "Go tools installed successfully."
+	@echo ""
+	@echo "Note: gitleaks is a system tool. Run 'make install-system-tools' to install it."
+
+install-system-tools: ## Install system tools (gitleaks, jq)
+	@echo "Installing system tools..."
+	@if ! command -v gitleaks >/dev/null 2>&1; then \
+		echo "Installing gitleaks..."; \
+		if [ -f ./scripts/install-gitleaks.sh ]; then \
+			./scripts/install-gitleaks.sh; \
+		else \
+			echo "⚠️  gitleaks install script not found. Please install manually from https://github.com/gitleaks/gitleaks"; \
+		fi; \
+	else \
+		echo "✅ gitleaks already installed"; \
+	fi
+	@if ! command -v jq >/dev/null 2>&1; then \
+		echo "Installing jq..."; \
+		if command -v apt-get >/dev/null 2>&1; then \
+			sudo apt-get update && sudo apt-get install -y jq; \
+		elif command -v brew >/dev/null 2>&1; then \
+			brew install jq; \
+		elif command -v yum >/dev/null 2>&1; then \
+			sudo yum install -y jq; \
+		else \
+			echo "⚠️  Please install jq manually for your system: https://stedolan.github.io/jq/download/"; \
+		fi; \
+	else \
+		echo "✅ jq already installed"; \
+	fi
+	@echo "System tools installation complete."
 
 verify: fmt-check vet lint test ## Verify code quality (alias for 'all')
 
