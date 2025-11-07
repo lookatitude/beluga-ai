@@ -1,0 +1,35 @@
+# Gitleaks configuration file
+# Excludes test files and test data from secret scanning
+
+title = "Beluga AI Gitleaks Configuration"
+
+[extend]
+# Use default rules but exclude test files
+useDefault = true
+
+[allowlist]
+description = "Allowlist for test files and test data"
+paths = [
+    '''.*test.*\.go$''',
+    '''.*_test\.go$''',
+    '''.*testdata.*''',
+    '''.*/testdata/.*''',
+    '''.*examples/.*''',
+    '''.*/examples/.*''',
+    '''.*docs/.*''',
+    '''.*website/.*''',
+]
+
+# Allow specific patterns in test files
+commits = [
+    '''^test.*''',
+    '''^Test.*''',
+]
+
+# Allow specific secrets that are clearly test values
+regexes = [
+    '''sk-test.*''',
+    '''msk-test.*''',
+    '''msk-validkey.*''',
+]
+

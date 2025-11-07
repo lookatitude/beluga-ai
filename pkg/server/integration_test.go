@@ -186,7 +186,7 @@ func TestServerGracefulShutdown(t *testing.T) {
 	// Check for shutdown-related log messages (may be formatted differently)
 	hasShutdownLog := logger.hasLog("INFO", "Shutting down") || logger.hasLog("INFO", "shutdown")
 	hasCompleteLog := logger.hasLog("INFO", "shutdown complete") || logger.hasLog("INFO", "complete")
-	
+
 	if !hasShutdownLog && !hasCompleteLog {
 		// If no shutdown logs found, at least verify the shutdown succeeded
 		// The important thing is that shutdown worked, not the exact log message

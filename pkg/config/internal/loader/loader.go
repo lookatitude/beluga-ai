@@ -59,7 +59,7 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	}
 
 	var cfg iface.Config
-	
+
 	// Viper's Unmarshal doesn't always parse array indices from env vars correctly
 	// Use UnmarshalKey for each section to ensure env vars are parsed
 	// Always try to unmarshal (IsSet may not detect array indices from env vars)
@@ -68,7 +68,7 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	_ = provider.UnmarshalKey("vector_stores", &cfg.VectorStores)
 	_ = provider.UnmarshalKey("agents", &cfg.Agents)
 	_ = provider.UnmarshalKey("tools", &cfg.Tools)
-	
+
 	// Load other fields using standard Load (this won't overwrite arrays we just set)
 	if err := provider.Load(&cfg); err != nil {
 		return nil, fmt.Errorf("failed to load config from env: %w", err)

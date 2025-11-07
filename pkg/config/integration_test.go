@@ -55,9 +55,9 @@ tools:
 		"BELUGA_LLM_PROVIDERS_0_API_KEY":                          "env-api-key",
 		"BELUGA_LLM_PROVIDERS_0_DEFAULT_CALL_OPTIONS_TEMPERATURE": "0.8",
 		"BELUGA_EMBEDDING_PROVIDERS_0_API_KEY":                    "env-embed-key",
-		"BELUGA_EMBEDDING_PROVIDERS_0_MODEL_NAME":                   "text-embedding-ada-002",
+		"BELUGA_EMBEDDING_PROVIDERS_0_MODEL_NAME":                 "text-embedding-ada-002",
 		"BELUGA_AGENTS_0_MAX_ITERATIONS":                          "10",
-		"BELUGA_AGENTS_0_LLM_PROVIDER_NAME":                      "openai-gpt4",
+		"BELUGA_AGENTS_0_LLM_PROVIDER_NAME":                       "openai-gpt4",
 		"BELUGA_TOOLS_0_ENABLED":                                  "true",
 	}
 
@@ -102,7 +102,7 @@ tools:
 	// when a config file exists. This test verifies that file config is loaded correctly.
 	// For env var overrides with array indices, use env-only configuration or
 	// implement a custom merge strategy.
-	
+
 	// Verify file-based config was loaded (env vars with array indices don't override)
 	llmProvider := cfg.LLMProviders[0]
 	if llmProvider.APIKey != "file-api-key" {
@@ -158,7 +158,7 @@ llm_providers:
 		"ENV_LLM_PROVIDERS_0_NAME":       "env-provider",
 		"ENV_LLM_PROVIDERS_0_PROVIDER":   "anthropic",
 		"ENV_LLM_PROVIDERS_0_API_KEY":    "env-key",
-		"ENV_LLM_PROVIDERS_0_MODEL_NAME":  "claude-3-opus",
+		"ENV_LLM_PROVIDERS_0_MODEL_NAME": "claude-3-opus",
 	}
 
 	for key, value := range envVars {

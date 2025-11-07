@@ -144,7 +144,7 @@ func TestAdvancedMockVectorStore(t *testing.T) {
 			},
 			expectedError:     false,
 			expectedCallCount: 1,
-			expectedDocCount: 5, // Preloaded documents
+			expectedDocCount:  5, // Preloaded documents
 		},
 	}
 

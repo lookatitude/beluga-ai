@@ -16,7 +16,7 @@ import (
 // ChannelMessageBus implements MessageBus using Go channels for local communication.
 // Note: This implementation uses the MessageBus interface from messagebus.go
 type ChannelMessageBus struct {
-	subs        map[string]chan Message                    // Map topic to their message channel
+	subs        map[string]chan Message                  // Map topic to their message channel
 	subscribers map[string]map[string]context.CancelFunc // Map topic -> subscriberID -> cancel function
 	mu          sync.RWMutex
 	closed      bool
@@ -74,16 +74,16 @@ func (b *ChannelMessageBus) Subscribe(ctx context.Context, topic string, handler
 	}
 	subChan := b.subs[topic]
 	subID := fmt.Sprintf("sub-%d", time.Now().UnixNano())
-	
+
 	// Create a cancellable context for this subscriber to allow cleanup
 	subCtx, cancel := context.WithCancel(ctx)
-	
+
 	// Track the subscriber for cleanup
 	if b.subscribers[topic] == nil {
 		b.subscribers[topic] = make(map[string]context.CancelFunc)
 	}
 	b.subscribers[topic][subID] = cancel
-	
+
 	b.mu.Unlock()
 
 	// Start a goroutine to process messages for this subscriber
@@ -128,7 +128,7 @@ func (b *ChannelMessageBus) Unsubscribe(ctx context.Context, topic string, subsc
 		if cancel, exists := topicSubscribers[subscriberID]; exists {
 			cancel() // This will cause the goroutine to exit
 			delete(topicSubscribers, subscriberID)
-			
+
 			// Clean up empty topic entries
 			if len(topicSubscribers) == 0 {
 				delete(b.subscribers, topic)
@@ -141,7 +141,7 @@ func (b *ChannelMessageBus) Unsubscribe(ctx context.Context, topic string, subsc
 			return nil
 		}
 	}
-	
+
 	return fmt.Errorf("subscriber %s not found for topic %s", subscriberID, topic)
 }
 
@@ -170,7 +170,7 @@ func (b *ChannelMessageBus) Close() error {
 	}
 
 	b.closed = true
-	
+
 	// Cancel all subscriber contexts to stop goroutines
 	for _, topicSubscribers := range b.subscribers {
 		for _, cancel := range topicSubscribers {
@@ -178,7 +178,7 @@ func (b *ChannelMessageBus) Close() error {
 		}
 	}
 	b.subscribers = make(map[string]map[string]context.CancelFunc)
-	
+
 	// Close all channels
 	for id, ch := range b.subs {
 		delete(b.subs, id)

@@ -6,11 +6,9 @@
 
 # Beluga-ai
 
-[![Go CI](https://github.com/lookatitude/beluga-ai/workflows/Go%20CI/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/go_ci.yml)
-[![Coverage](https://github.com/lookatitude/beluga-ai/workflows/Coverage%20Report/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/coverage.yml)
-[![Security Scanning](https://github.com/lookatitude/beluga-ai/workflows/Security%20Scanning/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/security.yml)
+[![CI/CD](https://github.com/lookatitude/beluga-ai/workflows/CI/CD/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/ci-cd.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/lookatitude/beluga-ai)](https://goreportcard.com/report/github.com/lookatitude/beluga-ai)
-[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Go Version](https://img.shields.io/badge/go-1.24+-00ADD8.svg)](https://golang.org)
 
 **🚀 PRODUCTION READY: Beluga-ai has completed comprehensive standardization and is now enterprise-grade with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.**
@@ -425,6 +423,6 @@ Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how t
 
 ## License
 
-Beluga-ai is licensed under the [Apache 2.0 License](./LICENSE).
+Beluga-ai is licensed under the [MIT License](./LICENSE).
 
 

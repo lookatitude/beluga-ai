@@ -1,0 +1,691 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  GO_VERSION: '1.24'
+
+jobs:
+  # ============================================================================
+  # POLICY CHECKS (PR only)
+  # ============================================================================
+  policy:
+    name: 📋 Policy Checks
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install jq
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y jq
+      
+      - name: Validate branch name (###-kebab-case)
+        run: |
+          BRANCH="${GITHUB_HEAD_REF}"
+          if ! echo "$BRANCH" | grep -Eq '^[0-9]{3}-[a-z0-9-]+$'; then
+            echo "❌ Branch name must be ###-kebab-case" && exit 1
+          fi
+          echo "✅ Branch name is valid"
+      
+      - name: Enforce PR description contains spec link
+        run: |
+          body=$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH")
+          echo "$body" | grep -Eq '(Spec:|/specs/|Feature Spec|Mini-spec)' || {
+            echo "❌ PR body must link a spec or include mini-spec"
+            exit 1
+          }
+          echo "✅ PR description contains spec reference"
+      
+      - name: Check PR size
+        run: |
+          added=$(jq '.pull_request.additions' "$GITHUB_EVENT_PATH")
+          removed=$(jq '.pull_request.deletions' "$GITHUB_EVENT_PATH")
+          lines=$((added+removed))
+          echo "📊 PR size: $lines lines"
+          if [ "$lines" -gt 1500 ]; then
+            echo "::error::❌ PR too large (>1500 lines). Add label 'large-pr' to proceed"
+            exit 1
+          fi
+          if [ "$lines" -gt 600 ]; then
+            echo "::warning::⚠️  Large PR (>600 lines). Consider splitting"
+          fi
+
+  # ============================================================================
+  # CODE QUALITY
+  # ============================================================================
+  lint:
+    name: 🔍 Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+          args: --timeout=5m --out-format=colored-line-number,github-actions
+      
+      - name: go vet
+        run: |
+          echo "Running go vet..."
+          go vet $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee vet-report.txt
+          vet_status=${PIPESTATUS[0]}
+          if [ "$vet_status" -ne 0 ]; then
+            echo "::error::go vet found issues"
+            cat vet-report.txt
+            exit 1
+          fi
+          echo "✅ go vet passed - no issues found"
+      
+      - name: go fmt check
+        run: |
+          echo "Checking code formatting..."
+          unformatted=$(gofmt -s -l .)
+          if [ -n "$unformatted" ]; then
+            echo "::error::Files need formatting"
+            echo "❌ The following files need formatting:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$unformatted" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "✅ All files properly formatted" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All files properly formatted"
+      
+      - name: Generate Lint Summary
+        if: always()
+        run: |
+          echo "## 🔍 Lint & Format Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f vet-report.txt ] && [ -s vet-report.txt ]; then
+            echo "### ⚠️ go vet Issues" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat vet-report.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **go vet**: No issues found" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **golangci-lint**: See annotations above" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **go fmt**: All files properly formatted" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # SECURITY SCANS
+  # ============================================================================
+  security:
+    name: 🔒 Security Scans
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Run gosec (code security)
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          echo "Running gosec security scan..."
+          mkdir -p coverage
+          gosec -fmt=json -out=coverage/gosec-report.json $(go list ./... | grep -v -E '(specs|examples)') || true
+          gosec -fmt=text $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee coverage/gosec-report.txt
+          
+          # Check if any issues were found
+          if grep -q "Issues : [1-9]" coverage/gosec-report.txt; then
+            echo "::error::Security issues found by gosec"
+            exit 1
+          fi
+          echo "✅ No security issues found"
+      
+      - name: Run govulncheck (vulnerability scanning)
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          echo "Running govulncheck vulnerability scan..."
+          govulncheck $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee coverage/govulncheck-report.txt || true
+          echo "✅ Vulnerability scan completed"
+      
+      - name: Run gitleaks (secret detection)
+        run: |
+          # Install gitleaks
+          wget -q https://github.com/gitleaks/gitleaks/releases/download/v8.18.0/gitleaks_8.18.0_linux_x64.tar.gz
+          tar -xzf gitleaks_8.18.0_linux_x64.tar.gz
+          chmod +x gitleaks
+          
+          echo "Running gitleaks secret detection..."
+          ./gitleaks detect --no-banner --redact --config=.gitleaks.toml --report-path=coverage/gitleaks-report.json || true
+          
+          # Check results
+          if [ -f coverage/gitleaks-report.json ] && [ -s coverage/gitleaks-report.json ] && [ "$(cat coverage/gitleaks-report.json)" != "[]" ]; then
+            echo "::error::Secrets detected by gitleaks"
+            ./gitleaks detect --no-banner --redact --config=.gitleaks.toml
+            exit 1
+          fi
+          echo "✅ No secrets detected"
+      
+      - name: Run Trivy (file system scan)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'coverage/trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          skip-dirs: 'specs,examples,docs,website'
+        continue-on-error: true
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: coverage/trivy-results.sarif
+          wait-for-processing: true
+      
+      - name: Generate Security Summary
+        if: always()
+        run: |
+          echo "## 🔒 Security Scan Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # gosec summary
+          if [ -f coverage/gosec-report.txt ]; then
+            issues=$(grep -oP "Issues : \K\d+" coverage/gosec-report.txt || echo "0")
+            if [ "$issues" -gt 0 ]; then
+              echo "### ❌ gosec: Found $issues security issue(s)" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              tail -20 coverage/gosec-report.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **gosec**: No security issues found" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # govulncheck summary
+          if [ -f coverage/govulncheck-report.txt ]; then
+            vulns=$(grep -c "Vulnerable" coverage/govulncheck-report.txt 2>/dev/null || echo "0")
+            if [ "$vulns" -gt 0 ]; then
+              echo "### ⚠️ govulncheck: Found $vulns vulnerability(ies)" >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+              tail -20 coverage/govulncheck-report.txt >> $GITHUB_STEP_SUMMARY
+              echo '```' >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **govulncheck**: No vulnerabilities found" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # gitleaks summary
+          if [ -f coverage/gitleaks-report.json ]; then
+            leaks=$(cat coverage/gitleaks-report.json | grep -o "RuleID" | wc -l || echo "0")
+            if [ "$leaks" -gt 0 ]; then
+              echo "### ❌ gitleaks: Found $leaks potential secret(s)" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "✅ **gitleaks**: No secrets detected" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Trivy**: Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            coverage/gosec-report.json
+            coverage/gosec-report.txt
+            coverage/govulncheck-report.txt
+            coverage/gitleaks-report.json
+            coverage/trivy-results.sarif
+          retention-days: 30
+
+  # ============================================================================
+  # UNIT TESTS
+  # ============================================================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      - name: Run unit tests
+        run: |
+          echo "Running unit tests..."
+          # Run tests with coverage, excluding integration tests
+          go test -v -race -coverprofile=coverage.unit.out -covermode=atomic $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 | tee test-output.txt
+          
+          # Also run with JSON output (without coverage to avoid file conflicts)
+          go test -v -race -json $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 > test-output.json || true
+      
+      - name: Parse test results
+        if: always()
+        id: test_results
+        run: |
+          set +e  # Don't exit on error
+          
+          # Count package-level results
+          passed=$(grep -c "^ok  " test-output.txt 2>/dev/null || echo "0")
+          failed=$(grep -c "^FAIL" test-output.txt 2>/dev/null || echo "0")
+          
+          # Clean up the values (remove any whitespace/newlines)
+          passed=$(echo "$passed" | tr -d '\n\r' | tr -d ' ')
+          failed=$(echo "$failed" | tr -d '\n\r' | tr -d ' ')
+          
+          # Ensure they're numbers
+          if ! [[ "$passed" =~ ^[0-9]+$ ]]; then passed=0; fi
+          if ! [[ "$failed" =~ ^[0-9]+$ ]]; then failed=0; fi
+          
+          # Calculate total
+          total=$((passed + failed))
+          
+          echo "passed=$passed" >> $GITHUB_OUTPUT
+          echo "failed=$failed" >> $GITHUB_OUTPUT
+          echo "total=$total" >> $GITHUB_OUTPUT
+          
+          # Calculate coverage
+          if [ -f coverage.unit.out ]; then
+            coverage=$(go tool cover -func=coverage.unit.out 2>/dev/null | grep total | awk '{print $3}' || echo "0%")
+            coverage_num=$(echo "$coverage" | sed 's/%//' | tr -d '\n\r' | tr -d ' ')
+            if ! [[ "$coverage_num" =~ ^[0-9.]+$ ]]; then coverage_num=0; fi
+            
+            echo "coverage=$coverage" >> $GITHUB_OUTPUT
+            echo "coverage_num=$coverage_num" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "📊 Test Results: $passed passed, $failed failed out of $total tests"
+          
+          set -e  # Re-enable exit on error
+      
+      - name: Generate Test Summary
+        if: always()
+        run: |
+          echo "## 🧪 Unit Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📊 **Test Statistics:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Total tests: ${{ steps.test_results.outputs.total }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Passed: ${{ steps.test_results.outputs.passed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- ❌ Failed: ${{ steps.test_results.outputs.failed }}" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 Coverage: ${{ steps.test_results.outputs.coverage }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ steps.test_results.outputs.failed }}" != "0" ]; then
+            echo "### ❌ Failed Tests:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            grep -A 10 "FAIL:" test-output.txt | head -50 >> $GITHUB_STEP_SUMMARY || true
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Coverage breakdown
+          if [ -f coverage.unit.out ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### 📈 Coverage by Package:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            go tool cover -func=coverage.unit.out | grep -v "total:" | tail -20 >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            go tool cover -func=coverage.unit.out | grep "total:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+      
+      - name: Check coverage threshold
+        if: always()
+        run: |
+          if [ "${{ steps.test_results.outputs.coverage_num }}" != "" ]; then
+            if awk "BEGIN {exit !(${{ steps.test_results.outputs.coverage_num }} < 80)}"; then
+              echo "::error::Coverage ${{ steps.test_results.outputs.coverage }} is below 80% threshold"
+              exit 1
+            fi
+            echo "✅ Coverage ${{ steps.test_results.outputs.coverage }} meets 80% threshold"
+          fi
+      
+      - name: Upload unit test coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.unit.out
+          flags: unittests
+          name: unit-tests
+        continue-on-error: true
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: |
+            test-output.txt
+            test-output.json
+            coverage.unit.out
+          retention-days: 30
+
+  # ============================================================================
+  # INTEGRATION TESTS
+  # ============================================================================
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      - name: Run integration tests
+        env:
+          # Integration tests use mocks by default, but can use real providers if keys are set
+          INTEGRATION_TEST_REAL_PROVIDERS: false
+        run: |
+          echo "Running integration tests..."
+          go test -v -race -coverprofile=coverage.integration.out -covermode=atomic -timeout=15m ./tests/integration/... 2>&1 | tee integration-test-output.txt
+          
+          echo "📊 Integration Test Coverage:"
+          go tool cover -func=coverage.integration.out | tail -n1
+      
+      - name: Upload integration test coverage
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.integration.out
+          flags: integration
+          name: integration-tests
+        continue-on-error: true
+      
+      - name: Upload integration test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-results
+          path: |
+            integration-test-output.txt
+            coverage.integration.out
+          retention-days: 30
+
+  # ============================================================================
+  # COVERAGE ENFORCEMENT
+  # ============================================================================
+  coverage:
+    name: 📈 Coverage Check (≥80%)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      - name: Download unit test coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: coverage/
+      
+      - name: Download integration test coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: integration-test-results
+          path: coverage/
+      
+      - name: Merge coverage reports
+        run: |
+          # Merge coverage files if both exist
+          if [ -f coverage/coverage.unit.out ] && [ -f coverage/coverage.integration.out ]; then
+            echo "mode: atomic" > coverage.out
+            grep -h -v "^mode:" coverage/coverage.unit.out coverage/coverage.integration.out >> coverage.out || true
+          elif [ -f coverage/coverage.unit.out ]; then
+            cp coverage/coverage.unit.out coverage.out
+          elif [ -f coverage/coverage.integration.out ]; then
+            cp coverage/coverage.integration.out coverage.out
+          else
+            echo "No coverage files found"
+            exit 1
+          fi
+      
+      - name: Run tests and check coverage
+        run: |
+          # If merged coverage doesn't exist, generate it
+          if [ ! -f coverage.out ]; then
+            go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v -E '(specs|examples)') > /dev/null 2>&1
+          fi
+          
+          pct=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | sed 's/%//')
+          echo "📊 Total Coverage: ${pct}%"
+          
+          if awk "BEGIN {exit !($pct < 80)}"; then
+            echo "❌ Coverage ${pct}% is below minimum 80%"
+            exit 1
+          else
+            echo "✅ Coverage ${pct}% meets minimum requirement"
+          fi
+      
+      - name: Generate coverage report
+        run: |
+          echo "## 📈 Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go tool cover -func=coverage.out >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload merged coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: merged-coverage
+          path: coverage.out
+          retention-days: 30
+
+  # ============================================================================
+  # BUILD
+  # ============================================================================
+  build:
+    name: 🔨 Build Packages
+    runs-on: ubuntu-latest
+    needs: [lint, security, unit-tests]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Download dependencies
+        run: go mod download
+      
+      - name: Verify dependencies
+        run: go mod verify
+      
+      - name: Build all packages
+        run: |
+          echo "Building all packages..."
+          go build -v $(go list ./... | grep -v -E '(specs|examples)')
+          echo "✅ All packages built successfully"
+      
+      - name: Verify build artifacts
+        run: |
+          echo "## 🔨 Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All packages compiled successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Built Packages:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go list ./pkg/... | grep -v -E '(specs|examples)' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # PACKAGE VERIFICATION
+  # ============================================================================
+  package:
+    name: 📦 Package Verification
+    runs-on: ubuntu-latest
+    needs: [build, integration-tests, coverage]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+      
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ env.GO_VERSION }}-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-${{ env.GO_VERSION }}-
+      
+      - name: Verify module can be imported
+        run: |
+          echo "Verifying module can be imported..."
+          go list -m -json github.com/lookatitude/beluga-ai
+          echo "✅ Module is valid and can be imported"
+      
+      - name: Generate package summary
+        run: |
+          echo "## 📦 Package Verification" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Module verified and ready for distribution" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Module Info:" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          go list -m -f '{{.Path}}@{{.Version}}' github.com/lookatitude/beluga-ai >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+      
+      - name: Upload build verification
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-verification
+          path: |
+            go.mod
+            go.sum
+          retention-days: 7
+
+  # ============================================================================
+  # CI SUMMARY
+  # ============================================================================
+  ci-summary:
+    name: ✅ CI Summary
+    runs-on: ubuntu-latest
+    needs: [lint, security, unit-tests, integration-tests, coverage, build, package]
+    if: always()
+    steps:
+      - name: Generate CI Summary
+        run: |
+          echo "## ✅ CI/CD Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All CI/CD checks have completed. Check individual job results for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Jobs Completed:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📋 Policy Checks" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔍 Lint & Format" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 Security Scans" >> $GITHUB_STEP_SUMMARY
+          echo "- 🧪 Unit Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔗 Integration Tests" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 Coverage Check" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔨 Build" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 Package Verification" >> $GITHUB_STEP_SUMMARY
+

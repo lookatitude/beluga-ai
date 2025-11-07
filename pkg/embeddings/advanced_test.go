@@ -206,7 +206,7 @@ func TestEmbeddingProviderRegistry(t *testing.T) {
 	// Note: Global registry may be empty if no providers are registered globally
 	globalRegistry := GetGlobalRegistry()
 	assert.NotNil(t, globalRegistry)
-	
+
 	// List available providers (may be empty if none registered)
 	globalProviders := ListAvailableProviders()
 	// Just verify the function works, don't require it to be non-empty

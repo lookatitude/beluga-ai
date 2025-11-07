@@ -1,0 +1,25 @@
+# Gitleaks ignore file
+# Exclude test files and test data from secret scanning
+
+# Test data directories
+**/testdata/**
+**/testdata/**/*
+
+# Test files
+**/*_test.go
+**/*test.go
+**/test_*.go
+**/*.test.go
+
+# Example files
+**/examples/**
+**/examples/**/*
+
+# Specific test files with known fake keys
+pkg/embeddings/testdata/configs.yaml
+pkg/integration_tests/tests/provider_compatibility_test.go
+
+# Documentation
+**/docs/**
+**/website/**
+

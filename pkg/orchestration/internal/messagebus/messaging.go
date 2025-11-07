@@ -36,7 +36,7 @@ func (ms *MessagingSystem) SendMessageWithRetry(msg Message, retries int, backof
 	if maxAttempts < 1 {
 		maxAttempts = 1
 	}
-	
+
 	for i := 0; i < maxAttempts; i++ {
 		if err := ms.SendMessage(msg); err != nil {
 			if i < maxAttempts-1 {
