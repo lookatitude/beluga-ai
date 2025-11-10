@@ -1,6 +1,6 @@
 module github.com/lookatitude/beluga-ai
 
-go 1.24.0
+go 1.24.1
 
 toolchain go1.24.2
 
@@ -15,7 +15,7 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/jltobler/go-rcon v0.3.0
 	github.com/lib/pq v1.10.9
-	github.com/ollama/ollama v0.12.9
+	github.com/ollama/ollama v0.12.10
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
