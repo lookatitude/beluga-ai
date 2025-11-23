@@ -1,28 +1,15 @@
-// AdvancedMockcomponent is a mock implementation of Interface
-type AdvancedMockcomponent struct {
+package embeddings
+
+import (
+	"github.com/stretchr/testify/mock"
+)
+
+// EmbeddingsMockcomponent is a mock implementation of Interface
+type EmbeddingsMockcomponent struct {
 	mock.Mock
 }
 
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-// AdvancedMockcomponent is a mock implementation of Interface
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
+// NewEmbeddingsMockcomponent creates a new EmbeddingsMockcomponent
+func NewEmbeddingsMockcomponent() *EmbeddingsMockcomponent {
+	return &EmbeddingsMockcomponent{}
 }

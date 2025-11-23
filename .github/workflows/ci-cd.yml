@@ -115,6 +115,38 @@ jobs:
           echo "✅ All files properly formatted" >> $GITHUB_STEP_SUMMARY
           echo "✅ All files properly formatted"
       
+      - name: Validate package declarations
+        run: |
+          echo "Validating all .go files have package declarations..."
+          failed=0
+          missing_packages=""
+          
+          while IFS= read -r file; do
+            # Skip test files in specs and examples
+            if [[ "$file" =~ (specs|examples) ]]; then
+              continue
+            fi
+            
+            first_line=$(head -n 1 "$file" 2>/dev/null)
+            if [[ ! "$first_line" =~ ^package\  ]]; then
+              echo "::error file=$file::Missing package declaration"
+              missing_packages="${missing_packages}${file}\n"
+              failed=1
+            fi
+          done < <(find . -name "*.go" -type f | grep -v -E '(specs|examples|vendor)')
+          
+          if [ "$failed" -eq 1 ]; then
+            echo "❌ Some files are missing package declarations:" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo -e "$missing_packages" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            echo "::error::Some .go files are missing package declarations"
+            exit 1
+          fi
+          
+          echo "✅ All .go files have package declarations" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All .go files have package declarations"
+      
       - name: Generate Lint Summary
         if: always()
         run: |

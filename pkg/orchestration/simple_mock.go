@@ -1,11 +1,15 @@
 package orchestration
 
-// AdvancedMockcomponent is a mock implementation of Interface
-type AdvancedMockcomponent struct {
+import (
+	"github.com/stretchr/testify/mock"
+)
+
+// SimpleMockcomponent is a mock implementation of Interface
+type SimpleMockcomponent struct {
 	mock.Mock
 }
 
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
+// NewSimpleMockcomponent creates a new SimpleMockcomponent
+func NewSimpleMockcomponent() *SimpleMockcomponent {
+	return &SimpleMockcomponent{}
 }
