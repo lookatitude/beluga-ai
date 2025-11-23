@@ -1,100 +1,15 @@
-// AdvancedMockcomponent is a mock implementation of Interface
-type AdvancedMockcomponent struct {
+package server
+
+import (
+	"github.com/stretchr/testify/mock"
+)
+
+// MCPServerMockcomponent is a mock implementation of Interface
+type MCPServerMockcomponent struct {
 	mock.Mock
 }
 
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
-}
-
-// AdvancedMockcomponent is a mock implementation of Interface
-type AdvancedMockcomponent struct {
-	mock.Mock
-}
-
-// NewAdvancedMockcomponent creates a new AdvancedMockcomponent
-func NewAdvancedMockcomponent() *AdvancedMockcomponent {
-	return &AdvancedMockcomponent{}
+// NewMCPServerMockcomponent creates a new MCPServerMockcomponent
+func NewMCPServerMockcomponent() *MCPServerMockcomponent {
+	return &MCPServerMockcomponent{}
 }
