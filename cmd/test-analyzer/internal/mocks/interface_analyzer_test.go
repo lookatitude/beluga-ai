@@ -27,4 +27,3 @@ func TestInterfaceAnalyzer_AnalyzeInterface(t *testing.T) {
 		_ = err
 	})
 }
-

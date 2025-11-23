@@ -7,4 +7,3 @@ func getFilePath(function *TestFunction) string {
 	}
 	return ""
 }
-

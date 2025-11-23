@@ -7,25 +7,25 @@ import (
 // Config holds configuration for the test analyzer.
 type Config struct {
 	// Analysis flags
-	DryRun           bool
-	Output           string
-	OutputFile       string
+	DryRun            bool
+	Output            string
+	OutputFile        string
 	IncludeBenchmarks bool
-	ExcludePackages  []string
+	ExcludePackages   []string
 
 	// Fix flags
-	AutoFix         bool
-	FixTypes        []string
-	SkipValidation  bool
-	BackupDir       string
+	AutoFix        bool
+	FixTypes       []string
+	SkipValidation bool
+	BackupDir      string
 
 	// Threshold flags
-	UnitTestTimeout       time.Duration
-	IntegrationTestTimeout time.Duration
-	LoadTestTimeout       time.Duration
-	SimpleIterationThreshold int
+	UnitTestTimeout           time.Duration
+	IntegrationTestTimeout    time.Duration
+	LoadTestTimeout           time.Duration
+	SimpleIterationThreshold  int
 	ComplexIterationThreshold int
-	SleepThreshold        time.Duration
+	SleepThreshold            time.Duration
 
 	// Filter flags
 	Severity   string
@@ -44,28 +44,28 @@ type Config struct {
 // DefaultConfig returns a Config with default values.
 func DefaultConfig() *Config {
 	return &Config{
-		DryRun:                  true,
-		Output:                  "stdout",
-		OutputFile:              "",
-		IncludeBenchmarks:        true,
-		ExcludePackages:          []string{},
-		AutoFix:                 false,
-		FixTypes:                []string{},
-		SkipValidation:          false,
-		BackupDir:               ".test-analyzer-backups",
-		UnitTestTimeout:         1 * time.Second,
-		IntegrationTestTimeout:  10 * time.Second,
-		LoadTestTimeout:         30 * time.Second,
-		SimpleIterationThreshold: 100,
+		DryRun:                    true,
+		Output:                    "stdout",
+		OutputFile:                "",
+		IncludeBenchmarks:         true,
+		ExcludePackages:           []string{},
+		AutoFix:                   false,
+		FixTypes:                  []string{},
+		SkipValidation:            false,
+		BackupDir:                 ".test-analyzer-backups",
+		UnitTestTimeout:           1 * time.Second,
+		IntegrationTestTimeout:    10 * time.Second,
+		LoadTestTimeout:           30 * time.Second,
+		SimpleIterationThreshold:  100,
 		ComplexIterationThreshold: 20,
-		SleepThreshold:         100 * time.Millisecond,
-		Severity:                "",
-		IssueTypes:              []string{},
-		Packages:                []string{},
-		Verbose:                 false,
-		Quiet:                   false,
-		Color:                   true,
-		Help:                    false,
+		SleepThreshold:            100 * time.Millisecond,
+		Severity:                  "",
+		IssueTypes:                []string{},
+		Packages:                  []string{},
+		Verbose:                   false,
+		Quiet:                     false,
+		Color:                     true,
+		Help:                      false,
 	}
 }
 
@@ -183,4 +183,3 @@ func WithExcludePackages(packages []string) Option {
 		c.ExcludePackages = packages
 	}
 }
-

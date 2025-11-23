@@ -27,6 +27,7 @@ The goal of Beluga-ai is to offer a Go-native alternative for creating complex A
 *   **Extensible Memory Management:** Equip agents with different types of memory, supporting various backends, including multiple vector database providers (e.g., InMemory, pgvector, Pinecone, Weaviate).
 *   **Retrieval-Augmented Generation (RAG):** Implement RAG pipelines with swappable components for data loading, splitting, embedding, and retrieval.
 *   **Extensible Orchestration:** Define and manage complex workflows with a flexible engine, potentially integrating with external orchestrators.
+*   **Voice Agents:** Build natural voice interactions with speech-to-text, text-to-speech, voice activity detection, turn detection, and complete session management.
 *   **Communication:** Establish protocols for inter-agent communication (future).
 
 ## Core Principle: Extensibility via Provider Interfaces
@@ -150,7 +151,16 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
 
 ## Examples
 
-Detailed usage examples, including how to configure and use different providers for LLMs, VectorStores, and Tools, can be found in the `/examples` directory (to be populated as features are implemented).
+Detailed usage examples, including how to configure and use different providers for LLMs, VectorStores, Tools, and Voice Agents, can be found in the `/examples` directory:
+
+*   **LLM Usage:** See `examples/llm-usage/` for LLM provider examples
+*   **Voice Agents:** See `examples/voice/` for voice interaction examples including:
+    *   Simple voice session setup
+    *   Multi-provider configurations
+    *   Streaming audio processing
+    *   Custom provider implementations
+    *   Interruption handling
+    *   Preemptive generation
 
 ## Configuration
 
@@ -340,6 +350,7 @@ Beluga AI Framework has achieved **100% standardization** across all packages wi
 *   **Configuration Management (`pkg/config`):** ✅ Advanced configuration with validation, environment variables + **provider testing & validation**
 *   **Observability (`pkg/monitoring`):** ✅ Comprehensive monitoring with OTEL tracing, metrics, logging + **cross-package integration**
 *   **Schema (`pkg/schema`):** ✅ Centralized data structures with validation and type safety + **message/document testing utilities**
+*   **Voice Agents (`pkg/voice`):** ✅ Complete voice interaction framework with STT, TTS, VAD, Turn Detection, Transport, Noise Cancellation, and Session Management + **comprehensive testing & examples**
 
 ### **🔥 Every Package Now Includes:**
 - ✅ **OTEL Metrics & Tracing:** Production-ready observability with standardized patterns

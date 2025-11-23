@@ -121,4 +121,3 @@ func BenchmarkExample(b *testing.B) {
 		}
 	})
 }
-

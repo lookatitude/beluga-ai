@@ -38,15 +38,15 @@ func TestPackageAnalysis_Integration_AllPackages(t *testing.T) {
 			cmd := exec.CommandContext(context.Background(), "go", "run",
 				filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 				"--dry-run", "--output", "json", pkgPath)
-			
+
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)
-			
+
 			// Verify we got some output
 			if len(outputStr) == 0 && err == nil {
 				t.Error("Expected non-empty output or error")
 			}
-			
+
 			// If JSON output, verify it's valid JSON structure
 			if strings.Contains(outputStr, "{") {
 				// Basic JSON structure check
@@ -70,7 +70,7 @@ func TestPackageAnalysis_Integration_ComparePackages(t *testing.T) {
 	}
 
 	packages := []string{"llms", "memory", "orchestration", "agents"}
-	
+
 	for _, pkg := range packages {
 		t.Run("Compare_"+pkg, func(t *testing.T) {
 			pkgPath := filepath.Join(pkgDir, pkg)
@@ -81,13 +81,12 @@ func TestPackageAnalysis_Integration_ComparePackages(t *testing.T) {
 			cmd := exec.CommandContext(context.Background(), "go", "run",
 				filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 				"--dry-run", "--output", "json", pkgPath)
-			
+
 			output, err := cmd.CombinedOutput()
 			_ = err
-			
+
 			// Store or compare results
 			_ = output
 		})
 	}
 }
-

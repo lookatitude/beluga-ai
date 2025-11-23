@@ -11,4 +11,3 @@ func TestCodeGenerator(t *testing.T) {
 		// Placeholder test
 	})
 }
-

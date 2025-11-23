@@ -14,7 +14,7 @@ type Walker interface {
 
 // walker implements the Walker interface.
 type walker struct {
-	fset     *token.FileSet
+	fset      *token.FileSet
 	functions []*ast.FuncDecl
 }
 
@@ -60,4 +60,3 @@ func (w *walker) isTestFunction(fn *ast.FuncDecl) bool {
 		strings.HasPrefix(name, "Benchmark") ||
 		strings.HasPrefix(name, "Fuzz")
 }
-

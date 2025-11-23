@@ -53,4 +53,3 @@ func TestValidateFlags(t *testing.T) {
 		}
 	})
 }
-

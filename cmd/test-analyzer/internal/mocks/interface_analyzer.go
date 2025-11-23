@@ -180,4 +180,3 @@ func (a *interfaceAnalyzer) typeToString(expr ast.Expr) string {
 		return "unknown"
 	}
 }
-

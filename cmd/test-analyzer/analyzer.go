@@ -70,10 +70,10 @@ func (a *analyzer) AnalyzePackage(ctx context.Context, packagePath string) (*Pac
 
 	// Build summary
 	summary := &AnalysisSummary{
-		TotalFiles:     totalFiles,
-		TotalFunctions: totalFunctions,
-		TotalIssues:    len(allIssues),
-		IssuesByType:    make(map[IssueType]int),
+		TotalFiles:       totalFiles,
+		TotalFunctions:   totalFunctions,
+		TotalIssues:      len(allIssues),
+		IssuesByType:     make(map[IssueType]int),
 		IssuesBySeverity: make(map[Severity]int),
 	}
 
@@ -101,10 +101,10 @@ func (a *analyzer) AnalyzeFile(ctx context.Context, filePath string) (*FileAnaly
 
 	// Convert internal TestFile to main TestFile
 	testFile := &TestFile{
-		Path:                astFile.Path,
-		Package:             astFile.Package,
+		Path:                 astFile.Path,
+		Package:              astFile.Package,
 		HasIntegrationSuffix: astFile.HasIntegrationSuffix,
-		AST:                 astFile.AST,
+		AST:                  astFile.AST,
 	}
 
 	// Extract test functions
@@ -117,17 +117,17 @@ func (a *analyzer) AnalyzeFile(ctx context.Context, filePath string) (*FileAnaly
 	var functions []*TestFunction
 	for _, astFunc := range astFunctions {
 		functions = append(functions, &TestFunction{
-			Name:                   astFunc.Name,
-			Type:                   convertTestType(astFunc.Type),
-			File:                   testFile,
-			LineStart:              astFunc.LineStart,
-			LineEnd:                astFunc.LineEnd,
-			HasTimeout:             astFunc.HasTimeout,
-			TimeoutDuration:        time.Duration(astFunc.TimeoutDuration),
-			ExecutionTime:          time.Duration(astFunc.ExecutionTime),
+			Name:                     astFunc.Name,
+			Type:                     convertTestType(astFunc.Type),
+			File:                     testFile,
+			LineStart:                astFunc.LineStart,
+			LineEnd:                  astFunc.LineEnd,
+			HasTimeout:               astFunc.HasTimeout,
+			TimeoutDuration:          time.Duration(astFunc.TimeoutDuration),
+			ExecutionTime:            time.Duration(astFunc.ExecutionTime),
 			UsesActualImplementation: astFunc.UsesActualImplementation,
-			UsesMocks:              astFunc.UsesMocks,
-			MixedUsage:             astFunc.MixedUsage,
+			UsesMocks:                astFunc.UsesMocks,
+			MixedUsage:               astFunc.MixedUsage,
 		})
 	}
 
@@ -166,17 +166,17 @@ func (a *analyzer) DetectIssues(ctx context.Context, function *TestFunction) ([]
 
 	// Convert main TestFunction to internal TestFunction
 	internalFunc := &patterns.TestFunction{
-		Name:                   function.Name,
-		Type:                   function.Type.String(),
-		LineStart:              function.LineStart,
-		LineEnd:                function.LineEnd,
-		HasTimeout:             function.HasTimeout,
-		TimeoutDuration:       int64(function.TimeoutDuration),
-		ExecutionTime:          int64(function.ExecutionTime),
+		Name:                     function.Name,
+		Type:                     function.Type.String(),
+		LineStart:                function.LineStart,
+		LineEnd:                  function.LineEnd,
+		HasTimeout:               function.HasTimeout,
+		TimeoutDuration:          int64(function.TimeoutDuration),
+		ExecutionTime:            int64(function.ExecutionTime),
 		UsesActualImplementation: function.UsesActualImplementation,
-		UsesMocks:              function.UsesMocks,
-		MixedUsage:             function.MixedUsage,
-		AST:                    funcAST,
+		UsesMocks:                function.UsesMocks,
+		MixedUsage:               function.MixedUsage,
+		AST:                      funcAST,
 	}
 	// Set File field if available
 	if function.File != nil {
@@ -305,4 +305,3 @@ func (a *analyzer) findFunctionAST(fileAST *ast.File, funcName string) *ast.Func
 	}
 	return nil
 }
-

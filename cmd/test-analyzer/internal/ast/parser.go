@@ -13,26 +13,26 @@ import (
 
 // TestFile represents a parsed Go test file.
 type TestFile struct {
-	Path                string
-	Package             string
-	Functions           []*TestFunction
+	Path                 string
+	Package              string
+	Functions            []*TestFunction
 	HasIntegrationSuffix bool
-	AST                 *ast.File
+	AST                  *ast.File
 }
 
 // TestFunction represents a test function.
 type TestFunction struct {
-	Name                   string
-	Type                   string // Will be converted from main.TestType
-	File                   *TestFile
-	LineStart              int
-	LineEnd                int
-	HasTimeout             bool
-	TimeoutDuration        int64 // nanoseconds
-	ExecutionTime          int64 // nanoseconds
+	Name                     string
+	Type                     string // Will be converted from main.TestType
+	File                     *TestFile
+	LineStart                int
+	LineEnd                  int
+	HasTimeout               bool
+	TimeoutDuration          int64 // nanoseconds
+	ExecutionTime            int64 // nanoseconds
 	UsesActualImplementation bool
-	UsesMocks              bool
-	MixedUsage             bool
+	UsesMocks                bool
+	MixedUsage               bool
 }
 
 // Parser is the interface for parsing Go test files.
@@ -93,10 +93,10 @@ func (p *parser) ParseFile(ctx context.Context, filePath string) (*TestFile, err
 	}
 
 	return &TestFile{
-		Path:                absPath,
-		Package:             packageName,
+		Path:                 absPath,
+		Package:              packageName,
 		HasIntegrationSuffix: hasIntegrationSuffix,
-		AST:                 astFile,
+		AST:                  astFile,
 	}, nil
 }
 
@@ -122,8 +122,8 @@ func (p *parser) ExtractTestFunctions(ctx context.Context, file *TestFile) ([]*T
 		}
 
 		testFunc := &TestFunction{
-			Name:     fn.Name.Name,
-			File:     file,
+			Name:      fn.Name.Name,
+			File:      file,
 			LineStart: p.fset.Position(fn.Pos()).Line,
 			LineEnd:   p.fset.Position(fn.End()).Line,
 		}

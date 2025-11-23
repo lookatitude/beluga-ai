@@ -447,4 +447,3 @@ func findTestFunctionDecl(astFile *ast.File, name string) *ast.FuncDecl {
 	}
 	return nil
 }
-

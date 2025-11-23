@@ -9,10 +9,10 @@ import (
 func UpdateTestFileFix(ctx context.Context, testFile string, mockName string, lineStart, lineEnd int) (oldCode, newCode string, err error) {
 	// Generate code change to update test to use new mock
 	// This would replace old implementation calls with mock calls
-	
+
 	oldCode = "// Old implementation usage"
 	newCode = fmt.Sprintf("mock := NewAdvancedMock%s()\n\t// Use mock instead", mockName)
-	
+
 	return oldCode, newCode, nil
 }
 
@@ -21,4 +21,3 @@ func GenerateTestUpdateFix(ctx context.Context, testFile string, mockName string
 	// Placeholder: Would analyze test file and update to use mock
 	return UpdateTestFileFix(ctx, testFile, mockName, lineStart, lineEnd)
 }
-

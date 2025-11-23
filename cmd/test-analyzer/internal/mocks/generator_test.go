@@ -36,4 +36,3 @@ func TestGenerator_GenerateMock(t *testing.T) {
 		_ = err
 	})
 }
-

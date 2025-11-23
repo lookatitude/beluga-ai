@@ -45,4 +45,3 @@ func TestParseFlags(t *testing.T) {
 		}
 	})
 }
-

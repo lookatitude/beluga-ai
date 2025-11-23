@@ -16,9 +16,9 @@ type AnalysisReport struct {
 	IssuesByPackage   map[string]int
 	FixesApplied      int
 	FixesFailed       int
-	ExecutionTime      time.Duration
-	GeneratedAt        time.Time
-	Packages           []*PackageAnalysis
+	ExecutionTime     time.Duration
+	GeneratedAt       time.Time
+	Packages          []*PackageAnalysis
 }
 
 // PackageAnalysis represents analysis results for a package.
@@ -55,10 +55,10 @@ type PerformanceIssue struct {
 
 // AnalysisSummary represents summary statistics.
 type AnalysisSummary struct {
-	TotalFiles      int
-	TotalFunctions  int
-	TotalIssues     int
-	IssuesByType    map[IssueType]int
+	TotalFiles       int
+	TotalFunctions   int
+	TotalIssues      int
+	IssuesByType     map[IssueType]int
 	IssuesBySeverity map[Severity]int
 }
 
@@ -129,4 +129,3 @@ func (s Severity) String() string {
 		return "Unknown"
 	}
 }
-

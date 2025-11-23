@@ -39,4 +39,3 @@ func TestMarkdownReportGenerator_GenerateMarkdownReport(t *testing.T) {
 		}
 	})
 }
-

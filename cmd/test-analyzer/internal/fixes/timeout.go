@@ -30,7 +30,7 @@ func GenerateTimeoutFix(ctx context.Context, filePath, functionName string, line
 		}
 
 		// Extract old code
-		oldCodeLines := lines[lineStart-1:endLine]
+		oldCodeLines := lines[lineStart-1 : endLine]
 		oldCode = strings.Join(oldCodeLines, "\n")
 
 		// Generate the timeout code

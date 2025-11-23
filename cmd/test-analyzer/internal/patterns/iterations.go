@@ -64,16 +64,16 @@ func (d *iterationsDetector) Detect(ctx context.Context, function *TestFunction)
 
 		if iterCount > int64(threshold) {
 			issue := PerformanceIssue{
-				Type:        "LargeIteration",
-				Severity:    severity,
-				Location:    getLocation(function, loop),
-				Description: fmt.Sprintf("Loop in %s has %d iterations (threshold: %d)", 
+				Type:     "LargeIteration",
+				Severity: severity,
+				Location: getLocation(function, loop),
+				Description: fmt.Sprintf("Loop in %s has %d iterations (threshold: %d)",
 					function.Name, iterCount, threshold),
 				Context: map[string]interface{}{
-					"iterations":    iterCount,
-					"threshold":     threshold,
-					"is_complex":    isComplex,
-					"function":      function.Name,
+					"iterations": iterCount,
+					"threshold":  threshold,
+					"is_complex": isComplex,
+					"function":   function.Name,
 				},
 				Fixable: true,
 			}
@@ -148,4 +148,3 @@ func (d *iterationsDetector) isComplexLoop(forStmt *ast.ForStmt) bool {
 	// Consider complex if it has multiple function calls or channel operations
 	return complexity > 1
 }
-

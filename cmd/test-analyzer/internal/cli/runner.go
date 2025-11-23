@@ -60,9 +60,11 @@ type Location struct {
 }
 
 type IssueType int
+
 func (t IssueType) String() string { return "IssueType" }
 
 type Severity int
+
 func (s Severity) String() string { return "Severity" }
 
 type Fix struct{}
@@ -78,12 +80,13 @@ type AnalysisReport struct {
 	IssuesByPackage   map[string]int
 	FixesApplied      int
 	FixesFailed       int
-	ExecutionTime      time.Duration
-	GeneratedAt        time.Time
-	Packages           []PackageAnalysis
+	ExecutionTime     time.Duration
+	GeneratedAt       time.Time
+	Packages          []PackageAnalysis
 }
 
 type ReportFormat int
+
 const (
 	FormatJSON ReportFormat = iota
 	FormatHTML
@@ -132,7 +135,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 					fix, err := fixer.ApplyFix(ctx, issue)
 					if err != nil {
 						if !config.Quiet {
-							fmt.Fprintf(os.Stderr, "Failed to apply fix for issue in %s: %v\n", 
+							fmt.Fprintf(os.Stderr, "Failed to apply fix for issue in %s: %v\n",
 								pkg, err)
 						}
 						totalFailedFixes++
@@ -144,7 +147,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 						_, err := fixer.ValidateFix(ctx, fix)
 						if err != nil {
 							if !config.Quiet {
-								fmt.Fprintf(os.Stderr, "Failed to validate fix in %s: %v\n", 
+								fmt.Fprintf(os.Stderr, "Failed to validate fix in %s: %v\n",
 									pkg, err)
 							}
 							_ = fixer.RollbackFix(ctx, fix)
@@ -171,8 +174,8 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 		FixesApplied:      totalFixes,
 		FixesFailed:       totalFailedFixes,
 		ExecutionTime:     time.Since(startTime),
-		GeneratedAt:        time.Now(),
-		Packages:           allPackages,
+		GeneratedAt:       time.Now(),
+		Packages:          allPackages,
 	}
 
 	// Output report
@@ -205,7 +208,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 func findPackages(root string) []string {
 	var packages []string
 	seen := make(map[string]bool)
-	
+
 	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
@@ -228,7 +231,7 @@ func filterPackages(packages, exclude []string) []string {
 	if len(exclude) == 0 {
 		return packages
 	}
-	
+
 	var filtered []string
 	for _, pkg := range packages {
 		excluded := false
@@ -324,4 +327,3 @@ func aggregateIssuesByPackage(packages []PackageAnalysis) map[string]int {
 	}
 	return result
 }
-

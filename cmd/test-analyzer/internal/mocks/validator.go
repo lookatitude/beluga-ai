@@ -26,7 +26,7 @@ func (v *validator) VerifyInterfaceCompatibility(ctx context.Context, mock *Mock
 	// 1. Parse the actual interface definition
 	// 2. Compare method signatures
 	// 3. Use reflection to verify at runtime
-	
+
 	// For now, we check that the mock has methods for all interface methods
 	if len(mock.InterfaceMethods) == 0 {
 		return false, fmt.Errorf("mock has no methods")
@@ -50,11 +50,11 @@ func containsMethod(code, methodName string) bool {
 
 // contains is a simple string contains check.
 func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || 
-		(len(s) > len(substr) && 
-			(s[:len(substr)] == substr || 
-			 s[len(s)-len(substr):] == substr ||
-			 containsInMiddle(s, substr))))
+	return len(s) >= len(substr) && (s == substr ||
+		(len(s) > len(substr) &&
+			(s[:len(substr)] == substr ||
+				s[len(s)-len(substr):] == substr ||
+				containsInMiddle(s, substr))))
 }
 
 func containsInMiddle(s, substr string) bool {
@@ -72,4 +72,3 @@ func verifyWithReflection(mockType reflect.Type, interfaceType reflect.Type) boo
 	// For now, return true as placeholder
 	return true
 }
-

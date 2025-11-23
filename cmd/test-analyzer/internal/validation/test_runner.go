@@ -16,10 +16,10 @@ type TestRunner interface {
 
 // TestResult contains test execution results.
 type TestResult struct {
-	TestsPass              bool
-	Output                 string
-	OriginalExecutionTime  time.Duration
-	NewExecutionTime       time.Duration
+	TestsPass             bool
+	Output                string
+	OriginalExecutionTime time.Duration
+	NewExecutionTime      time.Duration
 }
 
 // testRunner implements TestRunner.
@@ -56,9 +56,8 @@ func (r *testRunner) RunTests(ctx context.Context, fix *Fix) (*TestResult, error
 
 	return &TestResult{
 		TestsPass:             testsPass,
-		Output:                 outputStr,
+		Output:                outputStr,
 		OriginalExecutionTime: 100 * time.Millisecond, // Placeholder
 		NewExecutionTime:      executionTime,
 	}, nil
 }
-

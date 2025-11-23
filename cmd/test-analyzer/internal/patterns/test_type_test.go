@@ -56,4 +56,3 @@ func TestTestTypeDetector_Detect(t *testing.T) {
 		}
 	})
 }
-

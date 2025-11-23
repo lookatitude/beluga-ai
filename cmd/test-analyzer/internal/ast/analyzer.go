@@ -14,15 +14,15 @@ type Analyzer interface {
 
 // FunctionAnalysis contains analysis results for a function.
 type FunctionAnalysis struct {
-	HasTimeout             bool
-	TimeoutDuration        int64 // nanoseconds
+	HasTimeout               bool
+	TimeoutDuration          int64 // nanoseconds
 	UsesActualImplementation bool
-	UsesMocks              bool
-	MixedUsage             bool
-	HasInfiniteLoop        bool
-	HasLargeIteration      bool
-	HasSleepDelays         bool
-	TotalSleepDuration     int64 // nanoseconds
+	UsesMocks                bool
+	MixedUsage               bool
+	HasInfiniteLoop          bool
+	HasLargeIteration        bool
+	HasSleepDelays           bool
+	TotalSleepDuration       int64 // nanoseconds
 }
 
 // analyzer implements the Analyzer interface.
@@ -121,4 +121,3 @@ func (v *functionVisitor) analyzeRangeLoop(loop *ast.RangeStmt) {
 	// Range loops are generally safe, but we could check for large collections
 	// This would require more sophisticated analysis
 }
-

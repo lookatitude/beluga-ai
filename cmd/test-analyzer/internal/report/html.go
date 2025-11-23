@@ -71,7 +71,7 @@ func (g *htmlReportGenerator) GenerateHTMLReport(ctx context.Context, report *An
 	data := struct {
 		PackagesAnalyzed  int
 		FilesAnalyzed     int
-		FunctionsAnalyzed  int
+		FunctionsAnalyzed int
 		IssuesFound       int
 		FixesApplied      int
 		FixesFailed       int
@@ -120,4 +120,3 @@ func convertIssuesBySeverityForHTML(m map[Severity]int) map[string]int {
 	}
 	return result
 }
-

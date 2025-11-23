@@ -30,9 +30,9 @@ func TestTestType_String(t *testing.T) {
 
 func TestIssueType_String(t *testing.T) {
 	tests := []struct {
-		name     string
+		name      string
 		issueType IssueType
-		want     string
+		want      string
 	}{
 		{"InfiniteLoop", IssueTypeInfiniteLoop, "InfiniteLoop"},
 		{"MissingTimeout", IssueTypeMissingTimeout, "MissingTimeout"},
@@ -82,9 +82,9 @@ func TestSeverity_String(t *testing.T) {
 
 func TestFixType_String(t *testing.T) {
 	tests := []struct {
-		name     string
-		fixType  FixType
-		want     string
+		name    string
+		fixType FixType
+		want    string
 	}{
 		{"Unknown", FixTypeUnknown, "Unknown"},
 		{"AddTimeout", FixTypeAddTimeout, "AddTimeout"},
@@ -109,9 +109,9 @@ func TestFixType_String(t *testing.T) {
 
 func TestFixStatus_String(t *testing.T) {
 	tests := []struct {
-		name     string
-		status   FixStatus
-		want     string
+		name   string
+		status FixStatus
+		want   string
 	}{
 		{"Proposed", FixStatusProposed, "Proposed"},
 		{"Applied", FixStatusApplied, "Applied"},
@@ -133,9 +133,9 @@ func TestFixStatus_String(t *testing.T) {
 
 func TestMockStatus_String(t *testing.T) {
 	tests := []struct {
-		name     string
-		status   MockStatus
-		want     string
+		name   string
+		status MockStatus
+		want   string
 	}{
 		{"Template", MockStatusTemplate, "Template"},
 		{"Complete", MockStatusComplete, "Complete"},
@@ -174,8 +174,8 @@ func TestTestFile(t *testing.T) {
 
 	t.Run("TestFileWithFunctions", func(t *testing.T) {
 		tf := &TestFile{
-			Path:     "test_test.go",
-			Package:  "test",
+			Path:    "test_test.go",
+			Package: "test",
 			Functions: []*TestFunction{
 				{Name: "TestOne"},
 				{Name: "TestTwo"},
@@ -231,9 +231,9 @@ func TestTestFunction(t *testing.T) {
 
 	t.Run("TestFunctionWithTimeout", func(t *testing.T) {
 		tf := &TestFunction{
-			Name:           "TestWithTimeout",
-			Type:           TestTypeIntegration,
-			HasTimeout:     true,
+			Name:            "TestWithTimeout",
+			Type:            TestTypeIntegration,
+			HasTimeout:      true,
 			TimeoutDuration: 5 * time.Second,
 		}
 
@@ -247,8 +247,8 @@ func TestTestFunction(t *testing.T) {
 
 	t.Run("TestFunctionWithIssues", func(t *testing.T) {
 		issue := PerformanceIssue{
-			Type:     IssueTypeMissingTimeout,
-			Severity: SeverityHigh,
+			Type:        IssueTypeMissingTimeout,
+			Severity:    SeverityHigh,
 			Description: "Missing timeout",
 		}
 
@@ -313,9 +313,9 @@ func TestPerformanceIssue(t *testing.T) {
 		}
 
 		issue := PerformanceIssue{
-			Type:     IssueTypeInfiniteLoop,
-			Severity: SeverityCritical,
-			Location: location,
+			Type:        IssueTypeInfiniteLoop,
+			Severity:    SeverityCritical,
+			Location:    location,
 			Description: "Infinite loop detected",
 		}
 
@@ -542,11 +542,11 @@ func TestValidationResult(t *testing.T) {
 		result := ValidationResult{
 			Fix:                   fix,
 			InterfaceCompatible:   true,
-			TestsPass:              true,
-			ExecutionTimeImproved:  true,
-			OriginalExecutionTime:  10 * time.Second,
+			TestsPass:             true,
+			ExecutionTimeImproved: true,
+			OriginalExecutionTime: 10 * time.Second,
 			NewExecutionTime:      5 * time.Second,
-			ValidatedAt:            time.Now(),
+			ValidatedAt:           time.Now(),
 		}
 
 		if !result.InterfaceCompatible {
@@ -783,21 +783,21 @@ func TestAnalysisReport(t *testing.T) {
 			FunctionsAnalyzed: 513,
 			IssuesFound:       901,
 			IssuesByType: map[IssueType]int{
-				IssueTypeMissingTimeout: 492,
+				IssueTypeMissingTimeout:            492,
 				IssueTypeActualImplementationUsage: 186,
 			},
 			IssuesBySeverity: map[Severity]int{
-				SeverityHigh: 500,
+				SeverityHigh:   500,
 				SeverityMedium: 300,
 			},
 			IssuesByPackage: map[string]int{
-				"pkg/llms": 63,
+				"pkg/llms":   63,
 				"pkg/memory": 321,
 			},
-			FixesApplied:    0,
-			FixesFailed:     0,
-			ExecutionTime:   100 * time.Millisecond,
-			GeneratedAt:     time.Now(),
+			FixesApplied:  0,
+			FixesFailed:   0,
+			ExecutionTime: 100 * time.Millisecond,
+			GeneratedAt:   time.Now(),
 		}
 
 		if report.PackagesAnalyzed != 4 {
@@ -820,4 +820,3 @@ func TestAnalysisReport(t *testing.T) {
 		}
 	})
 }
-

@@ -48,4 +48,3 @@ func (g *plainReportGenerator) GeneratePlainReport(ctx context.Context, report *
 
 	return []byte(buf.String()), nil
 }
-

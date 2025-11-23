@@ -13,7 +13,7 @@ func TestMockGeneration_Integration(t *testing.T) {
 
 	// Test mock generation for real interfaces
 	pkgDir := filepath.Join("..", "..", "..", "pkg")
-	
+
 	t.Run("GenerateMockForLLMInterface", func(t *testing.T) {
 		llmsPath := filepath.Join(pkgDir, "llms")
 		if _, err := os.Stat(llmsPath); os.IsNotExist(err) {
@@ -34,4 +34,3 @@ func TestMockGeneration_Integration(t *testing.T) {
 		t.Log("Mock generation integration test placeholder")
 	})
 }
-

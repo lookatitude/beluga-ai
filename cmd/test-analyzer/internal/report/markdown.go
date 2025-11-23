@@ -51,4 +51,3 @@ func (g *markdownReportGenerator) GenerateMarkdownReport(ctx context.Context, re
 
 	return []byte(buf.String()), nil
 }
-

@@ -24,7 +24,7 @@ func TestFixer_Integration_ApplyFixes(t *testing.T) {
 		cmd := exec.CommandContext(context.Background(), "go", "run",
 			filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 			"--dry-run", "--auto-fix", fixturesDir)
-		
+
 		output, err := cmd.CombinedOutput()
 		_ = err
 		_ = output
@@ -47,4 +47,3 @@ func TestFixer_Integration_Rollback(t *testing.T) {
 	// This would require applying a fix first, then rolling it back
 	t.Skip("Skipping rollback test (requires file modification)")
 }
-

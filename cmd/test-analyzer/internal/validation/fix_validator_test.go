@@ -31,4 +31,3 @@ func TestFixValidator_ValidateFix(t *testing.T) {
 		_ = err
 	})
 }
-

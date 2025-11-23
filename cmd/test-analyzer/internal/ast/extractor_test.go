@@ -322,8 +322,8 @@ func TestDetermineFunctionType(t *testing.T) {
 	// since it's a private function
 
 	tests := []struct {
-		name        string
-		funcName    string
+		name         string
+		funcName     string
 		expectedType string
 	}{
 		{"TestFunction", "TestExample", "Unit"},
@@ -567,4 +567,3 @@ func BenchmarkOne(b *testing.B) {
 		}
 	}
 }
-

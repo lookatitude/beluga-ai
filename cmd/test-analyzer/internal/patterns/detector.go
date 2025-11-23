@@ -27,18 +27,18 @@ type Location struct {
 
 // TestFunction represents a test function.
 type TestFunction struct {
-	Name                   string
-	Type                   string
-	File                   *TestFileInfo
-	LineStart              int
-	LineEnd                int
-	HasTimeout             bool
-	TimeoutDuration        int64
-	ExecutionTime          int64
+	Name                     string
+	Type                     string
+	File                     *TestFileInfo
+	LineStart                int
+	LineEnd                  int
+	HasTimeout               bool
+	TimeoutDuration          int64
+	ExecutionTime            int64
 	UsesActualImplementation bool
-	UsesMocks              bool
-	MixedUsage             bool
-	AST                    interface{} // *ast.FuncDecl - using interface{} to avoid importing go/ast in patterns package
+	UsesMocks                bool
+	MixedUsage               bool
+	AST                      interface{} // *ast.FuncDecl - using interface{} to avoid importing go/ast in patterns package
 }
 
 // TestFileInfo contains file information for test functions.
@@ -54,15 +54,15 @@ type PatternDetector interface {
 
 // detector implements the PatternDetector interface.
 type detector struct {
-	infiniteLoopDetector      InfiniteLoopDetector
-	timeoutDetector           TimeoutDetector
-	iterationsDetector        IterationsDetector
-	complexityDetector        ComplexityDetector
-	implementationDetector    ImplementationDetector
-	mocksDetector             MocksDetector
-	sleepDetector             SleepDetector
-	benchmarkDetector         BenchmarkDetector
-	testTypeDetector          TestTypeDetector
+	infiniteLoopDetector   InfiniteLoopDetector
+	timeoutDetector        TimeoutDetector
+	iterationsDetector     IterationsDetector
+	complexityDetector     ComplexityDetector
+	implementationDetector ImplementationDetector
+	mocksDetector          MocksDetector
+	sleepDetector          SleepDetector
+	benchmarkDetector      BenchmarkDetector
+	testTypeDetector       TestTypeDetector
 }
 
 // NewDetector creates a new PatternDetector instance.

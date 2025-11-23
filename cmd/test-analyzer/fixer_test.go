@@ -80,4 +80,3 @@ func TestFixer_RollbackFix(t *testing.T) {
 		_ = err
 	})
 }
-

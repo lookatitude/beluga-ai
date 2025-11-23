@@ -60,7 +60,7 @@ func TestActualImplementation(t *testing.T) {
 func TestWithTimeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	
+
 	select {
 	case <-ctx.Done():
 		return
@@ -73,7 +73,7 @@ func TestWithTimeout(t *testing.T) {
 func TestConcurrentTestRunner(t *testing.T) {
 	timer := time.NewTicker(100 * time.Millisecond)
 	defer timer.Stop()
-	
+
 	for {
 		select {
 		case <-timer.C:
@@ -82,4 +82,3 @@ func TestConcurrentTestRunner(t *testing.T) {
 		}
 	}
 }
-

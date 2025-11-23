@@ -39,4 +39,3 @@ func TestHTMLReportGenerator_GenerateHTMLReport(t *testing.T) {
 		}
 	})
 }
-

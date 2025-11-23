@@ -73,4 +73,3 @@ func determineFunctionType(name string) string {
 	}
 	return "Unit"
 }
-

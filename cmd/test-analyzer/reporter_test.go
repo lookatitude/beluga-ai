@@ -93,4 +93,3 @@ func TestReporter_GenerateReport(t *testing.T) {
 		}
 	})
 }
-

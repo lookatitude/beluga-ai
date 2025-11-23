@@ -246,4 +246,3 @@ func TestInfinite(t *testing.T) {
 		}
 	})
 }
-

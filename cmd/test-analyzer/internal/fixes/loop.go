@@ -30,7 +30,7 @@ func GenerateLoopExitFix(ctx context.Context, filePath string, lineStart, lineEn
 		}
 
 		// Extract old code
-		oldCodeLines := lines[lineStart-1:endLine]
+		oldCodeLines := lines[lineStart-1 : endLine]
 		oldCode = strings.Join(oldCodeLines, "\n")
 
 		// Check if it's an infinite loop

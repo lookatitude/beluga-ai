@@ -22,16 +22,16 @@ func NewInfiniteLoopDetector() InfiniteLoopDetector {
 // Detect implements InfiniteLoopDetector.Detect.
 func (d *infiniteLoopDetector) Detect(ctx context.Context, function *TestFunction) ([]PerformanceIssue, error) {
 	var issues []PerformanceIssue
-	
+
 	// Get function AST
 	funcDecl := getFuncDecl(function)
 	if funcDecl == nil || funcDecl.Body == nil {
 		return issues, nil
 	}
-	
+
 	// Find all for loops in the function
 	loops := findForLoops(funcDecl.Body)
-	
+
 	for _, loop := range loops {
 		// Check if it's an infinite loop
 		if hasInfiniteLoop(loop) {
@@ -70,7 +70,7 @@ func (d *infiniteLoopDetector) Detect(ctx context.Context, function *TestFunctio
 			}
 		}
 	}
-	
+
 	return issues, nil
 }
 
@@ -79,7 +79,7 @@ func isConcurrentTestRunnerPattern(forStmt *ast.ForStmt) bool {
 	if forStmt.Body == nil {
 		return false
 	}
-	
+
 	// Look for select statement with timer channel
 	selects := findSelectStmts(forStmt.Body)
 	for _, sel := range selects {
@@ -101,7 +101,7 @@ func isConcurrentTestRunnerPattern(forStmt *ast.ForStmt) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -109,16 +109,16 @@ func isConcurrentTestRunnerPattern(forStmt *ast.ForStmt) bool {
 func getLocation(function *TestFunction, node ast.Node) Location {
 	// Use function location as base
 	loc := Location{
-		Package:  getPackageName(function),
+		Package:   getPackageName(function),
 		File:      getFilePath(function),
-		Function: function.Name,
+		Function:  function.Name,
 		LineStart: function.LineStart,
 		LineEnd:   function.LineEnd,
 	}
-	
+
 	// Try to get more specific location from node if possible
 	// (would need FileSet for precise positions)
-	
+
 	return loc
 }
 
@@ -130,4 +130,3 @@ func getPackageName(function *TestFunction) string {
 	}
 	return ""
 }
-

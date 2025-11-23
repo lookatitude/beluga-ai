@@ -11,4 +11,3 @@ func TestMockReplacementFix(t *testing.T) {
 		// Placeholder test
 	})
 }
-

@@ -84,4 +84,3 @@ func TestActualImplementation(t *testing.T) {
 		}
 	})
 }
-

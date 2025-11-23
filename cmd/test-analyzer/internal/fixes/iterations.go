@@ -30,7 +30,7 @@ func GenerateIterationFix(ctx context.Context, filePath string, oldCount, newCou
 		}
 
 		// Extract old code
-		oldCodeLines := lines[lineStart-1:endLine]
+		oldCodeLines := lines[lineStart-1 : endLine]
 		oldCode = strings.Join(oldCodeLines, "\n")
 
 		// Replace iteration count in the code

@@ -38,6 +38,16 @@ Beluga-AI is organized into several packages, each focusing on specific function
 - [Vector Stores](/docs/api/packages/vectorstores) - Vector database interfaces and implementations
 - [Retrievers](/docs/api/packages/retrievers) - Document retrieval components
 
+### Voice Packages
+- [Voice](/docs/api/packages/voice/) - Voice-enabled AI agent framework:
+  - [STT](/docs/api/packages/voice/stt) - Speech-to-Text providers and interfaces
+  - [TTS](/docs/api/packages/voice/tts) - Text-to-Speech providers and interfaces
+  - [VAD](/docs/api/packages/voice/vad) - Voice Activity Detection providers
+  - [Turn Detection](/docs/api/packages/voice/turndetection) - Turn detection algorithms
+  - [Transport](/docs/api/packages/voice/transport) - Audio transport implementations
+  - [Noise Cancellation](/docs/api/packages/voice/noise) - Noise cancellation providers
+  - [Session](/docs/api/packages/voice/session) - Voice session management
+
 ### Supporting Packages
 - [Prompts](/docs/api/packages/prompts) - Prompt management and formatting
 - [Monitoring](/docs/api/packages/monitoring) - Observability, metrics, and tracing

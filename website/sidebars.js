@@ -41,6 +41,20 @@ module.exports = {
     },
     {
       type: 'category',
+      label: 'Voice Agents',
+      items: [
+        'voice/index',
+        'voice/stt',
+        'voice/tts',
+        'voice/vad',
+        'voice/turndetection',
+        'voice/transport',
+        'voice/noise',
+        'voice/session',
+      ],
+    },
+    {
+      type: 'category',
       label: 'Guides',
       items: [
         'guides/architecture',
@@ -148,6 +162,19 @@ module.exports = {
             'api/packages/orchestration',
             'api/packages/monitoring',
             'api/packages/server',
+            {
+              type: 'category',
+              label: 'Voice Packages',
+              items: [
+                'api/packages/voice/stt',
+                'api/packages/voice/tts',
+                'api/packages/voice/vad',
+                'api/packages/voice/turndetection',
+                'api/packages/voice/transport',
+                'api/packages/voice/noise',
+                'api/packages/voice/session',
+              ],
+            },
           ],
         },
       ],

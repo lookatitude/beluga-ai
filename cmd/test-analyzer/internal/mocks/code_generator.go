@@ -56,21 +56,21 @@ func (m *{{$.StructName}}) {{.Name}}({{range $i, $p := .Parameters}}{{if $i}}, {
 `
 
 	data := struct {
-		Package       string
-		StructName    string
-		EmbeddedType  string
-		OptionsType   string
+		Package         string
+		StructName      string
+		EmbeddedType    string
+		OptionsType     string
 		ConstructorName string
-		InterfaceName string
-		Methods       []MethodSignature
+		InterfaceName   string
+		Methods         []MethodSignature
 	}{
-		Package:        "testutils", // Will be determined from packagePath
-		StructName:     pattern.StructName,
-		EmbeddedType:   pattern.EmbeddedType,
-		OptionsType:    pattern.OptionsType,
+		Package:         "testutils", // Will be determined from packagePath
+		StructName:      pattern.StructName,
+		EmbeddedType:    pattern.EmbeddedType,
+		OptionsType:     pattern.OptionsType,
 		ConstructorName: pattern.ConstructorName,
-		InterfaceName:  interfaceName,
-		Methods:        methods,
+		InterfaceName:   interfaceName,
+		Methods:         methods,
 	}
 
 	t, err := template.New("mock").Parse(tmpl)
@@ -85,4 +85,3 @@ func (m *{{$.StructName}}) {{.Name}}({{range $i, $p := .Parameters}}{{if $i}}, {
 
 	return buf.String(), nil
 }
-

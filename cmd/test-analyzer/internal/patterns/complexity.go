@@ -43,14 +43,14 @@ func (d *complexityDetector) Detect(ctx context.Context, function *TestFunction)
 		complexOps := d.findComplexOperations(loop.Body)
 		if len(complexOps) > 0 {
 			issue := PerformanceIssue{
-				Type:        "HighConcurrency",
-				Severity:    "High",
-				Location:    getLocation(function, loop),
-				Description: fmt.Sprintf("Loop in %s contains %d complex operation(s): %s", 
+				Type:     "HighConcurrency",
+				Severity: "High",
+				Location: getLocation(function, loop),
+				Description: fmt.Sprintf("Loop in %s contains %d complex operation(s): %s",
 					function.Name, len(complexOps), strings.Join(complexOps, ", ")),
 				Context: map[string]interface{}{
-					"function":      function.Name,
-					"operations":    complexOps,
+					"function":        function.Name,
+					"operations":      complexOps,
 					"operation_count": len(complexOps),
 				},
 				Fixable: true,
@@ -174,4 +174,3 @@ func (d *complexityDetector) isExternalServiceCall(pkg, method string) bool {
 	}
 	return false
 }
-

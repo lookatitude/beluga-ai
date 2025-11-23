@@ -9,7 +9,7 @@ import (
 func CreateMockFix(ctx context.Context, componentName, interfaceName, packagePath string) (mockCode string, err error) {
 	// This would call the MockGenerator to create the mock
 	// For now, return placeholder
-	
+
 	mockCode = fmt.Sprintf(`// AdvancedMock%s is a mock implementation of %s
 type AdvancedMock%s struct {
 	mock.Mock
@@ -20,7 +20,7 @@ func NewAdvancedMock%s() *AdvancedMock%s {
 	return &AdvancedMock%s{}
 }
 `, componentName, interfaceName, componentName, componentName, componentName, componentName, componentName, componentName)
-	
+
 	return mockCode, nil
 }
 
@@ -29,4 +29,3 @@ func GenerateMockCreationFix(ctx context.Context, componentName, interfaceName, 
 	// Placeholder: Would use MockGenerator to create mock
 	return CreateMockFix(ctx, componentName, interfaceName, packagePath)
 }
-
