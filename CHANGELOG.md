@@ -1,5 +1,35 @@
 # Changelog
 
+## [Unreleased]
+
+### Features
+
+* **voice:** add comprehensive Voice Agents feature with STT, TTS, VAD, Turn Detection, Transport, Noise Cancellation, and Session Management packages
+  * Speech-to-Text (STT) package with providers: Deepgram, Google Cloud, Azure Speech, OpenAI Whisper
+  * Text-to-Speech (TTS) package with providers: OpenAI, Google Cloud, Azure Speech, ElevenLabs
+  * Voice Activity Detection (VAD) package with providers: Silero, Energy-based, WebRTC, RNNoise
+  * Turn Detection package with providers: Heuristic, ONNX
+  * Transport package with providers: WebRTC, WebSocket
+  * Noise Cancellation package with providers: Spectral Subtraction, RNNoise, WebRTC
+  * Session Management package with complete voice interaction lifecycle management
+  * Comprehensive integration tests, contract tests, and end-to-end tests
+  * Performance benchmarks for all packages
+  * Complete documentation and usage examples
+
+### Testing
+
+* **voice:** increase test coverage to 80%+ for all voice packages
+  * Add WebSocket mock server utility for testing streaming sessions
+  * Improve Deepgram STT coverage from 54.2% to 90.3%
+  * Improve Azure STT coverage from 61.0% to 92.1%
+  * Improve RNNoise noise provider coverage from 74.6% to 90.1%
+  * Improve Spectral noise provider coverage from 76.1% to 95.5%
+  * Improve session/internal coverage from 61.6% to 90.1%
+  * Add comprehensive tests for streaming components (STT, TTS, incremental)
+  * Add tests for integration components (STT, TTS, transport, VAD, turn detection)
+  * Add tests for session management (interruption, response cancellation, strategy)
+  * Add tests for adaptive noise profile and FFT window functions
+
 ## [1.3.1](https://github.com/lookatitude/beluga-ai/compare/v1.3.0...v1.3.1) (2025-11-23)
 
 

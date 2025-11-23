@@ -491,7 +491,7 @@ func TestWalker_StringPrefixMatching(t *testing.T) {
 		{"test", false}, // lowercase
 		{"TEST", false}, // uppercase
 		{"NotTest", false},
-		{"TestHelper", true}, // starts with Test, so it's a test function
+		{"TestHelper", true},  // starts with Test, so it's a test function
 		{"HelperTest", false}, // doesn't start with Test
 	}
 
@@ -509,4 +509,3 @@ func TestWalker_StringPrefixMatching(t *testing.T) {
 		})
 	}
 }
-

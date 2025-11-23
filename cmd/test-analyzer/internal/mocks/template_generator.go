@@ -61,13 +61,13 @@ func (m *{{$.StructName}}) {{.Name}}({{range $i, $p := .Parameters}}{{if $i}}, {
 `
 
 	data := struct {
-		Package        string
-		StructName     string
-		OptionsType    string
+		Package         string
+		StructName      string
+		OptionsType     string
 		ConstructorName string
-		InterfaceName  string
-		Methods        []MethodSignature
-		Reason         string
+		InterfaceName   string
+		Methods         []MethodSignature
+		Reason          string
 	}{
 		Package:         "testutils",
 		StructName:      "AdvancedMock" + componentName,
@@ -90,4 +90,3 @@ func (m *{{$.StructName}}) {{.Name}}({{range $i, $p := .Parameters}}{{if $i}}, {
 
 	return buf.String(), nil
 }
-

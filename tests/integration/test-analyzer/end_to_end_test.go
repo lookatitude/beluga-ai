@@ -23,12 +23,12 @@ func TestEndToEnd_DryRun(t *testing.T) {
 	cmd := exec.CommandContext(context.Background(), "go", "run",
 		filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 		"--dry-run", pkgDir)
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Logf("Command output: %s", string(output))
 	}
-	
+
 	// Verify output contains analysis results
 	outputStr := string(output)
 	if !strings.Contains(outputStr, "package") && !strings.Contains(outputStr, "files") {
@@ -50,7 +50,7 @@ func TestEndToEnd_SpecificPackage(t *testing.T) {
 	cmd := exec.CommandContext(context.Background(), "go", "run",
 		filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 		"--dry-run", "--output", "markdown", pkgDir)
-	
+
 	output, err := cmd.CombinedOutput()
 	_ = err
 	_ = output
@@ -73,10 +73,10 @@ func TestEndToEnd_ReportGeneration(t *testing.T) {
 			cmd := exec.CommandContext(context.Background(), "go", "run",
 				filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 				"--dry-run", "--output", format, pkgDir)
-			
+
 			output, err := cmd.CombinedOutput()
 			_ = err
-			
+
 			// Verify output is not empty
 			if len(output) == 0 {
 				t.Error("Expected non-empty output")
@@ -100,9 +100,8 @@ func TestEndToEnd_AutoFixWithValidation(t *testing.T) {
 	cmd := exec.CommandContext(context.Background(), "go", "run",
 		filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 		"--dry-run", "--auto-fix", fixturesDir)
-	
+
 	output, err := cmd.CombinedOutput()
 	_ = err
 	_ = output
 }
-

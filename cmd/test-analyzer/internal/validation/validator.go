@@ -6,11 +6,11 @@ import (
 
 // Fix represents a fix to be validated.
 type Fix struct {
-	Type             string
-	Changes          []CodeChange
-	Status           string
-	BackupPath       string
-	AppliedAt        time.Time
+	Type       string
+	Changes    []CodeChange
+	Status     string
+	BackupPath string
+	AppliedAt  time.Time
 }
 
 // CodeChange represents a code modification.
@@ -26,14 +26,14 @@ type CodeChange struct {
 // ValidationResult represents the result of fix validation.
 type ValidationResult struct {
 	Fix                   *Fix
-	InterfaceCompatible    bool
-	TestsPass              bool
-	ExecutionTimeImproved  bool
-	OriginalExecutionTime  time.Duration
-	NewExecutionTime       time.Duration
-	Errors                 []error
-	TestOutput             string
-	ValidatedAt            time.Time
+	InterfaceCompatible   bool
+	TestsPass             bool
+	ExecutionTimeImproved bool
+	OriginalExecutionTime time.Duration
+	NewExecutionTime      time.Duration
+	Errors                []error
+	TestOutput            string
+	ValidatedAt           time.Time
 }
 
 // validator wraps FixValidator for backward compatibility.
@@ -45,4 +45,3 @@ type validator struct {
 func NewValidator() FixValidator {
 	return NewFixValidator()
 }
-

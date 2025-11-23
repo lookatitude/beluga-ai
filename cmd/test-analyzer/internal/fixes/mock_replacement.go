@@ -30,7 +30,7 @@ func GenerateMockReplacementFix(ctx context.Context, filePath, componentName, mo
 		}
 
 		// Extract old code
-		oldCodeLines := lines[lineStart-1:endLine]
+		oldCodeLines := lines[lineStart-1 : endLine]
 		oldCode = strings.Join(oldCodeLines, "\n")
 
 		// Replace constructor name with mock constructor

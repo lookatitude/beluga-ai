@@ -43,8 +43,8 @@ func (d *timeoutDetector) Detect(ctx context.Context, function *TestFunction) ([
 		}
 
 		issue := PerformanceIssue{
-			Type:        "MissingTimeout",
-			Severity:    severity,
+			Type:     "MissingTimeout",
+			Severity: severity,
 			Location: Location{
 				File:      getFilePath(function),
 				Function:  function.Name,
@@ -119,4 +119,3 @@ func (d *timeoutDetector) hasTimeoutInSelect(sel *ast.SelectStmt) bool {
 
 	return false
 }
-

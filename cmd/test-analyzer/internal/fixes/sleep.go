@@ -31,7 +31,7 @@ func GenerateSleepFix(ctx context.Context, filePath string, oldDuration, newDura
 		}
 
 		// Extract old code
-		oldCodeLines := lines[lineStart-1:endLine]
+		oldCodeLines := lines[lineStart-1 : endLine]
 		oldCode = strings.Join(oldCodeLines, "\n")
 
 		// Replace sleep duration

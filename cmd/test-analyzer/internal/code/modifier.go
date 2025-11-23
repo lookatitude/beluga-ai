@@ -119,11 +119,11 @@ func (m *modifier) ApplyCodeChange(ctx context.Context, change *CodeChange) erro
 	// Replace lines
 	newLines := make([]string, 0, len(lines))
 	newLines = append(newLines, lines[:change.LineStart-1]...)
-	
+
 	// Add new code
 	newCodeLines := strings.Split(change.NewCode, "\n")
 	newLines = append(newLines, newCodeLines...)
-	
+
 	// Add remaining lines
 	if change.LineEnd < len(lines) {
 		newLines = append(newLines, lines[change.LineEnd:]...)

@@ -80,4 +80,3 @@ EXAMPLES:
 
 	fmt.Fprint(os.Stdout, helpText)
 }
-

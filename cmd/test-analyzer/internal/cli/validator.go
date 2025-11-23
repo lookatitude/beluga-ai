@@ -48,4 +48,3 @@ func ValidateFlags(config *Config) error {
 
 	return nil
 }
-

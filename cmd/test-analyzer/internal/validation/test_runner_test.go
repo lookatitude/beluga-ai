@@ -34,4 +34,3 @@ func TestTestRunner_RunTests(t *testing.T) {
 		_ = err
 	})
 }
-

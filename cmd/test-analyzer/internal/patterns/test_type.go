@@ -25,4 +25,3 @@ func (d *testTypeDetector) Detect(ctx context.Context, function *TestFunction) (
 	// This detector is a placeholder for future enhancements
 	return nil, nil
 }
-

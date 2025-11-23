@@ -195,6 +195,32 @@ if [ -d "${ROOT_DIR}/pkg/agents/tools" ]; then
     generate_package_docs "pkg/agents/tools" "${output_file}"
 fi
 
+# Generate docs for voice packages
+VOICE_DIR="${OUTPUT_DIR}/voice"
+mkdir -p "${VOICE_DIR}"
+
+VOICE_PACKAGES=(
+    "pkg/voice/stt"
+    "pkg/voice/tts"
+    "pkg/voice/vad"
+    "pkg/voice/turndetection"
+    "pkg/voice/transport"
+    "pkg/voice/noise"
+    "pkg/voice/session"
+)
+
+for pkg in "${VOICE_PACKAGES[@]}"; do
+    pkg_name=$(basename "$pkg")
+    output_file="${VOICE_DIR}/${pkg_name}.md"
+    
+    if [ ! -d "${ROOT_DIR}/${pkg}" ]; then
+        echo -e "${YELLOW}Skipping ${pkg_name} (directory not found)${NC}"
+        continue
+    fi
+    
+    generate_package_docs "${pkg}" "${output_file}"
+done
+
 # Generate docs for RAG (retrievers + vectorstores combined concept)
 # This is a conceptual package, so we'll create a combined doc
 if [ -f "${OUTPUT_DIR}/retrievers.md" ] && [ -f "${OUTPUT_DIR}/vectorstores.md" ]; then

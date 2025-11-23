@@ -33,6 +33,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - N/A (file system only) (002-beluga-ai-dependency)
 - Go 1.24.0 + GitHub Actions, gomarkdoc (for API docs), GoReleaser (for releases), release-please (for semantic versioning) (003-the-github-workflows)
 - N/A (workflow configuration files only) (003-the-github-workflows)
+- N/A (ephemeral audio streams, conversation history via pkg/memory) (004-feature-voice-agents)
 
 ## Project Structure
 ```
@@ -47,9 +48,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 004-feature-voice-agents: Added Go 1.21+
 - 003-the-github-workflows: Added Go 1.24.0 + GitHub Actions, gomarkdoc (for API docs), GoReleaser (for releases), release-please (for semantic versioning)
 - 002-beluga-ai-dependency: Added Go 1.24.0 + github.com/stretchr/testify/mock (for mock.Mock type)
-- 001-go-package-by: Added Go 1.24.0 (toolchain go1.24.2) + go/ast, go/parser, go/token (for AST analysis), testify/mock (for mock pattern detection), go/format (for code generation)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

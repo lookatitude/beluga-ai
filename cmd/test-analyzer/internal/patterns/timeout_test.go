@@ -43,12 +43,12 @@ func TestNoTimeout(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestNoTimeout",
-			Type:      "Unit",
-			LineStart: 4,
-			LineEnd:   7,
+			Name:       "TestNoTimeout",
+			Type:       "Unit",
+			LineStart:  4,
+			LineEnd:    7,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -93,12 +93,12 @@ func TestWithTimeout(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestWithTimeout",
-			Type:      "Unit",
-			LineStart: 8,
-			LineEnd:   12,
+			Name:       "TestWithTimeout",
+			Type:       "Unit",
+			LineStart:  8,
+			LineEnd:    12,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -137,12 +137,12 @@ func TestWithTimeAfter(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestWithTimeAfter",
-			Type:      "Unit",
-			LineStart: 7,
-			LineEnd:   12,
+			Name:       "TestWithTimeAfter",
+			Type:       "Unit",
+			LineStart:  7,
+			LineEnd:    12,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -175,12 +175,12 @@ func TestIntegration(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestIntegration",
-			Type:      "Integration",
-			LineStart: 4,
-			LineEnd:   7,
+			Name:       "TestIntegration",
+			Type:       "Integration",
+			LineStart:  4,
+			LineEnd:    7,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -218,12 +218,12 @@ func BenchmarkExample(b *testing.B) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "BenchmarkExample",
-			Type:      "Load",
-			LineStart: 4,
-			LineEnd:   7,
+			Name:       "BenchmarkExample",
+			Type:       "Load",
+			LineStart:  4,
+			LineEnd:    7,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -260,12 +260,12 @@ func TestWithFlag(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestWithFlag",
-			Type:      "Unit",
-			LineStart: 4,
-			LineEnd:   7,
+			Name:       "TestWithFlag",
+			Type:       "Unit",
+			LineStart:  4,
+			LineEnd:    7,
 			HasTimeout: true, // Flag is set
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -280,12 +280,12 @@ func TestWithFlag(t *testing.T) {
 
 	t.Run("DetectWithNilAST", func(t *testing.T) {
 		testFunc := &TestFunction{
-			Name:      "TestNilAST",
-			Type:      "Unit",
-			LineStart: 1,
-			LineEnd:   5,
+			Name:       "TestNilAST",
+			Type:       "Unit",
+			LineStart:  1,
+			LineEnd:    5,
 			HasTimeout: false,
-			AST:       nil,
+			AST:        nil,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -329,12 +329,12 @@ func TestComplexTimeout(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      "TestComplexTimeout",
-			Type:      "Unit",
-			LineStart: 8,
-			LineEnd:   20,
+			Name:       "TestComplexTimeout",
+			Type:       "Unit",
+			LineStart:  8,
+			LineEnd:    20,
 			HasTimeout: false,
-			AST:       funcDecl,
+			AST:        funcDecl,
 		}
 
 		issues, err := detector.Detect(ctx, testFunc)
@@ -347,4 +347,3 @@ func TestComplexTimeout(t *testing.T) {
 		}
 	})
 }
-

@@ -22,10 +22,10 @@ func TestAnalyzer_Integration_RealTestFiles(t *testing.T) {
 		}
 
 		// Run test-analyzer on the package
-		cmd := exec.CommandContext(context.Background(), "go", "run", 
-			filepath.Join("..", "..", "..", "cmd", "test-analyzer"), 
+		cmd := exec.CommandContext(context.Background(), "go", "run",
+			filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 			"--dry-run", "--output", "json", pkgDir)
-		
+
 		output, err := cmd.CombinedOutput()
 		if err != nil {
 			// Tool may return non-zero exit code if issues are found, which is expected
@@ -47,7 +47,7 @@ func TestAnalyzer_Integration_RealTestFiles(t *testing.T) {
 		cmd := exec.CommandContext(context.Background(), "go", "run",
 			filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 			"--dry-run", "--output", "json", pkgDir)
-		
+
 		output, err := cmd.CombinedOutput()
 		_ = err // Error is acceptable if issues found
 		_ = output
@@ -62,7 +62,7 @@ func TestAnalyzer_Integration_RealTestFiles(t *testing.T) {
 		cmd := exec.CommandContext(context.Background(), "go", "run",
 			filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 			"--dry-run", "--output", "json", fixturesDir)
-		
+
 		output, err := cmd.CombinedOutput()
 		_ = err
 		_ = output
@@ -83,17 +83,17 @@ func TestAnalyzer_Integration_DetectIssues(t *testing.T) {
 	cmd := exec.CommandContext(context.Background(), "go", "run",
 		filepath.Join("..", "..", "..", "cmd", "test-analyzer"),
 		"--dry-run", "--output", "json", fixturesDir)
-	
+
 	output, err := cmd.CombinedOutput()
 	outputStr := string(output)
-	
+
 	// Check if issues were detected
-	if strings.Contains(outputStr, "InfiniteLoop") || 
-	   strings.Contains(outputStr, "MissingTimeout") ||
-	   strings.Contains(outputStr, "LargeIteration") {
+	if strings.Contains(outputStr, "InfiniteLoop") ||
+		strings.Contains(outputStr, "MissingTimeout") ||
+		strings.Contains(outputStr, "LargeIteration") {
 		t.Logf("Issues detected as expected: %s", outputStr[:min(200, len(outputStr))])
 	}
-	
+
 	_ = err
 }
 

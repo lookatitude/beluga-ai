@@ -61,8 +61,8 @@ func TestExample(t *testing.T) {
 		}
 
 		testFunc := &TestFunction{
-			Name:      functions[0].Name,
-			Type:      convertTestType(functions[0].Type),
+			Name: functions[0].Name,
+			Type: convertTestType(functions[0].Type),
 			File: &TestFile{
 				Path:    testFile,
 				Package: astFile.Package,
@@ -185,4 +185,3 @@ func TestTwo(t *testing.T) {
 		_ = err
 	})
 }
-

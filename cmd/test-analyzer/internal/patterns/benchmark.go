@@ -48,7 +48,7 @@ func (d *benchmarkDetector) Detect(ctx context.Context, function *TestFunction) 
 				LineStart: function.LineStart,
 				LineEnd:   function.LineEnd,
 			},
-			Description: fmt.Sprintf("Test function %s uses benchmark helpers: %s", 
+			Description: fmt.Sprintf("Test function %s uses benchmark helpers: %s",
 				function.Name, strings.Join(benchmarkHelpers, ", ")),
 			Context: map[string]interface{}{
 				"helpers":      benchmarkHelpers,
@@ -120,4 +120,3 @@ func (d *benchmarkDetector) isBenchmarkHelper(call *ast.CallExpr) string {
 
 	return ""
 }
-

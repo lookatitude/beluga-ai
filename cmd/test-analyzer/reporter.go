@@ -41,7 +41,7 @@ func NewReporter() Reporter {
 func (r *reporter) GenerateReport(ctx context.Context, reportData *AnalysisReport, format ReportFormat) ([]byte, error) {
 	// Convert main package types to report package types
 	report := convertToReportAnalysisReport(reportData)
-	
+
 	switch format {
 	case FormatJSON:
 		return r.jsonGen.GenerateJSONReport(ctx, report)
@@ -125,14 +125,13 @@ func (r *reporter) GeneratePackageReport(ctx context.Context, packageAnalysis *P
 		PackagesAnalyzed:  1,
 		FilesAnalyzed:     len(packageAnalysis.Files),
 		FunctionsAnalyzed: packageAnalysis.Summary.TotalFunctions,
-		IssuesFound:        packageAnalysis.Summary.TotalIssues,
-		IssuesByType:       packageAnalysis.Summary.IssuesByType,
-		IssuesBySeverity:   packageAnalysis.Summary.IssuesBySeverity,
-		IssuesByPackage:    map[string]int{packageAnalysis.Package: packageAnalysis.Summary.TotalIssues},
-		GeneratedAt:        packageAnalysis.AnalyzedAt,
-		Packages:           []*PackageAnalysis{packageAnalysis},
+		IssuesFound:       packageAnalysis.Summary.TotalIssues,
+		IssuesByType:      packageAnalysis.Summary.IssuesByType,
+		IssuesBySeverity:  packageAnalysis.Summary.IssuesBySeverity,
+		IssuesByPackage:   map[string]int{packageAnalysis.Package: packageAnalysis.Summary.TotalIssues},
+		GeneratedAt:       packageAnalysis.AnalyzedAt,
+		Packages:          []*PackageAnalysis{packageAnalysis},
 	}
 
 	return r.GenerateReport(ctx, report, format)
 }
-

@@ -39,4 +39,3 @@ func TestJSONReportGenerator_GenerateJSONReport(t *testing.T) {
 		}
 	})
 }
-

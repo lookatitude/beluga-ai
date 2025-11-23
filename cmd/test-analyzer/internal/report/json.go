@@ -42,13 +42,13 @@ func (g *jsonReportGenerator) GenerateJSONReport(ctx context.Context, report *An
 	// Convert report to JSON-serializable format
 	jsonReport := map[string]interface{}{
 		"summary": map[string]interface{}{
-			"packages_analyzed": report.PackagesAnalyzed,
-			"files_analyzed":    report.FilesAnalyzed,
+			"packages_analyzed":  report.PackagesAnalyzed,
+			"files_analyzed":     report.FilesAnalyzed,
 			"functions_analyzed": report.FunctionsAnalyzed,
-			"issues_found":      report.IssuesFound,
-			"fixes_applied":     report.FixesApplied,
-			"fixes_failed":      report.FixesFailed,
-			"execution_time":    report.ExecutionTime.String(),
+			"issues_found":       report.IssuesFound,
+			"fixes_applied":      report.FixesApplied,
+			"fixes_failed":       report.FixesFailed,
+			"execution_time":     report.ExecutionTime.String(),
 		},
 		"issues_by_type":     convertIssuesByType(report.IssuesByType),
 		"issues_by_severity": convertIssuesBySeverity(report.IssuesBySeverity),
@@ -63,4 +63,3 @@ func (g *jsonReportGenerator) GenerateJSONReport(ctx context.Context, report *An
 
 	return data, nil
 }
-

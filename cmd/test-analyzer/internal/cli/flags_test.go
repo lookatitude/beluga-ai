@@ -16,4 +16,3 @@ func TestFlags(t *testing.T) {
 		}
 	})
 }
-

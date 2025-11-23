@@ -28,17 +28,17 @@ type Fixer interface {
 
 // fixer implements the Fixer interface.
 type fixer struct {
-	mockGenerator  mocks.MockGenerator
-	codeModifier   code.CodeModifier
-	validator      validation.FixValidator
+	mockGenerator mocks.MockGenerator
+	codeModifier  code.CodeModifier
+	validator     validation.FixValidator
 }
 
 // NewFixer creates a new Fixer instance with the given dependencies.
 func NewFixer(mockGenerator mocks.MockGenerator, codeModifier code.CodeModifier, validator validation.FixValidator) Fixer {
 	return &fixer{
 		mockGenerator: mockGenerator,
-		codeModifier: codeModifier,
-		validator:    validator,
+		codeModifier:  codeModifier,
+		validator:     validator,
 	}
 }
 
@@ -128,14 +128,14 @@ func (f *fixer) ValidateFix(ctx context.Context, fix *Fix) (*ValidationResult, e
 	// Convert internal ValidationResult to main ValidationResult
 	result := &ValidationResult{
 		Fix:                   fix,
-		InterfaceCompatible:    internalResult.InterfaceCompatible,
-		TestsPass:              internalResult.TestsPass,
-		ExecutionTimeImproved:  internalResult.ExecutionTimeImproved,
-		OriginalExecutionTime:  internalResult.OriginalExecutionTime,
-		NewExecutionTime:       internalResult.NewExecutionTime,
-		Errors:                 internalResult.Errors,
-		TestOutput:             internalResult.TestOutput,
-		ValidatedAt:            internalResult.ValidatedAt,
+		InterfaceCompatible:   internalResult.InterfaceCompatible,
+		TestsPass:             internalResult.TestsPass,
+		ExecutionTimeImproved: internalResult.ExecutionTimeImproved,
+		OriginalExecutionTime: internalResult.OriginalExecutionTime,
+		NewExecutionTime:      internalResult.NewExecutionTime,
+		Errors:                internalResult.Errors,
+		TestOutput:            internalResult.TestOutput,
+		ValidatedAt:           internalResult.ValidatedAt,
 	}
 
 	return result, nil
@@ -189,7 +189,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 		if duration, ok := issue.Context["timeout_duration"].(string); ok {
 			timeoutDuration = duration
 		}
-		
+
 		oldCode, newCode, err := fixes.GenerateTimeoutFix(ctx, issue.Location.File, issue.Location.Function, issue.Location.LineStart, issue.Location.LineEnd, timeoutDuration)
 		if err != nil {
 			return nil, fmt.Errorf("generating timeout fix: %w", err)
@@ -228,7 +228,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 				newCount = 10
 			}
 		}
-		
+
 		oldCode, newCode, err := fixes.GenerateIterationFix(ctx, issue.Location.File, oldCount, newCount, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating iteration fix: %w", err)
@@ -253,7 +253,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 				newDuration = time.Millisecond
 			}
 		}
-		
+
 		oldCode, newCode, err := fixes.GenerateSleepFix(ctx, issue.Location.File, oldDuration, newDuration, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating sleep fix: %w", err)
@@ -274,7 +274,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 			componentName = name
 		}
 		mockName := strings.ToLower(componentName) + "Mock"
-		
+
 		oldCode, newCode, err := fixes.GenerateMockReplacementFix(ctx, issue.Location.File, componentName, mockName, issue.Location.LineStart, issue.Location.LineEnd)
 		if err != nil {
 			return nil, fmt.Errorf("generating mock replacement fix: %w", err)
@@ -302,7 +302,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 		if pkg, ok := issue.Context["package_path"].(string); ok {
 			packagePath = pkg
 		}
-		
+
 		mockCode, err := fixes.GenerateMockCreationFix(ctx, componentName, interfaceName, packagePath)
 		if err != nil {
 			return nil, fmt.Errorf("generating mock creation fix: %w", err)
@@ -317,7 +317,7 @@ func (f *fixer) generateCodeChanges(ctx context.Context, issue *PerformanceIssue
 			// Fallback: create mock file in same directory
 			mockFile = filepath.Join(filepath.Dir(testFile), strings.ToLower(componentName)+"_mock.go")
 		}
-		
+
 		changes = append(changes, CodeChange{
 			File:        mockFile,
 			LineStart:   1,
@@ -349,4 +349,3 @@ func (f *fixer) rollbackFromBackup(ctx context.Context, backupPath, filePath str
 
 	return nil
 }
-

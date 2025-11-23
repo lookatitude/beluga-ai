@@ -7,15 +7,15 @@ import (
 
 // MockImplementation represents a generated mock.
 type MockImplementation struct {
-	ComponentName          string
-	InterfaceName          string
-	Package                string
-	FilePath               string
-	Code                   string
-	InterfaceMethods       []MethodSignature
-	Status                 string
+	ComponentName            string
+	InterfaceName            string
+	Package                  string
+	FilePath                 string
+	Code                     string
+	InterfaceMethods         []MethodSignature
+	Status                   string
 	RequiresManualCompletion bool
-	GeneratedAt            time.Time
+	GeneratedAt              time.Time
 }
 
 // MethodSignature represents a method signature.
@@ -91,9 +91,9 @@ func (g *generator) GenerateMock(ctx context.Context, componentName, interfaceNa
 	if err != nil {
 		// Use default pattern if extraction fails
 		pattern = &MockPattern{
-			StructName:    "AdvancedMock" + componentName,
-			EmbeddedType:  "mock.Mock",
-			OptionsType:   "Mock" + componentName + "Option",
+			StructName:      "AdvancedMock" + componentName,
+			EmbeddedType:    "mock.Mock",
+			OptionsType:     "Mock" + componentName + "Option",
 			ConstructorName: "NewAdvancedMock" + componentName,
 		}
 	}
@@ -106,15 +106,15 @@ func (g *generator) GenerateMock(ctx context.Context, componentName, interfaceNa
 	}
 
 	return &MockImplementation{
-		ComponentName:          componentName,
-		InterfaceName:          interfaceName,
-		Package:                packagePath,
-		FilePath:               "test_utils.go",
-		Code:                   code,
-		InterfaceMethods:       methods,
-		Status:                 "Complete",
+		ComponentName:            componentName,
+		InterfaceName:            interfaceName,
+		Package:                  packagePath,
+		FilePath:                 "test_utils.go",
+		Code:                     code,
+		InterfaceMethods:         methods,
+		Status:                   "Complete",
 		RequiresManualCompletion: false,
-		GeneratedAt:            time.Now(),
+		GeneratedAt:              time.Now(),
 	}, nil
 }
 
@@ -133,15 +133,15 @@ func (g *generator) GenerateMockTemplate(ctx context.Context, componentName, int
 	}
 
 	return &MockImplementation{
-		ComponentName:          componentName,
-		InterfaceName:          interfaceName,
-		Package:                packagePath,
-		FilePath:               "test_utils.go",
-		Code:                   code,
-		InterfaceMethods:       methods,
-		Status:                 "Template",
+		ComponentName:            componentName,
+		InterfaceName:            interfaceName,
+		Package:                  packagePath,
+		FilePath:                 "test_utils.go",
+		Code:                     code,
+		InterfaceMethods:         methods,
+		Status:                   "Template",
 		RequiresManualCompletion: true,
-		GeneratedAt:            time.Now(),
+		GeneratedAt:              time.Now(),
 	}, nil
 }
 

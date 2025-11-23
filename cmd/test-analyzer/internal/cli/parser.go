@@ -81,34 +81,34 @@ func ParseFlags(args []string) (*Config, error) {
 // Config holds configuration for the test analyzer.
 type Config struct {
 	// Analysis flags
-	DryRun           bool
-	Output           string
-	OutputFile       string
-	IncludeBenchmarks bool
-	ExcludePackages  []string
+	DryRun             bool
+	Output             string
+	OutputFile         string
+	IncludeBenchmarks  bool
+	ExcludePackages    []string
 	ExcludePackagesStr string // Internal: for parsing
 
 	// Fix flags
-	AutoFix         bool
-	FixTypes        []string
-	FixTypesStr     string // Internal: for parsing
-	SkipValidation  bool
-	BackupDir       string
+	AutoFix        bool
+	FixTypes       []string
+	FixTypesStr    string // Internal: for parsing
+	SkipValidation bool
+	BackupDir      string
 
 	// Threshold flags
-	UnitTestTimeout       time.Duration
-	IntegrationTestTimeout time.Duration
-	LoadTestTimeout       time.Duration
-	SimpleIterationThreshold int
+	UnitTestTimeout           time.Duration
+	IntegrationTestTimeout    time.Duration
+	LoadTestTimeout           time.Duration
+	SimpleIterationThreshold  int
 	ComplexIterationThreshold int
-	SleepThreshold        time.Duration
+	SleepThreshold            time.Duration
 
 	// Filter flags
-	Severity   string
-	IssueTypes []string
+	Severity      string
+	IssueTypes    []string
 	IssueTypesStr string // Internal: for parsing
-	Packages   []string
-	PackagesStr string // Internal: for parsing
+	Packages      []string
+	PackagesStr   string // Internal: for parsing
 
 	// Output flags
 	Verbose bool
@@ -121,4 +121,3 @@ type Config struct {
 	// Package paths from positional arguments
 	PackagePaths []string
 }
-

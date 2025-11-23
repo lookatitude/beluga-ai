@@ -50,11 +50,11 @@ func (d *implementationDetector) Detect(ctx context.Context, function *TestFunct
 				LineStart: function.LineStart,
 				LineEnd:   function.LineEnd,
 			},
-			Description: fmt.Sprintf("Unit test %s uses actual implementations instead of mocks: %s", 
+			Description: fmt.Sprintf("Unit test %s uses actual implementations instead of mocks: %s",
 				function.Name, strings.Join(actualImpls, ", ")),
 			Context: map[string]interface{}{
-				"test_type":        function.Type,
-				"implementations":   actualImpls,
+				"test_type":            function.Type,
+				"implementations":      actualImpls,
 				"implementation_count": len(actualImpls),
 			},
 			Fixable: true,
@@ -76,9 +76,9 @@ func (d *implementationDetector) Detect(ctx context.Context, function *TestFunct
 			},
 			Description: fmt.Sprintf("Unit test %s mixes mocks and real implementations", function.Name),
 			Context: map[string]interface{}{
-				"test_type":        function.Type,
-				"actual_impls":     actualImpls,
-				"mock_impls":       mockImpls,
+				"test_type":    function.Type,
+				"actual_impls": actualImpls,
+				"mock_impls":   mockImpls,
 			},
 			Fixable: true,
 		}
@@ -343,4 +343,3 @@ func (d *implementationDetector) looksLikeImplementationType(typeName string) bo
 
 	return false
 }
-

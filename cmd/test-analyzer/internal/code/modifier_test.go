@@ -59,4 +59,3 @@ func TestModifier_FormatCode(t *testing.T) {
 		}
 	})
 }
-

@@ -46,15 +46,15 @@ func (d *sleepDetector) Detect(ctx context.Context, function *TestFunction) ([]P
 		}
 
 		issue := PerformanceIssue{
-			Type:        "SleepDelay",
-			Severity:    severity,
+			Type:     "SleepDelay",
+			Severity: severity,
 			Location: Location{
 				File:      getFilePath(function),
 				Function:  function.Name,
 				LineStart: function.LineStart,
 				LineEnd:   function.LineEnd,
 			},
-			Description: fmt.Sprintf("Test function %s contains %v of sleep delays (threshold: %v)", 
+			Description: fmt.Sprintf("Test function %s contains %v of sleep delays (threshold: %v)",
 				function.Name, totalSleep, d.threshold),
 			Context: map[string]interface{}{
 				"total_sleep": totalSleep.String(),
@@ -155,4 +155,3 @@ func (d *sleepDetector) getTimeUnit(name string) time.Duration {
 		return 0
 	}
 }
-

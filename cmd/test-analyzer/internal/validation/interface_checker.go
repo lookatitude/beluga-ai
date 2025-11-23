@@ -27,12 +27,12 @@ func (c *interfaceChecker) CheckInterfaceCompatibility(ctx context.Context, fix 
 	// 2. Parse the mock implementation from fix changes
 	// 3. Use reflection to verify mock implements interface
 	// 4. Compare method signatures
-	
+
 	// For now, return true as placeholder
 	// In production, would use go/types and reflect packages
-	
+
 	_ = reflect.TypeOf(nil) // Placeholder to use reflect
-	
+
 	return true, nil
 }
 
@@ -43,4 +43,3 @@ func verifyInterfaceCompatibility(mockType reflect.Type, interfaceType reflect.T
 	}
 	return true, nil
 }
-

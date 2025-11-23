@@ -39,4 +39,3 @@ func TestPlainReportGenerator_GeneratePlainReport(t *testing.T) {
 		}
 	})
 }
-

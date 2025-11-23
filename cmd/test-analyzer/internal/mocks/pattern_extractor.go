@@ -82,4 +82,3 @@ func (e *patternExtractor) ExtractMockPattern(ctx context.Context, packagePath s
 
 	return pattern, nil
 }
-

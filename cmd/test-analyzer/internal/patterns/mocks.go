@@ -50,11 +50,11 @@ func (d *mocksDetector) Detect(ctx context.Context, function *TestFunction) ([]P
 				Severity: "Medium",
 				Location: Location{
 					File:      getFilePath(function),
-					Function: function.Name,
+					Function:  function.Name,
 					LineStart: function.LineStart,
 					LineEnd:   function.LineEnd,
 				},
-				Description: fmt.Sprintf("Unit test %s uses interface %s but no mock implementation found", 
+				Description: fmt.Sprintf("Unit test %s uses interface %s but no mock implementation found",
 					function.Name, iface),
 				Context: map[string]interface{}{
 					"interface": iface,
@@ -156,4 +156,3 @@ func (d *mocksDetector) extractComponentFromMockName(mockName string) string {
 	mockName = strings.TrimPrefix(mockName, "AdvancedMock")
 	return mockName
 }
-

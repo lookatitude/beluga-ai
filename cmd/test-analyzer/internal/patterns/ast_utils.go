@@ -21,20 +21,20 @@ func hasInfiniteLoop(stmt ast.Stmt) bool {
 	if !ok {
 		return false
 	}
-	
+
 	// Check if it's a for loop without init, condition, or post
 	// Pattern: for { } or for ;; { }
 	if forStmt.Init == nil && forStmt.Cond == nil && forStmt.Post == nil {
 		return true
 	}
-	
+
 	// Check for `for true { }` pattern
 	if forStmt.Cond != nil {
 		if ident, ok := forStmt.Cond.(*ast.Ident); ok && ident.Name == "true" {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
@@ -44,14 +44,14 @@ func findForLoops(body *ast.BlockStmt) []*ast.ForStmt {
 	if body == nil {
 		return loops
 	}
-	
+
 	ast.Inspect(body, func(n ast.Node) bool {
 		if forStmt, ok := n.(*ast.ForStmt); ok {
 			loops = append(loops, forStmt)
 		}
 		return true
 	})
-	
+
 	return loops
 }
 
@@ -61,14 +61,14 @@ func findSelectStmts(body *ast.BlockStmt) []*ast.SelectStmt {
 	if body == nil {
 		return selects
 	}
-	
+
 	ast.Inspect(body, func(n ast.Node) bool {
 		if selectStmt, ok := n.(*ast.SelectStmt); ok {
 			selects = append(selects, selectStmt)
 		}
 		return true
 	})
-	
+
 	return selects
 }
 
@@ -78,14 +78,14 @@ func findCallExprs(body *ast.BlockStmt) []*ast.CallExpr {
 	if body == nil {
 		return calls
 	}
-	
+
 	ast.Inspect(body, func(n ast.Node) bool {
 		if call, ok := n.(*ast.CallExpr); ok {
 			calls = append(calls, call)
 		}
 		return true
 	})
-	
+
 	return calls
 }
 
@@ -95,12 +95,12 @@ func isTimeSleepCall(call *ast.CallExpr) bool {
 	if !ok {
 		return false
 	}
-	
+
 	ident, ok := sel.X.(*ast.Ident)
 	if !ok {
 		return false
 	}
-	
+
 	return ident.Name == "time" && sel.Sel.Name == "Sleep"
 }
 
@@ -110,12 +110,12 @@ func isContextWithTimeout(call *ast.CallExpr) bool {
 	if !ok {
 		return false
 	}
-	
+
 	ident, ok := sel.X.(*ast.Ident)
 	if !ok {
 		return false
 	}
-	
+
 	return ident.Name == "context" && sel.Sel.Name == "WithTimeout"
 }
 
@@ -125,12 +125,12 @@ func isTimeAfter(call *ast.CallExpr) bool {
 	if !ok {
 		return false
 	}
-	
+
 	ident, ok := sel.X.(*ast.Ident)
 	if !ok {
 		return false
 	}
-	
+
 	return ident.Name == "time" && sel.Sel.Name == "After"
 }
 
@@ -140,13 +140,13 @@ func getLoopIterationCount(forStmt *ast.ForStmt) int64 {
 	if forStmt.Cond == nil {
 		return -1 // Infinite loop
 	}
-	
+
 	// Check for `for i := 0; i < N; i++` pattern
 	binaryExpr, ok := forStmt.Cond.(*ast.BinaryExpr)
 	if !ok {
 		return -1
 	}
-	
+
 	if binaryExpr.Op.String() == "<" {
 		if right, ok := binaryExpr.Y.(*ast.BasicLit); ok {
 			// Try to parse the number
@@ -156,7 +156,7 @@ func getLoopIterationCount(forStmt *ast.ForStmt) int64 {
 			}
 		}
 	}
-	
+
 	return -1
 }
 
@@ -165,7 +165,7 @@ func hasExitCondition(forStmt *ast.ForStmt) bool {
 	if forStmt.Body == nil {
 		return false
 	}
-	
+
 	// Check for break, return, or context cancellation
 	hasExit := false
 	ast.Inspect(forStmt.Body, func(n ast.Node) bool {
@@ -183,7 +183,6 @@ func hasExitCondition(forStmt *ast.ForStmt) bool {
 		}
 		return true
 	})
-	
+
 	return hasExit
 }
-

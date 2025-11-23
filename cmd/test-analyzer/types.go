@@ -7,27 +7,27 @@ import (
 
 // TestFile represents a Go test file containing test functions and test utilities.
 type TestFile struct {
-	Path                string
-	Package             string
-	Functions           []*TestFunction
+	Path                 string
+	Package              string
+	Functions            []*TestFunction
 	HasIntegrationSuffix bool
-	AST                 *ast.File
+	AST                  *ast.File
 }
 
 // TestFunction represents an individual test function that may contain long-running operations.
 type TestFunction struct {
-	Name                   string
-	Type                   TestType
-	File                   *TestFile
-	LineStart              int
-	LineEnd                int
-	Issues                 []PerformanceIssue
-	HasTimeout             bool
-	TimeoutDuration        time.Duration
-	ExecutionTime          time.Duration
+	Name                     string
+	Type                     TestType
+	File                     *TestFile
+	LineStart                int
+	LineEnd                  int
+	Issues                   []PerformanceIssue
+	HasTimeout               bool
+	TimeoutDuration          time.Duration
+	ExecutionTime            time.Duration
 	UsesActualImplementation bool
-	UsesMocks              bool
-	MixedUsage             bool
+	UsesMocks                bool
+	MixedUsage               bool
 }
 
 // TestType is an enumeration of test function types.
@@ -265,27 +265,27 @@ type CodeChange struct {
 // ValidationResult represents the result of fix validation.
 type ValidationResult struct {
 	Fix                   *Fix
-	InterfaceCompatible    bool
-	TestsPass              bool
-	ExecutionTimeImproved  bool
-	OriginalExecutionTime  time.Duration
-	NewExecutionTime       time.Duration
-	Errors                 []error
-	TestOutput             string
-	ValidatedAt            time.Time
+	InterfaceCompatible   bool
+	TestsPass             bool
+	ExecutionTimeImproved bool
+	OriginalExecutionTime time.Duration
+	NewExecutionTime      time.Duration
+	Errors                []error
+	TestOutput            string
+	ValidatedAt           time.Time
 }
 
 // MockImplementation represents a mock implementation following the established pattern.
 type MockImplementation struct {
-	ComponentName          string
-	InterfaceName          string
-	Package                string
-	FilePath               string
-	Code                   string
-	InterfaceMethods       []MethodSignature
-	Status                 MockStatus
+	ComponentName            string
+	InterfaceName            string
+	Package                  string
+	FilePath                 string
+	Code                     string
+	InterfaceMethods         []MethodSignature
+	Status                   MockStatus
 	RequiresManualCompletion bool
-	GeneratedAt            time.Time
+	GeneratedAt              time.Time
 }
 
 // MockStatus is an enumeration of mock implementation statuses.
@@ -342,9 +342,9 @@ type AnalysisReport struct {
 	IssuesByPackage   map[string]int
 	FixesApplied      int
 	FixesFailed       int
-	ExecutionTime      time.Duration
-	GeneratedAt        time.Time
-	Packages           []*PackageAnalysis
+	ExecutionTime     time.Duration
+	GeneratedAt       time.Time
+	Packages          []*PackageAnalysis
 }
 
 // PackageAnalysis represents analysis results for a package.
@@ -366,10 +366,10 @@ type FileAnalysis struct {
 
 // AnalysisSummary represents summary statistics for an analysis.
 type AnalysisSummary struct {
-	TotalFiles      int
-	TotalFunctions  int
-	TotalIssues     int
-	IssuesByType    map[IssueType]int
+	TotalFiles       int
+	TotalFunctions   int
+	TotalIssues      int
+	IssuesByType     map[IssueType]int
 	IssuesBySeverity map[Severity]int
 }
 
@@ -398,4 +398,3 @@ func (f ReportFormat) String() string {
 		return "unknown"
 	}
 }
-

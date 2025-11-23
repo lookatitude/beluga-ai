@@ -29,7 +29,7 @@ func NewFixValidator() FixValidator {
 // ValidateFix implements FixValidator.ValidateFix.
 func (v *fixValidator) ValidateFix(ctx context.Context, fix *Fix) (*ValidationResult, error) {
 	result := &ValidationResult{
-		Fix:        fix,
+		Fix:         fix,
 		ValidatedAt: time.Now(),
 	}
 
@@ -69,4 +69,3 @@ func (v *fixValidator) ValidateFix(ctx context.Context, fix *Fix) (*ValidationRe
 
 	return result, nil
 }
-
