@@ -1,6 +1,16 @@
+# Unified Release Workflow
+# Supports both automated semantic versioning (release-please) and manual/tag-based releases (GoReleaser)
+# Prevents conflicts by using conditional job execution based on trigger type
+
 name: Release
 
 on:
+  # Automated semantic versioning: Triggered on main branch pushes
+  # release-please creates version tags and PRs automatically
+  push:
+    branches:
+      - main
+  # Manual/tag-based releases: Triggered on version tags or manual dispatch
   push:
     tags:
       - 'v*'  # Trigger on version tags
@@ -9,14 +19,36 @@ on:
       tag:
         description: 'Release tag (e.g., v1.0.0)'
         required: true
+        type: string
 
 permissions:
   contents: write
+  issues: write
   pull-requests: write
 
+# Prevent concurrent releases
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  # Automated semantic versioning via release-please
+  # Only runs on main branch pushes (not on tags or manual dispatch)
+  release-please:
+    name: Automated Semantic Versioning
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        with:
+          release-type: go
+          package-name: beluga-ai
+
+  # Manual/tag-based releases via GoReleaser
+  # Only runs on tag pushes or manual dispatch (not on main branch pushes)
   release:
     name: Create Release
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     needs: [pre-release]
     runs-on: ubuntu-latest
     steps:
@@ -26,10 +58,28 @@ jobs:
           fetch-depth: 0  # Full history for changelog generation
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           cache-dependency-path: go.sum
+
+      - name: Determine release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${{ github.ref_name }}"
+          fi
+          
+          # Validate version format
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Invalid version format: $VERSION (must be vX.Y.Z)"
+            exit 1
+          fi
+          
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "✅ Release version: $VERSION"
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -47,18 +97,21 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Release created successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Tag: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "Version: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
 
-  # Optional: Build and test before release
+  # Pre-release checks for manual/tag-based releases
+  # Only runs when release job runs (not for automated semantic versioning)
   pre-release:
     name: Pre-Release Checks
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.24'
           cache-dependency-path: go.sum
@@ -71,4 +124,3 @@ jobs:
 
       - name: Build
         run: go build -v $(go list ./... | grep -v -E '(specs|examples)')
-

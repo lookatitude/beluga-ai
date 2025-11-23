@@ -1,3 +1,9 @@
+# Website Deployment Workflow
+# Automatically generates API documentation and deploys Docusaurus website to GitHub Pages
+# Triggers: Main branch merges (when code/docs change), manual dispatch
+# Process: Generate API docs → Build website → Deploy to GitHub Pages
+# Documentation generation runs automatically on main branch merges only (not on PRs)
+
 name: Deploy Docusaurus Website to GitHub Pages
 
 on:
@@ -40,8 +46,22 @@ jobs:
           go-version: '1.24'
           cache-dependency-path: go.sum
 
+      - name: Install gomarkdoc
+        run: |
+          echo "Installing gomarkdoc for API documentation generation..."
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          # Ensure gomarkdoc is in PATH
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
       - name: Generate API documentation
-        run: make docs-generate
+        run: |
+          echo "Generating API documentation..."
+          if ! make docs-generate; then
+            echo "::error::Documentation generation failed"
+            echo "Please check the documentation generation script and ensure all packages are valid"
+            exit 1
+          fi
+          echo "✅ API documentation generated successfully"
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
