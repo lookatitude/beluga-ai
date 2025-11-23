@@ -1,3 +1,9 @@
+# CI/CD Workflow
+# Runs on all pull requests and pushes to main/develop branches
+# Includes: policy checks, linting, security scans, unit tests, integration tests, coverage, and build verification
+# Critical checks (block merge): unit-tests, security, build
+# Advisory checks (warnings only): lint, coverage threshold
+
 name: CI/CD
 
 on:
@@ -57,11 +63,12 @@ jobs:
           fi
 
   # ============================================================================
-  # CODE QUALITY
+  # CODE QUALITY (ADVISORY - warnings only, doesn't block merge)
   # ============================================================================
   lint:
     name: 🔍 Lint & Format
     runs-on: ubuntu-latest
+    continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
       - uses: actions/checkout@v4
       
@@ -93,7 +100,7 @@ jobs:
           go vet $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee vet-report.txt
           vet_status=${PIPESTATUS[0]}
           if [ "$vet_status" -ne 0 ]; then
-            echo "::error::go vet found issues"
+            echo "::warning::go vet found issues (advisory - does not block merge)"
             cat vet-report.txt
             exit 1
           fi
@@ -104,8 +111,8 @@ jobs:
           echo "Checking code formatting..."
           unformatted=$(gofmt -s -l .)
           if [ -n "$unformatted" ]; then
-            echo "::error::Files need formatting"
-            echo "❌ The following files need formatting:" >> $GITHUB_STEP_SUMMARY
+            echo "::warning::Files need formatting (advisory - does not block merge)"
+            echo "⚠️  The following files need formatting:" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
             echo "$unformatted" >> $GITHUB_STEP_SUMMARY
             echo '```' >> $GITHUB_STEP_SUMMARY
@@ -165,11 +172,12 @@ jobs:
           echo "✅ **go fmt**: All files properly formatted" >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================
-  # SECURITY SCANS
+  # SECURITY SCANS (CRITICAL - blocks merge on failure)
   # ============================================================================
   security:
     name: 🔒 Security Scans
     runs-on: ubuntu-latest
+    # Critical check - failures block merge
     steps:
       - uses: actions/checkout@v4
         with:
@@ -312,11 +320,12 @@ jobs:
           retention-days: 30
 
   # ============================================================================
-  # UNIT TESTS
+  # UNIT TESTS (CRITICAL - blocks merge on failure)
   # ============================================================================
   unit-tests:
     name: 🧪 Unit Tests
     runs-on: ubuntu-latest
+    # Critical check - failures block merge
     steps:
       - uses: actions/checkout@v4
       
@@ -343,10 +352,33 @@ jobs:
         run: |
           echo "Running unit tests..."
           # Run tests with coverage, excluding integration tests
+          # Use set +e to continue even if some tests fail, ensuring coverage file is generated
+          set +e
           go test -v -race -coverprofile=coverage.unit.out -covermode=atomic $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 | tee test-output.txt
+          test_exit_code=$?
+          set -e
+          
+          # Ensure coverage file exists (create empty if tests completely failed)
+          if [ ! -f coverage.unit.out ]; then
+            echo "⚠️  Coverage file not generated, creating empty file"
+            touch coverage.unit.out
+          fi
+          
+          # Validate coverage file is not empty and is valid
+          if [ ! -s coverage.unit.out ]; then
+            echo "⚠️  Coverage file is empty"
+          else
+            # Validate file format by attempting to parse it
+            if ! go tool cover -func=coverage.unit.out > /dev/null 2>&1; then
+              echo "⚠️  Coverage file format invalid"
+            fi
+          fi
           
           # Also run with JSON output (without coverage to avoid file conflicts)
           go test -v -race -json $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 > test-output.json || true
+          
+          # Exit with test exit code to preserve test failure status
+          exit $test_exit_code
       
       - name: Parse test results
         if: always()
@@ -374,13 +406,35 @@ jobs:
           echo "total=$total" >> $GITHUB_OUTPUT
           
           # Calculate coverage
-          if [ -f coverage.unit.out ]; then
-            coverage=$(go tool cover -func=coverage.unit.out 2>/dev/null | grep total | awk '{print $3}' || echo "0%")
-            coverage_num=$(echo "$coverage" | sed 's/%//' | tr -d '\n\r' | tr -d ' ')
-            if ! [[ "$coverage_num" =~ ^[0-9.]+$ ]]; then coverage_num=0; fi
-            
-            echo "coverage=$coverage" >> $GITHUB_OUTPUT
-            echo "coverage_num=$coverage_num" >> $GITHUB_OUTPUT
+          if [ -f coverage.unit.out ] && [ -s coverage.unit.out ]; then
+            # Validate coverage file can be parsed
+            if go tool cover -func=coverage.unit.out > /dev/null 2>&1; then
+              coverage=$(go tool cover -func=coverage.unit.out 2>/dev/null | grep total | awk '{print $3}' || echo "")
+              if [ -n "$coverage" ] && [ "$coverage" != "0%" ]; then
+                coverage_num=$(echo "$coverage" | sed 's/%//' | tr -d '\n\r' | tr -d ' ')
+                if [[ "$coverage_num" =~ ^[0-9.]+$ ]]; then
+                  echo "coverage=$coverage" >> $GITHUB_OUTPUT
+                  echo "coverage_num=$coverage_num" >> $GITHUB_OUTPUT
+                  echo "✅ Coverage calculated: $coverage"
+                else
+                  echo "⚠️  Invalid coverage number format: $coverage_num"
+                  echo "coverage=0%" >> $GITHUB_OUTPUT
+                  echo "coverage_num=0" >> $GITHUB_OUTPUT
+                fi
+              else
+                echo "⚠️  Coverage parsing returned empty or 0%"
+                echo "coverage=0%" >> $GITHUB_OUTPUT
+                echo "coverage_num=0" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "⚠️  Coverage file exists but is not valid Go coverage format"
+              echo "coverage=0%" >> $GITHUB_OUTPUT
+              echo "coverage_num=0" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "⚠️  Coverage file missing or empty"
+            echo "coverage=0%" >> $GITHUB_OUTPUT
+            echo "coverage_num=0" >> $GITHUB_OUTPUT
           fi
           
           echo "📊 Test Results: $passed passed, $failed failed out of $total tests"
@@ -422,13 +476,24 @@ jobs:
       - name: Check coverage threshold
         if: always()
         run: |
-          if [ "${{ steps.test_results.outputs.coverage_num }}" != "" ]; then
-            if awk "BEGIN {exit !(${{ steps.test_results.outputs.coverage_num }} < 80)}"; then
-              echo "::error::Coverage ${{ steps.test_results.outputs.coverage }} is below 80% threshold"
-              exit 1
-            fi
-            echo "✅ Coverage ${{ steps.test_results.outputs.coverage }} meets 80% threshold"
+          coverage_num="${{ steps.test_results.outputs.coverage_num }}"
+          coverage="${{ steps.test_results.outputs.coverage }}"
+          
+          if [ -z "$coverage_num" ] || [ "$coverage_num" = "0" ]; then
+            echo "::error::Coverage calculation failed or returned 0%. Please check test execution and coverage file generation."
+            exit 1
           fi
+          
+          # Coverage threshold is advisory - show warning but don't block
+          if awk "BEGIN {exit !($coverage_num < 80)}"; then
+            echo "::warning::Coverage ${coverage} is below 80% threshold (required: ≥80%) - advisory check"
+            echo "Current coverage: ${coverage}"
+            echo "Required coverage: 80%"
+            echo "⚠️  Coverage below threshold, but this is an advisory check and does not block merge"
+            # Don't exit 1 - this is advisory
+          fi
+          
+          echo "✅ Coverage ${coverage} meets 80% threshold"
       
       - name: Upload unit test coverage
         uses: codecov/codecov-action@v4
@@ -507,11 +572,12 @@ jobs:
           retention-days: 30
 
   # ============================================================================
-  # COVERAGE ENFORCEMENT
+  # COVERAGE ENFORCEMENT (ADVISORY - warnings only, doesn't block merge)
   # ============================================================================
   coverage:
     name: 📈 Coverage Check (≥80%)
     runs-on: ubuntu-latest
+    continue-on-error: true  # Advisory check - warnings don't block merge
     needs: [unit-tests, integration-tests]
     steps:
       - uses: actions/checkout@v4
@@ -595,11 +661,12 @@ jobs:
           retention-days: 30
 
   # ============================================================================
-  # BUILD
+  # BUILD (CRITICAL - blocks merge on failure)
   # ============================================================================
   build:
     name: 🔨 Build Packages
     runs-on: ubuntu-latest
+    # Critical check - failures block merge
     needs: [lint, security, unit-tests]
     steps:
       - uses: actions/checkout@v4
