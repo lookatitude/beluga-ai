@@ -496,7 +496,7 @@ jobs:
           echo "✅ Coverage ${coverage} meets 80% threshold"
       
       - name: Upload unit test coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.unit.out
           flags: unittests
@@ -554,7 +554,7 @@ jobs:
           go tool cover -func=coverage.integration.out | tail -n1
       
       - name: Upload integration test coverage
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           files: ./coverage.integration.out
           flags: integration
