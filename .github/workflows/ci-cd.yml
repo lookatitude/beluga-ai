@@ -59,7 +59,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.run_policy == 'true')
     continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Install jq
         run: |
@@ -110,13 +110,13 @@ jobs:
       github.event.inputs.run_lint == 'true'
     continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -132,7 +132,7 @@ jobs:
             ${{ runner.os }}-go-${{ env.GO_VERSION }}-
       
       - name: golangci-lint (with auto-fix)
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@v7
         with:
           version: v2.0.1
           args: --timeout=5m --fix --out-format=colored-line-number
@@ -229,12 +229,12 @@ jobs:
       github.event.inputs.run_security == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -290,7 +290,7 @@ jobs:
           echo "✅ No secrets detected"
       
       - name: Run Trivy (file system scan)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -380,10 +380,10 @@ jobs:
       github.event.inputs.run_unit_tests == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -575,10 +575,10 @@ jobs:
       github.event_name != 'workflow_dispatch' ||
       github.event.inputs.run_integration_tests == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -657,10 +657,10 @@ jobs:
     continue-on-error: true  # Advisory check - warnings don't block merge
     needs: [unit-tests, integration-tests]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -679,13 +679,13 @@ jobs:
         run: go mod download
       
       - name: Download unit test coverage
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v4
         with:
           name: unit-test-results
           path: coverage/
       
       - name: Download integration test coverage
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v4
         with:
           name: integration-test-results
           path: coverage/
@@ -753,10 +753,10 @@ jobs:
     # Depends on critical jobs (security, unit-tests) but not advisory jobs (policy, lint)
     needs: [security, unit-tests]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -821,10 +821,10 @@ jobs:
     needs: [build, integration-tests, coverage]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
