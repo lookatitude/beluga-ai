@@ -1,7 +1,7 @@
 # golangci-lint v2 configuration for Beluga AI Framework
 # Comprehensive linting setup for production-ready Go framework
 
-version: 2
+version: "2"
 
 run:
   # Timeout for analysis
