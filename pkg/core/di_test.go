@@ -427,6 +427,7 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
+	var mu sync.Mutex
 	var errors []error
 
 	for i := 0; i < numGoroutines; i++ {
@@ -435,7 +436,9 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 			for j := 0; j < healthChecksPerGoroutine; j++ {
 				err := container.CheckHealth(context.Background())
 				if err != nil {
+					mu.Lock()
 					errors = append(errors, err)
+					mu.Unlock()
 				}
 				time.Sleep(time.Millisecond) // Small delay to increase chance of race conditions
 			}

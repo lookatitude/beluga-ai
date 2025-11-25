@@ -134,7 +134,7 @@ jobs:
       - name: golangci-lint (with auto-fix)
         uses: golangci/golangci-lint-action@v7
         with:
-          version: v2.0.1
+          version: v2.6.2
           args: --timeout=5m --fix ./pkg/... ./tests/...
       
       - name: go vet

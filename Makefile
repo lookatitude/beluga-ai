@@ -76,7 +76,7 @@ lint: ## Run golangci-lint
 	@echo "Running golangci-lint..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not found. Installing..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.60.1; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.6.2; \
 	fi
 	@PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run $$(go list ./... | grep -v -E '(specs|examples)') || true
 
@@ -84,7 +84,7 @@ lint-fix: ## Run golangci-lint with auto-fix
 	@echo "Running golangci-lint with auto-fix..."
 	@if ! command -v golangci-lint >/dev/null 2>&1; then \
 		echo "golangci-lint not found. Installing..."; \
-		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v1.60.1; \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.6.2; \
 	fi
 	@if [ -n "$(PKG)" ]; then \
 		echo "Fixing lint errors in $(PKG)..."; \
@@ -223,7 +223,7 @@ bench-cmp: ## Compare benchmarks (requires benchstat)
 
 install-tools: ## Install all required Go tools
 	@echo "Installing required Go tools..."
-	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.1
+	@go install github.com/golangci/golangci-lint/cmd/golangci-lint@v2.6.2
 	@go install github.com/securego/gosec/v2/cmd/gosec@latest
 	@go install golang.org/x/vuln/cmd/govulncheck@latest
 	@go install mvdan.cc/gofumpt@latest
