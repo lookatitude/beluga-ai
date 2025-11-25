@@ -12,12 +12,12 @@ import (
 func TestNewProvider(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider to avoid import cycle
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.Transport, error) {
 		return NewAdvancedMockTransport("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("webrtc", testFactory)
 
 	tests := []struct {
 		name         string
@@ -27,21 +27,33 @@ func TestNewProvider(t *testing.T) {
 	}{
 		{
 			name:         "valid provider",
-			providerName: "test-provider",
-			config:       DefaultConfig(),
-			wantErr:      false,
+			providerName: "webrtc",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.URL = "wss://example.com" // Required field
+				return c
+			}(),
+			wantErr: false,
 		},
 		{
 			name:         "nil config uses defaults",
-			providerName: "test-provider",
-			config:       nil,
-			wantErr:      false,
+			providerName: "webrtc",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.URL = "wss://example.com" // Required field
+				return c
+			}(),
+			wantErr: false,
 		},
 		{
 			name:         "invalid provider",
 			providerName: "invalid",
-			config:       DefaultConfig(),
-			wantErr:      true,
+			config: func() *Config {
+				c := DefaultConfig()
+				c.URL = "wss://example.com" // Required field
+				return c
+			}(),
+			wantErr: true,
 		},
 	}
 
@@ -62,15 +74,16 @@ func TestNewProvider(t *testing.T) {
 func TestNewProvider_WithOptions(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.Transport, error) {
 		return NewAdvancedMockTransport("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("webrtc", testFactory)
 
 	config := DefaultConfig()
-	config.Provider = "test-provider"
+	config.Provider = "webrtc"
+	config.URL = "wss://example.com" // Required field
 
 	provider, err := NewProvider(ctx, "", config, func(c *Config) {
 		c.SampleRate = 48000
@@ -82,7 +95,7 @@ func TestNewProvider_WithOptions(t *testing.T) {
 func TestNewProvider_OverrideProviderName(t *testing.T) {
 	ctx := context.Background()
 
-	// Register test providers
+	// Register test providers using valid provider names
 	registry := GetRegistry()
 	testFactory1 := func(config *Config) (iface.Transport, error) {
 		return NewAdvancedMockTransport("test1"), nil
@@ -90,17 +103,18 @@ func TestNewProvider_OverrideProviderName(t *testing.T) {
 	testFactory2 := func(config *Config) (iface.Transport, error) {
 		return NewAdvancedMockTransport("test2"), nil
 	}
-	registry.Register("test-provider-1", testFactory1)
-	registry.Register("test-provider-2", testFactory2)
+	registry.Register("webrtc", testFactory1)
+	registry.Register("websocket", testFactory2)
 
 	config := DefaultConfig()
-	config.Provider = "test-provider-2" // Different from providerName
+	config.Provider = "websocket" // Different from providerName
+	config.URL = "wss://example.com" // Required field
 
-	provider, err := NewProvider(ctx, "test-provider-1", config)
+	provider, err := NewProvider(ctx, "webrtc", config)
 	require.NoError(t, err)
 	assert.NotNil(t, provider)
 	// Provider name should be overridden
-	assert.Equal(t, "test-provider-1", config.Provider)
+	assert.Equal(t, "webrtc", config.Provider)
 }
 
 func TestInitMetrics(t *testing.T) {

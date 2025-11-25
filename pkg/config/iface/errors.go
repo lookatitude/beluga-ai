@@ -80,12 +80,16 @@ func IsConfigError(err error, code string) bool {
 }
 
 // AsConfigError attempts to cast an error to ConfigError.
+// It returns the first (outermost) ConfigError found in the error chain.
 // It unwraps ConfigErrors to find nested ConfigErrors, but does not unwrap
 // regular errors (like fmt.Errorf) that might wrap ConfigErrors.
 func AsConfigError(err error, target **ConfigError) bool {
 	for err != nil {
 		if cfgErr, ok := err.(*ConfigError); ok {
-			*target = cfgErr
+			// Set target to the first ConfigError found (outermost)
+			if *target == nil {
+				*target = cfgErr
+			}
 			// Unwrap to check for nested ConfigErrors
 			err = cfgErr.Unwrap()
 			if err == nil {
@@ -98,5 +102,5 @@ func AsConfigError(err error, target **ConfigError) bool {
 		// This prevents finding ConfigErrors wrapped in regular errors (like fmt.Errorf)
 		break
 	}
-	return false
+	return *target != nil
 }

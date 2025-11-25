@@ -476,8 +476,6 @@ func (s *ProviderInterfaceTestSuite) testConcurrentAccess(t *testing.T) {
 }
 
 // TestAllProviderInterfaces tests interface compliance for multiple providers
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestAllProviderInterfaces(t *testing.T) {
 	providers := []struct {
 		name   string
@@ -502,8 +500,6 @@ func TestAllProviderInterfaces(t *testing.T) {
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestInterfaceReflection provides detailed reflection-based interface testing
 func TestInterfaceReflection(t *testing.T) {
@@ -544,8 +540,6 @@ func TestInterfaceReflection(t *testing.T) {
 				}
 			}
 		})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -629,8 +623,6 @@ func TestMethodSignatures(t *testing.T) {
 					assert.Equal(t, expectedType, methodType.Out(i),
 						"Method %s return value %d should have correct type", methodName, i)
 				}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 		})
 	}
@@ -664,7 +656,7 @@ func TestProviderContract(t *testing.T) {
 
 	// Test that health checks don't affect functionality
 	_ = provider.CheckHealth()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	response4, err4 := provider.Generate(ctx, messages)
 
@@ -705,7 +697,7 @@ func TestProviderLifecycle(t *testing.T) {
 	assert.Equal(t, 0, resetHealth["call_count"])
 
 	// Test continued functionality after reset
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	response, err := provider.Generate(ctx, messages)
 	assert.NoError(t, err)
@@ -755,8 +747,6 @@ func TestProviderRobustness(t *testing.T) {
 
 // generateLargeMessages creates a slice of messages for testing
 func generateLargeMessages(count int) []schema.Message {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	messages := make([]schema.Message, count)
 	for i := 0; i < count; i++ {
 		if i%2 == 0 {
@@ -770,8 +760,8 @@ func generateLargeMessages(count int) []schema.Message {
 
 // BenchmarkProviderInterface benchmarks provider interface methods
 func BenchmarkProviderInterface(b *testing.B) {
-	provider := NewAdvancedMockChatModel("benchmark-test")
 	ctx := context.Background()
+	provider := NewAdvancedMockChatModel("benchmark-test")
 	messages := CreateTestMessages()
 
 	b.Run("Generate", func(b *testing.B) {
@@ -813,8 +803,8 @@ func TestProviderThreadSafety(t *testing.T) {
 	}
 
 	provider := NewAdvancedMockChatModel("thread-safety-test")
-	ctx := context.Background()
 	messages := CreateTestMessages()
+	ctx := context.Background()
 
 	// Run multiple goroutines performing different operations
 	operations := []func(){

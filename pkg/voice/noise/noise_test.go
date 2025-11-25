@@ -11,7 +11,6 @@ import (
 
 func TestNewProvider(t *testing.T) {
 	ctx := context.Background()
-
 	// Register a test provider to avoid import cycle
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.NoiseCancellation, error) {
@@ -61,18 +60,18 @@ func TestNewProvider(t *testing.T) {
 
 func TestNewProvider_WithOptions(t *testing.T) {
 	ctx := context.Background()
-
 	// Register a test provider
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.NoiseCancellation, error) {
 		return NewAdvancedMockNoiseCancellation("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("rnnoise", testFactory) // Use valid provider name
 
 	config := DefaultConfig()
-	config.Provider = "test-provider"
+	// Don't set Provider in config - it will be validated and must be one of: rnnoise, webrtc, spectral
+	// The providerName parameter in NewProvider will override it if provided
 
-	provider, err := NewProvider(ctx, "", config, func(c *Config) {
+	provider, err := NewProvider(ctx, "rnnoise", config, func(c *Config) {
 		c.FrameSize = 1024
 	})
 	require.NoError(t, err)

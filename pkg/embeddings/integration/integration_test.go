@@ -13,8 +13,6 @@ import (
 )
 
 // TestEmbedderFactory_Integration tests the embedder factory with real providers
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestEmbedderFactory_Integration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -214,8 +212,6 @@ func testOllamaProviderIntegration(t *testing.T) {
 
 	t.Log("Ollama integration test passed")
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestPerformance_Integration tests performance with real providers
 func TestPerformance_Integration(t *testing.T) {
@@ -252,8 +248,6 @@ func TestPerformance_Integration(t *testing.T) {
 	}
 	if metrics.DocumentsPerSecond <= 0 {
 		t.Error("Documents per second should be positive")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -319,8 +313,6 @@ func getEnvOrDefault(key, defaultValue string) string {
 }
 
 func isOllamaServerAvailable() bool {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Simple check - in a real implementation, you might try to connect
 	// For now, just check if we can create a basic HTTP client
 	return true // Assume available, let the test fail if not

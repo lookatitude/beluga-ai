@@ -222,8 +222,6 @@ func createMockMetricsRecorder() *mockMetricsRecorder {
 	return &mockMetricsRecorder{}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewBaseAgent(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -274,8 +272,6 @@ func TestNewBaseAgent(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewReActAgent(t *testing.T) {
@@ -321,8 +317,6 @@ func TestNewReActAgent(t *testing.T) {
 			if err == nil && agent == nil {
 				t.Error("NewReActAgent() returned nil agent without error")
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -331,8 +325,8 @@ func TestAgentFactory(t *testing.T) {
 	config := agents.DefaultConfig()
 	factory := agents.NewAgentFactory(config)
 
-	ctx := context.Background()
 	llm := &mockLLM{}
+	ctx := context.Background()
 	tools := createMockTools()
 
 	t.Run("CreateBaseAgent", func(t *testing.T) {
@@ -353,15 +347,11 @@ func TestAgentFactory(t *testing.T) {
 			t.Errorf("AgentFactory.CreateReActAgent() error = %v", err)
 			return
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if agent == nil {
 			t.Error("AgentFactory.CreateReActAgent() returned nil agent")
 		}
 	})
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestNewAgentExecutor(t *testing.T) {
 	executor := agents.NewAgentExecutor()
@@ -377,15 +367,11 @@ func TestNewAgentExecutorWithOptions(t *testing.T) {
 	}
 
 	executor2 := agents.NewExecutorWithReturnIntermediateSteps(true)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if executor2 == nil {
 		t.Error("NewExecutorWithReturnIntermediateSteps() returned nil")
 	}
 
 	executor3 := agents.NewExecutorWithHandleParsingErrors(false)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if executor3 == nil {
 		t.Error("NewExecutorWithHandleParsingErrors() returned nil")
 	}
@@ -402,8 +388,6 @@ func TestDefaultConfig(t *testing.T) {
 	config := agents.DefaultConfig()
 	if config == nil {
 		t.Error("DefaultConfig() returned nil")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Test default values
@@ -445,8 +429,6 @@ func TestValidateConfig(t *testing.T) {
 				DefaultMaxRetries:    3,
 				DefaultRetryDelay:    2 * time.Second,
 				DefaultTimeout:       0,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				DefaultMaxIterations: 15,
 			},
 			wantErr: true,
@@ -476,8 +458,6 @@ func TestHealthCheck(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to initialize test agent: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	status := agents.HealthCheck(agent)
 	if status == nil {
@@ -498,8 +478,6 @@ func TestHealthCheck(t *testing.T) {
 
 func TestListAgentStates(t *testing.T) {
 	states := agents.ListAgentStates()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	expectedStates := []iface.AgentState{
 		iface.StateInitializing,
 		iface.StateReady,
@@ -547,13 +525,13 @@ func TestGetAgentStateString(t *testing.T) {
 // Test agent as Runnable interface.
 func TestAgentAsRunnable(t *testing.T) {
 	llm := &mockLLM{}
+	ctx := context.Background()
 	tools := createMockTools()
 	agent, err := agents.NewBaseAgent("runnable-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create test agent: %v", err)
 	}
 
-	ctx := context.Background()
 	input := map[string]any{"input": "test query"}
 
 	// Test Invoke - expect error since BaseAgent doesn't implement executeWithInput
@@ -568,8 +546,6 @@ func TestAgentAsRunnable(t *testing.T) {
 	if err == nil {
 		t.Error("Agent.Batch() expected error for unimplemented executeWithInput")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test Stream - expect error since BaseAgent doesn't implement executeWithInput
 	stream, err := agent.Stream(ctx, input)
@@ -622,8 +598,6 @@ func TestAgentCreationErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
 			agent, err := agents.NewBaseAgent("test-agent", tt.llm, tt.tools)
 			if tt.wantErr {
@@ -655,9 +629,9 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 	config.EnableTracing = false
 
 	factory := agents.NewAgentFactory(config)
-	ctx := context.Background()
 
 	t.Run("FactoryWithMetrics", func(t *testing.T) {
+	ctx := context.Background()
 		llm := &mockLLM{}
 		tools := createMockTools()
 
@@ -678,6 +652,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 
 	t.Run("FactoryConfigInheritance", func(t *testing.T) {
 		llm := &mockLLM{}
+		ctx := context.Background()
 		tools := createMockTools()
 
 		// Create agent without additional options - should inherit factory config
@@ -701,6 +676,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 
 	t.Run("FactoryWithOptionsOverride", func(t *testing.T) {
 		llm := &mockLLM{}
+		ctx := context.Background()
 		tools := createMockTools()
 
 		// Create agent with options that should override factory config
@@ -721,6 +697,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 // Test agent lifecycle management.
 func TestAgentLifecycle(t *testing.T) {
 	llm := &mockLLM{}
+	ctx := context.Background()
 	tools := createMockTools()
 	agent, err := agents.NewBaseAgent("lifecycle-test", llm, tools)
 	if err != nil {
@@ -736,7 +713,7 @@ func TestAgentLifecycle(t *testing.T) {
 	config := map[string]interface{}{
 		"max_retries": 1,                    // Use fewer retries for faster test
 		"retry_delay": 1 * time.Millisecond, // Use very short delay for test
-		"timeout":     "30s",
+		"timeout":     "30*time.Second",
 	}
 	err = agent.Initialize(config)
 	if err != nil {
@@ -754,8 +731,6 @@ func TestAgentLifecycle(t *testing.T) {
 
 	// Execute in a goroutine with timeout
 	done := make(chan error, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	go func() {
 		done <- agent.Execute()
 	}()
@@ -841,8 +816,6 @@ func TestConfigurationScenarios(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := agents.ValidateConfig(tt.config)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				if tt.wantErr && err == nil {
 					t.Errorf("Expected validation error for config: %v", tt.name)
 				}
@@ -900,8 +873,6 @@ func TestToolRegistry(t *testing.T) {
 	// Test getting tools
 	retrievedTool, err := registry.GetTool("tool1")
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Failed to get tool1: %v", err)
 	}
 	if retrievedTool != tool1 {
@@ -955,8 +926,6 @@ func TestErrorHandling(t *testing.T) {
 		valErr := agents.NewValidationError("test_field", "test message")
 		if valErr.Field != "test_field" {
 			t.Errorf("Expected field 'test_field', got '%s'", valErr.Field)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 		if valErr.Message != "test message" {
 			t.Errorf("Expected message 'test message', got '%s'", valErr.Message)
@@ -1021,8 +990,6 @@ func TestEventHandling(t *testing.T) {
 	t.Run("MultipleEventHandlers", func(t *testing.T) {
 		handler1Called := false
 		handler2Called := false
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 		handler1 := func(payload interface{}) error {
 			handler1Called = true
@@ -1031,8 +998,6 @@ func TestEventHandling(t *testing.T) {
 		handler2 := func(payload interface{}) error {
 			handler2Called = true
 			return nil
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 
 		agent.RegisterEventHandler("multi_event", handler1)
@@ -1047,8 +1012,6 @@ func TestEventHandling(t *testing.T) {
 	t.Run("EventHandlerError", func(t *testing.T) {
 		handlerErr := errors.New("handler error")
 		handler := func(payload interface{}) error {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			return handlerErr
 		}
 
@@ -1078,7 +1041,7 @@ func BenchmarkAgentInitialization(b *testing.B) {
 
 	config := map[string]interface{}{
 		"max_retries": 3,
-		"timeout":     "30s",
+		"timeout":     "30*time.Second",
 	}
 
 	b.ResetTimer()

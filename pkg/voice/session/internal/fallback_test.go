@@ -124,12 +124,12 @@ func TestProviderFallback_IsUsingFallback(t *testing.T) {
 
 func TestProviderFallback_ExecuteWithFallback_Success(t *testing.T) {
 	primary := &mockSTTProvider{shouldError: false}
+	ctx := context.Background()
 	fallback := &mockSTTProvider{}
 	breaker := NewCircuitBreaker(5, 10*1000, 5*time.Second)
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	ctx := context.Background()
 	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
 		stt := provider.(*mockSTTProvider)
 		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
@@ -142,12 +142,12 @@ func TestProviderFallback_ExecuteWithFallback_Success(t *testing.T) {
 
 func TestProviderFallback_ExecuteWithFallback_PrimaryFails(t *testing.T) {
 	primary := &mockSTTProvider{shouldError: true}
+	ctx := context.Background()
 	fallback := &mockSTTProvider{shouldError: false}
 	breaker := NewCircuitBreaker(5, 10*1000, 5*time.Second)
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	ctx := context.Background()
 	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
 		stt := provider.(*mockSTTProvider)
 		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
@@ -160,12 +160,12 @@ func TestProviderFallback_ExecuteWithFallback_PrimaryFails(t *testing.T) {
 
 func TestProviderFallback_ExecuteWithFallback_BothFail(t *testing.T) {
 	primary := &mockSTTProvider{shouldError: true}
+	ctx := context.Background()
 	fallback := &mockSTTProvider{shouldError: true}
 	breaker := NewCircuitBreaker(5, 10*1000, 5*time.Second)
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	ctx := context.Background()
 	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
 		stt := provider.(*mockSTTProvider)
 		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
@@ -178,11 +178,11 @@ func TestProviderFallback_ExecuteWithFallback_BothFail(t *testing.T) {
 
 func TestProviderFallback_ExecuteWithFallback_NoFallback(t *testing.T) {
 	primary := &mockSTTProvider{shouldError: true}
+	ctx := context.Background()
 	breaker := NewCircuitBreaker(5, 10*1000, 5*time.Second)
 
 	pf := NewProviderFallback(primary, nil, breaker)
 
-	ctx := context.Background()
 	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
 		stt := provider.(*mockSTTProvider)
 		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
@@ -194,6 +194,7 @@ func TestProviderFallback_ExecuteWithFallback_NoFallback(t *testing.T) {
 
 func TestProviderFallback_ExecuteWithFallback_SwitchBackToPrimary(t *testing.T) {
 	primary := &mockSTTProvider{shouldError: false}
+	ctx := context.Background()
 	fallback := &mockSTTProvider{}
 	breaker := NewCircuitBreaker(5, 10*1000, 5*time.Second)
 
@@ -201,7 +202,6 @@ func TestProviderFallback_ExecuteWithFallback_SwitchBackToPrimary(t *testing.T) 
 	pf.SwitchToFallback()
 	assert.True(t, pf.IsUsingFallback())
 
-	ctx := context.Background()
 	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
 		stt := provider.(*mockSTTProvider)
 		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})

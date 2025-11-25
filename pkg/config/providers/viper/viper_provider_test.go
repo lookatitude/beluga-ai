@@ -8,8 +8,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewViperProvider(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -59,8 +57,6 @@ func TestNewViperProvider(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestViperProvider_Load(t *testing.T) {
@@ -94,8 +90,6 @@ llm_providers:
 		t.Errorf("expected 1 LLM provider, got %d", len(cfg.LLMProviders))
 	}
 	if cfg.LLMProviders[0].Name != "test-llm" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("expected LLM provider name 'test-llm', got %s", cfg.LLMProviders[0].Name)
 	}
 }
@@ -152,8 +146,6 @@ func TestViperProvider_Getters(t *testing.T) {
 					}
 				}
 			} else if result != tt.expected {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("expected %v, got %v", tt.expected, result)
 			}
 		})
@@ -180,8 +172,6 @@ func TestViperProvider_IsSet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			result := provider.IsSet(tt.key)
 			if result != tt.expected {
 				t.Errorf("expected %v for key %s, got %v", tt.expected, tt.key, result)
@@ -227,8 +217,6 @@ llm_providers:
 	if configs[0].Name != "openai-gpt4" {
 		t.Errorf("expected first provider name 'openai-gpt4', got %s", configs[0].Name)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if configs[0].Provider != "openai" {
 		t.Errorf("expected first provider type 'openai', got %s", configs[0].Provider)
 	}
@@ -263,8 +251,6 @@ llm_providers:
 	config, err := provider.GetLLMProviderConfig("openai-gpt4")
 	if err != nil {
 		t.Fatalf("failed to get existing LLM provider config: %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if config.Name != "openai-gpt4" {
 		t.Errorf("expected provider name 'openai-gpt4', got %s", config.Name)
@@ -296,8 +282,6 @@ embedding_providers:
 	if err != nil {
 		t.Fatalf("failed to create provider: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	configs, err := provider.GetEmbeddingProvidersConfig()
 	if err != nil {
@@ -329,8 +313,6 @@ vector_stores:
 
 	provider, err := NewViperProvider("test", []string{tempDir}, "", "yaml")
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatalf("failed to create provider: %v", err)
 	}
 
@@ -362,8 +344,6 @@ agents:
 		t.Fatalf("failed to create test config file: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	provider, err := NewViperProvider("test", []string{tempDir}, "", "yaml")
 	if err != nil {
 		t.Fatalf("failed to create provider: %v", err)
@@ -398,8 +378,6 @@ agents:
 	}
 
 	provider, err := NewViperProvider("test", []string{tempDir}, "", "yaml")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err != nil {
 		t.Fatalf("failed to create provider: %v", err)
 	}
@@ -431,8 +409,6 @@ tools:
     enabled: true
 `
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -467,8 +443,6 @@ tools:
 `
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatalf("failed to create test config file: %v", err)
 	}
 
@@ -492,8 +466,6 @@ tools:
 		t.Error("expected error for non-existing tool, got nil")
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestViperProvider_UnmarshalKey(t *testing.T) {
 	provider, err := NewViperProvider("", nil, "", "")
@@ -518,8 +490,6 @@ func TestViperProvider_UnmarshalKey(t *testing.T) {
 	if result["nested"].(map[string]interface{})["key"] != "value" {
 		t.Errorf("expected unmarshalled value 'value', got %v", result["nested"])
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestViperProvider_Validate(t *testing.T) {
@@ -544,8 +514,6 @@ llm_providers:
 
 	err = provider.Validate()
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("expected validation to succeed, got error: %v", err)
 	}
 }
@@ -580,8 +548,6 @@ func TestViperProvider_EnvironmentVariables(t *testing.T) {
 	// Set up environment variables
 	testEnvVars := map[string]string{
 		"TEST_LLM_PROVIDERS_0_NAME":       "env-llm",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"TEST_LLM_PROVIDERS_0_PROVIDER":   "openai",
 		"TEST_LLM_PROVIDERS_0_API_KEY":    "env-key",
 		"TEST_LLM_PROVIDERS_0_MODEL_NAME": "gpt-4",

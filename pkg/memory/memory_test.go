@@ -51,8 +51,6 @@ func (m *MockMemory) Clear(ctx context.Context) error {
 }
 
 // TestMemoryInterface ensures that MockMemory correctly implements the Memory interface.
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestMemoryInterface(t *testing.T) {
 	var _ Memory = (*MockMemory)(nil)
 
@@ -74,8 +72,6 @@ func TestMemoryInterface(t *testing.T) {
 	err = mockMem.Clear(context.Background())
 	assert.NoError(t, err)
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestNoOpMemory tests the NoOpMemory implementation
 func TestNoOpMemory(t *testing.T) {
@@ -94,8 +90,6 @@ func TestNoOpMemory(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = noOpMem.Clear(ctx)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 }
 
@@ -118,7 +112,7 @@ func TestFactory(t *testing.T) {
 	assert.Equal(t, []string{"test_history"}, memory.MemoryVariables())
 
 	// Test loading memory variables
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 	assert.NoError(t, err)
@@ -155,8 +149,6 @@ func TestFactory_AllMemoryTypes(t *testing.T) {
 				assert.Error(t, err)
 				assert.Nil(t, memory)
 			} else {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				assert.NoError(t, err)
 				assert.NotNil(t, memory)
 			}
@@ -241,8 +233,6 @@ func TestFactory_ConfigurationValidation(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				if tc.config.Enabled {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 					assert.NotNil(t, memory)
 				} else {
 					assert.IsType(t, &NoOpMemory{}, memory)
@@ -269,8 +259,6 @@ func TestConvenienceFunctions(t *testing.T) {
 
 	// Test saving and loading context
 	inputs := map[string]any{"input": "Hello"}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	outputs := map[string]any{"output": "Hi there"}
 
 	err := bufferMem.SaveContext(ctx, inputs, outputs)
@@ -313,8 +301,6 @@ func TestNewMemory(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Run(tc.name, func(t *testing.T) {
 			memory, err := NewMemory(tc.memoryType, tc.options...)
 			if tc.expectError {
@@ -362,8 +348,6 @@ func TestConfiguration(t *testing.T) {
 	assert.Equal(t, "response", config.OutputKey)
 
 	WithMaxTokenLimit(3000)(&config)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, 3000, config.MaxTokenLimit)
 
 	WithTopK(8)(&config)
@@ -430,8 +414,6 @@ func TestConfiguration_Validation(t *testing.T) {
 			name: "Valid vector store",
 			config: Config{
 				Type: MemoryTypeVectorStore,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			},
 			expectError: false,
 		},
@@ -456,8 +438,6 @@ func TestErrorHandling(t *testing.T) {
 	// Test invalid configuration
 	factory := NewFactory()
 	invalidConfig := Config{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Type:    "invalid_type",
 		Enabled: true,
 	}
@@ -500,8 +480,6 @@ func TestGetInputOutputKeys(t *testing.T) {
 	inputKey, outputKey, err = GetInputOutputKeys(inputs, outputs)
 	assert.NoError(t, err)
 	assert.Equal(t, "query", inputKey)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, "answer", outputKey)
 
 	// Test with multiple possible keys
@@ -529,8 +507,6 @@ func TestGetBufferString(t *testing.T) {
 
 	// Create a history with some messages
 	history := NewBaseChatMessageHistory()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := history.AddUserMessage(ctx, "Hello")
 	require.NoError(t, err)
 	err = history.AddAIMessage(ctx, "Hi there!")
@@ -578,8 +554,6 @@ func TestMemoryLifecycle(t *testing.T) {
 	inputs2 := map[string]any{"input": "How are you?"}
 	outputs2 := map[string]any{"output": "I'm doing well, thank you!"}
 	err = memory.SaveContext(ctx, inputs2, outputs2)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 
 	// Load and verify
@@ -609,8 +583,6 @@ func TestMemoryLifecycle(t *testing.T) {
 func TestMemoryErrorTypes(t *testing.T) {
 	// Test creating different error types
 	err1 := NewMemoryError("test_op", MemoryTypeBuffer, ErrCodeInvalidConfig, errors.New("config error"))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, "memory test_op (buffer): config error", err1.Error())
 	assert.Equal(t, "test_op", err1.Op)
 	assert.Equal(t, MemoryTypeBuffer, err1.MemoryType)
@@ -647,7 +619,7 @@ func TestConcurrentAccess(t *testing.T) {
 	// Test concurrent SaveContext operations
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 		go func(id int) {
 			inputs := map[string]any{"input": "Message " + string(rune(id+'0'))}
@@ -676,8 +648,6 @@ func TestConcurrentAccess(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		<-done
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // BenchmarkMemoryOperations benchmarks memory operations
@@ -696,8 +666,6 @@ func BenchmarkMemoryOperations(b *testing.B) {
 	})
 
 	b.Run("LoadMemoryVariables", func(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		for i := 0; i < b.N; i++ {
 			memory.LoadMemoryVariables(ctx, map[string]any{})
 		}
@@ -733,9 +701,9 @@ func BenchmarkFactory(b *testing.B) {
 
 // TestMemoryIntegration tests integration scenarios
 func TestMemoryIntegration(t *testing.T) {
-	ctx := context.Background()
 
 	t.Run("BufferMemoryWorkflow", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 		bufferMemory := buffer.NewChatMessageBufferMemory(history)
 		bufferMemory.ReturnMessages = false // Return formatted string instead of messages
@@ -775,6 +743,7 @@ func TestMemoryIntegration(t *testing.T) {
 	})
 
 	t.Run("WindowMemoryWorkflow", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 		memory := NewConversationBufferWindowMemory(history, 3, "history", false)
 

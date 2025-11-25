@@ -17,9 +17,8 @@ import (
 )
 
 // TestAdvancedMockVectorStore tests the advanced mock vector store functionality
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestAdvancedMockVectorStore(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name              string
 		vectorStore       *AdvancedMockVectorStore
@@ -152,7 +151,6 @@ func TestAdvancedMockVectorStore(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
 
 			// Run operations
 			err := tt.operations(ctx, tt.vectorStore)
@@ -181,11 +179,10 @@ func TestAdvancedMockVectorStore(t *testing.T) {
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestVectorStoreRegistry tests the vector store registry functionality
 func TestVectorStoreRegistry(t *testing.T) {
+	ctx := context.Background()
 	// This test uses the pattern from vectorstores/iface/vectorstore.go
 	registry := vectorstoresiface.NewStoreFactory()
 
@@ -197,7 +194,6 @@ func TestVectorStoreRegistry(t *testing.T) {
 	registry.Register("test_vectorstore", testCreator)
 
 	// Test creation
-	ctx := context.Background()
 	config := CreateTestVectorStoreConfig()
 
 	vectorStore, err := registry.Create(ctx, "test_vectorstore", config)
@@ -213,13 +209,12 @@ func TestVectorStoreRegistry(t *testing.T) {
 	globalVectorStore, err := vectorstoresiface.NewVectorStore(ctx, "test_vectorstore", config)
 	if err == nil {
 		assert.NotNil(t, globalVectorStore)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
 // TestVectorStoreSearchScenarios tests various search scenarios
 func TestVectorStoreSearchScenarios(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name         string
 		setupDocs    int
@@ -269,7 +264,6 @@ func TestVectorStoreSearchScenarios(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
 
 			// Setup store with documents
 			store := NewAdvancedMockVectorStore("search-test")
@@ -299,8 +293,6 @@ func TestVectorStoreSearchScenarios(t *testing.T) {
 			// Validate search results
 			if len(docs) > 0 {
 				AssertVectorStoreResults(t, docs, scores, tt.expectedMin, 1.0)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 		})
 	}
@@ -308,6 +300,7 @@ func TestVectorStoreSearchScenarios(t *testing.T) {
 
 // TestVectorStoreScenarios tests real-world usage scenarios
 func TestVectorStoreScenarios(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name     string
 		scenario func(t *testing.T, store vectorstoresiface.VectorStore)
@@ -315,7 +308,6 @@ func TestVectorStoreScenarios(t *testing.T) {
 		{
 			name: "document_lifecycle",
 			scenario: func(t *testing.T, store vectorstoresiface.VectorStore) {
-				ctx := context.Background()
 				embedder := NewAdvancedMockEmbedder(128)
 
 				// Add documents
@@ -344,7 +336,6 @@ func TestVectorStoreScenarios(t *testing.T) {
 		{
 			name: "retriever_integration",
 			scenario: func(t *testing.T, store vectorstoresiface.VectorStore) {
-				ctx := context.Background()
 				embedder := NewAdvancedMockEmbedder(128)
 
 				// Add documents
@@ -366,7 +357,6 @@ func TestVectorStoreScenarios(t *testing.T) {
 		{
 			name: "batch_operations",
 			scenario: func(t *testing.T, store vectorstoresiface.VectorStore) {
-				ctx := context.Background()
 				embedder := NewAdvancedMockEmbedder(128)
 
 				// Add documents in batches
@@ -388,8 +378,6 @@ func TestVectorStoreScenarios(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			// Use mock vector store for scenario testing
 			store := NewAdvancedMockVectorStore("scenario-test")
 			tt.scenario(t, store)
@@ -399,6 +387,8 @@ func TestVectorStoreScenarios(t *testing.T) {
 
 // TestVectorStoreWithOptions tests various configuration options
 func TestVectorStoreWithOptions(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name     string
 		setup    func() (*AdvancedMockVectorStore, []vectorstoresiface.Option)
@@ -459,11 +449,8 @@ func TestVectorStoreWithOptions(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
 			store, opts := tt.setup()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			queryVector := generateRandomEmbedding(128)
 			results, scores, err := store.SimilaritySearch(ctx, queryVector, 5, opts...)
 
@@ -475,6 +462,8 @@ func TestVectorStoreWithOptions(t *testing.T) {
 
 // TestConcurrencyAdvanced tests concurrent vector store operations
 func TestConcurrencyAdvanced(t *testing.T) {
+	ctx := context.Background()
+
 	store := NewAdvancedMockVectorStore("concurrent-test")
 
 	const numGoroutines = 10
@@ -490,7 +479,6 @@ func TestConcurrencyAdvanced(t *testing.T) {
 				defer wg.Done()
 
 				for j := 0; j < numOperationsPerGoroutine; j++ {
-					ctx := context.Background()
 					embedder := NewAdvancedMockEmbedder(128)
 
 					// Add document
@@ -527,8 +515,6 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 		// Check for errors
 		for err := range errChan {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			t.Errorf("Concurrent operation error: %v", err)
 		}
 
@@ -551,8 +537,6 @@ func TestLoadTesting(t *testing.T) {
 	const numOperations = 50
 	const concurrency = 5
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	t.Run("vector_store_load_test", func(t *testing.T) {
 		// RunLoadTest verifies call count internally, but it may be higher than numOperations
 		// because SimilaritySearchByQuery calls embedder which might increment call count
@@ -568,10 +552,10 @@ func TestLoadTesting(t *testing.T) {
 
 // TestVectorStoreScenarioRunner tests the scenario runner functionality
 func TestVectorStoreScenarioRunner(t *testing.T) {
+	ctx := context.Background()
 	store := NewAdvancedMockVectorStore("scenario-test")
 	embedder := NewAdvancedMockEmbedder(128)
 	runner := NewVectorStoreScenarioRunner(store, embedder)
-	ctx := context.Background()
 
 	t.Run("document_ingestion_scenario", func(t *testing.T) {
 		err := runner.RunDocumentIngestionScenario(ctx, 15)
@@ -604,8 +588,6 @@ func TestVectorStoreScenarioRunner(t *testing.T) {
 		if store.GetDocumentCount() == 0 {
 			err := runner.RunDocumentIngestionScenario(ctx, 5)
 			require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 
 		initialCount := store.GetDocumentCount()
@@ -636,13 +618,12 @@ func TestIntegrationTestHelper(t *testing.T) {
 
 	// Test retrieval
 	assert.Equal(t, memoryStore, helper.GetVectorStore("memory"))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	assert.Equal(t, pgvectorStore, helper.GetVectorStore("pgvector"))
 	assert.Equal(t, openaiEmbedder, helper.GetEmbedder("openai"))
 
 	// Test operations
-	ctx := context.Background()
 	docs := CreateTestDocuments(2)
 	_, err := memoryStore.AddDocuments(ctx, docs, vectorstoresiface.WithEmbedder(openaiEmbedder))
 	assert.NoError(t, err)
@@ -657,9 +638,9 @@ func TestIntegrationTestHelper(t *testing.T) {
 
 // BenchmarkAdvancedVectorStoreOperations benchmarks vector store operation performance
 func BenchmarkAdvancedVectorStoreOperations(b *testing.B) {
+	ctx := context.Background()
 	store := NewAdvancedMockVectorStore("benchmark")
 	embedder := NewAdvancedMockEmbedder(256)
-	ctx := context.Background()
 
 	// Pre-populate for search benchmarks
 	docs := CreateTestDocuments(100)
@@ -690,8 +671,6 @@ func BenchmarkAdvancedVectorStoreOperations(b *testing.B) {
 	b.Run("SimilaritySearchByQuery", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			_, _, err := store.SimilaritySearchByQuery(ctx, fmt.Sprintf("query-%d", i), 5, embedder)
 			if err != nil {
 				b.Errorf("SimilaritySearchByQuery error: %v", err)

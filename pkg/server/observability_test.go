@@ -11,8 +11,6 @@ import (
 
 // Metrics Tests
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestMetricsCollection(t *testing.T) {
 	logger := newMockLogger()
 	tracer := newMockTracer()
@@ -41,8 +39,6 @@ func TestMetricsCollection(t *testing.T) {
 	// Note: With simplified mock meter, we just verify server creation succeeds
 	// In a real implementation, metrics would be collected during operation
 	t.Log("Server created successfully with metrics enabled")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestTracingIntegration(t *testing.T) {
@@ -72,8 +68,6 @@ func TestTracingIntegration(t *testing.T) {
 
 	// Verify tracer is configured
 	if tracer == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("Expected tracer to be configured")
 	}
 }
@@ -118,8 +112,6 @@ func TestLoggingIntegration(t *testing.T) {
 		t.Error("Expected warn message to be logged")
 	}
 	if !logger.hasLog("ERROR", "Test error message") {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("Expected error message to be logged")
 	}
 }
@@ -158,8 +150,6 @@ func TestHealthChecks(t *testing.T) {
 		t.Fatalf("Failed to create MCP server: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test health before any operations
 	if !mcpServer.IsHealthy(context.Background()) {
 		t.Error("MCP server should be healthy initially")
@@ -206,8 +196,6 @@ func TestPerformanceMetrics(t *testing.T) {
 	if duration > 1*time.Second {
 		t.Errorf("Operations took too long: %v", duration)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Verify tracer recorded spans
 	httpSpans := tracer.getSpans("test.operation")
@@ -248,8 +236,6 @@ func TestErrorTracking(t *testing.T) {
 
 	if testError.HTTPStatus() != 500 {
 		t.Errorf("Expected HTTP status 500, got %d", testError.HTTPStatus())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Test error logging
@@ -337,8 +323,6 @@ func TestConfigurationObservability(t *testing.T) {
 			}
 
 			// Test that server was created successfully
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if server == nil {
 				t.Error("Expected server to be created")
 			}
@@ -374,8 +358,6 @@ func TestResourceUsageTracking(t *testing.T) {
 	// Test that server starts and can be monitored
 	if !server.IsHealthy(context.Background()) {
 		t.Error("Server should be healthy")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Log some test messages to simulate activity
@@ -383,8 +365,6 @@ func TestResourceUsageTracking(t *testing.T) {
 		logger.Info("Test activity", "iteration", i)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Verify logs were recorded
 	testLogs := logger.getLogs("INFO")
 	if len(testLogs) < 10 {
@@ -394,8 +374,6 @@ func TestResourceUsageTracking(t *testing.T) {
 
 // Benchmark Tests for Observability
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkLoggingPerformance(b *testing.B) {
 	logger := newMockLogger()
 
@@ -406,23 +384,18 @@ func BenchmarkLoggingPerformance(b *testing.B) {
 }
 
 func BenchmarkTracingPerformance(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	tracer := newMockTracer()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ctx, span := tracer.Start(context.Background(), "benchmark.operation")
+		_, span := tracer.Start(context.Background(), "benchmark.operation")
 		span.End()
-		_ = ctx // Use context
 	}
 }
 
 func BenchmarkMetricsPerformance(b *testing.B) {
 	// Simplified benchmark - mock meter doesn't implement full interface
 	meter := newMockMeter()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	_ = meter // Use meter to avoid unused variable
 
 	b.ResetTimer()
@@ -431,8 +404,6 @@ func BenchmarkMetricsPerformance(b *testing.B) {
 		_ = i
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func BenchmarkHealthCheckPerformance(b *testing.B) {
 	logger := newMockLogger()

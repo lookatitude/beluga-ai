@@ -12,8 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewLogger(t *testing.T) {
 	tests := []struct {
 		name string
@@ -31,8 +29,6 @@ func TestNewLogger(t *testing.T) {
 			assert.True(t, logger.useColors)
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewLoggerWithConfig(t *testing.T) {
@@ -82,8 +78,6 @@ func TestNewLoggerWithConfig(t *testing.T) {
 				logger.Close()
 				os.Remove(tt.config.OutputFile)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -93,8 +87,6 @@ func TestLoggerSetLevel(t *testing.T) {
 	assert.Equal(t, INFO, logger.level)
 
 	logger.SetLevel(DEBUG)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, DEBUG, logger.level)
 
 	logger.SetLevel(ERROR)
@@ -113,7 +105,7 @@ func TestLoggerLogging(t *testing.T) {
 
 	t.Run("debug logging", func(t *testing.T) {
 		buf.Reset()
-		logger.Debug("Debug message", "arg1", "arg2")
+		logger.Debug("Debug message %s %s", "arg1", "arg2")
 
 		output := buf.String()
 		assert.Contains(t, output, "DEBUG")
@@ -161,8 +153,6 @@ func TestLoggerLogging(t *testing.T) {
 
 		logger.Info("This should also not appear")
 		output = buf.String()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Empty(t, output, "Info message should be filtered out")
 
 		logger.Warning("This should appear")
@@ -181,8 +171,6 @@ func TestLoggerColorize(t *testing.T) {
 	redText := logger.colorize(ERROR, "error message")
 	assert.Contains(t, redText, "\033[31m") // Red color code
 	assert.Contains(t, redText, "\033[0m")  // Reset code
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	greenText := logger.colorize(INFO, "info message")
 	assert.Contains(t, greenText, "\033[32m") // Green color code
@@ -204,8 +192,6 @@ func TestLoggerClose(t *testing.T) {
 		UseConsole: false,
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NotNil(t, logger.file)
 	assert.NotNil(t, logger.fileOut)
 
@@ -216,8 +202,6 @@ func TestLoggerClose(t *testing.T) {
 	logger2 := NewLogger("test2")
 	err = logger2.Close()
 	assert.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestLoggerGetWriter(t *testing.T) {
@@ -239,8 +223,6 @@ func TestLogWriter_Write(t *testing.T) {
 		level:     INFO,
 		stdout:    log.New(&buf, "", 0),
 		useColors: false,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	writer := &logWriter{
@@ -281,8 +263,6 @@ func TestStructuredLogger(t *testing.T) {
 		assert.Contains(t, output, `"logger":"structured_test"`)
 		assert.Contains(t, output, `"message":"Test message"`)
 		assert.Contains(t, output, `"key":"value"`)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Contains(t, output, `"count":42`)
 	})
 
@@ -303,13 +283,10 @@ func TestStructuredLogger(t *testing.T) {
 
 func TestStructuredLoggerWithFields(t *testing.T) {
 	logger := NewStructuredLogger("test", WithColors(false))
-	ctx := context.Background()
 
 	contextLogger := logger.WithFields(map[string]interface{}{
 		"component": "test_component",
 		"version":   "1.0.0",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	})
 
 	assert.NotNil(t, contextLogger)
@@ -320,6 +297,7 @@ func TestStructuredLoggerWithFields(t *testing.T) {
 	structuredLogger.stdout = log.New(&buf, "", 0)
 	structuredLogger.useJSON = true
 
+	ctx := context.Background()
 	contextLogger.Info(ctx, "Context message", map[string]interface{}{
 		"action": "test_action",
 	})
@@ -327,16 +305,14 @@ func TestStructuredLoggerWithFields(t *testing.T) {
 	output := buf.String()
 	assert.Contains(t, output, `"component":"test_component"`)
 	assert.Contains(t, output, `"version":"1.0.0"`)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, output, `"action":"test_action"`)
 }
 
 func TestStructuredLoggerContext(t *testing.T) {
 	logger := NewStructuredLogger("test", WithColors(false), WithJSONOutput())
-	ctx := context.Background()
 
 	// Add trace context
+	ctx := context.Background()
 	ctx = context.WithValue(ctx, "trace_id", "test-trace-123")
 	ctx = context.WithValue(ctx, "span_id", "test-span-456")
 
@@ -347,8 +323,6 @@ func TestStructuredLoggerContext(t *testing.T) {
 	structuredLogger.Info(ctx, "Context test message", nil)
 
 	output := buf.String()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, output, `"trace_id":"test-trace-123"`)
 	assert.Contains(t, output, `"span_id":"test-span-456"`)
 }
@@ -356,17 +330,13 @@ func TestStructuredLoggerContext(t *testing.T) {
 func TestLogLevel(t *testing.T) {
 	tests := []struct {
 		level    LogLevel
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		expected string
 	}{
 		{DEBUG, "DEBUG"},
 		{INFO, "INFO"},
-		{WARNING, "WARNING"},
+		{WARNING, "WARN"},
 		{ERROR, "ERROR"},
 		{FATAL, "FATAL"},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{LogLevel(999), "UNKNOWN"},
 	}
 
@@ -374,8 +344,6 @@ func TestLogLevel(t *testing.T) {
 		t.Run(tt.expected, func(t *testing.T) {
 			assert.Equal(t, tt.expected, tt.level.String())
 		})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -386,8 +354,6 @@ func TestDefaultLoggerConfig(t *testing.T) {
 	assert.True(t, config.UseConsole)
 	assert.Empty(t, config.OutputFile)
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // Benchmark tests
 func BenchmarkLogger_Debug(b *testing.B) {

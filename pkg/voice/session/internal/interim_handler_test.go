@@ -105,10 +105,10 @@ func TestInterimHandler_Reset(t *testing.T) {
 func TestInterimHandler_ConcurrentAccess(t *testing.T) {
 	handler := NewInterimHandler(nil)
 
-	ctx := context.Background()
 	done := make(chan bool, 10)
 
 	for i := 0; i < 10; i++ {
+	ctx := context.Background()
 		go func(idx int) {
 			handler.Handle(ctx, "transcript")
 			done <- true

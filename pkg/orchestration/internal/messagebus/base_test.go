@@ -12,8 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewChannelMessageBus(t *testing.T) {
 	bus := NewChannelMessageBus()
 
@@ -21,25 +19,21 @@ func TestNewChannelMessageBus(t *testing.T) {
 	assert.NotNil(t, bus.subs)
 	assert.False(t, bus.closed)
 	assert.Equal(t, "channel", bus.GetName())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestChannelMessageBus_Publish_NoSubscribers(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	err := bus.Publish(ctx, "test.topic", "test_payload", nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no subscribers for topic test.topic")
 }
 
 func TestChannelMessageBus_Publish_Success(t *testing.T) {
-	bus := NewChannelMessageBus()
 	ctx := context.Background()
+	bus := NewChannelMessageBus()
 
 	// Subscribe first
 	subID, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
@@ -47,9 +41,6 @@ func TestChannelMessageBus_Publish_Success(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.NotEmpty(t, subID)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Now publish
 	err = bus.Publish(ctx, "test.topic", "test_payload", map[string]interface{}{"key": "value"})
 
@@ -58,8 +49,8 @@ func TestChannelMessageBus_Publish_Success(t *testing.T) {
 
 func TestChannelMessageBus_Publish_AfterClose(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	// Subscribe first
 	_, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
 		return nil
@@ -69,8 +60,6 @@ func TestChannelMessageBus_Publish_AfterClose(t *testing.T) {
 	// Close the bus
 	err = bus.Close()
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Try to publish after close
 	err = bus.Publish(ctx, "test.topic", "test_payload", nil)
@@ -81,8 +70,8 @@ func TestChannelMessageBus_Publish_AfterClose(t *testing.T) {
 
 func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	// Subscribe with a handler
 	_, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
 		return nil
@@ -113,9 +102,8 @@ func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 
 	// Create a very short context that's already expired
 	shortCtx, cancel := context.WithCancel(ctx)
-	cancel() // Cancel immediately
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
 	defer cancel()
+	cancel() // Cancel immediately
 
 	// This should fail because context is already cancelled
 	err = bus.Publish(shortCtx, "test.topic", "test_payload", nil)
@@ -128,15 +116,13 @@ func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 
 func TestChannelMessageBus_Subscribe_Success(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	handler := func(ctx context.Context, msg Message) error {
 		return nil
 	}
 
 	subID, err := bus.Subscribe(ctx, "test.topic", handler)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.NoError(t, err)
 	assert.NotEmpty(t, subID)
@@ -151,14 +137,12 @@ func TestChannelMessageBus_Subscribe_Success(t *testing.T) {
 
 func TestChannelMessageBus_Subscribe_AfterClose(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Close the bus first
 	err := bus.Close()
 	require.NoError(t, err)
 
+	ctx := context.Background()
 	// Try to subscribe after close
 	_, err = bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
 		return nil
@@ -170,15 +154,13 @@ func TestChannelMessageBus_Subscribe_AfterClose(t *testing.T) {
 
 func TestChannelMessageBus_Subscribe_MultipleTopics(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	// Subscribe to multiple topics
 	_, err := bus.Subscribe(ctx, "topic1", func(ctx context.Context, msg Message) error {
 		return nil
 	})
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	_, err = bus.Subscribe(ctx, "topic2", func(ctx context.Context, msg Message) error {
 		return nil
@@ -197,18 +179,14 @@ func TestChannelMessageBus_Subscribe_MultipleTopics(t *testing.T) {
 
 func TestChannelMessageBus_Unsubscribe(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
+	ctx := context.Background()
 	// Subscribe first
 	subID, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
 		return nil
 	})
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Try to unsubscribe
 	err = bus.Unsubscribe(ctx, "test.topic", subID)
 
@@ -217,16 +195,13 @@ func TestChannelMessageBus_Unsubscribe(t *testing.T) {
 	// Try to unsubscribe again (should fail)
 	err = bus.Unsubscribe(ctx, "test.topic", subID)
 	assert.Error(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, err.Error(), "subscriber")
 }
 
 func TestChannelMessageBus_Start(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
 	err := bus.Start(ctx)
 
@@ -235,8 +210,8 @@ func TestChannelMessageBus_Start(t *testing.T) {
 
 func TestChannelMessageBus_Stop(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	err := bus.Stop(ctx)
 
 	assert.NoError(t, err)
@@ -251,9 +226,8 @@ func TestChannelMessageBus_GetName(t *testing.T) {
 
 func TestChannelMessageBus_Close(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ctx := context.Background()
 
 	// Subscribe to create some channels
 	_, err := bus.Subscribe(ctx, "topic1", func(ctx context.Context, msg Message) error {
@@ -265,8 +239,6 @@ func TestChannelMessageBus_Close(t *testing.T) {
 		return nil
 	})
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Close the bus
 	err = bus.Close()
@@ -298,8 +270,6 @@ func TestChannelMessageBus_Close_AlreadyClosed(t *testing.T) {
 func TestChannelMessageBus_ConcurrentOperations(t *testing.T) {
 	bus := NewChannelMessageBus()
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	var wg sync.WaitGroup
 
 	// Start multiple goroutines publishing
@@ -332,9 +302,8 @@ func TestChannelMessageBus_ConcurrentOperations(t *testing.T) {
 
 func TestChannelMessageBus_MessageStructure(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ctx := context.Background()
 
 	var receivedMsg Message
 	var msgReceived bool
@@ -351,8 +320,6 @@ func TestChannelMessageBus_MessageStructure(t *testing.T) {
 	metadata := map[string]interface{}{"source": "test", "priority": "high"}
 
 	// Publish a message
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err = bus.Publish(ctx, "test.topic", payload, metadata)
 	require.NoError(t, err)
 
@@ -370,7 +337,8 @@ func TestChannelMessageBus_MessageStructure(t *testing.T) {
 
 func TestChannelMessageBus_BufferSize(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
 
 	// Subscribe to create a channel
 	_, err := bus.Subscribe(ctx, "buffer.topic", func(ctx context.Context, msg Message) error {
@@ -383,16 +351,14 @@ func TestChannelMessageBus_BufferSize(t *testing.T) {
 	ch := bus.subs["buffer.topic"]
 	bus.mu.RUnlock()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Check channel buffer size
 	assert.Equal(t, 100, cap(ch))
 }
 
 func TestChannelMessageBus_MultipleSubscribers(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	var receivedCount int
 	var mu sync.Mutex
 
@@ -423,8 +389,8 @@ func TestChannelMessageBus_MultipleSubscribers(t *testing.T) {
 
 func TestChannelMessageBus_TopicIsolation(t *testing.T) {
 	bus := NewChannelMessageBus()
-	ctx := context.Background()
 
+	ctx := context.Background()
 	var topic1Received, topic2Received bool
 
 	// Subscribe to different topics

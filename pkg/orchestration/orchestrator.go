@@ -266,10 +266,8 @@ func (o *Orchestrator) GetMetrics() iface.OrchestratorMetrics {
 
 // Health check implementation
 func (o *Orchestrator) Check(ctx context.Context) error {
-	o.mu.RLock()
-	defer o.mu.RUnlock()
-
 	// Check if we can create a simple chain (basic functionality test)
+	// Note: We don't hold a lock here to avoid deadlock with CreateChain's write lock
 	if o.config.Enabled.Chains {
 		testSteps := []core.Runnable{} // Empty chain should work
 		_, err := o.CreateChain(testSteps)

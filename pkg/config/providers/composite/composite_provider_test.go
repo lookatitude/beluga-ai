@@ -7,8 +7,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestCompositeProvider_Load(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -96,8 +94,6 @@ func TestCompositeProvider_Load(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestCompositeProvider_GetString(t *testing.T) {
@@ -125,8 +121,6 @@ func TestCompositeProvider_GetString(t *testing.T) {
 		result := cp.GetString(tt.key)
 		if result != tt.expected {
 			t.Errorf("GetString(%s) = %s, want %s", tt.key, result, tt.expected)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 }
@@ -148,8 +142,6 @@ func TestCompositeProvider_IsSet(t *testing.T) {
 
 	for _, tt := range tests {
 		result := cp.IsSet(tt.key)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if result != tt.expected {
 			t.Errorf("IsSet(%s) = %v, want %v", tt.key, result, tt.expected)
 		}
@@ -281,8 +273,6 @@ func (m *mockProvider) GetToolsConfig() ([]iface.ToolConfig, error) {
 func (m *mockProvider) Validate() error {
 	if !m.success {
 		return iface.NewConfigError(m.errorCode, "validation failed")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	return nil
 }
@@ -338,8 +328,6 @@ func TestCompositeProvider_UnmarshalKey(t *testing.T) {
 			var result map[string]interface{}
 			err := cp.UnmarshalKey(tt.key, &result)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if tt.expectError && err == nil {
 				t.Error("expected error but got none")
 			}
@@ -372,8 +360,6 @@ func TestCompositeProvider_GetterMethods(t *testing.T) {
 		{"GetString from second provider", "key2", "value2", cp.GetString},
 		{"GetString shared key", "shared", "value1", cp.GetString}, // First provider wins
 		{"GetString missing key", "missing", "", cp.GetString},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	for _, tt := range tests {
@@ -409,8 +395,6 @@ func TestCompositeProvider_GetSpecificConfigs(t *testing.T) {
 	}
 
 	_, err = cp.GetLLMProviderConfig("nonexistent")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err == nil {
 		t.Error("expected error for non-existent LLM provider")
 	}
@@ -461,8 +445,6 @@ func TestCompositeProvider_Validate(t *testing.T) {
 			expectError: false, // Validate on empty composite should succeed
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -473,8 +455,6 @@ func TestCompositeProvider_Validate(t *testing.T) {
 				t.Error("expected error but got none")
 			}
 			if !tt.expectError && err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("expected no error but got: %v", err)
 			}
 		})

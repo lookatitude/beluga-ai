@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestFrameworkError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -49,8 +47,6 @@ func TestFrameworkError_Error(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestFrameworkError_Unwrap(t *testing.T) {
@@ -62,8 +58,6 @@ func TestFrameworkError_Unwrap(t *testing.T) {
 	}
 
 	if err.Unwrap() != cause {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("FrameworkError.Unwrap() = %v, expected %v", err.Unwrap(), cause)
 	}
 }
@@ -77,8 +71,6 @@ func TestNewValidationError(t *testing.T) {
 	}
 	if err.Message != "Input validation failed" {
 		t.Errorf("NewValidationError() Message = %q, expected %q", err.Message, "Input validation failed")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if err.Cause != cause {
 		t.Errorf("NewValidationError() Cause = %v, expected %v", err.Cause, cause)
@@ -92,8 +84,6 @@ func TestNewNetworkError(t *testing.T) {
 	if err.Type != ErrorTypeNetwork {
 		t.Errorf("NewNetworkError() Type = %v, expected %v", err.Type, ErrorTypeNetwork)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err.Message != "Network connection failed" {
 		t.Errorf("NewNetworkError() Message = %q, expected %q", err.Message, "Network connection failed")
 	}
@@ -107,8 +97,6 @@ func TestNewAuthenticationError(t *testing.T) {
 	err := NewAuthenticationError("Authentication failed", cause)
 
 	if err.Type != ErrorTypeAuthentication {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("NewAuthenticationError() Type = %v, expected %v", err.Type, ErrorTypeAuthentication)
 	}
 	if err.Message != "Authentication failed" {
@@ -122,8 +110,6 @@ func TestNewAuthenticationError(t *testing.T) {
 func TestNewInternalError(t *testing.T) {
 	cause := errors.New("database connection lost")
 	err := NewInternalError("Internal system error", cause)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if err.Type != ErrorTypeInternal {
 		t.Errorf("NewInternalError() Type = %v, expected %v", err.Type, ErrorTypeInternal)
@@ -137,8 +123,6 @@ func TestNewInternalError(t *testing.T) {
 }
 
 func TestNewConfigurationError(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	cause := errors.New("missing required config")
 	err := NewConfigurationError("Configuration error", cause)
 
@@ -178,8 +162,6 @@ func TestIsErrorType(t *testing.T) {
 		},
 		{
 			name:      "non-FrameworkError",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			err:       errors.New("regular error"),
 			errorType: ErrorTypeValidation,
 			expected:  false,
@@ -220,8 +202,6 @@ func TestAsFrameworkError(t *testing.T) {
 		{
 			name:     "non-FrameworkError",
 			err:      errors.New("regular error"),
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			expected: false,
 		},
 	}
@@ -256,8 +236,6 @@ func TestUnwrapError(t *testing.T) {
 		{
 			name:     "error without Unwrap method",
 			err:      errors.New("no unwrap"),
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			expected: nil,
 		},
 	}
@@ -302,8 +280,6 @@ func TestWrapError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := WrapError(tt.err, tt.message)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if tt.expected && result == nil {
 				t.Error("WrapError() returned nil, expected FrameworkError")
 			}
@@ -319,8 +295,6 @@ func TestWrapError(t *testing.T) {
 					t.Errorf("WrapError() message = %q, expected %q", fwErr.Message, tt.message)
 				}
 				if fwErr.Type != ErrorTypeInternal {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 					t.Errorf("WrapError() type = %v, expected %v", fwErr.Type, ErrorTypeInternal)
 				}
 			}
@@ -334,8 +308,6 @@ func TestNewFrameworkErrorWithCode(t *testing.T) {
 	if err.Type != ErrorTypeRateLimit {
 		t.Errorf("NewFrameworkErrorWithCode() Type = %v, expected %v", err.Type, ErrorTypeRateLimit)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err.Code != string(ErrorCodeRateLimited) {
 		t.Errorf("NewFrameworkErrorWithCode() Code = %q, expected %q", err.Code, ErrorCodeRateLimited)
 	}
@@ -359,8 +331,6 @@ func TestFrameworkError_AddContext(t *testing.T) {
 	}
 	if result.Context["key2"] != 42 {
 		t.Errorf("AddContext() key2 = %v, expected %v", result.Context["key2"], 42)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -383,8 +353,6 @@ func TestErrorConstants(t *testing.T) {
 	}
 	if ErrorTypeExternal != "external" {
 		t.Errorf("ErrorTypeExternal = %q, expected %q", ErrorTypeExternal, "external")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if ErrorTypeConfiguration != "configuration" {
 		t.Errorf("ErrorTypeConfiguration = %q, expected %q", ErrorTypeConfiguration, "configuration")
@@ -401,8 +369,6 @@ func TestErrorCodes(t *testing.T) {
 	}
 	if ErrorCodeUnauthorized != "UNAUTHORIZED" {
 		t.Errorf("ErrorCodeUnauthorized = %q, expected %q", ErrorCodeUnauthorized, "UNAUTHORIZED")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if ErrorCodeTimeout != "TIMEOUT" {
 		t.Errorf("ErrorCodeTimeout = %q, expected %q", ErrorCodeTimeout, "TIMEOUT")
@@ -411,8 +377,6 @@ func TestErrorCodes(t *testing.T) {
 		t.Errorf("ErrorCodeRateLimited = %q, expected %q", ErrorCodeRateLimited, "RATE_LIMITED")
 	}
 	if ErrorCodeInternalError != "INTERNAL_ERROR" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("ErrorCodeInternalError = %q, expected %q", ErrorCodeInternalError, "INTERNAL_ERROR")
 	}
 }
@@ -431,8 +395,6 @@ func TestFrameworkError_NilCause(t *testing.T) {
 	if errorMsg != expected {
 		t.Errorf("FrameworkError.Error() = %q, expected %q", errorMsg, expected)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if err.Unwrap() != nil {
 		t.Errorf("FrameworkError.Unwrap() should return nil for nil cause")
@@ -471,8 +433,6 @@ func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
 
 func TestIsErrorType_EdgeCases(t *testing.T) {
 	tests := []struct {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		name      string
 		err       error
 		errorType ErrorType
@@ -508,8 +468,6 @@ func TestIsErrorType_EdgeCases(t *testing.T) {
 				t.Errorf("IsErrorType() = %v, expected %v", result, tt.expected)
 			}
 		})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -556,8 +514,6 @@ func TestUnwrapError_EdgeCases(t *testing.T) {
 		err      error
 		expected error
 	}{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{
 			name:     "nil error",
 			err:      nil,
@@ -612,8 +568,6 @@ func TestWrapError_EdgeCases(t *testing.T) {
 			err:      nil,
 			message:  "should not wrap",
 			expected: false,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 		{
 			name:     "regular error",
@@ -637,8 +591,6 @@ func TestWrapError_EdgeCases(t *testing.T) {
 			}
 			if !tt.expected && result != nil {
 				t.Error("WrapError() returned error, expected nil")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 			if tt.expected {
 				fwErr, ok := result.(*FrameworkError)
@@ -683,8 +635,6 @@ func TestFrameworkError_AddContext_EdgeCases(t *testing.T) {
 	if err.Context["nil_key"] != nil {
 		t.Errorf("AddContext() should handle nil values, got %v", err.Context["nil_key"])
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestErrorConstructors_EdgeCases(t *testing.T) {
@@ -705,8 +655,6 @@ func TestErrorConstructors_EdgeCases(t *testing.T) {
 	// Test all constructor functions
 	constructors := []func(string, error) *FrameworkError{
 		NewValidationError,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		NewNetworkError,
 		NewAuthenticationError,
 		NewInternalError,

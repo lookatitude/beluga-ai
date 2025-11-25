@@ -214,8 +214,6 @@ func (w *TestWorkflowStep) Stream(ctx context.Context, input any, opts ...core.O
 }
 
 // Integration test: Complete data processing pipeline
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestDataProcessingPipelineIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -230,8 +228,10 @@ func TestDataProcessingPipelineIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test single item processing
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "test-item-123"}
-	result, err := chain.Invoke(context.Background(), input)
+	result, err := chain.Invoke(ctx, input)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -242,8 +242,6 @@ func TestDataProcessingPipelineIntegration(t *testing.T) {
 	assert.Contains(t, resultMap, "final_result")
 	assert.Equal(t, true, resultMap["final_result"])
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // Integration test: Batch processing pipeline
 func TestBatchProcessingPipelineIntegration(t *testing.T) {
@@ -264,7 +262,9 @@ func TestBatchProcessingPipelineIntegration(t *testing.T) {
 	}
 
 	// Process batch
-	results, err := chain.Batch(context.Background(), inputs)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	results, err := chain.Batch(ctx, inputs)
 
 	assert.NoError(t, err)
 	assert.Len(t, results, batchSize)
@@ -277,8 +277,6 @@ func TestBatchProcessingPipelineIntegration(t *testing.T) {
 		assert.Contains(t, resultMap, "validated_data")
 		assert.Contains(t, resultMap, "valid")
 		assert.Equal(t, true, resultMap["valid"])
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -323,16 +321,16 @@ func TestGraphWorkflowIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Execute workflow
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "workflow-input"}
-	result, err := graph.Invoke(context.Background(), input)
+	result, err := graph.Invoke(ctx, input)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
 	resultMap, ok := result.(map[string]any)
 	assert.True(t, ok)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, resultMap, "workflow_data")
 	assert.Contains(t, resultMap, "step")
 	assert.Equal(t, "reporter", resultMap["step"])
@@ -381,9 +379,11 @@ func TestParallelProcessingGraphIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Execute parallel workflow
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "parallel-input"}
 	start := time.Now()
-	result, err := graph.Invoke(context.Background(), input)
+	result, err := graph.Invoke(ctx, input)
 	duration := time.Since(start)
 
 	assert.NoError(t, err)
@@ -391,8 +391,6 @@ func TestParallelProcessingGraphIntegration(t *testing.T) {
 
 	// Should complete faster than sequential execution
 	// (processor1 + processor2 in parallel should be faster than sequential)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.True(t, duration < 100*time.Millisecond, "Parallel execution took too long: %v", duration)
 
 	resultMap, ok := result.(map[string]any)
@@ -418,8 +416,10 @@ func TestErrorHandlingIntegration(t *testing.T) {
 	chain, err := orch.CreateChain([]core.Runnable{failingStep, recoveryStep})
 	require.NoError(t, err)
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "error-test"}
-	_, err = chain.Invoke(context.Background(), input)
+	_, err = chain.Invoke(ctx, input)
 
 	// Should fail at the first step
 	assert.Error(t, err)
@@ -439,8 +439,6 @@ func TestTimeoutHandlingIntegration(t *testing.T) {
 
 	// Use a short timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	defer cancel()
 
 	input := map[string]any{"data": "timeout-test"}
@@ -452,6 +450,9 @@ func TestTimeoutHandlingIntegration(t *testing.T) {
 
 // Integration test: Concurrent orchestration
 func TestConcurrentOrchestrationIntegration(t *testing.T) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
 
@@ -465,6 +466,14 @@ func TestConcurrentOrchestrationIntegration(t *testing.T) {
 		wg.Add(1)
 		go func(chainID int) {
 			defer wg.Done()
+
+			// Check context cancellation
+			select {
+			case <-ctx.Done():
+				results <- ctx.Err()
+				return
+			default:
+			}
 
 			// Create steps for this chain
 			steps := make([]core.Runnable, stepsPerChain)
@@ -483,11 +492,9 @@ func TestConcurrentOrchestrationIntegration(t *testing.T) {
 			}
 
 			input := map[string]any{"data": fmt.Sprintf("chain-%d-input", chainID)}
-			_, err = chain.Invoke(context.Background(), input)
+			_, err = chain.Invoke(ctx, input)
 			results <- err
 		}(i)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	wg.Wait()
@@ -544,12 +551,12 @@ func TestComplexGraphIntegration(t *testing.T) {
 	require.NoError(t, err)
 	err = graph.SetFinishPoint([]string{"converge"})
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Execute complex workflow
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "complex-input"}
-	result, err := graph.Invoke(context.Background(), input)
+	result, err := graph.Invoke(ctx, input)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
@@ -603,19 +610,19 @@ func TestResourceCleanupIntegration(t *testing.T) {
 
 	// Verify resources are tracked
 	finalMetrics := orch.GetMetrics()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, initialChains+numChains, finalMetrics.GetActiveChains())
 	assert.Equal(t, initialGraphs+numGraphs, finalMetrics.GetActiveGraphs())
 
 	// Execute all orchestrations
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	for _, chain := range chains {
-		_, err := chain.Invoke(context.Background(), map[string]any{"data": "cleanup-test"})
+		_, err := chain.Invoke(ctx, map[string]any{"data": "cleanup-test"})
 		assert.NoError(t, err)
 	}
 
 	for _, graph := range graphs {
-		_, err := graph.Invoke(context.Background(), map[string]any{"data": "cleanup-test"})
+		_, err := graph.Invoke(ctx, map[string]any{"data": "cleanup-test"})
 		assert.NoError(t, err)
 	}
 }
@@ -636,11 +643,11 @@ func TestPerformanceMonitoringIntegration(t *testing.T) {
 	require.NoError(t, err)
 
 	// Execute with timing
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	input := map[string]any{"data": "perf-test"}
 	start := time.Now()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
-	result, err := chain.Invoke(context.Background(), input)
+	result, err := chain.Invoke(ctx, input)
 	duration := time.Since(start)
 
 	assert.NoError(t, err)
@@ -676,8 +683,10 @@ func TestLargeScaleBatchProcessingIntegration(t *testing.T) {
 	}
 
 	// Process large batch
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	start := time.Now()
-	results, err := chain.Batch(context.Background(), inputs)
+	results, err := chain.Batch(ctx, inputs)
 	duration := time.Since(start)
 
 	assert.NoError(t, err)

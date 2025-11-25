@@ -9,8 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewWorkerPool(t *testing.T) {
 	pool := NewWorkerPool(3)
 	require.NotNil(t, pool)
@@ -18,8 +16,6 @@ func TestNewWorkerPool(t *testing.T) {
 	assert.NotNil(t, pool.taskQueue)
 	assert.NotNil(t, pool.results)
 	assert.False(t, pool.running)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestWorkerPool_StartStop(t *testing.T) {
@@ -57,8 +53,6 @@ func TestWorkerPool_SubmitTask(t *testing.T) {
 		assert.True(t, result.Success)
 		assert.Nil(t, result.Error)
 	case <-time.After(100 * time.Millisecond):
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatal("Expected result not received")
 	}
 }
@@ -139,8 +133,6 @@ func TestWorkerPool_TaskFailure(t *testing.T) {
 	case result := <-pool.GetResults():
 		assert.Equal(t, "failing-task", result.TaskID)
 		assert.False(t, result.Success)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.NotNil(t, result.Error)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected result not received")

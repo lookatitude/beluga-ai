@@ -17,8 +17,6 @@ func (m *mockMeterProvider) Meter(name string, opts ...interface{}) interface{} 
 	return noop.NewMeterProvider().Meter(name)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
@@ -41,11 +39,9 @@ func TestNewMetrics(t *testing.T) {
 	if metrics.toolCalls == nil {
 		t.Error("toolCalls metric not initialized")
 	}
-	if metrics.planningCalls == nil {
+	if 		metrics.planningCalls == nil {
 		t.Error("planningCalls metric not initialized")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestDefaultMetrics(t *testing.T) {
@@ -55,8 +51,6 @@ func TestDefaultMetrics(t *testing.T) {
 	}
 
 	if metrics.tracer == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("DefaultMetrics should have a tracer")
 	}
 }
@@ -67,8 +61,6 @@ func TestNoOpMetrics(t *testing.T) {
 		t.Error("NoOpMetrics() returned nil")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// NoOpMetrics should have a noop tracer
 	if metrics.tracer == nil {
 		t.Error("NoOpMetrics should have a tracer")
@@ -83,8 +75,6 @@ func TestMetrics_RecordAgentCreation(t *testing.T) {
 	ctx := context.Background()
 
 	// Test recording agent creation
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	metrics.RecordAgentCreation(ctx, "base")
 	metrics.RecordAgentCreation(ctx, "react")
 	metrics.RecordAgentCreation(ctx, "custom")
@@ -125,8 +115,6 @@ func TestMetrics_RecordAgentExecution(t *testing.T) {
 			agentType: "custom",
 			success:   true,
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	for _, tt := range tests {
@@ -167,8 +155,6 @@ func TestMetrics_RecordExecutorRun(t *testing.T) {
 			name:         "zero steps executor run",
 			executorType: "empty_executor",
 			steps:        0,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			success:      true,
 		},
 	}
@@ -205,8 +191,6 @@ func TestMetrics_RecordToolCall(t *testing.T) {
 			success:  false,
 		},
 		{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			name:     "successful api tool call",
 			toolName: "api_request",
 			success:  true,
@@ -243,8 +227,6 @@ func TestMetrics_RecordPlanningCall(t *testing.T) {
 			name:      "failed planning call",
 			agentName: "confused-agent",
 			success:   false,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 		{
 			name:      "empty agent name planning call",
@@ -284,8 +266,6 @@ func TestMetrics_Tracing(t *testing.T) {
 		if newCtx == nil {
 			t.Error("StartExecutorSpan should return valid context")
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if span == nil {
 			t.Error("StartExecutorSpan should return valid span")
 		}
@@ -327,8 +307,6 @@ func TestMetrics_EdgeCases(t *testing.T) {
 		metrics.RecordToolCall(ctx, "test", -1*time.Second, true)
 		metrics.RecordPlanningCall(ctx, "test", -1*time.Second, true)
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	t.Run("Zero duration", func(t *testing.T) {
 		// These should not panic
@@ -337,8 +315,6 @@ func TestMetrics_EdgeCases(t *testing.T) {
 		metrics.RecordToolCall(ctx, "test", 0, true)
 		metrics.RecordPlanningCall(ctx, "test", 0, true)
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	t.Run("Very large duration", func(t *testing.T) {
 		largeDuration := 365 * 24 * time.Hour // 1 year
@@ -347,8 +323,6 @@ func TestMetrics_EdgeCases(t *testing.T) {
 		metrics.RecordExecutorRun(ctx, "test", largeDuration, 1, true)
 		metrics.RecordToolCall(ctx, "test", largeDuration, true)
 		metrics.RecordPlanningCall(ctx, "test", largeDuration, true)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	})
 }
 
@@ -361,8 +335,6 @@ func TestMetrics_InterfaceCompliance(t *testing.T) {
 	// This should compile without issues
 	var _ iface.MetricsRecorder = metrics
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // Benchmark tests.
 func BenchmarkNewMetrics(b *testing.B) {
@@ -375,8 +347,6 @@ func BenchmarkNewMetrics(b *testing.B) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkRecordAgentExecution(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")

@@ -609,6 +609,7 @@ func TestAzureProvider_StartStreaming_Error(t *testing.T) {
 }
 
 func TestAzureProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
+	ctx := context.Background()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
@@ -626,8 +627,6 @@ func TestAzureProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, provider)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)

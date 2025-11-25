@@ -9,7 +9,9 @@ import (
 )
 
 // TestInfiniteLoop demonstrates an infinite loop without exit condition
+// This test is skipped because it intentionally runs forever to demonstrate the pattern
 func TestInfiniteLoop(t *testing.T) {
+	t.Skip("Skipping infinite loop test - this is an example test that intentionally runs forever")
 	for {
 		// This will run forever
 		time.Sleep(100 * time.Millisecond)

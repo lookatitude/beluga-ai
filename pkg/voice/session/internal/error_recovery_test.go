@@ -47,8 +47,8 @@ func TestErrorRecovery_ShouldRetry_MaxRetriesExceeded(t *testing.T) {
 }
 
 func TestErrorRecovery_RetryWithBackoff_Success(t *testing.T) {
-	er := NewErrorRecovery(3, 10*time.Millisecond)
 	ctx := context.Background()
+	er := NewErrorRecovery(3, 10*time.Millisecond)
 
 	attempts := 0
 	err := er.RetryWithBackoff(ctx, "test-op", func() error {
@@ -64,8 +64,8 @@ func TestErrorRecovery_RetryWithBackoff_Success(t *testing.T) {
 }
 
 func TestErrorRecovery_RetryWithBackoff_AllFailures(t *testing.T) {
-	er := NewErrorRecovery(2, 10*time.Millisecond)
 	ctx := context.Background()
+	er := NewErrorRecovery(2, 10*time.Millisecond)
 
 	err := er.RetryWithBackoff(ctx, "test-op", func() error {
 		return errors.New("timeout error")

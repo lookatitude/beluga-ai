@@ -12,8 +12,6 @@ import (
 
 // Message Interface Tests
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestMessageInterfaceCompliance(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -87,8 +85,6 @@ func TestMessageInterfaceCompliance(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestMessageValidation(t *testing.T) {
@@ -130,8 +126,6 @@ func TestMessageValidation(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ValidateMessage() error = %v, wantErr %v", err, tt.wantErr)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -152,8 +146,6 @@ func TestMessageTypeConstants(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if string(tt.got) != tt.expected {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("MessageType constant %s = %q, want %q", tt.name, string(tt.got), tt.expected)
 			}
 		})
@@ -175,8 +167,6 @@ func TestToolCallStructure(t *testing.T) {
 	if toolCall.ID != "call_123" {
 		t.Errorf("ToolCall.ID = %q, want %q", toolCall.ID, "call_123")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if toolCall.Type != "function" {
 		t.Errorf("ToolCall.Type = %q, want %q", toolCall.Type, "function")
 	}
@@ -211,8 +201,6 @@ func TestAIMessageWithToolCalls(t *testing.T) {
 	if aiMsg.GetContent() != content {
 		t.Errorf("GetContent() = %q, want %q", aiMsg.GetContent(), content)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	returnedToolCalls := aiMsg.ToolCalls()
 	if len(returnedToolCalls) != 1 {
@@ -239,8 +227,6 @@ func TestMessageEdgeCases(t *testing.T) {
 		}
 	})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	t.Run("long content", func(t *testing.T) {
 		longContent := string(make([]byte, 10000)) // 10KB content
 		for i := range longContent {
@@ -250,8 +236,6 @@ func TestMessageEdgeCases(t *testing.T) {
 		if len(msg.GetContent()) != 10000 {
 			t.Errorf("Long content length = %d, want 10000", len(msg.GetContent()))
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	})
 }
 
@@ -266,8 +250,6 @@ func TestBaseMessage_GetContent(t *testing.T) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestBaseMessage_AdditionalArgs(t *testing.T) {
 	baseMsg := internal.BaseMessage{
 		Content: "Test",
@@ -323,8 +305,6 @@ func TestNewBaseChatHistory(t *testing.T) {
 				WithTTL(12 * time.Hour),
 				WithPersistence(true),
 			},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			wantErr: false,
 		},
 	}
@@ -381,8 +361,6 @@ func TestChatHistoryOperations(t *testing.T) {
 	expectedTypes := []MessageType{iface.RoleHuman, iface.RoleAssistant, iface.RoleSystem}
 	for i, msg := range messages {
 		if msg.GetType() != expectedTypes[i] {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			t.Errorf("Message %d type = %v, want %v", i, msg.GetType(), expectedTypes[i])
 		}
 	}
@@ -415,8 +393,6 @@ func TestChatHistoryMaxMessages(t *testing.T) {
 		err = history.AddUserMessage(msg)
 		if err != nil {
 			t.Errorf("AddUserMessage() error = %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 
@@ -439,8 +415,6 @@ func TestChatHistoryMaxMessages(t *testing.T) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestChatHistoryUnlimitedMessages(t *testing.T) {
 	history, err := NewBaseChatHistory() // No limit
 	if err != nil {
@@ -480,8 +454,6 @@ func TestChatHistoryConfigValidation(t *testing.T) {
 			},
 			wantErr: false,
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{
 			name: "negative max messages",
 			config: &ChatHistoryConfig{
@@ -531,8 +503,6 @@ func TestChatHistoryFunctionalOptions(t *testing.T) {
 	// Test WithPersistence
 	config, err = NewChatHistoryConfig(WithPersistence(true))
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatalf("NewChatHistoryConfig() error = %v", err)
 	}
 	if !config.EnablePersistence {
@@ -552,8 +522,6 @@ func TestChatHistoryFunctionalOptions(t *testing.T) {
 		t.Errorf("MaxMessages = %d, want 25", config.MaxMessages)
 	}
 	if config.TTL != 6*time.Hour {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("TTL = %v, want %v", config.TTL, 6*time.Hour)
 	}
 	if config.EnablePersistence {
@@ -573,8 +541,6 @@ func TestNewAgentAction(t *testing.T) {
 
 	action := NewAgentAction(tool, toolInput, log)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if action.Tool != tool {
 		t.Errorf("Tool = %q, want %q", action.Tool, tool)
 	}
@@ -587,8 +553,6 @@ func TestNewAgentAction(t *testing.T) {
 }
 
 func TestNewAgentObservation(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	actionLog := "Executed calculator tool"
 	output := "Result: 4"
 	parsedOutput := map[string]interface{}{
@@ -613,8 +577,6 @@ func TestNewStep(t *testing.T) {
 	action := NewAgentAction("search", map[string]interface{}{"query": "AI"}, "Searching for AI")
 	observation := NewAgentObservation("Searching for AI", "Found results", nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	step := NewStep(action, observation)
 
 	if step.Action.Tool != "search" {
@@ -630,8 +592,6 @@ func TestNewFinalAnswer(t *testing.T) {
 	sourceDocuments := []interface{}{
 		NewDocument("Source 1", map[string]string{"title": "Doc 1"}),
 		NewDocument("Source 2", map[string]string{"title": "Doc 2"}),
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	intermediateSteps := []Step{
 		NewStep(
@@ -666,16 +626,12 @@ func TestNewAgentFinish(t *testing.T) {
 		t.Errorf("ReturnValues = %v, want %v", finish.ReturnValues, returnValues)
 	}
 	if finish.Log != log {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Log = %q, want %q", finish.Log, log)
 	}
 }
 
 func TestAgentActionWithComplexInput(t *testing.T) {
 	// Test with complex nested input
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	complexInput := map[string]interface{}{
 		"query": "machine learning",
 		"filters": map[string]interface{}{
@@ -708,8 +664,6 @@ func TestAgentActionWithComplexInput(t *testing.T) {
 	if filters["year"] != 2024 {
 		t.Errorf("Year = %v, want 2024", filters["year"])
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestAgentObservationWithNilParsedOutput(t *testing.T) {
@@ -728,8 +682,6 @@ func TestStepSequence(t *testing.T) {
 			NewAgentObservation("Analyzing text", "Analysis complete", map[string]interface{}{"sentiment": "positive"}),
 		),
 		NewStep(
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			NewAgentAction("summarize", map[string]interface{}{"content": "Analysis complete"}, "Summarizing"),
 			NewAgentObservation("Summarizing", "Summary: Positive sentiment detected", "Positive sentiment"),
 		),
@@ -750,8 +702,6 @@ func TestStepSequence(t *testing.T) {
 	// Verify second step
 	if steps[1].Action.Tool != "summarize" {
 		t.Errorf("Second step action tool = %q, want %q", steps[1].Action.Tool, "summarize")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if steps[1].Observation.Output != "Summary: Positive sentiment detected" {
 		t.Errorf("Second step observation output = %q, want %q", steps[1].Observation.Output, "Summary: Positive sentiment detected")
@@ -779,8 +729,6 @@ func TestAgentScratchPadEntry(t *testing.T) {
 // LLM Types Tests
 
 func TestNewGeneration(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	text := "Hello, world!"
 	message := NewHumanMessage("Hello")
 	generationInfo := map[string]interface{}{
@@ -793,8 +741,6 @@ func TestNewGeneration(t *testing.T) {
 
 	if generation.Text != text {
 		t.Errorf("Text = %q, want %q", generation.Text, text)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if generation.Message.GetContent() != "Hello" {
 		t.Errorf("Message content = %q, want %q", generation.Message.GetContent(), "Hello")
@@ -849,8 +795,6 @@ func TestNewCallOptions(t *testing.T) {
 
 func TestLLMOptionFunctions(t *testing.T) {
 	callOpts := NewCallOptions()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test WithTemperature
 	WithTemperature(0.8)(callOpts)
@@ -877,8 +821,6 @@ func TestLLMOptionFunctions(t *testing.T) {
 	}
 
 	// Test WithPresencePenalty
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	WithPresencePenalty(0.3)(callOpts)
 	if callOpts.PresencePenalty == nil || *callOpts.PresencePenalty != 0.3 {
 		t.Errorf("PresencePenalty = %v, want 0.3", callOpts.PresencePenalty)
@@ -909,8 +851,6 @@ func TestLLMOptionFunctions(t *testing.T) {
 
 func TestCallOptionsComposition(t *testing.T) {
 	callOpts := NewCallOptions()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Apply multiple options
 	WithTemperature(0.7)(callOpts)
@@ -942,8 +882,6 @@ func TestGenerationWithComplexInfo(t *testing.T) {
 	message := NewAIMessage(text)
 
 	generationInfo := map[string]interface{}{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"model": "gpt-4-turbo",
 		"usage": map[string]interface{}{
 			"prompt_tokens":     150,
@@ -974,8 +912,6 @@ func TestGenerationWithComplexInfo(t *testing.T) {
 func TestLLMResponseWithMultipleBatches(t *testing.T) {
 	// Create multiple batches of generations
 	batch1 := []*Generation{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		NewGeneration("Question 1?", NewHumanMessage("Question 1?"), nil),
 		NewGeneration("Answer 1", NewAIMessage("Answer 1"), nil),
 	}
@@ -1005,8 +941,6 @@ func TestLLMResponseWithMultipleBatches(t *testing.T) {
 		t.Errorf("LLMOutput[total_batches] = %v, want 2", response.LLMOutput["total_batches"])
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestCallOptionsDefaults(t *testing.T) {
 	callOpts := NewCallOptions()
@@ -1025,8 +959,6 @@ func TestCallOptionsDefaults(t *testing.T) {
 		t.Errorf("FrequencyPenalty should be nil by default, got %v", callOpts.FrequencyPenalty)
 	}
 	if callOpts.PresencePenalty != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("PresencePenalty should be nil by default, got %v", callOpts.PresencePenalty)
 	}
 	if len(callOpts.Stop) != 0 {
@@ -1046,8 +978,6 @@ func TestNewDocument(t *testing.T) {
 	pageContent := "This is a test document content."
 	metadata := map[string]string{
 		"author":     "Test Author",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"title":      "Test Document",
 		"category":   "testing",
 		"created_at": "2024-01-01",
@@ -1077,8 +1007,6 @@ func TestNewDocument(t *testing.T) {
 
 func TestNewDocumentWithID(t *testing.T) {
 	id := "doc-12345"
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	pageContent := "Document with specific ID"
 	metadata := map[string]string{
 		"source": "database",
@@ -1115,8 +1043,6 @@ func TestNewDocumentWithEmbedding(t *testing.T) {
 	}
 	if doc.Score != 0 {
 		t.Errorf("Score should be 0, got %f", doc.Score)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -1124,8 +1050,6 @@ func TestDocumentAsMessage(t *testing.T) {
 	metadata := map[string]string{
 		"author": "Test Author",
 		"title":  "Test Doc",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	doc := NewDocument("Document content", metadata)
 
@@ -1147,8 +1071,6 @@ func TestDocumentAsMessage(t *testing.T) {
 	}
 
 	// Documents have empty additional args
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	args := doc.AdditionalArgs()
 	if args == nil {
 		t.Error("AdditionalArgs() should not return nil")
@@ -1167,8 +1089,6 @@ func TestDocumentValidation(t *testing.T) {
 			wantErr: false,
 		},
 		{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			name:    "empty content",
 			doc:     NewDocument("", map[string]string{"key": "value"}),
 			wantErr: true,
@@ -1185,8 +1105,6 @@ func TestDocumentValidation(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateDocument(tt.doc)
@@ -1199,8 +1117,6 @@ func TestDocumentValidation(t *testing.T) {
 
 func TestDocumentWithScore(t *testing.T) {
 	doc := NewDocument("Test content", map[string]string{"type": "test"})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	doc.Score = 0.85
 
 	if doc.Score != 0.85 {
@@ -1214,8 +1130,6 @@ func TestDocumentMetadataOperations(t *testing.T) {
 		"year":    "2024",
 		"subject": "AI",
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test metadata access
 	if doc.Metadata["author"] != "Alice" {
@@ -1266,8 +1180,6 @@ func TestDocumentLargeContent(t *testing.T) {
 		t.Errorf("PageContent length = %d, want %d", len(doc.PageContent), 1024*1024)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if doc.Metadata["size"] != "large" {
 		t.Errorf("Metadata[size] = %q, want %q", doc.Metadata["size"], "large")
 	}
@@ -1321,8 +1233,6 @@ func TestAgentConfig_Validate(t *testing.T) {
 			name: "missing name",
 			config: &AgentConfig{
 				LLMProviderName: "openai-gpt4",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				MaxIterations:   5,
 			},
 			wantErr: true,
@@ -1367,8 +1277,6 @@ func TestLLMProviderConfig_Validate(t *testing.T) {
 			config: &LLMProviderConfig{
 				Name:      "openai-gpt4",
 				Provider:  "openai",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				ModelName: "gpt-4-turbo",
 				APIKey:    "sk-test",
 			},
@@ -1407,8 +1315,6 @@ func TestLLMProviderConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if (err != nil) != tt.wantErr {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("LLMProviderConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -1455,8 +1361,6 @@ func TestEmbeddingProviderConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if (err != nil) != tt.wantErr {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("EmbeddingProviderConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -1496,8 +1400,6 @@ func TestVectorStoreConfig_Validate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("VectorStoreConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -1544,8 +1446,6 @@ func TestNewAgentConfig(t *testing.T) {
 				return
 			}
 			if !tt.wantErr && config == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Error("NewAgentConfig() returned nil config without error")
 			}
 			if !tt.wantErr && config.Name != tt.agentName {
@@ -1588,8 +1488,6 @@ func TestNewLLMProviderConfig(t *testing.T) {
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewLLMProviderConfig() error = %v, wantErr %v", err, tt.wantErr)
 				return
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 			if !tt.wantErr && config == nil {
 				t.Error("NewLLMProviderConfig() returned nil config without error")
@@ -1637,8 +1535,6 @@ func TestFunctionalOptions(t *testing.T) {
 		t.Errorf("APIKey = %q, want %q", llmConfig.APIKey, "sk-test")
 	}
 	if llmConfig.BaseURL != "https://api.openai.com" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("BaseURL = %q, want %q", llmConfig.BaseURL, "https://api.openai.com")
 	}
 	if llmConfig.DefaultCallOptions["temperature"] != 0.7 {
@@ -1659,8 +1555,6 @@ func TestNewSchemaValidationConfig(t *testing.T) {
 			opts:    []SchemaValidationOption{},
 			wantErr: false,
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{
 			name: "valid config with custom options",
 			opts: []SchemaValidationOption{
@@ -1673,8 +1567,6 @@ func TestNewSchemaValidationConfig(t *testing.T) {
 		},
 		{
 			name: "invalid config - negative message length",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			opts: []SchemaValidationOption{
 				WithMaxMessageLength(-1),
 			},
@@ -1691,8 +1583,6 @@ func TestNewSchemaValidationConfig(t *testing.T) {
 			}
 			if !tt.wantErr && config == nil {
 				t.Error("NewSchemaValidationConfig() returned nil config without error")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 		})
 	}
@@ -1709,8 +1599,6 @@ func TestSchemaValidationConfig_Validate(t *testing.T) {
 			config: &SchemaValidationConfig{
 				EnableStrictValidation:  true,
 				MaxMessageLength:        10000,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				MaxMetadataSize:         100,
 				MaxToolCalls:            10,
 				MaxEmbeddingDimensions:  1536,
@@ -1744,8 +1632,6 @@ func TestSchemaValidationConfig_Validate(t *testing.T) {
 				t.Errorf("SchemaValidationConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -1766,8 +1652,6 @@ func TestNewAgentMessage(t *testing.T) {
 		t.Errorf("MessageID = %q, want %q", msg.MessageID, messageID)
 	}
 	if msg.MessageType != messageType {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("MessageType = %v, want %v", msg.MessageType, messageType)
 	}
 	if msg.Payload == nil {
@@ -1794,8 +1678,6 @@ func TestNewAgentResponse(t *testing.T) {
 	status := "success"
 	result := map[string]interface{}{"answer": 42}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	resp := NewAgentResponse(requestID, status, result)
 
 	if resp.RequestID != requestID {
@@ -1822,8 +1704,6 @@ func TestNewAgentError(t *testing.T) {
 	if err.Message != message {
 		t.Errorf("Message = %q, want %q", err.Message, message)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if len(err.Details) != 1 {
 		t.Errorf("Details length = %d, want 1", len(err.Details))
 	}
@@ -1844,8 +1724,6 @@ func TestAgentMessageWithMetadata(t *testing.T) {
 
 	msg := NewAgentMessage(fromAgentID, messageID, messageType, payload)
 	msg.ToAgentID = toAgentID
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	msg.ConversationID = conversationID
 	msg.Metadata = metadata
 
@@ -1886,8 +1764,6 @@ func TestAgentMessageBroadcast(t *testing.T) {
 	if msg.Payload == nil {
 		t.Error("Payload should not be nil")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestAgentRequestWithTimeout(t *testing.T) {
@@ -1914,8 +1790,6 @@ func TestAgentRequestWithTimeout(t *testing.T) {
 		t.Errorf("Priority = %d, want %d", req.Priority, priority)
 	}
 	if len(req.Parameters) != 3 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Parameters length = %d, want 3", len(req.Parameters))
 	}
 }
@@ -1933,8 +1807,6 @@ func TestAgentResponseWithError(t *testing.T) {
 	resp := NewAgentResponse(requestID, status, result)
 	resp.Error = agentError
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if resp.Status != status {
 		t.Errorf("Status = %q, want %q", resp.Status, status)
 	}
@@ -1955,8 +1827,6 @@ func TestAgentMessageTypes(t *testing.T) {
 		name        string
 		messageType AgentMessageType
 		expected    string
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}{
 		{"Request", AgentMessageRequest, "request"},
 		{"Response", AgentMessageResponse, "response"},
@@ -1969,8 +1839,6 @@ func TestAgentMessageTypes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if string(tt.messageType) != tt.expected {
 				t.Errorf("AgentMessageType %s = %q, want %q", tt.name, string(tt.messageType), tt.expected)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 		})
 	}
@@ -1987,8 +1855,6 @@ func TestAgentMessageConversationFlow(t *testing.T) {
 	// Response message
 	response := NewAgentMessage("calc-agent", "msg-2", AgentMessageResponse,
 		NewAgentResponse("msg-1", "success", map[string]interface{}{"result": 6}))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	response.ConversationID = conversationID
 	response.ToAgentID = "client-agent"
 
@@ -2001,8 +1867,6 @@ func TestAgentMessageConversationFlow(t *testing.T) {
 	if request.ConversationID != conversationID {
 		t.Errorf("Request ConversationID = %q, want %q", request.ConversationID, conversationID)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if response.ConversationID != conversationID {
 		t.Errorf("Response ConversationID = %q, want %q", response.ConversationID, conversationID)
 	}
@@ -2032,8 +1896,6 @@ func TestAgentErrorDetails(t *testing.T) {
 	})
 
 	if err.Code != "network_timeout" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Code = %q, want %q", err.Code, "network_timeout")
 	}
 	if err.Message != "Connection timeout" {
@@ -2062,8 +1924,6 @@ func TestAgentMessageTimestamp(t *testing.T) {
 	}
 
 	// Test setting custom timestamp
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	customTimestamp := int64(1700000000)
 	msg.Timestamp = customTimestamp
 	if msg.Timestamp != customTimestamp {
@@ -2126,8 +1986,6 @@ func TestNewTaskEvent(t *testing.T) {
 		t.Errorf("EventType = %v, want %v", event.EventType, eventType)
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestNewWorkflowEvent(t *testing.T) {
 	workflowID := "workflow-123"
@@ -2155,8 +2013,6 @@ func TestEventWithMetadata(t *testing.T) {
 	version := "2.1.0"
 	metadata := map[string]interface{}{
 		"correlation_id": "corr-abc-123",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"user_id":        "user-789",
 		"session_id":     "sess-def-456",
 	}
@@ -2182,8 +2038,6 @@ func TestAgentLifecycleEventStates(t *testing.T) {
 	tests := []struct {
 		name      string
 		eventType AgentLifecycleEventType
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		expected  string
 	}{
 		{"Started", AgentStarted, "agent_started"},
@@ -2198,8 +2052,6 @@ func TestAgentLifecycleEventStates(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			event := NewAgentLifecycleEvent(agentID, tt.eventType)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if event.AgentID != agentID {
 				t.Errorf("AgentID = %q, want %q", event.AgentID, agentID)
 			}
@@ -2264,8 +2116,6 @@ func TestTaskEventLifecycle(t *testing.T) {
 	// Task failed
 	failEvent := NewTaskEvent(taskID, agentID, TaskFailed)
 	failEvent.Error = NewAgentError("processing_error", "Failed to process data", nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	failEvent.Status = "failed"
 
 	if failEvent.Error == nil {
@@ -2306,8 +2156,6 @@ func TestWorkflowEventStates(t *testing.T) {
 }
 
 func TestWorkflowEventWithParticipants(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	workflowID := "workflow-distributed-001"
 	eventType := WorkflowStarted
 
@@ -2373,8 +2221,6 @@ func TestEventConstants(t *testing.T) {
 		})
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test task event constants
 	taskTests := []struct {
 		name     string
@@ -2433,8 +2279,6 @@ func TestEventSystemIntegration(t *testing.T) {
 	// Workflow coordination
 	workflowEvent := NewWorkflowEvent("workflow-001", WorkflowStarted)
 	workflowEvent.Participants = []string{agentID, "coordinator"}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	workflowEvent.CurrentStep = "task_assignment"
 
 	// Agent failed
@@ -2496,8 +2340,6 @@ func TestNewEmbeddingProviderConfigFactory(t *testing.T) {
 			provider:   "openai",
 			modelName:  "text-embedding-ada-002",
 			apiKey:     "",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			opts:       []EmbeddingOption{},
 			wantErr:    true,
 		},
@@ -2530,8 +2372,6 @@ func TestNewEmbeddingProviderConfigFactory(t *testing.T) {
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestNewVectorStoreConfigFactory(t *testing.T) {
 	tests := []struct {

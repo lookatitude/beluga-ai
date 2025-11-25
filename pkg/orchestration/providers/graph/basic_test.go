@@ -92,8 +92,6 @@ func (m *MockSpan) TracerProvider() trace.TracerProvider {
 	return args.Get(0).(trace.TracerProvider)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewBasicGraph(t *testing.T) {
 	config := iface.GraphConfig{
 		Name:        "test-graph",
@@ -109,8 +107,6 @@ func TestNewBasicGraph(t *testing.T) {
 	assert.NotNil(t, graph.edges)
 	assert.Equal(t, []string{"start"}, graph.entryNodes)
 	assert.Equal(t, []string{"end"}, graph.exitNodes)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestBasicGraph_AddNode(t *testing.T) {
@@ -126,8 +122,6 @@ func TestBasicGraph_AddNode(t *testing.T) {
 
 	// Test duplicate node error
 	err = graph.AddNode("node1", runnable)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 }
@@ -155,8 +149,6 @@ func TestBasicGraph_AddEdge(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "source node nonexistent")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test edge to non-existent target node
 	err = graph.AddEdge("node1", "nonexistent")
 	assert.Error(t, err)
@@ -173,8 +165,6 @@ func TestBasicGraph_SetEntryPoint(t *testing.T) {
 	// Test successful entry point setting
 	err = graph.SetEntryPoint([]string{"entry"})
 	assert.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, []string{"entry"}, graph.entryNodes)
 
 	// Test setting non-existent entry point
@@ -191,8 +181,6 @@ func TestBasicGraph_SetFinishPoint(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test successful finish point setting
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err = graph.SetFinishPoint([]string{"exit"})
 	assert.NoError(t, err)
 	assert.Equal(t, []string{"exit"}, graph.exitNodes)
@@ -225,8 +213,6 @@ func TestBasicGraph_Invoke_LinearGraph(t *testing.T) {
 	err = graph.SetFinishPoint([]string{"node2"})
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Execute graph
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
@@ -271,8 +257,6 @@ func TestBasicGraph_Invoke_BranchingGraph(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 	assert.NotNil(t, result)
 
@@ -296,8 +280,6 @@ func TestBasicGraph_Invoke_WithTimeout(t *testing.T) {
 	node := &MockRunnable{name: "slow-node"}
 	node.On("Invoke", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return(map[string]any{"result": "done"}, nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := graph.AddNode("node1", node)
 	require.NoError(t, err)
 	err = graph.SetEntryPoint([]string{"node1"})
@@ -319,8 +301,6 @@ func TestBasicGraph_Invoke_NodeError(t *testing.T) {
 
 	failingNode := &MockRunnable{name: "failing-node"}
 	failingNode.On("Invoke", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return(nil, errors.New("node failed"))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	err := graph.AddNode("failing", failingNode)
 	require.NoError(t, err)
@@ -356,8 +336,6 @@ func TestBasicGraph_Invoke_ParallelExecution(t *testing.T) {
 	err = graph.AddNode("node2", node2)
 	require.NoError(t, err)
 	err = graph.SetEntryPoint([]string{"node1", "node2"})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	require.NoError(t, err)
 	err = graph.SetFinishPoint([]string{"node1", "node2"})
 	require.NoError(t, err)
@@ -386,8 +364,6 @@ func TestBasicGraph_Batch(t *testing.T) {
 
 	err := graph.AddNode("node", node)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err = graph.SetEntryPoint([]string{"node"})
 	require.NoError(t, err)
 	err = graph.SetFinishPoint([]string{"node"})
@@ -448,8 +424,6 @@ func TestBasicGraph_Stream_Success(t *testing.T) {
 	streamChan := make(chan any, 1)
 	streamChan <- "stream_result"
 	close(streamChan)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	streamNode.On("Stream", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return((<-chan any)(streamChan), nil)
 
 	err := graph.AddNode("stream", streamNode)
@@ -459,8 +433,6 @@ func TestBasicGraph_Stream_Success(t *testing.T) {
 
 	input := map[string]any{"input": "test"}
 	resultChan, err := graph.Stream(context.Background(), input)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resultChan)
@@ -478,8 +450,6 @@ func TestBasicGraph_Stream_Success(t *testing.T) {
 
 func TestBasicGraph_Stream_NoExitNodes(t *testing.T) {
 	graph := NewBasicGraph(iface.GraphConfig{Name: "no-exit-graph"}, nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	input := map[string]any{"input": "test"}
 	resultChan, err := graph.Stream(context.Background(), input)
@@ -506,8 +476,6 @@ func TestBasicGraph_Stream_ExitNodeNotFound(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.NotNil(t, resultChan)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestBasicGraph_countEdges(t *testing.T) {

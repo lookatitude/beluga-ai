@@ -10,9 +10,9 @@ import (
 )
 
 // TestInterfaceCompliance tests that implementations properly satisfy interfaces
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestInterfaceCompliance(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("VectorStoreInterface", func(t *testing.T) {
 		// Test that MockVectorStore implements VectorStore
 		var _ VectorStore = (*MockVectorStore)(nil)
@@ -22,7 +22,6 @@ func TestInterfaceCompliance(t *testing.T) {
 		store := &MockVectorStore{}
 
 		// Test all interface methods exist and are callable
-		ctx := context.Background()
 		docs := []schema.Document{schema.NewDocument("test", nil)}
 
 		_, err := store.AddDocuments(ctx, docs)
@@ -49,7 +48,6 @@ func TestInterfaceCompliance(t *testing.T) {
 		var _ Retriever = (*MockRetriever)(nil)
 
 		retriever := &MockRetriever{}
-		ctx := context.Background()
 
 		// Test interface method exists and is callable
 		_, err := retriever.GetRelevantDocuments(ctx, "test query")
@@ -61,7 +59,6 @@ func TestInterfaceCompliance(t *testing.T) {
 		var _ Embedder = (*MockEmbedder)(nil)
 
 		embedder := &MockEmbedder{}
-		ctx := context.Background()
 
 		// Test interface methods exist and are callable
 		_, err := embedder.EmbedDocuments(ctx, []string{"test"})
@@ -71,8 +68,6 @@ func TestInterfaceCompliance(t *testing.T) {
 		require.NoError(t, err)
 	})
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestConfigInterfaceCompliance tests that Config works with all expected options
 func TestConfigInterfaceCompliance(t *testing.T) {
@@ -99,18 +94,17 @@ func TestConfigInterfaceCompliance(t *testing.T) {
 	assert.Equal(t, float32(0.8), config.ScoreThreshold)
 	assert.NotNil(t, config.Embedder)
 	assert.Contains(t, config.MetadataFilters, "key")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, config.ProviderConfig, "config_key")
 }
 
 // TestStoreFactoryCompliance tests StoreFactory functionality
 func TestStoreFactoryCompliance(t *testing.T) {
+	ctx := context.Background()
+
 	factory := NewStoreFactory()
 	assert.NotNil(t, factory)
 
 	// Test interface methods exist
-	ctx := context.Background()
 	config := NewDefaultConfig()
 
 	mockCreator := func(ctx context.Context, config Config) (VectorStore, error) {
@@ -120,8 +114,6 @@ func TestStoreFactoryCompliance(t *testing.T) {
 	factory.Register("test", mockCreator)
 
 	store, err := factory.Create(ctx, "test", *config)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 	assert.NotNil(t, store)
 	assert.Equal(t, "mock", store.GetName())
@@ -150,8 +142,6 @@ func TestTypeAssertions(t *testing.T) {
 	t.Run("EmbedderTypeAssertion", func(t *testing.T) {
 		var embedderInterface Embedder = &MockEmbedder{}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		// Test that we can assert back to concrete type
 		mockEmbedder, ok := embedderInterface.(*MockEmbedder)
 		assert.True(t, ok)
@@ -161,11 +151,12 @@ func TestTypeAssertions(t *testing.T) {
 
 // TestInterfaceMethodSignatures tests that interface methods have correct signatures
 func TestInterfaceMethodSignatures(t *testing.T) {
+	ctx := context.Background()
+
 	t.Run("VectorStoreMethodSignatures", func(t *testing.T) {
 		store := &MockVectorStore{}
 
 		// Test method signatures by calling them with correct parameter types
-		ctx := context.Background()
 		docs := []schema.Document{schema.NewDocument("test", nil)}
 		vector := []float32{0.1, 0.2, 0.3}
 		embedder := &MockEmbedder{}
@@ -185,17 +176,13 @@ func TestInterfaceMethodSignatures(t *testing.T) {
 		retriever := &MockRetriever{}
 
 		// Test method signature
-		ctx := context.Background()
 		_, _ = retriever.GetRelevantDocuments(ctx, "query")
 	})
 
 	t.Run("EmbedderMethodSignatures", func(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		embedder := &MockEmbedder{}
 
 		// Test method signatures
-		ctx := context.Background()
 		_, _ = embedder.EmbedDocuments(ctx, []string{"test"})
 		_, _ = embedder.EmbedQuery(ctx, "query")
 	})

@@ -10,8 +10,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -160,8 +158,6 @@ func TestValidateConfig(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestSetDefaults(t *testing.T) {
@@ -198,8 +194,6 @@ func TestSetDefaults(t *testing.T) {
 
 	// Check max_tokens default
 	if maxTokens, ok := config.LLMProviders[0].DefaultCallOptions["max_tokens"]; !ok || maxTokens != 1000 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected max_tokens to be 1000, got %v", maxTokens)
 	}
 }
@@ -210,8 +204,6 @@ func TestValidationError_Error(t *testing.T) {
 		Message: "test message",
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	expected := "validation error for field 'test_field': test message"
 	if err.Error() != expected {
 		t.Errorf("ValidationError.Error() = %q, want %q", err.Error(), expected)
@@ -224,8 +216,6 @@ func TestValidationErrors_Error(t *testing.T) {
 		iface.ValidationError{Field: "field2", Message: "error2"},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result := errs.Error()
 	expected := "configuration validation failed: validation error for field 'field1': error1; validation error for field 'field2': error2"
 
@@ -265,8 +255,6 @@ func TestIsRequiredField(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			field := reflect.StructField{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				Tag: reflect.StructTag(tt.tag),
 			}
 			result := iface.IsRequiredField(field)
@@ -318,8 +306,6 @@ func TestGetFieldName(t *testing.T) {
 			if tt.jsonTag != "" {
 				field.Tag = reflect.StructTag(tt.jsonTag)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if tt.yamlTag != "" {
 				field.Tag = reflect.StructTag(tt.yamlTag)
 			}
@@ -357,8 +343,6 @@ llm_providers:
 	if err != nil {
 		t.Fatalf("LoadConfig() error = %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if cfg == nil {
 		t.Fatal("LoadConfig() returned nil config")
@@ -394,8 +378,6 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 
 	if cfg == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatal("LoadFromEnv() returned nil config")
 	}
 
@@ -474,8 +456,6 @@ llm_providers:
 			if !tt.expectError && err != nil {
 				t.Errorf("expected no error but got: %v", err)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if !tt.expectError && cfg == nil {
 				t.Error("expected config but got nil")
 			}
@@ -505,8 +485,6 @@ llm_providers:
     api_key: "sk-must-test"
     model_name: "gpt-4"
 `
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := os.WriteFile(configFile, []byte(configContent), 0o644)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
@@ -537,8 +515,6 @@ func TestDefaultLoaderOptions(t *testing.T) {
 	if len(options.ConfigPaths) != 2 {
 		t.Errorf("expected 2 config paths, got %d", len(options.ConfigPaths))
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if options.ConfigPaths[0] != "./config" {
 		t.Errorf("expected first config path './config', got %s", options.ConfigPaths[0])
@@ -549,8 +525,6 @@ func TestDefaultLoaderOptions(t *testing.T) {
 	}
 
 	if options.EnvPrefix != "BELUGA" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("expected EnvPrefix 'BELUGA', got %s", options.EnvPrefix)
 	}
 
@@ -587,8 +561,6 @@ func TestNewProvider_FactoryFunctions(t *testing.T) {
 			return NewYAMLProvider(name, paths, prefix)
 		}, false},
 		{"NewJSONProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			return NewJSONProvider(name, paths, prefix)
 		}, false},
 		{"NewTOMLProvider", func(name string, paths []string, prefix string) (iface.Provider, error) {
@@ -598,8 +570,6 @@ func TestNewProvider_FactoryFunctions(t *testing.T) {
 			return NewAutoDetectProvider(name, paths, prefix)
 		}, false},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -632,8 +602,6 @@ func TestValidateConfig_Integration(t *testing.T) {
 	// Test ValidateConfig function from main package
 	validConfig := &iface.Config{
 		LLMProviders: []schema.LLMProviderConfig{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			{
 				Name:      "test-llm",
 				Provider:  "openai",
@@ -679,8 +647,6 @@ func TestSetDefaults_Integration(t *testing.T) {
 
 	SetDefaults(config)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if config.LLMProviders[0].DefaultCallOptions == nil {
 		t.Error("expected DefaultCallOptions to be initialized")
 	}
@@ -708,8 +674,6 @@ func TestSetDefaults_Integration(t *testing.T) {
 			return
 		}
 		if maxTokensFloat != 1000.0 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			t.Errorf("expected max_tokens 1000, got %v", maxTokensFloat)
 		}
 	}
@@ -739,8 +703,6 @@ func TestGetEnvConfigMap(t *testing.T) {
 		t.Errorf("expected var1=value1, got %s", envMap["var1"])
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if envMap["var2"] != "value2" {
 		t.Errorf("expected var2=value2, got %s", envMap["var2"])
 	}
@@ -770,8 +732,6 @@ func TestEnvVarName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := EnvVarName(tt.prefix, tt.key)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if result != tt.expected {
 				t.Errorf("EnvVarName(%s, %s) = %s, want %s", tt.prefix, tt.key, result, tt.expected)
 			}
@@ -781,8 +741,6 @@ func TestEnvVarName(t *testing.T) {
 
 func TestConfigKey(t *testing.T) {
 	tests := []struct {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		name     string
 		prefix   string
 		envVar   string

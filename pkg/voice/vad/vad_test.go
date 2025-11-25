@@ -12,12 +12,12 @@ import (
 func TestNewProvider(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider to avoid import cycle
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.VADProvider, error) {
 		return NewAdvancedMockVADProvider("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("silero", testFactory)
 
 	tests := []struct {
 		name         string
@@ -27,13 +27,13 @@ func TestNewProvider(t *testing.T) {
 	}{
 		{
 			name:         "valid provider",
-			providerName: "test-provider",
+			providerName: "silero",
 			config:       DefaultConfig(),
 			wantErr:      false,
 		},
 		{
 			name:         "nil config uses defaults",
-			providerName: "test-provider",
+			providerName: "silero",
 			config:       nil,
 			wantErr:      false,
 		},
@@ -62,15 +62,15 @@ func TestNewProvider(t *testing.T) {
 func TestNewProvider_WithOptions(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.VADProvider, error) {
 		return NewAdvancedMockVADProvider("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("silero", testFactory)
 
 	config := DefaultConfig()
-	config.Provider = "test-provider"
+	config.Provider = "silero"
 
 	provider, err := NewProvider(ctx, "", config, func(c *Config) {
 		c.Threshold = 0.5
@@ -82,7 +82,7 @@ func TestNewProvider_WithOptions(t *testing.T) {
 func TestNewProvider_OverrideProviderName(t *testing.T) {
 	ctx := context.Background()
 
-	// Register test providers
+	// Register test providers using valid provider names
 	registry := GetRegistry()
 	testFactory1 := func(config *Config) (iface.VADProvider, error) {
 		return NewAdvancedMockVADProvider("test1"), nil
@@ -90,17 +90,17 @@ func TestNewProvider_OverrideProviderName(t *testing.T) {
 	testFactory2 := func(config *Config) (iface.VADProvider, error) {
 		return NewAdvancedMockVADProvider("test2"), nil
 	}
-	registry.Register("test-provider-1", testFactory1)
-	registry.Register("test-provider-2", testFactory2)
+	registry.Register("silero", testFactory1)
+	registry.Register("energy", testFactory2)
 
 	config := DefaultConfig()
-	config.Provider = "test-provider-2" // Different from providerName
+	config.Provider = "energy" // Different from providerName
 
-	provider, err := NewProvider(ctx, "test-provider-1", config)
+	provider, err := NewProvider(ctx, "silero", config)
 	require.NoError(t, err)
 	assert.NotNil(t, provider)
 	// Provider name should be overridden
-	assert.Equal(t, "test-provider-1", config.Provider)
+	assert.Equal(t, "silero", config.Provider)
 }
 
 func TestNewProvider_InvalidConfig(t *testing.T) {

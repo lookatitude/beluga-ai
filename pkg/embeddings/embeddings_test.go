@@ -8,8 +8,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewEmbedderFactory(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -59,8 +57,6 @@ func TestNewEmbedderFactory(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestEmbedderFactory_NewEmbedder(t *testing.T) {
@@ -123,8 +119,6 @@ func TestEmbedderFactory_NewEmbedder(t *testing.T) {
 				// Verify interface compliance
 				var _ iface.Embedder = embedder
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -160,8 +154,6 @@ func TestEmbedderFactory_GetAvailableProviders(t *testing.T) {
 	}
 
 	for _, provider := range providers {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if !expectedProviders[provider] {
 			t.Errorf("GetAvailableProviders() returned unexpected provider: %s", provider)
 		}
@@ -187,7 +179,7 @@ func TestEmbedderFactory_CheckHealth(t *testing.T) {
 	if err != nil {
 		t.Errorf("CheckHealth() failed for mock provider: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	// Test unknown provider
@@ -241,8 +233,6 @@ func TestOptions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			config := defaultOptionConfig()
 			for _, opt := range tt.opts {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				opt(config)
 			}
 
@@ -278,8 +268,6 @@ func TestEmbedderFactory_NewEmbedder_DisabledProvider(t *testing.T) {
 	_, err = factory.NewEmbedder("openai")
 	if err == nil {
 		t.Error("Expected error for disabled provider")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Mock should still work
@@ -322,8 +310,6 @@ func TestEmbedderFactory_GetAvailableProviders_EnabledDisabled(t *testing.T) {
 	// Should only include enabled providers
 	expectedProviders := map[string]bool{
 		"ollama": true,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"mock":   true,
 	}
 
@@ -367,8 +353,6 @@ func TestEmbedderFactory_CheckHealth_ErrorCases(t *testing.T) {
 		},
 		Mock: &MockConfig{
 			Dimension: 128,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 	}
 	factory2, err := NewEmbedderFactory(config2)
@@ -399,17 +383,15 @@ func TestEmbedderFactory_ConcurrentAccess(t *testing.T) {
 
 	// Test concurrent creation of embedders
 	done := make(chan bool, 10)
-	ctx := context.Background()
 
 	for i := 0; i < 10; i++ {
 		go func(id int) {
 			defer func() { done <- true }()
+			ctx := context.Background()
 
 			embedder, err := factory.NewEmbedder("mock")
 			if err != nil {
 				t.Errorf("Goroutine %d: failed to create embedder: %v", id, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				return
 			}
 
@@ -434,8 +416,6 @@ func TestEmbedderFactory_OptionsApplication(t *testing.T) {
 			Dimension: 128,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test that options are stored and can be accessed
 	opts := []Option{
@@ -497,8 +477,6 @@ func TestEmbedderFactory_ProviderCreationErrors(t *testing.T) {
 			},
 			providerType: "openai",
 			wantErr:      true,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 	}
 
@@ -528,8 +506,6 @@ func TestEmbedderFactory_ContextCancellation(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	factory, err := NewEmbedderFactory(config)
 	if err != nil {
 		t.Fatalf("Failed to create factory: %v", err)

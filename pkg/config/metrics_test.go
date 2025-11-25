@@ -2,14 +2,13 @@ package config
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
 	"go.opentelemetry.io/otel/metric/noop"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewMetrics(t *testing.T) {
 	// Test with noop meter (doesn't require actual OTEL setup)
 	meter := noop.Meter{}
@@ -39,8 +38,6 @@ func TestNewMetrics(t *testing.T) {
 	if metrics.validationErrorsTotal == nil {
 		t.Error("validationErrorsTotal should be initialized")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNoOpMetrics(t *testing.T) {
@@ -64,8 +61,6 @@ func TestNoOpMetrics(t *testing.T) {
 		t.Error("validationDuration should be nil in NoOpMetrics")
 	}
 	if metrics.validationErrorsTotal != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("validationErrorsTotal should be nil in NoOpMetrics")
 	}
 }
@@ -73,12 +68,12 @@ func TestNoOpMetrics(t *testing.T) {
 func TestMetrics_RecordConfigLoad(t *testing.T) {
 	// Use noop meter for testing
 	meter := noop.Meter{}
+	ctx := context.Background()
 	metrics, err := NewMetrics(meter)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
 
-	ctx := context.Background()
 	duration := 100 * time.Millisecond
 
 	tests := []struct {
@@ -97,7 +92,7 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 			metrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
 
 			// Test with nil metrics (should not panic)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 			var nilMetrics *Metrics
 			nilMetrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
@@ -108,12 +103,12 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 func TestMetrics_RecordValidation(t *testing.T) {
 	// Use noop meter for testing
 	meter := noop.Meter{}
+	ctx := context.Background()
 	metrics, err := NewMetrics(meter)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
 
-	ctx := context.Background()
 	duration := 50 * time.Millisecond
 
 	tests := []struct {
@@ -128,7 +123,7 @@ func TestMetrics_RecordValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// This should not panic even with nil metrics
 			metrics.RecordValidation(ctx, duration, tt.success)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 			// Test with nil metrics (should not panic)
@@ -151,8 +146,6 @@ func TestGetGlobalMetrics(t *testing.T) {
 	// First call should create metrics
 	metrics1 := GetGlobalMetrics()
 	if metrics1 == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatal("GetGlobalMetrics() returned nil")
 	}
 
@@ -175,8 +168,6 @@ func TestSetGlobalMetrics(t *testing.T) {
 	SetGlobalMetrics(testMetrics)
 
 	// Verify that GetGlobalMetrics returns our test instance
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	retrievedMetrics := GetGlobalMetrics()
 	if retrievedMetrics != testMetrics {
 		t.Error("SetGlobalMetrics() did not set the global metrics instance correctly")
@@ -199,8 +190,6 @@ func TestGlobalMetrics_NoOpFallback(t *testing.T) {
 	}()
 
 	// Reset global metrics and flag to test lazy initialization
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	globalMetrics = nil
 	globalMetricsExplicitlySet = false
 
@@ -217,8 +206,6 @@ func TestGlobalMetrics_NoOpFallback(t *testing.T) {
 // Simple test using noop meter which is sufficient for our testing needs.
 func TestMetrics_WithNoOpMeter(t *testing.T) {
 	// Use noop meter which implements the full interface
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	meter := noop.Meter{}
 
 	metrics, err := NewMetrics(meter)
@@ -245,10 +232,7 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
 
-	ctx := context.Background()
 	duration := 150 * time.Millisecond
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test various combinations of success/source
 	testCases := []struct {
@@ -263,7 +247,7 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 
 	for _, tc := range testCases {
 		// Just ensure it doesn't panic
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 		metrics.RecordConfigLoad(ctx, duration, tc.success, tc.source)
 	}
@@ -279,8 +263,6 @@ func BenchmarkMetrics_RecordConfigLoad(b *testing.B) {
 	ctx := context.Background()
 	duration := 100 * time.Millisecond
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		metrics.RecordConfigLoad(ctx, duration, true, "benchmark")
@@ -304,30 +286,51 @@ func BenchmarkMetrics_RecordValidation(b *testing.B) {
 }
 
 func TestMetrics_Concurrency(t *testing.T) {
+	// Add test timeout to prevent hanging
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	meter := noop.Meter{}
 	metrics, err := NewMetrics(meter)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
 
-	ctx := context.Background()
 	duration := 10 * time.Millisecond
 
 	// Test concurrent access to metrics recording
-	done := make(chan bool, 10)
+	var wg sync.WaitGroup
+	const numGoroutines = 10
+	const iterationsPerGoroutine = 100
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
 		go func(id int) {
-			for j := 0; j < 100; j++ {
+			defer wg.Done()
+			for j := 0; j < iterationsPerGoroutine; j++ {
+				// Check context cancellation
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
 				metrics.RecordConfigLoad(ctx, duration, id%2 == 0, "concurrency_test")
 				metrics.RecordValidation(ctx, duration, id%2 == 1)
 			}
-			done <- true
 		}(i)
 	}
 
-	// Wait for all goroutines to complete
-	for i := 0; i < 10; i++ {
-		<-done
+	// Wait for all goroutines to complete with timeout
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+		// All goroutines completed successfully
+	case <-ctx.Done():
+		t.Fatal("Test timed out waiting for goroutines to complete")
 	}
 }
