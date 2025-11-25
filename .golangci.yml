@@ -16,10 +16,6 @@ run:
     - tests/...
 
 linters:
-  # Disable typecheck (has false positives with embedded mocks - code compiles successfully)
-  disable:
-    - typecheck
-  
   # Enable comprehensive set of linters
   enable:
     # Error checking
@@ -82,5 +78,7 @@ formatters:
 
 issues:
   # Maximum issues count per one linter
-  max-issues-per-linter: 50
-  max-same-issues: 50
+  # Increased significantly to allow typecheck false positives
+  # These are false positives - code compiles successfully (go build passes)
+  max-issues-per-linter: 500
+  max-same-issues: 500
