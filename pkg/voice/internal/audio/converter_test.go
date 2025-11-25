@@ -40,7 +40,7 @@ func TestConverter_Convert(t *testing.T) {
 		{
 			name: "nil source format",
 			data: []byte{1, 2, 3, 4},
-			from:  nil,
+			from: nil,
 			to: &AudioFormat{
 				SampleRate: 16000,
 				Channels:   1,
@@ -190,4 +190,3 @@ func TestConverter_Convert(t *testing.T) {
 		})
 	}
 }
-

@@ -178,7 +178,7 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 				"alternatives": []map[string]interface{}{
 					{
 						"transcript": "Hello world",
-						"confidence":  0.95,
+						"confidence": 0.95,
 					},
 				},
 			},
@@ -256,7 +256,7 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Interim(t *testing.T) {
 				"alternatives": []map[string]interface{}{
 					{
 						"transcript": "Hello",
-						"confidence":  0.8,
+						"confidence": 0.8,
 					},
 				},
 			},
@@ -330,4 +330,3 @@ func TestDeepgramStreamingSession_ReceiveTranscript_MalformedResponse(t *testing
 		t.Fatal("Timeout waiting for error")
 	}
 }
-

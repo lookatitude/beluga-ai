@@ -73,4 +73,3 @@ func TestIsSupported(t *testing.T) {
 		})
 	}
 }
-

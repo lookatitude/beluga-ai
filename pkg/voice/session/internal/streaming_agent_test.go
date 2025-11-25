@@ -223,4 +223,3 @@ func TestStreamingAgent_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 }
-

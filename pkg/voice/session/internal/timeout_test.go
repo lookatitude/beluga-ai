@@ -78,7 +78,7 @@ func TestSessionTimeout_TimeoutCallback(t *testing.T) {
 	})
 
 	timeout.Start()
-	
+
 	// Wait for timeout
 	done := make(chan bool, 1)
 	go func() {
@@ -126,4 +126,3 @@ func TestSessionTimeout_ResetOnUpdateActivity(t *testing.T) {
 	_ = callbackCalled
 	mu.Unlock()
 }
-

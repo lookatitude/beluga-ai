@@ -212,4 +212,3 @@ func TestProviderFallback_ExecuteWithFallback_SwitchBackToPrimary(t *testing.T) 
 	// Should switch back to primary after success
 	assert.False(t, pf.IsUsingFallback())
 }
-

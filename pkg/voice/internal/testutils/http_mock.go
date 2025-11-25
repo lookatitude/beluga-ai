@@ -69,4 +69,3 @@ func NewJSONResponse(statusCode int, jsonBody string) *http.Response {
 	resp.Header.Set("Content-Type", "application/json")
 	return resp
 }
-

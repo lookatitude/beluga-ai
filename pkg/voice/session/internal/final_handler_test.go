@@ -107,7 +107,7 @@ func TestFinalHandler_GetLastFinal(t *testing.T) {
 
 	ctx := context.Background()
 	handler.Handle(ctx, "test transcript", "")
-	
+
 	lastFinal := handler.GetLastFinal()
 	assert.Equal(t, "test transcript", lastFinal)
 }
@@ -123,4 +123,3 @@ func TestFinalHandler_GetFinalCount(t *testing.T) {
 	handler.Handle(ctx, "transcript2", "")
 	assert.Equal(t, 2, handler.GetFinalCount())
 }
-

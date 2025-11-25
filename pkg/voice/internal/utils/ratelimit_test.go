@@ -157,4 +157,3 @@ func TestRateLimiter_Allow_Concurrent(t *testing.T) {
 	assert.Equal(t, 10, successCount)
 	assert.Equal(t, 10, errorCount)
 }
-

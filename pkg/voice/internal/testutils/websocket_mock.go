@@ -22,7 +22,7 @@ type MockWebSocketServer struct {
 	mu         sync.Mutex
 	messages   [][]byte
 	onMessage  func([]byte) []byte // Handler that can return a response
-	closeAfter time.Duration        // Close connection after this duration
+	closeAfter time.Duration       // Close connection after this duration
 }
 
 // NewMockWebSocketServer creates a new mock WebSocket server
@@ -163,4 +163,3 @@ func (m *MockWebSocketServer) WaitForConnection(timeout time.Duration) bool {
 	}
 	return false
 }
-

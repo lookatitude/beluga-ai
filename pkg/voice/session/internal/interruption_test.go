@@ -136,4 +136,3 @@ func TestInterruptionDetector_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 }
-

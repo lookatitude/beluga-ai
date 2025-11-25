@@ -109,4 +109,3 @@ func TestGetWindowFunction_EmptyString(t *testing.T) {
 	fn(signal)
 	// Should not panic
 }
-

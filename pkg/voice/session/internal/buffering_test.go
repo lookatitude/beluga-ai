@@ -94,4 +94,3 @@ func TestBuffering_Clear(t *testing.T) {
 	assert.Equal(t, 0, b.GetSize())
 	assert.False(t, b.IsFull())
 }
-

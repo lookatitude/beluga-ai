@@ -159,4 +159,3 @@ func TestStreamingIncremental_ConcurrentAccess(t *testing.T) {
 	results := si.GetResults()
 	assert.Equal(t, 10, len(results))
 }
-

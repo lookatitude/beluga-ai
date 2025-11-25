@@ -172,4 +172,3 @@ func TestCircuitBreaker_StateTransitions(t *testing.T) {
 	state := cb.GetState()
 	assert.True(t, state == StateClosed || state == StateHalfOpen)
 }
-

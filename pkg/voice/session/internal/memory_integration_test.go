@@ -123,4 +123,3 @@ func TestMemoryIntegration_Overwrite(t *testing.T) {
 	value, _ = mi.Retrieve("key")
 	assert.Equal(t, "value2", value)
 }
-

@@ -150,7 +150,7 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 		}
 
 		resp, err = p.httpClient.Do(req)
-		
+
 		// Success case - break immediately
 		if err == nil && resp.StatusCode == http.StatusOK {
 			break
@@ -160,14 +160,14 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 		if err != nil && !stt.IsRetryableError(err) {
 			break
 		}
-		
+
 		// For HTTP responses, check if we should retry
 		// Retry on 429 (TooManyRequests) or 5xx errors
 		if resp != nil {
 			statusCode := resp.StatusCode
 			// Close response body before retrying
 			resp.Body.Close()
-			
+
 			// Don't retry on non-retryable status codes (except 429 and 5xx)
 			if statusCode != http.StatusTooManyRequests && statusCode < 500 {
 				break
@@ -189,11 +189,11 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 		}
 		return "", stt.ErrorFromHTTPStatus("Transcribe", 0, err)
 	}
-	
+
 	if resp == nil {
 		return "", stt.NewSTTError("Transcribe", stt.ErrCodeNetworkError, fmt.Errorf("no response received"))
 	}
-	
+
 	defer resp.Body.Close()
 
 	// Check status code

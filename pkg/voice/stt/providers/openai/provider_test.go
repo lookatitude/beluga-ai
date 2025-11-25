@@ -249,7 +249,7 @@ func TestOpenAIProvider_Transcribe_ContextCancellation(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Start transcription in goroutine and cancel immediately
 	done := make(chan error, 1)
 	go func() {
@@ -257,10 +257,10 @@ func TestOpenAIProvider_Transcribe_ContextCancellation(t *testing.T) {
 		_, err := provider.Transcribe(ctx, audio)
 		done <- err
 	}()
-	
+
 	// Cancel context
 	cancel()
-	
+
 	// Wait for error
 	err = <-done
 	assert.Error(t, err)

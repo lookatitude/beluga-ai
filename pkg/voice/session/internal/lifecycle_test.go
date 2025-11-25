@@ -37,7 +37,7 @@ func TestVoiceSessionImpl_Start_FromEndedState(t *testing.T) {
 	impl := createTestSessionImpl(t)
 
 	ctx := context.Background()
-	
+
 	// Start and stop first
 	err := impl.Start(ctx)
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func createTestSessionImpl(t *testing.T) *VoiceSessionImpl {
 		SessionID: "test-session-123",
 		Timeout:   30 * time.Minute,
 	}
-	
+
 	opts := &VoiceOptions{
 		STTProvider: nil, // Can be nil for basic tests
 		TTSProvider: nil,
@@ -101,7 +101,6 @@ func createTestSessionImpl(t *testing.T) *VoiceSessionImpl {
 	impl, err := NewVoiceSessionImpl(config, opts)
 	require.NoError(t, err)
 	require.NotNil(t, impl)
-	
+
 	return impl
 }
-

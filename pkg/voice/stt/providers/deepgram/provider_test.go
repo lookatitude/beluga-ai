@@ -638,7 +638,6 @@ func TestDeepgramProvider_StartStreaming_Error(t *testing.T) {
 	assert.Nil(t, session)
 }
 
-
 func TestDeepgramProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(200 * time.Millisecond)

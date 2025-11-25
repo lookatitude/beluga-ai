@@ -194,4 +194,3 @@ func TestRetryExecutor_ExecuteWithRetry_NoDelayOnFirstAttempt(t *testing.T) {
 	// First attempt should be immediate (no delay)
 	assert.Less(t, duration, 50*time.Millisecond)
 }
-

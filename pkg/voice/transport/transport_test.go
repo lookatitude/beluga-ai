@@ -20,28 +20,28 @@ func TestNewProvider(t *testing.T) {
 	registry.Register("test-provider", testFactory)
 
 	tests := []struct {
-		name        string
+		name         string
 		providerName string
-		config      *Config
-		wantErr     bool
+		config       *Config
+		wantErr      bool
 	}{
 		{
-			name:        "valid provider",
+			name:         "valid provider",
 			providerName: "test-provider",
-			config:      DefaultConfig(),
-			wantErr:     false,
+			config:       DefaultConfig(),
+			wantErr:      false,
 		},
 		{
-			name:        "nil config uses defaults",
+			name:         "nil config uses defaults",
 			providerName: "test-provider",
-			config:      nil,
-			wantErr:     false,
+			config:       nil,
+			wantErr:      false,
 		},
 		{
-			name:        "invalid provider",
+			name:         "invalid provider",
 			providerName: "invalid",
-			config:      DefaultConfig(),
-			wantErr:     true,
+			config:       DefaultConfig(),
+			wantErr:      true,
 		},
 	}
 
@@ -116,4 +116,3 @@ func TestGetMetrics(t *testing.T) {
 	// May be nil if not initialized, which is fine
 	_ = metrics
 }
-

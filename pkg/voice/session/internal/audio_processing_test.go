@@ -93,10 +93,10 @@ func (m *mockNoiseCancellation) Process(ctx context.Context, audio []byte) ([]by
 
 func (m *mockNoiseCancellation) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error) {
 	output := make(chan []byte, 10)
-	
+
 	go func() {
 		defer close(output)
-		
+
 		for data := range audioCh {
 			if m.processFunc != nil {
 				processed, err := m.processFunc(ctx, data)
@@ -109,7 +109,6 @@ func (m *mockNoiseCancellation) ProcessStream(ctx context.Context, audioCh <-cha
 			}
 		}
 	}()
-	
+
 	return output, nil
 }
-

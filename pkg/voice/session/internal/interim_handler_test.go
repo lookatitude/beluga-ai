@@ -122,4 +122,3 @@ func TestInterimHandler_ConcurrentAccess(t *testing.T) {
 	// Should have processed all transcripts
 	assert.GreaterOrEqual(t, handler.GetInterimCount(), 1)
 }
-

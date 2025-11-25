@@ -65,10 +65,10 @@ func TestVoiceSessionImpl_OnStateChanged_MultipleChanges(t *testing.T) {
 	// Change states through actual methods (which trigger callbacks)
 	ctx := context.Background()
 	impl.Start(ctx) // Should trigger callback for "listening"
-	
+
 	// Use Say to trigger speaking state
 	impl.Say(ctx, "test") // Should trigger callback for "speaking"
-	
+
 	// Wait a bit for async state change
 	time.Sleep(200 * time.Millisecond)
 
@@ -134,4 +134,3 @@ func TestVoiceSessionImpl_OnStateChanged_ReplaceCallback(t *testing.T) {
 	assert.False(t, firstCalled)
 	assert.True(t, secondCalled)
 }
-

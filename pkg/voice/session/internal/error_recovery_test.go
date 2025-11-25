@@ -40,7 +40,7 @@ func TestErrorRecovery_ShouldRetry_MaxRetriesExceeded(t *testing.T) {
 	// Retry twice
 	assert.True(t, er.ShouldRetry("test-op", err))
 	assert.True(t, er.ShouldRetry("test-op", err))
-	
+
 	// Should not retry after max retries
 	result := er.ShouldRetry("test-op", err)
 	assert.False(t, result)
@@ -159,4 +159,3 @@ func TestErrorRecovery_isRetryableError(t *testing.T) {
 		})
 	}
 }
-

@@ -131,4 +131,3 @@ func TestVoiceSessionImpl_Say_StateTransition(t *testing.T) {
 
 	_ = handle
 }
-
