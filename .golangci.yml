@@ -1,19 +1,12 @@
 # golangci-lint v2 configuration for Beluga AI Framework
 # Comprehensive linting setup for production-ready Go framework
 
-version: "2"
-
 run:
   # Timeout for analysis
   timeout: 5m
   
   # Include test files in linting
   tests: true
-  
-  # Only lint pkg and tests directories
-  paths:
-    - pkg/...
-    - tests/...
 
 linters:
   # Enable comprehensive set of linters
@@ -69,12 +62,6 @@ linters:
     - sqlclosecheck
     - thelper
     - wastedassign
-
-formatters:
-  enable:
-    - gofmt
-    - goimports
-    - gofumpt
 
 issues:
   # Maximum issues count per one linter
