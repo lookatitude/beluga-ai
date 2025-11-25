@@ -1,7 +1,7 @@
-# golangci-lint configuration for Beluga AI Framework
+# golangci-lint v2 configuration for Beluga AI Framework
 # Comprehensive linting setup for production-ready Go framework
 
-version: 2
+version: "2"
 
 run:
   # Timeout for analysis
@@ -9,122 +9,6 @@ run:
   
   # Include test files in linting
   tests: true
-
-output:
-  # Print issues count
-  print-issued-lines: true
-  print-linter-name: true
-  
-  # Sort results
-  sort-results: true
-
-linters-settings:
-  # errcheck settings
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-    check-asserts: true
-  
-  # gosec settings - security linter
-  gosec:
-    # Security check types to enable
-    severity: medium
-    confidence: medium
-    # Exclude specific rules if needed
-    excludes:
-      - G104  # Errors unhandled (we handle errors explicitly)
-      - G307  # Deferring unsafe method (we use defer safely)
-  
-  # govet settings
-  govet:
-    enable-all: true
-  # shadow settings (replaces govet.check-shadowing)
-  shadow:
-    strict: false
-  
-  # staticcheck settings
-  staticcheck:
-    checks: ["all"]
-  
-  # gocritic settings - code quality
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport  # Allow duplicate imports in some cases
-      - ifElseChain  # Allow if-else chains
-  
-  # revive settings - Go linter
-  revive:
-    min-confidence: 0.8
-    rules:
-      - name: exported
-      - name: var-naming
-      - name: package-comments
-      - name: range
-      - name: if-return
-      - name: error-return
-      - name: error-naming
-      - name: increment-decrement
-      - name: var-declaration
-      - name: range-val-in-closure
-      - name: range-val-address
-      - name: waitgroup-by-value
-  
-  # gocyclo settings - cyclomatic complexity
-  gocyclo:
-    min-complexity: 15  # Warn on functions with complexity > 15
-  
-  # dupl settings - code duplication
-  dupl:
-    threshold: 100  # Threshold for code duplication detection
-  
-  # funlen settings - function length
-  funlen:
-    lines: 100
-    statements: 50
-  
-  # goconst settings - constant detection
-  goconst:
-    min-len: 3
-    min-occurrences: 2
-  
-  # misspell settings
-  misspell:
-    locale: US
-  
-  # lll settings - line length
-  lll:
-    line-length: 120  # Allow longer lines for Go code
-  
-  # unused settings
-  unused:
-    check-exported: true
-  
-  # ineffassign settings
-  ineffassign:
-    check-exported: true
-  
-  # exhaustive - enum exhaustiveness
-  exhaustive:
-    default-signifies-exhaustive: false
-  
-  # forbidigo - forbid certain identifiers
-  forbidigo:
-    forbid:
-      - ^fmt\.Print.*$  # Prefer structured logging
-      - ^print$  # Prefer structured logging
-  
-  # nolintlint - linter for nolint directives
-  nolintlint:
-    allow-leading-space: true
-    allow-unused: false
-    require-explanation: true
-    require-specific: true
 
 linters:
   # Enable comprehensive set of linters
@@ -192,12 +76,8 @@ issues:
   max-issues-per-linter: 50
   max-same-issues: 50
   
-  # Default severity for issues
-  default-severity: error
-  
-  # Exclude following linters from limiting of issues count
-  exclude-rules:
-    # Exclude some linters from exclusion rules
+  exclude:
+    # Exclude some linters from exclusion rules for test files
     - path: _test\.go
       linters:
         - errcheck
@@ -232,26 +112,3 @@ issues:
       text: "error var.*should have name"
       linters:
         - revive
-  
-  # Rules to change severity
-  severity-rules:
-    - linters:
-        - gocyclo
-        - funlen
-        - dupl
-      severity: warning
-    - linters:
-        - misspell
-      severity: warning
-  
-  # Rules to change severity
-  rules:
-    - linters:
-        - gocyclo
-        - funlen
-        - dupl
-      severity: warning
-    - linters:
-        - misspell
-      severity: warning
-
