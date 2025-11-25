@@ -358,7 +358,7 @@ jobs:
       
       - name: Upload security reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: security-reports
           path: |
@@ -556,7 +556,7 @@ jobs:
       
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: unit-test-results
           path: |
@@ -640,7 +640,7 @@ jobs:
       
       - name: Upload integration test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: integration-test-results
           path: |
@@ -734,7 +734,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
       
       - name: Upload merged coverage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: merged-coverage
           path: coverage.out
@@ -857,7 +857,7 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
       
       - name: Upload build verification
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: package-verification
           path: |
