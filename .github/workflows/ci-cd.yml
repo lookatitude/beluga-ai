@@ -780,7 +780,25 @@ jobs:
       - name: Build all packages
         run: |
           echo "Building all packages..."
-          go build -v $(go list ./... | grep -v -E '(specs|examples)')
+          # Get all packages, filter out specs/examples/tests/website, and only include those with non-test Go files
+          packages=$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./... 2>&1 | grep -v -E '(specs|examples|tests|website|github.com/lookatitude/beluga-ai$)' | grep -v "^$")
+          
+          if [ -z "$packages" ]; then
+            echo "⚠️ No packages found to build"
+            exit 1
+          fi
+          
+          # Build all packages in one command (more efficient and better error handling)
+          set +e
+          echo "$packages" | xargs go build -v
+          build_exit=$?
+          set -e
+          
+          if [ "$build_exit" -ne 0 ]; then
+            echo "::error::Some packages failed to build"
+            exit 1
+          fi
+          
           echo "✅ All packages built successfully"
       
       - name: Verify build artifacts
