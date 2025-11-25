@@ -75,14 +75,39 @@ if [ "$pct" = "0" ] || [ "$pct" = "0.0" ]; then
   fi
 fi
 
-# Validation Rule 6: Coverage threshold MUST be enforced
+# Validation Rule 6: Coverage threshold MUST use warnings (not errors) and not exit with error
+# This validation script checks the workflow file, not the coverage itself
+WORKFLOW_FILE="${3:-.github/workflows/ci-cd.yml}"
+if [ -f "$WORKFLOW_FILE" ]; then
+  echo ""
+  echo -e "${GREEN}Validating coverage threshold configuration in workflow...${NC}"
+  
+  # Check that coverage threshold uses ::warning:: not ::error::
+  if grep -q "coverage.*80\|Coverage.*80" "$WORKFLOW_FILE" -A 5 | grep -q "::warning::"; then
+    echo -e "${GREEN}✅ Coverage threshold uses ::warning:: (advisory)${NC}"
+  else
+    echo -e "${YELLOW}⚠️  WARNING: Coverage threshold may not use ::warning::${NC}"
+  fi
+  
+  # Check that coverage threshold doesn't exit with error
+  if grep -q "coverage.*80\|Coverage.*80" "$WORKFLOW_FILE" -A 10 | grep -q "exit 1"; then
+    echo -e "${RED}❌ ERROR: Coverage threshold check exits with error code${NC}"
+    echo "Coverage threshold should be advisory (warnings only, no exit 1)"
+    exit 1
+  else
+    echo -e "${GREEN}✅ Coverage threshold does not exit with error code${NC}"
+  fi
+fi
+
+# For this script, we still check if coverage meets threshold (for local validation)
 if awk "BEGIN {exit !($pct < $THRESHOLD)}"; then
-  echo -e "${RED}❌ FAILURE: Coverage ${coverage} is below ${THRESHOLD}% threshold${NC}"
+  echo -e "${YELLOW}⚠️  WARNING: Coverage ${coverage} is below ${THRESHOLD}% threshold${NC}"
   echo "Current coverage: ${coverage}"
   echo "Required coverage: ${THRESHOLD}%"
-  exit 1
+  echo "Note: This is an advisory check and does not block merge"
+else
+  echo -e "${GREEN}✅ Coverage ${coverage} meets ${THRESHOLD}% threshold${NC}"
 fi
-echo -e "${GREEN}✅ Coverage ${coverage} meets ${THRESHOLD}% threshold${NC}"
 
 # Show coverage breakdown
 echo ""

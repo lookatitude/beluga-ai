@@ -33,20 +33,24 @@ for job in "${CRITICAL_JOBS[@]}"; do
   fi
 done
 
-# Validation Rule 2: Advisory checks (lint, coverage threshold) MUST show warnings but allow merge
-ADVISORY_JOBS=("lint" "coverage")
+# Validation Rule 2: Advisory checks (policy, lint, coverage threshold) MUST show warnings but allow merge
+ADVISORY_JOBS=("policy" "lint" "coverage")
 for job in "${ADVISORY_JOBS[@]}"; do
-  if ! grep -q "name:.*${job}" "$WORKFLOW_FILE" -A 5 | grep -q "ADVISORY\|advisory\|Advisory"; then
-    echo -e "${YELLOW}⚠️  WARNING: Advisory job '${job}' not clearly marked as advisory${NC}"
-  else
+  # Find the job section and check if it has continue-on-error
+  job_section=$(grep -A 10 "^  ${job}:" "$WORKFLOW_FILE" || grep -A 10 "name:.*${job}" "$WORKFLOW_FILE" | head -15)
+  
+  if echo "$job_section" | grep -q "ADVISORY\|advisory\|Advisory\|warnings only"; then
     echo -e "${GREEN}✅ Advisory job '${job}' configured${NC}"
+  else
+    echo -e "${YELLOW}⚠️  WARNING: Advisory job '${job}' not clearly marked as advisory${NC}"
   fi
   
   # Check that advisory jobs have continue-on-error
-  if ! grep -q "name:.*${job}" "$WORKFLOW_FILE" -A 3 | grep -q "continue-on-error: true"; then
-    echo -e "${YELLOW}⚠️  WARNING: Advisory job '${job}' should have continue-on-error: true${NC}"
-  else
+  if echo "$job_section" | grep -q "continue-on-error: true"; then
     echo -e "${GREEN}✅ Advisory job '${job}' has continue-on-error configured${NC}"
+  else
+    echo -e "${RED}❌ ERROR: Advisory job '${job}' must have continue-on-error: true${NC}"
+    exit 1
   fi
 done
 

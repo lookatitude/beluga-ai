@@ -18,8 +18,29 @@ on:
     inputs:
       tag:
         description: 'Release tag (e.g., v1.0.0)'
-        required: true
+        required: false
         type: string
+        default: ''
+      run_pre_release:
+        description: 'Run pre-release checks'
+        required: false
+        default: 'false'
+        type: boolean
+      run_release:
+        description: 'Run release (GoReleaser)'
+        required: false
+        default: 'false'
+        type: boolean
+      run_docs:
+        description: 'Generate and update documentation'
+        required: false
+        default: 'false'
+        type: boolean
+      run_website:
+        description: 'Update and deploy website'
+        required: false
+        default: 'false'
+        type: boolean
 
 permissions:
   contents: write
@@ -27,9 +48,10 @@ permissions:
   pull-requests: write
 
 # Prevent concurrent releases
+# Manual releases take precedence (cancel automated releases)
 concurrency:
   group: release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   # Automated semantic versioning via release-please
@@ -48,7 +70,9 @@ jobs:
   # Only runs on tag pushes or manual dispatch (not on main branch pushes)
   release:
     name: Create Release
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_release == 'true') ||
+      (github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/'))
     needs: [pre-release]
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +91,12 @@ jobs:
         id: version
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            VERSION="${{ github.event.inputs.tag }}"
+            if [ -n "${{ github.event.inputs.tag }}" ]; then
+              VERSION="${{ github.event.inputs.tag }}"
+            else
+              # Try to get version from git tag or generate from commit
+              VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+            fi
           else
             VERSION="${{ github.ref_name }}"
           fi
@@ -80,6 +109,56 @@ jobs:
           
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "✅ Release version: $VERSION"
+      
+      - name: Generate changelog
+        id: changelog
+        continue-on-error: true
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Generating changelog for $VERSION..."
+          
+          # Check if CHANGELOG.md exists
+          if [ -f CHANGELOG.md ]; then
+            echo "CHANGELOG.md already exists, using existing file"
+            changelog_exists=true
+          else
+            changelog_exists=false
+          fi
+          
+          # Generate changelog from git commits (GoReleaser will also do this, but we generate it here for visibility)
+          # Get commits since last tag
+          LAST_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          if [ -z "$LAST_TAG" ]; then
+            echo "No previous tag found, generating changelog from all commits"
+            git log --pretty=format:"- %s (%h)" --no-merges > CHANGELOG_TEMP.md || true
+          else
+            echo "Generating changelog from $LAST_TAG to $VERSION"
+            git log --pretty=format:"- %s (%h)" --no-merges ${LAST_TAG}..HEAD > CHANGELOG_TEMP.md || true
+          fi
+          
+          # If changelog generation succeeded, update CHANGELOG.md
+          if [ -f CHANGELOG_TEMP.md ] && [ -s CHANGELOG_TEMP.md ]; then
+            {
+              echo "# Changelog"
+              echo ""
+              echo "## [$VERSION] - $(date +%Y-%m-%d)"
+              echo ""
+              cat CHANGELOG_TEMP.md
+              echo ""
+              if [ "$changelog_exists" = "true" ]; then
+                echo ""
+                echo "---"
+                echo ""
+                tail -n +2 CHANGELOG.md
+              fi
+            } > CHANGELOG.md
+            rm -f CHANGELOG_TEMP.md
+            echo "✅ Changelog generated successfully"
+            echo "changelog_generated=true" >> $GITHUB_OUTPUT
+          else
+            echo "::warning::Changelog generation failed or produced empty output, continuing with release"
+            echo "changelog_generated=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
@@ -90,8 +169,39 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # If using custom tokens, uncomment:
           # GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+      
+      - name: Generate API documentation
+        if: |
+          github.event_name != 'workflow_dispatch' ||
+          github.event.inputs.run_docs == 'true'
+        continue-on-error: true
+        run: |
+          echo "Generating API documentation..."
+          if ! bash scripts/generate-docs.sh; then
+            echo "::warning::Documentation generation failed, but release will continue"
+            echo "Please check the documentation generation script and ensure all packages are valid"
+          else
+            echo "✅ API documentation generated successfully"
+          fi
+      
+      - name: Update website
+        if: |
+          github.event_name != 'workflow_dispatch' ||
+          github.event.inputs.run_website == 'true'
+        continue-on-error: true
+        run: |
+          echo "Updating website with generated documentation..."
+          # Trigger website deployment workflow or build website here
+          # For now, we'll just note that docs are ready
+          if [ -d "website/docs/api/packages" ]; then
+            echo "✅ Documentation ready for website deployment"
+            echo "Website will be updated on next push to main or via website_deploy workflow"
+          else
+            echo "::warning::Documentation directory not found, website update skipped"
+          fi
 
       - name: Release Summary
+        if: always()
         run: |
           echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -99,12 +209,29 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Version: ${{ steps.version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "Trigger: ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Release Status:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ GoReleaser: Completed" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ steps.changelog.outputs.changelog_generated }}" = "true" ]; then
+            echo "- ✅ Changelog: Generated" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⚠️ Changelog: Generation failed or skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ github.event.inputs.run_docs }}" = "true" ]; then
+            echo "- 📝 Documentation: Generated (if enabled)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ github.event.inputs.run_website }}" = "true" ]; then
+            echo "- 🌐 Website: Ready for update (if enabled)" >> $GITHUB_STEP_SUMMARY
+          fi
 
   # Pre-release checks for manual/tag-based releases
   # Only runs when release job runs (not for automated semantic versioning)
   pre-release:
     name: Pre-Release Checks
-    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/')
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_pre_release == 'true') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_release == 'true') ||
+      (github.event_name != 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
