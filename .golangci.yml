@@ -198,6 +198,7 @@ linters:
           audit: true
     
     # Go vet - enable all checks
+    # Note: react package excluded from linting in CI due to printf panic bug in v2.6.2
     govet:
       enable-all: true
     
