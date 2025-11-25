@@ -163,4 +163,3 @@ func TestStreamingSTT_Start_ProviderError(t *testing.T) {
 	assert.Contains(t, err.Error(), "failed to start streaming")
 	assert.False(t, sstt.IsActive())
 }
-

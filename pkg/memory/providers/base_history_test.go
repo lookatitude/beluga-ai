@@ -10,10 +10,7 @@ import (
 )
 
 // TestBaseChatMessageHistory tests the base chat message history implementation.
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestBaseChatMessageHistory(t *testing.T) {
-	ctx := context.Background()
 
 	t.Run("NewBaseChatMessageHistory", func(t *testing.T) {
 		history := NewBaseChatMessageHistory()
@@ -28,6 +25,7 @@ func TestBaseChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("AddAndGetMessages", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 
 		// Add messages
@@ -46,6 +44,7 @@ func TestBaseChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("MaxSizeLimit", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory(WithMaxHistorySize(3))
 
 		// Add more messages than the limit
@@ -64,6 +63,7 @@ func TestBaseChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("Clear", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 
 		// Add messages
@@ -86,6 +86,7 @@ func TestBaseChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("ContextCancellation", func(t *testing.T) {
+		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 
 		// Create a cancelled context
@@ -105,12 +106,9 @@ func TestBaseChatMessageHistory(t *testing.T) {
 		assert.Error(t, err)
 	})
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestCompositeChatMessageHistory tests the composite chat message history implementation.
 func TestCompositeChatMessageHistory(t *testing.T) {
-	ctx := context.Background()
 
 	t.Run("NewCompositeChatMessageHistory", func(t *testing.T) {
 		primary := NewBaseChatMessageHistory()
@@ -133,6 +131,7 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("AddAndGetMessages", func(t *testing.T) {
+		ctx := context.Background()
 		primary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary)
 
@@ -150,6 +149,7 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("SecondaryHistory", func(t *testing.T) {
+		ctx := context.Background()
 		primary := NewBaseChatMessageHistory()
 		secondary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary, WithSecondaryHistory(secondary))
@@ -169,6 +169,7 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("Hooks", func(t *testing.T) {
+		ctx := context.Background()
 		primary := NewBaseChatMessageHistory()
 		var addHookCalled, getHookCalled bool
 
@@ -195,6 +196,7 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 	})
 
 	t.Run("ClearComposite", func(t *testing.T) {
+		ctx := context.Background()
 		primary := NewBaseChatMessageHistory()
 		secondary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary, WithSecondaryHistory(secondary))
@@ -216,18 +218,14 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, secondaryMessages, 0)
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // Benchmark tests for performance measurement
 
 func BenchmarkBaseChatMessageHistory_AddMessage(b *testing.B) {
-	history := NewBaseChatMessageHistory()
 	ctx := context.Background()
+	history := NewBaseChatMessageHistory()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		history.AddUserMessage(ctx, "Benchmark message")
@@ -235,14 +233,12 @@ func BenchmarkBaseChatMessageHistory_AddMessage(b *testing.B) {
 }
 
 func BenchmarkBaseChatMessageHistory_GetMessages(b *testing.B) {
-	history := NewBaseChatMessageHistory()
 	ctx := context.Background()
+	history := NewBaseChatMessageHistory()
 
 	// Add some messages first
 	for i := 0; i < 100; i++ {
 		history.AddUserMessage(ctx, "Message "+string(rune(i)))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	b.ResetTimer()
@@ -252,11 +248,9 @@ func BenchmarkBaseChatMessageHistory_GetMessages(b *testing.B) {
 }
 
 func BenchmarkCompositeChatMessageHistory_AddMessage(b *testing.B) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
+	ctx := context.Background()
 	primary := NewBaseChatMessageHistory()
 	composite := NewCompositeChatMessageHistory(primary)
-	ctx := context.Background()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -265,13 +259,11 @@ func BenchmarkCompositeChatMessageHistory_AddMessage(b *testing.B) {
 }
 
 func BenchmarkCompositeChatMessageHistory_GetMessages(b *testing.B) {
+	ctx := context.Background()
 	primary := NewBaseChatMessageHistory()
 	composite := NewCompositeChatMessageHistory(primary)
-	ctx := context.Background()
 
 	// Add some messages first
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	for i := 0; i < 100; i++ {
 		composite.AddUserMessage(ctx, "Message "+string(rune(i)))
 	}

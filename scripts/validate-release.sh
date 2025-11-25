@@ -67,6 +67,36 @@ if ! grep -q "goreleaser" "$WORKFLOW_FILE"; then
   echo "GoReleaser is typically used for manual/tag-based releases"
 else
   echo -e "${GREEN}✅ GoReleaser configured${NC}"
+  
+  # Check for GoReleaser action version
+  if grep -q "goreleaser/goreleaser-action@v" "$WORKFLOW_FILE"; then
+    version=$(grep -o "goreleaser/goreleaser-action@v[0-9]*" "$WORKFLOW_FILE" | head -1)
+    echo -e "${GREEN}✅ GoReleaser action version: $version${NC}"
+  fi
+fi
+
+# Validation Rule 7: Check for changelog generation
+if grep -q "changelog\|CHANGELOG\|Generate changelog" "$WORKFLOW_FILE" -i; then
+  echo -e "${GREEN}✅ Changelog generation found${NC}"
+else
+  echo -e "${YELLOW}⚠️  WARNING: Changelog generation not found${NC}"
+  echo "Consider adding changelog generation before GoReleaser"
+fi
+
+# Validation Rule 8: Check for documentation generation
+if grep -q "generate-docs\|docs-generate\|Generate.*documentation" "$WORKFLOW_FILE" -i; then
+  echo -e "${GREEN}✅ Documentation generation found${NC}"
+else
+  echo -e "${YELLOW}⚠️  WARNING: Documentation generation not found${NC}"
+  echo "Consider adding documentation generation to release workflow"
+fi
+
+# Validation Rule 9: Check for website update
+if grep -q "website\|Website\|Docusaurus" "$WORKFLOW_FILE" -i; then
+  echo -e "${GREEN}✅ Website update found${NC}"
+else
+  echo -e "${YELLOW}⚠️  WARNING: Website update not found${NC}"
+  echo "Consider adding website update to release workflow"
 fi
 
 echo ""

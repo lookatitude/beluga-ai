@@ -279,8 +279,6 @@ func (m *mockMCPResource) Read(ctx context.Context) ([]byte, error) {
 
 // Test Suites
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewRESTServer(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -320,8 +318,6 @@ func TestNewRESTServer(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewMCPServer(t *testing.T) {
@@ -361,8 +357,6 @@ func TestNewMCPServer(t *testing.T) {
 				// Test that it implements the MCPServer interface
 				var _ MCPServer = server
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -402,8 +396,6 @@ func TestDefaultConfigs(t *testing.T) {
 		if config.ServerName != "beluga-mcp-server" {
 			t.Errorf("DefaultMCPConfig().ServerName = %v, want beluga-mcp-server", config.ServerName)
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if config.ProtocolVersion != "2024-11-05" {
 			t.Errorf("DefaultMCPConfig().ProtocolVersion = %v, want 2024-11-05", config.ProtocolVersion)
 		}
@@ -524,8 +516,6 @@ func TestMiddlewareFunctions(t *testing.T) {
 		handler.ServeHTTP(w, req)
 
 		if w.Code != http.StatusInternalServerError {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			t.Errorf("Expected status 500 for panic, got %d", w.Code)
 		}
 		if !logger.hasLog("ERROR", "Panic recovered") {
@@ -670,8 +660,6 @@ func TestErrorHandling(t *testing.T) {
 		expected := "test_op: test message"
 		if err.Error() != expected {
 			t.Errorf("Expected error string '%s', got '%s'", expected, err.Error())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 
 		// Test with underlying error
@@ -714,8 +702,6 @@ func TestFunctionalOptions(t *testing.T) {
 			},
 		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				if tt.opt == nil {
@@ -740,8 +726,6 @@ func TestRESTServerHandlerRegistration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create REST server: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if restServer, ok := server.(RESTServer); ok {
 		handler := newMockStreamingHandler()
@@ -798,8 +782,6 @@ func (h *mockAgentHandler) handleExecute(w http.ResponseWriter, r *http.Request)
 }
 
 func (h *mockAgentHandler) handleStatus(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"status": "running", "agent": "test"})
 }
@@ -828,8 +810,6 @@ func TestRESTServerMiddleware(t *testing.T) {
 			APIBasePath: "/api/v1",
 		}),
 		WithMiddleware(CORSMiddleware([]string{"*"})),
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		WithMiddleware(LoggingMiddleware(logger)),
 	)
 	if err != nil {
@@ -862,8 +842,6 @@ func TestRESTServerIntegration(t *testing.T) {
 				Port: 0, // Use random port for testing
 			},
 			APIBasePath: "/api/v1",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}),
 	)
 	if err != nil {
@@ -918,8 +896,6 @@ func TestMCPServerIntegration(t *testing.T) {
 			t.Errorf("Failed to register resource: %v", err)
 		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		// Test tool listing
 		tools, err := mcpServer.ListTools(context.Background())
 		if err != nil {
@@ -928,8 +904,6 @@ func TestMCPServerIntegration(t *testing.T) {
 		if len(tools) != 1 {
 			t.Errorf("Expected 1 tool, got %d", len(tools))
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 		// Test resource listing
 		resources, err := mcpServer.ListResources(context.Background())
@@ -938,8 +912,6 @@ func TestMCPServerIntegration(t *testing.T) {
 		}
 		if len(resources) != 1 {
 			t.Errorf("Expected 1 resource, got %d", len(resources))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 }
@@ -956,8 +928,6 @@ func BenchmarkNewRESTServer(b *testing.B) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkNewMCPServer(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		server, err := NewMCPServer()

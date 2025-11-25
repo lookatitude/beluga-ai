@@ -126,8 +126,6 @@ func (m *mockLLM) GetProviderName() string {
 	return "mock-provider"
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewAgentExecutor(t *testing.T) {
 	executor := NewAgentExecutor()
 	if executor == nil {
@@ -144,8 +142,6 @@ func TestNewAgentExecutor(t *testing.T) {
 	if !executor.handleParsingErrors {
 		t.Error("Expected default handleParsingErrors to be true")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewAgentExecutorWithOptions(t *testing.T) {
@@ -162,8 +158,6 @@ func TestNewAgentExecutorWithOptions(t *testing.T) {
 		t.Error("Expected returnIntermediateSteps to be true")
 	}
 	if executor.handleParsingErrors {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("Expected handleParsingErrors to be false")
 	}
 }
@@ -185,8 +179,6 @@ func TestExecutorOptionFunctions(t *testing.T) {
 
 	t.Run("WithHandleParsingErrors", func(t *testing.T) {
 		executor := NewAgentExecutor(WithHandleParsingErrors(false))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if executor.handleParsingErrors {
 			t.Error("Expected handleParsingErrors to be false")
 		}
@@ -222,8 +214,6 @@ func TestExecutePlan_Success(t *testing.T) {
 	}
 
 	if result.Output != "tool_result" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected output 'tool_result', got '%s'", result.Output)
 	}
 
@@ -244,8 +234,6 @@ func TestExecutePlan_EmptyPlan(t *testing.T) {
 	plan := []schema.Step{}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result, err := executor.ExecutePlan(ctx, agent, plan)
 	if err != nil {
 		t.Errorf("ExecutePlan with empty plan failed: %v", err)
@@ -275,8 +263,6 @@ func TestExecutePlan_MaxIterationsExceeded(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	ctx := context.Background()
 	_, err := executor.ExecutePlan(ctx, agent, plan)
 
@@ -305,8 +291,6 @@ func TestExecutePlan_ToolNotFound(t *testing.T) {
 				Tool: "non_existent_tool",
 			},
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	ctx := context.Background()
@@ -336,8 +320,6 @@ func TestExecutePlan_ToolExecutionError(t *testing.T) {
 		{
 			Action: schema.AgentAction{
 				Tool: "test_tool",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			},
 		},
 	}
@@ -375,8 +357,6 @@ func TestExecutePlan_WithIntermediateSteps(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result, err := executor.ExecutePlan(ctx, agent, plan)
 	if err != nil {
 		t.Errorf("ExecutePlan failed: %v", err)
@@ -404,8 +384,6 @@ func TestExecuteStep_ToolExecution(t *testing.T) {
 		tools: []tools.Tool{mockTool},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	executor := NewAgentExecutor()
 
 	step := schema.Step{
@@ -434,8 +412,6 @@ func TestExecuteStep_NonToolAction(t *testing.T) {
 		tools: []tools.Tool{},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	executor := NewAgentExecutor()
 
 	step := schema.Step{
@@ -461,8 +437,6 @@ func TestExecuteStep_NonToolAction(t *testing.T) {
 func TestExecuteTool_Success(t *testing.T) {
 	mockTool := &mockTool{name: "test_tool", result: "success_result"}
 	mockLLM := &mockLLM{}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
@@ -488,8 +462,6 @@ func TestExecuteTool_Success(t *testing.T) {
 }
 
 func TestExecuteTool_ToolNotFound(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	mockLLM := &mockLLM{}
 	agent := &mockAgent{
 		name:  "test_agent",
@@ -516,8 +488,6 @@ func TestExecuteTool_ToolNotFound(t *testing.T) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestExecuteTool_ExecutionError(t *testing.T) {
 	mockTool := &mockTool{name: "test_tool", shouldError: true}
 	mockLLM := &mockLLM{}
@@ -560,14 +530,10 @@ func TestConvertToSchemaSteps(t *testing.T) {
 			Action: iface.AgentAction{
 				Tool:      "tool2",
 				ToolInput: map[string]any{"input": "value2"},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				Log:       "log2",
 			},
 			Observation: "observation2",
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	steps := convertToSchemaSteps(intermediateSteps)
@@ -594,8 +560,6 @@ func TestConvertToSchemaSteps(t *testing.T) {
 }
 
 // Benchmark tests
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkNewAgentExecutor(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = NewAgentExecutor()

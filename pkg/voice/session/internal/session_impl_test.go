@@ -90,4 +90,3 @@ func TestNewVoiceSessionImpl_WithDefaults(t *testing.T) {
 	assert.Equal(t, 3, impl.config.MaxRetries)
 	assert.Equal(t, 1*time.Second, impl.config.RetryDelay)
 }
-

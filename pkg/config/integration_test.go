@@ -8,8 +8,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestIntegration_LoadConfigWithFileAndEnvOverrides(t *testing.T) {
 	tempDir := t.TempDir()
 
@@ -136,8 +134,6 @@ tools:
 	if tool.Enabled {
 		t.Errorf("expected tool to be disabled from file, got %v", tool.Enabled)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestIntegration_CompositeProviderWithMultipleSources(t *testing.T) {
@@ -225,8 +221,6 @@ llm_providers:
 	}
 
 	if cfg2.LLMProviders[0].Provider != "anthropic" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("expected env provider type 'anthropic', got %s", cfg2.LLMProviders[0].Provider)
 	}
 }
@@ -296,8 +290,6 @@ tools:
 			found = true
 			break
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 	if !found {
 		t.Error("agent references non-existent LLM provider")
@@ -366,8 +358,6 @@ agents:
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if len(loadedConfig.Agents) > 0 {
 		if loadedConfig.Agents[0].LLMProviderName != "roundtrip-llm" {
 			t.Errorf("Agent LLM provider reference mismatch: got %s, want roundtrip-llm",
@@ -416,8 +406,6 @@ llm_providers:
 		t.Fatalf("failed to create valid config file: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	cfg, err := LoadFromFile(validConfigFile)
 	if err != nil {
 		t.Fatalf("failed to load valid config after invalid attempts: %v", err)
@@ -527,8 +515,6 @@ tools:
 		if !found {
 			t.Errorf("agent %s references non-existent LLM provider %s", agent.Name, agent.LLMProviderName)
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Verify tool configurations

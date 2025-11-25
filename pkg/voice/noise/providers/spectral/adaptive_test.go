@@ -112,4 +112,3 @@ func TestAdaptiveNoiseProfile_Update_Larger(t *testing.T) {
 	assert.NotNil(t, updated)
 	assert.Equal(t, 5, len(updated))
 }
-

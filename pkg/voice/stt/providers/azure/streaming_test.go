@@ -186,9 +186,9 @@ func TestAzureStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 	mockServer.SetOnMessage(func([]byte) []byte {
 		response := map[string]interface{}{
 			"RecognitionStatus": "Success",
-			"DisplayText":        "Hello world",
-			"Offset":             0,
-			"Duration":            1000,
+			"DisplayText":       "Hello world",
+			"Offset":            0,
+			"Duration":          1000,
 		}
 		data, _ := json.Marshal(response)
 		return data
@@ -326,4 +326,3 @@ func TestAzureStreamingSession_ReceiveTranscript_MalformedResponse(t *testing.T)
 		t.Fatal("Timeout waiting for error")
 	}
 }
-

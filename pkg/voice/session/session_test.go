@@ -33,6 +33,8 @@ func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.R
 }
 
 func TestNewVoiceSession(t *testing.T) {
+	ctx := context.Background()
+
 	tests := []struct {
 		name    string
 		opts    []VoiceOption
@@ -71,7 +73,6 @@ func TestNewVoiceSession(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
 			session, err := NewVoiceSession(ctx, tt.opts...)
 			if tt.wantErr {
 				assert.Error(t, err)

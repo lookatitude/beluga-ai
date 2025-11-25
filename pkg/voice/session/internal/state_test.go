@@ -30,73 +30,73 @@ func TestStateMachine_SetState(t *testing.T) {
 			name:      "initial to listening",
 			fromState: sessioniface.SessionState("initial"),
 			toState:   sessioniface.SessionState("listening"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "listening to processing",
 			fromState: sessioniface.SessionState("listening"),
 			toState:   sessioniface.SessionState("processing"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "processing to speaking",
 			fromState: sessioniface.SessionState("processing"),
 			toState:   sessioniface.SessionState("speaking"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "speaking to listening",
 			fromState: sessioniface.SessionState("speaking"),
 			toState:   sessioniface.SessionState("listening"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "listening to ended",
 			fromState: sessioniface.SessionState("listening"),
 			toState:   sessioniface.SessionState("ended"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "initial to ended",
 			fromState: sessioniface.SessionState("initial"),
 			toState:   sessioniface.SessionState("ended"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "ended to initial",
 			fromState: sessioniface.SessionState("ended"),
 			toState:   sessioniface.SessionState("initial"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "listening to away",
 			fromState: sessioniface.SessionState("listening"),
 			toState:   sessioniface.SessionState("away"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "away to listening",
 			fromState: sessioniface.SessionState("away"),
 			toState:   sessioniface.SessionState("listening"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "processing to listening",
 			fromState: sessioniface.SessionState("processing"),
 			toState:   sessioniface.SessionState("listening"),
-			wantValid:  true,
+			wantValid: true,
 		},
 		{
 			name:      "invalid: initial to speaking",
 			fromState: sessioniface.SessionState("initial"),
 			toState:   sessioniface.SessionState("speaking"),
-			wantValid:  false,
+			wantValid: false,
 		},
 		{
 			name:      "invalid: initial to processing",
 			fromState: sessioniface.SessionState("initial"),
 			toState:   sessioniface.SessionState("processing"),
-			wantValid:  false,
+			wantValid: false,
 		},
 	}
 
@@ -134,7 +134,7 @@ func TestStateMachine_SetState(t *testing.T) {
 func TestStateMachine_SetState_SameState(t *testing.T) {
 	sm := NewStateMachine()
 	sm.SetState(sessioniface.SessionState("listening"))
-	
+
 	// Setting to same state - isValidTransition doesn't allow same state
 	// So it should return false
 	_ = sm.SetState(sessioniface.SessionState("listening"))
@@ -145,7 +145,7 @@ func TestStateMachine_SetState_SameState(t *testing.T) {
 
 func TestStateMachine_ConcurrentAccess(t *testing.T) {
 	sm := NewStateMachine()
-	
+
 	// Test concurrent reads
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
@@ -154,15 +154,14 @@ func TestStateMachine_ConcurrentAccess(t *testing.T) {
 			done <- true
 		}()
 	}
-	
+
 	// Wait for all reads
 	for i := 0; i < 10; i++ {
 		<-done
 	}
-	
+
 	// Test concurrent writes (should be safe)
 	sm.SetState(sessioniface.SessionState("listening"))
 	state := sm.GetState()
 	assert.Equal(t, sessioniface.SessionState("listening"), state)
 }
-

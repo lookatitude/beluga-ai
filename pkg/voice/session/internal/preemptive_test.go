@@ -136,4 +136,3 @@ func TestPreemptiveGeneration_GetResponseStrategy(t *testing.T) {
 	pg = NewPreemptiveGeneration(true, ResponseStrategyDiscard)
 	assert.Equal(t, ResponseStrategyDiscard, pg.GetResponseStrategy())
 }
-

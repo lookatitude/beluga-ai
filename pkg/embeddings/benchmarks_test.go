@@ -10,8 +10,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkNewEmbedderFactory(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -24,8 +22,6 @@ func BenchmarkNewEmbedderFactory(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = NewEmbedderFactory(config)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func BenchmarkEmbedderFactory_NewEmbedder(b *testing.B) {
@@ -43,8 +39,6 @@ func BenchmarkEmbedderFactory_NewEmbedder(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		_, _ = factory.NewEmbedder("mock")
 	}
 }
@@ -57,8 +51,6 @@ func BenchmarkConfig_Validate(b *testing.B) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = config.Validate()
@@ -67,8 +59,6 @@ func BenchmarkConfig_Validate(b *testing.B) {
 
 func BenchmarkConfig_SetDefaults(b *testing.B) {
 	config := &Config{}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -93,16 +83,10 @@ func BenchmarkMockEmbedder_EmbedQuery(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create embedder: %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
-
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	query := "This is a benchmark query for testing embedding performance"
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, _ = embedder.EmbedQuery(ctx, query)
@@ -135,8 +119,6 @@ func benchmarkMockEmbedderEmbedDocuments(b *testing.B, batchSize int) {
 
 	embedder, err := factory.NewEmbedder("mock")
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		b.Fatalf("Failed to create embedder: %v", err)
 	}
 
@@ -166,8 +148,6 @@ func BenchmarkMockEmbedder_EmbedDocuments_Memory(b *testing.B) {
 	}
 
 	embedder, err := factory.NewEmbedder("mock")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err != nil {
 		b.Fatalf("Failed to create embedder: %v", err)
 	}
@@ -200,8 +180,6 @@ func BenchmarkMockEmbedder_ConcurrentEmbeddings(b *testing.B) {
 
 	ctx := context.Background()
 	documents := []string{"Test document 1", "Test document 2", "Test document 3"}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	query := "Benchmark query for concurrent testing"
 
 	b.RunParallel(func(pb *testing.PB) {
@@ -238,8 +216,6 @@ func BenchmarkMockEmbedder_DifferentDimensions(b *testing.B) {
 			factory, err := NewEmbedderFactory(config)
 			if err != nil {
 				b.Fatalf("Failed to create factory: %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			}
 
 			embedder, err := factory.NewEmbedder("mock")
@@ -257,8 +233,6 @@ func BenchmarkMockEmbedder_DifferentDimensions(b *testing.B) {
 			for i := 0; i < b.N; i++ {
 				_, _ = embedder.EmbedDocuments(ctx, documents)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -279,8 +253,6 @@ func BenchmarkEmbedderFactory_GetAvailableProviders(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		_ = factory.GetAvailableProviders()
 	}
 }
@@ -303,16 +275,10 @@ func BenchmarkEmbedderFactory_CheckHealth(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = factory.CheckHealth(ctx, "mock")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // Performance comparison benchmarks
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkEmbedderFactory_ProviderCreation(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -364,8 +330,6 @@ func benchmarkLoadTest(b *testing.B, numDocs, minWords, maxWords int) {
 	embedder, err := factory.NewEmbedder("mock")
 	if err != nil {
 		b.Fatalf("Failed to create embedder: %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	ctx := context.Background()
@@ -419,8 +383,8 @@ func BenchmarkMockEmbedder_Throughput(b *testing.B) {
 		b.Fatalf("Failed to create embedder: %v", err)
 	}
 
-	ctx := context.Background()
 
+	ctx := context.Background()
 	// Pre-generate test data
 	smallDocs := make([]string, 100)
 	for i := range smallDocs {

@@ -15,8 +15,6 @@ import (
 )
 
 // TestAdvancedMockOrchestrator tests the advanced mock orchestrator functionality
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestAdvancedMockOrchestrator(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -231,8 +229,6 @@ func TestGraphExecution(t *testing.T) {
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestWorkflowExecution tests workflow execution scenarios
 func TestWorkflowExecution(t *testing.T) {
@@ -295,8 +291,6 @@ func TestWorkflowExecution(t *testing.T) {
 				assert.NoError(t, err)
 			}
 		})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
@@ -347,8 +341,6 @@ func TestConcurrencyAdvanced(t *testing.T) {
 			resultCount++
 		}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Equal(t, numGoroutines*numRequests, resultCount)
 		assert.Equal(t, numGoroutines*numRequests, orchestrator.GetCallCount())
 	})
@@ -369,8 +361,6 @@ func TestLoadTesting(t *testing.T) {
 	t.Run("load_test", func(t *testing.T) {
 		RunLoadTest(t, orchestrator, numRequests, concurrency)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		// Verify health after load test
 		health := orchestrator.CheckHealth()
 		AssertHealthCheck(t, health, "healthy")
@@ -434,8 +424,6 @@ func TestMetricsRecording(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
 			metrics.Clear()
 			tt.operation()
@@ -465,8 +453,6 @@ func TestIntegrationTestHelper(t *testing.T) {
 
 	// Test metrics recording
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	helper.GetMetrics().RecordChainExecution(ctx, 100*time.Millisecond, true, "integration-chain")
 
 	recordings := helper.GetMetrics().GetRecordings()
@@ -498,8 +484,6 @@ func TestErrorHandling(t *testing.T) {
 				return err
 			},
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	for _, tt := range tests {
@@ -516,11 +500,9 @@ func TestErrorHandling(t *testing.T) {
 // BenchmarkOrchestratorExecution benchmarks orchestrator execution performance
 func BenchmarkOrchestratorExecution(b *testing.B) {
 	orchestrator := NewAdvancedMockOrchestrator("bench-orch", "chain",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		WithMockResponses([]interface{}{"benchmark result"}))
-
 	ctx := context.Background()
+
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -530,8 +512,6 @@ func BenchmarkOrchestratorExecution(b *testing.B) {
 				b.Errorf("Benchmark execution error: %v", err)
 			}
 		}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	})
 }
 
@@ -549,8 +529,6 @@ func BenchmarkChainExecution(b *testing.B) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // BenchmarkGraphExecution benchmarks graph execution performance
 func BenchmarkGraphExecution(b *testing.B) {
 	edges := map[string][]string{

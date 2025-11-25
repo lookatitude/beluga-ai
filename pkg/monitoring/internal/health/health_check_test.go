@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewHealthCheck(t *testing.T) {
 	checkFunc := func() *HealthCheckResult {
 		return &HealthCheckResult{
@@ -32,8 +30,6 @@ func TestNewHealthCheck(t *testing.T) {
 	assert.Equal(t, 3, hc.MaxRetries)
 	assert.Equal(t, 2*time.Second, hc.RetryDelay)
 	assert.NotNil(t, hc.Alerts)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestHealthCheckStartStop(t *testing.T) {
@@ -56,8 +52,6 @@ func TestHealthCheckStartStop(t *testing.T) {
 	time.Sleep(150 * time.Millisecond)
 
 	hc.Stop()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.True(t, called, "Health check function should have been called")
 }
@@ -120,7 +114,7 @@ func TestHealthCheckRunCheck(t *testing.T) {
 
 	t.Run("timeout check", func(t *testing.T) {
 		checkFunc := func() *HealthCheckResult {
-			time.Sleep(10 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond) // Sleep longer than timeout
 			return &HealthCheckResult{
 				Status:    StatusHealthy,
 				Message:   "Should timeout",
@@ -146,8 +140,6 @@ func TestHealthCheckRunCheck(t *testing.T) {
 		hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
 
 		hc.RunCheck()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 		assert.Equal(t, StatusUnhealthy, hc.LastResult.Status)
 		assert.Contains(t, hc.LastResult.Message, "returned nil result")
@@ -170,8 +162,6 @@ func TestHealthCheckRegisterAlert(t *testing.T) {
 	}
 
 	hc.RegisterAlert(alertFunc)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Len(t, hc.Alerts, 1)
 
 	hc.RunCheck()
@@ -190,15 +180,11 @@ func TestHealthCheckGetLastResult(t *testing.T) {
 	})
 
 	// Initially unknown
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result := hc.GetLastResult()
 	assert.Equal(t, StatusUnknown, result.Status)
 
 	// After running check
 	hc.RunCheck()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result = hc.GetLastResult()
 	assert.Equal(t, StatusHealthy, result.Status)
 	assert.Equal(t, "Test result", result.Message)
@@ -224,8 +210,6 @@ func TestHealthCheckManagerAddCheck(t *testing.T) {
 
 	hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	t.Run("add new check", func(t *testing.T) {
 		err := manager.AddCheck(hc)
 		assert.NoError(t, err)
@@ -251,8 +235,6 @@ func TestHealthCheckManagerRemoveCheck(t *testing.T) {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
 	manager.AddCheck(hc)
 
@@ -280,8 +262,6 @@ func TestHealthCheckManagerStartStopAllChecks(t *testing.T) {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	hc1 := NewHealthCheck("check1", "component1", 100*time.Millisecond, checkFunc)
 	hc2 := NewHealthCheck("check2", "component2", 100*time.Millisecond, checkFunc)
 
@@ -304,8 +284,6 @@ func TestHealthCheckManagerGetCheckResults(t *testing.T) {
 	manager := NewHealthCheckManager()
 
 	checkFunc := func() *HealthCheckResult {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		return &HealthCheckResult{
 			Status:      StatusHealthy,
 			Message:     "Test",
@@ -367,8 +345,6 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 		degradedCheck.RunCheck()
 
 		overallStatus, results := manager.CheckSystemHealth()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Equal(t, StatusDegraded, overallStatus)
 		assert.Len(t, results, 2)
 	})
@@ -426,8 +402,6 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 		getHealthFunc := func() map[string]interface{} {
 			return map[string]interface{}{
 				"state": "paused",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				"name":  "test_agent",
 			}
 		}
@@ -444,8 +418,6 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 				"error_count": 10,
 				"name":        "test_agent",
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 		checkFunc := CreateAgentHealthCheckFunc(getHealthFunc)
 		result := checkFunc()
@@ -488,8 +460,6 @@ func TestHealthCheckConcurrency(t *testing.T) {
 			Message:     "Concurrent check",
 			CheckName:   "concurrent_check",
 			ComponentID: "test_component",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			Timestamp:   time.Now(),
 		}
 	}
@@ -506,8 +476,6 @@ func TestHealthCheckConcurrency(t *testing.T) {
 			defer wg.Done()
 			hc.RunCheck()
 		}()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	wg.Wait()
@@ -531,8 +499,6 @@ func BenchmarkHealthCheck_RunCheck(b *testing.B) {
 	}
 
 	hc := NewHealthCheck("bench_check", "bench_component", time.Minute, checkFunc)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

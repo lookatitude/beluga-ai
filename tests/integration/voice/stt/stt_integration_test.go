@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
+	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/azure"    // Register azure provider
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram" // Register deepgram provider
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/google"   // Register google provider
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/azure"    // Register azure provider
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/openai"   // Register openai provider
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

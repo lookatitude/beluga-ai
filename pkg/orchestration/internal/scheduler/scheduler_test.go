@@ -9,15 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewScheduler(t *testing.T) {
 	scheduler := NewScheduler()
 	require.NotNil(t, scheduler)
 	assert.NotNil(t, scheduler.tasks)
 	assert.NotNil(t, scheduler.completed)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestScheduler_AddTask(t *testing.T) {
@@ -31,8 +27,6 @@ func TestScheduler_AddTask(t *testing.T) {
 	}
 
 	err := scheduler.AddTask(task)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 	assert.Contains(t, scheduler.tasks, "test-task")
 }
@@ -51,8 +45,6 @@ func TestScheduler_AddTask_DuplicateID(t *testing.T) {
 	err := scheduler.AddTask(task)
 	assert.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Try to add duplicate
 	err = scheduler.AddTask(task)
 	assert.Error(t, err)
@@ -84,8 +76,6 @@ func TestScheduler_Run(t *testing.T) {
 	scheduler.AddTask(task1)
 	scheduler.AddTask(task2)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := scheduler.Run()
 	assert.NoError(t, err)
 	assert.True(t, executedTasks["task1"])
@@ -102,8 +92,6 @@ func TestScheduler_Run_WithMissingDependency(t *testing.T) {
 		Execute: func() error {
 			return nil
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		DependsOn: []string{"nonexistent"},
 	}
 
@@ -130,8 +118,6 @@ func TestScheduler_Run_WithTaskFailure(t *testing.T) {
 			return nil
 		},
 		DependsOn: []string{"task1"},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	scheduler.AddTask(task1)
@@ -159,8 +145,6 @@ func TestScheduler_ExecuteSequential(t *testing.T) {
 
 	task2 := &Task{
 		ID: "task2",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Execute: func() error {
 			executionOrder = append(executionOrder, "task2")
 			return nil
@@ -195,8 +179,6 @@ func TestScheduler_ExecuteAutonomous(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 			executedTasks["task2"] = true
 			return nil
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 	}
 
@@ -227,8 +209,6 @@ func TestScheduler_ExecuteConcurrent(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	task2 := &Task{
 		ID: "task2",
 		Execute: func() error {
@@ -250,8 +230,6 @@ func TestScheduler_ExecuteConcurrent(t *testing.T) {
 func TestScheduler_ExecuteWithRetry(t *testing.T) {
 	scheduler := NewScheduler()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	attemptCount := 0
 
 	task := &Task{

@@ -224,8 +224,6 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, options ...Option)
 	return ch, nil
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestWithOption(t *testing.T) {
 	config := make(map[string]any)
 
@@ -309,8 +307,6 @@ func TestEnsureMessages(t *testing.T) {
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 */
 
 func TestMockRunnable_Invoke(t *testing.T) {
@@ -329,8 +325,6 @@ func TestMockRunnable_Invoke(t *testing.T) {
 	// Test call tracking
 	calls := mock.GetInvokeCalls()
 	if len(calls) != 1 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected 1 invoke call, got %d", len(calls))
 	}
 }
@@ -344,8 +338,6 @@ func TestMockRunnable_InvokeWithError(t *testing.T) {
 		t.Errorf("MockRunnable.Invoke() error = %v, expected %v", err, expectedErr)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	calls := mock.GetInvokeCalls()
 	if len(calls) != 1 {
 		t.Errorf("Expected 1 invoke call, got %d", len(calls))
@@ -360,8 +352,6 @@ func TestMockRunnable_InvokeWithDelay(t *testing.T) {
 	duration := time.Since(start)
 
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("MockRunnable.Invoke() error = %v", err)
 	}
 
@@ -390,8 +380,6 @@ func TestMockRunnable_Batch(t *testing.T) {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test call tracking
 	calls := mock.GetBatchCalls()
 	if len(calls) != 1 {
@@ -406,8 +394,6 @@ func TestMockRunnable_BatchWithError(t *testing.T) {
 	expectedErr := errors.New("batch error")
 	mock := NewMockRunnable().WithBatchError(expectedErr)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	inputs := []any{"input1", "input2"}
 	_, err := mock.Batch(context.Background(), inputs)
 	if err != expectedErr {
@@ -423,8 +409,6 @@ func TestMockRunnable_BatchWithError(t *testing.T) {
 func TestMockRunnable_BatchWithDelay(t *testing.T) {
 	mock := NewMockRunnable().WithBatchDelay(10 * time.Millisecond)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	inputs := []any{"input1", "input2"}
 	start := time.Now()
 	_, err := mock.Batch(context.Background(), inputs)
@@ -447,8 +431,6 @@ func TestTracedRunnable_Invoke(t *testing.T) {
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
 	result, err := traced.Invoke(context.Background(), "test_input")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if err != nil {
 		t.Errorf("TracedRunnable.Invoke() error = %v", err)
 		return
@@ -467,8 +449,6 @@ func TestTracedRunnable_Invoke(t *testing.T) {
 
 func TestTracedRunnable_InvokeWithError(t *testing.T) {
 	expectedErr := errors.New("test error")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	mock := NewMockRunnable().WithInvokeError(expectedErr)
 
 	tracer := trace.NewNoopTracerProvider().Tracer("")
@@ -498,8 +478,6 @@ func TestTracedRunnable_Batch(t *testing.T) {
 	results, err := traced.Batch(context.Background(), inputs)
 	if err != nil {
 		t.Errorf("TracedRunnable.Batch() error = %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		return
 	}
 
@@ -531,8 +509,6 @@ func TestTracedRunnable_Stream(t *testing.T) {
 	if err != nil {
 		t.Errorf("TracedRunnable.Stream() error = %v", err)
 		return
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	var chunks []any
@@ -551,8 +527,6 @@ func TestTracedRunnable_Stream(t *testing.T) {
 	// Verify that the mock was called
 	calls := mock.GetStreamCalls()
 	if len(calls) != 1 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected 1 stream call on mock, got %d", len(calls))
 	}
 }
@@ -570,8 +544,6 @@ func TestTracedRunnable_StreamWithError(t *testing.T) {
 		t.Errorf("TracedRunnable.Stream() error = %v, expected %v", err, expectedErr)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Verify that the mock was called
 	calls := mock.GetStreamCalls()
 	if len(calls) != 1 {
@@ -589,8 +561,6 @@ func TestRunnableWithTracing(t *testing.T) {
 	if tracedRunnable, ok := traced.(*TracedRunnable); !ok {
 		t.Errorf("RunnableWithTracing() returned %T, expected *TracedRunnable", traced)
 	} else {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		if tracedRunnable.componentType != "test_component" {
 			t.Errorf("RunnableWithTracing() componentType = %q, expected %q", tracedRunnable.componentType, "test_component")
 		}
@@ -607,8 +577,6 @@ func TestRunnableWithTracingAndName(t *testing.T) {
 	metrics := NoOpMetrics()
 	traced := RunnableWithTracingAndName(mock, tracer, metrics, "test_component", "test_name")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	if tracedRunnable, ok := traced.(*TracedRunnable); !ok {
 		t.Errorf("RunnableWithTracingAndName() returned %T, expected *TracedRunnable", traced)
 	} else {
@@ -654,8 +622,6 @@ func TestMetrics_Recording(t *testing.T) {
 
 	// Test Invoke metrics
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	result, err := traced.Invoke(ctx, "test_input")
 	if err != nil {
 		t.Errorf("TracedRunnable.Invoke() error = %v", err)
@@ -681,8 +647,6 @@ func TestMetrics_Recording(t *testing.T) {
 	}
 	chunks := 0
 	for range streamChan {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		chunks++
 	}
 	if chunks != 1 {
@@ -699,8 +663,6 @@ func TestMetrics_NoOpMetrics(t *testing.T) {
 	// No-op metrics should not panic when called
 	ctx := context.Background()
 	metrics.RecordRunnableInvoke(ctx, "test", time.Millisecond, nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	metrics.RecordRunnableBatch(ctx, "test", 5, time.Millisecond, nil)
 	metrics.RecordRunnableStream(ctx, "test", time.Millisecond, 3, nil)
 
@@ -730,8 +692,6 @@ func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
 	ctx := context.Background()
 	result, err := traced.Invoke(ctx, "test_input")
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("TracedRunnable.Invoke() error = %v", err)
 	}
 	if result != "mock_result" {
@@ -747,8 +707,6 @@ func TestFrameworkErrorTypes(t *testing.T) {
 	}{
 		{"ValidationError", NewValidationError, ErrorTypeValidation},
 		{"NetworkError", NewNetworkError, ErrorTypeNetwork},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{"AuthenticationError", NewAuthenticationError, ErrorTypeAuthentication},
 		{"InternalError", NewInternalError, ErrorTypeInternal},
 		{"ConfigurationError", NewConfigurationError, ErrorTypeConfiguration},

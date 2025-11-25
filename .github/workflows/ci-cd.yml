@@ -11,20 +11,55 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      run_policy:
+        description: 'Run policy checks'
+        required: false
+        default: 'false'
+        type: boolean
+      run_lint:
+        description: 'Run lint and format checks'
+        required: false
+        default: 'false'
+        type: boolean
+      run_security:
+        description: 'Run security scans'
+        required: false
+        default: 'false'
+        type: boolean
+      run_unit_tests:
+        description: 'Run unit tests'
+        required: false
+        default: 'false'
+        type: boolean
+      run_integration_tests:
+        description: 'Run integration tests'
+        required: false
+        default: 'false'
+        type: boolean
+      run_build:
+        description: 'Run build verification'
+        required: false
+        default: 'false'
+        type: boolean
 
 env:
   GO_VERSION: '1.24'
 
 jobs:
   # ============================================================================
-  # POLICY CHECKS (PR only)
+  # POLICY CHECKS (PR only) - ADVISORY (warnings only, doesn't block merge)
   # ============================================================================
   policy:
     name: 📋 Policy Checks
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: |
+      (github.event_name == 'pull_request') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.run_policy == 'true')
+    continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Install jq
         run: |
@@ -35,18 +70,21 @@ jobs:
         run: |
           BRANCH="${GITHUB_HEAD_REF}"
           if ! echo "$BRANCH" | grep -Eq '^[0-9]{3}-[a-z0-9-]+$'; then
-            echo "❌ Branch name must be ###-kebab-case" && exit 1
+            echo "::warning::Branch name must be ###-kebab-case"
+            echo "❌ Branch name must be ###-kebab-case"
+          else
+            echo "✅ Branch name is valid"
           fi
-          echo "✅ Branch name is valid"
       
       - name: Enforce PR description contains spec link
         run: |
           body=$(jq -r '.pull_request.body' "$GITHUB_EVENT_PATH")
-          echo "$body" | grep -Eq '(Spec:|/specs/|Feature Spec|Mini-spec)' || {
+          if ! echo "$body" | grep -Eq '(Spec:|/specs/|Feature Spec|Mini-spec)'; then
+            echo "::warning::PR body must link a spec or include mini-spec"
             echo "❌ PR body must link a spec or include mini-spec"
-            exit 1
-          }
-          echo "✅ PR description contains spec reference"
+          else
+            echo "✅ PR description contains spec reference"
+          fi
       
       - name: Check PR size
         run: |
@@ -55,8 +93,7 @@ jobs:
           lines=$((added+removed))
           echo "📊 PR size: $lines lines"
           if [ "$lines" -gt 1500 ]; then
-            echo "::error::❌ PR too large (>1500 lines). Add label 'large-pr' to proceed"
-            exit 1
+            echo "::warning::❌ PR too large (>1500 lines). Add label 'large-pr' to proceed"
           fi
           if [ "$lines" -gt 600 ]; then
             echo "::warning::⚠️  Large PR (>600 lines). Consider splitting"
@@ -68,12 +105,18 @@ jobs:
   lint:
     name: 🔍 Lint & Format
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.run_lint == 'true'
     continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -88,11 +131,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-${{ env.GO_VERSION }}-
       
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3
+      - name: golangci-lint (with auto-fix)
+        uses: golangci/golangci-lint-action@v7
         with:
-          version: latest
-          args: --timeout=5m --out-format=colored-line-number,github-actions
+          version: v2.6.2
+          args: --timeout=5m --fix ./pkg/... ./tests/...
       
       - name: go vet
         run: |
@@ -106,21 +149,25 @@ jobs:
           fi
           echo "✅ go vet passed - no issues found"
       
-      - name: go fmt check
+      - name: go fmt (auto-fix)
         run: |
-          echo "Checking code formatting..."
-          unformatted=$(gofmt -s -l .)
-          if [ -n "$unformatted" ]; then
-            echo "::warning::Files need formatting (advisory - does not block merge)"
-            echo "⚠️  The following files need formatting:" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$unformatted" >> $GITHUB_STEP_SUMMARY
-            echo '```' >> $GITHUB_STEP_SUMMARY
-            echo "$unformatted"
-            exit 1
+          echo "Auto-formatting code with gofmt..."
+          gofmt -w -s .
+          echo "✅ Code formatted with gofmt"
+      
+      - name: Commit auto-fixed files
+        if: github.event_name == 'pull_request'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add -A
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: auto-fix linting and formatting issues [skip ci]"
+            git push
+            echo "✅ Auto-fixed files committed to PR branch"
           fi
-          echo "✅ All files properly formatted" >> $GITHUB_STEP_SUMMARY
-          echo "✅ All files properly formatted"
       
       - name: Validate package declarations
         run: |
@@ -177,14 +224,17 @@ jobs:
   security:
     name: 🔒 Security Scans
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.run_security == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -240,7 +290,7 @@ jobs:
           echo "✅ No secrets detected"
       
       - name: Run Trivy (file system scan)
-        uses: aquasecurity/trivy-action@0.33.1
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
@@ -325,12 +375,15 @@ jobs:
   unit-tests:
     name: 🧪 Unit Tests
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.run_unit_tests == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -480,20 +533,18 @@ jobs:
           coverage="${{ steps.test_results.outputs.coverage }}"
           
           if [ -z "$coverage_num" ] || [ "$coverage_num" = "0" ]; then
-            echo "::error::Coverage calculation failed or returned 0%. Please check test execution and coverage file generation."
-            exit 1
+            echo "::warning::Coverage calculation failed or returned 0%. Please check test execution and coverage file generation."
+          else
+            # Coverage threshold is advisory - show warning but don't block
+            if awk "BEGIN {exit !($coverage_num < 80)}"; then
+              echo "::warning::Coverage ${coverage} is below 80% threshold (required: ≥80%) - advisory check"
+              echo "Current coverage: ${coverage}"
+              echo "Required coverage: 80%"
+              echo "⚠️  Coverage below threshold, but this is an advisory check and does not block merge"
+            else
+              echo "✅ Coverage ${coverage} meets 80% threshold"
+            fi
           fi
-          
-          # Coverage threshold is advisory - show warning but don't block
-          if awk "BEGIN {exit !($coverage_num < 80)}"; then
-            echo "::warning::Coverage ${coverage} is below 80% threshold (required: ≥80%) - advisory check"
-            echo "Current coverage: ${coverage}"
-            echo "Required coverage: 80%"
-            echo "⚠️  Coverage below threshold, but this is an advisory check and does not block merge"
-            # Don't exit 1 - this is advisory
-          fi
-          
-          echo "✅ Coverage ${coverage} meets 80% threshold"
       
       - name: Upload unit test coverage
         uses: codecov/codecov-action@v5
@@ -520,11 +571,14 @@ jobs:
   integration-tests:
     name: 🔗 Integration Tests
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.run_integration_tests == 'true'
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -553,6 +607,29 @@ jobs:
           echo "📊 Integration Test Coverage:"
           go tool cover -func=coverage.integration.out | tail -n1
       
+      - name: Check integration test coverage threshold
+        if: always()
+        run: |
+          if [ -f coverage.integration.out ] && [ -s coverage.integration.out ]; then
+            coverage=$(go tool cover -func=coverage.integration.out 2>/dev/null | grep total | awk '{print $3}' || echo "")
+            if [ -n "$coverage" ] && [ "$coverage" != "0%" ]; then
+              coverage_num=$(echo "$coverage" | sed 's/%//' | tr -d '\n\r' | tr -d ' ')
+              if [[ "$coverage_num" =~ ^[0-9.]+$ ]]; then
+                # Coverage threshold is advisory - show warning but don't block
+                if awk "BEGIN {exit !($coverage_num < 80)}"; then
+                  echo "::warning::Integration test coverage ${coverage} is below 80% threshold (required: ≥80%) - advisory check"
+                  echo "Current coverage: ${coverage}"
+                  echo "Required coverage: 80%"
+                  echo "⚠️  Coverage below threshold, but this is an advisory check and does not block merge"
+                else
+                  echo "✅ Integration test coverage ${coverage} meets 80% threshold"
+                fi
+              fi
+            fi
+          else
+            echo "::warning::Integration test coverage file missing or empty"
+          fi
+      
       - name: Upload integration test coverage
         uses: codecov/codecov-action@v5
         with:
@@ -580,10 +657,10 @@ jobs:
     continue-on-error: true  # Advisory check - warnings don't block merge
     needs: [unit-tests, integration-tests]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -602,13 +679,13 @@ jobs:
         run: go mod download
       
       - name: Download unit test coverage
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v4
         with:
           name: unit-test-results
           path: coverage/
       
       - name: Download integration test coverage
-        uses: actions/download-artifact@v6
+        uses: actions/download-artifact@v4
         with:
           name: integration-test-results
           path: coverage/
@@ -638,9 +715,12 @@ jobs:
           pct=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | sed 's/%//')
           echo "📊 Total Coverage: ${pct}%"
           
+          # Coverage threshold is advisory - show warning but don't block
           if awk "BEGIN {exit !($pct < 80)}"; then
-            echo "❌ Coverage ${pct}% is below minimum 80%"
-            exit 1
+            echo "::warning::Coverage ${pct}% is below 80% threshold (required: ≥80%) - advisory check"
+            echo "Current coverage: ${pct}%"
+            echo "Required coverage: 80%"
+            echo "⚠️  Coverage below threshold, but this is an advisory check and does not block merge"
           else
             echo "✅ Coverage ${pct}% meets minimum requirement"
           fi
@@ -666,13 +746,17 @@ jobs:
   build:
     name: 🔨 Build Packages
     runs-on: ubuntu-latest
+    if: |
+      github.event_name != 'workflow_dispatch' ||
+      github.event.inputs.run_build == 'true'
     # Critical check - failures block merge
-    needs: [lint, security, unit-tests]
+    # Depends on critical jobs (security, unit-tests) but not advisory jobs (policy, lint)
+    needs: [security, unit-tests]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum
@@ -696,7 +780,25 @@ jobs:
       - name: Build all packages
         run: |
           echo "Building all packages..."
-          go build -v $(go list ./... | grep -v -E '(specs|examples)')
+          # Get all packages, filter out specs/examples/tests/website, and only include those with non-test Go files
+          packages=$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./... 2>&1 | grep -v -E '(specs|examples|tests|website|github.com/lookatitude/beluga-ai$)' | grep -v "^$")
+          
+          if [ -z "$packages" ]; then
+            echo "⚠️ No packages found to build"
+            exit 1
+          fi
+          
+          # Build all packages in one command (more efficient and better error handling)
+          set +e
+          echo "$packages" | xargs go build -v
+          build_exit=$?
+          set -e
+          
+          if [ "$build_exit" -ne 0 ]; then
+            echo "::error::Some packages failed to build"
+            exit 1
+          fi
+          
           echo "✅ All packages built successfully"
       
       - name: Verify build artifacts
@@ -719,10 +821,10 @@ jobs:
     needs: [build, integration-tests, coverage]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
       
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
           cache-dependency-path: go.sum

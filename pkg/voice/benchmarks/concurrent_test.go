@@ -8,11 +8,11 @@ import (
 
 // BenchmarkConcurrentSessions benchmarks concurrent sessions (target 100+)
 func BenchmarkConcurrentSessions(b *testing.B) {
-	ctx := context.Background()
 	numSessions := 100
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+	ctx := context.Background()
 		var wg sync.WaitGroup
 		sessions := make([]interface{}, numSessions)
 
@@ -32,12 +32,12 @@ func BenchmarkConcurrentSessions(b *testing.B) {
 
 // BenchmarkConcurrentAudioProcessing benchmarks concurrent audio processing
 func BenchmarkConcurrentAudioProcessing(b *testing.B) {
-	ctx := context.Background()
 	audio := make([]byte, 3200)
 	concurrency := 50
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+	ctx := context.Background()
 		var wg sync.WaitGroup
 		sem := make(chan struct{}, concurrency)
 

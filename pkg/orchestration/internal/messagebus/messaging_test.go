@@ -49,16 +49,12 @@ func (m *MockMessageBus) GetName() string {
 	return args.String(0)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewMessagingSystem(t *testing.T) {
 	mockBus := &MockMessageBus{}
 	system := NewMessagingSystem(mockBus)
 
 	assert.NotNil(t, system)
 	assert.Equal(t, mockBus, system.messageBus)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestMessagingSystem_SendMessage_Success(t *testing.T) {
@@ -76,8 +72,6 @@ func TestMessagingSystem_SendMessage_Success(t *testing.T) {
 
 	err := system.SendMessage(msg)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 	mockBus.AssertExpectations(t)
 }
@@ -96,8 +90,6 @@ func TestMessagingSystem_SendMessage_Error(t *testing.T) {
 	mockBus.On("Publish", mock.Anything, "test.topic", "test payload", mock.AnythingOfType("map[string]interface {}")).Return(assert.AnError)
 
 	err := system.SendMessage(msg)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
@@ -114,8 +106,6 @@ func TestMessagingSystem_SendMessageWithRetry_Success(t *testing.T) {
 	}
 
 	// Mock successful publish on first attempt
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	mockBus.On("Publish", mock.Anything, "test.topic", mock.Anything, mock.Anything).Return(nil)
 
 	err := system.SendMessageWithRetry(msg, 3, 10*time.Millisecond)
@@ -143,8 +133,6 @@ func TestMessagingSystem_SendMessageWithRetry_EventualSuccess(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 3, 1*time.Millisecond)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 
 	// Verify retry logs
@@ -173,8 +161,6 @@ func TestMessagingSystem_SendMessageWithRetry_ExhaustRetries(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 3, 1*time.Millisecond)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send message after 3 retries")
 
@@ -199,8 +185,6 @@ func TestMessagingSystem_SendMessageWithRetry_ExponentialBackoff(t *testing.T) {
 	// Mock all attempts fail to test timing
 	// With retries=3, we get 4 attempts total: initial + 3 retries
 	// Backoff: 10ms (after attempt 1), 20ms (after attempt 2), 40ms (after attempt 3)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Total: 10ms + 20ms + 40ms = 70ms
 	mockBus.On("Publish", mock.Anything, "test.topic", mock.Anything, mock.Anything).Return(assert.AnError).Times(4)
 
@@ -210,8 +194,6 @@ func TestMessagingSystem_SendMessageWithRetry_ExponentialBackoff(t *testing.T) {
 
 	assert.Error(t, err)
 	// Should take at least 10ms + 20ms + 40ms = 70ms due to exponential backoff
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.True(t, duration >= 70*time.Millisecond, "Duration should be at least 70ms, got %v", duration)
 
 	mockBus.AssertExpectations(t)
@@ -221,8 +203,6 @@ func TestMessagingSystem_ReceiveMessage(t *testing.T) {
 	mockBus := &MockMessageBus{}
 	system := NewMessagingSystem(mockBus)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	msg, err := system.ReceiveMessage()
 
 	assert.Error(t, err)
@@ -232,8 +212,6 @@ func TestMessagingSystem_ReceiveMessage(t *testing.T) {
 
 func TestValidateMessage_Valid(t *testing.T) {
 	msg := Message{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		ID:    "test-id",
 		Topic: "test.topic",
 	}
@@ -243,8 +221,6 @@ func TestValidateMessage_Valid(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestValidateMessage_MissingID(t *testing.T) {
 	msg := Message{
 		Topic: "test.topic",
@@ -252,8 +228,6 @@ func TestValidateMessage_MissingID(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required fields")
 }
@@ -265,8 +239,6 @@ func TestValidateMessage_MissingTopic(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required fields")
 }
@@ -289,8 +261,6 @@ func TestValidateMessage_WithPayloadAndMetadata(t *testing.T) {
 	}
 
 	err := ValidateMessage(msg)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.NoError(t, err)
 }
@@ -324,8 +294,6 @@ func TestSerializeMessage_ComplexPayload(t *testing.T) {
 		"nested": map[string]interface{}{
 			"array":  []string{"item1", "item2"},
 			"number": 123,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 		"simple": "value",
 	}
@@ -343,8 +311,6 @@ func TestSerializeMessage_ComplexPayload(t *testing.T) {
 
 	// Verify deserialization works
 	deserialized, err := DeserializeMessage(serialized)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 	assert.Equal(t, msg.ID, deserialized.ID)
 	assert.Equal(t, msg.Topic, deserialized.Topic)
@@ -363,8 +329,6 @@ func TestSerializeMessage_InvalidPayload(t *testing.T) {
 	type NonSerializable struct {
 		Func func() // Functions can't be JSON serialized
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	msg := Message{
 		ID:      "invalid-id",
@@ -373,8 +337,6 @@ func TestSerializeMessage_InvalidPayload(t *testing.T) {
 	}
 
 	serialized, err := SerializeMessage(msg)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.Error(t, err)
 	assert.Empty(t, serialized)
@@ -384,8 +346,6 @@ func TestSerializeMessage_InvalidPayload(t *testing.T) {
 func TestDeserializeMessage_Success(t *testing.T) {
 	jsonStr := `{
 		"ID": "test-id",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"Topic": "test.topic",
 		"Payload": "test payload",
 		"Metadata": {"key": "value"}
@@ -407,8 +367,6 @@ func TestDeserializeMessage_InvalidJSON(t *testing.T) {
 	invalidJSON := `{"ID": "test", "invalid": json}`
 
 	msg, err := DeserializeMessage(invalidJSON)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.Error(t, err)
 	assert.Equal(t, Message{}, msg)
@@ -440,8 +398,6 @@ func TestMessagingSystem_Integration_SerializeDeserialize(t *testing.T) {
 
 	// Deserialize
 	deserialized, err := DeserializeMessage(serialized)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	require.NoError(t, err)
 
 	// Compare
@@ -458,8 +414,6 @@ func TestMessagingSystem_EndToEnd(t *testing.T) {
 	// Create and validate message
 	msg := Message{
 		ID:       "e2e-id",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Topic:    "e2e.topic",
 		Payload:  "end to end payload",
 		Metadata: map[string]interface{}{"test": "e2e"},
@@ -474,8 +428,6 @@ func TestMessagingSystem_EndToEnd(t *testing.T) {
 
 	// Deserialize message
 	deserialized, err := DeserializeMessage(serialized)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	require.NoError(t, err)
 
 	// Mock successful publish
@@ -490,8 +442,6 @@ func TestMessagingSystem_EndToEnd(t *testing.T) {
 
 func TestMessagingSystem_RetryBackoffCalculation(t *testing.T) {
 	mockBus := &MockMessageBus{}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	system := NewMessagingSystem(mockBus)
 
 	msg := Message{ID: "retry-test", Topic: "retry.topic"}

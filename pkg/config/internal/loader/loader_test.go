@@ -8,8 +8,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewLoader(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -45,8 +43,6 @@ func TestNewLoader(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestLoader_LoadConfig(t *testing.T) {
@@ -119,8 +115,6 @@ llm_providers:
 			if !tt.expectError && cfg == nil {
 				t.Error("expected config but got nil")
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -182,8 +176,6 @@ func TestLoadFromEnv(t *testing.T) {
 				}
 				if len(cfg.LLMProviders) > 0 && cfg.LLMProviders[0].Name != "env-llm" {
 					t.Errorf("expected LLM provider name 'env-llm', got %s", cfg.LLMProviders[0].Name)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				}
 			}
 		})
@@ -259,8 +251,6 @@ llm_providers:
 
 			// Verify config content for successful cases
 			if !tt.expectError && cfg != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				if len(cfg.LLMProviders) != 1 {
 					t.Errorf("expected 1 LLM provider, got %d", len(cfg.LLMProviders))
 				}
@@ -294,8 +284,6 @@ llm_providers:
 		t.Fatalf("failed to create loader: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test successful case
 	cfg := loader.MustLoadConfig()
 	if cfg == nil {
@@ -319,8 +307,6 @@ func TestLoader_MustLoadConfig_Panic(t *testing.T) {
 		SetDefaults: false,
 	})
 	if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Fatalf("failed to create loader: %v", err)
 	}
 
@@ -358,8 +344,6 @@ func TestLoader_FluentAPI(t *testing.T) {
 	if len(loader.options.ConfigPaths) != 2 {
 		t.Errorf("expected 2 config paths, got %d", len(loader.options.ConfigPaths))
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if loader.options.EnvPrefix != "MYAPP" {
 		t.Errorf("EnvPrefix = %s, want MYAPP", loader.options.EnvPrefix)
@@ -416,8 +400,6 @@ func TestGetEnvConfigMap(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Run(tt.name, func(t *testing.T) {
 			result := GetEnvConfigMap(tt.prefix)
 
@@ -459,8 +441,6 @@ func TestEnvVarName(t *testing.T) {
 			key:      "simple.key",
 			expected: "_SIMPLE_KEY",
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{
 			name:     "empty key",
 			prefix:   "APP",
@@ -502,8 +482,6 @@ func TestConfigKey(t *testing.T) {
 			name:     "empty prefix",
 			prefix:   "",
 			envVar:   "_SIMPLE_KEY",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			expected: "simple.key",
 		},
 		{
@@ -532,8 +510,6 @@ func TestLoader_LoadConfig_WithValidationError(t *testing.T) {
 llm_providers:
   - name: ""
     provider: "openai"
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 `
 	err := os.WriteFile(configFile, []byte(configContent), 0644)
 	if err != nil {

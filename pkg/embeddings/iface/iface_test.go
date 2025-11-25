@@ -5,8 +5,6 @@ import (
 	"testing"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewEmbeddingError(t *testing.T) {
 	embErr := NewEmbeddingError("test_code", "test message %s", "arg")
 
@@ -21,8 +19,6 @@ func TestNewEmbeddingError(t *testing.T) {
 	if embErr.Cause != nil {
 		t.Error("Expected Cause to be nil")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestWrapError(t *testing.T) {
@@ -38,8 +34,6 @@ func TestWrapError(t *testing.T) {
 	}
 
 	if embErr.Cause != cause {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("Expected Cause to match original error")
 	}
 }
@@ -72,8 +66,6 @@ func TestEmbeddingError_Error(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.err.Error() != tt.expected {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("EmbeddingError.Error() = %q, expected %q", tt.err.Error(), tt.expected)
 			}
 		})
@@ -85,8 +77,6 @@ func TestEmbeddingError_Unwrap(t *testing.T) {
 	err := &EmbeddingError{
 		Code:    "test_code",
 		Message: "test message",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Cause:   cause,
 	}
 
@@ -141,8 +131,6 @@ func TestIsEmbeddingError(t *testing.T) {
 			want: false,
 		},
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -198,8 +186,6 @@ func TestAsEmbeddingError(t *testing.T) {
 				t.Errorf("AsEmbeddingError() found = %v, want %v", found, tt.found)
 			}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if found && target == nil {
 				t.Error("AsEmbeddingError() should set target when found")
 			}

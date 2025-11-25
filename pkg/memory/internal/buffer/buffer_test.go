@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -69,8 +70,6 @@ func (m *MockChatMessageHistory) Clear(ctx context.Context) error {
 var _ iface.ChatMessageHistory = (*MockChatMessageHistory)(nil)
 
 // TestNewChatMessageBufferMemory tests the constructor
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewChatMessageBufferMemory(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history)
@@ -84,8 +83,6 @@ func TestNewChatMessageBufferMemory(t *testing.T) {
 	assert.Equal(t, "Human", memory.HumanPrefix)
 	assert.Equal(t, "AI", memory.AIPrefix)
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestMemoryVariables tests the MemoryVariables method
 func TestChatMessageBufferMemory_MemoryVariables(t *testing.T) {
@@ -95,8 +92,6 @@ func TestChatMessageBufferMemory_MemoryVariables(t *testing.T) {
 	memory.MemoryKey = "custom_history"
 	variables := memory.MemoryVariables()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, []string{"custom_history"}, variables)
 }
 
@@ -119,8 +114,6 @@ func TestChatMessageBufferMemory_LoadMemoryVariables_ReturnMessages(t *testing.T
 
 	messages, ok := vars["history"].([]schema.Message)
 	assert.True(t, ok)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Len(t, messages, 2)
 	assert.Equal(t, "Hello", messages[0].GetContent())
 	assert.Equal(t, "Hi there!", messages[1].GetContent())
@@ -143,8 +136,6 @@ func TestChatMessageBufferMemory_LoadMemoryVariables_ReturnFormattedString(t *te
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 	assert.NoError(t, err)
 	assert.Contains(t, vars, "history")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	formatted, ok := vars["history"].(string)
 	assert.True(t, ok)
@@ -155,8 +146,6 @@ func TestChatMessageBufferMemory_LoadMemoryVariables_ReturnFormattedString(t *te
 // TestLoadMemoryVariables_GetMessagesError tests error handling when GetMessages fails
 func TestChatMessageBufferMemory_LoadMemoryVariables_GetMessagesError(t *testing.T) {
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	history := NewMockChatMessageHistory()
 	history.getError = errors.New("get messages error")
 	memory := NewChatMessageBufferMemory(history)
@@ -175,8 +164,6 @@ func TestChatMessageBufferMemory_SaveContext(t *testing.T) {
 	inputs := map[string]any{"input": "Hello"}
 	outputs := map[string]any{"output": "Hi there!"}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := memory.SaveContext(ctx, inputs, outputs)
 	assert.NoError(t, err)
 
@@ -195,8 +182,6 @@ func TestChatMessageBufferMemory_SaveContext_CustomKeys(t *testing.T) {
 	memory := NewChatMessageBufferMemory(history)
 	memory.InputKey = "query"
 	memory.OutputKey = "response"
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	inputs := map[string]any{"query": "Hello"}
 	outputs := map[string]any{"response": "Hi there!"}
@@ -215,8 +200,6 @@ func TestChatMessageBufferMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	memory.InputKey = "" // Clear to trigger auto-detection
 	memory.OutputKey = ""
 
@@ -229,8 +212,6 @@ func TestChatMessageBufferMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	// Verify messages were added
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Len(t, messages, 2)
 }
 
@@ -243,8 +224,6 @@ func TestChatMessageBufferMemory_SaveContext_MissingInputKey(t *testing.T) {
 	inputs := map[string]any{"wrong_key": "Hello"}
 	outputs := map[string]any{"output": "Hi there!"}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := memory.SaveContext(ctx, inputs, outputs)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "input key input not found in inputs")
@@ -257,8 +236,6 @@ func TestChatMessageBufferMemory_SaveContext_MissingOutputKey(t *testing.T) {
 	memory := NewChatMessageBufferMemory(history)
 
 	inputs := map[string]any{"input": "Hello"}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	outputs := map[string]any{"wrong_key": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
@@ -271,8 +248,6 @@ func TestChatMessageBufferMemory_SaveContext_NonStringInput(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	inputs := map[string]any{"input": 123}
 	outputs := map[string]any{"output": "Hi there!"}
@@ -286,8 +261,6 @@ func TestChatMessageBufferMemory_SaveContext_NonStringInput(t *testing.T) {
 func TestChatMessageBufferMemory_SaveContext_NonStringOutput(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	memory := NewChatMessageBufferMemory(history)
 
 	inputs := map[string]any{"input": "Hello"}
@@ -308,8 +281,6 @@ func TestChatMessageBufferMemory_SaveContext_AddUserMessageError(t *testing.T) {
 	inputs := map[string]any{"input": "Hello"}
 	outputs := map[string]any{"output": "Hi there!"}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := memory.SaveContext(ctx, inputs, outputs)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to add user message")
@@ -328,8 +299,6 @@ func TestChatMessageBufferMemory_SaveContext_AddAIMessageError(t *testing.T) {
 		}
 		return nil // Success for other message types
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	inputs := map[string]any{"input": "Hello"}
 	outputs := map[string]any{"output": "Hi there!"}
@@ -340,8 +309,6 @@ func TestChatMessageBufferMemory_SaveContext_AddAIMessageError(t *testing.T) {
 }
 
 // TestClear tests the Clear method
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestChatMessageBufferMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -359,14 +326,10 @@ func TestChatMessageBufferMemory_Clear(t *testing.T) {
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
 	assert.Len(t, messages, 0)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // TestClear_HistoryError tests error handling when history Clear fails
 func TestChatMessageBufferMemory_Clear_HistoryError(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	history.clearError = errors.New("clear error")
@@ -413,8 +376,6 @@ func TestGetInputOutputKeys(t *testing.T) {
 	}{
 		{
 			name:           "Empty maps",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			inputs:         map[string]any{},
 			outputs:        map[string]any{},
 			expectedInput:  "input",
@@ -422,8 +383,6 @@ func TestGetInputOutputKeys(t *testing.T) {
 		},
 		{
 			name:           "Standard keys",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			inputs:         map[string]any{"input": "test"},
 			outputs:        map[string]any{"output": "test"},
 			expectedInput:  "input",
@@ -452,8 +411,6 @@ func TestGetInputOutputKeys(t *testing.T) {
 			assert.Equal(t, tc.expectedOutput, outputKey)
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // TestChatMessageBufferMemory_InterfaceCompliance tests that ChatMessageBufferMemory implements iface.Memory
@@ -467,9 +424,8 @@ func TestChatMessageBufferMemory_InterfaceCompliance(t *testing.T) {
 
 // TestChatMessageBufferMemory_ConcurrentAccess tests concurrent access (basic smoke test)
 func TestChatMessageBufferMemory_ConcurrentAccess(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history)
 
@@ -485,7 +441,6 @@ func TestChatMessageBufferMemory_ConcurrentAccess(t *testing.T) {
 		}
 		done <- true
 	}()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
 	defer cancel()
 
 	go func() {
@@ -502,8 +457,6 @@ func TestChatMessageBufferMemory_ConcurrentAccess(t *testing.T) {
 // BenchmarkChatMessageBufferMemory_SaveContext benchmarks SaveContext performance
 func BenchmarkChatMessageBufferMemory_SaveContext(b *testing.B) {
 	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	history := NewMockChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history)
 
@@ -517,8 +470,6 @@ func BenchmarkChatMessageBufferMemory_SaveContext(b *testing.B) {
 }
 
 // BenchmarkChatMessageBufferMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkChatMessageBufferMemory_LoadMemoryVariables(b *testing.B) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -527,8 +478,6 @@ func BenchmarkChatMessageBufferMemory_LoadMemoryVariables(b *testing.B) {
 	// Pre-populate with some messages
 	for i := 0; i < 100; i++ {
 		history.AddUserMessage(ctx, "Message "+string(rune(i)))
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		history.AddAIMessage(ctx, "Response "+string(rune(i)))
 	}
 
@@ -537,8 +486,6 @@ func BenchmarkChatMessageBufferMemory_LoadMemoryVariables(b *testing.B) {
 		memory.LoadMemoryVariables(ctx, map[string]any{})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // BenchmarkGetBufferString benchmarks the getBufferString function
 func BenchmarkGetBufferString(b *testing.B) {

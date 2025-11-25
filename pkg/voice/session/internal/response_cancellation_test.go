@@ -115,7 +115,7 @@ func TestResponseCancellation_CancelOnInterruption(t *testing.T) {
 	// Trigger interruption (need both word count and duration thresholds)
 	detector.CheckInterruption(3, 500*time.Millisecond)
 	assert.True(t, detector.IsInterrupted())
-	
+
 	err = rc.CancelOnInterruption(context.Background(), detector)
 	assert.NoError(t, err)
 	assert.True(t, rc.IsCancelled())
@@ -143,4 +143,3 @@ func TestResponseCancellation_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 }
-

@@ -75,8 +75,6 @@ func (m *MockTracer) Start(ctx context.Context, spanName string, opts ...trace.S
 	return args.Get(0).(context.Context), args.Get(1).(trace.Span)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewSimpleChain(t *testing.T) {
 	config := iface.ChainConfig{
 		Name:  "test-chain",
@@ -90,8 +88,6 @@ func TestNewSimpleChain(t *testing.T) {
 	assert.NotNil(t, chain)
 	assert.Equal(t, config, chain.config)
 	assert.Equal(t, memory, chain.memory)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestSimpleChain_GetInputKeys(t *testing.T) {
@@ -124,8 +120,6 @@ func TestSimpleChain_GetInputKeys(t *testing.T) {
 
 			keys := chain.GetInputKeys()
 			assert.Equal(t, tt.expectedKeys, keys)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -158,15 +152,11 @@ func TestSimpleChain_GetOutputKeys(t *testing.T) {
 			config := iface.ChainConfig{OutputKeys: tt.outputKeys}
 			chain := NewSimpleChain(config, nil, nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			keys := chain.GetOutputKeys()
 			assert.Equal(t, tt.expectedKeys, keys)
 		})
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 func TestSimpleChain_GetMemory(t *testing.T) {
 	memory := &MockMemory{}
@@ -180,14 +170,13 @@ func TestSimpleChain_Invoke_Success(t *testing.T) {
 	step1.On("Invoke", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return(map[string]any{"result": "success"}, nil)
 
 	config := iface.ChainConfig{
-		Name:  "test-chain",
-		Steps: []core.Runnable{step1},
+		Name:    "test-chain",
+		Steps:   []core.Runnable{step1},
+		Retries: 1, // At least 1 retry needed for retry executor to call the step
 	}
 
 	chain := NewSimpleChain(config, nil, nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
@@ -211,10 +200,9 @@ func TestSimpleChain_Invoke_WithMemory(t *testing.T) {
 		Steps:      []core.Runnable{step1},
 		InputKeys:  []string{"input"},
 		OutputKeys: []string{"result"},
+		Retries:    1, // At least 1 retry needed for retry executor to call the step
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	chain := NewSimpleChain(config, mockMemory, nil)
 
 	input := map[string]any{"input": "test"}
@@ -234,9 +222,8 @@ func TestSimpleChain_Invoke_WithTimeout(t *testing.T) {
 	config := iface.ChainConfig{
 		Name:    "test-chain",
 		Steps:   []core.Runnable{step1},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Timeout: 5, // 5 seconds
+		Retries: 1, // At least 1 retry needed for retry executor to call the step
 	}
 
 	chain := NewSimpleChain(config, nil, nil)
@@ -255,10 +242,9 @@ func TestSimpleChain_Invoke_StepError(t *testing.T) {
 	step1.On("Invoke", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return(nil, errors.New("step failed"))
 
 	config := iface.ChainConfig{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
-		Name:  "test-chain",
-		Steps: []core.Runnable{step1},
+		Name:    "test-chain",
+		Steps:   []core.Runnable{step1},
+		Retries: 1, // At least 1 retry needed for retry executor to call the step
 	}
 
 	chain := NewSimpleChain(config, nil, nil)
@@ -273,8 +259,6 @@ func TestSimpleChain_Invoke_StepError(t *testing.T) {
 	step1.AssertExpectations(t)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestSimpleChain_Invoke_InvalidInput(t *testing.T) {
 	mockMemory := &MockMemory{}
 
@@ -294,8 +278,6 @@ func TestSimpleChain_Invoke_InvalidInput(t *testing.T) {
 }
 
 func TestSimpleChain_Invoke_MemoryError(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	mockMemory := &MockMemory{}
 	mockMemory.On("LoadMemoryVariables", mock.Anything, mock.AnythingOfType("map[string]interface {}")).Return(nil, errors.New("memory load failed"))
 
@@ -321,10 +303,9 @@ func TestSimpleChain_Batch(t *testing.T) {
 	step1.On("Invoke", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return(map[string]any{"result": "success"}, nil).Maybe()
 
 	config := iface.ChainConfig{
-		Name:  "test-chain",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
-		Steps: []core.Runnable{step1},
+		Name:    "test-chain",
+		Steps:   []core.Runnable{step1},
+		Retries: 1, // At least 1 retry needed for retry executor to call the step
 	}
 
 	chain := NewSimpleChain(config, nil, nil)
@@ -386,8 +367,6 @@ func TestSimpleChain_Stream_Success(t *testing.T) {
 	step2.On("Stream", mock.Anything, mock.AnythingOfType("map[string]interface {}"), mock.Anything).Return((<-chan any)(streamChan), nil)
 
 	config := iface.ChainConfig{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		Name:  "test-chain",
 		Steps: []core.Runnable{step1, step2},
 	}
@@ -402,8 +381,6 @@ func TestSimpleChain_Stream_Success(t *testing.T) {
 
 	// Read from the stream
 	select {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	case result := <-resultChan:
 		assert.Equal(t, "stream_result", result)
 	case <-time.After(1 * time.Second):

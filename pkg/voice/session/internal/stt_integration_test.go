@@ -147,4 +147,3 @@ func TestSTTIntegration_CloseStreaming_NotStarted(t *testing.T) {
 	err := sti.CloseStreaming()
 	assert.NoError(t, err)
 }
-

@@ -33,7 +33,7 @@ func TestNewChunking_NilConfig(t *testing.T) {
 
 func TestChunking_Chunk_SmallData(t *testing.T) {
 	c := NewChunking(&ChunkingConfig{
-		ChunkSize: 100,
+		ChunkSize:   100,
 		OverlapSize: 10,
 	})
 
@@ -45,7 +45,7 @@ func TestChunking_Chunk_SmallData(t *testing.T) {
 
 func TestChunking_Chunk_LargeData(t *testing.T) {
 	c := NewChunking(&ChunkingConfig{
-		ChunkSize: 10,
+		ChunkSize:   10,
 		OverlapSize: 2,
 	})
 
@@ -57,7 +57,7 @@ func TestChunking_Chunk_LargeData(t *testing.T) {
 
 	chunks := c.Chunk(data)
 	assert.Greater(t, len(chunks), 1)
-	
+
 	// Verify total size (accounting for overlaps)
 	totalSize := 0
 	for _, chunk := range chunks {
@@ -68,7 +68,7 @@ func TestChunking_Chunk_LargeData(t *testing.T) {
 
 func TestChunking_Chunk_ExactChunkSize(t *testing.T) {
 	c := NewChunking(&ChunkingConfig{
-		ChunkSize: 10,
+		ChunkSize:   10,
 		OverlapSize: 0,
 	})
 
@@ -94,4 +94,3 @@ func TestChunking_SetChunkSize(t *testing.T) {
 	c.SetChunkSize(2048)
 	assert.Equal(t, 2048, c.GetChunkSize())
 }
-

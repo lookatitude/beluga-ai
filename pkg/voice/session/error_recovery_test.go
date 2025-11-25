@@ -30,8 +30,8 @@ func TestErrorRecovery_ShouldRetry(t *testing.T) {
 
 func TestErrorRecovery_RetryWithBackoff(t *testing.T) {
 	recovery := internal.NewErrorRecovery(2, 10*time.Millisecond)
-
 	ctx := context.Background()
+
 	attempts := 0
 
 	err := recovery.RetryWithBackoff(ctx, "test", func() error {

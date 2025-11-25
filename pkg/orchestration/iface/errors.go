@@ -104,7 +104,7 @@ func IsRetryable(err error) bool {
 	var orchErr *OrchestratorError
 	if errors.As(err, &orchErr) {
 		switch orchErr.Code {
-		case ErrCodeTimeout, ErrCodeDependencyFailed, ErrCodeResourceExhausted, ErrCodeCircuitBreakerOpen:
+		case ErrCodeTimeout, ErrCodeDependencyFailed, ErrCodeResourceExhausted, ErrCodeCircuitBreakerOpen, ErrCodeRateLimitExceeded:
 			return true
 		case ErrCodeInvalidConfig, ErrCodeInvalidState, ErrCodeNotFound, ErrCodeInvalidInput, ErrCodeWorkflowDeadlock:
 			return false

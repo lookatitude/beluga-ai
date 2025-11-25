@@ -131,11 +131,11 @@ func TestRateLimiter_Allow_RequestCleanup(t *testing.T) {
 
 func TestRateLimiter_Allow_Concurrent(t *testing.T) {
 	rl := NewRateLimiter(10, time.Second)
-	ctx := context.Background()
 
 	// Make concurrent requests
 	errors := make(chan error, 20)
 	for i := 0; i < 20; i++ {
+	ctx := context.Background()
 		go func() {
 			errors <- rl.Allow(ctx)
 		}()
@@ -157,4 +157,3 @@ func TestRateLimiter_Allow_Concurrent(t *testing.T) {
 	assert.Equal(t, 10, successCount)
 	assert.Equal(t, 10, errorCount)
 }
-

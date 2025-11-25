@@ -1,7 +1,8 @@
-# golangci-lint configuration for Beluga AI Framework
+# golangci-lint v2 configuration for Beluga AI Framework
 # Comprehensive linting setup for production-ready Go framework
+# Based on best practices from Fiber, Gin, and other major Go frameworks
 
-version: 2
+version: "2"
 
 run:
   # Timeout for analysis
@@ -9,130 +10,24 @@ run:
   
   # Include test files in linting
   tests: true
-
-output:
-  # Print issues count
-  print-issued-lines: true
-  print-linter-name: true
   
-  # Sort results
-  sort-results: true
-
-linters-settings:
-  # errcheck settings
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-    check-asserts: true
+  # Modules download mode
+  modules-download-mode: readonly
   
-  # gosec settings - security linter
-  gosec:
-    # Security check types to enable
-    severity: medium
-    confidence: medium
-    # Exclude specific rules if needed
-    excludes:
-      - G104  # Errors unhandled (we handle errors explicitly)
-      - G307  # Deferring unsafe method (we use defer safely)
-  
-  # govet settings
-  govet:
-    enable-all: true
-  # shadow settings (replaces govet.check-shadowing)
-  shadow:
-    strict: false
-  
-  # staticcheck settings
-  staticcheck:
-    checks: ["all"]
-  
-  # gocritic settings - code quality
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport  # Allow duplicate imports in some cases
-      - ifElseChain  # Allow if-else chains
-  
-  # revive settings - Go linter
-  revive:
-    min-confidence: 0.8
-    rules:
-      - name: exported
-      - name: var-naming
-      - name: package-comments
-      - name: range
-      - name: if-return
-      - name: error-return
-      - name: error-naming
-      - name: increment-decrement
-      - name: var-declaration
-      - name: range-val-in-closure
-      - name: range-val-address
-      - name: waitgroup-by-value
-  
-  # gocyclo settings - cyclomatic complexity
-  gocyclo:
-    min-complexity: 15  # Warn on functions with complexity > 15
-  
-  # dupl settings - code duplication
-  dupl:
-    threshold: 100  # Threshold for code duplication detection
-  
-  # funlen settings - function length
-  funlen:
-    lines: 100
-    statements: 50
-  
-  # goconst settings - constant detection
-  goconst:
-    min-len: 3
-    min-occurrences: 2
-  
-  # misspell settings
-  misspell:
-    locale: US
-  
-  # lll settings - line length
-  lll:
-    line-length: 120  # Allow longer lines for Go code
-  
-  # unused settings
-  unused:
-    check-exported: true
-  
-  # ineffassign settings
-  ineffassign:
-    check-exported: true
-  
-  # exhaustive - enum exhaustiveness
-  exhaustive:
-    default-signifies-exhaustive: false
-  
-  # forbidigo - forbid certain identifiers
-  forbidigo:
-    forbid:
-      - ^fmt\.Print.*$  # Prefer structured logging
-      - ^print$  # Prefer structured logging
-  
-  # nolintlint - linter for nolint directives
-  nolintlint:
-    allow-leading-space: true
-    allow-unused: false
-    require-explanation: true
-    require-specific: true
+  # Allow serial runners for consistency
+  allow-serial-runners: true
 
 linters:
-  # Enable comprehensive set of linters
+  # Comprehensive set of linters based on industry best practices
   enable:
     # Error checking
     - errcheck
-    - errorlint
+    - err113
+    - errchkjson
     - errname
+    - errorlint
+    - nilerr
+    - nilnil
     
     # Security
     - gosec
@@ -146,10 +41,15 @@ linters:
     - unused
     - unparam
     - unconvert
+    - wastedassign
     
-    # Style
+    # Style and formatting
+    - asciicheck
+    - bidichk
     - misspell
     - goconst
+    - dupword
+    - whitespace
     
     # Complexity
     - gocyclo
@@ -166,6 +66,7 @@ linters:
     # Performance
     - prealloc
     - makezero
+    - perfsprint
     
     # Best practices
     - exhaustive
@@ -179,79 +80,284 @@ linters:
     - rowserrcheck
     - sqlclosecheck
     - thelper
-    - wastedassign
+    - dogsled
+    - durationcheck
+    - forcetypeassert
+    - gochecksumtype
+    - goprintffuncname
+    - musttag
+    - nonamedreturns
+    - nosprintfhostport
+    - predeclared
+    - reassign
+    - testableexamples
+    - tparallel
+    - usestdlibvars
+    - wrapcheck
+    
+    # HTTP and API
+    - bodyclose
+    
+    # Testing
+    - ginkgolinter
+    - testifylint
+    
+    # Logging
+    - loggercheck
+    - sloglint
+    - zerologlint
+    
+    # Dependencies
+    - depguard
+    - gomoddirectives
+    
+    # Import organization
+    - grouper
+    - decorder
+    
+    # Code organization
+    - copyloopvar
+    - mirror
+    
+    # Prometheus metrics
+    - promlinter
+    
+    # Protocol buffers
+    - protogetter
+    
+    # OpenTelemetry
+    - spancheck
+    
+    # JSON/YAML
+    - tagliatelle
+    
+  settings:
+    # Dependency guard - restrict usage of certain packages
+    depguard:
+      rules:
+        all:
+          list-mode: lax
+          deny:
+            - pkg: flag
+              desc: "`flag` package is only allowed in main.go"
+            - pkg: log
+              desc: "logging is provided by structured logging packages"
+            - pkg: io/ioutil
+              desc: "`io/ioutil` package is deprecated, use the `io` and `os` package instead"
+    
+    # Error checking configuration
+    errcheck:
+      disable-default-exclusions: true
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - (*bytes.Buffer).Write
+        - (*github.com/valyala/bytebufferpool.ByteBuffer).Write
+        - (*github.com/valyala/bytebufferpool.ByteBuffer).WriteByte
+        - (*github.com/valyala/bytebufferpool.ByteBuffer).WriteString
+    
+    errchkjson:
+      report-no-exported: true
+    
+    exhaustive:
+      default-signifies-exhaustive: true
+    
+    # Forbid certain patterns
+    forbidigo:
+      forbid:
+        - pattern: ^print(ln)?$
+        - pattern: ^fmt\.Print(f|ln)?$
+        - pattern: ^http\.Default(Client|ServeMux|Transport)$
+      analyze-types: true
+    
+    goconst:
+      numbers: true
+      min-len: 3
+    
+    # Go Critic - advanced code analysis
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
+      settings:
+        captLocal:
+          paramsOnly: false
+        elseif:
+          skipBalanced: false
+        underef:
+          skipRecvDeref: false
+    
+    # Security scanner configuration
+    gosec:
+      excludes:
+        - G104  # Allow errors to be ignored if explicitly handled
+        - G115  # Allow deferring file.Close() when using os.ReadFile
+      config:
+        global:
+          audit: true
+    
+    # Go vet - enable all checks
+    govet:
+      enable-all: true
+    
+    # Import grouping
+    grouper:
+      import-require-single-import: true
+      import-require-grouping: true
+    
+    # Logger check - ensure structured logging
+    loggercheck:
+      require-string-key: true
+      no-printf-like: true
+    
+    misspell:
+      locale: US
+    
+    # Nolint lint - require explanations
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+    
+    nonamedreturns:
+      report-error-in-defer: true
+    
+    # Performance print - use better alternatives
+    perfsprint:
+      int-conversion: true
+      err-error: true
+      errorf: true
+      sprintf1: true
+      strconcat: true
+    
+    predeclared:
+      qualified-name: true
+    
+    # Prometheus metrics linting
+    promlinter:
+      strict: true
+    
+    # Revive - comprehensive linting rules
+    revive:
+      enable-all-rules: true
+      rules:
+        - name: add-constant
+          disabled: true
+        - name: argument-limit
+          disabled: true
+        - name: banned-characters
+          disabled: true
+        - name: cognitive-complexity
+          disabled: true
+        - name: confusing-results
+          disabled: true
+        - name: comment-spacings
+          arguments:
+            - nolint
+          disabled: true
+        - name: cyclomatic
+          disabled: true
+        - name: enforce-slice-style
+          arguments:
+            - make
+          disabled: true
+        - name: exported
+          disabled: true
+        - name: file-header
+          disabled: true
+        - name: function-result-limit
+          arguments:
+            - 3
+        - name: function-length
+          disabled: true
+        - name: line-length-limit
+          disabled: true
+        - name: max-public-structs
+          disabled: true
+        - name: modifies-parameter
+          disabled: true
+        - name: nested-structs
+          disabled: true
+        - name: package-comments
+          disabled: true
+        - name: optimize-operands-order
+          disabled: true
+        - name: unchecked-type-assertion
+          disabled: true
+        - name: unhandled-error
+          disabled: true
+    
+    # Staticcheck - comprehensive static analysis
+    staticcheck:
+      checks:
+        - all
+        - -ST1000  # Package comment should be of the form
+        - -ST1020  # The comment of exported function should start with function name
+        - -ST1021  # The comment of exported type should start with type name
+        - -ST1022  # The comment of exported variable should start with variable name
+    
+    # JSON/YAML tag naming
+    tagliatelle:
+      case:
+        rules:
+          json: snake
+    
+    # Testify linting
+    testifylint:
+      enable-all: true
+    
+    # Unused code detection
+    unused:
+      field-writes-are-uses: true
+      exported-fields-are-used: true
+    
+    unparam:
+      check-exported: false
+    
+    # Use standard library variables
+    usestdlibvars:
+      http-method: true
+      http-status-code: true
+      time-weekday: false
+      time-month: false
+      time-layout: false
+      crypto-hash: true
+      default-rpc-path: true
+      sql-isolation-level: true
+      tls-signature-scheme: true
+      constant-kind: true
+    
+    # Wrap check - ensure errors are wrapped
+    wrapcheck:
+      ignore-package-globs:
+        - github.com/lookatitude/beluga-ai/*
+        - errors
+        - fmt
 
+# Formatters configuration
 formatters:
   enable:
     - gofmt
-    - goimports
     - gofumpt
-
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/lookatitude/beluga-ai)
+        - blank
+        - dot
+      custom-order: false
+    gofumpt:
+      module-path: github.com/lookatitude/beluga-ai
+      extra-rules: true
+    gofmt:
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+# Issues configuration
 issues:
-  # Maximum issues count per one linter
-  max-issues-per-linter: 50
-  max-same-issues: 50
-  
-  # Default severity for issues
-  default-severity: error
-  
-  # Exclude following linters from limiting of issues count
-  exclude-rules:
-    # Exclude some linters from exclusion rules
-    - path: _test\.go
-      linters:
-        - errcheck
-        - gocyclo
-        - funlen
-        - dupl
-    
-    # Exclude generated files
-    - path: ".*\\.pb\\.go$"
-      linters:
-        - all
-    
-    # Allow certain patterns in test files
-    - path: _test\.go
-      text: "func.*testing\\.T"
-      linters:
-        - gocyclo
-    
-    # Exclude common false positives
-    - text: "Error return value of .((os\\.)?std(out|err)\\..*|.*Close|.*Flush|os\\.Remove(All)?|.*printf?|.*Println) is not checked"
-      linters:
-        - errcheck
-    
-    # Allow empty blocks in test files
-    - path: _test\.go
-      text: "empty block"
-      linters:
-        - revive
-    
-    # Allow underscore in error variables in test files
-    - path: _test\.go
-      text: "error var.*should have name"
-      linters:
-        - revive
-  
-  # Rules to change severity
-  severity-rules:
-    - linters:
-        - gocyclo
-        - funlen
-        - dupl
-      severity: warning
-    - linters:
-        - misspell
-      severity: warning
-  
-  # Rules to change severity
-  rules:
-    - linters:
-        - gocyclo
-        - funlen
-        - dupl
-      severity: warning
-    - linters:
-        - misspell
-      severity: warning
-
+  # Set to 0 to ensure all issues are addressed
+  max-issues-per-linter: 0
+  max-same-issues: 0

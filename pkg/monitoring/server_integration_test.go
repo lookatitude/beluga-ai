@@ -33,8 +33,6 @@ func (m *unhealthyMockHealthChecker) IsHealthy(ctx context.Context) bool {
 	return false
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewServerIntegration(t *testing.T) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
@@ -42,8 +40,6 @@ func TestNewServerIntegration(t *testing.T) {
 	assert.NotNil(t, integration)
 	assert.NotNil(t, integration.monitor)
 	assert.Equal(t, mockMonitor, integration.monitor)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestServerIntegrationHealthCheckHandler(t *testing.T) {
@@ -94,8 +90,6 @@ func TestServerIntegrationHealthCheckHandler(t *testing.T) {
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Equal(t, "unhealthy", response["status"])
 	})
 }
@@ -143,8 +137,6 @@ func TestServerIntegrationSafetyCheckHandler(t *testing.T) {
 
 		integration.SafetyCheckHandler(w, req)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Equal(t, http.StatusBadRequest, w.Code)
 		// Error message may vary, just check it's a bad request
 		assert.NotEmpty(t, w.Body.String())
@@ -187,8 +179,6 @@ func TestServerIntegrationEthicsCheckHandler(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		integration.EthicsCheckHandler(w, req)
 
 		assert.Equal(t, http.StatusBadRequest, w.Code)
@@ -211,8 +201,6 @@ func TestServerIntegrationBestPracticesCheckHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		var response map[string]interface{}
 		err := json.Unmarshal(w.Body.Bytes(), &response)
 		assert.NoError(t, err)
@@ -228,8 +216,6 @@ func TestServerIntegrationMetricsHandler(t *testing.T) {
 	integration := NewServerIntegration(mockMonitor)
 
 	req := httptest.NewRequest("GET", "/metrics", nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	w := httptest.NewRecorder()
 
 	integration.MetricsHandler(w, req)
@@ -247,8 +233,6 @@ func TestServerIntegrationTracesHandler(t *testing.T) {
 	integration := NewServerIntegration(mockMonitor)
 
 	req := httptest.NewRequest("GET", "/traces", nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	w := httptest.NewRecorder()
 
 	integration.TracesHandler(w, req)
@@ -266,8 +250,6 @@ func TestServerIntegrationTracesHandler(t *testing.T) {
 func TestServerIntegrationLogsHandler(t *testing.T) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	req := httptest.NewRequest("GET", "/logs", nil)
 	w := httptest.NewRecorder()
@@ -299,8 +281,6 @@ func TestServerIntegrationRegisterRoutes(t *testing.T) {
 		{"/api/v1/health", "GET"},
 		{"/api/v1/safety/check", "POST"},
 		{"/api/v1/ethics/check", "POST"},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{"/api/v1/best-practices/check", "POST"},
 		{"/api/v1/metrics", "GET"},
 		{"/api/v1/traces", "GET"},
@@ -333,8 +313,6 @@ func TestServerIntegrationMonitoringMiddleware(t *testing.T) {
 
 	t.Run("successful request", func(t *testing.T) {
 		req := httptest.NewRequest("GET", "/test", nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		w := httptest.NewRecorder()
 
 		middleware.ServeHTTP(w, req)
@@ -350,8 +328,6 @@ func TestServerIntegrationMonitoringMiddleware(t *testing.T) {
 		w := httptest.NewRecorder()
 
 		middleware.ServeHTTP(w, req)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
@@ -391,8 +367,6 @@ func TestServerIntegrationFormatHealthResults(t *testing.T) {
 			CheckName: "check2",
 			Timestamp: time.Now(),
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	formatted := integration.formatHealthResults(results)
@@ -410,8 +384,6 @@ func TestServerIntegrationFormatHealthResults(t *testing.T) {
 	}
 
 	assert.NotNil(t, check1)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NotNil(t, check2)
 	assert.Equal(t, "healthy", check1["status"])
 	assert.Equal(t, "unhealthy", check2["status"])
@@ -447,8 +419,6 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 			panic("test panic")
 		})
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		middleware := integration.MonitoringMiddleware(panicHandler)
 
 		req := httptest.NewRequest("GET", "/panic", nil)
@@ -460,8 +430,6 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 		})
 
 		// Should still get a response (500 error)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		assert.Equal(t, http.StatusInternalServerError, w.Code)
 	})
 
@@ -476,8 +444,6 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 		// Should handle large body gracefully
 		assert.True(t, w.Code == http.StatusOK || w.Code == http.StatusBadRequest)
 	})
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // Benchmark tests
@@ -494,8 +460,6 @@ func BenchmarkServerIntegrationHealthCheckHandler(b *testing.B) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func BenchmarkServerIntegrationSafetyCheckHandler(b *testing.B) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)

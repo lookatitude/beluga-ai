@@ -155,4 +155,3 @@ func TestCircuitBreaker_HalfOpenSuccessThreshold(t *testing.T) {
 	})
 	assert.Equal(t, CircuitBreakerClosed, cb.GetState())
 }
-

@@ -5,8 +5,6 @@ import (
 )
 
 // Simple test that doesn't depend on external packages
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestOrchestratorCreation(t *testing.T) {
 	// Test config creation
 	config := DefaultConfig()
@@ -38,8 +36,6 @@ func TestOrchestratorCreation(t *testing.T) {
 	t.Logf("  Active chains: %d", activeChains)
 	t.Logf("  Active graphs: %d", activeGraphs)
 	t.Logf("  Active workflows: %d", activeWorkflows)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestConfigurationOptions(t *testing.T) {
@@ -63,8 +59,6 @@ func TestConfigurationOptions(t *testing.T) {
 	}
 
 	if config.Observability.MetricsPrefix != "test.prefix" {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected metrics prefix 'test.prefix', got %v", config.Observability.MetricsPrefix)
 	}
 }

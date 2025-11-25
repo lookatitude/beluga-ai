@@ -73,8 +73,6 @@ func (m *MockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewBaseAgent(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -125,8 +123,6 @@ func TestNewBaseAgent(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestBaseAgent_Initialize(t *testing.T) {
@@ -149,8 +145,6 @@ func TestBaseAgent_Initialize(t *testing.T) {
 
 	// Verify state changed to ready
 	if agent.GetState() != iface.StateReady {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected state Ready, got %v", agent.GetState())
 	}
 }
@@ -163,8 +157,6 @@ func TestBaseAgent_GetConfig(t *testing.T) {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	config := agent.GetConfig()
 	if config.Name != "test-agent" {
 		t.Errorf("Expected agent name 'test-agent', got '%s'", config.Name)
@@ -184,8 +176,6 @@ func TestBaseAgent_GetTools(t *testing.T) {
 
 	retrievedTools := agent.GetTools()
 	if len(retrievedTools) != 2 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected 2 tools, got %d", len(retrievedTools))
 	}
 
@@ -207,8 +197,6 @@ func TestBaseAgent_CheckHealth(t *testing.T) {
 	if health["name"] != "test-agent" {
 		t.Errorf("Expected name 'test-agent', got '%v'", health["name"])
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	if health["state"] != iface.StateInitializing {
 		t.Errorf("Expected initial state 'initializing', got '%v'", health["state"])
@@ -236,8 +224,6 @@ func TestBaseAgent_EventHandling(t *testing.T) {
 		return nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	agent.RegisterEventHandler("test_event", handler)
 	agent.EmitEvent("test_event", "test_payload")
 
@@ -256,8 +242,6 @@ func TestBaseAgent_Plan(t *testing.T) {
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	ctx := context.Background()
@@ -270,8 +254,6 @@ func TestBaseAgent_Plan(t *testing.T) {
 	if err == nil {
 		t.Error("Expected Plan to return an error (not implemented)")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func BenchmarkBaseAgent_CheckHealth(b *testing.B) {

@@ -224,7 +224,7 @@ func (sm *StatisticalMetrics) Mean() float64 {
 // Min returns the minimum value
 func (sm *StatisticalMetrics) Min() float64 {
 	sm.mutex.RLock()
-	defer sm.mutex.RLock()
+	defer sm.mutex.RUnlock()
 
 	if len(sm.Observations) == 0 {
 		return 0
@@ -242,7 +242,7 @@ func (sm *StatisticalMetrics) Min() float64 {
 // Max returns the maximum value
 func (sm *StatisticalMetrics) Max() float64 {
 	sm.mutex.RLock()
-	defer sm.mutex.RLock()
+	defer sm.mutex.RUnlock()
 
 	if len(sm.Observations) == 0 {
 		return 0

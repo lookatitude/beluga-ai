@@ -60,8 +60,8 @@ func TestRetryExecutor_ExecuteWithRetry_SuccessAfterRetries(t *testing.T) {
 func TestRetryExecutor_ExecuteWithRetry_AllAttemptsFail(t *testing.T) {
 	config := DefaultRetryConfig()
 	executor := NewRetryExecutor(config)
-	ctx := context.Background()
 	testErr := errors.New("persistent error")
+	ctx := context.Background()
 
 	err := executor.ExecuteWithRetry(ctx, func() error {
 		return testErr
@@ -152,6 +152,7 @@ func TestRetryExecutor_calculateDelay_MaxDelayCap(t *testing.T) {
 }
 
 func TestRetryExecutor_ExecuteWithRetry_RetryCount(t *testing.T) {
+	ctx := context.Background()
 	config := RetryConfig{
 		MaxAttempts:   2,
 		InitialDelay:  10 * time.Millisecond,
@@ -160,7 +161,6 @@ func TestRetryExecutor_ExecuteWithRetry_RetryCount(t *testing.T) {
 		JitterFactor:  0.1,
 	}
 	executor := NewRetryExecutor(config)
-	ctx := context.Background()
 
 	attempts := 0
 	err := executor.ExecuteWithRetry(ctx, func() error {
@@ -194,4 +194,3 @@ func TestRetryExecutor_ExecuteWithRetry_NoDelayOnFirstAttempt(t *testing.T) {
 	// First attempt should be immediate (no delay)
 	assert.Less(t, duration, 50*time.Millisecond)
 }
-

@@ -77,9 +77,9 @@ func TestTTSIntegration_ConcurrentAccess(t *testing.T) {
 	mockProvider := tts.NewAdvancedMockTTSProvider("test")
 	tti := NewTTSIntegration(mockProvider)
 
-	ctx := context.Background()
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
+	ctx := context.Background()
 		go func() {
 			_, _ = tti.GenerateSpeech(ctx, "test")
 			_, _ = tti.StreamGenerate(ctx, "test")
@@ -92,4 +92,3 @@ func TestTTSIntegration_ConcurrentAccess(t *testing.T) {
 		<-done
 	}
 }
-

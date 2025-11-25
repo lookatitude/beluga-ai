@@ -11,8 +11,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/prompts"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestMockTemplateEngine_Parse(t *testing.T) {
 	engine := NewMockTemplateEngine()
 
@@ -32,8 +30,6 @@ func TestMockTemplateEngine_Parse(t *testing.T) {
 	if stored, ok := engine.Templates[name]; !ok || stored != template {
 		t.Errorf("Template not stored correctly: got %v, want %v", stored, template)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestMockTemplateEngine_ExtractVariables(t *testing.T) {
@@ -87,8 +83,6 @@ func TestMockTemplateEngine_ExtractVariables(t *testing.T) {
 					t.Errorf("ExtractVariables()[%d] = %v, want %v", i, v, tt.expected[i])
 				}
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		})
 	}
 }
@@ -148,8 +142,6 @@ func TestMockParsedTemplate_Execute(t *testing.T) {
 			}
 
 			if result != tt.expected {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("Execute() = %v, want %v", result, tt.expected)
 			}
 		})
@@ -219,8 +211,6 @@ func TestMockVariableValidator_Validate(t *testing.T) {
 			// Check error type when expecting specific error
 			if tt.expectError && !tt.shouldFail && err != nil {
 				var promptErr *prompts.PromptError
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				if !errors.As(err, &promptErr) {
 					t.Errorf("Expected PromptError, got %T", err)
 				}
@@ -269,8 +259,6 @@ func TestMockVariableValidator_ValidateTypes(t *testing.T) {
 			err := validator.ValidateTypes(tt.variables)
 
 			if tt.expectError && err == nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Error("Expected error but got none")
 			}
 
@@ -305,8 +293,6 @@ func TestMockHealthChecker_Check(t *testing.T) {
 			checker.ShouldFail = tt.shouldFail
 
 			err := checker.Check(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 			if tt.expectError && err == nil {
 				t.Error("Expected error but got none")
@@ -329,8 +315,6 @@ func TestMockHealthChecker_CheckCount(t *testing.T) {
 
 	// Check multiple times
 	checker.Check(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	checker.Check(context.Background())
 	checker.Check(context.Background())
 
@@ -400,8 +384,6 @@ func TestThreadSafeMockTemplateEngine_Concurrency(t *testing.T) {
 			}
 		}(i)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	wg.Wait()
 	close(errors)
@@ -453,8 +435,6 @@ func TestAdvancedMockVariableValidator_ValidationCalls(t *testing.T) {
 	}
 	if !reflect.DeepEqual(calls[0].Provided, provided) {
 		t.Errorf("First call provided = %v, want %v", calls[0].Provided, provided)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	// Check second call (ValidateTypes)
@@ -478,8 +458,6 @@ func TestAdvancedMockVariableValidator_ErrorScenarios(t *testing.T) {
 
 	// Test forced validation failure
 	validator.ShouldFailValidation = true
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err := validator.Validate([]string{"name"}, map[string]interface{}{"name": "test"})
 	if err == nil {
 		t.Error("Expected validation error but got none")
@@ -502,7 +480,6 @@ func TestAdvancedMockVariableValidator_ErrorScenarios(t *testing.T) {
 
 func TestMockHealthChecker_Concurrency(t *testing.T) {
 	checker := NewMockHealthChecker()
-	ctx := context.Background()
 
 	numGoroutines := 10
 	numChecks := 100
@@ -511,6 +488,7 @@ func TestMockHealthChecker_Concurrency(t *testing.T) {
 	errors := make(chan error, numGoroutines*numChecks)
 
 	for i := 0; i < numGoroutines; i++ {
+	ctx := context.Background()
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -523,8 +501,6 @@ func TestMockHealthChecker_Concurrency(t *testing.T) {
 			}
 		}()
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	wg.Wait()
 	close(errors)
@@ -537,8 +513,6 @@ func TestMockHealthChecker_Concurrency(t *testing.T) {
 	}
 
 	if errorCount > 0 {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Total concurrent health check errors: %d", errorCount)
 	}
 
@@ -556,8 +530,6 @@ func BenchmarkMockTemplateEngine_Parse(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		name := fmt.Sprintf("template_%d", i)
 		template := fmt.Sprintf("Hello {{.name%d}}!", i)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		_, err := engine.Parse(name, template)
 		if err != nil {
 			b.Fatal(err)
@@ -570,8 +542,6 @@ func BenchmarkMockVariableValidator_Validate(b *testing.B) {
 
 	required := []string{"name", "age", "email"}
 	provided := map[string]interface{}{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		"name":  "Alice",
 		"age":   "25",
 		"email": "alice@example.com",

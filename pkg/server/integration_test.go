@@ -396,8 +396,6 @@ func TestServerStressWithManyRequests(t *testing.T) {
 
 // Configuration Validation Tests
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestServerConfigurationValidation(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -508,8 +506,6 @@ func makeHTTPRequest(method, url string, body io.Reader) (*http.Response, error)
 	return client.Do(req)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // Benchmark tests for integration scenarios
 
 func BenchmarkServerStartupShutdown(b *testing.B) {
@@ -529,8 +525,6 @@ func BenchmarkServerStartupShutdown(b *testing.B) {
 		// Quick health check
 		if !server.IsHealthy(context.Background()) {
 			b.Error("Server should be healthy")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 }

@@ -3,6 +3,7 @@ package turndetection
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
 	"github.com/stretchr/testify/assert"
@@ -12,36 +13,36 @@ import (
 func TestNewProvider(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider to avoid import cycle
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.TurnDetector, error) {
 		return NewAdvancedMockTurnDetector("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("heuristic", testFactory)
 
 	tests := []struct {
-		name        string
+		name         string
 		providerName string
-		config      *Config
-		wantErr     bool
+		config       *Config
+		wantErr      bool
 	}{
 		{
-			name:        "valid provider",
-			providerName: "test-provider",
-			config:      DefaultConfig(),
-			wantErr:     false,
+			name:         "valid provider",
+			providerName: "heuristic",
+			config:       DefaultConfig(),
+			wantErr:      false,
 		},
 		{
-			name:        "nil config uses defaults",
-			providerName: "test-provider",
-			config:      nil,
-			wantErr:     false,
+			name:         "nil config uses defaults",
+			providerName: "heuristic",
+			config:       nil,
+			wantErr:      false,
 		},
 		{
-			name:        "invalid provider",
+			name:         "invalid provider",
 			providerName: "invalid",
-			config:      DefaultConfig(),
-			wantErr:     true,
+			config:       DefaultConfig(),
+			wantErr:      true,
 		},
 	}
 
@@ -62,18 +63,18 @@ func TestNewProvider(t *testing.T) {
 func TestNewProvider_WithOptions(t *testing.T) {
 	ctx := context.Background()
 
-	// Register a test provider
+	// Register a test provider using valid provider name
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.TurnDetector, error) {
 		return NewAdvancedMockTurnDetector("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("heuristic", testFactory)
 
 	config := DefaultConfig()
-	config.Provider = "test-provider"
+	config.Provider = "heuristic"
 
 	provider, err := NewProvider(ctx, "", config, func(c *Config) {
-		c.MinSilenceDuration = 500
+		c.MinSilenceDuration = 500 * time.Millisecond // Must be >= 100ms
 	})
 	require.NoError(t, err)
 	assert.NotNil(t, provider)
@@ -88,4 +89,3 @@ func TestGetMetrics(t *testing.T) {
 	metrics := GetMetrics()
 	_ = metrics
 }
-

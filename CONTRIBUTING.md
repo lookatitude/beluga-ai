@@ -163,7 +163,59 @@ make security
 # This runs:
 # - gosec (static security analysis)
 # - govulncheck (dependency vulnerabilities)
+# - gitleaks (secret detection)
+# - Trivy (vulnerability scanning)
 ```
+
+#### Additional Quality Tools
+
+Beyond the standard tools integrated in our CI/CD pipeline, the following tools can enhance code quality and are worth considering for specific use cases:
+
+**Goroutine Leak Detection:**
+- **goleak** (Uber): Detects goroutine leaks in tests. Useful for ensuring proper cleanup of concurrent operations.
+  ```bash
+  go install go.uber.org/goleak@latest
+  go test -tags goleak ./...
+  ```
+
+**Nil Pointer Analysis:**
+- **NilAway** (Uber): Static analysis tool that detects potential nil pointer dereferences before runtime.
+  ```bash
+  go install go.uber.org/nilaway/cmd/nilaway@latest
+  nilaway ./...
+  ```
+
+**Dependency Management:**
+- **go-mod-outdated**: Check for outdated dependencies in go.mod.
+  ```bash
+  go install github.com/psampaz/go-mod-outdated@latest
+  go list -u -m -json all | go-mod-outdated -update -direct
+  ```
+
+**Code Formatting:**
+- **golines**: Format long lines for better readability.
+  ```bash
+  go install github.com/segmentio/golines@latest
+  golines -w .
+  ```
+
+**Import Organization:**
+- **goimports-reviser**: Alternative to goimports with more configuration options.
+  ```bash
+  go install github.com/incu6us/goimports-reviser/v3@latest
+  ```
+
+**Analysis Tools:**
+- **go-tools**: Collection of static analysis tools from golang.org/x/tools.
+  ```bash
+  go install golang.org/x/tools/go/analysis/passes/...@latest
+  ```
+
+These tools are not required for standard development but can be valuable for:
+- Deep code analysis before major refactoring
+- Detecting subtle concurrency issues
+- Ensuring dependency hygiene
+- Custom formatting requirements
 
 #### Building
 

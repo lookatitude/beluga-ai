@@ -12,8 +12,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewContainer(t *testing.T) {
 	container := NewContainer()
 
@@ -34,8 +32,6 @@ func TestNewContainer(t *testing.T) {
 	if result != "test" {
 		t.Errorf("Resolve() = %q, expected %q", result, "test")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewContainerWithOptions(t *testing.T) {
@@ -58,8 +54,6 @@ func TestNewContainerWithOptions(t *testing.T) {
 		}
 		if impl.tracerProvider != tracerProvider {
 			t.Error("TracerProvider not set correctly")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 }
@@ -98,8 +92,6 @@ func TestContainer_Register(t *testing.T) {
 
 			err := container.Register(tt.factoryFunc)
 			if (err != nil) != tt.wantErr {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("Register() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -153,8 +145,6 @@ func TestContainer_Resolve(t *testing.T) {
 			container := NewContainer()
 			tt.setup(container)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			err := container.Resolve(tt.target)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Resolve() error = %v, wantErr %v", err, tt.wantErr)
@@ -169,8 +159,6 @@ func TestContainer_Singleton(t *testing.T) {
 	instance := "singleton_test"
 	container.Singleton(instance)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	var result string
 	if err := container.Resolve(&result); err != nil {
 		t.Errorf("Resolve() error = %v", err)
@@ -190,8 +178,6 @@ func TestContainer_Has(t *testing.T) {
 		t.Error("Has() should return true for registered type")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test with singleton
 	container.Singleton(42)
 	if !container.Has(intType()) {
@@ -207,8 +193,6 @@ func TestContainer_Has(t *testing.T) {
 func TestContainer_Clear(t *testing.T) {
 	container := NewContainer()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	container.Register(func() string { return "test" })
 	container.Singleton(42)
 
@@ -240,8 +224,6 @@ func TestContainer_CheckHealth(t *testing.T) {
 				c.Register(func() string { return "existing" })
 			},
 			wantErr: false,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		},
 	}
 
@@ -251,8 +233,6 @@ func TestContainer_CheckHealth(t *testing.T) {
 			tt.setup(container)
 
 			err := container.CheckHealth(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckHealth() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -294,8 +274,6 @@ type testLogger struct {
 
 func (t *testLogger) Debug(msg string, args ...interface{}) {
 	t.logs = append(t.logs, "DEBUG: "+msg)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func (t *testLogger) Info(msg string, args ...interface{}) {
@@ -336,8 +314,6 @@ func TestContainer_ConcurrentRegistration(t *testing.T) {
 				key := id*numRegistrations + j
 				// Create a unique type for each registration by using a closure
 				// that captures a unique value, forcing separate registrations
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				localKey := key
 				// Register as singleton with unique instance
 				container.Singleton(&testType{ID: localKey})
@@ -377,8 +353,6 @@ func TestContainer_ConcurrentResolution(t *testing.T) {
 		go func(goroutineID int) {
 			defer wg.Done()
 			results[goroutineID] = make([]int, numResolutions)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			for j := 0; j < numResolutions; j++ {
 				var result int
 				err := container.Resolve(&result)
@@ -420,8 +394,6 @@ func TestContainer_ConcurrentMixedOperations(t *testing.T) {
 		go func(goroutineID int) {
 			defer wg.Done()
 			for j := 0; j < operationsPerGoroutine; j++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				switch j % 4 {
 				case 0: // Register
 					container.Register(func() testService {
@@ -449,14 +421,13 @@ func TestContainer_ConcurrentMixedOperations(t *testing.T) {
 }
 
 func TestContainer_ConcurrentHealthChecks(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	container := NewContainer()
 	numGoroutines := 5
 	healthChecksPerGoroutine := 20
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
+	var mu sync.Mutex
 	var errors []error
 
 	for i := 0; i < numGoroutines; i++ {
@@ -465,7 +436,9 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 			for j := 0; j < healthChecksPerGoroutine; j++ {
 				err := container.CheckHealth(context.Background())
 				if err != nil {
+					mu.Lock()
 					errors = append(errors, err)
+					mu.Unlock()
 				}
 				time.Sleep(time.Millisecond) // Small delay to increase chance of race conditions
 			}
@@ -488,8 +461,6 @@ func TestContainer_ConcurrentBuilderOperations(t *testing.T) {
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
@@ -502,8 +473,6 @@ func TestContainer_ConcurrentBuilderOperations(t *testing.T) {
 					builder.Singleton(fmt.Sprintf("singleton_%d_%d", id, j))
 				case 2: // Build
 					var result int
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 					builder.Build(&result)
 				}
 			}
@@ -551,8 +520,6 @@ func TestBuilder_RegisterMultipleServices(t *testing.T) {
 		t.Errorf("Register() error = %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err = builder.Register(func() bool { return true })
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
@@ -578,8 +545,6 @@ func TestBuilder_RegisterMultipleServices(t *testing.T) {
 	}
 
 	var b bool
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	err = builder.Build(&b)
 	if err != nil {
 		t.Errorf("Build(bool) error = %v", err)
@@ -604,8 +569,6 @@ func TestBuilder_ServiceDependencies(t *testing.T) {
 		t.Errorf("Register(service) error = %v", err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Resolve service with dependency
 	var service ServiceWithDep
 	err = builder.Build(&service)
@@ -653,8 +616,6 @@ func TestBuilder_RegisterMonitoringComponents(t *testing.T) {
 	if err != nil {
 		t.Errorf("RegisterLogger() error = %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	err = builder.RegisterTracerProvider(func() TracerProvider { return trace.NewNoopTracerProvider() })
 	if err != nil {
@@ -699,8 +660,6 @@ func TestBuilder_NoOpMonitoringComponents(t *testing.T) {
 	container := NewContainer()
 	builder := NewBuilder(container)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Register no-op monitoring components
 	err := builder.RegisterNoOpLogger()
 	if err != nil {
@@ -723,8 +682,6 @@ func TestBuilder_NoOpMonitoringComponents(t *testing.T) {
 	if err != nil {
 		t.Errorf("Build(logger) error = %v", err)
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	var tracerProvider TracerProvider
 	err = builder.Build(&tracerProvider)
@@ -755,8 +712,6 @@ func TestBuilder_ErrorHandling(t *testing.T) {
 		t.Error("Expected error when registering non-function")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test registering function with error
 	err = builder.Register(func() (string, error) { return "", errors.New("factory error") })
 	if err != nil {

@@ -48,8 +48,6 @@ func (m *MockTracerProvider) Tracer() trace.Tracer {
 }
 
 // TestNewMetrics tests the Metrics constructor
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewMetrics(t *testing.T) {
 	mockMeter := NewMockMeterProvider().Meter()
 	metrics := NewMetrics(mockMeter)
@@ -64,8 +62,6 @@ func TestNewMetrics(t *testing.T) {
 	assert.NotNil(t, metrics.memorySizeGauge)
 	assert.NotNil(t, metrics.activeMemoryGauge)
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestMetrics_RecordOperation tests recording operations
 func TestMetrics_RecordOperation(t *testing.T) {
@@ -81,8 +77,6 @@ func TestMetrics_RecordOperation(t *testing.T) {
 
 	// Test with nil operation counter (should not panic)
 	metrics.operationCounter = nil
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	metrics.RecordOperation(ctx, "clear", MemoryTypeBuffer, true)
 }
 
@@ -102,8 +96,6 @@ func TestMetrics_RecordOperationDuration(t *testing.T) {
 	// Test unknown operation (should not record)
 	metrics.RecordOperationDuration(ctx, "unknown", MemoryTypeBuffer, duration)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test with nil histogram (should not panic)
 	metrics.loadDuration = nil
 	metrics.RecordOperationDuration(ctx, "load", MemoryTypeBuffer, duration)
@@ -118,8 +110,6 @@ func TestMetrics_RecordError(t *testing.T) {
 	// Test recording different error types
 	metrics.RecordError(ctx, "load", MemoryTypeBuffer, "timeout")
 	metrics.RecordError(ctx, "save", MemoryTypeBufferWindow, "storage_error")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	metrics.RecordError(ctx, "clear", MemoryTypeSummary, "validation_error")
 
 	// Test with nil error counter (should not panic)
@@ -134,8 +124,6 @@ func TestMetrics_RecordMemorySize(t *testing.T) {
 	metrics := NewMetrics(mockMeter)
 
 	// Test recording different sizes
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	metrics.RecordMemorySize(ctx, MemoryTypeBuffer, 100)
 	metrics.RecordMemorySize(ctx, MemoryTypeBufferWindow, 50)
 	metrics.RecordMemorySize(ctx, MemoryTypeSummary, 200)
@@ -150,15 +138,11 @@ func TestMetrics_RecordActiveMemory(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
 	metrics := NewMetrics(mockMeter)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test recording creation and deletion
 	metrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)       // Created
 	metrics.RecordActiveMemory(ctx, MemoryTypeBufferWindow, 1) // Created
 	metrics.RecordActiveMemory(ctx, MemoryTypeBuffer, -1)      // Deleted
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test with nil gauge (should not panic)
 	metrics.activeMemoryGauge = nil
@@ -176,8 +160,6 @@ func TestNewTracer(t *testing.T) {
 func TestTracer_StartSpan(t *testing.T) {
 	ctx := context.Background()
 	tracer := NewTracer()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Test starting spans for different operations
 	ctx1, span1 := tracer.StartSpan(ctx, "load", MemoryTypeBuffer, "history")
@@ -193,8 +175,6 @@ func TestTracer_StartSpan(t *testing.T) {
 	assert.NotEqual(t, ctx, ctx2)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // TestTracer_RecordSpanError tests recording errors on spans
 func TestTracer_RecordSpanError(t *testing.T) {
 	ctx := context.Background()
@@ -208,8 +188,6 @@ func TestTracer_RecordSpanError(t *testing.T) {
 
 	// Test recording nil error (should not panic)
 	tracer.RecordSpanError(span, nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	span.End()
 }
@@ -223,8 +201,6 @@ func TestGlobalMetricsFunctions(t *testing.T) {
 	mockMeter := NewMockMeterProvider().Meter()
 	SetGlobalMetrics(mockMeter)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Should now return the metrics instance
 	globalMetrics := GetGlobalMetrics()
 	assert.NotNil(t, globalMetrics)
@@ -237,8 +213,6 @@ func TestGlobalTracerFunctions(t *testing.T) {
 	// (The init() function calls SetGlobalTracer())
 	assert.NotNil(t, GetGlobalTracer())
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Set global tracer
 	SetGlobalTracer()
 
@@ -252,8 +226,6 @@ func TestGlobalTracerFunctions(t *testing.T) {
 func TestNewLogger(t *testing.T) {
 	// Test with nil logger
 	logger := NewLogger(nil)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NotNil(t, logger)
 	assert.NotNil(t, logger.logger)
 
@@ -264,8 +236,6 @@ func TestNewLogger(t *testing.T) {
 	assert.Equal(t, customLogger, logger2.logger)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // TestLogger_LogMemoryOperation tests logging memory operations
 func TestLogger_LogMemoryOperation(t *testing.T) {
 	ctx := context.Background()
@@ -278,8 +248,6 @@ func TestLogger_LogMemoryOperation(t *testing.T) {
 
 	// Test operation with error
 	testErr := errors.New("test error")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	logger.LogMemoryOperation(ctx, slog.LevelError, "save", MemoryTypeBufferWindow, "recent", 3, duration, testErr)
 }
 
@@ -292,8 +260,6 @@ func TestLogger_LogMemoryLifecycle(t *testing.T) {
 	logger.LogMemoryLifecycle(ctx, "created", MemoryTypeBuffer, "history")
 	logger.LogMemoryLifecycle(ctx, "cleared", MemoryTypeBufferWindow, "recent",
 		slog.String("reason", "user_request"),
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		slog.Int("messages_cleared", 10))
 }
 
@@ -315,8 +281,6 @@ func TestLogger_LogError(t *testing.T) {
 func TestGlobalLoggerFunctions(t *testing.T) {
 	// Initially should have a default logger
 	globalLogger := GetGlobalLogger()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NotNil(t, globalLogger)
 
 	// Set custom logger
@@ -355,8 +319,6 @@ func TestMetricsIntegration_WithMemoryOperations(t *testing.T) {
 	ctx := context.Background()
 
 	// Set up global metrics
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	mockMeter := NewMockMeterProvider().Meter()
 	SetGlobalMetrics(mockMeter)
 
@@ -394,9 +356,8 @@ func TestMetricsIntegration_WithMemoryOperations(t *testing.T) {
 
 // TestTracingIntegration_WithMemoryOperations tests tracing integration with memory operations
 func TestTracingIntegration_WithMemoryOperations(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ctx := context.Background()
 
 	// Set up global tracer
 	SetGlobalTracer()
@@ -447,8 +408,6 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 	factory := NewFactory()
 
 	configs := []Config{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{Type: MemoryTypeBuffer, Enabled: true, MemoryKey: "buffer_memory"},
 		{Type: MemoryTypeBufferWindow, Enabled: true, MemoryKey: "window_memory", WindowSize: 3},
 	}
@@ -469,7 +428,7 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 			outputs := map[string]any{"output": "Test output"}
 
 			err := memory.SaveContext(ctx, inputs, outputs)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 			assert.NoError(t, err)
 
@@ -483,8 +442,6 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	// Verify global instances are properly set
 	assert.NotNil(t, GetGlobalMetrics())
@@ -494,9 +451,8 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 
 // TestMetricsNilHandling tests that nil metrics don't cause panics
 func TestMetricsNilHandling(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	ctx := context.Background()
 
 	// Test with completely nil metrics
 	var nilMetrics *Metrics
@@ -514,8 +470,6 @@ func TestMetricsNilHandling(t *testing.T) {
 	partialMetrics.RecordError(ctx, "test", MemoryTypeBuffer, "error")
 	partialMetrics.RecordMemorySize(ctx, MemoryTypeBuffer, 100)
 	partialMetrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // TestTracerNilHandling tests that nil tracer doesn't cause panics
@@ -540,8 +494,6 @@ func TestLoggerNilHandling(t *testing.T) {
 	var nilLogger *Logger
 	nilLogger.LogMemoryOperation(ctx, slog.LevelInfo, "test", MemoryTypeBuffer, "test_memory", 1, time.Second, nil)
 	nilLogger.LogMemoryLifecycle(ctx, "test", MemoryTypeBuffer, "test_memory")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	nilLogger.LogError(ctx, errors.New("test"), "test", MemoryTypeBuffer, "test_memory")
 }
 
@@ -562,8 +514,6 @@ func TestGlobalFunctionsNilHandling(t *testing.T) {
 	// Convenience functions should not panic
 	LogMemoryOperation(ctx, slog.LevelInfo, "test", MemoryTypeBuffer, "test", 1, time.Second, nil)
 	LogMemoryLifecycle(ctx, "test", MemoryTypeBuffer, "test")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	LogError(ctx, errors.New("test"), "test", MemoryTypeBuffer, "test")
 }
 

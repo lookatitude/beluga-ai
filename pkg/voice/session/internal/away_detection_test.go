@@ -92,4 +92,3 @@ func TestAwayDetection_CallbackOnStateChange(t *testing.T) {
 	assert.Greater(t, len(awayStates), 0)
 	mu.Unlock()
 }
-

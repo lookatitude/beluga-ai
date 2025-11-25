@@ -91,6 +91,29 @@ for workflow in "$WORKFLOWS_DIR"/*.yml "$WORKFLOWS_DIR"/*.yaml; do
   # Validation Rule 4: No duplicate workflow names
   # This would be checked across all workflows, but we're checking one at a time
   echo -e "${GREEN}✅ $workflow_name structure validated${NC}"
+  
+  # Validation Rule 5: Check for workflow_dispatch support
+  if grep -q "workflow_dispatch:" "$workflow"; then
+    echo -e "${GREEN}✅ $workflow_name supports manual triggers (workflow_dispatch)${NC}"
+    
+    # Check for input parameters
+    if grep -q "inputs:" "$workflow"; then
+      echo -e "${GREEN}✅ $workflow_name has input parameters for manual triggers${NC}"
+    else
+      echo -e "${YELLOW}⚠️  WARNING: $workflow_name has workflow_dispatch but no inputs defined${NC}"
+    fi
+  else
+    echo -e "${YELLOW}⚠️  WARNING: $workflow_name does not support manual triggers${NC}"
+  fi
+  
+  # Validation Rule 6: Check for conditional logic (if: statements)
+  if_count=$(grep -c "if:" "$workflow" || echo "0")
+  if [ "$if_count" -gt 0 ]; then
+    echo -e "${GREEN}✅ $workflow_name uses conditional logic ($if_count conditions)${NC}"
+  else
+    echo -e "${YELLOW}⚠️  WARNING: $workflow_name has no conditional logic${NC}"
+  fi
+  
   echo ""
 done
 

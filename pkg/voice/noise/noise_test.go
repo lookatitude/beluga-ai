@@ -11,7 +11,6 @@ import (
 
 func TestNewProvider(t *testing.T) {
 	ctx := context.Background()
-
 	// Register a test provider to avoid import cycle
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.NoiseCancellation, error) {
@@ -20,28 +19,28 @@ func TestNewProvider(t *testing.T) {
 	registry.Register("test-provider", testFactory)
 
 	tests := []struct {
-		name        string
+		name         string
 		providerName string
-		config      *Config
-		wantErr     bool
+		config       *Config
+		wantErr      bool
 	}{
 		{
-			name:        "valid provider",
+			name:         "valid provider",
 			providerName: "test-provider",
-			config:      DefaultConfig(),
-			wantErr:     false,
+			config:       DefaultConfig(),
+			wantErr:      false,
 		},
 		{
-			name:        "nil config uses defaults",
+			name:         "nil config uses defaults",
 			providerName: "test-provider",
-			config:      nil,
-			wantErr:     false,
+			config:       nil,
+			wantErr:      false,
 		},
 		{
-			name:        "invalid provider",
+			name:         "invalid provider",
 			providerName: "invalid",
-			config:      DefaultConfig(),
-			wantErr:     true,
+			config:       DefaultConfig(),
+			wantErr:      true,
 		},
 	}
 
@@ -61,18 +60,18 @@ func TestNewProvider(t *testing.T) {
 
 func TestNewProvider_WithOptions(t *testing.T) {
 	ctx := context.Background()
-
 	// Register a test provider
 	registry := GetRegistry()
 	testFactory := func(config *Config) (iface.NoiseCancellation, error) {
 		return NewAdvancedMockNoiseCancellation("test"), nil
 	}
-	registry.Register("test-provider", testFactory)
+	registry.Register("rnnoise", testFactory) // Use valid provider name
 
 	config := DefaultConfig()
-	config.Provider = "test-provider"
+	// Don't set Provider in config - it will be validated and must be one of: rnnoise, webrtc, spectral
+	// The providerName parameter in NewProvider will override it if provided
 
-	provider, err := NewProvider(ctx, "", config, func(c *Config) {
+	provider, err := NewProvider(ctx, "rnnoise", config, func(c *Config) {
 		c.FrameSize = 1024
 	})
 	require.NoError(t, err)
@@ -88,4 +87,3 @@ func TestGetMetrics(t *testing.T) {
 	metrics := GetMetrics()
 	_ = metrics
 }
-

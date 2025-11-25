@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestSleepDelay(t *testing.T) {
 	// Multiple sleep calls that accumulate to exceed threshold
 	time.Sleep(50 * time.Millisecond)

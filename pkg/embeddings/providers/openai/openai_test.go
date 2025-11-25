@@ -11,8 +11,6 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewOpenAIEmbedder(t *testing.T) {
 	tracer := otel.Tracer("test")
 
@@ -83,8 +81,6 @@ func TestNewOpenAIEmbedder(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestNewOpenAIEmbedderWithClient_NilClient(t *testing.T) {
@@ -101,15 +97,13 @@ func TestNewOpenAIEmbedderWithClient_NilClient(t *testing.T) {
 		t.Errorf("Expected EmbeddingError, got %T", err)
 	}
 	if embErr.Code != iface.ErrCodeConnectionFailed {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Errorf("Expected error code %s, got %s", iface.ErrCodeConnectionFailed, embErr.Code)
 	}
 }
 
 func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
-	tracer := otel.Tracer("test")
 	ctx := context.Background()
+	tracer := otel.Tracer("test")
 
 	tests := []struct {
 		name          string
@@ -271,8 +265,6 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 					if len(mockClient.CreateEmbeddingsCalls) != 1 {
 						t.Errorf("Expected 1 API call, got %d", len(mockClient.CreateEmbeddingsCalls))
 					}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				}
 			}
 		})
@@ -280,8 +272,8 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
-	tracer := otel.Tracer("test")
 	ctx := context.Background()
+	tracer := otel.Tracer("test")
 
 	tests := []struct {
 		name        string
@@ -385,8 +377,6 @@ func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
 					t.Errorf("Expected dimension %d, got %d", tt.expectedDim, len(embedding))
 				}
 				// Verify API call was made
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				if len(mockClient.CreateEmbeddingsCalls) != 1 {
 					t.Errorf("Expected 1 API call, got %d", len(mockClient.CreateEmbeddingsCalls))
 				}
@@ -396,8 +386,8 @@ func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_GetDimension(t *testing.T) {
-	tracer := otel.Tracer("test")
 	ctx := context.Background()
+	tracer := otel.Tracer("test")
 
 	tests := []struct {
 		name     string
@@ -437,8 +427,6 @@ func TestOpenAIEmbedder_GetDimension(t *testing.T) {
 
 			dimension, err := embedder.GetDimension(ctx)
 			if err != nil {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Fatalf("GetDimension() failed: %v", err)
 			}
 
@@ -450,8 +438,8 @@ func TestOpenAIEmbedder_GetDimension(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_Check(t *testing.T) {
-	tracer := otel.Tracer("test")
 	ctx := context.Background()
+	tracer := otel.Tracer("test")
 
 	tests := []struct {
 		name      string
@@ -489,8 +477,6 @@ func TestOpenAIEmbedder_Check(t *testing.T) {
 
 			config := &Config{APIKey: "sk-test", Model: "text-embedding-ada-002"}
 			embedder, err := NewOpenAIEmbedderWithClient(config, tracer, mockClient)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			if err != nil {
 				t.Fatalf("Failed to create embedder: %v", err)
 			}
@@ -504,8 +490,6 @@ func TestOpenAIEmbedder_Check(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_InterfaceCompliance(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	tracer := otel.Tracer("test")
 	config := &Config{APIKey: "sk-test", Model: "text-embedding-ada-002"}
 	mockClient := mock.NewOpenAIClientMock()
@@ -521,16 +505,15 @@ func TestOpenAIEmbedder_InterfaceCompliance(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_ContextCancellation(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	tracer := otel.Tracer("test")
 
 	// Create a context that will be cancelled
-	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	mockClient := mock.NewOpenAIClientMock()
 	mockClient.SetCreateEmbeddingsError(context.Canceled) // Simulate cancellation
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	config := &Config{APIKey: "sk-test", Model: "text-embedding-ada-002"}
 	embedder, err := NewOpenAIEmbedderWithClient(config, tracer, mockClient)
@@ -548,8 +531,8 @@ func TestOpenAIEmbedder_ContextCancellation(t *testing.T) {
 }
 
 func TestOpenAIEmbedder_ConcurrentAccess(t *testing.T) {
-	tracer := otel.Tracer("test")
 	ctx := context.Background()
+	tracer := otel.Tracer("test")
 
 	// Test concurrent creation of multiple embedders
 	done := make(chan bool, 5)
@@ -582,8 +565,6 @@ func TestOpenAIEmbedder_ConcurrentAccess(t *testing.T) {
 			if err != nil {
 				t.Errorf("Goroutine %d: failed to embed query: %v", id, err)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 			dimension, err := embedder.GetDimension(ctx)
 			if err != nil {
@@ -603,16 +584,14 @@ func TestOpenAIEmbedder_ConcurrentAccess(t *testing.T) {
 
 // Benchmark tests
 func BenchmarkOpenAIEmbedder_EmbedQuery(b *testing.B) {
-	tracer := otel.Tracer("benchmark")
 	ctx := context.Background()
+	tracer := otel.Tracer("benchmark")
 
 	mockClient := mock.NewOpenAIClientMock()
 	embedding := make([]float32, 1536)
 	response := openaiClient.EmbeddingResponse{
 		Object: "list",
 		Data: []openaiClient.Embedding{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			{Object: "embedding", Embedding: embedding, Index: 0},
 		},
 		Model: "text-embedding-ada-002",
@@ -634,8 +613,8 @@ func BenchmarkOpenAIEmbedder_EmbedQuery(b *testing.B) {
 }
 
 func BenchmarkOpenAIEmbedder_EmbedDocuments(b *testing.B) {
-	tracer := otel.Tracer("benchmark")
 	ctx := context.Background()
+	tracer := otel.Tracer("benchmark")
 
 	mockClient := mock.NewOpenAIClientMock()
 	embeddings := make([]openaiClient.Embedding, 5)

@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -86,8 +84,6 @@ func TestConfig_Validate(t *testing.T) {
 			}
 		})
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestConfig_SetDefaults(t *testing.T) {
@@ -136,8 +132,6 @@ func TestConfig_SetDefaults(t *testing.T) {
 		}
 		if !config.Mock.Enabled {
 			t.Error("Expected Mock to be enabled by default")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		}
 	}
 }
@@ -176,8 +170,6 @@ func TestOpenAIConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if (err != nil) != tt.wantErr {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("OpenAIConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -206,8 +198,6 @@ func TestOllamaConfig_Validate(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			err := tt.config.Validate()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("OllamaConfig.Validate() error = %v, wantErr %v", err, tt.wantErr)
@@ -255,8 +245,6 @@ func TestMockConfig_Validate(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
@@ -321,8 +309,6 @@ func TestConfig_ValidateWithMultipleProviders(t *testing.T) {
 			},
 			wantErr: true,
 		},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	for _, tt := range tests {
@@ -359,8 +345,6 @@ func TestConfig_SetDefaults_PartialInitialization(t *testing.T) {
 		t.Error("OpenAI API key should not be changed")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Check Ollama kept custom server URL but got other defaults
 	if config.Ollama.ServerURL != "http://custom:8080" {
 		t.Errorf("Expected custom server URL, got %s", config.Ollama.ServerURL)
@@ -410,8 +394,6 @@ func TestConfig_TimeoutValidation(t *testing.T) {
 					APIKey:  "sk-test",
 					Model:   "text-embedding-ada-002",
 					Timeout: 24 * time.Hour, // Very long but valid
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				},
 			},
 			wantErr: false,
@@ -435,8 +417,6 @@ func TestConfig_ConcurrentValidation(t *testing.T) {
 		},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Test concurrent validation
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
@@ -506,8 +486,6 @@ func TestOpenAIConfig_Validate_EdgeCases(t *testing.T) {
 			wantErr: false, // Should be allowed
 		},
 		{
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			name: "negative max retries",
 			config: &OpenAIConfig{
 				APIKey:     "sk-test",
@@ -571,8 +549,6 @@ func TestOllamaConfig_Validate_EdgeCases(t *testing.T) {
 			name: "whitespace model",
 			config: &OllamaConfig{
 				Model: "   ",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			},
 			wantErr: false, // Validator doesn't consider whitespace as empty
 		},
@@ -595,8 +571,6 @@ func TestOllamaConfig_Validate_EdgeCases(t *testing.T) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestOptionConfig(t *testing.T) {
 	// Test the functional options
 	opts := []Option{

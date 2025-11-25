@@ -6,8 +6,6 @@ import (
 	"testing"
 )
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewConfigError(t *testing.T) {
 	err := NewConfigError("test_code", "test message %s", "arg")
 
@@ -23,8 +21,6 @@ func TestNewConfigError(t *testing.T) {
 	if err.Cause != nil {
 		t.Error("expected no cause for new error")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 func TestWrapError(t *testing.T) {
@@ -41,8 +37,6 @@ func TestWrapError(t *testing.T) {
 	}
 
 	if err.Cause != cause {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		t.Error("expected cause to be preserved")
 	}
 }
@@ -69,8 +63,6 @@ func TestConfigError_Error(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := tt.err.Error()
 			if result != tt.expected {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				t.Errorf("Error() = %q, want %q", result, tt.expected)
 			}
 		})
@@ -78,8 +70,6 @@ func TestConfigError_Error(t *testing.T) {
 }
 
 func TestConfigError_Unwrap(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	cause := errors.New("original error")
 	wrapped := WrapError(cause, "code", "message")
 
@@ -104,8 +94,6 @@ func TestIsConfigError(t *testing.T) {
 		{"nil error", nil, "test_code", false},
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result := IsConfigError(tt.err, tt.code)
@@ -139,8 +127,6 @@ func TestAsConfigError(t *testing.T) {
 			if found != tt.expectFound {
 				t.Errorf("AsConfigError() found = %v, want %v", found, tt.expectFound)
 			}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 			if tt.expectFound && target == nil {
 				t.Error("expected target to be set when found is true")
@@ -167,8 +153,6 @@ func TestErrorCodes(t *testing.T) {
 		ErrCodeLoadFailed,
 		ErrCodeSaveFailed,
 		ErrCodeProviderUnavailable,
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		ErrCodeRemoteLoadTimeout,
 		ErrCodeAllProvidersFailed,
 		ErrCodeConfigNotFound,
@@ -195,8 +179,6 @@ func TestIsConfigError_EdgeCases(t *testing.T) {
 		{"config error with matching code", NewConfigError("test_code", "msg"), "test_code", true},
 		{"config error with non-matching code", NewConfigError("other_code", "msg"), "test_code", false},
 		{"wrapped config error", WrapError(NewConfigError("test_code", "msg"), "wrapper", "wrapper msg"), "test_code", true},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 		{"deeply wrapped config error", func() error {
 			return WrapError(WrapError(NewConfigError("test_code", "msg"), "middle", "middle"), "outer", "outer")
 		}(), "test_code", true},
@@ -235,8 +217,6 @@ func TestAsConfigError_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			var target *ConfigError
 			found := AsConfigError(tt.err, &target)
 
@@ -286,8 +266,6 @@ func TestNewConfigError_Formatting(t *testing.T) {
 		},
 		{
 			name:     "message with %",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			code:     "test_code",
 			message:  "message with %% percent",
 			args:     nil,
@@ -332,8 +310,6 @@ func TestWrapError_Formatting(t *testing.T) {
 			cause:    cause,
 			code:     "test_code",
 			message:  "wrapped %s with %d",
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			args:     []interface{}{"message", 42},
 			expected: "wrapped message with 42: original cause",
 		},
@@ -375,8 +351,6 @@ func TestConfigError_Error_Formatting(t *testing.T) {
 		{
 			name:     "nil cause",
 			err:      &ConfigError{Code: "code", Message: "message", Cause: nil},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			expected: "message",
 		},
 		{
@@ -438,6 +412,9 @@ func TestErrorHandling_Integration(t *testing.T) {
 	var cfgErr2 *ConfigError
 	if !AsConfigError(unwrapped, &cfgErr2) {
 		t.Error("unwrapped error should also be ConfigError")
+	}
+	if cfgErr2 == nil {
+		t.Fatal("cfgErr2 should not be nil after AsConfigError returned true")
 	}
 	if cfgErr2.Code != "level1" {
 		t.Errorf("expected unwrapped code 'level1', got %s", cfgErr2.Code)

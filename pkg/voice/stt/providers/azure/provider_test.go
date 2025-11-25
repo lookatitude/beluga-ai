@@ -608,8 +608,8 @@ func TestAzureProvider_StartStreaming_Error(t *testing.T) {
 	assert.Nil(t, session)
 }
 
-
 func TestAzureProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
+	ctx := context.Background()
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(200 * time.Millisecond)
 		w.WriteHeader(http.StatusOK)
@@ -627,8 +627,6 @@ func TestAzureProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, provider)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
-	defer cancel()
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
@@ -651,9 +649,9 @@ func TestAzureProvider_Transcribe_RetryContextCancellation(t *testing.T) {
 	config := &stt.Config{
 		Provider:   "azure",
 		APIKey:     "test-key",
-		Timeout:     30 * time.Second,
-		MaxRetries:  3,
-		RetryDelay:  100 * time.Millisecond,
+		Timeout:    30 * time.Second,
+		MaxRetries: 3,
+		RetryDelay: 100 * time.Millisecond,
 	}
 	config.BaseURL = server.URL
 
@@ -733,7 +731,7 @@ func TestAzureProvider_Transcribe_ContextCancellation(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	// Cancel after a short delay to allow request creation
 	go func() {
 		time.Sleep(5 * time.Millisecond)
@@ -750,4 +748,3 @@ func TestAzureProvider_Transcribe_ContextCancellation(t *testing.T) {
 		assert.Contains(t, err.Error(), "context")
 	}
 }
-

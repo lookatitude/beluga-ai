@@ -21,8 +21,6 @@ import (
 )
 
 // TestEnsureMessagesAdvanced provides advanced table-driven tests for EnsureMessages
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestEnsureMessagesAdvanced(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -321,6 +319,7 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 
 // TestAdvancedMockChatModel provides comprehensive tests for the advanced mock
 func TestAdvancedMockChatModel(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		description string
@@ -340,7 +339,6 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				assert.Equal(t, "test-model", mock.GetModelName())
 				assert.Equal(t, "test-provider", mock.GetProviderName())
 
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				// Test first response
@@ -370,7 +368,6 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				)
 			},
 			testFn: func(t *testing.T, mock *AdvancedMockChatModel) {
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				_, err := mock.Generate(ctx, messages)
@@ -391,9 +388,6 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				)
 			},
 			testFn: func(t *testing.T, mock *AdvancedMockChatModel) {
-				ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
-				defer cancel()
-
 				messages := CreateTestMessages()
 
 				streamChan, err := mock.StreamChat(ctx, messages)
@@ -452,7 +446,6 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				)
 			},
 			testFn: func(t *testing.T, mock *AdvancedMockChatModel) {
-				ctx := context.Background()
 
 				// Test Invoke
 				result, err := mock.Invoke(ctx, "test input")
@@ -496,6 +489,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 
 // TestConcurrencyAdvanced tests concurrent operations and race conditions
 func TestConcurrencyAdvanced(t *testing.T) {
+	ctx := context.Background()
 	if testing.Short() {
 		t.Skip("Skipping concurrency test in short mode")
 	}
@@ -505,7 +499,6 @@ func TestConcurrencyAdvanced(t *testing.T) {
 		WithStreamingDelay(1*time.Millisecond),
 	)
 
-	ctx := context.Background()
 	messages := CreateTestMessages()
 
 	// Test concurrent Generate calls
@@ -596,6 +589,7 @@ func TestLoadTesting(t *testing.T) {
 
 // TestIntegrationPatterns demonstrates integration testing patterns
 func TestIntegrationPatterns(t *testing.T) {
+	ctx := context.Background()
 	helper := NewIntegrationTestHelper()
 
 	// Set up mock provider
@@ -631,7 +625,6 @@ func TestIntegrationPatterns(t *testing.T) {
 
 	// Test end-to-end workflow
 	t.Run("end_to_end_workflow", func(t *testing.T) {
-		ctx := context.Background()
 		messages := CreateTestMessages()
 
 		// Generate response
@@ -665,7 +658,6 @@ func TestIntegrationPatterns(t *testing.T) {
 		metrics.Mock.On("RecordRequest", mock.Anything, "integration-provider", "integration-model", mock.Anything).Return().Maybe()
 		metrics.Mock.On("RecordError", mock.Anything, "integration-provider", "integration-model", mock.Anything, mock.Anything).Return().Maybe()
 
-		ctx := context.Background()
 		messages := CreateTestMessages()
 
 		// This would normally record metrics
@@ -680,7 +672,6 @@ func TestIntegrationPatterns(t *testing.T) {
 	t.Run("tracing_integration", func(t *testing.T) {
 		tracing := helper.GetTracing()
 
-		ctx := context.Background()
 
 		// Set up expectations - tracing may or may not be called depending on implementation
 		tracing.Mock.On("StartOperation", mock.Anything, "integration-provider.generate", "integration-provider", "integration-model").Return(ctx).Maybe()
@@ -700,6 +691,7 @@ func TestIntegrationPatterns(t *testing.T) {
 
 // TestEdgeCasesAdvanced tests various edge cases and error scenarios
 func TestEdgeCasesAdvanced(t *testing.T) {
+	ctx := context.Background()
 	tests := []struct {
 		name        string
 		description string
@@ -711,7 +703,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			testFn: func(t *testing.T) {
 				mock := NewAdvancedMockChatModel("test-model")
 
-				ctx := context.Background()
 				var emptyMessages []schema.Message
 
 				_, err := mock.Generate(ctx, emptyMessages)
@@ -724,7 +715,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			testFn: func(t *testing.T) {
 				mock := NewAdvancedMockChatModel("test-model")
 
-				ctx := context.Background()
 
 				_, err := mock.Generate(ctx, nil)
 				assert.NoError(t, err) // Mock should handle nil messages gracefully
@@ -734,13 +724,12 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			name:        "context_cancellation_generate",
 			description: "Test context cancellation during generate",
 			testFn: func(t *testing.T) {
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
 				mock := NewAdvancedMockChatModel("test-model",
 					WithNetworkDelay(true),
 					WithStreamingDelay(50*time.Millisecond),
 				)
-
-				ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-				defer cancel()
 
 				messages := CreateTestMessages()
 
@@ -756,14 +745,13 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			name:        "context_cancellation_streaming",
 			description: "Test context cancellation during streaming",
 			testFn: func(t *testing.T) {
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
 				mock := NewAdvancedMockChatModel("test-model",
 					WithResponses("This is a long streaming response that should be cancelled"),
 					WithNetworkDelay(true),
 					WithStreamingDelay(10*time.Millisecond),
 				)
-
-				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Millisecond)
-				defer cancel()
 
 				messages := CreateTestMessages()
 
@@ -787,7 +775,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			testFn: func(t *testing.T) {
 				mock := NewAdvancedMockChatModel("test-model")
 
-				ctx := context.Background()
 
 				// Create large batch
 				batchSize := 100
@@ -813,7 +800,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 				errorTool := NewMockTool("error-tool")
 				errorTool.SetShouldError(true)
 
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				// Bind error tool
@@ -833,14 +819,13 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 					t.Skip("Skipping test with extreme delays in short mode")
 				}
 
+				ctx, cancel := context.WithCancel(context.Background())
+				defer cancel()
 				mock := NewAdvancedMockChatModel("test-model",
 					WithResponses("Slow streaming response"),
 					WithStreamingDelay(100*time.Millisecond),
 					WithNetworkDelay(true),
 				)
-
-				ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-				defer cancel()
 
 				messages := CreateTestMessages()
 
@@ -863,7 +848,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 					WithResponses(strings.Repeat("Large response ", 1000)), // Large response
 				)
 
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				// Test multiple concurrent large operations
@@ -891,6 +875,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 
 // TestObservabilityAdvanced tests metrics and tracing functionality
 func TestObservabilityAdvanced(t *testing.T) {
+	ctx := context.Background()
 	provider := NewAdvancedMockChatModel("observability-test")
 	metrics := NewMockMetricsRecorder()
 	tracing := NewMockTracingHelper()
@@ -908,7 +893,6 @@ func TestObservabilityAdvanced(t *testing.T) {
 	tracing.Mock.On("AddSpanAttributes", mock.Anything, mock.Anything).Return().Maybe()
 	tracing.Mock.On("EndSpan", mock.Anything).Return().Maybe()
 
-	ctx := context.Background()
 	messages := CreateTestMessages()
 
 	// Test successful operation
@@ -945,10 +929,11 @@ func TestObservabilityAdvanced(t *testing.T) {
 
 // BenchmarkAdvancedMockOperations provides performance benchmarks
 func BenchmarkAdvancedMockOperations(b *testing.B) {
+	ctx := context.Background()
+
 	mock := NewAdvancedMockChatModel("benchmark-model",
 		WithResponses("Benchmark response for performance testing"),
 	)
-	ctx := context.Background()
 	messages := CreateTestMessages()
 
 	b.Run("Generate", func(b *testing.B) {
@@ -1018,6 +1003,7 @@ func TestProviderCompliance(t *testing.T) {
 
 // TestIntegrationWorkflows tests complete integration workflows
 func TestIntegrationWorkflows(t *testing.T) {
+	ctx := context.Background()
 	if testing.Short() {
 		t.Skip("Skipping integration workflows in short mode")
 	}
@@ -1044,7 +1030,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "multi_provider_comparison",
 			description: "Compare responses from multiple providers",
 			workflowFn: func(t *testing.T) {
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				// Get responses from both providers
@@ -1063,7 +1048,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "tool_chaining_workflow",
 			description: "Test tool chaining across providers",
 			workflowFn: func(t *testing.T) {
-				ctx := context.Background()
 
 				// Create tools
 				calculator := NewMockTool("calculator")
@@ -1086,7 +1070,7 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "streaming_comparison",
 			description: "Compare streaming responses",
 			workflowFn: func(t *testing.T) {
-				ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
 				messages := CreateTestMessages()
@@ -1110,7 +1094,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "batch_processing_workflow",
 			description: "Test batch processing workflow",
 			workflowFn: func(t *testing.T) {
-				ctx := context.Background()
 
 				// Create batch inputs
 				inputs := []any{
@@ -1144,7 +1127,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 				errorMock := NewAdvancedMockChatModel("error-recovery-test",
 					WithError(NewLLMError("generate", ErrCodeNetworkError, errors.New("temporary network error"))))
 
-				ctx := context.Background()
 				messages := CreateTestMessages()
 
 				// This should fail as configured

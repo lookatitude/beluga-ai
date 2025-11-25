@@ -102,4 +102,3 @@ func TestDurationDetector_CheckThreshold_NotActive(t *testing.T) {
 	// Should return false after stop
 	assert.False(t, dd.CheckThreshold())
 }
-

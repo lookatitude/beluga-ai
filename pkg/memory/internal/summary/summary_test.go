@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
@@ -162,8 +163,6 @@ func (m *MockChatMessageHistory) Clear(ctx context.Context) error {
 var _ iface.ChatMessageHistory = (*MockChatMessageHistory)(nil)
 
 // TestNewConversationSummaryMemory tests the constructor
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestNewConversationSummaryMemory(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -178,8 +177,6 @@ func TestNewConversationSummaryMemory(t *testing.T) {
 	assert.Equal(t, "AI", memory.AiPrefix)
 	assert.NotNil(t, memory.SummaryPrompt)
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // TestNewConversationSummaryMemory_Defaults tests default values
 func TestNewConversationSummaryMemory_Defaults(t *testing.T) {
@@ -188,8 +185,6 @@ func TestNewConversationSummaryMemory_Defaults(t *testing.T) {
 
 	memory := NewConversationSummaryMemory(history, llm, "")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, "history", memory.MemoryKey) // Default memory key
 }
 
@@ -199,8 +194,6 @@ func TestConversationSummaryMemory_MemoryVariables(t *testing.T) {
 	llm := NewMockLLM()
 
 	memory := NewConversationSummaryMemory(history, llm, "summary_memory")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	variables := memory.MemoryVariables()
 	assert.Equal(t, []string{"summary_memory"}, variables)
@@ -214,8 +207,6 @@ func TestConversationSummaryMemory_LoadMemoryVariables(t *testing.T) {
 
 	memory := NewConversationSummaryMemory(history, llm, "memory")
 	memory.currentSummary = "Test summary"
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 	assert.NoError(t, err)
@@ -227,8 +218,6 @@ func TestConversationSummaryMemory_LoadMemoryVariables(t *testing.T) {
 func TestConversationSummaryMemory_LoadMemoryVariables_EmptySummary(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	llm := NewMockLLM()
 
 	memory := NewConversationSummaryMemory(history, llm, "memory")
@@ -256,8 +245,6 @@ func TestConversationSummaryMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.NoError(t, err)
 
 	// Verify summary was updated
@@ -278,8 +265,6 @@ func TestConversationSummaryMemory_SaveContext_CustomKeys(t *testing.T) {
 	llm.invokeFunc = func(ctx context.Context, input any, options ...core.Option) (any, error) {
 		return "Summary with custom keys", nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	memory := NewConversationSummaryMemory(history, llm, "memory")
 	memory.InputKey = "question"
@@ -301,8 +286,6 @@ func TestConversationSummaryMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 
 	llm.invokeFunc = func(ctx context.Context, input any, options ...core.Option) (any, error) {
 		return "Auto-detected summary", nil
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 
 	memory := NewConversationSummaryMemory(history, llm, "memory")
@@ -320,6 +303,7 @@ func TestConversationSummaryMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 
 // TestConversationSummaryMemory_SaveContext_ErrorHandling tests various error conditions
 func TestConversationSummaryMemory_SaveContext_ErrorHandling(t *testing.T) {
+	ctx := context.Background()
 	testCases := []struct {
 		name          string
 		setupMemory   func(*ConversationSummaryMemory)
@@ -396,10 +380,7 @@ func TestConversationSummaryMemory_SaveContext_ErrorHandling(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
 			history := NewMockChatMessageHistory()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			llm := NewMockLLM()
 			if tc.setupLLM != nil {
 				tc.setupLLM(llm)
@@ -419,8 +400,6 @@ func TestConversationSummaryMemory_SaveContext_ErrorHandling(t *testing.T) {
 
 // TestConversationSummaryMemory_SaveContext_LLMMessageResponse tests LLM returning schema.Message
 func TestConversationSummaryMemory_SaveContext_LLMMessageResponse(t *testing.T) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -440,8 +419,6 @@ func TestConversationSummaryMemory_SaveContext_LLMMessageResponse(t *testing.T) 
 	assert.Equal(t, "LLM generated summary", memory.currentSummary)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // TestConversationSummaryMemory_SaveContext_LLMStringResponse tests LLM returning string
 func TestConversationSummaryMemory_SaveContext_LLMStringResponse(t *testing.T) {
 	ctx := context.Background()
@@ -461,8 +438,6 @@ func TestConversationSummaryMemory_SaveContext_LLMStringResponse(t *testing.T) {
 	err := memory.SaveContext(ctx, inputs, outputs)
 	assert.NoError(t, err)
 	assert.Equal(t, "String summary response", memory.currentSummary)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 }
 
 // TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse tests LLM returning unexpected type
@@ -487,8 +462,6 @@ func TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse(t *testing.
 }
 
 // TestConversationSummaryMemory_Clear tests the Clear method
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestConversationSummaryMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -501,8 +474,6 @@ func TestConversationSummaryMemory_Clear(t *testing.T) {
 	err := history.AddUserMessage(ctx, "Hello")
 	require.NoError(t, err)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	// Clear
 	err = memory.Clear(ctx)
 	assert.NoError(t, err)
@@ -517,8 +488,6 @@ func TestConversationSummaryMemory_Clear(t *testing.T) {
 }
 
 // TestConversationSummaryMemory_Clear_HistoryError tests error handling in Clear
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 func TestConversationSummaryMemory_Clear_HistoryError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -542,8 +511,6 @@ func TestConversationSummaryBufferMemory(t *testing.T) {
 	assert.NotNil(t, memory)
 	assert.Equal(t, history, memory.ChatHistory)
 	assert.Equal(t, llm, memory.LLM)
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Equal(t, "buffer_memory", memory.MemoryKey)
 	assert.Equal(t, 1000, memory.MaxTokenLimit)
 	assert.Equal(t, "Human", memory.HumanPrefix)
@@ -568,8 +535,6 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables(t *testing.T) {
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
 	assert.NoError(t, err)
 	assert.Contains(t, vars, "memory")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	result := vars["memory"].(string)
 	assert.Contains(t, result, "Existing summary")
@@ -582,8 +547,6 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary(t *testin
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	memory := NewConversationSummaryBufferMemory(history, llm, "memory", 1000)
 
@@ -602,8 +565,6 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary(t *testin
 	// When summary is empty, result should be the buffer string (which contains newlines)
 	// The buffer string format includes newlines between messages
 	assert.Contains(t, result, "Human: Hello")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	assert.Contains(t, result, "AI: Hi!")
 }
 
@@ -663,8 +624,6 @@ func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T)
 			name: "Non-string input",
 			setupMemory: func(m *ConversationSummaryBufferMemory) {
 				m.InputKey = "input"
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 				m.OutputKey = "output"
 			},
 			inputs:        map[string]any{"input": 123},
@@ -677,8 +636,6 @@ func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T)
 				m.InputKey = "input"
 				m.OutputKey = "output"
 			},
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 			inputs:        map[string]any{"input": "Hello"},
 			outputs:       map[string]any{"output": "Hi!"},
 			expectedError: "error",
@@ -687,14 +644,13 @@ func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
 			history := NewMockChatMessageHistory()
 			if tc.name == "Add message error" {
 				history.addError = errors.New("add message error")
 			}
 			llm := NewMockLLM()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 			memory := NewConversationSummaryBufferMemory(history, llm, "memory", 1000)
 			if tc.setupMemory != nil {
@@ -708,15 +664,11 @@ func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T)
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // TestConversationSummaryBufferMemory_Clear tests the Clear method
 func TestConversationSummaryBufferMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	memory := NewConversationSummaryBufferMemory(history, llm, "memory", 1000)
 	memory.movingSummaryBuffer = "Test summary"
@@ -736,8 +688,6 @@ func TestGetBufferString_Summary(t *testing.T) {
 	}
 
 	result := getBufferString(messages, "User", "Bot")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 	assert.Contains(t, result, "User: Hello")
 	assert.Contains(t, result, "Bot: Hi!")
@@ -751,8 +701,6 @@ func TestInterfaceCompliance_Summary(t *testing.T) {
 	llm := NewMockLLM()
 
 	// Test ConversationSummaryMemory
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	summaryMemory := NewConversationSummaryMemory(history, llm, "memory")
 	var _ iface.Memory = summaryMemory
 
@@ -768,8 +716,6 @@ func TestDefaultSummaryPrompt(t *testing.T) {
 	assert.NotNil(t, DefaultSummaryPrompt)
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // BenchmarkConversationSummaryMemory_SaveContext benchmarks SaveContext performance
 func BenchmarkConversationSummaryMemory_SaveContext(b *testing.B) {
 	ctx := context.Background()
@@ -790,8 +736,6 @@ func BenchmarkConversationSummaryMemory_SaveContext(b *testing.B) {
 		memory.SaveContext(ctx, inputs, outputs)
 	}
 }
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 
 // BenchmarkConversationSummaryMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
 func BenchmarkConversationSummaryMemory_LoadMemoryVariables(b *testing.B) {
@@ -808,8 +752,6 @@ func BenchmarkConversationSummaryMemory_LoadMemoryVariables(b *testing.B) {
 	}
 }
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 // BenchmarkGetBufferString benchmarks the getBufferString function
 func BenchmarkGetBufferString_Summary(b *testing.B) {
 	messages := make([]schema.Message, 100)
@@ -824,8 +766,6 @@ func BenchmarkGetBufferString_Summary(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		getBufferString(messages, "Human", "AI")
-	ctx, cancel := context.WithTimeout(context.Background(), 5s)
-	defer cancel()
 	}
 }
 
