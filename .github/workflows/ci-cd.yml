@@ -132,10 +132,10 @@ jobs:
             ${{ runner.os }}-go-${{ env.GO_VERSION }}-
       
       - name: golangci-lint (with auto-fix)
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
-          args: --timeout=5m --fix --out-format=colored-line-number,github-actions
+          version: v2.0.1
+          args: --timeout=5m --fix --out-format=colored-line-number
       
       - name: go vet
         run: |
