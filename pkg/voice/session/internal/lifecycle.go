@@ -7,7 +7,7 @@ import (
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
 
-// Start starts the voice session
+// Start starts the voice session.
 func (s *VoiceSessionImpl) Start(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -46,7 +46,7 @@ func (s *VoiceSessionImpl) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop stops the voice session gracefully
+// Stop stops the voice session gracefully.
 func (s *VoiceSessionImpl) Stop(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -74,14 +74,14 @@ func (s *VoiceSessionImpl) Stop(ctx context.Context) error {
 	return nil
 }
 
-// GetSessionID returns the session identifier
+// GetSessionID returns the session identifier.
 func (s *VoiceSessionImpl) GetSessionID() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.sessionID
 }
 
-// GetState returns the current session state
+// GetState returns the current session state.
 func (s *VoiceSessionImpl) GetState() sessioniface.SessionState {
 	s.mu.RLock()
 	defer s.mu.RUnlock()

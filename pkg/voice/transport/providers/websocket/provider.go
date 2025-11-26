@@ -2,7 +2,7 @@ package websocket
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -10,27 +10,27 @@ import (
 	transportiface "github.com/lookatitude/beluga-ai/pkg/voice/transport/iface"
 )
 
-// WebSocketTransport implements the Transport interface for WebSocket
+// WebSocketTransport implements the Transport interface for WebSocket.
 type WebSocketTransport struct {
 	config        *WebSocketConfig
 	conn          *WSConnection
 	audioCh       chan []byte
+	audioCallback func([]byte)
 	mu            sync.RWMutex
 	connected     bool
-	audioCallback func([]byte)
 }
 
-// WSConnection represents a WebSocket connection
+// WSConnection represents a WebSocket connection.
 type WSConnection struct {
 	connected bool
 	mu        sync.RWMutex
 }
 
-// NewWebSocketTransport creates a new WebSocket Transport provider
+// NewWebSocketTransport creates a new WebSocket Transport provider.
 func NewWebSocketTransport(config *transport.Config) (transportiface.Transport, error) {
 	if config == nil {
 		return nil, transport.NewTransportError("NewWebSocketTransport", transport.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to WebSocket config
@@ -71,7 +71,7 @@ func NewWebSocketTransport(config *transport.Config) (transportiface.Transport, 
 	}, nil
 }
 
-// SendAudio implements the Transport interface
+// SendAudio implements the Transport interface.
 func (t *WebSocketTransport) SendAudio(ctx context.Context, audio []byte) error {
 	t.mu.RLock()
 	connected := t.connected
@@ -79,7 +79,7 @@ func (t *WebSocketTransport) SendAudio(ctx context.Context, audio []byte) error 
 
 	if !connected {
 		return transport.NewTransportError("SendAudio", transport.ErrCodeNotConnected,
-			fmt.Errorf("transport not connected"))
+			errors.New("transport not connected"))
 	}
 
 	// TODO: Actual WebSocket audio sending would go here
@@ -91,18 +91,18 @@ func (t *WebSocketTransport) SendAudio(ctx context.Context, audio []byte) error 
 	// Placeholder: Just validate audio data
 	if len(audio) == 0 {
 		return transport.NewTransportError("SendAudio", transport.ErrCodeInvalidInput,
-			fmt.Errorf("audio data is empty"))
+			errors.New("audio data is empty"))
 	}
 
 	return nil
 }
 
-// ReceiveAudio implements the Transport interface
+// ReceiveAudio implements the Transport interface.
 func (t *WebSocketTransport) ReceiveAudio() <-chan []byte {
 	return t.audioCh
 }
 
-// OnAudioReceived implements the Transport interface
+// OnAudioReceived implements the Transport interface.
 func (t *WebSocketTransport) OnAudioReceived(callback func(audio []byte)) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -112,7 +112,7 @@ func (t *WebSocketTransport) OnAudioReceived(callback func(audio []byte)) {
 	// to be called when audio is received from the WebSocket connection
 }
 
-// Close implements the Transport interface
+// Close implements the Transport interface.
 func (t *WebSocketTransport) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -136,7 +136,7 @@ func (t *WebSocketTransport) Close() error {
 }
 
 // Connect is a helper method to establish WebSocket connection
-// Note: This is not part of the Transport interface but useful for testing
+// Note: This is not part of the Transport interface but useful for testing.
 func (t *WebSocketTransport) Connect(ctx context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()

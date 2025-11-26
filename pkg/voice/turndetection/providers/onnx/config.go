@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
 )
 
-// ONNXConfig extends the base Turn Detection config with ONNX-specific settings
+// ONNXConfig extends the base Turn Detection config with ONNX-specific settings.
 type ONNXConfig struct {
 	*turndetection.Config
 
@@ -26,7 +26,7 @@ type ONNXConfig struct {
 	SampleRate int `mapstructure:"sample_rate" yaml:"sample_rate" default:"16000" validate:"oneof=8000 16000 22050 24000 32000 44100 48000"`
 }
 
-// DefaultONNXConfig returns a default ONNX Turn Detection configuration
+// DefaultONNXConfig returns a default ONNX Turn Detection configuration.
 func DefaultONNXConfig() *ONNXConfig {
 	return &ONNXConfig{
 		Config:             turndetection.DefaultConfig(),

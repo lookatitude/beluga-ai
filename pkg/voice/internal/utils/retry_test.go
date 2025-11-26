@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultRetryConfig(t *testing.T) {
@@ -15,8 +16,8 @@ func TestDefaultRetryConfig(t *testing.T) {
 	assert.Equal(t, 3, config.MaxAttempts)
 	assert.Equal(t, 100*time.Millisecond, config.InitialDelay)
 	assert.Equal(t, 30*time.Second, config.MaxDelay)
-	assert.Equal(t, 2.0, config.BackoffFactor)
-	assert.Equal(t, 0.1, config.JitterFactor)
+	assert.InEpsilon(t, 2.0, config.BackoffFactor, 0.0001)
+	assert.InEpsilon(t, 0.1, config.JitterFactor, 0.0001)
 }
 
 func TestNewRetryExecutor(t *testing.T) {
@@ -36,7 +37,7 @@ func TestRetryExecutor_ExecuteWithRetry_Success(t *testing.T) {
 		return nil
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRetryExecutor_ExecuteWithRetry_SuccessAfterRetries(t *testing.T) {
@@ -53,7 +54,7 @@ func TestRetryExecutor_ExecuteWithRetry_SuccessAfterRetries(t *testing.T) {
 		return nil
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 2, attempts)
 }
 
@@ -67,7 +68,7 @@ func TestRetryExecutor_ExecuteWithRetry_AllAttemptsFail(t *testing.T) {
 		return testErr
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "operation failed after")
 	assert.Contains(t, err.Error(), "attempts")
 }
@@ -84,7 +85,7 @@ func TestRetryExecutor_ExecuteWithRetry_ContextCancellation(t *testing.T) {
 		return errors.New("should not be called")
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 }
 
@@ -104,9 +105,9 @@ func TestRetryExecutor_ExecuteWithRetry_ContextCancellationDuringRetry(t *testin
 		return errors.New("temporary error")
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	assert.Greater(t, attempts, 0)
+	assert.Positive(t, attempts)
 }
 
 func TestRetryExecutor_calculateDelay(t *testing.T) {
@@ -168,7 +169,7 @@ func TestRetryExecutor_ExecuteWithRetry_RetryCount(t *testing.T) {
 		return errors.New("always fails")
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Should have tried MaxAttempts + 1 times (initial + retries)
 	assert.Equal(t, config.MaxAttempts+1, attempts)
 }
@@ -190,7 +191,7 @@ func TestRetryExecutor_ExecuteWithRetry_NoDelayOnFirstAttempt(t *testing.T) {
 	})
 	duration := time.Since(start)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// First attempt should be immediate (no delay)
 	assert.Less(t, duration, 50*time.Millisecond)
 }

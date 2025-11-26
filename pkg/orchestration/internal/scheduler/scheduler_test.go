@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
@@ -27,7 +28,7 @@ func TestScheduler_AddTask(t *testing.T) {
 	}
 
 	err := scheduler.AddTask(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, scheduler.tasks, "test-task")
 }
 
@@ -43,11 +44,11 @@ func TestScheduler_AddTask_DuplicateID(t *testing.T) {
 
 	// Add first task
 	err := scheduler.AddTask(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Try to add duplicate
 	err = scheduler.AddTask(task)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 }
 
@@ -73,11 +74,11 @@ func TestScheduler_Run(t *testing.T) {
 		DependsOn: []string{"task1"},
 	}
 
-	scheduler.AddTask(task1)
-	scheduler.AddTask(task2)
+	_ = scheduler.AddTask(task1)
+	_ = scheduler.AddTask(task2)
 
 	err := scheduler.Run()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, executedTasks["task1"])
 	assert.True(t, executedTasks["task2"])
 	assert.True(t, scheduler.completed["task1"])
@@ -95,10 +96,10 @@ func TestScheduler_Run_WithMissingDependency(t *testing.T) {
 		DependsOn: []string{"nonexistent"},
 	}
 
-	scheduler.AddTask(task)
+	_ = scheduler.AddTask(task)
 
 	err := scheduler.Run()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not found")
 }
 
@@ -120,11 +121,11 @@ func TestScheduler_Run_WithTaskFailure(t *testing.T) {
 		DependsOn: []string{"task1"},
 	}
 
-	scheduler.AddTask(task1)
-	scheduler.AddTask(task2)
+	_ = scheduler.AddTask(task1)
+	_ = scheduler.AddTask(task2)
 
 	err := scheduler.Run()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "task failed")
 	// task2 should not be marked as completed due to dependency failure
 	assert.False(t, scheduler.completed["task2"])
@@ -151,24 +152,27 @@ func TestScheduler_ExecuteSequential(t *testing.T) {
 		},
 	}
 
-	scheduler.AddTask(task1)
-	scheduler.AddTask(task2)
+	_ = scheduler.AddTask(task1)
+	_ = scheduler.AddTask(task2)
 
 	err := scheduler.ExecuteSequential()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []string{"task1", "task2"}, executionOrder)
 }
 
 func TestScheduler_ExecuteAutonomous(t *testing.T) {
 	scheduler := NewScheduler()
 
+	var mu sync.Mutex
 	executedTasks := make(map[string]bool)
 
 	task1 := &Task{
 		ID: "task1",
 		Execute: func() error {
 			time.Sleep(10 * time.Millisecond) // Small delay to ensure concurrent execution
+			mu.Lock()
 			executedTasks["task1"] = true
+			mu.Unlock()
 			return nil
 		},
 	}
@@ -177,34 +181,43 @@ func TestScheduler_ExecuteAutonomous(t *testing.T) {
 		ID: "task2",
 		Execute: func() error {
 			time.Sleep(10 * time.Millisecond)
+			mu.Lock()
 			executedTasks["task2"] = true
+			mu.Unlock()
 			return nil
 		},
 	}
 
-	scheduler.AddTask(task1)
-	scheduler.AddTask(task2)
+	_ = scheduler.AddTask(task1)
+	_ = scheduler.AddTask(task2)
 
 	err := scheduler.ExecuteAutonomous()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Give some time for goroutines to complete
 	time.Sleep(50 * time.Millisecond)
 
-	assert.True(t, executedTasks["task1"])
-	assert.True(t, executedTasks["task2"])
+	mu.Lock()
+	task1Executed := executedTasks["task1"]
+	task2Executed := executedTasks["task2"]
+	mu.Unlock()
+	assert.True(t, task1Executed)
+	assert.True(t, task2Executed)
 }
 
 func TestScheduler_ExecuteConcurrent(t *testing.T) {
 	scheduler := NewScheduler()
 
+	var mu sync.Mutex
 	executedTasks := make(map[string]bool)
 
 	task1 := &Task{
 		ID: "task1",
 		Execute: func() error {
 			time.Sleep(20 * time.Millisecond)
+			mu.Lock()
 			executedTasks["task1"] = true
+			mu.Unlock()
 			return nil
 		},
 	}
@@ -213,18 +226,25 @@ func TestScheduler_ExecuteConcurrent(t *testing.T) {
 		ID: "task2",
 		Execute: func() error {
 			time.Sleep(20 * time.Millisecond)
+			mu.Lock()
 			executedTasks["task2"] = true
+			mu.Unlock()
 			return nil
 		},
 	}
 
-	scheduler.AddTask(task1)
-	scheduler.AddTask(task2)
+	_ = scheduler.AddTask(task1)
+	_ = scheduler.AddTask(task2)
 
 	err := scheduler.ExecuteConcurrent(2)
-	assert.NoError(t, err)
-	assert.True(t, executedTasks["task1"])
-	assert.True(t, executedTasks["task2"])
+	require.NoError(t, err)
+
+	mu.Lock()
+	task1Executed := executedTasks["task1"]
+	task2Executed := executedTasks["task2"]
+	mu.Unlock()
+	assert.True(t, task1Executed)
+	assert.True(t, task2Executed)
 }
 
 func TestScheduler_ExecuteWithRetry(t *testing.T) {
@@ -243,10 +263,10 @@ func TestScheduler_ExecuteWithRetry(t *testing.T) {
 		},
 	}
 
-	scheduler.AddTask(task)
+	_ = scheduler.AddTask(task)
 
 	err := scheduler.ExecuteWithRetry(5)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 3, attemptCount)
 }
 
@@ -263,10 +283,10 @@ func TestScheduler_ExecuteWithRetry_ExhaustRetries(t *testing.T) {
 		},
 	}
 
-	scheduler.AddTask(task)
+	_ = scheduler.AddTask(task)
 
 	err := scheduler.ExecuteWithRetry(2)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed after retries")
 	assert.Equal(t, 2, attemptCount)
 }

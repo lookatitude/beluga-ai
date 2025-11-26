@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Metrics contains all metrics for the server package
+// Metrics contains all metrics for the server package.
 type Metrics struct {
 	// HTTP metrics
 	httpRequestsTotal     metric.Int64Counter
@@ -31,7 +31,7 @@ type Metrics struct {
 	serverHealthChecks metric.Int64Counter
 }
 
-// NewMetrics creates a new Metrics instance with the given meter
+// NewMetrics creates a new Metrics instance with the given meter.
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	m := &Metrics{}
 
@@ -160,7 +160,7 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	return m, nil
 }
 
-// RecordHTTPRequest records an HTTP request with its duration and status
+// RecordHTTPRequest records an HTTP request with its duration and status.
 func (m *Metrics) RecordHTTPRequest(ctx context.Context, method, path string, statusCode int, duration time.Duration) {
 	m.httpRequestsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -188,12 +188,12 @@ func (m *Metrics) RecordHTTPRequest(ctx context.Context, method, path string, st
 	}
 }
 
-// RecordActiveConnections records the number of active connections
+// RecordActiveConnections records the number of active connections.
 func (m *Metrics) RecordActiveConnections(ctx context.Context, count int64) {
 	m.httpActiveConnections.Add(ctx, count)
 }
 
-// RecordMCPToolCall records an MCP tool call with its duration and success status
+// RecordMCPToolCall records an MCP tool call with its duration and success status.
 func (m *Metrics) RecordMCPToolCall(ctx context.Context, toolName string, success bool, duration time.Duration) {
 	m.mcpToolCallsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -218,7 +218,7 @@ func (m *Metrics) RecordMCPToolCall(ctx context.Context, toolName string, succes
 	}
 }
 
-// RecordMCPResourceRead records an MCP resource read with its duration and success status
+// RecordMCPResourceRead records an MCP resource read with its duration and success status.
 func (m *Metrics) RecordMCPResourceRead(ctx context.Context, resourceURI string, success bool, duration time.Duration) {
 	m.mcpResourceReadsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -243,7 +243,7 @@ func (m *Metrics) RecordMCPResourceRead(ctx context.Context, resourceURI string,
 	}
 }
 
-// RecordToolRegistration records the registration of an MCP tool
+// RecordToolRegistration records the registration of an MCP tool.
 func (m *Metrics) RecordToolRegistration(ctx context.Context, toolName string) {
 	m.mcpToolsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -252,7 +252,7 @@ func (m *Metrics) RecordToolRegistration(ctx context.Context, toolName string) {
 	)
 }
 
-// RecordResourceRegistration records the registration of an MCP resource
+// RecordResourceRegistration records the registration of an MCP resource.
 func (m *Metrics) RecordResourceRegistration(ctx context.Context, resourceURI string) {
 	m.mcpResourcesTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -261,7 +261,7 @@ func (m *Metrics) RecordResourceRegistration(ctx context.Context, resourceURI st
 	)
 }
 
-// RecordHealthCheck records a health check
+// RecordHealthCheck records a health check.
 func (m *Metrics) RecordHealthCheck(ctx context.Context, healthy bool) {
 	m.serverHealthChecks.Add(ctx, 1,
 		metric.WithAttributes(
@@ -270,7 +270,7 @@ func (m *Metrics) RecordHealthCheck(ctx context.Context, healthy bool) {
 	)
 }
 
-// RecordServerUptime records server uptime
+// RecordServerUptime records server uptime.
 func (m *Metrics) RecordServerUptime(ctx context.Context, uptime time.Duration) {
 	m.serverUptime.Record(ctx, uptime.Seconds())
 }

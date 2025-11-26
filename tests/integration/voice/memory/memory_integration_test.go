@@ -7,12 +7,11 @@ import (
 
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // TestMemoryIntegration tests integration with memory package
-// This is a placeholder - actual integration would depend on memory package API
+// This is a placeholder - actual integration would depend on memory package API.
 func TestMemoryIntegration(t *testing.T) {
 	ctx := context.Background()
 
@@ -42,10 +41,10 @@ func TestMemoryIntegration(t *testing.T) {
 	// Process audio - should save transcript to memory
 	audio := []byte{1, 2, 3}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify transcript was captured (simulating memory save)
-	assert.GreaterOrEqual(t, len(transcripts), 0)
+	// len(transcripts) is always >= 0, so no assertion needed
 
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)
@@ -57,12 +56,13 @@ func TestMemoryIntegration(t *testing.T) {
 // - Context persistence across sessions
 // - Memory cleanup on session end
 
-// Mock providers
+// Mock providers.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "test transcript", nil
 }
+
 func (m *mockSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, nil
 }
@@ -72,6 +72,7 @@ type mockTTSProvider struct{}
 func (m *mockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	return []byte{1, 2, 3}, nil
 }
+
 func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	return nil, nil
 }

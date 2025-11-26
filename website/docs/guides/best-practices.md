@@ -245,7 +245,7 @@ Test individual components:
 func TestLLMProvider(t *testing.T) {
     provider := NewMockProvider()
     result, err := provider.Generate(ctx, messages)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.NotEmpty(t, result)
 }
 ```
@@ -262,7 +262,7 @@ func TestRAGPipeline(t *testing.T) {
     
     // Test complete pipeline
     result, err := executeRAGQuery(t, embedder, store, llm, "query")
-    assert.NoError(t, err)
+    require.NoError(t, err)
 }
 ```
 

@@ -6,9 +6,9 @@ import (
 	"net/http"
 )
 
-// Error codes for TTS operations
+// Error codes for TTS operations.
 const (
-	// General errors
+	// General errors.
 	ErrCodeInvalidConfig  = "invalid_config"
 	ErrCodeNetworkError   = "network_error"
 	ErrCodeTimeout        = "timeout"
@@ -20,27 +20,27 @@ const (
 	ErrCodeInternalError  = "internal_error"
 	ErrCodeInvalidInput   = "invalid_input"
 
-	// Provider-specific errors
+	// Provider-specific errors.
 	ErrCodeUnsupportedProvider = "unsupported_provider"
 	ErrCodeInvalidModel        = "invalid_model"
 	ErrCodeInvalidVoice        = "invalid_voice"
 	ErrCodeModelNotAvailable   = "model_not_available"
 
-	// Request/Response errors
+	// Request/Response errors.
 	ErrCodeInvalidRequest    = "invalid_request"
 	ErrCodeInvalidResponse   = "invalid_response"
 	ErrCodeEmptyResponse     = "empty_response"
 	ErrCodeMalformedResponse = "malformed_response"
 
-	// Streaming errors
+	// Streaming errors.
 	ErrCodeStreamError   = "stream_error"
 	ErrCodeStreamTimeout = "stream_timeout"
 	ErrCodeStreamClosed  = "stream_closed"
 
-	// SSML errors
+	// SSML errors.
 	ErrCodeInvalidSSML = "invalid_ssml"
 
-	// Context errors
+	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
 )
@@ -48,14 +48,14 @@ const (
 // TTSError represents an error that occurred during TTS operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type TTSError struct {
-	Op      string                 // Operation that failed (e.g., "generate", "stream")
-	Err     error                  // Underlying error
-	Code    string                 // Error code for programmatic handling
-	Message string                 // Human-readable error message
-	Details map[string]interface{} // Additional error details
+	Err     error
+	Details map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e *TTSError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("tts %s: %s (code: %s)", e.Op, e.Message, e.Code)
@@ -66,12 +66,12 @@ func (e *TTSError) Error() string {
 	return fmt.Sprintf("tts %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying error
+// Unwrap returns the underlying error.
 func (e *TTSError) Unwrap() error {
 	return e.Err
 }
 
-// NewTTSError creates a new TTSError
+// NewTTSError creates a new TTSError.
 func NewTTSError(op, code string, err error) *TTSError {
 	return &TTSError{
 		Op:   op,
@@ -80,7 +80,7 @@ func NewTTSError(op, code string, err error) *TTSError {
 	}
 }
 
-// NewTTSErrorWithMessage creates a new TTSError with a custom message
+// NewTTSErrorWithMessage creates a new TTSError with a custom message.
 func NewTTSErrorWithMessage(op, code, message string, err error) *TTSError {
 	return &TTSError{
 		Op:      op,
@@ -90,8 +90,8 @@ func NewTTSErrorWithMessage(op, code, message string, err error) *TTSError {
 	}
 }
 
-// NewTTSErrorWithDetails creates a new TTSError with additional details
-func NewTTSErrorWithDetails(op, code, message string, err error, details map[string]interface{}) *TTSError {
+// NewTTSErrorWithDetails creates a new TTSError with additional details.
+func NewTTSErrorWithDetails(op, code, message string, err error, details map[string]any) *TTSError {
 	return &TTSError{
 		Op:      op,
 		Code:    code,
@@ -101,7 +101,7 @@ func NewTTSErrorWithDetails(op, code, message string, err error, details map[str
 	}
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false
@@ -121,7 +121,7 @@ func IsRetryableError(err error) bool {
 	return false
 }
 
-// ErrorFromHTTPStatus creates a TTSError from an HTTP status code
+// ErrorFromHTTPStatus creates a TTSError from an HTTP status code.
 func ErrorFromHTTPStatus(op string, statusCode int, err error) *TTSError {
 	var code string
 	var message string

@@ -10,23 +10,16 @@ import (
 // Config represents the configuration for the agents package.
 // It includes settings for agent behavior, execution, and monitoring.
 type Config struct {
-	// Default settings for all agents
-	DefaultMaxRetries    int           `mapstructure:"default_max_retries" yaml:"default_max_retries" validate:"min=0" default:"3"`
-	DefaultRetryDelay    time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" validate:"min=0" default:"2s"`
-	DefaultTimeout       time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"gt=0" default:"30s"`
-	DefaultMaxIterations int           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" validate:"gt=0" default:"15"`
-
-	// Monitoring and observability settings
-	EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-	EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-	MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" validate:"required" default:"beluga_agents"`
-	TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" validate:"required" default:"beluga-agents"`
-
-	// Executor settings
-	ExecutorConfig ExecutorConfig `mapstructure:"executor" yaml:"executor"`
-
-	// Agent-specific configurations
-	AgentConfigs map[string]schema.AgentConfig `mapstructure:"agents" yaml:"agents"`
+	AgentConfigs         map[string]schema.AgentConfig `mapstructure:"agents" yaml:"agents"`
+	MetricsPrefix        string                        `mapstructure:"metrics_prefix" yaml:"metrics_prefix" validate:"required" default:"beluga_agents"`
+	TracingServiceName   string                        `mapstructure:"tracing_service_name" yaml:"tracing_service_name" validate:"required" default:"beluga-agents"`
+	ExecutorConfig       ExecutorConfig                `mapstructure:"executor" yaml:"executor"`
+	DefaultMaxRetries    int                           `mapstructure:"default_max_retries" yaml:"default_max_retries" validate:"min=0" default:"3"`
+	DefaultRetryDelay    time.Duration                 `mapstructure:"default_retry_delay" yaml:"default_retry_delay" validate:"min=0" default:"2s"`
+	DefaultTimeout       time.Duration                 `mapstructure:"default_timeout" yaml:"default_timeout" validate:"gt=0" default:"30s"`
+	DefaultMaxIterations int                           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" validate:"gt=0" default:"15"`
+	EnableMetrics        bool                          `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
+	EnableTracing        bool                          `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
 }
 
 // ExecutorConfig defines configuration for agent execution.
@@ -48,13 +41,13 @@ type Option func(*options)
 
 // options holds the configuration options for an agent.
 type options struct {
+	eventHandlers map[string][]func(any) error
 	maxRetries    int
 	retryDelay    time.Duration
 	timeout       time.Duration
 	maxIterations int
 	enableMetrics bool
 	enableTracing bool
-	eventHandlers map[string][]func(interface{}) error
 }
 
 // WithMaxRetries sets the maximum number of retries for agent operations.

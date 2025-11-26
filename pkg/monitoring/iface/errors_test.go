@@ -123,7 +123,7 @@ func TestMonitoringError_WithMetadata(t *testing.T) {
 
 func TestMonitoringError_WithMetadataMap(t *testing.T) {
 	err := NewMonitoringError("test_code", "Test message")
-	metadata := map[string]interface{}{
+	metadata := map[string]any{
 		"key1": "value1",
 		"key2": 42,
 	}
@@ -243,14 +243,14 @@ func TestAsMonitoringError(t *testing.T) {
 
 func TestErrorSeverity_String(t *testing.T) {
 	tests := []struct {
-		severity ErrorSeverity
 		expected string
+		severity ErrorSeverity
 	}{
-		{SeverityLow, "low"},
-		{SeverityMedium, "medium"},
-		{SeverityHigh, "high"},
-		{SeverityCritical, "critical"},
-		{ErrorSeverity(999), "unknown"},
+		{"low", SeverityLow},
+		{"medium", SeverityMedium},
+		{"high", SeverityHigh},
+		{"critical", SeverityCritical},
+		{"unknown", ErrorSeverity(999)},
 	}
 
 	for _, tt := range tests {
@@ -280,7 +280,7 @@ func BenchmarkMonitoringError_Error(b *testing.B) {
 	}
 }
 
-// WithCause is a helper method for testing
+// WithCause is a helper method for testing.
 func (e *MonitoringError) WithCause(cause error) *MonitoringError {
 	e.Cause = cause
 	return e

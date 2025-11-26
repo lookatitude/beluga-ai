@@ -2,7 +2,7 @@ package silero
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -11,7 +11,7 @@ import (
 	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
 )
 
-// SileroProvider implements the VADProvider interface for Silero VAD
+// SileroProvider implements the VADProvider interface for Silero VAD.
 type SileroProvider struct {
 	config      *SileroConfig
 	model       *ONNXModel
@@ -19,11 +19,11 @@ type SileroProvider struct {
 	initialized bool
 }
 
-// NewSileroProvider creates a new Silero VAD provider
+// NewSileroProvider creates a new Silero VAD provider.
 func NewSileroProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	if config == nil {
 		return nil, vad.NewVADError("NewSileroProvider", vad.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Silero config
@@ -63,7 +63,7 @@ func NewSileroProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	return provider, nil
 }
 
-// Process implements the VADProvider interface
+// Process implements the VADProvider interface.
 func (p *SileroProvider) Process(ctx context.Context, audio []byte) (bool, error) {
 	// Lazy initialization - load model on first use
 	if err := p.ensureInitialized(ctx); err != nil {
@@ -74,7 +74,7 @@ func (p *SileroProvider) Process(ctx context.Context, audio []byte) (bool, error
 	return p.model.Process(ctx, audio, p.config.Threshold)
 }
 
-// ProcessStream implements the VADProvider interface
+// ProcessStream implements the VADProvider interface.
 func (p *SileroProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error) {
 	// Lazy initialization - load model on first use
 	if err := p.ensureInitialized(ctx); err != nil {
@@ -123,7 +123,7 @@ func (p *SileroProvider) ProcessStream(ctx context.Context, audioCh <-chan []byt
 	return resultCh, nil
 }
 
-// ensureInitialized loads the ONNX model if not already loaded
+// ensureInitialized loads the ONNX model if not already loaded.
 func (p *SileroProvider) ensureInitialized(ctx context.Context) error {
 	p.mu.RLock()
 	initialized := p.initialized

@@ -12,26 +12,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockNoiseCancellation provides a comprehensive mock implementation for testing
+// AdvancedMockNoiseCancellation provides a comprehensive mock implementation for testing.
 type AdvancedMockNoiseCancellation struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
-	cancellationName string
-	callCount        int
-	mu               sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	cancellationName     string
 	processedAudio       [][]byte
+	callCount            int
 	audioIndex           int
 	processingDelay      time.Duration
-	simulateNetworkDelay bool
 	noiseReductionLevel  float64
+	mu                   sync.RWMutex
+	shouldError          bool
+	simulateNetworkDelay bool
 }
 
-// NewAdvancedMockNoiseCancellation creates a new advanced mock with configurable behavior
+// NewAdvancedMockNoiseCancellation creates a new advanced mock with configurable behavior.
 func NewAdvancedMockNoiseCancellation(cancellationName string, opts ...MockOption) *AdvancedMockNoiseCancellation {
 	m := &AdvancedMockNoiseCancellation{
 		cancellationName:    cancellationName,
@@ -48,24 +44,24 @@ func NewAdvancedMockNoiseCancellation(cancellationName string, opts ...MockOptio
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockNoiseCancellation
+// MockOption configures the behavior of AdvancedMockNoiseCancellation.
 type MockOption func(*AdvancedMockNoiseCancellation)
 
-// WithCancellationName sets the cancellation name
+// WithCancellationName sets the cancellation name.
 func WithCancellationName(name string) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.cancellationName = name
 	}
 }
 
-// WithProcessedAudio sets the processed audio to return
+// WithProcessedAudio sets the processed audio to return.
 func WithProcessedAudio(audio ...[]byte) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.processedAudio = audio
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.shouldError = true
@@ -73,35 +69,35 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithProcessingDelay sets the delay for processing
+// WithProcessingDelay sets the delay for processing.
 func WithProcessingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.processingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// WithMockNoiseReductionLevel sets the noise reduction level for the mock
+// WithMockNoiseReductionLevel sets the noise reduction level for the mock.
 func WithMockNoiseReductionLevel(level float64) MockOption {
 	return func(m *AdvancedMockNoiseCancellation) {
 		m.noiseReductionLevel = level
 	}
 }
 
-// Process implements the NoiseCancellation interface
+// Process implements the NoiseCancellation interface.
 func (m *AdvancedMockNoiseCancellation) Process(ctx context.Context, audio []byte) ([]byte, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, audio)
 		if args.Get(0) != nil {
 			if processed, ok := args.Get(0).([]byte); ok {
@@ -149,7 +145,7 @@ func (m *AdvancedMockNoiseCancellation) Process(ctx context.Context, audio []byt
 	return audio, nil
 }
 
-// ProcessStream implements the NoiseCancellation interface
+// ProcessStream implements the NoiseCancellation interface.
 func (m *AdvancedMockNoiseCancellation) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error) {
 	processedCh := make(chan []byte, 10)
 
@@ -195,7 +191,7 @@ func (m *AdvancedMockNoiseCancellation) ProcessStream(ctx context.Context, audio
 	return processedCh, nil
 }
 
-// getNextProcessedAudio returns the next processed audio in the list
+// getNextProcessedAudio returns the next processed audio in the list.
 func (m *AdvancedMockNoiseCancellation) getNextProcessedAudio() []byte {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -209,15 +205,16 @@ func (m *AdvancedMockNoiseCancellation) getNextProcessedAudio() []byte {
 	return audio
 }
 
-// GetCallCount returns the number of times Process has been called
+// GetCallCount returns the number of times Process has been called.
 func (m *AdvancedMockNoiseCancellation) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// AssertNoiseCancellationInterface ensures that a type implements the NoiseCancellation interface
+// AssertNoiseCancellationInterface ensures that a type implements the NoiseCancellation interface.
 func AssertNoiseCancellationInterface(t *testing.T, cancellation iface.NoiseCancellation) {
+	t.Helper()
 	assert.NotNil(t, cancellation, "NoiseCancellation should not be nil")
 
 	// Test Process method

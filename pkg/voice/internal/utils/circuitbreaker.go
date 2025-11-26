@@ -1,19 +1,19 @@
 package utils
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 )
 
 // CircuitBreaker provides circuit breaker functionality.
 type CircuitBreaker struct {
-	mu               sync.RWMutex
+	lastFailureTime  time.Time
 	failureThreshold int
 	resetTimeout     time.Duration
 	failureCount     int
-	lastFailureTime  time.Time
 	state            CircuitState
+	mu               sync.RWMutex
 }
 
 // CircuitState represents the state of the circuit breaker.
@@ -45,7 +45,7 @@ func (cb *CircuitBreaker) Call(operation func() error) error {
 	case StateOpen:
 		if time.Since(cb.lastFailureTime) < cb.resetTimeout {
 			cb.mu.Unlock()
-			return fmt.Errorf("circuit breaker is open")
+			return errors.New("circuit breaker is open")
 		}
 		cb.state = StateHalfOpen
 	case StateHalfOpen:

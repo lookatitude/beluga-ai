@@ -5,6 +5,7 @@ package bedrock
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -21,12 +22,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Provider constants
+// Provider constants.
 const (
 	ProviderName = "bedrock"
 	DefaultModel = "anthropic.claude-3-haiku-20240307-v1:0"
 
-	// Error codes specific to AWS Bedrock
+	// Error codes specific to AWS Bedrock.
 	ErrCodeInvalidCredentials = "bedrock_invalid_credentials"
 	ErrCodeRegionNotFound     = "bedrock_region_not_found"
 	ErrCodeModelNotFound      = "bedrock_model_not_found"
@@ -34,19 +35,19 @@ const (
 	ErrCodeThrottling         = "bedrock_throttling"
 )
 
-// BedrockProvider implements the ChatModel interface for AWS Bedrock models
+// BedrockProvider implements the ChatModel interface for AWS Bedrock models.
 type BedrockProvider struct {
+	metrics     llms.MetricsRecorder
 	config      *llms.Config
 	client      *bedrockruntime.Client
-	modelName   string
-	tools       []tools.Tool
-	metrics     llms.MetricsRecorder
 	tracing     *common.TracingHelper
 	retryConfig *common.RetryConfig
+	modelName   string
 	region      string
+	tools       []tools.Tool
 }
 
-// NewBedrockProvider creates a new AWS Bedrock provider instance
+// NewBedrockProvider creates a new AWS Bedrock provider instance.
 func NewBedrockProvider(ctx context.Context, config *llms.Config) (*BedrockProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(ctx, config); err != nil {
@@ -91,7 +92,7 @@ func NewBedrockProvider(ctx context.Context, config *llms.Config) (*BedrockProvi
 	return provider, nil
 }
 
-// NewBedrockLLM creates a new Bedrock provider (legacy compatibility function)
+// NewBedrockLLM creates a new Bedrock provider (legacy compatibility function).
 func NewBedrockLLM(ctx context.Context, modelName string, opts ...llms.ConfigOption) (iface.ChatModel, error) {
 	config := llms.NewConfig(opts...)
 	config.ModelName = modelName
@@ -100,7 +101,7 @@ func NewBedrockLLM(ctx context.Context, modelName string, opts ...llms.ConfigOpt
 	return NewBedrockProvider(ctx, config)
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = b.tracing.StartOperation(ctx, "bedrock.generate", ProviderName, b.modelName)
@@ -109,7 +110,7 @@ func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Messag
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	b.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	b.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -142,14 +143,14 @@ func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Messag
 	return result, nil
 }
 
-// StreamChat implements the ChatModel interface
+// StreamChat implements the ChatModel interface.
 func (b *BedrockProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// TODO: Implement streaming for Bedrock
 	// For now, return an error
-	return nil, fmt.Errorf("streaming not yet implemented for Bedrock provider")
+	return nil, errors.New("streaming not yet implemented for Bedrock provider")
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (b *BedrockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	newProvider := *b // Create a copy
 	newProvider.tools = make([]tools.Tool, len(toolsToBind))
@@ -157,7 +158,7 @@ func (b *BedrockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	return &newProvider
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (b *BedrockProvider) GetModelName() string {
 	return b.modelName
 }
@@ -166,7 +167,7 @@ func (b *BedrockProvider) GetProviderName() string {
 	return ProviderName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (b *BedrockProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -175,7 +176,7 @@ func (b *BedrockProvider) Invoke(ctx context.Context, input any, options ...core
 	return b.Generate(ctx, messages, options...)
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (b *BedrockProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	errors := make([]error, len(inputs))
@@ -207,7 +208,7 @@ func (b *BedrockProvider) Batch(ctx context.Context, inputs []any, options ...co
 			if combinedErr == nil {
 				combinedErr = err
 			} else {
-				combinedErr = fmt.Errorf("%v; %v", combinedErr, err)
+				combinedErr = fmt.Errorf("%w; %w", combinedErr, err)
 			}
 		}
 	}
@@ -215,7 +216,7 @@ func (b *BedrockProvider) Batch(ctx context.Context, inputs []any, options ...co
 	return results, combinedErr
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (b *BedrockProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -243,7 +244,7 @@ func (b *BedrockProvider) Stream(ctx context.Context, input any, options ...core
 	return outputChan, nil
 }
 
-// generateInternal performs the actual generation logic
+// generateInternal performs the actual generation logic.
 func (b *BedrockProvider) generateInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (schema.Message, error) {
 	// Convert messages to Bedrock format
 	bedrockRequest, err := b.convertMessages(messages, opts)
@@ -261,13 +262,13 @@ func (b *BedrockProvider) generateInternal(ctx context.Context, messages []schem
 	return b.convertBedrockResponse(resp)
 }
 
-// streamInternal performs the actual streaming logic
+// streamInternal performs the actual streaming logic.
 func (b *BedrockProvider) streamInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (<-chan iface.AIMessageChunk, error) {
 	// TODO: Implement streaming for Bedrock
-	return nil, fmt.Errorf("streaming not yet implemented for Bedrock provider")
+	return nil, errors.New("streaming not yet implemented for Bedrock provider")
 }
 
-// convertMessages converts schema messages to Bedrock format
+// convertMessages converts schema messages to Bedrock format.
 func (b *BedrockProvider) convertMessages(messages []schema.Message, opts *llms.CallOptions) (*bedrockruntime.InvokeModelInput, error) {
 	// This is a simplified implementation - in practice, you'd need to handle
 	// different model formats (Anthropic, Titan, etc.) based on the model name
@@ -285,10 +286,10 @@ func (b *BedrockProvider) convertMessages(messages []schema.Message, opts *llms.
 	return nil, fmt.Errorf("unsupported model type for Bedrock: %s", b.modelName)
 }
 
-// convertAnthropicMessages converts messages for Anthropic models on Bedrock
+// convertAnthropicMessages converts messages for Anthropic models on Bedrock.
 func (b *BedrockProvider) convertAnthropicMessages(messages []schema.Message, opts *llms.CallOptions) (*bedrockruntime.InvokeModelInput, error) {
 	var systemPrompt *string
-	var anthropicMessages []map[string]interface{}
+	var anthropicMessages []map[string]any
 
 	// Extract system message and convert others
 	for _, msg := range messages {
@@ -302,13 +303,13 @@ func (b *BedrockProvider) convertAnthropicMessages(messages []schema.Message, op
 					role = "assistant"
 				}
 
-				anthropicMessages = append(anthropicMessages, map[string]interface{}{
+				anthropicMessages = append(anthropicMessages, map[string]any{
 					"role":    role,
 					"content": chatMsg.GetContent(),
 				})
 			}
 		} else if aiMsg, ok := msg.(*schema.AIMessage); ok {
-			anthropicMessages = append(anthropicMessages, map[string]interface{}{
+			anthropicMessages = append(anthropicMessages, map[string]any{
 				"role":    "assistant",
 				"content": aiMsg.GetContent(),
 			})
@@ -316,7 +317,7 @@ func (b *BedrockProvider) convertAnthropicMessages(messages []schema.Message, op
 	}
 
 	// Build Anthropic request body
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"messages":   anthropicMessages,
 		"max_tokens": 1024, // Default
 	}
@@ -353,44 +354,46 @@ func (b *BedrockProvider) convertAnthropicMessages(messages []schema.Message, op
 	}, nil
 }
 
-// convertTitanMessages converts messages for Titan models on Bedrock
+// convertTitanMessages converts messages for Titan models on Bedrock.
 func (b *BedrockProvider) convertTitanMessages(messages []schema.Message, opts *llms.CallOptions) (*bedrockruntime.InvokeModelInput, error) {
 	// Simplified Titan message conversion
 	var inputText string
 
+	var inputTextSb361 strings.Builder
 	for _, msg := range messages {
 		if chatMsg, ok := msg.(*schema.ChatMessage); ok {
 			if chatMsg.GetType() == schema.RoleSystem {
-				inputText += "System: " + chatMsg.GetContent() + "\n\n"
+				inputTextSb361.WriteString("System: " + chatMsg.GetContent() + "\n\n")
 			} else {
 				role := "User"
 				if chatMsg.GetType() == schema.RoleAssistant {
 					role = "Assistant"
 				}
-				inputText += role + ": " + chatMsg.GetContent() + "\n\n"
+				inputTextSb361.WriteString(role + ": " + chatMsg.GetContent() + "\n\n")
 			}
 		} else if aiMsg, ok := msg.(*schema.AIMessage); ok {
 			inputText += "Assistant: " + aiMsg.GetContent() + "\n\n"
 		}
 	}
+	inputText += inputTextSb361.String()
 
 	// Build Titan request body
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"inputText": inputText,
-		"textGenerationConfig": map[string]interface{}{
+		"textGenerationConfig": map[string]any{
 			"maxTokenCount": 1024, // Default
 		},
 	}
 
 	// Apply call options
 	if opts.MaxTokens != nil {
-		requestBody["textGenerationConfig"].(map[string]interface{})["maxTokenCount"] = *opts.MaxTokens
+		requestBody["textGenerationConfig"].(map[string]any)["maxTokenCount"] = *opts.MaxTokens
 	}
 	if opts.Temperature != nil {
-		requestBody["textGenerationConfig"].(map[string]interface{})["temperature"] = *opts.Temperature
+		requestBody["textGenerationConfig"].(map[string]any)["temperature"] = *opts.Temperature
 	}
 	if opts.TopP != nil {
-		requestBody["textGenerationConfig"].(map[string]interface{})["topP"] = *opts.TopP
+		requestBody["textGenerationConfig"].(map[string]any)["topP"] = *opts.TopP
 	}
 
 	// Serialize request body
@@ -407,7 +410,7 @@ func (b *BedrockProvider) convertTitanMessages(messages []schema.Message, opts *
 	}, nil
 }
 
-// convertBedrockResponse converts Bedrock response to schema.Message
+// convertBedrockResponse converts Bedrock response to schema.Message.
 func (b *BedrockProvider) convertBedrockResponse(resp *bedrockruntime.InvokeModelOutput) (schema.Message, error) {
 	// Parse response based on model type
 	if strings.Contains(b.modelName, "anthropic") {
@@ -420,33 +423,35 @@ func (b *BedrockProvider) convertBedrockResponse(resp *bedrockruntime.InvokeMode
 	return nil, fmt.Errorf("unsupported model type for response conversion: %s", b.modelName)
 }
 
-// convertAnthropicResponse converts Anthropic model response
+// convertAnthropicResponse converts Anthropic model response.
 func (b *BedrockProvider) convertAnthropicResponse(resp *bedrockruntime.InvokeModelOutput) (schema.Message, error) {
-	var anthropicResp map[string]interface{}
+	var anthropicResp map[string]any
 	if err := json.Unmarshal(resp.Body, &anthropicResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal Anthropic response: %w", err)
 	}
 
-	content, ok := anthropicResp["content"].([]interface{})
+	content, ok := anthropicResp["content"].([]any)
 	if !ok || len(content) == 0 {
-		return nil, fmt.Errorf("invalid Anthropic response format")
+		return nil, errors.New("invalid Anthropic response format")
 	}
 
 	textContent := ""
+	var textContentSb436 strings.Builder
 	for _, item := range content {
-		if itemMap, ok := item.(map[string]interface{}); ok {
+		if itemMap, ok := item.(map[string]any); ok {
 			if itemType, ok := itemMap["type"].(string); ok && itemType == "text" {
 				if text, ok := itemMap["text"].(string); ok {
-					textContent += text
+					textContentSb436.WriteString(text)
 				}
 			}
 		}
 	}
+	textContent += textContentSb436.String()
 
 	aiMsg := schema.NewAIMessage(textContent)
 
 	// Add usage information if available
-	if usage, ok := anthropicResp["usage"].(map[string]interface{}); ok {
+	if usage, ok := anthropicResp["usage"].(map[string]any); ok {
 		args := aiMsg.AdditionalArgs()
 		args["usage"] = usage
 	}
@@ -454,26 +459,26 @@ func (b *BedrockProvider) convertAnthropicResponse(resp *bedrockruntime.InvokeMo
 	return aiMsg, nil
 }
 
-// convertTitanResponse converts Titan model response
+// convertTitanResponse converts Titan model response.
 func (b *BedrockProvider) convertTitanResponse(resp *bedrockruntime.InvokeModelOutput) (schema.Message, error) {
-	var titanResp map[string]interface{}
+	var titanResp map[string]any
 	if err := json.Unmarshal(resp.Body, &titanResp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal Titan response: %w", err)
 	}
 
-	results, ok := titanResp["results"].([]interface{})
+	results, ok := titanResp["results"].([]any)
 	if !ok || len(results) == 0 {
-		return nil, fmt.Errorf("invalid Titan response format")
+		return nil, errors.New("invalid Titan response format")
 	}
 
-	result, ok := results[0].(map[string]interface{})
+	result, ok := results[0].(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("invalid Titan result format")
+		return nil, errors.New("invalid Titan result format")
 	}
 
 	outputText, ok := result["outputText"].(string)
 	if !ok {
-		return nil, fmt.Errorf("missing output text in Titan response")
+		return nil, errors.New("missing output text in Titan response")
 	}
 
 	aiMsg := schema.NewAIMessage(outputText)
@@ -481,7 +486,7 @@ func (b *BedrockProvider) convertTitanResponse(resp *bedrockruntime.InvokeModelO
 	// Add usage information if available
 	if tokenCount, ok := result["tokenCount"].(float64); ok {
 		args := aiMsg.AdditionalArgs()
-		args["usage"] = map[string]interface{}{
+		args["usage"] = map[string]any{
 			"output_tokens": int(tokenCount),
 		}
 	}
@@ -489,14 +494,14 @@ func (b *BedrockProvider) convertTitanResponse(resp *bedrockruntime.InvokeModelO
 	return aiMsg, nil
 }
 
-// convertBedrockStreamEvent converts Bedrock stream events to AIMessageChunk
+// convertBedrockStreamEvent converts Bedrock stream events to AIMessageChunk.
 func (b *BedrockProvider) convertBedrockStreamEvent(event any) (*iface.AIMessageChunk, error) {
 	// This is a simplified implementation - in practice, you'd need to handle
 	// the specific event types for different Bedrock models
 	return nil, nil
 }
 
-// buildCallOptions merges configuration options with call-specific options
+// buildCallOptions merges configuration options with call-specific options.
 func (b *BedrockProvider) buildCallOptions(options ...core.Option) *llms.CallOptions {
 	callOpts := llms.NewCallOptions()
 
@@ -525,7 +530,7 @@ func (b *BedrockProvider) buildCallOptions(options ...core.Option) *llms.CallOpt
 	return callOpts
 }
 
-// handleBedrockError converts Bedrock errors to LLM errors
+// handleBedrockError converts Bedrock errors to LLM errors.
 func (b *BedrockProvider) handleBedrockError(operation string, err error) error {
 	if err == nil {
 		return nil
@@ -555,9 +560,9 @@ func (b *BedrockProvider) handleBedrockError(operation string, err error) error 
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
-// CheckHealth implements the HealthChecker interface
-func (b *BedrockProvider) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (b *BedrockProvider) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":       "healthy",
 		"provider":    "bedrock",
 		"model":       b.modelName,
@@ -567,7 +572,7 @@ func (b *BedrockProvider) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Factory function for creating Bedrock providers
+// Factory function for creating Bedrock providers.
 func NewBedrockProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewBedrockProvider(context.Background(), config)

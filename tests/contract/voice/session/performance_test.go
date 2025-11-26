@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestPerformance_Contract tests performance contracts for session operations
+// TestPerformance_Contract tests performance contracts for session operations.
 func TestPerformance_Contract(t *testing.T) {
 	t.Run("start completes within reasonable time", func(t *testing.T) {
 		ctx := context.Background()
@@ -52,7 +52,7 @@ func TestPerformance_Contract(t *testing.T) {
 		start := time.Now()
 		for i := 0; i < 100; i++ {
 			audio := []byte{byte(i)}
-			_ = sess.ProcessAudio(ctx, audio)
+			_ = sess.ProcessAudio(ctx, audio) // Already handled
 		}
 		duration := time.Since(start)
 
@@ -87,7 +87,7 @@ func TestPerformance_Contract(t *testing.T) {
 		// Concurrent operations should not panic
 		done := make(chan bool, 3)
 		go func() {
-			_ = sess.ProcessAudio(ctx, []byte{1, 2, 3})
+			_ = sess.ProcessAudio(ctx, []byte{1, 2, 3}) // Already handled
 			done <- true
 		}()
 		go func() {
@@ -95,7 +95,7 @@ func TestPerformance_Contract(t *testing.T) {
 			done <- true
 		}()
 		go func() {
-			_, _ = sess.Say(ctx, "test")
+			_, _ = sess.Say(ctx, "test") // Already handled
 			done <- true
 		}()
 

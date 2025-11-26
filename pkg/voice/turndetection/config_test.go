@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -62,9 +63,9 @@ func TestConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -99,7 +100,7 @@ func TestConfigOption(t *testing.T) {
 	assert.Equal(t, ".,!?", config.SentenceEndMarkers)
 
 	WithThreshold(0.7)(config)
-	assert.Equal(t, 0.7, config.Threshold)
+	assert.InEpsilon(t, 0.7, config.Threshold, 0.0001)
 
 	WithModelPath("/path/to/model")(config)
 	assert.Equal(t, "/path/to/model", config.ModelPath)

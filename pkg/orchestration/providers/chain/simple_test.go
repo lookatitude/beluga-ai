@@ -14,9 +14,10 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// MockRunnable is a mock implementation of core.Runnable for testing
+// MockRunnable is a mock implementation of core.Runnable for testing.
 type MockRunnable struct {
 	mock.Mock
 	name string
@@ -37,7 +38,7 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, opts ...core.Optio
 	return args.Get(0).(<-chan any), args.Error(1)
 }
 
-// MockMemory is a mock implementation of memory.Memory for testing
+// MockMemory is a mock implementation of memory.Memory for testing.
 type MockMemory struct {
 	mock.Mock
 }
@@ -50,7 +51,7 @@ func (m *MockMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]
 	return args.Get(0).(map[string]any), args.Error(1)
 }
 
-func (m *MockMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *MockMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	args := m.Called(ctx, inputs, outputs)
 	return args.Error(0)
 }
@@ -65,7 +66,7 @@ func (m *MockMemory) MemoryVariables() []string {
 	return args.Get(0).([]string)
 }
 
-// MockTracer is a mock implementation of trace.Tracer for testing
+// MockTracer is a mock implementation of trace.Tracer for testing.
 type MockTracer struct {
 	mock.Mock
 }
@@ -180,7 +181,7 @@ func TestSimpleChain_Invoke_Success(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, map[string]any{"result": "success"}, result)
 
@@ -208,7 +209,7 @@ func TestSimpleChain_Invoke_WithMemory(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	step1.AssertExpectations(t)
@@ -231,7 +232,7 @@ func TestSimpleChain_Invoke_WithTimeout(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	step1.AssertExpectations(t)
@@ -252,7 +253,7 @@ func TestSimpleChain_Invoke_StepError(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "error in chain step")
 
@@ -272,7 +273,7 @@ func TestSimpleChain_Invoke_InvalidInput(t *testing.T) {
 	// Test with invalid input type
 	result, err := chain.Invoke(context.Background(), 123)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "chain input must be map[string]any")
 }
@@ -291,7 +292,7 @@ func TestSimpleChain_Invoke_MemoryError(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := chain.Invoke(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "memory load failed")
 
@@ -318,7 +319,7 @@ func TestSimpleChain_Batch(t *testing.T) {
 
 	results, err := chain.Batch(context.Background(), inputs)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, results, 3)
 	for _, result := range results {
 		assert.NotNil(t, result)
@@ -349,7 +350,7 @@ func TestSimpleChain_Batch_WithErrors(t *testing.T) {
 
 	results, err := chain.Batch(context.Background(), inputs)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Len(t, results, 3)
 	assert.Contains(t, err.Error(), "error processing batch item")
 
@@ -376,7 +377,7 @@ func TestSimpleChain_Stream_Success(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := chain.Stream(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resultChan)
 
 	// Read from the stream
@@ -402,7 +403,7 @@ func TestSimpleChain_Stream_EmptyChain(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := chain.Stream(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, resultChan)
 	assert.Contains(t, err.Error(), "cannot stream an empty chain")
 }
@@ -423,14 +424,14 @@ func TestSimpleChain_Stream_PrecomputeError(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := chain.Stream(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, resultChan)
 	assert.Contains(t, err.Error(), "error in chain stream pre-computation")
 
 	step1.AssertExpectations(t)
 }
 
-// MockSpan is a mock implementation of trace.Span
+// MockSpan is a mock implementation of trace.Span.
 type MockSpan struct {
 	mock.Mock
 }

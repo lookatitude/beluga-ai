@@ -5,7 +5,7 @@ package tts
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"sync"
 	"testing"
@@ -16,25 +16,21 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockTTSProvider provides a comprehensive mock implementation for testing
+// AdvancedMockTTSProvider provides a comprehensive mock implementation for testing.
 type AdvancedMockTTSProvider struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
-	providerName string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	providerName         string
 	audioResponses       [][]byte
+	callCount            int
 	audioIndex           int
 	streamingDelay       time.Duration
+	mu                   sync.RWMutex
+	shouldError          bool
 	simulateNetworkDelay bool
 }
 
-// NewAdvancedMockTTSProvider creates a new advanced mock with configurable behavior
+// NewAdvancedMockTTSProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockTTSProvider(providerName string, opts ...MockOption) *AdvancedMockTTSProvider {
 	m := &AdvancedMockTTSProvider{
 		providerName:   providerName,
@@ -50,24 +46,24 @@ func NewAdvancedMockTTSProvider(providerName string, opts ...MockOption) *Advanc
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockTTSProvider
+// MockOption configures the behavior of AdvancedMockTTSProvider.
 type MockOption func(*AdvancedMockTTSProvider)
 
-// WithProviderName sets the provider name
+// WithProviderName sets the provider name.
 func WithProviderName(name string) MockOption {
 	return func(m *AdvancedMockTTSProvider) {
 		m.providerName = name
 	}
 }
 
-// WithAudioResponses sets the audio responses to return
+// WithAudioResponses sets the audio responses to return.
 func WithAudioResponses(audioResponses ...[]byte) MockOption {
 	return func(m *AdvancedMockTTSProvider) {
 		m.audioResponses = audioResponses
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockTTSProvider) {
 		m.shouldError = true
@@ -75,28 +71,28 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithStreamingDelay sets the delay between streaming chunks
+// WithStreamingDelay sets the delay between streaming chunks.
 func WithStreamingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockTTSProvider) {
 		m.streamingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockTTSProvider) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// GenerateSpeech implements the TTSProvider interface
+// GenerateSpeech implements the TTSProvider interface.
 func (m *AdvancedMockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, text)
 		if args.Get(0) != nil {
 			if audio, ok := args.Get(0).([]byte); ok {
@@ -109,7 +105,7 @@ func (m *AdvancedMockTTSProvider) GenerateSpeech(ctx context.Context, text strin
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	// Simulate network delay if enabled
@@ -125,13 +121,13 @@ func (m *AdvancedMockTTSProvider) GenerateSpeech(ctx context.Context, text strin
 	return m.getNextAudio(), nil
 }
 
-// StreamGenerate implements the TTSProvider interface
+// StreamGenerate implements the TTSProvider interface.
 func (m *AdvancedMockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	if m.shouldError {
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock streaming error")
+		return nil, errors.New("mock streaming error")
 	}
 
 	// Create a reader that streams audio chunks
@@ -139,7 +135,7 @@ func (m *AdvancedMockTTSProvider) StreamGenerate(ctx context.Context, text strin
 	return bytes.NewReader(audio), nil
 }
 
-// getNextAudio returns the next audio response in the list
+// getNextAudio returns the next audio response in the list.
 func (m *AdvancedMockTTSProvider) getNextAudio() []byte {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -153,15 +149,16 @@ func (m *AdvancedMockTTSProvider) getNextAudio() []byte {
 	return audio
 }
 
-// GetCallCount returns the number of times GenerateSpeech has been called
+// GetCallCount returns the number of times GenerateSpeech has been called.
 func (m *AdvancedMockTTSProvider) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// AssertTTSProviderInterface ensures that a type implements the TTSProvider interface
+// AssertTTSProviderInterface ensures that a type implements the TTSProvider interface.
 func AssertTTSProviderInterface(t *testing.T, provider iface.TTSProvider) {
+	t.Helper()
 	assert.NotNil(t, provider, "TTSProvider should not be nil")
 
 	// Test GenerateSpeech method

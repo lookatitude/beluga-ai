@@ -14,9 +14,10 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/mock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// unhealthyMockHealthChecker is a test helper that always returns unhealthy results
+// unhealthyMockHealthChecker is a test helper that always returns unhealthy results.
 type unhealthyMockHealthChecker struct {
 	results map[string]iface.HealthCheckResult
 }
@@ -49,7 +50,7 @@ func TestServerIntegrationHealthCheckHandler(t *testing.T) {
 	t.Run("healthy system", func(t *testing.T) {
 		mockMonitor.IsHealthyValue = true
 
-		req := httptest.NewRequest("GET", "/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 		w := httptest.NewRecorder()
 
 		integration.HealthCheckHandler(w, req)
@@ -57,9 +58,9 @@ func TestServerIntegrationHealthCheckHandler(t *testing.T) {
 		assert.Equal(t, http.StatusOK, w.Code)
 		assert.Contains(t, w.Body.String(), "healthy")
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "healthy", response["status"])
 		assert.Contains(t, response, "timestamp")
 		assert.Contains(t, response, "checks")
@@ -79,7 +80,7 @@ func TestServerIntegrationHealthCheckHandler(t *testing.T) {
 		unhealthyMonitor.HealthCheckerValue = unhealthyHealthChecker
 		unhealthyIntegration := NewServerIntegration(unhealthyMonitor)
 
-		req := httptest.NewRequest("GET", "/health", nil)
+		req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 		w := httptest.NewRecorder()
 
 		unhealthyIntegration.HealthCheckHandler(w, req)
@@ -87,9 +88,9 @@ func TestServerIntegrationHealthCheckHandler(t *testing.T) {
 		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 		assert.Contains(t, w.Body.String(), "unhealthy")
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, "unhealthy", response["status"])
 	})
 }
@@ -100,7 +101,7 @@ func TestServerIntegrationSafetyCheckHandler(t *testing.T) {
 
 	t.Run("successful safety check", func(t *testing.T) {
 		requestBody := `{"content": "This is safe content", "context": "chat"}`
-		req := httptest.NewRequest("POST", "/safety/check", strings.NewReader(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/safety/check", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -108,9 +109,9 @@ func TestServerIntegrationSafetyCheckHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, response, "result")
 		assert.Contains(t, response, "timestamp")
 
@@ -118,7 +119,7 @@ func TestServerIntegrationSafetyCheckHandler(t *testing.T) {
 	})
 
 	t.Run("invalid JSON", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/safety/check", strings.NewReader("invalid json"))
+		req := httptest.NewRequest(http.MethodPost, "/safety/check", strings.NewReader("invalid json"))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -131,7 +132,7 @@ func TestServerIntegrationSafetyCheckHandler(t *testing.T) {
 
 	t.Run("missing content", func(t *testing.T) {
 		requestBody := `{"context": "chat"}`
-		req := httptest.NewRequest("POST", "/safety/check", strings.NewReader(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/safety/check", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -156,7 +157,7 @@ func TestServerIntegrationEthicsCheckHandler(t *testing.T) {
 				"domain": "general"
 			}
 		}`
-		req := httptest.NewRequest("POST", "/ethics/check", strings.NewReader(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/ethics/check", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -164,9 +165,9 @@ func TestServerIntegrationEthicsCheckHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, response, "result")
 		assert.Contains(t, response, "timestamp")
 
@@ -175,7 +176,7 @@ func TestServerIntegrationEthicsCheckHandler(t *testing.T) {
 
 	t.Run("invalid ethics context", func(t *testing.T) {
 		requestBody := `{"content": "test", "context": "invalid"}`
-		req := httptest.NewRequest("POST", "/ethics/check", strings.NewReader(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/ethics/check", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -193,7 +194,7 @@ func TestServerIntegrationBestPracticesCheckHandler(t *testing.T) {
 
 	t.Run("successful best practices check", func(t *testing.T) {
 		requestBody := `{"data": "sample code", "component": "test_component"}`
-		req := httptest.NewRequest("POST", "/best-practices/check", strings.NewReader(requestBody))
+		req := httptest.NewRequest(http.MethodPost, "/best-practices/check", strings.NewReader(requestBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -201,9 +202,9 @@ func TestServerIntegrationBestPracticesCheckHandler(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, w.Code)
 
-		var response map[string]interface{}
+		var response map[string]any
 		err := json.Unmarshal(w.Body.Bytes(), &response)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, response, "issues")
 		assert.Contains(t, response, "timestamp")
 
@@ -215,7 +216,7 @@ func TestServerIntegrationMetricsHandler(t *testing.T) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
 
-	req := httptest.NewRequest("GET", "/metrics", nil)
+	req := httptest.NewRequest(http.MethodGet, "/metrics", http.NoBody)
 	w := httptest.NewRecorder()
 
 	integration.MetricsHandler(w, req)
@@ -232,7 +233,7 @@ func TestServerIntegrationTracesHandler(t *testing.T) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
 
-	req := httptest.NewRequest("GET", "/traces", nil)
+	req := httptest.NewRequest(http.MethodGet, "/traces", http.NoBody)
 	w := httptest.NewRecorder()
 
 	integration.TracesHandler(w, req)
@@ -240,9 +241,9 @@ func TestServerIntegrationTracesHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Header().Get("Content-Type"), "application/json")
 
-	var response map[string]interface{}
+	var response map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, response, "traces")
 	assert.Contains(t, response, "timestamp")
 }
@@ -251,7 +252,7 @@ func TestServerIntegrationLogsHandler(t *testing.T) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
 
-	req := httptest.NewRequest("GET", "/logs", nil)
+	req := httptest.NewRequest(http.MethodGet, "/logs", http.NoBody)
 	w := httptest.NewRecorder()
 
 	integration.LogsHandler(w, req)
@@ -259,9 +260,9 @@ func TestServerIntegrationLogsHandler(t *testing.T) {
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Contains(t, w.Header().Get("Content-Type"), "application/json")
 
-	var response map[string]interface{}
+	var response map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &response)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, response, "logs")
 	assert.Contains(t, response, "timestamp")
 }
@@ -288,7 +289,7 @@ func TestServerIntegrationRegisterRoutes(t *testing.T) {
 	}
 
 	for _, route := range testRoutes {
-		req := httptest.NewRequest(route.method, route.path, nil)
+		req := httptest.NewRequest(route.method, route.path, http.NoBody)
 		w := httptest.NewRecorder()
 
 		mux.ServeHTTP(w, req)
@@ -312,7 +313,7 @@ func TestServerIntegrationMonitoringMiddleware(t *testing.T) {
 	middleware := integration.MonitoringMiddleware(testHandler)
 
 	t.Run("successful request", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
 		middleware.ServeHTTP(w, req)
@@ -322,7 +323,7 @@ func TestServerIntegrationMonitoringMiddleware(t *testing.T) {
 	})
 
 	t.Run("request with context", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/api/test", strings.NewReader("test data"))
+		req := httptest.NewRequest(http.MethodPost, "/api/test", strings.NewReader("test data"))
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("User-Agent", "test-agent")
 		w := httptest.NewRecorder()
@@ -337,11 +338,11 @@ func TestServerIntegrationGetStatusString(t *testing.T) {
 	integration := NewServerIntegration(mock.NewMockMonitor())
 
 	tests := []struct {
-		healthy  bool
 		expected string
+		healthy  bool
 	}{
-		{true, "healthy"},
-		{false, "unhealthy"},
+		{"healthy", true},
+		{"unhealthy", false},
 	}
 
 	for _, tt := range tests {
@@ -359,7 +360,7 @@ func TestServerIntegrationFormatHealthResults(t *testing.T) {
 			Message:   "Check 1 passed",
 			CheckName: "check1",
 			Timestamp: time.Now(),
-			Details:   map[string]interface{}{"detail": "value"},
+			Details:   map[string]any{"detail": "value"},
 		},
 		"check2": {
 			Status:    iface.StatusUnhealthy,
@@ -374,11 +375,12 @@ func TestServerIntegrationFormatHealthResults(t *testing.T) {
 	assert.Len(t, formatted, 2)
 
 	// Find check1 and check2 in results
-	var check1, check2 map[string]interface{}
+	var check1, check2 map[string]any
 	for _, result := range formatted {
-		if result["name"] == "check1" {
+		switch result["name"] {
+		case "check1":
 			check1 = result
-		} else if result["name"] == "check2" {
+		case "check2":
 			check2 = result
 		}
 	}
@@ -421,7 +423,7 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 
 		middleware := integration.MonitoringMiddleware(panicHandler)
 
-		req := httptest.NewRequest("GET", "/panic", nil)
+		req := httptest.NewRequest(http.MethodGet, "/panic", http.NoBody)
 		w := httptest.NewRecorder()
 
 		// This should not panic the test, middleware should handle it
@@ -435,7 +437,7 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 
 	t.Run("large request body", func(t *testing.T) {
 		largeBody := strings.Repeat("x", 1024*1024) // 1MB
-		req := httptest.NewRequest("POST", "/safety/check", strings.NewReader(largeBody))
+		req := httptest.NewRequest(http.MethodPost, "/safety/check", strings.NewReader(largeBody))
 		req.Header.Set("Content-Type", "application/json")
 		w := httptest.NewRecorder()
 
@@ -446,12 +448,12 @@ func TestServerIntegrationErrorHandling(t *testing.T) {
 	})
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkServerIntegrationHealthCheckHandler(b *testing.B) {
 	mockMonitor := mock.NewMockMonitor()
 	integration := NewServerIntegration(mockMonitor)
 
-	req := httptest.NewRequest("GET", "/health", nil)
+	req := httptest.NewRequest(http.MethodGet, "/health", http.NoBody)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -465,7 +467,7 @@ func BenchmarkServerIntegrationSafetyCheckHandler(b *testing.B) {
 	integration := NewServerIntegration(mockMonitor)
 
 	requestBody := `{"content": "This is test content for benchmarking", "context": "bench"}`
-	req := httptest.NewRequest("POST", "/safety/check", bytes.NewReader([]byte(requestBody)))
+	req := httptest.NewRequest(http.MethodPost, "/safety/check", bytes.NewReader([]byte(requestBody)))
 	req.Header.Set("Content-Type", "application/json")
 
 	b.ResetTimer()
@@ -485,7 +487,7 @@ func BenchmarkServerIntegrationMonitoringMiddleware(b *testing.B) {
 	})
 
 	middleware := integration.MonitoringMiddleware(handler)
-	req := httptest.NewRequest("GET", "/bench", nil)
+	req := httptest.NewRequest(http.MethodGet, "/bench", http.NoBody)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

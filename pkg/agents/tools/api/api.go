@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,19 +18,19 @@ import (
 
 // APITool allows making HTTP requests to external APIs.
 type APITool struct {
+	Client *http.Client
 	tools.BaseTool
-	Def     tools.ToolDefinition // Store definition directly
-	Client  *http.Client         // Use a shared client for potential connection reuse
-	Timeout time.Duration        // Optional timeout per request
+	Def     tools.ToolDefinition
+	Timeout time.Duration
 }
 
 // APIToolInput defines the expected structure for the input arguments.
 // Using a struct helps with clarity and potential schema generation.
 type APIToolInput struct {
-	URL     string            `json:"url"`               // Required: The URL to request
-	Method  string            `json:"method,omitempty"`  // Optional: HTTP method (GET, POST, etc.), defaults to GET
-	Headers map[string]string `json:"headers,omitempty"` // Optional: Request headers
-	Body    any               `json:"body,omitempty"`    // Optional: Request body (can be string or JSON object)
+	Body    any               `json:"body,omitempty"`
+	Headers map[string]string `json:"headers,omitempty"`
+	URL     string            `json:"url"`
+	Method  string            `json:"method,omitempty"`
 }
 
 // GenerateInputSchema generates the JSON schema for APIToolInput.
@@ -46,8 +47,10 @@ func GenerateInputSchema() (map[string]any, error) { // Changed return type
 		"required": ["url"]
 	}`
 	var schemaMap map[string]any
-	err := json.Unmarshal([]byte(schemaStr), &schemaMap)
-	return schemaMap, err
+	if err := json.Unmarshal([]byte(schemaStr), &schemaMap); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal API tool schema: %w", err)
+	}
+	return schemaMap, nil
 }
 
 // NewAPITool creates a new APITool.
@@ -89,7 +92,7 @@ func (at *APITool) Name() string {
 }
 
 // Execute makes the HTTP request.
-// Corrected input type to any and return type to any
+// Corrected input type to any and return type to any.
 func (at *APITool) Execute(ctx context.Context, input any) (any, error) {
 	var apiInput APIToolInput
 
@@ -115,7 +118,7 @@ func (at *APITool) Execute(ctx context.Context, input any) (any, error) {
 
 	// Validate required fields
 	if apiInput.URL == "" {
-		return nil, fmt.Errorf("invalid input: 'url' is required")
+		return nil, errors.New("invalid input: 'url' is required")
 	}
 
 	// Default method to GET
@@ -170,14 +173,18 @@ func (at *APITool) Execute(ctx context.Context, input any) (any, error) {
 	resp, err := at.Client.Do(req)
 	if err != nil {
 		// Check for context timeout
-		if reqCtx.Err() == context.DeadlineExceeded {
+		if errors.Is(reqCtx.Err(), context.DeadlineExceeded) {
 			// Return timeout as output string, not error
 			return fmt.Sprintf("Request timed out after %s", at.Timeout), nil
 		}
 		// Return network errors as output string, not error
 		return fmt.Sprintf("Failed to execute request: %v", err), nil
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Log close error but don't fail the request
+		}
+	}()
 
 	// Read response body
 	respBodyBytes, err := io.ReadAll(resp.Body)
@@ -191,14 +198,14 @@ func (at *APITool) Execute(ctx context.Context, input any) (any, error) {
 	return fmt.Sprintf("Status: %s\nBody:\n%s", resp.Status, string(respBodyBytes)), nil
 }
 
-// Implement core.Runnable Invoke for APITool
+// Implement core.Runnable Invoke for APITool.
 func (at *APITool) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Execute now takes any
 	return at.Execute(ctx, input)
 }
 
 // Batch implementation
-// Batch implements the tools.Tool interface
+// Batch implements the tools.Tool interface.
 func (at *APITool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i, input := range inputs {
@@ -211,7 +218,7 @@ func (at *APITool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
-// Run implements the core.Runnable Batch method with options
+// Run implements the core.Runnable Batch method with options.
 func (at *APITool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	return at.Batch(ctx, inputs) // Options are ignored for now
 }
@@ -232,10 +239,10 @@ func (at *APITool) Stream(ctx context.Context, input any, options ...core.Option
 }
 
 // Ensure implementation satisfies interfaces
-// Make sure interfaces are correctly implemented
+// Make sure interfaces are correctly implemented.
 var _ tools.Tool = (*APITool)(nil)
 
-// Define a custom interface that matches what we've implemented
+// Define a custom interface that matches what we've implemented.
 type batcherWithOptions interface {
 	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)

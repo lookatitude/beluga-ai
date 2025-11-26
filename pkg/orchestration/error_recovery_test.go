@@ -15,10 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// CustomFailingRunnable is a custom implementation for specific test cases
+// CustomFailingRunnable is a custom implementation for specific test cases.
 type CustomFailingRunnable struct {
-	name  string
 	error error
+	name  string
 }
 
 func (c *CustomFailingRunnable) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
@@ -39,7 +39,7 @@ func (c *CustomFailingRunnable) Stream(ctx context.Context, input any, opts ...c
 	return ch, c.error
 }
 
-// ConditionalFailingRunnable fails based on input conditions
+// ConditionalFailingRunnable fails based on input conditions.
 type ConditionalFailingRunnable struct {
 	name string
 }
@@ -80,12 +80,12 @@ func (c *ConditionalFailingRunnable) Stream(ctx context.Context, input any, opts
 	return ch, nil
 }
 
-// FailingRunnable simulates various types of failures
+// FailingRunnable simulates various types of failures.
 type FailingRunnable struct {
 	name           string
+	failType       string
 	failOnAttempt  int
 	currentAttempt int64
-	failType       string
 	mutex          sync.Mutex
 }
 
@@ -101,7 +101,7 @@ func (f *FailingRunnable) Invoke(ctx context.Context, input any, opts ...core.Op
 			return nil, fmt.Errorf("transient failure attempt %d in %s", attempt, f.name)
 		}
 		return map[string]any{
-			"result":       fmt.Sprintf("%s_success", f.name),
+			"result":       f.name + "_success",
 			"attempts":     attempt,
 			"recovered_at": attempt,
 		}, nil
@@ -116,7 +116,7 @@ func (f *FailingRunnable) Invoke(ctx context.Context, input any, opts ...core.Op
 
 	case "panic":
 		if int(attempt) == f.failOnAttempt {
-			panic(fmt.Sprintf("simulated panic in %s", f.name))
+			panic("simulated panic in " + f.name)
 		}
 		// After panicking, return an error to indicate the panic was handled
 		return nil, fmt.Errorf("panic occurred and was recovered in %s", f.name)
@@ -125,7 +125,7 @@ func (f *FailingRunnable) Invoke(ctx context.Context, input any, opts ...core.Op
 		return nil, fmt.Errorf("resource exhausted in %s", f.name)
 
 	default:
-		return map[string]any{"result": fmt.Sprintf("%s_success", f.name)}, nil
+		return map[string]any{"result": f.name + "_success"}, nil
 	}
 }
 
@@ -154,7 +154,7 @@ func (f *FailingRunnable) Stream(ctx context.Context, input any, opts ...core.Op
 	return ch, nil
 }
 
-// RecoveryRunnable simulates recovery mechanisms
+// RecoveryRunnable simulates recovery mechanisms.
 type RecoveryRunnable struct {
 	name      string
 	recovered bool
@@ -198,7 +198,7 @@ func (r *RecoveryRunnable) Stream(ctx context.Context, input any, opts ...core.O
 	return ch, nil
 }
 
-// Test permanent failure scenarios
+// Test permanent failure scenarios.
 func TestPermanentFailureScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -213,7 +213,7 @@ func TestPermanentFailureScenarios(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "permanent failure")
 	})
 
@@ -226,13 +226,13 @@ func TestPermanentFailureScenarios(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "permanent failure")
 		assert.Contains(t, err.Error(), "permanent")
 	})
 }
 
-// Test transient failure and recovery scenarios
+// Test transient failure and recovery scenarios.
 func TestTransientFailureRecovery(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -248,7 +248,7 @@ func TestTransientFailureRecovery(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 
 		resultMap, ok := result.(map[string]any)
@@ -270,12 +270,12 @@ func TestTransientFailureRecovery(t *testing.T) {
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
 		// This should fail after exhausting all retry attempts
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "after 3 attempts")
 	})
 }
 
-// Test timeout scenarios
+// Test timeout scenarios.
 func TestTimeoutScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -294,8 +294,8 @@ func TestTimeoutScenarios(t *testing.T) {
 		defer cancel()
 
 		_, err = chain.Invoke(ctx, map[string]any{"input": "test"})
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, context.DeadlineExceeded), "Expected context deadline exceeded error, got: %v", err)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, context.DeadlineExceeded, "Expected context deadline exceeded error, got: %v", err)
 	})
 
 	t.Run("chain timeout configuration", func(t *testing.T) {
@@ -312,13 +312,13 @@ func TestTimeoutScenarios(t *testing.T) {
 		defer cancel()
 
 		result, err := chain.Invoke(ctx, map[string]any{"input": "test"})
-		assert.Error(t, err)
-		assert.True(t, errors.Is(err, context.DeadlineExceeded), "Expected context deadline exceeded error, got: %v", err)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, context.DeadlineExceeded, "Expected context deadline exceeded error, got: %v", err)
 		assert.Nil(t, result)
 	})
 }
 
-// Test panic recovery
+// Test panic recovery.
 func TestPanicRecovery(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -336,7 +336,7 @@ func TestPanicRecovery(t *testing.T) {
 		assert.NotPanics(t, func() {
 			_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
 			// Should fail gracefully, not panic
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	})
 
@@ -353,12 +353,12 @@ func TestPanicRecovery(t *testing.T) {
 
 		assert.NotPanics(t, func() {
 			_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	})
 }
 
-// Test resource exhaustion scenarios
+// Test resource exhaustion scenarios.
 func TestResourceExhaustionScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -373,7 +373,7 @@ func TestResourceExhaustionScenarios(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "resource exhausted")
 	})
 
@@ -392,12 +392,12 @@ func TestResourceExhaustionScenarios(t *testing.T) {
 		}
 
 		_, err = chain.Batch(context.Background(), inputs)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "resource exhausted")
 	})
 }
 
-// Test graph failure scenarios
+// Test graph failure scenarios.
 func TestGraphFailureScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -423,7 +423,7 @@ func TestGraphFailureScenarios(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = graph.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "permanent failure")
 	})
 
@@ -449,13 +449,13 @@ func TestGraphFailureScenarios(t *testing.T) {
 		// on the first attempt. The node will fail on attempt 1, then succeed on attempt 2,
 		// but the graph doesn't retry, so we expect an error.
 		result, err := graph.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "transient failure attempt 1")
 		assert.Nil(t, result) // Expect nil result on error
 	})
 }
 
-// Test concurrent failure scenarios
+// Test concurrent failure scenarios.
 func TestConcurrentFailureScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -516,7 +516,7 @@ func TestConcurrentFailureScenarios(t *testing.T) {
 	})
 }
 
-// Test batch processing failure scenarios
+// Test batch processing failure scenarios.
 func TestBatchProcessingFailureScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -540,7 +540,7 @@ func TestBatchProcessingFailureScenarios(t *testing.T) {
 		results, err := chain.Batch(context.Background(), inputs)
 
 		// Should return partial results even with failures
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Len(t, results, 4)
 
 		// Check individual results
@@ -566,7 +566,7 @@ func TestBatchProcessingFailureScenarios(t *testing.T) {
 
 		results, err := chain.Batch(context.Background(), inputs)
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Len(t, results, 2)
 		// Results should still be populated even with errors
 		for _, result := range results {
@@ -575,7 +575,7 @@ func TestBatchProcessingFailureScenarios(t *testing.T) {
 	})
 }
 
-// Test cascading failure scenarios
+// Test cascading failure scenarios.
 func TestCascadingFailureScenarios(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -619,14 +619,13 @@ func TestCascadingFailureScenarios(t *testing.T) {
 
 		// Should fail at the start node
 		_, err = graph.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "fail-start")
 	})
 }
 
-// Test recovery mechanisms
+// Test recovery mechanisms.
 func TestRecoveryMechanisms(t *testing.T) {
-
 	t.Run("manual recovery simulation", func(t *testing.T) {
 		failingStep := &FailingRunnable{
 			name:          "recoverable-step",
@@ -638,13 +637,13 @@ func TestRecoveryMechanisms(t *testing.T) {
 
 		// Test recovery by running steps individually
 		_, err := failingStep.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err) // First attempt should fail
+		require.Error(t, err) // First attempt should fail
 
 		result, err := failingStep.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.NoError(t, err) // Second attempt should succeed
+		require.NoError(t, err) // Second attempt should succeed
 
 		recoveryResult, err := recoveryStep.Invoke(context.Background(), result)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, recoveryResult)
 	})
 
@@ -669,7 +668,7 @@ func TestRecoveryMechanisms(t *testing.T) {
 	})
 }
 
-// Test graceful degradation
+// Test graceful degradation.
 func TestGracefulDegradation(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -688,12 +687,12 @@ func TestGracefulDegradation(t *testing.T) {
 		require.NoError(t, err)
 
 		result, err := chain.Invoke(context.Background(), map[string]any{"input": "degraded"})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 }
 
-// Test error propagation and context
+// Test error propagation and context.
 func TestErrorPropagation(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -711,10 +710,10 @@ func TestErrorPropagation(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		// Check that the custom error is preserved as the underlying error
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, errors.Is(err, customError) || strings.Contains(err.Error(), "custom chain error"))
 	})
 
@@ -731,13 +730,13 @@ func TestErrorPropagation(t *testing.T) {
 		require.NoError(t, err)
 
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "test"})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "nested")
 		assert.Contains(t, err.Error(), "original error")
 	})
 }
 
-// Test performance under failure conditions
+// Test performance under failure conditions.
 func TestPerformanceUnderFailure(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -759,19 +758,19 @@ func TestPerformanceUnderFailure(t *testing.T) {
 
 		for i := 0; i < iterations; i++ {
 			_, err := chain.Invoke(ctx, map[string]any{"input": fmt.Sprintf("perf-test-%d", i)})
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 
 		duration := time.Since(start)
 		avgDuration := duration / time.Duration(iterations)
 
 		// Should handle failures efficiently (adjusted threshold to be more realistic)
-		assert.True(t, avgDuration < 500*time.Millisecond,
+		assert.Less(t, avgDuration, 500*time.Millisecond,
 			"Failure handling too slow: %v per operation", avgDuration)
 	})
 }
 
-// Test cleanup after failures
+// Test cleanup after failures.
 func TestCleanupAfterFailures(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -787,7 +786,7 @@ func TestCleanupAfterFailures(t *testing.T) {
 
 		// Execute and expect failure
 		_, err = chain.Invoke(context.Background(), map[string]any{"input": "cleanup"})
-		assert.Error(t, err)
+		require.Error(t, err)
 
 		// Metrics should still be consistent
 		metrics := orch.GetMetrics()
@@ -797,10 +796,10 @@ func TestCleanupAfterFailures(t *testing.T) {
 		workingChain, err := orch.CreateChain([]core.Runnable{
 			&FailingRunnable{name: "working-after-failure", failType: "success"},
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		result, err := workingChain.Invoke(context.Background(), map[string]any{"input": "post-failure"})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, result)
 	})
 }

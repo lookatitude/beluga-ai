@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
-// RNNoiseConfig extends the base VAD config with RNNoise VAD specific settings
+// RNNoiseConfig extends the base VAD config with RNNoise VAD specific settings.
 type RNNoiseConfig struct {
 	*vad.Config
 
@@ -29,7 +29,7 @@ type RNNoiseConfig struct {
 	MaxSilenceDuration time.Duration `mapstructure:"max_silence_duration" yaml:"max_silence_duration" default:"500ms"`
 }
 
-// DefaultRNNoiseConfig returns a default RNNoise VAD configuration
+// DefaultRNNoiseConfig returns a default RNNoise VAD configuration.
 func DefaultRNNoiseConfig() *RNNoiseConfig {
 	return &RNNoiseConfig{
 		Config:             vad.DefaultConfig(),

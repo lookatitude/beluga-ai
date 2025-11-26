@@ -599,7 +599,7 @@ func TestChatModel(t *testing.T) {
     messages := []schema.Message{schema.NewHumanMessage("Test")}
     response, err := mockLLM.Generate(context.Background(), messages)
 
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Equal(t, "Mock response 1", response.GetContent())
 }
 ```
@@ -638,9 +638,9 @@ func TestEnsureMessages(t *testing.T) {
         t.Run(tt.name, func(t *testing.T) {
             result, err := llms.EnsureMessages(tt.input)
             if tt.wantErr {
-                assert.Error(t, err)
+                require.Error(t, err)
             } else {
-                assert.NoError(t, err)
+                require.NoError(t, err)
                 assert.Equal(t, tt.expected, result)
             }
         })

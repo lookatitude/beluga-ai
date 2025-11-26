@@ -8,12 +8,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/prompts/iface"
 )
 
-// MetricsWrapper wraps the OTEL Metrics to implement the iface.Metrics interface
+// MetricsWrapper wraps the OTEL Metrics to implement the iface.Metrics interface.
 type MetricsWrapper struct {
 	otelMetrics *Metrics
 }
 
-// Template metrics implementation
+// Template metrics implementation.
 func (m *MetricsWrapper) RecordTemplateCreated(templateType string) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordTemplateCreated(context.Background(), templateType)
@@ -27,13 +27,13 @@ func (m *MetricsWrapper) RecordTemplateExecuted(templateName string, duration fl
 	}
 }
 
-func (m *MetricsWrapper) RecordTemplateError(templateName string, errorType string) {
+func (m *MetricsWrapper) RecordTemplateError(templateName, errorType string) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordTemplateError(context.Background(), templateName, errorType)
 	}
 }
 
-// Formatting metrics implementation
+// Formatting metrics implementation.
 func (m *MetricsWrapper) RecordFormattingRequest(adapterType string, duration float64) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordFormattingRequest(context.Background(), adapterType,
@@ -41,13 +41,13 @@ func (m *MetricsWrapper) RecordFormattingRequest(adapterType string, duration fl
 	}
 }
 
-func (m *MetricsWrapper) RecordFormattingError(adapterType string, errorType string) {
+func (m *MetricsWrapper) RecordFormattingError(adapterType, errorType string) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordFormattingError(context.Background(), adapterType, errorType)
 	}
 }
 
-// Variable validation metrics implementation
+// Variable validation metrics implementation.
 func (m *MetricsWrapper) RecordValidationRequest() {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordValidationRequest(context.Background(), "template_validation", true)
@@ -60,7 +60,7 @@ func (m *MetricsWrapper) RecordValidationError(errorType string) {
 	}
 }
 
-// Cache metrics implementation
+// Cache metrics implementation.
 func (m *MetricsWrapper) RecordCacheHit() {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordCacheHit(context.Background(), "template_cache")
@@ -79,18 +79,18 @@ func (m *MetricsWrapper) RecordCacheSize(size int64) {
 	}
 }
 
-// Adapter metrics implementation
+// Adapter metrics implementation.
 func (m *MetricsWrapper) RecordAdapterRequest(adapterType string) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordAdapterRequest(context.Background(), adapterType, true)
 	}
 }
 
-func (m *MetricsWrapper) RecordAdapterError(adapterType string, errorType string) {
+func (m *MetricsWrapper) RecordAdapterError(adapterType, errorType string) {
 	if m.otelMetrics != nil {
 		m.otelMetrics.RecordAdapterError(context.Background(), adapterType, errorType)
 	}
 }
 
-// Verify that MetricsWrapper implements iface.Metrics
+// Verify that MetricsWrapper implements iface.Metrics.
 var _ iface.Metrics = (*MetricsWrapper)(nil)

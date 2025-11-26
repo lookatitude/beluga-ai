@@ -4,6 +4,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -13,45 +14,38 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockMemory provides a comprehensive mock implementation for testing
+// AdvancedMockMemory provides a comprehensive mock implementation for testing.
 type AdvancedMockMemory struct {
-	mock.Mock
-
-	// Configuration
-	memoryKey  string
-	memoryType MemoryType
-	callCount  int
-	mu         sync.RWMutex
-
-	// Configurable behavior
-	shouldError     bool
-	errorToReturn   error
-	memoryVariables []string
-	storedContext   map[string]interface{}
-	returnMessages  bool
-	simulateDelay   time.Duration
-
-	// Memory-specific data
-	messages       []schema.Message
-	contextHistory []map[string]interface{}
-	maxMemorySize  int
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	storedContext   map[string]any
+	mock.Mock
+	memoryKey       string
+	memoryType      MemoryType
+	healthState     string
+	contextHistory  []map[string]any
+	memoryVariables []string
+	messages        []schema.Message
+	simulateDelay   time.Duration
+	maxMemorySize   int
+	callCount       int
+	mu              sync.RWMutex
+	returnMessages  bool
+	shouldError     bool
 }
 
-// NewAdvancedMockMemory creates a new advanced mock with configurable behavior
+// NewAdvancedMockMemory creates a new advanced mock with configurable behavior.
 func NewAdvancedMockMemory(memoryKey string, memoryType MemoryType, options ...MockMemoryOption) *AdvancedMockMemory {
 	mock := &AdvancedMockMemory{
 		memoryKey:       memoryKey,
 		memoryType:      memoryType,
 		memoryVariables: []string{memoryKey},
-		storedContext:   make(map[string]interface{}),
+		storedContext:   make(map[string]any),
 		messages:        make([]schema.Message, 0),
-		contextHistory:  make([]map[string]interface{}, 0),
+		contextHistory:  make([]map[string]any, 0),
 		maxMemorySize:   100,
 		healthState:     "healthy",
 	}
@@ -64,10 +58,10 @@ func NewAdvancedMockMemory(memoryKey string, memoryType MemoryType, options ...M
 	return mock
 }
 
-// MockMemoryOption defines functional options for mock configuration
+// MockMemoryOption defines functional options for mock configuration.
 type MockMemoryOption func(*AdvancedMockMemory)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.shouldError = shouldError
@@ -75,35 +69,35 @@ func WithMockError(shouldError bool, err error) MockMemoryOption {
 	}
 }
 
-// WithMemoryVariables sets the memory variables for the mock
+// WithMemoryVariables sets the memory variables for the mock.
 func WithMemoryVariables(variables []string) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.memoryVariables = variables
 	}
 }
 
-// WithMockReturnMessages sets whether to return messages directly
+// WithMockReturnMessages sets whether to return messages directly.
 func WithMockReturnMessages(returnMessages bool) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.returnMessages = returnMessages
 	}
 }
 
-// WithSimulateDelay adds artificial delay to mock operations
+// WithSimulateDelay adds artificial delay to mock operations.
 func WithSimulateDelay(delay time.Duration) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.simulateDelay = delay
 	}
 }
 
-// WithMaxMemorySize sets the maximum memory size
+// WithMaxMemorySize sets the maximum memory size.
 func WithMaxMemorySize(size int) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.maxMemorySize = size
 	}
 }
 
-// WithPreloadedMessages preloads messages into the mock
+// WithPreloadedMessages preloads messages into the mock.
 func WithPreloadedMessages(messages []schema.Message) MockMemoryOption {
 	return func(m *AdvancedMockMemory) {
 		m.messages = make([]schema.Message, len(messages))
@@ -111,7 +105,7 @@ func WithPreloadedMessages(messages []schema.Message) MockMemoryOption {
 	}
 }
 
-// Mock implementation methods
+// Mock implementation methods.
 func (m *AdvancedMockMemory) MemoryVariables() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -121,32 +115,42 @@ func (m *AdvancedMockMemory) MemoryVariables() []string {
 func (m *AdvancedMockMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error) {
 	m.mu.Lock()
 	m.callCount++
+	shouldError := m.shouldError
+	errorToReturn := m.errorToReturn
+	messagesCopy := make([]schema.Message, len(m.messages))
+	copy(messagesCopy, m.messages)
+	storedContextCopy := make(map[string]any)
+	for k, v := range m.storedContext {
+		storedContextCopy[k] = v
+	}
+	returnMessages := m.returnMessages
+	memoryKey := m.memoryKey
 	m.mu.Unlock()
 
 	if m.simulateDelay > 0 {
 		time.Sleep(m.simulateDelay)
 	}
 
-	if m.shouldError {
-		return nil, m.errorToReturn
+	if shouldError {
+		return nil, errorToReturn
 	}
 
 	result := make(map[string]any)
-	if m.returnMessages {
-		result[m.memoryKey] = m.messages
+	if returnMessages {
+		result[memoryKey] = messagesCopy
 	} else {
-		result[m.memoryKey] = GetBufferString(m.messages, "Human", "AI")
+		result[memoryKey] = GetBufferString(messagesCopy, "Human", "AI")
 	}
 
 	// Add stored context
-	for k, v := range m.storedContext {
+	for k, v := range storedContextCopy {
 		result[k] = v
 	}
 
 	return result, nil
 }
 
-func (m *AdvancedMockMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *AdvancedMockMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -161,7 +165,7 @@ func (m *AdvancedMockMemory) SaveContext(ctx context.Context, inputs map[string]
 	}
 
 	// Store the context
-	context := make(map[string]interface{})
+	context := make(map[string]any)
 	for k, v := range inputs {
 		context["input_"+k] = v
 	}
@@ -209,8 +213,8 @@ func (m *AdvancedMockMemory) Clear(ctx context.Context) error {
 	}
 
 	m.messages = make([]schema.Message, 0)
-	m.contextHistory = make([]map[string]interface{}, 0)
-	m.storedContext = make(map[string]interface{})
+	m.contextHistory = make([]map[string]any, 0)
+	m.storedContext = make(map[string]any)
 
 	return nil
 }
@@ -229,17 +233,17 @@ func (m *AdvancedMockMemory) GetMessages() []schema.Message {
 	return result
 }
 
-func (m *AdvancedMockMemory) GetContextHistory() []map[string]interface{} {
+func (m *AdvancedMockMemory) GetContextHistory() []map[string]any {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	result := make([]map[string]interface{}, len(m.contextHistory))
+	result := make([]map[string]any, len(m.contextHistory))
 	copy(result, m.contextHistory)
 	return result
 }
 
-func (m *AdvancedMockMemory) CheckHealth() map[string]interface{} {
+func (m *AdvancedMockMemory) CheckHealth() map[string]any {
 	m.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":          m.healthState,
 		"memory_key":      m.memoryKey,
 		"memory_type":     string(m.memoryType),
@@ -250,21 +254,19 @@ func (m *AdvancedMockMemory) CheckHealth() map[string]interface{} {
 	}
 }
 
-// AdvancedMockChatMessageHistory provides a comprehensive mock for chat message history
+// AdvancedMockChatMessageHistory provides a comprehensive mock for chat message history.
 type AdvancedMockChatMessageHistory struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
 	messages      []schema.Message
 	maxSize       int
 	callCount     int
+	simulateDelay time.Duration
 	mu            sync.RWMutex
 	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
 }
 
-// NewAdvancedMockChatMessageHistory creates a new advanced mock chat message history
+// NewAdvancedMockChatMessageHistory creates a new advanced mock chat message history.
 func NewAdvancedMockChatMessageHistory(options ...MockHistoryOption) *AdvancedMockChatMessageHistory {
 	mock := &AdvancedMockChatMessageHistory{
 		messages: make([]schema.Message, 0),
@@ -279,17 +281,17 @@ func NewAdvancedMockChatMessageHistory(options ...MockHistoryOption) *AdvancedMo
 	return mock
 }
 
-// MockHistoryOption defines functional options for mock history configuration
+// MockHistoryOption defines functional options for mock history configuration.
 type MockHistoryOption func(*AdvancedMockChatMessageHistory)
 
-// WithHistoryMaxSize sets the maximum history size
+// WithHistoryMaxSize sets the maximum history size.
 func WithHistoryMaxSize(size int) MockHistoryOption {
 	return func(h *AdvancedMockChatMessageHistory) {
 		h.maxSize = size
 	}
 }
 
-// WithHistoryError configures the mock to return errors
+// WithHistoryError configures the mock to return errors.
 func WithHistoryError(shouldError bool, err error) MockHistoryOption {
 	return func(h *AdvancedMockChatMessageHistory) {
 		h.shouldError = shouldError
@@ -297,14 +299,14 @@ func WithHistoryError(shouldError bool, err error) MockHistoryOption {
 	}
 }
 
-// WithHistoryDelay adds artificial delay to mock operations
+// WithHistoryDelay adds artificial delay to mock operations.
 func WithHistoryDelay(delay time.Duration) MockHistoryOption {
 	return func(h *AdvancedMockChatMessageHistory) {
 		h.simulateDelay = delay
 	}
 }
 
-// WithPreloadedHistoryMessages preloads messages into the mock history
+// WithPreloadedHistoryMessages preloads messages into the mock history.
 func WithPreloadedHistoryMessages(messages []schema.Message) MockHistoryOption {
 	return func(h *AdvancedMockChatMessageHistory) {
 		h.messages = make([]schema.Message, len(messages))
@@ -312,7 +314,7 @@ func WithPreloadedHistoryMessages(messages []schema.Message) MockHistoryOption {
 	}
 }
 
-// Mock implementation methods for ChatMessageHistory
+// Mock implementation methods for ChatMessageHistory.
 func (h *AdvancedMockChatMessageHistory) AddMessage(ctx context.Context, message schema.Message) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -390,7 +392,7 @@ func (h *AdvancedMockChatMessageHistory) GetCallCount() int {
 
 // Test data creation helpers
 
-// CreateTestMessages creates a set of test messages
+// CreateTestMessages creates a set of test messages.
 func CreateTestMessages(count int) []schema.Message {
 	messages := make([]schema.Message, 0, count*2)
 
@@ -404,7 +406,7 @@ func CreateTestMessages(count int) []schema.Message {
 	return messages
 }
 
-// CreateTestMemoryConfig creates a test memory configuration
+// CreateTestMemoryConfig creates a test memory configuration.
 func CreateTestMemoryConfig(memoryType MemoryType) Config {
 	return Config{
 		Type:           memoryType,
@@ -422,7 +424,7 @@ func CreateTestMemoryConfig(memoryType MemoryType) Config {
 	}
 }
 
-// CreateTestInputOutput creates test input/output maps
+// CreateTestInputOutput creates test input/output maps.
 func CreateTestInputOutput(input, output string) (map[string]any, map[string]any) {
 	inputs := map[string]any{
 		"input": input,
@@ -435,22 +437,25 @@ func CreateTestInputOutput(input, output string) (map[string]any, map[string]any
 
 // Assertion helpers
 
-// AssertMemoryVariables validates memory variables
+// AssertMemoryVariables validates memory variables.
 func AssertMemoryVariables(t *testing.T, memory iface.Memory, expectedVars []string) {
+	t.Helper()
 	variables := memory.MemoryVariables()
 	assert.ElementsMatch(t, expectedVars, variables)
 }
 
-// AssertMemoryContent validates memory content
+// AssertMemoryContent validates memory content.
 func AssertMemoryContent(t *testing.T, content map[string]any, expectedKeys []string) {
+	t.Helper()
 	for _, key := range expectedKeys {
 		assert.Contains(t, content, key)
 		assert.NotEmpty(t, content[key])
 	}
 }
 
-// AssertMessageHistory validates message history
+// AssertMessageHistory validates message history.
 func AssertMessageHistory(t *testing.T, messages []schema.Message, expectedCount int) {
+	t.Helper()
 	assert.Len(t, messages, expectedCount)
 
 	for _, msg := range messages {
@@ -461,17 +466,19 @@ func AssertMessageHistory(t *testing.T, messages []schema.Message, expectedCount
 	}
 }
 
-// AssertHealthCheck validates health check results
-func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertHealthCheck validates health check results.
+func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "memory_key")
 	assert.Contains(t, health, "memory_type")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var memErr *MemoryError
 	if assert.ErrorAs(t, err, &memErr) {
 		assert.Equal(t, expectedCode, memErr.Code)
@@ -480,11 +487,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs memory tests concurrently for performance testing
+// ConcurrentTestRunner runs memory tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -539,8 +546,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on memory
-func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on memory.
+func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -581,7 +589,7 @@ func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations int, co
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected operation count (each iteration does 2 operations)
@@ -590,7 +598,7 @@ func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations int, co
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	memories  map[string]*AdvancedMockMemory
 	histories map[string]*AdvancedMockChatMessageHistory
@@ -621,16 +629,16 @@ func (h *IntegrationTestHelper) GetHistory(name string) *AdvancedMockChatMessage
 
 func (h *IntegrationTestHelper) Reset() {
 	for _, memory := range h.memories {
-		memory.Clear(context.Background())
+		_ = memory.Clear(context.Background())
 		memory.callCount = 0
 	}
 	for _, history := range h.histories {
-		history.Clear(context.Background())
+		_ = history.Clear(context.Background())
 		history.callCount = 0
 	}
 }
 
-// MemoryScenarioRunner runs common memory scenarios
+// MemoryScenarioRunner runs common memory scenarios.
 type MemoryScenarioRunner struct {
 	memory iface.Memory
 }
@@ -684,7 +692,7 @@ func (r *MemoryScenarioRunner) RunMemoryRetentionTest(ctx context.Context, initi
 
 	// Verify memory was properly managed (implementation-specific)
 	if len(vars) == 0 {
-		return fmt.Errorf("memory appears to be empty after retention test")
+		return errors.New("memory appears to be empty after retention test")
 	}
 
 	return nil

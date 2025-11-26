@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 
-// TranscribeREST performs transcription using Azure Speech Services REST API
+// TranscribeREST performs transcription using Azure Speech Services REST API.
 func (p *AzureProvider) TranscribeREST(ctx context.Context, audio []byte) (string, error) {
 	startTime := time.Now()
 
@@ -33,7 +34,7 @@ func (p *AzureProvider) TranscribeREST(ctx context.Context, audio []byte) (strin
 		url += "&diarization=true"
 	}
 	if p.config.EndpointID != "" {
-		url += fmt.Sprintf("&endpointId=%s", p.config.EndpointID)
+		url += "&endpointId=" + p.config.EndpointID
 	}
 
 	// Create request
@@ -75,16 +76,16 @@ func (p *AzureProvider) TranscribeREST(ctx context.Context, audio []byte) (strin
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeTimeout, err)
 		}
-		if ctx.Err() == context.Canceled {
+		if errors.Is(ctx.Err(), context.Canceled) {
 			return "", ctx.Err()
 		}
 		return "", stt.ErrorFromHTTPStatus("TranscribeREST", 0, err)
@@ -122,7 +123,7 @@ func (p *AzureProvider) TranscribeREST(ctx context.Context, audio []byte) (strin
 
 	if response.DisplayText == "" {
 		return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeEmptyResponse,
-			fmt.Errorf("no transcript in response"))
+			errors.New("no transcript in response"))
 	}
 
 	transcript := response.DisplayText

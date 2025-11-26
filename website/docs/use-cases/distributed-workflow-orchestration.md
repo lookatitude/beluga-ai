@@ -331,7 +331,7 @@ func TestWorkflowGraph(t *testing.T) {
     }
     
     result, err := graph.Invoke(context.Background(), input)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Equal(t, "completed", result.(map[string]any)["status"])
 }
 ```

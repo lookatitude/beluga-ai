@@ -78,5 +78,5 @@ EXAMPLES:
     test-analyzer --output html --output-file report.html
 `
 
-	fmt.Fprint(os.Stdout, helpText)
+	_, _ = fmt.Fprint(os.Stdout, helpText)
 }

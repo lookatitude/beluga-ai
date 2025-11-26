@@ -12,7 +12,7 @@ func TestEstimateNoiseMagnitude(t *testing.T) {
 
 	noiseEstimate := EstimateNoiseMagnitude(signalMagnitude, percentile)
 	assert.NotNil(t, noiseEstimate)
-	assert.Equal(t, len(signalMagnitude), len(noiseEstimate))
+	assert.Len(t, noiseEstimate, len(signalMagnitude))
 
 	// All values should be <= threshold
 	threshold := percentile * maxFloat64(signalMagnitude)
@@ -45,13 +45,13 @@ func TestEstimateNoiseMagnitude_ZeroPercentile(t *testing.T) {
 func TestMaxFloat64(t *testing.T) {
 	values := []float64{1.0, 5.0, 3.0, 9.0, 2.0}
 	max := maxFloat64(values)
-	assert.Equal(t, 9.0, max)
+	assert.InEpsilon(t, 9.0, max, 0.0001)
 }
 
 func TestMaxFloat64_SingleValue(t *testing.T) {
 	values := []float64{42.0}
 	max := maxFloat64(values)
-	assert.Equal(t, 42.0, max)
+	assert.InEpsilon(t, 42.0, max, 0.0001)
 }
 
 func TestMaxFloat64_Empty(t *testing.T) {
@@ -63,7 +63,7 @@ func TestMaxFloat64_Empty(t *testing.T) {
 func TestMaxFloat64_NegativeValues(t *testing.T) {
 	values := []float64{-5.0, -1.0, -10.0, -2.0}
 	max := maxFloat64(values)
-	assert.Equal(t, -1.0, max)
+	assert.InEpsilon(t, -1.0, max, 0.0001)
 }
 
 func TestAdaptiveNoiseProfile_Update(t *testing.T) {
@@ -71,7 +71,7 @@ func TestAdaptiveNoiseProfile_Update(t *testing.T) {
 
 	// Initial state
 	initial := anp.GetNoiseMagnitude()
-	assert.Equal(t, 10, len(initial))
+	assert.Len(t, initial, 10)
 
 	// Update with noise estimate
 	noiseMagnitude := []float64{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0}
@@ -85,7 +85,7 @@ func TestAdaptiveNoiseProfile_Update(t *testing.T) {
 	// Get updated noise magnitude
 	updated := anp.GetNoiseMagnitude()
 	assert.NotNil(t, updated)
-	assert.Equal(t, 10, len(updated))
+	assert.Len(t, updated, 10)
 }
 
 func TestAdaptiveNoiseProfile_Update_Partial(t *testing.T) {
@@ -110,5 +110,5 @@ func TestAdaptiveNoiseProfile_Update_Larger(t *testing.T) {
 	// Should handle larger data
 	updated := anp.GetNoiseMagnitude()
 	assert.NotNil(t, updated)
-	assert.Equal(t, 5, len(updated))
+	assert.Len(t, updated, 5)
 }

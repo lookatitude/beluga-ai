@@ -80,8 +80,8 @@ func (m *mockChatModel) GetProviderName() string {
 	return "mock-provider"
 }
 
-func (m *mockChatModel) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+func (m *mockChatModel) CheckHealth() map[string]any {
+	return map[string]any{
 		"status": "healthy",
 		"name":   "mock-chat-model",
 	}
@@ -105,7 +105,7 @@ func (m *mockTool) Definition() tools.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: m.description,
-		InputSchema: map[string]interface{}{"type": "string"},
+		InputSchema: map[string]any{"type": "string"},
 	}
 }
 
@@ -147,9 +147,9 @@ func (m *mockErrorLLM) GetProviderName() string {
 
 // mockErrorTool simulates tool errors for testing error scenarios.
 type mockErrorTool struct {
+	err         error
 	name        string
 	description string
-	err         error
 }
 
 func (m *mockErrorTool) Name() string {
@@ -164,7 +164,7 @@ func (m *mockErrorTool) Definition() tools.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: m.description,
-		InputSchema: map[string]interface{}{"type": "string"},
+		InputSchema: map[string]any{"type": "string"},
 	}
 }
 
@@ -280,7 +280,7 @@ func TestNewReActAgent(t *testing.T) {
 		agentName string
 		llm       llmsiface.ChatModel
 		tools     []tools.Tool
-		prompt    interface{}
+		prompt    any
 		opts      []iface.Option
 		wantErr   bool
 	}{
@@ -404,8 +404,8 @@ func TestDefaultConfig(t *testing.T) {
 
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *agents.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -454,7 +454,7 @@ func TestHealthCheck(t *testing.T) {
 	}
 
 	// Initialize the agent to change its state to ready
-	err = agent.Initialize(map[string]interface{}{})
+	err = agent.Initialize(map[string]any{})
 	if err != nil {
 		t.Fatalf("Failed to initialize test agent: %v", err)
 	}
@@ -570,11 +570,11 @@ func TestAgentAsRunnable(t *testing.T) {
 // Test error scenarios for agent creation.
 func TestAgentCreationErrors(t *testing.T) {
 	tests := []struct {
-		name      string
 		llm       llmsiface.LLM
+		name      string
+		errString string
 		tools     []tools.Tool
 		wantErr   bool
-		errString string
 	}{
 		{
 			name:      "nil LLM",
@@ -631,7 +631,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 	factory := agents.NewAgentFactory(config)
 
 	t.Run("FactoryWithMetrics", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		llm := &mockLLM{}
 		tools := createMockTools()
 
@@ -663,7 +663,7 @@ func TestAgentFactoryComprehensive(t *testing.T) {
 		}
 
 		// Initialize agent to test config inheritance
-		err = agent.Initialize(map[string]interface{}{})
+		err = agent.Initialize(map[string]any{})
 		if err != nil {
 			t.Errorf("Agent initialization failed: %v", err)
 		}
@@ -710,7 +710,7 @@ func TestAgentLifecycle(t *testing.T) {
 	}
 
 	// Test initialization
-	config := map[string]interface{}{
+	config := map[string]any{
 		"max_retries": 1,                    // Use fewer retries for faster test
 		"retry_delay": 1 * time.Millisecond, // Use very short delay for test
 		"timeout":     "30*time.Second",
@@ -767,8 +767,8 @@ func TestConfigurationScenarios(t *testing.T) {
 
 	t.Run("InvalidConfigScenarios", func(t *testing.T) {
 		tests := []struct {
-			name    string
 			config  *agents.Config
+			name    string
 			wantErr bool
 		}{
 			{
@@ -831,7 +831,7 @@ func TestConfigurationScenarios(t *testing.T) {
 		config.AgentConfigs = map[string]schema.AgentConfig{
 			"test-agent": {
 				Name: "test-agent",
-				Settings: map[string]interface{}{
+				Settings: map[string]any{
 					"max_retries": 5,
 				},
 			},
@@ -968,9 +968,9 @@ func TestEventHandling(t *testing.T) {
 
 	t.Run("EventRegistrationAndEmission", func(t *testing.T) {
 		eventReceived := false
-		var receivedPayload interface{}
+		var receivedPayload any
 
-		handler := func(payload interface{}) error {
+		handler := func(payload any) error {
 			eventReceived = true
 			receivedPayload = payload
 			return nil
@@ -991,11 +991,11 @@ func TestEventHandling(t *testing.T) {
 		handler1Called := false
 		handler2Called := false
 
-		handler1 := func(payload interface{}) error {
+		handler1 := func(payload any) error {
 			handler1Called = true
 			return nil
 		}
-		handler2 := func(payload interface{}) error {
+		handler2 := func(payload any) error {
 			handler2Called = true
 			return nil
 		}
@@ -1011,7 +1011,7 @@ func TestEventHandling(t *testing.T) {
 
 	t.Run("EventHandlerError", func(t *testing.T) {
 		handlerErr := errors.New("handler error")
-		handler := func(payload interface{}) error {
+		handler := func(payload any) error {
 			return handlerErr
 		}
 
@@ -1039,7 +1039,7 @@ func BenchmarkAgentInitialization(b *testing.B) {
 	tools := createMockTools()
 	agent, _ := agents.NewBaseAgent("bench-agent", llm, tools)
 
-	config := map[string]interface{}{
+	config := map[string]any{
 		"max_retries": 3,
 		"timeout":     "30*time.Second",
 	}
@@ -1054,7 +1054,7 @@ func BenchmarkHealthCheck(b *testing.B) {
 	llm := &mockLLM{}
 	tools := createMockTools()
 	agent, _ := agents.NewBaseAgent("bench-agent", llm, tools)
-	agent.Initialize(map[string]interface{}{})
+	agent.Initialize(map[string]any{})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

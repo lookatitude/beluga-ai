@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BenchmarkTurnDetection_DetectTurn benchmarks turn detection
+// BenchmarkTurnDetection_DetectTurn benchmarks turn detection.
 func BenchmarkTurnDetection_DetectTurn(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200) // 20ms at 16kHz
@@ -19,7 +19,7 @@ func BenchmarkTurnDetection_DetectTurn(b *testing.B) {
 	}
 }
 
-// BenchmarkTurnDetection_DetectTurnWithSilence benchmarks turn detection with silence
+// BenchmarkTurnDetection_DetectTurnWithSilence benchmarks turn detection with silence.
 func BenchmarkTurnDetection_DetectTurnWithSilence(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200)

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// TestConcurrentSessions_E2E tests concurrent sessions (100+ sessions)
+// TestConcurrentSessions_E2E tests concurrent sessions (100+ sessions).
 func TestConcurrentSessions_E2E(t *testing.T) {
 	ctx := context.Background()
 

@@ -25,7 +25,7 @@ func NewLogger(logger *slog.Logger) *Logger {
 }
 
 // LogDocumentOperation logs document-related operations.
-func (l *Logger) LogDocumentOperation(ctx context.Context, level slog.Level, operation string, storeName string, docCount int, duration time.Duration, err error) {
+func (l *Logger) LogDocumentOperation(ctx context.Context, level slog.Level, operation, storeName string, docCount int, duration time.Duration, err error) {
 	attrs := []slog.Attr{
 		slog.String("operation", operation),
 		slog.String("store_name", storeName),
@@ -49,7 +49,7 @@ func (l *Logger) LogDocumentOperation(ctx context.Context, level slog.Level, ope
 }
 
 // LogSearchOperation logs search operations.
-func (l *Logger) LogSearchOperation(ctx context.Context, level slog.Level, storeName string, queryLength int, k int, resultCount int, duration time.Duration, err error) {
+func (l *Logger) LogSearchOperation(ctx context.Context, level slog.Level, storeName string, queryLength, k, resultCount int, duration time.Duration, err error) {
 	attrs := []slog.Attr{
 		slog.String("store_name", storeName),
 		slog.Int("query_length", queryLength),
@@ -97,7 +97,7 @@ func (l *Logger) LogEmbeddingOperation(ctx context.Context, level slog.Level, st
 }
 
 // LogError logs errors with context.
-func (l *Logger) LogError(ctx context.Context, err error, operation string, storeName string, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogError(ctx context.Context, err error, operation, storeName string, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("operation", operation),
 		slog.String("store_name", storeName),
@@ -118,7 +118,7 @@ func (l *Logger) LogError(ctx context.Context, err error, operation string, stor
 }
 
 // LogInfo logs informational messages.
-func (l *Logger) LogInfo(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogInfo(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("store_name", storeName),
 	}
@@ -137,7 +137,7 @@ func (l *Logger) LogInfo(ctx context.Context, message string, storeName string, 
 }
 
 // LogDebug logs debug messages.
-func (l *Logger) LogDebug(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogDebug(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("store_name", storeName),
 	}
@@ -156,7 +156,7 @@ func (l *Logger) LogDebug(ctx context.Context, message string, storeName string,
 }
 
 // LogWarn logs warning messages.
-func (l *Logger) LogWarn(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogWarn(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("store_name", storeName),
 	}
@@ -175,7 +175,7 @@ func (l *Logger) LogWarn(ctx context.Context, message string, storeName string, 
 }
 
 // LogStoreLifecycle logs vector store lifecycle events.
-func (l *Logger) LogStoreLifecycle(ctx context.Context, event string, storeName string, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogStoreLifecycle(ctx context.Context, event, storeName string, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("store_name", storeName),
 		slog.String("event", event),
@@ -195,7 +195,7 @@ func (l *Logger) LogStoreLifecycle(ctx context.Context, event string, storeName 
 }
 
 // LogPerformance logs performance-related information.
-func (l *Logger) LogPerformance(ctx context.Context, operation string, storeName string, duration time.Duration, additionalAttrs ...slog.Attr) {
+func (l *Logger) LogPerformance(ctx context.Context, operation, storeName string, duration time.Duration, additionalAttrs ...slog.Attr) {
 	attrs := []slog.Attr{
 		slog.String("operation", operation),
 		slog.String("store_name", storeName),
@@ -216,7 +216,7 @@ func (l *Logger) LogPerformance(ctx context.Context, operation string, storeName
 	l.logger.LogAttrs(ctx, slog.LevelInfo, "Performance measurement", attrs...)
 }
 
-// Global logger instance
+// Global logger instance.
 var globalLogger *Logger
 
 // SetGlobalLogger sets the global logger instance.
@@ -232,29 +232,29 @@ func GetGlobalLogger() *Logger {
 	return globalLogger
 }
 
-// Default convenience functions that use the global logger
+// Default convenience functions that use the global logger.
 var (
-	LogError = func(ctx context.Context, err error, operation string, storeName string, additionalAttrs ...slog.Attr) {
+	LogError = func(ctx context.Context, err error, operation, storeName string, additionalAttrs ...slog.Attr) {
 		GetGlobalLogger().LogError(ctx, err, operation, storeName, additionalAttrs...)
 	}
 
-	LogInfo = func(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+	LogInfo = func(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 		GetGlobalLogger().LogInfo(ctx, message, storeName, additionalAttrs...)
 	}
 
-	LogDebug = func(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+	LogDebug = func(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 		GetGlobalLogger().LogDebug(ctx, message, storeName, additionalAttrs...)
 	}
 
-	LogWarn = func(ctx context.Context, message string, storeName string, additionalAttrs ...slog.Attr) {
+	LogWarn = func(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr) {
 		GetGlobalLogger().LogWarn(ctx, message, storeName, additionalAttrs...)
 	}
 
-	LogDocumentOperation = func(ctx context.Context, level slog.Level, operation string, storeName string, docCount int, duration time.Duration, err error) {
+	LogDocumentOperation = func(ctx context.Context, level slog.Level, operation, storeName string, docCount int, duration time.Duration, err error) {
 		GetGlobalLogger().LogDocumentOperation(ctx, level, operation, storeName, docCount, duration, err)
 	}
 
-	LogSearchOperation = func(ctx context.Context, level slog.Level, storeName string, queryLength int, k int, resultCount int, duration time.Duration, err error) {
+	LogSearchOperation = func(ctx context.Context, level slog.Level, storeName string, queryLength, k, resultCount int, duration time.Duration, err error) {
 		GetGlobalLogger().LogSearchOperation(ctx, level, storeName, queryLength, k, resultCount, duration, err)
 	}
 

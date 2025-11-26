@@ -11,66 +11,59 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockMonitor provides a comprehensive mock implementation for testing
+// AdvancedMockMonitor provides a comprehensive mock implementation for testing.
 type AdvancedMockMonitor struct {
-	mock.Mock
-
-	// Configuration
-	name        string
-	monitorType string
-	callCount   int
-	mu          sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
-
-	// Monitoring data
-	metrics      map[string]interface{}
-	traces       []TraceRecord
-	logs         []LogRecord
-	healthChecks []HealthRecord
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	metrics         map[string]any
+	mock.Mock
+	name          string
+	monitorType   string
+	healthState   string
+	traces        []TraceRecord
+	logs          []LogRecord
+	healthChecks  []HealthRecord
+	simulateDelay time.Duration
+	callCount     int
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
-// TraceRecord represents a trace record for testing
+// TraceRecord represents a trace record for testing.
 type TraceRecord struct {
+	Timestamp time.Time
 	TraceID   string
 	SpanID    string
 	Operation string
 	Duration  time.Duration
-	Timestamp time.Time
 	Success   bool
 }
 
-// LogRecord represents a log record for testing
+// LogRecord represents a log record for testing.
 type LogRecord struct {
+	Timestamp time.Time
+	Fields    map[string]any
 	Level     string
 	Message   string
-	Fields    map[string]interface{}
-	Timestamp time.Time
 }
 
-// HealthRecord represents a health check record for testing
+// HealthRecord represents a health check record for testing.
 type HealthRecord struct {
+	Timestamp time.Time
+	Details   map[string]any
 	Component string
 	Status    string
-	Details   map[string]interface{}
-	Timestamp time.Time
 }
 
-// NewAdvancedMockMonitor creates a new advanced mock monitor
+// NewAdvancedMockMonitor creates a new advanced mock monitor.
 func NewAdvancedMockMonitor(name, monitorType string, options ...MockMonitorOption) *AdvancedMockMonitor {
 	mock := &AdvancedMockMonitor{
 		name:         name,
 		monitorType:  monitorType,
-		metrics:      make(map[string]interface{}),
+		metrics:      make(map[string]any),
 		traces:       make([]TraceRecord, 0),
 		logs:         make([]LogRecord, 0),
 		healthChecks: make([]HealthRecord, 0),
@@ -85,10 +78,10 @@ func NewAdvancedMockMonitor(name, monitorType string, options ...MockMonitorOpti
 	return mock
 }
 
-// MockMonitorOption defines functional options for mock configuration
+// MockMonitorOption defines functional options for mock configuration.
 type MockMonitorOption func(*AdvancedMockMonitor)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockMonitorOption {
 	return func(m *AdvancedMockMonitor) {
 		m.shouldError = shouldError
@@ -96,15 +89,15 @@ func WithMockError(shouldError bool, err error) MockMonitorOption {
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockMonitorOption {
 	return func(m *AdvancedMockMonitor) {
 		m.simulateDelay = delay
 	}
 }
 
-// Mock implementation methods
-func (m *AdvancedMockMonitor) RecordMetric(ctx context.Context, name string, value interface{}, labels map[string]string) error {
+// Mock implementation methods.
+func (m *AdvancedMockMonitor) RecordMetric(ctx context.Context, name string, value any, labels map[string]string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -120,7 +113,7 @@ func (m *AdvancedMockMonitor) RecordMetric(ctx context.Context, name string, val
 
 	// Store metric
 	metricKey := fmt.Sprintf("%s_%d", name, len(m.metrics))
-	m.metrics[metricKey] = map[string]interface{}{
+	m.metrics[metricKey] = map[string]any{
 		"name":      name,
 		"value":     value,
 		"labels":    labels,
@@ -178,7 +171,7 @@ func (m *AdvancedMockMonitor) FinishTrace(ctx context.Context, traceID string, s
 	return nil
 }
 
-func (m *AdvancedMockMonitor) Log(ctx context.Context, level string, message string, fields map[string]interface{}) error {
+func (m *AdvancedMockMonitor) Log(ctx context.Context, level, message string, fields map[string]any) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -196,7 +189,7 @@ func (m *AdvancedMockMonitor) Log(ctx context.Context, level string, message str
 	logRecord := LogRecord{
 		Level:     level,
 		Message:   message,
-		Fields:    make(map[string]interface{}),
+		Fields:    make(map[string]any),
 		Timestamp: time.Now(),
 	}
 
@@ -209,7 +202,7 @@ func (m *AdvancedMockMonitor) Log(ctx context.Context, level string, message str
 	return nil
 }
 
-func (m *AdvancedMockMonitor) CheckComponentHealth(ctx context.Context, component string) (map[string]interface{}, error) {
+func (m *AdvancedMockMonitor) CheckComponentHealth(ctx context.Context, component string) (map[string]any, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -219,11 +212,11 @@ func (m *AdvancedMockMonitor) CheckComponentHealth(ctx context.Context, componen
 		return nil, m.errorToReturn
 	}
 
-	healthStatus := map[string]interface{}{
+	healthStatus := map[string]any{
 		"component": component,
 		"status":    "healthy",
 		"timestamp": time.Now(),
-		"details": map[string]interface{}{
+		"details": map[string]any{
 			"uptime":  "10m",
 			"version": "1.0.0",
 		},
@@ -233,14 +226,14 @@ func (m *AdvancedMockMonitor) CheckComponentHealth(ctx context.Context, componen
 	m.healthChecks = append(m.healthChecks, HealthRecord{
 		Component: component,
 		Status:    "healthy",
-		Details:   healthStatus["details"].(map[string]interface{}),
+		Details:   healthStatus["details"].(map[string]any),
 		Timestamp: time.Now(),
 	})
 
 	return healthStatus, nil
 }
 
-// Helper methods for testing
+// Helper methods for testing.
 func (m *AdvancedMockMonitor) GetName() string {
 	return m.name
 }
@@ -255,10 +248,10 @@ func (m *AdvancedMockMonitor) GetCallCount() int {
 	return m.callCount
 }
 
-func (m *AdvancedMockMonitor) GetMetrics() map[string]interface{} {
+func (m *AdvancedMockMonitor) GetMetrics() map[string]any {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range m.metrics {
 		result[k] = v
 	}
@@ -289,9 +282,9 @@ func (m *AdvancedMockMonitor) GetHealthChecks() []HealthRecord {
 	return result
 }
 
-func (m *AdvancedMockMonitor) CheckHealth() map[string]interface{} {
+func (m *AdvancedMockMonitor) CheckHealth() map[string]any {
 	m.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":              m.healthState,
 		"name":                m.name,
 		"type":                m.monitorType,
@@ -306,13 +299,13 @@ func (m *AdvancedMockMonitor) CheckHealth() map[string]interface{} {
 
 // Test data creation helpers
 
-// CreateTestMetrics creates test metrics for monitoring
-func CreateTestMetrics(count int) map[string]interface{} {
-	metrics := make(map[string]interface{})
+// CreateTestMetrics creates test metrics for monitoring.
+func CreateTestMetrics(count int) map[string]any {
+	metrics := make(map[string]any)
 
 	for i := 0; i < count; i++ {
 		key := fmt.Sprintf("test_metric_%d", i+1)
-		metrics[key] = map[string]interface{}{
+		metrics[key] = map[string]any{
 			"value":     float64(i * 100),
 			"timestamp": time.Now(),
 			"labels": map[string]string{
@@ -325,7 +318,7 @@ func CreateTestMetrics(count int) map[string]interface{} {
 	return metrics
 }
 
-// CreateTestTraces creates test trace records
+// CreateTestTraces creates test trace records.
 func CreateTestTraces(count int) []TraceRecord {
 	traces := make([]TraceRecord, count)
 
@@ -343,7 +336,7 @@ func CreateTestTraces(count int) []TraceRecord {
 	return traces
 }
 
-// CreateTestLogs creates test log records
+// CreateTestLogs creates test log records.
 func CreateTestLogs(count int) []LogRecord {
 	logs := make([]LogRecord, count)
 	levels := []string{"DEBUG", "INFO", "WARN", "ERROR"}
@@ -353,7 +346,7 @@ func CreateTestLogs(count int) []LogRecord {
 		logs[i] = LogRecord{
 			Level:   level,
 			Message: fmt.Sprintf("Test log message %d at %s level", i+1, level),
-			Fields: map[string]interface{}{
+			Fields: map[string]any{
 				"component":  "test",
 				"request_id": fmt.Sprintf("req_%d", i+1),
 				"user_id":    fmt.Sprintf("user_%d", (i%10)+1),
@@ -367,7 +360,7 @@ func CreateTestLogs(count int) []LogRecord {
 
 // Assertion helpers
 
-// AssertMonitoringData validates monitoring data collection
+// AssertMonitoringData validates monitoring data collection.
 func AssertMonitoringData(t *testing.T, monitor *AdvancedMockMonitor, expectedMinMetrics, expectedMinTraces, expectedMinLogs int) {
 	metrics := monitor.GetMetrics()
 	traces := monitor.GetTraces()
@@ -378,7 +371,7 @@ func AssertMonitoringData(t *testing.T, monitor *AdvancedMockMonitor, expectedMi
 	assert.GreaterOrEqual(t, len(logs), expectedMinLogs, "Should have minimum logs")
 }
 
-// AssertTraceRecord validates trace record properties
+// AssertTraceRecord validates trace record properties.
 func AssertTraceRecord(t *testing.T, trace TraceRecord, expectedOperation string) {
 	assert.NotEmpty(t, trace.TraceID, "Trace should have ID")
 	assert.NotEmpty(t, trace.SpanID, "Trace should have span ID")
@@ -387,7 +380,7 @@ func AssertTraceRecord(t *testing.T, trace TraceRecord, expectedOperation string
 	assert.False(t, trace.Timestamp.IsZero(), "Trace should have timestamp")
 }
 
-// AssertLogRecord validates log record properties
+// AssertLogRecord validates log record properties.
 func AssertLogRecord(t *testing.T, log LogRecord, expectedLevel string) {
 	assert.Equal(t, expectedLevel, log.Level, "Log level should match")
 	assert.NotEmpty(t, log.Message, "Log should have message")
@@ -395,8 +388,8 @@ func AssertLogRecord(t *testing.T, log LogRecord, expectedLevel string) {
 	assert.False(t, log.Timestamp.IsZero(), "Log should have timestamp")
 }
 
-// AssertMonitorHealth validates monitor health check results
-func AssertMonitorHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertMonitorHealth validates monitor health check results.
+func AssertMonitorHealth(t *testing.T, health map[string]any, expectedStatus string) {
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -406,8 +399,9 @@ func AssertMonitorHealth(t *testing.T, health map[string]interface{}, expectedSt
 
 // Performance testing helpers
 
-// RunLoadTest executes a load test scenario on monitor
-func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on monitor.
+func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -422,14 +416,15 @@ func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations int, 
 			semaphore <- struct{}{}
 			defer func() { <-semaphore }()
 
-			if opID%4 == 0 {
+			switch opID % 4 {
+			case 0:
 				// Test metric recording
 				err := monitor.RecordMetric(ctx, fmt.Sprintf("test_metric_%d", opID),
 					float64(opID), map[string]string{"operation": "load_test"})
 				if err != nil {
 					errChan <- err
 				}
-			} else if opID%4 == 1 {
+			case 1:
 				// Test trace recording
 				_, traceID, err := monitor.StartTrace(ctx, fmt.Sprintf("load_operation_%d", opID))
 				if err != nil {
@@ -440,14 +435,14 @@ func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations int, 
 				if err != nil {
 					errChan <- err
 				}
-			} else if opID%4 == 2 {
+			case 2:
 				// Test logging
 				err := monitor.Log(ctx, "INFO", fmt.Sprintf("Load test log %d", opID),
-					map[string]interface{}{"operation": "load_test"})
+					map[string]any{"operation": "load_test"})
 				if err != nil {
 					errChan <- err
 				}
-			} else {
+			default:
 				// Test health check
 				_, err := monitor.CheckComponentHealth(ctx, fmt.Sprintf("component_%d", opID))
 				if err != nil {
@@ -462,7 +457,7 @@ func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations int, 
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -471,7 +466,7 @@ func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations int, 
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	monitors map[string]*AdvancedMockMonitor
 }
@@ -493,14 +488,14 @@ func (h *IntegrationTestHelper) GetMonitor(name string) *AdvancedMockMonitor {
 func (h *IntegrationTestHelper) Reset() {
 	for _, monitor := range h.monitors {
 		monitor.callCount = 0
-		monitor.metrics = make(map[string]interface{})
+		monitor.metrics = make(map[string]any)
 		monitor.traces = make([]TraceRecord, 0)
 		monitor.logs = make([]LogRecord, 0)
 		monitor.healthChecks = make([]HealthRecord, 0)
 	}
 }
 
-// MonitoringScenarioRunner runs common monitoring scenarios
+// MonitoringScenarioRunner runs common monitoring scenarios.
 type MonitoringScenarioRunner struct {
 	monitor *AdvancedMockMonitor
 }
@@ -520,8 +515,8 @@ func (r *MonitoringScenarioRunner) RunFullObservabilityScenario(ctx context.Cont
 		}
 
 		// Log operation start
-		err = r.monitor.Log(traceCtx, "INFO", fmt.Sprintf("Starting %s", operation),
-			map[string]interface{}{"trace_id": traceID, "operation": operation})
+		err = r.monitor.Log(traceCtx, "INFO", "Starting "+operation,
+			map[string]any{"trace_id": traceID, "operation": operation})
 		if err != nil {
 			return fmt.Errorf("failed to log operation start %d: %w", i+1, err)
 		}
@@ -547,8 +542,8 @@ func (r *MonitoringScenarioRunner) RunFullObservabilityScenario(ctx context.Cont
 		}
 
 		// Log operation completion
-		err = r.monitor.Log(traceCtx, "INFO", fmt.Sprintf("Completed %s", operation),
-			map[string]interface{}{"trace_id": traceID, "success": success})
+		err = r.monitor.Log(traceCtx, "INFO", "Completed "+operation,
+			map[string]any{"trace_id": traceID, "success": success})
 		if err != nil {
 			return fmt.Errorf("failed to log operation completion %d: %w", i+1, err)
 		}
@@ -557,7 +552,7 @@ func (r *MonitoringScenarioRunner) RunFullObservabilityScenario(ctx context.Cont
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for monitoring
+// BenchmarkHelper provides benchmarking utilities for monitoring.
 type BenchmarkHelper struct {
 	monitor *AdvancedMockMonitor
 }
@@ -608,7 +603,7 @@ func (b *BenchmarkHelper) BenchmarkLogging(iterations int) (time.Duration, error
 	start := time.Now()
 	for i := 0; i < iterations; i++ {
 		err := b.monitor.Log(ctx, "INFO", fmt.Sprintf("Benchmark log %d", i),
-			map[string]interface{}{"iteration": i})
+			map[string]any{"iteration": i})
 		if err != nil {
 			return 0, err
 		}

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestInterruption_E2E tests interruption handling end-to-end
+// TestInterruption_E2E tests interruption handling end-to-end.
 func TestInterruption_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -38,15 +38,15 @@ func TestInterruption_E2E(t *testing.T) {
 	// Simulate user interruption by processing audio
 	audio := []byte{1, 2, 3, 4, 5}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Cancel the current say operation (simulating interruption)
 	err = handle.Cancel()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should be able to process new audio after interruption
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)

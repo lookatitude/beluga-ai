@@ -3,6 +3,7 @@ package safety
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -12,41 +13,41 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/logger"
 )
 
-// SafetyChecker provides safety and ethical checks for AI operations
+// SafetyChecker provides safety and ethical checks for AI operations.
 type SafetyChecker struct {
+	logger           *logger.StructuredLogger
+	humanInLoop      *HumanInLoop
 	toxicityPatterns []*regexp.Regexp
 	biasPatterns     []*regexp.Regexp
 	harmfulPatterns  []*regexp.Regexp
-	logger           *logger.StructuredLogger
-	humanInLoop      *HumanInLoop
 }
 
-// HumanInLoop provides human oversight capabilities
+// HumanInLoop provides human oversight capabilities.
 type HumanInLoop struct {
+	reviewQueue      chan *ReviewRequest
+	logger           *logger.StructuredLogger
+	reviewers        []Reviewer
 	reviewThreshold  float64
 	autoApproveBelow float64
-	reviewQueue      chan *ReviewRequest
-	reviewers        []Reviewer
-	logger           *logger.StructuredLogger
 }
 
-// ReviewRequest represents a request for human review
+// ReviewRequest represents a request for human review.
 type ReviewRequest struct {
+	Timestamp    time.Time
+	ResponseChan chan iface.ReviewDecision
 	ID           string
 	Content      string
 	Context      string
 	RiskScore    float64
-	Timestamp    time.Time
-	ResponseChan chan iface.ReviewDecision
 }
 
-// Reviewer represents a human reviewer
+// Reviewer represents a human reviewer.
 type Reviewer interface {
 	Review(ctx context.Context, request *ReviewRequest) (iface.ReviewDecision, error)
 	GetID() string
 }
 
-// NewSafetyChecker creates a new safety checker
+// NewSafetyChecker creates a new safety checker.
 func NewSafetyChecker(logger *logger.StructuredLogger) *SafetyChecker {
 	sc := &SafetyChecker{
 		logger:      logger,
@@ -59,7 +60,7 @@ func NewSafetyChecker(logger *logger.StructuredLogger) *SafetyChecker {
 	return sc
 }
 
-// NewHumanInLoop creates a new human-in-the-loop system
+// NewHumanInLoop creates a new human-in-the-loop system.
 func NewHumanInLoop(logger *logger.StructuredLogger) *HumanInLoop {
 	hil := &HumanInLoop{
 		reviewThreshold:  0.7, // Review if risk score > 0.7
@@ -74,7 +75,7 @@ func NewHumanInLoop(logger *logger.StructuredLogger) *HumanInLoop {
 	return hil
 }
 
-// initializePatterns sets up safety and bias detection patterns
+// initializePatterns sets up safety and bias detection patterns.
 func (sc *SafetyChecker) initializePatterns() {
 	// Toxicity patterns
 	sc.toxicityPatterns = []*regexp.Regexp{
@@ -98,8 +99,8 @@ func (sc *SafetyChecker) initializePatterns() {
 	}
 }
 
-// CheckContent performs safety and ethical checks on content
-func (sc *SafetyChecker) CheckContent(ctx context.Context, content string, contextInfo string) (iface.SafetyResult, error) {
+// CheckContent performs safety and ethical checks on content.
+func (sc *SafetyChecker) CheckContent(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error) {
 	result := iface.SafetyResult{
 		Content:   content,
 		Safe:      true,
@@ -140,7 +141,7 @@ func (sc *SafetyChecker) CheckContent(ctx context.Context, content string, conte
 
 	// Log the safety check
 	sc.logger.Info(ctx, "Safety check completed",
-		map[string]interface{}{
+		map[string]any{
 			"safe":       result.Safe,
 			"risk_score": result.RiskScore,
 			"issues":     len(result.Issues),
@@ -149,7 +150,7 @@ func (sc *SafetyChecker) CheckContent(ctx context.Context, content string, conte
 	return result, nil
 }
 
-// checkPatterns checks content against a set of regex patterns
+// checkPatterns checks content against a set of regex patterns.
 func (sc *SafetyChecker) checkPatterns(content string, patterns []*regexp.Regexp, issueType string) []iface.SafetyIssue {
 	issues := make([]iface.SafetyIssue, 0)
 
@@ -166,7 +167,7 @@ func (sc *SafetyChecker) checkPatterns(content string, patterns []*regexp.Regexp
 	return issues
 }
 
-// getSeverity returns the severity level for an issue type
+// getSeverity returns the severity level for an issue type.
 func (sc *SafetyChecker) getSeverity(issueType string) string {
 	switch issueType {
 	case "toxicity", "harmful":
@@ -178,8 +179,8 @@ func (sc *SafetyChecker) getSeverity(issueType string) string {
 	}
 }
 
-// RequestHumanReview requests human review for high-risk content
-func (sc *SafetyChecker) RequestHumanReview(ctx context.Context, content string, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
+// RequestHumanReview requests human review for high-risk content.
+func (sc *SafetyChecker) RequestHumanReview(ctx context.Context, content, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
 	request := &ReviewRequest{
 		ID:           fmt.Sprintf("review-%d", time.Now().UnixNano()),
 		Content:      content,
@@ -193,14 +194,14 @@ func (sc *SafetyChecker) RequestHumanReview(ctx context.Context, content string,
 	select {
 	case sc.humanInLoop.reviewQueue <- request:
 		sc.logger.Info(ctx, "Content sent for human review",
-			map[string]interface{}{
+			map[string]any{
 				"request_id": request.ID,
 				"risk_score": riskScore,
 			})
 	case <-ctx.Done():
 		return iface.ReviewDecision{}, ctx.Err()
 	default:
-		return iface.ReviewDecision{}, fmt.Errorf("human review queue is full")
+		return iface.ReviewDecision{}, errors.New("human review queue is full")
 	}
 
 	// Wait for review decision
@@ -210,11 +211,11 @@ func (sc *SafetyChecker) RequestHumanReview(ctx context.Context, content string,
 	case <-ctx.Done():
 		return iface.ReviewDecision{}, ctx.Err()
 	case <-time.After(5 * time.Minute): // Timeout after 5 minutes
-		return iface.ReviewDecision{}, fmt.Errorf("human review timeout")
+		return iface.ReviewDecision{}, errors.New("human review timeout")
 	}
 }
 
-// processReviews processes human review requests
+// processReviews processes human review requests.
 func (hil *HumanInLoop) processReviews() {
 	for request := range hil.reviewQueue {
 		ctx := context.Background()
@@ -238,12 +239,12 @@ func (hil *HumanInLoop) processReviews() {
 		case request.ResponseChan <- decision:
 		default:
 			hil.logger.Warning(ctx, "Failed to send review decision - channel full",
-				map[string]interface{}{"request_id": request.ID})
+				map[string]any{"request_id": request.ID})
 		}
 	}
 }
 
-// simulateHumanReview simulates human review (replace with actual human review system)
+// simulateHumanReview simulates human review (replace with actual human review system).
 func (hil *HumanInLoop) simulateHumanReview(request *ReviewRequest) iface.ReviewDecision {
 	// Simple simulation: approve if risk score < 0.8
 	approved := request.RiskScore < 0.8
@@ -262,22 +263,22 @@ func (hil *HumanInLoop) simulateHumanReview(request *ReviewRequest) iface.Review
 	return decision
 }
 
-// AddReviewer adds a human reviewer to the system
+// AddReviewer adds a human reviewer to the system.
 func (hil *HumanInLoop) AddReviewer(reviewer Reviewer) {
 	hil.reviewers = append(hil.reviewers, reviewer)
 }
 
-// EthicalFilter provides ethical filtering capabilities
+// EthicalFilter provides ethical filtering capabilities.
 type EthicalFilter struct {
 	logger *logger.StructuredLogger
 }
 
-// NewEthicalFilter creates a new ethical filter
+// NewEthicalFilter creates a new ethical filter.
 func NewEthicalFilter(logger *logger.StructuredLogger) *EthicalFilter {
 	return &EthicalFilter{logger: logger}
 }
 
-// FilterContent applies ethical filtering to content
+// FilterContent applies ethical filtering to content.
 func (ef *EthicalFilter) FilterContent(ctx context.Context, content string) (string, error) {
 	// Basic ethical filtering - in production, this would be more sophisticated
 	filtered := content
@@ -295,7 +296,7 @@ func (ef *EthicalFilter) FilterContent(ctx context.Context, content string) (str
 
 	if filtered != content {
 		ef.logger.Info(ctx, "Content filtered for ethical reasons",
-			map[string]interface{}{
+			map[string]any{
 				"original_length": len(content),
 				"filtered_length": len(filtered),
 			})
@@ -304,13 +305,13 @@ func (ef *EthicalFilter) FilterContent(ctx context.Context, content string) (str
 	return filtered, nil
 }
 
-// ConcurrencyLimiter provides concurrency limiting
+// ConcurrencyLimiter provides concurrency limiting.
 type ConcurrencyLimiter struct {
 	semaphore     chan struct{}
 	maxConcurrent int
 }
 
-// NewConcurrencyLimiter creates a new concurrency limiter
+// NewConcurrencyLimiter creates a new concurrency limiter.
 func NewConcurrencyLimiter(maxConcurrent int) *ConcurrencyLimiter {
 	return &ConcurrencyLimiter{
 		semaphore:     make(chan struct{}, maxConcurrent),
@@ -318,7 +319,7 @@ func NewConcurrencyLimiter(maxConcurrent int) *ConcurrencyLimiter {
 	}
 }
 
-// Execute executes a function with concurrency limiting
+// Execute executes a function with concurrency limiting.
 func (cl *ConcurrencyLimiter) Execute(ctx context.Context, fn func() error) error {
 	select {
 	case cl.semaphore <- struct{}{}:
@@ -331,7 +332,7 @@ func (cl *ConcurrencyLimiter) Execute(ctx context.Context, fn func() error) erro
 	}
 }
 
-// GetCurrentConcurrency returns the current number of concurrent operations
+// GetCurrentConcurrency returns the current number of concurrent operations.
 func (cl *ConcurrencyLimiter) GetCurrentConcurrency() int {
 	return len(cl.semaphore)
 }

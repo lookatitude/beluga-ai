@@ -9,7 +9,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// ValidateConfig validates the entire configuration structure
+// ValidateConfig validates the entire configuration structure.
 func ValidateConfig(cfg *Config) error {
 	var errs ValidationErrors
 
@@ -95,7 +95,7 @@ func validateAgent(agent schema.AgentConfig) error {
 	return agent.Validate()
 }
 
-// SetDefaults sets default values for configuration fields
+// SetDefaults sets default values for configuration fields.
 func SetDefaults(cfg *Config) {
 	// Set default values for LLM providers
 	for i := range cfg.LLMProviders {
@@ -110,7 +110,7 @@ func SetDefaults(cfg *Config) {
 
 func setLLMProviderDefaults(provider *schema.LLMProviderConfig) {
 	if provider.DefaultCallOptions == nil {
-		provider.DefaultCallOptions = make(map[string]interface{})
+		provider.DefaultCallOptions = make(map[string]any)
 	}
 
 	// Set default values in DefaultCallOptions map
@@ -128,7 +128,7 @@ func setEmbeddingProviderDefaults(provider *schema.EmbeddingProviderConfig) {
 	// or through ProviderSpecific configuration
 }
 
-// ValidateProvider validates a configuration provider
+// ValidateProvider validates a configuration provider.
 func ValidateProvider(provider Provider) error {
 	// Try to load the main configuration and validate it
 	var cfg Config
@@ -138,13 +138,13 @@ func ValidateProvider(provider Provider) error {
 	return ValidateConfig(&cfg)
 }
 
-// IsRequiredField checks if a struct field has a "required" tag
+// IsRequiredField checks if a struct field has a "required" tag.
 func IsRequiredField(field reflect.StructField) bool {
 	tag := field.Tag.Get("validate")
 	return strings.Contains(tag, "required")
 }
 
-// GetFieldName gets the field name from struct tags or field name
+// GetFieldName gets the field name from struct tags or field name.
 func GetFieldName(field reflect.StructField) string {
 	if jsonTag := field.Tag.Get("json"); jsonTag != "" {
 		if commaIdx := strings.Index(jsonTag, ","); commaIdx != -1 {

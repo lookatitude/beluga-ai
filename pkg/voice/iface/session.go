@@ -56,10 +56,10 @@ const (
 
 // SayOptions represents options for the Say operation.
 type SayOptions struct {
-	AllowInterruptions bool
 	Voice              string
-	Speed              float64 // 0.5-2.0, default: 1.0
-	Volume             float64 // 0.0-1.0, default: 1.0
+	Speed              float64
+	Volume             float64
+	AllowInterruptions bool
 }
 
 // SayHandle provides control over a Say operation.

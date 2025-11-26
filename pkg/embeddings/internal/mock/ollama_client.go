@@ -7,33 +7,29 @@ import (
 	"github.com/ollama/ollama/api"
 )
 
-// OllamaClientMock implements the Ollama API client interface for testing
+// OllamaClientMock implements the Ollama API client interface for testing.
 type OllamaClientMock struct {
-	mu sync.Mutex
-
-	// Embeddings behavior
-	EmbeddingsFunc  func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
-	EmbeddingsCalls []EmbeddingsCall
-
-	// Error injection
-	ShouldFailEmbeddings bool
 	EmbeddingsError      error
+	EmbeddingsFunc       func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error)
+	EmbeddingsCalls      []EmbeddingsCall
+	mu                   sync.Mutex
+	ShouldFailEmbeddings bool
 }
 
-// EmbeddingsCall records a call to Embeddings
+// EmbeddingsCall records a call to Embeddings.
 type EmbeddingsCall struct {
 	Ctx context.Context
 	Req *api.EmbeddingRequest
 }
 
-// NewOllamaClientMock creates a new mock Ollama client
+// NewOllamaClientMock creates a new mock Ollama client.
 func NewOllamaClientMock() *OllamaClientMock {
 	return &OllamaClientMock{
 		EmbeddingsCalls: make([]EmbeddingsCall, 0),
 	}
 }
 
-// Embeddings mocks the Ollama embeddings API call
+// Embeddings mocks the Ollama embeddings API call.
 func (m *OllamaClientMock) Embeddings(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -63,7 +59,7 @@ func (m *OllamaClientMock) Embeddings(ctx context.Context, req *api.EmbeddingReq
 	}, nil
 }
 
-// Reset resets the mock state
+// Reset resets the mock state.
 func (m *OllamaClientMock) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -74,7 +70,7 @@ func (m *OllamaClientMock) Reset() {
 	m.EmbeddingsFunc = nil
 }
 
-// SetEmbeddingsResponse sets a custom response function for embeddings
+// SetEmbeddingsResponse sets a custom response function for embeddings.
 func (m *OllamaClientMock) SetEmbeddingsResponse(embedding []float64) {
 	m.EmbeddingsFunc = func(ctx context.Context, req *api.EmbeddingRequest) (*api.EmbeddingResponse, error) {
 		return &api.EmbeddingResponse{
@@ -83,7 +79,7 @@ func (m *OllamaClientMock) SetEmbeddingsResponse(embedding []float64) {
 	}
 }
 
-// SetEmbeddingsError sets the mock to return an error
+// SetEmbeddingsError sets the mock to return an error.
 func (m *OllamaClientMock) SetEmbeddingsError(err error) {
 	m.ShouldFailEmbeddings = true
 	m.EmbeddingsError = err

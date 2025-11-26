@@ -15,8 +15,8 @@ import (
 
 func TestNewDeepgramProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *stt.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +47,10 @@ func TestNewDeepgramProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewDeepgramProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -66,11 +66,11 @@ func TestDeepgramProvider_Transcribe_Success(t *testing.T) {
 		assert.Equal(t, "audio/wav", r.Header.Get("Content-Type"))
 
 		// Return success response
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{
+						"alternatives": []map[string]any{
 							{
 								"transcript": "Hello, this is a test transcription",
 								"confidence": 0.95,
@@ -79,8 +79,8 @@ func TestDeepgramProvider_Transcribe_Success(t *testing.T) {
 					},
 				},
 			},
-			"metadata": map[string]interface{}{
-				"model_info": map[string]interface{}{
+			"metadata": map[string]any{
+				"model_info": map[string]any{
 					"name": "nova-2",
 				},
 			},
@@ -107,7 +107,7 @@ func TestDeepgramProvider_Transcribe_Success(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello, this is a test transcription", transcript)
 }
 
@@ -133,7 +133,7 @@ func TestDeepgramProvider_Transcribe_HTTPError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramProvider_Transcribe_InvalidResponse(t *testing.T) {
@@ -159,14 +159,14 @@ func TestDeepgramProvider_Transcribe_InvalidResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramProvider_Transcribe_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{},
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -190,7 +190,7 @@ func TestDeepgramProvider_Transcribe_EmptyResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
@@ -211,7 +211,7 @@ func TestDeepgramProvider_StartStreaming(t *testing.T) {
 	// StartStreaming creates a WebSocket session
 	// It may fail without a valid WebSocket connection, but we test the creation
 	if err != nil {
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, session)
 	} else {
 		assert.NotNil(t, session)
@@ -243,16 +243,16 @@ func TestDeepgramProvider_Transcribe_ContextCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramProvider_Transcribe_EmptyChannels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{},
+						"alternatives": []map[string]any{},
 					},
 				},
 			},
@@ -278,7 +278,7 @@ func TestDeepgramProvider_Transcribe_EmptyChannels(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
@@ -308,7 +308,7 @@ func TestDeepgramProvider_Transcribe_ReadBodyError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
@@ -319,11 +319,11 @@ func TestDeepgramProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Write([]byte("Rate limit exceeded"))
 		} else {
-			response := map[string]interface{}{
-				"results": map[string]interface{}{
-					"channels": []map[string]interface{}{
+			response := map[string]any{
+				"results": map[string]any{
+					"channels": []map[string]any{
 						{
-							"alternatives": []map[string]interface{}{
+							"alternatives": []map[string]any{
 								{
 									"transcript": "Success after retry",
 									"confidence": 0.95,
@@ -365,11 +365,11 @@ func TestDeepgramProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
 
 func TestDeepgramProvider_Transcribe_WithMetrics(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{
+						"alternatives": []map[string]any{
 							{
 								"transcript": "Test with metrics",
 								"confidence": 0.95,
@@ -401,7 +401,7 @@ func TestDeepgramProvider_Transcribe_WithMetrics(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test with metrics", transcript)
 }
 
@@ -411,11 +411,11 @@ func TestDeepgramProvider_Transcribe_WithOptionalParams(t *testing.T) {
 		assert.Contains(t, r.URL.RawQuery, "diarize=true")
 		assert.Contains(t, r.URL.RawQuery, "multichannel=true")
 
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{
+						"alternatives": []map[string]any{
 							{
 								"transcript": "Test transcription",
 								"confidence": 0.95,
@@ -452,17 +452,17 @@ func TestDeepgramProvider_Transcribe_WithOptionalParams(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test transcription", transcript)
 }
 
 func TestDeepgramProvider_Transcribe_NoAlternatives(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{},
+						"alternatives": []map[string]any{},
 					},
 				},
 			},
@@ -488,15 +488,15 @@ func TestDeepgramProvider_Transcribe_NoAlternatives(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
 func TestDeepgramProvider_Transcribe_NoChannels(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{},
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{},
 			},
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -520,17 +520,17 @@ func TestDeepgramProvider_Transcribe_NoChannels(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
 func TestDeepgramProvider_Transcribe_EmptyTranscript(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": map[string]interface{}{
-				"channels": []map[string]interface{}{
+		response := map[string]any{
+			"results": map[string]any{
+				"channels": []map[string]any{
 					{
-						"alternatives": []map[string]interface{}{
+						"alternatives": []map[string]any{
 							{
 								"transcript": "",
 								"confidence": 0.0,
@@ -563,7 +563,7 @@ func TestDeepgramProvider_Transcribe_EmptyTranscript(t *testing.T) {
 	// Empty transcript is actually valid (no speech detected)
 	// The code returns empty string, not an error
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, transcript)
 }
 
@@ -634,7 +634,7 @@ func TestDeepgramProvider_StartStreaming_Error(t *testing.T) {
 
 	session, err := provider.StartStreaming(ctx)
 	// Should fail without valid WebSocket connection
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -657,10 +657,9 @@ func TestDeepgramProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, provider)
 
-
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramProvider_Transcribe_RequestCreationError(t *testing.T) {
@@ -703,7 +702,7 @@ func TestDeepgramProvider_Transcribe_RetryContextCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDefaultDeepgramConfig(t *testing.T) {

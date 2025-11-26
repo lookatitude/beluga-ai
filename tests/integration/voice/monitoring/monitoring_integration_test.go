@@ -12,7 +12,7 @@ import (
 )
 
 // TestMonitoringIntegration tests integration with monitoring package
-// This is a placeholder - actual integration would depend on monitoring package API
+// This is a placeholder - actual integration would depend on monitoring package API.
 func TestMonitoringIntegration(t *testing.T) {
 	ctx := context.Background()
 
@@ -37,7 +37,7 @@ func TestMonitoringIntegration(t *testing.T) {
 	// Operations should be monitored
 	audio := []byte{1, 2, 3}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	handle, err := voiceSession.Say(ctx, "test")
 	require.NoError(t, err)
@@ -54,12 +54,13 @@ func TestMonitoringIntegration(t *testing.T) {
 // - Health check endpoints
 // - Performance monitoring
 
-// Mock providers
+// Mock providers.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "", nil
 }
+
 func (m *mockSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, nil
 }
@@ -69,6 +70,7 @@ type mockTTSProvider struct{}
 func (m *mockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	return nil, nil
 }
+
 func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	return nil, nil
 }

@@ -3,6 +3,7 @@ package azure
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"html"
 	"io"
@@ -15,18 +16,18 @@ import (
 	ttsiface "github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
 )
 
-// AzureProvider implements the TTSProvider interface for Azure Speech Services
+// AzureProvider implements the TTSProvider interface for Azure Speech Services.
 type AzureProvider struct {
 	config     *AzureConfig
 	httpClient *http.Client
 	mu         sync.RWMutex
 }
 
-// NewAzureProvider creates a new Azure Speech Services provider
+// NewAzureProvider creates a new Azure Speech Services provider.
 func NewAzureProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	if config == nil {
 		return nil, tts.NewTTSError("NewAzureProvider", tts.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Azure config
@@ -74,7 +75,7 @@ func NewAzureProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	}, nil
 }
 
-// GenerateSpeech implements the TTSProvider interface using Azure Speech Services API
+// GenerateSpeech implements the TTSProvider interface using Azure Speech Services API.
 func (p *AzureProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	startTime := time.Now()
 
@@ -82,7 +83,7 @@ func (p *AzureProvider) GenerateSpeech(ctx context.Context, text string) ([]byte
 	ssml := p.config.buildSSML(text)
 
 	// Build request URL
-	url := fmt.Sprintf("%s/cognitiveservices/v1", p.config.GetBaseURL())
+	url := p.config.GetBaseURL() + "/cognitiveservices/v1"
 
 	// Create request
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, strings.NewReader(ssml))
@@ -124,13 +125,13 @@ func (p *AzureProvider) GenerateSpeech(ctx context.Context, text string) ([]byte
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeTimeout, err)
 		}
 		return nil, tts.ErrorFromHTTPStatus("GenerateSpeech", 0, err)
@@ -151,7 +152,7 @@ func (p *AzureProvider) GenerateSpeech(ctx context.Context, text string) ([]byte
 
 	if len(audio) == 0 {
 		return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeEmptyResponse,
-			fmt.Errorf("no audio data in response"))
+			errors.New("no audio data in response"))
 	}
 
 	duration := time.Since(startTime)
@@ -168,7 +169,7 @@ func (p *AzureProvider) GenerateSpeech(ctx context.Context, text string) ([]byte
 }
 
 // StreamGenerate implements the TTSProvider interface
-// Azure Speech Services supports streaming, but for simplicity we return the full audio as a reader
+// Azure Speech Services supports streaming, but for simplicity we return the full audio as a reader.
 func (p *AzureProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	// Generate speech first
 	audio, err := p.GenerateSpeech(ctx, text)
@@ -180,7 +181,7 @@ func (p *AzureProvider) StreamGenerate(ctx context.Context, text string) (io.Rea
 	return bytes.NewReader(audio), nil
 }
 
-// buildSSML builds the SSML for Azure TTS
+// buildSSML builds the SSML for Azure TTS.
 func (c *AzureConfig) buildSSML(text string) string {
 	var ssml strings.Builder
 	ssml.WriteString(`<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="`)

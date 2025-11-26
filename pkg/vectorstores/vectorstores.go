@@ -73,6 +73,7 @@ package vectorstores
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -165,20 +166,20 @@ func WithScoreThreshold(threshold float32) Option {
 
 // WithMetadataFilter adds a metadata filter for search operations.
 // Only documents matching the filter criteria will be considered.
-func WithMetadataFilter(key string, value interface{}) Option {
+func WithMetadataFilter(key string, value any) Option {
 	return func(c *vectorstoresiface.Config) {
 		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
+			c.MetadataFilters = make(map[string]any)
 		}
 		c.MetadataFilters[key] = value
 	}
 }
 
 // WithMetadataFilters sets multiple metadata filters for search operations.
-func WithMetadataFilters(filters map[string]interface{}) Option {
+func WithMetadataFilters(filters map[string]any) Option {
 	return func(c *vectorstoresiface.Config) {
 		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
+			c.MetadataFilters = make(map[string]any)
 		}
 		for k, v := range filters {
 			c.MetadataFilters[k] = v
@@ -187,20 +188,20 @@ func WithMetadataFilters(filters map[string]interface{}) Option {
 }
 
 // WithProviderConfig sets provider-specific configuration options.
-func WithProviderConfig(key string, value interface{}) Option {
+func WithProviderConfig(key string, value any) Option {
 	return func(c *vectorstoresiface.Config) {
 		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
+			c.ProviderConfig = make(map[string]any)
 		}
 		c.ProviderConfig[key] = value
 	}
 }
 
 // WithProviderConfigs sets multiple provider-specific configuration options.
-func WithProviderConfigs(config map[string]interface{}) Option {
+func WithProviderConfigs(config map[string]any) Option {
 	return func(c *vectorstoresiface.Config) {
 		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
+			c.ProviderConfig = make(map[string]any)
 		}
 		for k, v := range config {
 			c.ProviderConfig[k] = v
@@ -243,7 +244,7 @@ func (f *StoreFactory) Create(ctx context.Context, name string, config vectorsto
 	return creator(ctx, config)
 }
 
-// Global factory instance for easy access
+// Global factory instance for easy access.
 var globalFactory = NewStoreFactory()
 
 // RegisterGlobal registers a provider with the global factory.
@@ -259,9 +260,9 @@ func NewVectorStore(ctx context.Context, name string, config vectorstoresiface.C
 // VectorStoreError represents errors specific to vector store operations.
 // It provides structured error information for programmatic error handling.
 type VectorStoreError struct {
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable error message
-	Cause   error  // Underlying error that caused this error
+	Cause   error
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -278,7 +279,7 @@ func (e *VectorStoreError) Unwrap() error {
 }
 
 // NewVectorStoreError creates a new VectorStoreError with the given code and message.
-func NewVectorStoreError(code, message string, args ...interface{}) *VectorStoreError {
+func NewVectorStoreError(code, message string, args ...any) *VectorStoreError {
 	return &VectorStoreError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -286,7 +287,7 @@ func NewVectorStoreError(code, message string, args ...interface{}) *VectorStore
 }
 
 // WrapError wraps an existing error with vector store context.
-func WrapError(cause error, code, message string, args ...interface{}) *VectorStoreError {
+func WrapError(cause error, code, message string, args ...any) *VectorStoreError {
 	return &VectorStoreError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -294,7 +295,7 @@ func WrapError(cause error, code, message string, args ...interface{}) *VectorSt
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeUnknownProvider      = "unknown_provider"
 	ErrCodeInvalidConfig        = "invalid_config"
@@ -320,7 +321,8 @@ func IsVectorStoreError(err error, code string) bool {
 // AsVectorStoreError attempts to cast an error to VectorStoreError.
 func AsVectorStoreError(err error, target **VectorStoreError) bool {
 	for err != nil {
-		if vsErr, ok := err.(*VectorStoreError); ok {
+		vsErr := &VectorStoreError{}
+		if errors.As(err, &vsErr) {
 			*target = vsErr
 			return true
 		}
@@ -344,7 +346,7 @@ func AsVectorStoreError(err error, target **VectorStoreError) bool {
 //	)
 //
 // Note: This function requires the inmemory provider to be imported for registration.
-// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
+// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory".
 func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) {
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)
@@ -365,7 +367,7 @@ func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 //	)
 //
 // Note: This function requires the pgvector provider to be imported for registration.
-// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/pgvector"
+// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/pgvector".
 func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) {
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)

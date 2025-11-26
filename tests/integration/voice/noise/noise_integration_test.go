@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
-	// Import providers to trigger init() registration
+	// Import providers to trigger init() registration.
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/rnnoise"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/spectral"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/webrtc"
@@ -92,7 +92,7 @@ func TestNoiseCancellation_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		cleaned, err := mockNoise.Process(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, cleaned)
 		assert.True(t, noise.IsRetryableError(err))
 	})
@@ -104,7 +104,7 @@ func TestNoiseCancellation_ErrorHandling(t *testing.T) {
 
 		ctx := context.Background()
 		_, err := mockNoise.Process(ctx, []byte{1, 2, 3})
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, noise.IsRetryableError(err))
 	})
 }

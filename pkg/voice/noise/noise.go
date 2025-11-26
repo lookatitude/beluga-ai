@@ -12,20 +12,20 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Global metrics instance - initialized once
+// Global metrics instance - initialized once.
 var (
 	globalMetrics *Metrics
 	metricsOnce   sync.Once
 )
 
-// InitMetrics initializes the global metrics instance
+// InitMetrics initializes the global metrics instance.
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter)
 	})
 }
 
-// GetMetrics returns the global metrics instance
+// GetMetrics returns the global metrics instance.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }

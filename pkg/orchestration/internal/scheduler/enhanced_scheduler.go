@@ -7,30 +7,30 @@ import (
 	"time"
 )
 
-// EnhancedScheduler provides advanced scheduling with worker pools and retry mechanisms
+// EnhancedScheduler provides advanced scheduling with worker pools and retry mechanisms.
 type EnhancedScheduler struct {
+	ctx            context.Context
 	tasks          map[string]*Task
 	completed      map[string]bool
-	mutex          sync.RWMutex
 	workerPool     *WorkerPool
 	retryExecutor  *RetryExecutor
 	circuitBreaker *CircuitBreaker
 	bulkhead       *Bulkhead
-	ctx            context.Context
 	cancel         context.CancelFunc
+	mutex          sync.RWMutex
 }
 
-// EnhancedTask extends the basic Task with retry and concurrency settings
+// EnhancedTask extends the basic Task with retry and concurrency settings.
 type EnhancedTask struct {
 	Task
-	MaxRetries             int
 	RetryConfig            RetryConfig
+	MaxRetries             int
 	Priority               int
 	Timeout                time.Duration
 	RequiresCircuitBreaker bool
 }
 
-// NewEnhancedScheduler creates a new enhanced scheduler
+// NewEnhancedScheduler creates a new enhanced scheduler.
 func NewEnhancedScheduler(workers int) *EnhancedScheduler {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -46,18 +46,18 @@ func NewEnhancedScheduler(workers int) *EnhancedScheduler {
 	}
 }
 
-// Start initializes the scheduler
+// Start initializes the scheduler.
 func (es *EnhancedScheduler) Start() {
 	es.workerPool.Start()
 }
 
-// Stop gracefully stops the scheduler
+// Stop gracefully stops the scheduler.
 func (es *EnhancedScheduler) Stop() {
 	es.cancel()
 	es.workerPool.Stop()
 }
 
-// AddTask adds a task to the scheduler
+// AddTask adds a task to the scheduler.
 func (es *EnhancedScheduler) AddTask(task *Task) error {
 	es.mutex.Lock()
 	defer es.mutex.Unlock()
@@ -70,7 +70,7 @@ func (es *EnhancedScheduler) AddTask(task *Task) error {
 	return nil
 }
 
-// AddEnhancedTask adds an enhanced task with retry and concurrency features
+// AddEnhancedTask adds an enhanced task with retry and concurrency features.
 func (es *EnhancedScheduler) AddEnhancedTask(task *EnhancedTask) error {
 	es.mutex.Lock()
 	defer es.mutex.Unlock()
@@ -90,7 +90,7 @@ func (es *EnhancedScheduler) AddEnhancedTask(task *EnhancedTask) error {
 	return nil
 }
 
-// createEnhancedExecuteFunc creates an enhanced execute function with retry and circuit breaker
+// createEnhancedExecuteFunc creates an enhanced execute function with retry and circuit breaker.
 func (es *EnhancedScheduler) createEnhancedExecuteFunc(task *EnhancedTask) func() error {
 	return func() error {
 		// Create task-specific retry config
@@ -121,7 +121,7 @@ func (es *EnhancedScheduler) createEnhancedExecuteFunc(task *EnhancedTask) func(
 	}
 }
 
-// RunAsync executes tasks asynchronously using the worker pool
+// RunAsync executes tasks asynchronously using the worker pool.
 func (es *EnhancedScheduler) RunAsync() error {
 	es.mutex.RLock()
 	defer es.mutex.RUnlock()
@@ -139,7 +139,7 @@ func (es *EnhancedScheduler) RunAsync() error {
 	return es.collectResults(results)
 }
 
-// submitTaskWithDependencies submits a task considering its dependencies
+// submitTaskWithDependencies submits a task considering its dependencies.
 func (es *EnhancedScheduler) submitTaskWithDependencies(task *Task) error {
 	// Check dependencies
 	for _, depID := range task.DependsOn {
@@ -151,7 +151,7 @@ func (es *EnhancedScheduler) submitTaskWithDependencies(task *Task) error {
 	return es.workerPool.SubmitTask(*task)
 }
 
-// collectResults collects and processes task results
+// collectResults collects and processes task results.
 func (es *EnhancedScheduler) collectResults(results <-chan TaskResult) error {
 	completedTasks := 0
 	totalTasks := len(es.tasks)
@@ -166,9 +166,9 @@ func (es *EnhancedScheduler) collectResults(results <-chan TaskResult) error {
 			completedTasks++
 
 			if !result.Success {
-				fmt.Printf("Task %s failed after %d attempts: %v\n", result.TaskID, result.Attempts, result.Error)
+				_, _ = fmt.Printf("Task %s failed after %d attempts: %v\n", result.TaskID, result.Attempts, result.Error)
 			} else {
-				fmt.Printf("Task %s completed successfully in %v\n", result.TaskID, result.Duration)
+				_, _ = fmt.Printf("Task %s completed successfully in %v\n", result.TaskID, result.Duration)
 			}
 
 		case <-es.ctx.Done():
@@ -179,7 +179,7 @@ func (es *EnhancedScheduler) collectResults(results <-chan TaskResult) error {
 	return nil
 }
 
-// RunSequential executes tasks sequentially with enhanced features
+// RunSequential executes tasks sequentially with enhanced features.
 func (es *EnhancedScheduler) RunSequential() error {
 	es.mutex.Lock()
 	defer es.mutex.Unlock()
@@ -218,7 +218,7 @@ func (es *EnhancedScheduler) runEnhancedTask(id string, task *Task) error {
 	return nil
 }
 
-// GetStats returns scheduler statistics
+// GetStats returns scheduler statistics.
 func (es *EnhancedScheduler) GetStats() SchedulerStats {
 	es.mutex.RLock()
 	defer es.mutex.RUnlock()
@@ -233,7 +233,7 @@ func (es *EnhancedScheduler) GetStats() SchedulerStats {
 	}
 }
 
-// countCompletedTasks counts completed tasks
+// countCompletedTasks counts completed tasks.
 func (es *EnhancedScheduler) countCompletedTasks() int {
 	count := 0
 	for _, completed := range es.completed {
@@ -244,7 +244,7 @@ func (es *EnhancedScheduler) countCompletedTasks() int {
 	return count
 }
 
-// SchedulerStats holds statistics about the scheduler
+// SchedulerStats holds statistics about the scheduler.
 type SchedulerStats struct {
 	TotalTasks          int
 	CompletedTasks      int
@@ -254,17 +254,17 @@ type SchedulerStats struct {
 	BulkheadCapacity    int
 }
 
-// SetRetryConfig sets the retry configuration
+// SetRetryConfig sets the retry configuration.
 func (es *EnhancedScheduler) SetRetryConfig(config RetryConfig) {
 	es.retryExecutor = NewRetryExecutor(config)
 }
 
-// SetCircuitBreakerConfig sets the circuit breaker configuration
+// SetCircuitBreakerConfig sets the circuit breaker configuration.
 func (es *EnhancedScheduler) SetCircuitBreakerConfig(failureThreshold int, resetTimeout time.Duration) {
 	es.circuitBreaker = NewCircuitBreaker(failureThreshold, resetTimeout)
 }
 
-// SetBulkheadCapacity sets the bulkhead capacity
+// SetBulkheadCapacity sets the bulkhead capacity.
 func (es *EnhancedScheduler) SetBulkheadCapacity(capacity int) {
 	es.bulkhead = NewBulkhead(capacity)
 }

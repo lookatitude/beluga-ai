@@ -3,6 +3,7 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,8 +16,8 @@ import (
 
 func TestNewOpenAIProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *stt.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +48,10 @@ func TestNewOpenAIProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewOpenAIProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -99,7 +100,7 @@ func TestOpenAIProvider_Transcribe_Success(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5} // Mock audio data
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello, this is a test transcription", transcript)
 }
 
@@ -126,7 +127,7 @@ func TestOpenAIProvider_Transcribe_HTTPError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_Transcribe_InvalidResponse(t *testing.T) {
@@ -153,7 +154,7 @@ func TestOpenAIProvider_Transcribe_InvalidResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_Transcribe_EmptyResponse(t *testing.T) {
@@ -183,7 +184,7 @@ func TestOpenAIProvider_Transcribe_EmptyResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
@@ -220,7 +221,7 @@ func TestOpenAIProvider_Transcribe_WithLanguage(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test with language", transcript)
 }
 
@@ -263,9 +264,9 @@ func TestOpenAIProvider_Transcribe_ContextCancellation(t *testing.T) {
 
 	// Wait for error
 	err = <-done
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Error could be context.Canceled or a wrapped error
-	assert.True(t, err == context.Canceled || err == ctx.Err())
+	assert.True(t, errors.Is(err, context.Canceled) || errors.Is(err, ctx.Err()))
 }
 
 func TestOpenAIProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
@@ -333,7 +334,7 @@ func TestOpenAIProvider_StartStreaming(t *testing.T) {
 	ctx := context.Background()
 	session, err := provider.StartStreaming(ctx)
 	// OpenAI Whisper doesn't support streaming
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 	assert.Contains(t, err.Error(), "does not support streaming")
 }
@@ -364,7 +365,7 @@ func TestOpenAIProvider_Transcribe_NetworkError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_Transcribe_WithPrompt(t *testing.T) {
@@ -402,6 +403,6 @@ func TestOpenAIProvider_Transcribe_WithPrompt(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test transcription", transcript)
 }

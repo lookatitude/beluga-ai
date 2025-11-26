@@ -6,12 +6,13 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSession_Start(t *testing.T) {
 	tests := []struct {
-		name          string
 		session       iface.VoiceSession
+		name          string
 		expectedError bool
 	}{
 		{
@@ -36,9 +37,9 @@ func TestSession_Start(t *testing.T) {
 			err := tt.session.Start(ctx)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				state := tt.session.GetState()
 				assert.NotEqual(t, "ended", string(state))
 			}
@@ -48,8 +49,8 @@ func TestSession_Start(t *testing.T) {
 
 func TestSession_Stop(t *testing.T) {
 	tests := []struct {
-		name          string
 		session       iface.VoiceSession
+		name          string
 		expectedError bool
 	}{
 		{
@@ -74,9 +75,9 @@ func TestSession_Stop(t *testing.T) {
 			err := tt.session.Stop(ctx)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				state := tt.session.GetState()
 				assert.Equal(t, "ended", string(state))
 			}
@@ -92,8 +93,8 @@ func TestSession_GetSessionID(t *testing.T) {
 func TestSession_GetState(t *testing.T) {
 	tests := []struct {
 		name          string
-		active        bool
 		expectedState string
+		active        bool
 	}{
 		{
 			name:          "active session",

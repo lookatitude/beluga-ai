@@ -1,13 +1,16 @@
 package vectorstores
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // VectorStoreError represents errors specific to vector store operations.
 // It provides structured error information for programmatic error handling.
 type VectorStoreError struct {
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable error message
-	Cause   error  // Underlying error that caused this error
+	Cause   error
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -24,7 +27,7 @@ func (e *VectorStoreError) Unwrap() error {
 }
 
 // NewVectorStoreError creates a new VectorStoreError with the given code and message.
-func NewVectorStoreError(code, message string, args ...interface{}) *VectorStoreError {
+func NewVectorStoreError(code, message string, args ...any) *VectorStoreError {
 	return &VectorStoreError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -32,7 +35,7 @@ func NewVectorStoreError(code, message string, args ...interface{}) *VectorStore
 }
 
 // WrapError wraps an existing error with vector store context.
-func WrapError(cause error, code, message string, args ...interface{}) *VectorStoreError {
+func WrapError(cause error, code, message string, args ...any) *VectorStoreError {
 	return &VectorStoreError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -40,7 +43,7 @@ func WrapError(cause error, code, message string, args ...interface{}) *VectorSt
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeUnknownProvider      = "unknown_provider"
 	ErrCodeInvalidConfig        = "invalid_config"
@@ -66,7 +69,8 @@ func IsVectorStoreError(err error, code string) bool {
 // AsVectorStoreError attempts to cast an error to VectorStoreError.
 func AsVectorStoreError(err error, target **VectorStoreError) bool {
 	for err != nil {
-		if vsErr, ok := err.(*VectorStoreError); ok {
+		vsErr := &VectorStoreError{}
+		if errors.As(err, &vsErr) {
 			*target = vsErr
 			return true
 		}

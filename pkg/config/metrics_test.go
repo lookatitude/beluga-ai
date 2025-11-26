@@ -78,12 +78,12 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		success bool
 		source  string
+		success bool
 	}{
-		{"successful load", true, "file"},
-		{"failed load", false, "env"},
-		{"empty source", true, ""},
+		{"successful load", "file", true},
+		{"failed load", "env", false},
+		{"empty source", "", true},
 	}
 
 	for _, tt := range tests {
@@ -92,8 +92,8 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 			metrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
 
 			// Test with nil metrics (should not panic)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			var nilMetrics *Metrics
 			nilMetrics.RecordConfigLoad(ctx, duration, tt.success, tt.source)
 		})
@@ -123,8 +123,8 @@ func TestMetrics_RecordValidation(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// This should not panic even with nil metrics
 			metrics.RecordValidation(ctx, duration, tt.success)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
 			// Test with nil metrics (should not panic)
 			var nilMetrics *Metrics
@@ -236,19 +236,19 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 
 	// Test various combinations of success/source
 	testCases := []struct {
-		success bool
 		source  string
+		success bool
 	}{
-		{true, "file"},
-		{false, "env"},
-		{true, "default"},
-		{false, "remote"},
+		{"file", true},
+		{"env", false},
+		{"default", true},
+		{"remote", false},
 	}
 
 	for _, tc := range testCases {
 		// Just ensure it doesn't panic
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		metrics.RecordConfigLoad(ctx, duration, tc.success, tc.source)
 	}
 }

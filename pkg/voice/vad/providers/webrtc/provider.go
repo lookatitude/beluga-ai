@@ -2,6 +2,7 @@ package webrtc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -11,18 +12,18 @@ import (
 	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
 )
 
-// WebRTCProvider implements the VADProvider interface for WebRTC VAD
+// WebRTCProvider implements the VADProvider interface for WebRTC VAD.
 type WebRTCProvider struct {
 	config      *WebRTCConfig
 	mu          sync.RWMutex
 	initialized bool
 }
 
-// NewWebRTCProvider creates a new WebRTC VAD provider
+// NewWebRTCProvider creates a new WebRTC VAD provider.
 func NewWebRTCProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	if config == nil {
 		return nil, vad.NewVADError("NewWebRTCProvider", vad.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to WebRTC config
@@ -56,7 +57,7 @@ func NewWebRTCProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	return provider, nil
 }
 
-// Process implements the VADProvider interface
+// Process implements the VADProvider interface.
 func (p *WebRTCProvider) Process(ctx context.Context, audio []byte) (bool, error) {
 	// Lazy initialization
 	if err := p.ensureInitialized(); err != nil {
@@ -83,7 +84,7 @@ func (p *WebRTCProvider) Process(ctx context.Context, audio []byte) (bool, error
 	return energy >= threshold, nil
 }
 
-// ProcessStream implements the VADProvider interface
+// ProcessStream implements the VADProvider interface.
 func (p *WebRTCProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error) {
 	// Lazy initialization
 	if err := p.ensureInitialized(); err != nil {
@@ -132,7 +133,7 @@ func (p *WebRTCProvider) ProcessStream(ctx context.Context, audioCh <-chan []byt
 	return resultCh, nil
 }
 
-// ensureInitialized initializes the WebRTC VAD instance
+// ensureInitialized initializes the WebRTC VAD instance.
 func (p *WebRTCProvider) ensureInitialized() error {
 	p.mu.RLock()
 	initialized := p.initialized
@@ -160,7 +161,7 @@ func (p *WebRTCProvider) ensureInitialized() error {
 	return nil
 }
 
-// calculateEnergy calculates the energy of an audio signal
+// calculateEnergy calculates the energy of an audio signal.
 func calculateEnergy(audio []byte) float64 {
 	if len(audio) == 0 {
 		return 0.0
@@ -185,7 +186,7 @@ func calculateEnergy(audio []byte) float64 {
 	return sum / float64(sampleCount)
 }
 
-// getThresholdForMode returns the energy threshold for a given VAD mode
+// getThresholdForMode returns the energy threshold for a given VAD mode.
 func getThresholdForMode(mode int) float64 {
 	// WebRTC VAD modes have different sensitivity levels
 	thresholds := []float64{0.01, 0.015, 0.02, 0.025} // Increasing sensitivity

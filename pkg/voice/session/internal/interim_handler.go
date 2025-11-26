@@ -5,15 +5,15 @@ import (
 	"sync"
 )
 
-// InterimHandler manages handling of interim transcripts
+// InterimHandler manages handling of interim transcripts.
 type InterimHandler struct {
-	mu           sync.RWMutex
 	handler      func(transcript string)
 	lastInterim  string
 	interimCount int
+	mu           sync.RWMutex
 }
 
-// NewInterimHandler creates a new interim handler
+// NewInterimHandler creates a new interim handler.
 func NewInterimHandler(handler func(transcript string)) *InterimHandler {
 	return &InterimHandler{
 		handler:      handler,
@@ -21,7 +21,7 @@ func NewInterimHandler(handler func(transcript string)) *InterimHandler {
 	}
 }
 
-// Handle processes an interim transcript
+// Handle processes an interim transcript.
 func (ih *InterimHandler) Handle(ctx context.Context, transcript string) {
 	ih.mu.Lock()
 	ih.lastInterim = transcript
@@ -34,21 +34,21 @@ func (ih *InterimHandler) Handle(ctx context.Context, transcript string) {
 	}
 }
 
-// GetLastInterim returns the last interim transcript
+// GetLastInterim returns the last interim transcript.
 func (ih *InterimHandler) GetLastInterim() string {
 	ih.mu.RLock()
 	defer ih.mu.RUnlock()
 	return ih.lastInterim
 }
 
-// GetInterimCount returns the number of interim transcripts received
+// GetInterimCount returns the number of interim transcripts received.
 func (ih *InterimHandler) GetInterimCount() int {
 	ih.mu.RLock()
 	defer ih.mu.RUnlock()
 	return ih.interimCount
 }
 
-// Reset resets the interim handler state
+// Reset resets the interim handler state.
 func (ih *InterimHandler) Reset() {
 	ih.mu.Lock()
 	defer ih.mu.Unlock()

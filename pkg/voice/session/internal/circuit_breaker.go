@@ -1,12 +1,12 @@
 package internal
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 )
 
-// CircuitBreakerState represents the state of a circuit breaker
+// CircuitBreakerState represents the state of a circuit breaker.
 type CircuitBreakerState int
 
 const (
@@ -15,19 +15,19 @@ const (
 	CircuitBreakerHalfOpen
 )
 
-// CircuitBreaker implements circuit breaker pattern for provider failures
+// CircuitBreaker implements circuit breaker pattern for provider failures.
 type CircuitBreaker struct {
-	mu                 sync.RWMutex
+	lastFailureTime    time.Time
 	state              CircuitBreakerState
 	failureCount       int
 	successCount       int
 	maxFailures        int
 	halfOpenMaxSuccess int
 	resetTimeout       time.Duration
-	lastFailureTime    time.Time
+	mu                 sync.RWMutex
 }
 
-// NewCircuitBreaker creates a new circuit breaker
+// NewCircuitBreaker creates a new circuit breaker.
 func NewCircuitBreaker(maxFailures, halfOpenMaxSuccess int, resetTimeout time.Duration) *CircuitBreaker {
 	return &CircuitBreaker{
 		state:              CircuitBreakerClosed,
@@ -37,7 +37,7 @@ func NewCircuitBreaker(maxFailures, halfOpenMaxSuccess int, resetTimeout time.Du
 	}
 }
 
-// Call executes a function with circuit breaker protection
+// Call executes a function with circuit breaker protection.
 func (cb *CircuitBreaker) Call(fn func() error) error {
 	cb.mu.Lock()
 	state := cb.state
@@ -54,7 +54,7 @@ func (cb *CircuitBreaker) Call(fn func() error) error {
 		cb.mu.Unlock()
 
 		if cb.state == CircuitBreakerOpen {
-			return fmt.Errorf("circuit breaker is open")
+			return errors.New("circuit breaker is open")
 		}
 	}
 
@@ -73,7 +73,7 @@ func (cb *CircuitBreaker) Call(fn func() error) error {
 	return nil
 }
 
-// recordFailure records a failure
+// recordFailure records a failure.
 func (cb *CircuitBreaker) recordFailure() {
 	cb.failureCount++
 	cb.lastFailureTime = time.Now()
@@ -88,7 +88,7 @@ func (cb *CircuitBreaker) recordFailure() {
 	}
 }
 
-// recordSuccess records a success
+// recordSuccess records a success.
 func (cb *CircuitBreaker) recordSuccess() {
 	cb.failureCount = 0
 
@@ -102,7 +102,7 @@ func (cb *CircuitBreaker) recordSuccess() {
 	}
 }
 
-// GetState returns the current circuit breaker state
+// GetState returns the current circuit breaker state.
 func (cb *CircuitBreaker) GetState() CircuitBreakerState {
 	cb.mu.RLock()
 	defer cb.mu.RUnlock()

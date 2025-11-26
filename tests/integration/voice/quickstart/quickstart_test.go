@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestQuickstart_Validation validates the quickstart example
+// TestQuickstart_Validation validates the quickstart example.
 func TestQuickstart_Validation(t *testing.T) {
 	ctx := context.Background()
 
@@ -38,7 +38,7 @@ func TestQuickstart_Validation(t *testing.T) {
 	// Process audio (quickstart step 3)
 	audio := []byte{1, 2, 3, 4, 5}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Say something (quickstart step 4)
 	handle, err := voiceSession.Say(ctx, "Hello, user!")

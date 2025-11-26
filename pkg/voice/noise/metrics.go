@@ -2,38 +2,39 @@ package noise
 
 import (
 	"context"
+	"time"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"time"
 )
 
-// MetricsRecorder defines the interface for recording metrics
+// MetricsRecorder defines the interface for recording metrics.
 type MetricsRecorder interface {
 	RecordProcessing(ctx context.Context, provider string, duration time.Duration, inputSize, outputSize int64)
 	RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
 	IncrementProcessedFrames(ctx context.Context, provider string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled
+// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
 type NoOpMetrics struct{}
 
-// NewNoOpMetrics creates a new no-operation metrics recorder
+// NewNoOpMetrics creates a new no-operation metrics recorder.
 func NewNoOpMetrics() *NoOpMetrics {
 	return &NoOpMetrics{}
 }
 
-// RecordProcessing is a no-op implementation
+// RecordProcessing is a no-op implementation.
 func (n *NoOpMetrics) RecordProcessing(ctx context.Context, provider string, duration time.Duration, inputSize, outputSize int64) {
 }
 
-// RecordError is a no-op implementation
+// RecordError is a no-op implementation.
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 }
 
-// IncrementProcessedFrames is a no-op implementation
+// IncrementProcessedFrames is a no-op implementation.
 func (n *NoOpMetrics) IncrementProcessedFrames(ctx context.Context, provider string) {}
 
-// Metrics contains all the metrics for Noise Cancellation operations
+// Metrics contains all the metrics for Noise Cancellation operations.
 type Metrics struct {
 	processedFrames   metric.Int64Counter
 	bytesProcessed    metric.Int64Counter
@@ -42,7 +43,7 @@ type Metrics struct {
 	processingLatency metric.Float64Histogram
 }
 
-// NewMetrics creates a new Metrics instance
+// NewMetrics creates a new Metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
 	m := &Metrics{}
 
@@ -55,7 +56,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	return m
 }
 
-// RecordProcessing records a processing operation
+// RecordProcessing records a processing operation.
 func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duration time.Duration, inputSize, outputSize int64) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -66,7 +67,7 @@ func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duratio
 	m.processingLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// RecordError records an error
+// RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -76,7 +77,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 	m.processingLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// IncrementProcessedFrames increments the processed frames counter
+// IncrementProcessedFrames increments the processed frames counter.
 func (m *Metrics) IncrementProcessedFrames(ctx context.Context, provider string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),

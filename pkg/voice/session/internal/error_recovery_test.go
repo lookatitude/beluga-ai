@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewErrorRecovery(t *testing.T) {
@@ -59,7 +60,7 @@ func TestErrorRecovery_RetryWithBackoff_Success(t *testing.T) {
 		return nil
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.GreaterOrEqual(t, attempts, 2)
 }
 
@@ -71,7 +72,7 @@ func TestErrorRecovery_RetryWithBackoff_AllFailures(t *testing.T) {
 		return errors.New("timeout error")
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed after")
 }
 
@@ -89,9 +90,9 @@ func TestErrorRecovery_RetryWithBackoff_ContextCancellation(t *testing.T) {
 		return errors.New("timeout error")
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Error should be context.Canceled or wrapped
-	assert.True(t, err == context.Canceled || err == ctx.Err())
+	assert.True(t, errors.Is(err, context.Canceled) || errors.Is(err, ctx.Err()))
 }
 
 func TestErrorRecovery_Reset(t *testing.T) {
@@ -111,8 +112,8 @@ func TestErrorRecovery_Reset(t *testing.T) {
 
 func TestErrorRecovery_isRetryableError(t *testing.T) {
 	tests := []struct {
-		name     string
 		err      error
+		name     string
 		expected bool
 	}{
 		{

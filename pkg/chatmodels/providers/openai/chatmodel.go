@@ -10,7 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// openaiMetrics is a simple stub to avoid import cycles
+// openaiMetrics is a simple stub to avoid import cycles.
 type openaiMetrics struct{}
 
 func (m *openaiMetrics) RecordMessageGeneration(model, provider string, duration time.Duration, success bool, tokenCount int) {
@@ -21,31 +21,30 @@ func (m *openaiMetrics) RecordStreamingSession(model, provider string, duration 
 	// No-op implementation
 }
 
-func (m *openaiMetrics) StartGenerationSpan(ctx context.Context, model, provider, operation string) (context.Context, interface{}) {
+func (m *openaiMetrics) StartGenerationSpan(ctx context.Context, model, provider, operation string) (context.Context, any) {
 	return ctx, nil
 }
 
-func (m *openaiMetrics) StartStreamingSpan(ctx context.Context, model, provider string) (context.Context, interface{}) {
+func (m *openaiMetrics) StartStreamingSpan(ctx context.Context, model, provider string) (context.Context, any) {
 	return ctx, nil
 }
 
 // OpenAIChatModel is an OpenAI implementation of the ChatModel interface.
 type OpenAIChatModel struct {
 	model   string
-	config  interface{} // Use interface{} to avoid import cycle
+	config  any // Use interface{} to avoid import cycle
 	options *iface.Options
-	metrics interface{} // Use interface{} to avoid import cycle
+	metrics any // Use interface{} to avoid import cycle
 	apiKey  string
 	baseURL string
 }
 
 // NewOpenAIChatModel creates a new OpenAI chat model instance.
-func NewOpenAIChatModel(model string, config interface{}, options *iface.Options) (*OpenAIChatModel, error) {
+func NewOpenAIChatModel(model string, config any, options *iface.Options) (*OpenAIChatModel, error) {
 	// Simple stub to avoid import cycle - in real implementation would extract API key from config
 
 	// Create simple metrics stub
-	var metrics interface{}
-	metrics = &openaiMetrics{}
+	var metrics any = &openaiMetrics{}
 
 	return &OpenAIChatModel{
 		model:   model,
@@ -68,7 +67,8 @@ func (o *OpenAIChatModel) GenerateMessages(ctx context.Context, messages []schem
 	}
 
 	// Start tracing (stub implementation)
-	ctx, _ = o.metrics.(*openaiMetrics).StartGenerationSpan(ctx, o.model, "openai", "generate_messages")
+	// Note: span return value intentionally ignored in stub implementation
+	ctx, _ = o.metrics.(*openaiMetrics).StartGenerationSpan(ctx, o.model, "openai", "generate_messages") //nolint:errcheck // Span creation does not return an error here
 
 	// TODO: Implement actual OpenAI API call
 	// For now, return a placeholder response
@@ -103,7 +103,8 @@ func (o *OpenAIChatModel) StreamMessages(ctx context.Context, messages []schema.
 		}
 
 		// Start tracing (stub implementation)
-		ctx, _ = o.metrics.(*openaiMetrics).StartStreamingSpan(ctx, o.model, "openai")
+		// Note: span return value intentionally ignored in stub implementation
+		ctx, _ = o.metrics.(*openaiMetrics).StartStreamingSpan(ctx, o.model, "openai") //nolint:errcheck // Span creation does not return an error here
 
 		// TODO: Implement actual OpenAI streaming API call
 		// For now, simulate streaming with chunks
@@ -179,9 +180,9 @@ func (o *OpenAIChatModel) GetModelInfo() iface.ModelInfo {
 }
 
 // CheckHealth returns the health status of the OpenAI model.
-func (o *OpenAIChatModel) CheckHealth() map[string]interface{} {
+func (o *OpenAIChatModel) CheckHealth() map[string]any {
 	// TODO: Implement actual health check by making a lightweight API call
-	return map[string]interface{}{
+	return map[string]any{
 		"status":      "healthy",
 		"model":       o.model,
 		"provider":    "openai",
@@ -252,6 +253,7 @@ func (o *OpenAIChatModel) Run(ctx context.Context) error {
 	// OpenAI models don't need to run anything continuously
 	// This could be used for connection pooling or background tasks in the future
 	<-ctx.Done()
+	// Context.Err() is self-descriptive and doesn't need wrapping
 	return ctx.Err()
 }
 

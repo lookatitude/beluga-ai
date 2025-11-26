@@ -16,7 +16,7 @@ func TestVoiceSessionImpl_ProcessAudio_NotActive(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	err := impl.ProcessAudio(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not_active")
 }
 
@@ -29,7 +29,7 @@ func TestVoiceSessionImpl_ProcessAudio_Active(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	err = impl.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should transition to processing state
 	assert.Equal(t, sessioniface.SessionState("processing"), impl.GetState())
@@ -54,7 +54,7 @@ func TestVoiceSessionImpl_ProcessAudio_WithNoiseCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	err = impl.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestVoiceSessionImpl_ProcessAudio_NoiseCancellationError(t *testing.T) {
@@ -76,10 +76,10 @@ func TestVoiceSessionImpl_ProcessAudio_NoiseCancellationError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 	// Should continue processing even if noise cancellation fails
 	err = impl.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// Mock noise cancellation for testing
+// Mock noise cancellation for testing.
 type mockNoiseCancellation struct {
 	processFunc func(ctx context.Context, audio []byte) ([]byte, error)
 }

@@ -2,7 +2,7 @@ package webrtc
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -10,27 +10,27 @@ import (
 	transportiface "github.com/lookatitude/beluga-ai/pkg/voice/transport/iface"
 )
 
-// WebRTCTransport implements the Transport interface for WebRTC
+// WebRTCTransport implements the Transport interface for WebRTC.
 type WebRTCTransport struct {
 	config        *WebRTCConfig
 	peerConn      *PeerConnection
 	audioCh       chan []byte
+	audioCallback func([]byte)
 	mu            sync.RWMutex
 	connected     bool
-	audioCallback func([]byte)
 }
 
-// PeerConnection represents a WebRTC peer connection
+// PeerConnection represents a WebRTC peer connection.
 type PeerConnection struct {
 	connected bool
 	mu        sync.RWMutex
 }
 
-// NewWebRTCTransport creates a new WebRTC Transport provider
+// NewWebRTCTransport creates a new WebRTC Transport provider.
 func NewWebRTCTransport(config *transport.Config) (transportiface.Transport, error) {
 	if config == nil {
 		return nil, transport.NewTransportError("NewWebRTCTransport", transport.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to WebRTC config
@@ -71,7 +71,7 @@ func NewWebRTCTransport(config *transport.Config) (transportiface.Transport, err
 	}, nil
 }
 
-// SendAudio implements the Transport interface
+// SendAudio implements the Transport interface.
 func (t *WebRTCTransport) SendAudio(ctx context.Context, audio []byte) error {
 	t.mu.RLock()
 	connected := t.connected
@@ -79,7 +79,7 @@ func (t *WebRTCTransport) SendAudio(ctx context.Context, audio []byte) error {
 
 	if !connected {
 		return transport.NewTransportError("SendAudio", transport.ErrCodeNotConnected,
-			fmt.Errorf("transport not connected"))
+			errors.New("transport not connected"))
 	}
 
 	// TODO: Actual WebRTC audio sending would go here
@@ -92,18 +92,18 @@ func (t *WebRTCTransport) SendAudio(ctx context.Context, audio []byte) error {
 	// Placeholder: Just validate audio data
 	if len(audio) == 0 {
 		return transport.NewTransportError("SendAudio", transport.ErrCodeInvalidInput,
-			fmt.Errorf("audio data is empty"))
+			errors.New("audio data is empty"))
 	}
 
 	return nil
 }
 
-// ReceiveAudio implements the Transport interface
+// ReceiveAudio implements the Transport interface.
 func (t *WebRTCTransport) ReceiveAudio() <-chan []byte {
 	return t.audioCh
 }
 
-// OnAudioReceived implements the Transport interface
+// OnAudioReceived implements the Transport interface.
 func (t *WebRTCTransport) OnAudioReceived(callback func(audio []byte)) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -113,7 +113,7 @@ func (t *WebRTCTransport) OnAudioReceived(callback func(audio []byte)) {
 	// to be called when audio is received from the WebRTC peer connection
 }
 
-// Close implements the Transport interface
+// Close implements the Transport interface.
 func (t *WebRTCTransport) Close() error {
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -137,7 +137,7 @@ func (t *WebRTCTransport) Close() error {
 }
 
 // Connect is a helper method to establish WebRTC connection
-// Note: This is not part of the Transport interface but useful for testing
+// Note: This is not part of the Transport interface but useful for testing.
 func (t *WebRTCTransport) Connect(ctx context.Context) error {
 	t.mu.Lock()
 	defer t.mu.Unlock()

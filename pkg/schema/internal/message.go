@@ -4,14 +4,14 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 )
 
-// Re-export types from iface for internal use
+// Re-export types from iface for internal use.
 type (
 	MessageType  = iface.MessageType
 	ToolCall     = iface.ToolCall
 	FunctionCall = iface.FunctionCall
 )
 
-// Re-export constants from iface
+// Re-export constants from iface.
 const (
 	RoleHuman     = iface.RoleHuman
 	RoleAssistant = iface.RoleAssistant
@@ -36,23 +36,23 @@ func (bm *BaseMessage) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns an empty map by default.
-func (bm *BaseMessage) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{})
+func (bm *BaseMessage) AdditionalArgs() map[string]any {
+	return make(map[string]any)
 }
 
 // GetAdditionalArgs is an alias for AdditionalArgs for backward compatibility.
-func (bm *BaseMessage) GetAdditionalArgs() map[string]interface{} {
+func (bm *BaseMessage) GetAdditionalArgs() map[string]any {
 	return bm.AdditionalArgs()
 }
 
 // ToolCallChunk represents a chunk of a tool call, useful for streaming responses.
 type ToolCallChunk struct {
-	ID        string       `json:"id,omitempty"`
-	Type      string       `json:"type,omitempty"` // Typically "function"
 	Function  FunctionCall `json:"function,omitempty"`
-	Index     int          `json:"index,omitempty"`     // Index in a sequence of chunks
-	Name      string       `json:"name,omitempty"`      // For direct access
-	Arguments string       `json:"arguments,omitempty"` // For direct access
+	ID        string       `json:"id,omitempty"`
+	Type      string       `json:"type,omitempty"`
+	Name      string       `json:"name,omitempty"`
+	Arguments string       `json:"arguments,omitempty"`
+	Index     int          `json:"index,omitempty"`
 }
 
 // ChatMessage represents a message in a chat sequence.
@@ -76,8 +76,8 @@ func (m *ChatMessage) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns an empty map for ChatMessage.
-func (m *ChatMessage) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{})
+func (m *ChatMessage) AdditionalArgs() map[string]any {
+	return make(map[string]any)
 }
 
 // ToolMessage represents the result of a tool invocation.
@@ -97,8 +97,8 @@ func (m *ToolMessage) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns an empty map for ToolMessage.
-func (m *ToolMessage) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{})
+func (m *ToolMessage) AdditionalArgs() map[string]any {
+	return make(map[string]any)
 }
 
 // FunctionMessage represents a message related to a function call.
@@ -118,18 +118,16 @@ func (m *FunctionMessage) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns an empty map for FunctionMessage.
-func (m *FunctionMessage) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{})
+func (m *FunctionMessage) AdditionalArgs() map[string]any {
+	return make(map[string]any)
 }
 
 // AIMessage represents a message from the AI.
 // It can include content and a list of tool calls the AI wants to make.
 type AIMessage struct {
+	AdditionalArgs_ map[string]any `json:"additional_kwargs,omitempty"`
 	BaseMessage
-	// Content is inherited from BaseMessage.
-	// Role is implicitly RoleAssistant, returned by GetType().
-	ToolCalls_      []ToolCall             `json:"tool_calls,omitempty" yaml:"tool_calls,omitempty"`
-	AdditionalArgs_ map[string]interface{} `json:"additional_kwargs,omitempty"`
+	ToolCalls_ []ToolCall `json:"tool_calls,omitempty" yaml:"tool_calls,omitempty"`
 }
 
 // GetType returns the message type, which is always RoleAssistant for AIMessage.
@@ -146,31 +144,30 @@ func (m *AIMessage) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns additional arguments for this message.
-func (m *AIMessage) AdditionalArgs() map[string]interface{} {
+func (m *AIMessage) AdditionalArgs() map[string]any {
 	if m.AdditionalArgs_ == nil {
-		m.AdditionalArgs_ = make(map[string]interface{})
+		m.AdditionalArgs_ = make(map[string]any)
 	}
 	return m.AdditionalArgs_
 }
 
 // Generation represents a single generation from an LLM.
 type Generation struct {
-	Text           string                 `json:"text"`
-	Message        iface.Message          `json:"message"` // The actual message object, e.g., a ChatMessage
-	GenerationInfo map[string]interface{} `json:"generation_info,omitempty"`
+	Message        iface.Message  `json:"message"`
+	GenerationInfo map[string]any `json:"generation_info,omitempty"`
+	Text           string         `json:"text"`
 }
 
 // CallOptions holds parameters for an LLM call.
 type CallOptions struct {
-	Temperature      *float64
-	MaxTokens        *int
-	TopP             *float64
-	FrequencyPenalty *float64
-	PresencePenalty  *float64
-	Stop             []string
-	Streaming        bool
-	// ProviderSpecificArgs allows for passing through any other provider-specific options.
-	ProviderSpecificArgs map[string]interface{}
+	Temperature          *float64
+	MaxTokens            *int
+	TopP                 *float64
+	FrequencyPenalty     *float64
+	PresencePenalty      *float64
+	ProviderSpecificArgs map[string]any
+	Stop                 []string
+	Streaming            bool
 }
 
 // LLMOption defines a function type for LLM call options.
@@ -178,6 +175,6 @@ type LLMOption func(options *CallOptions)
 
 // LLMResponse represents the response from an LLM.
 type LLMResponse struct {
-	Generations [][]*Generation        `json:"generations"`
-	LLMOutput   map[string]interface{} `json:"llm_output,omitempty"` // Provider-specific output
+	LLMOutput   map[string]any  `json:"llm_output,omitempty"`
+	Generations [][]*Generation `json:"generations"`
 }

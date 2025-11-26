@@ -4,6 +4,7 @@ package base
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -17,47 +18,38 @@ import (
 
 // options holds the configuration options for an agent.
 type options struct {
+	eventHandlers map[string][]func(any) error
 	maxRetries    int
 	retryDelay    time.Duration
 	enableMetrics bool
 	enableTracing bool
-	eventHandlers map[string][]func(interface{}) error
 }
 
 // BaseAgent provides common functionality for all agents.
 // It implements the CompositeAgent interface through composition and embedding.
 type BaseAgent struct {
-	// Core agent properties
-	name   string
-	config schema.AgentConfig
-	llm    llmsiface.LLM
-	tools  []tools.Tool
-	memory interface{} // Memory interface (to be defined)
-
-	// Lifecycle management
-	state          iface.AgentState
 	createdAt      time.Time
 	lastActiveTime time.Time
-	mutex          sync.RWMutex
 	ctx            context.Context
+	llm            llmsiface.LLM
+	memory         any
+	metrics        iface.MetricsRecorder
+	eventHandlers  map[string][]iface.EventHandler
 	cancelFunc     context.CancelFunc
-
-	// Operational settings
-	maxRetries int
-	retryDelay time.Duration
-	errorCount int
-
-	// Event handling
-	eventHandlers map[string][]iface.EventHandler
-
-	// Observability
-	metrics iface.MetricsRecorder
+	name           string
+	state          iface.AgentState
+	tools          []tools.Tool
+	config         schema.AgentConfig
+	retryDelay     time.Duration
+	errorCount     int
+	maxRetries     int
+	mutex          sync.RWMutex
 }
 
 // NewBaseAgent creates a new BaseAgent with the provided configuration.
 func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts ...iface.Option) (*BaseAgent, error) {
 	if llm == nil {
-		return nil, fmt.Errorf("LLM cannot be nil")
+		return nil, errors.New("LLM cannot be nil")
 	}
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -139,7 +131,7 @@ func (a *BaseAgent) GetLLM() llmsiface.LLM {
 // Plan is a placeholder implementation that should be overridden by specific agents.
 func (a *BaseAgent) Plan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error) {
 	// Start tracing span if metrics are available
-	var planCtx context.Context = ctx
+	planCtx := ctx
 	var span iface.SpanEnder
 	if a.metrics != nil {
 		planCtx, span = a.metrics.StartAgentSpan(ctx, a.name, "plan")
@@ -153,7 +145,7 @@ func (a *BaseAgent) Plan(ctx context.Context, intermediateSteps []iface.Intermed
 	start := time.Now()
 
 	// Placeholder implementation - should be overridden by specific agents
-	err := fmt.Errorf("Plan method not implemented in BaseAgent; must be overridden by specific agent type")
+	err := errors.New("Plan method not implemented in BaseAgent; must be overridden by specific agent type")
 
 	if a.metrics != nil {
 		a.metrics.RecordPlanningCall(planCtx, a.name, time.Since(start), false)
@@ -167,7 +159,7 @@ func (a *BaseAgent) Plan(ctx context.Context, intermediateSteps []iface.Intermed
 // This is the primary method for synchronous execution.
 func (a *BaseAgent) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Start tracing span if metrics are available
-	var invokeCtx context.Context = ctx
+	invokeCtx := ctx
 	var span iface.SpanEnder
 	if a.metrics != nil {
 		invokeCtx, span = a.metrics.StartAgentSpan(ctx, a.name, "invoke")
@@ -260,15 +252,15 @@ func (a *BaseAgent) Stream(ctx context.Context, input any, options ...core.Optio
 // This method should be overridden by specific agent implementations.
 func (a *BaseAgent) executeWithInput(ctx context.Context, inputs map[string]any) (any, error) {
 	// Default implementation - should be overridden by specific agents
-	return nil, fmt.Errorf("executeWithInput not implemented in BaseAgent; must be overridden by specific agent type")
+	return nil, errors.New("executeWithInput not implemented in BaseAgent; must be overridden by specific agent type")
 }
 
 // Lifecycle management
 
 // Initialize sets up the agent with necessary configurations.
-func (a *BaseAgent) Initialize(config map[string]interface{}) error {
+func (a *BaseAgent) Initialize(config map[string]any) error {
 	if config == nil {
-		return fmt.Errorf("config cannot be nil")
+		return errors.New("config cannot be nil")
 	}
 
 	a.mutex.Lock()
@@ -294,7 +286,7 @@ func (a *BaseAgent) Initialize(config map[string]interface{}) error {
 
 	// Emit events after releasing lock to avoid deadlock
 	a.emitEvent("state_change", iface.StateReady)
-	a.emitEvent("initialized", map[string]interface{}{
+	a.emitEvent("initialized", map[string]any{
 		"config": config,
 		"time":   time.Now(),
 	})
@@ -315,7 +307,7 @@ func (a *BaseAgent) Execute() error {
 	start := time.Now()
 
 	// Emit execution start event
-	a.emitEvent("execution_started", map[string]interface{}{
+	a.emitEvent("execution_started", map[string]any{
 		"time": time.Now(),
 	})
 
@@ -332,19 +324,19 @@ func (a *BaseAgent) Execute() error {
 
 			// Emit events after releasing lock
 			a.emitEvent("state_change", iface.StateError)
-			a.emitEvent("execution_cancelled", map[string]interface{}{
+			a.emitEvent("execution_canceled", map[string]any{
 				"attempt":    attempt,
 				"total_time": time.Since(start),
 			})
 			if a.metrics != nil {
 				a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), false)
 			}
-			return fmt.Errorf("agent %s execution cancelled: %w", a.name, a.ctx.Err())
+			return fmt.Errorf("agent %s execution canceled: %w", a.name, a.ctx.Err())
 		default:
 		}
 
 		if attempt > 0 {
-			a.emitEvent("retry", map[string]interface{}{
+			a.emitEvent("retry", map[string]any{
 				"attempt": attempt,
 				"delay":   a.retryDelay,
 			})
@@ -360,14 +352,14 @@ func (a *BaseAgent) Execute() error {
 
 				// Emit events after releasing lock
 				a.emitEvent("state_change", iface.StateError)
-				a.emitEvent("execution_cancelled", map[string]interface{}{
+				a.emitEvent("execution_canceled", map[string]any{
 					"attempt":    attempt,
 					"total_time": time.Since(start),
 				})
 				if a.metrics != nil {
 					a.metrics.RecordAgentExecution(a.ctx, a.name, "base", time.Since(start), false)
 				}
-				return fmt.Errorf("agent %s execution cancelled during retry delay: %w", a.name, a.ctx.Err())
+				return fmt.Errorf("agent %s execution canceled during retry delay: %w", a.name, a.ctx.Err())
 			}
 		}
 
@@ -380,7 +372,7 @@ func (a *BaseAgent) Execute() error {
 		a.errorCount++
 		a.mutex.Unlock()
 
-		a.emitEvent("execution_error", map[string]interface{}{
+		a.emitEvent("execution_error", map[string]any{
 			"attempt": attempt,
 			"error":   err.Error(),
 		})
@@ -394,7 +386,7 @@ func (a *BaseAgent) Execute() error {
 
 		// Emit events after releasing lock
 		a.emitEvent("state_change", iface.StateError)
-		a.emitEvent("execution_failed", map[string]interface{}{
+		a.emitEvent("execution_failed", map[string]any{
 			"error":      err.Error(),
 			"attempts":   a.maxRetries + 1,
 			"total_time": time.Since(start),
@@ -411,7 +403,7 @@ func (a *BaseAgent) Execute() error {
 
 	// Emit events after releasing lock
 	a.emitEvent("state_change", iface.StateReady)
-	a.emitEvent("execution_completed", map[string]interface{}{
+	a.emitEvent("execution_completed", map[string]any{
 		"total_time": time.Since(start),
 	})
 	if a.metrics != nil {
@@ -423,7 +415,7 @@ func (a *BaseAgent) Execute() error {
 
 // doExecute is the internal execution method that should be overridden by subclasses.
 func (a *BaseAgent) doExecute() error {
-	return fmt.Errorf("doExecute not implemented in BaseAgent; must be overridden by specific agent type")
+	return errors.New("doExecute not implemented in BaseAgent; must be overridden by specific agent type")
 }
 
 // Shutdown gracefully stops the agent and cleans up resources.
@@ -445,11 +437,11 @@ func (a *BaseAgent) Shutdown() error {
 	time.Sleep(10 * time.Millisecond)
 
 	// Emit events after releasing lock and allowing Execute() to finish
-	a.emitEvent("shutdown_started", map[string]interface{}{
+	a.emitEvent("shutdown_started", map[string]any{
 		"time": time.Now(),
 	})
 	a.emitEvent("state_change", iface.StateShutdown)
-	a.emitEvent("shutdown_completed", map[string]interface{}{
+	a.emitEvent("shutdown_completed", map[string]any{
 		"time": time.Now(),
 	})
 
@@ -464,11 +456,11 @@ func (a *BaseAgent) GetState() iface.AgentState {
 }
 
 // CheckHealth returns the health status of the agent.
-func (a *BaseAgent) CheckHealth() map[string]interface{} {
+func (a *BaseAgent) CheckHealth() map[string]any {
 	a.mutex.RLock()
 	defer a.mutex.RUnlock()
 
-	return map[string]interface{}{
+	return map[string]any{
 		"name":             a.name,
 		"state":            a.state,
 		"up_time":          time.Since(a.createdAt).String(),
@@ -493,7 +485,7 @@ func (a *BaseAgent) RegisterEventHandler(eventType string, handler iface.EventHa
 }
 
 // EmitEvent triggers all registered handlers for the given event type.
-func (a *BaseAgent) EmitEvent(eventType string, payload interface{}) {
+func (a *BaseAgent) EmitEvent(eventType string, payload any) {
 	a.emitEvent(eventType, payload)
 }
 
@@ -512,7 +504,7 @@ func (a *BaseAgent) setState(state iface.AgentState) {
 }
 
 // emitEvent calls all registered handlers for the given event type.
-func (a *BaseAgent) emitEvent(eventType string, payload interface{}) {
+func (a *BaseAgent) emitEvent(eventType string, payload any) {
 	a.mutex.RLock()
 	handlers := make([]iface.EventHandler, len(a.eventHandlers[eventType]))
 	copy(handlers, a.eventHandlers[eventType])
@@ -522,7 +514,7 @@ func (a *BaseAgent) emitEvent(eventType string, payload interface{}) {
 		if err := handler(payload); err != nil {
 			// Log error but don't fail the operation
 			// In a real implementation, you'd use structured logging here
-			fmt.Printf("Event handler error for %s: %v\n", eventType, err)
+			_, _ = fmt.Printf("Event handler error for %s: %v\n", eventType, err) //nolint:errcheck // Log only, error intentionally ignored
 		}
 	}
 }

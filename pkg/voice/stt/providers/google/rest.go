@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -13,12 +14,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 
-// TranscribeREST performs transcription using Google Cloud Speech-to-Text REST API
+// TranscribeREST performs transcription using Google Cloud Speech-to-Text REST API.
 func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (string, error) {
 	startTime := time.Now()
 
 	// Build request URL
-	url := fmt.Sprintf("%s/v1/speech:recognize", p.config.BaseURL)
+	url := p.config.BaseURL + "/v1/speech:recognize"
 	if p.config.ProjectID != "" {
 		url = fmt.Sprintf("%s/v1/projects/%s/locations/global:recognize", p.config.BaseURL, p.config.ProjectID)
 	}
@@ -27,7 +28,7 @@ func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (stri
 	audioContent := base64.StdEncoding.EncodeToString(audio)
 
 	// Build recognition config
-	recognitionConfig := map[string]interface{}{
+	recognitionConfig := map[string]any{
 		"encoding":                   "LINEAR16",
 		"sampleRateHertz":            p.config.SampleRate,
 		"languageCode":               p.config.LanguageCode,
@@ -48,9 +49,9 @@ func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (stri
 	}
 
 	// Build request body
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"config": recognitionConfig,
-		"audio": map[string]interface{}{
+		"audio": map[string]any{
 			"content": audioContent,
 		},
 	}
@@ -69,7 +70,7 @@ func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (stri
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	if p.config.APIKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+		req.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 	}
 
 	// Execute request with retry logic
@@ -100,16 +101,16 @@ func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (stri
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeTimeout, err)
 		}
-		if ctx.Err() == context.Canceled {
+		if errors.Is(ctx.Err(), context.Canceled) {
 			return "", ctx.Err()
 		}
 		return "", stt.ErrorFromHTTPStatus("TranscribeREST", 0, err)
@@ -144,13 +145,13 @@ func (p *GoogleProvider) TranscribeREST(ctx context.Context, audio []byte) (stri
 	// Extract transcript
 	if len(response.Results) == 0 || len(response.Results[0].Alternatives) == 0 {
 		return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeEmptyResponse,
-			fmt.Errorf("no transcript in response"))
+			errors.New("no transcript in response"))
 	}
 
 	transcript := response.Results[0].Alternatives[0].Transcript
 	if transcript == "" {
 		return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeEmptyResponse,
-			fmt.Errorf("no transcript in response"))
+			errors.New("no transcript in response"))
 	}
 	duration := time.Since(startTime)
 

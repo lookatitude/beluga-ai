@@ -4,14 +4,14 @@ import (
 	"sync"
 )
 
-// ChunkingConfig configures chunking for long utterances
+// ChunkingConfig configures chunking for long utterances.
 type ChunkingConfig struct {
 	ChunkSize          int // Maximum chunk size in bytes
 	ProcessingStrategy ChunkProcessingStrategy
 	OverlapSize        int // Overlap between chunks
 }
 
-// ChunkProcessingStrategy defines how chunks are processed
+// ChunkProcessingStrategy defines how chunks are processed.
 type ChunkProcessingStrategy int
 
 const (
@@ -20,7 +20,7 @@ const (
 	ChunkProcessingStreaming
 )
 
-// DefaultChunkingConfig returns default chunking configuration
+// DefaultChunkingConfig returns default chunking configuration.
 func DefaultChunkingConfig() *ChunkingConfig {
 	return &ChunkingConfig{
 		ChunkSize:          8192, // 8KB default
@@ -29,13 +29,13 @@ func DefaultChunkingConfig() *ChunkingConfig {
 	}
 }
 
-// Chunking manages chunking of long utterances
+// Chunking manages chunking of long utterances.
 type Chunking struct {
-	mu     sync.RWMutex
 	config *ChunkingConfig
+	mu     sync.RWMutex
 }
 
-// NewChunking creates a new chunking manager
+// NewChunking creates a new chunking manager.
 func NewChunking(config *ChunkingConfig) *Chunking {
 	if config == nil {
 		config = DefaultChunkingConfig()
@@ -46,7 +46,7 @@ func NewChunking(config *ChunkingConfig) *Chunking {
 	}
 }
 
-// Chunk splits data into chunks
+// Chunk splits data into chunks.
 func (c *Chunking) Chunk(data []byte) [][]byte {
 	c.mu.RLock()
 	chunkSize := c.config.ChunkSize
@@ -86,14 +86,14 @@ func (c *Chunking) Chunk(data []byte) [][]byte {
 	return chunks
 }
 
-// GetChunkSize returns the configured chunk size
+// GetChunkSize returns the configured chunk size.
 func (c *Chunking) GetChunkSize() int {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	return c.config.ChunkSize
 }
 
-// SetChunkSize sets the chunk size
+// SetChunkSize sets the chunk size.
 func (c *Chunking) SetChunkSize(size int) {
 	c.mu.Lock()
 	defer c.mu.Unlock()

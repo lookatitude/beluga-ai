@@ -32,6 +32,7 @@ package inmemory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -100,12 +101,12 @@ func WithSearchK(k int) Option {
 // InMemoryVectorStore is a simple in-memory implementation of the VectorStore interface.
 // It stores documents and their embeddings in memory for fast access and similarity search.
 type InMemoryVectorStore struct {
-	mu         sync.RWMutex
-	documents  []schema.Document
-	embeddings [][]float32
 	embedder   Embedder
 	name       string
+	documents  []schema.Document
+	embeddings [][]float32
 	nextID     int
+	mu         sync.RWMutex
 }
 
 // docWithScore holds a document and its similarity score for search results.
@@ -152,7 +153,7 @@ func (s *InMemoryVectorStore) AddDocuments(ctx context.Context, documents []sche
 	}
 
 	if embedder == nil && len(documents) > 0 && documents[0].Embedding == nil {
-		return nil, fmt.Errorf("embedder is required if documents do not have pre-computed embeddings")
+		return nil, errors.New("embedder is required if documents do not have pre-computed embeddings")
 	}
 
 	// Generate embeddings if needed
@@ -215,7 +216,7 @@ func (s *InMemoryVectorStore) SimilaritySearch(ctx context.Context, queryVector 
 	}
 
 	if k <= 0 {
-		return nil, nil, fmt.Errorf("k must be greater than 0")
+		return nil, nil, errors.New("k must be greater than 0")
 	}
 
 	// Apply options
@@ -270,7 +271,7 @@ func (s *InMemoryVectorStore) SimilaritySearchByQuery(ctx context.Context, query
 		currentEmbedder = s.embedder
 	}
 	if currentEmbedder == nil {
-		return nil, nil, fmt.Errorf("embedder is required for SimilaritySearchByQuery")
+		return nil, nil, errors.New("embedder is required for SimilaritySearchByQuery")
 	}
 
 	// Generate query embedding
@@ -330,7 +331,7 @@ func (s *InMemoryVectorStore) cosineSimilarity(a, b []float32) (float32, error) 
 		return 0, fmt.Errorf("vectors have different lengths: %d vs %d", len(a), len(b))
 	}
 	if len(a) == 0 {
-		return 0, fmt.Errorf("vectors are empty")
+		return 0, errors.New("vectors are empty")
 	}
 
 	var dotProduct float32
@@ -344,7 +345,7 @@ func (s *InMemoryVectorStore) cosineSimilarity(a, b []float32) (float32, error) 
 	}
 
 	if normA == 0 || normB == 0 {
-		return 0, fmt.Errorf("cannot compute cosine similarity with zero vector")
+		return 0, errors.New("cannot compute cosine similarity with zero vector")
 	}
 
 	return float32(float64(dotProduct) / (math.Sqrt(float64(normA)) * math.Sqrt(float64(normB)))), nil

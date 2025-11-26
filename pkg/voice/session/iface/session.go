@@ -9,7 +9,9 @@ import (
 // This allows package-specific extensions if needed in the future.
 type VoiceSession = voiceiface.VoiceSession
 
-// Re-export types for convenience
-type SessionState = voiceiface.SessionState
-type SayOptions = voiceiface.SayOptions
-type SayHandle = voiceiface.SayHandle
+// Re-export types for convenience.
+type (
+	SessionState = voiceiface.SessionState
+	SayOptions   = voiceiface.SayOptions
+	SayHandle    = voiceiface.SayHandle
+)

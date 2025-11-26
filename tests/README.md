@@ -132,7 +132,7 @@ func TestIntegrationLLMsMemory(t *testing.T) {
     
     // Test integration scenarios
     err := helper.TestConversationFlow(llm, memory, 5)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     
     // Verify cross-package interactions
     helper.AssertCrossPackageMetrics(t, "llms", "memory")

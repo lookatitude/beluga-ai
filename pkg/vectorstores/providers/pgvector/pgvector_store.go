@@ -45,19 +45,18 @@ import (
 type PgVectorStore struct {
 	db             *sql.DB
 	tableName      string
-	embeddingDim   int    // Dimension of the embeddings
-	collectionName string // Optional, for multi-tenancy or logical separation within the table
+	collectionName string
 	name           string
-	// Other necessary fields like connection string, preDeleteCollection, etc.
+	embeddingDim   int
 }
 
 // PgVectorStoreConfig holds configuration specific to PgVectorStore.
 type PgVectorStoreConfig struct {
 	ConnectionString    string `mapstructure:"connection_string"`
 	TableName           string `mapstructure:"table_name"`
+	CollectionName      string `mapstructure:"collection_name"`
 	EmbeddingDimension  int    `mapstructure:"embedding_dimension"`
-	CollectionName      string `mapstructure:"collection_name"`       // Optional
-	PreDeleteCollection bool   `mapstructure:"pre_delete_collection"` // If true, deletes existing data for the collection on init
+	PreDeleteCollection bool   `mapstructure:"pre_delete_collection"`
 }
 
 // NewPgVectorStoreFromConfig creates a new PgVectorStore from configuration.
@@ -66,22 +65,22 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 	// Extract pgvector-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pgvector"]
 	if !ok {
-		providerConfig = make(map[string]interface{})
+		providerConfig = make(map[string]any)
 	}
 
 	// Extract connection parameters with defaults
-	connStr, _ := providerConfig.(map[string]interface{})["connection_string"].(string)
+	connStr, _ := providerConfig.(map[string]any)["connection_string"].(string)
 	if connStr == "" {
 		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
 			"connection_string is required in pgvector provider config")
 	}
 
-	tableName, _ := providerConfig.(map[string]interface{})["table_name"].(string)
+	tableName, _ := providerConfig.(map[string]any)["table_name"].(string)
 	if tableName == "" {
 		tableName = "beluga_documents"
 	}
 
-	embeddingDim, _ := providerConfig.(map[string]interface{})["embedding_dimension"].(int)
+	embeddingDim, _ := providerConfig.(map[string]any)["embedding_dimension"].(int)
 	if embeddingDim == 0 {
 		embeddingDim = 768 // default
 	}
@@ -95,7 +94,7 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 
 	// Test the connection
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeConnectionFailed,
 			"failed to ping PostgreSQL database")
 	}
@@ -110,7 +109,7 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 	}
 
 	if err := store.ensureTableExists(ctx); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
 			"failed to ensure table exists")
 	}
@@ -157,7 +156,10 @@ func (s *PgVectorStore) ensureTableExists(ctx context.Context) error {
 	`, s.tableName, s.embeddingDim, s.tableName, s.tableName) // Example index
 
 	_, err := s.db.ExecContext(ctx, query)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to create table and index: %w", err)
+	}
+	return nil
 }
 
 // AddDocuments adds documents to the PgVectorStore.
@@ -201,7 +203,7 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
 			"failed to begin transaction")
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	// Prepare statement for inserting documents
 	stmt, err := tx.PrepareContext(ctx, fmt.Sprintf(
@@ -211,7 +213,7 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
 			"failed to prepare insert statement")
 	}
-	defer stmt.Close()
+	defer func() { _ = stmt.Close() }()
 
 	embedIndex := 0
 	for i, doc := range documents {
@@ -310,7 +312,7 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeRetrievalFailed,
 			"failed to execute similarity search query")
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var resultDocs []schema.Document
 	var resultScores []float32
@@ -345,7 +347,10 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		resultDocs = append(resultDocs, doc)
 	}
 
-	return resultDocs, resultScores, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, nil, fmt.Errorf("error iterating query results: %w", err)
+	}
+	return resultDocs, resultScores, nil
 }
 
 // SimilaritySearchByQuery generates an embedding for the query and then performs a similarity search.
@@ -406,7 +411,7 @@ func (s *PgVectorStore) DeleteDocuments(ctx context.Context, ids []string, opts 
 
 	// Create placeholders for the IN clause
 	placeholders := make([]string, len(ids))
-	args := make([]interface{}, len(ids))
+	args := make([]any, len(ids))
 	for i, id := range ids {
 		placeholders[i] = fmt.Sprintf("$%d", i+1)
 		args[i] = id

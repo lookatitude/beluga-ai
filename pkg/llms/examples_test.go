@@ -2,8 +2,10 @@ package llms_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
@@ -14,7 +16,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Example demonstrating basic ChatModel usage
+// Example demonstrating basic ChatModel usage.
 func ExampleNewFactory() {
 	// Create a new factory
 	factory := llms.NewFactory()
@@ -29,11 +31,13 @@ func ExampleNewFactory() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Retrieved model: %s\n", model.GetModelName())
+	if _, err := fmt.Printf("Retrieved model: %s\n", model.GetModelName()); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Output: Retrieved model: example-model
 }
 
-// Example demonstrating configuration usage
+// Example demonstrating configuration usage.
 func ExampleNewConfig() {
 	// Create configuration with functional options
 	config := llms.NewConfig(
@@ -52,26 +56,32 @@ func ExampleNewConfig() {
 		return
 	}
 
-	fmt.Printf("Config validated for provider: %s\n", config.Provider)
+	if _, err := fmt.Printf("Config validated for provider: %s\n", config.Provider); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Output: Config validated for provider: anthropic
 }
 
-// Example demonstrating error handling
+// Example demonstrating error handling.
 func ExampleLLMError() {
 	// Create an LLM error
-	err := llms.NewLLMError("generate", llms.ErrCodeRateLimit, fmt.Errorf("rate limit exceeded"))
+	err := llms.NewLLMError("generate", llms.ErrCodeRateLimit, errors.New("rate limit exceeded"))
 
 	// Check if it's an LLM error
 	if llms.IsLLMError(err) {
-		fmt.Printf("LLM Error Code: %s\n", llms.GetLLMErrorCode(err))
-		fmt.Printf("Is Retryable: %t\n", llms.IsRetryableError(err))
+		if _, printErr := fmt.Printf("LLM Error Code: %s\n", llms.GetLLMErrorCode(err)); printErr != nil {
+			log.Printf("Failed to print: %v", printErr)
+		}
+		if _, printErr := fmt.Printf("Is Retryable: %t\n", llms.IsRetryableError(err)); printErr != nil {
+			log.Printf("Failed to print: %v", printErr)
+		}
 	}
 	// Output:
 	// LLM Error Code: rate_limit
 	// Is Retryable: true
 }
 
-// Example demonstrating message conversion
+// Example demonstrating message conversion.
 func ExampleEnsureMessages() {
 	// Convert string to messages
 	messages, err := llms.EnsureMessages("Hello, world!")
@@ -79,11 +89,13 @@ func ExampleEnsureMessages() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Converted %d messages\n", len(messages))
+	if _, err := fmt.Printf("Converted %d messages\n", len(messages)); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Output: Converted 1 messages
 }
 
-// Example demonstrating streaming (mock implementation)
+// Example demonstrating streaming (mock implementation).
 func ExampleChatModel_StreamChat() {
 	// This is a mock example - in real usage, you'd use an actual provider
 	mockModel := &MockChatModel{modelName: "streaming-example"}
@@ -107,16 +119,24 @@ func ExampleChatModel_StreamChat() {
 
 	// Collect streaming results
 	var fullContent string
+	var fullContentSb110 strings.Builder
 	for chunk := range resultChan {
 		if chunk.Err != nil {
 			log.Printf("Stream error: %v", chunk.Err)
 			break
 		}
-		fullContent += chunk.Content
-		fmt.Printf("Received: %s\n", chunk.Content)
+		if _, err := fullContentSb110.WriteString(chunk.Content); err != nil {
+			log.Printf("Failed to write: %v", err)
+		}
+		if _, err := fmt.Printf("Received: %s\n", chunk.Content); err != nil {
+			log.Printf("Failed to print: %v", err)
+		}
 	}
+	fullContent += fullContentSb110.String()
 
-	fmt.Printf("Full content: %s\n", fullContent)
+	if _, err := fmt.Printf("Full content: %s\n", fullContent); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Note: In a real test, you'd assert expectations here
 	// Output:
 	// Received: Hello
@@ -125,7 +145,7 @@ func ExampleChatModel_StreamChat() {
 	// Full content: Hello world!
 }
 
-// Example demonstrating batch processing
+// Example demonstrating batch processing.
 func ExampleChatModel_Batch() {
 	mockModel := &MockChatModel{modelName: "batch-example"}
 
@@ -145,10 +165,14 @@ func ExampleChatModel_Batch() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("Processed %d items in batch\n", len(results))
+	if _, err := fmt.Printf("Processed %d items in batch\n", len(results)); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	for i, result := range results {
 		if msg, ok := result.(schema.Message); ok {
-			fmt.Printf("Result %d: %s\n", i+1, msg.GetContent())
+			if _, err := fmt.Printf("Result %d: %s\n", i+1, msg.GetContent()); err != nil {
+				log.Printf("Failed to print: %v", err)
+			}
 		}
 	}
 	// Note: In a real test, you'd assert expectations here
@@ -159,7 +183,7 @@ func ExampleChatModel_Batch() {
 	// Result 3: Response 3
 }
 
-// Example demonstrating tool binding
+// Example demonstrating tool binding.
 func ExampleChatModel_BindTools() {
 	mockModel := &MockChatModel{modelName: "tool-example"}
 
@@ -175,12 +199,14 @@ func ExampleChatModel_BindTools() {
 	// Bind tools
 	modelWithTools := mockModel.BindTools(tools)
 
-	fmt.Printf("Model with tools: %s\n", modelWithTools.GetModelName())
+	if _, err := fmt.Printf("Model with tools: %s\n", modelWithTools.GetModelName()); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Note: In a real test, you'd assert expectations here
 	// Output: Model with tools: tool-example
 }
 
-// Example demonstrating utility functions
+// Example demonstrating utility functions.
 func ExampleGetSystemAndHumanPromptsFromSchema() {
 	messages := []schema.Message{
 		schema.NewSystemMessage("You are a helpful assistant."),
@@ -191,31 +217,43 @@ func ExampleGetSystemAndHumanPromptsFromSchema() {
 
 	system, human := llms.GetSystemAndHumanPromptsFromSchema(messages)
 
-	fmt.Printf("System: %s\n", system)
-	fmt.Printf("Human: %s\n", human)
+	if _, err := fmt.Printf("System: %s\n", system); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
+	if _, err := fmt.Printf("Human: %s\n", human); err != nil {
+		log.Printf("Failed to print: %v", err)
+	}
 	// Output:
 	// System: You are a helpful assistant.
 	// Human: What is 2 + 2?
 	// What is 3 + 3?
 }
 
-// Example demonstrating model validation
+// Example demonstrating model validation.
 func ExampleValidateModelName() {
 	// Valid OpenAI model
 	err := llms.ValidateModelName("openai", "gpt-4")
-	fmt.Printf("OpenAI GPT-4 valid: %t\n", err == nil)
+	if _, printErr := fmt.Printf("OpenAI GPT-4 valid: %t\n", err == nil); printErr != nil {
+		log.Printf("Failed to print: %v", printErr)
+	}
 
 	// Invalid OpenAI model
 	err = llms.ValidateModelName("openai", "invalid-model")
-	fmt.Printf("OpenAI invalid model: %t\n", err != nil)
+	if _, printErr := fmt.Printf("OpenAI invalid model: %t\n", err != nil); printErr != nil {
+		log.Printf("Failed to print: %v", printErr)
+	}
 
 	// Valid Anthropic model
 	err = llms.ValidateModelName("anthropic", "claude-3-sonnet")
-	fmt.Printf("Anthropic Claude valid: %t\n", err == nil)
+	if _, printErr := fmt.Printf("Anthropic Claude valid: %t\n", err == nil); printErr != nil {
+		log.Printf("Failed to print: %v", printErr)
+	}
 
 	// Unknown provider (should pass)
 	err = llms.ValidateModelName("unknown", "some-model")
-	fmt.Printf("Unknown provider: %t\n", err == nil)
+	if _, printErr := fmt.Printf("Unknown provider: %t\n", err == nil); printErr != nil {
+		log.Printf("Failed to print: %v", printErr)
+	}
 	// Output:
 	// OpenAI GPT-4 valid: true
 	// OpenAI invalid model: true
@@ -265,8 +303,8 @@ func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core
 	return results, nil
 }
 
-func (m *MockChatModel) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+func (m *MockChatModel) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":         "healthy",
 		"provider":      "mock",
 		"model":         m.modelName,
@@ -299,7 +337,8 @@ func (m *MockTool) Definition() tools.ToolDefinition {
 		InputSchema: "{}",
 	}
 }
-func (m *MockTool) Execute(ctx context.Context, input interface{}) (interface{}, error) {
+
+func (m *MockTool) Execute(ctx context.Context, input any) (any, error) {
 	return "mock tool result", nil
 }
 

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestStop_Contract tests the contract for the Stop() method
+// TestStop_Contract tests the contract for the Stop() method.
 func TestStop_Contract(t *testing.T) {
 	t.Run("stop transitions session to ended state", func(t *testing.T) {
 		ctx := context.Background()
@@ -30,7 +30,7 @@ func TestStop_Contract(t *testing.T) {
 
 		// Don't start session
 		err := sess.Stop(ctx)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("stop respects context cancellation", func(t *testing.T) {
@@ -42,10 +42,9 @@ func TestStop_Contract(t *testing.T) {
 
 		cancel() // Cancel context
 		err = sess.Stop(ctx)
-
 		// Should either return error or respect cancellation
 		if err != nil {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	})
 

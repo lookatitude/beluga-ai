@@ -288,11 +288,11 @@ func TestSearchService(t *testing.T) {
         {ID: "2", Text: "Deep learning advanced"},
     }
     err := service.IndexContent(context.Background(), items)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     
     // Search
     results, err := service.Search(context.Background(), "AI learning", 5)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Greater(t, len(results), 0)
 }
 ```

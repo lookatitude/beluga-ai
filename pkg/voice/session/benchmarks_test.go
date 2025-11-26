@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BenchmarkSession_Start benchmarks the Start method
+// BenchmarkSession_Start benchmarks the Start method.
 func BenchmarkSession_Start(b *testing.B) {
 	session := NewAdvancedMockSession("benchmark",
 		WithActive(false),
@@ -18,11 +18,11 @@ func BenchmarkSession_Start(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = session.Start(ctx)
-		session.Stop(ctx)
+		_ = session.Stop(ctx)
 	}
 }
 
-// BenchmarkSession_Stop benchmarks the Stop method
+// BenchmarkSession_Stop benchmarks the Stop method.
 func BenchmarkSession_Stop(b *testing.B) {
 	session := NewAdvancedMockSession("benchmark",
 		WithActive(true),
@@ -33,12 +33,12 @@ func BenchmarkSession_Stop(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		session.Start(ctx)
+		_ = session.Start(ctx)
 		_ = session.Stop(ctx)
 	}
 }
 
-// BenchmarkSession_ProcessAudio benchmarks the ProcessAudio method
+// BenchmarkSession_ProcessAudio benchmarks the ProcessAudio method.
 func BenchmarkSession_ProcessAudio(b *testing.B) {
 	session := NewAdvancedMockSession("benchmark",
 		WithActive(true),
@@ -54,7 +54,7 @@ func BenchmarkSession_ProcessAudio(b *testing.B) {
 	}
 }
 
-// BenchmarkConfig_Validate benchmarks configuration validation
+// BenchmarkConfig_Validate benchmarks configuration validation.
 func BenchmarkConfig_Validate(b *testing.B) {
 	config := DefaultConfig()
 	config.SessionID = "test-session"

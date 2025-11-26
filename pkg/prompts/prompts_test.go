@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -21,8 +22,8 @@ func TestPromptManager_NewStringTemplate(t *testing.T) {
 		name         string
 		templateName string
 		template     string
-		wantErr      bool
 		expectedVars []string
+		wantErr      bool
 	}{
 		{
 			name:         "valid template",
@@ -202,19 +203,19 @@ func TestPromptManager_NewDefaultAdapter(t *testing.T) {
 
 func TestDefaultPromptAdapter_Format(t *testing.T) {
 	tests := []struct {
+		inputs      map[string]any
 		name        string
 		template    string
-		variables   []string
-		inputs      map[string]interface{}
 		expected    string
-		expectError bool
 		errorType   string
+		variables   []string
+		expectError bool
 	}{
 		{
 			name:      "simple replacement",
 			template:  "Hello {{.name}}!",
 			variables: []string{"name"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name": "Alice",
 			},
 			expected: "Hello Alice!",
@@ -223,7 +224,7 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			name:      "multiple variables",
 			template:  "{{.greeting}} {{.name}}, welcome!",
 			variables: []string{"greeting", "name"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"greeting": "Hi",
 				"name":     "Bob",
 			},
@@ -233,14 +234,14 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			name:      "no variables",
 			template:  "Hello World!",
 			variables: []string{},
-			inputs:    map[string]interface{}{},
+			inputs:    map[string]any{},
 			expected:  "Hello World!",
 		},
 		{
 			name:        "missing required variable",
 			template:    "Hello {{.name}}!",
 			variables:   []string{"name"},
-			inputs:      map[string]interface{}{},
+			inputs:      map[string]any{},
 			expectError: true,
 			errorType:   "variable_missing",
 		},
@@ -248,7 +249,7 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			name:      "wrong variable type",
 			template:  "Count: {{.number}}",
 			variables: []string{"number"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"number": 42, // int instead of string
 			},
 			expectError: true,
@@ -258,7 +259,7 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			name:      "extra variables ignored",
 			template:  "Hello {{.name}}!",
 			variables: []string{"name"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name":  "Alice",
 				"extra": "ignored",
 			},
@@ -268,7 +269,7 @@ func TestDefaultPromptAdapter_Format(t *testing.T) {
 			name:      "special characters",
 			template:  "Path: {{.path}}",
 			variables: []string{"path"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"path": "/usr/local/bin",
 			},
 			expected: "Path: /usr/local/bin",
@@ -398,22 +399,22 @@ func TestPromptManager_NewChatAdapter(t *testing.T) {
 
 func TestChatPromptAdapter_Format(t *testing.T) {
 	tests := []struct {
+		inputs         map[string]any
 		name           string
 		systemTemplate string
 		userTemplate   string
-		variables      []string
-		inputs         map[string]interface{}
-		expectSystem   bool
 		expectedUser   string
-		expectError    bool
 		errorType      string
+		variables      []string
+		expectSystem   bool
+		expectError    bool
 	}{
 		{
 			name:           "system and user messages",
 			systemTemplate: "You are a {{.role}}.",
 			userTemplate:   "Please {{.action}} {{.subject}}.",
 			variables:      []string{"role", "action", "subject"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"role":    "teacher",
 				"action":  "explain",
 				"subject": "quantum physics",
@@ -426,7 +427,7 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			systemTemplate: "",
 			userTemplate:   "Hello {{.name}}!",
 			variables:      []string{"name"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name": "Alice",
 			},
 			expectSystem: false,
@@ -437,7 +438,7 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			systemTemplate: "You are helpful.",
 			userTemplate:   "What is {{.topic}}?",
 			variables:      []string{"topic"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"topic": "AI",
 				"history": []schema.Message{
 					schema.NewChatMessage("user", "What is machine learning?"),
@@ -452,7 +453,7 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			systemTemplate: "You are {{.role}}.",
 			userTemplate:   "Hello!",
 			variables:      []string{"role"},
-			inputs:         map[string]interface{}{},
+			inputs:         map[string]any{},
 			expectError:    true,
 			errorType:      "variable_missing",
 		},
@@ -461,7 +462,7 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			systemTemplate: "",
 			userTemplate:   "Hello {{.name}}!",
 			variables:      []string{"name"},
-			inputs:         map[string]interface{}{},
+			inputs:         map[string]any{},
 			expectError:    true,
 			errorType:      "variable_missing",
 		},
@@ -470,7 +471,7 @@ func TestChatPromptAdapter_Format(t *testing.T) {
 			systemTemplate: "",
 			userTemplate:   "Count: {{.number}}",
 			variables:      []string{"number"},
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"number": 42, // should be string
 			},
 			expectError: true,
@@ -561,17 +562,17 @@ func TestPromptManager_HealthCheck(t *testing.T) {
 
 func TestStringTemplate_Format(t *testing.T) {
 	tests := []struct {
+		inputs      map[string]any
 		name        string
 		template    string
-		inputs      map[string]interface{}
 		expected    string
-		expectError bool
 		errorType   string
+		expectError bool
 	}{
 		{
 			name:     "simple replacement",
 			template: "Hello {{.name}}!",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name": "Alice",
 			},
 			expected: "Hello Alice!",
@@ -579,7 +580,7 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:     "multiple variables",
 			template: "{{.greeting}} {{.name}}, you are {{.age}} years old!",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"greeting": "Hi",
 				"name":     "Bob",
 				"age":      "25",
@@ -589,13 +590,13 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:     "no variables",
 			template: "Hello World!",
-			inputs:   map[string]interface{}{},
+			inputs:   map[string]any{},
 			expected: "Hello World!",
 		},
 		{
 			name:     "numeric values",
 			template: "Count: {{.count}}",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"count": 42,
 			},
 			expected: "Count: 42",
@@ -603,7 +604,7 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:     "boolean values",
 			template: "Active: {{.active}}",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"active": true,
 			},
 			expected: "Active: true",
@@ -611,14 +612,14 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:        "missing required variable",
 			template:    "Hello {{.name}}!",
-			inputs:      map[string]interface{}{},
+			inputs:      map[string]any{},
 			expectError: true,
 			errorType:   "variable_missing",
 		},
 		{
 			name:     "extra variables provided",
 			template: "Hello {{.name}}!",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name":  "Alice",
 				"extra": "ignored",
 			},
@@ -627,7 +628,7 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:     "special characters",
 			template: "{{.message}} - {{.timestamp}}",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"message":   "System started",
 				"timestamp": "2024-01-01 12:00:00",
 			},
@@ -636,7 +637,7 @@ func TestStringTemplate_Format(t *testing.T) {
 		{
 			name:     "template with newlines",
 			template: "Line 1: {{.var1}}\nLine 2: {{.var2}}",
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"var1": "value1",
 				"var2": "value2",
 			},
@@ -784,7 +785,6 @@ func TestConfig_WithOptions(t *testing.T) {
 	manager, err := NewPromptManager(
 		WithConfig(config),
 	)
-
 	if err != nil {
 		t.Fatalf("NewPromptManager() error = %v", err)
 	}
@@ -800,19 +800,19 @@ func TestConfig_WithOptions(t *testing.T) {
 
 func TestVariableValidation(t *testing.T) {
 	tests := []struct {
+		providedVars map[string]any
 		name         string
 		template     string
-		requiredVars []string
-		providedVars map[string]interface{}
-		expectError  bool
 		errorType    string
+		requiredVars []string
+		expectError  bool
 		validateType bool
 	}{
 		{
 			name:         "all variables provided",
 			template:     "Hello {{.name}}, you are {{.age}} years old.",
 			requiredVars: []string{"name", "age"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"name": "Alice",
 				"age":  "25",
 			},
@@ -822,7 +822,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "missing required variable",
 			template:     "Hello {{.name}}!",
 			requiredVars: []string{"name"},
-			providedVars: map[string]interface{}{},
+			providedVars: map[string]any{},
 			expectError:  true,
 			errorType:    "variable_missing",
 		},
@@ -830,7 +830,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "extra variables provided",
 			template:     "Hello {{.name}}!",
 			requiredVars: []string{"name"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"name":  "Alice",
 				"extra": "ignored",
 			},
@@ -840,7 +840,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "nil variable value",
 			template:     "Hello {{.name}}!",
 			requiredVars: []string{"name"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"name": nil,
 			},
 			expectError: true,
@@ -850,7 +850,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "wrong variable type - int instead of string",
 			template:     "Count: {{.number}}",
 			requiredVars: []string{"number"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"number": 42,
 			},
 			expectError:  true,
@@ -861,7 +861,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "correct variable type - string",
 			template:     "Count: {{.number}}",
 			requiredVars: []string{"number"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"number": "42",
 			},
 			expectError: false,
@@ -870,7 +870,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "multiple missing variables",
 			template:     "{{.greeting}} {{.name}}!",
 			requiredVars: []string{"greeting", "name"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"greeting": "Hello",
 			},
 			expectError: true,
@@ -880,7 +880,7 @@ func TestVariableValidation(t *testing.T) {
 			name:         "empty string variable",
 			template:     "Hello {{.name}}!",
 			requiredVars: []string{"name"},
-			providedVars: map[string]interface{}{
+			providedVars: map[string]any{
 				"name": "",
 			},
 			expectError: false, // Empty strings are valid
@@ -974,14 +974,19 @@ func TestErrorHandling(t *testing.T) {
 
 func BenchmarkStringPromptTemplate_Format(b *testing.B) {
 	ctx := context.Background()
-	manager, _ := NewPromptManager()
-	template, _ := manager.NewStringTemplate("bench", "Hello {{.name}}, you are {{.age}} years old!")
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
+	template, err := manager.NewStringTemplate("bench", "Hello {{.name}}, you are {{.age}} years old!")
+	if err != nil {
+		b.Fatal(err)
+	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"name": "Alice",
 		"age":  "30",
 	}
-
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -997,7 +1002,7 @@ func BenchmarkStringPromptTemplate_Format_Complex(b *testing.B) {
 	template, _ := NewStringPromptTemplate("bench_complex",
 		"Dear {{.customer_name}}, your order #{{.order_id}} for {{.product_name}} has been {{.status}}. Total: ${{.total_amount}}. Thank you for shopping with {{.company_name}}!")
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"customer_name": "John Doe",
 		"order_id":      "12345",
 		"product_name":  "Wireless Headphones",
@@ -1005,7 +1010,6 @@ func BenchmarkStringPromptTemplate_Format_Complex(b *testing.B) {
 		"total_amount":  "299.99",
 		"company_name":  "TechStore Inc",
 	}
-
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1019,18 +1023,21 @@ func BenchmarkStringPromptTemplate_Format_Complex(b *testing.B) {
 func BenchmarkStringPromptTemplate_Format_LargeTemplate(b *testing.B) {
 	// Create a large template with many variables
 	var templateStr strings.Builder
-	var inputs map[string]interface{} = make(map[string]interface{})
+	inputs := make(map[string]any)
 
-	templateStr.WriteString("Welcome ")
+	_, _ = templateStr.WriteString("Welcome ")
 	for i := 0; i < 50; i++ {
 		if i > 0 {
-			templateStr.WriteString(", ")
+			_, _ = templateStr.WriteString(", ")
 		}
-		templateStr.WriteString(fmt.Sprintf("{{.field%d}}", i))
+		_, _ = templateStr.WriteString(fmt.Sprintf("{{.field%d}}", i))
 		inputs[fmt.Sprintf("field%d", i)] = fmt.Sprintf("value%d", i)
 	}
 
-	template, _ := NewStringPromptTemplate("bench_large", templateStr.String())
+	template, err := NewStringPromptTemplate("bench_large", templateStr.String())
+	if err != nil {
+		b.Fatal(err)
+	}
 	ctx := context.Background()
 
 	b.ResetTimer()
@@ -1044,10 +1051,16 @@ func BenchmarkStringPromptTemplate_Format_LargeTemplate(b *testing.B) {
 
 func BenchmarkDefaultPromptAdapter_Format(b *testing.B) {
 	ctx := context.Background()
-	manager, _ := NewPromptManager()
-	adapter, _ := manager.NewDefaultAdapter("bench", "Translate {{.text}} to {{.language}}", []string{"text", "language"})
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
+	adapter, err := manager.NewDefaultAdapter("bench", "Translate {{.text}} to {{.language}}", []string{"text", "language"})
+	if err != nil {
+		b.Fatal(err)
+	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"text":     "Hello World",
 		"language": "Spanish",
 	}
@@ -1062,16 +1075,22 @@ func BenchmarkDefaultPromptAdapter_Format(b *testing.B) {
 }
 
 func BenchmarkDefaultPromptAdapter_Format_LongText(b *testing.B) {
-	manager, _ := NewPromptManager()
-	adapter, _ := manager.NewDefaultAdapter("bench_long", "Analyze the following text: {{.text}}", []string{"text"})
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
+	adapter, err := manager.NewDefaultAdapter("bench_long", "Analyze the following text: {{.text}}", []string{"text"})
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	// Create a long text
 	var longText strings.Builder
 	for i := 0; i < 1000; i++ {
-		longText.WriteString(fmt.Sprintf("Word%d ", i))
+		_, _ = longText.WriteString(fmt.Sprintf("Word%d ", i))
 	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"text": longText.String(),
 	}
 	ctx := context.Background()
@@ -1086,12 +1105,15 @@ func BenchmarkDefaultPromptAdapter_Format_LongText(b *testing.B) {
 }
 
 func BenchmarkChatPromptAdapter_Format(b *testing.B) {
-	adapter, _ := NewChatPromptAdapter("bench_chat",
+	adapter, err := NewChatPromptAdapter("bench_chat",
 		"You are a {{.role}} assistant.",
 		"{{.question}}",
 		[]string{"role", "question"})
+	if err != nil {
+		b.Fatal(err)
+	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"role":     "helpful",
 		"question": "What is the capital of France?",
 	}
@@ -1107,10 +1129,13 @@ func BenchmarkChatPromptAdapter_Format(b *testing.B) {
 }
 
 func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
-	adapter, _ := NewChatPromptAdapter("bench_chat_history",
+	adapter, err := NewChatPromptAdapter("bench_chat_history",
 		"You are a helpful assistant.",
 		"{{.question}}",
 		[]string{"question"})
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	// Create chat history
 	history := []schema.Message{
@@ -1120,7 +1145,7 @@ func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
 		schema.NewChatMessage("assistant", "AI works by..."),
 	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"question": "What are the applications?",
 		"history":  history,
 	}
@@ -1136,7 +1161,7 @@ func BenchmarkChatPromptAdapter_Format_WithHistory(b *testing.B) {
 }
 
 func BenchmarkPromptManager_NewStringTemplate(b *testing.B) {
-	manager, _ := NewPromptManager()
+	manager, _ := NewPromptManager() //nolint:errcheck // Benchmark test
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1150,7 +1175,10 @@ func BenchmarkPromptManager_NewStringTemplate(b *testing.B) {
 }
 
 func BenchmarkPromptManager_NewDefaultAdapter(b *testing.B) {
-	manager, _ := NewPromptManager()
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1166,7 +1194,10 @@ func BenchmarkPromptManager_NewDefaultAdapter(b *testing.B) {
 
 func BenchmarkPromptManager_HealthCheck(b *testing.B) {
 	ctx := context.Background()
-	manager, _ := NewPromptManager()
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1206,16 +1237,21 @@ func BenchmarkVariableValidation(b *testing.B) {
 	ctx := context.Background()
 	config := DefaultConfig()
 	config.ValidateVariables = true
-	manager, _ := NewPromptManager(WithConfig(config))
+	manager, err := NewPromptManager(WithConfig(config))
+	if err != nil {
+		b.Fatal(err)
+	}
 
-	template, _ := manager.NewStringTemplate("bench_validation", "Hello {{.name}}, {{.age}}, {{.city}}!")
+	template, err := manager.NewStringTemplate("bench_validation", "Hello {{.name}}, {{.age}}, {{.city}}!")
+	if err != nil {
+		b.Fatal(err)
+	}
 
-	inputs := map[string]interface{}{
+	inputs := map[string]any{
 		"name": "Alice",
 		"age":  "25",
 		"city": "New York",
 	}
-
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -1227,8 +1263,14 @@ func BenchmarkVariableValidation(b *testing.B) {
 }
 
 func BenchmarkConcurrentOperations(b *testing.B) {
-	manager, _ := NewPromptManager()
-	template, _ := manager.NewStringTemplate("concurrent_bench", "Hello {{.name}} from iteration {{.iter}}!")
+	manager, err := NewPromptManager()
+	if err != nil {
+		b.Fatal(err)
+	}
+	template, err := manager.NewStringTemplate("concurrent_bench", "Hello {{.name}} from iteration {{.iter}}!")
+	if err != nil {
+		b.Fatal(err)
+	}
 	ctx := context.Background()
 
 	numGoroutines := runtime.NumCPU()
@@ -1246,7 +1288,7 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 		go func(goroutineID int) {
 			defer wg.Done()
 			for j := 0; j < iterationsPerGoroutine; j++ {
-				inputs := map[string]interface{}{
+				inputs := map[string]any{
 					"name": fmt.Sprintf("User%d", goroutineID),
 					"iter": j,
 				}
@@ -1264,12 +1306,12 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 func TestCacheConfiguration(t *testing.T) {
 	tests := []struct {
 		name               string
-		enableCache        bool
 		cacheTTL           time.Duration
 		maxCacheSize       int
-		expectEnableCache  bool
 		expectCacheTTL     time.Duration
 		expectMaxCacheSize int
+		enableCache        bool
+		expectEnableCache  bool
 	}{
 		{
 			name:               "default cache settings",
@@ -1363,7 +1405,6 @@ func TestTemplateCachingBehavior(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// Create the same template multiple times
 	templateName := "cached_template"
 	templateStr := "Hello {{.name}}!"
@@ -1386,7 +1427,7 @@ func TestTemplateCachingBehavior(t *testing.T) {
 	}
 
 	// Both should work identically
-	inputs := map[string]interface{}{"name": "Test"}
+	inputs := map[string]any{"name": "Test"}
 
 	result1, err := template1.Format(ctx, inputs)
 	if err != nil {
@@ -1423,7 +1464,6 @@ func TestCacheSizeLimits(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// Create multiple templates
 	for i := 0; i < 10; i++ {
 		templateName := fmt.Sprintf("template_%d", i)
@@ -1435,7 +1475,7 @@ func TestCacheSizeLimits(t *testing.T) {
 		}
 
 		// Test that template works
-		inputs := map[string]interface{}{"value": fmt.Sprintf("test%d", i)}
+		inputs := map[string]any{"value": fmt.Sprintf("test%d", i)}
 		_, err = template.Format(ctx, inputs)
 		if err != nil {
 			t.Fatalf("Failed to format template %d: %v", i, err)
@@ -1458,7 +1498,6 @@ func TestCacheExpiration(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// Create a template
 	template, err := manager.NewStringTemplate("expiring_template", "Hello {{.name}}!")
 	if err != nil {
@@ -1466,7 +1505,7 @@ func TestCacheExpiration(t *testing.T) {
 	}
 
 	// Use template immediately
-	inputs := map[string]interface{}{"name": "Test"}
+	inputs := map[string]any{"name": "Test"}
 	_, err = template.Format(ctx, inputs)
 	if err != nil {
 		t.Fatalf("Failed to format template: %v", err)
@@ -1505,10 +1544,10 @@ func TestMetricsCollection(t *testing.T) {
 func TestErrorTypesAndContext(t *testing.T) {
 	// Test that different error types provide appropriate context
 	tests := []struct {
-		name         string
 		setupFunc    func() error
-		expectedCode string
 		checkContext func(t *testing.T, err error)
+		name         string
+		expectedCode string
 	}{
 		{
 			name: "template parse error",
@@ -1518,6 +1557,7 @@ func TestErrorTypesAndContext(t *testing.T) {
 			},
 			expectedCode: "template_parse_error",
 			checkContext: func(t *testing.T, err error) {
+				t.Helper()
 				var promptErr *PromptError
 				if errors.As(err, &promptErr) {
 					if promptErr.Context == nil {
@@ -1534,12 +1574,16 @@ func TestErrorTypesAndContext(t *testing.T) {
 			name: "variable missing error",
 			setupFunc: func() error {
 				ctx := context.Background()
-				template, _ := NewStringPromptTemplate("test", "Hello {{.name}}!")
-				_, err := template.Format(ctx, map[string]interface{}{})
+				template, err := NewStringPromptTemplate("test", "Hello {{.name}}!")
+				if err != nil {
+					return err
+				}
+				_, err = template.Format(ctx, map[string]any{})
 				return err
 			},
 			expectedCode: "variable_missing",
 			checkContext: func(t *testing.T, err error) {
+				t.Helper()
 				var promptErr *PromptError
 				if errors.As(err, &promptErr) {
 					if promptErr.Context == nil {
@@ -1559,12 +1603,16 @@ func TestErrorTypesAndContext(t *testing.T) {
 			name: "variable invalid type error",
 			setupFunc: func() error {
 				ctx := context.Background()
-				adapter, _ := NewDefaultPromptAdapter("test", "Count: {{.number}}", []string{"number"})
-				_, err := adapter.Format(ctx, map[string]interface{}{"number": 42})
+				adapter, err := NewDefaultPromptAdapter("test", "Count: {{.number}}", []string{"number"})
+				if err != nil {
+					return err
+				}
+				_, err = adapter.Format(ctx, map[string]any{"number": 42})
 				return err
 			},
 			expectedCode: "variable_invalid",
 			checkContext: func(t *testing.T, err error) {
+				t.Helper()
 				var promptErr *PromptError
 				if errors.As(err, &promptErr) {
 					if promptErr.Context == nil {
@@ -1585,7 +1633,7 @@ func TestErrorTypesAndContext(t *testing.T) {
 		},
 	}
 
-		for _, tt := range tests {
+	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.setupFunc()
 			if err == nil {
@@ -1612,7 +1660,7 @@ func TestErrorTypesAndContext(t *testing.T) {
 
 func TestErrorWrappingAndUnwrapping(t *testing.T) {
 	// Test that errors can be properly wrapped and unwrapped
-	originalErr := fmt.Errorf("original error")
+	originalErr := errors.New("original error")
 	wrappedErr := fmt.Errorf("wrapped: %w", originalErr)
 
 	// Create a prompt error that wraps the original
@@ -1630,15 +1678,15 @@ func TestErrorWrappingAndUnwrapping(t *testing.T) {
 	}
 
 	// Test that the wrapped error is accessible
-	if promptErr.Err != wrappedErr {
+	if !errors.Is(promptErr.Err, wrappedErr) {
 		t.Error("Expected wrapped error to be accessible")
 	}
 }
 
 func TestErrorEdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
 		testFunc    func() error
+		name        string
 		expectError bool
 	}{
 		{
@@ -1661,8 +1709,11 @@ func TestErrorEdgeCases(t *testing.T) {
 			name: "nil inputs map",
 			testFunc: func() error {
 				ctx := context.Background()
-				template, _ := NewStringPromptTemplate("test", "Hello {{.name}}!")
-				_, err := template.Format(ctx, nil)
+				template, err := NewStringPromptTemplate("test", "Hello {{.name}}!")
+				if err != nil {
+					return err
+				}
+				_, err = template.Format(ctx, nil)
 				return err
 			},
 			expectError: true,
@@ -1671,9 +1722,9 @@ func TestErrorEdgeCases(t *testing.T) {
 			name: "extremely long template",
 			testFunc: func() error {
 				var longTemplate strings.Builder
-				longTemplate.WriteString("Template: ")
+				_, _ = longTemplate.WriteString("Template: ")
 				for i := 0; i < 10000; i++ {
-					longTemplate.WriteString(fmt.Sprintf("{{.var%d}} ", i))
+					_, _ = longTemplate.WriteString(fmt.Sprintf("{{.var%d}} ", i))
 				}
 				_, err := NewStringPromptTemplate("long_test", longTemplate.String())
 				return err
@@ -1728,7 +1779,6 @@ func TestErrorRecovery(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// First, try to create a template with invalid syntax (should fail)
 	_, err = manager.NewStringTemplate("invalid", "Hello {{.name")
 	if err == nil {
@@ -1742,7 +1792,7 @@ func TestErrorRecovery(t *testing.T) {
 	}
 
 	// Format the valid template (should work)
-	result, err := template.Format(ctx, map[string]interface{}{"name": "Alice"})
+	result, err := template.Format(ctx, map[string]any{"name": "Alice"})
 	if err != nil {
 		t.Fatalf("Failed to format valid template: %v", err)
 	}
@@ -1761,8 +1811,8 @@ func TestErrorRecovery(t *testing.T) {
 func TestConfigurationError(t *testing.T) {
 	// Test configuration-related errors
 	tests := []struct {
-		name        string
 		configFunc  func() *Config
+		name        string
 		expectError bool
 	}{
 		{
@@ -1833,7 +1883,7 @@ func TestTracingIntegration(t *testing.T) {
 		t.Fatalf("NewStringTemplate() error = %v", err)
 	}
 
-	_, err = template.Format(ctx, map[string]interface{}{"name": "Test"})
+	_, err = template.Format(ctx, map[string]any{"name": "Test"})
 	if err != nil {
 		t.Errorf("Format() error = %v", err)
 	}
@@ -1852,7 +1902,6 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// Test 1: String template workflow
 	t.Run("string_template_workflow", func(t *testing.T) {
 		template, err := manager.NewStringTemplate("greeting", "Hello {{.name}}, welcome to {{.place}}!")
@@ -1860,7 +1909,7 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 			t.Fatalf("Failed to create string template: %v", err)
 		}
 
-		inputs := map[string]interface{}{
+		inputs := map[string]any{
 			"name":  "Alice",
 			"place": "Wonderland",
 		}
@@ -1898,7 +1947,7 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 			t.Fatalf("Failed to create default adapter: %v", err)
 		}
 
-		inputs := map[string]interface{}{
+		inputs := map[string]any{
 			"text":     "Hello World",
 			"language": "Spanish",
 		}
@@ -1929,7 +1978,7 @@ func TestIntegration_EndToEndWorkflow(t *testing.T) {
 			t.Fatalf("Failed to create chat adapter: %v", err)
 		}
 
-		inputs := map[string]interface{}{
+		inputs := map[string]any{
 			"role":     "helpful",
 			"question": "What is AI?",
 		}
@@ -1987,14 +2036,13 @@ func TestIntegration_ErrorPropagation(t *testing.T) {
 		t.Fatalf("Failed to create prompt manager: %v", err)
 	}
 
-
 	// Test missing variable error propagation
 	template, err := manager.NewStringTemplate("test", "Hello {{.name}}!")
 	if err != nil {
 		t.Fatalf("Failed to create template: %v", err)
 	}
 
-	_, err = template.Format(ctx, map[string]interface{}{})
+	_, err = template.Format(ctx, map[string]any{})
 	if err == nil {
 		t.Error("Expected error for missing variable")
 	}
@@ -2058,7 +2106,7 @@ func TestConcurrency_TemplateFormatting(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < numIterations; j++ {
-				inputs := map[string]interface{}{
+				inputs := map[string]any{
 					"name": "User" + string(rune(j%26+65)), // A-Z cycling
 					"id":   goroutineID,
 				}
@@ -2106,7 +2154,7 @@ func TestConcurrency_AdapterFormatting(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < numIterations; j++ {
-				inputs := map[string]interface{}{
+				inputs := map[string]any{
 					"data": "item" + string(rune(j%10+48)),           // 0-9 cycling
 					"user": "user" + string(rune(goroutineID%26+65)), // A-Z cycling
 				}
@@ -2168,7 +2216,7 @@ func TestConcurrency_ManagerOperations(t *testing.T) {
 				}
 
 				// Format with template
-				inputs := map[string]interface{}{
+				inputs := map[string]any{
 					"name": fmt.Sprintf("User%d", goroutineID),
 				}
 
@@ -2227,8 +2275,8 @@ func TestConcurrency_ChatAdapterFormatting(t *testing.T) {
 			defer wg.Done()
 
 			for j := 0; j < numIterations; j++ {
-				inputs := map[string]interface{}{
-					"id":       fmt.Sprintf("%d", goroutineID), // Convert to string as adapter expects strings
+				inputs := map[string]any{
+					"id":       strconv.Itoa(goroutineID), // Convert to string as adapter expects strings
 					"question": fmt.Sprintf("What is %d?", j),
 				}
 
@@ -2284,7 +2332,7 @@ func TestTimeoutHandling(t *testing.T) {
 	}
 
 	// This should not timeout for simple operations, but tests the timeout configuration
-	_, err = template.Format(ctx, map[string]interface{}{"name": "Test"})
+	_, err = template.Format(ctx, map[string]any{"name": "Test"})
 	if err != nil {
 		t.Errorf("Format() error = %v", err)
 	}

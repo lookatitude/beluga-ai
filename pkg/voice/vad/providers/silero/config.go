@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
-// SileroConfig extends the base VAD config with Silero VAD specific settings
+// SileroConfig extends the base VAD config with Silero VAD specific settings.
 type SileroConfig struct {
 	*vad.Config
 
@@ -29,7 +29,7 @@ type SileroConfig struct {
 	FrameSize int `mapstructure:"frame_size" yaml:"frame_size" default:"512" validate:"min=64,max=4096"`
 }
 
-// DefaultSileroConfig returns a default Silero VAD configuration
+// DefaultSileroConfig returns a default Silero VAD configuration.
 func DefaultSileroConfig() *SileroConfig {
 	return &SileroConfig{
 		Config:             vad.DefaultConfig(),

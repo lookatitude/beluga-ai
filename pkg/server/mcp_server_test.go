@@ -28,6 +28,7 @@ func TestMCPServerToolRegistration(t *testing.T) {
 	}
 
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Test registering tools
 	tool1 := newMockMCPTool("calculator", "Performs calculations")
@@ -73,6 +74,7 @@ func TestMCPServerResourceRegistration(t *testing.T) {
 	}
 
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Test registering resources
 	resource1 := newMockMCPResource("file://config.json", "config", "Configuration file", "application/json", "{}")
@@ -118,6 +120,7 @@ func TestMCPServerToolExecution(t *testing.T) {
 	}
 
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Register a tool
 	tool := newMockMCPTool("test-tool", "A test tool")
@@ -127,7 +130,7 @@ func TestMCPServerToolExecution(t *testing.T) {
 	}
 
 	// Test successful tool execution
-	input := map[string]interface{}{
+	input := map[string]any{
 		"input": "test data",
 		"value": 42,
 	}
@@ -171,6 +174,7 @@ func TestMCPServerResourceReading(t *testing.T) {
 	}
 
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Register a resource
 	resource := newMockMCPResource("test://resource", "test-resource", "A test resource", "text/plain", "test content")
@@ -204,7 +208,7 @@ func TestMCPServerInitialization(t *testing.T) {
 
 	// Test that the server implements the Server interface
 	var _ iface.Server = server
-	var _ MCPServer = server
+	_ = server
 
 	// Test health check
 	isHealthy := server.IsHealthy(context.Background())
@@ -217,27 +221,27 @@ func TestMCPServerInitialization(t *testing.T) {
 
 func TestMCPProtocolMessages(t *testing.T) {
 	tests := []struct {
+		message map[string]any
 		name    string
-		message map[string]interface{}
 		wantErr bool
 	}{
 		{
 			name: "valid_initialize",
-			message: map[string]interface{}{
+			message: map[string]any{
 				"jsonrpc": "2.0",
 				"id":      1,
 				"method":  "initialize",
-				"params": map[string]interface{}{
+				"params": map[string]any{
 					"protocolVersion": "2024-11-05",
-					"capabilities":    map[string]interface{}{},
-					"clientInfo":      map[string]interface{}{"name": "test-client"},
+					"capabilities":    map[string]any{},
+					"clientInfo":      map[string]any{"name": "test-client"},
 				},
 			},
 			wantErr: false,
 		},
 		{
 			name: "valid_list_tools",
-			message: map[string]interface{}{
+			message: map[string]any{
 				"jsonrpc": "2.0",
 				"id":      2,
 				"method":  "tools/list",
@@ -246,7 +250,7 @@ func TestMCPProtocolMessages(t *testing.T) {
 		},
 		{
 			name: "valid_list_resources",
-			message: map[string]interface{}{
+			message: map[string]any{
 				"jsonrpc": "2.0",
 				"id":      3,
 				"method":  "resources/list",
@@ -255,7 +259,7 @@ func TestMCPProtocolMessages(t *testing.T) {
 		},
 		{
 			name: "invalid_method",
-			message: map[string]interface{}{
+			message: map[string]any{
 				"jsonrpc": "2.0",
 				"id":      4,
 				"method":  "invalid_method",
@@ -274,7 +278,7 @@ func TestMCPProtocolMessages(t *testing.T) {
 				return
 			}
 
-			var msg map[string]interface{}
+			var msg map[string]any
 			err = json.Unmarshal(data, &msg)
 			if err != nil {
 				t.Errorf("Failed to unmarshal message: %v", err)
@@ -311,6 +315,7 @@ func TestMCPServerFullIntegration(t *testing.T) {
 	}
 
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Register multiple tools
 	tools := []iface.MCPTool{
@@ -360,7 +365,7 @@ func TestMCPServerFullIntegration(t *testing.T) {
 
 	// Test tool execution for each tool
 	for _, tool := range tools {
-		input := map[string]interface{}{
+		input := map[string]any{
 			"input": "test",
 			"value": 123,
 		}
@@ -386,11 +391,12 @@ func BenchmarkMCPServerToolRegistration(b *testing.B) {
 		}),
 	)
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tool := newMockMCPTool(fmt.Sprintf("tool-%d", i), fmt.Sprintf("Tool %d", i))
-		mcpServer.RegisterTool(tool)
+		_ = mcpServer.RegisterTool(tool)
 	}
 }
 
@@ -404,18 +410,19 @@ func BenchmarkMCPServerToolExecution(b *testing.B) {
 		}),
 	)
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	tool := newMockMCPTool("bench-tool", "Benchmark tool")
-	mcpServer.RegisterTool(tool)
+	_ = mcpServer.RegisterTool(tool)
 
-	input := map[string]interface{}{
+	input := map[string]any{
 		"input": "benchmark data",
 		"value": 42,
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		mcpServer.CallTool(context.Background(), "bench-tool", input)
+		_, _ = mcpServer.CallTool(context.Background(), "bench-tool", input)
 	}
 }
 
@@ -429,6 +436,7 @@ func BenchmarkMCPServerListTools(b *testing.B) {
 		}),
 	)
 	mcpServer := server.(MCPServer)
+	_ = mcpServer
 
 	// Register some tools
 	for i := 0; i < 100; i++ {

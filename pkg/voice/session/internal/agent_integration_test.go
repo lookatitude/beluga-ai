@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewAgentIntegration(t *testing.T) {
@@ -22,7 +23,7 @@ func TestAgentIntegration_GenerateResponse(t *testing.T) {
 
 	// Without callback, should return error
 	response, err := ai.GenerateResponse(ctx, transcript)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, response)
 	assert.Contains(t, err.Error(), "agent callback not set")
 
@@ -36,7 +37,7 @@ func TestAgentIntegration_GenerateResponse(t *testing.T) {
 	})
 
 	response, err = ai.GenerateResponse(ctx, transcript)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, called)
 	assert.Equal(t, transcript, receivedTranscript)
 	assert.Equal(t, "I'm doing well, thank you!", response)
@@ -52,7 +53,7 @@ func TestAgentIntegration_GenerateResponse_Error(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := ai.GenerateResponse(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expectedErr, err)
 }
 
@@ -69,7 +70,7 @@ func TestAgentIntegration_SetAgentCallback(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := ai.GenerateResponse(ctx, "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, called)
 }
 
@@ -85,6 +86,6 @@ func TestAgentIntegration_GenerateResponse_ContextCancellation(t *testing.T) {
 	cancel()
 
 	_, err := ai.GenerateResponse(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
 }

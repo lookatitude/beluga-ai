@@ -11,6 +11,7 @@ package llms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -23,7 +24,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// IntegrationTestConfig holds configuration for integration tests
+// IntegrationTestConfig holds configuration for integration tests.
 type IntegrationTestConfig struct {
 	// Provider configurations
 	AnthropicAPIKey string
@@ -43,7 +44,7 @@ type IntegrationTestConfig struct {
 	RequestDelay     time.Duration
 }
 
-// DefaultIntegrationTestConfig returns a default configuration for integration tests
+// DefaultIntegrationTestConfig returns a default configuration for integration tests.
 func DefaultIntegrationTestConfig() *IntegrationTestConfig {
 	return &IntegrationTestConfig{
 		Timeout:          30 * time.Second,
@@ -56,7 +57,7 @@ func DefaultIntegrationTestConfig() *IntegrationTestConfig {
 	}
 }
 
-// LoadIntegrationTestConfig loads configuration from environment variables
+// LoadIntegrationTestConfig loads configuration from environment variables.
 func LoadIntegrationTestConfig() *IntegrationTestConfig {
 	config := DefaultIntegrationTestConfig()
 
@@ -90,16 +91,16 @@ func LoadIntegrationTestConfig() *IntegrationTestConfig {
 	return config
 }
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
+	lastRequest  time.Time
 	config       *IntegrationTestConfig
 	factory      *Factory
 	providers    map[string]iface.ChatModel
 	requestCount int
-	lastRequest  time.Time
 }
 
-// NewIntegrationTestHelper creates a new integration test helper
+// NewIntegrationTestHelper creates a new integration test helper.
 func NewIntegrationTestHelper() *IntegrationTestHelper {
 	config := LoadIntegrationTestConfig()
 	factory := NewFactory()
@@ -112,7 +113,7 @@ func NewIntegrationTestHelper() *IntegrationTestHelper {
 	}
 }
 
-// SetupProvider sets up a provider for integration testing
+// SetupProvider sets up a provider for integration testing.
 func (h *IntegrationTestHelper) SetupProvider(providerName string, config *Config) (iface.ChatModel, error) {
 	if cached, exists := h.providers[providerName]; exists {
 		return cached, nil
@@ -127,10 +128,10 @@ func (h *IntegrationTestHelper) SetupProvider(providerName string, config *Confi
 	return provider, nil
 }
 
-// SetupAnthropicProvider sets up an Anthropic provider
+// SetupAnthropicProvider sets up an Anthropic provider.
 func (h *IntegrationTestHelper) SetupAnthropicProvider(modelName string) (iface.ChatModel, error) {
 	if h.config.AnthropicAPIKey == "" {
-		return nil, fmt.Errorf("ANTHROPIC_API_KEY not set")
+		return nil, errors.New("ANTHROPIC_API_KEY not set")
 	}
 
 	config := NewConfig(
@@ -145,10 +146,10 @@ func (h *IntegrationTestHelper) SetupAnthropicProvider(modelName string) (iface.
 	return h.SetupProvider("anthropic", config)
 }
 
-// SetupOpenAIProvider sets up an OpenAI provider
+// SetupOpenAIProvider sets up an OpenAI provider.
 func (h *IntegrationTestHelper) SetupOpenAIProvider(modelName string) (iface.ChatModel, error) {
 	if h.config.OpenAIAPIKey == "" {
-		return nil, fmt.Errorf("OPENAI_API_KEY not set")
+		return nil, errors.New("OPENAI_API_KEY not set")
 	}
 
 	config := NewConfig(
@@ -163,7 +164,7 @@ func (h *IntegrationTestHelper) SetupOpenAIProvider(modelName string) (iface.Cha
 	return h.SetupProvider("openai", config)
 }
 
-// SetupBedrockProvider sets up an AWS Bedrock provider
+// SetupBedrockProvider sets up an AWS Bedrock provider.
 func (h *IntegrationTestHelper) SetupBedrockProvider(modelName string) (iface.ChatModel, error) {
 	config := NewConfig(
 		WithProvider("bedrock"),
@@ -177,7 +178,7 @@ func (h *IntegrationTestHelper) SetupBedrockProvider(modelName string) (iface.Ch
 	return h.SetupProvider("bedrock", config)
 }
 
-// SetupOllamaProvider sets up an Ollama provider
+// SetupOllamaProvider sets up an Ollama provider.
 func (h *IntegrationTestHelper) SetupOllamaProvider(modelName string) (iface.ChatModel, error) {
 	config := NewConfig(
 		WithProvider("ollama"),
@@ -191,7 +192,7 @@ func (h *IntegrationTestHelper) SetupOllamaProvider(modelName string) (iface.Cha
 	return h.SetupProvider("ollama", config)
 }
 
-// RateLimit enforces rate limiting between requests
+// RateLimit enforces rate limiting between requests.
 func (h *IntegrationTestHelper) RateLimit() {
 	h.requestCount++
 
@@ -209,8 +210,8 @@ func (h *IntegrationTestHelper) RateLimit() {
 	}
 }
 
-// SetupMockProvider sets up a mock provider for integration testing
-func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string, opts ...interface{}) iface.ChatModel {
+// SetupMockProvider sets up a mock provider for integration testing.
+func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string, opts ...any) iface.ChatModel {
 	// Create a mock provider directly using the test utilities
 	mockOpts := make([]MockOption, 0, len(opts))
 	for _, opt := range opts {
@@ -227,12 +228,12 @@ func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string
 	return mockProvider
 }
 
-// GetFactory returns the factory
+// GetFactory returns the factory.
 func (h *IntegrationTestHelper) GetFactory() *Factory {
 	return h.factory
 }
 
-// GetConfig returns the test configuration as *Config for compatibility
+// GetConfig returns the test configuration as *Config for compatibility.
 func (h *IntegrationTestHelper) GetConfig() *Config {
 	// Convert IntegrationTestConfig to Config for factory compatibility
 	return NewConfig(
@@ -245,17 +246,17 @@ func (h *IntegrationTestHelper) GetConfig() *Config {
 	)
 }
 
-// GetMetrics returns a mock metrics recorder
+// GetMetrics returns a mock metrics recorder.
 func (h *IntegrationTestHelper) GetMetrics() *MockMetricsRecorder {
 	return NewMockMetricsRecorder()
 }
 
-// GetTracing returns a mock tracing helper
+// GetTracing returns a mock tracing helper.
 func (h *IntegrationTestHelper) GetTracing() *MockTracingHelper {
 	return NewMockTracingHelper()
 }
 
-// TestProviderIntegration tests a provider with basic integration tests
+// TestProviderIntegration tests a provider with basic integration tests.
 func (h *IntegrationTestHelper) TestProviderIntegration(t *testing.T, provider iface.ChatModel, providerName string) {
 	if h.config.Verbose {
 		t.Logf("Testing provider: %s", providerName)
@@ -308,10 +309,10 @@ func (h *IntegrationTestHelper) TestProviderIntegration(t *testing.T, provider i
 				if chunk.Err != nil {
 					t.Fatalf("Stream error: %v", chunk.Err)
 				}
-				collectedContent.WriteString(chunk.Content)
+				_, _ = collectedContent.WriteString(chunk.Content)
 			}
 
-			assert.Greater(t, chunkCount, 0, "Should receive at least one chunk")
+			assert.Positive(t, chunkCount, "Should receive at least one chunk")
 			assert.NotEmpty(t, collectedContent.String(), "Should collect some content")
 
 			if h.config.Verbose {
@@ -361,7 +362,7 @@ func (h *IntegrationTestHelper) TestProviderIntegration(t *testing.T, provider i
 	})
 }
 
-// TestCrossProviderComparison compares responses from multiple providers
+// TestCrossProviderComparison compares responses from multiple providers.
 func (h *IntegrationTestHelper) TestCrossProviderComparison(t *testing.T, providers map[string]iface.ChatModel, testPrompt string) {
 	if h.config.SkipExpensive {
 		t.Skip("Skipping expensive cross-provider comparison test")
@@ -378,7 +379,7 @@ func (h *IntegrationTestHelper) TestCrossProviderComparison(t *testing.T, provid
 	results := make(map[string]string)
 
 	for name, provider := range providers {
-		t.Run(fmt.Sprintf("provider_%s", name), func(t *testing.T) {
+		t.Run("provider_"+name, func(t *testing.T) {
 			h.RateLimit()
 
 			response, err := provider.Generate(ctx, messages)
@@ -415,7 +416,7 @@ func (h *IntegrationTestHelper) TestCrossProviderComparison(t *testing.T, provid
 	}
 }
 
-// TestProviderErrorHandling tests error handling scenarios
+// TestProviderErrorHandling tests error handling scenarios.
 func (h *IntegrationTestHelper) TestProviderErrorHandling(t *testing.T, provider iface.ChatModel, providerName string) {
 	if h.config.SkipExpensive {
 		t.Skip("Skipping expensive error handling test")
@@ -457,15 +458,15 @@ func (h *IntegrationTestHelper) TestProviderErrorHandling(t *testing.T, provider
 	})
 }
 
-// IntegrationTestSuite represents a complete integration test suite
+// IntegrationTestSuite represents a complete integration test suite.
 type IntegrationTestSuite struct {
-	Name        string
-	Description string
 	SetupFunc   func(t *testing.T) *IntegrationTestHelper
 	TestFunc    func(t *testing.T, helper *IntegrationTestHelper)
+	Name        string
+	Description string
 }
 
-// RunIntegrationTestSuite runs a complete integration test suite
+// RunIntegrationTestSuite runs a complete integration test suite.
 func RunIntegrationTestSuite(t *testing.T, suite IntegrationTestSuite) {
 	t.Run(suite.Name, func(t *testing.T) {
 		if suite.Description != "" {
@@ -481,7 +482,7 @@ func RunIntegrationTestSuite(t *testing.T, suite IntegrationTestSuite) {
 
 // Example integration test suites
 
-// AnthropicIntegrationTestSuite returns a test suite for Anthropic
+// AnthropicIntegrationTestSuite returns a test suite for Anthropic.
 func AnthropicIntegrationTestSuite() IntegrationTestSuite {
 	return IntegrationTestSuite{
 		Name:        "anthropic_integration",
@@ -502,7 +503,7 @@ func AnthropicIntegrationTestSuite() IntegrationTestSuite {
 	}
 }
 
-// OpenAIIntegrationTestSuite returns a test suite for OpenAI
+// OpenAIIntegrationTestSuite returns a test suite for OpenAI.
 func OpenAIIntegrationTestSuite() IntegrationTestSuite {
 	return IntegrationTestSuite{
 		Name:        "openai_integration",
@@ -523,7 +524,7 @@ func OpenAIIntegrationTestSuite() IntegrationTestSuite {
 	}
 }
 
-// MultiProviderIntegrationTestSuite returns a test suite comparing multiple providers
+// MultiProviderIntegrationTestSuite returns a test suite comparing multiple providers.
 func MultiProviderIntegrationTestSuite() IntegrationTestSuite {
 	return IntegrationTestSuite{
 		Name:        "multi_provider_comparison",
@@ -546,7 +547,7 @@ func MultiProviderIntegrationTestSuite() IntegrationTestSuite {
 				}
 			}
 
-			require.Greater(t, len(providers), 0, "At least one provider should be available")
+			require.NotEmpty(t, providers, "At least one provider should be available")
 
 			helper.providers = providers
 			return helper
@@ -554,7 +555,7 @@ func MultiProviderIntegrationTestSuite() IntegrationTestSuite {
 		TestFunc: func(t *testing.T, helper *IntegrationTestHelper) {
 			// Test each provider individually
 			for name, provider := range helper.providers {
-				t.Run(fmt.Sprintf("individual_%s", name), func(t *testing.T) {
+				t.Run("individual_"+name, func(t *testing.T) {
 					helper.TestProviderIntegration(t, provider, name)
 				})
 			}
@@ -573,7 +574,7 @@ func MultiProviderIntegrationTestSuite() IntegrationTestSuite {
 	}
 }
 
-// OllamaIntegrationTestSuite returns a test suite for Ollama
+// OllamaIntegrationTestSuite returns a test suite for Ollama.
 func OllamaIntegrationTestSuite() IntegrationTestSuite {
 	return IntegrationTestSuite{
 		Name:        "ollama_integration",
@@ -594,7 +595,7 @@ func OllamaIntegrationTestSuite() IntegrationTestSuite {
 	}
 }
 
-// RunAllIntegrationTests runs all available integration tests
+// RunAllIntegrationTests runs all available integration tests.
 func RunAllIntegrationTests(t *testing.T) {
 	suites := []IntegrationTestSuite{}
 

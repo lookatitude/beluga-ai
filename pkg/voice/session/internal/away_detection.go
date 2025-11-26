@@ -5,16 +5,16 @@ import (
 	"time"
 )
 
-// AwayDetection manages user away state detection
+// AwayDetection manages user away state detection.
 type AwayDetection struct {
-	mu                sync.RWMutex
-	awayThreshold     time.Duration
 	lastActivity      time.Time
-	isAway            bool
 	onAwayStateChange func(isAway bool)
+	awayThreshold     time.Duration
+	mu                sync.RWMutex
+	isAway            bool
 }
 
-// NewAwayDetection creates a new away detection manager
+// NewAwayDetection creates a new away detection manager.
 func NewAwayDetection(awayThreshold time.Duration, onAwayStateChange func(isAway bool)) *AwayDetection {
 	return &AwayDetection{
 		awayThreshold:     awayThreshold,
@@ -24,7 +24,7 @@ func NewAwayDetection(awayThreshold time.Duration, onAwayStateChange func(isAway
 	}
 }
 
-// UpdateActivity updates the last activity time and checks away status
+// UpdateActivity updates the last activity time and checks away status.
 func (ad *AwayDetection) UpdateActivity() {
 	ad.mu.Lock()
 	defer ad.mu.Unlock()
@@ -40,7 +40,7 @@ func (ad *AwayDetection) UpdateActivity() {
 	}
 }
 
-// CheckAwayStatus checks if the user should be marked as away
+// CheckAwayStatus checks if the user should be marked as away.
 func (ad *AwayDetection) CheckAwayStatus() bool {
 	ad.mu.Lock()
 	defer ad.mu.Unlock()
@@ -58,14 +58,14 @@ func (ad *AwayDetection) CheckAwayStatus() bool {
 	return ad.isAway
 }
 
-// IsAway returns whether the user is currently away
+// IsAway returns whether the user is currently away.
 func (ad *AwayDetection) IsAway() bool {
 	ad.mu.RLock()
 	defer ad.mu.RUnlock()
 	return ad.isAway
 }
 
-// StartMonitoring starts periodic away status checking
+// StartMonitoring starts periodic away status checking.
 func (ad *AwayDetection) StartMonitoring(checkInterval time.Duration) {
 	go func() {
 		ticker := time.NewTicker(checkInterval)

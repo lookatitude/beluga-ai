@@ -3,29 +3,30 @@ package metrics
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// MetricsCollector provides metrics collection and reporting
+// MetricsCollector provides metrics collection and reporting.
 type MetricsCollector struct {
-	mutex   sync.RWMutex
 	metrics map[string]*Metric
+	mutex   sync.RWMutex
 }
 
-// Metric represents a single metric
+// Metric represents a single metric.
 type Metric struct {
+	Timestamp   time.Time
+	Labels      map[string]string
 	Name        string
 	Description string
 	Value       float64
-	Labels      map[string]string
 	Type        MetricType
-	Timestamp   time.Time
 }
 
-// MetricType represents the type of metric
+// MetricType represents the type of metric.
 type MetricType int
 
 const (
@@ -35,28 +36,28 @@ const (
 	Summary
 )
 
-// NewMetricsCollector creates a new metrics collector
+// NewMetricsCollector creates a new metrics collector.
 func NewMetricsCollector() *MetricsCollector {
 	return &MetricsCollector{
 		metrics: make(map[string]*Metric),
 	}
 }
 
-// Counter creates or increments a counter metric
+// Counter creates or increments a counter metric.
 func (mc *MetricsCollector) Counter(ctx context.Context, name, description string, value float64, labels map[string]string) {
 	mc.updateMetric(name, description, value, labels, Counter, func(m *Metric) {
 		m.Value += value
 	})
 }
 
-// Gauge sets a gauge metric value
+// Gauge sets a gauge metric value.
 func (mc *MetricsCollector) Gauge(ctx context.Context, name, description string, value float64, labels map[string]string) {
 	mc.updateMetric(name, description, value, labels, Gauge, func(m *Metric) {
 		m.Value = value
 	})
 }
 
-// Histogram records a histogram observation
+// Histogram records a histogram observation.
 func (mc *MetricsCollector) Histogram(ctx context.Context, name, description string, value float64, labels map[string]string) {
 	mc.updateMetric(name, description, value, labels, Histogram, func(m *Metric) {
 		// For histogram, we could implement buckets here
@@ -65,17 +66,17 @@ func (mc *MetricsCollector) Histogram(ctx context.Context, name, description str
 	})
 }
 
-// Timing records the duration of an operation
+// Timing records the duration of an operation.
 func (mc *MetricsCollector) Timing(ctx context.Context, name, description string, duration time.Duration, labels map[string]string) {
 	mc.Histogram(ctx, name, description, duration.Seconds(), labels)
 }
 
-// Increment increments a counter by 1
+// Increment increments a counter by 1.
 func (mc *MetricsCollector) Increment(ctx context.Context, name, description string, labels map[string]string) {
 	mc.Counter(ctx, name, description, 1, labels)
 }
 
-// updateMetric updates or creates a metric
+// updateMetric updates or creates a metric.
 func (mc *MetricsCollector) updateMetric(name, description string, value float64, labels map[string]string, typ MetricType, updater func(*Metric)) {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
@@ -98,20 +99,22 @@ func (mc *MetricsCollector) updateMetric(name, description string, value float64
 	metric.Timestamp = time.Now()
 }
 
-// metricKey generates a unique key for a metric
+// metricKey generates a unique key for a metric.
 func (mc *MetricsCollector) metricKey(name string, labels map[string]string) string {
 	key := name
 	if len(labels) > 0 {
 		key += "{"
+		var keySb106 strings.Builder
 		for k, v := range labels {
-			key += k + "=" + v + ","
+			keySb106.WriteString(k + "=" + v + ",")
 		}
+		key += keySb106.String()
 		key = key[:len(key)-1] + "}"
 	}
 	return key
 }
 
-// GetMetric retrieves a metric by name and labels
+// GetMetric retrieves a metric by name and labels.
 func (mc *MetricsCollector) GetMetric(name string, labels map[string]string) (*Metric, bool) {
 	mc.mutex.RLock()
 	defer mc.mutex.RUnlock()
@@ -121,7 +124,7 @@ func (mc *MetricsCollector) GetMetric(name string, labels map[string]string) (*M
 	return metric, exists
 }
 
-// GetAllMetrics returns all collected metrics
+// GetAllMetrics returns all collected metrics.
 func (mc *MetricsCollector) GetAllMetrics() []*Metric {
 	mc.mutex.RLock()
 	defer mc.mutex.RUnlock()
@@ -133,22 +136,22 @@ func (mc *MetricsCollector) GetAllMetrics() []*Metric {
 	return metrics
 }
 
-// Reset clears all metrics
+// Reset clears all metrics.
 func (mc *MetricsCollector) Reset() {
 	mc.mutex.Lock()
 	defer mc.mutex.Unlock()
 	mc.metrics = make(map[string]*Metric)
 }
 
-// Timer provides a convenient way to time operations
+// Timer provides a convenient way to time operations.
 type Timer struct {
-	collector *MetricsCollector
-	name      string
 	start     time.Time
+	collector *MetricsCollector
 	labels    map[string]string
+	name      string
 }
 
-// StartTimer starts a timer for measuring operation duration
+// StartTimer starts a timer for measuring operation duration.
 func (mc *MetricsCollector) StartTimer(ctx context.Context, name string, labels map[string]string) iface.Timer {
 	return &Timer{
 		collector: mc,
@@ -158,19 +161,19 @@ func (mc *MetricsCollector) StartTimer(ctx context.Context, name string, labels 
 	}
 }
 
-// Stop stops the timer and records the duration
+// Stop stops the timer and records the duration.
 func (t *Timer) Stop(ctx context.Context, description string) {
 	duration := time.Since(t.start)
 	t.collector.Timing(ctx, t.name, description, duration, t.labels)
 }
 
-// Observation represents a single observation for statistical metrics
+// Observation represents a single observation for statistical metrics.
 type Observation struct {
-	Value     float64
 	Timestamp time.Time
+	Value     float64
 }
 
-// StatisticalMetrics provides statistical calculations
+// StatisticalMetrics provides statistical calculations.
 type StatisticalMetrics struct {
 	Name         string
 	Description  string
@@ -178,7 +181,7 @@ type StatisticalMetrics struct {
 	mutex        sync.RWMutex
 }
 
-// NewStatisticalMetrics creates a new statistical metrics collector
+// NewStatisticalMetrics creates a new statistical metrics collector.
 func NewStatisticalMetrics(name, description string) *StatisticalMetrics {
 	return &StatisticalMetrics{
 		Name:         name,
@@ -187,7 +190,7 @@ func NewStatisticalMetrics(name, description string) *StatisticalMetrics {
 	}
 }
 
-// Observe adds a new observation
+// Observe adds a new observation.
 func (sm *StatisticalMetrics) Observe(value float64) {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
@@ -198,14 +201,14 @@ func (sm *StatisticalMetrics) Observe(value float64) {
 	})
 }
 
-// Count returns the number of observations
+// Count returns the number of observations.
 func (sm *StatisticalMetrics) Count() int {
 	sm.mutex.RLock()
 	defer sm.mutex.RUnlock()
 	return len(sm.Observations)
 }
 
-// Mean calculates the arithmetic mean
+// Mean calculates the arithmetic mean.
 func (sm *StatisticalMetrics) Mean() float64 {
 	sm.mutex.RLock()
 	defer sm.mutex.RUnlock()
@@ -221,7 +224,7 @@ func (sm *StatisticalMetrics) Mean() float64 {
 	return sum / float64(len(sm.Observations))
 }
 
-// Min returns the minimum value
+// Min returns the minimum value.
 func (sm *StatisticalMetrics) Min() float64 {
 	sm.mutex.RLock()
 	defer sm.mutex.RUnlock()
@@ -239,7 +242,7 @@ func (sm *StatisticalMetrics) Min() float64 {
 	return min
 }
 
-// Max returns the maximum value
+// Max returns the maximum value.
 func (sm *StatisticalMetrics) Max() float64 {
 	sm.mutex.RLock()
 	defer sm.mutex.RUnlock()
@@ -257,27 +260,27 @@ func (sm *StatisticalMetrics) Max() float64 {
 	return max
 }
 
-// Clear removes all observations
+// Clear removes all observations.
 func (sm *StatisticalMetrics) Clear() {
 	sm.mutex.Lock()
 	defer sm.mutex.Unlock()
 	sm.Observations = sm.Observations[:0]
 }
 
-// SimpleHealthChecker provides a simple health check wrapper
+// SimpleHealthChecker provides a simple health check wrapper.
 type SimpleHealthChecker struct {
 	checks map[string]iface.HealthCheckFunc
 	mutex  sync.RWMutex
 }
 
-// NewSimpleHealthChecker creates a new simple health checker
+// NewSimpleHealthChecker creates a new simple health checker.
 func NewSimpleHealthChecker() *SimpleHealthChecker {
 	return &SimpleHealthChecker{
 		checks: make(map[string]iface.HealthCheckFunc),
 	}
 }
 
-// RegisterCheck registers a health check function
+// RegisterCheck registers a health check function.
 func (shc *SimpleHealthChecker) RegisterCheck(name string, check iface.HealthCheckFunc) error {
 	shc.mutex.Lock()
 	defer shc.mutex.Unlock()
@@ -285,7 +288,7 @@ func (shc *SimpleHealthChecker) RegisterCheck(name string, check iface.HealthChe
 	return nil
 }
 
-// RunChecks runs all registered health checks
+// RunChecks runs all registered health checks.
 func (shc *SimpleHealthChecker) RunChecks(ctx context.Context) map[string]iface.HealthCheckResult {
 	shc.mutex.RLock()
 	defer shc.mutex.RUnlock()
@@ -309,7 +312,7 @@ func (shc *SimpleHealthChecker) RunChecks(ctx context.Context) map[string]iface.
 	return results
 }
 
-// IsHealthy returns true if all health checks pass
+// IsHealthy returns true if all health checks pass.
 func (shc *SimpleHealthChecker) IsHealthy(ctx context.Context) bool {
 	results := shc.RunChecks(ctx)
 	for _, result := range results {

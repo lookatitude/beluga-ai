@@ -11,17 +11,17 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Config holds configuration for Ollama embedder
+// Config holds configuration for Ollama embedder.
 type Config struct {
 	ServerURL  string
 	Model      string
+	KeepAlive  string
 	Timeout    time.Duration
 	MaxRetries int
-	KeepAlive  string
 	Enabled    bool
 }
 
-// HealthChecker interface for health checks
+// HealthChecker interface for health checks.
 type HealthChecker interface {
 	Check(ctx context.Context) error
 }
@@ -78,7 +78,6 @@ func (e *OllamaEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 	defer span.End()
 
 	defer func() {
-
 	}()
 
 	if len(documents) == 0 {
@@ -132,7 +131,6 @@ func (e *OllamaEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 		span.SetAttributes(
 			attribute.Int("output_dimension", len(embeddings[0])),
 		)
-
 	}
 
 	return embeddings, nil
@@ -149,7 +147,6 @@ func (e *OllamaEmbedder) EmbedQuery(ctx context.Context, query string) ([]float3
 	defer span.End()
 
 	defer func() {
-
 	}()
 
 	if query == "" {
@@ -203,7 +200,7 @@ func (e *OllamaEmbedder) GetDimension(ctx context.Context) (int, error) {
 	return 0, nil
 }
 
-// Check performs a health check on the Ollama embedder
+// Check performs a health check on the Ollama embedder.
 func (e *OllamaEmbedder) Check(ctx context.Context) error {
 	_, span := e.tracer.Start(ctx, "ollama.health_check")
 	defer span.End()
@@ -214,5 +211,7 @@ func (e *OllamaEmbedder) Check(ctx context.Context) error {
 }
 
 // Ensure OllamaEmbedder implements the interfaces.
-var _ iface.Embedder = (*OllamaEmbedder)(nil)
-var _ HealthChecker = (*OllamaEmbedder)(nil)
+var (
+	_ iface.Embedder = (*OllamaEmbedder)(nil)
+	_ HealthChecker  = (*OllamaEmbedder)(nil)
+)

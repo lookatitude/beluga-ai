@@ -21,8 +21,8 @@ type Factory interface {
 // ProviderRegistry is the global factory for creating embedder instances.
 // It maintains a registry of available providers and their creation functions.
 type ProviderRegistry struct {
-	mu       sync.RWMutex
 	creators map[string]func(ctx context.Context, config Config) (iface.Embedder, error)
+	mu       sync.RWMutex
 }
 
 // NewProviderRegistry creates a new ProviderRegistry instance.
@@ -67,7 +67,7 @@ func (f *ProviderRegistry) ListProviders() []string {
 	return names
 }
 
-// Global factory instance for easy access
+// Global factory instance for easy access.
 var globalRegistry = NewProviderRegistry()
 
 // RegisterGlobal registers a provider with the global factory.

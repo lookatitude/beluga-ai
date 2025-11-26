@@ -159,7 +159,7 @@ func TestMyService(t *testing.T) {
 
     // Test your service
     err := service.ProcessData(context.Background(), "test data")
-    assert.NoError(t, err)
+    require.NoError(t, err)
 
     // Verify monitoring calls
     assert.Len(t, mockMonitor.LoggerValue.InfoCalls, 1)

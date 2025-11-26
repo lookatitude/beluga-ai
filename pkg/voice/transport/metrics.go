@@ -2,12 +2,13 @@ package transport
 
 import (
 	"context"
+	"time"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"time"
 )
 
-// MetricsRecorder defines the interface for recording metrics
+// MetricsRecorder defines the interface for recording metrics.
 type MetricsRecorder interface {
 	RecordConnection(ctx context.Context, provider string, duration time.Duration, success bool)
 	RecordDisconnection(ctx context.Context, provider string, duration time.Duration)
@@ -18,41 +19,41 @@ type MetricsRecorder interface {
 	DecrementConnections(ctx context.Context, provider string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled
+// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
 type NoOpMetrics struct{}
 
-// NewNoOpMetrics creates a new no-operation metrics recorder
+// NewNoOpMetrics creates a new no-operation metrics recorder.
 func NewNoOpMetrics() *NoOpMetrics {
 	return &NoOpMetrics{}
 }
 
-// RecordConnection is a no-op implementation
+// RecordConnection is a no-op implementation.
 func (n *NoOpMetrics) RecordConnection(ctx context.Context, provider string, duration time.Duration, success bool) {
 }
 
-// RecordDisconnection is a no-op implementation
+// RecordDisconnection is a no-op implementation.
 func (n *NoOpMetrics) RecordDisconnection(ctx context.Context, provider string, duration time.Duration) {
 }
 
-// RecordAudioSent is a no-op implementation
+// RecordAudioSent is a no-op implementation.
 func (n *NoOpMetrics) RecordAudioSent(ctx context.Context, provider string, bytes int64) {
 }
 
-// RecordAudioReceived is a no-op implementation
+// RecordAudioReceived is a no-op implementation.
 func (n *NoOpMetrics) RecordAudioReceived(ctx context.Context, provider string, bytes int64) {
 }
 
-// RecordError is a no-op implementation
+// RecordError is a no-op implementation.
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 }
 
-// IncrementConnections is a no-op implementation
+// IncrementConnections is a no-op implementation.
 func (n *NoOpMetrics) IncrementConnections(ctx context.Context, provider string) {}
 
-// DecrementConnections is a no-op implementation
+// DecrementConnections is a no-op implementation.
 func (n *NoOpMetrics) DecrementConnections(ctx context.Context, provider string) {}
 
-// Metrics contains all the metrics for Transport operations
+// Metrics contains all the metrics for Transport operations.
 type Metrics struct {
 	connections       metric.Int64Counter
 	disconnections    metric.Int64Counter
@@ -65,7 +66,7 @@ type Metrics struct {
 	activeConnections metric.Int64UpDownCounter
 }
 
-// NewMetrics creates a new Metrics instance
+// NewMetrics creates a new Metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
 	m := &Metrics{}
 
@@ -82,7 +83,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	return m
 }
 
-// RecordConnection records a connection operation
+// RecordConnection records a connection operation.
 func (m *Metrics) RecordConnection(ctx context.Context, provider string, duration time.Duration, success bool) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -95,7 +96,7 @@ func (m *Metrics) RecordConnection(ctx context.Context, provider string, duratio
 	}
 }
 
-// RecordDisconnection records a disconnection operation
+// RecordDisconnection records a disconnection operation.
 func (m *Metrics) RecordDisconnection(ctx context.Context, provider string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -104,7 +105,7 @@ func (m *Metrics) RecordDisconnection(ctx context.Context, provider string, dura
 	m.activeConnections.Add(ctx, -1, metric.WithAttributes(attrs...))
 }
 
-// RecordAudioSent records audio sent
+// RecordAudioSent records audio sent.
 func (m *Metrics) RecordAudioSent(ctx context.Context, provider string, bytes int64) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -113,7 +114,7 @@ func (m *Metrics) RecordAudioSent(ctx context.Context, provider string, bytes in
 	m.bytesSent.Add(ctx, bytes, metric.WithAttributes(attrs...))
 }
 
-// RecordAudioReceived records audio received
+// RecordAudioReceived records audio received.
 func (m *Metrics) RecordAudioReceived(ctx context.Context, provider string, bytes int64) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -122,7 +123,7 @@ func (m *Metrics) RecordAudioReceived(ctx context.Context, provider string, byte
 	m.bytesReceived.Add(ctx, bytes, metric.WithAttributes(attrs...))
 }
 
-// RecordError records an error
+// RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -132,7 +133,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 	m.connectionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// IncrementConnections increments the active connections counter
+// IncrementConnections increments the active connections counter.
 func (m *Metrics) IncrementConnections(ctx context.Context, provider string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -140,7 +141,7 @@ func (m *Metrics) IncrementConnections(ctx context.Context, provider string) {
 	m.activeConnections.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// DecrementConnections decrements the active connections counter
+// DecrementConnections decrements the active connections counter.
 func (m *Metrics) DecrementConnections(ctx context.Context, provider string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),

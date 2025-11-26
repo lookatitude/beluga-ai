@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewConverter(t *testing.T) {
@@ -13,12 +14,12 @@ func TestNewConverter(t *testing.T) {
 
 func TestConverter_Convert(t *testing.T) {
 	tests := []struct {
-		name    string
-		data    []byte
 		from    *AudioFormat
 		to      *AudioFormat
-		wantErr bool
+		name    string
 		errMsg  string
+		data    []byte
+		wantErr bool
 	}{
 		{
 			name: "same format - no conversion needed",
@@ -178,13 +179,13 @@ func TestConverter_Convert(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := converter.Convert(tt.data, tt.from, tt.to)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tt.errMsg != "" {
 					assert.Contains(t, err.Error(), tt.errMsg)
 				}
 				assert.Nil(t, result)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.data, result)
 			}
 		})

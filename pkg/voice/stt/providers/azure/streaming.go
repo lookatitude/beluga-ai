@@ -3,8 +3,10 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,7 +15,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 
-// AzureStreamingSession implements the StreamingSession interface for Azure Speech Services WebSocket
+// AzureStreamingSession implements the StreamingSession interface for Azure Speech Services WebSocket.
 type AzureStreamingSession struct {
 	config   *AzureConfig
 	conn     *websocket.Conn
@@ -25,7 +27,7 @@ type AzureStreamingSession struct {
 	wg       sync.WaitGroup
 }
 
-// NewAzureStreamingSession creates a new Azure Speech Services WebSocket streaming session
+// NewAzureStreamingSession creates a new Azure Speech Services WebSocket streaming session.
 func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.StreamingSession, error) {
 	// Build WebSocket URL with query parameters
 	url := fmt.Sprintf("%s?language=%s&format=detailed",
@@ -44,7 +46,7 @@ func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.S
 		url += "&diarization=true"
 	}
 	if config.EndpointID != "" {
-		url += fmt.Sprintf("&endpointId=%s", config.EndpointID)
+		url += "&endpointId=" + config.EndpointID
 	}
 
 	// Create request headers
@@ -60,9 +62,13 @@ func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.S
 	conn, resp, err := dialer.Dial(url, headers)
 	if err != nil {
 		if resp != nil {
+			_ = resp.Body.Close() //nolint:errcheck // Best effort to close response body on error
 			return nil, stt.ErrorFromHTTPStatus("StartStreaming", resp.StatusCode, err)
 		}
 		return nil, stt.NewSTTError("StartStreaming", stt.ErrCodeNetworkError, err)
+	}
+	if resp != nil {
+		_ = resp.Body.Close() //nolint:errcheck // Close response body after successful WebSocket handshake
 	}
 
 	// Create context with cancel
@@ -91,7 +97,7 @@ func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.S
 	return session, nil
 }
 
-// SendAudio sends audio data to the streaming session
+// SendAudio sends audio data to the streaming session.
 func (s *AzureStreamingSession) SendAudio(ctx context.Context, audio []byte) error {
 	s.mu.RLock()
 	closed := s.closed
@@ -99,11 +105,11 @@ func (s *AzureStreamingSession) SendAudio(ctx context.Context, audio []byte) err
 	s.mu.RUnlock()
 
 	if closed {
-		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, fmt.Errorf("session closed"))
+		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, errors.New("session closed"))
 	}
 
 	if conn == nil {
-		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, fmt.Errorf("connection not established"))
+		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, errors.New("connection not established"))
 	}
 
 	// Write audio data as binary message
@@ -115,12 +121,12 @@ func (s *AzureStreamingSession) SendAudio(ctx context.Context, audio []byte) err
 	return nil
 }
 
-// ReceiveTranscript returns the channel for receiving transcript results
+// ReceiveTranscript returns the channel for receiving transcript results.
 func (s *AzureStreamingSession) ReceiveTranscript() <-chan iface.TranscriptResult {
 	return s.resultCh
 }
 
-// Close closes the streaming session
+// Close closes the streaming session.
 func (s *AzureStreamingSession) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -157,7 +163,7 @@ func (s *AzureStreamingSession) Close() error {
 	return nil
 }
 
-// receiveMessages receives messages from the WebSocket connection
+// receiveMessages receives messages from the WebSocket connection.
 func (s *AzureStreamingSession) receiveMessages() {
 	defer s.wg.Done()
 
@@ -224,7 +230,7 @@ func (s *AzureStreamingSession) receiveMessages() {
 	}
 }
 
-// generateConnectionID generates a unique connection ID
+// generateConnectionID generates a unique connection ID.
 func generateConnectionID() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	// Import providers to trigger init() registration
+	// Import providers to trigger init() registration.
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/energy"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/rnnoise"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
@@ -92,7 +92,7 @@ func TestVADProvider_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.Process(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, vad.IsRetryableError(err))
 	})
 
@@ -105,7 +105,7 @@ func TestVADProvider_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.Process(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, vad.IsRetryableError(err))
 	})
 }

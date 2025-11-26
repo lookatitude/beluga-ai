@@ -2,21 +2,22 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
-// StreamingSTT manages streaming STT integration
+// StreamingSTT manages streaming STT integration.
 type StreamingSTT struct {
-	mu               sync.RWMutex
 	sttProvider      iface.STTProvider
 	streamingSession iface.StreamingSession
+	mu               sync.RWMutex
 	active           bool
 }
 
-// NewStreamingSTT creates a new streaming STT manager
+// NewStreamingSTT creates a new streaming STT manager.
 func NewStreamingSTT(provider iface.STTProvider) *StreamingSTT {
 	return &StreamingSTT{
 		sttProvider: provider,
@@ -24,17 +25,17 @@ func NewStreamingSTT(provider iface.STTProvider) *StreamingSTT {
 	}
 }
 
-// Start starts a streaming STT session
+// Start starts a streaming STT session.
 func (sstt *StreamingSTT) Start(ctx context.Context) error {
 	sstt.mu.Lock()
 	defer sstt.mu.Unlock()
 
 	if sstt.active {
-		return fmt.Errorf("streaming session already active")
+		return errors.New("streaming session already active")
 	}
 
 	if sstt.sttProvider == nil {
-		return fmt.Errorf("STT provider not set")
+		return errors.New("STT provider not set")
 	}
 
 	session, err := sstt.sttProvider.StartStreaming(ctx)
@@ -47,7 +48,7 @@ func (sstt *StreamingSTT) Start(ctx context.Context) error {
 	return nil
 }
 
-// SendAudio sends audio to the streaming session
+// SendAudio sends audio to the streaming session.
 func (sstt *StreamingSTT) SendAudio(ctx context.Context, audio []byte) error {
 	sstt.mu.RLock()
 	session := sstt.streamingSession
@@ -55,13 +56,13 @@ func (sstt *StreamingSTT) SendAudio(ctx context.Context, audio []byte) error {
 	sstt.mu.RUnlock()
 
 	if !active || session == nil {
-		return fmt.Errorf("streaming session not active")
+		return errors.New("streaming session not active")
 	}
 
 	return session.SendAudio(ctx, audio)
 }
 
-// ReceiveTranscript receives transcripts from the streaming session
+// ReceiveTranscript receives transcripts from the streaming session.
 func (sstt *StreamingSTT) ReceiveTranscript() <-chan iface.TranscriptResult {
 	sstt.mu.RLock()
 	session := sstt.streamingSession
@@ -76,7 +77,7 @@ func (sstt *StreamingSTT) ReceiveTranscript() <-chan iface.TranscriptResult {
 	return session.ReceiveTranscript()
 }
 
-// Stop stops the streaming session
+// Stop stops the streaming session.
 func (sstt *StreamingSTT) Stop() error {
 	sstt.mu.Lock()
 	defer sstt.mu.Unlock()
@@ -96,7 +97,7 @@ func (sstt *StreamingSTT) Stop() error {
 	return nil
 }
 
-// IsActive returns whether the streaming session is active
+// IsActive returns whether the streaming session is active.
 func (sstt *StreamingSTT) IsActive() bool {
 	sstt.mu.RLock()
 	defer sstt.mu.RUnlock()

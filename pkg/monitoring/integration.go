@@ -7,17 +7,17 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// IntegrationHelper provides helper functions for integrating monitoring with other packages
+// IntegrationHelper provides helper functions for integrating monitoring with other packages.
 type IntegrationHelper struct {
 	monitor iface.Monitor
 }
 
-// NewIntegrationHelper creates a new integration helper
+// NewIntegrationHelper creates a new integration helper.
 func NewIntegrationHelper(monitor iface.Monitor) *IntegrationHelper {
 	return &IntegrationHelper{monitor: monitor}
 }
 
-// WithMonitoring wraps a function with monitoring
+// WithMonitoring wraps a function with monitoring.
 func (ih *IntegrationHelper) WithMonitoring(operationName string, fn func() error) error {
 	ctx := context.Background()
 	ctx, span := ih.monitor.Tracer().StartSpan(ctx, operationName)
@@ -31,7 +31,7 @@ func (ih *IntegrationHelper) WithMonitoring(operationName string, fn func() erro
 	err := fn()
 	if err != nil {
 		span.SetError(err)
-		ih.monitor.Logger().Error(ctx, operationName+" failed", map[string]interface{}{
+		ih.monitor.Logger().Error(ctx, operationName+" failed", map[string]any{
 			"error": err.Error(),
 		})
 		return err
@@ -41,7 +41,7 @@ func (ih *IntegrationHelper) WithMonitoring(operationName string, fn func() erro
 	return nil
 }
 
-// WithMonitoringAndContext wraps a function with monitoring and context
+// WithMonitoringAndContext wraps a function with monitoring and context.
 func (ih *IntegrationHelper) WithMonitoringAndContext(ctx context.Context, operationName string, fn func(context.Context) error) error {
 	ctx, span := ih.monitor.Tracer().StartSpan(ctx, operationName)
 	defer ih.monitor.Tracer().FinishSpan(span)
@@ -54,7 +54,7 @@ func (ih *IntegrationHelper) WithMonitoringAndContext(ctx context.Context, opera
 	err := fn(ctx)
 	if err != nil {
 		span.SetError(err)
-		ih.monitor.Logger().Error(ctx, operationName+" failed", map[string]interface{}{
+		ih.monitor.Logger().Error(ctx, operationName+" failed", map[string]any{
 			"error": err.Error(),
 		})
 		return err
@@ -64,13 +64,13 @@ func (ih *IntegrationHelper) WithMonitoringAndContext(ctx context.Context, opera
 	return nil
 }
 
-// RecordMetric records a custom metric
+// RecordMetric records a custom metric.
 func (ih *IntegrationHelper) RecordMetric(ctx context.Context, name, description string, value float64, labels map[string]string) {
 	ih.monitor.Metrics().Counter(ctx, name, description, value, labels)
 }
 
-// LogEvent logs an event with structured data
-func (ih *IntegrationHelper) LogEvent(ctx context.Context, level, message string, fields map[string]interface{}) {
+// LogEvent logs an event with structured data.
+func (ih *IntegrationHelper) LogEvent(ctx context.Context, level, message string, fields map[string]any) {
 	switch level {
 	case "debug":
 		ih.monitor.Logger().Debug(ctx, message, fields)
@@ -87,22 +87,22 @@ func (ih *IntegrationHelper) LogEvent(ctx context.Context, level, message string
 	}
 }
 
-// CheckSafety performs a safety check on content
+// CheckSafety performs a safety check on content.
 func (ih *IntegrationHelper) CheckSafety(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error) {
 	return ih.monitor.SafetyChecker().CheckContent(ctx, content, contextInfo)
 }
 
-// ValidateBestPractices validates best practices for data
-func (ih *IntegrationHelper) ValidateBestPractices(ctx context.Context, data interface{}, component string) []iface.ValidationIssue {
+// ValidateBestPractices validates best practices for data.
+func (ih *IntegrationHelper) ValidateBestPractices(ctx context.Context, data any, component string) []iface.ValidationIssue {
 	return ih.monitor.BestPracticesChecker().Validate(ctx, data, component)
 }
 
-// WithHealthCheck registers a health check
+// WithHealthCheck registers a health check.
 func (ih *IntegrationHelper) WithHealthCheck(name string, check iface.HealthCheckFunc) error {
 	return ih.monitor.HealthChecker().RegisterCheck(name, check)
 }
 
-// IsSystemHealthy checks if the system is healthy
+// IsSystemHealthy checks if the system is healthy.
 func (ih *IntegrationHelper) IsSystemHealthy(ctx context.Context) bool {
 	return ih.monitor.IsHealthy(ctx)
 }

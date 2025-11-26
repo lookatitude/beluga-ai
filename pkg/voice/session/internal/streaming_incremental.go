@@ -5,24 +5,24 @@ import (
 	"sync"
 )
 
-// StreamingIncremental manages streaming incremental processing
+// StreamingIncremental manages streaming incremental processing.
 type StreamingIncremental struct {
+	chunkProcessor func(ctx context.Context, chunk []byte) error
+	results        []any
 	mu             sync.RWMutex
 	enabled        bool
-	chunkProcessor func(ctx context.Context, chunk []byte) error
-	results        []interface{}
 }
 
-// NewStreamingIncremental creates a new streaming incremental processor
+// NewStreamingIncremental creates a new streaming incremental processor.
 func NewStreamingIncremental(enabled bool, chunkProcessor func(ctx context.Context, chunk []byte) error) *StreamingIncremental {
 	return &StreamingIncremental{
 		enabled:        enabled,
 		chunkProcessor: chunkProcessor,
-		results:        make([]interface{}, 0),
+		results:        make([]any, 0),
 	}
 }
 
-// ProcessChunk processes a single chunk incrementally
+// ProcessChunk processes a single chunk incrementally.
 func (si *StreamingIncremental) ProcessChunk(ctx context.Context, chunk []byte) error {
 	if !si.enabled {
 		return nil
@@ -39,31 +39,31 @@ func (si *StreamingIncremental) ProcessChunk(ctx context.Context, chunk []byte) 
 	return nil
 }
 
-// AddResult adds a processing result
-func (si *StreamingIncremental) AddResult(result interface{}) {
+// AddResult adds a processing result.
+func (si *StreamingIncremental) AddResult(result any) {
 	si.mu.Lock()
 	defer si.mu.Unlock()
 	si.results = append(si.results, result)
 }
 
-// GetResults returns all accumulated results
-func (si *StreamingIncremental) GetResults() []interface{} {
+// GetResults returns all accumulated results.
+func (si *StreamingIncremental) GetResults() []any {
 	si.mu.RLock()
 	defer si.mu.RUnlock()
 
-	result := make([]interface{}, len(si.results))
+	result := make([]any, len(si.results))
 	copy(result, si.results)
 	return result
 }
 
-// ClearResults clears all accumulated results
+// ClearResults clears all accumulated results.
 func (si *StreamingIncremental) ClearResults() {
 	si.mu.Lock()
 	defer si.mu.Unlock()
 	si.results = si.results[:0]
 }
 
-// IsEnabled returns whether streaming incremental processing is enabled
+// IsEnabled returns whether streaming incremental processing is enabled.
 func (si *StreamingIncremental) IsEnabled() bool {
 	si.mu.RLock()
 	defer si.mu.RUnlock()

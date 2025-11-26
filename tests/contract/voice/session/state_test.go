@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestState_Contract tests the contract for state management
+// TestState_Contract tests the contract for state management.
 func TestState_Contract(t *testing.T) {
 	t.Run("initial state is initial", func(t *testing.T) {
 		sess := createTestSession(t)

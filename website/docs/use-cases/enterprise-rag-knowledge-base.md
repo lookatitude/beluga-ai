@@ -714,7 +714,7 @@ func TestRetrieveStep(t *testing.T) {
 
     input := map[string]any{"query": "test"}
     result, err := step.Invoke(context.Background(), input)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, result.(map[string]any)["context"].(string), "Test content")
 }
 
@@ -730,7 +730,7 @@ func TestRAGChain(t *testing.T) {
     input := map[string]any{"query": "What is AI?"}
     result, err := chain.Invoke(context.Background(), input)
     
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.NotEmpty(t, result.(map[string]any)["answer"])
 }
 ```

@@ -8,6 +8,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/session/internal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorRecovery_ShouldRetry(t *testing.T) {
@@ -45,7 +46,7 @@ func TestErrorRecovery_RetryWithBackoff(t *testing.T) {
 
 	// With maxRetries=2, the function will try attempts 0, 1, 2 (3 total)
 	// The test expects success on attempt 3, which should happen
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, 3, attempts)
 }
 

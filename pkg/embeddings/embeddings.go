@@ -13,6 +13,7 @@ package embeddings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
@@ -23,7 +24,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// EmbedderFactory provides factory methods for creating embedder instances
+// EmbedderFactory provides factory methods for creating embedder instances.
 type EmbedderFactory struct {
 	config  *Config
 	metrics *Metrics
@@ -31,10 +32,10 @@ type EmbedderFactory struct {
 	options *optionConfig
 }
 
-// NewEmbedderFactory creates a new embedder factory with the given configuration
+// NewEmbedderFactory creates a new embedder factory with the given configuration.
 func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, errors.New("config cannot be nil")
 	}
 
 	if err := config.Validate(); err != nil {
@@ -68,7 +69,7 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 	return factory, nil
 }
 
-// NewEmbedder creates an embedder instance based on the provider type
+// NewEmbedder creates an embedder instance based on the provider type.
 func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, error) {
 	switch providerType {
 	case "openai":
@@ -82,10 +83,10 @@ func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, erro
 	}
 }
 
-// newOpenAIEmbedder creates an OpenAI embedder instance
+// newOpenAIEmbedder creates an OpenAI embedder instance.
 func (f *EmbedderFactory) newOpenAIEmbedder() (iface.Embedder, error) {
 	if f.config.OpenAI == nil || !f.config.OpenAI.Enabled {
-		return nil, fmt.Errorf("OpenAI provider is not configured or disabled")
+		return nil, errors.New("OpenAI provider is not configured or disabled")
 	}
 
 	if err := f.config.OpenAI.Validate(); err != nil {
@@ -105,10 +106,10 @@ func (f *EmbedderFactory) newOpenAIEmbedder() (iface.Embedder, error) {
 	return openai.NewOpenAIEmbedder(openaiConfig, f.tracer)
 }
 
-// newOllamaEmbedder creates an Ollama embedder instance
+// newOllamaEmbedder creates an Ollama embedder instance.
 func (f *EmbedderFactory) newOllamaEmbedder() (iface.Embedder, error) {
 	if f.config.Ollama == nil || !f.config.Ollama.Enabled {
-		return nil, fmt.Errorf("ollama provider is not configured or disabled")
+		return nil, errors.New("ollama provider is not configured or disabled")
 	}
 
 	if err := f.config.Ollama.Validate(); err != nil {
@@ -127,10 +128,10 @@ func (f *EmbedderFactory) newOllamaEmbedder() (iface.Embedder, error) {
 	return ollama.NewOllamaEmbedder(ollamaConfig, f.tracer)
 }
 
-// newMockEmbedder creates a mock embedder instance
+// newMockEmbedder creates a mock embedder instance.
 func (f *EmbedderFactory) newMockEmbedder() (iface.Embedder, error) {
 	if f.config.Mock == nil || !f.config.Mock.Enabled {
-		return nil, fmt.Errorf("mock provider is not configured or disabled")
+		return nil, errors.New("mock provider is not configured or disabled")
 	}
 
 	if err := f.config.Mock.Validate(); err != nil {
@@ -147,7 +148,7 @@ func (f *EmbedderFactory) newMockEmbedder() (iface.Embedder, error) {
 	return mock.NewMockEmbedder(mockConfig, f.tracer)
 }
 
-// GetAvailableProviders returns a list of available provider types
+// GetAvailableProviders returns a list of available provider types.
 func (f *EmbedderFactory) GetAvailableProviders() []string {
 	providers := []string{}
 
@@ -166,12 +167,12 @@ func (f *EmbedderFactory) GetAvailableProviders() []string {
 
 // Health checks
 
-// HealthChecker interface for embedder health checks
+// HealthChecker interface for embedder health checks.
 type HealthChecker interface {
 	Check(ctx context.Context) error
 }
 
-// CheckHealth performs a health check on the embedder
+// CheckHealth performs a health check on the embedder.
 func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) error {
 	embedder, err := f.NewEmbedder(providerType)
 	if err != nil {

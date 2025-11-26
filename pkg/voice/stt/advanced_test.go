@@ -12,10 +12,10 @@ import (
 
 func TestSTTProvider_Transcribe(t *testing.T) {
 	tests := []struct {
-		name          string
 		provider      iface.STTProvider
-		audio         []byte
+		name          string
 		expectedText  string
+		audio         []byte
 		expectedError bool
 	}{
 		{
@@ -50,10 +50,10 @@ func TestSTTProvider_Transcribe(t *testing.T) {
 			text, err := tt.provider.Transcribe(ctx, tt.audio)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Empty(t, text)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedText, text)
 			}
 		})
@@ -62,8 +62,8 @@ func TestSTTProvider_Transcribe(t *testing.T) {
 
 func TestSTTProvider_StartStreaming(t *testing.T) {
 	tests := []struct {
-		name          string
 		provider      iface.STTProvider
+		name          string
 		expectedError bool
 	}{
 		{
@@ -86,19 +86,19 @@ func TestSTTProvider_StartStreaming(t *testing.T) {
 			session, err := tt.provider.StartStreaming(ctx)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, session)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				require.NotNil(t, session)
-				defer session.Close()
+				defer func() { _ = session.Close() }()
 
 				// Test receiving transcripts
 				timeout := time.After(2 * time.Second)
 				select {
 				case result := <-session.ReceiveTranscript():
 					assert.NotEmpty(t, result.Text)
-					assert.NoError(t, result.Error)
+					require.NoError(t, result.Error)
 				case <-timeout:
 					t.Fatal("timeout waiting for transcript")
 				}
@@ -119,10 +119,10 @@ func TestStreamingSession_SendAudio(t *testing.T) {
 	session, err := provider.StartStreaming(ctx)
 	require.NoError(t, err)
 	require.NotNil(t, session)
-	defer session.Close()
+	defer func() { _ = session.Close() }()
 
 	err = session.SendAudio(ctx, []byte{1, 2, 3, 4, 5})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestStreamingSession_Close(t *testing.T) {
@@ -134,9 +134,9 @@ func TestStreamingSession_Close(t *testing.T) {
 	require.NotNil(t, session)
 
 	err = session.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Closing again should not error
 	err = session.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

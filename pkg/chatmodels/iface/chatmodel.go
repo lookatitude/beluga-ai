@@ -35,7 +35,7 @@ type ModelInfoProvider interface {
 // HealthChecker defines the interface for health checking chat model components.
 type HealthChecker interface {
 	// CheckHealth returns the health status information.
-	CheckHealth() map[string]interface{}
+	CheckHealth() map[string]any
 }
 
 // ChatModel defines the core interface for chat-based language models.
@@ -55,8 +55,8 @@ type ModelInfo struct {
 	Name         string
 	Provider     string
 	Version      string
-	MaxTokens    int
 	Capabilities []string
+	MaxTokens    int
 }
 
 // Option represents a functional option for configuring chat models.
@@ -79,14 +79,14 @@ func OptionFunc(f func(config *map[string]any)) Option {
 
 // Options holds the configuration options for chat models.
 type Options struct {
-	Temperature     float32
-	MaxTokens       int
-	TopP            float32
-	StopSequences   []string
 	SystemPrompt    string
-	FunctionCalling bool
+	StopSequences   []string
+	MaxTokens       int
 	Timeout         time.Duration
 	MaxRetries      int
+	Temperature     float32
+	TopP            float32
+	FunctionCalling bool
 	EnableMetrics   bool
 	EnableTracing   bool
 }
@@ -95,5 +95,5 @@ type Options struct {
 // It enables dependency injection and different chat model creation strategies.
 type ChatModelFactory interface {
 	// CreateChatModel creates a new chat model instance based on the provided configuration.
-	CreateChatModel(ctx context.Context, config interface{}) (ChatModel, error)
+	CreateChatModel(ctx context.Context, config any) (ChatModel, error)
 }

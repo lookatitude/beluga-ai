@@ -4,6 +4,7 @@ package common
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -12,14 +13,14 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// RetryConfig holds retry configuration
+// RetryConfig holds retry configuration.
 type RetryConfig struct {
 	MaxRetries int
 	Delay      time.Duration
 	Backoff    float64
 }
 
-// DefaultRetryConfig returns default retry configuration
+// DefaultRetryConfig returns default retry configuration.
 func DefaultRetryConfig() *RetryConfig {
 	return &RetryConfig{
 		MaxRetries: 3,
@@ -28,7 +29,7 @@ func DefaultRetryConfig() *RetryConfig {
 	}
 }
 
-// RetryWithBackoff executes a function with exponential backoff retry logic
+// RetryWithBackoff executes a function with exponential backoff retry logic.
 func RetryWithBackoff(ctx context.Context, config *RetryConfig, operation string, fn func() error) error {
 	var lastErr error
 	delay := config.Delay
@@ -59,25 +60,25 @@ func RetryWithBackoff(ctx context.Context, config *RetryConfig, operation string
 	return llms.WrapError(operation, lastErr)
 }
 
-// MessageConverter provides utilities for converting between different message formats
+// MessageConverter provides utilities for converting between different message formats.
 type MessageConverter struct{}
 
-// NewMessageConverter creates a new MessageConverter
+// NewMessageConverter creates a new MessageConverter.
 func NewMessageConverter() *MessageConverter {
 	return &MessageConverter{}
 }
 
-// ConvertToSchemaMessages converts messages (placeholder for future conversion)
+// ConvertToSchemaMessages converts messages (placeholder for future conversion).
 func (mc *MessageConverter) ConvertToSchemaMessages(messages []schema.Message) ([]schema.Message, error) {
 	if len(messages) == 0 {
-		return nil, fmt.Errorf("no messages provided")
+		return nil, errors.New("no messages provided")
 	}
 
 	// For now, just return the messages as-is since they're already schema messages
 	return messages, nil
 }
 
-// ExtractSystemMessage extracts and removes the system message from a message slice
+// ExtractSystemMessage extracts and removes the system message from a message slice.
 func (mc *MessageConverter) ExtractSystemMessage(messages []schema.Message) (*string, []schema.Message) {
 	if len(messages) == 0 {
 		return nil, messages
@@ -91,15 +92,15 @@ func (mc *MessageConverter) ExtractSystemMessage(messages []schema.Message) (*st
 	return nil, messages
 }
 
-// ToolCallConverter provides utilities for converting tool calls between formats
+// ToolCallConverter provides utilities for converting tool calls between formats.
 type ToolCallConverter struct{}
 
-// NewToolCallConverter creates a new ToolCallConverter
+// NewToolCallConverter creates a new ToolCallConverter.
 func NewToolCallConverter() *ToolCallConverter {
 	return &ToolCallConverter{}
 }
 
-// ConvertToolCallsToSchema converts tool calls (placeholder)
+// ConvertToolCallsToSchema converts tool calls (placeholder).
 func (tcc *ToolCallConverter) ConvertToolCallsToSchema(toolCalls []schema.ToolCall) []schema.ToolCall {
 	if len(toolCalls) == 0 {
 		return nil
@@ -109,87 +110,87 @@ func (tcc *ToolCallConverter) ConvertToolCallsToSchema(toolCalls []schema.ToolCa
 	return toolCalls
 }
 
-// TracingHelper provides utilities for tracing with OpenTelemetry
+// TracingHelper provides utilities for tracing with OpenTelemetry.
 type TracingHelper struct{}
 
-// NewTracingHelper creates a new TracingHelper
+// NewTracingHelper creates a new TracingHelper.
 func NewTracingHelper() *TracingHelper {
 	return &TracingHelper{}
 }
 
-// StartOperation starts a new trace span for an LLM operation
-func (th *TracingHelper) StartOperation(ctx context.Context, operation string, provider, model string) context.Context {
+// StartOperation starts a new trace span for an LLM operation.
+func (th *TracingHelper) StartOperation(ctx context.Context, operation, provider, model string) context.Context {
 	// This is a placeholder - the actual tracing is handled in the main package
 	// to avoid circular dependencies. The main TracingHelper is in the llms package.
 	return ctx
 }
 
-// RecordError records an error on the current span
+// RecordError records an error on the current span.
 func (th *TracingHelper) RecordError(ctx context.Context, err error) {
 	// This is a placeholder - the actual tracing is handled in the main package
 	// to avoid circular dependencies. The main TracingHelper is in the llms package.
 }
 
-// AddSpanAttributes adds attributes to the current span
-func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]interface{}) {
+// AddSpanAttributes adds attributes to the current span.
+func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]any) {
 	// This is a placeholder - the actual tracing is handled in the main package
 	// to avoid circular dependencies. The main TracingHelper is in the llms package.
 }
 
-// EndSpan ends the current span
+// EndSpan ends the current span.
 func (th *TracingHelper) EndSpan(ctx context.Context) {
 	// This is a placeholder - the actual tracing is handled in the main package
 	// to avoid circular dependencies. The main TracingHelper is in the llms package.
 }
 
-// MetricsHelper provides utilities for metrics recording
+// MetricsHelper provides utilities for metrics recording.
 type MetricsHelper struct {
 	metrics *llms.Metrics
 }
 
-// NewMetricsHelper creates a new MetricsHelper
+// NewMetricsHelper creates a new MetricsHelper.
 func NewMetricsHelper(metrics *llms.Metrics) *MetricsHelper {
 	return &MetricsHelper{metrics: metrics}
 }
 
-// RecordRequest records request metrics
+// RecordRequest records request metrics.
 func (mh *MetricsHelper) RecordRequest(ctx context.Context, provider, model string, duration time.Duration) {
 	if mh.metrics != nil {
 		mh.metrics.RecordRequest(ctx, provider, model, duration)
 	}
 }
 
-// RecordError records error metrics
+// RecordError records error metrics.
 func (mh *MetricsHelper) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
 	if mh.metrics != nil {
 		mh.metrics.RecordError(ctx, provider, model, errorCode, duration)
 	}
 }
 
-// RecordTokenUsage records token usage metrics
+// RecordTokenUsage records token usage metrics.
 func (mh *MetricsHelper) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int) {
 	if mh.metrics != nil {
 		mh.metrics.RecordTokenUsage(ctx, provider, model, inputTokens, outputTokens)
 	}
 }
 
-// PromptBuilder provides utilities for building prompts from messages
+// PromptBuilder provides utilities for building prompts from messages.
 type PromptBuilder struct{}
 
-// NewPromptBuilder creates a new PromptBuilder
+// NewPromptBuilder creates a new PromptBuilder.
 func NewPromptBuilder() *PromptBuilder {
 	return &PromptBuilder{}
 }
 
-// BuildChatPrompt builds a chat-style prompt from messages
+// BuildChatPrompt builds a chat-style prompt from messages.
 func (pb *PromptBuilder) BuildChatPrompt(messages []schema.Message, systemPrompt *string) string {
 	var prompt strings.Builder
 
 	// Add system prompt if provided
 	if systemPrompt != nil && *systemPrompt != "" {
-		prompt.WriteString("System: ")
-		prompt.WriteString(*systemPrompt)
-		prompt.WriteString("\n\n")
+		_, _ = prompt.WriteString("System: ")    //nolint:errcheck // strings.Builder.WriteString rarely fails
+		_, _ = prompt.WriteString(*systemPrompt) //nolint:errcheck // strings.Builder.WriteString rarely fails
+		_, _ = prompt.WriteString("\n\n")        //nolint:errcheck // strings.Builder.WriteString rarely fails
 	}
 
 	// Add conversation messages
@@ -199,52 +200,52 @@ func (pb *PromptBuilder) BuildChatPrompt(messages []schema.Message, systemPrompt
 			switch m.GetType() {
 			case schema.RoleSystem:
 				if systemPrompt == nil || *systemPrompt == "" {
-					prompt.WriteString("System: ")
-					prompt.WriteString(m.GetContent())
-					prompt.WriteString("\n\n")
+					_, _ = prompt.WriteString("System: ")     //nolint:errcheck // strings.Builder.WriteString rarely fails
+					_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
+					_, _ = prompt.WriteString("\n\n")         //nolint:errcheck // strings.Builder.WriteString rarely fails
 				}
 			case schema.RoleHuman:
-				prompt.WriteString("Human: ")
-				prompt.WriteString(m.GetContent())
-				prompt.WriteString("\n\nAssistant: ")
+				_, _ = prompt.WriteString("Human: ")      //nolint:errcheck // strings.Builder.WriteString rarely fails
+				_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
+				_, _ = prompt.WriteString("\n\nAssistant: ")
 			case schema.RoleAssistant:
-				prompt.WriteString(m.GetContent())
-				prompt.WriteString("\n\n")
+				_, _ = prompt.WriteString(m.GetContent())
+				_, _ = prompt.WriteString("\n\n")
 			}
 		case *schema.AIMessage:
-			prompt.WriteString(m.GetContent())
-			prompt.WriteString("\n\n")
+			_, _ = prompt.WriteString(m.GetContent())
+			_, _ = prompt.WriteString("\n\n")
 		}
 	}
 
 	return strings.TrimSpace(prompt.String())
 }
 
-// BuildCompletionPrompt builds a simple completion-style prompt
+// BuildCompletionPrompt builds a simple completion-style prompt.
 func (pb *PromptBuilder) BuildCompletionPrompt(prompt string, systemPrompt *string) string {
 	var result strings.Builder
 
 	if systemPrompt != nil && *systemPrompt != "" {
-		result.WriteString(*systemPrompt)
-		result.WriteString("\n\n")
+		_, _ = result.WriteString(*systemPrompt)
+		_, _ = result.WriteString("\n\n")
 	}
 
-	result.WriteString(prompt)
+	_, _ = result.WriteString(prompt)
 	return result.String()
 }
 
-// ValidationHelper provides utilities for input validation
+// ValidationHelper provides utilities for input validation.
 type ValidationHelper struct{}
 
-// NewValidationHelper creates a new ValidationHelper
+// NewValidationHelper creates a new ValidationHelper.
 func NewValidationHelper() *ValidationHelper {
 	return &ValidationHelper{}
 }
 
-// ValidateMessages validates a slice of messages
+// ValidateMessages validates a slice of messages.
 func (vh *ValidationHelper) ValidateMessages(messages []schema.Message) error {
 	if len(messages) == 0 {
-		return fmt.Errorf("messages cannot be empty")
+		return errors.New("messages cannot be empty")
 	}
 
 	for i, msg := range messages {
@@ -261,26 +262,26 @@ func (vh *ValidationHelper) ValidateMessages(messages []schema.Message) error {
 	return nil
 }
 
-// ValidatePrompt validates a prompt string
+// ValidatePrompt validates a prompt string.
 func (vh *ValidationHelper) ValidatePrompt(prompt string) error {
 	if strings.TrimSpace(prompt) == "" {
-		return fmt.Errorf("prompt cannot be empty")
+		return errors.New("prompt cannot be empty")
 	}
 	return nil
 }
 
-// ValidateConfig validates basic configuration
+// ValidateConfig validates basic configuration.
 func (vh *ValidationHelper) ValidateConfig(config *llms.Config) error {
 	if config == nil {
-		return fmt.Errorf("configuration cannot be nil")
+		return errors.New("configuration cannot be nil")
 	}
 
 	if config.Provider == "" {
-		return fmt.Errorf("provider cannot be empty")
+		return errors.New("provider cannot be empty")
 	}
 
 	if config.ModelName == "" {
-		return fmt.Errorf("model name cannot be empty")
+		return errors.New("model name cannot be empty")
 	}
 
 	// Provider-specific validation

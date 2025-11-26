@@ -4,6 +4,7 @@ package window
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -14,14 +15,14 @@ import (
 // ConversationBufferWindowMemory remembers a fixed number of the most recent interactions.
 // It loads the history into a single variable ("history" by default).
 type ConversationBufferWindowMemory struct {
-	ChatHistory    iface.ChatMessageHistory // Underlying storage for messages
-	K              int                      // Number of messages to keep in the window
-	MemoryKey      string                   // Key name for the history variable in prompts
-	InputKey       string                   // Key name for the user input variable (optional, used in SaveContext)
-	OutputKey      string                   // Key name for the AI output variable (optional, used in SaveContext)
-	HumanPrefix    string                   // Prefix for human messages in the buffer string
-	AiPrefix       string                   // Prefix for AI messages in the buffer string
-	ReturnMessages bool                     // If true, LoadMemoryVariables returns []schema.Message, otherwise a formatted string
+	ChatHistory    iface.ChatMessageHistory
+	MemoryKey      string
+	InputKey       string
+	OutputKey      string
+	HumanPrefix    string
+	AiPrefix       string
+	K              int
+	ReturnMessages bool
 }
 
 // NewConversationBufferWindowMemory creates a new ConversationBufferWindowMemory.
@@ -73,9 +74,9 @@ func (m *ConversationBufferWindowMemory) LoadMemoryVariables(ctx context.Context
 
 // SaveContext adds the latest user input and AI output to the chat history.
 // Pruning happens during loading, not saving.
-func (m *ConversationBufferWindowMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *ConversationBufferWindowMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	if m.ChatHistory == nil {
-		return fmt.Errorf("chat history is nil")
+		return errors.New("chat history is nil")
 	}
 
 	inputKey := m.InputKey
@@ -130,7 +131,7 @@ func (m *ConversationBufferWindowMemory) Clear(ctx context.Context) error {
 }
 
 // getInputOutputKeys determines the input and output keys from the given maps.
-func getInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string) {
+func getInputOutputKeys(inputs, outputs map[string]any) (string, string) {
 	if len(inputs) == 0 || len(outputs) == 0 {
 		return "input", "output"
 	}

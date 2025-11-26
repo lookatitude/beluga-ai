@@ -8,7 +8,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// MockMonitor provides a mock implementation of the Monitor interface for testing
+// MockMonitor provides a mock implementation of the Monitor interface for testing.
 type MockMonitor struct {
 	LoggerValue               iface.Logger
 	TracerValue               iface.Tracer
@@ -22,7 +22,7 @@ type MockMonitor struct {
 	IsHealthyValue            bool
 }
 
-// NewMockMonitor creates a new mock monitor with default mock implementations
+// NewMockMonitor creates a new mock monitor with default mock implementations.
 func NewMockMonitor() *MockMonitor {
 	return &MockMonitor{
 		LoggerValue:               &MockLogger{},
@@ -36,7 +36,7 @@ func NewMockMonitor() *MockMonitor {
 	}
 }
 
-// Core interface implementations
+// Core interface implementations.
 func (m *MockMonitor) Logger() iface.Logger                 { return m.LoggerValue }
 func (m *MockMonitor) Tracer() iface.Tracer                 { return m.TracerValue }
 func (m *MockMonitor) Metrics() iface.MetricsCollector      { return m.MetricsValue }
@@ -47,7 +47,7 @@ func (m *MockMonitor) BestPracticesChecker() iface.BestPracticesChecker {
 	return m.BestPracticesCheckerValue
 }
 
-// Lifecycle management
+// Lifecycle management.
 func (m *MockMonitor) Start(ctx context.Context) error {
 	m.StartCalled = true
 	return nil
@@ -62,7 +62,7 @@ func (m *MockMonitor) IsHealthy(ctx context.Context) bool {
 	return m.IsHealthyValue
 }
 
-// MockLogger provides a mock implementation of the Logger interface
+// MockLogger provides a mock implementation of the Logger interface.
 type MockLogger struct {
 	DebugCalls      []DebugCall
 	InfoCalls       []InfoCall
@@ -74,41 +74,41 @@ type MockLogger struct {
 
 type DebugCall struct {
 	Ctx     context.Context
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type InfoCall struct {
 	Ctx     context.Context
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type WarningCall struct {
 	Ctx     context.Context
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type ErrorCall struct {
 	Ctx     context.Context
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type FatalCall struct {
 	Ctx     context.Context
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type WithFieldsCall struct {
-	Fields map[string]interface{}
+	Fields map[string]any
 	Return iface.ContextLogger
 }
 
-func (m *MockLogger) Debug(ctx context.Context, message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockLogger) Debug(ctx context.Context, message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -117,8 +117,8 @@ func (m *MockLogger) Debug(ctx context.Context, message string, fields ...map[st
 	})
 }
 
-func (m *MockLogger) Info(ctx context.Context, message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockLogger) Info(ctx context.Context, message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -127,8 +127,8 @@ func (m *MockLogger) Info(ctx context.Context, message string, fields ...map[str
 	})
 }
 
-func (m *MockLogger) Warning(ctx context.Context, message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockLogger) Warning(ctx context.Context, message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -137,8 +137,8 @@ func (m *MockLogger) Warning(ctx context.Context, message string, fields ...map[
 	})
 }
 
-func (m *MockLogger) Error(ctx context.Context, message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockLogger) Error(ctx context.Context, message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -147,8 +147,8 @@ func (m *MockLogger) Error(ctx context.Context, message string, fields ...map[st
 	})
 }
 
-func (m *MockLogger) Fatal(ctx context.Context, message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockLogger) Fatal(ctx context.Context, message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -157,29 +157,29 @@ func (m *MockLogger) Fatal(ctx context.Context, message string, fields ...map[st
 	})
 }
 
-func (m *MockLogger) WithFields(fields map[string]interface{}) iface.ContextLogger {
+func (m *MockLogger) WithFields(fields map[string]any) iface.ContextLogger {
 	return &MockContextLogger{Logger: m, Fields: fields}
 }
 
-// MockContextLogger provides a mock implementation of the ContextLogger interface
+// MockContextLogger provides a mock implementation of the ContextLogger interface.
 type MockContextLogger struct {
 	Logger *MockLogger
-	Fields map[string]interface{}
+	Fields map[string]any
 }
 
-func (m *MockContextLogger) Debug(ctx context.Context, message string, fields ...map[string]interface{}) {
+func (m *MockContextLogger) Debug(ctx context.Context, message string, fields ...map[string]any) {
 	m.Logger.Debug(ctx, message, fields...)
 }
 
-func (m *MockContextLogger) Info(ctx context.Context, message string, fields ...map[string]interface{}) {
+func (m *MockContextLogger) Info(ctx context.Context, message string, fields ...map[string]any) {
 	m.Logger.Info(ctx, message, fields...)
 }
 
-func (m *MockContextLogger) Error(ctx context.Context, message string, fields ...map[string]interface{}) {
+func (m *MockContextLogger) Error(ctx context.Context, message string, fields ...map[string]any) {
 	m.Logger.Error(ctx, message, fields...)
 }
 
-// MockTracer provides a mock implementation of the Tracer interface
+// MockTracer provides a mock implementation of the Tracer interface.
 type MockTracer struct {
 	StartSpanCalls     []StartSpanCall
 	FinishSpanCalls    []iface.Span
@@ -189,9 +189,9 @@ type MockTracer struct {
 
 type StartSpanCall struct {
 	Ctx     context.Context
+	Return  iface.Span
 	Name    string
 	Options []iface.SpanOption
-	Return  iface.Span
 }
 
 func (m *MockTracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanOption) (context.Context, iface.Span) {
@@ -216,7 +216,7 @@ func (m *MockTracer) GetTraceSpans(traceID string) []iface.Span {
 	return []iface.Span{&MockSpan{}}
 }
 
-// MockSpan provides a mock implementation of the Span interface
+// MockSpan provides a mock implementation of the Span interface.
 type MockSpan struct {
 	LogCalls         []LogCall
 	SetErrorCalls    []error
@@ -227,17 +227,17 @@ type MockSpan struct {
 }
 
 type LogCall struct {
+	Fields  map[string]any
 	Message string
-	Fields  map[string]interface{}
 }
 
 type SetTagCall struct {
+	Value any
 	Key   string
-	Value interface{}
 }
 
-func (m *MockSpan) Log(message string, fields ...map[string]interface{}) {
-	var fieldMap map[string]interface{}
+func (m *MockSpan) Log(message string, fields ...map[string]any) {
+	var fieldMap map[string]any
 	if len(fields) > 0 {
 		fieldMap = fields[0]
 	}
@@ -260,11 +260,11 @@ func (m *MockSpan) IsFinished() bool {
 	return m.IsFinishedValue
 }
 
-func (m *MockSpan) SetTag(key string, value interface{}) {
+func (m *MockSpan) SetTag(key string, value any) {
 	m.SetTagCalls = append(m.SetTagCalls, SetTagCall{Key: key, Value: value})
 }
 
-// MockMetricsCollector provides a mock implementation of the MetricsCollector interface
+// MockMetricsCollector provides a mock implementation of the MetricsCollector interface.
 type MockMetricsCollector struct {
 	CounterCalls    []CounterCall
 	GaugeCalls      []GaugeCall
@@ -276,48 +276,48 @@ type MockMetricsCollector struct {
 
 type CounterCall struct {
 	Ctx         context.Context
+	Labels      map[string]string
 	Name        string
 	Description string
 	Value       float64
-	Labels      map[string]string
 }
 
 type GaugeCall struct {
 	Ctx         context.Context
+	Labels      map[string]string
 	Name        string
 	Description string
 	Value       float64
-	Labels      map[string]string
 }
 
 type HistogramCall struct {
 	Ctx         context.Context
+	Labels      map[string]string
 	Name        string
 	Description string
 	Value       float64
-	Labels      map[string]string
 }
 
 type TimingCall struct {
 	Ctx         context.Context
+	Labels      map[string]string
 	Name        string
 	Description string
 	Duration    time.Duration
-	Labels      map[string]string
 }
 
 type IncrementCall struct {
 	Ctx         context.Context
+	Labels      map[string]string
 	Name        string
 	Description string
-	Labels      map[string]string
 }
 
 type StartTimerCall struct {
 	Ctx    context.Context
-	Name   string
-	Labels map[string]string
 	Return iface.Timer
+	Labels map[string]string
+	Name   string
 }
 
 func (m *MockMetricsCollector) Counter(ctx context.Context, name, description string, value float64, labels map[string]string) {
@@ -358,7 +358,7 @@ func (m *MockMetricsCollector) StartTimer(ctx context.Context, name string, labe
 	return call.Return
 }
 
-// MockTimer provides a mock implementation of the Timer interface
+// MockTimer provides a mock implementation of the Timer interface.
 type MockTimer struct {
 	StopCalls []StopCall
 }
@@ -372,7 +372,7 @@ func (m *MockTimer) Stop(ctx context.Context, description string) {
 	m.StopCalls = append(m.StopCalls, StopCall{Ctx: ctx, Description: description})
 }
 
-// MockHealthChecker provides a mock implementation of the HealthChecker interface
+// MockHealthChecker provides a mock implementation of the HealthChecker interface.
 type MockHealthChecker struct {
 	RegisterCheckCalls []RegisterCheckCall
 	RunChecksCalls     []RunChecksCall
@@ -380,9 +380,9 @@ type MockHealthChecker struct {
 }
 
 type RegisterCheckCall struct {
-	Name   string
-	Check  iface.HealthCheckFunc
 	Return error
+	Check  iface.HealthCheckFunc
+	Name   string
 }
 
 type RunChecksCall struct {
@@ -413,7 +413,7 @@ func (m *MockHealthChecker) IsHealthy(ctx context.Context) bool {
 	return call.Return
 }
 
-// MockSafetyChecker provides a mock implementation of the SafetyChecker interface
+// MockSafetyChecker provides a mock implementation of the SafetyChecker interface.
 type MockSafetyChecker struct {
 	CheckContentCalls       []CheckContentCall
 	RequestHumanReviewCalls []RequestHumanReviewCall
@@ -421,22 +421,22 @@ type MockSafetyChecker struct {
 
 type CheckContentCall struct {
 	Ctx         context.Context
+	Error       error
 	Content     string
 	ContextInfo string
 	Return      iface.SafetyResult
-	Error       error
 }
 
 type RequestHumanReviewCall struct {
 	Ctx         context.Context
+	Error       error
 	Content     string
 	ContextInfo string
-	RiskScore   float64
 	Return      iface.ReviewDecision
-	Error       error
+	RiskScore   float64
 }
 
-func (m *MockSafetyChecker) CheckContent(ctx context.Context, content string, contextInfo string) (iface.SafetyResult, error) {
+func (m *MockSafetyChecker) CheckContent(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error) {
 	call := CheckContentCall{
 		Ctx: ctx, Content: content, ContextInfo: contextInfo,
 		Return: iface.SafetyResult{Content: content, Safe: true, RiskScore: 0.0},
@@ -446,7 +446,7 @@ func (m *MockSafetyChecker) CheckContent(ctx context.Context, content string, co
 	return call.Return, call.Error
 }
 
-func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content string, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
+func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
 	call := RequestHumanReviewCall{
 		Ctx: ctx, Content: content, ContextInfo: contextInfo, RiskScore: riskScore,
 		Return: iface.ReviewDecision{Approved: true},
@@ -456,17 +456,17 @@ func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content stri
 	return call.Return, call.Error
 }
 
-// MockEthicalChecker provides a mock implementation of the EthicalChecker interface
+// MockEthicalChecker provides a mock implementation of the EthicalChecker interface.
 type MockEthicalChecker struct {
 	CheckContentCalls []EthicalCheckContentCall
 }
 
 type EthicalCheckContentCall struct {
 	Ctx        context.Context
+	Error      error
 	Content    string
 	EthicalCtx iface.EthicalContext
 	Return     iface.EthicalAnalysis
-	Error      error
 }
 
 func (m *MockEthicalChecker) CheckContent(ctx context.Context, content string, ethicalCtx iface.EthicalContext) (iface.EthicalAnalysis, error) {
@@ -479,7 +479,7 @@ func (m *MockEthicalChecker) CheckContent(ctx context.Context, content string, e
 	return call.Return, call.Error
 }
 
-// MockBestPracticesChecker provides a mock implementation of the BestPracticesChecker interface
+// MockBestPracticesChecker provides a mock implementation of the BestPracticesChecker interface.
 type MockBestPracticesChecker struct {
 	ValidateCalls     []ValidateCall
 	AddValidatorCalls []iface.Validator
@@ -487,12 +487,12 @@ type MockBestPracticesChecker struct {
 
 type ValidateCall struct {
 	Ctx       context.Context
-	Data      interface{}
+	Data      any
 	Component string
 	Return    []iface.ValidationIssue
 }
 
-func (m *MockBestPracticesChecker) Validate(ctx context.Context, data interface{}, component string) []iface.ValidationIssue {
+func (m *MockBestPracticesChecker) Validate(ctx context.Context, data any, component string) []iface.ValidationIssue {
 	call := ValidateCall{Ctx: ctx, Data: data, Component: component, Return: []iface.ValidationIssue{}}
 	m.ValidateCalls = append(m.ValidateCalls, call)
 	return call.Return

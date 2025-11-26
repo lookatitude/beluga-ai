@@ -83,7 +83,7 @@ func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
 
 // Default configurations
 
-// DefaultRESTConfig returns a default REST server configuration
+// DefaultRESTConfig returns a default REST server configuration.
 func DefaultRESTConfig() RESTConfig {
 	return RESTConfig{
 		Config: Config{
@@ -108,7 +108,7 @@ func DefaultRESTConfig() RESTConfig {
 	}
 }
 
-// DefaultMCPConfig returns a default MCP server configuration
+// DefaultMCPConfig returns a default MCP server configuration.
 func DefaultMCPConfig() MCPConfig {
 	return MCPConfig{
 		Config: Config{
@@ -133,7 +133,7 @@ func DefaultMCPConfig() MCPConfig {
 
 // Common middleware functions
 
-// CORSMiddleware returns a CORS middleware function
+// CORSMiddleware returns a CORS middleware function.
 func CORSMiddleware(allowedOrigins []string) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -162,7 +162,7 @@ func CORSMiddleware(allowedOrigins []string) Middleware {
 			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
 			w.Header().Set("Access-Control-Max-Age", "86400")
 
-			if r.Method == "OPTIONS" {
+			if r.Method == http.MethodOptions {
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -172,7 +172,7 @@ func CORSMiddleware(allowedOrigins []string) Middleware {
 	}
 }
 
-// LoggingMiddleware returns a logging middleware function
+// LoggingMiddleware returns a logging middleware function.
 func LoggingMiddleware(logger Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -187,7 +187,7 @@ func LoggingMiddleware(logger Logger) Middleware {
 	}
 }
 
-// RecoveryMiddleware returns a panic recovery middleware function
+// RecoveryMiddleware returns a panic recovery middleware function.
 func RecoveryMiddleware(logger Logger) Middleware {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

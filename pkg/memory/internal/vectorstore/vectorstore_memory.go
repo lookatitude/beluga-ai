@@ -4,7 +4,9 @@ package vectorstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
@@ -103,20 +105,21 @@ func (m *VectorStoreRetrieverMemory) MemoryVariables() []string {
 func (m *VectorStoreRetrieverMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error) {
 	query, ok := inputs[m.InputKey].(string)
 	if !ok {
-		return nil, fmt.Errorf(
-			"error")
+		return nil, errors.New("error")
 	}
 
 	// Use SimilaritySearchByQuery from the VectorStore interface
 	docs, _, err := m.VectorStore.SimilaritySearchByQuery(ctx, query, m.TopK, m.Embedder)
 	if err != nil {
-		return nil, fmt.Errorf("error")
+		return nil, errors.New("error")
 	}
 
 	var relevantHistory string
+	var relevantHistorySb117 strings.Builder
 	for _, doc := range docs {
-		relevantHistory += doc.PageContent + "\n"
+		_, _ = relevantHistorySb117.WriteString(doc.PageContent + "\n")
 	}
+	relevantHistory += relevantHistorySb117.String()
 
 	memoryVariables := map[string]any{m.MemoryKey: relevantHistory}
 	if m.ReturnDocs {
@@ -129,17 +132,15 @@ func (m *VectorStoreRetrieverMemory) LoadMemoryVariables(ctx context.Context, in
 
 // SaveContext saves the context of the current interaction to the vector store.
 // It creates documents from the input and output and adds them to the vector store.
-func (m *VectorStoreRetrieverMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *VectorStoreRetrieverMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	inputVal, inputOk := inputs[m.InputKey].(string)
 	outputVal, outputOk := outputs[m.OutputKey].(string)
 
 	if !inputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 	if !outputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 
 	interactionContent := fmt.Sprintf("Input: %s\nOutput: %s", inputVal, outputVal)
@@ -152,7 +153,7 @@ func (m *VectorStoreRetrieverMemory) SaveContext(ctx context.Context, inputs map
 	// Use AddDocuments from the VectorStore interface, passing the embedder
 	_, err := m.VectorStore.AddDocuments(ctx, []schema.Document{doc}, vectorstores.WithEmbedder(m.Embedder))
 	if err != nil {
-		return fmt.Errorf("error")
+		return errors.New("error")
 	}
 	return nil
 }
@@ -161,7 +162,7 @@ func (m *VectorStoreRetrieverMemory) SaveContext(ctx context.Context, inputs map
 // clearing the associated namespace in the vector store if supported, or it might be a no-op
 // if the vector store is managed externally or shared.
 func (m *VectorStoreRetrieverMemory) Clear(ctx context.Context) error {
-	fmt.Println("VectorStoreRetrieverMemory.Clear() called - specific implementation depends on VectorStore capabilities.")
+	_, _ = fmt.Println("VectorStoreRetrieverMemory.Clear() called - specific implementation depends on VectorStore capabilities.")
 	return nil
 }
 

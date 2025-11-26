@@ -2,7 +2,7 @@ package energy
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math"
 	"sync"
 	"time"
@@ -12,19 +12,19 @@ import (
 	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
 )
 
-// EnergyProvider implements the VADProvider interface for Energy-based VAD
+// EnergyProvider implements the VADProvider interface for Energy-based VAD.
 type EnergyProvider struct {
 	config            *EnergyConfig
-	mu                sync.RWMutex
 	energyHistory     []float64
 	adaptiveThreshold float64
+	mu                sync.RWMutex
 }
 
-// NewEnergyProvider creates a new Energy-based VAD provider
+// NewEnergyProvider creates a new Energy-based VAD provider.
 func NewEnergyProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	if config == nil {
 		return nil, vad.NewVADError("NewEnergyProvider", vad.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Energy config
@@ -58,7 +58,7 @@ func NewEnergyProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	return provider, nil
 }
 
-// Process implements the VADProvider interface
+// Process implements the VADProvider interface.
 func (p *EnergyProvider) Process(ctx context.Context, audio []byte) (bool, error) {
 	if len(audio) == 0 {
 		return false, nil
@@ -86,7 +86,7 @@ func (p *EnergyProvider) Process(ctx context.Context, audio []byte) (bool, error
 	return energy >= threshold, nil
 }
 
-// ProcessStream implements the VADProvider interface
+// ProcessStream implements the VADProvider interface.
 func (p *EnergyProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error) {
 	resultCh := make(chan iface.VADResult, 10)
 

@@ -10,19 +10,19 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// ServerIntegration provides HTTP handlers for safety and ethics monitoring
+// ServerIntegration provides HTTP handlers for safety and ethics monitoring.
 type ServerIntegration struct {
 	monitor iface.Monitor
 }
 
-// NewServerIntegration creates a new server integration
+// NewServerIntegration creates a new server integration.
 func NewServerIntegration(monitor iface.Monitor) *ServerIntegration {
 	return &ServerIntegration{
 		monitor: monitor,
 	}
 }
 
-// HealthCheckHandler provides a health check endpoint
+// HealthCheckHandler provides a health check endpoint.
 func (si *ServerIntegration) HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -46,16 +46,16 @@ func (si *ServerIntegration) HealthCheckHandler(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    si.getStatusString(overallHealthy),
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 		"checks":    si.formatHealthResults(results),
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// SafetyCheckHandler provides a safety validation endpoint
+// SafetyCheckHandler provides a safety validation endpoint.
 func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -81,7 +81,7 @@ func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.R
 
 	result, err := si.monitor.SafetyChecker().CheckContent(ctx, request.Content, request.ContextInfo)
 	if err != nil {
-		si.monitor.Logger().Error(ctx, "Safety check failed", map[string]interface{}{
+		si.monitor.Logger().Error(ctx, "Safety check failed", map[string]any{
 			"error": err.Error(),
 		})
 		http.Error(w, "Safety check failed", http.StatusInternalServerError)
@@ -89,14 +89,14 @@ func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	response := map[string]interface{}{
+	response := map[string]any{
 		"result":    result,
 		"timestamp": time.Now(),
 	}
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// EthicsCheckHandler provides an ethical validation endpoint
+// EthicsCheckHandler provides an ethical validation endpoint.
 func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
@@ -122,7 +122,7 @@ func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.R
 
 	result, err := si.monitor.EthicalChecker().CheckContent(ctx, request.Content, request.ContextInfo)
 	if err != nil {
-		si.monitor.Logger().Error(ctx, "Ethics check failed", map[string]interface{}{
+		si.monitor.Logger().Error(ctx, "Ethics check failed", map[string]any{
 			"error": err.Error(),
 		})
 		http.Error(w, "Ethics check failed", http.StatusInternalServerError)
@@ -130,14 +130,14 @@ func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.R
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	response := map[string]interface{}{
+	response := map[string]any{
 		"result":    result,
 		"timestamp": time.Now(),
 	}
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// BestPracticesCheckHandler provides a best practices validation endpoint
+// BestPracticesCheckHandler provides a best practices validation endpoint.
 func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -145,8 +145,8 @@ func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r 
 	}
 
 	var request struct {
-		Data      interface{} `json:"data"`
-		Component string      `json:"component"`
+		Data      any    `json:"data"`
+		Component string `json:"component"`
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -156,17 +156,17 @@ func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r 
 
 	issues := si.monitor.BestPracticesChecker().Validate(r.Context(), request.Data, request.Component)
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"issues":    issues,
 		"validated": true,
 		"timestamp": time.Now().UTC().Format(time.RFC3339),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// MetricsHandler provides metrics endpoint
+// MetricsHandler provides metrics endpoint.
 func (si *ServerIntegration) MetricsHandler(w http.ResponseWriter, r *http.Request) {
 	// Return Prometheus-style metrics format
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
@@ -185,10 +185,10 @@ beluga_ai_response_time_seconds_bucket{le="+Inf"} 42
 beluga_ai_response_time_seconds_sum 123.45
 beluga_ai_response_time_seconds_count 42
 `
-	w.Write([]byte(metrics))
+	_, _ = w.Write([]byte(metrics))
 }
 
-// TracesHandler provides trace information endpoint
+// TracesHandler provides trace information endpoint.
 func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Request) {
 	// Get trace ID from query parameter
 	traceID := r.URL.Query().Get("trace_id")
@@ -198,13 +198,13 @@ func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Reques
 
 	spans := si.monitor.Tracer().GetTraceSpans(traceID)
 
-	response := map[string]interface{}{
-		"traces":    make([]map[string]interface{}, len(spans)),
+	response := map[string]any{
+		"traces":    make([]map[string]any, len(spans)),
 		"timestamp": time.Now(),
 	}
 
 	for i, span := range spans {
-		response["traces"].([]map[string]interface{})[i] = map[string]interface{}{
+		response["traces"].([]map[string]any)[i] = map[string]any{
 			"span_id":   fmt.Sprintf("span_%d", i),
 			"trace_id":  traceID,
 			"duration":  span.GetDuration().String(),
@@ -214,18 +214,18 @@ func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// LogsHandler provides log search endpoint
+// LogsHandler provides log search endpoint.
 func (si *ServerIntegration) LogsHandler(w http.ResponseWriter, r *http.Request) {
 	// This is a simplified implementation - in production, you would integrate
 	// with a proper log aggregation system
 	query := r.URL.Query().Get("query")
 	level := r.URL.Query().Get("level")
 
-	response := map[string]interface{}{
-		"logs": []map[string]interface{}{
+	response := map[string]any{
+		"logs": []map[string]any{
 			{
 				"timestamp": time.Now().UTC().Format(time.RFC3339),
 				"level":     level,
@@ -237,10 +237,10 @@ func (si *ServerIntegration) LogsHandler(w http.ResponseWriter, r *http.Request)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
-// RegisterRoutes registers all monitoring routes with an HTTP mux
+// RegisterRoutes registers all monitoring routes with an HTTP mux.
 func (si *ServerIntegration) RegisterRoutes(mux *http.ServeMux, pathPrefix string) {
 	if pathPrefix == "" {
 		pathPrefix = "/monitoring"
@@ -264,11 +264,11 @@ func (si *ServerIntegration) getStatusString(healthy bool) string {
 	return "unhealthy"
 }
 
-func (si *ServerIntegration) formatHealthResults(results map[string]iface.HealthCheckResult) []map[string]interface{} {
-	formatted := make([]map[string]interface{}, 0, len(results))
+func (si *ServerIntegration) formatHealthResults(results map[string]iface.HealthCheckResult) []map[string]any {
+	formatted := make([]map[string]any, 0, len(results))
 
 	for name, result := range results {
-		formatted = append(formatted, map[string]interface{}{
+		formatted = append(formatted, map[string]any{
 			"name":      name,
 			"status":    string(result.Status),
 			"message":   result.Message,
@@ -280,7 +280,7 @@ func (si *ServerIntegration) formatHealthResults(results map[string]iface.Health
 	return formatted
 }
 
-// Middleware for automatic monitoring of HTTP requests
+// Middleware for automatic monitoring of HTTP requests.
 func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -299,7 +299,7 @@ func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handle
 				rw.statusCode = http.StatusInternalServerError
 				rw.WriteHeader(http.StatusInternalServerError)
 				span.SetError(fmt.Errorf("panic: %v", err))
-				si.monitor.Logger().Error(ctx, "Panic in HTTP handler", map[string]interface{}{
+				si.monitor.Logger().Error(ctx, "Panic in HTTP handler", map[string]any{
 					"panic":  err,
 					"method": r.Method,
 					"path":   r.URL.Path,
@@ -314,14 +314,14 @@ func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handle
 		duration := time.Since(start)
 		if rw.statusCode >= 400 {
 			span.SetError(fmt.Errorf("HTTP %d", rw.statusCode))
-			si.monitor.Logger().Warning(ctx, "HTTP request failed", map[string]interface{}{
+			si.monitor.Logger().Warning(ctx, "HTTP request failed", map[string]any{
 				"method":      r.Method,
 				"path":        r.URL.Path,
 				"status_code": rw.statusCode,
 				"duration":    duration.String(),
 			})
 		} else {
-			si.monitor.Logger().Info(ctx, "HTTP request completed", map[string]interface{}{
+			si.monitor.Logger().Info(ctx, "HTTP request completed", map[string]any{
 				"method":      r.Method,
 				"path":        r.URL.Path,
 				"status_code": rw.statusCode,
@@ -331,7 +331,7 @@ func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handle
 	})
 }
 
-// responseWriter wraps http.ResponseWriter to capture status code
+// responseWriter wraps http.ResponseWriter to capture status code.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -343,5 +343,9 @@ func (rw *responseWriter) WriteHeader(code int) {
 }
 
 func (rw *responseWriter) Write(b []byte) (int, error) {
-	return rw.ResponseWriter.Write(b)
+	n, err := rw.ResponseWriter.Write(b)
+	if err != nil {
+		return n, fmt.Errorf("failed to write response: %w", err)
+	}
+	return n, nil
 }

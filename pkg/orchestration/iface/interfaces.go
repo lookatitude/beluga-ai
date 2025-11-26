@@ -34,7 +34,7 @@ type Graph interface {
 	AddNode(name string, runnable core.Runnable) error
 
 	// AddEdge defines a dependency between two nodes.
-	AddEdge(sourceNode string, targetNode string) error
+	AddEdge(sourceNode, targetNode string) error
 
 	// SetEntryPoint defines the starting node(s) of the graph.
 	SetEntryPoint(nodeNames []string) error
@@ -47,22 +47,22 @@ type Graph interface {
 // This interface can be implemented using systems like Temporal or other workflow engines.
 type Workflow interface {
 	// Execute starts the workflow execution.
-	Execute(ctx context.Context, input any) (workflowID string, runID string, err error)
+	Execute(ctx context.Context, input any) (workflowID, runID string, err error)
 
 	// GetResult retrieves the final result of a completed workflow instance.
-	GetResult(ctx context.Context, workflowID string, runID string) (any, error)
+	GetResult(ctx context.Context, workflowID, runID string) (any, error)
 
 	// Signal sends a signal to a running workflow instance.
-	Signal(ctx context.Context, workflowID string, runID string, signalName string, data any) error
+	Signal(ctx context.Context, workflowID, runID, signalName string, data any) error
 
 	// Query queries the state of a running workflow instance.
-	Query(ctx context.Context, workflowID string, runID string, queryType string, args ...any) (any, error)
+	Query(ctx context.Context, workflowID, runID, queryType string, args ...any) (any, error)
 
 	// Cancel requests cancellation of a running workflow instance.
-	Cancel(ctx context.Context, workflowID string, runID string) error
+	Cancel(ctx context.Context, workflowID, runID string) error
 
 	// Terminate forcefully stops a running workflow instance.
-	Terminate(ctx context.Context, workflowID string, runID string, reason string, details ...any) error
+	Terminate(ctx context.Context, workflowID, runID, reason string, details ...any) error
 }
 
 // Activity represents a unit of work within a workflow, often corresponding to a Beluga Runnable.
@@ -112,16 +112,16 @@ type HealthChecker interface {
 	Check(ctx context.Context) error
 }
 
-// ChainOption represents a functional option for configuring chains
+// ChainOption represents a functional option for configuring chains.
 type ChainOption func(*ChainConfig) error
 
-// GraphOption represents a functional option for configuring graphs
+// GraphOption represents a functional option for configuring graphs.
 type GraphOption func(*GraphConfig) error
 
-// WorkflowOption represents a functional option for configuring workflows
+// WorkflowOption represents a functional option for configuring workflows.
 type WorkflowOption func(*WorkflowConfig) error
 
-// ChainConfig holds configuration for chain orchestration
+// ChainConfig holds configuration for chain orchestration.
 type ChainConfig struct {
 	Name        string
 	Description string
@@ -133,7 +133,7 @@ type ChainConfig struct {
 	Retries     int
 }
 
-// GraphConfig holds configuration for graph orchestration
+// GraphConfig holds configuration for graph orchestration.
 type GraphConfig struct {
 	Name                    string
 	Description             string
@@ -146,20 +146,20 @@ type GraphConfig struct {
 	EnableParallelExecution bool
 }
 
-// GraphEdge represents an edge in a graph orchestration
+// GraphEdge represents an edge in a graph orchestration.
 type GraphEdge struct {
 	Source    string
 	Target    string
 	Condition string // optional condition for conditional edges
 }
 
-// WorkflowConfig holds configuration for workflow orchestration
+// WorkflowConfig holds configuration for workflow orchestration.
 type WorkflowConfig struct {
+	Container   any
+	Metadata    map[string]any
 	Name        string
 	Description string
 	TaskQueue   string
-	Timeout     int // seconds
+	Timeout     int
 	Retries     int
-	Container   any // DI container
-	Metadata    map[string]any
 }

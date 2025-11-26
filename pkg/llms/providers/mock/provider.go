@@ -4,6 +4,7 @@ package mock
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -15,26 +16,26 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Provider constants
+// Provider constants.
 const (
 	ProviderName = "mock"
 	DefaultModel = "mock-model"
 )
 
-// MockProvider implements the ChatModel interface for testing and development
+// MockProvider implements the ChatModel interface for testing and development.
 type MockProvider struct {
+	metrics     llms.MetricsRecorder
 	config      *llms.Config
+	toolResults map[string]string
+	tracing     *common.TracingHelper
 	modelName   string
 	responses   []string
-	toolResults map[string]string
 	tools       []tools.Tool
-	metrics     llms.MetricsRecorder
-	tracing     *common.TracingHelper
 	callCount   int
 	shouldError bool
 }
 
-// NewMockProvider creates a new mock provider instance
+// NewMockProvider creates a new mock provider instance.
 func NewMockProvider(config *llms.Config) (*MockProvider, error) {
 	// Set default model if not specified
 	modelName := config.ModelName
@@ -44,7 +45,7 @@ func NewMockProvider(config *llms.Config) (*MockProvider, error) {
 
 	// Get responses from provider-specific config
 	var responses []string
-	if respSlice, ok := config.ProviderSpecific["responses"].([]interface{}); ok {
+	if respSlice, ok := config.ProviderSpecific["responses"].([]any); ok {
 		for _, r := range respSlice {
 			if str, ok := r.(string); ok {
 				responses = append(responses, str)
@@ -80,7 +81,7 @@ func NewMockProvider(config *llms.Config) (*MockProvider, error) {
 	return provider, nil
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = m.tracing.StartOperation(ctx, "mock.generate", ProviderName, m.modelName)
@@ -89,7 +90,7 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 	for _, msg := range messages {
 		inputSize += len(msg.GetContent())
 	}
-	m.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	m.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -102,7 +103,7 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 	// Check if should error
 	if m.shouldError {
 		duration := time.Since(start)
-		err := llms.NewLLMError("mock.generate", llms.ErrCodeInternalError, fmt.Errorf("mock provider configured to error"))
+		err := llms.NewLLMError("mock.generate", llms.ErrCodeInternalError, errors.New("mock provider configured to error"))
 		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError, duration)
 		m.tracing.RecordError(ctx, err)
 		return nil, err
@@ -132,7 +133,7 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 	return aiMsg, nil
 }
 
-// StreamChat implements the ChatModel interface
+// StreamChat implements the ChatModel interface.
 func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = m.tracing.StartOperation(ctx, "mock.stream", ProviderName, m.modelName)
@@ -141,7 +142,7 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 	for _, msg := range messages {
 		inputSize += len(msg.GetContent())
 	}
-	m.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	m.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -154,7 +155,7 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 	// Check if should error
 	if m.shouldError {
 		duration := time.Since(start)
-		err := llms.NewLLMError("mock.stream", llms.ErrCodeInternalError, fmt.Errorf("mock provider configured to error"))
+		err := llms.NewLLMError("mock.stream", llms.ErrCodeInternalError, errors.New("mock provider configured to error"))
 		m.metrics.RecordError(ctx, ProviderName, m.modelName, llms.ErrCodeInternalError, duration)
 		m.tracing.RecordError(ctx, err)
 		return nil, err
@@ -183,7 +184,7 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 
 				chunk := iface.AIMessageChunk{
 					Content:        response[i:end],
-					AdditionalArgs: make(map[string]interface{}),
+					AdditionalArgs: make(map[string]any),
 				}
 
 				// Add finish reason on last chunk
@@ -204,7 +205,7 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 
 		// Send final chunk with usage information
 		finalChunk := iface.AIMessageChunk{
-			AdditionalArgs: map[string]interface{}{
+			AdditionalArgs: map[string]any{
 				"usage": map[string]int{
 					"input_tokens":  len(messages) * 10,
 					"output_tokens": len(response) / 4,
@@ -225,7 +226,7 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 	return outputChan, nil
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (m *MockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	newProvider := *m // Create a copy
 	newProvider.tools = make([]tools.Tool, len(toolsToBind))
@@ -240,7 +241,7 @@ func (m *MockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	return &newProvider
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (m *MockProvider) GetModelName() string {
 	return m.modelName
 }
@@ -249,7 +250,7 @@ func (m *MockProvider) GetProviderName() string {
 	return ProviderName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (m *MockProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -258,7 +259,7 @@ func (m *MockProvider) Invoke(ctx context.Context, input any, options ...core.Op
 	return m.Generate(ctx, messages, options...)
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (m *MockProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 
@@ -278,7 +279,7 @@ func (m *MockProvider) Batch(ctx context.Context, inputs []any, options ...core.
 	return results, nil
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (m *MockProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -306,28 +307,28 @@ func (m *MockProvider) Stream(ctx context.Context, input any, options ...core.Op
 	return outputChan, nil
 }
 
-// GetCallCount returns the number of calls made to this provider
+// GetCallCount returns the number of calls made to this provider.
 func (m *MockProvider) GetCallCount() int {
 	return m.callCount
 }
 
-// SetResponses sets the mock responses
+// SetResponses sets the mock responses.
 func (m *MockProvider) SetResponses(responses []string) {
 	m.responses = responses
 }
 
-// SetShouldError sets whether the provider should return errors
+// SetShouldError sets whether the provider should return errors.
 func (m *MockProvider) SetShouldError(shouldError bool) {
 	m.shouldError = shouldError
 }
 
-// Reset resets the provider state
+// Reset resets the provider state.
 func (m *MockProvider) Reset() {
 	m.callCount = 0
 	m.toolResults = make(map[string]string)
 }
 
-// AddToolResult adds a mock result for a specific tool
+// AddToolResult adds a mock result for a specific tool.
 func (m *MockProvider) AddToolResult(toolName, result string) {
 	if m.toolResults == nil {
 		m.toolResults = make(map[string]string)
@@ -335,9 +336,9 @@ func (m *MockProvider) AddToolResult(toolName, result string) {
 	m.toolResults[toolName] = result
 }
 
-// CheckHealth implements the HealthChecker interface
-func (m *MockProvider) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (m *MockProvider) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":         "healthy",
 		"provider":      "mock",
 		"model":         m.modelName,
@@ -349,7 +350,7 @@ func (m *MockProvider) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Factory function for creating mock providers
+// Factory function for creating mock providers.
 func NewMockProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewMockProvider(config)

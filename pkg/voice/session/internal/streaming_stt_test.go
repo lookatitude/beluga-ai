@@ -30,7 +30,7 @@ func TestStreamingSTT_Start_Success(t *testing.T) {
 
 	ctx := context.Background()
 	err := sstt.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, sstt.IsActive())
 }
 
@@ -44,7 +44,7 @@ func TestStreamingSTT_Start_AlreadyActive(t *testing.T) {
 
 	// Try to start again
 	err = sstt.Start(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already active")
 }
 
@@ -53,7 +53,7 @@ func TestStreamingSTT_Start_NilProvider(t *testing.T) {
 
 	ctx := context.Background()
 	err := sstt.Start(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not set")
 }
 
@@ -67,7 +67,7 @@ func TestStreamingSTT_SendAudio_Success(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	err = sstt.SendAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestStreamingSTT_SendAudio_NotActive(t *testing.T) {
@@ -77,7 +77,7 @@ func TestStreamingSTT_SendAudio_NotActive(t *testing.T) {
 	ctx := context.Background()
 	audio := []byte{1, 2, 3, 4, 5}
 	err := sstt.SendAudio(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not active")
 }
 
@@ -95,7 +95,7 @@ func TestStreamingSTT_ReceiveTranscript_Success(t *testing.T) {
 	// Should receive transcriptions
 	select {
 	case result := <-ch:
-		assert.NoError(t, result.Error)
+		require.NoError(t, result.Error)
 		assert.NotEmpty(t, result.Text)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for transcript")
@@ -124,7 +124,7 @@ func TestStreamingSTT_Stop_Success(t *testing.T) {
 	assert.True(t, sstt.IsActive())
 
 	err = sstt.Stop()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, sstt.IsActive())
 }
 
@@ -133,7 +133,7 @@ func TestStreamingSTT_Stop_NotActive(t *testing.T) {
 	sstt := NewStreamingSTT(mockProvider)
 
 	err := sstt.Stop()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, sstt.IsActive())
 }
 
@@ -159,7 +159,7 @@ func TestStreamingSTT_Start_ProviderError(t *testing.T) {
 
 	ctx := context.Background()
 	err := sstt.Start(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to start streaming")
 	assert.False(t, sstt.IsActive())
 }

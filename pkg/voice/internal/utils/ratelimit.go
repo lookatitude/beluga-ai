@@ -9,11 +9,11 @@ import (
 
 // RateLimiter provides rate limiting functionality.
 type RateLimiter struct {
-	mu          sync.Mutex
-	rate        int           // Number of requests allowed
-	per         time.Duration // Per time period
-	requests    []time.Time   // Timestamps of recent requests
 	windowStart time.Time
+	requests    []time.Time
+	rate        int
+	per         time.Duration
+	mu          sync.Mutex
 }
 
 // NewRateLimiter creates a new rate limiter.

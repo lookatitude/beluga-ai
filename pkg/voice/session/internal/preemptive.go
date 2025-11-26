@@ -5,16 +5,16 @@ import (
 	"sync"
 )
 
-// PreemptiveGeneration manages preemptive generation logic
+// PreemptiveGeneration manages preemptive generation logic.
 type PreemptiveGeneration struct {
-	mu               sync.RWMutex
-	enabled          bool
 	interimHandler   func(transcript string)
 	finalHandler     func(transcript string)
 	responseStrategy ResponseStrategy
+	mu               sync.RWMutex
+	enabled          bool
 }
 
-// ResponseStrategy defines how to handle preemptive responses
+// ResponseStrategy defines how to handle preemptive responses.
 type ResponseStrategy int
 
 const (
@@ -23,7 +23,7 @@ const (
 	ResponseStrategyAlwaysUse
 )
 
-// NewPreemptiveGeneration creates a new preemptive generation manager
+// NewPreemptiveGeneration creates a new preemptive generation manager.
 func NewPreemptiveGeneration(enabled bool, strategy ResponseStrategy) *PreemptiveGeneration {
 	return &PreemptiveGeneration{
 		enabled:          enabled,
@@ -31,21 +31,21 @@ func NewPreemptiveGeneration(enabled bool, strategy ResponseStrategy) *Preemptiv
 	}
 }
 
-// SetInterimHandler sets the handler for interim transcripts
+// SetInterimHandler sets the handler for interim transcripts.
 func (pg *PreemptiveGeneration) SetInterimHandler(handler func(transcript string)) {
 	pg.mu.Lock()
 	defer pg.mu.Unlock()
 	pg.interimHandler = handler
 }
 
-// SetFinalHandler sets the handler for final transcripts
+// SetFinalHandler sets the handler for final transcripts.
 func (pg *PreemptiveGeneration) SetFinalHandler(handler func(transcript string)) {
 	pg.mu.Lock()
 	defer pg.mu.Unlock()
 	pg.finalHandler = handler
 }
 
-// HandleInterim handles an interim transcript
+// HandleInterim handles an interim transcript.
 func (pg *PreemptiveGeneration) HandleInterim(ctx context.Context, transcript string) {
 	if !pg.enabled {
 		return
@@ -60,7 +60,7 @@ func (pg *PreemptiveGeneration) HandleInterim(ctx context.Context, transcript st
 	}
 }
 
-// HandleFinal handles a final transcript
+// HandleFinal handles a final transcript.
 func (pg *PreemptiveGeneration) HandleFinal(ctx context.Context, transcript string) {
 	pg.mu.RLock()
 	handler := pg.finalHandler
@@ -85,7 +85,7 @@ func (pg *PreemptiveGeneration) HandleFinal(ctx context.Context, transcript stri
 	}
 }
 
-// GetResponseStrategy returns the current response strategy
+// GetResponseStrategy returns the current response strategy.
 func (pg *PreemptiveGeneration) GetResponseStrategy() ResponseStrategy {
 	pg.mu.RLock()
 	defer pg.mu.RUnlock()

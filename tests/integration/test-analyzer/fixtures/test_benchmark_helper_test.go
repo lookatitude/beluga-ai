@@ -9,4 +9,3 @@ func TestBenchmarkHelperUsage(t *testing.T) {
 	b.StopTimer()
 	b.StartTimer()
 }
-

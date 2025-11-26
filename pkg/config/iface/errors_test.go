@@ -36,7 +36,7 @@ func TestWrapError(t *testing.T) {
 		t.Errorf("expected message '%s', got '%s'", expectedMsg, err.Message)
 	}
 
-	if err.Cause != cause {
+	if !errors.Is(err.Cause, cause) {
 		t.Error("expected cause to be preserved")
 	}
 }
@@ -73,7 +73,7 @@ func TestConfigError_Unwrap(t *testing.T) {
 	cause := errors.New("original error")
 	wrapped := WrapError(cause, "code", "message")
 
-	if wrapped.Unwrap() != cause {
+	if !errors.Is(wrapped.Unwrap(), cause) {
 		t.Error("Unwrap() should return the cause")
 	}
 }
@@ -109,14 +109,14 @@ func TestAsConfigError(t *testing.T) {
 	regularErr := errors.New("regular error")
 
 	tests := []struct {
-		name        string
 		err         error
+		name        string
 		expectFound bool
 	}{
-		{"config error", configErr, true},
-		{"wrapped config error", WrapError(configErr, "outer", "outer message"), true},
-		{"regular error", regularErr, false},
-		{"nil error", nil, false},
+		{configErr, "config error", true},
+		{WrapError(configErr, "outer", "outer message"), "wrapped config error", true},
+		{regularErr, "regular error", false},
+		{nil, "nil error", false},
 	}
 
 	for _, tt := range tests {
@@ -197,22 +197,22 @@ func TestIsConfigError_EdgeCases(t *testing.T) {
 
 func TestAsConfigError_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
 		err         error
+		name        string
 		expectFound bool
 	}{
-		{"nil error", nil, false},
-		{"regular error", errors.New("regular"), false},
-		{"config error", NewConfigError("code", "msg"), true},
-		{"wrapped config error", WrapError(NewConfigError("code", "msg"), "wrapper", "msg"), true},
-		{"deeply wrapped config error", func() error {
+		{nil, "nil error", false},
+		{errors.New("regular"), "regular error", false},
+		{NewConfigError("code", "msg"), "config error", true},
+		{WrapError(NewConfigError("code", "msg"), "wrapper", "msg"), "wrapped config error", true},
+		{func() error {
 			return WrapError(WrapError(NewConfigError("code", "msg"), "middle", "msg"), "outer", "msg")
-		}(), true},
-		{"config error wrapped in regular error", func() error {
+		}(), "deeply wrapped config error", true},
+		{func() error {
 			// Actually wrap a ConfigError in a regular error using fmt.Errorf
 			configErr := NewConfigError("inner", "inner msg")
 			return fmt.Errorf("regular error: %w", configErr)
-		}(), false},
+		}(), "config error wrapped in regular error", false},
 	}
 
 	for _, tt := range tests {
@@ -240,8 +240,8 @@ func TestNewConfigError_Formatting(t *testing.T) {
 		name     string
 		code     string
 		message  string
-		args     []interface{}
 		expected string
+		args     []any
 	}{
 		{
 			name:     "no args",
@@ -254,7 +254,7 @@ func TestNewConfigError_Formatting(t *testing.T) {
 			name:     "with args",
 			code:     "test_code",
 			message:  "message with %s and %d",
-			args:     []interface{}{"string", 42},
+			args:     []any{"string", 42},
 			expected: "message with string and 42",
 		},
 		{
@@ -290,12 +290,12 @@ func TestWrapError_Formatting(t *testing.T) {
 	cause := errors.New("original cause")
 
 	tests := []struct {
-		name     string
 		cause    error
+		name     string
 		code     string
 		message  string
-		args     []interface{}
 		expected string
+		args     []any
 	}{
 		{
 			name:     "wrap with no args",
@@ -310,7 +310,7 @@ func TestWrapError_Formatting(t *testing.T) {
 			cause:    cause,
 			code:     "test_code",
 			message:  "wrapped %s with %d",
-			args:     []interface{}{"message", 42},
+			args:     []any{"message", 42},
 			expected: "wrapped message with 42: original cause",
 		},
 	}
@@ -325,7 +325,7 @@ func TestWrapError_Formatting(t *testing.T) {
 			if err.Code != tt.code {
 				t.Errorf("WrapError() code = %q, want %q", err.Code, tt.code)
 			}
-			if err.Cause != tt.cause {
+			if !errors.Is(err.Cause, tt.cause) {
 				t.Errorf("WrapError() cause = %v, want %v", err.Cause, tt.cause)
 			}
 		})

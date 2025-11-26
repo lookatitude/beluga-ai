@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// Error codes for programmatic error handling
+// Error codes for programmatic error handling.
 const (
 	ErrCodeInvalidConfig    = "invalid_config"
 	ErrCodeInvalidInput     = "invalid_input"
@@ -47,7 +47,7 @@ func NewRetrieverError(op string, err error, code string) *RetrieverError {
 }
 
 // NewRetrieverErrorWithMessage creates a new RetrieverError with a custom message.
-func NewRetrieverErrorWithMessage(op string, err error, code string, message string) *RetrieverError {
+func NewRetrieverErrorWithMessage(op string, err error, code, message string) *RetrieverError {
 	return &RetrieverError{
 		Op:      op,
 		Err:     err,
@@ -58,9 +58,9 @@ func NewRetrieverErrorWithMessage(op string, err error, code string, message str
 
 // ValidationError represents a configuration validation error.
 type ValidationError struct {
-	Field string      // field that failed validation
-	Value interface{} // value that failed validation
-	Msg   string      // validation error message
+	Field string // field that failed validation
+	Value any    // value that failed validation
+	Msg   string // validation error message
 }
 
 func (e *ValidationError) Error() string {
@@ -69,9 +69,9 @@ func (e *ValidationError) Error() string {
 
 // TimeoutError represents a timeout error.
 type TimeoutError struct {
-	Op      string        // operation that timed out
-	Timeout time.Duration // timeout duration
-	Err     error         // underlying error
+	Err     error
+	Op      string
+	Timeout time.Duration
 }
 
 func (e *TimeoutError) Error() string {

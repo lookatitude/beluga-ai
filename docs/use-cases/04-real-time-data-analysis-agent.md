@@ -304,7 +304,7 @@ func TestAnalysisAgent(t *testing.T) {
         "task": "Calculate average sales for last month",
     })
     
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, result.(string), "average")
 }
 ```

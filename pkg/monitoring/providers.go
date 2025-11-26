@@ -2,47 +2,48 @@
 package monitoring
 
 import (
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// Provider represents a monitoring backend provider
+// Provider represents a monitoring backend provider.
 type Provider interface {
 	Name() string
-	Initialize(config map[string]interface{}) error
+	Initialize(config map[string]any) error
 	Shutdown() error
 }
 
-// LoggerProvider provides logging functionality
+// LoggerProvider provides logging functionality.
 type LoggerProvider interface {
 	Provider
-	CreateLogger(name string, config map[string]interface{}) (iface.Logger, error)
+	CreateLogger(name string, config map[string]any) (iface.Logger, error)
 }
 
-// TracerProvider provides tracing functionality
+// TracerProvider provides tracing functionality.
 type TracerProvider interface {
 	Provider
-	CreateTracer(serviceName string, config map[string]interface{}) (iface.Tracer, error)
+	CreateTracer(serviceName string, config map[string]any) (iface.Tracer, error)
 }
 
-// MetricsProvider provides metrics functionality
+// MetricsProvider provides metrics functionality.
 type MetricsProvider interface {
 	Provider
-	CreateMetricsCollector(config map[string]interface{}) (iface.MetricsCollector, error)
+	CreateMetricsCollector(config map[string]any) (iface.MetricsCollector, error)
 }
 
-// ProviderRegistry manages monitoring providers
+// ProviderRegistry manages monitoring providers.
 type ProviderRegistry struct {
-	mu      sync.RWMutex
 	loggers map[string]LoggerProvider
 	tracers map[string]TracerProvider
 	metrics map[string]MetricsProvider
-	current map[string]string // current provider for each type
+	current map[string]string
+	mu      sync.RWMutex
 }
 
-// NewProviderRegistry creates a new provider registry
+// NewProviderRegistry creates a new provider registry.
 func NewProviderRegistry() *ProviderRegistry {
 	return &ProviderRegistry{
 		loggers: make(map[string]LoggerProvider),
@@ -52,7 +53,7 @@ func NewProviderRegistry() *ProviderRegistry {
 	}
 }
 
-// RegisterLoggerProvider registers a logger provider
+// RegisterLoggerProvider registers a logger provider.
 func (pr *ProviderRegistry) RegisterLoggerProvider(provider LoggerProvider) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -66,7 +67,7 @@ func (pr *ProviderRegistry) RegisterLoggerProvider(provider LoggerProvider) erro
 	return nil
 }
 
-// RegisterTracerProvider registers a tracer provider
+// RegisterTracerProvider registers a tracer provider.
 func (pr *ProviderRegistry) RegisterTracerProvider(provider TracerProvider) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -80,7 +81,7 @@ func (pr *ProviderRegistry) RegisterTracerProvider(provider TracerProvider) erro
 	return nil
 }
 
-// RegisterMetricsProvider registers a metrics provider
+// RegisterMetricsProvider registers a metrics provider.
 func (pr *ProviderRegistry) RegisterMetricsProvider(provider MetricsProvider) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -94,7 +95,7 @@ func (pr *ProviderRegistry) RegisterMetricsProvider(provider MetricsProvider) er
 	return nil
 }
 
-// SetCurrentLogger sets the current logger provider
+// SetCurrentLogger sets the current logger provider.
 func (pr *ProviderRegistry) SetCurrentLogger(name string) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -107,7 +108,7 @@ func (pr *ProviderRegistry) SetCurrentLogger(name string) error {
 	return nil
 }
 
-// SetCurrentTracer sets the current tracer provider
+// SetCurrentTracer sets the current tracer provider.
 func (pr *ProviderRegistry) SetCurrentTracer(name string) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -120,7 +121,7 @@ func (pr *ProviderRegistry) SetCurrentTracer(name string) error {
 	return nil
 }
 
-// SetCurrentMetrics sets the current metrics provider
+// SetCurrentMetrics sets the current metrics provider.
 func (pr *ProviderRegistry) SetCurrentMetrics(name string) error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -133,14 +134,14 @@ func (pr *ProviderRegistry) SetCurrentMetrics(name string) error {
 	return nil
 }
 
-// CreateLogger creates a logger using the current provider
-func (pr *ProviderRegistry) CreateLogger(name string, config map[string]interface{}) (iface.Logger, error) {
+// CreateLogger creates a logger using the current provider.
+func (pr *ProviderRegistry) CreateLogger(name string, config map[string]any) (iface.Logger, error) {
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 
 	providerName, exists := pr.current["logger"]
 	if !exists {
-		return nil, fmt.Errorf("no current logger provider set")
+		return nil, errors.New("no current logger provider set")
 	}
 
 	provider, exists := pr.loggers[providerName]
@@ -151,14 +152,14 @@ func (pr *ProviderRegistry) CreateLogger(name string, config map[string]interfac
 	return provider.CreateLogger(name, config)
 }
 
-// CreateTracer creates a tracer using the current provider
-func (pr *ProviderRegistry) CreateTracer(serviceName string, config map[string]interface{}) (iface.Tracer, error) {
+// CreateTracer creates a tracer using the current provider.
+func (pr *ProviderRegistry) CreateTracer(serviceName string, config map[string]any) (iface.Tracer, error) {
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 
 	providerName, exists := pr.current["tracer"]
 	if !exists {
-		return nil, fmt.Errorf("no current tracer provider set")
+		return nil, errors.New("no current tracer provider set")
 	}
 
 	provider, exists := pr.tracers[providerName]
@@ -169,14 +170,14 @@ func (pr *ProviderRegistry) CreateTracer(serviceName string, config map[string]i
 	return provider.CreateTracer(serviceName, config)
 }
 
-// CreateMetricsCollector creates a metrics collector using the current provider
-func (pr *ProviderRegistry) CreateMetricsCollector(config map[string]interface{}) (iface.MetricsCollector, error) {
+// CreateMetricsCollector creates a metrics collector using the current provider.
+func (pr *ProviderRegistry) CreateMetricsCollector(config map[string]any) (iface.MetricsCollector, error) {
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
 
 	providerName, exists := pr.current["metrics"]
 	if !exists {
-		return nil, fmt.Errorf("no current metrics provider set")
+		return nil, errors.New("no current metrics provider set")
 	}
 
 	provider, exists := pr.metrics[providerName]
@@ -187,7 +188,7 @@ func (pr *ProviderRegistry) CreateMetricsCollector(config map[string]interface{}
 	return provider.CreateMetricsCollector(config)
 }
 
-// GetAvailableProviders returns all available providers
+// GetAvailableProviders returns all available providers.
 func (pr *ProviderRegistry) GetAvailableProviders() map[string][]string {
 	pr.mu.RLock()
 	defer pr.mu.RUnlock()
@@ -206,7 +207,7 @@ func (pr *ProviderRegistry) GetAvailableProviders() map[string][]string {
 	return providers
 }
 
-// Shutdown shuts down all registered providers
+// Shutdown shuts down all registered providers.
 func (pr *ProviderRegistry) Shutdown() error {
 	pr.mu.Lock()
 	defer pr.mu.Unlock()
@@ -241,10 +242,10 @@ func (pr *ProviderRegistry) Shutdown() error {
 	return nil
 }
 
-// Global registry instance
+// Global registry instance.
 var globalRegistry = NewProviderRegistry()
 
-// GetGlobalRegistry returns the global provider registry
+// GetGlobalRegistry returns the global provider registry.
 func GetGlobalRegistry() *ProviderRegistry {
 	return globalRegistry
 }

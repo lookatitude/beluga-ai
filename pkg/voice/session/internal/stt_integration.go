@@ -2,46 +2,47 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
-// STTIntegration manages STT provider integration
+// STTIntegration manages STT provider integration.
 type STTIntegration struct {
 	provider         iface.STTProvider
 	streamingSession iface.StreamingSession
 	mu               sync.RWMutex
 }
 
-// NewSTTIntegration creates a new STT integration
+// NewSTTIntegration creates a new STT integration.
 func NewSTTIntegration(provider iface.STTProvider) *STTIntegration {
 	return &STTIntegration{
 		provider: provider,
 	}
 }
 
-// Transcribe transcribes audio using the STT provider
+// Transcribe transcribes audio using the STT provider.
 func (sti *STTIntegration) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	sti.mu.RLock()
 	provider := sti.provider
 	sti.mu.RUnlock()
 
 	if provider == nil {
-		return "", fmt.Errorf("STT provider not set")
+		return "", errors.New("STT provider not set")
 	}
 
 	return provider.Transcribe(ctx, audio)
 }
 
-// StartStreaming starts a streaming transcription session
+// StartStreaming starts a streaming transcription session.
 func (sti *STTIntegration) StartStreaming(ctx context.Context) error {
 	sti.mu.Lock()
 	defer sti.mu.Unlock()
 
 	if sti.provider == nil {
-		return fmt.Errorf("STT provider not set")
+		return errors.New("STT provider not set")
 	}
 
 	session, err := sti.provider.StartStreaming(ctx)
@@ -53,20 +54,20 @@ func (sti *STTIntegration) StartStreaming(ctx context.Context) error {
 	return nil
 }
 
-// SendAudio sends audio to the streaming session
+// SendAudio sends audio to the streaming session.
 func (sti *STTIntegration) SendAudio(ctx context.Context, audio []byte) error {
 	sti.mu.RLock()
 	session := sti.streamingSession
 	sti.mu.RUnlock()
 
 	if session == nil {
-		return fmt.Errorf("streaming session not started")
+		return errors.New("streaming session not started")
 	}
 
 	return session.SendAudio(ctx, audio)
 }
 
-// ReceiveTranscript receives transcripts from the streaming session
+// ReceiveTranscript receives transcripts from the streaming session.
 func (sti *STTIntegration) ReceiveTranscript() <-chan iface.TranscriptResult {
 	sti.mu.RLock()
 	session := sti.streamingSession
@@ -82,7 +83,7 @@ func (sti *STTIntegration) ReceiveTranscript() <-chan iface.TranscriptResult {
 	return session.ReceiveTranscript()
 }
 
-// CloseStreaming closes the streaming session
+// CloseStreaming closes the streaming session.
 func (sti *STTIntegration) CloseStreaming() error {
 	sti.mu.Lock()
 	defer sti.mu.Unlock()

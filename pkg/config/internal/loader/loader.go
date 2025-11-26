@@ -10,17 +10,17 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/config/providers/viper"
 )
 
-// Loader provides a high-level interface for loading configuration
+// Loader provides a high-level interface for loading configuration.
 type Loader struct {
 	options iface.LoaderOptions
 }
 
-// NewLoader creates a new configuration loader with the given options
+// NewLoader creates a new configuration loader with the given options.
 func NewLoader(options iface.LoaderOptions) (*Loader, error) {
 	return &Loader{options: options}, nil
 }
 
-// LoadConfig loads the main application configuration
+// LoadConfig loads the main application configuration.
 func (l *Loader) LoadConfig() (*iface.Config, error) {
 	provider, err := viper.NewViperProvider(
 		l.options.ConfigName,
@@ -51,7 +51,7 @@ func (l *Loader) LoadConfig() (*iface.Config, error) {
 	return &cfg, nil
 }
 
-// LoadFromEnv loads configuration from environment variables only
+// LoadFromEnv loads configuration from environment variables only.
 func LoadFromEnv(prefix string) (*iface.Config, error) {
 	provider, err := viper.NewViperProvider("", nil, prefix, "")
 	if err != nil {
@@ -63,11 +63,12 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	// Viper's Unmarshal doesn't always parse array indices from env vars correctly
 	// Use UnmarshalKey for each section to ensure env vars are parsed
 	// Always try to unmarshal (IsSet may not detect array indices from env vars)
-	_ = provider.UnmarshalKey("llm_providers", &cfg.LLMProviders)
-	_ = provider.UnmarshalKey("embedding_providers", &cfg.EmbeddingProviders)
-	_ = provider.UnmarshalKey("vector_stores", &cfg.VectorStores)
-	_ = provider.UnmarshalKey("agents", &cfg.Agents)
-	_ = provider.UnmarshalKey("tools", &cfg.Tools)
+	// Errors are intentionally ignored as these are fallback attempts
+	_ = provider.UnmarshalKey("llm_providers", &cfg.LLMProviders)             //nolint:errcheck // Fallback attempt, errors handled below
+	_ = provider.UnmarshalKey("embedding_providers", &cfg.EmbeddingProviders) //nolint:errcheck // Fallback attempt
+	_ = provider.UnmarshalKey("vector_stores", &cfg.VectorStores)             //nolint:errcheck // Fallback attempt
+	_ = provider.UnmarshalKey("agents", &cfg.Agents)                          //nolint:errcheck // Fallback attempt
+	_ = provider.UnmarshalKey("tools", &cfg.Tools)                            //nolint:errcheck // Fallback attempt
 
 	// Load other fields using standard Load (this won't overwrite arrays we just set)
 	if err := provider.Load(&cfg); err != nil {
@@ -90,7 +91,7 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 	return &cfg, nil
 }
 
-// LoadFromFile loads configuration from a specific file
+// LoadFromFile loads configuration from a specific file.
 func LoadFromFile(filePath string) (*iface.Config, error) {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("config file does not exist: %s", filePath)
@@ -119,7 +120,7 @@ func LoadFromFile(filePath string) (*iface.Config, error) {
 	return &cfg, nil
 }
 
-// MustLoadConfig loads configuration and panics on error
+// MustLoadConfig loads configuration and panics on error.
 func (l *Loader) MustLoadConfig() *iface.Config {
 	cfg, err := l.LoadConfig()
 	if err != nil {
@@ -128,37 +129,37 @@ func (l *Loader) MustLoadConfig() *iface.Config {
 	return cfg
 }
 
-// WithConfigName sets the configuration file name (without extension)
+// WithConfigName sets the configuration file name (without extension).
 func (l *Loader) WithConfigName(name string) *Loader {
 	l.options.ConfigName = name
 	return l
 }
 
-// WithConfigPaths sets the paths to search for configuration files
+// WithConfigPaths sets the paths to search for configuration files.
 func (l *Loader) WithConfigPaths(paths ...string) *Loader {
 	l.options.ConfigPaths = paths
 	return l
 }
 
-// WithEnvPrefix sets the environment variable prefix
+// WithEnvPrefix sets the environment variable prefix.
 func (l *Loader) WithEnvPrefix(prefix string) *Loader {
 	l.options.EnvPrefix = prefix
 	return l
 }
 
-// WithValidation enables or disables configuration validation
+// WithValidation enables or disables configuration validation.
 func (l *Loader) WithValidation(enabled bool) *Loader {
 	l.options.Validate = enabled
 	return l
 }
 
-// WithDefaults enables or disables setting default values
+// WithDefaults enables or disables setting default values.
 func (l *Loader) WithDefaults(enabled bool) *Loader {
 	l.options.SetDefaults = enabled
 	return l
 }
 
-// GetEnvConfigMap returns a map of all environment variables with the given prefix
+// GetEnvConfigMap returns a map of all environment variables with the given prefix.
 func GetEnvConfigMap(prefix string) map[string]string {
 	envMap := make(map[string]string)
 	if prefix == "" {
@@ -182,12 +183,12 @@ func GetEnvConfigMap(prefix string) map[string]string {
 	return envMap
 }
 
-// EnvVarName converts a config key to environment variable name
+// EnvVarName converts a config key to environment variable name.
 func EnvVarName(prefix, key string) string {
 	return strings.ToUpper(prefix + "_" + strings.ReplaceAll(key, ".", "_"))
 }
 
-// ConfigKey converts an environment variable name to config key
+// ConfigKey converts an environment variable name to config key.
 func ConfigKey(prefix, envVar string) string {
 	key := strings.ToLower(strings.TrimPrefix(envVar, strings.ToUpper(prefix+"_")))
 	return strings.ReplaceAll(key, "_", ".")

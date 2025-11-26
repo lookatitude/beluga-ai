@@ -6,19 +6,19 @@ import (
 	"context"
 )
 
-// MCPTool represents a tool that can be invoked via MCP
+// MCPTool represents a tool that can be invoked via MCP.
 type MCPTool interface {
 	// Name returns the tool's name
 	Name() string
 	// Description returns the tool's description
 	Description() string
 	// InputSchema returns the JSON schema for the tool's input
-	InputSchema() map[string]interface{}
+	InputSchema() map[string]any
 	// Execute runs the tool with the given input
-	Execute(ctx context.Context, input map[string]interface{}) (interface{}, error)
+	Execute(ctx context.Context, input map[string]any) (any, error)
 }
 
-// MCPResource represents a resource that can be accessed via MCP
+// MCPResource represents a resource that can be accessed via MCP.
 type MCPResource interface {
 	// URI returns the resource's URI
 	URI() string
@@ -32,23 +32,23 @@ type MCPResource interface {
 	Read(ctx context.Context) ([]byte, error)
 }
 
-// Logger represents a logging interface
+// Logger represents a logging interface.
 type Logger interface {
-	Debug(msg string, args ...interface{})
-	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
+	Debug(msg string, args ...any)
+	Info(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Error(msg string, args ...any)
 }
 
-// Tracer represents a tracing interface
+// Tracer represents a tracing interface.
 type Tracer interface {
 	Start(ctx context.Context, name string) (context.Context, Span)
 }
 
-// Span represents a tracing span
+// Span represents a tracing span.
 type Span interface {
 	End()
-	SetAttributes(attrs ...interface{})
+	SetAttributes(attrs ...any)
 	RecordError(err error)
 	SetStatus(code int, msg string)
 }

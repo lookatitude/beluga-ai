@@ -11,7 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 )
 
-// noOpSpan is a no-operation span for our internal use
+// noOpSpan is a no-operation span for our internal use.
 type noOpSpan struct{}
 
 func (s *noOpSpan) End() {}
@@ -20,23 +20,23 @@ func (s *noOpSpan) SetStatus(code codes.Code, description string) {}
 
 func (s *noOpSpan) SetAttributes(kv ...attribute.KeyValue) {}
 
-// Provider implements OpenTelemetry integration
+// Provider implements OpenTelemetry integration.
 type Provider struct {
 	config Config
 }
 
-// Config configures the OpenTelemetry provider
+// Config configures the OpenTelemetry provider.
 type Config struct {
+	ResourceAttrs  map[string]string
 	Endpoint       string
 	ServiceName    string
 	ServiceVersion string
 	Environment    string
-	ResourceAttrs  map[string]string
-	SampleRate     float64
 	ExportTimeout  string
+	SampleRate     float64
 }
 
-// NewProvider creates a new OpenTelemetry provider
+// NewProvider creates a new OpenTelemetry provider.
 func NewProvider(config Config) (*Provider, error) {
 	provider := &Provider{
 		config: config,
@@ -45,17 +45,17 @@ func NewProvider(config Config) (*Provider, error) {
 	return provider, nil
 }
 
-// Tracer returns the OpenTelemetry tracer
+// Tracer returns the OpenTelemetry tracer.
 func (p *Provider) Tracer() iface.Tracer {
 	return &otelTracer{}
 }
 
-// Shutdown shuts down the provider
+// Shutdown shuts down the provider.
 func (p *Provider) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-// otelTracer implements the iface.Tracer interface using OpenTelemetry
+// otelTracer implements the iface.Tracer interface using OpenTelemetry.
 type otelTracer struct{}
 
 func (t *otelTracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanOption) (context.Context, iface.Span) {
@@ -87,12 +87,12 @@ func (t *otelTracer) GetTraceSpans(traceID string) []iface.Span {
 	return nil
 }
 
-// otelSpan implements the iface.Span interface using OpenTelemetry
+// otelSpan implements the iface.Span interface using OpenTelemetry.
 type otelSpan struct {
 	span *noOpSpan
 }
 
-func (s *otelSpan) Log(message string, fields ...map[string]interface{}) {
+func (s *otelSpan) Log(message string, fields ...map[string]any) {
 	// Convert fields to attributes (no-op for now)
 	_ = message
 	_ = fields
@@ -130,21 +130,21 @@ func (s *otelSpan) IsFinished() bool {
 	return false
 }
 
-func (s *otelSpan) SetTag(key string, value interface{}) {
+func (s *otelSpan) SetTag(key string, value any) {
 	// No-op for now
 	_ = key
 	_ = value
 }
 
-// WithTag creates a span option for adding tags
-func WithTag(key string, value interface{}) iface.SpanOption {
+// WithTag creates a span option for adding tags.
+func WithTag(key string, value any) iface.SpanOption {
 	return func(span iface.Span) {
 		span.SetTag(key, value)
 	}
 }
 
-// WithTags creates a span option for adding multiple tags
-func WithTags(tags map[string]interface{}) iface.SpanOption {
+// WithTags creates a span option for adding multiple tags.
+func WithTags(tags map[string]any) iface.SpanOption {
 	return func(span iface.Span) {
 		for k, v := range tags {
 			span.SetTag(k, v)

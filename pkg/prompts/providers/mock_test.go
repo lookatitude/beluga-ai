@@ -91,13 +91,13 @@ func TestMockParsedTemplate_Execute(t *testing.T) {
 	tests := []struct {
 		name     string
 		template string
-		data     interface{}
+		data     any
 		expected string
 	}{
 		{
 			name:     "simple replacement",
 			template: "Hello {{.name}}!",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"name": "Alice",
 			},
 			expected: "Hello Alice!",
@@ -105,7 +105,7 @@ func TestMockParsedTemplate_Execute(t *testing.T) {
 		{
 			name:     "multiple replacements",
 			template: "{{.greeting}} {{.name}}!",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"greeting": "Hi",
 				"name":     "Bob",
 			},
@@ -114,13 +114,13 @@ func TestMockParsedTemplate_Execute(t *testing.T) {
 		{
 			name:     "no replacements",
 			template: "Hello World!",
-			data:     map[string]interface{}{},
+			data:     map[string]any{},
 			expected: "Hello World!",
 		},
 		{
 			name:     "non-string data",
 			template: "Hello {{.name}}!",
-			data: map[string]interface{}{
+			data: map[string]any{
 				"name": 123, // int instead of string
 			},
 			expected: "Hello {{.name}}!", // Should not replace
@@ -150,17 +150,17 @@ func TestMockParsedTemplate_Execute(t *testing.T) {
 
 func TestMockVariableValidator_Validate(t *testing.T) {
 	tests := []struct {
+		provided    map[string]any
 		name        string
-		shouldFail  bool
 		required    []string
-		provided    map[string]interface{}
+		shouldFail  bool
 		expectError bool
 	}{
 		{
 			name:       "successful validation",
 			shouldFail: false,
 			required:   []string{"name", "age"},
-			provided: map[string]interface{}{
+			provided: map[string]any{
 				"name": "Alice",
 				"age":  "25",
 			},
@@ -170,7 +170,7 @@ func TestMockVariableValidator_Validate(t *testing.T) {
 			name:       "missing required variable",
 			shouldFail: false,
 			required:   []string{"name", "age"},
-			provided: map[string]interface{}{
+			provided: map[string]any{
 				"name": "Alice",
 			},
 			expectError: true,
@@ -179,7 +179,7 @@ func TestMockVariableValidator_Validate(t *testing.T) {
 			name:       "forced failure",
 			shouldFail: true,
 			required:   []string{"name"},
-			provided: map[string]interface{}{
+			provided: map[string]any{
 				"name": "Alice",
 			},
 			expectError: true,
@@ -188,7 +188,7 @@ func TestMockVariableValidator_Validate(t *testing.T) {
 			name:        "no required variables",
 			shouldFail:  false,
 			required:    []string{},
-			provided:    map[string]interface{}{},
+			provided:    map[string]any{},
 			expectError: false,
 		},
 	}
@@ -221,15 +221,15 @@ func TestMockVariableValidator_Validate(t *testing.T) {
 
 func TestMockVariableValidator_ValidateTypes(t *testing.T) {
 	tests := []struct {
+		variables   map[string]any
 		name        string
 		shouldFail  bool
-		variables   map[string]interface{}
 		expectError bool
 	}{
 		{
 			name:       "successful type validation",
 			shouldFail: false,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"name": "Alice",
 				"age":  25,
 			},
@@ -238,7 +238,7 @@ func TestMockVariableValidator_ValidateTypes(t *testing.T) {
 		{
 			name:       "forced failure",
 			shouldFail: true,
-			variables: map[string]interface{}{
+			variables: map[string]any{
 				"name": "Alice",
 			},
 			expectError: true,
@@ -246,7 +246,7 @@ func TestMockVariableValidator_ValidateTypes(t *testing.T) {
 		{
 			name:        "empty variables",
 			shouldFail:  false,
-			variables:   map[string]interface{}{},
+			variables:   map[string]any{},
 			expectError: false,
 		},
 	}
@@ -314,9 +314,9 @@ func TestMockHealthChecker_CheckCount(t *testing.T) {
 	}
 
 	// Check multiple times
-	checker.Check(context.Background())
-	checker.Check(context.Background())
-	checker.Check(context.Background())
+	_ = checker.Check(context.Background())
+	_ = checker.Check(context.Background())
+	_ = checker.Check(context.Background())
 
 	if count := checker.GetCheckCount(); count != 3 {
 		t.Errorf("Check count after 3 calls = %d, want 3", count)
@@ -362,7 +362,7 @@ func TestThreadSafeMockTemplateEngine_Concurrency(t *testing.T) {
 				}
 
 				// Execute template
-				data := map[string]interface{}{
+				data := map[string]any{
 					"name": fmt.Sprintf("User%d", goroutineID),
 				}
 				result, err := parsed.Execute(data)
@@ -405,7 +405,7 @@ func TestAdvancedMockVariableValidator_ValidationCalls(t *testing.T) {
 
 	// Test Validate calls
 	required := []string{"name", "age"}
-	provided := map[string]interface{}{
+	provided := map[string]any{
 		"name": "Alice",
 		"age":  "25",
 	}
@@ -458,7 +458,7 @@ func TestAdvancedMockVariableValidator_ErrorScenarios(t *testing.T) {
 
 	// Test forced validation failure
 	validator.ShouldFailValidation = true
-	err := validator.Validate([]string{"name"}, map[string]interface{}{"name": "test"})
+	err := validator.Validate([]string{"name"}, map[string]any{"name": "test"})
 	if err == nil {
 		t.Error("Expected validation error but got none")
 	}
@@ -466,7 +466,7 @@ func TestAdvancedMockVariableValidator_ErrorScenarios(t *testing.T) {
 	// Test forced type check failure
 	validator.ShouldFailValidation = false
 	validator.ShouldFailTypeCheck = true
-	err = validator.ValidateTypes(map[string]interface{}{"name": "test"})
+	err = validator.ValidateTypes(map[string]any{"name": "test"})
 	if err == nil {
 		t.Error("Expected type validation error but got none")
 	}
@@ -488,7 +488,7 @@ func TestMockHealthChecker_Concurrency(t *testing.T) {
 	errors := make(chan error, numGoroutines*numChecks)
 
 	for i := 0; i < numGoroutines; i++ {
-	ctx := context.Background()
+		ctx := context.Background()
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
@@ -541,7 +541,7 @@ func BenchmarkMockVariableValidator_Validate(b *testing.B) {
 	validator := NewMockVariableValidator()
 
 	required := []string{"name", "age", "email"}
-	provided := map[string]interface{}{
+	provided := map[string]any{
 		"name":  "Alice",
 		"age":   "25",
 		"email": "alice@example.com",
@@ -569,7 +569,7 @@ func BenchmarkMockHealthChecker_Check(b *testing.B) {
 	}
 }
 
-// TestMockIntegration tests the mocks working together
+// TestMockIntegration tests the mocks working together.
 func TestMockIntegration(t *testing.T) {
 	// Create all mock components
 	templateEngine := NewMockTemplateEngine()
@@ -598,7 +598,7 @@ func TestMockIntegration(t *testing.T) {
 	}
 
 	// Test validation
-	err = variableValidator.Validate(vars, map[string]interface{}{
+	err = variableValidator.Validate(vars, map[string]any{
 		"name":  "Alice",
 		"place": "Wonderland",
 	})
@@ -607,7 +607,7 @@ func TestMockIntegration(t *testing.T) {
 	}
 
 	// Test template execution
-	result, err := parsed.Execute(map[string]interface{}{
+	result, err := parsed.Execute(map[string]any{
 		"name":  "Alice",
 		"place": "Wonderland",
 	})

@@ -1,5 +1,7 @@
 // Package react provides ReAct (Reasoning + Acting) agent implementations.
 // ReAct agents combine reasoning and acting in an iterative process.
+//
+//nolint:printf // Disable printf linter due to panic bug in golangci-lint v2.6.2 when analyzing range loops
 package react
 
 import (
@@ -93,7 +95,14 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 	// Add tools description to inputs
 	var toolsDesc strings.Builder
 	for _, tool := range a.tools {
-		toolsDesc.WriteString(fmt.Sprintf("- %s: %s\n", tool.Name(), tool.Description()))
+		toolName := tool.Name()
+		toolDesc := tool.Description()
+		// Avoid fmt.Sprintf in range loop to prevent printf linter panic
+		toolsDesc.WriteString("- ")
+		toolsDesc.WriteString(toolName)
+		toolsDesc.WriteString(": ")
+		toolsDesc.WriteString(toolDesc)
+		toolsDesc.WriteString("\n")
 	}
 	promptInputs["tools"] = toolsDesc.String()
 
@@ -107,7 +116,8 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 
 	// Call LLM
 	llmResponse, err := a.llm.Generate(ctx, messages)
-	agentName := a.BaseAgent.GetConfig().Name
+	config := a.BaseAgent.GetConfig()
+	agentName := config.Name
 	if err != nil {
 		if a.GetMetrics() != nil {
 			a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), false)
@@ -116,7 +126,8 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 	}
 
 	// Parse LLM response
-	action, finish, err := a.parseResponse(llmResponse.GetContent())
+	responseContent := llmResponse.GetContent()
+	action, finish, err := a.parseResponse(responseContent)
 	if err != nil {
 		if a.GetMetrics() != nil {
 			a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), false)
@@ -131,18 +142,78 @@ func (a *ReActAgent) Plan(ctx context.Context, intermediateSteps []iface.Interme
 	return action, finish, nil
 }
 
+// anyToString converts any value to string without using fmt.Sprintf.
+// This prevents printf linter panic in golangci-lint v2.6.2 when analyzing range loops.
+func anyToString(v any) string {
+	if v == nil {
+		return ""
+	}
+	switch val := v.(type) {
+	case string:
+		return val
+	case []byte:
+		return string(val)
+	case int:
+		return strconv.Itoa(val)
+	case int64:
+		return strconv.FormatInt(val, 10)
+	case float64:
+		return strconv.FormatFloat(val, 'f', -1, 64)
+	case bool:
+		return strconv.FormatBool(val)
+	case map[string]any:
+		// Convert map to JSON string representation
+		if jsonBytes, err := json.Marshal(val); err == nil {
+			return string(jsonBytes)
+		}
+		return "{}"
+	case []any:
+		// Convert slice to JSON string representation
+		if jsonBytes, err := json.Marshal(val); err == nil {
+			return string(jsonBytes)
+		}
+		return "[]"
+	default:
+		// For complex types, use JSON marshaling
+		if jsonBytes, err := json.Marshal(val); err == nil {
+			return string(jsonBytes)
+		}
+		// Last resort: empty string (better than fmt.Sprintf which causes panic)
+		return ""
+	}
+}
+
 // constructScratchpad builds the agent scratchpad from intermediate steps.
 func (a *ReActAgent) constructScratchpad(intermediateSteps []iface.IntermediateStep) string {
 	var scratchpad strings.Builder
 
 	for i, step := range intermediateSteps {
-		scratchpad.WriteString(fmt.Sprintf("Step %d:\n", i+1))
-		scratchpad.WriteString(fmt.Sprintf("Action: %s\n", step.Action.Tool))
+		stepNum := i + 1
+		actionTool := step.Action.Tool
+		observation := step.Observation
+		actionLog := step.Action.Log
+
+		// Avoid fmt.Sprintf in range loop to prevent printf linter panic
+		scratchpad.WriteString("Step ")
+		scratchpad.WriteString(strconv.Itoa(stepNum))
+		scratchpad.WriteString(":\n")
+		scratchpad.WriteString("Action: ")
+		scratchpad.WriteString(actionTool)
+		scratchpad.WriteString("\n")
 		if step.Action.ToolInput != nil {
-			scratchpad.WriteString(fmt.Sprintf("Action Input: %v\n", step.Action.ToolInput))
+			toolInput := step.Action.ToolInput
+			scratchpad.WriteString("Action Input: ")
+			// Use helper function to avoid fmt.Sprintf in range loop
+			toolInputStr := anyToString(toolInput)
+			scratchpad.WriteString(toolInputStr)
+			scratchpad.WriteString("\n")
 		}
-		scratchpad.WriteString(fmt.Sprintf("Observation: %s\n", step.Observation))
-		scratchpad.WriteString(fmt.Sprintf("Log: %s\n\n", step.Action.Log))
+		scratchpad.WriteString("Observation: ")
+		scratchpad.WriteString(observation)
+		scratchpad.WriteString("\n")
+		scratchpad.WriteString("Log: ")
+		scratchpad.WriteString(actionLog)
+		scratchpad.WriteString("\n\n")
 	}
 
 	return scratchpad.String()
@@ -159,7 +230,9 @@ func (a *ReActAgent) formatPrompt(inputs map[string]any) string {
 	formatted := template
 	for key, value := range inputs {
 		placeholder := "{" + key + "}"
-		formatted = strings.ReplaceAll(formatted, placeholder, fmt.Sprintf("%v", value))
+		// Use helper function to avoid fmt.Sprintf in range loop
+		valueStr := anyToString(value)
+		formatted = strings.ReplaceAll(formatted, placeholder, valueStr)
 	}
 
 	return formatted

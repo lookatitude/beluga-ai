@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// PackageMetrics defines comprehensive metrics for the monitoring package
+// PackageMetrics defines comprehensive metrics for the monitoring package.
 type PackageMetrics struct {
 	// System metrics
 	monitorStartTime time.Time
@@ -74,7 +74,7 @@ type PackageMetrics struct {
 	meter metric.Meter
 }
 
-// NewPackageMetrics creates a new comprehensive package metrics instance
+// NewPackageMetrics creates a new comprehensive package metrics instance.
 func NewPackageMetrics(meter metric.Meter) *PackageMetrics {
 	pm := &PackageMetrics{
 		monitorStartTime: time.Now(),
@@ -345,19 +345,19 @@ func NewPackageMetrics(meter metric.Meter) *PackageMetrics {
 	return pm
 }
 
-// RecordRequest records a monitoring request
+// RecordRequest records a monitoring request.
 func (pm *PackageMetrics) RecordRequest(ctx context.Context, operation string) {
 	pm.totalRequests.Add(ctx, 1,
 		metric.WithAttributes(attribute.String("operation", operation)))
 }
 
-// RecordOperationStart records the start of an operation
+// RecordOperationStart records the start of an operation.
 func (pm *PackageMetrics) RecordOperationStart(ctx context.Context, operation string) {
 	pm.activeOperations.Add(ctx, 1,
 		metric.WithAttributes(attribute.String("operation", operation)))
 }
 
-// RecordOperationEnd records the end of an operation
+// RecordOperationEnd records the end of an operation.
 func (pm *PackageMetrics) RecordOperationEnd(ctx context.Context, operation string, duration time.Duration) {
 	pm.activeOperations.Add(ctx, -1,
 		metric.WithAttributes(attribute.String("operation", operation)))
@@ -366,7 +366,7 @@ func (pm *PackageMetrics) RecordOperationEnd(ctx context.Context, operation stri
 		metric.WithAttributes(attribute.String("operation", operation)))
 }
 
-// RecordHealthCheck records a health check operation
+// RecordHealthCheck records a health check operation.
 func (pm *PackageMetrics) RecordHealthCheck(ctx context.Context, component string, duration time.Duration, success bool) {
 	if success {
 		pm.healthCheckDuration.Record(ctx, duration.Seconds(),
@@ -377,7 +377,7 @@ func (pm *PackageMetrics) RecordHealthCheck(ctx context.Context, component strin
 	}
 }
 
-// RecordSafetyCheck records a safety check operation
+// RecordSafetyCheck records a safety check operation.
 func (pm *PackageMetrics) RecordSafetyCheck(ctx context.Context, duration time.Duration, success bool) {
 	if success {
 		pm.safetyCheckDuration.Record(ctx, duration.Seconds())
@@ -386,7 +386,7 @@ func (pm *PackageMetrics) RecordSafetyCheck(ctx context.Context, duration time.D
 	}
 }
 
-// RecordEthicsCheck records an ethics check operation
+// RecordEthicsCheck records an ethics check operation.
 func (pm *PackageMetrics) RecordEthicsCheck(ctx context.Context, duration time.Duration, success bool) {
 	if success {
 		pm.ethicsCheckDuration.Record(ctx, duration.Seconds())
@@ -395,7 +395,7 @@ func (pm *PackageMetrics) RecordEthicsCheck(ctx context.Context, duration time.D
 	}
 }
 
-// UpdateComponentHealth updates the health status of a component
+// UpdateComponentHealth updates the health status of a component.
 func (pm *PackageMetrics) UpdateComponentHealth(ctx context.Context, component string, healthy bool) {
 	var value int64
 	if healthy {
@@ -418,7 +418,7 @@ func (pm *PackageMetrics) UpdateComponentHealth(ctx context.Context, component s
 	}
 }
 
-// RecordError records a general monitoring error
+// RecordError records a general monitoring error.
 func (pm *PackageMetrics) RecordError(ctx context.Context, component string, err error) {
 	pm.totalErrors.Add(ctx, 1,
 		metric.WithAttributes(
@@ -427,7 +427,7 @@ func (pm *PackageMetrics) RecordError(ctx context.Context, component string, err
 		))
 }
 
-// RecordTracingOperation records a tracing operation
+// RecordTracingOperation records a tracing operation.
 func (pm *PackageMetrics) RecordTracingOperation(ctx context.Context, duration time.Duration, success bool) {
 	if success {
 		pm.tracingDuration.Record(ctx, duration.Seconds())
@@ -436,7 +436,7 @@ func (pm *PackageMetrics) RecordTracingOperation(ctx context.Context, duration t
 	}
 }
 
-// RecordLoggingOperation records a logging operation
+// RecordLoggingOperation records a logging operation.
 func (pm *PackageMetrics) RecordLoggingOperation(ctx context.Context, duration time.Duration, success bool) {
 	if success {
 		pm.loggingDuration.Record(ctx, duration.Seconds())
@@ -445,7 +445,7 @@ func (pm *PackageMetrics) RecordLoggingOperation(ctx context.Context, duration t
 	}
 }
 
-// RecordAPIRequest records an API request
+// RecordAPIRequest records an API request.
 func (pm *PackageMetrics) RecordAPIRequest(ctx context.Context, method, endpoint string) {
 	pm.apiRequests.Add(ctx, 1,
 		metric.WithAttributes(
@@ -454,7 +454,7 @@ func (pm *PackageMetrics) RecordAPIRequest(ctx context.Context, method, endpoint
 		))
 }
 
-// RecordDatabaseQuery records a database query
+// RecordDatabaseQuery records a database query.
 func (pm *PackageMetrics) RecordDatabaseQuery(ctx context.Context, operation, table string, duration time.Duration) {
 	pm.databaseQueries.Add(ctx, 1,
 		metric.WithAttributes(
@@ -465,7 +465,7 @@ func (pm *PackageMetrics) RecordDatabaseQuery(ctx context.Context, operation, ta
 		metric.WithAttributes(attribute.String("type", "database")))
 }
 
-// RecordCacheOperation records a cache operation
+// RecordCacheOperation records a cache operation.
 func (pm *PackageMetrics) RecordCacheOperation(ctx context.Context, operation, key string, hit bool) {
 	if hit {
 		pm.cacheHits.Add(ctx, 1,
@@ -482,7 +482,7 @@ func (pm *PackageMetrics) RecordCacheOperation(ctx context.Context, operation, k
 	}
 }
 
-// RecordExternalAPICall records an external API call
+// RecordExternalAPICall records an external API call.
 func (pm *PackageMetrics) RecordExternalAPICall(ctx context.Context, service, endpoint string, duration time.Duration, success bool) {
 	pm.externalAPICalls.Add(ctx, 1,
 		metric.WithAttributes(
@@ -494,7 +494,7 @@ func (pm *PackageMetrics) RecordExternalAPICall(ctx context.Context, service, en
 		metric.WithAttributes(attribute.String("type", "external_api")))
 }
 
-// RecordValidationOperation records a validation operation
+// RecordValidationOperation records a validation operation.
 func (pm *PackageMetrics) RecordValidationOperation(ctx context.Context, validatorType string, duration time.Duration, success bool) {
 	pm.validationOperations.Add(ctx, 1,
 		metric.WithAttributes(
@@ -503,7 +503,7 @@ func (pm *PackageMetrics) RecordValidationOperation(ctx context.Context, validat
 		))
 }
 
-// RegisterCustomCounter registers a custom counter metric
+// RegisterCustomCounter registers a custom counter metric.
 func (pm *PackageMetrics) RegisterCustomCounter(name, description string) error {
 	counter, err := pm.getMeter().Int64Counter(name, metric.WithDescription(description))
 	if err != nil {
@@ -513,7 +513,7 @@ func (pm *PackageMetrics) RegisterCustomCounter(name, description string) error 
 	return nil
 }
 
-// RegisterCustomHistogram registers a custom histogram metric
+// RegisterCustomHistogram registers a custom histogram metric.
 func (pm *PackageMetrics) RegisterCustomHistogram(name, description string) error {
 	histogram, err := pm.getMeter().Float64Histogram(name, metric.WithDescription(description))
 	if err != nil {
@@ -523,7 +523,7 @@ func (pm *PackageMetrics) RegisterCustomHistogram(name, description string) erro
 	return nil
 }
 
-// RecordCustomCounter records a value for a custom counter
+// RecordCustomCounter records a value for a custom counter.
 func (pm *PackageMetrics) RecordCustomCounter(ctx context.Context, name string, value int64, labels map[string]string) {
 	if counter, exists := pm.customCounters[name]; exists {
 		attrs := make([]attribute.KeyValue, 0, len(labels))
@@ -534,7 +534,7 @@ func (pm *PackageMetrics) RecordCustomCounter(ctx context.Context, name string, 
 	}
 }
 
-// RecordCustomHistogram records a value for a custom histogram
+// RecordCustomHistogram records a value for a custom histogram.
 func (pm *PackageMetrics) RecordCustomHistogram(ctx context.Context, name string, value float64, labels map[string]string) {
 	if histogram, exists := pm.customHistograms[name]; exists {
 		attrs := make([]attribute.KeyValue, 0, len(labels))
@@ -545,12 +545,12 @@ func (pm *PackageMetrics) RecordCustomHistogram(ctx context.Context, name string
 	}
 }
 
-// GetUptime returns the uptime of the monitoring system
+// GetUptime returns the uptime of the monitoring system.
 func (pm *PackageMetrics) GetUptime() time.Duration {
 	return time.Since(pm.monitorStartTime)
 }
 
-// getMeter returns the OpenTelemetry meter
+// getMeter returns the OpenTelemetry meter.
 func (pm *PackageMetrics) getMeter() metric.Meter {
 	return pm.meter
 }

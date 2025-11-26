@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 
-// TranscribeREST performs transcription using Deepgram REST API as a fallback
+// TranscribeREST performs transcription using Deepgram REST API as a fallback.
 func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (string, error) {
 	startTime := time.Now()
 
@@ -40,7 +41,7 @@ func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (st
 	}
 
 	// Set headers
-	req.Header.Set("Authorization", fmt.Sprintf("Token %s", p.config.APIKey))
+	req.Header.Set("Authorization", "Token "+p.config.APIKey)
 	req.Header.Set("Content-Type", "audio/wav")
 
 	// Execute request with retry logic
@@ -71,16 +72,16 @@ func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (st
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeTimeout, err)
 		}
-		if ctx.Err() == context.Canceled {
+		if errors.Is(ctx.Err(), context.Canceled) {
 			return "", ctx.Err()
 		}
 		return "", stt.ErrorFromHTTPStatus("TranscribeREST", 0, err)
@@ -95,6 +96,11 @@ func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (st
 
 	// Parse response
 	var response struct {
+		Metadata struct {
+			ModelInfo struct {
+				Name string `json:"name"`
+			} `json:"model_info"`
+		} `json:"metadata"`
 		Results struct {
 			Channels []struct {
 				Alternatives []struct {
@@ -103,11 +109,6 @@ func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (st
 				} `json:"alternatives"`
 			} `json:"channels"`
 		} `json:"results"`
-		Metadata struct {
-			ModelInfo struct {
-				Name string `json:"name"`
-			} `json:"model_info"`
-		} `json:"metadata"`
 	}
 
 	body, err := io.ReadAll(resp.Body)
@@ -123,7 +124,7 @@ func (p *DeepgramProvider) TranscribeREST(ctx context.Context, audio []byte) (st
 	if len(response.Results.Channels) == 0 ||
 		len(response.Results.Channels[0].Alternatives) == 0 {
 		return "", stt.NewSTTError("TranscribeREST", stt.ErrCodeEmptyResponse,
-			fmt.Errorf("no transcript in response"))
+			errors.New("no transcript in response"))
 	}
 
 	transcript := response.Results.Channels[0].Alternatives[0].Transcript

@@ -2,6 +2,7 @@ package onnx
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -10,7 +11,7 @@ import (
 	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
 )
 
-// ONNXProvider implements the TurnDetector interface for ONNX-based Turn Detection
+// ONNXProvider implements the TurnDetector interface for ONNX-based Turn Detection.
 type ONNXProvider struct {
 	config      *ONNXConfig
 	model       *ONNXModel
@@ -18,7 +19,7 @@ type ONNXProvider struct {
 	initialized bool
 }
 
-// ONNXModel represents a loaded ONNX model for turn detection
+// ONNXModel represents a loaded ONNX model for turn detection.
 type ONNXModel struct {
 	modelPath  string
 	sampleRate int
@@ -26,11 +27,11 @@ type ONNXModel struct {
 	loaded     bool
 }
 
-// NewONNXProvider creates a new ONNX Turn Detection provider
+// NewONNXProvider creates a new ONNX Turn Detection provider.
 func NewONNXProvider(config *turndetection.Config) (turndetectioniface.TurnDetector, error) {
 	if config == nil {
 		return nil, turndetection.NewTurnDetectionError("NewONNXProvider", turndetection.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to ONNX config
@@ -63,7 +64,7 @@ func NewONNXProvider(config *turndetection.Config) (turndetectioniface.TurnDetec
 	return provider, nil
 }
 
-// DetectTurn implements the TurnDetector interface
+// DetectTurn implements the TurnDetector interface.
 func (p *ONNXProvider) DetectTurn(ctx context.Context, audio []byte) (bool, error) {
 	// Lazy initialization - load model on first use
 	if err := p.ensureInitialized(ctx); err != nil {
@@ -74,7 +75,7 @@ func (p *ONNXProvider) DetectTurn(ctx context.Context, audio []byte) (bool, erro
 	return p.model.Process(ctx, audio, p.config.Threshold)
 }
 
-// DetectTurnWithSilence implements the TurnDetector interface
+// DetectTurnWithSilence implements the TurnDetector interface.
 func (p *ONNXProvider) DetectTurnWithSilence(ctx context.Context, audio []byte, silenceDuration time.Duration) (bool, error) {
 	// Check if silence duration exceeds minimum threshold
 	if silenceDuration >= p.config.MinSilenceDuration {
@@ -85,7 +86,7 @@ func (p *ONNXProvider) DetectTurnWithSilence(ctx context.Context, audio []byte, 
 	return p.DetectTurn(ctx, audio)
 }
 
-// ensureInitialized loads the ONNX model if not already loaded
+// ensureInitialized loads the ONNX model if not already loaded.
 func (p *ONNXProvider) ensureInitialized(ctx context.Context) error {
 	p.mu.RLock()
 	initialized := p.initialized
@@ -115,7 +116,7 @@ func (p *ONNXProvider) ensureInitialized(ctx context.Context) error {
 	return nil
 }
 
-// LoadONNXModel loads an ONNX model from the specified path
+// LoadONNXModel loads an ONNX model from the specified path.
 func LoadONNXModel(modelPath string, sampleRate, frameSize int) (*ONNXModel, error) {
 	// TODO: Actual ONNX model loading would go here
 	// In a real implementation, this would:
@@ -133,11 +134,11 @@ func LoadONNXModel(modelPath string, sampleRate, frameSize int) (*ONNXModel, err
 	return model, nil
 }
 
-// Process processes audio data using the ONNX model
+// Process processes audio data using the ONNX model.
 func (m *ONNXModel) Process(ctx context.Context, audio []byte, threshold float64) (bool, error) {
 	if !m.loaded {
 		return false, turndetection.NewTurnDetectionError("Process", turndetection.ErrCodeModelLoadFailed,
-			fmt.Errorf("model not loaded"))
+			errors.New("model not loaded"))
 	}
 
 	// Validate audio length
@@ -166,7 +167,7 @@ func (m *ONNXModel) Process(ctx context.Context, audio []byte, threshold float64
 	return turnProbability >= threshold, nil
 }
 
-// calculateEnergy calculates the energy of an audio signal
+// calculateEnergy calculates the energy of an audio signal.
 func calculateEnergy(audio []byte) float64 {
 	if len(audio) == 0 {
 		return 0.0

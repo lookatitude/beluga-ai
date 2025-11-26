@@ -10,7 +10,7 @@ import (
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
-// MockLLM is a test implementation of the LLM interface
+// MockLLM is a test implementation of the LLM interface.
 type MockLLM struct {
 	response any
 	err      error
@@ -31,12 +31,12 @@ func (m *MockLLM) GetProviderName() string {
 	return "mock-provider"
 }
 
-// MockTool is a test implementation of the Tool interface
+// MockTool is a test implementation of the Tool interface.
 type MockTool struct {
+	result      any
+	err         error
 	name        string
 	description string
-	result      interface{}
-	err         error
 }
 
 func (m *MockTool) Name() string {
@@ -133,7 +133,7 @@ func TestBaseAgent_Initialize(t *testing.T) {
 		t.Fatalf("Failed to create agent: %v", err)
 	}
 
-	config := map[string]interface{}{
+	config := map[string]any{
 		"max_retries": 5,
 		"timeout":     "30s",
 	}
@@ -216,9 +216,9 @@ func TestBaseAgent_EventHandling(t *testing.T) {
 	}
 
 	eventReceived := false
-	var receivedPayload interface{}
+	var receivedPayload any
 
-	handler := func(payload interface{}) error {
+	handler := func(payload any) error {
 		eventReceived = true
 		receivedPayload = payload
 		return nil
@@ -245,7 +245,7 @@ func TestBaseAgent_Plan(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	inputs := map[string]interface{}{"input": "test input"}
+	inputs := map[string]any{"input": "test input"}
 	steps := []iface.IntermediateStep{}
 
 	_, _, err = agent.Plan(ctx, steps, inputs)
@@ -278,7 +278,7 @@ func BenchmarkBaseAgent_EventEmission(b *testing.B) {
 		b.Fatalf("Failed to create agent: %v", err)
 	}
 
-	handler := func(payload interface{}) error {
+	handler := func(payload any) error {
 		return nil
 	}
 

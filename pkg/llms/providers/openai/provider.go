@@ -5,6 +5,7 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -19,12 +20,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Provider constants
+// Provider constants.
 const (
 	ProviderName = "openai"
 	DefaultModel = "gpt-3.5-turbo"
 
-	// Error codes specific to OpenAI
+	// Error codes specific to OpenAI.
 	ErrCodeInvalidAPIKey  = "openai_invalid_api_key"
 	ErrCodeRateLimit      = "openai_rate_limit"
 	ErrCodeModelNotFound  = "openai_model_not_found"
@@ -32,18 +33,18 @@ const (
 	ErrCodeQuotaExceeded  = "openai_quota_exceeded"
 )
 
-// OpenAIProvider implements the ChatModel interface for OpenAI GPT models
+// OpenAIProvider implements the ChatModel interface for OpenAI GPT models.
 type OpenAIProvider struct {
+	metrics     llms.MetricsRecorder
 	config      *llms.Config
 	client      *openaiClient.Client
-	modelName   string
-	tools       []tools.Tool
-	metrics     llms.MetricsRecorder
 	tracing     *common.TracingHelper
 	retryConfig *common.RetryConfig
+	modelName   string
+	tools       []tools.Tool
 }
 
-// NewOpenAIProvider creates a new OpenAI provider instance
+// NewOpenAIProvider creates a new OpenAI provider instance.
 func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -85,7 +86,7 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 	return provider, nil
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "openaiClient.generate", ProviderName, o.modelName)
@@ -94,7 +95,7 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	o.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -127,7 +128,7 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 	return result, nil
 }
 
-// StreamChat implements the ChatModel interface
+// StreamChat implements the ChatModel interface.
 func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "openaiClient.stream", ProviderName, o.modelName)
@@ -136,7 +137,7 @@ func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Messa
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	o.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	// Apply options and merge with defaults
 	callOpts := o.buildCallOptions(options...)
@@ -145,7 +146,7 @@ func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Messa
 	return o.streamInternal(ctx, messages, callOpts)
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (o *OpenAIProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	newProvider := *o // Create a copy
 	newProvider.tools = make([]tools.Tool, len(toolsToBind))
@@ -153,7 +154,7 @@ func (o *OpenAIProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	return &newProvider
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (o *OpenAIProvider) GetModelName() string {
 	return o.modelName
 }
@@ -162,7 +163,7 @@ func (o *OpenAIProvider) GetProviderName() string {
 	return ProviderName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (o *OpenAIProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -171,7 +172,7 @@ func (o *OpenAIProvider) Invoke(ctx context.Context, input any, options ...core.
 	return o.Generate(ctx, messages, options...)
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (o *OpenAIProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	errors := make([]error, len(inputs))
@@ -203,7 +204,7 @@ func (o *OpenAIProvider) Batch(ctx context.Context, inputs []any, options ...cor
 			if combinedErr == nil {
 				combinedErr = err
 			} else {
-				combinedErr = fmt.Errorf("%v; %v", combinedErr, err)
+				combinedErr = fmt.Errorf("%w; %w", combinedErr, err)
 			}
 		}
 	}
@@ -211,7 +212,7 @@ func (o *OpenAIProvider) Batch(ctx context.Context, inputs []any, options ...cor
 	return results, combinedErr
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (o *OpenAIProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -239,7 +240,7 @@ func (o *OpenAIProvider) Stream(ctx context.Context, input any, options ...core.
 	return outputChan, nil
 }
 
-// generateInternal performs the actual generation logic
+// generateInternal performs the actual generation logic.
 func (o *OpenAIProvider) generateInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (schema.Message, error) {
 	// Convert messages to OpenAI format
 	openaiMessages, err := o.convertMessages(messages)
@@ -260,7 +261,7 @@ func (o *OpenAIProvider) generateInternal(ctx context.Context, messages []schema
 	return o.convertOpenAIResponse(&resp)
 }
 
-// streamInternal performs the actual streaming logic
+// streamInternal performs the actual streaming logic.
 func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (<-chan iface.AIMessageChunk, error) {
 	// Convert messages to OpenAI format
 	openaiMessages, err := o.convertMessages(messages)
@@ -287,7 +288,7 @@ func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.M
 		for {
 			response, err := stream.Recv()
 			if err != nil {
-				if err != nil && err.Error() == "stream closed" {
+				if err.Error() == "stream closed" {
 					break
 				}
 				finalChunk := iface.AIMessageChunk{
@@ -326,7 +327,7 @@ func (o *OpenAIProvider) streamInternal(ctx context.Context, messages []schema.M
 	return outputChan, nil
 }
 
-// convertMessages converts schema messages to OpenAI format
+// convertMessages converts schema messages to OpenAI format.
 func (o *OpenAIProvider) convertMessages(messages []schema.Message) ([]openaiClient.ChatCompletionMessage, error) {
 	openaiMessages := make([]openaiClient.ChatCompletionMessage, 0, len(messages))
 
@@ -374,13 +375,13 @@ func (o *OpenAIProvider) convertMessages(messages []schema.Message) ([]openaiCli
 	}
 
 	if len(openaiMessages) == 0 {
-		return nil, fmt.Errorf("no valid messages provided for OpenAI conversion")
+		return nil, errors.New("no valid messages provided for OpenAI conversion")
 	}
 
 	return openaiMessages, nil
 }
 
-// buildOpenAIRequest builds the OpenAI API request
+// buildOpenAIRequest builds the OpenAI API request.
 func (o *OpenAIProvider) buildOpenAIRequest(messages []openaiClient.ChatCompletionMessage, opts *llms.CallOptions) openaiClient.ChatCompletionRequest {
 	req := openaiClient.ChatCompletionRequest{
 		Model:    o.modelName,
@@ -415,7 +416,7 @@ func (o *OpenAIProvider) buildOpenAIRequest(messages []openaiClient.ChatCompleti
 	return req
 }
 
-// convertTools converts tools to OpenAI format
+// convertTools converts tools to OpenAI format.
 func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openaiClient.Tool {
 	if len(tools) == 0 {
 		return nil
@@ -436,7 +437,7 @@ func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openaiClient.Tool {
 		// Add parameters schema
 		if def.InputSchema != nil {
 			if schemaStr, ok := def.InputSchema.(string); ok && schemaStr != "" {
-				var params map[string]interface{}
+				var params map[string]any
 				if err := json.Unmarshal([]byte(schemaStr), &params); err == nil {
 					openaiTool.Function.Parameters = params
 				}
@@ -449,10 +450,10 @@ func (o *OpenAIProvider) convertTools(tools []tools.Tool) []openaiClient.Tool {
 	return openaiTools
 }
 
-// convertOpenAIResponse converts OpenAI response to schema.Message
+// convertOpenAIResponse converts OpenAI response to schema.Message.
 func (o *OpenAIProvider) convertOpenAIResponse(resp *openaiClient.ChatCompletionResponse) (schema.Message, error) {
 	if len(resp.Choices) == 0 {
-		return nil, fmt.Errorf("empty response from OpenAI")
+		return nil, errors.New("empty response from OpenAI")
 	}
 
 	choice := resp.Choices[0]
@@ -489,7 +490,7 @@ func (o *OpenAIProvider) convertOpenAIResponse(resp *openaiClient.ChatCompletion
 	return aiMsg, nil
 }
 
-// convertOpenAIStreamResponse converts OpenAI stream response to AIMessageChunk
+// convertOpenAIStreamResponse converts OpenAI stream response to AIMessageChunk.
 func (o *OpenAIProvider) convertOpenAIStreamResponse(resp *openaiClient.ChatCompletionStreamResponse) (*iface.AIMessageChunk, error) {
 	if len(resp.Choices) == 0 {
 		return nil, nil
@@ -498,7 +499,7 @@ func (o *OpenAIProvider) convertOpenAIStreamResponse(resp *openaiClient.ChatComp
 	choice := resp.Choices[0]
 	chunk := &iface.AIMessageChunk{
 		Content:        choice.Delta.Content,
-		AdditionalArgs: make(map[string]interface{}),
+		AdditionalArgs: make(map[string]any),
 	}
 
 	// Add finish reason if present
@@ -509,7 +510,7 @@ func (o *OpenAIProvider) convertOpenAIStreamResponse(resp *openaiClient.ChatComp
 	return chunk, nil
 }
 
-// buildCallOptions merges configuration options with call-specific options
+// buildCallOptions merges configuration options with call-specific options.
 func (o *OpenAIProvider) buildCallOptions(options ...core.Option) *llms.CallOptions {
 	callOpts := llms.NewCallOptions()
 
@@ -545,7 +546,7 @@ func (o *OpenAIProvider) buildCallOptions(options ...core.Option) *llms.CallOpti
 	return callOpts
 }
 
-// handleOpenAIError converts OpenAI errors to LLM errors
+// handleOpenAIError converts OpenAI errors to LLM errors.
 func (o *OpenAIProvider) handleOpenAIError(operation string, err error) error {
 	if err == nil {
 		return nil
@@ -576,9 +577,9 @@ func (o *OpenAIProvider) handleOpenAIError(operation string, err error) error {
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
-// CheckHealth implements the HealthChecker interface
-func (o *OpenAIProvider) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (o *OpenAIProvider) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":       "healthy",
 		"provider":    "openai",
 		"model":       o.modelName,
@@ -588,7 +589,7 @@ func (o *OpenAIProvider) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Factory function for creating OpenAI providers
+// Factory function for creating OpenAI providers.
 func NewOpenAIProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOpenAIProvider(config)

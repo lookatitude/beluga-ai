@@ -29,7 +29,7 @@ func TestStreamingTTS_StartStream_Success(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := stts.StartStream(ctx, "Hello, world!")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 	assert.True(t, stts.IsActive())
 	assert.Equal(t, reader, stts.GetCurrentReader())
@@ -40,7 +40,7 @@ func TestStreamingTTS_StartStream_NilProvider(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := stts.StartStream(ctx, "Hello, world!")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, reader)
 	assert.Contains(t, err.Error(), "not set")
 }
@@ -51,7 +51,7 @@ func TestStreamingTTS_StartStream_ProviderError(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := stts.StartStream(ctx, "Hello, world!")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, reader)
 	assert.Contains(t, err.Error(), "failed to start streaming")
 }
@@ -101,8 +101,8 @@ func TestStreamingTTS_GetCurrentReader(t *testing.T) {
 	// Read from reader to verify it works
 	data := make([]byte, 100)
 	n, err := reader.Read(data)
-	assert.NoError(t, err)
-	assert.Greater(t, n, 0)
+	require.NoError(t, err)
+	assert.Positive(t, n)
 
 	stts.Stop()
 	assert.Nil(t, stts.GetCurrentReader())

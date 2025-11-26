@@ -7,8 +7,8 @@ import (
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -138,8 +138,8 @@ func TestConfig_SetDefaults(t *testing.T) {
 
 func TestOpenAIConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *OpenAIConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -178,8 +178,8 @@ func TestOpenAIConfig_Validate(t *testing.T) {
 
 func TestOllamaConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *OllamaConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -208,8 +208,8 @@ func TestOllamaConfig_Validate(t *testing.T) {
 
 func TestMockConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *MockConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -257,8 +257,8 @@ func TestMockConfig_Validate(t *testing.T) {
 
 func TestConfig_ValidateWithMultipleProviders(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -361,8 +361,8 @@ func TestConfig_SetDefaults_PartialInitialization(t *testing.T) {
 
 func TestConfig_TimeoutValidation(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -437,8 +437,8 @@ func TestConfig_ConcurrentValidation(t *testing.T) {
 
 func TestOpenAIConfig_Validate_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *OpenAIConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -508,8 +508,8 @@ func TestOpenAIConfig_Validate_EdgeCases(t *testing.T) {
 
 func TestOllamaConfig_Validate_EdgeCases(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *OllamaConfig
+		name    string
 		wantErr bool
 	}{
 		{

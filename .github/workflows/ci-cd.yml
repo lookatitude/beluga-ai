@@ -142,14 +142,13 @@ jobs:
         run: |
           # Workaround: Exclude react package to avoid printf linter panic bug in golangci-lint v2.6.2
           # Bug: interface conversion: types.Object is nil, not *types.Var in printf analyzer
-          # This occurs only in CI due to different Go version (1.24) or module resolution order
           export PATH="$PATH:$(go env GOPATH)/bin"
           
           echo "Filtering packages to exclude react package (workaround for golangci-lint v2.6.2 bug)..."
           
           # Get all packages and filter out react (using full import path)
           all_packages=$(go list ./pkg/... ./tests/... 2>/dev/null)
-          filtered_packages=$(echo "$all_packages" | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$" | tr '\n' ' ')
+          filtered_packages=$(echo "$all_packages" | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' ')
           
           if [ -z "$filtered_packages" ]; then
             echo "Error: Could not determine packages to lint after filtering"
@@ -173,7 +172,7 @@ jobs:
       - name: go vet
         run: |
           echo "Running go vet..."
-          go vet $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee vet-report.txt
+          go vet ./pkg/... ./cmd/... ./tests/... 2>&1 | tee vet-report.txt
           vet_status=${PIPESTATUS[0]}
           if [ "$vet_status" -ne 0 ]; then
             echo "::warning::go vet found issues (advisory - does not block merge)"
@@ -287,8 +286,8 @@ jobs:
           go install github.com/securego/gosec/v2/cmd/gosec@latest
           echo "Running gosec security scan..."
           mkdir -p coverage
-          gosec -fmt=json -out=coverage/gosec-report.json $(go list ./... | grep -v -E '(specs|examples)') || true
-          gosec -fmt=text $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee coverage/gosec-report.txt
+          gosec -fmt=json -out=coverage/gosec-report.json ./pkg/... ./cmd/... ./tests/... || true
+          gosec -fmt=text ./pkg/... ./cmd/... ./tests/... 2>&1 | tee coverage/gosec-report.txt
           
           # Check if any issues were found
           if grep -q "Issues : [1-9]" coverage/gosec-report.txt; then
@@ -301,7 +300,7 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           echo "Running govulncheck vulnerability scan..."
-          govulncheck $(go list ./... | grep -v -E '(specs|examples)') 2>&1 | tee coverage/govulncheck-report.txt || true
+          govulncheck ./pkg/... ./cmd/... ./tests/... 2>&1 | tee coverage/govulncheck-report.txt || true
           echo "✅ Vulnerability scan completed"
       
       - name: Run gitleaks (secret detection)
@@ -440,7 +439,7 @@ jobs:
           # Run tests with coverage, excluding integration tests
           # Use set +e to continue even if some tests fail, ensuring coverage file is generated
           set +e
-          go test -v -race -coverprofile=coverage.unit.out -covermode=atomic $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 | tee test-output.txt
+          go test -v -race -coverprofile=coverage.unit.out -covermode=atomic ./pkg/... 2>&1 | tee test-output.txt
           test_exit_code=$?
           set -e
           
@@ -461,7 +460,7 @@ jobs:
           fi
           
           # Also run with JSON output (without coverage to avoid file conflicts)
-          go test -v -race -json $(go list ./pkg/... | grep -v -E '(specs|examples)') 2>&1 > test-output.json || true
+          go test -v -race -json ./pkg/... 2>&1 > test-output.json || true
           
           # Exit with test exit code to preserve test failure status
           exit $test_exit_code
@@ -742,7 +741,7 @@ jobs:
         run: |
           # If merged coverage doesn't exist, generate it
           if [ ! -f coverage.out ]; then
-            go test -coverprofile=coverage.out -covermode=atomic $(go list ./... | grep -v -E '(specs|examples)') > /dev/null 2>&1
+            go test -coverprofile=coverage.out -covermode=atomic ./pkg/... ./cmd/... ./tests/... > /dev/null 2>&1
           fi
           
           pct=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | sed 's/%//')
@@ -813,17 +812,9 @@ jobs:
       - name: Build all packages
         run: |
           echo "Building all packages..."
-          # Get all packages, filter out specs/examples/tests/website, and only include those with non-test Go files
-          packages=$(go list -f '{{if .GoFiles}}{{.ImportPath}}{{end}}' ./... 2>&1 | grep -v -E '(specs|examples|tests|website|github.com/lookatitude/beluga-ai$)' | grep -v "^$")
-          
-          if [ -z "$packages" ]; then
-            echo "⚠️ No packages found to build"
-            exit 1
-          fi
-          
-          # Build all packages in one command (more efficient and better error handling)
+          # Build packages using relative paths
           set +e
-          echo "$packages" | xargs go build -v
+          go build -v ./pkg/... ./cmd/...
           build_exit=$?
           set -e
           
@@ -842,7 +833,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Built Packages:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          go list ./pkg/... | grep -v -E '(specs|examples)' >> $GITHUB_STEP_SUMMARY
+          go list ./pkg/... ./cmd/... >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================

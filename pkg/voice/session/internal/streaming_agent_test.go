@@ -134,7 +134,7 @@ func TestStreamingAgent_StartStreaming_AlreadyActive(t *testing.T) {
 
 	// Try to start again while active
 	ch2, err := sa.StartStreaming(ctx, "Second")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, ch2)
 	assert.Contains(t, err.Error(), "streaming already active")
 
@@ -149,7 +149,7 @@ func TestStreamingAgent_StartStreaming_NoCallback(t *testing.T) {
 
 	ctx := context.Background()
 	ch, err := sa.StartStreaming(ctx, "Hello")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, ch)
 	assert.Contains(t, err.Error(), "agent callback not set")
 }

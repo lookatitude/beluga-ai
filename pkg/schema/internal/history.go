@@ -1,7 +1,7 @@
 package internal
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
@@ -75,7 +75,7 @@ type ChatHistoryConfig struct {
 // Validate validates the ChatHistoryConfig struct.
 func (c *ChatHistoryConfig) Validate() error {
 	if c.MaxMessages < 0 {
-		return fmt.Errorf("max_messages cannot be negative")
+		return errors.New("max_messages cannot be negative")
 	}
 	return nil
 }

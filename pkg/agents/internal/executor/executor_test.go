@@ -13,7 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// mockAgent implements the Agent interface for testing
+// mockAgent implements the Agent interface for testing.
 type mockAgent struct {
 	name        string
 	llm         llmsiface.LLM
@@ -68,12 +68,12 @@ func (m *mockAgent) GetMetrics() iface.MetricsRecorder {
 	return nil
 }
 
-// mockTool implements the Tool interface for testing
+// mockTool implements the Tool interface for testing.
 type mockTool struct {
-	name        string
 	result      any
-	shouldError bool
+	name        string
 	callCount   int
+	shouldError bool
 }
 
 func (m *mockTool) Name() string {
@@ -111,7 +111,7 @@ func (m *mockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
-// mockLLM implements the LLM interface for testing
+// mockLLM implements the LLM interface for testing.
 type mockLLM struct{}
 
 func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
@@ -559,7 +559,7 @@ func TestConvertToSchemaSteps(t *testing.T) {
 	}
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkNewAgentExecutor(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_ = NewAgentExecutor()

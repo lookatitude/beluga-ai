@@ -35,71 +35,37 @@ const (
 // Config holds the configuration for memory implementations.
 // It uses struct tags for validation and mapping to configuration sources.
 type Config struct {
-	// Type specifies which memory implementation to use
-	Type MemoryType `mapstructure:"type" yaml:"type" env:"MEMORY_TYPE" validate:"required,oneof=buffer buffer_window summary summary_buffer vector_store vector_store_retriever"`
-
-	// MemoryKey is the key used for storing memory variables in prompts
-	MemoryKey string `mapstructure:"memory_key" yaml:"memory_key" env:"MEMORY_KEY" default:"history"`
-
-	// InputKey is the key for input values in SaveContext operations
-	InputKey string `mapstructure:"input_key" yaml:"input_key" env:"INPUT_KEY" default:"input"`
-
-	// OutputKey is the key for output values in SaveContext operations
-	OutputKey string `mapstructure:"output_key" yaml:"output_key" env:"OUTPUT_KEY" default:"output"`
-
-	// ReturnMessages indicates whether to return messages directly or formatted strings
-	ReturnMessages bool `mapstructure:"return_messages" yaml:"return_messages" env:"RETURN_MESSAGES" default:"false"`
-
-	// WindowSize is the number of interactions to keep for window-based memories
-	WindowSize int `mapstructure:"window_size" yaml:"window_size" env:"WINDOW_SIZE" default:"5"`
-
-	// MaxTokenLimit is the maximum token count before triggering summarization
-	MaxTokenLimit int `mapstructure:"max_token_limit" yaml:"max_token_limit" env:"MAX_TOKEN_LIMIT" default:"2000"`
-
-	// TopK is the number of documents to retrieve for vector store memories
-	TopK int `mapstructure:"top_k" yaml:"top_k" env:"TOP_K" default:"4"`
-
-	// HumanPrefix is the prefix for human messages in formatted output
-	HumanPrefix string `mapstructure:"human_prefix" yaml:"human_prefix" env:"HUMAN_PREFIX" default:"Human"`
-
-	// AIPrefix is the prefix for AI messages in formatted output
-	AIPrefix string `mapstructure:"ai_prefix" yaml:"ai_prefix" env:"AI_PREFIX" default:"AI"`
-
-	// Enabled indicates whether memory is enabled
-	Enabled bool `mapstructure:"enabled" yaml:"enabled" env:"MEMORY_ENABLED" default:"true"`
-
-	// Timeout is the timeout for memory operations
-	Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" env:"MEMORY_TIMEOUT" default:"30s"`
+	Type           MemoryType    `mapstructure:"type" yaml:"type" env:"MEMORY_TYPE" validate:"required,oneof=buffer buffer_window summary summary_buffer vector_store vector_store_retriever"`
+	MemoryKey      string        `mapstructure:"memory_key" yaml:"memory_key" env:"MEMORY_KEY" default:"history"`
+	InputKey       string        `mapstructure:"input_key" yaml:"input_key" env:"INPUT_KEY" default:"input"`
+	OutputKey      string        `mapstructure:"output_key" yaml:"output_key" env:"OUTPUT_KEY" default:"output"`
+	HumanPrefix    string        `mapstructure:"human_prefix" yaml:"human_prefix" env:"HUMAN_PREFIX" default:"Human"`
+	AIPrefix       string        `mapstructure:"ai_prefix" yaml:"ai_prefix" env:"AI_PREFIX" default:"AI"`
+	WindowSize     int           `mapstructure:"window_size" yaml:"window_size" env:"WINDOW_SIZE" default:"5"`
+	MaxTokenLimit  int           `mapstructure:"max_token_limit" yaml:"max_token_limit" env:"MAX_TOKEN_LIMIT" default:"2000"`
+	TopK           int           `mapstructure:"top_k" yaml:"top_k" env:"TOP_K" default:"4"`
+	Timeout        time.Duration `mapstructure:"timeout" yaml:"timeout" env:"MEMORY_TIMEOUT" default:"30s"`
+	ReturnMessages bool          `mapstructure:"return_messages" yaml:"return_messages" env:"RETURN_MESSAGES" default:"false"`
+	Enabled        bool          `mapstructure:"enabled" yaml:"enabled" env:"MEMORY_ENABLED" default:"true"`
 }
 
 // BufferConfig holds configuration specific to buffer memory implementations.
 type BufferConfig struct {
-	// Base memory configuration
-	Config `mapstructure:",squash"`
-
-	// ChatHistory is the underlying message history storage
 	ChatHistory ChatMessageHistory
+	Config      `mapstructure:",squash"`
 }
 
 // SummaryConfig holds configuration specific to summary memory implementations.
 type SummaryConfig struct {
-	// Base memory configuration
-	Config `mapstructure:",squash"`
-
-	// ChatHistory is the underlying message history storage
 	ChatHistory ChatMessageHistory
-
-	// LLM is the language model used for generating summaries
-	LLM core.Runnable
+	LLM         core.Runnable
+	Config      `mapstructure:",squash"`
 }
 
 // VectorStoreConfig holds configuration specific to vector store memory implementations.
 type VectorStoreConfig struct {
-	// Base memory configuration
-	Config `mapstructure:",squash"`
-
-	// Retriever is the retriever interface for vector store operations
 	Retriever core.Retriever
+	Config    `mapstructure:",squash"`
 }
 
 // Option is a functional option for configuring memory implementations.

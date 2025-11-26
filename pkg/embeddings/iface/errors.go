@@ -1,13 +1,16 @@
 package iface
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // EmbeddingError represents errors specific to embedding operations.
 // It provides structured error information for programmatic error handling.
 type EmbeddingError struct {
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable error message
-	Cause   error  // Underlying error that caused this error
+	Cause   error
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -24,7 +27,7 @@ func (e *EmbeddingError) Unwrap() error {
 }
 
 // NewEmbeddingError creates a new EmbeddingError with the given code and message.
-func NewEmbeddingError(code, message string, args ...interface{}) *EmbeddingError {
+func NewEmbeddingError(code, message string, args ...any) *EmbeddingError {
 	return &EmbeddingError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -32,7 +35,7 @@ func NewEmbeddingError(code, message string, args ...interface{}) *EmbeddingErro
 }
 
 // WrapError wraps an existing error with embedding context.
-func WrapError(cause error, code, message string, args ...interface{}) *EmbeddingError {
+func WrapError(cause error, code, message string, args ...any) *EmbeddingError {
 	return &EmbeddingError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -40,7 +43,7 @@ func WrapError(cause error, code, message string, args ...interface{}) *Embeddin
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeInvalidConfig     = "invalid_config"
 	ErrCodeProviderNotFound  = "provider_not_found"
@@ -62,7 +65,8 @@ func IsEmbeddingError(err error, code string) bool {
 // AsEmbeddingError attempts to cast an error to EmbeddingError.
 func AsEmbeddingError(err error, target **EmbeddingError) bool {
 	for err != nil {
-		if embErr, ok := err.(*EmbeddingError); ok {
+		embErr := &EmbeddingError{}
+		if errors.As(err, &embErr) {
 			*target = embErr
 			return true
 		}

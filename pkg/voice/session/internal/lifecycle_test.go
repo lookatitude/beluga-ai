@@ -15,7 +15,7 @@ func TestVoiceSessionImpl_Start(t *testing.T) {
 
 	ctx := context.Background()
 	err := impl.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, impl.active)
 	assert.Equal(t, sessioniface.SessionState("listening"), impl.GetState())
 }
@@ -29,7 +29,7 @@ func TestVoiceSessionImpl_Start_AlreadyActive(t *testing.T) {
 
 	// Try to start again
 	err = impl.Start(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already_active")
 }
 
@@ -47,7 +47,7 @@ func TestVoiceSessionImpl_Start_FromEndedState(t *testing.T) {
 
 	// Start again from ended state
 	err = impl.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, impl.active)
 	assert.Equal(t, sessioniface.SessionState("listening"), impl.GetState())
 }
@@ -60,7 +60,7 @@ func TestVoiceSessionImpl_Stop(t *testing.T) {
 	require.NoError(t, err)
 
 	err = impl.Stop(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, impl.active)
 	assert.Equal(t, sessioniface.SessionState("ended"), impl.GetState())
 }
@@ -70,7 +70,7 @@ func TestVoiceSessionImpl_Stop_NotActive(t *testing.T) {
 
 	ctx := context.Background()
 	err := impl.Stop(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not_active")
 }
 
@@ -86,8 +86,9 @@ func TestVoiceSessionImpl_GetState(t *testing.T) {
 	assert.Equal(t, sessioniface.SessionState("initial"), state)
 }
 
-// Helper function to create a test session implementation
+// Helper function to create a test session implementation.
 func createTestSessionImpl(t *testing.T) *VoiceSessionImpl {
+	t.Helper()
 	config := &Config{
 		SessionID: "test-session-123",
 		Timeout:   30 * time.Minute,

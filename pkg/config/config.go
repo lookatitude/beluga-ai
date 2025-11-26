@@ -39,7 +39,7 @@ func NewLoader(options iface.LoaderOptions) (iface.Loader, error) {
 
 // NewProvider creates a new configuration provider.
 // Currently supports Viper-based providers for YAML, JSON, TOML and environment variable configuration.
-func NewProvider(configName string, configPaths []string, envPrefix string, format string) (iface.Provider, error) {
+func NewProvider(configName string, configPaths []string, envPrefix, format string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, format)
 }
 

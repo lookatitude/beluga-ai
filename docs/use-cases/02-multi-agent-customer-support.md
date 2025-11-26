@@ -689,7 +689,7 @@ func TestRouterAgent(t *testing.T) {
     router := createTestRouterAgent(t)
     
     agentType, err := router.RouteIssue(context.Background(), "I can't log in")
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Equal(t, AgentTypeTech, agentType)
 }
 
@@ -699,7 +699,7 @@ func TestTechAgent(t *testing.T) {
     result, err := agent.Execute(context.Background(), map[string]any{
         "task": "Help me reset my password",
     })
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.NotEmpty(t, result)
 }
 ```
@@ -715,7 +715,7 @@ func TestSupportGraph(t *testing.T) {
     }
     
     result, err := graph.Invoke(context.Background(), input)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, result.(map[string]any)["response"].(string), "billing")
 }
 ```

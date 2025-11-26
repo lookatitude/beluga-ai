@@ -2,12 +2,13 @@ package tts
 
 import (
 	"context"
+	"time"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"time"
 )
 
-// MetricsRecorder defines the interface for recording metrics
+// MetricsRecorder defines the interface for recording metrics.
 type MetricsRecorder interface {
 	RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration)
 	RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration)
@@ -16,33 +17,33 @@ type MetricsRecorder interface {
 	DecrementActiveStreams(ctx context.Context, provider, model, voice string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled
+// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
 type NoOpMetrics struct{}
 
-// NewNoOpMetrics creates a new no-operation metrics recorder
+// NewNoOpMetrics creates a new no-operation metrics recorder.
 func NewNoOpMetrics() *NoOpMetrics {
 	return &NoOpMetrics{}
 }
 
-// RecordGeneration is a no-op implementation
+// RecordGeneration is a no-op implementation.
 func (n *NoOpMetrics) RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration) {
 }
 
-// RecordError is a no-op implementation
+// RecordError is a no-op implementation.
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration) {
 }
 
-// RecordStreaming is a no-op implementation
+// RecordStreaming is a no-op implementation.
 func (n *NoOpMetrics) RecordStreaming(ctx context.Context, provider, model, voice string, duration time.Duration) {
 }
 
-// IncrementActiveStreams is a no-op implementation
+// IncrementActiveStreams is a no-op implementation.
 func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, model, voice string) {}
 
-// DecrementActiveStreams is a no-op implementation
+// DecrementActiveStreams is a no-op implementation.
 func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, model, voice string) {}
 
-// Metrics contains all the metrics for TTS operations
+// Metrics contains all the metrics for TTS operations.
 type Metrics struct {
 	generations       metric.Int64Counter
 	successful        metric.Int64Counter
@@ -54,7 +55,7 @@ type Metrics struct {
 	activeStreams     metric.Int64UpDownCounter
 }
 
-// NewMetrics creates a new Metrics instance
+// NewMetrics creates a new Metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
 	m := &Metrics{}
 
@@ -70,7 +71,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	return m
 }
 
-// RecordGeneration records a generation operation
+// RecordGeneration records a generation operation.
 func (m *Metrics) RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -82,7 +83,7 @@ func (m *Metrics) RecordGeneration(ctx context.Context, provider, model, voice s
 	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// RecordError records an error
+// RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -95,7 +96,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, voice, error
 	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// RecordStreaming records a streaming operation
+// RecordStreaming records a streaming operation.
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model, voice string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -106,7 +107,7 @@ func (m *Metrics) RecordStreaming(ctx context.Context, provider, model, voice st
 	m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// IncrementActiveStreams increments the active streams counter
+// IncrementActiveStreams increments the active streams counter.
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, voice string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -116,7 +117,7 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, v
 	m.activeStreams.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// DecrementActiveStreams decrements the active streams counter
+// DecrementActiveStreams decrements the active streams counter.
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model, voice string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),

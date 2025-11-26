@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock providers for testing
+// Mock providers for testing.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
@@ -96,7 +96,7 @@ func TestSession_Integration(t *testing.T) {
 
 		audio := []byte{1, 2, 3, 4, 5}
 		err = voiceSession.ProcessAudio(ctx, audio)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		voiceSession.Stop(ctx)
 	})
@@ -111,7 +111,7 @@ func TestSession_ErrorHandling(t *testing.T) {
 		)
 
 		err := mockSession.Start(ctx)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("stop inactive session", func(t *testing.T) {
@@ -122,7 +122,7 @@ func TestSession_ErrorHandling(t *testing.T) {
 		)
 
 		err := mockSession.Stop(ctx)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 

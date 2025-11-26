@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -57,23 +58,29 @@ func TestVoiceSessionImpl_OnStateChanged_MultipleChanges(t *testing.T) {
 	require.NotNil(t, impl)
 
 	// Track all state changes
+	var mu sync.Mutex
 	states := make([]sessioniface.SessionState, 0)
 	impl.OnStateChanged(func(state sessioniface.SessionState) {
+		mu.Lock()
 		states = append(states, state)
+		mu.Unlock()
 	})
 
 	// Change states through actual methods (which trigger callbacks)
 	ctx := context.Background()
-	impl.Start(ctx) // Should trigger callback for "listening"
+	_ = impl.Start(ctx) // Should trigger callback for "listening"
 
 	// Use Say to trigger speaking state
-	impl.Say(ctx, "test") // Should trigger callback for "speaking"
+	_, _ = impl.Say(ctx, "test") // Should trigger callback for "speaking"
 
 	// Wait a bit for async state change
 	time.Sleep(200 * time.Millisecond)
 
 	// Should have received all state changes
-	assert.GreaterOrEqual(t, len(states), 3)
+	mu.Lock()
+	stateCount := len(states)
+	mu.Unlock()
+	assert.GreaterOrEqual(t, stateCount, 3)
 }
 
 func TestVoiceSessionImpl_OnStateChanged_NilCallback(t *testing.T) {
@@ -96,7 +103,7 @@ func TestVoiceSessionImpl_OnStateChanged_NilCallback(t *testing.T) {
 	// Change state through Start (should not panic)
 	ctx := context.Background()
 	err = impl.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestVoiceSessionImpl_OnStateChanged_ReplaceCallback(t *testing.T) {

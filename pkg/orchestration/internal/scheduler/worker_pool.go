@@ -2,34 +2,35 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 )
 
-// WorkerPool manages a pool of workers for concurrent task execution
+// WorkerPool manages a pool of workers for concurrent task execution.
 type WorkerPool struct {
-	workers   int
+	ctx       context.Context
 	taskQueue chan Task
 	results   chan TaskResult
-	ctx       context.Context
 	cancel    context.CancelFunc
 	wg        sync.WaitGroup
+	workers   int
 	mu        sync.RWMutex
 	running   bool
 }
 
-// TaskResult represents the result of a task execution
+// TaskResult represents the result of a task execution.
 type TaskResult struct {
-	TaskID      string
-	Success     bool
+	CompletedAt time.Time
 	Error       error
+	TaskID      string
 	Attempts    int
 	Duration    time.Duration
-	CompletedAt time.Time
+	Success     bool
 }
 
-// NewWorkerPool creates a new worker pool
+// NewWorkerPool creates a new worker pool.
 func NewWorkerPool(workers int) *WorkerPool {
 	ctx, cancel := context.WithCancel(context.Background())
 	return &WorkerPool{
@@ -41,7 +42,7 @@ func NewWorkerPool(workers int) *WorkerPool {
 	}
 }
 
-// Start begins the worker pool execution
+// Start begins the worker pool execution.
 func (wp *WorkerPool) Start() {
 	wp.mu.Lock()
 	defer wp.mu.Unlock()
@@ -59,7 +60,7 @@ func (wp *WorkerPool) Start() {
 	}
 }
 
-// Stop gracefully stops the worker pool
+// Stop gracefully stops the worker pool.
 func (wp *WorkerPool) Stop() {
 	wp.mu.Lock()
 	defer wp.mu.Unlock()
@@ -77,38 +78,38 @@ func (wp *WorkerPool) Stop() {
 	close(wp.results)
 }
 
-// SubmitTask submits a task to the worker pool
+// SubmitTask submits a task to the worker pool.
 func (wp *WorkerPool) SubmitTask(task Task) error {
 	wp.mu.RLock()
 	defer wp.mu.RUnlock()
 
 	if !wp.running {
-		return fmt.Errorf("worker pool is not running")
+		return errors.New("worker pool is not running")
 	}
 
 	select {
 	case wp.taskQueue <- task:
 		return nil
 	case <-wp.ctx.Done():
-		return fmt.Errorf("worker pool is shutting down")
+		return errors.New("worker pool is shutting down")
 	default:
-		return fmt.Errorf("task queue is full")
+		return errors.New("task queue is full")
 	}
 }
 
-// GetResults returns a channel for receiving task results
+// GetResults returns a channel for receiving task results.
 func (wp *WorkerPool) GetResults() <-chan TaskResult {
 	return wp.results
 }
 
-// IsRunning returns whether the worker pool is running
+// IsRunning returns whether the worker pool is running.
 func (wp *WorkerPool) IsRunning() bool {
 	wp.mu.RLock()
 	defer wp.mu.RUnlock()
 	return wp.running
 }
 
-// worker is the main worker goroutine
+// worker is the main worker goroutine.
 func (wp *WorkerPool) worker(id int) {
 	defer wp.wg.Done()
 
@@ -150,7 +151,7 @@ func (wp *WorkerPool) worker(id int) {
 	}
 }
 
-// GetStats returns current worker pool statistics
+// GetStats returns current worker pool statistics.
 func (wp *WorkerPool) GetStats() WorkerPoolStats {
 	wp.mu.RLock()
 	defer wp.mu.RUnlock()
@@ -163,7 +164,7 @@ func (wp *WorkerPool) GetStats() WorkerPoolStats {
 	}
 }
 
-// WorkerPoolStats holds statistics about the worker pool
+// WorkerPoolStats holds statistics about the worker pool.
 type WorkerPoolStats struct {
 	Workers     int
 	Running     bool

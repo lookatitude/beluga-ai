@@ -5,7 +5,9 @@ package chatmodels
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -17,15 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAdvancedMockChatModel tests the advanced mock chat model functionality
+// TestAdvancedMockChatModel tests the advanced mock chat model functionality.
 func TestAdvancedMockChatModel(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name              string
 		chatModel         *AdvancedMockChatModel
+		name              string
 		messages          []schema.Message
-		expectedError     bool
 		expectedCallCount int
+		expectedError     bool
 		expectedResponse  bool
 	}{
 		{
@@ -56,7 +58,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 		{
 			name: "chat_model_with_error",
 			chatModel: NewAdvancedMockChatModel("error-model", "error-provider",
-				WithMockError(true, fmt.Errorf("model service unavailable"))),
+				WithMockError(true, errors.New("model service unavailable"))),
 			messages: []schema.Message{
 				schema.NewHumanMessage("This should fail"),
 			},
@@ -86,7 +88,6 @@ func TestAdvancedMockChatModel(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// Test Generate method
 			var response schema.Message
 			var err error
@@ -97,9 +98,9 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				duration := time.Since(start)
 
 				if tt.expectedError {
-					assert.Error(t, err)
+					require.Error(t, err)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					if tt.expectedResponse {
 						AssertChatResponse(t, response, 5)
 					}
@@ -114,7 +115,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 			// Test streaming if no error expected
 			if !tt.expectedError && len(tt.messages) > 0 {
 				streamCh, err := tt.chatModel.StreamChat(ctx, tt.messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				chunks := make([]llmsiface.AIMessageChunk, 0)
 				for chunk := range streamCh {
@@ -145,7 +146,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 	}
 }
 
-// TestChatModelStreaming tests streaming functionality specifically
+// TestChatModelStreaming tests streaming functionality specifically.
 func TestChatModelStreaming(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -176,7 +177,7 @@ func TestChatModelStreaming(t *testing.T) {
 		{
 			name: "streaming_error",
 			chatModel: NewAdvancedMockChatModel("error-stream-model", "error-provider",
-				WithMockError(true, fmt.Errorf("streaming failed"))),
+				WithMockError(true, errors.New("streaming failed"))),
 			messages:      []schema.Message{schema.NewHumanMessage("This should fail")},
 			expectedError: true,
 		},
@@ -184,12 +185,11 @@ func TestChatModelStreaming(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			start := time.Now()
 			streamCh, err := tt.chatModel.StreamChat(ctx, tt.messages)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				return
 			}
 
@@ -204,7 +204,7 @@ func TestChatModelStreaming(t *testing.T) {
 				chunks = append(chunks, chunk)
 
 				// Verify no chunk errors
-				assert.NoError(t, chunk.Err, "Streaming chunk should not have error")
+				require.NoError(t, chunk.Err, "Streaming chunk should not have error")
 			}
 
 			chunkDuration := time.Since(chunkStart)
@@ -222,9 +222,11 @@ func TestChatModelStreaming(t *testing.T) {
 
 			// Verify chunks combine to form complete response
 			fullContent := ""
+			var fullContentSb225 strings.Builder
 			for _, chunk := range chunks {
-				fullContent += chunk.Content
+				_, _ = fullContentSb225.WriteString(chunk.Content)
 			}
+			fullContent += fullContentSb225.String()
 			assert.NotEmpty(t, fullContent, "Combined streaming content should not be empty")
 
 			t.Logf("Streaming test: %d chunks in %v (total: %v)",
@@ -233,7 +235,7 @@ func TestChatModelStreaming(t *testing.T) {
 	}
 }
 
-// TestChatModelConversationFlow tests multi-turn conversation scenarios
+// TestChatModelConversationFlow tests multi-turn conversation scenarios.
 func TestChatModelConversationFlow(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -264,7 +266,7 @@ func TestChatModelConversationFlow(t *testing.T) {
 			runner := NewChatModelScenarioRunner(chatModel)
 
 			err := runner.RunConversationScenario(ctx, tt.conversationTurns)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Verify conversation history
 			history := chatModel.GetConversationHistory()
@@ -277,13 +279,13 @@ func TestChatModelConversationFlow(t *testing.T) {
 	}
 }
 
-// TestChatModelToolIntegration tests tool binding and usage
+// TestChatModelToolIntegration tests tool binding and usage.
 func TestChatModelToolIntegration(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
 		name           string
-		toolsSupported bool
 		toolCount      int
+		toolsSupported bool
 		expectedBound  bool
 	}{
 		{
@@ -333,13 +335,13 @@ func TestChatModelToolIntegration(t *testing.T) {
 			}
 
 			response, err := chatModel.Generate(ctx, messages)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, response)
 		})
 	}
 }
 
-// TestConcurrencyAdvanced tests concurrent chat model operations
+// TestConcurrencyAdvanced tests concurrent chat model operations.
 func TestConcurrencyAdvanced(t *testing.T) {
 	ctx := context.Background()
 	chatModel := NewAdvancedMockChatModel("concurrent-test", "concurrent-provider")
@@ -433,7 +435,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	})
 }
 
-// TestLoadTesting performs load testing on chat model components
+// TestLoadTesting performs load testing on chat model components.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load tests in short mode")
@@ -454,21 +456,22 @@ func TestLoadTesting(t *testing.T) {
 	})
 }
 
-// TestChatModelScenarios tests real-world chat model usage scenarios
+// TestChatModelScenarios tests real-world chat model usage scenarios.
 func TestChatModelScenarios(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
 		scenario func(t *testing.T, chatModel llmsiface.ChatModel)
+		name     string
 	}{
 		{
 			name: "customer_service_bot",
 			scenario: func(t *testing.T, chatModel llmsiface.ChatModel) {
+				t.Helper()
 				runner := NewChatModelScenarioRunner(chatModel)
 
 				// Simulate customer service conversation
 				err := runner.RunConversationScenario(ctx, 5)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Test specific customer service queries
 				serviceQueries := []string{
@@ -478,12 +481,13 @@ func TestChatModelScenarios(t *testing.T) {
 				}
 
 				err = runner.RunStreamingScenario(ctx, serviceQueries)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
 			name: "educational_assistant",
 			scenario: func(t *testing.T, chatModel llmsiface.ChatModel) {
+				t.Helper()
 				runner := NewChatModelScenarioRunner(chatModel)
 
 				// Test educational conversation flow
@@ -495,17 +499,17 @@ func TestChatModelScenarios(t *testing.T) {
 				}
 
 				err := runner.RunStreamingScenario(ctx, educationalQueries)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Test follow-up conversation
 				err = runner.RunConversationScenario(ctx, 3)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
 			name: "code_assistant",
 			scenario: func(t *testing.T, chatModel llmsiface.ChatModel) {
-
+				t.Helper()
 				// Test code-related conversations
 				codeMessages := []schema.Message{
 					schema.NewHumanMessage("Help me debug this Python function"),
@@ -530,7 +534,7 @@ func TestChatModelScenarios(t *testing.T) {
 	}
 }
 
-// TestChatModelIntegrationTestHelper tests the integration test helper
+// TestChatModelIntegrationTestHelper tests the integration test helper.
 func TestChatModelIntegrationTestHelper(t *testing.T) {
 	ctx := context.Background()
 	helper := NewIntegrationTestHelper()
@@ -550,10 +554,10 @@ func TestChatModelIntegrationTestHelper(t *testing.T) {
 	messages := []schema.Message{schema.NewHumanMessage("Test message")}
 
 	_, err := gptModel.Generate(ctx, messages)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = claudeModel.Generate(ctx, messages)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test reset
 	helper.Reset()
@@ -565,19 +569,19 @@ func TestChatModelIntegrationTestHelper(t *testing.T) {
 	assert.Empty(t, claudeModel.GetConversationHistory())
 }
 
-// TestChatModelErrorHandling tests comprehensive error handling scenarios
+// TestChatModelErrorHandling tests comprehensive error handling scenarios.
 func TestChatModelErrorHandling(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name      string
 		setup     func() *AdvancedMockChatModel
 		operation func(chatModel *AdvancedMockChatModel) error
+		name      string
 	}{
 		{
 			name: "generation_error",
 			setup: func() *AdvancedMockChatModel {
 				return NewAdvancedMockChatModel("error-model", "error-provider",
-					WithMockError(true, fmt.Errorf("generation service down")))
+					WithMockError(true, errors.New("generation service down")))
 			},
 			operation: func(chatModel *AdvancedMockChatModel) error {
 				messages := []schema.Message{schema.NewHumanMessage("Test")}
@@ -589,7 +593,7 @@ func TestChatModelErrorHandling(t *testing.T) {
 			name: "streaming_error",
 			setup: func() *AdvancedMockChatModel {
 				return NewAdvancedMockChatModel("stream-error-model", "error-provider",
-					WithMockError(true, fmt.Errorf("streaming service down")))
+					WithMockError(true, errors.New("streaming service down")))
 			},
 			operation: func(chatModel *AdvancedMockChatModel) error {
 				messages := []schema.Message{schema.NewHumanMessage("Test stream")}
@@ -604,12 +608,12 @@ func TestChatModelErrorHandling(t *testing.T) {
 			chatModel := tt.setup()
 			err := tt.operation(chatModel)
 
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	}
 }
 
-// BenchmarkChatModelOperations benchmarks chat model operation performance
+// BenchmarkChatModelOperations benchmarks chat model operation performance.
 func BenchmarkChatModelOperations(b *testing.B) {
 	ctx := context.Background()
 	chatModel := NewAdvancedMockChatModel("benchmark-model", "benchmark-provider")
@@ -656,7 +660,7 @@ func BenchmarkChatModelOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkBenchmarkHelper tests the benchmark helper utility
+// BenchmarkBenchmarkHelper tests the benchmark helper utility.
 func BenchmarkBenchmarkHelper(b *testing.B) {
 	chatModel := NewAdvancedMockChatModel("benchmark-helper", "helper-provider")
 	helper := NewBenchmarkHelper(chatModel, 10)

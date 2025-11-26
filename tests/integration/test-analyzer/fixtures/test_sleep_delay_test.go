@@ -12,4 +12,3 @@ func TestSleepDelay(t *testing.T) {
 	time.Sleep(40 * time.Millisecond)
 	// Total: 120ms > 100ms threshold
 }
-

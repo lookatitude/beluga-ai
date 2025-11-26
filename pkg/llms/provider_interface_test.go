@@ -19,15 +19,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// ProviderInterfaceTestSuite provides comprehensive interface compliance tests
+// ProviderInterfaceTestSuite provides comprehensive interface compliance tests.
 type ProviderInterfaceTestSuite struct {
-	ProviderName string
 	Provider     iface.ChatModel
 	Config       *Config
+	ProviderName string
 	Verbose      bool
 }
 
-// NewProviderInterfaceTestSuite creates a new provider interface test suite
+// NewProviderInterfaceTestSuite creates a new provider interface test suite.
 func NewProviderInterfaceTestSuite(providerName string, provider iface.ChatModel, config *Config) *ProviderInterfaceTestSuite {
 	return &ProviderInterfaceTestSuite{
 		ProviderName: providerName,
@@ -37,15 +37,15 @@ func NewProviderInterfaceTestSuite(providerName string, provider iface.ChatModel
 	}
 }
 
-// WithVerbose enables verbose output for the test suite
+// WithVerbose enables verbose output for the test suite.
 func (s *ProviderInterfaceTestSuite) WithVerbose(verbose bool) *ProviderInterfaceTestSuite {
 	s.Verbose = verbose
 	return s
 }
 
-// Run runs all interface compliance tests
+// Run runs all interface compliance tests.
 func (s *ProviderInterfaceTestSuite) Run(t *testing.T) {
-	t.Run(fmt.Sprintf("%s_interface_compliance", s.ProviderName), func(t *testing.T) {
+	t.Run(s.ProviderName+"_interface_compliance", func(t *testing.T) {
 		s.testBasicInterfaceCompliance(t)
 		s.testChatModelMethods(t)
 		s.testRunnableInterface(t)
@@ -59,13 +59,13 @@ func (s *ProviderInterfaceTestSuite) Run(t *testing.T) {
 	})
 }
 
-// testBasicInterfaceCompliance tests that the provider implements all required interfaces
+// testBasicInterfaceCompliance tests that the provider implements all required interfaces.
 func (s *ProviderInterfaceTestSuite) testBasicInterfaceCompliance(t *testing.T) {
 	t.Run("interface_implementation", func(t *testing.T) {
 		provider := s.Provider
 
 		// Test that provider implements ChatModel interface
-		var _ iface.ChatModel = provider
+		_ = provider
 		assert.NotNil(t, provider, "Provider should implement ChatModel interface")
 
 		// Test that provider implements Runnable interface
@@ -82,7 +82,7 @@ func (s *ProviderInterfaceTestSuite) testBasicInterfaceCompliance(t *testing.T) 
 	})
 }
 
-// testChatModelMethods tests ChatModel-specific methods
+// testChatModelMethods tests ChatModel-specific methods.
 func (s *ProviderInterfaceTestSuite) testChatModelMethods(t *testing.T) {
 	t.Run("chat_model_methods", func(t *testing.T) {
 		provider := s.Provider
@@ -102,7 +102,7 @@ func (s *ProviderInterfaceTestSuite) testChatModelMethods(t *testing.T) {
 		assert.NotNil(t, boundProvider, "BindTools should return non-nil provider")
 
 		// Verify bound provider still implements ChatModel
-		var _ iface.ChatModel = boundProvider
+		_ = boundProvider
 
 		// Test that bound provider has access to tools (if supported)
 		health := boundProvider.CheckHealth()
@@ -119,7 +119,7 @@ func (s *ProviderInterfaceTestSuite) testChatModelMethods(t *testing.T) {
 	})
 }
 
-// testRunnableInterface tests Runnable interface compliance
+// testRunnableInterface tests Runnable interface compliance.
 func (s *ProviderInterfaceTestSuite) testRunnableInterface(t *testing.T) {
 	t.Run("runnable_interface", func(t *testing.T) {
 		provider := s.Provider
@@ -175,14 +175,14 @@ func (s *ProviderInterfaceTestSuite) testRunnableInterface(t *testing.T) {
 	})
 }
 
-// testHealthCheckerInterface tests HealthChecker interface compliance
+// testHealthCheckerInterface tests HealthChecker interface compliance.
 func (s *ProviderInterfaceTestSuite) testHealthCheckerInterface(t *testing.T) {
 	t.Run("health_checker_interface", func(t *testing.T) {
 		provider := s.Provider
 
 		health := provider.CheckHealth()
 		assert.NotNil(t, health, "CheckHealth should return health data")
-		assert.IsType(t, map[string]interface{}{}, health, "CheckHealth should return map")
+		assert.IsType(t, map[string]any{}, health, "CheckHealth should return map")
 
 		// Verify common health fields
 		assert.Contains(t, health, "state", "Health should contain state field")
@@ -215,7 +215,7 @@ func (s *ProviderInterfaceTestSuite) testHealthCheckerInterface(t *testing.T) {
 	})
 }
 
-// testModelInfoProviderInterface tests ModelInfoProvider interface compliance
+// testModelInfoProviderInterface tests ModelInfoProvider interface compliance.
 func (s *ProviderInterfaceTestSuite) testModelInfoProviderInterface(t *testing.T) {
 	t.Run("model_info_provider_interface", func(t *testing.T) {
 		provider := s.Provider
@@ -258,7 +258,7 @@ func (s *ProviderInterfaceTestSuite) testModelInfoProviderInterface(t *testing.T
 	})
 }
 
-// testStreamMessageHandlerInterface tests StreamMessageHandler interface compliance
+// testStreamMessageHandlerInterface tests StreamMessageHandler interface compliance.
 func (s *ProviderInterfaceTestSuite) testStreamMessageHandlerInterface(t *testing.T) {
 	t.Run("stream_message_handler_interface", func(t *testing.T) {
 		provider := s.Provider
@@ -304,7 +304,7 @@ func (s *ProviderInterfaceTestSuite) testStreamMessageHandlerInterface(t *testin
 			}
 		}
 
-		assert.Greater(t, chunkCount, 0, "Should receive at least one chunk")
+		assert.Positive(t, chunkCount, "Should receive at least one chunk")
 
 		if s.Verbose {
 			t.Logf("Provider %s streamed %d chunks", s.ProviderName, chunkCount)
@@ -312,7 +312,7 @@ func (s *ProviderInterfaceTestSuite) testStreamMessageHandlerInterface(t *testin
 	})
 }
 
-// testMessageGeneratorInterface tests MessageGenerator interface compliance
+// testMessageGeneratorInterface tests MessageGenerator interface compliance.
 func (s *ProviderInterfaceTestSuite) testMessageGeneratorInterface(t *testing.T) {
 	t.Run("message_generator_interface", func(t *testing.T) {
 		provider := s.Provider
@@ -343,15 +343,18 @@ func (s *ProviderInterfaceTestSuite) testMessageGeneratorInterface(t *testing.T)
 				resultMessages := results[0].Interface()
 				err := results[1].Interface()
 
-				if err != nil && err.(error) != nil {
-					assert.NoError(t, err.(error), "GenerateMessages should not error")
+				if err != nil {
+					errVal := err.(error)
+					if errVal != nil {
+						assert.NoError(t, errVal, "GenerateMessages should not error")
+					}
 				} else {
 					assert.NotNil(t, resultMessages, "GenerateMessages should return messages")
 
 					// Try to check if it's a slice
 					resultValue := reflect.ValueOf(resultMessages)
 					if resultValue.Kind() == reflect.Slice {
-						assert.Greater(t, resultValue.Len(), 0, "Should return at least one message")
+						assert.Positive(t, resultValue.Len(), "Should return at least one message")
 					}
 				}
 			}
@@ -366,7 +369,7 @@ func (s *ProviderInterfaceTestSuite) testMessageGeneratorInterface(t *testing.T)
 	})
 }
 
-// testErrorHandling tests error handling capabilities
+// testErrorHandling tests error handling capabilities.
 func (s *ProviderInterfaceTestSuite) testErrorHandling(t *testing.T) {
 	t.Run("error_handling", func(t *testing.T) {
 		provider := s.Provider
@@ -394,7 +397,6 @@ func (s *ProviderInterfaceTestSuite) testErrorHandling(t *testing.T) {
 
 		messages := CreateTestMessages()
 		_, err = provider.Generate(shortCtx, messages)
-
 		// Should either succeed quickly or error due to timeout
 		if err != nil {
 			assert.Contains(t, strings.ToLower(err.Error()), "timeout", "Error should be related to timeout")
@@ -406,7 +408,7 @@ func (s *ProviderInterfaceTestSuite) testErrorHandling(t *testing.T) {
 	})
 }
 
-// testConfigurationValidation tests configuration validation
+// testConfigurationValidation tests configuration validation.
 func (s *ProviderInterfaceTestSuite) testConfigurationValidation(t *testing.T) {
 	t.Run("configuration_validation", func(t *testing.T) {
 		if s.Config == nil {
@@ -430,7 +432,7 @@ func (s *ProviderInterfaceTestSuite) testConfigurationValidation(t *testing.T) {
 	})
 }
 
-// testConcurrentAccess tests concurrent access to the provider
+// testConcurrentAccess tests concurrent access to the provider.
 func (s *ProviderInterfaceTestSuite) testConcurrentAccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping concurrent access test in short mode")
@@ -475,11 +477,11 @@ func (s *ProviderInterfaceTestSuite) testConcurrentAccess(t *testing.T) {
 	})
 }
 
-// TestAllProviderInterfaces tests interface compliance for multiple providers
+// TestAllProviderInterfaces tests interface compliance for multiple providers.
 func TestAllProviderInterfaces(t *testing.T) {
 	providers := []struct {
-		name   string
 		config *Config
+		name   string
 	}{
 		{
 			name:   "mock_provider",
@@ -488,7 +490,7 @@ func TestAllProviderInterfaces(t *testing.T) {
 	}
 
 	for _, p := range providers {
-		t.Run(fmt.Sprintf("interface_test_%s", p.name), func(t *testing.T) {
+		t.Run("interface_test_"+p.name, func(t *testing.T) {
 			// Create provider instance
 			mockProvider := NewAdvancedMockChatModel("test-model",
 				WithProviderName(p.name),
@@ -501,7 +503,7 @@ func TestAllProviderInterfaces(t *testing.T) {
 	}
 }
 
-// TestInterfaceReflection provides detailed reflection-based interface testing
+// TestInterfaceReflection provides detailed reflection-based interface testing.
 func TestInterfaceReflection(t *testing.T) {
 	provider := NewAdvancedMockChatModel("reflection-test")
 
@@ -515,7 +517,7 @@ func TestInterfaceReflection(t *testing.T) {
 	}
 
 	for _, ifaceType := range interfaces {
-		t.Run(fmt.Sprintf("implements_%s", ifaceType.Name()), func(t *testing.T) {
+		t.Run("implements_"+ifaceType.Name(), func(t *testing.T) {
 			assert.True(t, providerType.Implements(ifaceType),
 				"Provider should implement %s interface", ifaceType.Name())
 
@@ -543,7 +545,7 @@ func TestInterfaceReflection(t *testing.T) {
 	}
 }
 
-// TestMethodSignatures tests that all provider methods have correct signatures
+// TestMethodSignatures tests that all provider methods have correct signatures.
 func TestMethodSignatures(t *testing.T) {
 	provider := NewAdvancedMockChatModel("signature-test")
 
@@ -576,11 +578,11 @@ func TestMethodSignatures(t *testing.T) {
 		"Invoke": {
 			inputTypes: []reflect.Type{
 				reflect.TypeOf((*context.Context)(nil)).Elem(),
-				reflect.TypeOf((*interface{})(nil)).Elem(),
+				reflect.TypeOf((*any)(nil)).Elem(),
 				reflect.TypeOf([]core.Option{}), // Variadic options parameter
 			},
 			outputTypes: []reflect.Type{
-				reflect.TypeOf((*interface{})(nil)).Elem(),
+				reflect.TypeOf((*any)(nil)).Elem(),
 				reflect.TypeOf((*error)(nil)).Elem(),
 			},
 		},
@@ -590,7 +592,7 @@ func TestMethodSignatures(t *testing.T) {
 		},
 		"CheckHealth": {
 			inputTypes:  []reflect.Type{},
-			outputTypes: []reflect.Type{reflect.TypeOf(map[string]interface{}{})},
+			outputTypes: []reflect.Type{reflect.TypeOf(map[string]any{})},
 		},
 	}
 
@@ -628,7 +630,7 @@ func TestMethodSignatures(t *testing.T) {
 	}
 }
 
-// TestProviderContract tests the behavioral contract that all providers should follow
+// TestProviderContract tests the behavioral contract that all providers should follow.
 func TestProviderContract(t *testing.T) {
 	provider := NewAdvancedMockChatModel("contract-test",
 		WithResponses("Consistent response"),
@@ -665,7 +667,7 @@ func TestProviderContract(t *testing.T) {
 		"Health check should not affect functionality")
 }
 
-// TestProviderLifecycle tests the complete lifecycle of a provider
+// TestProviderLifecycle tests the complete lifecycle of a provider.
 func TestProviderLifecycle(t *testing.T) {
 	// Create provider
 	provider := NewAdvancedMockChatModel("lifecycle-test")
@@ -681,7 +683,7 @@ func TestProviderLifecycle(t *testing.T) {
 
 	for i := 0; i < 5; i++ {
 		response, err := provider.Generate(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 	}
 
@@ -700,7 +702,7 @@ func TestProviderLifecycle(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	response, err := provider.Generate(ctx, messages)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, response)
 
 	finalHealth := provider.CheckHealth()
@@ -708,7 +710,7 @@ func TestProviderLifecycle(t *testing.T) {
 	assert.Equal(t, 1, finalHealth["call_count"])
 }
 
-// TestProviderRobustness tests provider behavior under adverse conditions
+// TestProviderRobustness tests provider behavior under adverse conditions.
 func TestProviderRobustness(t *testing.T) {
 	provider := NewAdvancedMockChatModel("robustness-test")
 
@@ -730,7 +732,7 @@ func TestProviderRobustness(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.shouldPanic {
 				assert.Panics(t, func() {
-					provider.Generate(ctx, tc.messages)
+					_, _ = provider.Generate(ctx, tc.messages)
 				}, "Provider should panic for %s", tc.name)
 			} else {
 				response, err := provider.Generate(ctx, tc.messages)
@@ -745,7 +747,7 @@ func TestProviderRobustness(t *testing.T) {
 	}
 }
 
-// generateLargeMessages creates a slice of messages for testing
+// generateLargeMessages creates a slice of messages for testing.
 func generateLargeMessages(count int) []schema.Message {
 	messages := make([]schema.Message, count)
 	for i := 0; i < count; i++ {
@@ -758,7 +760,7 @@ func generateLargeMessages(count int) []schema.Message {
 	return messages
 }
 
-// BenchmarkProviderInterface benchmarks provider interface methods
+// BenchmarkProviderInterface benchmarks provider interface methods.
 func BenchmarkProviderInterface(b *testing.B) {
 	ctx := context.Background()
 	provider := NewAdvancedMockChatModel("benchmark-test")
@@ -796,7 +798,7 @@ func BenchmarkProviderInterface(b *testing.B) {
 	})
 }
 
-// TestProviderThreadSafety tests that providers are thread-safe
+// TestProviderThreadSafety tests that providers are thread-safe.
 func TestProviderThreadSafety(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping thread safety test in short mode")
@@ -808,8 +810,8 @@ func TestProviderThreadSafety(t *testing.T) {
 
 	// Run multiple goroutines performing different operations
 	operations := []func(){
-		func() { provider.Generate(ctx, messages) },
-		func() { provider.StreamChat(ctx, messages) },
+		func() { _, _ = provider.Generate(ctx, messages) },
+		func() { _, _ = provider.StreamChat(ctx, messages) },
 		func() { provider.CheckHealth() },
 		func() { provider.GetModelName() },
 		func() { provider.BindTools([]tools.Tool{NewMockTool("test")}) },
@@ -851,5 +853,5 @@ func TestProviderThreadSafety(t *testing.T) {
 	// Verify final state is consistent
 	finalHealth := provider.CheckHealth()
 	assert.Equal(t, "healthy", finalHealth["state"])
-	assert.Greater(t, finalHealth["call_count"], 0)
+	assert.Positive(t, finalHealth["call_count"])
 }

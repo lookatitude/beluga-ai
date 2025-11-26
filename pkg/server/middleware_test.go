@@ -35,7 +35,7 @@ func TestMiddlewareChain(t *testing.T) {
 	}
 
 	// Test the middleware chain
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 	req.Header.Set("Origin", "http://example.com")
 	req.Header.Set("User-Agent", "test-agent")
 	w := httptest.NewRecorder()
@@ -62,10 +62,10 @@ func TestMiddlewareChain(t *testing.T) {
 func TestCORSMiddlewareWithMultipleOrigins(t *testing.T) {
 	tests := []struct {
 		name           string
-		allowedOrigins []string
 		requestOrigin  string
-		expectAllow    bool
 		expectedOrigin string
+		allowedOrigins []string
+		expectAllow    bool
 	}{
 		{
 			name:           "exact_match",
@@ -104,7 +104,7 @@ func TestCORSMiddlewareWithMultipleOrigins(t *testing.T) {
 				w.WriteHeader(http.StatusOK)
 			}))
 
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 			if tt.requestOrigin != "" {
 				req.Header.Set("Origin", tt.requestOrigin)
 			}
@@ -134,7 +134,7 @@ func TestLoggingMiddlewareWithErrors(t *testing.T) {
 		w.WriteHeader(http.StatusInternalServerError)
 	}))
 
-	req := httptest.NewRequest("POST", "/api/error", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/error", http.NoBody)
 	req.Header.Set("User-Agent", "error-client")
 	w := httptest.NewRecorder()
 
@@ -157,7 +157,7 @@ func TestRecoveryMiddlewarePanic(t *testing.T) {
 		panic("test panic message")
 	}))
 
-	req := httptest.NewRequest("GET", "/api/panic", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/panic", http.NoBody)
 	w := httptest.NewRecorder()
 
 	// This should not panic
@@ -181,7 +181,7 @@ func TestRecoveryMiddlewareNoPanic(t *testing.T) {
 		fmt.Fprint(w, "success")
 	}))
 
-	req := httptest.NewRequest("GET", "/api/normal", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/normal", http.NoBody)
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
@@ -224,7 +224,7 @@ func TestCustomMiddleware(t *testing.T) {
 		wrappedHandler = middlewareChain[i](wrappedHandler)
 	}
 
-	req := httptest.NewRequest("GET", "/api/custom", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/custom", http.NoBody)
 	req.Header.Set("Origin", "http://example.com")
 	w := httptest.NewRecorder()
 
@@ -288,7 +288,7 @@ func TestMiddlewareOrder(t *testing.T) {
 	// Apply middlewares (order matters!)
 	wrappedHandler := middleware1(middleware2(middleware3(handler)))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	wrappedHandler.ServeHTTP(w, req)
@@ -330,7 +330,7 @@ func BenchmarkCORSMiddleware(b *testing.B) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	req.Header.Set("Origin", "http://example.com")
 	w := httptest.NewRecorder()
 
@@ -347,7 +347,7 @@ func BenchmarkLoggingMiddleware(b *testing.B) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 	req.Header.Set("User-Agent", "bench-agent")
 	w := httptest.NewRecorder()
 
@@ -364,7 +364,7 @@ func BenchmarkRecoveryMiddleware(b *testing.B) {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	b.ResetTimer()
@@ -391,7 +391,7 @@ func BenchmarkMiddlewareChain3(b *testing.B) {
 		handler = middlewares[i](handler)
 	}
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 	req.Header.Set("Origin", "http://example.com")
 	req.Header.Set("User-Agent", "bench-agent")
 	w := httptest.NewRecorder()
@@ -432,7 +432,7 @@ func BenchmarkMiddlewareChain5(b *testing.B) {
 		handler = middlewares[i](handler)
 	}
 
-	req := httptest.NewRequest("GET", "/api/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 	req.Header.Set("Origin", "http://example.com")
 	req.Header.Set("User-Agent", "bench-agent")
 	w := httptest.NewRecorder()

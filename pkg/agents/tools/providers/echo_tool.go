@@ -19,10 +19,10 @@ type EchoTool struct {
 // though EchoTool itself might not use it directly.
 func NewEchoTool(cfg iface.ToolConfig) (*EchoTool, error) {
 	// Define the schema as a map
-	inputSchema := map[string]interface{}{
+	inputSchema := map[string]any{
 		"type": "object",
-		"properties": map[string]interface{}{
-			"input": map[string]interface{}{
+		"properties": map[string]any{
+			"input": map[string]any{
 				"type":        "string",
 				"description": "The text to echo back.",
 			},
@@ -33,15 +33,15 @@ func NewEchoTool(cfg iface.ToolConfig) (*EchoTool, error) {
 	tool := &EchoTool{
 		BaseTool: tools.BaseTool{},
 	}
-	tool.BaseTool.SetName(cfg.Name)
-	tool.BaseTool.SetDescription(cfg.Description)
-	tool.BaseTool.SetInputSchema(inputSchema)
+	tool.SetName(cfg.Name)
+	tool.SetDescription(cfg.Description)
+	tool.SetInputSchema(inputSchema)
 	return tool, nil
 }
 
 // Execute echoes back the input, which is expected to be in the input map under the key "input".
 func (et *EchoTool) Execute(ctx context.Context, input any) (any, error) {
-	inputMap, ok := input.(map[string]interface{})
+	inputMap, ok := input.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("input must be a map[string]interface{}, got %T", input)
 	}
@@ -54,7 +54,7 @@ func (et *EchoTool) Execute(ctx context.Context, input any) (any, error) {
 		}
 		return nil, fmt.Errorf("invalid input format for EchoTool: expected a map with a string field 'input', but got %s", string(inputBytes))
 	}
-	return fmt.Sprintf("Echo: %s", inputText), nil
+	return "Echo: " + inputText, nil
 }
 
 // Ensure EchoTool implements the Tool interface.

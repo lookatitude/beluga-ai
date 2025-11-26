@@ -579,7 +579,7 @@ func TestConfig(t *testing.T) {
 
     // Validate configuration
     err := config.ValidateConfig(cfg)
-    assert.NoError(t, err)
+    require.NoError(t, err)
 }
 ```
 

@@ -10,9 +10,9 @@ import (
 func TestCompositeProvider_Load(t *testing.T) {
 	tests := []struct {
 		name        string
+		errorCode   string
 		providers   []iface.Provider
 		expectError bool
-		errorCode   string
 	}{
 		{
 			name:        "no providers",
@@ -177,16 +177,16 @@ func TestCompositeProvider_GetLLMProvidersConfig(t *testing.T) {
 	}
 }
 
-// mockProvider is a mock implementation of iface.Provider for testing
+// mockProvider is a mock implementation of iface.Provider for testing.
 type mockProvider struct {
-	success    bool
 	values     map[string]string
 	setKeys    map[string]bool
-	llmConfigs []schema.LLMProviderConfig
 	errorCode  string
+	llmConfigs []schema.LLMProviderConfig
+	success    bool
 }
 
-func (m *mockProvider) Load(configStruct interface{}) error {
+func (m *mockProvider) Load(configStruct any) error {
 	if !m.success {
 		code := iface.ErrCodeLoadFailed
 		if m.errorCode != "" {
@@ -197,7 +197,7 @@ func (m *mockProvider) Load(configStruct interface{}) error {
 	return nil
 }
 
-func (m *mockProvider) UnmarshalKey(key string, rawVal interface{}) error {
+func (m *mockProvider) UnmarshalKey(key string, rawVal any) error {
 	return nil
 }
 
@@ -325,7 +325,7 @@ func TestCompositeProvider_UnmarshalKey(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cp := NewCompositeProvider(tt.providers...)
-			var result map[string]interface{}
+			var result map[string]any
 			err := cp.UnmarshalKey(tt.key, &result)
 
 			if tt.expectError && err == nil {
@@ -351,15 +351,15 @@ func TestCompositeProvider_GetterMethods(t *testing.T) {
 	cp := NewCompositeProvider(provider1, provider2)
 
 	tests := []struct {
+		getter   func(string) string
 		name     string
 		key      string
 		expected string
-		getter   func(string) string
 	}{
-		{"GetString from first provider", "key1", "value1", cp.GetString},
-		{"GetString from second provider", "key2", "value2", cp.GetString},
-		{"GetString shared key", "shared", "value1", cp.GetString}, // First provider wins
-		{"GetString missing key", "missing", "", cp.GetString},
+		{cp.GetString, "GetString from first provider", "key1", "value1"},
+		{cp.GetString, "GetString from second provider", "key2", "value2"},
+		{cp.GetString, "GetString shared key", "shared", "value1"}, // First provider wins
+		{cp.GetString, "GetString missing key", "missing", ""},
 	}
 
 	for _, tt := range tests {

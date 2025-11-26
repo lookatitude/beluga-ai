@@ -5,7 +5,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
 )
 
-// Re-export types from iface to maintain backward compatibility
+// Re-export types from iface to maintain backward compatibility.
 type (
 	Config           = iface.Config
 	RESTConfig       = iface.RESTConfig
@@ -48,7 +48,7 @@ const (
 	ErrCodeConfigValidation = iface.ErrCodeConfigValidation
 )
 
-// Re-export functions from iface
+// Re-export functions from iface.
 var (
 	WithConfig               = iface.WithConfig
 	WithRESTConfig           = iface.WithRESTConfig

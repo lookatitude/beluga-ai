@@ -11,8 +11,8 @@ import (
 
 func TestNewSpectralProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *noise.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -33,10 +33,10 @@ func TestNewSpectralProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewSpectralProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -56,9 +56,9 @@ func TestSpectralProvider_Process(t *testing.T) {
 	audio := []byte{128, 129, 130, 131, 132}
 
 	processed, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processed)
-	assert.Equal(t, len(audio), len(processed))
+	assert.Len(t, processed, len(audio))
 }
 
 func TestSpectralProvider_ProcessStream(t *testing.T) {
@@ -77,7 +77,7 @@ func TestSpectralProvider_ProcessStream(t *testing.T) {
 	close(audioCh)
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processedCh)
 
 	// Receive processed audio
@@ -102,7 +102,7 @@ func TestSpectralProvider_ProcessStream_ContextCancellation(t *testing.T) {
 	cancel()
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Channel should be closed
 	_, ok := <-processedCh
@@ -119,15 +119,15 @@ func TestSpectralProvider_Process_EmptyAudio(t *testing.T) {
 
 	ctx := context.Background()
 	processed, err := provider.Process(ctx, []byte{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, processed)
 }
 
 func TestDefaultSpectralConfig(t *testing.T) {
 	config := DefaultSpectralConfig()
 	assert.NotNil(t, config)
-	assert.Equal(t, 2.0, config.Alpha)
-	assert.Equal(t, 0.1, config.Beta)
+	assert.InEpsilon(t, 2.0, config.Alpha, 0.0001)
+	assert.InEpsilon(t, 0.1, config.Beta, 0.0001)
 	assert.Equal(t, 512, config.FFTSize)
 	assert.Equal(t, "hann", config.WindowType)
 }

@@ -89,8 +89,8 @@ func TestMessageInterfaceCompliance(t *testing.T) {
 
 func TestMessageValidation(t *testing.T) {
 	tests := []struct {
-		name    string
 		message Message
+		name    string
 		wantErr bool
 	}{
 		{
@@ -441,8 +441,8 @@ func TestChatHistoryUnlimitedMessages(t *testing.T) {
 
 func TestChatHistoryConfigValidation(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *ChatHistoryConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -533,7 +533,7 @@ func TestChatHistoryFunctionalOptions(t *testing.T) {
 
 func TestNewAgentAction(t *testing.T) {
 	tool := "calculator"
-	toolInput := map[string]interface{}{
+	toolInput := map[string]any{
 		"expression": "2 + 2",
 		"operation":  "add",
 	}
@@ -555,7 +555,7 @@ func TestNewAgentAction(t *testing.T) {
 func TestNewAgentObservation(t *testing.T) {
 	actionLog := "Executed calculator tool"
 	output := "Result: 4"
-	parsedOutput := map[string]interface{}{
+	parsedOutput := map[string]any{
 		"result":  4,
 		"success": true,
 	}
@@ -574,7 +574,7 @@ func TestNewAgentObservation(t *testing.T) {
 }
 
 func TestNewStep(t *testing.T) {
-	action := NewAgentAction("search", map[string]interface{}{"query": "AI"}, "Searching for AI")
+	action := NewAgentAction("search", map[string]any{"query": "AI"}, "Searching for AI")
 	observation := NewAgentObservation("Searching for AI", "Found results", nil)
 
 	step := NewStep(action, observation)
@@ -589,13 +589,13 @@ func TestNewStep(t *testing.T) {
 
 func TestNewFinalAnswer(t *testing.T) {
 	output := "The answer is 42"
-	sourceDocuments := []interface{}{
+	sourceDocuments := []any{
 		NewDocument("Source 1", map[string]string{"title": "Doc 1"}),
 		NewDocument("Source 2", map[string]string{"title": "Doc 2"}),
 	}
 	intermediateSteps := []Step{
 		NewStep(
-			NewAgentAction("calculate", map[string]interface{}{"expr": "40+2"}, "Calculating"),
+			NewAgentAction("calculate", map[string]any{"expr": "40+2"}, "Calculating"),
 			NewAgentObservation("Calculating", "42", 42),
 		),
 	}
@@ -614,7 +614,7 @@ func TestNewFinalAnswer(t *testing.T) {
 }
 
 func TestNewAgentFinish(t *testing.T) {
-	returnValues := map[string]interface{}{
+	returnValues := map[string]any{
 		"answer":     42,
 		"confidence": 0.95,
 	}
@@ -632,9 +632,9 @@ func TestNewAgentFinish(t *testing.T) {
 
 func TestAgentActionWithComplexInput(t *testing.T) {
 	// Test with complex nested input
-	complexInput := map[string]interface{}{
+	complexInput := map[string]any{
 		"query": "machine learning",
-		"filters": map[string]interface{}{
+		"filters": map[string]any{
 			"category": "research",
 			"year":     2024,
 		},
@@ -647,7 +647,7 @@ func TestAgentActionWithComplexInput(t *testing.T) {
 		t.Errorf("Tool = %q, want %q", action.Tool, "search")
 	}
 
-	inputMap, ok := action.ToolInput.(map[string]interface{})
+	inputMap, ok := action.ToolInput.(map[string]any)
 	if !ok {
 		t.Fatal("ToolInput is not a map")
 	}
@@ -656,7 +656,7 @@ func TestAgentActionWithComplexInput(t *testing.T) {
 		t.Errorf("Query = %v, want %q", inputMap["query"], "machine learning")
 	}
 
-	filters, ok := inputMap["filters"].(map[string]interface{})
+	filters, ok := inputMap["filters"].(map[string]any)
 	if !ok {
 		t.Fatal("Filters is not a map")
 	}
@@ -678,11 +678,11 @@ func TestStepSequence(t *testing.T) {
 	// Test a sequence of steps
 	steps := []Step{
 		NewStep(
-			NewAgentAction("analyze", map[string]interface{}{"text": "Hello"}, "Analyzing text"),
-			NewAgentObservation("Analyzing text", "Analysis complete", map[string]interface{}{"sentiment": "positive"}),
+			NewAgentAction("analyze", map[string]any{"text": "Hello"}, "Analyzing text"),
+			NewAgentObservation("Analyzing text", "Analysis complete", map[string]any{"sentiment": "positive"}),
 		),
 		NewStep(
-			NewAgentAction("summarize", map[string]interface{}{"content": "Analysis complete"}, "Summarizing"),
+			NewAgentAction("summarize", map[string]any{"content": "Analysis complete"}, "Summarizing"),
 			NewAgentObservation("Summarizing", "Summary: Positive sentiment detected", "Positive sentiment"),
 		),
 	}
@@ -709,7 +709,7 @@ func TestStepSequence(t *testing.T) {
 }
 
 func TestAgentScratchPadEntry(t *testing.T) {
-	action := NewAgentAction("think", map[string]interface{}{"thought": "I need to solve this"}, "Thinking")
+	action := NewAgentAction("think", map[string]any{"thought": "I need to solve this"}, "Thinking")
 	observation := "I should use the calculator tool"
 
 	// Create scratch pad entry using internal type
@@ -731,7 +731,7 @@ func TestAgentScratchPadEntry(t *testing.T) {
 func TestNewGeneration(t *testing.T) {
 	text := "Hello, world!"
 	message := NewHumanMessage("Hello")
-	generationInfo := map[string]interface{}{
+	generationInfo := map[string]any{
 		"model":         "gpt-4",
 		"temperature":   0.7,
 		"finish_reason": "stop",
@@ -757,9 +757,9 @@ func TestNewLLMResponse(t *testing.T) {
 			NewGeneration("How can I help?", NewAIMessage("How can I help?"), nil),
 		},
 	}
-	llmOutput := map[string]interface{}{
+	llmOutput := map[string]any{
 		"model": "gpt-4",
-		"usage": map[string]interface{}{
+		"usage": map[string]any{
 			"prompt_tokens":     10,
 			"completion_tokens": 20,
 			"total_tokens":      30,
@@ -881,9 +881,9 @@ func TestGenerationWithComplexInfo(t *testing.T) {
 	text := "The answer is 42"
 	message := NewAIMessage(text)
 
-	generationInfo := map[string]interface{}{
+	generationInfo := map[string]any{
 		"model": "gpt-4-turbo",
-		"usage": map[string]interface{}{
+		"usage": map[string]any{
 			"prompt_tokens":     150,
 			"completion_tokens": 50,
 			"total_tokens":      200,
@@ -903,7 +903,7 @@ func TestGenerationWithComplexInfo(t *testing.T) {
 	}
 
 	// Check nested usage info
-	usage := generation.GenerationInfo["usage"].(map[string]interface{})
+	usage := generation.GenerationInfo["usage"].(map[string]any)
 	if usage["total_tokens"] != 200 {
 		t.Errorf("Usage total_tokens = %v, want 200", usage["total_tokens"])
 	}
@@ -921,7 +921,7 @@ func TestLLMResponseWithMultipleBatches(t *testing.T) {
 	}
 
 	generations := [][]*Generation{batch1, batch2}
-	llmOutput := map[string]interface{}{
+	llmOutput := map[string]any{
 		"total_batches": 2,
 		"model":         "gpt-4",
 	}
@@ -1216,8 +1216,8 @@ func TestDocumentUnicodeContent(t *testing.T) {
 
 func TestAgentConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *AgentConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -1268,8 +1268,8 @@ func TestAgentConfig_Validate(t *testing.T) {
 
 func TestLLMProviderConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *LLMProviderConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -1323,8 +1323,8 @@ func TestLLMProviderConfig_Validate(t *testing.T) {
 
 func TestEmbeddingProviderConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *EmbeddingProviderConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -1369,8 +1369,8 @@ func TestEmbeddingProviderConfig_Validate(t *testing.T) {
 
 func TestVectorStoreConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *VectorStoreConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -1525,7 +1525,7 @@ func TestFunctionalOptions(t *testing.T) {
 	llmConfig, err := NewLLMProviderConfig("openai-gpt4", "openai", "gpt-4-turbo",
 		WithAPIKey("sk-test"),
 		WithBaseURL("https://api.openai.com"),
-		WithDefaultCallOptions(map[string]interface{}{"temperature": 0.7}),
+		WithDefaultCallOptions(map[string]any{"temperature": 0.7}),
 	)
 	if err != nil {
 		t.Fatalf("NewLLMProviderConfig() error = %v", err)
@@ -1590,8 +1590,8 @@ func TestNewSchemaValidationConfig(t *testing.T) {
 
 func TestSchemaValidationConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *SchemaValidationConfig
+		name    string
 		wantErr bool
 	}{
 		{
@@ -1641,7 +1641,7 @@ func TestNewAgentMessage(t *testing.T) {
 	fromAgentID := "agent-1"
 	messageID := "msg-123"
 	messageType := AgentMessageRequest
-	payload := map[string]interface{}{"action": "test"}
+	payload := map[string]any{"action": "test"}
 
 	msg := NewAgentMessage(fromAgentID, messageID, messageType, payload)
 
@@ -1661,7 +1661,7 @@ func TestNewAgentMessage(t *testing.T) {
 
 func TestNewAgentRequest(t *testing.T) {
 	action := "calculate"
-	parameters := map[string]interface{}{"expression": "2+2"}
+	parameters := map[string]any{"expression": "2+2"}
 
 	req := NewAgentRequest(action, parameters)
 
@@ -1676,7 +1676,7 @@ func TestNewAgentRequest(t *testing.T) {
 func TestNewAgentResponse(t *testing.T) {
 	requestID := "req-123"
 	status := "success"
-	result := map[string]interface{}{"answer": 42}
+	result := map[string]any{"answer": 42}
 
 	resp := NewAgentResponse(requestID, status, result)
 
@@ -1694,7 +1694,7 @@ func TestNewAgentResponse(t *testing.T) {
 func TestNewAgentError(t *testing.T) {
 	code := "test_error"
 	message := "Test error occurred"
-	details := map[string]interface{}{"context": "testing"}
+	details := map[string]any{"context": "testing"}
 
 	err := NewAgentError(code, message, details)
 
@@ -1715,8 +1715,8 @@ func TestAgentMessageWithMetadata(t *testing.T) {
 	messageID := "msg-123"
 	conversationID := "conv-456"
 	messageType := AgentMessageRequest
-	payload := map[string]interface{}{"action": "analyze", "data": "test data"}
-	metadata := map[string]interface{}{
+	payload := map[string]any{"action": "analyze", "data": "test data"}
+	metadata := map[string]any{
 		"priority":       "high",
 		"timeout":        30,
 		"correlation_id": "corr-789",
@@ -1748,7 +1748,7 @@ func TestAgentMessageBroadcast(t *testing.T) {
 	fromAgentID := "coordinator"
 	messageID := "broadcast-123"
 	messageType := AgentMessageBroadcast
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"announcement": "System maintenance in 5 minutes",
 		"type":         "maintenance",
 	}
@@ -1768,7 +1768,7 @@ func TestAgentMessageBroadcast(t *testing.T) {
 
 func TestAgentRequestWithTimeout(t *testing.T) {
 	action := "process_data"
-	parameters := map[string]interface{}{
+	parameters := map[string]any{
 		"data":     []int{1, 2, 3, 4, 5},
 		"format":   "json",
 		"validate": true,
@@ -1797,8 +1797,8 @@ func TestAgentRequestWithTimeout(t *testing.T) {
 func TestAgentResponseWithError(t *testing.T) {
 	requestID := "req-123"
 	status := "error"
-	result := map[string]interface{}{}
-	agentError := NewAgentError("validation_failed", "Invalid input format", map[string]interface{}{
+	result := map[string]any{}
+	agentError := NewAgentError("validation_failed", "Invalid input format", map[string]any{
 		"field":  "data",
 		"reason": "missing required field",
 		"code":   "VALIDATION_ERROR",
@@ -1849,18 +1849,18 @@ func TestAgentMessageConversationFlow(t *testing.T) {
 
 	// Request message
 	request := NewAgentMessage("client-agent", "msg-1", AgentMessageRequest,
-		NewAgentRequest("calculate", map[string]interface{}{"expr": "2*3"}))
+		NewAgentRequest("calculate", map[string]any{"expr": "2*3"}))
 	request.ConversationID = conversationID
 
 	// Response message
 	response := NewAgentMessage("calc-agent", "msg-2", AgentMessageResponse,
-		NewAgentResponse("msg-1", "success", map[string]interface{}{"result": 6}))
+		NewAgentResponse("msg-1", "success", map[string]any{"result": 6}))
 	response.ConversationID = conversationID
 	response.ToAgentID = "client-agent"
 
 	// Notification message
 	notification := NewAgentMessage("system", "msg-3", AgentMessageNotification,
-		map[string]interface{}{"type": "info", "message": "Calculation completed"})
+		map[string]any{"type": "info", "message": "Calculation completed"})
 	notification.ConversationID = conversationID
 
 	// Verify conversation flow
@@ -1888,7 +1888,7 @@ func TestAgentMessageConversationFlow(t *testing.T) {
 
 func TestAgentErrorDetails(t *testing.T) {
 	// Test error with detailed information
-	err := NewAgentError("network_timeout", "Connection timeout", map[string]interface{}{
+	err := NewAgentError("network_timeout", "Connection timeout", map[string]any{
 		"endpoint":        "api.example.com",
 		"timeout_seconds": 30,
 		"retry_count":     3,
@@ -1916,7 +1916,7 @@ func TestAgentErrorDetails(t *testing.T) {
 
 func TestAgentMessageTimestamp(t *testing.T) {
 	msg := NewAgentMessage("agent-1", "msg-123", AgentMessageRequest,
-		map[string]interface{}{"action": "test"})
+		map[string]any{"action": "test"})
 
 	// Timestamp should be set (greater than 0)
 	if msg.Timestamp <= 0 {
@@ -1937,7 +1937,7 @@ func TestNewEvent(t *testing.T) {
 	eventID := "event-123"
 	eventType := "user_action"
 	source := "web_app"
-	payload := map[string]interface{}{"action": "click"}
+	payload := map[string]any{"action": "click"}
 
 	event := NewEvent(eventID, eventType, source, payload)
 
@@ -2005,13 +2005,13 @@ func TestEventWithMetadata(t *testing.T) {
 	eventID := "event-456"
 	eventType := "data_processed"
 	source := "data-processor"
-	payload := map[string]interface{}{
+	payload := map[string]any{
 		"records_processed": 1000,
 		"processing_time":   45.2,
 		"success_rate":      0.987,
 	}
 	version := "2.1.0"
-	metadata := map[string]interface{}{
+	metadata := map[string]any{
 		"correlation_id": "corr-abc-123",
 		"user_id":        "user-789",
 		"session_id":     "sess-def-456",
@@ -2095,7 +2095,7 @@ func TestTaskEventLifecycle(t *testing.T) {
 
 	// Task completed
 	completeEvent := NewTaskEvent(taskID, agentID, TaskCompleted)
-	completeEvent.Result = map[string]interface{}{
+	completeEvent.Result = map[string]any{
 		"analysis_result": "completed",
 		"confidence":      0.92,
 	}
@@ -2104,7 +2104,7 @@ func TestTaskEventLifecycle(t *testing.T) {
 	if completeEvent.Result == nil {
 		t.Error("Result should not be nil")
 	}
-	resultMap, ok := completeEvent.Result.(map[string]interface{})
+	resultMap, ok := completeEvent.Result.(map[string]any)
 	if !ok {
 		t.Error("Result should be a map")
 		return
@@ -2138,7 +2138,7 @@ func TestWorkflowEventStates(t *testing.T) {
 		{"StepCompleted", WorkflowStepCompleted, "workflow_step_completed"},
 		{"Completed", WorkflowCompleted, "workflow_completed"},
 		{"Failed", WorkflowFailed, "workflow_failed"},
-		{"Cancelled", WorkflowCancelled, "workflow_cancelled"},
+		{"Canceled", WorkflowCancelled, "workflow_canceled"},
 	}
 
 	for _, tt := range tests {
@@ -2183,7 +2183,7 @@ func TestWorkflowEventWithParticipants(t *testing.T) {
 }
 
 func TestEventTimestamp(t *testing.T) {
-	event := NewEvent("event-123", "test", "test-source", map[string]interface{}{"data": "test"})
+	event := NewEvent("event-123", "test", "test-source", map[string]any{"data": "test"})
 
 	// Timestamp should be set (greater than 0)
 	if event.Timestamp <= 0 {
@@ -2231,7 +2231,7 @@ func TestEventConstants(t *testing.T) {
 		{"TaskProgress", TaskProgress, "task_progress"},
 		{"TaskCompleted", TaskCompleted, "task_completed"},
 		{"TaskFailed", TaskFailed, "task_failed"},
-		{"TaskCancelled", TaskCancelled, "task_cancelled"},
+		{"TaskCancelled", TaskCancelled, "task_canceled"},
 	}
 
 	for _, tt := range taskTests {
@@ -2252,7 +2252,7 @@ func TestEventConstants(t *testing.T) {
 		{"WorkflowStepCompleted", WorkflowStepCompleted, "workflow_step_completed"},
 		{"WorkflowCompleted", WorkflowCompleted, "workflow_completed"},
 		{"WorkflowFailed", WorkflowFailed, "workflow_failed"},
-		{"WorkflowCancelled", WorkflowCancelled, "workflow_cancelled"},
+		{"WorkflowCancelled", WorkflowCancelled, "workflow_canceled"},
 	}
 
 	for _, tt := range workflowTests {
@@ -2468,12 +2468,12 @@ func TestFunctionalOptionsComposition(t *testing.T) {
 	llmConfig, err := NewLLMProviderConfig("complex-llm", "openai", "gpt-4-turbo",
 		WithAPIKey("sk-complex-key"),
 		WithBaseURL("https://api.openai.com/v1"),
-		WithDefaultCallOptions(map[string]interface{}{
+		WithDefaultCallOptions(map[string]any{
 			"temperature": 0.7,
 			"max_tokens":  2000,
 			"top_p":       1.0,
 		}),
-		WithProviderSpecific(map[string]interface{}{
+		WithProviderSpecific(map[string]any{
 			"organization": "test-org",
 			"project":      "ai-framework",
 		}),

@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// MockMeterProvider provides a mock implementation for testing
+// MockMeterProvider provides a mock implementation for testing.
 type MockMeterProvider struct {
 	meter metric.Meter
 }
@@ -32,7 +32,7 @@ func (m *MockMeterProvider) Meter() metric.Meter {
 	return m.meter
 }
 
-// MockTracerProvider provides a mock implementation for testing
+// MockTracerProvider provides a mock implementation for testing.
 type MockTracerProvider struct {
 	tracer trace.Tracer
 }
@@ -47,7 +47,7 @@ func (m *MockTracerProvider) Tracer() trace.Tracer {
 	return m.tracer
 }
 
-// TestNewMetrics tests the Metrics constructor
+// TestNewMetrics tests the Metrics constructor.
 func TestNewMetrics(t *testing.T) {
 	mockMeter := NewMockMeterProvider().Meter()
 	metrics := NewMetrics(mockMeter)
@@ -63,7 +63,7 @@ func TestNewMetrics(t *testing.T) {
 	assert.NotNil(t, metrics.activeMemoryGauge)
 }
 
-// TestMetrics_RecordOperation tests recording operations
+// TestMetrics_RecordOperation tests recording operations.
 func TestMetrics_RecordOperation(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -80,7 +80,7 @@ func TestMetrics_RecordOperation(t *testing.T) {
 	metrics.RecordOperation(ctx, "clear", MemoryTypeBuffer, true)
 }
 
-// TestMetrics_RecordOperationDuration tests recording operation durations
+// TestMetrics_RecordOperationDuration tests recording operation durations.
 func TestMetrics_RecordOperationDuration(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -101,7 +101,7 @@ func TestMetrics_RecordOperationDuration(t *testing.T) {
 	metrics.RecordOperationDuration(ctx, "load", MemoryTypeBuffer, duration)
 }
 
-// TestMetrics_RecordError tests recording errors
+// TestMetrics_RecordError tests recording errors.
 func TestMetrics_RecordError(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -117,7 +117,7 @@ func TestMetrics_RecordError(t *testing.T) {
 	metrics.RecordError(ctx, "load", MemoryTypeBuffer, "test_error")
 }
 
-// TestMetrics_RecordMemorySize tests recording memory size
+// TestMetrics_RecordMemorySize tests recording memory size.
 func TestMetrics_RecordMemorySize(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -133,7 +133,7 @@ func TestMetrics_RecordMemorySize(t *testing.T) {
 	metrics.RecordMemorySize(ctx, MemoryTypeBuffer, 100)
 }
 
-// TestMetrics_RecordActiveMemory tests recording active memory instances
+// TestMetrics_RecordActiveMemory tests recording active memory instances.
 func TestMetrics_RecordActiveMemory(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -149,14 +149,14 @@ func TestMetrics_RecordActiveMemory(t *testing.T) {
 	metrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)
 }
 
-// TestNewTracer tests the Tracer constructor
+// TestNewTracer tests the Tracer constructor.
 func TestNewTracer(t *testing.T) {
 	tracer := NewTracer()
 	assert.NotNil(t, tracer)
 	assert.NotNil(t, tracer.tracer)
 }
 
-// TestTracer_StartSpan tests starting spans
+// TestTracer_StartSpan tests starting spans.
 func TestTracer_StartSpan(t *testing.T) {
 	ctx := context.Background()
 	tracer := NewTracer()
@@ -175,7 +175,7 @@ func TestTracer_StartSpan(t *testing.T) {
 	assert.NotEqual(t, ctx, ctx2)
 }
 
-// TestTracer_RecordSpanError tests recording errors on spans
+// TestTracer_RecordSpanError tests recording errors on spans.
 func TestTracer_RecordSpanError(t *testing.T) {
 	ctx := context.Background()
 	tracer := NewTracer()
@@ -192,7 +192,7 @@ func TestTracer_RecordSpanError(t *testing.T) {
 	span.End()
 }
 
-// TestGlobalMetricsFunctions tests global metrics functions
+// TestGlobalMetricsFunctions tests global metrics functions.
 func TestGlobalMetricsFunctions(t *testing.T) {
 	// Initially should be nil
 	assert.Nil(t, GetGlobalMetrics())
@@ -207,7 +207,7 @@ func TestGlobalMetricsFunctions(t *testing.T) {
 	assert.Equal(t, mockMeter, globalMetrics.meter)
 }
 
-// TestGlobalTracerFunctions tests global tracer functions
+// TestGlobalTracerFunctions tests global tracer functions.
 func TestGlobalTracerFunctions(t *testing.T) {
 	// Tracer is initialized in init(), so it should not be nil
 	// (The init() function calls SetGlobalTracer())
@@ -222,7 +222,7 @@ func TestGlobalTracerFunctions(t *testing.T) {
 	assert.NotNil(t, globalTracer.tracer)
 }
 
-// TestNewLogger tests the Logger constructor
+// TestNewLogger tests the Logger constructor.
 func TestNewLogger(t *testing.T) {
 	// Test with nil logger
 	logger := NewLogger(nil)
@@ -236,7 +236,7 @@ func TestNewLogger(t *testing.T) {
 	assert.Equal(t, customLogger, logger2.logger)
 }
 
-// TestLogger_LogMemoryOperation tests logging memory operations
+// TestLogger_LogMemoryOperation tests logging memory operations.
 func TestLogger_LogMemoryOperation(t *testing.T) {
 	ctx := context.Background()
 	logger := NewLogger(nil)
@@ -251,7 +251,7 @@ func TestLogger_LogMemoryOperation(t *testing.T) {
 	logger.LogMemoryOperation(ctx, slog.LevelError, "save", MemoryTypeBufferWindow, "recent", 3, duration, testErr)
 }
 
-// TestLogger_LogMemoryLifecycle tests logging memory lifecycle events
+// TestLogger_LogMemoryLifecycle tests logging memory lifecycle events.
 func TestLogger_LogMemoryLifecycle(t *testing.T) {
 	ctx := context.Background()
 	logger := NewLogger(nil)
@@ -263,7 +263,7 @@ func TestLogger_LogMemoryLifecycle(t *testing.T) {
 		slog.Int("messages_cleared", 10))
 }
 
-// TestLogger_LogError tests logging errors
+// TestLogger_LogError tests logging errors.
 func TestLogger_LogError(t *testing.T) {
 	ctx := context.Background()
 	logger := NewLogger(nil)
@@ -277,7 +277,7 @@ func TestLogger_LogError(t *testing.T) {
 		slog.Int("attempt", 2))
 }
 
-// TestGlobalLoggerFunctions tests global logger functions
+// TestGlobalLoggerFunctions tests global logger functions.
 func TestGlobalLoggerFunctions(t *testing.T) {
 	// Initially should have a default logger
 	globalLogger := GetGlobalLogger()
@@ -291,7 +291,7 @@ func TestGlobalLoggerFunctions(t *testing.T) {
 	assert.Equal(t, customLogger, GetGlobalLogger())
 }
 
-// TestConvenienceLoggingFunctions tests the convenience logging functions
+// TestConvenienceLoggingFunctions tests the convenience logging functions.
 func TestConvenienceLoggingFunctions(t *testing.T) {
 	ctx := context.Background()
 
@@ -314,7 +314,7 @@ func TestConvenienceLoggingFunctions(t *testing.T) {
 		slog.String("error_details", "additional info"))
 }
 
-// TestMetricsIntegration_WithMemoryOperations tests metrics integration with actual memory operations
+// TestMetricsIntegration_WithMemoryOperations tests metrics integration with actual memory operations.
 func TestMetricsIntegration_WithMemoryOperations(t *testing.T) {
 	ctx := context.Background()
 
@@ -333,13 +333,13 @@ func TestMetricsIntegration_WithMemoryOperations(t *testing.T) {
 	start := time.Now()
 	err = memory.SaveContext(ctx, inputs, outputs)
 	duration := time.Since(start)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify global metrics instance is set
 	globalMetrics := GetGlobalMetrics()
@@ -354,7 +354,7 @@ func TestMetricsIntegration_WithMemoryOperations(t *testing.T) {
 	globalMetrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)
 }
 
-// TestTracingIntegration_WithMemoryOperations tests tracing integration with memory operations
+// TestTracingIntegration_WithMemoryOperations tests tracing integration with memory operations.
 func TestTracingIntegration_WithMemoryOperations(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -371,13 +371,13 @@ func TestTracingIntegration_WithMemoryOperations(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err = memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	_, err = memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify global tracer instance is set
 	globalTracer := GetGlobalTracer()
@@ -394,7 +394,7 @@ func TestTracingIntegration_WithMemoryOperations(t *testing.T) {
 	span.End()
 }
 
-// TestObservabilityIntegration_EndToEnd tests end-to-end observability integration
+// TestObservabilityIntegration_EndToEnd tests end-to-end observability integration.
 func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 	ctx := context.Background()
 
@@ -428,18 +428,18 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 			outputs := map[string]any{"output": "Test output"}
 
 			err := memory.SaveContext(ctx, inputs, outputs)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-			assert.NoError(t, err)
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+			require.NoError(t, err)
 
 			// Load memory variables
 			vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Contains(t, vars, memory.MemoryVariables()[0])
 
 			// Clear memory
 			err = memory.Clear(ctx)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 
@@ -449,7 +449,7 @@ func TestObservabilityIntegration_EndToEnd(t *testing.T) {
 	assert.NotNil(t, GetGlobalLogger())
 }
 
-// TestMetricsNilHandling tests that nil metrics don't cause panics
+// TestMetricsNilHandling tests that nil metrics don't cause panics.
 func TestMetricsNilHandling(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -472,7 +472,7 @@ func TestMetricsNilHandling(t *testing.T) {
 	partialMetrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)
 }
 
-// TestTracerNilHandling tests that nil tracer doesn't cause panics
+// TestTracerNilHandling tests that nil tracer doesn't cause panics.
 func TestTracerNilHandling(t *testing.T) {
 	ctx := context.Background()
 
@@ -486,7 +486,7 @@ func TestTracerNilHandling(t *testing.T) {
 	nilTracer.RecordSpanError(nil, errors.New("test error"))
 }
 
-// TestLoggerNilHandling tests that nil logger doesn't cause panics
+// TestLoggerNilHandling tests that nil logger doesn't cause panics.
 func TestLoggerNilHandling(t *testing.T) {
 	ctx := context.Background()
 
@@ -497,7 +497,7 @@ func TestLoggerNilHandling(t *testing.T) {
 	nilLogger.LogError(ctx, errors.New("test"), "test", MemoryTypeBuffer, "test_memory")
 }
 
-// TestGlobalFunctionsNilHandling tests that global functions handle nil gracefully
+// TestGlobalFunctionsNilHandling tests that global functions handle nil gracefully.
 func TestGlobalFunctionsNilHandling(t *testing.T) {
 	ctx := context.Background()
 
@@ -517,7 +517,7 @@ func TestGlobalFunctionsNilHandling(t *testing.T) {
 	LogError(ctx, errors.New("test"), "test", MemoryTypeBuffer, "test")
 }
 
-// BenchmarkMetricsRecording benchmarks metrics recording performance
+// BenchmarkMetricsRecording benchmarks metrics recording performance.
 func BenchmarkMetricsRecording(b *testing.B) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
@@ -543,7 +543,7 @@ func BenchmarkMetricsRecording(b *testing.B) {
 	})
 }
 
-// BenchmarkTracingOperations benchmarks tracing operations performance
+// BenchmarkTracingOperations benchmarks tracing operations performance.
 func BenchmarkTracingOperations(b *testing.B) {
 	ctx := context.Background()
 	tracer := NewTracer()
@@ -565,7 +565,7 @@ func BenchmarkTracingOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkLoggingOperations benchmarks logging operations performance
+// BenchmarkLoggingOperations benchmarks logging operations performance.
 func BenchmarkLoggingOperations(b *testing.B) {
 	ctx := context.Background()
 	logger := NewLogger(nil)

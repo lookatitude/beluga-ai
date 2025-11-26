@@ -753,7 +753,7 @@ container.MustResolve(&result)
 
 // Test health check
 err := container.CheckHealth(context.Background())
-assert.NoError(t, err)
+require.NoError(t, err)
 ```
 
 ### Running Tests

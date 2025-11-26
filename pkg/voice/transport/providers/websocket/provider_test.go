@@ -12,8 +12,8 @@ import (
 
 func TestNewWebSocketTransport(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *transport.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -43,10 +43,10 @@ func TestNewWebSocketTransport(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewWebSocketTransport(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -71,11 +71,11 @@ func TestWebSocketTransport_SendAudio(t *testing.T) {
 
 	// Test sending audio
 	err = wsTransport.SendAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test sending empty audio
 	err = wsTransport.SendAudio(ctx, []byte{})
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestWebSocketTransport_ReceiveAudio(t *testing.T) {
@@ -110,7 +110,7 @@ func TestWebSocketTransport_Close(t *testing.T) {
 
 	// Test closing
 	err = wsTransport.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, wsTransport.connected)
 }
 
@@ -128,7 +128,7 @@ func TestWebSocketTransport_Connect(t *testing.T) {
 
 	ctx := context.Background()
 	err = wsTransport.Connect(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, wsTransport.connected)
 }
 

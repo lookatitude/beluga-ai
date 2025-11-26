@@ -20,10 +20,10 @@ type CalculatorTool struct {
 
 // NewCalculatorTool creates a new CalculatorTool.
 func NewCalculatorTool(cfg iface.ToolConfig) (*CalculatorTool, error) {
-	inputSchema := map[string]interface{}{
+	inputSchema := map[string]any{
 		"type": "object",
-		"properties": map[string]interface{}{
-			"expression": map[string]interface{}{
+		"properties": map[string]any{
+			"expression": map[string]any{
 				"type":        "string",
 				"description": "The arithmetic expression to evaluate. Example: \"10 + 5 * (3 - 1)\"",
 			},
@@ -34,15 +34,15 @@ func NewCalculatorTool(cfg iface.ToolConfig) (*CalculatorTool, error) {
 	tool := &CalculatorTool{
 		BaseTool: tools.BaseTool{},
 	}
-	tool.BaseTool.SetName(cfg.Name)
-	tool.BaseTool.SetDescription(cfg.Description)
-	tool.BaseTool.SetInputSchema(inputSchema)
+	tool.SetName(cfg.Name)
+	tool.SetDescription(cfg.Description)
+	tool.SetInputSchema(inputSchema)
 	return tool, nil
 }
 
 // Execute evaluates the arithmetic expression from the input.
 func (ct *CalculatorTool) Execute(ctx context.Context, input any) (any, error) {
-	inputMap, ok := input.(map[string]interface{})
+	inputMap, ok := input.(map[string]any)
 	if !ok {
 		return nil, fmt.Errorf("input must be a map[string]interface{}, got %T", input)
 	}
@@ -69,7 +69,7 @@ func (ct *CalculatorTool) Execute(ctx context.Context, input any) (any, error) {
 		val2, err2 := strconv.ParseFloat(parts[3], 64)
 
 		if err1 != nil || err2 != nil {
-			return nil, fmt.Errorf("invalid numbers in expression: %s. Error1: %v, Error2: %v", expression, err1, err2)
+			return nil, fmt.Errorf("invalid numbers in expression: %s. Error1: %w, Error2: %w", expression, err1, err2)
 		}
 
 		var result float64

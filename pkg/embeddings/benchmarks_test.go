@@ -66,7 +66,7 @@ func BenchmarkConfig_SetDefaults(b *testing.B) {
 	}
 }
 
-// Provider-specific benchmarks
+// Provider-specific benchmarks.
 func BenchmarkMockEmbedder_EmbedQuery(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -134,7 +134,7 @@ func benchmarkMockEmbedderEmbedDocuments(b *testing.B, batchSize int) {
 	}
 }
 
-// Memory benchmarks
+// Memory benchmarks.
 func BenchmarkMockEmbedder_EmbedDocuments_Memory(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -165,7 +165,7 @@ func BenchmarkMockEmbedder_EmbedDocuments_Memory(b *testing.B) {
 	}
 }
 
-// Concurrent benchmarks
+// Concurrent benchmarks.
 func BenchmarkMockEmbedder_ConcurrentEmbeddings(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -199,7 +199,7 @@ func BenchmarkMockEmbedder_ConcurrentEmbeddings(b *testing.B) {
 	})
 }
 
-// Dimension benchmarks
+// Dimension benchmarks.
 func BenchmarkMockEmbedder_DifferentDimensions(b *testing.B) {
 	dimensions := []int{64, 128, 256, 512, 1024}
 
@@ -237,7 +237,7 @@ func BenchmarkMockEmbedder_DifferentDimensions(b *testing.B) {
 	}
 }
 
-// Factory operation benchmarks
+// Factory operation benchmarks.
 func BenchmarkEmbedderFactory_GetAvailableProviders(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -278,7 +278,7 @@ func BenchmarkEmbedderFactory_CheckHealth(b *testing.B) {
 	}
 }
 
-// Performance comparison benchmarks
+// Performance comparison benchmarks.
 func BenchmarkEmbedderFactory_ProviderCreation(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -302,7 +302,7 @@ func BenchmarkEmbedderFactory_ProviderCreation(b *testing.B) {
 	}
 }
 
-// Load testing benchmarks
+// Load testing benchmarks.
 func BenchmarkMockEmbedder_LoadTest_SmallDocuments(b *testing.B) {
 	benchmarkLoadTest(b, 100, 5, 10) // 100 docs, 5-10 words each
 }
@@ -363,7 +363,7 @@ func benchmarkLoadTest(b *testing.B, numDocs, minWords, maxWords int) {
 	b.ReportMetric(float64(totalProcessed)/duration.Seconds(), "embeddings/sec")
 }
 
-// Throughput benchmarks
+// Throughput benchmarks.
 func BenchmarkMockEmbedder_Throughput(b *testing.B) {
 	config := &Config{
 		Mock: &MockConfig{
@@ -382,7 +382,6 @@ func BenchmarkMockEmbedder_Throughput(b *testing.B) {
 	if err != nil {
 		b.Fatalf("Failed to create embedder: %v", err)
 	}
-
 
 	ctx := context.Background()
 	// Pre-generate test data

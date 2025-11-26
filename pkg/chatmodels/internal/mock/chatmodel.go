@@ -3,6 +3,7 @@ package mock
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
@@ -10,7 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// mockMetrics is a simple stub to avoid import cycles
+// mockMetrics is a simple stub to avoid import cycles.
 type mockMetrics struct{}
 
 func (m *mockMetrics) RecordMessageGeneration(model, provider string, duration time.Duration, success bool, tokenCount int) {
@@ -24,18 +25,17 @@ func (m *mockMetrics) RecordStreamingSession(model, provider string, duration ti
 // MockChatModel is a mock implementation of the ChatModel interface for testing.
 type MockChatModel struct {
 	model     string
-	config    interface{} // Use interface{} to avoid import cycle
+	config    any // Use interface{} to avoid import cycle
 	options   *iface.Options
-	metrics   interface{} // Use interface{} to avoid import cycle
-	responses []string    // Predefined responses to cycle through
-	index     int         // Current response index
+	metrics   any      // Use interface{} to avoid import cycle
+	responses []string // Predefined responses to cycle through
+	index     int      // Current response index
+	mu        sync.Mutex
 }
 
 // NewMockChatModel creates a new mock chat model instance.
-func NewMockChatModel(model string, config interface{}, options *iface.Options) (*MockChatModel, error) {
-	var metrics interface{}
-	// Simple metrics stub to avoid import cycle
-	metrics = &mockMetrics{}
+func NewMockChatModel(model string, config any, options *iface.Options) (*MockChatModel, error) {
+	var metrics any = &mockMetrics{}
 
 	return &MockChatModel{
 		model:   model,
@@ -66,6 +66,7 @@ func (m *MockChatModel) GenerateMessages(ctx context.Context, messages []schema.
 	// Simulate processing time
 	select {
 	case <-ctx.Done():
+		// Context.Err() is self-descriptive and doesn't need wrapping
 		return nil, ctx.Err()
 	case <-time.After(100 * time.Millisecond): // Mock delay
 	}
@@ -155,8 +156,8 @@ func (m *MockChatModel) GetModelInfo() iface.ModelInfo {
 }
 
 // CheckHealth returns the health status of the mock model.
-func (m *MockChatModel) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+func (m *MockChatModel) CheckHealth() map[string]any {
+	return map[string]any{
 		"status":           "healthy",
 		"model":            m.model,
 		"provider":         "mock",
@@ -225,11 +226,14 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 func (m *MockChatModel) Run(ctx context.Context) error {
 	// Mock models don't need to run anything continuously
 	<-ctx.Done()
+	// Context.Err() is self-descriptive and doesn't need wrapping
 	return ctx.Err()
 }
 
 // getNextResponse returns the next response in the cycle.
 func (m *MockChatModel) getNextResponse() string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	response := m.responses[m.index]
 	m.index = (m.index + 1) % len(m.responses)
 	return response

@@ -2,6 +2,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -15,29 +16,29 @@ const (
 	// ErrorTypeNetwork indicates network-related errors (connection failures, timeouts, etc.)
 	ErrorTypeNetwork ErrorType = "network"
 
-	// ErrorTypeAuthentication indicates authentication/authorization errors
+	// ErrorTypeAuthentication indicates authentication/authorization errors.
 	ErrorTypeAuthentication ErrorType = "authentication"
 
-	// ErrorTypeRateLimit indicates rate limiting errors
+	// ErrorTypeRateLimit indicates rate limiting errors.
 	ErrorTypeRateLimit ErrorType = "rate_limit"
 
-	// ErrorTypeInternal indicates internal system errors
+	// ErrorTypeInternal indicates internal system errors.
 	ErrorTypeInternal ErrorType = "internal"
 
-	// ErrorTypeExternal indicates errors from external services/APIs
+	// ErrorTypeExternal indicates errors from external services/APIs.
 	ErrorTypeExternal ErrorType = "external"
 
-	// ErrorTypeConfiguration indicates configuration-related errors
+	// ErrorTypeConfiguration indicates configuration-related errors.
 	ErrorTypeConfiguration ErrorType = "configuration"
 )
 
 // FrameworkError represents a standardized error in the Beluga AI framework.
 type FrameworkError struct {
+	Cause   error
+	Context map[string]any
 	Type    ErrorType
 	Message string
-	Cause   error
-	Code    string                 // Optional error code for programmatic handling
-	Context map[string]interface{} // Additional context information
+	Code    string
 }
 
 // Error implements the error interface.
@@ -109,14 +110,16 @@ func IsErrorType(err error, errorType ErrorType) bool {
 
 // AsFrameworkError attempts to convert an error to a FrameworkError.
 func AsFrameworkError(err error, target **FrameworkError) bool {
-	if fwErr, ok := err.(*FrameworkError); ok {
+	fwErr := &FrameworkError{}
+	if errors.As(err, &fwErr) {
 		*target = fwErr
 		return true
 	}
 
 	// Check if it's wrapped
 	if cause := UnwrapError(err); cause != nil {
-		if fwErr, ok := cause.(*FrameworkError); ok {
+		fwErr := &FrameworkError{}
+		if errors.As(cause, &fwErr) {
 			*target = fwErr
 			return true
 		}
@@ -150,22 +153,22 @@ func WrapError(err error, message string) error {
 type ErrorCode string
 
 const (
-	// ErrorCodeInvalidInput indicates invalid input parameters
+	// ErrorCodeInvalidInput indicates invalid input parameters.
 	ErrorCodeInvalidInput ErrorCode = "INVALID_INPUT"
 
-	// ErrorCodeNotFound indicates a resource was not found
+	// ErrorCodeNotFound indicates a resource was not found.
 	ErrorCodeNotFound ErrorCode = "NOT_FOUND"
 
-	// ErrorCodeUnauthorized indicates unauthorized access
+	// ErrorCodeUnauthorized indicates unauthorized access.
 	ErrorCodeUnauthorized ErrorCode = "UNAUTHORIZED"
 
-	// ErrorCodeTimeout indicates a timeout occurred
+	// ErrorCodeTimeout indicates a timeout occurred.
 	ErrorCodeTimeout ErrorCode = "TIMEOUT"
 
-	// ErrorCodeRateLimited indicates rate limiting was applied
+	// ErrorCodeRateLimited indicates rate limiting was applied.
 	ErrorCodeRateLimited ErrorCode = "RATE_LIMITED"
 
-	// ErrorCodeInternalError indicates an internal system error
+	// ErrorCodeInternalError indicates an internal system error.
 	ErrorCodeInternalError ErrorCode = "INTERNAL_ERROR"
 )
 
@@ -176,14 +179,14 @@ func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message stri
 		Message: message,
 		Cause:   cause,
 		Code:    string(code),
-		Context: make(map[string]interface{}),
+		Context: make(map[string]any),
 	}
 }
 
 // AddContext adds context information to a FrameworkError.
-func (e *FrameworkError) AddContext(key string, value interface{}) *FrameworkError {
+func (e *FrameworkError) AddContext(key string, value any) *FrameworkError {
 	if e.Context == nil {
-		e.Context = make(map[string]interface{})
+		e.Context = make(map[string]any)
 	}
 	e.Context[key] = value
 	return e

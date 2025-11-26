@@ -11,27 +11,30 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// TracerProvider defines the interface for tracing operations
+// TracerProvider defines the interface for tracing operations.
 type TracerProvider interface {
-	StartSpan(ctx context.Context, operation string, provider, model string) (context.Context, trace.Span)
+	StartSpan(ctx context.Context, operation, provider, model string) (context.Context, trace.Span)
 	RecordError(span trace.Span, err error)
-	AddSpanAttributes(span trace.Span, attrs map[string]interface{})
+	AddSpanAttributes(span trace.Span, attrs map[string]any)
 }
 
-// OpenTelemetryTracer implements TracerProvider using OpenTelemetry
+// OpenTelemetryTracer implements TracerProvider using OpenTelemetry.
 type OpenTelemetryTracer struct {
 	tracer trace.Tracer
 }
 
-// NewOpenTelemetryTracer creates a new OpenTelemetry tracer
+// NewOpenTelemetryTracer creates a new OpenTelemetry tracer.
 func NewOpenTelemetryTracer(name string) *OpenTelemetryTracer {
 	return &OpenTelemetryTracer{
 		tracer: otel.Tracer(name),
 	}
 }
 
-// StartSpan starts a new trace span for an LLM operation
-func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation string, provider, model string) (context.Context, trace.Span) {
+// StartSpan starts a new trace span for an LLM operation.
+// The returned span must be ended by the caller using span.End().
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
+func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation, provider, model string) (context.Context, trace.Span) {
 	ctx, span := t.tracer.Start(ctx, operation,
 		trace.WithAttributes(
 			attribute.String("llm.provider", provider),
@@ -41,7 +44,7 @@ func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation string, p
 	return ctx, span
 }
 
-// RecordError records an error on a span
+// RecordError records an error on a span.
 func (t *OpenTelemetryTracer) RecordError(span trace.Span, err error) {
 	if span.IsRecording() {
 		span.RecordError(err)
@@ -49,8 +52,8 @@ func (t *OpenTelemetryTracer) RecordError(span trace.Span, err error) {
 	}
 }
 
-// AddSpanAttributes adds attributes to a span
-func (t *OpenTelemetryTracer) AddSpanAttributes(span trace.Span, attrs map[string]interface{}) {
+// AddSpanAttributes adds attributes to a span.
+func (t *OpenTelemetryTracer) AddSpanAttributes(span trace.Span, attrs map[string]any) {
 	if !span.IsRecording() {
 		return
 	}
@@ -78,56 +81,62 @@ func (t *OpenTelemetryTracer) AddSpanAttributes(span trace.Span, attrs map[strin
 	span.SetAttributes(otelAttrs...)
 }
 
-// TracingHelper provides high-level tracing utilities
+// TracingHelper provides high-level tracing utilities.
 type TracingHelper struct {
 	tracer TracerProvider
 }
 
-// NewTracingHelper creates a new TracingHelper with OpenTelemetry
+// NewTracingHelper creates a new TracingHelper with OpenTelemetry.
 func NewTracingHelper() *TracingHelper {
 	return &TracingHelper{
 		tracer: NewOpenTelemetryTracer("beluga-ai-llms"),
 	}
 }
 
-// StartOperation starts a new trace span for an LLM operation
-func (th *TracingHelper) StartOperation(ctx context.Context, operation string, provider, model string) context.Context {
-	newCtx, _ := th.tracer.StartSpan(ctx, operation, provider, model)
+// StartOperation starts a new trace span for an LLM operation.
+// The span must be ended by calling EndSpan on the returned context.
+func (th *TracingHelper) StartOperation(ctx context.Context, operation, provider, model string) context.Context {
+	newCtx, span := th.tracer.StartSpan(ctx, operation, provider, model)
+	_ = span // Span is stored in context and will be ended via EndSpan method
 	return newCtx
 }
 
-// RecordError records an error on the current span
+// RecordError records an error on the current span.
 func (th *TracingHelper) RecordError(ctx context.Context, err error) {
 	if span := trace.SpanFromContext(ctx); span.IsRecording() {
 		th.tracer.RecordError(span, err)
 	}
 }
 
-// AddSpanAttributes adds attributes to the current span
-func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]interface{}) {
+// AddSpanAttributes adds attributes to the current span.
+func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]any) {
 	if span := trace.SpanFromContext(ctx); span.IsRecording() {
 		th.tracer.AddSpanAttributes(span, attrs)
 	}
 }
 
-// EndSpan ends the current span
+// EndSpan ends the current span.
 func (th *TracingHelper) EndSpan(ctx context.Context) {
 	if span := trace.SpanFromContext(ctx); span.IsRecording() {
 		span.End()
 	}
 }
 
-// StartSpan is a convenience function for starting spans
+// StartSpan is a convenience function for starting spans.
+// The returned span must be ended by the caller using span.End().
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func StartSpan(ctx context.Context, tracer trace.Tracer, operation, provider, model string) (context.Context, trace.Span) {
-	return tracer.Start(ctx, operation,
+	ctx, span := tracer.Start(ctx, operation,
 		trace.WithAttributes(
 			attribute.String("llm.provider", provider),
 			attribute.String("llm.model", model),
 			attribute.String("operation", operation),
 		))
+	return ctx, span
 }
 
-// RecordSpanError records an error on a span
+// RecordSpanError records an error on a span.
 func RecordSpanError(span trace.Span, err error) {
 	if span.IsRecording() {
 		span.RecordError(err)
@@ -135,8 +144,8 @@ func RecordSpanError(span trace.Span, err error) {
 	}
 }
 
-// AddSpanAttributesMap adds multiple attributes to a span
-func AddSpanAttributesMap(span trace.Span, attrs map[string]interface{}) {
+// AddSpanAttributesMap adds multiple attributes to a span.
+func AddSpanAttributesMap(span trace.Span, attrs map[string]any) {
 	if !span.IsRecording() {
 		return
 	}
@@ -164,9 +173,9 @@ func AddSpanAttributesMap(span trace.Span, attrs map[string]interface{}) {
 	span.SetAttributes(otelAttrs...)
 }
 
-// LoggerAttrs returns structured logging attributes for LLM operations
-func LoggerAttrs(provider, model, operation string) map[string]interface{} {
-	return map[string]interface{}{
+// LoggerAttrs returns structured logging attributes for LLM operations.
+func LoggerAttrs(provider, model, operation string) map[string]any {
+	return map[string]any{
 		"llm.provider": provider,
 		"llm.model":    model,
 		"operation":    operation,

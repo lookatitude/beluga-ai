@@ -19,20 +19,20 @@ import (
 // VectorStoreRetriever implements the core.Retriever interface using an underlying vectorstores.VectorStore.
 // It provides configurable retrieval with support for tracing, metrics, and structured logging.
 type VectorStoreRetriever struct {
-	vectorStore    vectorstores.VectorStore // The vector store to retrieve from
-	defaultK       int                      // Default number of documents to retrieve
-	scoreThreshold float32                  // Minimum similarity score threshold
-	maxRetries     int                      // Maximum number of retries for failed operations
-	timeout        time.Duration            // Timeout for operations
-	enableTracing  bool                     // Whether to enable tracing
-	enableMetrics  bool                     // Whether to enable metrics collection
-	logger         *slog.Logger             // Structured logger
-	tracer         trace.Tracer             // OpenTelemetry tracer
-	metrics        *Metrics                 // Metrics collector
+	vectorStore    vectorstores.VectorStore
+	tracer         trace.Tracer
+	logger         *slog.Logger
+	metrics        *Metrics
+	defaultK       int
+	maxRetries     int
+	timeout        time.Duration
+	scoreThreshold float32
+	enableTracing  bool
+	enableMetrics  bool
 }
 
 // newVectorStoreRetrieverInternal creates a new VectorStoreRetriever with internal configuration.
-// This is used by the public factory functions in retrievers.go
+// This is used by the public factory functions in retrievers.go.
 func newVectorStoreRetrieverInternal(vectorStore vectorstores.VectorStore, config *RetrieverOptions) *VectorStoreRetriever {
 	return &VectorStoreRetriever{
 		vectorStore:    vectorStore,
@@ -273,6 +273,8 @@ func (r *VectorStoreRetriever) CheckHealth(ctx context.Context) error {
 }
 
 // Compile-time check to ensure VectorStoreRetriever implements interfaces.
-var _ core.Retriever = (*VectorStoreRetriever)(nil)
-var _ core.Runnable = (*VectorStoreRetriever)(nil)
-var _ core.HealthChecker = (*VectorStoreRetriever)(nil)
+var (
+	_ core.Retriever     = (*VectorStoreRetriever)(nil)
+	_ core.Runnable      = (*VectorStoreRetriever)(nil)
+	_ core.HealthChecker = (*VectorStoreRetriever)(nil)
+)

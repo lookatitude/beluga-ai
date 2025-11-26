@@ -4,7 +4,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
 )
 
-// RNNoiseConfig extends the base Noise Cancellation config with RNNoise-specific settings
+// RNNoiseConfig extends the base Noise Cancellation config with RNNoise-specific settings.
 type RNNoiseConfig struct {
 	*noise.Config
 
@@ -18,7 +18,7 @@ type RNNoiseConfig struct {
 	SampleRate int `mapstructure:"sample_rate" yaml:"sample_rate" default:"48000" validate:"eq=48000"`
 }
 
-// DefaultRNNoiseConfig returns a default RNNoise configuration
+// DefaultRNNoiseConfig returns a default RNNoise configuration.
 func DefaultRNNoiseConfig() *RNNoiseConfig {
 	return &RNNoiseConfig{
 		Config:     noise.DefaultConfig(),

@@ -3,12 +3,12 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // TracedRunnable wraps a Runnable with OpenTelemetry tracing and metrics.
@@ -30,7 +30,7 @@ func NewTracedRunnable(
 	componentName string,
 ) *TracedRunnable {
 	if tracer == nil {
-		tracer = trace.NewNoopTracerProvider().Tracer("")
+		tracer = noop.NewTracerProvider().Tracer("")
 	}
 	if metrics == nil {
 		metrics = NoOpMetrics()
@@ -47,7 +47,7 @@ func NewTracedRunnable(
 
 // Invoke executes the wrapped Runnable with tracing and metrics.
 func (tr *TracedRunnable) Invoke(ctx context.Context, input any, options ...Option) (any, error) {
-	ctx, span := tr.tracer.Start(ctx, fmt.Sprintf("%s.invoke", tr.componentType),
+	ctx, span := tr.tracer.Start(ctx, tr.componentType+".invoke",
 		trace.WithAttributes(
 			attribute.String("component.type", tr.componentType),
 			attribute.String("component.name", tr.componentName),
@@ -75,7 +75,7 @@ func (tr *TracedRunnable) Invoke(ctx context.Context, input any, options ...Opti
 
 // Batch executes the wrapped Runnable with tracing and metrics.
 func (tr *TracedRunnable) Batch(ctx context.Context, inputs []any, options ...Option) ([]any, error) {
-	ctx, span := tr.tracer.Start(ctx, fmt.Sprintf("%s.batch", tr.componentType),
+	ctx, span := tr.tracer.Start(ctx, tr.componentType+".batch",
 		trace.WithAttributes(
 			attribute.String("component.type", tr.componentType),
 			attribute.String("component.name", tr.componentName),
@@ -104,7 +104,7 @@ func (tr *TracedRunnable) Batch(ctx context.Context, inputs []any, options ...Op
 
 // Stream executes the wrapped Runnable with tracing and metrics.
 func (tr *TracedRunnable) Stream(ctx context.Context, input any, options ...Option) (<-chan any, error) {
-	ctx, span := tr.tracer.Start(ctx, fmt.Sprintf("%s.stream", tr.componentType),
+	ctx, span := tr.tracer.Start(ctx, tr.componentType+".stream",
 		trace.WithAttributes(
 			attribute.String("component.type", tr.componentType),
 			attribute.String("component.name", tr.componentName),
@@ -115,7 +115,6 @@ func (tr *TracedRunnable) Stream(ctx context.Context, input any, options ...Opti
 	startTime := time.Now()
 
 	streamChan, err := tr.runnable.Stream(ctx, input, options...)
-
 	if err != nil {
 		duration := time.Since(startTime)
 		tr.metrics.RecordRunnableStream(ctx, tr.componentType, duration, 0, err)

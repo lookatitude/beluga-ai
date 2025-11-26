@@ -11,8 +11,8 @@ import (
 
 func TestNewWebRTCNoiseProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *noise.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -33,10 +33,10 @@ func TestNewWebRTCNoiseProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewWebRTCNoiseProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -56,9 +56,9 @@ func TestWebRTCNoiseProvider_Process(t *testing.T) {
 	audio := []byte{128, 129, 130, 131, 132}
 
 	processed, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processed)
-	assert.Equal(t, len(audio), len(processed))
+	assert.Len(t, processed, len(audio))
 }
 
 func TestWebRTCNoiseProvider_ProcessStream(t *testing.T) {
@@ -77,7 +77,7 @@ func TestWebRTCNoiseProvider_ProcessStream(t *testing.T) {
 	close(audioCh)
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Receive processed audio
 	processed := <-processedCh
@@ -98,7 +98,7 @@ func TestWebRTCNoiseProvider_ProcessStream_ContextCancellation(t *testing.T) {
 	cancel()
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Channel should be closed
 	_, ok := <-processedCh
@@ -115,7 +115,7 @@ func TestWebRTCNoiseProvider_Process_EmptyAudio(t *testing.T) {
 
 	ctx := context.Background()
 	processed, err := provider.Process(ctx, []byte{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, processed)
 }
 

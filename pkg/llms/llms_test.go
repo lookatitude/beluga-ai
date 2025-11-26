@@ -13,11 +13,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // Mock implementations for testing
 
-// MockChatModel is a mock implementation of ChatModel for testing
+// MockChatModel is a mock implementation of ChatModel for testing.
 type MockChatModel struct {
 	mock.Mock
 	modelName string
@@ -32,7 +33,9 @@ func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message,
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(schema.Message), args.Error(1)
+	msg := args.Get(0).(schema.Message)
+	_ = args.Error(1) // Error is returned, not checked in mock
+	return msg, args.Error(1)
 }
 
 func (m *MockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
@@ -69,8 +72,8 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 	return args.Get(0).(<-chan any), args.Error(1)
 }
 
-func (m *MockChatModel) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+func (m *MockChatModel) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":         "healthy",
 		"provider":      "mock",
 		"model":         m.modelName,
@@ -127,10 +130,10 @@ func TestEnsureMessages(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := EnsureMessages(tt.input)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, result)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expected, result)
 			}
 		})
@@ -145,13 +148,13 @@ func TestFactory(t *testing.T) {
 	factory.RegisterProvider("test", mockModel)
 
 	retrieved, err := factory.GetProvider("test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, mockModel, retrieved)
 
 	// Test getting non-existent provider
 	_, err = factory.GetProvider("nonexistent")
-	assert.Error(t, err)
-	assert.True(t, strings.Contains(err.Error(), "not registered"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not registered")
 
 	// Test listing providers
 	providers := factory.ListProviders()
@@ -160,8 +163,8 @@ func TestFactory(t *testing.T) {
 
 func TestConfiguration(t *testing.T) {
 	tests := []struct {
-		name      string
 		configFn  func() *Config
+		name      string
 		shouldErr bool
 	}{
 		{
@@ -212,9 +215,9 @@ func TestConfiguration(t *testing.T) {
 			config := tt.configFn()
 			err := config.Validate()
 			if tt.shouldErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -222,11 +225,11 @@ func TestConfiguration(t *testing.T) {
 
 func TestErrorHandling(t *testing.T) {
 	tests := []struct {
-		name        string
 		err         error
+		name        string
+		errorCode   string
 		isLLMError  bool
 		isRetryable bool
-		errorCode   string
 	}{
 		{
 			name:        "LLM error",
@@ -276,7 +279,7 @@ func TestGenerateText(t *testing.T) {
 
 	result, err := GenerateText(context.Background(), mockModel, "Test prompt")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, expectedResponse, result)
 	mockModel.AssertExpectations(t)
 }
@@ -295,7 +298,7 @@ func TestBatchGenerate(t *testing.T) {
 
 	results, err := BatchGenerate(context.Background(), mockModel, prompts)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, results, 2)
 	assert.Equal(t, expectedResponses[0], results[0])
 	assert.Equal(t, expectedResponses[1], results[1])
@@ -351,9 +354,9 @@ func TestValidateModelName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateModelName(tt.provider, tt.modelName)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -373,11 +376,11 @@ func TestStreaming(t *testing.T) {
 
 	resultChan, err := mockModel.StreamChat(context.Background(), []schema.Message{schema.NewHumanMessage("test")})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	var collectedContent strings.Builder
 	for chunk := range resultChan {
-		collectedContent.WriteString(chunk.Content)
+		_, _ = collectedContent.WriteString(chunk.Content)
 	}
 
 	assert.Equal(t, "Hello World", collectedContent.String())
@@ -399,7 +402,7 @@ func TestToolBinding(t *testing.T) {
 
 // Note: MockTool is defined in test_utils.go
 
-// MockLLM for testing ChatModelAdapter
+// MockLLM for testing ChatModelAdapter.
 type MockLLM struct {
 	modelName string
 }
@@ -416,7 +419,7 @@ func (m *MockLLM) GetProviderName() string {
 	return "mock"
 }
 
-// Add test for unification
+// Add test for unification.
 func TestChatModelUnification(t *testing.T) {
 	mockModel := NewMockChatModel("unification-test")
 
@@ -430,23 +433,23 @@ func TestChatModelUnification(t *testing.T) {
 	assert.Equal(t, "mock", llm.GetProviderName())
 }
 
-// Add test for LLM factories
+// Add test for LLM factories.
 func TestLLMFactories(t *testing.T) {
 	tests := []struct {
-		name string
 		fn   func(opts ...ConfigOption) (iface.LLM, error)
+		name string
 	}{
-		{"Anthropic", NewAnthropicLLM},
-		{"OpenAI", NewOpenAILLM},
-		{"Bedrock", NewBedrockLLM},
-		{"Ollama", NewOllamaLLM},
-		{"Mock", NewMockLLM},
+		{NewAnthropicLLM, "Anthropic"},
+		{NewOpenAILLM, "OpenAI"},
+		{NewBedrockLLM, "Bedrock"},
+		{NewOllamaLLM, "Ollama"},
+		{NewMockLLM, "Mock"},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			llm, err := tt.fn()
-			assert.Error(t, err) // Expected error from dummy implementation
+			require.Error(t, err) // Expected error from dummy implementation
 			if llm != nil {
 				assert.NotEmpty(t, llm.GetModelName())
 				assert.NotEmpty(t, llm.GetProviderName())
@@ -480,7 +483,7 @@ func BenchmarkGenerateText(b *testing.B) {
 	}
 }
 
-// Integration test example
+// Integration test example.
 func TestFactoryIntegration(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -500,14 +503,14 @@ func TestFactoryIntegration(t *testing.T) {
 
 	// Get provider and check health
 	retrieved, err := factory.GetProvider("integration-test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	health := retrieved.CheckHealth()
 	assert.NotNil(t, health)
 	assert.Equal(t, "healthy", health["state"])
 }
 
-// Test configuration with timeout
+// Test configuration with timeout.
 func TestConfigurationTimeout(t *testing.T) {
 	config := NewConfig(
 		WithProvider("anthropic"),
@@ -519,10 +522,10 @@ func TestConfigurationTimeout(t *testing.T) {
 	assert.Equal(t, 5*time.Second, config.Timeout)
 
 	err := ValidateProviderConfig(context.Background(), config)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// Test error wrapping
+// Test error wrapping.
 func TestErrorWrapping(t *testing.T) {
 	originalErr := errors.New("original error")
 	wrappedErr := WrapError("test_operation", originalErr)
@@ -533,11 +536,11 @@ func TestErrorWrapping(t *testing.T) {
 
 	// Test that it's still accessible as LLMError
 	var llmErr *LLMError
-	assert.True(t, errors.As(wrappedErr, &llmErr))
+	assert.ErrorAs(t, wrappedErr, &llmErr)
 	assert.Equal(t, "test_operation", llmErr.Op)
 }
 
-// Test CheckHealth functionality
+// Test CheckHealth functionality.
 func TestCheckHealth(t *testing.T) {
 	mockModel := NewMockChatModel("test-model")
 
@@ -554,7 +557,7 @@ func TestCheckHealth(t *testing.T) {
 	assert.Contains(t, health, "responses_len")
 }
 
-// Test factory provider registration and health checks
+// Test factory provider registration and health checks.
 func TestFactoryProviderHealth(t *testing.T) {
 	factory := NewFactory()
 
@@ -564,7 +567,7 @@ func TestFactoryProviderHealth(t *testing.T) {
 
 	// Get provider and check health
 	retrieved, err := factory.GetProvider("factory-test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	health := retrieved.CheckHealth()
 	assert.NotNil(t, health)
@@ -572,25 +575,25 @@ func TestFactoryProviderHealth(t *testing.T) {
 	assert.Equal(t, "mock", health["provider"])
 }
 
-// Test convenience factory functions
+// Test convenience factory functions.
 func TestConvenienceFactoryFunctions(t *testing.T) {
 	// Test NewAnthropicChat (should return error due to missing provider)
 	_, err := NewAnthropicChat(WithAPIKey("test-key"))
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "anthropic provider not available")
 
 	// Test NewOpenAIChat (should return error due to missing provider)
 	_, err = NewOpenAIChat(WithAPIKey("test-key"))
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "openai provider not available")
 
 	// Test NewOllamaChat (should return error due to missing provider)
 	_, err = NewOllamaChat(WithModelName("llama2"), WithAPIKey("dummy"))
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "ollama provider not available")
 }
 
-// Test ChatModelAdapter functionality
+// Test ChatModelAdapter functionality.
 func TestChatModelAdapter(t *testing.T) {
 	mockLLM := &MockLLM{modelName: "adapter-test"}
 	adapter := NewChatModelAdapter(mockLLM, &ChatOptions{})
@@ -607,7 +610,7 @@ func TestChatModelAdapter(t *testing.T) {
 	assert.Contains(t, health, "timestamp")
 }
 
-// Test configuration with all options
+// Test configuration with all options.
 func TestConfigurationComprehensive(t *testing.T) {
 	config := NewConfig(
 		WithProvider("anthropic"),
@@ -636,7 +639,7 @@ func TestConfigurationComprehensive(t *testing.T) {
 	assert.Equal(t, 10, config.MaxConcurrentBatches)
 	assert.Equal(t, 5, config.MaxRetries)
 	assert.Equal(t, time.Second, config.RetryDelay)
-	assert.Equal(t, 2.0, config.RetryBackoff)
+	assert.InEpsilon(t, 2.0, config.RetryBackoff, 0.0001)
 	assert.True(t, config.EnableTracing)
 	assert.True(t, config.EnableMetrics)
 	assert.True(t, config.EnableStructuredLogging)

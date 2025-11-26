@@ -2,7 +2,7 @@ package spectral
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"math"
 	"sync"
 
@@ -10,7 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise/iface"
 )
 
-// SpectralProvider implements noise cancellation using Spectral Subtraction
+// SpectralProvider implements noise cancellation using Spectral Subtraction.
 type SpectralProvider struct {
 	config         *SpectralConfig
 	noiseProfile   *AdaptiveNoiseProfile
@@ -18,11 +18,11 @@ type SpectralProvider struct {
 	mu             sync.RWMutex
 }
 
-// NewSpectralProvider creates a new Spectral Subtraction noise cancellation provider
+// NewSpectralProvider creates a new Spectral Subtraction noise cancellation provider.
 func NewSpectralProvider(config *noise.Config) (iface.NoiseCancellation, error) {
 	if config == nil {
 		return nil, noise.NewNoiseCancellationError("NewSpectralProvider", noise.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Spectral config
@@ -63,7 +63,7 @@ func NewSpectralProvider(config *noise.Config) (iface.NoiseCancellation, error) 
 	}, nil
 }
 
-// Process implements the NoiseCancellation interface
+// Process implements the NoiseCancellation interface.
 func (p *SpectralProvider) Process(ctx context.Context, audio []byte) ([]byte, error) {
 	if len(audio) == 0 {
 		return audio, nil
@@ -110,7 +110,7 @@ func (p *SpectralProvider) Process(ctx context.Context, audio []byte) ([]byte, e
 	return cleanedAudio, nil
 }
 
-// ProcessStream implements the NoiseCancellation interface
+// ProcessStream implements the NoiseCancellation interface.
 func (p *SpectralProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error) {
 	processedCh := make(chan []byte, 10)
 
@@ -143,7 +143,7 @@ func (p *SpectralProvider) ProcessStream(ctx context.Context, audioCh <-chan []b
 	return processedCh, nil
 }
 
-// bytesToFloat64 converts audio bytes to float64 samples
+// bytesToFloat64 converts audio bytes to float64 samples.
 func bytesToFloat64(audio []byte) []float64 {
 	samples := make([]float64, len(audio))
 	for i, b := range audio {
@@ -153,7 +153,7 @@ func bytesToFloat64(audio []byte) []float64 {
 	return samples
 }
 
-// float64ToBytes converts float64 samples to audio bytes
+// float64ToBytes converts float64 samples to audio bytes.
 func float64ToBytes(samples []float64) []byte {
 	audio := make([]byte, len(samples))
 	for i, s := range samples {

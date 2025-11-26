@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
-	// Import providers to trigger init() registration
+	// Import providers to trigger init() registration.
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/azure"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/elevenlabs"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/google"
@@ -43,7 +43,7 @@ func TestTTSProvider_Integration(t *testing.T) {
 		audio, err := mockProvider.GenerateSpeech(ctx, text)
 		require.NoError(t, err)
 		assert.NotNil(t, audio)
-		assert.Greater(t, len(audio), 0)
+		assert.NotEmpty(t, audio)
 	})
 
 	t.Run("mock provider streaming", func(t *testing.T) {
@@ -62,8 +62,8 @@ func TestTTSProvider_Integration(t *testing.T) {
 		// Read from stream
 		buffer := make([]byte, 1024)
 		n, err := reader.Read(buffer)
-		assert.NoError(t, err)
-		assert.Greater(t, n, 0)
+		require.NoError(t, err)
+		assert.Positive(t, n)
 	})
 }
 
@@ -77,7 +77,7 @@ func TestTTSProvider_ErrorHandling(t *testing.T) {
 		text := "Test text"
 
 		_, err := mockProvider.GenerateSpeech(ctx, text)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, tts.IsRetryableError(err))
 	})
 
@@ -90,7 +90,7 @@ func TestTTSProvider_ErrorHandling(t *testing.T) {
 		text := "Test text"
 
 		_, err := mockProvider.GenerateSpeech(ctx, text)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, tts.IsRetryableError(err))
 	})
 }
@@ -160,5 +160,5 @@ func TestTTSProvider_StreamingRead(t *testing.T) {
 		totalRead += n
 	}
 
-	assert.Greater(t, totalRead, 0)
+	assert.Positive(t, totalRead)
 }

@@ -94,18 +94,11 @@ type VectorStore interface {
 // Config holds configuration options for VectorStore operations.
 // It uses struct tags for viper configuration management and validation.
 type Config struct {
-	// Embedder to use for generating embeddings (optional, can be overridden per operation)
-	Embedder Embedder `json:"-"` // Skip JSON marshaling for embedder
-
-	// Search configuration
-	SearchK        int     `mapstructure:"search_k" yaml:"search_k" json:"search_k" default:"5"`
-	ScoreThreshold float32 `mapstructure:"score_threshold" yaml:"score_threshold" json:"score_threshold" default:"0"`
-
-	// Metadata filters for search operations
-	MetadataFilters map[string]interface{} `mapstructure:"metadata_filters" yaml:"metadata_filters" json:"metadata_filters"`
-
-	// Provider-specific configuration
-	ProviderConfig map[string]interface{} `mapstructure:"provider_config" yaml:"provider_config" json:"provider_config"`
+	Embedder        Embedder       `json:"-"`
+	MetadataFilters map[string]any `mapstructure:"metadata_filters" yaml:"metadata_filters" json:"metadata_filters"`
+	ProviderConfig  map[string]any `mapstructure:"provider_config" yaml:"provider_config" json:"provider_config"`
+	SearchK         int            `mapstructure:"search_k" yaml:"search_k" json:"search_k" default:"5"`
+	ScoreThreshold  float32        `mapstructure:"score_threshold" yaml:"score_threshold" json:"score_threshold" default:"0"`
 }
 
 // Option represents a functional option for configuring VectorStore operations.
@@ -147,7 +140,7 @@ func (f *StoreFactory) Create(ctx context.Context, name string, config Config) (
 	return creator(ctx, config)
 }
 
-// Global factory instance for easy access
+// Global factory instance for easy access.
 var globalFactory = NewStoreFactory()
 
 // RegisterGlobal registers a provider with the global factory.

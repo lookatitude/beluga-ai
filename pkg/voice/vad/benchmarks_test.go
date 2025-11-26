@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// BenchmarkVAD_Process benchmarks VAD processing
+// BenchmarkVAD_Process benchmarks VAD processing.
 func BenchmarkVAD_Process(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200) // 20ms at 16kHz
@@ -18,7 +18,7 @@ func BenchmarkVAD_Process(b *testing.B) {
 	}
 }
 
-// BenchmarkVAD_ProcessStream benchmarks streaming VAD
+// BenchmarkVAD_ProcessStream benchmarks streaming VAD.
 func BenchmarkVAD_ProcessStream(b *testing.B) {
 	ctx := context.Background()
 	audioCh := make(chan []byte, 10)

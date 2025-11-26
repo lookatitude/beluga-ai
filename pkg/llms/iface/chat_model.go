@@ -39,17 +39,17 @@ type ChatModel interface {
 
 	// CheckHealth returns the health status information.
 	// This allows monitoring the health of chat model providers.
-	CheckHealth() map[string]interface{}
+	CheckHealth() map[string]any
 }
 
 // AIMessageChunk represents a chunk of an AI message, typically used in streaming.
 // It can contain content, tool calls, or an error.
 // Chunks should be processed in order and the stream ends when the channel closes.
 type AIMessageChunk struct {
-	Content        string                 // Text content of the chunk
-	ToolCallChunks []schema.ToolCallChunk // Tool call information if present
-	AdditionalArgs map[string]interface{} // Provider-specific arguments or metadata
-	Err            error                  // Error encountered during streaming for this chunk
+	Err            error
+	AdditionalArgs map[string]any
+	Content        string
+	ToolCallChunks []schema.ToolCallChunk
 }
 
 // LLM is the interface for basic Large Language Model interactions.
@@ -70,8 +70,8 @@ type LLM interface {
 // This allows for different LLM providers to be instantiated based on configuration.
 type LLMFactory interface {
 	// CreateLLM creates an LLM instance based on the provided configuration.
-	CreateLLM(ctx context.Context, config interface{}) (LLM, error)
+	CreateLLM(ctx context.Context, config any) (LLM, error)
 
 	// CreateChatModel creates a ChatModel instance based on the provided configuration.
-	CreateChatModel(ctx context.Context, config interface{}) (ChatModel, error)
+	CreateChatModel(ctx context.Context, config any) (ChatModel, error)
 }

@@ -4,9 +4,11 @@ package rest
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -16,20 +18,21 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/server/iface"
 )
 
-// Server implements a REST server with streaming capabilities
+// Server implements a REST server with streaming capabilities.
 type Server struct {
-	config      iface.RESTConfig
-	router      *mux.Router
-	server      *http.Server
-	metrics     interface{} // TODO: fix metrics
+	startTime   time.Time
+	metrics     any
 	logger      iface.Logger
 	tracer      iface.Tracer
-	middlewares []iface.Middleware
-	startTime   time.Time
+	router      *mux.Router
+	server      *http.Server
 	handlers    map[string]iface.StreamingHandler
+	middlewares []iface.Middleware
+	config      iface.RESTConfig
+	mu          sync.RWMutex
 }
 
-// NewServer creates a new REST server instance
+// NewServer creates a new REST server instance.
 func NewServer(opts ...iface.Option) (*Server, error) {
 	options := &serverOptions{
 		config: iface.Config{
@@ -105,7 +108,7 @@ func NewServer(opts ...iface.Option) (*Server, error) {
 	return s, nil
 }
 
-// setupRoutes configures the HTTP routes
+// setupRoutes configures the HTTP routes.
 func (s *Server) setupRoutes() {
 	// Apply middlewares
 	handler := http.Handler(s.router)
@@ -132,8 +135,9 @@ func (s *Server) setupRoutes() {
 	api.HandleFunc("/{resource}", s.handleList).Methods("GET")
 }
 
-// Start starts the HTTP server
+// Start starts the HTTP server.
 func (s *Server) Start(ctx context.Context) error {
+	s.mu.Lock()
 	s.server = &http.Server{
 		Addr:           fmt.Sprintf("%s:%d", s.config.Host, s.config.Port),
 		Handler:        s.router,
@@ -142,6 +146,7 @@ func (s *Server) Start(ctx context.Context) error {
 		IdleTimeout:    s.config.IdleTimeout,
 		MaxHeaderBytes: s.config.MaxHeaderBytes,
 	}
+	s.mu.Unlock()
 
 	s.logger.Info("Starting REST server",
 		"host", s.config.Host,
@@ -158,7 +163,7 @@ func (s *Server) Start(ctx context.Context) error {
 	// Wait for context cancellation or server error
 	select {
 	case err := <-serverErr:
-		if err != http.ErrServerClosed {
+		if !errors.Is(err, http.ErrServerClosed) {
 			s.logger.Error("Server error", "error", err)
 			return iface.NewInternalError("server_start", err)
 		}
@@ -169,9 +174,13 @@ func (s *Server) Start(ctx context.Context) error {
 	}
 }
 
-// Stop gracefully shuts down the server
+// Stop gracefully shuts down the server.
 func (s *Server) Stop(ctx context.Context) error {
-	if s.server == nil {
+	s.mu.Lock()
+	server := s.server
+	s.mu.Unlock()
+
+	if server == nil {
 		return nil
 	}
 
@@ -179,7 +188,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	defer cancel()
 
 	s.logger.Info("Shutting down server gracefully")
-	if err := s.server.Shutdown(shutdownCtx); err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		s.logger.Error("Server shutdown error", "error", err)
 		return iface.NewInternalError("server_shutdown", err)
 	}
@@ -188,32 +197,32 @@ func (s *Server) Stop(ctx context.Context) error {
 	return nil
 }
 
-// IsHealthy returns true if the server is healthy
+// IsHealthy returns true if the server is healthy.
 func (s *Server) IsHealthy(ctx context.Context) bool {
 	// Basic health check - can be extended with more sophisticated checks
 	// A server is healthy if it's been created (even if not started yet)
 	return s != nil
 }
 
-// RegisterHandler registers a streaming handler for a resource
+// RegisterHandler registers a streaming handler for a resource.
 func (s *Server) RegisterHandler(resource string, handler iface.StreamingHandler) {
 	s.handlers[resource] = handler
 	s.logger.Info("Registered handler", "resource", resource)
 }
 
-// RegisterHTTPHandler registers an HTTP handler for a specific method and path
+// RegisterHTTPHandler registers an HTTP handler for a specific method and path.
 func (s *Server) RegisterHTTPHandler(method, path string, handler http.HandlerFunc) {
 	s.router.HandleFunc(path, handler).Methods(method)
 	s.logger.Info("Registered HTTP handler", "method", method, "path", path)
 }
 
-// RegisterMiddleware adds middleware to the server
+// RegisterMiddleware adds middleware to the server.
 func (s *Server) RegisterMiddleware(middleware iface.Middleware) {
 	s.middlewares = append(s.middlewares, middleware)
 }
 
-// GetMux returns the underlying router for advanced customization
-func (s *Server) GetMux() interface{} {
+// GetMux returns the underlying router for advanced customization.
+func (s *Server) GetMux() any {
 	return s.router
 }
 
@@ -237,7 +246,7 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Max-Age", "86400")
 
-		if r.Method == "OPTIONS" {
+		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
@@ -249,8 +258,8 @@ func (s *Server) corsMiddleware(next http.Handler) http.Handler {
 func (s *Server) rateLimitMiddleware(next http.Handler) http.Handler {
 	// Simple in-memory rate limiter - can be replaced with more sophisticated implementation
 	type clientInfo struct {
-		requests  int
 		resetTime time.Time
+		requests  int
 	}
 
 	clients := make(map[string]*clientInfo)
@@ -355,14 +364,14 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	// s.metrics.RecordHealthCheck(r.Context(), true)
 	// s.metrics.RecordServerUptime(r.Context(), time.Since(s.startTime))
 
-	response := map[string]interface{}{
+	response := map[string]any{
 		"status":    "healthy",
 		"timestamp": time.Now().UTC(),
 		"uptime":    time.Since(s.startTime).String(),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 func (s *Server) handleStreaming(w http.ResponseWriter, r *http.Request) {
@@ -409,7 +418,7 @@ func (s *Server) handleList(w http.ResponseWriter, r *http.Request) {
 
 	// Use non-streaming handler for list operations
 	if err := handler.HandleNonStreaming(w, r); err != nil {
-		s.handleError(w, r, iface.NewInternalError(fmt.Sprintf("list_%s", resource), err))
+		s.handleError(w, r, iface.NewInternalError("list_"+resource, err))
 	}
 }
 
@@ -419,22 +428,22 @@ func (s *Server) handleError(w http.ResponseWriter, r *http.Request, err *iface.
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	response := map[string]interface{}{
-		"error": map[string]interface{}{
+	response := map[string]any{
+		"error": map[string]any{
 			"code":    string(err.Code),
 			"message": err.Message,
 		},
 	}
 
 	if err.Details != nil {
-		response["error"].(map[string]interface{})["details"] = err.Details
+		response["error"].(map[string]any)["details"] = err.Details
 	}
 
 	if err.Operation != "" {
-		response["error"].(map[string]interface{})["operation"] = err.Operation
+		response["error"].(map[string]any)["operation"] = err.Operation
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // Helper functions
@@ -470,7 +479,7 @@ func getClientIP(r *http.Request) string {
 	return ip
 }
 
-// responseWriter wraps http.ResponseWriter to capture status code
+// responseWriter wraps http.ResponseWriter to capture status code.
 type responseWriter struct {
 	http.ResponseWriter
 	statusCode int
@@ -485,10 +494,10 @@ func (rw *responseWriter) WriteHeader(code int) {
 
 type defaultLogger struct{}
 
-func (l *defaultLogger) Debug(msg string, args ...interface{}) {}
-func (l *defaultLogger) Info(msg string, args ...interface{})  {}
-func (l *defaultLogger) Warn(msg string, args ...interface{})  {}
-func (l *defaultLogger) Error(msg string, args ...interface{}) {}
+func (l *defaultLogger) Debug(msg string, args ...any) {}
+func (l *defaultLogger) Info(msg string, args ...any)  {}
+func (l *defaultLogger) Warn(msg string, args ...any)  {}
+func (l *defaultLogger) Error(msg string, args ...any) {}
 
 type noopTracer struct{}
 
@@ -498,10 +507,10 @@ func (t *noopTracer) Start(ctx context.Context, name string) (context.Context, i
 
 type noopSpan struct{}
 
-func (s *noopSpan) End()                               {}
-func (s *noopSpan) SetAttributes(attrs ...interface{}) {}
-func (s *noopSpan) RecordError(err error)              {}
-func (s *noopSpan) SetStatus(code int, msg string)     {}
+func (s *noopSpan) End()                           {}
+func (s *noopSpan) SetAttributes(attrs ...any)     {}
+func (s *noopSpan) RecordError(err error)          {}
+func (s *noopSpan) SetStatus(code int, msg string) {}
 
 type noopMetrics struct{}
 
@@ -510,6 +519,7 @@ func (m *noopMetrics) RecordHTTPRequest(ctx context.Context, method, path string
 func (m *noopMetrics) RecordActiveConnections(ctx context.Context, count int64) {}
 func (m *noopMetrics) RecordMCPToolCall(ctx context.Context, toolName string, success bool, duration time.Duration) {
 }
+
 func (m *noopMetrics) RecordMCPResourceRead(ctx context.Context, resourceURI string, success bool, duration time.Duration) {
 }
 func (m *noopMetrics) RecordToolRegistration(ctx context.Context, toolName string)        {}
@@ -517,15 +527,15 @@ func (m *noopMetrics) RecordResourceRegistration(ctx context.Context, resourceUR
 func (m *noopMetrics) RecordHealthCheck(ctx context.Context, healthy bool)                {}
 func (m *noopMetrics) RecordServerUptime(ctx context.Context, uptime time.Duration)       {}
 
-// serverOptions holds configuration options for the server
+// serverOptions holds configuration options for the server.
 type serverOptions struct {
-	config      iface.Config
-	restConfig  *iface.RESTConfig
-	mcpConfig   *iface.MCPConfig
 	logger      iface.Logger
 	tracer      iface.Tracer
 	meter       iface.Meter
+	restConfig  *iface.RESTConfig
+	mcpConfig   *iface.MCPConfig
 	middlewares []iface.Middleware
 	tools       []iface.MCPTool
 	resources   []iface.MCPResource
+	config      iface.Config
 }

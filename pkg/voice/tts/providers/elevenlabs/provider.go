@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,18 +15,18 @@ import (
 	ttsiface "github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
 )
 
-// ElevenLabsProvider implements the TTSProvider interface for ElevenLabs
+// ElevenLabsProvider implements the TTSProvider interface for ElevenLabs.
 type ElevenLabsProvider struct {
 	config     *ElevenLabsConfig
 	httpClient *http.Client
 	mu         sync.RWMutex
 }
 
-// NewElevenLabsProvider creates a new ElevenLabs provider
+// NewElevenLabsProvider creates a new ElevenLabs provider.
 func NewElevenLabsProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	if config == nil {
 		return nil, tts.NewTTSError("NewElevenLabsProvider", tts.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to ElevenLabs config
@@ -69,7 +70,7 @@ func NewElevenLabsProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	}, nil
 }
 
-// GenerateSpeech implements the TTSProvider interface using ElevenLabs API
+// GenerateSpeech implements the TTSProvider interface using ElevenLabs API.
 func (p *ElevenLabsProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	startTime := time.Now()
 
@@ -77,10 +78,10 @@ func (p *ElevenLabsProvider) GenerateSpeech(ctx context.Context, text string) ([
 	url := fmt.Sprintf("%s/v1/text-to-speech/%s", p.config.BaseURL, p.config.VoiceID)
 
 	// Build request body
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"text":     text,
 		"model_id": p.config.ModelID,
-		"voice_settings": map[string]interface{}{
+		"voice_settings": map[string]any{
 			"stability":         p.config.Stability,
 			"similarity_boost":  p.config.SimilarityBoost,
 			"style":             p.config.Style,
@@ -137,13 +138,13 @@ func (p *ElevenLabsProvider) GenerateSpeech(ctx context.Context, text string) ([
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeTimeout, err)
 		}
 		return nil, tts.ErrorFromHTTPStatus("GenerateSpeech", 0, err)
@@ -164,7 +165,7 @@ func (p *ElevenLabsProvider) GenerateSpeech(ctx context.Context, text string) ([
 
 	if len(audio) == 0 {
 		return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeEmptyResponse,
-			fmt.Errorf("no audio data in response"))
+			errors.New("no audio data in response"))
 	}
 
 	duration := time.Since(startTime)
@@ -181,7 +182,7 @@ func (p *ElevenLabsProvider) GenerateSpeech(ctx context.Context, text string) ([
 }
 
 // StreamGenerate implements the TTSProvider interface
-// ElevenLabs supports streaming, but for simplicity we return the full audio as a reader
+// ElevenLabs supports streaming, but for simplicity we return the full audio as a reader.
 func (p *ElevenLabsProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	// Generate speech first
 	audio, err := p.GenerateSpeech(ctx, text)

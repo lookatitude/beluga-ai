@@ -2,6 +2,7 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -13,18 +14,18 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 )
 
-// BasicGraph provides a basic implementation of the Graph interface
+// BasicGraph provides a basic implementation of the Graph interface.
 type BasicGraph struct {
-	config     iface.GraphConfig
+	tracer     trace.Tracer
 	nodes      map[string]core.Runnable
-	edges      map[string][]string // node -> []target_nodes
+	edges      map[string][]string
 	entryNodes []string
 	exitNodes  []string
-	tracer     trace.Tracer
+	config     iface.GraphConfig
 	mu         sync.RWMutex
 }
 
-// NewBasicGraph creates a new BasicGraph
+// NewBasicGraph creates a new BasicGraph.
 func NewBasicGraph(config iface.GraphConfig, tracer trace.Tracer) *BasicGraph {
 	return &BasicGraph{
 		config:     config,
@@ -48,16 +49,16 @@ func (g *BasicGraph) AddNode(name string, runnable core.Runnable) error {
 	return nil
 }
 
-func (g *BasicGraph) AddEdge(sourceNode string, targetNode string) error {
+func (g *BasicGraph) AddEdge(sourceNode, targetNode string) error {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
 	// Validate that both nodes exist
 	if _, exists := g.nodes[sourceNode]; !exists {
-		return iface.ErrNotFound("graph.add_edge", fmt.Sprintf("source node %s", sourceNode))
+		return iface.ErrNotFound("graph.add_edge", "source node "+sourceNode)
 	}
 	if _, exists := g.nodes[targetNode]; !exists {
-		return iface.ErrNotFound("graph.add_edge", fmt.Sprintf("target node %s", targetNode))
+		return iface.ErrNotFound("graph.add_edge", "target node "+targetNode)
 	}
 
 	// Add edge
@@ -76,7 +77,7 @@ func (g *BasicGraph) SetEntryPoint(nodeNames []string) error {
 	// Validate that all entry nodes exist
 	for _, name := range nodeNames {
 		if _, exists := g.nodes[name]; !exists {
-			return iface.ErrNotFound("graph.set_entry_point", fmt.Sprintf("entry node %s", name))
+			return iface.ErrNotFound("graph.set_entry_point", "entry node "+name)
 		}
 	}
 
@@ -92,7 +93,7 @@ func (g *BasicGraph) SetFinishPoint(nodeNames []string) error {
 	// Validate that all exit nodes exist
 	for _, name := range nodeNames {
 		if _, exists := g.nodes[name]; !exists {
-			return iface.ErrNotFound("graph.set_finish_point", fmt.Sprintf("exit node %s", name))
+			return iface.ErrNotFound("graph.set_finish_point", "exit node "+name)
 		}
 	}
 
@@ -199,7 +200,7 @@ func (g *BasicGraph) executeSequential(ctx context.Context, input any, options .
 		}
 		nodeStart := time.Now()
 
-		var nodeInput any = input
+		nodeInput := input
 		if len(g.entryNodes) > 1 {
 			// For multiple entry nodes, use the original input for all
 			nodeInput = input
@@ -274,7 +275,7 @@ func (g *BasicGraph) Batch(ctx context.Context, inputs []any, options ...core.Op
 func (g *BasicGraph) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	// Basic implementation - stream the first exit node if it supports streaming
 	if len(g.exitNodes) == 0 {
-		return nil, iface.ErrInvalidConfig("graph.stream", fmt.Errorf("no exit nodes defined"))
+		return nil, iface.ErrInvalidConfig("graph.stream", errors.New("no exit nodes defined"))
 	}
 
 	exitNode := g.exitNodes[0]
@@ -282,7 +283,7 @@ func (g *BasicGraph) Stream(ctx context.Context, input any, options ...core.Opti
 		return runnable.Stream(ctx, input, options...)
 	}
 
-	return nil, iface.ErrNotFound("graph.stream", fmt.Sprintf("exit node %s", exitNode))
+	return nil, iface.ErrNotFound("graph.stream", "exit node "+exitNode)
 }
 
 func (g *BasicGraph) countEdges() int {
@@ -293,6 +294,8 @@ func (g *BasicGraph) countEdges() int {
 	return total
 }
 
-// Ensure BasicGraph implements the Graph interface
-var _ iface.Graph = (*BasicGraph)(nil)
-var _ core.Runnable = (*BasicGraph)(nil)
+// Ensure BasicGraph implements the Graph interface.
+var (
+	_ iface.Graph   = (*BasicGraph)(nil)
+	_ core.Runnable = (*BasicGraph)(nil)
+)

@@ -4,7 +4,7 @@ import (
 	"math"
 )
 
-// calculateEnergy calculates the energy of an audio signal
+// calculateEnergy calculates the energy of an audio signal.
 func calculateEnergy(audio []byte) float64 {
 	if len(audio) == 0 {
 		return 0.0
@@ -31,7 +31,7 @@ func calculateEnergy(audio []byte) float64 {
 	return math.Sqrt(sum / float64(sampleCount))
 }
 
-// calculateWindowedEnergy calculates energy over a sliding window
+// calculateWindowedEnergy calculates energy over a sliding window.
 func calculateWindowedEnergy(audio []byte, windowSize int) []float64 {
 	if len(audio) < windowSize*2 {
 		// If audio is smaller than window, return single energy value
@@ -48,7 +48,7 @@ func calculateWindowedEnergy(audio []byte, windowSize int) []float64 {
 	return energies
 }
 
-// adaptiveThreshold calculates an adaptive threshold based on background noise
+// adaptiveThreshold calculates an adaptive threshold based on background noise.
 func adaptiveThreshold(energies []float64, noiseFloor float64) float64 {
 	if len(energies) == 0 {
 		return noiseFloor

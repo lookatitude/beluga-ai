@@ -21,7 +21,7 @@ func TestNewAzureStreamingSession_Error(t *testing.T) {
 
 	session, err := NewAzureStreamingSession(ctx, config)
 	// Should fail without valid WebSocket connection
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -36,7 +36,7 @@ func TestNewAzureStreamingSession_WithHTTPResponse(t *testing.T) {
 
 	session, err := NewAzureStreamingSession(ctx, config)
 	// Should fail with HTTP error
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -53,7 +53,7 @@ func TestNewAzureStreamingSession_WithOptionalParams(t *testing.T) {
 	defer cancel()
 
 	session, err := NewAzureStreamingSession(ctx, config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -67,7 +67,7 @@ func TestNewAzureStreamingSession_WithMetrics(t *testing.T) {
 	defer cancel()
 
 	session, err := NewAzureStreamingSession(ctx, config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -85,7 +85,7 @@ func TestAzureStreamingSession_Close(t *testing.T) {
 	if err == nil && session != nil {
 		// If somehow it connected, test close
 		err := session.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -107,7 +107,7 @@ func TestAzureStreamingSession_SendAudio_Closed(t *testing.T) {
 		// Try to send audio to closed session
 		audio := []byte{1, 2, 3, 4, 5}
 		err = session.SendAudio(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 	}
 }
 
@@ -160,7 +160,7 @@ func TestAzureStreamingSession_SendAudio_Success(t *testing.T) {
 	// Send audio
 	audio := []byte{1, 2, 3, 4, 5}
 	err = session.SendAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Give server time to receive message
 	time.Sleep(100 * time.Millisecond)
@@ -172,7 +172,7 @@ func TestAzureStreamingSession_SendAudio_Success(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		messages = mockServer.GetMessages()
 	}
-	assert.Greater(t, len(messages), 0, "Expected at least one message")
+	assert.NotEmpty(t, messages, "Expected at least one message")
 	if len(messages) > 0 {
 		assert.Equal(t, audio, messages[0])
 	}
@@ -184,7 +184,7 @@ func TestAzureStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 
 	// Set up handler to send transcript response
 	mockServer.SetOnMessage(func([]byte) []byte {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "Hello world",
 			"Offset":            0,
@@ -216,10 +216,10 @@ func TestAzureStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 	ch := session.ReceiveTranscript()
 	select {
 	case result := <-ch:
-		assert.NoError(t, result.Error)
+		require.NoError(t, result.Error)
 		assert.Equal(t, "Hello world", result.Text)
 		assert.True(t, result.IsFinal)
-		assert.Equal(t, 1.0, result.Confidence)
+		assert.InEpsilon(t, 1.0, result.Confidence, 0.0001)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for transcript")
 	}
@@ -243,11 +243,11 @@ func TestAzureStreamingSession_Close_WithConnection(t *testing.T) {
 
 	// Close session
 	err = session.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Try to send after close
 	err = session.SendAudio(ctx, []byte{1, 2, 3})
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureStreamingSession_ReceiveTranscript_NonSuccess(t *testing.T) {
@@ -256,7 +256,7 @@ func TestAzureStreamingSession_ReceiveTranscript_NonSuccess(t *testing.T) {
 
 	// Set up handler to send non-success response
 	mockServer.SetOnMessage(func([]byte) []byte {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "NoMatch",
 			"DisplayText":       "",
 		}
@@ -321,7 +321,7 @@ func TestAzureStreamingSession_ReceiveTranscript_MalformedResponse(t *testing.T)
 	ch := session.ReceiveTranscript()
 	select {
 	case result := <-ch:
-		assert.Error(t, result.Error)
+		require.Error(t, result.Error)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for error")
 	}

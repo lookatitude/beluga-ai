@@ -22,7 +22,7 @@ func TestChunking_Chunk(t *testing.T) {
 	chunks := chunking.Chunk(data)
 
 	assert.Greater(t, len(chunks), 1, "Should create multiple chunks")
-	assert.Equal(t, 10, len(chunks[0]), "First chunk should be chunk size")
+	assert.Len(t, chunks[0], 10, "First chunk should be chunk size")
 }
 
 func TestChunking_SmallData(t *testing.T) {
@@ -34,7 +34,7 @@ func TestChunking_SmallData(t *testing.T) {
 	data := make([]byte, 50)
 	chunks := chunking.Chunk(data)
 
-	assert.Equal(t, 1, len(chunks), "Small data should not be chunked")
+	assert.Len(t, chunks, 1, "Small data should not be chunked")
 }
 
 func TestChunking_GetSetChunkSize(t *testing.T) {

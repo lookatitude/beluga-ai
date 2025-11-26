@@ -12,7 +12,7 @@
 //	import "github.com/lookatitude/beluga-ai/pkg/retrievers"
 //
 //	// Create a vector store retriever
-//	retriever := retrievers.NewVectorStoreRetriever(vectorStore,
+//	:= retrievers.NewVectorStoreRetriever(vectorStore,
 //	    retrievers.WithDefaultK(5),
 //	    retrievers.WithScoreThreshold(0.7),
 //	)
@@ -50,16 +50,16 @@ type Option func(*RetrieverOptions)
 
 // RetrieverOptions holds configuration options for retrievers.
 type RetrieverOptions struct {
-	DefaultK       int
-	ScoreThreshold float32
-	MaxRetries     int
-	Timeout        time.Duration
-	EnableTracing  bool
-	EnableMetrics  bool
-	Logger         *slog.Logger
 	Tracer         trace.Tracer
 	Meter          metric.Meter
+	Logger         *slog.Logger
 	Metrics        *Metrics
+	DefaultK       int
+	MaxRetries     int
+	Timeout        time.Duration
+	ScoreThreshold float32
+	EnableTracing  bool
+	EnableMetrics  bool
 }
 
 // WithDefaultK sets the default number of documents to retrieve.

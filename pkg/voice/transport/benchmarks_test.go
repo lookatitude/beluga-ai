@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// BenchmarkTransport_SendAudio benchmarks audio sending
+// BenchmarkTransport_SendAudio benchmarks audio sending.
 func BenchmarkTransport_SendAudio(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200) // 20ms at 16kHz
@@ -18,7 +18,7 @@ func BenchmarkTransport_SendAudio(b *testing.B) {
 	}
 }
 
-// BenchmarkTransport_ReceiveAudio benchmarks audio receiving
+// BenchmarkTransport_ReceiveAudio benchmarks audio receiving.
 func BenchmarkTransport_ReceiveAudio(b *testing.B) {
 	ctx := context.Background()
 

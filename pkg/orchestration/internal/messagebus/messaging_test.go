@@ -14,12 +14,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockMessageBus is a mock implementation of MessageBus for testing
+// MockMessageBus is a mock implementation of MessageBus for testing.
 type MockMessageBus struct {
 	mock.Mock
 }
 
-func (m *MockMessageBus) Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error {
+func (m *MockMessageBus) Publish(ctx context.Context, topic string, payload any, metadata map[string]any) error {
 	args := m.Called(ctx, topic, payload, metadata)
 	return args.Error(0)
 }
@@ -29,7 +29,7 @@ func (m *MockMessageBus) Subscribe(ctx context.Context, topic string, handler Ha
 	return args.String(0), args.Error(1)
 }
 
-func (m *MockMessageBus) Unsubscribe(ctx context.Context, topic string, subscriberID string) error {
+func (m *MockMessageBus) Unsubscribe(ctx context.Context, topic, subscriberID string) error {
 	args := m.Called(ctx, topic, subscriberID)
 	return args.Error(0)
 }
@@ -65,14 +65,14 @@ func TestMessagingSystem_SendMessage_Success(t *testing.T) {
 		ID:       "test-id",
 		Topic:    "test.topic",
 		Payload:  "test payload",
-		Metadata: map[string]interface{}{"key": "value"},
+		Metadata: map[string]any{"key": "value"},
 	}
 
 	mockBus.On("Publish", mock.Anything, "test.topic", "test payload", msg.Metadata).Return(nil)
 
 	err := system.SendMessage(msg)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockBus.AssertExpectations(t)
 }
 
@@ -91,7 +91,7 @@ func TestMessagingSystem_SendMessage_Error(t *testing.T) {
 
 	err := system.SendMessage(msg)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
 	mockBus.AssertExpectations(t)
 }
@@ -110,7 +110,7 @@ func TestMessagingSystem_SendMessageWithRetry_Success(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 3, 10*time.Millisecond)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockBus.AssertExpectations(t)
 }
 
@@ -133,7 +133,7 @@ func TestMessagingSystem_SendMessageWithRetry_EventualSuccess(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 3, 1*time.Millisecond)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify retry logs
 	output := logOutput.String()
@@ -161,7 +161,7 @@ func TestMessagingSystem_SendMessageWithRetry_ExhaustRetries(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 3, 1*time.Millisecond)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send message after 3 retries")
 
 	// Verify retry logs
@@ -192,9 +192,9 @@ func TestMessagingSystem_SendMessageWithRetry_ExponentialBackoff(t *testing.T) {
 	err := system.SendMessageWithRetry(msg, 3, 10*time.Millisecond)
 	duration := time.Since(start)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Should take at least 10ms + 20ms + 40ms = 70ms due to exponential backoff
-	assert.True(t, duration >= 70*time.Millisecond, "Duration should be at least 70ms, got %v", duration)
+	assert.GreaterOrEqual(t, duration, 70*time.Millisecond, "Duration should be at least 70ms, got %v", duration)
 
 	mockBus.AssertExpectations(t)
 }
@@ -205,7 +205,7 @@ func TestMessagingSystem_ReceiveMessage(t *testing.T) {
 
 	msg, err := system.ReceiveMessage()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "ReceiveMessage not implemented")
 	assert.Equal(t, Message{}, msg)
 }
@@ -218,7 +218,7 @@ func TestValidateMessage_Valid(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestValidateMessage_MissingID(t *testing.T) {
@@ -228,7 +228,7 @@ func TestValidateMessage_MissingID(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required fields")
 }
 
@@ -239,7 +239,7 @@ func TestValidateMessage_MissingTopic(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required fields")
 }
 
@@ -248,7 +248,7 @@ func TestValidateMessage_MissingBoth(t *testing.T) {
 
 	err := ValidateMessage(msg)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "missing required fields")
 }
 
@@ -257,12 +257,12 @@ func TestValidateMessage_WithPayloadAndMetadata(t *testing.T) {
 		ID:       "test-id",
 		Topic:    "test.topic",
 		Payload:  "test payload",
-		Metadata: map[string]interface{}{"key": "value"},
+		Metadata: map[string]any{"key": "value"},
 	}
 
 	err := ValidateMessage(msg)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSerializeMessage_Success(t *testing.T) {
@@ -270,18 +270,18 @@ func TestSerializeMessage_Success(t *testing.T) {
 		ID:       "test-id",
 		Topic:    "test.topic",
 		Payload:  "test payload",
-		Metadata: map[string]interface{}{"key": "value", "number": 42},
+		Metadata: map[string]any{"key": "value", "number": 42},
 	}
 
 	serialized, err := SerializeMessage(msg)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, serialized)
 
 	// Verify it's valid JSON
-	var deserialized map[string]interface{}
+	var deserialized map[string]any
 	err = json.Unmarshal([]byte(serialized), &deserialized)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify content
 	assert.Equal(t, "test-id", deserialized["ID"])
@@ -290,8 +290,8 @@ func TestSerializeMessage_Success(t *testing.T) {
 }
 
 func TestSerializeMessage_ComplexPayload(t *testing.T) {
-	complexPayload := map[string]interface{}{
-		"nested": map[string]interface{}{
+	complexPayload := map[string]any{
+		"nested": map[string]any{
 			"array":  []string{"item1", "item2"},
 			"number": 123,
 		},
@@ -306,18 +306,18 @@ func TestSerializeMessage_ComplexPayload(t *testing.T) {
 
 	serialized, err := SerializeMessage(msg)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, serialized)
 
 	// Verify deserialization works
 	deserialized, err := DeserializeMessage(serialized)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, msg.ID, deserialized.ID)
 	assert.Equal(t, msg.Topic, deserialized.Topic)
 	// JSON unmarshaling converts numbers to float64, so we need to compare carefully
-	deserializedPayload, ok := deserialized.Payload.(map[string]interface{})
+	deserializedPayload, ok := deserialized.Payload.(map[string]any)
 	assert.True(t, ok, "Payload should be a map")
-	nested, ok := deserializedPayload["nested"].(map[string]interface{})
+	nested, ok := deserializedPayload["nested"].(map[string]any)
 	assert.True(t, ok, "Nested should be a map")
 	// Compare number as float64 (JSON unmarshaling converts int to float64)
 	assert.Equal(t, float64(123), nested["number"])
@@ -338,7 +338,7 @@ func TestSerializeMessage_InvalidPayload(t *testing.T) {
 
 	serialized, err := SerializeMessage(msg)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, serialized)
 	assert.Contains(t, err.Error(), "failed to serialize message")
 }
@@ -353,7 +353,7 @@ func TestDeserializeMessage_Success(t *testing.T) {
 
 	msg, err := DeserializeMessage(jsonStr)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-id", msg.ID)
 	assert.Equal(t, "test.topic", msg.Topic)
 	assert.Equal(t, "test payload", msg.Payload)
@@ -368,7 +368,7 @@ func TestDeserializeMessage_InvalidJSON(t *testing.T) {
 
 	msg, err := DeserializeMessage(invalidJSON)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, Message{}, msg)
 	assert.Contains(t, err.Error(), "failed to deserialize message")
 }
@@ -378,7 +378,7 @@ func TestDeserializeMessage_MissingFields(t *testing.T) {
 
 	msg, err := DeserializeMessage(jsonStr)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, msg.ID)
 	assert.Empty(t, msg.Topic)
 	assert.Equal(t, "test", msg.Payload)
@@ -388,8 +388,8 @@ func TestMessagingSystem_Integration_SerializeDeserialize(t *testing.T) {
 	originalMsg := Message{
 		ID:       "integration-id",
 		Topic:    "integration.topic",
-		Payload:  map[string]interface{}{"data": "integration test"},
-		Metadata: map[string]interface{}{"source": "test", "version": "1.0"},
+		Payload:  map[string]any{"data": "integration test"},
+		Metadata: map[string]any{"source": "test", "version": "1.0"},
 	}
 
 	// Serialize
@@ -416,7 +416,7 @@ func TestMessagingSystem_EndToEnd(t *testing.T) {
 		ID:       "e2e-id",
 		Topic:    "e2e.topic",
 		Payload:  "end to end payload",
-		Metadata: map[string]interface{}{"test": "e2e"},
+		Metadata: map[string]any{"test": "e2e"},
 	}
 
 	err := ValidateMessage(msg)
@@ -436,7 +436,7 @@ func TestMessagingSystem_EndToEnd(t *testing.T) {
 	// Send the deserialized message
 	err = system.SendMessage(deserialized)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	mockBus.AssertExpectations(t)
 }
 
@@ -453,9 +453,9 @@ func TestMessagingSystem_RetryBackoffCalculation(t *testing.T) {
 	err := system.SendMessageWithRetry(msg, 3, 5*time.Millisecond)
 	duration := time.Since(start)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Should take at least 5ms + 10ms + 20ms = 35ms due to exponential backoff
-	assert.True(t, duration >= 35*time.Millisecond, "Duration should be at least 35ms, got %v", duration)
+	assert.GreaterOrEqual(t, duration, 35*time.Millisecond, "Duration should be at least 35ms, got %v", duration)
 }
 
 func TestMessagingSystem_ZeroRetries(t *testing.T) {
@@ -469,7 +469,7 @@ func TestMessagingSystem_ZeroRetries(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, 0, 1*time.Millisecond)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send message after 0 retries")
 	mockBus.AssertExpectations(t)
 }
@@ -485,15 +485,15 @@ func TestMessagingSystem_NegativeRetries(t *testing.T) {
 
 	err := system.SendMessageWithRetry(msg, -1, 1*time.Millisecond)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to send message after -1 retries")
 	mockBus.AssertExpectations(t)
 }
 
 func TestValidateMessage_EdgeCases(t *testing.T) {
 	testCases := []struct {
-		name    string
 		message Message
+		name    string
 		valid   bool
 	}{
 		{
@@ -542,9 +542,9 @@ func TestValidateMessage_EdgeCases(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := ValidateMessage(tc.message)
 			if tc.valid {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}

@@ -15,10 +15,10 @@ func TestNewOpenAIEmbedder(t *testing.T) {
 	tracer := otel.Tracer("test")
 
 	tests := []struct {
-		name    string
 		config  *Config
-		wantErr bool
+		name    string
 		errCode string
+		wantErr bool
 	}{
 		{
 			name:    "nil config",
@@ -106,12 +106,12 @@ func TestOpenAIEmbedder_EmbedDocuments(t *testing.T) {
 	tracer := otel.Tracer("test")
 
 	tests := []struct {
+		mockSetup     func(*mock.OpenAIClientMock)
 		name          string
 		documents     []string
-		mockSetup     func(*mock.OpenAIClientMock)
-		wantErr       bool
 		expectedCount int
 		expectedDim   int
+		wantErr       bool
 	}{
 		{
 			name:      "empty documents",
@@ -276,12 +276,12 @@ func TestOpenAIEmbedder_EmbedQuery(t *testing.T) {
 	tracer := otel.Tracer("test")
 
 	tests := []struct {
+		mockSetup   func(*mock.OpenAIClientMock)
 		name        string
 		query       string
-		mockSetup   func(*mock.OpenAIClientMock)
-		wantErr     bool
-		expectedDim int
 		errCode     string
+		expectedDim int
+		wantErr     bool
 	}{
 		{
 			name:  "empty query",
@@ -442,8 +442,8 @@ func TestOpenAIEmbedder_Check(t *testing.T) {
 	tracer := otel.Tracer("test")
 
 	tests := []struct {
-		name      string
 		mockSetup func(*mock.OpenAIClientMock)
+		name      string
 		wantErr   bool
 	}{
 		{
@@ -509,7 +509,7 @@ func TestOpenAIEmbedder_ContextCancellation(t *testing.T) {
 	defer cancel()
 	tracer := otel.Tracer("test")
 
-	// Create a context that will be cancelled
+	// Create a context that will be canceled
 	cancel() // Cancel immediately
 
 	mockClient := mock.NewOpenAIClientMock()
@@ -582,7 +582,7 @@ func TestOpenAIEmbedder_ConcurrentAccess(t *testing.T) {
 	}
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkOpenAIEmbedder_EmbedQuery(b *testing.B) {
 	ctx := context.Background()
 	tracer := otel.Tracer("benchmark")

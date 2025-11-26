@@ -15,17 +15,17 @@ var upgrader = websocket.Upgrader{
 	},
 }
 
-// MockWebSocketServer is a test WebSocket server
+// MockWebSocketServer is a test WebSocket server.
 type MockWebSocketServer struct {
 	server     *httptest.Server
 	conn       *websocket.Conn
-	mu         sync.Mutex
+	onMessage  func([]byte) []byte
 	messages   [][]byte
-	onMessage  func([]byte) []byte // Handler that can return a response
-	closeAfter time.Duration       // Close connection after this duration
+	closeAfter time.Duration
+	mu         sync.Mutex
 }
 
-// NewMockWebSocketServer creates a new mock WebSocket server
+// NewMockWebSocketServer creates a new mock WebSocket server.
 func NewMockWebSocketServer() *MockWebSocketServer {
 	mock := &MockWebSocketServer{
 		messages: make([][]byte, 0),
@@ -36,7 +36,7 @@ func NewMockWebSocketServer() *MockWebSocketServer {
 		if err != nil {
 			return
 		}
-		defer conn.Close()
+		defer func() { _ = conn.Close() }()
 
 		mock.mu.Lock()
 		mock.conn = conn
@@ -45,7 +45,7 @@ func NewMockWebSocketServer() *MockWebSocketServer {
 		// If closeAfter is set, close after duration
 		if mock.closeAfter > 0 {
 			time.AfterFunc(mock.closeAfter, func() {
-				conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+				_ = conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			})
 		}
 
@@ -75,7 +75,7 @@ func NewMockWebSocketServer() *MockWebSocketServer {
 							responseType = websocket.BinaryMessage
 						}
 					}
-					conn.WriteMessage(responseType, response)
+					_ = conn.WriteMessage(responseType, response)
 				}
 			}
 		}
@@ -84,7 +84,7 @@ func NewMockWebSocketServer() *MockWebSocketServer {
 	return mock
 }
 
-// URL returns the WebSocket URL (converts http to ws)
+// URL returns the WebSocket URL (converts http to ws).
 func (m *MockWebSocketServer) URL() string {
 	url := m.server.URL
 	// Convert http to ws
@@ -98,14 +98,14 @@ func (m *MockWebSocketServer) URL() string {
 	return url
 }
 
-// SetOnMessage sets a handler for incoming messages
+// SetOnMessage sets a handler for incoming messages.
 func (m *MockWebSocketServer) SetOnMessage(handler func([]byte) []byte) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.onMessage = handler
 }
 
-// SendMessage sends a message to the connected client
+// SendMessage sends a message to the connected client.
 func (m *MockWebSocketServer) SendMessage(message []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -115,7 +115,7 @@ func (m *MockWebSocketServer) SendMessage(message []byte) error {
 	return m.conn.WriteMessage(websocket.TextMessage, message)
 }
 
-// SendBinary sends a binary message to the connected client
+// SendBinary sends a binary message to the connected client.
 func (m *MockWebSocketServer) SendBinary(message []byte) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -125,31 +125,31 @@ func (m *MockWebSocketServer) SendBinary(message []byte) error {
 	return m.conn.WriteMessage(websocket.BinaryMessage, message)
 }
 
-// GetMessages returns all received messages
+// GetMessages returns all received messages.
 func (m *MockWebSocketServer) GetMessages() [][]byte {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.messages
 }
 
-// SetCloseAfter sets the duration after which the connection should close
+// SetCloseAfter sets the duration after which the connection should close.
 func (m *MockWebSocketServer) SetCloseAfter(duration time.Duration) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.closeAfter = duration
 }
 
-// Close closes the mock server
+// Close closes the mock server.
 func (m *MockWebSocketServer) Close() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.conn != nil {
-		m.conn.Close()
+		_ = m.conn.Close()
 	}
 	m.server.Close()
 }
 
-// WaitForConnection waits for a connection to be established
+// WaitForConnection waits for a connection to be established.
 func (m *MockWebSocketServer) WaitForConnection(timeout time.Duration) bool {
 	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {

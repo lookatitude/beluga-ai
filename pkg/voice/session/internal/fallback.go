@@ -8,17 +8,17 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
-// ProviderFallback manages fallback switching between providers
+// ProviderFallback manages fallback switching between providers.
 type ProviderFallback struct {
-	primary       interface{}
-	fallback      interface{}
+	primary       any
+	fallback      any
 	breaker       *CircuitBreaker
 	usingFallback bool
 	mu            sync.RWMutex
 }
 
-// NewProviderFallback creates a new provider fallback manager
-func NewProviderFallback(primary, fallback interface{}, breaker *CircuitBreaker) *ProviderFallback {
+// NewProviderFallback creates a new provider fallback manager.
+func NewProviderFallback(primary, fallback any, breaker *CircuitBreaker) *ProviderFallback {
 	return &ProviderFallback{
 		primary:       primary,
 		fallback:      fallback,
@@ -27,7 +27,7 @@ func NewProviderFallback(primary, fallback interface{}, breaker *CircuitBreaker)
 	}
 }
 
-// GetSTTProvider returns the current STT provider (primary or fallback)
+// GetSTTProvider returns the current STT provider (primary or fallback).
 func (pf *ProviderFallback) GetSTTProvider() iface.STTProvider {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
@@ -45,7 +45,7 @@ func (pf *ProviderFallback) GetSTTProvider() iface.STTProvider {
 	return nil
 }
 
-// GetTTSProvider returns the current TTS provider (primary or fallback)
+// GetTTSProvider returns the current TTS provider (primary or fallback).
 func (pf *ProviderFallback) GetTTSProvider() iface.TTSProvider {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
@@ -63,29 +63,29 @@ func (pf *ProviderFallback) GetTTSProvider() iface.TTSProvider {
 	return nil
 }
 
-// SwitchToFallback switches to the fallback provider
+// SwitchToFallback switches to the fallback provider.
 func (pf *ProviderFallback) SwitchToFallback() {
 	pf.mu.Lock()
 	defer pf.mu.Unlock()
 	pf.usingFallback = true
 }
 
-// SwitchToPrimary switches back to the primary provider
+// SwitchToPrimary switches back to the primary provider.
 func (pf *ProviderFallback) SwitchToPrimary() {
 	pf.mu.Lock()
 	defer pf.mu.Unlock()
 	pf.usingFallback = false
 }
 
-// IsUsingFallback returns whether fallback is currently active
+// IsUsingFallback returns whether fallback is currently active.
 func (pf *ProviderFallback) IsUsingFallback() bool {
 	pf.mu.RLock()
 	defer pf.mu.RUnlock()
 	return pf.usingFallback
 }
 
-// ExecuteWithFallback executes a function with automatic fallback on failure
-func (pf *ProviderFallback) ExecuteWithFallback(ctx context.Context, fn func(provider interface{}) error) error {
+// ExecuteWithFallback executes a function with automatic fallback on failure.
+func (pf *ProviderFallback) ExecuteWithFallback(ctx context.Context, fn func(provider any) error) error {
 	// Try primary first
 	err := pf.breaker.Call(func() error {
 		return fn(pf.primary)

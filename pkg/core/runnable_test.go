@@ -10,51 +10,42 @@ import (
 )
 
 // MockRunnable is an enhanced test implementation of the Runnable interface
-// with call tracking, error injection, and configurable behavior
+// with call tracking, error injection, and configurable behavior.
 type MockRunnable struct {
-	// Function overrides
-	invokeFunc func(ctx context.Context, input any, options ...Option) (any, error)
-	batchFunc  func(ctx context.Context, inputs []any, options ...Option) ([]any, error)
-	streamFunc func(ctx context.Context, input any, options ...Option) (<-chan any, error)
-
-	// Call tracking
-	invokeCalls []InvokeCall
-	batchCalls  []BatchCall
-	streamCalls []StreamCall
-
-	// Error injection
-	invokeError error
-	batchError  error
-	streamError error
-
-	// Configurable behavior
-	invokeDelay time.Duration
-	batchDelay  time.Duration
-	streamDelay time.Duration
-
-	// Stream configuration
+	invokeError  error
+	streamError  error
+	batchError   error
+	batchFunc    func(ctx context.Context, inputs []any, options ...Option) ([]any, error)
+	streamFunc   func(ctx context.Context, input any, options ...Option) (<-chan any, error)
+	invokeFunc   func(ctx context.Context, input any, options ...Option) (any, error)
+	invokeCalls  []InvokeCall
+	streamCalls  []StreamCall
+	batchCalls   []BatchCall
 	streamChunks []any
+	invokeDelay  time.Duration
+	batchDelay   time.Duration
+	streamDelay  time.Duration
 }
 
 type InvokeCall struct {
+	Time    time.Time
 	Ctx     context.Context
 	Input   any
 	Options []Option
-	Time    time.Time
 }
 
 type BatchCall struct {
+	Time    time.Time
 	Ctx     context.Context
 	Inputs  []any
 	Options []Option
-	Time    time.Time
 }
 
 type StreamCall struct {
+	Time    time.Time
 	Ctx     context.Context
 	Input   any
 	Options []Option
-	Time    time.Time
 }
 
 func NewMockRunnable() *MockRunnable {
@@ -334,7 +325,7 @@ func TestMockRunnable_InvokeWithError(t *testing.T) {
 	mock := NewMockRunnable().WithInvokeError(expectedErr)
 
 	_, err := mock.Invoke(context.Background(), "test_input")
-	if err != expectedErr {
+	if !errors.Is(err, expectedErr) {
 		t.Errorf("MockRunnable.Invoke() error = %v, expected %v", err, expectedErr)
 	}
 
@@ -396,7 +387,7 @@ func TestMockRunnable_BatchWithError(t *testing.T) {
 
 	inputs := []any{"input1", "input2"}
 	_, err := mock.Batch(context.Background(), inputs)
-	if err != expectedErr {
+	if !errors.Is(err, expectedErr) {
 		t.Errorf("MockRunnable.Batch() error = %v, expected %v", err, expectedErr)
 	}
 
@@ -456,7 +447,7 @@ func TestTracedRunnable_InvokeWithError(t *testing.T) {
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
 	_, err := traced.Invoke(context.Background(), "test_input")
-	if err != expectedErr {
+	if !errors.Is(err, expectedErr) {
 		t.Errorf("TracedRunnable.Invoke() error = %v, expected %v", err, expectedErr)
 	}
 
@@ -540,7 +531,7 @@ func TestTracedRunnable_StreamWithError(t *testing.T) {
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
 	_, err := traced.Stream(context.Background(), "test_input")
-	if err != expectedErr {
+	if !errors.Is(err, expectedErr) {
 		t.Errorf("TracedRunnable.Stream() error = %v, expected %v", err, expectedErr)
 	}
 
@@ -680,7 +671,7 @@ func TestMetrics_NoOpMetrics(t *testing.T) {
 	}
 }
 
-// Simple tracing test using NoOp tracer
+// Simple tracing test using NoOp tracer.
 func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
 	mock := NewMockRunnable()
 	tracer := trace.NewNoopTracerProvider().Tracer("")
@@ -723,7 +714,7 @@ func TestFrameworkErrorTypes(t *testing.T) {
 			if err.Message != "test message" {
 				t.Errorf("Error message = %q, expected %q", err.Message, "test message")
 			}
-			if err.Cause != cause {
+			if !errors.Is(err.Cause, cause) {
 				t.Errorf("Error cause = %v, expected %v", err.Cause, cause)
 			}
 		})

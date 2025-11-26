@@ -9,10 +9,10 @@ import (
 // Message represents a generic message that can be passed on the bus.
 // It includes a topic, a payload, and optional metadata.
 type Message struct {
-	ID       string                 // Unique ID for the message (e.g., UUID)
-	Topic    string                 // The topic this message belongs to (e.g., "agent.action", "task.status")
-	Payload  interface{}            // The actual content of the message (can be any struct, e.g., schema.AgentAction)
-	Metadata map[string]interface{} // Optional metadata (e.g., timestamp, source_agent_id)
+	Payload  any
+	Metadata map[string]any
+	ID       string
+	Topic    string
 }
 
 // HandlerFunc is a function type that processes a message.
@@ -23,7 +23,7 @@ type HandlerFunc func(ctx context.Context, msg Message) error
 // This allows different components of the AI framework to communicate in a decoupled manner.
 type MessageBus interface {
 	// Publish sends a message to a specific topic.
-	Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error
+	Publish(ctx context.Context, topic string, payload any, metadata map[string]any) error
 
 	// Subscribe registers a handler function for a given topic.
 	// Multiple handlers can subscribe to the same topic.
@@ -31,7 +31,7 @@ type MessageBus interface {
 	Subscribe(ctx context.Context, topic string, handler HandlerFunc) (string, error)
 
 	// Unsubscribe removes a handler for a given topic using its subscriberID.
-	Unsubscribe(ctx context.Context, topic string, subscriberID string) error
+	Unsubscribe(ctx context.Context, topic, subscriberID string) error
 
 	// Start begins processing messages. This might be a no-op for some implementations.
 	Start(ctx context.Context) error
@@ -46,13 +46,11 @@ type MessageBus interface {
 // InMemoryMessageBus is a simple in-memory implementation of the MessageBus interface.
 // It is suitable for single-process applications or testing.
 type InMemoryMessageBus struct {
-	mu          sync.RWMutex
-	subscribers map[string]map[string]HandlerFunc // topic -> subscriberID -> handler
-	nextSubID   int
+	subscribers map[string]map[string]HandlerFunc
+	stopChan    chan struct{}
 	name        string
-	stopChan    chan struct{} // Channel to signal stop
-	// For a more robust in-memory bus, a buffered channel per topic or a central dispatcher goroutine would be used.
-	// This version directly calls handlers upon publish for simplicity.
+	nextSubID   int
+	mu          sync.RWMutex
 }
 
 // NewInMemoryMessageBus creates a new InMemoryMessageBus.
@@ -67,7 +65,7 @@ func NewInMemoryMessageBus() *InMemoryMessageBus {
 
 // Publish sends a message to all subscribers of the topic.
 // In this simple implementation, handlers are called synchronously.
-func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error {
+func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, payload any, metadata map[string]any) error {
 	imb.mu.Lock() // Changed from RLock to Lock to allow modification of nextSubID
 	defer imb.mu.Unlock()
 
@@ -89,7 +87,7 @@ func (imb *InMemoryMessageBus) Publish(ctx context.Context, topic string, payloa
 				err := h(ctx, m)
 				if err != nil {
 					// TODO: Add proper logging for handler errors
-					fmt.Printf("InMemoryMessageBus: error in handler for topic %s: %v\n", m.Topic, err)
+					_, _ = fmt.Printf("InMemoryMessageBus: error in handler for topic %s: %v\n", m.Topic, err)
 				}
 			}(handler, msg)
 		}
@@ -113,7 +111,7 @@ func (imb *InMemoryMessageBus) Subscribe(ctx context.Context, topic string, hand
 }
 
 // Unsubscribe removes a handler from a topic.
-func (imb *InMemoryMessageBus) Unsubscribe(ctx context.Context, topic string, subscriberID string) error {
+func (imb *InMemoryMessageBus) Unsubscribe(ctx context.Context, topic, subscriberID string) error {
 	imb.mu.Lock()
 	defer imb.mu.Unlock()
 

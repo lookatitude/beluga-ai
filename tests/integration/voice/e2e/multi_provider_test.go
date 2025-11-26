@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestMultiProvider_E2E tests multi-provider fallback end-to-end
+// TestMultiProvider_E2E tests multi-provider fallback end-to-end.
 func TestMultiProvider_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -44,12 +44,13 @@ func TestMultiProvider_E2E(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Failing STT provider
+// Failing STT provider.
 type failingSTTProvider struct{}
 
 func (f *failingSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "", assert.AnError
 }
+
 func (f *failingSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, assert.AnError
 }

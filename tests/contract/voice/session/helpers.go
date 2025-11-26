@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// createTestSession creates a test session with mock providers
+// createTestSession creates a test session with mock providers.
 func createTestSession(t *testing.T) voiceiface.VoiceSession {
+	t.Helper()
 	ctx := context.Background()
 
 	sttProvider := &mockSTTProvider{}
@@ -25,7 +26,7 @@ func createTestSession(t *testing.T) voiceiface.VoiceSession {
 	return sess
 }
 
-// Mock providers
+// Mock providers.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {

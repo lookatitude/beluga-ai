@@ -46,8 +46,8 @@ func TestTTSError_Unwrap(t *testing.T) {
 
 func TestIsRetryableError(t *testing.T) {
 	tests := []struct {
-		name string
 		err  error
+		name string
 		want bool
 	}{
 		{
@@ -97,8 +97,8 @@ func TestIsRetryableError(t *testing.T) {
 func TestErrorFromHTTPStatus(t *testing.T) {
 	tests := []struct {
 		name       string
-		statusCode int
 		wantCode   string
+		statusCode int
 	}{
 		{
 			name:       "bad request",

@@ -8,12 +8,12 @@ import (
 // ChatModelError represents a custom error type for chat model operations.
 // It includes context about the operation that failed and wraps the underlying error.
 type ChatModelError struct {
-	Op       string                 // Operation that failed
-	Model    string                 // Model name or ID
-	Provider string                 // Provider name
-	Code     string                 // Error code for programmatic handling
-	Err      error                  // Underlying error
-	Fields   map[string]interface{} // Additional context fields
+	Err      error
+	Fields   map[string]any
+	Op       string
+	Model    string
+	Provider string
+	Code     string
 }
 
 // Error implements the error interface.
@@ -59,14 +59,14 @@ func NewChatModelError(op, model, provider, code string, err error) *ChatModelEr
 		Provider: provider,
 		Code:     code,
 		Err:      err,
-		Fields:   make(map[string]interface{}),
+		Fields:   make(map[string]any),
 	}
 }
 
 // WithField adds a context field to the error.
-func (e *ChatModelError) WithField(key string, value interface{}) *ChatModelError {
+func (e *ChatModelError) WithField(key string, value any) *ChatModelError {
 	if e.Fields == nil {
-		e.Fields = make(map[string]interface{})
+		e.Fields = make(map[string]any)
 	}
 	e.Fields[key] = value
 	return e
@@ -93,9 +93,9 @@ func NewValidationError(field, message string) *ValidationError {
 
 // ProviderError represents errors that occur with specific providers.
 type ProviderError struct {
+	Err       error
 	Provider  string
 	Operation string
-	Err       error
 }
 
 // Error implements the error interface.
@@ -119,11 +119,11 @@ func NewProviderError(provider, operation string, err error) *ProviderError {
 
 // GenerationError represents errors that occur during message generation.
 type GenerationError struct {
-	Model      string
-	Messages   int // Number of input messages
-	Tokens     int // Approximate token count
 	Err        error
-	Suggestion string // Suggestion for fixing the error
+	Model      string
+	Suggestion string
+	Messages   int
+	Tokens     int
 }
 
 // Error implements the error interface.
@@ -134,7 +134,7 @@ func (e *GenerationError) Error() string {
 	}
 	msg += fmt.Sprintf(": %v", e.Err)
 	if e.Suggestion != "" {
-		msg += fmt.Sprintf(". Suggestion: %s", e.Suggestion)
+		msg += ". Suggestion: " + e.Suggestion
 	}
 	return msg
 }
@@ -167,16 +167,16 @@ func (e *GenerationError) WithSuggestion(suggestion string) *GenerationError {
 
 // StreamingError represents errors that occur during streaming operations.
 type StreamingError struct {
-	Model    string
-	Duration string // How long the stream was active
 	Err      error
+	Model    string
+	Duration string
 }
 
 // Error implements the error interface.
 func (e *StreamingError) Error() string {
 	msg := fmt.Sprintf("streaming error for model '%s'", e.Model)
 	if e.Duration != "" {
-		msg += fmt.Sprintf(" after %s", e.Duration)
+		msg += " after " + e.Duration
 	}
 	msg += fmt.Sprintf(": %v", e.Err)
 	return msg
@@ -208,7 +208,7 @@ var (
 	ErrProviderNotAvailable = errors.New("provider not available")
 	ErrModelNotSupported    = errors.New("model not supported")
 	ErrMaxRetriesExceeded   = errors.New("maximum retries exceeded")
-	ErrContextCancelled     = errors.New("context cancelled")
+	ErrContextCancelled     = errors.New("context canceled")
 	ErrTimeout              = errors.New("operation timed out")
 	ErrRateLimitExceeded    = errors.New("rate limit exceeded")
 	ErrQuotaExceeded        = errors.New("quota exceeded")

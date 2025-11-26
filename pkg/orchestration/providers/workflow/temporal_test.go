@@ -15,9 +15,10 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// MockRunnable is a mock implementation of core.Runnable for testing
+// MockRunnable is a mock implementation of core.Runnable for testing.
 type MockRunnable struct {
 	mock.Mock
 	name string
@@ -38,10 +39,10 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, opts ...core.Optio
 	return args.Get(0).(<-chan any), args.Error(1)
 }
 
-// MockTracer is a mock implementation of trace.Tracer for testing
+// MockTracer is a mock implementation of trace.Tracer for testing.
 type MockTracer struct {
-	mock.Mock
 	embedded.Tracer
+	mock.Mock
 }
 
 func (m *MockTracer) Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
@@ -49,10 +50,10 @@ func (m *MockTracer) Start(ctx context.Context, spanName string, opts ...trace.S
 	return args.Get(0).(context.Context), args.Get(1).(trace.Span)
 }
 
-// MockSpan is a mock implementation of trace.Span
+// MockSpan is a mock implementation of trace.Span.
 type MockSpan struct {
-	mock.Mock
 	embedded.Span
+	mock.Mock
 }
 
 func (m *MockSpan) End(options ...trace.SpanEndOption) {
@@ -152,7 +153,7 @@ func TestTemporalWorkflow_Execute_Success(t *testing.T) {
 
 	workflowID, runID, err := temporalWorkflow.Execute(context.Background(), "test-input")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "test-workflow-id", workflowID)
 	assert.Equal(t, "test-run-id", runID)
 
@@ -187,7 +188,7 @@ func TestTemporalWorkflow_Execute_Error(t *testing.T) {
 
 	workflowID, runID, err := temporalWorkflow.Execute(context.Background(), "test-input")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Empty(t, workflowID)
 	assert.Empty(t, runID)
 	assert.Contains(t, err.Error(), "temporal execution failed")
@@ -213,7 +214,7 @@ func TestTemporalWorkflow_GetResult_Success(t *testing.T) {
 	mockSpan.On("End", mock.Anything).Return()
 	mockClient.On("GetWorkflow", mock.Anything, "workflow-id", "run-id").Return(mockWorkflowRun)
 	mockWorkflowRun.On("Get", mock.Anything, mock.AnythingOfType("*interface {}")).Run(func(args mock.Arguments) {
-		resultPtr := args.Get(1).(*interface{})
+		resultPtr := args.Get(1).(*any)
 		*resultPtr = "workflow_result"
 	}).Return(nil)
 
@@ -221,7 +222,7 @@ func TestTemporalWorkflow_GetResult_Success(t *testing.T) {
 
 	result, err := temporalWorkflow.GetResult(context.Background(), "workflow-id", "run-id")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "workflow_result", result)
 
 	mockClient.AssertExpectations(t)
@@ -252,7 +253,7 @@ func TestTemporalWorkflow_GetResult_Error(t *testing.T) {
 
 	result, err := temporalWorkflow.GetResult(context.Background(), "workflow-id", "run-id")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "workflow not found")
 
@@ -281,7 +282,7 @@ func TestTemporalWorkflow_Signal_Success(t *testing.T) {
 
 	err := temporalWorkflow.Signal(context.Background(), "workflow-id", "run-id", "test-signal", "signal-data")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
@@ -307,7 +308,7 @@ func TestTemporalWorkflow_Signal_Error(t *testing.T) {
 
 	err := temporalWorkflow.Signal(context.Background(), "workflow-id", "run-id", "test-signal", "signal-data")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "signal failed")
 
 	mockClient.AssertExpectations(t)
@@ -332,7 +333,7 @@ func TestTemporalWorkflow_Query_Success(t *testing.T) {
 	// QueryWorkflow accepts variadic args, so we need to match all possible arguments
 	mockClient.On("QueryWorkflow", mock.Anything, "workflow-id", "run-id", "test-query", "arg1", "arg2").Return(mockValue, nil)
 	mockValue.On("Get", mock.AnythingOfType("*interface {}")).Run(func(args mock.Arguments) {
-		resultPtr := args.Get(0).(*interface{})
+		resultPtr := args.Get(0).(*any)
 		*resultPtr = "query_result"
 	}).Return(nil)
 
@@ -340,7 +341,7 @@ func TestTemporalWorkflow_Query_Success(t *testing.T) {
 
 	result, err := temporalWorkflow.Query(context.Background(), "workflow-id", "run-id", "test-query", "arg1", "arg2")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "query_result", result)
 
 	mockClient.AssertExpectations(t)
@@ -369,7 +370,7 @@ func TestTemporalWorkflow_Query_Error(t *testing.T) {
 
 	result, err := temporalWorkflow.Query(context.Background(), "workflow-id", "run-id", "test-query")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "query failed")
 
@@ -397,7 +398,7 @@ func TestTemporalWorkflow_Cancel_Success(t *testing.T) {
 
 	err := temporalWorkflow.Cancel(context.Background(), "workflow-id", "run-id")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
@@ -424,7 +425,7 @@ func TestTemporalWorkflow_Cancel_Error(t *testing.T) {
 
 	err := temporalWorkflow.Cancel(context.Background(), "workflow-id", "run-id")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "cancel failed")
 
 	mockClient.AssertExpectations(t)
@@ -452,7 +453,7 @@ func TestTemporalWorkflow_Terminate_Success(t *testing.T) {
 
 	err := temporalWorkflow.Terminate(context.Background(), "workflow-id", "run-id", "test-reason", "detail1", "detail2")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	mockClient.AssertExpectations(t)
 	mockTracer.AssertExpectations(t)
@@ -480,7 +481,7 @@ func TestTemporalWorkflow_Terminate_Error(t *testing.T) {
 
 	err := temporalWorkflow.Terminate(context.Background(), "workflow-id", "run-id", "test-reason")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "terminate failed")
 
 	mockClient.AssertExpectations(t)
@@ -512,7 +513,7 @@ func TestTemporalActivityWrapper_Execute_Success(t *testing.T) {
 
 	result, err := wrapper.Execute(context.Background(), "test-input")
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "activity_result", result)
 
 	mockRunnable.AssertExpectations(t)
@@ -535,7 +536,7 @@ func TestTemporalActivityWrapper_Execute_Error(t *testing.T) {
 
 	result, err := wrapper.Execute(context.Background(), "test-input")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "activity failed")
 

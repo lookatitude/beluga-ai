@@ -2,18 +2,18 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 )
 
-// StreamingAgent manages streaming agent response integration
+// StreamingAgent manages streaming agent response integration.
 type StreamingAgent struct {
-	mu            sync.RWMutex
 	agentCallback func(ctx context.Context, transcript string) (string, error)
+	mu            sync.RWMutex
 	streaming     bool
 }
 
-// NewStreamingAgent creates a new streaming agent manager
+// NewStreamingAgent creates a new streaming agent manager.
 func NewStreamingAgent(agentCallback func(ctx context.Context, transcript string) (string, error)) *StreamingAgent {
 	return &StreamingAgent{
 		agentCallback: agentCallback,
@@ -21,17 +21,17 @@ func NewStreamingAgent(agentCallback func(ctx context.Context, transcript string
 	}
 }
 
-// StartStreaming starts streaming agent responses
+// StartStreaming starts streaming agent responses.
 func (sa *StreamingAgent) StartStreaming(ctx context.Context, transcript string) (<-chan string, error) {
 	sa.mu.Lock()
 	defer sa.mu.Unlock()
 
 	if sa.streaming {
-		return nil, fmt.Errorf("streaming already active")
+		return nil, errors.New("streaming already active")
 	}
 
 	if sa.agentCallback == nil {
-		return nil, fmt.Errorf("agent callback not set")
+		return nil, errors.New("agent callback not set")
 	}
 
 	responseCh := make(chan string, 10)
@@ -63,14 +63,14 @@ func (sa *StreamingAgent) StartStreaming(ctx context.Context, transcript string)
 	return responseCh, nil
 }
 
-// StopStreaming stops streaming agent responses
+// StopStreaming stops streaming agent responses.
 func (sa *StreamingAgent) StopStreaming() {
 	sa.mu.Lock()
 	defer sa.mu.Unlock()
 	sa.streaming = false
 }
 
-// IsStreaming returns whether streaming is active
+// IsStreaming returns whether streaming is active.
 func (sa *StreamingAgent) IsStreaming() bool {
 	sa.mu.RLock()
 	defer sa.mu.RUnlock()

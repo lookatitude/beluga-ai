@@ -4,6 +4,7 @@ package gofunc
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -46,21 +47,21 @@ func NewGoFunctionTool(name, description, inputSchemaJSON string, fn any) (*GoFu
 
 	fnType := reflect.TypeOf(fn)
 	if fnType.NumIn() != 2 {
-		return nil, fmt.Errorf("function must have exactly 2 inputs: context.Context and map[string]any")
+		return nil, errors.New("function must have exactly 2 inputs: context.Context and map[string]any")
 	}
 	if fnType.NumOut() != 2 {
-		return nil, fmt.Errorf("function must have exactly 2 outputs: any and error")
+		return nil, errors.New("function must have exactly 2 outputs: any and error")
 	}
 
 	if fnType.In(0) != reflect.TypeOf((*context.Context)(nil)).Elem() {
-		return nil, fmt.Errorf("first input must be context.Context")
+		return nil, errors.New("first input must be context.Context")
 	}
 	if fnType.In(1) != reflect.TypeOf(map[string]any(nil)) {
-		return nil, fmt.Errorf("second input must be map[string]any")
+		return nil, errors.New("second input must be map[string]any")
 	}
 
 	if !fnType.Out(1).Implements(reflect.TypeOf((*error)(nil)).Elem()) {
-		return nil, fmt.Errorf("second output must be error")
+		return nil, errors.New("second output must be error")
 	}
 
 	var inputSchema map[string]any // Changed to map[string]any
@@ -97,7 +98,7 @@ func (gft *GoFunctionTool) Name() string {
 
 // Execute implements the tools.Tool interface.
 // It calls the wrapped Go function using reflection with the provided arguments.
-// Corrected input type to any
+// Corrected input type to any.
 func (gft *GoFunctionTool) Execute(ctx context.Context, input any) (any, error) {
 	// Expect input to be map[string]any for function call
 	args, ok := input.(map[string]any)
@@ -156,7 +157,7 @@ func (gft *GoFunctionTool) Invoke(ctx context.Context, input any, options ...cor
 // Batch implements the core.Runnable interface for GoFunctionTool.
 // It calls Execute sequentially for each input.
 // TODO: Consider if the underlying function supports batching for potential optimization.
-// Batch implements the tools.Tool interface
+// Batch implements the tools.Tool interface.
 func (gft *GoFunctionTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i, input := range inputs {
@@ -169,7 +170,7 @@ func (gft *GoFunctionTool) Batch(ctx context.Context, inputs []any) ([]any, erro
 	return results, nil
 }
 
-// Run implements the core.Runnable Batch method with options
+// Run implements the core.Runnable Batch method with options.
 func (gft *GoFunctionTool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	return gft.Batch(ctx, inputs) // Options are ignored for now
 }
@@ -192,10 +193,10 @@ func (gft *GoFunctionTool) Stream(ctx context.Context, input any, options ...cor
 }
 
 // Compile-time checks to ensure implementation satisfies interfaces.
-// Make sure interfaces are correctly implemented
+// Make sure interfaces are correctly implemented.
 var _ tools.Tool = (*GoFunctionTool)(nil)
 
-// Define a custom interface that matches what we've implemented
+// Define a custom interface that matches what we've implemented.
 type batcherWithOptions interface {
 	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)

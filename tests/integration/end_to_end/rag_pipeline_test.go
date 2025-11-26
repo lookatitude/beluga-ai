@@ -5,7 +5,9 @@ package end_to_end
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -24,12 +26,12 @@ import (
 	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 )
 
-// TestEndToEndRAGPipeline tests a complete RAG (Retrieval Augmented Generation) pipeline
+// TestEndToEndRAGPipeline tests a complete RAG (Retrieval Augmented Generation) pipeline.
 func TestEndToEndRAGPipeline(t *testing.T) {
 	utils.SkipIfShortMode(t) // This is a comprehensive test
 
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name              string
@@ -133,14 +135,14 @@ func TestEndToEndRAGPipeline(t *testing.T) {
 	}
 }
 
-// ConversationStep represents a step in a multi-turn conversation
+// ConversationStep represents a step in a multi-turn conversation.
 type ConversationStep struct {
 	Query           string
 	ExpectedContext []string
 	ExpectedMemory  bool
 }
 
-// RAGPipeline represents a complete RAG pipeline for testing
+// RAGPipeline represents a complete RAG pipeline for testing.
 type RAGPipeline struct {
 	LLM         llmsiface.ChatModel
 	Memory      memoryiface.Memory
@@ -149,8 +151,9 @@ type RAGPipeline struct {
 	Documents   []schema.Document
 }
 
-// setupKnowledgeBase ingests documents into the vector store
+// setupKnowledgeBase ingests documents into the vector store.
 func setupKnowledgeBase(tb testing.TB, pipeline *RAGPipeline, documents []schema.Document) error {
+	tb.Helper()
 	ctx := context.Background()
 
 	// Store documents for later reference
@@ -160,7 +163,6 @@ func setupKnowledgeBase(tb testing.TB, pipeline *RAGPipeline, documents []schema
 	// Add documents to vector store with embeddings
 	_, err := pipeline.VectorStore.AddDocuments(ctx, documents,
 		vectorstoresiface.WithEmbedder(pipeline.Embedder))
-
 	if err != nil {
 		return fmt.Errorf("failed to setup knowledge base: %w", err)
 	}
@@ -169,8 +171,9 @@ func setupKnowledgeBase(tb testing.TB, pipeline *RAGPipeline, documents []schema
 	return nil
 }
 
-// executeRAGQuery executes a query through the complete RAG pipeline
+// executeRAGQuery executes a query through the complete RAG pipeline.
 func executeRAGQuery(tb testing.TB, pipeline *RAGPipeline, query string) (string, error) {
+	tb.Helper()
 	ctx := context.Background()
 
 	// Step 1: Load conversation memory
@@ -191,9 +194,11 @@ func executeRAGQuery(tb testing.TB, pipeline *RAGPipeline, query string) (string
 
 	// Step 3: Create context from retrieved documents
 	contextContent := ""
+	var contextContentSb194 strings.Builder
 	for i, doc := range relevantDocs {
-		contextContent += fmt.Sprintf("Document %d: %s\n", i+1, doc.GetContent())
+		_, _ = contextContentSb194.WriteString(fmt.Sprintf("Document %d: %s\n", i+1, doc.GetContent()))
 	}
+	contextContent += contextContentSb194.String()
 
 	// Step 4: Create messages with context and memory
 	messages := []schema.Message{
@@ -228,7 +233,7 @@ func executeRAGQuery(tb testing.TB, pipeline *RAGPipeline, query string) (string
 	return response.GetContent(), nil
 }
 
-// getMemoryContent retrieves memory content for validation
+// getMemoryContent retrieves memory content for validation.
 func getMemoryContent(t *testing.T, memory memoryiface.Memory) string {
 	ctx := context.Background()
 
@@ -252,9 +257,10 @@ func getMemoryContent(t *testing.T, memory memoryiface.Memory) string {
 	return ""
 }
 
-// validatePipelineHealth checks the health of all pipeline components
+// validatePipelineHealth checks the health of all pipeline components.
 func validatePipelineHealth(t *testing.T, pipeline *RAGPipeline) {
-	components := map[string]interface{}{
+	t.Helper()
+	components := map[string]any{
 		"llm":          pipeline.LLM,
 		"memory":       pipeline.Memory,
 		"embedder":     pipeline.Embedder,
@@ -265,14 +271,14 @@ func validatePipelineHealth(t *testing.T, pipeline *RAGPipeline) {
 	helper.AssertHealthChecks(t, components)
 }
 
-// TestEndToEndRAGPipelinePerformance tests RAG pipeline performance
+// TestEndToEndRAGPipelinePerformance tests RAG pipeline performance.
 func TestEndToEndRAGPipelinePerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance tests in short mode")
 	}
 
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name                string
@@ -327,15 +333,15 @@ func TestEndToEndRAGPipelinePerformance(t *testing.T) {
 	}
 }
 
-// TestEndToEndRAGPipelineErrorRecovery tests error handling and recovery
+// TestEndToEndRAGPipelineErrorRecovery tests error handling and recovery.
 func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
+		setupError    func(pipeline *RAGPipeline)
 		name          string
 		errorStage    string
-		setupError    func(pipeline *RAGPipeline)
 		shouldRecover bool
 	}{
 		{
@@ -344,7 +350,7 @@ func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 			setupError: func(pipeline *RAGPipeline) {
 				// Replace embedder with one that errors
 				errorEmbedder := embeddings.NewAdvancedMockEmbedder("error-provider", "error-model", 128,
-					embeddings.WithMockError(true, fmt.Errorf("embedding service unavailable")))
+					embeddings.WithMockError(true, errors.New("embedding service unavailable")))
 				pipeline.Embedder = errorEmbedder
 			},
 			shouldRecover: false,
@@ -355,7 +361,7 @@ func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 			setupError: func(pipeline *RAGPipeline) {
 				// Replace LLM with one that errors
 				errorLLM := llms.NewAdvancedMockChatModel("error-llm",
-					llms.WithError(fmt.Errorf("LLM service unavailable")))
+					llms.WithError(errors.New("LLM service unavailable")))
 				pipeline.LLM = errorLLM
 			},
 			shouldRecover: false,
@@ -366,7 +372,7 @@ func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 			setupError: func(pipeline *RAGPipeline) {
 				// Replace memory with one that errors on save
 				errorMemory := memory.NewAdvancedMockMemory("error-memory", memory.MemoryTypeBuffer,
-					memory.WithMockError(true, fmt.Errorf("memory storage unavailable")))
+					memory.WithMockError(true, errors.New("memory storage unavailable")))
 				pipeline.Memory = errorMemory
 			},
 			shouldRecover: false,
@@ -377,7 +383,7 @@ func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 			setupError: func(pipeline *RAGPipeline) {
 				// Replace vector store with one that errors on search
 				errorStore := vectorstores.NewAdvancedMockVectorStore("error-store",
-					vectorstores.WithMockError(true, fmt.Errorf("vector store unavailable")))
+					vectorstores.WithMockError(true, errors.New("vector store unavailable")))
 				pipeline.VectorStore = errorStore
 			},
 			shouldRecover: false,
@@ -402,24 +408,24 @@ func TestEndToEndRAGPipelineErrorRecovery(t *testing.T) {
 			result, err := executeRAGQuery(t, pipeline, "Test query")
 
 			if tt.shouldRecover {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, result)
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 				t.Logf("Expected error in %s stage: %v", tt.errorStage, err)
 			}
 		})
 	}
 }
 
-// TestEndToEndRAGPipelineConcurrency tests concurrent RAG pipeline usage
+// TestEndToEndRAGPipelineConcurrency tests concurrent RAG pipeline usage.
 func TestEndToEndRAGPipelineConcurrency(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping concurrency tests in short mode")
 	}
 
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	pipeline := createRAGPipelineGeneric(t, helper)
 
@@ -439,14 +445,14 @@ func TestEndToEndRAGPipelineConcurrency(t *testing.T) {
 				return err
 			}
 			if result == "" {
-				return fmt.Errorf("empty result from RAG query")
+				return errors.New("empty result from RAG query")
 			}
 			return nil
 		}, numGoroutines*queriesPerGoroutine, numGoroutines)
 	})
 }
 
-// TestEndToEndRAGPipelineRealProviders tests with real providers (if available)
+// TestEndToEndRAGPipelineRealProviders tests with real providers (if available).
 func TestEndToEndRAGPipelineRealProviders(t *testing.T) {
 	utils.SkipIfNoRealProviders(t)
 	utils.SkipIfShortMode(t)
@@ -460,10 +466,10 @@ func TestEndToEndRAGPipelineRealProviders(t *testing.T) {
 	t.Skip("Real provider integration tests require external service credentials")
 }
 
-// BenchmarkEndToEndRAGPipeline benchmarks complete RAG pipeline performance
+// BenchmarkEndToEndRAGPipeline benchmarks complete RAG pipeline performance.
 func BenchmarkEndToEndRAGPipeline(b *testing.B) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	pipeline := createRAGPipelineGeneric(b, helper)
 
@@ -533,7 +539,7 @@ func BenchmarkEndToEndRAGPipeline(b *testing.B) {
 	})
 }
 
-// Helper function that works with both testing.T and testing.B
+// Helper function that works with both testing.T and testing.B.
 func createRAGPipelineGeneric(tb testing.TB, helper *utils.IntegrationTestHelper) *RAGPipeline {
 	// Create components
 	llm := helper.CreateMockLLM("rag-llm")

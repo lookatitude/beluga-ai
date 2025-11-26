@@ -12,11 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestMemoryIntegration_ChatApplication simulates a chat application using memory
+// TestMemoryIntegration_ChatApplication simulates a chat application using memory.
 func TestMemoryIntegration_ChatApplication(t *testing.T) {
-
 	t.Run("BufferMemory_ChatSession", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		// Create buffer memory for a chat session
 		memory, err := NewMemory(MemoryTypeBuffer,
 			WithMemoryKey("chat_history"),
@@ -48,7 +47,7 @@ func TestMemoryIntegration_ChatApplication(t *testing.T) {
 
 		// Load memory and verify conversation history
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history, ok := vars["chat_history"].(string)
 		assert.True(t, ok, "Expected chat_history to be a string")
@@ -67,7 +66,7 @@ func TestMemoryIntegration_ChatApplication(t *testing.T) {
 
 		// Test memory persistence across operations
 		newVars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		newHistory, ok := newVars["chat_history"].(string)
 		assert.True(t, ok)
@@ -95,7 +94,7 @@ func TestMemoryIntegration_ChatApplication(t *testing.T) {
 
 		// Load memory and verify only recent 3 messages are kept (window size is 3 messages, not interactions)
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history, ok := vars["recent_history"].(string)
 		assert.True(t, ok)
@@ -156,18 +155,17 @@ func TestMemoryIntegration_ChatApplication(t *testing.T) {
 
 				// Test basic functionality
 				vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Contains(t, vars, scenario.config.MemoryKey)
 			})
 		}
 	})
 }
 
-// TestMemoryIntegration_ErrorScenarios tests error handling in integration scenarios
+// TestMemoryIntegration_ErrorScenarios tests error handling in integration scenarios.
 func TestMemoryIntegration_ErrorScenarios(t *testing.T) {
-
 	t.Run("MemoryDisabled", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		factory := NewFactory()
 		config := Config{
 			Type:    MemoryTypeBuffer,
@@ -175,19 +173,19 @@ func TestMemoryIntegration_ErrorScenarios(t *testing.T) {
 		}
 
 		memory, err := factory.CreateMemory(ctx, config)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.IsType(t, &NoOpMemory{}, memory)
 
 		// Test that NoOpMemory works correctly
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Equal(t, map[string]any{}, vars)
 
 		err = memory.SaveContext(ctx, map[string]any{}, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = memory.Clear(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("InvalidConfiguration", func(t *testing.T) {
@@ -207,12 +205,11 @@ func TestMemoryIntegration_ErrorScenarios(t *testing.T) {
 	})
 }
 
-// TestMemoryIntegration_PerformanceScenarios tests memory performance under load
+// TestMemoryIntegration_PerformanceScenarios tests memory performance under load.
 func TestMemoryIntegration_PerformanceScenarios(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance test in short mode")
 	}
-
 
 	t.Run("HighFrequencyOperations", func(t *testing.T) {
 		ctx := context.Background()
@@ -228,14 +225,14 @@ func TestMemoryIntegration_PerformanceScenarios(t *testing.T) {
 			outputs := map[string]any{"output": "Quick answer " + string(rune(i%10+'0'))}
 
 			err := memory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		saveDuration := time.Since(start)
 
 		// Load memory and verify all interactions are present
 		start = time.Now()
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		loadDuration := time.Since(start)
 
 		history := vars["history"].(string)
@@ -264,14 +261,14 @@ func TestMemoryIntegration_PerformanceScenarios(t *testing.T) {
 			outputs := map[string]any{"output": "Response to: " + string(rune(i%10+'0'))}
 
 			err := memory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 		saveDuration := time.Since(start)
 
 		// Load memory
 		start = time.Now()
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		loadDuration := time.Since(start)
 
 		history := vars["history"].(string)
@@ -287,9 +284,8 @@ func TestMemoryIntegration_PerformanceScenarios(t *testing.T) {
 	})
 }
 
-// TestMemoryIntegration_ComplexWorkflows tests complex memory usage patterns
+// TestMemoryIntegration_ComplexWorkflows tests complex memory usage patterns.
 func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
-
 	t.Run("MemorySwitching", func(t *testing.T) {
 		ctx := context.Background()
 		factory := NewFactory()
@@ -308,7 +304,7 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 		inputs := map[string]any{"input": "Hello"}
 		outputs := map[string]any{"output": "Hi!"}
 		err = bufferMemory.SaveContext(ctx, inputs, outputs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Switch to window memory with different configuration
 		windowConfig := Config{
@@ -326,12 +322,12 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 			inputs := map[string]any{"input": "Question " + string(rune(i+'0'))}
 			outputs := map[string]any{"output": "Answer " + string(rune(i+'0'))}
 			err = windowMemory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Verify window memory only keeps recent messages
 		vars, err := windowMemory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history := vars["recent_conversation"].(string)
 		// With 4 interactions (8 messages: Q0, A0, Q1, A1, Q2, A2, Q3, A3) and window of 2
@@ -356,12 +352,12 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 
 		for _, msg := range session1 {
 			err := memory.SaveContext(ctx, map[string]any{"input": msg.input}, map[string]any{"output": msg.output})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Simulate session break (memory persists)
 		vars1, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Session 2
 		session2 := []struct{ input, output string }{
@@ -371,12 +367,12 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 
 		for _, msg := range session2 {
 			err := memory.SaveContext(ctx, map[string]any{"input": msg.input}, map[string]any{"output": msg.output})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Verify all messages are present
 		vars2, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history1 := vars1["persistent_history"].(string)
 		history2 := vars2["persistent_history"].(string)
@@ -410,10 +406,10 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 		outputs := map[string]any{"assistant_response": "Custom output"}
 
 		err = memory.SaveContext(ctx, inputs, outputs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history := vars["conversation_log"].(string)
 		assert.Contains(t, history, "Custom input")
@@ -421,7 +417,7 @@ func TestMemoryIntegration_ComplexWorkflows(t *testing.T) {
 	})
 }
 
-// TestMemoryIntegration_MultiMemorySetup tests using multiple memory instances
+// TestMemoryIntegration_MultiMemorySetup tests using multiple memory instances.
 func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 	ctx := context.Background()
 	factory := NewFactory()
@@ -477,7 +473,7 @@ func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 	// Test each memory type behaves as expected
 	t.Run("ShortTermMemory", func(t *testing.T) {
 		vars, err := memories["short_term"].LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history := vars["recent_messages"].(string)
 		// With window of 3 messages and 5 interactions (10 messages total)
@@ -492,7 +488,7 @@ func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 
 	t.Run("LongTermMemory", func(t *testing.T) {
 		vars, err := memories["long_term"].LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history := vars["full_history"].(string)
 		// Should contain all interactions
@@ -504,7 +500,7 @@ func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 
 	t.Run("SummaryMemory", func(t *testing.T) {
 		vars, err := memories["summary"].LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		history := vars["summary"].(string)
 		// Should contain all interactions (same as long-term for buffer memory)
@@ -515,9 +511,8 @@ func TestMemoryIntegration_MultiMemorySetup(t *testing.T) {
 	})
 }
 
-// TestMemoryIntegration_Cleanup tests memory cleanup scenarios
+// TestMemoryIntegration_Cleanup tests memory cleanup scenarios.
 func TestMemoryIntegration_Cleanup(t *testing.T) {
-
 	t.Run("MemoryClearing", func(t *testing.T) {
 		ctx := context.Background()
 		memory, err := NewMemory(MemoryTypeBuffer)
@@ -527,23 +522,23 @@ func TestMemoryIntegration_Cleanup(t *testing.T) {
 		inputs := map[string]any{"input": "Test message"}
 		outputs := map[string]any{"output": "Test response"}
 		err = memory.SaveContext(ctx, inputs, outputs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify content exists
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		history := vars["history"].(string)
 		assert.Contains(t, history, "Test message")
 
 		// Clear memory
 		err = memory.Clear(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify content is cleared
 		vars, err = memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		clearedHistory := vars["history"].(string)
-		assert.Equal(t, "", clearedHistory)
+		assert.Empty(t, clearedHistory)
 		assert.NotEqual(t, history, clearedHistory)
 	})
 
@@ -562,16 +557,16 @@ func TestMemoryIntegration_Cleanup(t *testing.T) {
 		inputs := map[string]any{"input": "After clear"}
 		outputs := map[string]any{"output": "Still working"}
 		err = memory.SaveContext(ctx, inputs, outputs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		history := vars["history"].(string)
 		assert.Contains(t, history, "After clear")
 	})
 }
 
-// BenchmarkIntegration benchmarks complete memory workflows
+// BenchmarkIntegration benchmarks complete memory workflows.
 func BenchmarkIntegration(b *testing.B) {
 	ctx := context.Background()
 

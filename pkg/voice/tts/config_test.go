@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -90,9 +91,9 @@ func TestConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -104,7 +105,7 @@ func TestConfig_DefaultConfig(t *testing.T) {
 	assert.Equal(t, "openai", config.Provider)
 	assert.Equal(t, 24000, config.SampleRate)
 	assert.Equal(t, 16, config.BitDepth)
-	assert.Equal(t, 1.0, config.Speed)
+	assert.InEpsilon(t, 1.0, config.Speed, 0.0001)
 	assert.True(t, config.EnableStreaming)
 	assert.Equal(t, 3, config.MaxRetries)
 }
@@ -128,13 +129,13 @@ func TestConfigOption(t *testing.T) {
 	assert.Equal(t, "es", config.Language)
 
 	WithSpeed(1.5)(config)
-	assert.Equal(t, 1.5, config.Speed)
+	assert.InEpsilon(t, 1.5, config.Speed, 0.0001)
 
 	WithPitch(2.0)(config)
-	assert.Equal(t, 2.0, config.Pitch)
+	assert.InEpsilon(t, 2.0, config.Pitch, 0.0001)
 
 	WithVolume(0.8)(config)
-	assert.Equal(t, 0.8, config.Volume)
+	assert.InEpsilon(t, 0.8, config.Volume, 0.0001)
 
 	WithTimeout(60 * time.Second)(config)
 	assert.Equal(t, 60*time.Second, config.Timeout)

@@ -89,6 +89,6 @@ func TestAwayDetection_CallbackOnStateChange(t *testing.T) {
 	ad.UpdateActivity()
 
 	mu.Lock()
-	assert.Greater(t, len(awayStates), 0)
+	assert.NotEmpty(t, awayStates)
 	mu.Unlock()
 }

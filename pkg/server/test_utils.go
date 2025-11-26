@@ -12,46 +12,39 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockServer provides a comprehensive mock implementation for testing
+// AdvancedMockServer provides a comprehensive mock implementation for testing.
 type AdvancedMockServer struct {
-	mock.Mock
-
-	// Configuration
-	name       string
-	serverType string
-	port       int
-	callCount  int
-	mu         sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	responseDelay time.Duration
-	simulateLoad  bool
-
-	// Server state
-	isRunning       bool
-	connections     int
-	requestHistory  []RequestRecord
-	handlerRegistry map[string]http.HandlerFunc
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	handlerRegistry map[string]http.HandlerFunc
+	mock.Mock
+	name           string
+	serverType     string
+	healthState    string
+	requestHistory []RequestRecord
+	callCount      int
+	connections    int
+	responseDelay  time.Duration
+	port           int
+	mu             sync.RWMutex
+	simulateLoad   bool
+	isRunning      bool
+	shouldError    bool
 }
 
-// RequestRecord tracks server request history for testing
+// RequestRecord tracks server request history for testing.
 type RequestRecord struct {
+	Timestamp  time.Time
 	Method     string
 	Path       string
 	StatusCode int
 	Duration   time.Duration
-	Timestamp  time.Time
 }
 
-// NewAdvancedMockServer creates a new advanced mock server
+// NewAdvancedMockServer creates a new advanced mock server.
 func NewAdvancedMockServer(name, serverType string, port int, options ...MockServerOption) *AdvancedMockServer {
 	mock := &AdvancedMockServer{
 		name:            name,
@@ -70,10 +63,10 @@ func NewAdvancedMockServer(name, serverType string, port int, options ...MockSer
 	return mock
 }
 
-// MockServerOption defines functional options for mock configuration
+// MockServerOption defines functional options for mock configuration.
 type MockServerOption func(*AdvancedMockServer)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockServerOption {
 	return func(s *AdvancedMockServer) {
 		s.shouldError = shouldError
@@ -81,21 +74,21 @@ func WithMockError(shouldError bool, err error) MockServerOption {
 	}
 }
 
-// WithResponseDelay adds artificial delay to mock operations
+// WithResponseDelay adds artificial delay to mock operations.
 func WithResponseDelay(delay time.Duration) MockServerOption {
 	return func(s *AdvancedMockServer) {
 		s.responseDelay = delay
 	}
 }
 
-// WithLoadSimulation enables load simulation
+// WithLoadSimulation enables load simulation.
 func WithLoadSimulation(enabled bool) MockServerOption {
 	return func(s *AdvancedMockServer) {
 		s.simulateLoad = enabled
 	}
 }
 
-// Mock server operations
+// Mock server operations.
 func (s *AdvancedMockServer) Start(ctx context.Context) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -188,7 +181,7 @@ func (s *AdvancedMockServer) RemoveConnection() {
 	}
 }
 
-// Helper methods for testing
+// Helper methods for testing.
 func (s *AdvancedMockServer) GetName() string {
 	return s.name
 }
@@ -233,9 +226,9 @@ func (s *AdvancedMockServer) GetHandlerCount() int {
 	return len(s.handlerRegistry)
 }
 
-func (s *AdvancedMockServer) CheckHealth() map[string]interface{} {
+func (s *AdvancedMockServer) CheckHealth() map[string]any {
 	s.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":        s.healthState,
 		"name":          s.name,
 		"type":          s.serverType,
@@ -251,7 +244,7 @@ func (s *AdvancedMockServer) CheckHealth() map[string]interface{} {
 
 // Test data creation helpers
 
-// CreateTestServerConfig creates a test server configuration
+// CreateTestServerConfig creates a test server configuration.
 func CreateTestServerConfig() Config {
 	return Config{
 		Host:            "localhost",
@@ -269,7 +262,7 @@ func CreateTestServerConfig() Config {
 	}
 }
 
-// CreateTestRequests creates test HTTP requests for simulation
+// CreateTestRequests creates test HTTP requests for simulation.
 func CreateTestRequests(count int) []TestRequest {
 	requests := make([]TestRequest, count)
 	methods := []string{"GET", "POST", "PUT", "DELETE"}
@@ -294,26 +287,28 @@ type TestRequest struct {
 
 // Assertion helpers
 
-// AssertServerStatus validates server status
+// AssertServerStatus validates server status.
 func AssertServerStatus(t *testing.T, server *AdvancedMockServer, expectedRunning bool) {
+	t.Helper()
 	assert.Equal(t, expectedRunning, server.IsRunning(), "Server running status should match expected")
 }
 
-// AssertRequestHandling validates request handling
+// AssertRequestHandling validates request handling.
 func AssertRequestHandling(t *testing.T, statusCode int, duration time.Duration, err error, expectError bool) {
 	if expectError {
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.GreaterOrEqual(t, statusCode, 400, "Error responses should have status >= 400")
 	} else {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.GreaterOrEqual(t, statusCode, 200, "Success responses should have status >= 200")
 		assert.LessOrEqual(t, statusCode, 299, "Success responses should have status <= 299")
 	}
 	assert.Greater(t, duration, time.Duration(0), "Request should take some time")
 }
 
-// AssertServerHealth validates server health check results
-func AssertServerHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertServerHealth validates server health check results.
+func AssertServerHealth(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -324,8 +319,9 @@ func AssertServerHealth(t *testing.T, health map[string]interface{}, expectedSta
 
 // Performance testing helpers
 
-// RunLoadTest executes a load test scenario on server
-func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests int, concurrency int) {
+// RunLoadTest executes a load test scenario on server.
+func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numRequests)
 
@@ -376,7 +372,7 @@ func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests int, conc
 
 	// Verify request history
 	history := server.GetRequestHistory()
-	assert.Equal(t, numRequests, len(history), "Should record all requests")
+	assert.Len(t, history, numRequests, "Should record all requests")
 
 	// Stop server
 	err = server.Stop(ctx)
@@ -385,7 +381,7 @@ func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests int, conc
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	servers map[string]*AdvancedMockServer
 }
@@ -413,7 +409,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// ServerScenarioRunner runs common server scenarios
+// ServerScenarioRunner runs common server scenarios.
 type ServerScenarioRunner struct {
 	server *AdvancedMockServer
 }
@@ -496,7 +492,7 @@ func (r *ServerScenarioRunner) RunConnectionManagementScenario(ctx context.Conte
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for servers
+// BenchmarkHelper provides benchmarking utilities for servers.
 type BenchmarkHelper struct {
 	server   *AdvancedMockServer
 	requests []TestRequest

@@ -2,38 +2,38 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 )
 
 // AgentIntegration manages agent package integration for generating responses
-// This is a placeholder - actual agent integration would depend on the agent package API
+// This is a placeholder - actual agent integration would depend on the agent package API.
 type AgentIntegration struct {
-	mu            sync.RWMutex
 	agentCallback func(ctx context.Context, transcript string) (string, error)
+	mu            sync.RWMutex
 }
 
-// NewAgentIntegration creates a new agent integration
+// NewAgentIntegration creates a new agent integration.
 func NewAgentIntegration(agentCallback func(ctx context.Context, transcript string) (string, error)) *AgentIntegration {
 	return &AgentIntegration{
 		agentCallback: agentCallback,
 	}
 }
 
-// GenerateResponse generates a response from the agent
+// GenerateResponse generates a response from the agent.
 func (ai *AgentIntegration) GenerateResponse(ctx context.Context, transcript string) (string, error) {
 	ai.mu.RLock()
 	callback := ai.agentCallback
 	ai.mu.RUnlock()
 
 	if callback == nil {
-		return "", fmt.Errorf("agent callback not set")
+		return "", errors.New("agent callback not set")
 	}
 
 	return callback(ctx, transcript)
 }
 
-// SetAgentCallback sets the agent callback
+// SetAgentCallback sets the agent callback.
 func (ai *AgentIntegration) SetAgentCallback(callback func(ctx context.Context, transcript string) (string, error)) {
 	ai.mu.Lock()
 	defer ai.mu.Unlock()

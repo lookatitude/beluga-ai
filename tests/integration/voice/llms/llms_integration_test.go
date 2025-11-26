@@ -7,12 +7,11 @@ import (
 
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // TestLLMsIntegration tests integration with LLM package
-// This is a placeholder - actual integration would depend on LLM package API
+// This is a placeholder - actual integration would depend on LLM package API.
 func TestLLMsIntegration(t *testing.T) {
 	ctx := context.Background()
 
@@ -39,7 +38,7 @@ func TestLLMsIntegration(t *testing.T) {
 	// Process audio - should trigger LLM via agent
 	audio := []byte{1, 2, 3}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)
@@ -52,12 +51,13 @@ func TestLLMsIntegration(t *testing.T) {
 // - Token usage tracking
 // - Rate limiting
 
-// Mock providers
+// Mock providers.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "test transcript", nil
 }
+
 func (m *mockSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, nil
 }
@@ -67,6 +67,7 @@ type mockTTSProvider struct{}
 func (m *mockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	return []byte{1, 2, 3}, nil
 }
+
 func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	return nil, nil
 }

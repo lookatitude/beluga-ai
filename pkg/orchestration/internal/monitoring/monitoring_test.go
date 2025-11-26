@@ -33,14 +33,14 @@ func TestWorkflowMonitor_UpdateState(t *testing.T) {
 	// Verify states
 	assert.Equal(t, "completed", monitor.GetState("task1"))
 	assert.Equal(t, "completed", monitor.GetState("task2"))
-	assert.Equal(t, "", monitor.GetState("nonexistent")) // Non-existent task should return empty string
+	assert.Empty(t, monitor.GetState("nonexistent")) // Non-existent task should return empty string
 }
 
 func TestWorkflowMonitor_GetState(t *testing.T) {
 	monitor := NewWorkflowMonitor()
 
 	// Initially empty
-	assert.Equal(t, "", monitor.GetState("task1"))
+	assert.Empty(t, monitor.GetState("task1"))
 
 	// After setting state
 	monitor.UpdateState("task1", "running")
@@ -51,7 +51,7 @@ func TestWorkflowMonitor_GetState(t *testing.T) {
 	assert.Equal(t, "completed", monitor.GetState("task1"))
 
 	// Non-existent task
-	assert.Equal(t, "", monitor.GetState("nonexistent"))
+	assert.Empty(t, monitor.GetState("nonexistent"))
 }
 
 func TestWorkflowMonitor_StartLogging(t *testing.T) {
@@ -59,7 +59,10 @@ func TestWorkflowMonitor_StartLogging(t *testing.T) {
 
 	// Capture stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = w
 
 	// Start logging
@@ -79,12 +82,12 @@ func TestWorkflowMonitor_StartLogging(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
 	// Verify log output contains expected messages
@@ -94,11 +97,11 @@ func TestWorkflowMonitor_StartLogging(t *testing.T) {
 
 func TestWorkflowMonitor_ConcurrentAccess(t *testing.T) {
 	monitor := NewWorkflowMonitor()
-	
+
 	// Start logging to consume from the channel and prevent blocking
 	monitor.StartLogging()
 	defer close(monitor.logChan)
-	
+
 	var wg sync.WaitGroup
 
 	// Number of concurrent goroutines
@@ -288,7 +291,7 @@ func TestWorkflowMonitor_StateMapIsolated(t *testing.T) {
 	// Different tasks should not interfere
 	monitor1.UpdateState("task2", "state2-monitor1")
 	assert.Equal(t, "state2-monitor1", monitor1.GetState("task2"))
-	assert.Equal(t, "", monitor2.GetState("task2"))
+	assert.Empty(t, monitor2.GetState("task2"))
 }
 
 func TestWorkflowMonitor_LogFormat(t *testing.T) {
@@ -296,7 +299,10 @@ func TestWorkflowMonitor_LogFormat(t *testing.T) {
 
 	// Capture stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
 	os.Stdout = w
 
 	// Start logging
@@ -311,12 +317,12 @@ func TestWorkflowMonitor_LogFormat(t *testing.T) {
 	time.Sleep(50 * time.Millisecond)
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
 	// Verify log format

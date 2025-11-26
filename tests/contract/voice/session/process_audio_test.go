@@ -4,11 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestProcessAudio_Contract tests the contract for the ProcessAudio() method
+// TestProcessAudio_Contract tests the contract for the ProcessAudio() method.
 func TestProcessAudio_Contract(t *testing.T) {
 	t.Run("process audio accepts valid audio data", func(t *testing.T) {
 		ctx := context.Background()
@@ -19,7 +18,7 @@ func TestProcessAudio_Contract(t *testing.T) {
 
 		audio := []byte{1, 2, 3, 4, 5}
 		err = sess.ProcessAudio(ctx, audio)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("process audio returns error if session not active", func(t *testing.T) {
@@ -29,7 +28,7 @@ func TestProcessAudio_Contract(t *testing.T) {
 		// Don't start session
 		audio := []byte{1, 2, 3, 4, 5}
 		err := sess.ProcessAudio(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("process audio handles empty audio", func(t *testing.T) {
@@ -71,7 +70,7 @@ func TestProcessAudio_Contract(t *testing.T) {
 		err = sess.ProcessAudio(ctx, audio)
 		// Should either return error or respect cancellation
 		if err != nil {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	})
 

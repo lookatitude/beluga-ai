@@ -2,6 +2,7 @@ package silero
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"sync"
@@ -9,7 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
-// ONNXModel represents a loaded ONNX model for VAD
+// ONNXModel represents a loaded ONNX model for VAD.
 type ONNXModel struct {
 	modelPath  string
 	sampleRate int
@@ -20,7 +21,7 @@ type ONNXModel struct {
 
 // LoadONNXModel loads an ONNX model from the specified path
 // Note: This is a simplified implementation. A full implementation would use
-// an ONNX runtime library like github.com/owulveryck/onnx-go or ort
+// an ONNX runtime library like github.com/owulveryck/onnx-go or ort.
 func LoadONNXModel(modelPath string, sampleRate, frameSize int) (*ONNXModel, error) {
 	// Check if model file exists
 	if _, err := os.Stat(modelPath); os.IsNotExist(err) {
@@ -45,7 +46,7 @@ func LoadONNXModel(modelPath string, sampleRate, frameSize int) (*ONNXModel, err
 	return model, nil
 }
 
-// Process processes audio data using the ONNX model
+// Process processes audio data using the ONNX model.
 func (m *ONNXModel) Process(ctx context.Context, audio []byte, threshold float64) (bool, error) {
 	m.mu.RLock()
 	loaded := m.loaded
@@ -53,7 +54,7 @@ func (m *ONNXModel) Process(ctx context.Context, audio []byte, threshold float64
 
 	if !loaded {
 		return false, vad.NewVADError("Process", vad.ErrCodeModelLoadFailed,
-			fmt.Errorf("model not loaded"))
+			errors.New("model not loaded"))
 	}
 
 	// Validate audio length
@@ -82,7 +83,7 @@ func (m *ONNXModel) Process(ctx context.Context, audio []byte, threshold float64
 	return speechProbability >= threshold, nil
 }
 
-// calculateEnergy calculates the energy of an audio signal
+// calculateEnergy calculates the energy of an audio signal.
 func calculateEnergy(audio []byte) float64 {
 	if len(audio) == 0 {
 		return 0.0

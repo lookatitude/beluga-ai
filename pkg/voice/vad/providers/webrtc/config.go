@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
-// WebRTCConfig extends the base VAD config with WebRTC VAD specific settings
+// WebRTCConfig extends the base VAD config with WebRTC VAD specific settings.
 type WebRTCConfig struct {
 	*vad.Config
 
@@ -26,7 +26,7 @@ type WebRTCConfig struct {
 	MaxSilenceDuration time.Duration `mapstructure:"max_silence_duration" yaml:"max_silence_duration" default:"500ms"`
 }
 
-// DefaultWebRTCConfig returns a default WebRTC VAD configuration
+// DefaultWebRTCConfig returns a default WebRTC VAD configuration.
 func DefaultWebRTCConfig() *WebRTCConfig {
 	return &WebRTCConfig{
 		Config:             vad.DefaultConfig(),

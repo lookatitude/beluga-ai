@@ -12,12 +12,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockChatMessageHistory is a mock implementation for testing
+// MockChatMessageHistory is a mock implementation for testing.
 type MockChatMessageHistory struct {
-	messages   []schema.Message
 	addError   error
 	getError   error
 	clearError error
+	messages   []schema.Message
 }
 
 func NewMockChatMessageHistory() *MockChatMessageHistory {
@@ -60,10 +60,10 @@ func (m *MockChatMessageHistory) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Ensure MockChatMessageHistory implements the interface
+// Ensure MockChatMessageHistory implements the interface.
 var _ iface.ChatMessageHistory = (*MockChatMessageHistory)(nil)
 
-// TestNewConversationBufferWindowMemory tests the constructor
+// TestNewConversationBufferWindowMemory tests the constructor.
 func TestNewConversationBufferWindowMemory(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	memory := NewConversationBufferWindowMemory(history, 5, "test_history", false)
@@ -77,7 +77,7 @@ func TestNewConversationBufferWindowMemory(t *testing.T) {
 	assert.Equal(t, "AI", memory.AiPrefix)
 }
 
-// TestNewConversationBufferWindowMemory_Defaults tests default values
+// TestNewConversationBufferWindowMemory_Defaults tests default values.
 func TestNewConversationBufferWindowMemory_Defaults(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	memory := NewConversationBufferWindowMemory(history, 0, "", true)
@@ -87,7 +87,7 @@ func TestNewConversationBufferWindowMemory_Defaults(t *testing.T) {
 	assert.True(t, memory.ReturnMessages)
 }
 
-// TestConversationBufferWindowMemory_MemoryVariables tests the MemoryVariables method
+// TestConversationBufferWindowMemory_MemoryVariables tests the MemoryVariables method.
 func TestConversationBufferWindowMemory_MemoryVariables(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	memory := NewConversationBufferWindowMemory(history, 5, "custom_history", false)
@@ -96,7 +96,7 @@ func TestConversationBufferWindowMemory_MemoryVariables(t *testing.T) {
 	assert.Equal(t, []string{"custom_history"}, variables)
 }
 
-// TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages tests loading with ReturnMessages=true
+// TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages tests loading with ReturnMessages=true.
 func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -112,7 +112,7 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages(t *te
 
 	// Load memory variables
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 
 	messages, ok := vars["history"].([]schema.Message)
@@ -126,7 +126,7 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnMessages(t *te
 	assert.Equal(t, "AI message 4", messages[2].GetContent())
 }
 
-// TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedString tests loading with ReturnMessages=false
+// TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedString tests loading with ReturnMessages=false.
 func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -144,7 +144,7 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedStrin
 
 	// Load memory variables
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 
 	formatted, ok := vars["history"].(string)
@@ -155,7 +155,7 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_ReturnFormattedStrin
 	assert.NotContains(t, formatted, "Hello")
 }
 
-// TestConversationBufferWindowMemory_LoadMemoryVariables_FewerThanWindow tests when there are fewer messages than window size
+// TestConversationBufferWindowMemory_LoadMemoryVariables_FewerThanWindow tests when there are fewer messages than window size.
 func TestConversationBufferWindowMemory_LoadMemoryVariables_FewerThanWindow(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -169,14 +169,14 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_FewerThanWindow(t *t
 
 	// Load memory variables
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	messages, ok := vars["history"].([]schema.Message)
 	assert.True(t, ok)
 	assert.Len(t, messages, 2) // Should return all messages since fewer than window size
 }
 
-// TestConversationBufferWindowMemory_LoadMemoryVariables_GetMessagesError tests error handling
+// TestConversationBufferWindowMemory_LoadMemoryVariables_GetMessagesError tests error handling.
 func TestConversationBufferWindowMemory_LoadMemoryVariables_GetMessagesError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -184,11 +184,11 @@ func TestConversationBufferWindowMemory_LoadMemoryVariables_GetMessagesError(t *
 	memory := NewConversationBufferWindowMemory(history, 3, "history", true)
 
 	_, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to get messages from chat history")
 }
 
-// TestConversationBufferWindowMemory_SaveContext tests saving context
+// TestConversationBufferWindowMemory_SaveContext tests saving context.
 func TestConversationBufferWindowMemory_SaveContext(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -198,7 +198,7 @@ func TestConversationBufferWindowMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify messages were added
 	messages, err := history.GetMessages(ctx)
@@ -208,7 +208,7 @@ func TestConversationBufferWindowMemory_SaveContext(t *testing.T) {
 	assert.Equal(t, "Hi there!", messages[1].GetContent())
 }
 
-// TestConversationBufferWindowMemory_SaveContext_CustomKeys tests custom keys
+// TestConversationBufferWindowMemory_SaveContext_CustomKeys tests custom keys.
 func TestConversationBufferWindowMemory_SaveContext_CustomKeys(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -220,14 +220,14 @@ func TestConversationBufferWindowMemory_SaveContext_CustomKeys(t *testing.T) {
 	outputs := map[string]any{"answer": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
 	assert.Len(t, messages, 2)
 }
 
-// TestConversationBufferWindowMemory_SaveContext_AutoDetectKeys tests automatic key detection
+// TestConversationBufferWindowMemory_SaveContext_AutoDetectKeys tests automatic key detection.
 func TestConversationBufferWindowMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -240,14 +240,14 @@ func TestConversationBufferWindowMemory_SaveContext_AutoDetectKeys(t *testing.T)
 	outputs := map[string]any{"response": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
 	assert.Len(t, messages, 2)
 }
 
-// TestConversationBufferWindowMemory_SaveContext_ErrorHandling tests various error conditions
+// TestConversationBufferWindowMemory_SaveContext_ErrorHandling tests various error conditions.
 func TestConversationBufferWindowMemory_SaveContext_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -304,13 +304,13 @@ func TestConversationBufferWindowMemory_SaveContext_ErrorHandling(t *testing.T) 
 			tc.setupMemory(memory)
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestConversationBufferWindowMemory_SaveContext_AddMessageErrors tests errors from chat history
+// TestConversationBufferWindowMemory_SaveContext_AddMessageErrors tests errors from chat history.
 func TestConversationBufferWindowMemory_SaveContext_AddMessageErrors(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -319,11 +319,11 @@ func TestConversationBufferWindowMemory_SaveContext_AddMessageErrors(t *testing.
 	// Test AddUserMessage error
 	history.addError = errors.New("add user message error")
 	err := memory.SaveContext(ctx, map[string]any{"input": "Hello"}, map[string]any{"output": "Hi!"})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to add user message")
 }
 
-// TestConversationBufferWindowMemory_Clear tests the Clear method
+// TestConversationBufferWindowMemory_Clear tests the Clear method.
 func TestConversationBufferWindowMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -335,15 +335,15 @@ func TestConversationBufferWindowMemory_Clear(t *testing.T) {
 
 	// Clear
 	err = memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify cleared
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
-	assert.Len(t, messages, 0)
+	assert.Empty(t, messages)
 }
 
-// TestConversationBufferWindowMemory_Clear_Error tests error handling in Clear
+// TestConversationBufferWindowMemory_Clear_Error tests error handling in Clear.
 func TestConversationBufferWindowMemory_Clear_Error(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -351,11 +351,11 @@ func TestConversationBufferWindowMemory_Clear_Error(t *testing.T) {
 	memory := NewConversationBufferWindowMemory(history, 5, "history", true)
 
 	err := memory.Clear(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, history.clearError, err)
 }
 
-// TestConversationWindowBufferMemory tests the ConversationWindowBufferMemory implementation
+// TestConversationWindowBufferMemory tests the ConversationWindowBufferMemory implementation.
 func TestConversationWindowBufferMemory(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -379,7 +379,7 @@ func TestConversationWindowBufferMemory(t *testing.T) {
 
 	// Load memory - should return last 6 messages (3 interactions * 2 messages each)
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 
 	messages, ok := vars["history"].([]schema.Message)
@@ -387,7 +387,7 @@ func TestConversationWindowBufferMemory(t *testing.T) {
 	assert.Len(t, messages, 6) // Should return all 6 messages since window size is 3 interactions
 }
 
-// TestConversationWindowBufferMemory_LoadMemoryVariables_ReturnFormattedString tests formatted string return
+// TestConversationWindowBufferMemory_LoadMemoryVariables_ReturnFormattedString tests formatted string return.
 func TestConversationWindowBufferMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -405,7 +405,7 @@ func TestConversationWindowBufferMemory_LoadMemoryVariables_ReturnFormattedStrin
 	require.NoError(t, err)
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	formatted, ok := vars["history"].(string)
 	assert.True(t, ok)
@@ -415,7 +415,7 @@ func TestConversationWindowBufferMemory_LoadMemoryVariables_ReturnFormattedStrin
 	assert.Contains(t, formatted, "Fine!")
 }
 
-// TestConversationWindowBufferMemory_DefaultK tests default window size
+// TestConversationWindowBufferMemory_DefaultK tests default window size.
 func TestConversationWindowBufferMemory_DefaultK(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	memory := NewConversationWindowBufferMemory(history, 0)
@@ -423,7 +423,7 @@ func TestConversationWindowBufferMemory_DefaultK(t *testing.T) {
 	assert.Equal(t, 5, memory.K) // Should default to 5
 }
 
-// TestGetBufferString tests the getBufferString function
+// TestGetBufferString tests the getBufferString function.
 func TestGetBufferString_Window(t *testing.T) {
 	messages := []schema.Message{
 		schema.NewHumanMessage("Hello"),
@@ -438,7 +438,7 @@ func TestGetBufferString_Window(t *testing.T) {
 	assert.Contains(t, result, "System: System message")
 }
 
-// TestGetInputOutputKeys tests the getInputOutputKeys function
+// TestGetInputOutputKeys tests the getInputOutputKeys function.
 func TestGetInputOutputKeys_Window(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -472,7 +472,7 @@ func TestGetInputOutputKeys_Window(t *testing.T) {
 	}
 }
 
-// TestInterfaceCompliance tests that both implementations comply with the Memory interface
+// TestInterfaceCompliance tests that both implementations comply with the Memory interface.
 func TestInterfaceCompliance(t *testing.T) {
 	history := NewMockChatMessageHistory()
 
@@ -485,7 +485,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	var _ iface.Memory = windowBufferMemory
 }
 
-// BenchmarkConversationBufferWindowMemory_SaveContext benchmarks SaveContext performance
+// BenchmarkConversationBufferWindowMemory_SaveContext benchmarks SaveContext performance.
 func BenchmarkConversationBufferWindowMemory_SaveContext(b *testing.B) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -496,11 +496,11 @@ func BenchmarkConversationBufferWindowMemory_SaveContext(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.SaveContext(ctx, inputs, outputs)
+		_ = memory.SaveContext(ctx, inputs, outputs)
 	}
 }
 
-// BenchmarkConversationBufferWindowMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
+// BenchmarkConversationBufferWindowMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance.
 func BenchmarkConversationBufferWindowMemory_LoadMemoryVariables(b *testing.B) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -508,17 +508,17 @@ func BenchmarkConversationBufferWindowMemory_LoadMemoryVariables(b *testing.B) {
 
 	// Pre-populate with messages
 	for i := 0; i < 100; i++ {
-		history.AddUserMessage(ctx, "Message "+string(rune(i)))
-		history.AddAIMessage(ctx, "Response "+string(rune(i)))
+		_ = history.AddUserMessage(ctx, "Message "+string(rune(i)))
+		_ = history.AddAIMessage(ctx, "Response "+string(rune(i)))
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.LoadMemoryVariables(ctx, map[string]any{})
+		_, _ = memory.LoadMemoryVariables(ctx, map[string]any{})
 	}
 }
 
-// BenchmarkGetBufferString benchmarks the getBufferString function
+// BenchmarkGetBufferString benchmarks the getBufferString function.
 func BenchmarkGetBufferString_Window(b *testing.B) {
 	messages := make([]schema.Message, 100)
 	for i := 0; i < 100; i++ {
@@ -535,7 +535,7 @@ func BenchmarkGetBufferString_Window(b *testing.B) {
 	}
 }
 
-// TestConversationBufferWindowMemory_WindowPruning tests that window pruning works correctly
+// TestConversationBufferWindowMemory_WindowPruning tests that window pruning works correctly.
 func TestConversationBufferWindowMemory_WindowPruning(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -554,7 +554,7 @@ func TestConversationBufferWindowMemory_WindowPruning(t *testing.T) {
 
 	// Load memory - should return only last 2 messages due to window size
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	messages, ok := vars["history"].([]schema.Message)
 	assert.True(t, ok)
@@ -563,7 +563,7 @@ func TestConversationBufferWindowMemory_WindowPruning(t *testing.T) {
 	assert.Equal(t, "AI 2", messages[1].GetContent())
 }
 
-// TestConversationWindowBufferMemory_WindowPruning tests window pruning for ConversationWindowBufferMemory
+// TestConversationWindowBufferMemory_WindowPruning tests window pruning for ConversationWindowBufferMemory.
 func TestConversationWindowBufferMemory_WindowPruning(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -582,7 +582,7 @@ func TestConversationWindowBufferMemory_WindowPruning(t *testing.T) {
 
 	// Load memory - should return last 4 messages (2 interactions * 2 messages each)
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	messages, ok := vars["history"].([]schema.Message)
 	assert.True(t, ok)
@@ -593,7 +593,7 @@ func TestConversationWindowBufferMemory_WindowPruning(t *testing.T) {
 	assert.Equal(t, "AI 3", messages[3].GetContent())
 }
 
-// TestWindowMemory_CustomPrefixes tests custom message prefixes
+// TestWindowMemory_CustomPrefixes tests custom message prefixes.
 func TestWindowMemory_CustomPrefixes(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -607,7 +607,7 @@ func TestWindowMemory_CustomPrefixes(t *testing.T) {
 	require.NoError(t, err)
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	formatted, ok := vars["history"].(string)
 	assert.True(t, ok)

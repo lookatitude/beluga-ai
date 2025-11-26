@@ -4,6 +4,7 @@ package schema
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -11,34 +12,29 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockMessage provides a comprehensive mock implementation for testing
+// AdvancedMockMessage provides a comprehensive mock implementation for testing.
 type AdvancedMockMessage struct {
+	lastHealthCheck time.Time
+	additionalArgs  map[string]any
 	mock.Mock
-
-	// Configuration
 	messageType iface.MessageType
 	content     string
+	healthState string
+	toolCalls   []iface.ToolCall
 	callCount   int
 	mu          sync.RWMutex
-
-	// Message metadata
-	toolCalls      []iface.ToolCall
-	additionalArgs map[string]interface{}
-
-	// Health check data
-	healthState     string
-	lastHealthCheck time.Time
 }
 
-// NewAdvancedMockMessage creates a new advanced mock message
+// NewAdvancedMockMessage creates a new advanced mock message.
 func NewAdvancedMockMessage(messageType iface.MessageType, content string, options ...MockMessageOption) *AdvancedMockMessage {
 	mock := &AdvancedMockMessage{
 		messageType:    messageType,
 		content:        content,
 		toolCalls:      []iface.ToolCall{},
-		additionalArgs: make(map[string]interface{}),
+		additionalArgs: make(map[string]any),
 		healthState:    "healthy",
 	}
 
@@ -50,10 +46,10 @@ func NewAdvancedMockMessage(messageType iface.MessageType, content string, optio
 	return mock
 }
 
-// MockMessageOption defines functional options for mock configuration
+// MockMessageOption defines functional options for mock configuration.
 type MockMessageOption func(*AdvancedMockMessage)
 
-// WithMockToolCalls sets tool calls for the mock message
+// WithMockToolCalls sets tool calls for the mock message.
 func WithMockToolCalls(toolCalls []iface.ToolCall) MockMessageOption {
 	return func(m *AdvancedMockMessage) {
 		m.toolCalls = make([]iface.ToolCall, len(toolCalls))
@@ -61,17 +57,17 @@ func WithMockToolCalls(toolCalls []iface.ToolCall) MockMessageOption {
 	}
 }
 
-// WithMockAdditionalArgs sets additional arguments for the mock message
-func WithMockAdditionalArgs(args map[string]interface{}) MockMessageOption {
+// WithMockAdditionalArgs sets additional arguments for the mock message.
+func WithMockAdditionalArgs(args map[string]any) MockMessageOption {
 	return func(m *AdvancedMockMessage) {
-		m.additionalArgs = make(map[string]interface{})
+		m.additionalArgs = make(map[string]any)
 		for k, v := range args {
 			m.additionalArgs[k] = v
 		}
 	}
 }
 
-// Mock implementation methods for Message interface
+// Mock implementation methods for Message interface.
 func (m *AdvancedMockMessage) GetType() iface.MessageType {
 	m.mu.Lock()
 	m.callCount++
@@ -94,17 +90,17 @@ func (m *AdvancedMockMessage) ToolCalls() []iface.ToolCall {
 	return result
 }
 
-func (m *AdvancedMockMessage) AdditionalArgs() map[string]interface{} {
+func (m *AdvancedMockMessage) AdditionalArgs() map[string]any {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range m.additionalArgs {
 		result[k] = v
 	}
 	return result
 }
 
-// Additional helper methods for testing
+// Additional helper methods for testing.
 func (m *AdvancedMockMessage) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -123,9 +119,9 @@ func (m *AdvancedMockMessage) AddToolCall(toolCall iface.ToolCall) {
 	m.toolCalls = append(m.toolCalls, toolCall)
 }
 
-func (m *AdvancedMockMessage) CheckHealth() map[string]interface{} {
+func (m *AdvancedMockMessage) CheckHealth() map[string]any {
 	m.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":          m.healthState,
 		"type":            string(m.messageType),
 		"content_length":  len(m.content),
@@ -136,7 +132,7 @@ func (m *AdvancedMockMessage) CheckHealth() map[string]interface{} {
 	}
 }
 
-// AdvancedMockDocument provides a comprehensive mock implementation for testing
+// AdvancedMockDocument provides a comprehensive mock implementation for testing.
 type AdvancedMockDocument struct {
 	pageContent string
 	metadata    map[string]string
@@ -168,10 +164,10 @@ func NewAdvancedMockDocument(content string, metadata map[string]string, options
 	return mock
 }
 
-// MockDocumentOption defines functional options for mock document configuration
+// MockDocumentOption defines functional options for mock document configuration.
 type MockDocumentOption func(*AdvancedMockDocument)
 
-// WithMockEmbedding sets the embedding for the mock document
+// WithMockEmbedding sets the embedding for the mock document.
 func WithMockEmbedding(embedding []float32) MockDocumentOption {
 	return func(d *AdvancedMockDocument) {
 		d.embedding = make([]float32, len(embedding))
@@ -179,21 +175,21 @@ func WithMockEmbedding(embedding []float32) MockDocumentOption {
 	}
 }
 
-// WithMockScore sets the score for the mock document
+// WithMockScore sets the score for the mock document.
 func WithMockScore(score float32) MockDocumentOption {
 	return func(d *AdvancedMockDocument) {
 		d.score = score
 	}
 }
 
-// WithMockID sets the ID for the mock document
+// WithMockID sets the ID for the mock document.
 func WithMockID(id string) MockDocumentOption {
 	return func(d *AdvancedMockDocument) {
 		d.id = id
 	}
 }
 
-// Document interface implementation
+// Document interface implementation.
 func (d *AdvancedMockDocument) GetContent() string {
 	d.mu.Lock()
 	d.callCount++
@@ -209,11 +205,11 @@ func (d *AdvancedMockDocument) ToolCalls() []iface.ToolCall {
 	return []iface.ToolCall{} // Documents don't have tool calls
 }
 
-func (d *AdvancedMockDocument) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{}) // Documents don't have additional args
+func (d *AdvancedMockDocument) AdditionalArgs() map[string]any {
+	return make(map[string]any) // Documents don't have additional args
 }
 
-// Additional document-specific methods
+// Additional document-specific methods.
 func (d *AdvancedMockDocument) GetMetadata() map[string]string {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
@@ -248,7 +244,7 @@ func (d *AdvancedMockDocument) GetCallCount() int {
 
 // Test data creation helpers
 
-// CreateTestMessages creates a variety of test messages
+// CreateTestMessages creates a variety of test messages.
 func CreateTestMessages(count int) []Message {
 	messages := make([]Message, count)
 	messageTypes := []iface.MessageType{iface.RoleHuman, iface.RoleAssistant, iface.RoleSystem}
@@ -270,7 +266,7 @@ func CreateTestMessages(count int) []Message {
 	return messages
 }
 
-// CreateTestDocuments creates a set of test documents
+// CreateTestDocuments creates a set of test documents.
 func CreateTestDocuments(count int, topic string) []Document {
 	documents := make([]Document, count)
 
@@ -280,7 +276,7 @@ func CreateTestDocuments(count int, topic string) []Document {
 		metadata := map[string]string{
 			"doc_id":   fmt.Sprintf("test_doc_%d", i+1),
 			"topic":    topic,
-			"index":    fmt.Sprintf("%d", i+1),
+			"index":    strconv.Itoa(i + 1),
 			"category": fmt.Sprintf("category_%d", (i%3)+1),
 		}
 
@@ -290,7 +286,7 @@ func CreateTestDocuments(count int, topic string) []Document {
 	return documents
 }
 
-// CreateTestToolCall creates a test tool call
+// CreateTestToolCall creates a test tool call.
 func CreateTestToolCall(name, input string) iface.ToolCall {
 	return iface.ToolCall{
 		ID:        fmt.Sprintf("call_%s_%d", name, time.Now().UnixNano()),
@@ -304,7 +300,7 @@ func CreateTestToolCall(name, input string) iface.ToolCall {
 	}
 }
 
-// CreateTestAgentAction creates a test agent action
+// CreateTestAgentAction creates a test agent action.
 func CreateTestAgentAction(tool, input, log string) AgentAction {
 	return AgentAction{
 		Tool:      tool,
@@ -313,7 +309,7 @@ func CreateTestAgentAction(tool, input, log string) AgentAction {
 	}
 }
 
-// CreateTestAgentFinish creates a test agent finish
+// CreateTestAgentFinish creates a test agent finish.
 func CreateTestAgentFinish(returnValues map[string]any, log string) AgentFinish {
 	return AgentFinish{
 		ReturnValues: returnValues,
@@ -323,22 +319,24 @@ func CreateTestAgentFinish(returnValues map[string]any, log string) AgentFinish 
 
 // Assertion helpers
 
-// AssertMessage validates message properties
+// AssertMessage validates message properties.
 func AssertMessage(t *testing.T, message Message, expectedType iface.MessageType, expectedMinLength int) {
+	t.Helper()
 	assert.Equal(t, expectedType, message.GetType(), "Message type should match")
 	assert.GreaterOrEqual(t, len(message.GetContent()), expectedMinLength, "Message content should have minimum length")
 	assert.NotNil(t, message.ToolCalls(), "Tool calls should not be nil (can be empty)")
 	assert.NotNil(t, message.AdditionalArgs(), "Additional args should not be nil (can be empty)")
 }
 
-// AssertDocument validates document properties
+// AssertDocument validates document properties.
 func AssertDocument(t *testing.T, document Document, expectedMinContentLength int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(document.GetContent()), expectedMinContentLength, "Document should have substantial content")
 	assert.NotNil(t, document.Metadata, "Document should have metadata")
 	assert.Equal(t, iface.RoleSystem, document.GetType(), "Document should be system type message")
 }
 
-// AssertToolCall validates tool call properties
+// AssertToolCall validates tool call properties.
 func AssertToolCall(t *testing.T, toolCall iface.ToolCall, expectedName string) {
 	assert.Equal(t, expectedName, toolCall.Name, "Tool call name should match")
 	assert.NotEmpty(t, toolCall.ID, "Tool call should have ID")
@@ -346,22 +344,25 @@ func AssertToolCall(t *testing.T, toolCall iface.ToolCall, expectedName string) 
 	assert.Equal(t, "function", toolCall.Type, "Tool call should be function type")
 }
 
-// AssertAgentAction validates agent action properties
+// AssertAgentAction validates agent action properties.
 func AssertAgentAction(t *testing.T, action AgentAction, expectedTool string) {
+	t.Helper()
 	assert.Equal(t, expectedTool, action.Tool, "Agent action tool should match")
 	assert.NotNil(t, action.ToolInput, "Agent action should have tool input")
 	assert.NotEmpty(t, action.Log, "Agent action should have log")
 }
 
-// AssertAgentFinish validates agent finish properties
+// AssertAgentFinish validates agent finish properties.
 func AssertAgentFinish(t *testing.T, finish AgentFinish, expectedMinReturnValues int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(finish.ReturnValues), expectedMinReturnValues,
 		"Agent finish should have minimum return values")
 	assert.NotEmpty(t, finish.Log, "Agent finish should have log")
 }
 
-// AssertMessageHistory validates message history
+// AssertMessageHistory validates message history.
 func AssertMessageHistory(t *testing.T, messages []Message, expectedMinCount int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(messages), expectedMinCount, "History should have minimum message count")
 
 	for i, msg := range messages {
@@ -370,9 +371,10 @@ func AssertMessageHistory(t *testing.T, messages []Message, expectedMinCount int
 	}
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var schemaErr *iface.SchemaError
 	if assert.ErrorAs(t, err, &schemaErr) {
 		assert.Equal(t, expectedCode, schemaErr.Code)
@@ -381,11 +383,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs schema tests concurrently for performance testing
+// ConcurrentTestRunner runs schema tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -440,8 +442,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on schema components
-func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on schema components.
+func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -456,13 +459,14 @@ func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations int, 
 			defer func() { <-semaphore }()
 
 			// Test various message operations
-			if opID%4 == 0 {
+			switch opID % 4 {
+			case 0:
 				_ = message.GetType()
-			} else if opID%4 == 1 {
+			case 1:
 				_ = message.GetContent()
-			} else if opID%4 == 2 {
+			case 2:
 				_ = message.ToolCalls()
-			} else {
+			default:
 				_ = message.AdditionalArgs()
 			}
 		}(i)
@@ -473,7 +477,7 @@ func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations int, 
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count (GetType and GetContent increment counter)
@@ -483,7 +487,7 @@ func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations int, 
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	messages  map[string]*AdvancedMockMessage
 	documents map[string]*AdvancedMockDocument
@@ -521,7 +525,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// SchemaScenarioRunner runs common schema scenarios
+// SchemaScenarioRunner runs common schema scenarios.
 type SchemaScenarioRunner struct {
 	messages  []Message
 	documents []Document
@@ -614,7 +618,7 @@ func (r *SchemaScenarioRunner) RunConversationScenario() error {
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for schema
+// BenchmarkHelper provides benchmarking utilities for schema.
 type BenchmarkHelper struct {
 	messages  []Message
 	documents []Document
@@ -661,7 +665,7 @@ func (b *BenchmarkHelper) BenchmarkSchemaCreation(iterations int) (time.Duration
 	for i := 0; i < iterations; i++ {
 		// Benchmark creating new schema objects
 		_ = NewHumanMessage(fmt.Sprintf("Benchmark message %d", i))
-		_ = NewDocument(fmt.Sprintf("Benchmark document %d", i), map[string]string{"id": fmt.Sprintf("%d", i)})
+		_ = NewDocument(fmt.Sprintf("Benchmark document %d", i), map[string]string{"id": strconv.Itoa(i)})
 	}
 
 	return time.Since(start), nil
@@ -669,7 +673,7 @@ func (b *BenchmarkHelper) BenchmarkSchemaCreation(iterations int) (time.Duration
 
 // Schema validation helpers
 
-// ValidateMessageType checks if a message type is valid
+// ValidateMessageType checks if a message type is valid.
 func ValidateMessageType(msgType iface.MessageType) bool {
 	validTypes := []iface.MessageType{
 		iface.RoleHuman,
@@ -688,7 +692,7 @@ func ValidateMessageType(msgType iface.MessageType) bool {
 	return false
 }
 
-// ValidateConversationFlow checks if message sequence follows proper conversation patterns
+// ValidateConversationFlow checks if message sequence follows proper conversation patterns.
 func ValidateConversationFlow(messages []Message) error {
 	if len(messages) == 0 {
 		return nil // Empty conversation is valid
@@ -712,7 +716,7 @@ func ValidateConversationFlow(messages []Message) error {
 	return nil
 }
 
-// ValidateDocumentCollection validates a collection of documents
+// ValidateDocumentCollection validates a collection of documents.
 func ValidateDocumentCollection(documents []Document) error {
 	for i, doc := range documents {
 		if doc.GetContent() == "" {
