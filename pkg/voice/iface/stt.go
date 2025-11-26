@@ -39,9 +39,9 @@ type StreamingSession interface {
 
 // TranscriptResult represents a transcription result from a streaming session.
 type TranscriptResult struct {
+	Error      error
 	Text       string
-	IsFinal    bool
 	Language   string
 	Confidence float64
-	Error      error
+	IsFinal    bool
 }

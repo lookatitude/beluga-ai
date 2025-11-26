@@ -4,6 +4,7 @@ package providers
 
 import (
 	"context"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -13,6 +14,7 @@ import (
 type BaseChatMessageHistory struct {
 	messages []schema.Message
 	maxSize  int // Maximum number of messages to keep (-1 for unlimited)
+	mu       sync.RWMutex
 }
 
 // BaseHistoryOption is a functional option for configuring BaseChatMessageHistory.
@@ -44,6 +46,8 @@ func (h *BaseChatMessageHistory) AddMessage(ctx context.Context, message schema.
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.messages = append(h.messages, message)
 
 	// Apply size limit if configured
@@ -70,6 +74,8 @@ func (h *BaseChatMessageHistory) GetMessages(ctx context.Context) ([]schema.Mess
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
 	}
+	h.mu.RLock()
+	defer h.mu.RUnlock()
 	// Return a copy to prevent modification
 	messagesCopy := make([]schema.Message, len(h.messages))
 	copy(messagesCopy, h.messages)
@@ -81,6 +87,8 @@ func (h *BaseChatMessageHistory) Clear(ctx context.Context) error {
 	if ctx.Err() != nil {
 		return ctx.Err()
 	}
+	h.mu.Lock()
+	defer h.mu.Unlock()
 	h.messages = h.messages[:0] // Efficient way to clear a slice
 	return nil
 }
@@ -92,10 +100,10 @@ var _ iface.ChatMessageHistory = (*BaseChatMessageHistory)(nil)
 // It allows chaining multiple histories and adding middleware-like functionality.
 type CompositeChatMessageHistory struct {
 	primary   iface.ChatMessageHistory
-	secondary iface.ChatMessageHistory                                          // Optional secondary history for fallback or additional storage
-	maxSize   int                                                               // Maximum number of messages to keep
-	onAddHook func(context.Context, schema.Message) error                       // Hook called before adding a message
-	onGetHook func(context.Context, []schema.Message) ([]schema.Message, error) // Hook called after getting messages
+	secondary iface.ChatMessageHistory
+	onAddHook func(context.Context, schema.Message) error
+	onGetHook func(context.Context, []schema.Message) ([]schema.Message, error)
+	maxSize   int
 }
 
 // CompositeHistoryOption is a functional option for configuring CompositeChatMessageHistory.
@@ -238,7 +246,9 @@ func (h *CompositeChatMessageHistory) applySizeLimit(ctx context.Context) error 
 	// implemented differently based on the underlying storage
 	if baseHistory, ok := h.primary.(*BaseChatMessageHistory); ok {
 		// Keep only the most recent messages
+		baseHistory.mu.Lock()
 		baseHistory.messages = messages[len(messages)-h.maxSize:]
+		baseHistory.mu.Unlock()
 	}
 
 	return nil

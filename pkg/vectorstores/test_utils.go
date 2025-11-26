@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"sort"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -16,40 +17,31 @@ import (
 	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockVectorStore provides a comprehensive mock implementation for testing
+// AdvancedMockVectorStore provides a comprehensive mock implementation for testing.
 type AdvancedMockVectorStore struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	simulateDelay    time.Duration
-	simulateCapacity int
-
-	// Storage
-	documents   []schema.Document
-	embeddings  [][]float32
-	documentIDs []string
-	nextID      int
-
-	// Search behavior
-	defaultK        int
-	scoreThreshold  float32
-	metadataFilters map[string]interface{}
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	metadataFilters map[string]any
+	mock.Mock
+	name             string
+	healthState      string
+	embeddings       [][]float32
+	documentIDs      []string
+	documents        []schema.Document
+	defaultK         int
+	simulateCapacity int
+	nextID           int
+	simulateDelay    time.Duration
+	callCount        int
+	mu               sync.RWMutex
+	scoreThreshold   float32
+	shouldError      bool
 }
 
-// NewAdvancedMockVectorStore creates a new advanced mock with configurable behavior
+// NewAdvancedMockVectorStore creates a new advanced mock with configurable behavior.
 func NewAdvancedMockVectorStore(name string, options ...MockVectorStoreOption) *AdvancedMockVectorStore {
 	mock := &AdvancedMockVectorStore{
 		name:             name,
@@ -59,7 +51,7 @@ func NewAdvancedMockVectorStore(name string, options ...MockVectorStoreOption) *
 		nextID:           1,
 		defaultK:         5,
 		scoreThreshold:   0.0,
-		metadataFilters:  make(map[string]interface{}),
+		metadataFilters:  make(map[string]any),
 		simulateCapacity: 10000, // Default capacity
 		healthState:      "healthy",
 	}
@@ -72,10 +64,10 @@ func NewAdvancedMockVectorStore(name string, options ...MockVectorStoreOption) *
 	return mock
 }
 
-// MockVectorStoreOption defines functional options for mock configuration
+// MockVectorStoreOption defines functional options for mock configuration.
 type MockVectorStoreOption func(*AdvancedMockVectorStore)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockVectorStoreOption {
 	return func(v *AdvancedMockVectorStore) {
 		v.shouldError = shouldError
@@ -83,21 +75,21 @@ func WithMockError(shouldError bool, err error) MockVectorStoreOption {
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockVectorStoreOption {
 	return func(v *AdvancedMockVectorStore) {
 		v.simulateDelay = delay
 	}
 }
 
-// WithMockCapacity sets the storage capacity limit
+// WithMockCapacity sets the storage capacity limit.
 func WithMockCapacity(capacity int) MockVectorStoreOption {
 	return func(v *AdvancedMockVectorStore) {
 		v.simulateCapacity = capacity
 	}
 }
 
-// WithPreloadedDocuments preloads documents into the mock
+// WithPreloadedDocuments preloads documents into the mock.
 func WithPreloadedDocuments(documents []schema.Document, embeddings [][]float32) MockVectorStoreOption {
 	return func(v *AdvancedMockVectorStore) {
 		v.documents = make([]schema.Document, len(documents))
@@ -117,14 +109,14 @@ func WithPreloadedDocuments(documents []schema.Document, embeddings [][]float32)
 	}
 }
 
-// WithDefaultK sets the default number of results to return
+// WithDefaultK sets the default number of results to return.
 func WithDefaultK(k int) MockVectorStoreOption {
 	return func(v *AdvancedMockVectorStore) {
 		v.defaultK = k
 	}
 }
 
-// Mock implementation methods
+// Mock implementation methods.
 func (v *AdvancedMockVectorStore) AddDocuments(ctx context.Context, documents []schema.Document, opts ...vectorstoresiface.Option) ([]string, error) {
 	v.mu.Lock()
 	defer v.mu.Unlock()
@@ -337,9 +329,9 @@ func (v *AdvancedMockVectorStore) GetDocuments() []schema.Document {
 	return docs
 }
 
-func (v *AdvancedMockVectorStore) CheckHealth() map[string]interface{} {
+func (v *AdvancedMockVectorStore) CheckHealth() map[string]any {
 	v.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":         v.healthState,
 		"name":           v.name,
 		"document_count": len(v.documents),
@@ -349,7 +341,7 @@ func (v *AdvancedMockVectorStore) CheckHealth() map[string]interface{} {
 	}
 }
 
-// AdvancedMockRetriever implements the Retriever interface for testing
+// AdvancedMockRetriever implements the Retriever interface for testing.
 type AdvancedMockRetriever struct {
 	vectorStore vectorstoresiface.VectorStore
 	k           int
@@ -361,7 +353,7 @@ func (r *AdvancedMockRetriever) GetRelevantDocuments(ctx context.Context, query 
 	return []schema.Document{}, nil
 }
 
-// AdvancedMockEmbedder for vector store testing
+// AdvancedMockEmbedder for vector store testing.
 type AdvancedMockEmbedder struct {
 	dimension int
 	mu        sync.RWMutex
@@ -385,7 +377,7 @@ func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]f
 
 // Test data creation helpers
 
-// CreateTestDocuments creates a set of test documents
+// CreateTestDocuments creates a set of test documents.
 func CreateTestDocuments(count int) []schema.Document {
 	documents := make([]schema.Document, count)
 	for i := 0; i < count; i++ {
@@ -393,14 +385,14 @@ func CreateTestDocuments(count int) []schema.Document {
 		metadata := map[string]string{
 			"id":       fmt.Sprintf("test_doc_%d", i+1),
 			"category": fmt.Sprintf("category_%d", (i%3)+1),
-			"priority": fmt.Sprintf("%d", (i%5)+1),
+			"priority": strconv.Itoa((i % 5) + 1),
 		}
 		documents[i] = schema.NewDocument(content, metadata)
 	}
 	return documents
 }
 
-// CreateTestEmbeddings creates test embeddings for documents
+// CreateTestEmbeddings creates test embeddings for documents.
 func CreateTestEmbeddings(count, dimension int) [][]float32 {
 	embeddings := make([][]float32, count)
 	for i := 0; i < count; i++ {
@@ -409,15 +401,15 @@ func CreateTestEmbeddings(count, dimension int) [][]float32 {
 	return embeddings
 }
 
-// CreateTestVectorStoreConfig creates a test vector store configuration
+// CreateTestVectorStoreConfig creates a test vector store configuration.
 func CreateTestVectorStoreConfig() vectorstoresiface.Config {
 	return vectorstoresiface.Config{
 		SearchK:        5,
 		ScoreThreshold: 0.0,
-		MetadataFilters: map[string]interface{}{
+		MetadataFilters: map[string]any{
 			"category": "test",
 		},
-		ProviderConfig: map[string]interface{}{
+		ProviderConfig: map[string]any{
 			"dimension": 128,
 		},
 	}
@@ -455,10 +447,10 @@ func cosineSimilarity(a, b []float32) float32 {
 
 // Assertion helpers
 
-// AssertVectorStoreResults validates vector store search results
+// AssertVectorStoreResults validates vector store search results.
 func AssertVectorStoreResults(t *testing.T, documents []schema.Document, scores []float32, expectedMinCount int, expectedMaxScore float32) {
 	assert.GreaterOrEqual(t, len(documents), expectedMinCount, "Should return at least %d documents", expectedMinCount)
-	assert.Equal(t, len(documents), len(scores), "Documents and scores should have same length")
+	assert.Len(t, scores, len(documents), "Documents and scores should have same length")
 
 	// Verify scores are in descending order
 	for i := 1; i < len(scores); i++ {
@@ -478,8 +470,9 @@ func AssertVectorStoreResults(t *testing.T, documents []schema.Document, scores 
 	}
 }
 
-// AssertDocumentStorage validates document storage operations
+// AssertDocumentStorage validates document storage operations.
 func AssertDocumentStorage(t *testing.T, ids []string, expectedCount int) {
+	t.Helper()
 	assert.Len(t, ids, expectedCount, "Should return %d document IDs", expectedCount)
 
 	// Verify all IDs are unique and non-empty
@@ -491,8 +484,9 @@ func AssertDocumentStorage(t *testing.T, ids []string, expectedCount int) {
 	}
 }
 
-// AssertHealthCheck validates health check results
-func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertHealthCheck validates health check results.
+func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -500,9 +494,10 @@ func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStat
 	assert.Contains(t, health, "call_count")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var vsErr *vectorstoresiface.VectorStoreError
 	if assert.ErrorAs(t, err, &vsErr) {
 		assert.Equal(t, expectedCode, vsErr.Code)
@@ -511,11 +506,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs vector store tests concurrently for performance testing
+// ConcurrentTestRunner runs vector store tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -570,8 +565,8 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on vector store
-func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on vector store.
+func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperations, concurrency int) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -588,20 +583,21 @@ func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperatio
 
 			ctx := context.Background()
 
-			if opID%3 == 0 {
+			switch opID % 3 {
+			case 0:
 				// Test AddDocuments
 				_, err := vectorStore.AddDocuments(ctx, []schema.Document{testDocs[opID%len(testDocs)]})
 				if err != nil {
 					errChan <- err
 				}
-			} else if opID%3 == 1 {
+			case 1:
 				// Test SimilaritySearch
 				queryVector := generateRandomEmbedding(128)
 				_, _, err := vectorStore.SimilaritySearch(ctx, queryVector, 3)
 				if err != nil {
 					errChan <- err
 				}
-			} else {
+			default:
 				// Test SimilaritySearchByQuery (requires embedder)
 				embedder := NewAdvancedMockEmbedder(128)
 				_, _, err := vectorStore.SimilaritySearchByQuery(ctx, "test query", 3, embedder)
@@ -617,7 +613,7 @@ func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperatio
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -629,7 +625,7 @@ func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperatio
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	vectorStores map[string]*AdvancedMockVectorStore
 	embedders    map[string]*AdvancedMockEmbedder
@@ -668,7 +664,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// VectorStoreScenarioRunner runs common vector store scenarios
+// VectorStoreScenarioRunner runs common vector store scenarios.
 type VectorStoreScenarioRunner struct {
 	vectorStore vectorstoresiface.VectorStore
 	embedder    vectorstoresiface.Embedder
@@ -720,7 +716,7 @@ func (r *VectorStoreScenarioRunner) RunDocumentDeletionScenario(ctx context.Cont
 	return r.vectorStore.DeleteDocuments(ctx, idsToDelete)
 }
 
-// BenchmarkHelper provides benchmarking utilities for vector stores
+// BenchmarkHelper provides benchmarking utilities for vector stores.
 type BenchmarkHelper struct {
 	vectorStore vectorstoresiface.VectorStore
 	embedder    vectorstoresiface.Embedder

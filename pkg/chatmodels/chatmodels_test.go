@@ -13,7 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Test helper functions and utilities
+// Test helper functions and utilities.
 func createValidConfig(provider string) *Config {
 	return &Config{
 		DefaultProvider:       provider,
@@ -27,7 +27,7 @@ func createValidConfig(provider string) *Config {
 		StreamTimeout:         5 * time.Minute,
 		EnableMetrics:         true,
 		EnableTracing:         true,
-		Providers:             make(map[string]interface{}),
+		Providers:             make(map[string]any),
 	}
 }
 
@@ -43,7 +43,7 @@ func createTestMessages(count int) []schema.Message {
 	return messages
 }
 
-func assertErrorType(t *testing.T, err error, expectedCode string, operation string) {
+func assertErrorType(t *testing.T, err error, expectedCode, operation string) {
 	t.Helper()
 	if err == nil {
 		t.Fatalf("expected error but got none")
@@ -75,13 +75,13 @@ func assertModelCreated(t *testing.T, model iface.ChatModel, err error) {
 
 func TestNewChatModel(t *testing.T) {
 	tests := []struct {
+		config        *Config
+		validateModel func(t *testing.T, model iface.ChatModel)
 		name          string
 		model         string
-		config        *Config
+		errorCode     string
 		opts          []iface.Option
 		expectError   bool
-		errorCode     string
-		validateModel func(t *testing.T, model iface.ChatModel)
 	}{
 		{
 			name:        "valid openai model",
@@ -252,7 +252,7 @@ func TestNewChatModel(t *testing.T) {
 				// Basic interface compliance check
 				if model != nil {
 					// Test that all required interfaces are implemented
-					var _ iface.ChatModel = model
+					_ = model
 					var _ iface.MessageGenerator = model
 					var _ iface.StreamMessageHandler = model
 					var _ iface.ModelInfoProvider = model
@@ -268,9 +268,9 @@ func TestNewOpenAIChatModel(t *testing.T) {
 		name      string
 		model     string
 		apiKey    string
+		errorCode string
 		opts      []iface.Option
 		wantError bool
-		errorCode string
 	}{
 		{
 			name:      "valid openai model",
@@ -380,11 +380,11 @@ func TestNewMockChatModel(t *testing.T) {
 
 func TestChatModel_GenerateMessages(t *testing.T) {
 	tests := []struct {
+		validateResponse func(t *testing.T, response []schema.Message)
 		name             string
 		messages         []schema.Message
 		opts             []iface.Option
 		expectError      bool
-		validateResponse func(t *testing.T, response []schema.Message)
 	}{
 		{
 			name: "single message",
@@ -498,12 +498,12 @@ func TestChatModel_GenerateMessages(t *testing.T) {
 
 func TestChatModel_StreamMessages(t *testing.T) {
 	tests := []struct {
+		validateStream func(t *testing.T, messages []schema.Message)
 		name           string
 		messages       []schema.Message
 		opts           []iface.Option
 		timeout        time.Duration
 		expectError    bool
-		validateStream func(t *testing.T, messages []schema.Message)
 	}{
 		{
 			name: "basic streaming",
@@ -520,7 +520,7 @@ func TestChatModel_StreamMessages(t *testing.T) {
 				// Check that we have some content
 				var fullContent strings.Builder
 				for _, msg := range messages {
-					fullContent.WriteString(msg.GetContent())
+					_, _ = fullContent.WriteString(msg.GetContent())
 				}
 				if fullContent.Len() == 0 {
 					t.Error("Expected non-empty streamed content")
@@ -610,9 +610,9 @@ func TestChatModel_StreamMessages(t *testing.T) {
 
 func TestChatModel_GetModelInfo(t *testing.T) {
 	tests := []struct {
+		validateInfo func(t *testing.T, info iface.ModelInfo)
 		name         string
 		modelName    string
-		validateInfo func(t *testing.T, info iface.ModelInfo)
 	}{
 		{
 			name:      "mock model info",
@@ -666,14 +666,14 @@ func TestChatModel_GetModelInfo(t *testing.T) {
 
 func TestChatModel_CheckHealth(t *testing.T) {
 	tests := []struct {
+		validateHealth func(t *testing.T, health map[string]any)
 		name           string
 		modelName      string
-		validateHealth func(t *testing.T, health map[string]interface{})
 	}{
 		{
 			name:      "mock model health",
 			modelName: "test-model",
-			validateHealth: func(t *testing.T, health map[string]interface{}) {
+			validateHealth: func(t *testing.T, health map[string]any) {
 				if health == nil {
 					t.Fatal("Expected health map to be non-nil")
 				}
@@ -703,7 +703,7 @@ func TestChatModel_CheckHealth(t *testing.T) {
 		{
 			name:      "different model health",
 			modelName: "another-model",
-			validateHealth: func(t *testing.T, health map[string]interface{}) {
+			validateHealth: func(t *testing.T, health map[string]any) {
 				if health == nil {
 					t.Fatal("Expected health map to be non-nil")
 				}
@@ -737,8 +737,8 @@ func TestChatModel_CheckHealth(t *testing.T) {
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name      string
 		config    *Config
+		name      string
 		wantError bool
 	}{
 		{
@@ -897,7 +897,6 @@ func TestFunctionalOptions(t *testing.T) {
 		WithMetrics(true),
 		WithTracing(true),
 	)
-
 	if err != nil {
 		t.Fatalf("Failed to create model with options: %v", err)
 	}
@@ -919,7 +918,7 @@ func TestErrorHandling(t *testing.T) {
 		MaxConcurrentRequests: 100,
 		StreamBufferSize:      100,
 		StreamTimeout:         time.Minute,
-		Providers:             make(map[string]interface{}),
+		Providers:             make(map[string]any),
 	})
 
 	if err == nil {
@@ -950,8 +949,8 @@ func TestErrorHandling(t *testing.T) {
 
 func TestIsRetryable(t *testing.T) {
 	tests := []struct {
-		name     string
 		err      error
+		name     string
 		expected bool
 	}{
 		{
@@ -1174,8 +1173,8 @@ func TestConcurrentUsage(t *testing.T) {
 
 func TestContextCancellation(t *testing.T) {
 	tests := []struct {
-		name       string
 		cancelFunc func(ctx context.Context, cancel context.CancelFunc)
+		name       string
 	}{
 		{
 			name: "immediate cancellation",
@@ -1217,14 +1216,14 @@ func TestContextCancellation(t *testing.T) {
 				}
 			}
 
-			// Test StreamMessages with fresh cancelled context
+			// Test StreamMessages with fresh canceled context
 			ctx2, cancel2 := context.WithCancel(context.Background())
 			cancel2() // Cancel immediately
 
 			stream, err := model.StreamMessages(ctx2, messages)
 			if err != nil {
-				// Streaming might fail with cancelled context, which is expected
-				t.Logf("StreamMessages with cancelled context failed as expected: %v", err)
+				// Streaming might fail with canceled context, which is expected
+				t.Logf("StreamMessages with canceled context failed as expected: %v", err)
 			} else {
 				// If it didn't fail, consume the stream
 				for range stream {
@@ -1237,10 +1236,10 @@ func TestContextCancellation(t *testing.T) {
 
 func TestErrorScenarios(t *testing.T) {
 	tests := []struct {
-		name          string
 		setupModel    func() (iface.ChatModel, error)
-		expectError   bool
+		name          string
 		errorContains string
+		expectError   bool
 	}{
 		{
 			name: "normal operation",
@@ -1263,7 +1262,7 @@ func TestErrorScenarios(t *testing.T) {
 					StreamTimeout:         time.Minute,
 					EnableMetrics:         true,
 					EnableTracing:         true,
-					Providers:             make(map[string]interface{}),
+					Providers:             make(map[string]any),
 				})
 			},
 			expectError:   true,
@@ -1370,7 +1369,7 @@ func TestOptionValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			messages := []schema.Message{schema.NewHumanMessage("test")}
-		ctx := context.Background()
+			ctx := context.Background()
 
 			// Convert options
 			coreOpts := make([]core.Option, len(tt.opts))
@@ -1493,7 +1492,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	}
 
 	// Compile-time checks (these will fail at compile time if interfaces aren't satisfied)
-	var _ iface.ChatModel = model
+	_ = model
 	var _ iface.MessageGenerator = model
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -1545,7 +1544,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	}
 }
 
-// Benchmarks for performance testing
+// Benchmarks for performance testing.
 func BenchmarkGenerateMessages(b *testing.B) {
 	model, err := NewMockChatModel("benchmark-model")
 	if err != nil {

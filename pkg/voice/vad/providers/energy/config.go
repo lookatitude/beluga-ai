@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
-// EnergyConfig extends the base VAD config with Energy-based VAD specific settings
+// EnergyConfig extends the base VAD config with Energy-based VAD specific settings.
 type EnergyConfig struct {
 	*vad.Config
 
@@ -29,7 +29,7 @@ type EnergyConfig struct {
 	NoiseFloor float64 `mapstructure:"noise_floor" yaml:"noise_floor" default:"0.001" validate:"gte=0.0,lte=1.0"`
 }
 
-// DefaultEnergyConfig returns a default Energy-based VAD configuration
+// DefaultEnergyConfig returns a default Energy-based VAD configuration.
 func DefaultEnergyConfig() *EnergyConfig {
 	return &EnergyConfig{
 		Config:             vad.DefaultConfig(),

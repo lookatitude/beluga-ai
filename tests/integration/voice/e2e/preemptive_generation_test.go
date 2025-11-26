@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestPreemptiveGeneration_E2E tests preemptive generation end-to-end
+// TestPreemptiveGeneration_E2E tests preemptive generation end-to-end.
 func TestPreemptiveGeneration_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -35,11 +34,11 @@ func TestPreemptiveGeneration_E2E(t *testing.T) {
 	// Process audio that generates interim and final transcripts
 	audio := []byte{1, 2, 3, 4, 5}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Should have received at least one response
 	// (implementation may vary on preemptive generation)
-	assert.GreaterOrEqual(t, len(responses), 0)
+	// len(responses) is always >= 0, so no assertion needed
 
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)

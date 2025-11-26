@@ -504,13 +504,13 @@ func TestAgentPlatform(t *testing.T) {
         LLMProvider: "openai",
         Tools: []string{"calculator"},
     })
-    assert.NoError(t, err)
+    require.NoError(t, err)
     
     // Test agent execution
     result, err := agent.Execute(context.Background(), map[string]any{
         "task": "Calculate 2+2",
     })
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, result.(string), "4")
 }
 ```

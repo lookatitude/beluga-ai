@@ -33,7 +33,7 @@ func TestWrapError(t *testing.T) {
 		t.Errorf("Expected message 'wrapped message 42', got %s", embErr.Message)
 	}
 
-	if embErr.Cause != cause {
+	if !errors.Is(embErr.Cause, cause) {
 		t.Error("Expected Cause to match original error")
 	}
 }
@@ -80,7 +80,7 @@ func TestEmbeddingError_Unwrap(t *testing.T) {
 		Cause:   cause,
 	}
 
-	if err.Unwrap() != cause {
+	if !errors.Is(err.Unwrap(), cause) {
 		t.Error("Unwrap should return the cause error")
 	}
 }
@@ -151,8 +151,8 @@ func TestAsEmbeddingError(t *testing.T) {
 	var wrappedErrInterface error = wrappedErr
 
 	tests := []struct {
-		name  string
 		err   error
+		name  string
 		found bool
 	}{
 		{
@@ -197,7 +197,7 @@ func TestAsEmbeddingError(t *testing.T) {
 	}
 }
 
-// Test error code constants
+// Test error code constants.
 func TestErrorCodeConstants(t *testing.T) {
 	expectedCodes := map[string]bool{
 		ErrCodeInvalidConfig:     true,

@@ -12,40 +12,33 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // AdvancedMockConfigProvider provides a comprehensive mock implementation for testing.
 type AdvancedMockConfigProvider struct {
-	mock.Mock
-
-	// Configuration
-	name         string
-	providerType string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError    bool
-	errorToReturn  error
-	configValues   map[string]interface{}
-	simulateDelay  time.Duration
-	validateStrict bool
-
-	// Configuration management
-	watchCallbacks map[string][]func(interface{})
-	changeHistory  []ConfigChange
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	watchCallbacks  map[string][]func(any)
+	configValues    map[string]any
+	mock.Mock
+	name           string
+	providerType   string
+	healthState    string
+	changeHistory  []ConfigChange
+	callCount      int
+	simulateDelay  time.Duration
+	mu             sync.RWMutex
+	validateStrict bool
+	shouldError    bool
 }
 
 // ConfigChange represents a configuration change event.
 type ConfigChange struct {
-	Key       string
-	OldValue  interface{}
-	NewValue  interface{}
 	Timestamp time.Time
+	OldValue  any
+	NewValue  any
+	Key       string
 }
 
 // NewAdvancedMockConfigProvider creates a new advanced mock with configurable behavior.
@@ -53,8 +46,8 @@ func NewAdvancedMockConfigProvider(name, providerType string, options ...MockCon
 	mock := &AdvancedMockConfigProvider{
 		name:           name,
 		providerType:   providerType,
-		configValues:   make(map[string]interface{}),
-		watchCallbacks: make(map[string][]func(interface{})),
+		configValues:   make(map[string]any),
+		watchCallbacks: make(map[string][]func(any)),
 		changeHistory:  make([]ConfigChange, 0),
 		healthState:    "healthy",
 	}
@@ -66,7 +59,7 @@ func NewAdvancedMockConfigProvider(name, providerType string, options ...MockCon
 
 	// Set default config values if none provided
 	if len(mock.configValues) == 0 {
-		mock.configValues = map[string]interface{}{
+		mock.configValues = map[string]any{
 			"provider":       providerType,
 			"name":           name,
 			"timeout":        "30s",
@@ -91,9 +84,9 @@ func WithMockError(shouldError bool, err error) MockConfigOption {
 }
 
 // WithMockConfigValues sets predefined configuration values.
-func WithMockConfigValues(values map[string]interface{}) MockConfigOption {
+func WithMockConfigValues(values map[string]any) MockConfigOption {
 	return func(c *AdvancedMockConfigProvider) {
-		c.configValues = make(map[string]interface{})
+		c.configValues = make(map[string]any)
 		for k, v := range values {
 			c.configValues[k] = v
 		}
@@ -115,7 +108,7 @@ func WithStrictValidation(strict bool) MockConfigOption {
 }
 
 // Mock implementation methods for Provider interface.
-func (c *AdvancedMockConfigProvider) Load(configStruct interface{}) error {
+func (c *AdvancedMockConfigProvider) Load(configStruct any) error {
 	if c.shouldError {
 		return c.errorToReturn
 	}
@@ -124,7 +117,7 @@ func (c *AdvancedMockConfigProvider) Load(configStruct interface{}) error {
 	return nil
 }
 
-func (c *AdvancedMockConfigProvider) UnmarshalKey(key string, rawVal interface{}) error {
+func (c *AdvancedMockConfigProvider) UnmarshalKey(key string, rawVal any) error {
 	if c.shouldError {
 		return c.errorToReturn
 	}
@@ -239,7 +232,7 @@ func (c *AdvancedMockConfigProvider) SetDefaults() error {
 	}
 
 	// Set default values if not already set
-	defaults := map[string]interface{}{
+	defaults := map[string]any{
 		"timeout":        "30s",
 		"max_retries":    3,
 		"enable_metrics": true,
@@ -255,7 +248,7 @@ func (c *AdvancedMockConfigProvider) SetDefaults() error {
 }
 
 // Additional methods for extended functionality.
-func (c *AdvancedMockConfigProvider) Get(key string) interface{} {
+func (c *AdvancedMockConfigProvider) Get(key string) any {
 	c.mu.Lock()
 	c.callCount++
 	c.mu.Unlock()
@@ -273,7 +266,7 @@ func (c *AdvancedMockConfigProvider) Get(key string) interface{} {
 	return c.configValues[key]
 }
 
-func (c *AdvancedMockConfigProvider) Set(key string, value interface{}) error {
+func (c *AdvancedMockConfigProvider) Set(key string, value any) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -354,7 +347,7 @@ func (c *AdvancedMockConfigProvider) GetDuration(key string) time.Duration {
 	return 0
 }
 
-func (c *AdvancedMockConfigProvider) Watch(key string, callback func(interface{})) error {
+func (c *AdvancedMockConfigProvider) Watch(key string, callback func(any)) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -363,7 +356,7 @@ func (c *AdvancedMockConfigProvider) Watch(key string, callback func(interface{}
 	}
 
 	if c.watchCallbacks[key] == nil {
-		c.watchCallbacks[key] = make([]func(interface{}), 0)
+		c.watchCallbacks[key] = make([]func(any), 0)
 	}
 	c.watchCallbacks[key] = append(c.watchCallbacks[key], callback)
 
@@ -403,10 +396,10 @@ func (c *AdvancedMockConfigProvider) GetCallCount() int {
 	return c.callCount
 }
 
-func (c *AdvancedMockConfigProvider) GetConfigValues() map[string]interface{} {
+func (c *AdvancedMockConfigProvider) GetConfigValues() map[string]any {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range c.configValues {
 		result[k] = v
 	}
@@ -421,13 +414,13 @@ func (c *AdvancedMockConfigProvider) GetChangeHistory() []ConfigChange {
 	return result
 }
 
-func (c *AdvancedMockConfigProvider) TriggerChange(key string, newValue interface{}) {
-	c.Set(key, newValue) // This will trigger callbacks automatically
+func (c *AdvancedMockConfigProvider) TriggerChange(key string, newValue any) {
+	_ = c.Set(key, newValue) // This will trigger callbacks automatically
 }
 
-func (c *AdvancedMockConfigProvider) CheckHealth() map[string]interface{} {
+func (c *AdvancedMockConfigProvider) CheckHealth() map[string]any {
 	c.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":        c.healthState,
 		"name":          c.name,
 		"provider_type": c.providerType,
@@ -442,8 +435,8 @@ func (c *AdvancedMockConfigProvider) CheckHealth() map[string]interface{} {
 // Test data creation helpers
 
 // CreateTestConfig creates a comprehensive test configuration.
-func CreateTestConfig() map[string]interface{} {
-	return map[string]interface{}{
+func CreateTestConfig() map[string]any {
+	return map[string]any{
 		// Provider settings
 		"provider": "test",
 		"name":     "test-config",
@@ -474,8 +467,8 @@ func CreateTestConfig() map[string]interface{} {
 }
 
 // CreateTestProviderConfigs creates test configurations for different providers.
-func CreateTestProviderConfigs() map[string]map[string]interface{} {
-	return map[string]map[string]interface{}{
+func CreateTestProviderConfigs() map[string]map[string]any {
+	return map[string]map[string]any{
 		"openai": {
 			"provider":    "openai",
 			"api_key":     "test-openai-key",
@@ -514,7 +507,7 @@ func CreateTestEnvironmentVars() map[string]string {
 // Assertion helpers
 
 // AssertConfigValue validates configuration value retrieval using Provider interface.
-func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expectedValue interface{}, valueType string) {
+func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expectedValue any, valueType string) {
 	switch valueType {
 	case "string":
 		actual := provider.GetString(key)
@@ -527,20 +520,21 @@ func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expect
 		assert.Equal(t, expectedValue, actual, "Config value for key '%s' should match", key)
 	case "float64":
 		actual := provider.GetFloat64(key)
-		assert.Equal(t, expectedValue, actual, "Config value for key '%s' should match", key)
+		assert.InEpsilon(t, expectedValue, actual, 0.0001, "Config value for key '%s' should match", key)
 	default:
 		// Provider interface doesn't have Get method, test through specific getters
 		if provider.IsSet(key) {
-			assert.True(t, true, "Key '%s' should be set", key)
+			// Key is set, which is what we're testing
 		}
 	}
 }
 
 // AssertProviderStructs validates provider configuration structure loading.
 func AssertProviderStructs(t *testing.T, provider iface.Provider) {
+	t.Helper()
 	// Test LLM provider config loading
 	llmConfigs, err := provider.GetLLMProvidersConfig()
-	assert.NoError(t, err, "Should be able to get LLM provider configs")
+	require.NoError(t, err, "Should be able to get LLM provider configs")
 	assert.NotNil(t, llmConfigs, "LLM configs should not be nil")
 
 	// Test embedding provider config loading
@@ -561,6 +555,7 @@ func AssertProviderStructs(t *testing.T, provider iface.Provider) {
 
 // AssertConfigValidation validates configuration validation.
 func AssertConfigValidation(t *testing.T, provider iface.Provider, shouldPass bool) {
+	t.Helper()
 	err := provider.Validate()
 
 	if shouldPass {
@@ -571,7 +566,8 @@ func AssertConfigValidation(t *testing.T, provider iface.Provider, shouldPass bo
 }
 
 // AssertConfigHealth validates configuration provider health check.
-func AssertConfigHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+func AssertConfigHealth(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -581,7 +577,8 @@ func AssertConfigHealth(t *testing.T, health map[string]interface{}, expectedSta
 
 // AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var configErr *iface.ConfigError
 	if assert.ErrorAs(t, err, &configErr) {
 		assert.Equal(t, expectedCode, configErr.Code)
@@ -592,9 +589,9 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // ConcurrentTestRunner runs config tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -650,7 +647,8 @@ func (r *ConcurrentTestRunner) Run() error {
 }
 
 // RunLoadTest executes a load test scenario on config provider.
-func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperations int, concurrency int) {
+func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -689,7 +687,7 @@ func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperatio
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Note: Provider interface methods don't update call count in our mock
@@ -720,7 +718,7 @@ func (h *IntegrationTestHelper) Reset() {
 	for _, provider := range h.providers {
 		provider.callCount = 0
 		provider.changeHistory = make([]ConfigChange, 0)
-		provider.watchCallbacks = make(map[string][]func(interface{}))
+		provider.watchCallbacks = make(map[string][]func(any))
 	}
 }
 
@@ -735,7 +733,7 @@ func NewConfigScenarioRunner(provider iface.Provider) *ConfigScenarioRunner {
 	}
 }
 
-func (r *ConfigScenarioRunner) RunProviderSwitchingScenario(providerConfigs map[string]map[string]interface{}) error {
+func (r *ConfigScenarioRunner) RunProviderSwitchingScenario(providerConfigs map[string]map[string]any) error {
 	for providerName := range providerConfigs {
 		// Test provider configuration retrieval (Provider interface focuses on loading configs)
 		// Instead of setting individual keys, test structured config retrieval
@@ -784,12 +782,12 @@ func (r *ConfigScenarioRunner) RunConfigReloadScenario(reloadCount int) error {
 type BenchmarkHelper struct {
 	provider   iface.Provider
 	testKeys   []string
-	testValues []interface{}
+	testValues []any
 }
 
 func NewBenchmarkHelper(provider iface.Provider, keyCount int) *BenchmarkHelper {
 	testKeys := make([]string, keyCount)
-	testValues := make([]interface{}, keyCount)
+	testValues := make([]any, keyCount)
 
 	for i := 0; i < keyCount; i++ {
 		testKeys[i] = fmt.Sprintf("benchmark_key_%d", i+1)

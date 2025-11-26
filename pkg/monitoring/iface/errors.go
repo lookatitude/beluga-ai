@@ -2,11 +2,12 @@ package iface
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 )
 
-// ErrorSeverity represents the severity level of an error
+// ErrorSeverity represents the severity level of an error.
 type ErrorSeverity int
 
 const (
@@ -16,7 +17,7 @@ const (
 	SeverityCritical
 )
 
-// String returns the string representation of the error severity
+// String returns the string representation of the error severity.
 func (s ErrorSeverity) String() string {
 	switch s {
 	case SeverityLow:
@@ -35,15 +36,15 @@ func (s ErrorSeverity) String() string {
 // MonitoringError represents errors specific to monitoring operations.
 // It provides structured error information for programmatic error handling.
 type MonitoringError struct {
-	Code      string                 `json:"code"`      // Error code for programmatic handling
-	Message   string                 `json:"message"`   // Human-readable error message
-	Cause     error                  `json:"-"`         // Underlying error that caused this error
-	Operation string                 `json:"operation"` // Operation that failed
-	Component string                 `json:"component"` // Component where error occurred
-	Timestamp time.Time              `json:"timestamp"` // When the error occurred
-	Context   context.Context        `json:"-"`         // Context at time of error
-	Metadata  map[string]interface{} `json:"metadata"`  // Additional error metadata
-	Severity  ErrorSeverity          `json:"severity"`  // Error severity level
+	Timestamp time.Time       `json:"timestamp"`
+	Cause     error           `json:"-"`
+	Context   context.Context `json:"-"`
+	Metadata  map[string]any  `json:"metadata"`
+	Code      string          `json:"code"`
+	Message   string          `json:"message"`
+	Operation string          `json:"operation"`
+	Component string          `json:"component"`
+	Severity  ErrorSeverity   `json:"severity"`
 }
 
 // Error implements the error interface.
@@ -60,37 +61,37 @@ func (e *MonitoringError) Unwrap() error {
 }
 
 // NewMonitoringError creates a new MonitoringError with the given code and message.
-func NewMonitoringError(code, message string, args ...interface{}) *MonitoringError {
+func NewMonitoringError(code, message string, args ...any) *MonitoringError {
 	return &MonitoringError{
 		Code:      code,
 		Message:   fmt.Sprintf(message, args...),
 		Timestamp: time.Now(),
 		Severity:  SeverityMedium,
-		Metadata:  make(map[string]interface{}),
+		Metadata:  make(map[string]any),
 	}
 }
 
 // NewMonitoringErrorWithContext creates a new MonitoringError with context information.
-func NewMonitoringErrorWithContext(ctx context.Context, code, message string, args ...interface{}) *MonitoringError {
+func NewMonitoringErrorWithContext(ctx context.Context, code, message string, args ...any) *MonitoringError {
 	err := NewMonitoringError(code, message, args...)
 	err.Context = ctx
 	return err
 }
 
 // WrapError wraps an existing error with monitoring context.
-func WrapError(cause error, code, message string, args ...interface{}) *MonitoringError {
+func WrapError(cause error, code, message string, args ...any) *MonitoringError {
 	return &MonitoringError{
 		Code:      code,
 		Message:   fmt.Sprintf(message, args...),
 		Cause:     cause,
 		Timestamp: time.Now(),
 		Severity:  SeverityMedium,
-		Metadata:  make(map[string]interface{}),
+		Metadata:  make(map[string]any),
 	}
 }
 
 // WrapErrorWithContext wraps an existing error with monitoring context and operation details.
-func WrapErrorWithContext(ctx context.Context, cause error, code, message string, args ...interface{}) *MonitoringError {
+func WrapErrorWithContext(ctx context.Context, cause error, code, message string, args ...any) *MonitoringError {
 	return &MonitoringError{
 		Code:      code,
 		Message:   fmt.Sprintf(message, args...),
@@ -98,11 +99,11 @@ func WrapErrorWithContext(ctx context.Context, cause error, code, message string
 		Timestamp: time.Now(),
 		Context:   ctx,
 		Severity:  SeverityMedium,
-		Metadata:  make(map[string]interface{}),
+		Metadata:  make(map[string]any),
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeInvalidConfig        = "invalid_config"
 	ErrCodeProviderNotFound     = "provider_not_found"
@@ -137,7 +138,8 @@ func IsMonitoringError(err error, code string) bool {
 // AsMonitoringError attempts to cast an error to MonitoringError.
 func AsMonitoringError(err error, target **MonitoringError) bool {
 	for err != nil {
-		if monErr, ok := err.(*MonitoringError); ok {
+		monErr := &MonitoringError{}
+		if errors.As(err, &monErr) {
 			*target = monErr
 			return true
 		}
@@ -150,37 +152,37 @@ func AsMonitoringError(err error, target **MonitoringError) bool {
 	return false
 }
 
-// WithOperation sets the operation that failed
+// WithOperation sets the operation that failed.
 func (e *MonitoringError) WithOperation(operation string) *MonitoringError {
 	e.Operation = operation
 	return e
 }
 
-// WithComponent sets the component where the error occurred
+// WithComponent sets the component where the error occurred.
 func (e *MonitoringError) WithComponent(component string) *MonitoringError {
 	e.Component = component
 	return e
 }
 
-// WithSeverity sets the error severity
+// WithSeverity sets the error severity.
 func (e *MonitoringError) WithSeverity(severity ErrorSeverity) *MonitoringError {
 	e.Severity = severity
 	return e
 }
 
-// WithMetadata adds metadata to the error
-func (e *MonitoringError) WithMetadata(key string, value interface{}) *MonitoringError {
+// WithMetadata adds metadata to the error.
+func (e *MonitoringError) WithMetadata(key string, value any) *MonitoringError {
 	if e.Metadata == nil {
-		e.Metadata = make(map[string]interface{})
+		e.Metadata = make(map[string]any)
 	}
 	e.Metadata[key] = value
 	return e
 }
 
-// WithMetadataMap adds multiple metadata entries to the error
-func (e *MonitoringError) WithMetadataMap(metadata map[string]interface{}) *MonitoringError {
+// WithMetadataMap adds multiple metadata entries to the error.
+func (e *MonitoringError) WithMetadataMap(metadata map[string]any) *MonitoringError {
 	if e.Metadata == nil {
-		e.Metadata = make(map[string]interface{})
+		e.Metadata = make(map[string]any)
 	}
 	for k, v := range metadata {
 		e.Metadata[k] = v
@@ -188,44 +190,44 @@ func (e *MonitoringError) WithMetadataMap(metadata map[string]interface{}) *Moni
 	return e
 }
 
-// GetOperation returns the operation that failed
+// GetOperation returns the operation that failed.
 func (e *MonitoringError) GetOperation() string {
 	return e.Operation
 }
 
-// GetComponent returns the component where the error occurred
+// GetComponent returns the component where the error occurred.
 func (e *MonitoringError) GetComponent() string {
 	return e.Component
 }
 
-// GetSeverity returns the error severity
+// GetSeverity returns the error severity.
 func (e *MonitoringError) GetSeverity() ErrorSeverity {
 	return e.Severity
 }
 
-// GetMetadata returns the error metadata
-func (e *MonitoringError) GetMetadata() map[string]interface{} {
+// GetMetadata returns the error metadata.
+func (e *MonitoringError) GetMetadata() map[string]any {
 	if e.Metadata == nil {
-		return make(map[string]interface{})
+		return make(map[string]any)
 	}
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range e.Metadata {
 		result[k] = v
 	}
 	return result
 }
 
-// IsCritical returns true if the error is critical
+// IsCritical returns true if the error is critical.
 func (e *MonitoringError) IsCritical() bool {
 	return e.Severity == SeverityCritical
 }
 
-// IsHighSeverity returns true if the error is high severity or above
+// IsHighSeverity returns true if the error is high severity or above.
 func (e *MonitoringError) IsHighSeverity() bool {
 	return e.Severity >= SeverityHigh
 }
 
-// ShouldRetry returns true if the operation should be retried based on the error
+// ShouldRetry returns true if the operation should be retried based on the error.
 func (e *MonitoringError) ShouldRetry() bool {
 	switch e.Code {
 	case ErrCodeTimeout, ErrCodeConnectionFailed, ErrCodeServiceUnavailable, ErrCodeRateLimitExceeded:
@@ -235,7 +237,7 @@ func (e *MonitoringError) ShouldRetry() bool {
 	}
 }
 
-// GetRetryDelay returns the recommended retry delay for the error
+// GetRetryDelay returns the recommended retry delay for the error.
 func (e *MonitoringError) GetRetryDelay() time.Duration {
 	switch e.Code {
 	case ErrCodeRateLimitExceeded:

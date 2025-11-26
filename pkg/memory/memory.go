@@ -12,6 +12,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"strings"
@@ -35,9 +36,11 @@ func init() {
 	SetGlobalTracer()
 }
 
-// Ensure the main interfaces are imported for external use
-type Memory = iface.Memory
-type ChatMessageHistory = iface.ChatMessageHistory
+// Ensure the main interfaces are imported for external use.
+type (
+	Memory             = iface.Memory
+	ChatMessageHistory = iface.ChatMessageHistory
+)
 
 // Factory defines the interface for creating Memory instances.
 type Factory interface {
@@ -169,28 +172,28 @@ func (f *DefaultFactory) createBufferWindowMemory(ctx context.Context, config Co
 func (f *DefaultFactory) createSummaryMemory(ctx context.Context, config Config) (Memory, error) {
 	// This is a placeholder - in practice, the LLM would need to be injected
 	// through a more sophisticated factory pattern or configuration
-	return nil, fmt.Errorf("summary memory requires LLM dependency injection - use NewConversationSummaryMemory directly")
+	return nil, errors.New("summary memory requires LLM dependency injection - use NewConversationSummaryMemory directly")
 }
 
 // createSummaryBufferMemory creates a summary buffer memory instance.
 // Note: This requires an LLM to be provided via dependency injection.
 func (f *DefaultFactory) createSummaryBufferMemory(ctx context.Context, config Config) (Memory, error) {
 	// This is a placeholder - in practice, the LLM would need to be injected
-	return nil, fmt.Errorf("summary buffer memory requires LLM dependency injection - use NewConversationSummaryBufferMemory directly")
+	return nil, errors.New("summary buffer memory requires LLM dependency injection - use NewConversationSummaryBufferMemory directly")
 }
 
 // createVectorStoreMemory creates a vector store memory instance.
 // Note: This requires a retriever to be provided via dependency injection.
 func (f *DefaultFactory) createVectorStoreMemory(ctx context.Context, config Config) (Memory, error) {
 	// This is a placeholder - in practice, the retriever would need to be injected
-	return nil, fmt.Errorf("vector store memory requires retriever dependency injection - use NewVectorStoreMemory directly")
+	return nil, errors.New("vector store memory requires retriever dependency injection - use NewVectorStoreMemory directly")
 }
 
 // createVectorStoreRetrieverMemory creates a vector store retriever memory instance.
 // Note: This requires embedder and vector store to be provided via dependency injection.
 func (f *DefaultFactory) createVectorStoreRetrieverMemory(ctx context.Context, config Config) (Memory, error) {
 	// This is a placeholder - in practice, the embedder and vector store would need to be injected
-	return nil, fmt.Errorf("vector store retriever memory requires embedder and vector store dependency injection - use NewVectorStoreRetrieverMemory directly")
+	return nil, errors.New("vector store retriever memory requires embedder and vector store dependency injection - use NewVectorStoreRetrieverMemory directly")
 }
 
 // NewMemory is a convenience function for creating memory instances with functional options.
@@ -235,7 +238,7 @@ func (m *NoOpMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]
 }
 
 // SaveContext does nothing for no-op memory.
-func (m *NoOpMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *NoOpMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	return nil
 }
 
@@ -246,12 +249,12 @@ func (m *NoOpMemory) Clear(ctx context.Context) error {
 
 // GetInputOutputKeys determines the input and output keys from the given maps.
 // This utility function is exposed for use by memory implementations.
-func GetInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string, error) {
+func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error) {
 	if len(inputs) == 0 {
-		return "", "", fmt.Errorf("inputs map is empty")
+		return "", "", errors.New("inputs map is empty")
 	}
 	if len(outputs) == 0 {
-		return "", "", fmt.Errorf("outputs map is empty")
+		return "", "", errors.New("outputs map is empty")
 	}
 
 	// Common input/output key names

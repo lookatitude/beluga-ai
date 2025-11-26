@@ -4,6 +4,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -62,7 +63,7 @@ func TestRESTServerLifecycle(t *testing.T) {
 	// Wait for start goroutine to finish
 	select {
 	case startErr := <-started:
-		if startErr != nil && startErr != context.Canceled {
+		if startErr != nil && !errors.Is(startErr, context.Canceled) {
 			t.Errorf("Server start returned unexpected error: %v", startErr)
 		}
 	case <-time.After(2 * time.Second):
@@ -124,7 +125,7 @@ func TestMCPServerLifecycle(t *testing.T) {
 	// Wait for start goroutine to finish
 	select {
 	case startErr := <-started:
-		if startErr != nil && startErr != context.Canceled {
+		if startErr != nil && !errors.Is(startErr, context.Canceled) {
 			t.Errorf("Server start returned unexpected error: %v", startErr)
 		}
 	case <-time.After(2 * time.Second):
@@ -225,7 +226,7 @@ func TestRESTServerHTTPEndpointsE2E(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		server.Start(ctx)
+		_ = server.Start(ctx)
 	}()
 
 	// Give server time to start
@@ -238,7 +239,7 @@ func TestRESTServerHTTPEndpointsE2E(t *testing.T) {
 	// Stop server
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stopCancel()
-	server.Stop(stopCtx)
+	_ = server.Stop(stopCtx)
 }
 
 func TestMCPServerHTTPEndpointsE2E(t *testing.T) {
@@ -266,15 +267,15 @@ func TestMCPServerHTTPEndpointsE2E(t *testing.T) {
 	resource := newMockMCPResource("test://resource", "test-resource", "A test resource", "text/plain", "test content")
 
 	mcpServer := server.(MCPServer)
-	mcpServer.RegisterTool(tool)
-	mcpServer.RegisterResource(resource)
+	_ = mcpServer.RegisterTool(tool)
+	_ = mcpServer.RegisterResource(resource)
 
 	// Start server
 	ctx, cancel := context.WithTimeout(context.Background(), 110*time.Millisecond)
 	defer cancel()
 
 	go func() {
-		server.Start(ctx)
+		_ = server.Start(ctx)
 	}()
 
 	// Give server time to start
@@ -291,7 +292,7 @@ func TestMCPServerHTTPEndpointsE2E(t *testing.T) {
 	// Stop server
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stopCancel()
-	server.Stop(stopCtx)
+	_ = server.Stop(stopCtx)
 }
 
 // Load Testing
@@ -320,7 +321,7 @@ func TestRESTServerLoad(t *testing.T) {
 	server.RegisterHTTPHandler("GET", "/api/v1/load-test", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprint(w, `{"status": "ok"}`)
+		_, _ = fmt.Fprint(w, `{"status": "ok"}`)
 	})
 
 	// Start server
@@ -328,7 +329,7 @@ func TestRESTServerLoad(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		server.Start(ctx)
+		_ = server.Start(ctx)
 	}()
 
 	// Give server time to start
@@ -340,7 +341,7 @@ func TestRESTServerLoad(t *testing.T) {
 	// Stop server
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stopCancel()
-	server.Stop(stopCtx)
+	_ = server.Stop(stopCtx)
 }
 
 // Stress Testing
@@ -371,7 +372,7 @@ func TestServerStressWithManyRequests(t *testing.T) {
 		callCount++
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, `{"call": %d}`, callCount)
+		_, _ = fmt.Fprintf(w, `{"call": %d}`, callCount)
 	})
 
 	// Start server
@@ -379,7 +380,7 @@ func TestServerStressWithManyRequests(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		server.Start(ctx)
+		_ = server.Start(ctx)
 	}()
 
 	// Give server time to start
@@ -391,7 +392,7 @@ func TestServerStressWithManyRequests(t *testing.T) {
 	// Stop server
 	stopCtx, stopCancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer stopCancel()
-	server.Stop(stopCtx)
+	_ = server.Stop(stopCtx)
 }
 
 // Configuration Validation Tests
@@ -488,10 +489,10 @@ type testAgentHandler struct{}
 func (h *testAgentHandler) handleTest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	fmt.Fprint(w, `{"status": "test", "timestamp": "`+time.Now().Format(time.RFC3339)+`"}`)
+	_, _ = fmt.Fprint(w, `{"status": "test", "timestamp": "`+time.Now().Format(time.RFC3339)+`"}`)
 }
 
-// makeHTTPRequest is a helper function for making HTTP requests in integration tests
+// makeHTTPRequest is a helper function for making HTTP requests in integration tests.
 func makeHTTPRequest(method, url string, body io.Reader) (*http.Response, error) {
 	client := &http.Client{Timeout: 5 * time.Second}
 	req, err := http.NewRequest(method, url, body)
@@ -531,25 +532,28 @@ func BenchmarkServerStartupShutdown(b *testing.B) {
 
 func BenchmarkMCPServerToolOperations(b *testing.B) {
 	logger := newMockLogger()
-	server, _ := NewMCPServer(
+	server, err := NewMCPServer(
 		WithLogger(logger),
 		WithMCPConfig(MCPConfig{
 			Config:     Config{Host: "localhost", Port: 0},
 			ServerName: "bench-mcp-server",
 		}),
 	)
+	if err != nil {
+		b.Fatal(err)
+	}
 	mcpServer := server.(MCPServer)
 
 	// Register multiple tools
 	for i := 0; i < 10; i++ {
 		tool := newMockMCPTool(fmt.Sprintf("tool-%d", i), fmt.Sprintf("Tool %d", i))
-		mcpServer.RegisterTool(tool)
+		_ = mcpServer.RegisterTool(tool)
 	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		tool := newMockMCPTool(fmt.Sprintf("new-tool-%d", i), fmt.Sprintf("New Tool %d", i))
-		mcpServer.RegisterTool(tool)
-		mcpServer.ListTools(context.Background())
+		_ = mcpServer.RegisterTool(tool)
+		_, _ = mcpServer.ListTools(context.Background())
 	}
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestVADProvider_Process(t *testing.T) {
@@ -56,9 +57,9 @@ func TestVADProvider_Process(t *testing.T) {
 			speech, err := tt.provider.Process(ctx, tt.audio)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedSpeech, speech)
 			}
 		})

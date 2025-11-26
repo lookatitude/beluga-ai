@@ -5,17 +5,17 @@ import (
 	"time"
 )
 
-// SessionTimeout manages automatic session timeout on inactivity
+// SessionTimeout manages automatic session timeout on inactivity.
 type SessionTimeout struct {
-	mu           sync.RWMutex
-	timeout      time.Duration
 	lastActivity time.Time
 	timer        *time.Timer
 	onTimeout    func()
+	timeout      time.Duration
+	mu           sync.RWMutex
 	active       bool
 }
 
-// NewSessionTimeout creates a new session timeout manager
+// NewSessionTimeout creates a new session timeout manager.
 func NewSessionTimeout(timeout time.Duration, onTimeout func()) *SessionTimeout {
 	return &SessionTimeout{
 		timeout:      timeout,
@@ -25,7 +25,7 @@ func NewSessionTimeout(timeout time.Duration, onTimeout func()) *SessionTimeout 
 	}
 }
 
-// Start starts the timeout monitoring
+// Start starts the timeout monitoring.
 func (st *SessionTimeout) Start() {
 	st.mu.Lock()
 	defer st.mu.Unlock()
@@ -39,7 +39,7 @@ func (st *SessionTimeout) Start() {
 	st.resetTimer()
 }
 
-// Stop stops the timeout monitoring
+// Stop stops the timeout monitoring.
 func (st *SessionTimeout) Stop() {
 	st.mu.Lock()
 	defer st.mu.Unlock()
@@ -55,7 +55,7 @@ func (st *SessionTimeout) Stop() {
 	}
 }
 
-// UpdateActivity updates the last activity time and resets the timer
+// UpdateActivity updates the last activity time and resets the timer.
 func (st *SessionTimeout) UpdateActivity() {
 	st.mu.Lock()
 	defer st.mu.Unlock()
@@ -68,7 +68,7 @@ func (st *SessionTimeout) UpdateActivity() {
 	st.resetTimer()
 }
 
-// resetTimer resets the timeout timer
+// resetTimer resets the timeout timer.
 func (st *SessionTimeout) resetTimer() {
 	if st.timer != nil {
 		st.timer.Stop()
@@ -86,7 +86,7 @@ func (st *SessionTimeout) resetTimer() {
 	})
 }
 
-// GetLastActivity returns the last activity time
+// GetLastActivity returns the last activity time.
 func (st *SessionTimeout) GetLastActivity() time.Time {
 	st.mu.RLock()
 	defer st.mu.RUnlock()

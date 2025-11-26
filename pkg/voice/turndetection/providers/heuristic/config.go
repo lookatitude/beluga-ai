@@ -6,7 +6,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
 )
 
-// HeuristicConfig extends the base Turn Detection config with Heuristic-specific settings
+// HeuristicConfig extends the base Turn Detection config with Heuristic-specific settings.
 type HeuristicConfig struct {
 	*turndetection.Config
 
@@ -26,7 +26,7 @@ type HeuristicConfig struct {
 	MaxTurnLength int `mapstructure:"max_turn_length" yaml:"max_turn_length" default:"5000"`
 }
 
-// DefaultHeuristicConfig returns a default Heuristic Turn Detection configuration
+// DefaultHeuristicConfig returns a default Heuristic Turn Detection configuration.
 func DefaultHeuristicConfig() *HeuristicConfig {
 	return &HeuristicConfig{
 		Config:             turndetection.DefaultConfig(),

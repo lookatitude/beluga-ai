@@ -2,6 +2,7 @@ package llms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -13,134 +14,111 @@ import (
 // Config represents the configuration for LLM providers.
 // It includes common settings that apply to all LLM providers.
 type Config struct {
-	// Provider specifies the LLM provider (e.g., "openai", "anthropic", "bedrock")
-	Provider string `mapstructure:"provider" yaml:"provider" validate:"required,oneof=openai anthropic bedrock gemini ollama mock"`
-
-	// ModelName specifies the model to use (e.g., "gpt-4", "claude-3-sonnet")
-	ModelName string `mapstructure:"model_name" yaml:"model_name" validate:"required"`
-
-	// APIKey for authentication (required for most providers)
-	APIKey string `mapstructure:"api_key" yaml:"api_key" validate:"required_unless=Provider mock"`
-
-	// BaseURL for custom API endpoints (optional)
-	BaseURL string `mapstructure:"base_url" yaml:"base_url"`
-
-	// Timeout for API calls
-	Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" default:"30s" validate:"min=1s,max=5m"`
-
-	// Default generation parameters
-	Temperature      *float32 `mapstructure:"temperature" yaml:"temperature" validate:"omitempty,gte=0,lte=2"`
-	TopP             *float32 `mapstructure:"top_p" yaml:"top_p" validate:"omitempty,gte=0,lte=1"`
-	TopK             *int     `mapstructure:"top_k" yaml:"top_k" validate:"omitempty,gte=1,lte=100"`
-	MaxTokens        *int     `mapstructure:"max_tokens" yaml:"max_tokens" validate:"omitempty,gte=1,lte=32768"`
-	StopSequences    []string `mapstructure:"stop_sequences" yaml:"stop_sequences"`
-	FrequencyPenalty *float32 `mapstructure:"frequency_penalty" yaml:"frequency_penalty" validate:"omitempty,gte=-2,lte=2"`
-	PresencePenalty  *float32 `mapstructure:"presence_penalty" yaml:"presence_penalty" validate:"omitempty,gte=-2,lte=2"`
-
-	// Streaming configuration
-	EnableStreaming bool `mapstructure:"enable_streaming" yaml:"enable_streaming" default:"true"`
-
-	// Concurrency and batching
-	MaxConcurrentBatches int `mapstructure:"max_concurrent_batches" yaml:"max_concurrent_batches" default:"5" validate:"gte=1,lte=100"`
-
-	// Retry configuration
-	MaxRetries   int           `mapstructure:"max_retries" yaml:"max_retries" default:"3" validate:"gte=0,lte=10"`
-	RetryDelay   time.Duration `mapstructure:"retry_delay" yaml:"retry_delay" default:"1s" validate:"min=100ms,max=30s"`
-	RetryBackoff float64       `mapstructure:"retry_backoff" yaml:"retry_backoff" default:"2.0" validate:"gte=1,lte=5"`
-
-	// Provider-specific configuration
-	ProviderSpecific map[string]interface{} `mapstructure:"provider_specific" yaml:"provider_specific"`
-
-	// Observability settings
-	EnableTracing           bool `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-	EnableMetrics           bool `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-	EnableStructuredLogging bool `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
-
-	// Tool calling configuration
-	EnableToolCalling bool `mapstructure:"enable_tool_calling" yaml:"enable_tool_calling" default:"true"`
+	FrequencyPenalty        *float32       `mapstructure:"frequency_penalty" yaml:"frequency_penalty" validate:"omitempty,gte=-2,lte=2"`
+	PresencePenalty         *float32       `mapstructure:"presence_penalty" yaml:"presence_penalty" validate:"omitempty,gte=-2,lte=2"`
+	ProviderSpecific        map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
+	MaxTokens               *int           `mapstructure:"max_tokens" yaml:"max_tokens" validate:"omitempty,gte=1,lte=32768"`
+	TopK                    *int           `mapstructure:"top_k" yaml:"top_k" validate:"omitempty,gte=1,lte=100"`
+	Temperature             *float32       `mapstructure:"temperature" yaml:"temperature" validate:"omitempty,gte=0,lte=2"`
+	TopP                    *float32       `mapstructure:"top_p" yaml:"top_p" validate:"omitempty,gte=0,lte=1"`
+	BaseURL                 string         `mapstructure:"base_url" yaml:"base_url"`
+	APIKey                  string         `mapstructure:"api_key" yaml:"api_key" validate:"required_unless=Provider mock"`
+	ModelName               string         `mapstructure:"model_name" yaml:"model_name" validate:"required"`
+	Provider                string         `mapstructure:"provider" yaml:"provider" validate:"required,oneof=openai anthropic bedrock gemini ollama mock"`
+	StopSequences           []string       `mapstructure:"stop_sequences" yaml:"stop_sequences"`
+	RetryDelay              time.Duration  `mapstructure:"retry_delay" yaml:"retry_delay" default:"1s" validate:"min=100ms,max=30s"`
+	Timeout                 time.Duration  `mapstructure:"timeout" yaml:"timeout" default:"30s" validate:"min=1s,max=5m"`
+	MaxRetries              int            `mapstructure:"max_retries" yaml:"max_retries" default:"3" validate:"gte=0,lte=10"`
+	MaxConcurrentBatches    int            `mapstructure:"max_concurrent_batches" yaml:"max_concurrent_batches" default:"5" validate:"gte=1,lte=100"`
+	RetryBackoff            float64        `mapstructure:"retry_backoff" yaml:"retry_backoff" default:"2.0" validate:"gte=1,lte=5"`
+	EnableStreaming         bool           `mapstructure:"enable_streaming" yaml:"enable_streaming" default:"true"`
+	EnableTracing           bool           `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
+	EnableMetrics           bool           `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
+	EnableStructuredLogging bool           `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
+	EnableToolCalling       bool           `mapstructure:"enable_tool_calling" yaml:"enable_tool_calling" default:"true"`
 }
 
-// ConfigOption is a functional option for configuring LLM instances
+// ConfigOption is a functional option for configuring LLM instances.
 type ConfigOption func(*Config)
 
-// WithProvider sets the LLM provider
+// WithProvider sets the LLM provider.
 func WithProvider(provider string) ConfigOption {
 	return func(c *Config) {
 		c.Provider = provider
 	}
 }
 
-// WithModelName sets the model name
+// WithModelName sets the model name.
 func WithModelName(modelName string) ConfigOption {
 	return func(c *Config) {
 		c.ModelName = modelName
 	}
 }
 
-// WithAPIKey sets the API key
+// WithAPIKey sets the API key.
 func WithAPIKey(apiKey string) ConfigOption {
 	return func(c *Config) {
 		c.APIKey = apiKey
 	}
 }
 
-// WithBaseURL sets the base URL
+// WithBaseURL sets the base URL.
 func WithBaseURL(baseURL string) ConfigOption {
 	return func(c *Config) {
 		c.BaseURL = baseURL
 	}
 }
 
-// WithTimeout sets the timeout
+// WithTimeout sets the timeout.
 func WithTimeout(timeout time.Duration) ConfigOption {
 	return func(c *Config) {
 		c.Timeout = timeout
 	}
 }
 
-// WithTemperatureConfig sets the temperature
+// WithTemperatureConfig sets the temperature.
 func WithTemperatureConfig(temp float32) ConfigOption {
 	return func(c *Config) {
 		c.Temperature = &temp
 	}
 }
 
-// WithTopPConfig sets the top-p value
+// WithTopPConfig sets the top-p value.
 func WithTopPConfig(topP float32) ConfigOption {
 	return func(c *Config) {
 		c.TopP = &topP
 	}
 }
 
-// WithTopKConfig sets the top-k value
+// WithTopKConfig sets the top-k value.
 func WithTopKConfig(topK int) ConfigOption {
 	return func(c *Config) {
 		c.TopK = &topK
 	}
 }
 
-// WithMaxTokensConfig sets the maximum tokens
+// WithMaxTokensConfig sets the maximum tokens.
 func WithMaxTokensConfig(maxTokens int) ConfigOption {
 	return func(c *Config) {
 		c.MaxTokens = &maxTokens
 	}
 }
 
-// WithStopSequences sets the stop sequences
+// WithStopSequences sets the stop sequences.
 func WithStopSequences(sequences []string) ConfigOption {
 	return func(c *Config) {
 		c.StopSequences = sequences
 	}
 }
 
-// WithMaxConcurrentBatches sets the maximum concurrent batches
+// WithMaxConcurrentBatches sets the maximum concurrent batches.
 func WithMaxConcurrentBatches(n int) ConfigOption {
 	return func(c *Config) {
 		c.MaxConcurrentBatches = n
 	}
 }
 
-// WithRetryConfig sets retry configuration
+// WithRetryConfig sets retry configuration.
 func WithRetryConfig(maxRetries int, delay time.Duration, backoff float64) ConfigOption {
 	return func(c *Config) {
 		c.MaxRetries = maxRetries
@@ -149,17 +127,17 @@ func WithRetryConfig(maxRetries int, delay time.Duration, backoff float64) Confi
 	}
 }
 
-// WithProviderSpecific sets provider-specific configuration
-func WithProviderSpecific(key string, value interface{}) ConfigOption {
+// WithProviderSpecific sets provider-specific configuration.
+func WithProviderSpecific(key string, value any) ConfigOption {
 	return func(c *Config) {
 		if c.ProviderSpecific == nil {
-			c.ProviderSpecific = make(map[string]interface{})
+			c.ProviderSpecific = make(map[string]any)
 		}
 		c.ProviderSpecific[key] = value
 	}
 }
 
-// WithObservability enables or disables observability features
+// WithObservability enables or disables observability features.
 func WithObservability(tracing, metrics, logging bool) ConfigOption {
 	return func(c *Config) {
 		c.EnableTracing = tracing
@@ -168,14 +146,14 @@ func WithObservability(tracing, metrics, logging bool) ConfigOption {
 	}
 }
 
-// WithToolCalling enables or disables tool calling
+// WithToolCalling enables or disables tool calling.
 func WithToolCalling(enabled bool) ConfigOption {
 	return func(c *Config) {
 		c.EnableToolCalling = enabled
 	}
 }
 
-// NewDefaultConfig returns a default configuration
+// NewDefaultConfig returns a default configuration.
 func NewDefaultConfig() *Config {
 	return &Config{
 		Provider:                "",
@@ -195,7 +173,7 @@ func NewDefaultConfig() *Config {
 		MaxRetries:              3,
 		RetryDelay:              time.Second,
 		RetryBackoff:            2.0,
-		ProviderSpecific:        make(map[string]interface{}),
+		ProviderSpecific:        make(map[string]any),
 		EnableTracing:           true,
 		EnableMetrics:           true,
 		EnableStructuredLogging: true,
@@ -203,7 +181,7 @@ func NewDefaultConfig() *Config {
 	}
 }
 
-// Validate validates the configuration
+// Validate validates the configuration.
 func (c *Config) Validate() error {
 	validate := validator.New()
 	if err := validate.Struct(c); err != nil {
@@ -212,30 +190,30 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// MergeOptions applies functional options to the configuration
+// MergeOptions applies functional options to the configuration.
 func (c *Config) MergeOptions(opts ...ConfigOption) {
 	for _, opt := range opts {
 		opt(c)
 	}
 }
 
-// NewConfig creates a new configuration with the given options
+// NewConfig creates a new configuration with the given options.
 func NewConfig(opts ...ConfigOption) *Config {
 	config := NewDefaultConfig()
 	config.MergeOptions(opts...)
 	return config
 }
 
-// ProviderConfig represents configuration for a specific provider
+// ProviderConfig represents configuration for a specific provider.
 type ProviderConfig struct {
 	Config
 	// Additional provider-specific fields can be added here
 }
 
-// ValidateProviderConfig validates a provider configuration
+// ValidateProviderConfig validates a provider configuration.
 func ValidateProviderConfig(ctx context.Context, config *Config) error {
 	if config == nil {
-		return fmt.Errorf("configuration cannot be nil")
+		return errors.New("configuration cannot be nil")
 	}
 
 	// Validate using the struct validator
@@ -252,17 +230,17 @@ func ValidateProviderConfig(ctx context.Context, config *Config) error {
 	switch config.Provider {
 	case "openai":
 		if config.ModelName == "" {
-			return fmt.Errorf("model_name is required for OpenAI provider")
+			return errors.New("model_name is required for OpenAI provider")
 		}
 		if config.APIKey == "" {
-			return fmt.Errorf("api_key is required for OpenAI provider")
+			return errors.New("api_key is required for OpenAI provider")
 		}
 	case "anthropic":
 		if config.ModelName == "" {
-			return fmt.Errorf("model_name is required for Anthropic provider")
+			return errors.New("model_name is required for Anthropic provider")
 		}
 		if config.APIKey == "" {
-			return fmt.Errorf("api_key is required for Anthropic provider")
+			return errors.New("api_key is required for Anthropic provider")
 		}
 	case "mock":
 		// Mock provider has minimal requirements
@@ -276,30 +254,30 @@ func ValidateProviderConfig(ctx context.Context, config *Config) error {
 	return nil
 }
 
-// CallOptions represents runtime call options for LLM invocations
+// CallOptions represents runtime call options for LLM invocations.
 type CallOptions struct {
-	Temperature      *float32               `json:"temperature,omitempty"`
-	TopP             *float32               `json:"top_p,omitempty"`
-	TopK             *int                   `json:"top_k,omitempty"`
-	MaxTokens        *int                   `json:"max_tokens,omitempty"`
-	StopSequences    []string               `json:"stop_sequences,omitempty"`
-	FrequencyPenalty *float32               `json:"frequency_penalty,omitempty"`
-	PresencePenalty  *float32               `json:"presence_penalty,omitempty"`
-	Tools            []interface{}          `json:"tools,omitempty"` // Generic tool interface
-	ToolChoice       string                 `json:"tool_choice,omitempty"`
-	AdditionalArgs   map[string]interface{} `json:"additional_args,omitempty"`
+	Temperature      *float32       `json:"temperature,omitempty"`
+	TopP             *float32       `json:"top_p,omitempty"`
+	TopK             *int           `json:"top_k,omitempty"`
+	MaxTokens        *int           `json:"max_tokens,omitempty"`
+	FrequencyPenalty *float32       `json:"frequency_penalty,omitempty"`
+	PresencePenalty  *float32       `json:"presence_penalty,omitempty"`
+	AdditionalArgs   map[string]any `json:"additional_args,omitempty"`
+	ToolChoice       string         `json:"tool_choice,omitempty"`
+	StopSequences    []string       `json:"stop_sequences,omitempty"`
+	Tools            []any          `json:"tools,omitempty"`
 }
 
-// NewCallOptions creates new call options
+// NewCallOptions creates new call options.
 func NewCallOptions() *CallOptions {
 	return &CallOptions{
-		AdditionalArgs: make(map[string]interface{}),
+		AdditionalArgs: make(map[string]any),
 	}
 }
 
-// ApplyCallOption applies a core.Option to CallOptions
+// ApplyCallOption applies a core.Option to CallOptions.
 func (co *CallOptions) ApplyCallOption(opt core.Option) {
-	config := make(map[string]interface{})
+	config := make(map[string]any)
 	opt.Apply(&config)
 
 	for key, value := range config {
@@ -346,7 +324,7 @@ func (co *CallOptions) ApplyCallOption(opt core.Option) {
 			}
 		case "tools":
 			if toolList, ok := value.([]tools.Tool); ok {
-				co.Tools = make([]interface{}, len(toolList))
+				co.Tools = make([]any, len(toolList))
 				for i, tool := range toolList {
 					co.Tools[i] = tool
 				}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -14,18 +15,18 @@ import (
 	ttsiface "github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
 )
 
-// OpenAIProvider implements the TTSProvider interface for OpenAI TTS
+// OpenAIProvider implements the TTSProvider interface for OpenAI TTS.
 type OpenAIProvider struct {
 	config     *OpenAIConfig
 	httpClient *http.Client
 	mu         sync.RWMutex
 }
 
-// NewOpenAIProvider creates a new OpenAI TTS provider
+// NewOpenAIProvider creates a new OpenAI TTS provider.
 func NewOpenAIProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	if config == nil {
 		return nil, tts.NewTTSError("NewOpenAIProvider", tts.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to OpenAI config
@@ -69,15 +70,15 @@ func NewOpenAIProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	}, nil
 }
 
-// GenerateSpeech implements the TTSProvider interface using OpenAI TTS API
+// GenerateSpeech implements the TTSProvider interface using OpenAI TTS API.
 func (p *OpenAIProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	startTime := time.Now()
 
 	// Build request URL
-	url := fmt.Sprintf("%s/v1/audio/speech", p.config.BaseURL)
+	url := p.config.BaseURL + "/v1/audio/speech"
 
 	// Build request body
-	requestBody := map[string]interface{}{
+	requestBody := map[string]any{
 		"model": p.config.Model,
 		"input": text,
 		"voice": p.config.Voice,
@@ -102,7 +103,7 @@ func (p *OpenAIProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 	}
 
 	// Set headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	req.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 	req.Header.Set("Content-Type", "application/json")
 
 	// Execute request with retry logic
@@ -133,13 +134,13 @@ func (p *OpenAIProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeTimeout, err)
 		}
 		return nil, tts.ErrorFromHTTPStatus("GenerateSpeech", 0, err)
@@ -160,7 +161,7 @@ func (p *OpenAIProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 
 	if len(audio) == 0 {
 		return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeEmptyResponse,
-			fmt.Errorf("no audio data in response"))
+			errors.New("no audio data in response"))
 	}
 
 	duration := time.Since(startTime)
@@ -177,7 +178,7 @@ func (p *OpenAIProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 }
 
 // StreamGenerate implements the TTSProvider interface
-// OpenAI TTS API doesn't support streaming, so we return the full audio as a reader
+// OpenAI TTS API doesn't support streaming, so we return the full audio as a reader.
 func (p *OpenAIProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	// Generate speech first
 	audio, err := p.GenerateSpeech(ctx, text)

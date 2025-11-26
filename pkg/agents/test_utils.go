@@ -16,44 +16,37 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 // AdvancedMockAgent provides a comprehensive mock implementation for testing.
 type AdvancedMockAgent struct {
+	lastHealthCheck time.Time
+	errorToReturn   error
+	state           map[string]any
 	mock.Mock
-
-	// Configuration
-	name      string
-	agentType string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	responses        []interface{}
+	name             string
+	agentType        string
+	healthState      string
+	tools            []tools.Tool
+	planningSteps    []string
+	responses        []any
+	executionHistory []ExecutionRecord
 	responseIndex    int
 	executionDelay   time.Duration
+	callCount        int
+	mu               sync.RWMutex
 	simulateFailures bool
-
-	// Agent-specific data
-	tools            []tools.Tool
-	executionHistory []ExecutionRecord
-	state            map[string]interface{}
-	planningSteps    []string
-
-	// Health check data
-	healthState     string
-	lastHealthCheck time.Time
+	shouldError      bool
 }
 
 // ExecutionRecord tracks agent execution history for testing.
 type ExecutionRecord struct {
-	Input     interface{}
-	Output    interface{}
+	Timestamp time.Time
+	Input     any
+	Output    any
 	Error     error
 	Duration  time.Duration
-	Timestamp time.Time
 }
 
 // NewAdvancedMockAgent creates a new advanced mock with configurable behavior.
@@ -61,10 +54,10 @@ func NewAdvancedMockAgent(name, agentType string, options ...MockAgentOption) *A
 	mock := &AdvancedMockAgent{
 		name:             name,
 		agentType:        agentType,
-		responses:        []interface{}{},
+		responses:        []any{},
 		tools:            []tools.Tool{},
 		executionHistory: make([]ExecutionRecord, 0),
-		state:            make(map[string]interface{}),
+		state:            make(map[string]any),
 		planningSteps:    []string{},
 		healthState:      "healthy",
 	}
@@ -89,7 +82,7 @@ func WithMockError(shouldError bool, err error) MockAgentOption {
 }
 
 // WithMockResponses sets predefined responses for the mock.
-func WithMockResponses(responses []interface{}) MockAgentOption {
+func WithMockResponses(responses []any) MockAgentOption {
 	return func(a *AdvancedMockAgent) {
 		a.responses = responses
 	}
@@ -117,9 +110,9 @@ func WithPlanningSteps(steps []string) MockAgentOption {
 }
 
 // WithAgentState sets initial state for the mock agent.
-func WithAgentState(state map[string]interface{}) MockAgentOption {
+func WithAgentState(state map[string]any) MockAgentOption {
 	return func(a *AdvancedMockAgent) {
-		a.state = make(map[string]interface{})
+		a.state = make(map[string]any)
 		for k, v := range state {
 			a.state[k] = v
 		}
@@ -260,7 +253,7 @@ func (a *AdvancedMockAgent) GetMetrics() iface.MetricsRecorder {
 }
 
 // LifecycleManager interface implementation.
-func (a *AdvancedMockAgent) Initialize(config map[string]interface{}) error {
+func (a *AdvancedMockAgent) Initialize(config map[string]any) error {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 
@@ -296,14 +289,14 @@ func (a *AdvancedMockAgent) RegisterEventHandler(eventType string, handler iface
 	// Mock implementation - in real implementation would store handlers
 }
 
-func (a *AdvancedMockAgent) EmitEvent(eventType string, payload interface{}) {
+func (a *AdvancedMockAgent) EmitEvent(eventType string, payload any) {
 	// Mock implementation - in real implementation would call handlers
 }
 
 // HealthChecker interface implementation.
-func (a *AdvancedMockAgent) CheckHealth() map[string]interface{} {
+func (a *AdvancedMockAgent) CheckHealth() map[string]any {
 	a.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":          a.healthState,
 		"name":            a.name,
 		"type":            a.agentType,
@@ -324,17 +317,17 @@ func (a *AdvancedMockAgent) GetType() string {
 	return a.agentType
 }
 
-func (a *AdvancedMockAgent) GetInternalState() map[string]interface{} {
+func (a *AdvancedMockAgent) GetInternalState() map[string]any {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	for k, v := range a.state {
 		result[k] = v
 	}
 	return result
 }
 
-func (a *AdvancedMockAgent) SetInternalState(key string, value interface{}) {
+func (a *AdvancedMockAgent) SetInternalState(key string, value any) {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	a.state[key] = value
@@ -365,9 +358,9 @@ func NewMockTool(name, description string) *MockTool {
 	tool := &MockTool{
 		BaseTool: tools.BaseTool{},
 	}
-	tool.BaseTool.SetName(name)
-	tool.BaseTool.SetDescription(description)
-	tool.BaseTool.SetInputSchema(map[string]interface{}{
+	tool.SetName(name)
+	tool.SetDescription(description)
+	tool.SetInputSchema(map[string]any{
 		"type":        "string",
 		"description": "Tool input",
 	})
@@ -379,7 +372,7 @@ func (t *MockTool) Execute(ctx context.Context, input any) (any, error) {
 	defer t.mu.Unlock()
 	t.callCount++
 
-	return fmt.Sprintf("Tool %s executed with input: %v", t.BaseTool.Name(), input), nil
+	return fmt.Sprintf("Tool %s executed with input: %v", t.Name(), input), nil
 }
 
 func (t *MockTool) GetCallCount() int {
@@ -426,7 +419,7 @@ func CreateTestTools(count int) []tools.Tool {
 // Assertion helpers
 
 // AssertAgentExecution validates agent execution results.
-func AssertAgentExecution(t *testing.T, result interface{}, expectedPattern string) {
+func AssertAgentExecution(t *testing.T, result any, expectedPattern string) {
 	assert.NotNil(t, result)
 	if str, ok := result.(string); ok {
 		assert.Contains(t, str, expectedPattern)
@@ -442,7 +435,7 @@ func AssertPlanningResult(t *testing.T, steps []string, expectedMinSteps int) {
 }
 
 // AssertAgentHealth validates agent health check results.
-func AssertAgentHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+func AssertAgentHealth(t *testing.T, health map[string]any, expectedStatus string) {
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -452,7 +445,7 @@ func AssertAgentHealth(t *testing.T, health map[string]interface{}, expectedStat
 
 // AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	require.Error(t, err)
 	var agentErr *AgentError
 	if assert.ErrorAs(t, err, &agentErr) {
 		assert.Equal(t, expectedCode, agentErr.Code)
@@ -463,9 +456,9 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // ConcurrentTestRunner runs agent tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -555,7 +548,8 @@ func (r *ConcurrentTestRunner) Run() error {
 }
 
 // RunLoadTest executes a load test scenario on agents.
-func RunLoadTest(t *testing.T, agent *AdvancedMockAgent, numOperations int, concurrency int) {
+func RunLoadTest(t *testing.T, agent *AdvancedMockAgent, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -593,7 +587,7 @@ func RunLoadTest(t *testing.T, agent *AdvancedMockAgent, numOperations int, conc
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -653,11 +647,11 @@ func (h *IntegrationTestHelper) Reset() {
 
 // MockExecutor provides a mock executor for testing.
 type MockExecutor struct {
+	errorToReturn error
 	executions    []ExecutionRecord
 	callCount     int
 	mu            sync.RWMutex
 	shouldError   bool
-	errorToReturn error
 }
 
 func NewMockExecutor() *MockExecutor {
@@ -666,7 +660,7 @@ func NewMockExecutor() *MockExecutor {
 	}
 }
 
-func (e *MockExecutor) Execute(ctx context.Context, agent iface.CompositeAgent, input interface{}) (interface{}, error) {
+func (e *MockExecutor) Execute(ctx context.Context, agent iface.CompositeAgent, input any) (any, error) {
 	e.mu.Lock()
 	e.callCount++
 	start := time.Now()
@@ -799,7 +793,7 @@ func CreateTestAgentWithTools(name string, toolCount int) *AdvancedMockAgent {
 }
 
 // CreateTestAgentWithState creates an agent with predefined state.
-func CreateTestAgentWithState(name string, state map[string]interface{}) *AdvancedMockAgent {
+func CreateTestAgentWithState(name string, state map[string]any) *AdvancedMockAgent {
 	return NewAdvancedMockAgent(name, "base", WithAgentState(state))
 }
 
@@ -813,7 +807,7 @@ func CreateTestExecutionPlan(steps int) []string {
 }
 
 // CreateCollaborativeAgents creates agents configured for collaboration.
-func CreateCollaborativeAgents(count int, sharedState map[string]interface{}) []*AdvancedMockAgent {
+func CreateCollaborativeAgents(count int, sharedState map[string]any) []*AdvancedMockAgent {
 	agents := make([]*AdvancedMockAgent, count)
 
 	for i := 0; i < count; i++ {

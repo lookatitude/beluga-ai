@@ -3,7 +3,7 @@ package iface
 // MessageType defines the type of a message.
 type MessageType string
 
-// Constants for MessageType
+// Constants for MessageType.
 const (
 	RoleHuman     MessageType = "human"
 	RoleAssistant MessageType = "ai"
@@ -40,7 +40,7 @@ type Message interface {
 	ToolCalls() []ToolCall
 
 	// AdditionalArgs returns additional provider-specific arguments
-	AdditionalArgs() map[string]interface{}
+	AdditionalArgs() map[string]any
 }
 
 // ChatHistory defines the interface for storing and retrieving chat messages.

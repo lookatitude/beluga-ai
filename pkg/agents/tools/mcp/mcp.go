@@ -49,7 +49,7 @@ func (t *MCPingTool) Name() string {
 
 // Execute pings the server.
 // Input: any - expects string server address (host:port or host)
-// Output: string - JSON representation of the server status
+// Output: string - JSON representation of the server status.
 func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 	address, ok := input.(string)
 	if !ok {
@@ -81,16 +81,15 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 
 	// Define a custom struct matching the Minecraft server JSON response format
 	type ServerPingResponse struct {
-		Version struct {
+		Description any `json:"description"`
+		Version     struct {
 			Name     string `json:"name"`
 			Protocol int    `json:"protocol"`
 		} `json:"version"`
 		Players struct {
 			Max    int `json:"max"`
 			Online int `json:"online"`
-			// Sample array of players omitted for simplicity
 		} `json:"players"`
-		Description interface{} `json:"description"` // Can be string or complex chat component
 	}
 
 	// Process the response (which is JSON) into our structured format
@@ -98,7 +97,8 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 	err = json.Unmarshal(resp, &status)
 	if err != nil {
 		// Fallback: return raw JSON if unmarshaling fails
-		fmt.Printf("Warning: Failed to unmarshal ping response JSON for %s: %v. Returning raw JSON.\n", address, err)
+		// Note: Using fmt.Printf for compatibility, error intentionally not checked
+		_, _ = fmt.Printf("Warning: Failed to unmarshal ping response JSON for %s: %v. Returning raw JSON.\n", address, err)
 		return string(resp), nil
 	}
 
@@ -108,19 +108,25 @@ func (t *MCPingTool) Execute(ctx context.Context, input any) (any, error) {
 	switch desc := status.Description.(type) {
 	case string:
 		motd = desc
-	case map[string]interface{}:
+	case map[string]any:
 		// Try to extract text from chat component
 		if text, ok := desc["text"].(string); ok {
 			motd = text
 		} else {
 			// Convert the whole component to JSON as fallback
-			descJSON, _ := json.Marshal(desc)
-			motd = string(descJSON)
+			if descJSON, marshalErr := json.Marshal(desc); marshalErr == nil {
+				motd = string(descJSON)
+			} else {
+				motd = fmt.Sprintf("%v", desc)
+			}
 		}
 	default:
 		// If we can't determine the type, stringify it
-		descJSON, _ := json.Marshal(desc)
-		motd = string(descJSON)
+		if descJSON, marshalErr := json.Marshal(desc); marshalErr == nil {
+			motd = string(descJSON)
+		} else {
+			motd = fmt.Sprintf("%v", desc)
+		}
 	}
 
 	result := map[string]any{
@@ -195,7 +201,7 @@ type RconInput struct {
 
 // Execute connects via RCON and runs the command.
 // Input: any - expects JSON string or map[string]any matching RconInput structure
-// Output: string - Response from the server command
+// Output: string - Response from the server command.
 func (t *MCRconTool) Execute(ctx context.Context, input any) (any, error) {
 	var rconInput RconInput
 	var err error
@@ -235,7 +241,11 @@ func (t *MCRconTool) Execute(ctx context.Context, input any) (any, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect via RCON to %s: %w", rconInput.Address, err)
 	}
-	defer conn.Close()
+	defer func() {
+		if closeErr := conn.Close(); closeErr != nil {
+			// Log close error but don't fail the operation
+		}
+	}()
 
 	response, err := conn.SendCommand(rconInput.Command)
 	if err != nil {
@@ -263,7 +273,8 @@ func StripMinecraftFormatting(input string) string {
 			strip = false // Skip the character after §
 			continue
 		}
-		result.WriteRune(r)
+		// WriteRune on strings.Builder should never fail with proper initialization
+		_, _ = result.WriteRune(r)
 	}
 	return result.String()
 }

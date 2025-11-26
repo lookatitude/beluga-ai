@@ -8,11 +8,11 @@ import "github.com/lookatitude/beluga-ai/pkg/schema"
 type Provider interface {
 	// Load populates the given configStruct with configuration values.
 	// The configStruct should be a pointer to a struct that can be unmarshalled into.
-	Load(configStruct interface{}) error
+	Load(configStruct any) error
 
 	// UnmarshalKey decodes the configuration at a specific key into a struct.
 	// rawVal should be a pointer to a struct.
-	UnmarshalKey(key string, rawVal interface{}) error
+	UnmarshalKey(key string, rawVal any) error
 
 	// GetString retrieves a string configuration value by key.
 	GetString(key string) string
@@ -59,12 +59,12 @@ type Provider interface {
 	SetDefaults() error
 }
 
-// Validator defines the interface for configuration validation
+// Validator defines the interface for configuration validation.
 type Validator interface {
 	Validate() error
 }
 
-// Loader defines the interface for configuration loading
+// Loader defines the interface for configuration loading.
 type Loader interface {
 	LoadConfig() (*Config, error)
 	MustLoadConfig() *Config

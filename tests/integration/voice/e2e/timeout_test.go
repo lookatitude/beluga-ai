@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestTimeout_E2E tests session timeout end-to-end
+// TestTimeout_E2E tests session timeout end-to-end.
 func TestTimeout_E2E(t *testing.T) {
 	ctx := context.Background()
 

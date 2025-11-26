@@ -4,7 +4,9 @@ package vectorstore
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
@@ -51,11 +53,13 @@ func (m *VectorStoreMemory) MemoryVariables() []string {
 // TODO: Make this configurable.
 func formatDocuments(docs []schema.Message) string {
 	formatted := "Relevant context:\n"
+	var formattedSb54 strings.Builder
 	for _, doc := range docs {
 		// Assuming schema.Document can be treated like schema.Message for GetContent()
 		// This might need adjustment based on actual schema.Document structure.
-		formatted += fmt.Sprintf("- %s\n", doc.GetContent())
+		_, _ = formattedSb54.WriteString(fmt.Sprintf("- %s\n", doc.GetContent()))
 	}
+	formatted += formattedSb54.String()
 	return formatted
 }
 
@@ -77,21 +81,18 @@ func (m *VectorStoreMemory) LoadMemoryVariables(ctx context.Context, inputs map[
 			} else if _, ok := inputs["question"]; ok {
 				inputKey = "question"
 			} else {
-				return nil, fmt.Errorf(
-					"could not determine input key for retrieval query from multiple inputs")
+				return nil, errors.New("could not determine input key for retrieval query from multiple inputs")
 			}
 		}
 	}
 
 	queryVal, ok := inputs[inputKey]
 	if !ok {
-		return nil, fmt.Errorf(
-			"error")
+		return nil, errors.New("error")
 	}
 	queryStr, ok := queryVal.(string)
 	if !ok {
-		return nil, fmt.Errorf(
-			"error")
+		return nil, errors.New("error")
 	}
 
 	// Retrieve relevant documents
@@ -99,13 +100,12 @@ func (m *VectorStoreMemory) LoadMemoryVariables(ctx context.Context, inputs map[
 	// The concrete implementation (e.g., VectorStoreRetriever) handles embedding.
 	docsAny, err := m.Retriever.Invoke(ctx, queryStr)
 	if err != nil {
-		return nil, fmt.Errorf("error")
+		return nil, errors.New("error")
 	}
 
 	docs, ok := docsAny.([]schema.Document)
 	if !ok {
-		return nil, fmt.Errorf(
-			"error")
+		return nil, errors.New("error")
 	}
 
 	// Limit number of documents if necessary (though retriever might handle this)
@@ -130,7 +130,7 @@ func (m *VectorStoreMemory) LoadMemoryVariables(ctx context.Context, inputs map[
 }
 
 // SaveContext embeds the input/output pair and saves it to the vector store.
-func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
 
@@ -149,24 +149,20 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 	outputVal, outputOk := outputs[outputKey]
 
 	if !inputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 	if !outputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 
 	inputStr, inputStrOk := inputVal.(string)
 	outputStr, outputStrOk := outputVal.(string)
 
 	if !inputStrOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 	if !outputStrOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 
 	// Combine input and output into a single document content for saving.
@@ -178,7 +174,7 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 	// This assumes the retriever might wrap a vector store that has an AddDocuments method.
 	// This is a conceptual dependency and might need a different approach, e.g., direct VectorStore access.
 	if m.Retriever == nil {
-		return fmt.Errorf("retriever is nil")
+		return errors.New("retriever is nil")
 	}
 
 	type DocumentAdder interface {
@@ -189,13 +185,13 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 	if !ok {
 		// If the retriever doesn't support adding, we can't save context this way.
 		// Log a warning or return an error based on desired behavior.
-		fmt.Printf("Warning: Retriever used with VectorStoreMemory does not support adding documents. Context not saved to vector store.\n")
+		_, _ = fmt.Printf("Warning: Retriever used with VectorStoreMemory does not support adding documents. Context not saved to vector store.\n")
 		return nil // Or return an error if saving is critical
 	}
 
 	_, err := adder.AddDocuments(ctx, []schema.Document{doc})
 	if err != nil {
-		return fmt.Errorf("error")
+		return errors.New("error")
 	}
 
 	return nil
@@ -206,12 +202,12 @@ func (m *VectorStoreMemory) SaveContext(ctx context.Context, inputs map[string]a
 func (m *VectorStoreMemory) Clear(ctx context.Context) error {
 	// No-op for now. Implement deletion logic if the underlying vector store supports it
 	// and if session management/metadata allows identifying documents to clear.
-	fmt.Println("Warning: Clear() called on VectorStoreMemory, but not implemented. Vector store content remains unchanged.")
+	_, _ = fmt.Println("Warning: Clear() called on VectorStoreMemory, but not implemented. Vector store content remains unchanged.")
 	return nil
 }
 
 // getInputOutputKeys determines the input and output keys from the given maps.
-func getInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string) {
+func getInputOutputKeys(inputs, outputs map[string]any) (string, string) {
 	if len(inputs) == 0 || len(outputs) == 0 {
 		return "input", "output"
 	}

@@ -5,12 +5,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -71,9 +72,9 @@ func TestConfig_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.config.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -83,7 +84,7 @@ func TestConfig_DefaultConfig(t *testing.T) {
 	config := DefaultConfig()
 	assert.NotNil(t, config)
 	assert.Equal(t, "silero", config.Provider)
-	assert.Equal(t, 0.5, config.Threshold)
+	assert.InEpsilon(t, 0.5, config.Threshold, 0.0001)
 	assert.Equal(t, 512, config.FrameSize)
 	assert.Equal(t, 16000, config.SampleRate)
 	assert.Equal(t, 250*time.Millisecond, config.MinSpeechDuration)
@@ -97,7 +98,7 @@ func TestConfigOption(t *testing.T) {
 	assert.Equal(t, "energy", config.Provider)
 
 	WithThreshold(0.7)(config)
-	assert.Equal(t, 0.7, config.Threshold)
+	assert.InEpsilon(t, 0.7, config.Threshold, 0.0001)
 
 	WithFrameSize(1024)(config)
 	assert.Equal(t, 1024, config.FrameSize)

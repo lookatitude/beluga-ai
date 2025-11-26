@@ -6,12 +6,13 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTransport_Connect(t *testing.T) {
 	tests := []struct {
-		name          string
 		transport     *AdvancedMockTransport
+		name          string
 		expectedError bool
 	}{
 		{
@@ -34,9 +35,9 @@ func TestTransport_Connect(t *testing.T) {
 			err := tt.transport.Connect(ctx)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.True(t, tt.transport.IsConnected())
 			}
 		})
@@ -45,8 +46,8 @@ func TestTransport_Connect(t *testing.T) {
 
 func TestTransport_Disconnect(t *testing.T) {
 	tests := []struct {
-		name          string
 		transport     *AdvancedMockTransport
+		name          string
 		expectedError bool
 	}{
 		{
@@ -69,9 +70,9 @@ func TestTransport_Disconnect(t *testing.T) {
 			err := tt.transport.Disconnect(ctx)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.False(t, tt.transport.IsConnected())
 			}
 		})
@@ -107,9 +108,9 @@ func TestTransport_SendAudio(t *testing.T) {
 			err := tt.transport.SendAudio(ctx, tt.audio)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -117,8 +118,8 @@ func TestTransport_SendAudio(t *testing.T) {
 
 func TestTransport_ReceiveAudio(t *testing.T) {
 	tests := []struct {
-		name      string
 		transport *AdvancedMockTransport
+		name      string
 		wantData  bool
 	}{
 		{
@@ -189,7 +190,7 @@ func TestTransport_Close(t *testing.T) {
 		WithConnected(true))
 
 	err := transport.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, transport.IsConnected())
 }
 

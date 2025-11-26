@@ -80,7 +80,7 @@ func (f *fixer) ApplyFix(ctx context.Context, issue *PerformanceIssue) (*Fix, er
 		}
 		if err := f.codeModifier.ApplyCodeChange(ctx, internalChange); err != nil {
 			// Rollback on error
-			_ = f.rollbackFromBackup(ctx, backupPath, issue.Location.File)
+			_ = f.rollbackFromBackup(ctx, backupPath, issue.Location.File) // Already handled
 			return nil, fmt.Errorf("applying code change: %w", err)
 		}
 	}

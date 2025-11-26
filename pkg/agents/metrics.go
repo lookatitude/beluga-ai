@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // Package metrics provides metrics collection for the agents package.
@@ -242,28 +243,36 @@ func (m *Metrics) RecordPlanningCall(ctx context.Context, agentName string, dura
 }
 
 // Tracing helpers.
+// Spans returned by these methods must be ended by the caller using span.End().
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartAgentSpan(ctx context.Context, agentName, operation string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "agent."+operation,
+	ctx, span := m.tracer.Start(ctx, "agent."+operation,
 		trace.WithAttributes(
 			attribute.String("agent.name", agentName),
 		),
 	)
+	return ctx, span
 }
 
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartExecutorSpan(ctx context.Context, executorType, operation string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "executor."+operation,
+	ctx, span := m.tracer.Start(ctx, "executor."+operation,
 		trace.WithAttributes(
 			attribute.String("executor.type", executorType),
 		),
 	)
+	return ctx, span
 }
 
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartToolSpan(ctx context.Context, toolName, operation string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "tool."+operation,
+	ctx, span := m.tracer.Start(ctx, "tool."+operation,
 		trace.WithAttributes(
 			attribute.String("tool.name", toolName),
 		),
 	)
+	return ctx, span
 }
 
 // DefaultMetrics creates a metrics instance with default meter and tracer.
@@ -277,7 +286,7 @@ func DefaultMetrics() *Metrics {
 // Useful for testing or when metrics are disabled.
 func NoOpMetrics() *Metrics {
 	return &Metrics{
-		tracer: trace.NewNoopTracerProvider().Tracer("noop"),
+		tracer: noop.NewTracerProvider().Tracer("noop"),
 	}
 }
 

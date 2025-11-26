@@ -5,38 +5,38 @@ import (
 	"sync"
 )
 
-// ResponseCancellation manages cancellation of responses on interruption
+// ResponseCancellation manages cancellation of responses on interruption.
 type ResponseCancellation struct {
+	activeHandle any
 	mu           sync.RWMutex
-	activeHandle interface{} // SayHandle or similar
-	cancelled    bool
+	canceled     bool
 }
 
-// NewResponseCancellation creates a new response cancellation manager
+// NewResponseCancellation creates a new response cancellation manager.
 func NewResponseCancellation() *ResponseCancellation {
 	return &ResponseCancellation{
-		cancelled: false,
+		canceled: false,
 	}
 }
 
-// SetActiveHandle sets the active response handle
-func (rc *ResponseCancellation) SetActiveHandle(handle interface{}) {
+// SetActiveHandle sets the active response handle.
+func (rc *ResponseCancellation) SetActiveHandle(handle any) {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	rc.activeHandle = handle
-	rc.cancelled = false
+	rc.canceled = false
 }
 
-// Cancel cancels the active response
+// Cancel cancels the active response.
 func (rc *ResponseCancellation) Cancel() error {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	if rc.cancelled {
+	if rc.canceled {
 		return nil
 	}
 
-	rc.cancelled = true
+	rc.canceled = true
 
 	// Try to cancel the handle if it supports cancellation
 	if handle, ok := rc.activeHandle.(interface{ Cancel() error }); ok {
@@ -46,22 +46,22 @@ func (rc *ResponseCancellation) Cancel() error {
 	return nil
 }
 
-// IsCancelled returns whether the response is cancelled
+// IsCancelled returns whether the response is canceled.
 func (rc *ResponseCancellation) IsCancelled() bool {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
-	return rc.cancelled
+	return rc.canceled
 }
 
-// Clear clears the active handle
+// Clear clears the active handle.
 func (rc *ResponseCancellation) Clear() {
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 	rc.activeHandle = nil
-	rc.cancelled = false
+	rc.canceled = false
 }
 
-// CancelOnInterruption cancels the response if an interruption is detected
+// CancelOnInterruption cancels the response if an interruption is detected.
 func (rc *ResponseCancellation) CancelOnInterruption(ctx context.Context, detector *InterruptionDetector) error {
 	if detector.IsInterrupted() {
 		return rc.Cancel()

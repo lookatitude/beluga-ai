@@ -10,6 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/logger"
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/metrics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewBestPracticesChecker(t *testing.T) {
@@ -30,7 +31,7 @@ func TestBestPracticesCheckerValidate(t *testing.T) {
 	checker := NewBestPracticesChecker(mockLogger.(*logger.StructuredLogger), mockMetrics)
 
 	t.Run("validate with issues", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		// This should trigger some validation issues
 		data := "go func() { /* uncontrolled goroutine */ }()"
 		issues := checker.Validate(ctx, data, "test_component")
@@ -251,8 +252,8 @@ func TestPerformanceMonitor(t *testing.T) {
 		})
 		duration := time.Since(start)
 
-		assert.NoError(t, err)
-		assert.True(t, duration >= 10*time.Millisecond)
+		require.NoError(t, err)
+		assert.GreaterOrEqual(t, duration, 10*time.Millisecond)
 
 		// Check if metrics were recorded
 		// The metric is recorded with labels, so we need to match them
@@ -261,7 +262,7 @@ func TestPerformanceMonitor(t *testing.T) {
 		})
 		assert.True(t, exists)
 		if exists {
-			assert.True(t, metric.Value >= 0.01) // At least 10ms
+			assert.GreaterOrEqual(t, metric.Value, 0.01) // At least 10ms
 		}
 	})
 
@@ -271,7 +272,7 @@ func TestPerformanceMonitor(t *testing.T) {
 			return testErr
 		})
 
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, testErr, err)
 	})
 }
@@ -287,7 +288,7 @@ func TestPerformanceMonitorGoroutines(t *testing.T) {
 	// Check if metrics were recorded
 	metric, exists := mockMetrics.GetMetric("goroutines_total", nil)
 	assert.True(t, exists)
-	assert.True(t, metric.Value >= 1) // At least the main goroutine
+	assert.GreaterOrEqual(t, metric.Value, float64(1)) // At least the main goroutine
 }
 
 func TestDeadlockDetector(t *testing.T) {
@@ -334,7 +335,7 @@ func TestContainsPattern(t *testing.T) {
 	}
 }
 
-// Mock validator for testing
+// Mock validator for testing.
 type MockValidator struct {
 	name string
 }
@@ -343,7 +344,7 @@ func (mv *MockValidator) Name() string {
 	return mv.name
 }
 
-func (mv *MockValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+func (mv *MockValidator) Validate(ctx context.Context, data any) []iface.ValidationIssue {
 	return []iface.ValidationIssue{
 		{
 			Validator:  mv.name,
@@ -354,7 +355,7 @@ func (mv *MockValidator) Validate(ctx context.Context, data interface{}) []iface
 	}
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkBestPracticesChecker_Validate(b *testing.B) {
 	mockLogger := logger.NewStructuredLogger("bench_test")
 	mockMetrics := metrics.NewMetricsCollector()

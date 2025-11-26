@@ -1,6 +1,7 @@
 package audio
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -17,7 +18,7 @@ func NewConverter() *Converter {
 // audio processing libraries.
 func (c *Converter) Convert(data []byte, from, to *AudioFormat) ([]byte, error) {
 	if from == nil || to == nil {
-		return nil, fmt.Errorf("source and target formats must be non-nil")
+		return nil, errors.New("source and target formats must be non-nil")
 	}
 
 	if err := from.Validate(); err != nil {

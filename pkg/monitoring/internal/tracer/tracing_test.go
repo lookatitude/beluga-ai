@@ -20,7 +20,7 @@ func TestTracerStartSpan(t *testing.T) {
 	tracer := NewTracer("test-service")
 
 	t.Run("start root span", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		ctx, span := tracer.StartSpan(ctx, "test_operation")
 		assert.NotNil(t, ctx)
 		assert.NotNil(t, span)
@@ -90,7 +90,7 @@ func TestTracerFinishSpan(t *testing.T) {
 
 	assert.NotNil(t, spanImpl.EndTime)
 	assert.NotNil(t, spanImpl.SpanDuration)
-	assert.True(t, *spanImpl.SpanDuration >= 10*time.Millisecond)
+	assert.GreaterOrEqual(t, *spanImpl.SpanDuration, 10*time.Millisecond)
 	assert.Equal(t, "finished", spanImpl.Status)
 }
 
@@ -166,7 +166,7 @@ func TestSpanOperations(t *testing.T) {
 
 	t.Run("log", func(t *testing.T) {
 		span.Log("Simple log message")
-		span.Log("Log with fields", map[string]interface{}{
+		span.Log("Log with fields", map[string]any{
 			"step":   1,
 			"status": "processing",
 		})
@@ -196,11 +196,11 @@ func TestSpanOperations(t *testing.T) {
 	t.Run("get duration", func(t *testing.T) {
 		time.Sleep(5 * time.Millisecond)
 		duration := span.GetDuration()
-		assert.True(t, duration >= 5*time.Millisecond)
+		assert.GreaterOrEqual(t, duration, 5*time.Millisecond)
 
 		tracer.FinishSpan(span)
 		finishedDuration := span.GetDuration()
-		assert.True(t, finishedDuration >= duration)
+		assert.GreaterOrEqual(t, finishedDuration, duration)
 	})
 
 	t.Run("is finished", func(t *testing.T) {
@@ -219,7 +219,7 @@ func TestSpanOptions(t *testing.T) {
 		option := WithTag("test_key", "test_value")
 
 		spanImpl := &spanImpl{
-			Tags: make(map[string]interface{}),
+			Tags: make(map[string]any),
 		}
 
 		option(spanImpl)
@@ -227,14 +227,14 @@ func TestSpanOptions(t *testing.T) {
 	})
 
 	t.Run("WithTags", func(t *testing.T) {
-		tags := map[string]interface{}{
+		tags := map[string]any{
 			"key1": "value1",
 			"key2": 42,
 		}
 		option := WithTags(tags)
 
 		spanImpl := &spanImpl{
-			Tags: make(map[string]interface{}),
+			Tags: make(map[string]any),
 		}
 
 		option(spanImpl)
@@ -247,7 +247,7 @@ func TestSpanContext(t *testing.T) {
 	tracer := NewTracer("test-service")
 
 	t.Run("SpanFromContext", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		ctx, span := tracer.StartSpan(ctx, "test_operation")
 		retrievedSpan := SpanFromContext(ctx)
 		assert.Equal(t, span, retrievedSpan)
@@ -308,7 +308,7 @@ func TestTraceFunc(t *testing.T) {
 	}
 
 	err := TraceFunc(ctx, tracer, "test_function", testFunc)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, called)
 }
 
@@ -330,7 +330,7 @@ func TestTraceMethod(t *testing.T) {
 	}
 
 	err := TraceMethod(ctx, tracer, "TestMethod", receiver, testMethod)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, called)
 }
 
@@ -357,7 +357,7 @@ func isValidHex(s string) bool {
 	return true
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkTracer_StartSpan(b *testing.B) {
 	tracer := NewTracer("bench-service")
 
@@ -388,7 +388,7 @@ func BenchmarkSpan_Log(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		span.Log("Benchmark log message", map[string]interface{}{
+		span.Log("Benchmark log message", map[string]any{
 			"iteration": i,
 			"timestamp": time.Now().UnixNano(),
 		})

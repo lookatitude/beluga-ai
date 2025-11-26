@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSimpleSession_E2E tests a simple end-to-end voice session flow
+// TestSimpleSession_E2E tests a simple end-to-end voice session flow.
 func TestSimpleSession_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -40,7 +40,7 @@ func TestSimpleSession_E2E(t *testing.T) {
 	// Process audio
 	audio := []byte{1, 2, 3, 4, 5}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Say something
 	handle, err := voiceSession.Say(ctx, "Hello, user!")

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	// Import providers to trigger init() registration
+	// Import providers to trigger init() registration.
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/heuristic"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/onnx"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +67,7 @@ func TestTurnDetector_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.DetectTurn(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, turndetection.IsRetryableError(err))
 	})
 
@@ -80,7 +80,7 @@ func TestTurnDetector_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.DetectTurn(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, turndetection.IsRetryableError(err))
 	})
 }

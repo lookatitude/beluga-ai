@@ -7,6 +7,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNoiseCancellation_Process(t *testing.T) {
@@ -48,10 +49,10 @@ func TestNoiseCancellation_Process(t *testing.T) {
 			processed, err := tt.cancellation.Process(ctx, tt.audio)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, processed)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				if tt.expectedOutput {
 					assert.NotNil(t, processed)
 				}
@@ -95,7 +96,7 @@ func TestNoiseCancellation_ProcessStream(t *testing.T) {
 			processedCh, err := tt.cancellation.ProcessStream(ctx, audioCh)
 
 			if tt.expectedErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				// When there's an error, the channel is still returned but closed
 				if processedCh != nil {
 					// Verify channel is closed
@@ -103,7 +104,7 @@ func TestNoiseCancellation_ProcessStream(t *testing.T) {
 					assert.False(t, ok, "channel should be closed on error")
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, processedCh)
 
 				// Receive processed audio

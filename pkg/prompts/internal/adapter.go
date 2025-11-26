@@ -16,22 +16,22 @@ import (
 
 // Note: options struct is defined in the main prompts package
 
-// BaseAdapter provides common functionality for prompt adapters
+// BaseAdapter provides common functionality for prompt adapters.
 type BaseAdapter struct {
-	name      string
-	variables []string
 	metrics   iface.Metrics
 	tracer    iface.Tracer
 	logger    iface.Logger
 	config    *iface.Config
+	name      string
+	variables []string
 }
 
-// Name returns the adapter name
+// Name returns the adapter name.
 func (b *BaseAdapter) Name() string {
 	return b.name
 }
 
-// GetInputVariables returns the list of expected input variables
+// GetInputVariables returns the list of expected input variables.
 func (b *BaseAdapter) GetInputVariables() []string {
 	return b.variables
 }
@@ -39,8 +39,8 @@ func (b *BaseAdapter) GetInputVariables() []string {
 // DefaultPromptAdapter is a basic implementation that handles simple string formatting.
 // It can be used for models that expect a single string prompt.
 type DefaultPromptAdapter struct {
+	Template string
 	BaseAdapter
-	Template string // The prompt template string, e.g., "Translate the following text: {{.text}}"
 }
 
 // NewDefaultPromptAdapter creates a new DefaultPromptAdapter.
@@ -80,7 +80,7 @@ func NewDefaultPromptAdapter(name, template string, inputVariables []string, opt
 
 // Format interpolates the input variables into the template string.
 // For this default adapter, it returns a single string.
-func (dpa *DefaultPromptAdapter) Format(ctx context.Context, inputs map[string]interface{}) (interface{}, error) {
+func (dpa *DefaultPromptAdapter) Format(ctx context.Context, inputs map[string]any) (any, error) {
 	ctx, span := dpa.tracer.Start(ctx, "default_adapter.format")
 	defer span.End()
 
@@ -144,8 +144,8 @@ func (dpa *DefaultPromptAdapter) Format(ctx context.Context, inputs map[string]i
 	return formattedPrompt, nil
 }
 
-// validateInputs validates that all required inputs are present and have correct types
-func (dpa *DefaultPromptAdapter) validateInputs(inputs map[string]interface{}) error {
+// validateInputs validates that all required inputs are present and have correct types.
+func (dpa *DefaultPromptAdapter) validateInputs(inputs map[string]any) error {
 	for _, key := range dpa.variables {
 		value, ok := inputs[key]
 		if !ok {
@@ -160,15 +160,15 @@ func (dpa *DefaultPromptAdapter) validateInputs(inputs map[string]interface{}) e
 	return nil
 }
 
-// ChatPromptAdapter for models that use a list of messages (e.g., OpenAI Chat, Anthropic Claude)
+// ChatPromptAdapter for models that use a list of messages (e.g., OpenAI Chat, Anthropic Claude).
 type ChatPromptAdapter struct {
-	BaseAdapter
 	SystemMessageTemplate string
 	UserMessageTemplate   string
-	HistoryKey            string // Key in inputs map for chat history
+	HistoryKey            string
+	BaseAdapter
 }
 
-// NewChatPromptAdapter creates a new ChatPromptAdapter
+// NewChatPromptAdapter creates a new ChatPromptAdapter.
 func NewChatPromptAdapter(name, systemTemplate, userTemplate string, inputVariables []string, opts ...iface.Option) (*ChatPromptAdapter, error) {
 	if name == "" {
 		return nil, iface.NewValidationError("new_chat_adapter", "adapter name cannot be empty", nil)
@@ -205,8 +205,8 @@ func NewChatPromptAdapter(name, systemTemplate, userTemplate string, inputVariab
 	return adapter, nil
 }
 
-// Format formats inputs into a list of messages for chat models
-func (cpa *ChatPromptAdapter) Format(ctx context.Context, inputs map[string]interface{}) (interface{}, error) {
+// Format formats inputs into a list of messages for chat models.
+func (cpa *ChatPromptAdapter) Format(ctx context.Context, inputs map[string]any) (any, error) {
 	ctx, span := cpa.tracer.Start(ctx, "chat_adapter.format",
 		trace.WithAttributes(
 			attribute.String("adapter.name", cpa.name),
@@ -279,8 +279,8 @@ func (cpa *ChatPromptAdapter) Format(ctx context.Context, inputs map[string]inte
 	return messages, nil
 }
 
-// formatTemplate formats a single template string with inputs
-func (cpa *ChatPromptAdapter) formatTemplate(template string, inputs map[string]interface{}) (string, error) {
+// formatTemplate formats a single template string with inputs.
+func (cpa *ChatPromptAdapter) formatTemplate(template string, inputs map[string]any) (string, error) {
 	formatted := template
 	for _, key := range cpa.variables {
 		value, ok := inputs[key]
@@ -299,8 +299,8 @@ func (cpa *ChatPromptAdapter) formatTemplate(template string, inputs map[string]
 	return formatted, nil
 }
 
-// validateInputs validates that all required inputs are present and have correct types
-func (cpa *ChatPromptAdapter) validateInputs(inputs map[string]interface{}) error {
+// validateInputs validates that all required inputs are present and have correct types.
+func (cpa *ChatPromptAdapter) validateInputs(inputs map[string]any) error {
 	for _, key := range cpa.variables {
 		value, ok := inputs[key]
 		if !ok {
@@ -315,11 +315,13 @@ func (cpa *ChatPromptAdapter) validateInputs(inputs map[string]interface{}) erro
 	return nil
 }
 
-// Helper function to create a schema.Message (useful for chat model adapters)
+// Helper function to create a schema.Message (useful for chat model adapters).
 func NewChatMessage(role schema.MessageType, content string) schema.Message {
 	return schema.NewChatMessage(role, content)
 }
 
 // Compile-time checks to ensure implementations satisfy interfaces.
-var _ iface.PromptFormatter = (*DefaultPromptAdapter)(nil)
-var _ iface.PromptFormatter = (*ChatPromptAdapter)(nil)
+var (
+	_ iface.PromptFormatter = (*DefaultPromptAdapter)(nil)
+	_ iface.PromptFormatter = (*ChatPromptAdapter)(nil)
+)

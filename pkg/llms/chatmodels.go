@@ -5,6 +5,7 @@ package llms
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -38,7 +39,7 @@ type ModelInfoProvider interface {
 // HealthChecker defines the interface for health checking chat model components.
 type HealthChecker interface {
 	// CheckHealth returns the health status information.
-	CheckHealth() map[string]interface{}
+	CheckHealth() map[string]any
 }
 
 // ChatModel defines the core interface for chat-based language models.
@@ -58,38 +59,38 @@ type ModelInfo struct {
 	Name         string
 	Provider     string
 	Version      string
-	MaxTokens    int
 	Capabilities []string
+	MaxTokens    int
 }
 
 // ChatOption represents a functional option for configuring chat models.
 type ChatOption interface {
-	Apply(config *map[string]interface{})
+	Apply(config *map[string]any)
 }
 
 // chatOptionFunc is a helper type that allows an ordinary function to be used as a ChatOption.
-type chatOptionFunc func(config *map[string]interface{})
+type chatOptionFunc func(config *map[string]any)
 
 // Apply calls f(config), allowing chatOptionFunc to satisfy the ChatOption interface.
-func (f chatOptionFunc) Apply(config *map[string]interface{}) {
+func (f chatOptionFunc) Apply(config *map[string]any) {
 	f(config)
 }
 
 // ChatOptionFunc creates a new ChatOption that executes the provided function.
-func ChatOptionFunc(f func(config *map[string]interface{})) ChatOption {
+func ChatOptionFunc(f func(config *map[string]any)) ChatOption {
 	return chatOptionFunc(f)
 }
 
 // ChatOptions holds the configuration options for chat models.
 type ChatOptions struct {
-	Temperature     float32
-	MaxTokens       int
-	TopP            float32
-	StopSequences   []string
 	SystemPrompt    string
-	FunctionCalling bool
+	StopSequences   []string
+	MaxTokens       int
 	Timeout         time.Duration
 	MaxRetries      int
+	Temperature     float32
+	TopP            float32
+	FunctionCalling bool
 	EnableMetrics   bool
 	EnableTracing   bool
 }
@@ -98,68 +99,68 @@ type ChatOptions struct {
 // It enables dependency injection and different chat model creation strategies.
 type ChatModelFactory interface {
 	// CreateChatModel creates a new chat model instance based on the provided configuration.
-	CreateChatModel(ctx context.Context, config interface{}) (ChatModel, error)
+	CreateChatModel(ctx context.Context, config any) (ChatModel, error)
 }
 
 // WithChatTemperature sets the temperature for chat model generation.
 func WithChatTemperature(temp float32) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["temperature"] = temp
 	})
 }
 
 // WithChatMaxTokens sets the maximum tokens for chat model generation.
 func WithChatMaxTokens(maxTokens int) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["max_tokens"] = maxTokens
 	})
 }
 
 // WithChatTopP sets the top-p value for chat model generation.
 func WithChatTopP(topP float32) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["top_p"] = topP
 	})
 }
 
 // WithChatStopSequences sets the stop sequences for chat model generation.
 func WithChatStopSequences(sequences []string) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["stop_sequences"] = sequences
 	})
 }
 
 // WithChatSystemPrompt sets the system prompt for chat model generation.
 func WithChatSystemPrompt(prompt string) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["system_prompt"] = prompt
 	})
 }
 
 // WithChatFunctionCalling enables or disables function calling for chat models.
 func WithChatFunctionCalling(enabled bool) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["function_calling"] = enabled
 	})
 }
 
 // WithChatTimeout sets the timeout for chat model operations.
 func WithChatTimeout(timeout time.Duration) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["timeout"] = timeout
 	})
 }
 
 // WithChatMaxRetries sets the maximum retries for chat model operations.
 func WithChatMaxRetries(maxRetries int) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["max_retries"] = maxRetries
 	})
 }
 
 // WithChatObservability enables or disables observability features for chat models.
 func WithChatObservability(metrics, tracing bool) ChatOption {
-	return ChatOptionFunc(func(config *map[string]interface{}) {
+	return ChatOptionFunc(func(config *map[string]any) {
 		(*config)["enable_metrics"] = metrics
 		(*config)["enable_tracing"] = tracing
 	})
@@ -215,7 +216,7 @@ func NewChatModel(model string, config *Config, opts ...ChatOption) (iface.ChatM
 	}
 
 	// Convert ChatOptions to map and apply options
-	configMap := make(map[string]interface{})
+	configMap := make(map[string]any)
 	for _, opt := range opts {
 		opt.Apply(&configMap)
 	}
@@ -234,7 +235,9 @@ func NewChatModel(model string, config *Config, opts ...ChatOption) (iface.ChatM
 		options.StopSequences = stopSeq
 	}
 	if sysPrompt, ok := configMap["system_prompt"].(string); ok {
-		options.SystemPrompt = sysPrompt
+		// Note: SystemPrompt is set but not currently used (stub implementation)
+		// This will be used once provider registration is implemented
+		options.SystemPrompt = sysPrompt //nolint:govet // unusedwrite: intentional stub, will be used later
 	}
 	if funcCalling, ok := configMap["function_calling"].(bool); ok {
 		options.FunctionCalling = funcCalling
@@ -275,16 +278,16 @@ func NewChatModel(model string, config *Config, opts ...ChatOption) (iface.ChatM
 	llmConfig.Provider = config.Provider
 
 	// For now, return an error indicating that provider registration is needed
-	return nil, fmt.Errorf("chat model creation requires provider registration - use factory pattern to register providers first")
+	return nil, errors.New("chat model creation requires provider registration - use factory pattern to register providers first")
 }
 
-// ChatModelAdapter wraps an LLM to provide the ChatModel interface
+// ChatModelAdapter wraps an LLM to provide the ChatModel interface.
 type ChatModelAdapter struct {
 	llm     iface.LLM
 	options *ChatOptions
 }
 
-// NewChatModelAdapter creates a new ChatModelAdapter
+// NewChatModelAdapter creates a new ChatModelAdapter.
 func NewChatModelAdapter(llm iface.LLM, options *ChatOptions) *ChatModelAdapter {
 	return &ChatModelAdapter{
 		llm:     llm,
@@ -292,7 +295,7 @@ func NewChatModelAdapter(llm iface.LLM, options *ChatOptions) *ChatModelAdapter 
 	}
 }
 
-// GenerateMessages implements the MessageGenerator interface
+// GenerateMessages implements the MessageGenerator interface.
 func (c *ChatModelAdapter) GenerateMessages(ctx context.Context, messages []schema.Message, options ...core.Option) ([]schema.Message, error) {
 	// Convert messages to a single prompt for simple LLM invocation
 	prompt := c.messagesToPrompt(messages)
@@ -312,7 +315,7 @@ func (c *ChatModelAdapter) GenerateMessages(ctx context.Context, messages []sche
 	return []schema.Message{responseMsg}, nil
 }
 
-// StreamMessages implements the StreamMessageHandler interface
+// StreamMessages implements the StreamMessageHandler interface.
 func (c *ChatModelAdapter) StreamMessages(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan schema.Message, error) {
 	// For now, just generate a single message (streaming not implemented)
 	result, err := c.GenerateMessages(ctx, messages, options...)
@@ -327,7 +330,7 @@ func (c *ChatModelAdapter) StreamMessages(ctx context.Context, messages []schema
 	return messageChan, nil
 }
 
-// GetModelInfo implements the ModelInfoProvider interface
+// GetModelInfo implements the ModelInfoProvider interface.
 func (c *ChatModelAdapter) GetModelInfo() ModelInfo {
 	return ModelInfo{
 		Name:         c.llm.GetModelName(),
@@ -338,9 +341,9 @@ func (c *ChatModelAdapter) GetModelInfo() ModelInfo {
 	}
 }
 
-// CheckHealth implements the HealthChecker interface
-func (c *ChatModelAdapter) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (c *ChatModelAdapter) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":     "healthy",
 		"model":     c.llm.GetModelName(),
 		"provider":  c.llm.GetProviderName(),
@@ -348,7 +351,7 @@ func (c *ChatModelAdapter) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (c *ChatModelAdapter) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := EnsureMessages(input)
 	if err != nil {
@@ -361,7 +364,7 @@ func (c *ChatModelAdapter) Invoke(ctx context.Context, input any, options ...cor
 	return result, nil
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (c *ChatModelAdapter) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i, input := range inputs {
@@ -374,7 +377,7 @@ func (c *ChatModelAdapter) Batch(ctx context.Context, inputs []any, options ...c
 	return results, nil
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (c *ChatModelAdapter) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := EnsureMessages(input)
 	if err != nil {
@@ -398,36 +401,36 @@ func (c *ChatModelAdapter) Stream(ctx context.Context, input any, options ...cor
 	return anyChan, nil
 }
 
-// messagesToPrompt converts a slice of messages to a single prompt string
+// messagesToPrompt converts a slice of messages to a single prompt string.
 func (c *ChatModelAdapter) messagesToPrompt(messages []schema.Message) string {
 	var prompt strings.Builder
 
 	for i, msg := range messages {
 		if i > 0 {
-			prompt.WriteString("\n\n")
+			_, _ = prompt.WriteString("\n\n") //nolint:errcheck // strings.Builder.WriteString rarely fails
 		}
 
 		switch m := msg.(type) {
 		case *schema.ChatMessage:
 			if m.GetType() == schema.RoleSystem {
-				prompt.WriteString("System: ")
+				_, _ = prompt.WriteString("System: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
 			} else if m.GetType() == schema.RoleHuman {
-				prompt.WriteString("Human: ")
+				_, _ = prompt.WriteString("Human: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
 			} else if m.GetType() == schema.RoleAssistant {
-				prompt.WriteString("Assistant: ")
+				_, _ = prompt.WriteString("Assistant: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
 			}
-			prompt.WriteString(m.GetContent())
+			_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
 		case *schema.AIMessage:
-			prompt.WriteString("Assistant: ")
-			prompt.WriteString(m.GetContent())
+			_, _ = prompt.WriteString("Assistant: ")  //nolint:errcheck // strings.Builder.WriteString rarely fails
+			_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
 		default:
-			prompt.WriteString(msg.GetContent())
+			_, _ = prompt.WriteString(msg.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
 		}
 	}
 
 	// Add final assistant prompt if not already there
 	if !strings.HasSuffix(prompt.String(), "\n\nAssistant: ") {
-		prompt.WriteString("\n\nAssistant: ")
+		_, _ = prompt.WriteString("\n\nAssistant: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
 	}
 
 	return prompt.String()

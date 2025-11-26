@@ -2,6 +2,7 @@ package rnnoise
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -9,18 +10,18 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise/iface"
 )
 
-// RNNoiseProvider implements noise cancellation using RNNoise
+// RNNoiseProvider implements noise cancellation using RNNoise.
 type RNNoiseProvider struct {
 	config *RNNoiseConfig
 	model  *RNNoiseModel
 	mu     sync.RWMutex
 }
 
-// NewRNNoiseProvider creates a new RNNoise noise cancellation provider
+// NewRNNoiseProvider creates a new RNNoise noise cancellation provider.
 func NewRNNoiseProvider(config *noise.Config) (iface.NoiseCancellation, error) {
 	if config == nil {
 		return nil, noise.NewNoiseCancellationError("NewRNNoiseProvider", noise.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to RNNoise config
@@ -69,7 +70,7 @@ func NewRNNoiseProvider(config *noise.Config) (iface.NoiseCancellation, error) {
 	}, nil
 }
 
-// Process implements the NoiseCancellation interface
+// Process implements the NoiseCancellation interface.
 func (p *RNNoiseProvider) Process(ctx context.Context, audio []byte) ([]byte, error) {
 	if len(audio) == 0 {
 		return audio, nil
@@ -104,7 +105,7 @@ func (p *RNNoiseProvider) Process(ctx context.Context, audio []byte) ([]byte, er
 	return processed, nil
 }
 
-// ProcessStream implements the NoiseCancellation interface
+// ProcessStream implements the NoiseCancellation interface.
 func (p *RNNoiseProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error) {
 	processedCh := make(chan []byte, 10)
 

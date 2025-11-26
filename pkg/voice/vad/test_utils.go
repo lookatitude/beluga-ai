@@ -12,25 +12,21 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockVADProvider provides a comprehensive mock implementation for testing
+// AdvancedMockVADProvider provides a comprehensive mock implementation for testing.
 type AdvancedMockVADProvider struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
-	providerName string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	providerName         string
 	speechResults        []bool
+	callCount            int
 	resultIndex          int
 	processingDelay      time.Duration
+	mu                   sync.RWMutex
+	shouldError          bool
 	simulateNetworkDelay bool
 }
 
-// NewAdvancedMockVADProvider creates a new advanced mock with configurable behavior
+// NewAdvancedMockVADProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockVADProvider(providerName string, opts ...MockOption) *AdvancedMockVADProvider {
 	m := &AdvancedMockVADProvider{
 		providerName:    providerName,
@@ -46,24 +42,24 @@ func NewAdvancedMockVADProvider(providerName string, opts ...MockOption) *Advanc
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockVADProvider
+// MockOption configures the behavior of AdvancedMockVADProvider.
 type MockOption func(*AdvancedMockVADProvider)
 
-// WithProviderName sets the provider name
+// WithProviderName sets the provider name.
 func WithProviderName(name string) MockOption {
 	return func(m *AdvancedMockVADProvider) {
 		m.providerName = name
 	}
 }
 
-// WithSpeechResults sets the speech detection results to return
+// WithSpeechResults sets the speech detection results to return.
 func WithSpeechResults(results ...bool) MockOption {
 	return func(m *AdvancedMockVADProvider) {
 		m.speechResults = results
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockVADProvider) {
 		m.shouldError = true
@@ -71,28 +67,28 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithProcessingDelay sets the delay for processing
+// WithProcessingDelay sets the delay for processing.
 func WithProcessingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockVADProvider) {
 		m.processingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockVADProvider) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// Process implements the VADProvider interface
+// Process implements the VADProvider interface.
 func (m *AdvancedMockVADProvider) Process(ctx context.Context, audio []byte) (bool, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, audio)
 		if args.Get(0) != nil {
 			if speech, ok := args.Get(0).(bool); ok {
@@ -134,7 +130,7 @@ func (m *AdvancedMockVADProvider) Process(ctx context.Context, audio []byte) (bo
 	return m.getNextResult(), nil
 }
 
-// ProcessStream implements the VADProvider interface
+// ProcessStream implements the VADProvider interface.
 func (m *AdvancedMockVADProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error) {
 	resultCh := make(chan iface.VADResult, 10)
 
@@ -178,7 +174,7 @@ func (m *AdvancedMockVADProvider) ProcessStream(ctx context.Context, audioCh <-c
 	return resultCh, nil
 }
 
-// getNextResult returns the next speech detection result in the list
+// getNextResult returns the next speech detection result in the list.
 func (m *AdvancedMockVADProvider) getNextResult() bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -192,15 +188,16 @@ func (m *AdvancedMockVADProvider) getNextResult() bool {
 	return result
 }
 
-// GetCallCount returns the number of times Process has been called
+// GetCallCount returns the number of times Process has been called.
 func (m *AdvancedMockVADProvider) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// AssertVADProviderInterface ensures that a type implements the VADProvider interface
+// AssertVADProviderInterface ensures that a type implements the VADProvider interface.
 func AssertVADProviderInterface(t *testing.T, provider iface.VADProvider) {
+	t.Helper()
 	assert.NotNil(t, provider, "VADProvider should not be nil")
 
 	// Test Process method

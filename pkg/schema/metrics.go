@@ -547,7 +547,7 @@ func (m *Metrics) RecordConfigError(ctx context.Context, configType string, err 
 // A2A Communication metrics recording methods
 
 // RecordAgentMessageSent records an agent message being sent.
-func (m *Metrics) RecordAgentMessageSent(ctx context.Context, messageType string, fromAgentID string) {
+func (m *Metrics) RecordAgentMessageSent(ctx context.Context, messageType, fromAgentID string) {
 	if m == nil || m.agentMessagesSent == nil {
 		return
 	}
@@ -560,7 +560,7 @@ func (m *Metrics) RecordAgentMessageSent(ctx context.Context, messageType string
 }
 
 // RecordAgentMessageReceived records an agent message being received.
-func (m *Metrics) RecordAgentMessageReceived(ctx context.Context, messageType string, toAgentID string) {
+func (m *Metrics) RecordAgentMessageReceived(ctx context.Context, messageType, toAgentID string) {
 	if m == nil || m.agentMessagesReceived == nil {
 		return
 	}
@@ -573,7 +573,7 @@ func (m *Metrics) RecordAgentMessageReceived(ctx context.Context, messageType st
 }
 
 // RecordAgentRequestSent records an agent request being sent.
-func (m *Metrics) RecordAgentRequestSent(ctx context.Context, action string, fromAgentID string) {
+func (m *Metrics) RecordAgentRequestSent(ctx context.Context, action, fromAgentID string) {
 	if m == nil || m.agentRequestsSent == nil {
 		return
 	}
@@ -586,7 +586,7 @@ func (m *Metrics) RecordAgentRequestSent(ctx context.Context, action string, fro
 }
 
 // RecordAgentRequestReceived records an agent request being received.
-func (m *Metrics) RecordAgentRequestReceived(ctx context.Context, action string, toAgentID string) {
+func (m *Metrics) RecordAgentRequestReceived(ctx context.Context, action, toAgentID string) {
 	if m == nil || m.agentRequestsReceived == nil {
 		return
 	}
@@ -599,7 +599,7 @@ func (m *Metrics) RecordAgentRequestReceived(ctx context.Context, action string,
 }
 
 // RecordAgentResponseSent records an agent response being sent.
-func (m *Metrics) RecordAgentResponseSent(ctx context.Context, status string, toAgentID string) {
+func (m *Metrics) RecordAgentResponseSent(ctx context.Context, status, toAgentID string) {
 	if m == nil || m.agentResponsesSent == nil {
 		return
 	}
@@ -612,7 +612,7 @@ func (m *Metrics) RecordAgentResponseSent(ctx context.Context, status string, to
 }
 
 // RecordAgentResponseReceived records an agent response being received.
-func (m *Metrics) RecordAgentResponseReceived(ctx context.Context, status string, fromAgentID string) {
+func (m *Metrics) RecordAgentResponseReceived(ctx context.Context, status, fromAgentID string) {
 	if m == nil || m.agentResponsesReceived == nil {
 		return
 	}
@@ -640,7 +640,7 @@ func (m *Metrics) RecordA2ACommunicationError(ctx context.Context, operation str
 // Event metrics recording methods
 
 // RecordEventPublished records an event being published.
-func (m *Metrics) RecordEventPublished(ctx context.Context, eventType string, source string) {
+func (m *Metrics) RecordEventPublished(ctx context.Context, eventType, source string) {
 	if m == nil || m.eventsPublished == nil {
 		return
 	}
@@ -653,7 +653,7 @@ func (m *Metrics) RecordEventPublished(ctx context.Context, eventType string, so
 }
 
 // RecordEventConsumed records an event being consumed.
-func (m *Metrics) RecordEventConsumed(ctx context.Context, eventType string, consumer string) {
+func (m *Metrics) RecordEventConsumed(ctx context.Context, eventType, consumer string) {
 	if m == nil || m.eventsConsumed == nil {
 		return
 	}
@@ -666,7 +666,7 @@ func (m *Metrics) RecordEventConsumed(ctx context.Context, eventType string, con
 }
 
 // RecordAgentLifecycleEvent records an agent lifecycle event.
-func (m *Metrics) RecordAgentLifecycleEvent(ctx context.Context, agentID string, eventType string) {
+func (m *Metrics) RecordAgentLifecycleEvent(ctx context.Context, agentID, eventType string) {
 	if m == nil || m.agentLifecycleEvents == nil {
 		return
 	}
@@ -679,7 +679,7 @@ func (m *Metrics) RecordAgentLifecycleEvent(ctx context.Context, agentID string,
 }
 
 // RecordTaskEvent records a task event.
-func (m *Metrics) RecordTaskEvent(ctx context.Context, taskID string, eventType string) {
+func (m *Metrics) RecordTaskEvent(ctx context.Context, taskID, eventType string) {
 	if m == nil || m.taskEvents == nil {
 		return
 	}
@@ -692,7 +692,7 @@ func (m *Metrics) RecordTaskEvent(ctx context.Context, taskID string, eventType 
 }
 
 // RecordWorkflowEvent records a workflow event.
-func (m *Metrics) RecordWorkflowEvent(ctx context.Context, workflowID string, eventType string) {
+func (m *Metrics) RecordWorkflowEvent(ctx context.Context, workflowID, eventType string) {
 	if m == nil || m.workflowEvents == nil {
 		return
 	}
@@ -808,7 +808,7 @@ func (m *Metrics) RecordFactoryError(ctx context.Context, objectType string, err
 	)
 }
 
-// Global metrics instance (can be set by the application)
+// Global metrics instance (can be set by the application).
 var globalMetrics *Metrics
 
 // SetGlobalMetrics sets the global metrics instance.
@@ -917,42 +917,42 @@ func RecordConfigError(ctx context.Context, configType string, err error) {
 // Global helper functions for A2A Communication metrics
 
 // RecordAgentMessageSent records an agent message sent if global metrics is set.
-func RecordAgentMessageSent(ctx context.Context, messageType string, fromAgentID string) {
+func RecordAgentMessageSent(ctx context.Context, messageType, fromAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentMessageSent(ctx, messageType, fromAgentID)
 	}
 }
 
 // RecordAgentMessageReceived records an agent message received if global metrics is set.
-func RecordAgentMessageReceived(ctx context.Context, messageType string, toAgentID string) {
+func RecordAgentMessageReceived(ctx context.Context, messageType, toAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentMessageReceived(ctx, messageType, toAgentID)
 	}
 }
 
 // RecordAgentRequestSent records an agent request sent if global metrics is set.
-func RecordAgentRequestSent(ctx context.Context, action string, fromAgentID string) {
+func RecordAgentRequestSent(ctx context.Context, action, fromAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentRequestSent(ctx, action, fromAgentID)
 	}
 }
 
 // RecordAgentRequestReceived records an agent request received if global metrics is set.
-func RecordAgentRequestReceived(ctx context.Context, action string, toAgentID string) {
+func RecordAgentRequestReceived(ctx context.Context, action, toAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentRequestReceived(ctx, action, toAgentID)
 	}
 }
 
 // RecordAgentResponseSent records an agent response sent if global metrics is set.
-func RecordAgentResponseSent(ctx context.Context, status string, toAgentID string) {
+func RecordAgentResponseSent(ctx context.Context, status, toAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentResponseSent(ctx, status, toAgentID)
 	}
 }
 
 // RecordAgentResponseReceived records an agent response received if global metrics is set.
-func RecordAgentResponseReceived(ctx context.Context, status string, fromAgentID string) {
+func RecordAgentResponseReceived(ctx context.Context, status, fromAgentID string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentResponseReceived(ctx, status, fromAgentID)
 	}
@@ -968,35 +968,35 @@ func RecordA2ACommunicationError(ctx context.Context, operation string, err erro
 // Global helper functions for Event metrics
 
 // RecordEventPublished records an event published if global metrics is set.
-func RecordEventPublished(ctx context.Context, eventType string, source string) {
+func RecordEventPublished(ctx context.Context, eventType, source string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordEventPublished(ctx, eventType, source)
 	}
 }
 
 // RecordEventConsumed records an event consumed if global metrics is set.
-func RecordEventConsumed(ctx context.Context, eventType string, consumer string) {
+func RecordEventConsumed(ctx context.Context, eventType, consumer string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordEventConsumed(ctx, eventType, consumer)
 	}
 }
 
 // RecordAgentLifecycleEvent records an agent lifecycle event if global metrics is set.
-func RecordAgentLifecycleEvent(ctx context.Context, agentID string, eventType string) {
+func RecordAgentLifecycleEvent(ctx context.Context, agentID, eventType string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordAgentLifecycleEvent(ctx, agentID, eventType)
 	}
 }
 
 // RecordTaskEvent records a task event if global metrics is set.
-func RecordTaskEvent(ctx context.Context, taskID string, eventType string) {
+func RecordTaskEvent(ctx context.Context, taskID, eventType string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordTaskEvent(ctx, taskID, eventType)
 	}
 }
 
 // RecordWorkflowEvent records a workflow event if global metrics is set.
-func RecordWorkflowEvent(ctx context.Context, workflowID string, eventType string) {
+func RecordWorkflowEvent(ctx context.Context, workflowID, eventType string) {
 	if globalMetrics != nil {
 		globalMetrics.RecordWorkflowEvent(ctx, workflowID, eventType)
 	}

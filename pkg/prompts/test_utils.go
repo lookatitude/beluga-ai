@@ -4,8 +4,10 @@ package prompts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -14,42 +16,35 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockTemplate provides a comprehensive mock implementation for testing
+// AdvancedMockTemplate provides a comprehensive mock implementation for testing.
 type AdvancedMockTemplate struct {
-	mock.Mock
-
-	// Configuration
-	name        string
-	templateStr string
-	callCount   int
-	mu          sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	variables     []string
-	formatResults []interface{}
-	resultIndex   int
-	simulateDelay time.Duration
-
-	// Template-specific data
-	inputVariables  []string
-	validationRules map[string]string
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	validationRules map[string]string
+	mock.Mock
+	name           string
+	templateStr    string
+	healthState    string
+	inputVariables []string
+	variables      []string
+	formatResults  []any
+	callCount      int
+	simulateDelay  time.Duration
+	resultIndex    int
+	mu             sync.RWMutex
+	shouldError    bool
 }
 
-// NewAdvancedMockTemplate creates a new advanced mock with configurable behavior
+// NewAdvancedMockTemplate creates a new advanced mock with configurable behavior.
 func NewAdvancedMockTemplate(name, templateStr string, options ...MockTemplateOption) *AdvancedMockTemplate {
 	mock := &AdvancedMockTemplate{
 		name:            name,
 		templateStr:     templateStr,
 		variables:       []string{},
-		formatResults:   []interface{}{},
+		formatResults:   []any{},
 		inputVariables:  []string{"input"},
 		validationRules: make(map[string]string),
 		healthState:     "healthy",
@@ -68,10 +63,10 @@ func NewAdvancedMockTemplate(name, templateStr string, options ...MockTemplateOp
 	return mock
 }
 
-// MockTemplateOption defines functional options for mock configuration
+// MockTemplateOption defines functional options for mock configuration.
 type MockTemplateOption func(*AdvancedMockTemplate)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockTemplateOption {
 	return func(t *AdvancedMockTemplate) {
 		t.shouldError = shouldError
@@ -79,7 +74,7 @@ func WithMockError(shouldError bool, err error) MockTemplateOption {
 	}
 }
 
-// WithMockVariables sets the input variables for the template
+// WithMockVariables sets the input variables for the template.
 func WithMockVariables(variables []string) MockTemplateOption {
 	return func(t *AdvancedMockTemplate) {
 		t.inputVariables = make([]string, len(variables))
@@ -87,22 +82,22 @@ func WithMockVariables(variables []string) MockTemplateOption {
 	}
 }
 
-// WithMockResults sets predefined format results
-func WithMockResults(results []interface{}) MockTemplateOption {
+// WithMockResults sets predefined format results.
+func WithMockResults(results []any) MockTemplateOption {
 	return func(t *AdvancedMockTemplate) {
-		t.formatResults = make([]interface{}, len(results))
+		t.formatResults = make([]any, len(results))
 		copy(t.formatResults, results)
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockTemplateOption {
 	return func(t *AdvancedMockTemplate) {
 		t.simulateDelay = delay
 	}
 }
 
-// WithValidationRules sets validation rules for template variables
+// WithValidationRules sets validation rules for template variables.
 func WithValidationRules(rules map[string]string) MockTemplateOption {
 	return func(t *AdvancedMockTemplate) {
 		t.validationRules = make(map[string]string)
@@ -112,8 +107,8 @@ func WithValidationRules(rules map[string]string) MockTemplateOption {
 	}
 }
 
-// Mock implementation methods for PromptFormatter interface
-func (t *AdvancedMockTemplate) Format(ctx context.Context, inputs map[string]interface{}) (interface{}, error) {
+// Mock implementation methods for PromptFormatter interface.
+func (t *AdvancedMockTemplate) Format(ctx context.Context, inputs map[string]any) (any, error) {
 	t.mu.Lock()
 	t.callCount++
 	t.mu.Unlock()
@@ -142,9 +137,11 @@ func (t *AdvancedMockTemplate) Format(ctx context.Context, inputs map[string]int
 
 	// Generate default formatted result
 	result := fmt.Sprintf("Template '%s' formatted with %d variables", t.name, len(inputs))
+	var resultSb145 strings.Builder
 	for key, value := range inputs {
-		result += fmt.Sprintf(" [%s: %v]", key, value)
+		_, _ = resultSb145.WriteString(fmt.Sprintf(" [%s: %v]", key, value))
 	}
+	result += resultSb145.String()
 
 	return result, nil
 }
@@ -157,7 +154,7 @@ func (t *AdvancedMockTemplate) GetInputVariables() []string {
 	return result
 }
 
-// Mock implementation methods for Template interface
+// Mock implementation methods for Template interface.
 func (t *AdvancedMockTemplate) Name() string {
 	return t.name
 }
@@ -168,20 +165,20 @@ func (t *AdvancedMockTemplate) Validate() error {
 	}
 
 	if t.templateStr == "" {
-		return fmt.Errorf("template string cannot be empty")
+		return errors.New("template string cannot be empty")
 	}
 
 	// Validate template variables
 	for _, variable := range t.inputVariables {
 		if variable == "" {
-			return fmt.Errorf("template variable name cannot be empty")
+			return errors.New("template variable name cannot be empty")
 		}
 	}
 
 	return nil
 }
 
-// Additional helper methods for testing
+// Additional helper methods for testing.
 func (t *AdvancedMockTemplate) GetCallCount() int {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -192,9 +189,9 @@ func (t *AdvancedMockTemplate) GetTemplate() string {
 	return t.templateStr
 }
 
-func (t *AdvancedMockTemplate) CheckHealth() map[string]interface{} {
+func (t *AdvancedMockTemplate) CheckHealth() map[string]any {
 	t.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":           t.healthState,
 		"name":             t.name,
 		"template_length":  len(t.templateStr),
@@ -205,7 +202,7 @@ func (t *AdvancedMockTemplate) CheckHealth() map[string]interface{} {
 	}
 }
 
-// AdvancedMockPromptValue provides a mock implementation of PromptValue
+// AdvancedMockPromptValue provides a mock implementation of PromptValue.
 type AdvancedMockPromptValue struct {
 	stringValue  string
 	messageValue []schema.Message
@@ -228,7 +225,7 @@ func (p *AdvancedMockPromptValue) ToMessages() []schema.Message {
 	return result
 }
 
-// AdvancedMockTemplateManager provides a mock template manager
+// AdvancedMockTemplateManager provides a mock template manager.
 type AdvancedMockTemplateManager struct {
 	templates map[string]*AdvancedMockTemplate
 	mu        sync.RWMutex
@@ -285,21 +282,23 @@ func (m *AdvancedMockTemplateManager) GetTemplateCount() int {
 
 // Test data creation helpers
 
-// CreateTestTemplate creates a test template string
+// CreateTestTemplate creates a test template string.
 func CreateTestTemplate(name string, variableCount int) string {
 	template := fmt.Sprintf("This is test template '%s'", name)
 
+	var templateSb292 strings.Builder
 	for i := 0; i < variableCount; i++ {
 		varName := fmt.Sprintf("var%d", i+1)
-		template += fmt.Sprintf(" Variable %s: {{.%s}}", varName, varName)
+		_, _ = templateSb292.WriteString(fmt.Sprintf(" Variable %s: {{.%s}}", varName, varName))
 	}
+	template += templateSb292.String()
 
 	return template
 }
 
-// CreateTestInputs creates test input variables for templates
-func CreateTestInputs(variableNames []string) map[string]interface{} {
-	inputs := make(map[string]interface{})
+// CreateTestInputs creates test input variables for templates.
+func CreateTestInputs(variableNames []string) map[string]any {
+	inputs := make(map[string]any)
 
 	for i, name := range variableNames {
 		inputs[name] = fmt.Sprintf("test_value_%d", i+1)
@@ -313,7 +312,7 @@ func CreateTestInputs(variableNames []string) map[string]interface{} {
 	return inputs
 }
 
-// CreateTestPromptConfig creates a test prompt configuration
+// CreateTestPromptConfig creates a test prompt configuration.
 func CreateTestPromptConfig() iface.Config {
 	return iface.Config{
 		DefaultTemplateTimeout: iface.Duration(30 * time.Second),
@@ -329,7 +328,7 @@ func CreateTestPromptConfig() iface.Config {
 	}
 }
 
-// CreateTestMessages creates test chat messages for prompt value testing
+// CreateTestMessages creates test chat messages for prompt value testing.
 func CreateTestPromptMessages(count int) []schema.Message {
 	messages := make([]schema.Message, count)
 
@@ -372,16 +371,17 @@ func extractVariablesFromTemplate(template string) []string {
 
 // Assertion helpers
 
-// AssertTemplateFormat validates template formatting results
-func AssertTemplateFormat(t *testing.T, result interface{}, expectedPattern string) {
+// AssertTemplateFormat validates template formatting results.
+func AssertTemplateFormat(t *testing.T, result any, expectedPattern string) {
 	assert.NotNil(t, result)
 	if str, ok := result.(string); ok {
 		assert.Contains(t, str, expectedPattern)
 	}
 }
 
-// AssertPromptValue validates prompt value results
+// AssertPromptValue validates prompt value results.
 func AssertPromptValue(t *testing.T, value iface.PromptValue, expectedStringPattern string, expectedMessageCount int) {
+	t.Helper()
 	assert.NotNil(t, value)
 
 	// Test string representation
@@ -402,8 +402,9 @@ func AssertPromptValue(t *testing.T, value iface.PromptValue, expectedStringPatt
 	}
 }
 
-// AssertTemplateVariables validates template input variables
+// AssertTemplateVariables validates template input variables.
 func AssertTemplateVariables(t *testing.T, variables []string, expectedCount int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(variables), expectedCount)
 
 	for i, variable := range variables {
@@ -411,17 +412,19 @@ func AssertTemplateVariables(t *testing.T, variables []string, expectedCount int
 	}
 }
 
-// AssertTemplateHealth validates template health check results
-func AssertTemplateHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertTemplateHealth validates template health check results.
+func AssertTemplateHealth(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
 	assert.Contains(t, health, "call_count")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var promptErr *iface.PromptError
 	if assert.ErrorAs(t, err, &promptErr) {
 		assert.Equal(t, expectedCode, promptErr.Code)
@@ -430,11 +433,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs prompt tests concurrently for performance testing
+// ConcurrentTestRunner runs prompt tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -489,8 +492,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on templates
-func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on templates.
+func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -508,7 +512,7 @@ func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations int
 			ctx := context.Background()
 
 			// Add operation-specific input
-			operationInputs := make(map[string]interface{})
+			operationInputs := make(map[string]any)
 			for k, v := range testInputs {
 				operationInputs[k] = fmt.Sprintf("%v_%d", v, opID)
 			}
@@ -525,7 +529,7 @@ func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations int
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -534,7 +538,7 @@ func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations int
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	templates       map[string]*AdvancedMockTemplate
 	templateManager *AdvancedMockTemplateManager
@@ -578,7 +582,7 @@ func (h *IntegrationTestHelper) Reset() {
 	h.promptValues = make(map[string]*AdvancedMockPromptValue)
 }
 
-// PromptScenarioRunner runs common prompt scenarios
+// PromptScenarioRunner runs common prompt scenarios.
 type PromptScenarioRunner struct {
 	template iface.Template
 	manager  iface.TemplateManager
@@ -591,8 +595,8 @@ func NewPromptScenarioRunner(template iface.Template, manager iface.TemplateMana
 	}
 }
 
-func (r *PromptScenarioRunner) RunTemplateFormattingScenario(ctx context.Context, inputSets []map[string]interface{}) ([]interface{}, error) {
-	results := make([]interface{}, len(inputSets))
+func (r *PromptScenarioRunner) RunTemplateFormattingScenario(ctx context.Context, inputSets []map[string]any) ([]any, error) {
+	results := make([]any, len(inputSets))
 
 	for i, inputs := range inputSets {
 		result, err := r.template.Format(ctx, inputs)
@@ -605,9 +609,9 @@ func (r *PromptScenarioRunner) RunTemplateFormattingScenario(ctx context.Context
 	return results, nil
 }
 
-func (r *PromptScenarioRunner) RunTemplateManagementScenario(ctx context.Context, templateNames []string, templateStrings []string) error {
+func (r *PromptScenarioRunner) RunTemplateManagementScenario(ctx context.Context, templateNames, templateStrings []string) error {
 	if len(templateNames) != len(templateStrings) {
-		return fmt.Errorf("template names and strings must have same length")
+		return errors.New("template names and strings must have same length")
 	}
 
 	// Create templates
@@ -652,14 +656,14 @@ func (r *PromptScenarioRunner) RunTemplateManagementScenario(ctx context.Context
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for prompts
+// BenchmarkHelper provides benchmarking utilities for prompts.
 type BenchmarkHelper struct {
 	template iface.Template
-	inputs   []map[string]interface{}
+	inputs   []map[string]any
 }
 
 func NewBenchmarkHelper(template iface.Template, inputCount int) *BenchmarkHelper {
-	inputs := make([]map[string]interface{}, inputCount)
+	inputs := make([]map[string]any, inputCount)
 	variables := template.GetInputVariables()
 
 	for i := 0; i < inputCount; i++ {
@@ -701,7 +705,7 @@ func (b *BenchmarkHelper) BenchmarkValidation(iterations int) (time.Duration, er
 	return time.Since(start), nil
 }
 
-// TemplateQualityTester provides utilities for testing template quality
+// TemplateQualityTester provides utilities for testing template quality.
 type TemplateQualityTester struct {
 	template iface.Template
 }
@@ -710,13 +714,13 @@ func NewTemplateQualityTester(template iface.Template) *TemplateQualityTester {
 	return &TemplateQualityTester{template: template}
 }
 
-func (q *TemplateQualityTester) TestConsistency(ctx context.Context, inputs map[string]interface{}, iterations int) (bool, error) {
+func (q *TemplateQualityTester) TestConsistency(ctx context.Context, inputs map[string]any, iterations int) (bool, error) {
 	if iterations < 2 {
 		return true, nil
 	}
 
 	// Generate results multiple times
-	results := make([]interface{}, iterations)
+	results := make([]any, iterations)
 	for i := 0; i < iterations; i++ {
 		result, err := q.template.Format(ctx, inputs)
 		if err != nil {
@@ -757,10 +761,10 @@ func (q *TemplateQualityTester) TestVariableHandling(ctx context.Context, testCa
 	return nil
 }
 
-// VariableTestCase represents a test case for template variable handling
+// VariableTestCase represents a test case for template variable handling.
 type VariableTestCase struct {
+	Inputs      map[string]any
 	Name        string
-	Inputs      map[string]interface{}
-	ShouldError bool
 	Description string
+	ShouldError bool
 }

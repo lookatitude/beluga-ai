@@ -26,7 +26,7 @@ type HealthCheckResult struct {
 	Status      HealthStatus
 	Message     string
 	Timestamp   time.Time
-	Details     map[string]interface{}
+	Details     map[string]any
 	CheckName   string
 	ComponentID string
 }
@@ -39,22 +39,22 @@ type AlertFunc func(result *HealthCheckResult)
 
 // HealthCheck defines a periodic health check mechanism.
 type HealthCheck struct {
-	Name        string
-	ComponentID string
-	Interval    time.Duration
-	Timeout     time.Duration
+	Logger      iface.Logger
 	Check       HealthCheckFunc
 	StopChan    chan struct{}
 	LastResult  *HealthCheckResult
+	Name        string
+	ComponentID string
+	Alerts      []AlertFunc
+	Interval    time.Duration
+	Timeout     time.Duration
 	MaxRetries  int
 	RetryDelay  time.Duration
-	Alerts      []AlertFunc
-	Logger      iface.Logger
 	mutex       sync.RWMutex
 }
 
 // NewHealthCheck creates a new health check.
-func NewHealthCheck(name string, componentID string, interval time.Duration, check HealthCheckFunc) *HealthCheck {
+func NewHealthCheck(name, componentID string, interval time.Duration, check HealthCheckFunc) *HealthCheck {
 	return &HealthCheck{
 		Name:        name,
 		ComponentID: componentID,
@@ -68,7 +68,7 @@ func NewHealthCheck(name string, componentID string, interval time.Duration, che
 			Timestamp:   time.Now(),
 			CheckName:   name,
 			ComponentID: componentID,
-			Details:     make(map[string]interface{}),
+			Details:     make(map[string]any),
 		},
 		MaxRetries: 3,
 		RetryDelay: time.Second * 2,
@@ -80,7 +80,7 @@ func NewHealthCheck(name string, componentID string, interval time.Duration, che
 // Start begins the periodic health check.
 func (hc *HealthCheck) Start() {
 	hc.Logger.Info(context.Background(), "Starting health check",
-		map[string]interface{}{
+		map[string]any{
 			"name":         hc.Name,
 			"component_id": hc.ComponentID,
 			"interval":     hc.Interval,
@@ -96,7 +96,7 @@ func (hc *HealthCheck) Start() {
 				hc.RunCheck()
 			case <-hc.StopChan:
 				hc.Logger.Info(context.Background(), "Health check stopped",
-					map[string]interface{}{
+					map[string]any{
 						"name":         hc.Name,
 						"component_id": hc.ComponentID,
 					})
@@ -154,7 +154,7 @@ func (hc *HealthCheck) RunCheck() {
 	attempts := 1
 	for result.Status == StatusUnhealthy && attempts <= hc.MaxRetries {
 		hc.Logger.Warning(context.Background(), "Health check failed, retrying",
-			map[string]interface{}{
+			map[string]any{
 				"name":         hc.Name,
 				"component_id": hc.ComponentID,
 				"attempts":     attempts,
@@ -176,25 +176,26 @@ func (hc *HealthCheck) RunCheck() {
 	hc.LastResult = result
 	hc.mutex.Unlock()
 
-	if result.Status == StatusUnhealthy {
+	switch result.Status {
+	case StatusUnhealthy:
 		hc.Logger.Error(context.Background(), "Health check failed",
-			map[string]interface{}{
+			map[string]any{
 				"name":         hc.Name,
 				"component_id": hc.ComponentID,
 				"status":       string(result.Status),
 				"message":      result.Message,
 			})
-	} else if result.Status == StatusDegraded {
+	case StatusDegraded:
 		hc.Logger.Warning(context.Background(), "Health check degraded",
-			map[string]interface{}{
+			map[string]any{
 				"name":         hc.Name,
 				"component_id": hc.ComponentID,
 				"status":       string(result.Status),
 				"message":      result.Message,
 			})
-	} else {
+	default:
 		hc.Logger.Info(context.Background(), "Health check passed",
-			map[string]interface{}{
+			map[string]any{
 				"name":         hc.Name,
 				"component_id": hc.ComponentID,
 				"status":       string(result.Status),
@@ -205,7 +206,7 @@ func (hc *HealthCheck) RunCheck() {
 	// Trigger alerts if status changed
 	if prevStatus != result.Status {
 		hc.Logger.Info(context.Background(), "Health status changed",
-			map[string]interface{}{
+			map[string]any{
 				"name":            hc.Name,
 				"component_id":    hc.ComponentID,
 				"previous_status": prevStatus,
@@ -222,7 +223,7 @@ func (hc *HealthCheck) triggerAlerts(result *HealthCheckResult) {
 			defer func() {
 				if r := recover(); r != nil {
 					hc.Logger.Error(context.Background(), "Alert handler panicked",
-						map[string]interface{}{
+						map[string]any{
 							"error": r,
 						})
 				}
@@ -253,9 +254,9 @@ func (hc *HealthCheck) Stop() {
 
 // HealthCheckManager manages multiple health checks.
 type HealthCheckManager struct {
+	Logger iface.Logger
 	checks map[string]*HealthCheck
 	mutex  sync.RWMutex
-	Logger iface.Logger
 }
 
 // NewHealthCheckManager creates a new health check manager.
@@ -278,7 +279,7 @@ func (hcm *HealthCheckManager) AddCheck(check *HealthCheck) error {
 
 	hcm.checks[checkID] = check
 	hcm.Logger.Info(context.Background(), "Added health check",
-		map[string]interface{}{
+		map[string]any{
 			"name":         check.Name,
 			"component_id": check.ComponentID,
 		})
@@ -300,7 +301,7 @@ func (hcm *HealthCheckManager) RemoveCheck(componentID, name string) error {
 	check.Stop()
 	delete(hcm.checks, checkID)
 	hcm.Logger.Info(context.Background(), "Removed health check",
-		map[string]interface{}{
+		map[string]any{
 			"name":         name,
 			"component_id": componentID,
 		})
@@ -316,7 +317,7 @@ func (hcm *HealthCheckManager) StartAllChecks() {
 		check.Start()
 	}
 	hcm.Logger.Info(context.Background(), "Started all health checks",
-		map[string]interface{}{
+		map[string]any{
 			"total_checks": len(hcm.checks),
 		})
 }
@@ -362,7 +363,7 @@ func (hcm *HealthCheckManager) CheckSystemHealth() (HealthStatus, map[string]*He
 }
 
 // CreateAgentHealthCheckFunc creates a health check function for an agent.
-func CreateAgentHealthCheckFunc(getHealthFunc func() map[string]interface{}) HealthCheckFunc {
+func CreateAgentHealthCheckFunc(getHealthFunc func() map[string]any) HealthCheckFunc {
 	return func() *HealthCheckResult {
 		health := getHealthFunc()
 
@@ -371,10 +372,11 @@ func CreateAgentHealthCheckFunc(getHealthFunc func() map[string]interface{}) Hea
 
 		// Check agent state
 		if agentState, ok := health["state"].(string); ok {
-			if agentState == "error" {
+			switch agentState {
+			case "error":
 				status = StatusUnhealthy
 				message = "Agent is in error state"
-			} else if agentState == "paused" {
+			case "paused":
 				status = StatusDegraded
 				message = "Agent is paused"
 			}

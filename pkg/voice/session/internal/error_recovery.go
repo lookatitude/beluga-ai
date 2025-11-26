@@ -7,17 +7,17 @@ import (
 	"time"
 )
 
-// ErrorRecovery manages automatic error recovery and retry logic
+// ErrorRecovery manages automatic error recovery and retry logic.
 type ErrorRecovery struct {
-	mu              sync.RWMutex
+	retryCount      map[string]int
+	lastError       map[string]error
 	maxRetries      int
 	retryDelay      time.Duration
-	retryCount      map[string]int // Track retries per operation
-	lastError       map[string]error
+	mu              sync.RWMutex
 	recoveryEnabled bool
 }
 
-// NewErrorRecovery creates a new error recovery manager
+// NewErrorRecovery creates a new error recovery manager.
 func NewErrorRecovery(maxRetries int, retryDelay time.Duration) *ErrorRecovery {
 	return &ErrorRecovery{
 		maxRetries:      maxRetries,
@@ -28,7 +28,7 @@ func NewErrorRecovery(maxRetries int, retryDelay time.Duration) *ErrorRecovery {
 	}
 }
 
-// ShouldRetry determines if an error should be retried
+// ShouldRetry determines if an error should be retried.
 func (er *ErrorRecovery) ShouldRetry(op string, err error) bool {
 	if !er.recoveryEnabled {
 		return false
@@ -52,7 +52,7 @@ func (er *ErrorRecovery) ShouldRetry(op string, err error) bool {
 	return true
 }
 
-// RetryWithBackoff executes a function with retry logic and exponential backoff
+// RetryWithBackoff executes a function with retry logic and exponential backoff.
 func (er *ErrorRecovery) RetryWithBackoff(ctx context.Context, op string, fn func() error) error {
 	var lastErr error
 	backoff := er.retryDelay
@@ -87,7 +87,7 @@ func (er *ErrorRecovery) RetryWithBackoff(ctx context.Context, op string, fn fun
 	return fmt.Errorf("operation %s failed after %d attempts: %w", op, er.maxRetries+1, lastErr)
 }
 
-// Reset resets retry counts for an operation
+// Reset resets retry counts for an operation.
 func (er *ErrorRecovery) Reset(op string) {
 	er.mu.Lock()
 	defer er.mu.Unlock()
@@ -95,7 +95,7 @@ func (er *ErrorRecovery) Reset(op string) {
 	delete(er.lastError, op)
 }
 
-// isRetryableError checks if an error is retryable
+// isRetryableError checks if an error is retryable.
 func isRetryableError(err error) bool {
 	if err == nil {
 		return false
@@ -115,7 +115,7 @@ func isRetryableError(err error) bool {
 	return false
 }
 
-// contains checks if a string contains a substring (case-insensitive)
+// contains checks if a string contains a substring (case-insensitive).
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && containsHelper(s, substr))
 }

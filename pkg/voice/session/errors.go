@@ -5,21 +5,21 @@ import (
 	"fmt"
 )
 
-// Error codes for Session operations
+// Error codes for Session operations.
 const (
-	// General errors
+	// General errors.
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeInternalError = "internal_error"
 	ErrCodeInvalidState  = "invalid_state"
 	ErrCodeTimeout       = "timeout"
 
-	// Session lifecycle errors
+	// Session lifecycle errors.
 	ErrCodeSessionNotFound      = "session_not_found"
 	ErrCodeSessionAlreadyActive = "session_already_active"
 	ErrCodeSessionNotActive     = "session_not_active"
 	ErrCodeSessionExpired       = "session_expired"
 
-	// Context errors
+	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
 )
@@ -27,14 +27,14 @@ const (
 // SessionError represents an error that occurred during Session operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type SessionError struct {
-	Op      string                 // Operation that failed (e.g., "Start", "Stop")
-	Err     error                  // Underlying error
-	Code    string                 // Error code for programmatic handling
-	Message string                 // Human-readable error message
-	Details map[string]interface{} // Additional error details
+	Err     error
+	Details map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e *SessionError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("session %s: %s (code: %s)", e.Op, e.Message, e.Code)
@@ -45,12 +45,12 @@ func (e *SessionError) Error() string {
 	return fmt.Sprintf("session %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying error
+// Unwrap returns the underlying error.
 func (e *SessionError) Unwrap() error {
 	return e.Err
 }
 
-// NewSessionError creates a new SessionError
+// NewSessionError creates a new SessionError.
 func NewSessionError(op, code string, err error) *SessionError {
 	return &SessionError{
 		Op:   op,
@@ -59,7 +59,7 @@ func NewSessionError(op, code string, err error) *SessionError {
 	}
 }
 
-// NewSessionErrorWithMessage creates a new SessionError with a custom message
+// NewSessionErrorWithMessage creates a new SessionError with a custom message.
 func NewSessionErrorWithMessage(op, code, message string, err error) *SessionError {
 	return &SessionError{
 		Op:      op,
@@ -69,8 +69,8 @@ func NewSessionErrorWithMessage(op, code, message string, err error) *SessionErr
 	}
 }
 
-// NewSessionErrorWithDetails creates a new SessionError with additional details
-func NewSessionErrorWithDetails(op, code, message string, err error, details map[string]interface{}) *SessionError {
+// NewSessionErrorWithDetails creates a new SessionError with additional details.
+func NewSessionErrorWithDetails(op, code, message string, err error, details map[string]any) *SessionError {
 	return &SessionError{
 		Op:      op,
 		Code:    code,
@@ -80,7 +80,7 @@ func NewSessionErrorWithDetails(op, code, message string, err error, details map
 	}
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false

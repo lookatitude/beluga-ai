@@ -58,7 +58,7 @@ func TestSTTProvider_Integration(t *testing.T) {
 		// Send audio
 		audio := []byte{1, 2, 3, 4, 5}
 		err = session.SendAudio(ctx, audio)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Receive transcripts
 		timeout := time.After(2 * time.Second)
@@ -93,7 +93,7 @@ func TestSTTProvider_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.Transcribe(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, stt.IsRetryableError(err))
 	})
 
@@ -106,7 +106,7 @@ func TestSTTProvider_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		_, err := mockProvider.Transcribe(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, stt.IsRetryableError(err))
 	})
 }

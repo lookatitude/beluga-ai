@@ -5,6 +5,7 @@ package session
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -14,20 +15,20 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Global metrics instance - initialized once
+// Global metrics instance - initialized once.
 var (
 	globalMetrics *Metrics
 	metricsOnce   sync.Once
 )
 
-// InitMetrics initializes the global metrics instance
+// InitMetrics initializes the global metrics instance.
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter)
 	})
 }
 
-// GetMetrics returns the global metrics instance
+// GetMetrics returns the global metrics instance.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -55,11 +56,11 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 	// Validate required providers
 	if options.STTProvider == nil {
 		return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
-			fmt.Errorf("STT provider is required"))
+			errors.New("STT provider is required"))
 	}
 	if options.TTSProvider == nil {
 		return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
-			fmt.Errorf("TTS provider is required"))
+			errors.New("TTS provider is required"))
 	}
 
 	// Generate session ID if not provided
@@ -101,7 +102,7 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 	return impl, nil
 }
 
-// generateSessionID generates a unique session ID
+// generateSessionID generates a unique session ID.
 func generateSessionID() string {
 	// TODO: Use a proper UUID generator (e.g., github.com/google/uuid)
 	// For now, use timestamp-based ID

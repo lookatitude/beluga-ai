@@ -2,24 +2,24 @@ package webrtc
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise/iface"
 )
 
-// WebRTCNoiseProvider implements noise cancellation using WebRTC's noise suppression
+// WebRTCNoiseProvider implements noise cancellation using WebRTC's noise suppression.
 type WebRTCNoiseProvider struct {
 	config *WebRTCNoiseConfig
 	mu     sync.RWMutex
 }
 
-// NewWebRTCNoiseProvider creates a new WebRTC noise cancellation provider
+// NewWebRTCNoiseProvider creates a new WebRTC noise cancellation provider.
 func NewWebRTCNoiseProvider(config *noise.Config) (iface.NoiseCancellation, error) {
 	if config == nil {
 		return nil, noise.NewNoiseCancellationError("NewWebRTCNoiseProvider", noise.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to WebRTC config
@@ -37,7 +37,7 @@ func NewWebRTCNoiseProvider(config *noise.Config) (iface.NoiseCancellation, erro
 	}, nil
 }
 
-// Process implements the NoiseCancellation interface
+// Process implements the NoiseCancellation interface.
 func (p *WebRTCNoiseProvider) Process(ctx context.Context, audio []byte) ([]byte, error) {
 	if len(audio) == 0 {
 		return audio, nil
@@ -56,7 +56,7 @@ func (p *WebRTCNoiseProvider) Process(ctx context.Context, audio []byte) ([]byte
 	return audio, nil
 }
 
-// ProcessStream implements the NoiseCancellation interface
+// ProcessStream implements the NoiseCancellation interface.
 func (p *WebRTCNoiseProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error) {
 	processedCh := make(chan []byte, 10)
 

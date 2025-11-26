@@ -3,6 +3,7 @@ package deepgram
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -13,7 +14,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 
-// DeepgramStreamingSession implements the StreamingSession interface for Deepgram WebSocket
+// DeepgramStreamingSession implements the StreamingSession interface for Deepgram WebSocket.
 type DeepgramStreamingSession struct {
 	config   *DeepgramConfig
 	conn     *websocket.Conn
@@ -25,7 +26,7 @@ type DeepgramStreamingSession struct {
 	wg       sync.WaitGroup
 }
 
-// NewDeepgramStreamingSession creates a new Deepgram WebSocket streaming session
+// NewDeepgramStreamingSession creates a new Deepgram WebSocket streaming session.
 func NewDeepgramStreamingSession(ctx context.Context, config *DeepgramConfig) (iface.StreamingSession, error) {
 	// Build WebSocket URL with query parameters
 	url := fmt.Sprintf("%s?model=%s&language=%s&punctuate=%t&smart_format=%t&interim_results=%t&endpointing=%d",
@@ -40,7 +41,7 @@ func NewDeepgramStreamingSession(ctx context.Context, config *DeepgramConfig) (i
 
 	// Create request headers
 	headers := http.Header{}
-	headers.Set("Authorization", fmt.Sprintf("Token %s", config.APIKey))
+	headers.Set("Authorization", "Token "+config.APIKey)
 
 	// Dial WebSocket connection
 	dialer := websocket.Dialer{
@@ -50,9 +51,13 @@ func NewDeepgramStreamingSession(ctx context.Context, config *DeepgramConfig) (i
 	conn, resp, err := dialer.Dial(url, headers)
 	if err != nil {
 		if resp != nil {
+			_ = resp.Body.Close() //nolint:errcheck // Best effort to close response body on error
 			return nil, stt.ErrorFromHTTPStatus("StartStreaming", resp.StatusCode, err)
 		}
 		return nil, stt.NewSTTError("StartStreaming", stt.ErrCodeNetworkError, err)
+	}
+	if resp != nil {
+		_ = resp.Body.Close() //nolint:errcheck // Close response body after successful WebSocket handshake
 	}
 
 	// Create context with cancel
@@ -81,7 +86,7 @@ func NewDeepgramStreamingSession(ctx context.Context, config *DeepgramConfig) (i
 	return session, nil
 }
 
-// SendAudio sends audio data to the streaming session
+// SendAudio sends audio data to the streaming session.
 func (s *DeepgramStreamingSession) SendAudio(ctx context.Context, audio []byte) error {
 	s.mu.RLock()
 	closed := s.closed
@@ -89,11 +94,11 @@ func (s *DeepgramStreamingSession) SendAudio(ctx context.Context, audio []byte) 
 	s.mu.RUnlock()
 
 	if closed {
-		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, fmt.Errorf("session closed"))
+		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, errors.New("session closed"))
 	}
 
 	if conn == nil {
-		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, fmt.Errorf("connection not established"))
+		return stt.NewSTTError("SendAudio", stt.ErrCodeStreamClosed, errors.New("connection not established"))
 	}
 
 	// Write audio data as binary message
@@ -105,12 +110,12 @@ func (s *DeepgramStreamingSession) SendAudio(ctx context.Context, audio []byte) 
 	return nil
 }
 
-// ReceiveTranscript returns the channel for receiving transcript results
+// ReceiveTranscript returns the channel for receiving transcript results.
 func (s *DeepgramStreamingSession) ReceiveTranscript() <-chan iface.TranscriptResult {
 	return s.resultCh
 }
 
-// Close closes the streaming session
+// Close closes the streaming session.
 func (s *DeepgramStreamingSession) Close() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -147,7 +152,7 @@ func (s *DeepgramStreamingSession) Close() error {
 	return nil
 }
 
-// receiveMessages receives messages from the WebSocket connection
+// receiveMessages receives messages from the WebSocket connection.
 func (s *DeepgramStreamingSession) receiveMessages() {
 	defer s.wg.Done()
 

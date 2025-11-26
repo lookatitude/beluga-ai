@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Metrics holds the metrics for the embeddings package
+// Metrics holds the metrics for the embeddings package.
 type Metrics struct {
 	requestsTotal    metric.Int64Counter
 	requestDuration  metric.Float64Histogram
@@ -17,25 +17,27 @@ type Metrics struct {
 	tokensProcessed  metric.Int64Counter
 }
 
-// NewMetrics creates a new metrics instance
+// NewMetrics creates a new metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
-	requestsTotal, _ := meter.Int64Counter(
+	// OpenTelemetry metric initialization errors are ignored as they're rare
+	// and the metrics will just be nil, causing no-op behavior
+	requestsTotal, _ := meter.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
 		"embeddings_requests_total",
 		metric.WithDescription("Total number of embedding requests"),
 	)
-	requestDuration, _ := meter.Float64Histogram(
+	requestDuration, _ := meter.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
 		"embeddings_request_duration_seconds",
 		metric.WithDescription("Duration of embedding requests in seconds"),
 	)
-	requestsInFlight, _ := meter.Int64UpDownCounter(
+	requestsInFlight, _ := meter.Int64UpDownCounter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
 		"embeddings_requests_in_flight",
 		metric.WithDescription("Number of embedding requests currently in flight"),
 	)
-	errorsTotal, _ := meter.Int64Counter(
+	errorsTotal, _ := meter.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
 		"embeddings_errors_total",
 		metric.WithDescription("Total number of embedding errors"),
 	)
-	tokensProcessed, _ := meter.Int64Counter(
+	tokensProcessed, _ := meter.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
 		"embeddings_tokens_processed_total",
 		metric.WithDescription("Total number of tokens processed for embeddings"),
 	)
@@ -49,7 +51,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	}
 }
 
-// RecordRequest records a successful embedding request
+// RecordRequest records a successful embedding request.
 func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, duration time.Duration, inputCount, outputDimension int) {
 	m.requestsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -65,7 +67,7 @@ func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, dur
 		))
 }
 
-// RecordError records an embedding error
+// RecordError records an embedding error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType string) {
 	m.errorsTotal.Add(ctx, 1,
 		metric.WithAttributes(
@@ -75,7 +77,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType st
 		))
 }
 
-// RecordTokensProcessed records the number of tokens processed
+// RecordTokensProcessed records the number of tokens processed.
 func (m *Metrics) RecordTokensProcessed(ctx context.Context, provider, model string, tokenCount int) {
 	m.tokensProcessed.Add(ctx, int64(tokenCount),
 		metric.WithAttributes(
@@ -84,7 +86,7 @@ func (m *Metrics) RecordTokensProcessed(ctx context.Context, provider, model str
 		))
 }
 
-// StartRequest increments the in-flight counter
+// StartRequest increments the in-flight counter.
 func (m *Metrics) StartRequest(ctx context.Context, provider, model string) {
 	m.requestsInFlight.Add(ctx, 1,
 		metric.WithAttributes(
@@ -93,7 +95,7 @@ func (m *Metrics) StartRequest(ctx context.Context, provider, model string) {
 		))
 }
 
-// EndRequest decrements the in-flight counter
+// EndRequest decrements the in-flight counter.
 func (m *Metrics) EndRequest(ctx context.Context, provider, model string) {
 	m.requestsInFlight.Add(ctx, -1,
 		metric.WithAttributes(

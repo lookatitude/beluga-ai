@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockLLM is a mock implementation of core.Runnable for testing
+// MockLLM is a mock implementation of core.Runnable for testing.
 type MockLLM struct {
 	invokeFunc  func(ctx context.Context, input any, options ...core.Option) (any, error)
 	batchFunc   func(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -72,13 +72,13 @@ func (m *MockLLM) WithConfig(config map[string]any) core.Runnable {
 	return m
 }
 
-// MockPromptTemplate is a mock implementation of promptsiface.Template for testing
+// MockPromptTemplate is a mock implementation of promptsiface.Template for testing.
 type MockPromptTemplate struct {
-	formatFunc    func(ctx context.Context, inputs map[string]any) (any, error)
 	formatError   error
+	validateError error
+	formatFunc    func(ctx context.Context, inputs map[string]any) (any, error)
 	name          string
 	inputVars     []string
-	validateError error
 }
 
 func NewMockPromptTemplate() *MockPromptTemplate {
@@ -111,12 +111,12 @@ func (m *MockPromptTemplate) Validate() error {
 	return m.validateError
 }
 
-// MockChatMessageHistory is a mock implementation for testing
+// MockChatMessageHistory is a mock implementation for testing.
 type MockChatMessageHistory struct {
-	messages   []schema.Message
 	addError   error
 	getError   error
 	clearError error
+	messages   []schema.Message
 }
 
 func NewMockChatMessageHistory() *MockChatMessageHistory {
@@ -159,10 +159,10 @@ func (m *MockChatMessageHistory) Clear(ctx context.Context) error {
 	return nil
 }
 
-// Ensure MockChatMessageHistory implements the interface
+// Ensure MockChatMessageHistory implements the interface.
 var _ iface.ChatMessageHistory = (*MockChatMessageHistory)(nil)
 
-// TestNewConversationSummaryMemory tests the constructor
+// TestNewConversationSummaryMemory tests the constructor.
 func TestNewConversationSummaryMemory(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -178,7 +178,7 @@ func TestNewConversationSummaryMemory(t *testing.T) {
 	assert.NotNil(t, memory.SummaryPrompt)
 }
 
-// TestNewConversationSummaryMemory_Defaults tests default values
+// TestNewConversationSummaryMemory_Defaults tests default values.
 func TestNewConversationSummaryMemory_Defaults(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -188,7 +188,7 @@ func TestNewConversationSummaryMemory_Defaults(t *testing.T) {
 	assert.Equal(t, "history", memory.MemoryKey) // Default memory key
 }
 
-// TestConversationSummaryMemory_MemoryVariables tests the MemoryVariables method
+// TestConversationSummaryMemory_MemoryVariables tests the MemoryVariables method.
 func TestConversationSummaryMemory_MemoryVariables(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -199,7 +199,7 @@ func TestConversationSummaryMemory_MemoryVariables(t *testing.T) {
 	assert.Equal(t, []string{"summary_memory"}, variables)
 }
 
-// TestConversationSummaryMemory_LoadMemoryVariables tests loading memory variables
+// TestConversationSummaryMemory_LoadMemoryVariables tests loading memory variables.
 func TestConversationSummaryMemory_LoadMemoryVariables(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -209,12 +209,12 @@ func TestConversationSummaryMemory_LoadMemoryVariables(t *testing.T) {
 	memory.currentSummary = "Test summary"
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "memory")
 	assert.Equal(t, "Test summary", vars["memory"])
 }
 
-// TestConversationSummaryMemory_LoadMemoryVariables_EmptySummary tests loading with empty summary
+// TestConversationSummaryMemory_LoadMemoryVariables_EmptySummary tests loading with empty summary.
 func TestConversationSummaryMemory_LoadMemoryVariables_EmptySummary(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -223,11 +223,11 @@ func TestConversationSummaryMemory_LoadMemoryVariables_EmptySummary(t *testing.T
 	memory := NewConversationSummaryMemory(history, llm, "memory")
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
-	assert.Equal(t, "", vars["memory"])
+	require.NoError(t, err)
+	assert.Empty(t, vars["memory"])
 }
 
-// TestConversationSummaryMemory_SaveContext tests saving context
+// TestConversationSummaryMemory_SaveContext tests saving context.
 func TestConversationSummaryMemory_SaveContext(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -245,7 +245,7 @@ func TestConversationSummaryMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify summary was updated
 	assert.Equal(t, "Updated summary with new conversation", memory.currentSummary)
@@ -256,7 +256,7 @@ func TestConversationSummaryMemory_SaveContext(t *testing.T) {
 	assert.Contains(t, memory.currentSummary, "conversation")
 }
 
-// TestConversationSummaryMemory_SaveContext_CustomKeys tests saving with custom keys
+// TestConversationSummaryMemory_SaveContext_CustomKeys tests saving with custom keys.
 func TestConversationSummaryMemory_SaveContext_CustomKeys(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -274,11 +274,11 @@ func TestConversationSummaryMemory_SaveContext_CustomKeys(t *testing.T) {
 	outputs := map[string]any{"answer": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Summary with custom keys", memory.currentSummary)
 }
 
-// TestConversationSummaryMemory_SaveContext_AutoDetectKeys tests automatic key detection
+// TestConversationSummaryMemory_SaveContext_AutoDetectKeys tests automatic key detection.
 func TestConversationSummaryMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -297,11 +297,11 @@ func TestConversationSummaryMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	outputs := map[string]any{"response": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Auto-detected summary", memory.currentSummary)
 }
 
-// TestConversationSummaryMemory_SaveContext_ErrorHandling tests various error conditions
+// TestConversationSummaryMemory_SaveContext_ErrorHandling tests various error conditions.
 func TestConversationSummaryMemory_SaveContext_ErrorHandling(t *testing.T) {
 	ctx := context.Background()
 	testCases := []struct {
@@ -392,13 +392,13 @@ func TestConversationSummaryMemory_SaveContext_ErrorHandling(t *testing.T) {
 			}
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestConversationSummaryMemory_SaveContext_LLMMessageResponse tests LLM returning schema.Message
+// TestConversationSummaryMemory_SaveContext_LLMMessageResponse tests LLM returning schema.Message.
 func TestConversationSummaryMemory_SaveContext_LLMMessageResponse(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -415,11 +415,11 @@ func TestConversationSummaryMemory_SaveContext_LLMMessageResponse(t *testing.T) 
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "LLM generated summary", memory.currentSummary)
 }
 
-// TestConversationSummaryMemory_SaveContext_LLMStringResponse tests LLM returning string
+// TestConversationSummaryMemory_SaveContext_LLMStringResponse tests LLM returning string.
 func TestConversationSummaryMemory_SaveContext_LLMStringResponse(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -436,11 +436,11 @@ func TestConversationSummaryMemory_SaveContext_LLMStringResponse(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "String summary response", memory.currentSummary)
 }
 
-// TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse tests LLM returning unexpected type
+// TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse tests LLM returning unexpected type.
 func TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -457,11 +457,11 @@ func TestConversationSummaryMemory_SaveContext_LLMUnexpectedResponse(t *testing.
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "LLM Invoke returned unexpected type for summary")
 }
 
-// TestConversationSummaryMemory_Clear tests the Clear method
+// TestConversationSummaryMemory_Clear tests the Clear method.
 func TestConversationSummaryMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -476,18 +476,18 @@ func TestConversationSummaryMemory_Clear(t *testing.T) {
 
 	// Clear
 	err = memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify summary is cleared
-	assert.Equal(t, "", memory.currentSummary)
+	assert.Empty(t, memory.currentSummary)
 
 	// Verify history is cleared
 	messages, err := history.GetMessages(ctx)
 	require.NoError(t, err)
-	assert.Len(t, messages, 0)
+	assert.Empty(t, messages)
 }
 
-// TestConversationSummaryMemory_Clear_HistoryError tests error handling in Clear
+// TestConversationSummaryMemory_Clear_HistoryError tests error handling in Clear.
 func TestConversationSummaryMemory_Clear_HistoryError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -497,11 +497,11 @@ func TestConversationSummaryMemory_Clear_HistoryError(t *testing.T) {
 	memory := NewConversationSummaryMemory(history, llm, "memory")
 
 	err := memory.Clear(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, history.clearError, err)
 }
 
-// TestConversationSummaryBufferMemory tests the ConversationSummaryBufferMemory implementation
+// TestConversationSummaryBufferMemory tests the ConversationSummaryBufferMemory implementation.
 func TestConversationSummaryBufferMemory(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -517,7 +517,7 @@ func TestConversationSummaryBufferMemory(t *testing.T) {
 	assert.Equal(t, "AI", memory.AiPrefix)
 }
 
-// TestConversationSummaryBufferMemory_LoadMemoryVariables tests loading memory variables
+// TestConversationSummaryBufferMemory_LoadMemoryVariables tests loading memory variables.
 func TestConversationSummaryBufferMemory_LoadMemoryVariables(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -533,7 +533,7 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables(t *testing.T) {
 	require.NoError(t, err)
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "memory")
 
 	result := vars["memory"].(string)
@@ -542,7 +542,7 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables(t *testing.T) {
 	assert.Contains(t, result, "Hi!")
 }
 
-// TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary tests loading without summary
+// TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary tests loading without summary.
 func TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -557,7 +557,7 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary(t *testin
 	require.NoError(t, err)
 
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	result := vars["memory"].(string)
 	assert.Contains(t, result, "Hello")
@@ -568,7 +568,7 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables_NoSummary(t *testin
 	assert.Contains(t, result, "AI: Hi!")
 }
 
-// TestConversationSummaryBufferMemory_LoadMemoryVariables_GetMessagesError tests error handling
+// TestConversationSummaryBufferMemory_LoadMemoryVariables_GetMessagesError tests error handling.
 func TestConversationSummaryBufferMemory_LoadMemoryVariables_GetMessagesError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -578,11 +578,11 @@ func TestConversationSummaryBufferMemory_LoadMemoryVariables_GetMessagesError(t 
 	memory := NewConversationSummaryBufferMemory(history, llm, "memory", 1000)
 
 	_, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error")
 }
 
-// TestConversationSummaryBufferMemory_SaveContext tests saving context
+// TestConversationSummaryBufferMemory_SaveContext tests saving context.
 func TestConversationSummaryBufferMemory_SaveContext(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -594,7 +594,7 @@ func TestConversationSummaryBufferMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify messages were added to history
 	messages, err := history.GetMessages(ctx)
@@ -602,7 +602,7 @@ func TestConversationSummaryBufferMemory_SaveContext(t *testing.T) {
 	assert.Len(t, messages, 2)
 }
 
-// TestConversationSummaryBufferMemory_SaveContext_ErrorHandling tests error handling in SaveContext
+// TestConversationSummaryBufferMemory_SaveContext_ErrorHandling tests error handling in SaveContext.
 func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name          string
@@ -650,21 +650,21 @@ func TestConversationSummaryBufferMemory_SaveContext_ErrorHandling(t *testing.T)
 			}
 			llm := NewMockLLM()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 			memory := NewConversationSummaryBufferMemory(history, llm, "memory", 1000)
 			if tc.setupMemory != nil {
 				tc.setupMemory(memory)
 			}
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestConversationSummaryBufferMemory_Clear tests the Clear method
+// TestConversationSummaryBufferMemory_Clear tests the Clear method.
 func TestConversationSummaryBufferMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -674,11 +674,11 @@ func TestConversationSummaryBufferMemory_Clear(t *testing.T) {
 	memory.movingSummaryBuffer = "Test summary"
 
 	err := memory.Clear(ctx)
-	assert.NoError(t, err)
-	assert.Equal(t, "", memory.movingSummaryBuffer)
+	require.NoError(t, err)
+	assert.Empty(t, memory.movingSummaryBuffer)
 }
 
-// TestGetBufferString_Summary tests the getBufferString function with different message types
+// TestGetBufferString_Summary tests the getBufferString function with different message types.
 func TestGetBufferString_Summary(t *testing.T) {
 	messages := []schema.Message{
 		schema.NewHumanMessage("Hello"),
@@ -695,7 +695,7 @@ func TestGetBufferString_Summary(t *testing.T) {
 	assert.Contains(t, result, "Tool (call_123): Tool result")
 }
 
-// TestInterfaceCompliance tests that both implementations comply with the Memory interface
+// TestInterfaceCompliance tests that both implementations comply with the Memory interface.
 func TestInterfaceCompliance_Summary(t *testing.T) {
 	history := NewMockChatMessageHistory()
 	llm := NewMockLLM()
@@ -709,14 +709,14 @@ func TestInterfaceCompliance_Summary(t *testing.T) {
 	var _ iface.Memory = summaryBufferMemory
 }
 
-// TestDefaultSummaryPrompt tests that the default summary prompt is properly initialized
+// TestDefaultSummaryPrompt tests that the default summary prompt is properly initialized.
 func TestDefaultSummaryPrompt(t *testing.T) {
 	// This tests that the DefaultSummaryPrompt is not nil
 	// In the real implementation, this should be a valid prompt template
 	assert.NotNil(t, DefaultSummaryPrompt)
 }
 
-// BenchmarkConversationSummaryMemory_SaveContext benchmarks SaveContext performance
+// BenchmarkConversationSummaryMemory_SaveContext benchmarks SaveContext performance.
 func BenchmarkConversationSummaryMemory_SaveContext(b *testing.B) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -733,11 +733,11 @@ func BenchmarkConversationSummaryMemory_SaveContext(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.SaveContext(ctx, inputs, outputs)
+		_ = memory.SaveContext(ctx, inputs, outputs)
 	}
 }
 
-// BenchmarkConversationSummaryMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
+// BenchmarkConversationSummaryMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance.
 func BenchmarkConversationSummaryMemory_LoadMemoryVariables(b *testing.B) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -748,11 +748,11 @@ func BenchmarkConversationSummaryMemory_LoadMemoryVariables(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.LoadMemoryVariables(ctx, map[string]any{})
+		_, _ = memory.LoadMemoryVariables(ctx, map[string]any{})
 	}
 }
 
-// BenchmarkGetBufferString benchmarks the getBufferString function
+// BenchmarkGetBufferString benchmarks the getBufferString function.
 func BenchmarkGetBufferString_Summary(b *testing.B) {
 	messages := make([]schema.Message, 100)
 	for i := 0; i < 100; i++ {
@@ -769,7 +769,7 @@ func BenchmarkGetBufferString_Summary(b *testing.B) {
 	}
 }
 
-// TestConversationSummaryMemory_CustomPrefixes tests custom message prefixes
+// TestConversationSummaryMemory_CustomPrefixes tests custom message prefixes.
 func TestConversationSummaryMemory_CustomPrefixes(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -788,10 +788,10 @@ func TestConversationSummaryMemory_CustomPrefixes(t *testing.T) {
 	outputs := map[string]any{"output": "Hi!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestPredictNewSummary tests the predictNewSummary method directly
+// TestPredictNewSummary tests the predictNewSummary method directly.
 func TestConversationSummaryMemory_PredictNewSummary(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -805,11 +805,11 @@ func TestConversationSummaryMemory_PredictNewSummary(t *testing.T) {
 	memory.currentSummary = "Existing summary"
 
 	newSummary, err := memory.predictNewSummary(ctx, "New conversation lines")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Generated summary", newSummary)
 }
 
-// TestPredictNewSummary_PromptFormatError tests prompt formatting error
+// TestPredictNewSummary_PromptFormatError tests prompt formatting error.
 func TestConversationSummaryMemory_PredictNewSummary_PromptFormatError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -821,11 +821,11 @@ func TestConversationSummaryMemory_PredictNewSummary_PromptFormatError(t *testin
 	memory.SummaryPrompt = mockPrompt
 
 	_, err := memory.predictNewSummary(ctx, "New lines")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error")
 }
 
-// TestPredictNewSummary_LLMError tests LLM invocation error
+// TestPredictNewSummary_LLMError tests LLM invocation error.
 func TestConversationSummaryMemory_PredictNewSummary_LLMError(t *testing.T) {
 	ctx := context.Background()
 	history := NewMockChatMessageHistory()
@@ -835,6 +835,6 @@ func TestConversationSummaryMemory_PredictNewSummary_LLMError(t *testing.T) {
 	memory := NewConversationSummaryMemory(history, llm, "memory")
 
 	_, err := memory.predictNewSummary(ctx, "New lines")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "error")
 }

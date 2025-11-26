@@ -4,6 +4,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -223,7 +224,7 @@ func TestErrorTracking(t *testing.T) {
 	}
 
 	// Simulate error conditions
-	testError := NewInternalError("test.operation", fmt.Errorf("simulated error"))
+	testError := NewInternalError("test.operation", errors.New("simulated error"))
 
 	// Test that error is properly structured
 	if testError.Code != ErrCodeInternalError {

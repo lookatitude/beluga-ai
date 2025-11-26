@@ -4,6 +4,7 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -135,7 +136,7 @@ func (e *AgentExecutor) executeStep(ctx context.Context, agent iface.Agent, step
 	if step.Action.Log != "" {
 		llm := agent.GetLLM()
 		if llm == nil {
-			return "", fmt.Errorf("step requires LLM but agent does not have one")
+			return "", errors.New("step requires LLM but agent does not have one")
 		}
 
 		result, err := llm.Invoke(ctx, step.Action.Log)
@@ -197,5 +198,5 @@ func convertToSchemaSteps(intermediateSteps []iface.IntermediateStep) []schema.S
 	return steps
 }
 
-// Ensure AgentExecutor implements the Executor interface
+// Ensure AgentExecutor implements the Executor interface.
 var _ iface.Executor = (*AgentExecutor)(nil)

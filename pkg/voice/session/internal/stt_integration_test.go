@@ -29,7 +29,7 @@ func TestSTTIntegration_Transcribe_Success(t *testing.T) {
 	ctx := context.Background()
 	audio := []byte{1, 2, 3, 4, 5}
 	text, err := sti.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello world", text)
 }
 
@@ -39,7 +39,7 @@ func TestSTTIntegration_Transcribe_NilProvider(t *testing.T) {
 	ctx := context.Background()
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err := sti.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not set")
 }
 
@@ -49,7 +49,7 @@ func TestSTTIntegration_StartStreaming_Success(t *testing.T) {
 
 	ctx := context.Background()
 	err := sti.StartStreaming(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSTTIntegration_StartStreaming_NilProvider(t *testing.T) {
@@ -57,7 +57,7 @@ func TestSTTIntegration_StartStreaming_NilProvider(t *testing.T) {
 
 	ctx := context.Background()
 	err := sti.StartStreaming(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not set")
 }
 
@@ -67,7 +67,7 @@ func TestSTTIntegration_StartStreaming_ProviderError(t *testing.T) {
 
 	ctx := context.Background()
 	err := sti.StartStreaming(ctx)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to start")
 }
 
@@ -81,7 +81,7 @@ func TestSTTIntegration_SendAudio_Success(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	err = sti.SendAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSTTIntegration_SendAudio_NotStarted(t *testing.T) {
@@ -91,7 +91,7 @@ func TestSTTIntegration_SendAudio_NotStarted(t *testing.T) {
 	ctx := context.Background()
 	audio := []byte{1, 2, 3, 4, 5}
 	err := sti.SendAudio(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not started")
 }
 
@@ -109,7 +109,7 @@ func TestSTTIntegration_ReceiveTranscript_Success(t *testing.T) {
 	// Should receive transcriptions
 	select {
 	case result := <-ch:
-		assert.NoError(t, result.Error)
+		require.NoError(t, result.Error)
 		assert.NotEmpty(t, result.Text)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for transcript")
@@ -137,7 +137,7 @@ func TestSTTIntegration_CloseStreaming_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	err = sti.CloseStreaming()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestSTTIntegration_CloseStreaming_NotStarted(t *testing.T) {
@@ -145,5 +145,5 @@ func TestSTTIntegration_CloseStreaming_NotStarted(t *testing.T) {
 	sti := NewSTTIntegration(mockProvider)
 
 	err := sti.CloseStreaming()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

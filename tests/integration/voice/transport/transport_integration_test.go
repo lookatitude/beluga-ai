@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/transport"
-	// Import providers to trigger init() registration
+	// Import providers to trigger init() registration.
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/webrtc"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/websocket"
 	"github.com/stretchr/testify/assert"
@@ -85,7 +85,7 @@ func TestTransport_ErrorHandling(t *testing.T) {
 		audio := []byte{1, 2, 3, 4, 5}
 
 		err := mockTransport.SendAudio(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.False(t, transport.IsRetryableError(err))
 	})
 
@@ -96,7 +96,7 @@ func TestTransport_ErrorHandling(t *testing.T) {
 
 		ctx := context.Background()
 		err := mockTransport.Connect(ctx)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.True(t, transport.IsRetryableError(err))
 	})
 }

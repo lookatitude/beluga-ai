@@ -9,7 +9,7 @@ import (
 )
 
 // TestStart_Contract tests the contract for the Start() method
-// These tests ensure that any implementation of VoiceSession follows the expected behavior
+// These tests ensure that any implementation of VoiceSession follows the expected behavior.
 func TestStart_Contract(t *testing.T) {
 	t.Run("start initializes session to listening state", func(t *testing.T) {
 		ctx := context.Background()
@@ -30,7 +30,7 @@ func TestStart_Contract(t *testing.T) {
 		require.NoError(t, err)
 
 		err = sess.Start(ctx)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 
 	t.Run("start respects context cancellation", func(t *testing.T) {
@@ -39,10 +39,9 @@ func TestStart_Contract(t *testing.T) {
 
 		sess := createTestSession(t)
 		err := sess.Start(ctx)
-
 		// Should either return error or respect cancellation
 		if err != nil {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 	})
 
@@ -59,7 +58,7 @@ func TestStart_Contract(t *testing.T) {
 
 		// Should be able to start again
 		err = sess.Start(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("start generates session ID if not provided", func(t *testing.T) {

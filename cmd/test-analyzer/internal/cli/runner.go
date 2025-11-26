@@ -119,7 +119,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 		pkgAnalysis, err := analyzer.AnalyzePackage(ctx, pkg)
 		if err != nil {
 			if !config.Quiet {
-				fmt.Fprintf(os.Stderr, "Error analyzing package %s: %v\n", pkg, err)
+				_, _ = fmt.Fprintf(os.Stderr, "Error analyzing package %s: %v\n", pkg, err)
 			}
 			continue
 		}
@@ -135,7 +135,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 					fix, err := fixer.ApplyFix(ctx, issue)
 					if err != nil {
 						if !config.Quiet {
-							fmt.Fprintf(os.Stderr, "Failed to apply fix for issue in %s: %v\n",
+							_, _ = fmt.Fprintf(os.Stderr, "Failed to apply fix for issue in %s: %v\n",
 								pkg, err)
 						}
 						totalFailedFixes++
@@ -147,7 +147,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 						_, err := fixer.ValidateFix(ctx, fix)
 						if err != nil {
 							if !config.Quiet {
-								fmt.Fprintf(os.Stderr, "Failed to validate fix in %s: %v\n",
+								_, _ = fmt.Fprintf(os.Stderr, "Failed to validate fix in %s: %v\n",
 									pkg, err)
 							}
 							_ = fixer.RollbackFix(ctx, fix)
@@ -191,7 +191,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 			return 1, fmt.Errorf("writing output file: %w", err)
 		}
 	} else {
-		os.Stdout.Write(reportData)
+		_, _ = os.Stdout.Write(reportData)
 	}
 
 	// Determine exit code
@@ -209,7 +209,7 @@ func findPackages(root string) []string {
 	var packages []string
 	seen := make(map[string]bool)
 
-	filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil
 		}

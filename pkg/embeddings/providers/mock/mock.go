@@ -10,7 +10,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Config holds configuration for mock embedder
+// Config holds configuration for mock embedder.
 type Config struct {
 	Dimension    int
 	Seed         int64
@@ -18,17 +18,17 @@ type Config struct {
 	Enabled      bool
 }
 
-// HealthChecker interface for health checks
+// HealthChecker interface for health checks.
 type HealthChecker interface {
 	Check(ctx context.Context) error
 }
 
 // MockEmbedder is a mock implementation of the Embedder interface for testing.
 type MockEmbedder struct {
-	config *Config
 	tracer trace.Tracer
-	mu     sync.Mutex
+	config *Config
 	rng    *rand.Rand
+	mu     sync.Mutex
 }
 
 // NewMockEmbedder creates a new MockEmbedder with the given configuration.
@@ -64,7 +64,6 @@ func (m *MockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]
 	defer span.End()
 
 	defer func() {
-
 	}()
 
 	m.mu.Lock()
@@ -103,7 +102,6 @@ func (m *MockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, 
 	defer span.End()
 
 	defer func() {
-
 	}()
 
 	m.mu.Lock()
@@ -142,7 +140,7 @@ func (m *MockEmbedder) GetDimension(ctx context.Context) (int, error) {
 	return m.config.Dimension, nil
 }
 
-// Check performs a health check on the mock embedder
+// Check performs a health check on the mock embedder.
 func (m *MockEmbedder) Check(ctx context.Context) error {
 	_, span := m.tracer.Start(ctx, "mock.health_check")
 	defer span.End()
@@ -152,5 +150,7 @@ func (m *MockEmbedder) Check(ctx context.Context) error {
 }
 
 // Ensure MockEmbedder implements the interface.
-var _ iface.Embedder = (*MockEmbedder)(nil)
-var _ HealthChecker = (*MockEmbedder)(nil)
+var (
+	_ iface.Embedder = (*MockEmbedder)(nil)
+	_ HealthChecker  = (*MockEmbedder)(nil)
+)

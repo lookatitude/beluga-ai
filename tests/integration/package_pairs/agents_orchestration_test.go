@@ -5,6 +5,7 @@ package package_pairs
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -19,17 +20,17 @@ import (
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 )
 
-// TestIntegrationAgentsOrchestration tests the integration between Agents and Orchestration
+// TestIntegrationAgentsOrchestration tests the integration between Agents and Orchestration.
 func TestIntegrationAgentsOrchestration(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name              string
-		agentCount        int
 		orchestrationType string
-		expectedExecution bool
+		agentCount        int
 		expectedSteps     int
+		expectedExecution bool
 	}{
 		{
 			name:              "single_agent_chain",
@@ -76,13 +77,13 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 			}
 
 			// Create orchestration component
-			var orchestrationResult interface{}
+			var orchestrationResult any
 			var err error
 
 			switch tt.orchestrationType {
 			case "chain":
 				chain := orchestration.CreateTestChain(
-					fmt.Sprintf("agent-chain-%s", tt.name),
+					"agent-chain-"+tt.name,
 					generateStepNames(tt.expectedSteps),
 				)
 				orchestrationResult, err = chain.Invoke(ctx, "test input")
@@ -98,7 +99,7 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 				}
 
 				graph := orchestration.CreateTestGraph(
-					fmt.Sprintf("agent-graph-%s", tt.name),
+					"agent-graph-"+tt.name,
 					nodes,
 					edges,
 				)
@@ -106,7 +107,7 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 
 			case "workflow":
 				workflow := orchestration.CreateTestWorkflow(
-					fmt.Sprintf("agent-workflow-%s", tt.name),
+					"agent-workflow-"+tt.name,
 					generateTaskNames(tt.agentCount),
 				)
 				workflowID, runID, workflowErr := workflow.Execute(ctx, "test input")
@@ -117,7 +118,7 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 			}
 
 			if tt.expectedExecution {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, orchestrationResult)
 
 				// Verify orchestration executed successfully
@@ -125,13 +126,13 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 					assert.Contains(t, result, tt.name)
 				}
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 
 			// Test multi-agent coordination through memory
 			sharedMemory := helper.CreateMockMemory("shared-coordination", memory.MemoryTypeBuffer)
 			err = helper.TestMultiAgentWorkflow(testAgents, orchestrationResult, sharedMemory)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Verify agents were properly coordinated
 			// Note: Test orchestration utilities may not actually invoke agents,
@@ -153,21 +154,21 @@ func TestIntegrationAgentsOrchestration(t *testing.T) {
 	}
 }
 
-// TestAgentsOrchestrationErrorHandling tests error scenarios
+// TestAgentsOrchestrationErrorHandling tests error scenarios.
 func TestAgentsOrchestrationErrorHandling(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
+		setupError  func() ([]agentsiface.CompositeAgent, any)
 		name        string
-		setupError  func() ([]agentsiface.CompositeAgent, interface{})
 		expectedErr bool
 	}{
 		{
 			name: "agent_execution_error",
-			setupError: func() ([]agentsiface.CompositeAgent, interface{}) {
+			setupError: func() ([]agentsiface.CompositeAgent, any) {
 				errorAgent := agents.NewAdvancedMockAgent("error-agent", "base",
-					agents.WithMockError(true, fmt.Errorf("agent execution failed")))
+					agents.WithMockError(true, errors.New("agent execution failed")))
 
 				chain := orchestration.CreateTestChain("error-chain", []string{"step1"})
 
@@ -177,11 +178,11 @@ func TestAgentsOrchestrationErrorHandling(t *testing.T) {
 		},
 		{
 			name: "orchestration_execution_error",
-			setupError: func() ([]agentsiface.CompositeAgent, interface{}) {
+			setupError: func() ([]agentsiface.CompositeAgent, any) {
 				normalAgent := agents.NewAdvancedMockAgent("normal-agent", "base")
 
 				errorOrchestrator := orchestration.NewAdvancedMockOrchestrator("error-orch", "chain",
-					orchestration.WithMockError(true, fmt.Errorf("orchestration failed")))
+					orchestration.WithMockError(true, errors.New("orchestration failed")))
 
 				return []agentsiface.CompositeAgent{normalAgent}, errorOrchestrator
 			},
@@ -202,20 +203,20 @@ func TestAgentsOrchestrationErrorHandling(t *testing.T) {
 				// In a real implementation, this would test actual error propagation
 				assert.NotNil(t, testAgents, "Should have test agents even with error setup")
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
-// TestAgentsOrchestrationPerformance tests performance scenarios
+// TestAgentsOrchestrationPerformance tests performance scenarios.
 func TestAgentsOrchestrationPerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance tests in short mode")
 	}
 
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name            string
@@ -271,10 +272,10 @@ func TestAgentsOrchestrationPerformance(t *testing.T) {
 	}
 }
 
-// TestAgentsOrchestrationConcurrency tests concurrent agent execution
+// TestAgentsOrchestrationConcurrency tests concurrent agent execution.
 func TestAgentsOrchestrationConcurrency(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	const numGoroutines = 5
 	const agentsPerGoroutine = 2
@@ -300,18 +301,19 @@ func TestAgentsOrchestrationConcurrency(t *testing.T) {
 	})
 }
 
-// TestAgentsOrchestrationComplexScenarios tests complex real-world scenarios
+// TestAgentsOrchestrationComplexScenarios tests complex real-world scenarios.
 func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	scenarios := []struct {
-		name     string
 		scenario func(t *testing.T)
+		name     string
 	}{
 		{
 			name: "collaborative_problem_solving",
 			scenario: func(t *testing.T) {
+				t.Helper()
 				ctx := context.Background()
 
 				// Create specialized agents
@@ -336,25 +338,26 @@ func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 
 				// Test agent coordination
 				err = helper.TestMultiAgentWorkflow(agents, workflow, sharedMemory)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify workflow result
 				result, err := workflow.GetResult(ctx, workflowID, runID)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 
 				// Test workflow control operations
 				err = workflow.Signal(ctx, workflowID, runID, "progress_update", "50% complete")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				queryResult, err := workflow.Query(ctx, workflowID, runID, "status")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, queryResult)
 			},
 		},
 		{
 			name: "hierarchical_agent_system",
 			scenario: func(t *testing.T) {
+				t.Helper()
 				// Create hierarchical agent structure
 				supervisorAgent := agents.NewAdvancedMockAgent("supervisor", "base")
 				workerAgent1 := agents.NewAdvancedMockAgent("worker1", "base")
@@ -376,12 +379,12 @@ func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 				// Test hierarchical execution
 				ctx := context.Background()
 				result, err := graph.Invoke(ctx, "Coordinate task execution")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 
 				// Test agent coordination
 				err = helper.TestMultiAgentWorkflow(allAgents, graph, hierarchyMemory)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify all agents participated
 				for i, agent := range allAgents {
@@ -395,6 +398,7 @@ func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 		{
 			name: "agent_chain_with_recovery",
 			scenario: func(t *testing.T) {
+				t.Helper()
 				// Test error recovery in agent chains
 				normalAgent := agents.NewAdvancedMockAgent("normal-agent", "base")
 				recoveryAgent := agents.NewAdvancedMockAgent("recovery-agent", "base")
@@ -409,7 +413,7 @@ func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 
 				// Test execution with recovery
 				err := helper.TestMultiAgentWorkflow(testAgents, chain, recoveryMemory)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify recovery mechanism worked
 				memoryContent := helper.GetMemoryContent(recoveryMemory)
@@ -425,10 +429,10 @@ func TestAgentsOrchestrationComplexScenarios(t *testing.T) {
 	}
 }
 
-// TestAgentsOrchestrationRealWorldWorkflows tests realistic workflows
+// TestAgentsOrchestrationRealWorldWorkflows tests realistic workflows.
 func TestAgentsOrchestrationRealWorldWorkflows(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	t.Run("document_processing_workflow", func(t *testing.T) {
 		// Simulate a document processing workflow with multiple agents
@@ -454,16 +458,16 @@ func TestAgentsOrchestrationRealWorldWorkflows(t *testing.T) {
 
 		// Test agent coordination in workflow
 		err = helper.TestMultiAgentWorkflow(agents, workflow, workflowMemory)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify workflow completion
 		result, err := workflow.GetResult(ctx, workflowID, runID)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Contains(t, result.(string), workflowID)
 
 		// Test workflow state queries
 		statusResult, err := workflow.Query(ctx, workflowID, runID, "processing_status")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, statusResult)
 	})
 
@@ -490,7 +494,7 @@ func TestAgentsOrchestrationRealWorldWorkflows(t *testing.T) {
 
 		// Test agent coordination in decision making
 		err = helper.TestMultiAgentWorkflow(agents, chain, decisionMemory)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify decision process was recorded in memory
 		memoryContent := helper.GetMemoryContent(decisionMemory)
@@ -498,10 +502,10 @@ func TestAgentsOrchestrationRealWorldWorkflows(t *testing.T) {
 	})
 }
 
-// TestAgentsOrchestrationMetrics tests metrics collection across agent-orchestration integration
+// TestAgentsOrchestrationMetrics tests metrics collection across agent-orchestration integration.
 func TestAgentsOrchestrationMetrics(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	// Create components with metrics
 	agent := agents.NewAdvancedMockAgent("metrics-agent", "base")
@@ -517,12 +521,12 @@ func TestAgentsOrchestrationMetrics(t *testing.T) {
 		orchestrator,
 		memory,
 	)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Execute chain operations
 	ctx := context.Background()
 	_, err = chain.Invoke(ctx, "metrics test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify metrics were recorded
 	agentHealth := agent.CheckHealth()
@@ -532,7 +536,7 @@ func TestAgentsOrchestrationMetrics(t *testing.T) {
 	assert.Contains(t, orchestratorHealth, "call_count")
 
 	// Test cross-component metrics
-	components := map[string]interface{}{
+	components := map[string]any{
 		"agent":        agent,
 		"orchestrator": orchestrator,
 		"memory":       memory,
@@ -540,10 +544,10 @@ func TestAgentsOrchestrationMetrics(t *testing.T) {
 	helper.AssertHealthChecks(t, components)
 }
 
-// BenchmarkIntegrationAgentsOrchestration benchmarks agent-orchestration integration
+// BenchmarkIntegrationAgentsOrchestration benchmarks agent-orchestration integration.
 func BenchmarkIntegrationAgentsOrchestration(b *testing.B) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	// Setup test components
 	testAgents := make([]agentsiface.CompositeAgent, 3)

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestStreamingSession_E2E tests streaming voice session functionality
+// TestStreamingSession_E2E tests streaming voice session functionality.
 func TestStreamingSession_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -44,7 +44,7 @@ func TestStreamingSession_E2E(t *testing.T) {
 
 	for _, chunk := range audioChunks {
 		err = voiceSession.ProcessAudio(ctx, chunk)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Test streaming TTS

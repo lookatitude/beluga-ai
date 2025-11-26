@@ -8,13 +8,13 @@ import (
 )
 
 var (
-	globalCreators   = make(map[string]func(config map[string]interface{}) (vectorstores.VectorStore, error))
+	globalCreators   = make(map[string]func(config map[string]any) (vectorstores.VectorStore, error))
 	globalCreatorsMu sync.RWMutex
 )
 
 // Register globally adds a new vector store creator function.
 // This function is intended to be called from the init() function of vector store provider packages.
-func Register(name string, creator func(config map[string]interface{}) (vectorstores.VectorStore, error)) {
+func Register(name string, creator func(config map[string]any) (vectorstores.VectorStore, error)) {
 	globalCreatorsMu.Lock()
 	defer globalCreatorsMu.Unlock()
 	if _, dup := globalCreators[name]; dup {
@@ -27,7 +27,7 @@ func Register(name string, creator func(config map[string]interface{}) (vectorst
 // It allows for easy addition of new vector store types.
 type VectorStoreFactory struct {
 	// creators holds a snapshot of the globally registered creators at the time of factory instantiation.
-	creators map[string]func(config map[string]interface{}) (vectorstores.VectorStore, error)
+	creators map[string]func(config map[string]any) (vectorstores.VectorStore, error)
 }
 
 // NewVectorStoreFactory creates a new instance of VectorStoreFactory.
@@ -36,7 +36,7 @@ func NewVectorStoreFactory() *VectorStoreFactory {
 	globalCreatorsMu.RLock()
 	defer globalCreatorsMu.RUnlock()
 
-	instanceCreators := make(map[string]func(config map[string]interface{}) (vectorstores.VectorStore, error))
+	instanceCreators := make(map[string]func(config map[string]any) (vectorstores.VectorStore, error))
 	for name, creator := range globalCreators {
 		instanceCreators[name] = creator
 	}
@@ -47,7 +47,7 @@ func NewVectorStoreFactory() *VectorStoreFactory {
 }
 
 // Create creates a new vector store instance based on the given name and configuration.
-func (f *VectorStoreFactory) Create(name string, config map[string]interface{}) (vectorstores.VectorStore, error) {
+func (f *VectorStoreFactory) Create(name string, config map[string]any) (vectorstores.VectorStore, error) {
 	creator, ok := f.creators[name]
 	if !ok {
 		// For debugging, list available creators if not found

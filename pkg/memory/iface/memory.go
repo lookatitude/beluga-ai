@@ -19,7 +19,7 @@ type Memory interface {
 	LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error)
 
 	// SaveContext saves the current context and new inputs/outputs to memory.
-	SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error
+	SaveContext(ctx context.Context, inputs, outputs map[string]any) error
 
 	// Clear clears the memory contents.
 	Clear(ctx context.Context) error

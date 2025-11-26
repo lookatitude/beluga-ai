@@ -159,11 +159,14 @@ func NewTracer() *Tracer {
 }
 
 // StartSpan starts a new span for a memory operation.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (t *Tracer) StartSpan(ctx context.Context, operation string, memoryType MemoryType, memoryKey string) (context.Context, trace.Span) {
 	if t == nil || t.tracer == nil {
 		return ctx, nil
 	}
-	return t.tracer.Start(ctx, "memory."+operation)
+	ctx, span := t.tracer.Start(ctx, "memory."+operation)
+	return ctx, span
 }
 
 // RecordSpanError records an error on the span.
@@ -176,7 +179,7 @@ func (t *Tracer) RecordSpanError(span trace.Span, err error) {
 	}
 }
 
-// Global metrics and tracer instances
+// Global metrics and tracer instances.
 var (
 	globalMetrics *Metrics
 	globalTracer  *Tracer
@@ -295,7 +298,7 @@ func (l *Logger) LogError(ctx context.Context, err error, operation string, memo
 	l.logger.LogAttrs(ctx, slog.LevelError, "Memory operation failed", attrs...)
 }
 
-// Global logger instance
+// Global logger instance.
 var globalLogger *Logger
 
 // SetGlobalLogger sets the global logger instance.
@@ -311,7 +314,7 @@ func GetGlobalLogger() *Logger {
 	return globalLogger
 }
 
-// Default convenience functions that use the global logger
+// Default convenience functions that use the global logger.
 var (
 	LogMemoryOperation = func(ctx context.Context, level slog.Level, operation string, memoryType MemoryType, memoryKey string, messageCount int, duration time.Duration, err error) {
 		GetGlobalLogger().LogMemoryOperation(ctx, level, operation, memoryType, memoryKey, messageCount, duration, err)

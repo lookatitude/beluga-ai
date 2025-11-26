@@ -13,8 +13,8 @@ import (
 
 func TestNewONNXProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *turndetection.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -42,10 +42,10 @@ func TestNewONNXProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewONNXProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -83,7 +83,7 @@ func TestONNXProvider_DetectTurn(t *testing.T) {
 
 	// Test processing
 	turn, err := onnxProvider.DetectTurn(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Result depends on audio content, but should not error
 	_ = turn
 }
@@ -102,13 +102,13 @@ func TestONNXProvider_DetectTurnWithSilence(t *testing.T) {
 
 	// Test with silence duration below threshold
 	turn, err := provider.DetectTurnWithSilence(ctx, audio, 100*time.Millisecond)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Result depends on implementation
 	_ = turn
 
 	// Test with silence duration above threshold
 	turn, err = provider.DetectTurnWithSilence(ctx, audio, 600*time.Millisecond)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, turn)
 }
 
@@ -116,7 +116,7 @@ func TestDefaultONNXConfig(t *testing.T) {
 	config := DefaultONNXConfig()
 	assert.NotNil(t, config)
 	assert.Equal(t, "turn_detection.onnx", config.ModelPath)
-	assert.Equal(t, 0.5, config.Threshold)
+	assert.InEpsilon(t, 0.5, config.Threshold, 0.0001)
 	assert.Equal(t, 16000, config.SampleRate)
 	assert.Equal(t, 512, config.FrameSize)
 }

@@ -333,6 +333,9 @@ linters:
         - github.com/lookatitude/beluga-ai/*
         - errors
         - fmt
+        - go.opentelemetry.io/otel/metric
+        - go.opentelemetry.io/otel/trace
+        - context
 
 # Formatters configuration
 formatters:
@@ -361,3 +364,19 @@ issues:
   # Set to 0 to ensure all issues are addressed
   max-issues-per-linter: 0
   max-same-issues: 0
+  # Disable govet (including printf) for react package to avoid panic bug in golangci-lint v2.6.2
+  # Bug: interface conversion: types.Object is nil, not *types.Var in printf analyzer
+  # when analyzing range loops - panic happens during analysis phase, not reporting
+  exclude-rules:
+    - path: pkg/agents/providers/react
+      linters:
+        - govet
+    # Exclude spancheck warnings for span helper functions that return spans for caller management
+    - path: pkg/.*/metrics\.go
+      text: "span is unassigned, probable memory leak"
+      linters:
+        - spancheck
+    - path: pkg/llms/tracing\.go
+      text: "span.End is not called on all paths"
+      linters:
+        - spancheck

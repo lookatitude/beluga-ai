@@ -312,7 +312,7 @@ mockProvider := stt.NewAdvancedMockSTTProvider("test",
 
 // Use in tests
 text, err := mockProvider.Transcribe(ctx, audio)
-assert.NoError(t, err)
+require.NoError(t, err)
 assert.Equal(t, "Hello world", text)
 ```
 

@@ -46,10 +46,10 @@ func TestTTSProvider_GenerateSpeech(t *testing.T) {
 			audio, err := tt.provider.GenerateSpeech(ctx, tt.text)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, audio)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, audio)
 			}
 		})
@@ -85,17 +85,17 @@ func TestTTSProvider_StreamGenerate(t *testing.T) {
 			reader, err := tt.provider.StreamGenerate(ctx, tt.text)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, reader)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				require.NotNil(t, reader)
 
 				// Read from stream
 				buffer := make([]byte, 1024)
 				n, readErr := reader.Read(buffer)
 				assert.NoError(t, readErr)
-				assert.Greater(t, n, 0)
+				assert.Positive(t, n)
 			}
 		})
 	}
@@ -116,8 +116,8 @@ func TestStreamGenerate_Read(t *testing.T) {
 
 	buffer := make([]byte, 1024)
 	n, err := reader.Read(buffer)
-	assert.NoError(t, err)
-	assert.Greater(t, n, 0)
+	require.NoError(t, err)
+	assert.Positive(t, n)
 
 	// Test EOF
 	_, err = reader.Read(buffer)

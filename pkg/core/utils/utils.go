@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 )
 
 // GenerateRandomString generates a random hex string of the specified length.
@@ -11,7 +12,7 @@ func GenerateRandomString(length int) (string, error) {
 	b := make([]byte, length)
 	_, err := rand.Read(b)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to generate random bytes: %w", err)
 	}
 	return hex.EncodeToString(b), nil
 }

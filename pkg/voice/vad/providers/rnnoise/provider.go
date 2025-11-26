@@ -2,6 +2,7 @@ package rnnoise
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -11,7 +12,7 @@ import (
 	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
 )
 
-// RNNoiseProvider implements the VADProvider interface for RNNoise VAD
+// RNNoiseProvider implements the VADProvider interface for RNNoise VAD.
 type RNNoiseProvider struct {
 	config      *RNNoiseConfig
 	model       *RNNoiseModel
@@ -19,17 +20,17 @@ type RNNoiseProvider struct {
 	initialized bool
 }
 
-// RNNoiseModel represents a loaded RNNoise model
+// RNNoiseModel represents a loaded RNNoise model.
 type RNNoiseModel struct {
 	modelPath string
 	loaded    bool
 }
 
-// NewRNNoiseProvider creates a new RNNoise VAD provider
+// NewRNNoiseProvider creates a new RNNoise VAD provider.
 func NewRNNoiseProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	if config == nil {
 		return nil, vad.NewVADError("NewRNNoiseProvider", vad.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to RNNoise config
@@ -65,7 +66,7 @@ func NewRNNoiseProvider(config *vad.Config) (vadiface.VADProvider, error) {
 	return provider, nil
 }
 
-// Process implements the VADProvider interface
+// Process implements the VADProvider interface.
 func (p *RNNoiseProvider) Process(ctx context.Context, audio []byte) (bool, error) {
 	// Lazy initialization - load model on first use
 	if err := p.ensureInitialized(ctx); err != nil {
@@ -95,7 +96,7 @@ func (p *RNNoiseProvider) Process(ctx context.Context, audio []byte) (bool, erro
 	return speechProbability >= p.config.Threshold, nil
 }
 
-// ProcessStream implements the VADProvider interface
+// ProcessStream implements the VADProvider interface.
 func (p *RNNoiseProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error) {
 	// Lazy initialization - load model on first use
 	if err := p.ensureInitialized(ctx); err != nil {
@@ -144,7 +145,7 @@ func (p *RNNoiseProvider) ProcessStream(ctx context.Context, audioCh <-chan []by
 	return resultCh, nil
 }
 
-// ensureInitialized loads the RNNoise model if not already loaded
+// ensureInitialized loads the RNNoise model if not already loaded.
 func (p *RNNoiseProvider) ensureInitialized(ctx context.Context) error {
 	p.mu.RLock()
 	initialized := p.initialized
@@ -174,7 +175,7 @@ func (p *RNNoiseProvider) ensureInitialized(ctx context.Context) error {
 	return nil
 }
 
-// LoadRNNoiseModel loads an RNNoise model from the specified path
+// LoadRNNoiseModel loads an RNNoise model from the specified path.
 func LoadRNNoiseModel(modelPath string) (*RNNoiseModel, error) {
 	// TODO: Actual RNNoise model loading would go here
 	// In a real implementation, this would:
@@ -190,7 +191,7 @@ func LoadRNNoiseModel(modelPath string) (*RNNoiseModel, error) {
 	return model, nil
 }
 
-// calculateEnergy calculates the energy of an audio signal
+// calculateEnergy calculates the energy of an audio signal.
 func calculateEnergy(audio []byte) float64 {
 	if len(audio) == 0 {
 		return 0.0

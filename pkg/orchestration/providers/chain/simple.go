@@ -2,6 +2,7 @@ package chain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync/atomic"
 	"time"
@@ -15,14 +16,14 @@ import (
 	scheduler "github.com/lookatitude/beluga-ai/pkg/orchestration/internal/scheduler"
 )
 
-// SimpleChain provides a basic implementation of the Chain interface
+// SimpleChain provides a basic implementation of the Chain interface.
 type SimpleChain struct {
-	config iface.ChainConfig
 	memory memory.Memory
 	tracer trace.Tracer
+	config iface.ChainConfig
 }
 
-// NewSimpleChain creates a new SimpleChain
+// NewSimpleChain creates a new SimpleChain.
 func NewSimpleChain(config iface.ChainConfig, memory memory.Memory, tracer trace.Tracer) *SimpleChain {
 	return &SimpleChain{
 		config: config,
@@ -237,11 +238,11 @@ func (c *SimpleChain) Batch(ctx context.Context, inputs []any, options ...core.O
 func (c *SimpleChain) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	// Basic stream implementation: only streams the last step if it supports streaming
 	if len(c.config.Steps) == 0 {
-		return nil, iface.ErrInvalidConfig("chain.stream", fmt.Errorf("cannot stream an empty chain"))
+		return nil, iface.ErrInvalidConfig("chain.stream", errors.New("cannot stream an empty chain"))
 	}
 
 	// Execute all steps except the last one
-	var intermediateOutput any = input
+	intermediateOutput := input
 	var err error
 	for i := 0; i < len(c.config.Steps)-1; i++ {
 		step := c.config.Steps[i]
@@ -256,6 +257,8 @@ func (c *SimpleChain) Stream(ctx context.Context, input any, options ...core.Opt
 	return lastStep.Stream(ctx, intermediateOutput, options...)
 }
 
-// Ensure SimpleChain implements the Chain interface
-var _ iface.Chain = (*SimpleChain)(nil)
-var _ core.Runnable = (*SimpleChain)(nil)
+// Ensure SimpleChain implements the Chain interface.
+var (
+	_ iface.Chain   = (*SimpleChain)(nil)
+	_ core.Runnable = (*SimpleChain)(nil)
+)

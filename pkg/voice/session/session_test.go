@@ -12,12 +12,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Mock providers for testing
+// Mock providers for testing.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "", nil
 }
+
 func (m *mockSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, nil
 }
@@ -27,6 +28,7 @@ type mockTTSProvider struct{}
 func (m *mockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	return nil, nil
 }
+
 func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	// Return a simple reader for testing
 	return bytes.NewReader([]byte("mock audio data")), nil
@@ -75,10 +77,10 @@ func TestNewVoiceSession(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			session, err := NewVoiceSession(ctx, tt.opts...)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, session)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, session)
 			}
 		})

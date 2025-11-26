@@ -14,36 +14,29 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockRetriever provides a comprehensive mock implementation for testing
+// AdvancedMockRetriever provides a comprehensive mock implementation for testing.
 type AdvancedMockRetriever struct {
+	lastHealthCheck time.Time
+	errorToReturn   error
 	mock.Mock
-
-	// Configuration
-	name          string
-	retrieverType string
-	callCount     int
-	mu            sync.RWMutex
-
-	// Configurable behavior
-	shouldError    bool
-	errorToReturn  error
-	simulateDelay  time.Duration
-	documents      []schema.Document
-	defaultK       int
-	scoreThreshold float32
-
-	// Search simulation
+	name             string
+	retrieverType    string
+	healthState      string
 	similarityScores []float32
 	documentOrder    []int
-
-	// Health check data
-	healthState     string
-	lastHealthCheck time.Time
+	documents        []schema.Document
+	callCount        int
+	defaultK         int
+	simulateDelay    time.Duration
+	mu               sync.RWMutex
+	scoreThreshold   float32
+	shouldError      bool
 }
 
-// NewAdvancedMockRetriever creates a new advanced mock with configurable behavior
+// NewAdvancedMockRetriever creates a new advanced mock with configurable behavior.
 func NewAdvancedMockRetriever(name, retrieverType string, options ...MockRetrieverOption) *AdvancedMockRetriever {
 	mock := &AdvancedMockRetriever{
 		name:             name,
@@ -64,10 +57,10 @@ func NewAdvancedMockRetriever(name, retrieverType string, options ...MockRetriev
 	return mock
 }
 
-// MockRetrieverOption defines functional options for mock configuration
+// MockRetrieverOption defines functional options for mock configuration.
 type MockRetrieverOption func(*AdvancedMockRetriever)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.shouldError = shouldError
@@ -75,7 +68,7 @@ func WithMockError(shouldError bool, err error) MockRetrieverOption {
 	}
 }
 
-// WithMockDocuments sets the documents to return from searches
+// WithMockDocuments sets the documents to return from searches.
 func WithMockDocuments(documents []schema.Document) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.documents = make([]schema.Document, len(documents))
@@ -83,14 +76,14 @@ func WithMockDocuments(documents []schema.Document) MockRetrieverOption {
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.simulateDelay = delay
 	}
 }
 
-// WithMockScores sets predefined similarity scores
+// WithMockScores sets predefined similarity scores.
 func WithMockScores(scores []float32) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.similarityScores = make([]float32, len(scores))
@@ -98,21 +91,21 @@ func WithMockScores(scores []float32) MockRetrieverOption {
 	}
 }
 
-// WithMockDefaultK sets the default number of documents to return
+// WithMockDefaultK sets the default number of documents to return.
 func WithMockDefaultK(k int) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.defaultK = k
 	}
 }
 
-// WithScoreThreshold sets the minimum similarity score threshold
+// WithScoreThreshold sets the minimum similarity score threshold.
 func WithScoreThreshold(threshold float32) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.scoreThreshold = threshold
 	}
 }
 
-// Mock implementation methods for core.Runnable interface
+// Mock implementation methods for core.Runnable interface.
 func (r *AdvancedMockRetriever) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	if query, ok := input.(string); ok {
 		return r.GetRelevantDocuments(ctx, query)
@@ -146,7 +139,7 @@ func (r *AdvancedMockRetriever) Stream(ctx context.Context, input any, options .
 	return ch, nil
 }
 
-// Mock implementation methods for Retriever interface
+// Mock implementation methods for Retriever interface.
 func (r *AdvancedMockRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -228,9 +221,9 @@ func (r *AdvancedMockRetriever) GetDocumentCount() int {
 	return len(r.documents)
 }
 
-func (r *AdvancedMockRetriever) CheckHealth() map[string]interface{} {
+func (r *AdvancedMockRetriever) CheckHealth() map[string]any {
 	r.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":          r.healthState,
 		"name":            r.name,
 		"type":            r.retrieverType,
@@ -242,11 +235,11 @@ func (r *AdvancedMockRetriever) CheckHealth() map[string]interface{} {
 	}
 }
 
-// AdvancedMockVectorStoreRetriever provides a comprehensive mock for vector store retrievers
+// AdvancedMockVectorStoreRetriever provides a comprehensive mock for vector store retrievers.
 type AdvancedMockVectorStoreRetriever struct {
 	*AdvancedMockRetriever
-	vectorStore interface{} // Mock vector store
-	embedder    interface{} // Mock embedder
+	vectorStore any // Mock vector store
+	embedder    any // Mock embedder
 }
 
 func NewAdvancedMockVectorStoreRetriever(name string, options ...MockRetrieverOption) *AdvancedMockVectorStoreRetriever {
@@ -256,25 +249,25 @@ func NewAdvancedMockVectorStoreRetriever(name string, options ...MockRetrieverOp
 	}
 }
 
-func (r *AdvancedMockVectorStoreRetriever) GetVectorStore() interface{} {
+func (r *AdvancedMockVectorStoreRetriever) GetVectorStore() any {
 	return r.vectorStore
 }
 
-func (r *AdvancedMockVectorStoreRetriever) SetVectorStore(store interface{}) {
+func (r *AdvancedMockVectorStoreRetriever) SetVectorStore(store any) {
 	r.vectorStore = store
 }
 
-func (r *AdvancedMockVectorStoreRetriever) GetEmbedder() interface{} {
+func (r *AdvancedMockVectorStoreRetriever) GetEmbedder() any {
 	return r.embedder
 }
 
-func (r *AdvancedMockVectorStoreRetriever) SetEmbedder(embedder interface{}) {
+func (r *AdvancedMockVectorStoreRetriever) SetEmbedder(embedder any) {
 	r.embedder = embedder
 }
 
 // Test data creation helpers
 
-// CreateTestRetrievalQueries creates standardized test queries
+// CreateTestRetrievalQueries creates standardized test queries.
 func CreateTestRetrievalQueries(count int) []string {
 	queries := make([]string, count)
 	topics := []string{"artificial intelligence", "machine learning", "deep learning", "natural language processing", "computer vision"}
@@ -287,7 +280,7 @@ func CreateTestRetrievalQueries(count int) []string {
 	return queries
 }
 
-// CreateTestRetrievalDocuments creates documents optimized for retrieval testing
+// CreateTestRetrievalDocuments creates documents optimized for retrieval testing.
 func CreateTestRetrievalDocuments(count int) []schema.Document {
 	documents := make([]schema.Document, count)
 	topics := []string{"AI", "ML", "DL", "NLP", "CV"}
@@ -313,7 +306,7 @@ func CreateTestRetrievalDocuments(count int) []schema.Document {
 	return documents
 }
 
-// CreateTestRetrieverConfig creates a test retriever configuration
+// CreateTestRetrieverConfig creates a test retriever configuration.
 func CreateTestRetrieverConfig() RetrieverOptions {
 	return RetrieverOptions{
 		DefaultK:       5,
@@ -327,8 +320,9 @@ func CreateTestRetrieverConfig() RetrieverOptions {
 
 // Assertion helpers
 
-// AssertRetrievalResults validates retrieval results
+// AssertRetrievalResults validates retrieval results.
 func AssertRetrievalResults(t *testing.T, documents []schema.Document, expectedMinCount, expectedMaxCount int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(documents), expectedMinCount, "Should return at least %d documents", expectedMinCount)
 	assert.LessOrEqual(t, len(documents), expectedMaxCount, "Should return at most %d documents", expectedMaxCount)
 
@@ -340,7 +334,7 @@ func AssertRetrievalResults(t *testing.T, documents []schema.Document, expectedM
 	}
 }
 
-// AssertRetrievalRelevance validates document relevance to query
+// AssertRetrievalRelevance validates document relevance to query.
 func AssertRetrievalRelevance(t *testing.T, documents []schema.Document, query string, minRelevance float32) {
 	for i, doc := range documents {
 		// Simple relevance check: document should contain some words from query
@@ -353,8 +347,9 @@ func AssertRetrievalRelevance(t *testing.T, documents []schema.Document, query s
 	}
 }
 
-// AssertRetrieverHealth validates retriever health check results
-func AssertRetrieverHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertRetrieverHealth validates retriever health check results.
+func AssertRetrieverHealth(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
@@ -362,9 +357,10 @@ func AssertRetrieverHealth(t *testing.T, health map[string]interface{}, expected
 	assert.Contains(t, health, "call_count")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var retErr *RetrieverError
 	if assert.ErrorAs(t, err, &retErr) {
 		assert.Equal(t, expectedCode, retErr.Code)
@@ -373,11 +369,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs retriever tests concurrently for performance testing
+// ConcurrentTestRunner runs retriever tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -432,8 +428,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on retriever
-func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on retriever.
+func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -463,7 +460,7 @@ func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations i
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -472,18 +469,18 @@ func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations i
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	retrievers   map[string]*AdvancedMockRetriever
-	vectorStores map[string]interface{}
-	embedders    map[string]interface{}
+	vectorStores map[string]any
+	embedders    map[string]any
 }
 
 func NewIntegrationTestHelper() *IntegrationTestHelper {
 	return &IntegrationTestHelper{
 		retrievers:   make(map[string]*AdvancedMockRetriever),
-		vectorStores: make(map[string]interface{}),
-		embedders:    make(map[string]interface{}),
+		vectorStores: make(map[string]any),
+		embedders:    make(map[string]any),
 	}
 }
 
@@ -491,11 +488,11 @@ func (h *IntegrationTestHelper) AddRetriever(name string, retriever *AdvancedMoc
 	h.retrievers[name] = retriever
 }
 
-func (h *IntegrationTestHelper) AddVectorStore(name string, store interface{}) {
+func (h *IntegrationTestHelper) AddVectorStore(name string, store any) {
 	h.vectorStores[name] = store
 }
 
-func (h *IntegrationTestHelper) AddEmbedder(name string, embedder interface{}) {
+func (h *IntegrationTestHelper) AddEmbedder(name string, embedder any) {
 	h.embedders[name] = embedder
 }
 
@@ -503,11 +500,11 @@ func (h *IntegrationTestHelper) GetRetriever(name string) *AdvancedMockRetriever
 	return h.retrievers[name]
 }
 
-func (h *IntegrationTestHelper) GetVectorStore(name string) interface{} {
+func (h *IntegrationTestHelper) GetVectorStore(name string) any {
 	return h.vectorStores[name]
 }
 
-func (h *IntegrationTestHelper) GetEmbedder(name string) interface{} {
+func (h *IntegrationTestHelper) GetEmbedder(name string) any {
 	return h.embedders[name]
 }
 
@@ -518,7 +515,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// RetrieverScenarioRunner runs common retriever scenarios
+// RetrieverScenarioRunner runs common retriever scenarios.
 type RetrieverScenarioRunner struct {
 	retriever core.Retriever
 }
@@ -581,7 +578,7 @@ func (r *RetrieverScenarioRunner) RunRelevanceTestScenario(ctx context.Context, 
 	return nil
 }
 
-// QueryDocumentPair represents a query and its expected relevant document
+// QueryDocumentPair represents a query and its expected relevant document.
 type QueryDocumentPair struct {
 	Query            string
 	ExpectedDoc      schema.Document
@@ -591,7 +588,7 @@ type QueryDocumentPair struct {
 
 // Helper functions for similarity and ranking
 
-// CalculateRelevanceScore calculates a simple relevance score between query and document
+// CalculateRelevanceScore calculates a simple relevance score between query and document.
 func CalculateRelevanceScore(query, docContent string) float32 {
 	// Simple word overlap scoring for testing
 	queryWords := tokenizeSimple(query)
@@ -641,7 +638,7 @@ func tokenizeSimple(text string) []string {
 	return words
 }
 
-// RankDocuments ranks documents by relevance score
+// RankDocuments ranks documents by relevance score.
 func RankDocuments(query string, documents []schema.Document) []DocumentScore {
 	scores := make([]DocumentScore, len(documents))
 
@@ -667,14 +664,14 @@ func RankDocuments(query string, documents []schema.Document) []DocumentScore {
 	return scores
 }
 
-// DocumentScore represents a document with its relevance score
+// DocumentScore represents a document with its relevance score.
 type DocumentScore struct {
 	Document schema.Document
 	Score    float32
 	Rank     int
 }
 
-// BenchmarkHelper provides benchmarking utilities for retrievers
+// BenchmarkHelper provides benchmarking utilities for retrievers.
 type BenchmarkHelper struct {
 	retriever core.Retriever
 	queries   []string

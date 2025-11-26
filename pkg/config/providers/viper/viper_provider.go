@@ -1,6 +1,7 @@
 package viper
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -17,7 +18,7 @@ type ViperProvider struct {
 
 // NewViperProvider creates a new ViperProvider.
 // The format parameter can be "yaml", "json", "toml", or empty for auto-detection.
-func NewViperProvider(configName string, configPaths []string, envPrefix string, format string) (*ViperProvider, error) {
+func NewViperProvider(configName string, configPaths []string, envPrefix, format string) (*ViperProvider, error) {
 	v := viper.New()
 
 	if configName != "" {
@@ -42,7 +43,8 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string,
 
 	if configName != "" {
 		if err := v.ReadInConfig(); err != nil {
-			if _, ok := err.(viper.ConfigFileNotFoundError); !ok {
+			var configFileNotFoundError viper.ConfigFileNotFoundError
+			if errors.As(err, &configFileNotFoundError) {
 				return nil, fmt.Errorf("failed to read config file: %w", err)
 			}
 		}
@@ -57,7 +59,7 @@ func NewViperProvider(configName string, configPaths []string, envPrefix string,
 }
 
 // constructArraysFromEnv manually constructs array structures from environment variables
-// This is needed because Viper doesn't automatically build arrays from indexed env vars
+// This is needed because Viper doesn't automatically build arrays from indexed env vars.
 func constructArraysFromEnv(v *viper.Viper, prefix string) {
 	prefixUpper := strings.ToUpper(prefix) + "_"
 
@@ -100,9 +102,9 @@ func constructArraysFromEnv(v *viper.Viper, prefix string) {
 		// If we found array elements, construct the array structure and set values
 		if maxIndex >= 0 {
 			// Build array as a slice of maps
-			array := make([]interface{}, maxIndex+1)
+			array := make([]any, maxIndex+1)
 			for i := 0; i <= maxIndex; i++ {
-				item := make(map[string]interface{})
+				item := make(map[string]any)
 				// Set individual field values from env vars
 				for key, value := range envMap {
 					// Parse "index_fieldname" format
@@ -126,7 +128,7 @@ func constructArraysFromEnv(v *viper.Viper, prefix string) {
 }
 
 // Load unmarshals the configuration into the given struct.
-func (vp *ViperProvider) Load(configStruct interface{}) error {
+func (vp *ViperProvider) Load(configStruct any) error {
 	// Try to unmarshal the entire config first
 	if err := vp.v.Unmarshal(configStruct); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
@@ -134,20 +136,24 @@ func (vp *ViperProvider) Load(configStruct interface{}) error {
 
 	// For Config structs, also try UnmarshalKey for each array section
 	// This ensures arrays are properly unmarshaled even if the main Unmarshal fails
+	// Errors are intentionally ignored as these are fallback attempts
 	if cfg, ok := configStruct.(*iface.Config); ok {
-		_ = vp.v.UnmarshalKey("llm_providers", &cfg.LLMProviders)
-		_ = vp.v.UnmarshalKey("embedding_providers", &cfg.EmbeddingProviders)
-		_ = vp.v.UnmarshalKey("vector_stores", &cfg.VectorStores)
-		_ = vp.v.UnmarshalKey("agents", &cfg.Agents)
-		_ = vp.v.UnmarshalKey("tools", &cfg.Tools)
+		_ = vp.v.UnmarshalKey("llm_providers", &cfg.LLMProviders)             //nolint:errcheck // Fallback attempt
+		_ = vp.v.UnmarshalKey("embedding_providers", &cfg.EmbeddingProviders) //nolint:errcheck // Fallback attempt
+		_ = vp.v.UnmarshalKey("vector_stores", &cfg.VectorStores)             //nolint:errcheck // Fallback attempt
+		_ = vp.v.UnmarshalKey("agents", &cfg.Agents)                          //nolint:errcheck // Fallback attempt
+		_ = vp.v.UnmarshalKey("tools", &cfg.Tools)                            //nolint:errcheck // Fallback attempt
 	}
 
 	return nil
 }
 
 // UnmarshalKey decodes the configuration at a specific key into a struct.
-func (vp *ViperProvider) UnmarshalKey(key string, rawVal interface{}) error {
-	return vp.v.UnmarshalKey(key, rawVal)
+func (vp *ViperProvider) UnmarshalKey(key string, rawVal any) error {
+	if err := vp.v.UnmarshalKey(key, rawVal); err != nil {
+		return fmt.Errorf("failed to unmarshal config key %q: %w", key, err)
+	}
+	return nil
 }
 
 // GetString retrieves a string configuration value by key.

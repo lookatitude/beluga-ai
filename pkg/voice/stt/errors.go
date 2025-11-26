@@ -6,9 +6,9 @@ import (
 	"net/http"
 )
 
-// Error codes for STT operations
+// Error codes for STT operations.
 const (
-	// General errors
+	// General errors.
 	ErrCodeInvalidConfig  = "invalid_config"
 	ErrCodeNetworkError   = "network_error"
 	ErrCodeTimeout        = "timeout"
@@ -20,23 +20,23 @@ const (
 	ErrCodeInternalError  = "internal_error"
 	ErrCodeInvalidInput   = "invalid_input"
 
-	// Provider-specific errors
+	// Provider-specific errors.
 	ErrCodeUnsupportedProvider = "unsupported_provider"
 	ErrCodeInvalidModel        = "invalid_model"
 	ErrCodeModelNotAvailable   = "model_not_available"
 
-	// Request/Response errors
+	// Request/Response errors.
 	ErrCodeInvalidRequest    = "invalid_request"
 	ErrCodeInvalidResponse   = "invalid_response"
 	ErrCodeEmptyResponse     = "empty_response"
 	ErrCodeMalformedResponse = "malformed_response"
 
-	// Streaming errors
+	// Streaming errors.
 	ErrCodeStreamError   = "stream_error"
 	ErrCodeStreamTimeout = "stream_timeout"
 	ErrCodeStreamClosed  = "stream_closed"
 
-	// Context errors
+	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
 )
@@ -44,14 +44,14 @@ const (
 // STTError represents an error that occurred during STT operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type STTError struct {
-	Op      string                 // Operation that failed (e.g., "transcribe", "stream")
-	Err     error                  // Underlying error
-	Code    string                 // Error code for programmatic handling
-	Message string                 // Human-readable error message
-	Details map[string]interface{} // Additional error details
+	Err     error
+	Details map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e *STTError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("stt %s: %s (code: %s)", e.Op, e.Message, e.Code)
@@ -62,12 +62,12 @@ func (e *STTError) Error() string {
 	return fmt.Sprintf("stt %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying error
+// Unwrap returns the underlying error.
 func (e *STTError) Unwrap() error {
 	return e.Err
 }
 
-// NewSTTError creates a new STTError
+// NewSTTError creates a new STTError.
 func NewSTTError(op, code string, err error) *STTError {
 	return &STTError{
 		Op:   op,
@@ -76,7 +76,7 @@ func NewSTTError(op, code string, err error) *STTError {
 	}
 }
 
-// NewSTTErrorWithMessage creates a new STTError with a custom message
+// NewSTTErrorWithMessage creates a new STTError with a custom message.
 func NewSTTErrorWithMessage(op, code, message string, err error) *STTError {
 	return &STTError{
 		Op:      op,
@@ -86,8 +86,8 @@ func NewSTTErrorWithMessage(op, code, message string, err error) *STTError {
 	}
 }
 
-// NewSTTErrorWithDetails creates a new STTError with additional details
-func NewSTTErrorWithDetails(op, code, message string, err error, details map[string]interface{}) *STTError {
+// NewSTTErrorWithDetails creates a new STTError with additional details.
+func NewSTTErrorWithDetails(op, code, message string, err error, details map[string]any) *STTError {
 	return &STTError{
 		Op:      op,
 		Code:    code,
@@ -97,7 +97,7 @@ func NewSTTErrorWithDetails(op, code, message string, err error, details map[str
 	}
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false
@@ -117,7 +117,7 @@ func IsRetryableError(err error) bool {
 	return false
 }
 
-// ErrorFromHTTPStatus creates an STTError from an HTTP status code
+// ErrorFromHTTPStatus creates an STTError from an HTTP status code.
 func ErrorFromHTTPStatus(op string, statusCode int, err error) *STTError {
 	var code string
 	var message string

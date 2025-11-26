@@ -33,9 +33,9 @@ func TestNewLogger(t *testing.T) {
 
 func TestNewLoggerWithConfig(t *testing.T) {
 	tests := []struct {
+		check  func(t *testing.T, logger *Logger)
 		name   string
 		config LoggerConfig
-		check  func(t *testing.T, logger *Logger)
 	}{
 		{
 			name: "with debug level",
@@ -196,12 +196,12 @@ func TestLoggerClose(t *testing.T) {
 	assert.NotNil(t, logger.fileOut)
 
 	err = logger.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test without file
 	logger2 := NewLogger("test2")
 	err = logger2.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestLoggerGetWriter(t *testing.T) {
@@ -212,7 +212,7 @@ func TestLoggerGetWriter(t *testing.T) {
 	// Test writing to the writer
 	data := []byte("test message")
 	n, err := writer.Write(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(data), n)
 }
 
@@ -232,7 +232,7 @@ func TestLogWriter_Write(t *testing.T) {
 
 	data := []byte("test writer message")
 	n, err := writer.Write(data)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, len(data), n)
 
 	output := buf.String()
@@ -253,7 +253,7 @@ func TestStructuredLogger(t *testing.T) {
 
 	t.Run("JSON logging", func(t *testing.T) {
 		buf.Reset()
-		logger.Info(ctx, "Test message", map[string]interface{}{
+		logger.Info(ctx, "Test message", map[string]any{
 			"key":   "value",
 			"count": 42,
 		})
@@ -269,7 +269,7 @@ func TestStructuredLogger(t *testing.T) {
 	t.Run("Plain text logging", func(t *testing.T) {
 		logger.useJSON = false
 		buf.Reset()
-		logger.Info(ctx, "Plain text message", map[string]interface{}{
+		logger.Info(ctx, "Plain text message", map[string]any{
 			"action": "test",
 		})
 
@@ -284,7 +284,7 @@ func TestStructuredLogger(t *testing.T) {
 func TestStructuredLoggerWithFields(t *testing.T) {
 	logger := NewStructuredLogger("test", WithColors(false))
 
-	contextLogger := logger.WithFields(map[string]interface{}{
+	contextLogger := logger.WithFields(map[string]any{
 		"component": "test_component",
 		"version":   "1.0.0",
 	})
@@ -298,7 +298,7 @@ func TestStructuredLoggerWithFields(t *testing.T) {
 	structuredLogger.useJSON = true
 
 	ctx := context.Background()
-	contextLogger.Info(ctx, "Context message", map[string]interface{}{
+	contextLogger.Info(ctx, "Context message", map[string]any{
 		"action": "test_action",
 	})
 
@@ -329,15 +329,15 @@ func TestStructuredLoggerContext(t *testing.T) {
 
 func TestLogLevel(t *testing.T) {
 	tests := []struct {
-		level    LogLevel
 		expected string
+		level    LogLevel
 	}{
-		{DEBUG, "DEBUG"},
-		{INFO, "INFO"},
-		{WARNING, "WARN"},
-		{ERROR, "ERROR"},
-		{FATAL, "FATAL"},
-		{LogLevel(999), "UNKNOWN"},
+		{"DEBUG", DEBUG},
+		{"INFO", INFO},
+		{"WARN", WARNING},
+		{"ERROR", ERROR},
+		{"FATAL", FATAL},
+		{"UNKNOWN", LogLevel(999)},
 	}
 
 	for _, tt := range tests {
@@ -355,7 +355,7 @@ func TestDefaultLoggerConfig(t *testing.T) {
 	assert.Empty(t, config.OutputFile)
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkLogger_Debug(b *testing.B) {
 	logger := NewLogger("bench")
 
@@ -379,7 +379,7 @@ func BenchmarkStructuredLogger_JSON(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info(context.Background(), "Benchmark JSON message", map[string]interface{}{
+		logger.Info(context.Background(), "Benchmark JSON message", map[string]any{
 			"iteration": i,
 			"timestamp": time.Now().Unix(),
 		})
@@ -391,7 +391,7 @@ func BenchmarkStructuredLogger_PlainText(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		logger.Info(context.Background(), "Benchmark plain text message", map[string]interface{}{
+		logger.Info(context.Background(), "Benchmark plain text message", map[string]any{
 			"iteration": i,
 			"timestamp": time.Now().Unix(),
 		})

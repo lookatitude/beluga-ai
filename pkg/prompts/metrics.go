@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Metrics provides metrics collection for the prompts package
+// Metrics provides metrics collection for the prompts package.
 type Metrics struct {
 	// Template metrics
 	templatesCreated  metric.Int64Counter
@@ -39,7 +39,7 @@ type Metrics struct {
 	tracer trace.Tracer
 }
 
-// NewMetrics creates a new metrics collector with OTEL instrumentation
+// NewMetrics creates a new metrics collector with OTEL instrumentation.
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	m := &Metrics{tracer: tracer}
 
@@ -179,7 +179,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	return m, nil
 }
 
-// RecordTemplateCreated records a template creation
+// RecordTemplateCreated records a template creation.
 func (m *Metrics) RecordTemplateCreated(ctx context.Context, templateType string) {
 	if m == nil || m.templatesCreated == nil {
 		return
@@ -192,7 +192,7 @@ func (m *Metrics) RecordTemplateCreated(ctx context.Context, templateType string
 	m.templatesCreated.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordTemplateExecuted records a template execution
+// RecordTemplateExecuted records a template execution.
 func (m *Metrics) RecordTemplateExecuted(ctx context.Context, templateName string, duration time.Duration, success bool) {
 	if m == nil {
 		return
@@ -215,8 +215,8 @@ func (m *Metrics) RecordTemplateExecuted(ctx context.Context, templateName strin
 	}
 }
 
-// RecordTemplateError records a template execution error
-func (m *Metrics) RecordTemplateError(ctx context.Context, templateName string, errorType string) {
+// RecordTemplateError records a template execution error.
+func (m *Metrics) RecordTemplateError(ctx context.Context, templateName, errorType string) {
 	if m == nil || m.templateErrors == nil {
 		return
 	}
@@ -229,7 +229,7 @@ func (m *Metrics) RecordTemplateError(ctx context.Context, templateName string, 
 	m.templateErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordFormattingRequest records a formatting request
+// RecordFormattingRequest records a formatting request.
 func (m *Metrics) RecordFormattingRequest(ctx context.Context, adapterType string, duration time.Duration, success bool) {
 	if m == nil {
 		return
@@ -252,8 +252,8 @@ func (m *Metrics) RecordFormattingRequest(ctx context.Context, adapterType strin
 	}
 }
 
-// RecordFormattingError records a formatting error
-func (m *Metrics) RecordFormattingError(ctx context.Context, adapterType string, errorType string) {
+// RecordFormattingError records a formatting error.
+func (m *Metrics) RecordFormattingError(ctx context.Context, adapterType, errorType string) {
 	if m == nil || m.formattingErrors == nil {
 		return
 	}
@@ -266,7 +266,7 @@ func (m *Metrics) RecordFormattingError(ctx context.Context, adapterType string,
 	m.formattingErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordValidationRequest records a validation request
+// RecordValidationRequest records a validation request.
 func (m *Metrics) RecordValidationRequest(ctx context.Context, validationType string, success bool) {
 	if m == nil {
 		return
@@ -286,7 +286,7 @@ func (m *Metrics) RecordValidationRequest(ctx context.Context, validationType st
 	}
 }
 
-// RecordValidationError records a validation error
+// RecordValidationError records a validation error.
 func (m *Metrics) RecordValidationError(ctx context.Context, errorType string) {
 	if m == nil || m.validationErrors == nil {
 		return
@@ -299,7 +299,7 @@ func (m *Metrics) RecordValidationError(ctx context.Context, errorType string) {
 	m.validationErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordCacheHit records a cache hit
+// RecordCacheHit records a cache hit.
 func (m *Metrics) RecordCacheHit(ctx context.Context, cacheType string) {
 	if m == nil || m.cacheHits == nil {
 		return
@@ -312,7 +312,7 @@ func (m *Metrics) RecordCacheHit(ctx context.Context, cacheType string) {
 	m.cacheHits.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordCacheMiss records a cache miss
+// RecordCacheMiss records a cache miss.
 func (m *Metrics) RecordCacheMiss(ctx context.Context, cacheType string) {
 	if m == nil || m.cacheMisses == nil {
 		return
@@ -325,7 +325,7 @@ func (m *Metrics) RecordCacheMiss(ctx context.Context, cacheType string) {
 	m.cacheMisses.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// RecordCacheSize records the current cache size
+// RecordCacheSize records the current cache size.
 func (m *Metrics) RecordCacheSize(ctx context.Context, size int64, cacheType string) {
 	if m == nil || m.cacheSize == nil {
 		return
@@ -338,7 +338,7 @@ func (m *Metrics) RecordCacheSize(ctx context.Context, size int64, cacheType str
 	m.cacheSize.Add(ctx, size, metric.WithAttributes(attrs...))
 }
 
-// RecordAdapterRequest records an adapter request
+// RecordAdapterRequest records an adapter request.
 func (m *Metrics) RecordAdapterRequest(ctx context.Context, adapterType string, success bool) {
 	if m == nil {
 		return
@@ -358,8 +358,8 @@ func (m *Metrics) RecordAdapterRequest(ctx context.Context, adapterType string, 
 	}
 }
 
-// RecordAdapterError records an adapter error
-func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType string, errorType string) {
+// RecordAdapterError records an adapter error.
+func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType, errorType string) {
 	if m == nil || m.adapterErrors == nil {
 		return
 	}
@@ -372,30 +372,36 @@ func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType string, er
 	m.adapterErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 }
 
-// StartTemplateSpan starts a new span for template operations
+// StartTemplateSpan starts a new span for template operations.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartTemplateSpan(ctx context.Context, templateName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
 	}
 
-	return m.tracer.Start(ctx, "prompts.template."+operation,
+	ctx, span := m.tracer.Start(ctx, "prompts.template."+operation,
 		trace.WithAttributes(
 			attribute.String("template.name", templateName),
 		),
 	)
+	return ctx, span
 }
 
-// StartFormattingSpan starts a new span for formatting operations
+// StartFormattingSpan starts a new span for formatting operations.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartFormattingSpan(ctx context.Context, adapterType, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
 	}
 
-	return m.tracer.Start(ctx, "prompts.formatting."+operation,
+	ctx, span := m.tracer.Start(ctx, "prompts.formatting."+operation,
 		trace.WithAttributes(
 			attribute.String("adapter.type", adapterType),
 		),
 	)
+	return ctx, span
 }
 
 // NoOpMetrics returns a metrics instance that does nothing.

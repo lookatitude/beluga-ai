@@ -16,8 +16,8 @@ import (
 
 func TestNewElevenLabsProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *tts.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +47,10 @@ func TestNewElevenLabsProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewElevenLabsProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -66,7 +66,7 @@ func TestElevenLabsProvider_GenerateSpeech_Success(t *testing.T) {
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		// Parse request body
-		var requestBody map[string]interface{}
+		var requestBody map[string]any
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		require.NoError(t, err)
 		assert.Equal(t, "Hello, world!", requestBody["text"])
@@ -98,7 +98,7 @@ func TestElevenLabsProvider_GenerateSpeech_Success(t *testing.T) {
 	text := "Hello, world!"
 
 	audio, err := provider.GenerateSpeech(ctx, text)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 }
 
@@ -126,7 +126,7 @@ func TestElevenLabsProvider_GenerateSpeech_HTTPError(t *testing.T) {
 	text := "Hello, world!"
 
 	_, err = provider.GenerateSpeech(ctx, text)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestElevenLabsProvider_GenerateSpeech_ContextCancellation(t *testing.T) {
@@ -156,7 +156,7 @@ func TestElevenLabsProvider_GenerateSpeech_ContextCancellation(t *testing.T) {
 	}()
 
 	_, err = provider.GenerateSpeech(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestElevenLabsProvider_StreamGenerate(t *testing.T) {
@@ -183,11 +183,11 @@ func TestElevenLabsProvider_StreamGenerate(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := provider.StreamGenerate(ctx, "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 
 	audio, err := io.ReadAll(reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 }
 
@@ -195,8 +195,8 @@ func TestDefaultElevenLabsConfig(t *testing.T) {
 	config := DefaultElevenLabsConfig()
 	assert.NotNil(t, config)
 	assert.Equal(t, "eleven_monolingual_v1", config.ModelID)
-	assert.Equal(t, 0.5, config.Stability)
-	assert.Equal(t, 0.5, config.SimilarityBoost)
+	assert.InEpsilon(t, 0.5, config.Stability, 0.0001)
+	assert.InEpsilon(t, 0.5, config.SimilarityBoost, 0.0001)
 	assert.Equal(t, "mp3_44100_128", config.OutputFormat)
 	assert.Equal(t, "https://api.elevenlabs.io", config.BaseURL)
 }

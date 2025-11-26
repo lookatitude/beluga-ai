@@ -5,7 +5,6 @@ package stt
 import (
 	"context"
 	"errors"
-	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -15,28 +14,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockSTTProvider provides a comprehensive mock implementation for testing
+// AdvancedMockSTTProvider provides a comprehensive mock implementation for testing.
 type AdvancedMockSTTProvider struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
-	providerName string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	providerName         string
 	transcriptions       []string
+	streamingSessions    []*MockStreamingSession
+	callCount            int
 	transcriptionIndex   int
 	streamingDelay       time.Duration
+	mu                   sync.RWMutex
+	shouldError          bool
 	simulateNetworkDelay bool
-
-	// Streaming support
-	streamingSessions []*MockStreamingSession
 }
 
-// NewAdvancedMockSTTProvider creates a new advanced mock with configurable behavior
+// NewAdvancedMockSTTProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockSTTProvider(providerName string, opts ...MockOption) *AdvancedMockSTTProvider {
 	m := &AdvancedMockSTTProvider{
 		providerName:      providerName,
@@ -53,24 +46,24 @@ func NewAdvancedMockSTTProvider(providerName string, opts ...MockOption) *Advanc
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockSTTProvider
+// MockOption configures the behavior of AdvancedMockSTTProvider.
 type MockOption func(*AdvancedMockSTTProvider)
 
-// WithProviderName sets the provider name
+// WithProviderName sets the provider name.
 func WithProviderName(name string) MockOption {
 	return func(m *AdvancedMockSTTProvider) {
 		m.providerName = name
 	}
 }
 
-// WithTranscriptions sets the transcriptions to return
+// WithTranscriptions sets the transcriptions to return.
 func WithTranscriptions(transcriptions ...string) MockOption {
 	return func(m *AdvancedMockSTTProvider) {
 		m.transcriptions = transcriptions
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockSTTProvider) {
 		m.shouldError = true
@@ -78,28 +71,28 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithStreamingDelay sets the delay between streaming chunks
+// WithStreamingDelay sets the delay between streaming chunks.
 func WithStreamingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockSTTProvider) {
 		m.streamingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockSTTProvider) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// Transcribe implements the STTProvider interface
+// Transcribe implements the STTProvider interface.
 func (m *AdvancedMockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, audio)
 		if args.Get(0) != nil {
 			if text, ok := args.Get(0).(string); ok {
@@ -112,7 +105,7 @@ func (m *AdvancedMockSTTProvider) Transcribe(ctx context.Context, audio []byte) 
 		if m.errorToReturn != nil {
 			return "", m.errorToReturn
 		}
-		return "", fmt.Errorf("mock error")
+		return "", errors.New("mock error")
 	}
 
 	// Simulate network delay if enabled
@@ -128,7 +121,7 @@ func (m *AdvancedMockSTTProvider) Transcribe(ctx context.Context, audio []byte) 
 	return m.getNextTranscription(), nil
 }
 
-// StartStreaming implements the STTProvider interface
+// StartStreaming implements the STTProvider interface.
 func (m *AdvancedMockSTTProvider) StartStreaming(ctx context.Context) (iface.StreamingSession, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -137,7 +130,7 @@ func (m *AdvancedMockSTTProvider) StartStreaming(ctx context.Context) (iface.Str
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock streaming error")
+		return nil, errors.New("mock streaming error")
 	}
 
 	session := NewMockStreamingSession(ctx, m.streamingDelay, m.transcriptions)
@@ -145,7 +138,7 @@ func (m *AdvancedMockSTTProvider) StartStreaming(ctx context.Context) (iface.Str
 	return session, nil
 }
 
-// getNextTranscription returns the next transcription in the list
+// getNextTranscription returns the next transcription in the list.
 func (m *AdvancedMockSTTProvider) getNextTranscription() string {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -159,25 +152,25 @@ func (m *AdvancedMockSTTProvider) getNextTranscription() string {
 	return text
 }
 
-// GetCallCount returns the number of times Transcribe has been called
+// GetCallCount returns the number of times Transcribe has been called.
 func (m *AdvancedMockSTTProvider) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// MockStreamingSession provides a mock implementation of StreamingSession
+// MockStreamingSession provides a mock implementation of StreamingSession.
 type MockStreamingSession struct {
 	ctx            context.Context
+	resultCh       chan iface.TranscriptResult
 	transcriptions []string
 	index          int
 	delay          time.Duration
-	resultCh       chan iface.TranscriptResult
-	closed         bool
 	mu             sync.RWMutex
+	closed         bool
 }
 
-// NewMockStreamingSession creates a new mock streaming session
+// NewMockStreamingSession creates a new mock streaming session.
 func NewMockStreamingSession(ctx context.Context, delay time.Duration, transcriptions []string) *MockStreamingSession {
 	session := &MockStreamingSession{
 		ctx:            ctx,
@@ -192,7 +185,7 @@ func NewMockStreamingSession(ctx context.Context, delay time.Duration, transcrip
 	return session
 }
 
-// sendTranscriptions sends transcriptions to the result channel
+// sendTranscriptions sends transcriptions to the result channel.
 func (m *MockStreamingSession) sendTranscriptions() {
 	defer close(m.resultCh)
 
@@ -217,7 +210,7 @@ func (m *MockStreamingSession) sendTranscriptions() {
 	}
 }
 
-// SendAudio implements the StreamingSession interface
+// SendAudio implements the StreamingSession interface.
 func (m *MockStreamingSession) SendAudio(ctx context.Context, audio []byte) error {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -228,12 +221,12 @@ func (m *MockStreamingSession) SendAudio(ctx context.Context, audio []byte) erro
 	return nil
 }
 
-// ReceiveTranscript implements the StreamingSession interface
+// ReceiveTranscript implements the StreamingSession interface.
 func (m *MockStreamingSession) ReceiveTranscript() <-chan iface.TranscriptResult {
 	return m.resultCh
 }
 
-// Close implements the StreamingSession interface
+// Close implements the StreamingSession interface.
 func (m *MockStreamingSession) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -245,8 +238,9 @@ func (m *MockStreamingSession) Close() error {
 	return nil
 }
 
-// AssertSTTProviderInterface ensures that a type implements the STTProvider interface
+// AssertSTTProviderInterface ensures that a type implements the STTProvider interface.
 func AssertSTTProviderInterface(t *testing.T, provider iface.STTProvider) {
+	t.Helper()
 	assert.NotNil(t, provider, "STTProvider should not be nil")
 
 	// Test Transcribe method

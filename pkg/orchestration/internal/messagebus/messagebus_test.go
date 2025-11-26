@@ -23,7 +23,7 @@ func TestInMemoryMessageBus_PublishAndSubscribe(t *testing.T) {
 	bus := NewInMemoryMessageBus()
 	topic := "test.topic"
 	payload := "test_payload"
-	var receivedPayload interface{}
+	var receivedPayload any
 	var handlerCalled bool
 	var wg sync.WaitGroup
 
@@ -89,7 +89,7 @@ func TestInMemoryMessageBus_MultipleSubscribers(t *testing.T) {
 	require.NoError(t, err)
 
 	err = bus.Publish(ctx, topic, payload, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
@@ -133,7 +133,7 @@ func TestInMemoryMessageBus_Unsubscribe(t *testing.T) {
 	bus.mu.RUnlock()
 
 	err = bus.Publish(ctx, topic, payload, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Give some time for the goroutine (if any) to potentially execute
 	time.Sleep(100 * time.Millisecond)
@@ -189,16 +189,19 @@ func TestInMemoryMessageBus_MessageIDGeneration(t *testing.T) {
 	ctx := context.Background()
 	bus := NewInMemoryMessageBus()
 	topic := "id.test.topic"
+	var mu sync.Mutex
 	var firstMsgID string
 	var wg sync.WaitGroup
 
 	handler := func(ctx context.Context, msg Message) error {
 		assert.NotEmpty(t, msg.ID, "Message ID should not be empty")
+		mu.Lock()
 		if firstMsgID == "" {
 			firstMsgID = msg.ID
 		} else {
 			assert.NotEqual(t, firstMsgID, msg.ID, "Message IDs should be unique for subsequent publishes")
 		}
+		mu.Unlock()
 		wg.Done()
 		return nil
 	}

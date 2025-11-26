@@ -84,7 +84,7 @@ type AgentFactory interface {
 // It handles initialization, execution, and cleanup operations.
 type LifecycleManager interface {
 	// Initialize sets up the agent with necessary configurations.
-	Initialize(config map[string]interface{}) error
+	Initialize(config map[string]any) error
 
 	// Execute performs the main task of the agent.
 	Execute() error
@@ -96,7 +96,7 @@ type LifecycleManager interface {
 	GetState() AgentState
 
 	// CheckHealth returns the health status of the agent.
-	CheckHealth() map[string]interface{}
+	CheckHealth() map[string]any
 }
 
 // AgentState represents the current state of an agent.
@@ -112,7 +112,7 @@ const (
 )
 
 // EventHandler defines a function type for handling agent events.
-type EventHandler func(payload interface{}) error
+type EventHandler func(payload any) error
 
 // EventEmitter defines the interface for emitting and handling events.
 type EventEmitter interface {
@@ -120,7 +120,7 @@ type EventEmitter interface {
 	RegisterEventHandler(eventType string, handler EventHandler)
 
 	// EmitEvent triggers all registered handlers for the given event type.
-	EmitEvent(eventType string, payload interface{})
+	EmitEvent(eventType string, payload any)
 }
 
 // Option represents a functional option for configuring agents.
@@ -128,20 +128,20 @@ type Option func(*Options)
 
 // Options holds the configuration options for an agent.
 type Options struct {
+	Metrics       MetricsRecorder
+	EventHandlers map[string][]EventHandler
 	MaxRetries    int
 	RetryDelay    time.Duration
 	Timeout       time.Duration
 	MaxIterations int
 	EnableMetrics bool
 	EnableTracing bool
-	EventHandlers map[string][]EventHandler
-	Metrics       MetricsRecorder
 }
 
 // HealthChecker defines the interface for health checking components.
 type HealthChecker interface {
 	// CheckHealth returns the health status information.
-	CheckHealth() map[string]interface{}
+	CheckHealth() map[string]any
 }
 
 // MetricsRecorder defines the interface for recording metrics.

@@ -19,41 +19,33 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockChatModel provides a comprehensive mock implementation for testing
+// AdvancedMockChatModel provides a comprehensive mock implementation for testing.
 type AdvancedMockChatModel struct {
-	mock.Mock
-
-	// Configuration
-	modelName    string
-	providerName string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
-	responses            []string
-	responseIndex        int
-	streamingDelay       time.Duration
-	simulateNetworkDelay bool
-
-	// Tool support
-	boundTools    []tools.Tool
-	toolCallCount int
-	toolResults   map[string]interface{}
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	toolResults     map[string]any
+	mock.Mock
+	modelName            string
+	providerName         string
+	healthState          string
+	boundTools           []tools.Tool
+	responses            []string
+	toolCallCount        int
+	streamingDelay       time.Duration
+	responseIndex        int
+	callCount            int
+	mu                   sync.RWMutex
+	simulateNetworkDelay bool
+	shouldError          bool
 }
 
-// NewAdvancedMockChatModel creates a new advanced mock with configurable behavior
+// NewAdvancedMockChatModel creates a new advanced mock with configurable behavior.
 func NewAdvancedMockChatModel(modelName string, opts ...MockOption) *AdvancedMockChatModel {
 	m := &AdvancedMockChatModel{
 		modelName:       modelName,
 		providerName:    "advanced-mock",
 		responses:       []string{"Default mock response"},
-		toolResults:     make(map[string]interface{}),
+		toolResults:     make(map[string]any),
 		healthState:     "healthy",
 		lastHealthCheck: time.Now(),
 		streamingDelay:  10 * time.Millisecond,
@@ -67,24 +59,24 @@ func NewAdvancedMockChatModel(modelName string, opts ...MockOption) *AdvancedMoc
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockChatModel
+// MockOption configures the behavior of AdvancedMockChatModel.
 type MockOption func(*AdvancedMockChatModel)
 
-// WithProviderName sets the provider name
+// WithProviderName sets the provider name.
 func WithProviderName(name string) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.providerName = name
 	}
 }
 
-// WithResponses sets the responses to return
+// WithResponses sets the responses to return.
 func WithResponses(responses ...string) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.responses = responses
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.shouldError = true
@@ -92,29 +84,29 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithStreamingDelay sets the delay between streaming chunks
+// WithStreamingDelay sets the delay between streaming chunks.
 func WithStreamingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.streamingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// WithHealthState sets the health check state
+// WithHealthState sets the health check state.
 func WithHealthState(state string) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		m.healthState = state
 	}
 }
 
-// WithToolResults pre-configures tool execution results
-func WithToolResults(results map[string]interface{}) MockOption {
+// WithToolResults pre-configures tool execution results.
+func WithToolResults(results map[string]any) MockOption {
 	return func(m *AdvancedMockChatModel) {
 		for k, v := range results {
 			m.toolResults[k] = v
@@ -122,14 +114,14 @@ func WithToolResults(results map[string]interface{}) MockOption {
 	}
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
 			if msg, ok := args.Get(0).(schema.Message); ok {
@@ -142,7 +134,7 @@ func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	// Default behavior
@@ -150,14 +142,14 @@ func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.
 	return schema.NewAIMessage(response), nil
 }
 
-// StreamChat implements the ChatModel interface with realistic streaming
+// StreamChat implements the ChatModel interface with realistic streaming.
 func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
 			return args.Get(0).(<-chan iface.AIMessageChunk), args.Error(1)
@@ -168,7 +160,7 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	streamChan := make(chan iface.AIMessageChunk, 10)
@@ -202,8 +194,15 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 		}
 
 		// Send final chunk with tool calls if tools are bound
-		if len(m.boundTools) > 0 && m.toolCallCount < 2 { // Simulate occasional tool calls
+		m.mu.RLock()
+		boundToolsLen := len(m.boundTools)
+		toolCallCount := m.toolCallCount
+		m.mu.RUnlock()
+
+		if boundToolsLen > 0 && toolCallCount < 2 { // Simulate occasional tool calls
+			m.mu.Lock()
 			m.toolCallCount++
+			m.mu.Unlock()
 			chunk := iface.AIMessageChunk{
 				ToolCallChunks: []schema.ToolCallChunk{
 					{
@@ -223,10 +222,10 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 	return streamChan, nil
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(toolsToBind)
 		if args.Get(0) != nil {
 			return args.Get(0).(iface.ChatModel)
@@ -241,20 +240,20 @@ func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatMo
 	return m
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (m *AdvancedMockChatModel) GetModelName() string {
 	return m.modelName
 }
 
-// GetProviderName returns the provider name
+// GetProviderName returns the provider name.
 func (m *AdvancedMockChatModel) GetProviderName() string {
 	return m.providerName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, input, options)
 		if args.Get(0) != nil {
 			return args.Get(0), args.Error(1)
@@ -265,7 +264,7 @@ func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options .
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	messages, err := EnsureMessages(input)
@@ -281,10 +280,10 @@ func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options .
 	return result, nil
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, inputs, options)
 		if args.Get(0) != nil {
 			return args.Get(0).([]any), args.Error(1)
@@ -295,7 +294,7 @@ func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	results := make([]any, len(inputs))
@@ -310,10 +309,10 @@ func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options
 	return results, nil
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, input, options)
 		if args.Get(0) != nil {
 			return args.Get(0).(<-chan any), args.Error(1)
@@ -324,7 +323,7 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 		if m.errorToReturn != nil {
 			return nil, m.errorToReturn
 		}
-		return nil, fmt.Errorf("mock error")
+		return nil, errors.New("mock error")
 	}
 
 	messages, err := EnsureMessages(input)
@@ -352,11 +351,11 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 	return outputChan, nil
 }
 
-// CheckHealth implements the HealthChecker interface
-func (m *AdvancedMockChatModel) CheckHealth() map[string]interface{} {
+// CheckHealth implements the HealthChecker interface.
+func (m *AdvancedMockChatModel) CheckHealth() map[string]any {
 	m.mu.Lock()
 	m.lastHealthCheck = time.Now()
-	health := map[string]interface{}{
+	health := map[string]any{
 		"state":           m.healthState,
 		"provider":        m.providerName,
 		"model":           m.modelName,
@@ -386,14 +385,14 @@ func (m *AdvancedMockChatModel) getNextResponse() string {
 	return response
 }
 
-// GetCallCount returns the number of times methods were called
+// GetCallCount returns the number of times methods were called.
 func (m *AdvancedMockChatModel) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// Reset resets the mock state
+// Reset resets the mock state.
 func (m *AdvancedMockChatModel) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -404,7 +403,7 @@ func (m *AdvancedMockChatModel) Reset() {
 	m.errorToReturn = nil
 }
 
-// AdvancedMockLLM provides a mock LLM implementation
+// AdvancedMockLLM provides a mock LLM implementation.
 type AdvancedMockLLM struct {
 	mock.Mock
 	modelName    string
@@ -426,7 +425,7 @@ func (m *AdvancedMockLLM) Invoke(ctx context.Context, input any, options ...core
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, input, options)
 		if args.Get(0) != nil {
 			return args.Get(0), args.Error(1)
@@ -443,7 +442,7 @@ func (m *AdvancedMockLLM) GetProviderName() string {
 	return m.providerName
 }
 
-// MockMetricsRecorder provides a mock implementation of MetricsRecorder
+// MockMetricsRecorder provides a mock implementation of MetricsRecorder.
 type MockMetricsRecorder struct {
 	mock.Mock
 }
@@ -454,75 +453,75 @@ func NewMockMetricsRecorder() *MockMetricsRecorder {
 
 func (m *MockMetricsRecorder) RecordRequest(ctx context.Context, provider, model string, duration time.Duration) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, duration)
 	}
 }
 
 func (m *MockMetricsRecorder) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, errorCode, duration)
 	}
 }
 
 func (m *MockMetricsRecorder) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, inputTokens, outputTokens)
 	}
 }
 
 func (m *MockMetricsRecorder) RecordToolCall(ctx context.Context, provider, model, toolName string) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, toolName)
 	}
 }
 
 func (m *MockMetricsRecorder) RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, batchSize, duration)
 	}
 }
 
 func (m *MockMetricsRecorder) RecordStream(ctx context.Context, provider, model string, duration time.Duration) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model, duration)
 	}
 }
 
 func (m *MockMetricsRecorder) IncrementActiveRequests(ctx context.Context, provider, model string) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model)
 	}
 }
 
 func (m *MockMetricsRecorder) DecrementActiveRequests(ctx context.Context, provider, model string) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model)
 	}
 }
 
 func (m *MockMetricsRecorder) IncrementActiveStreams(ctx context.Context, provider, model string) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model)
 	}
 }
 
 func (m *MockMetricsRecorder) DecrementActiveStreams(ctx context.Context, provider, model string) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, provider, model)
 	}
 }
 
-// MockTracingHelper provides a mock implementation of tracing functionality
+// MockTracingHelper provides a mock implementation of tracing functionality.
 type MockTracingHelper struct {
 	mock.Mock
 }
@@ -531,9 +530,9 @@ func NewMockTracingHelper() *MockTracingHelper {
 	return &MockTracingHelper{}
 }
 
-func (m *MockTracingHelper) StartOperation(ctx context.Context, operation string, provider, model string) context.Context {
+func (m *MockTracingHelper) StartOperation(ctx context.Context, operation, provider, model string) context.Context {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, operation, provider, model)
 		if args.Get(0) != nil {
 			return args.Get(0).(context.Context)
@@ -544,33 +543,33 @@ func (m *MockTracingHelper) StartOperation(ctx context.Context, operation string
 
 func (m *MockTracingHelper) RecordError(ctx context.Context, err error) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, err)
 	}
 }
 
-func (m *MockTracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]interface{}) {
+func (m *MockTracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]any) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx, attrs)
 	}
 }
 
 func (m *MockTracingHelper) EndSpan(ctx context.Context) {
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		m.Called(ctx)
 	}
 }
 
 // Test Utilities
 
-// TestContext creates a context with timeout suitable for testing
+// TestContext creates a context with timeout suitable for testing.
 func TestContext() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 30*time.Second)
 }
 
-// CreateTestMessages creates a set of test messages
+// CreateTestMessages creates a set of test messages.
 func CreateTestMessages() []schema.Message {
 	return []schema.Message{
 		schema.NewSystemMessage("You are a helpful assistant."),
@@ -580,7 +579,7 @@ func CreateTestMessages() []schema.Message {
 	}
 }
 
-// CreateTestConfig creates a test configuration
+// CreateTestConfig creates a test configuration.
 func CreateTestConfig() *Config {
 	return NewConfig(
 		WithProvider("mock"),
@@ -592,8 +591,9 @@ func CreateTestConfig() *Config {
 	)
 }
 
-// AssertHealthCheck validates health check results
-func AssertHealthCheck(t *testing.T, health map[string]interface{}) {
+// AssertHealthCheck validates health check results.
+func AssertHealthCheck(t *testing.T, health map[string]any) {
+	t.Helper()
 	assert.NotNil(t, health)
 	assert.Contains(t, health, "state")
 	assert.Contains(t, health, "provider")
@@ -601,8 +601,9 @@ func AssertHealthCheck(t *testing.T, health map[string]interface{}) {
 	assert.Contains(t, health, "timestamp")
 }
 
-// AssertStreamingResponse validates streaming responses
+// AssertStreamingResponse validates streaming responses.
 func AssertStreamingResponse(t *testing.T, chunks <-chan iface.AIMessageChunk) {
+	t.Helper()
 	var receivedContent strings.Builder
 	var chunkCount int
 
@@ -612,12 +613,13 @@ func AssertStreamingResponse(t *testing.T, chunks <-chan iface.AIMessageChunk) {
 		receivedContent.WriteString(chunk.Content)
 	}
 
-	assert.Greater(t, chunkCount, 0, "Should receive at least one chunk")
+	assert.Positive(t, chunkCount, "Should receive at least one chunk")
 	assert.NotEmpty(t, receivedContent.String(), "Should receive content")
 }
 
-// AssertErrorType checks if an error matches expected type
+// AssertErrorType checks if an error matches expected type.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
+	t.Helper()
 	if err == nil {
 		t.Errorf("Expected error with code %s, but got nil", expectedCode)
 		return
@@ -630,7 +632,7 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 	}
 }
 
-// ConcurrentTestRunner runs a test function concurrently
+// ConcurrentTestRunner runs a test function concurrently.
 func ConcurrentTestRunner(t *testing.T, testFunc func(t *testing.T), goroutines int) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, goroutines)
@@ -657,17 +659,18 @@ func ConcurrentTestRunner(t *testing.T, testFunc func(t *testing.T), goroutines 
 	}
 }
 
-// LoadTestScenario represents a load testing scenario
+// LoadTestScenario represents a load testing scenario.
 type LoadTestScenario struct {
+	TestFunc    func(ctx context.Context) error
 	Name        string
 	Duration    time.Duration
 	Concurrency int
-	RequestRate int // requests per second, 0 for unlimited
-	TestFunc    func(ctx context.Context) error
+	RequestRate int
 }
 
-// RunLoadTest executes a load test scenario
+// RunLoadTest executes a load test scenario.
 func RunLoadTest(t *testing.T, scenario LoadTestScenario) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), scenario.Duration)
 	defer cancel()
 
@@ -719,12 +722,12 @@ func RunLoadTest(t *testing.T, scenario LoadTestScenario) {
 	}
 }
 
-// MockTool provides a mock tool implementation for testing
+// MockTool provides a mock tool implementation for testing.
 type MockTool struct {
+	result      any
 	name        string
 	description string
 	shouldError bool
-	result      interface{}
 }
 
 func NewMockTool(name string) *MockTool {
@@ -750,14 +753,14 @@ func (m *MockTool) Definition() tools.ToolDefinition {
 	}
 }
 
-func (m *MockTool) Execute(ctx context.Context, input interface{}) (interface{}, error) {
+func (m *MockTool) Execute(ctx context.Context, input any) (any, error) {
 	if m.shouldError {
 		return nil, errors.New("mock tool error")
 	}
 	if m.result != nil {
 		return m.result, nil
 	}
-	return fmt.Sprintf("Mock result from %s", m.name), nil
+	return "Mock result from " + m.name, nil
 }
 
 func (m *MockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
@@ -776,11 +779,11 @@ func (m *MockTool) SetShouldError(shouldError bool) {
 	m.shouldError = shouldError
 }
 
-func (m *MockTool) SetResult(result interface{}) {
+func (m *MockTool) SetResult(result any) {
 	m.result = result
 }
 
-// TestProviderInterface tests that a provider implements the ChatModel interface correctly
+// TestProviderInterface tests that a provider implements the ChatModel interface correctly.
 func TestProviderInterface(t *testing.T, provider iface.ChatModel, providerName string) {
 	// Test basic properties
 	assert.NotEmpty(t, provider.GetModelName(), "Provider should have a model name")

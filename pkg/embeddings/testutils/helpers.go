@@ -10,7 +10,7 @@ import (
 // Note: TestConfig functions moved to avoid import cycles.
 // Use the config creation functions directly in test files instead.
 
-// TestDocuments returns a set of test documents for embedding tests
+// TestDocuments returns a set of test documents for embedding tests.
 func TestDocuments() []string {
 	return []string{
 		"The quick brown fox jumps over the lazy dog",
@@ -21,7 +21,7 @@ func TestDocuments() []string {
 	}
 }
 
-// TestQueries returns a set of test queries for embedding tests
+// TestQueries returns a set of test queries for embedding tests.
 func TestQueries() []string {
 	return []string{
 		"What is machine learning?",
@@ -31,7 +31,7 @@ func TestQueries() []string {
 	}
 }
 
-// RandomDocuments generates random test documents
+// RandomDocuments generates random test documents.
 func RandomDocuments(count, minWords, maxWords int) []string {
 	rand.Seed(time.Now().UnixNano())
 	documents := make([]string, count)
@@ -67,12 +67,12 @@ func TestContext() context.Context {
 	return ctx
 }
 
-// TestContextWithCancel returns a cancellable context for testing
+// TestContextWithCancel returns a cancellable context for testing.
 func TestContextWithCancel() (context.Context, context.CancelFunc) {
 	return context.WithTimeout(context.Background(), 30*time.Second)
 }
 
-// PerformanceMetrics holds performance test results
+// PerformanceMetrics holds performance test results.
 type PerformanceMetrics struct {
 	QueriesPerSecond   float64
 	DocumentsPerSecond float64
@@ -84,7 +84,7 @@ type PerformanceMetrics struct {
 // Note: Interface testing and performance measurement functions
 // moved to avoid import cycles. Use directly in test files.
 
-// min returns the minimum of two integers
+// min returns the minimum of two integers.
 func min(a, b int) int {
 	if a < b {
 		return a

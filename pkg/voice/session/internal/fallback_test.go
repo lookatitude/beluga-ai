@@ -9,6 +9,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockSTTProvider struct {
@@ -130,13 +131,13 @@ func TestProviderFallback_ExecuteWithFallback_Success(t *testing.T) {
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
+	err := pf.ExecuteWithFallback(ctx, func(provider any) error {
 		stt := provider.(*mockSTTProvider)
-		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
-		return err
+		_, transcribeErr := stt.Transcribe(ctx, []byte{1, 2, 3})
+		return transcribeErr
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, pf.IsUsingFallback())
 }
 
@@ -148,13 +149,13 @@ func TestProviderFallback_ExecuteWithFallback_PrimaryFails(t *testing.T) {
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
+	err := pf.ExecuteWithFallback(ctx, func(provider any) error {
 		stt := provider.(*mockSTTProvider)
-		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
-		return err
+		_, transcribeErr := stt.Transcribe(ctx, []byte{1, 2, 3})
+		return transcribeErr
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, pf.IsUsingFallback())
 }
 
@@ -166,13 +167,13 @@ func TestProviderFallback_ExecuteWithFallback_BothFail(t *testing.T) {
 
 	pf := NewProviderFallback(primary, fallback, breaker)
 
-	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
+	err := pf.ExecuteWithFallback(ctx, func(provider any) error {
 		stt := provider.(*mockSTTProvider)
-		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
-		return err
+		_, transcribeErr := stt.Transcribe(ctx, []byte{1, 2, 3})
+		return transcribeErr
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "both primary and fallback providers failed")
 }
 
@@ -183,13 +184,13 @@ func TestProviderFallback_ExecuteWithFallback_NoFallback(t *testing.T) {
 
 	pf := NewProviderFallback(primary, nil, breaker)
 
-	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
+	err := pf.ExecuteWithFallback(ctx, func(provider any) error {
 		stt := provider.(*mockSTTProvider)
-		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
-		return err
+		_, transcribeErr := stt.Transcribe(ctx, []byte{1, 2, 3})
+		return transcribeErr
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestProviderFallback_ExecuteWithFallback_SwitchBackToPrimary(t *testing.T) {
@@ -202,13 +203,13 @@ func TestProviderFallback_ExecuteWithFallback_SwitchBackToPrimary(t *testing.T) 
 	pf.SwitchToFallback()
 	assert.True(t, pf.IsUsingFallback())
 
-	err := pf.ExecuteWithFallback(ctx, func(provider interface{}) error {
+	err := pf.ExecuteWithFallback(ctx, func(provider any) error {
 		stt := provider.(*mockSTTProvider)
-		_, err := stt.Transcribe(ctx, []byte{1, 2, 3})
-		return err
+		_, transcribeErr := stt.Transcribe(ctx, []byte{1, 2, 3})
+		return transcribeErr
 	})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Should switch back to primary after success
 	assert.False(t, pf.IsUsingFallback())
 }

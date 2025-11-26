@@ -5,6 +5,7 @@ package prompts
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -16,20 +17,20 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAdvancedMockTemplate tests the advanced mock template functionality
+// TestAdvancedMockTemplate tests the advanced mock template functionality.
 func TestAdvancedMockTemplate(t *testing.T) {
 	tests := []struct {
-		name              string
 		template          *AdvancedMockTemplate
-		inputs            map[string]interface{}
-		expectedError     bool
-		expectedCallCount int
+		inputs            map[string]any
+		name              string
 		expectedPattern   string
+		expectedCallCount int
+		expectedError     bool
 	}{
 		{
 			name:     "successful_formatting",
 			template: NewAdvancedMockTemplate("test-template", "Hello {{.name}}, welcome to {{.service}}"),
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"name":    "Alice",
 				"service": "Beluga AI",
 			},
@@ -40,11 +41,11 @@ func TestAdvancedMockTemplate(t *testing.T) {
 		{
 			name: "template_with_custom_results",
 			template: NewAdvancedMockTemplate("custom-template", "Custom template",
-				WithMockResults([]interface{}{
+				WithMockResults([]any{
 					"Custom result 1",
 					"Custom result 2",
 				})),
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"input": "test",
 			},
 			expectedError:     false,
@@ -54,8 +55,8 @@ func TestAdvancedMockTemplate(t *testing.T) {
 		{
 			name: "template_with_error",
 			template: NewAdvancedMockTemplate("error-template", "Error template",
-				WithMockError(true, fmt.Errorf("template parsing failed"))),
-			inputs: map[string]interface{}{
+				WithMockError(true, errors.New("template parsing failed"))),
+			inputs: map[string]any{
 				"input": "test",
 			},
 			expectedError:     true,
@@ -65,7 +66,7 @@ func TestAdvancedMockTemplate(t *testing.T) {
 			name: "template_with_delay",
 			template: NewAdvancedMockTemplate("delay-template", "Delayed template",
 				WithMockDelay(15*time.Millisecond)),
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"input": "delayed test",
 			},
 			expectedError:     false,
@@ -76,7 +77,7 @@ func TestAdvancedMockTemplate(t *testing.T) {
 			name: "template_with_missing_variables",
 			template: NewAdvancedMockTemplate("var-template", "Template with {{.required}} variable",
 				WithMockVariables([]string{"required", "optional"})),
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"optional": "present",
 				// "required" is missing
 			},
@@ -90,7 +91,7 @@ func TestAdvancedMockTemplate(t *testing.T) {
 					"email": "email_format",
 					"age":   "number",
 				})),
-			inputs: map[string]interface{}{
+			inputs: map[string]any{
 				"input": "test with validation",
 			},
 			expectedError:     false,
@@ -109,9 +110,9 @@ func TestAdvancedMockTemplate(t *testing.T) {
 				duration := time.Since(start)
 
 				if tt.expectedError {
-					assert.Error(t, err)
+					require.Error(t, err)
 				} else {
-					assert.NoError(t, err)
+					require.NoError(t, err)
 					AssertTemplateFormat(t, result, tt.expectedPattern)
 
 					// Verify delay was respected if configured
@@ -126,7 +127,7 @@ func TestAdvancedMockTemplate(t *testing.T) {
 			if tt.expectedError {
 				// Template with error configuration might fail validation
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			// Verify call count
@@ -144,12 +145,12 @@ func TestAdvancedMockTemplate(t *testing.T) {
 	}
 }
 
-// TestTemplateManager tests template management functionality
+// TestTemplateManager tests template management functionality.
 func TestTemplateManager(t *testing.T) {
 	tests := []struct {
-		name          string
 		templates     map[string]string
 		operations    func(t *testing.T, manager *AdvancedMockTemplateManager)
+		name          string
 		expectedCount int
 	}{
 		{
@@ -159,6 +160,7 @@ func TestTemplateManager(t *testing.T) {
 				"farewell": "Goodbye {{.name}}, see you {{.when}}!",
 			},
 			operations: func(t *testing.T, manager *AdvancedMockTemplateManager) {
+				t.Helper()
 				// Test template creation and retrieval
 				ctx := context.Background()
 
@@ -197,7 +199,7 @@ func TestTemplateManager(t *testing.T) {
 
 				// Verify remaining templates still exist
 				remainingTemplates := manager.ListTemplates()
-				assert.Equal(t, 2, len(remainingTemplates), "Should have 2 templates after deletion")
+				assert.Len(t, remainingTemplates, 2, "Should have 2 templates after deletion")
 			},
 			expectedCount: 2, // After deletion
 		},
@@ -223,7 +225,7 @@ func TestTemplateManager(t *testing.T) {
 	}
 }
 
-// TestPromptValue tests prompt value implementations
+// TestPromptValue tests prompt value implementations.
 func TestPromptValue(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -267,7 +269,7 @@ func TestPromptValue(t *testing.T) {
 	}
 }
 
-// TestPromptsIntegrationTestHelper tests the integration test helper
+// TestPromptsIntegrationTestHelper tests the integration test helper.
 func TestPromptsIntegrationTestHelper(t *testing.T) {
 	helper := NewIntegrationTestHelper()
 
@@ -288,10 +290,10 @@ func TestPromptsIntegrationTestHelper(t *testing.T) {
 
 	// Test operations
 	ctx := context.Background()
-	inputs := map[string]interface{}{"name": "Alice"}
+	inputs := map[string]any{"name": "Alice"}
 
 	_, err := greetingTemplate.Format(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test reset
 	helper.Reset()
@@ -301,28 +303,29 @@ func TestPromptsIntegrationTestHelper(t *testing.T) {
 	assert.Equal(t, 0, helper.GetTemplateManager().GetTemplateCount())
 }
 
-// TestPromptScenarios tests real-world prompt usage scenarios
+// TestPromptScenarios tests real-world prompt usage scenarios.
 func TestPromptScenarios(t *testing.T) {
 	tests := []struct {
-		name     string
 		scenario func(t *testing.T, template iface.Template, manager iface.TemplateManager)
+		name     string
 	}{
 		{
 			name: "multi_format_templates",
 			scenario: func(t *testing.T, template iface.Template, manager iface.TemplateManager) {
+				t.Helper()
 				ctx := context.Background()
 				runner := NewPromptScenarioRunner(template, manager)
 
 				// Test different input combinations - use variables that match the template
 				// Template is "Test template with {{.input}}", so provide "input" variable
-				inputSets := []map[string]interface{}{
+				inputSets := []map[string]any{
 					{"input": "Alice"},
 					{"input": "Bob"},
 					{"input": "Charlie"},
 				}
 
 				results, err := runner.RunTemplateFormattingScenario(ctx, inputSets)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, results, len(inputSets))
 
 				// Verify each result is unique and valid
@@ -337,6 +340,7 @@ func TestPromptScenarios(t *testing.T) {
 		{
 			name: "template_library_management",
 			scenario: func(t *testing.T, template iface.Template, manager iface.TemplateManager) {
+				t.Helper()
 				ctx := context.Background()
 				runner := NewPromptScenarioRunner(template, manager)
 
@@ -349,12 +353,13 @@ func TestPromptScenarios(t *testing.T) {
 				}
 
 				err := runner.RunTemplateManagementScenario(ctx, templateNames, templateStrings)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
 			name: "prompt_value_conversion",
 			scenario: func(t *testing.T, template iface.Template, manager iface.TemplateManager) {
+				t.Helper()
 				ctx := context.Background()
 
 				// Format template to get result
@@ -389,21 +394,21 @@ func TestPromptScenarios(t *testing.T) {
 	}
 }
 
-// TestTemplateQuality tests template quality and consistency
+// TestTemplateQuality tests template quality and consistency.
 func TestTemplateQuality(t *testing.T) {
 	template := NewAdvancedMockTemplate("quality-test", "Quality test template with {{.input}}")
 	ctx := context.Background()
 	tester := NewTemplateQualityTester(template)
 
 	tests := []struct {
-		name       string
 		testFunc   func() (bool, error)
+		name       string
 		expectedOK bool
 	}{
 		{
 			name: "formatting_consistency",
 			testFunc: func() (bool, error) {
-				inputs := map[string]interface{}{"input": "consistency test"}
+				inputs := map[string]any{"input": "consistency test"}
 				return tester.TestConsistency(ctx, inputs, 5)
 			},
 			expectedOK: true,
@@ -414,12 +419,12 @@ func TestTemplateQuality(t *testing.T) {
 				testCases := []VariableTestCase{
 					{
 						Name:        "valid_input",
-						Inputs:      map[string]interface{}{"input": "valid value"},
+						Inputs:      map[string]any{"input": "valid value"},
 						ShouldError: false,
 					},
 					{
 						Name:        "missing_required_variable",
-						Inputs:      map[string]interface{}{"wrong_key": "value"},
+						Inputs:      map[string]any{"wrong_key": "value"},
 						ShouldError: true,
 					},
 				}
@@ -436,7 +441,7 @@ func TestTemplateQuality(t *testing.T) {
 			ok, err := tt.testFunc()
 
 			if tt.expectedOK {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.True(t, ok, "Quality test should pass")
 			} else {
 				// Test may fail for specific scenarios
@@ -448,7 +453,7 @@ func TestTemplateQuality(t *testing.T) {
 	}
 }
 
-// TestConcurrencyAdvanced tests concurrent prompt operations
+// TestConcurrencyAdvanced tests concurrent prompt operations.
 func TestConcurrencyAdvanced(t *testing.T) {
 	template := NewAdvancedMockTemplate("concurrent-test", "Concurrent template with {{.input}}")
 
@@ -466,7 +471,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 				for j := 0; j < operationsPerGoroutine; j++ {
 					ctx := context.Background()
-					inputs := map[string]interface{}{
+					inputs := map[string]any{
 						"input": fmt.Sprintf("concurrent-input-%d-%d", goroutineID, j),
 					}
 
@@ -521,7 +526,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 				}
 
 				ctx := context.Background()
-				inputs := map[string]interface{}{"input": "concurrent test"}
+				inputs := map[string]any{"input": "concurrent test"}
 				_, err = createdTemplate.Format(ctx, inputs)
 				if err != nil {
 					errChan <- err
@@ -540,11 +545,11 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 		// Verify all templates were created
 		finalTemplates := manager.ListTemplates()
-		assert.Equal(t, numGoroutines, len(finalTemplates), "Should have created %d templates", numGoroutines)
+		assert.Len(t, finalTemplates, numGoroutines, "Should have created %d templates", numGoroutines)
 	})
 }
 
-// TestLoadTesting performs load testing on prompt components
+// TestLoadTesting performs load testing on prompt components.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load tests in short mode")
@@ -565,7 +570,7 @@ func TestLoadTesting(t *testing.T) {
 	})
 }
 
-// TestPromptErrorHandling tests comprehensive error handling scenarios
+// TestPromptErrorHandling tests comprehensive error handling scenarios.
 func TestPromptErrorHandling(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -577,11 +582,11 @@ func TestPromptErrorHandling(t *testing.T) {
 			name: "template_formatting_error",
 			setup: func() iface.Template {
 				return NewAdvancedMockTemplate("error-template", "Error template",
-					WithMockError(true, fmt.Errorf("formatting engine failure")))
+					WithMockError(true, errors.New("formatting engine failure")))
 			},
 			operation: func(template iface.Template) error {
 				ctx := context.Background()
-				inputs := map[string]interface{}{"input": "test"}
+				inputs := map[string]any{"input": "test"}
 				_, err := template.Format(ctx, inputs)
 				return err
 			},
@@ -590,7 +595,7 @@ func TestPromptErrorHandling(t *testing.T) {
 			name: "template_validation_error",
 			setup: func() iface.Template {
 				return NewAdvancedMockTemplate("invalid-template", "",
-					WithMockError(true, fmt.Errorf("invalid template structure")))
+					WithMockError(true, errors.New("invalid template structure")))
 			},
 			operation: func(template iface.Template) error {
 				return template.Validate()
@@ -604,7 +609,7 @@ func TestPromptErrorHandling(t *testing.T) {
 			},
 			operation: func(template iface.Template) error {
 				ctx := context.Background()
-				inputs := map[string]interface{}{"optional": "present"} // missing "required"
+				inputs := map[string]any{"optional": "present"} // missing "required"
 				_, err := template.Format(ctx, inputs)
 				return err
 			},
@@ -616,16 +621,16 @@ func TestPromptErrorHandling(t *testing.T) {
 			template := tt.setup()
 			err := tt.operation(template)
 
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	}
 }
 
-// BenchmarkPromptOperations benchmarks prompt operation performance
+// BenchmarkPromptOperations benchmarks prompt operation performance.
 func BenchmarkPromptOperations(b *testing.B) {
 	template := NewAdvancedMockTemplate("benchmark-template", "Benchmark template with {{.input}}")
 	ctx := context.Background()
-	inputs := map[string]interface{}{"input": "benchmark test"}
+	inputs := map[string]any{"input": "benchmark test"}
 
 	b.Run("TemplateFormatting", func(b *testing.B) {
 		b.ResetTimer()
@@ -658,7 +663,7 @@ func BenchmarkPromptOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkTemplateManager benchmarks template manager operations
+// BenchmarkTemplateManager benchmarks template manager operations.
 func BenchmarkTemplateManager(b *testing.B) {
 	manager := NewAdvancedMockTemplateManager()
 
@@ -666,7 +671,7 @@ func BenchmarkTemplateManager(b *testing.B) {
 	for i := 0; i < 10; i++ {
 		name := fmt.Sprintf("template_%d", i)
 		templateStr := fmt.Sprintf("Template %d with {{.input}}", i)
-		manager.CreateTemplate(name, templateStr)
+		_, _ = manager.CreateTemplate(name, templateStr)
 	}
 
 	b.Run("GetTemplate", func(b *testing.B) {
@@ -703,7 +708,7 @@ func BenchmarkTemplateManager(b *testing.B) {
 	})
 }
 
-// BenchmarkBenchmarkHelper tests the benchmark helper utility
+// BenchmarkBenchmarkHelper tests the benchmark helper utility.
 func BenchmarkBenchmarkHelper(b *testing.B) {
 	template := NewAdvancedMockTemplate("benchmark-helper", "Helper template with {{.input}}")
 	helper := NewBenchmarkHelper(template, 20)

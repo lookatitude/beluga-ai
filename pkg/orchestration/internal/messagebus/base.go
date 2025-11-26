@@ -14,7 +14,7 @@ import (
 // --- In-Memory Channel-Based Message Bus ---
 
 // ChannelMessageBus implements MessageBus using Go channels for local communication.
-// Note: This implementation uses the MessageBus interface from messagebus.go
+// Note: This implementation uses the MessageBus interface from messagebus.go.
 type ChannelMessageBus struct {
 	subs        map[string]chan Message                  // Map topic to their message channel
 	subscribers map[string]map[string]context.CancelFunc // Map topic -> subscriberID -> cancel function
@@ -31,7 +31,7 @@ func NewChannelMessageBus() *ChannelMessageBus {
 }
 
 // Publish sends a message to all subscribers of the topic.
-func (b *ChannelMessageBus) Publish(ctx context.Context, topic string, payload interface{}, metadata map[string]interface{}) error {
+func (b *ChannelMessageBus) Publish(ctx context.Context, topic string, payload any, metadata map[string]any) error {
 	b.mu.RLock()
 	if b.closed {
 		b.mu.RUnlock()
@@ -115,7 +115,7 @@ func (b *ChannelMessageBus) Subscribe(ctx context.Context, topic string, handler
 }
 
 // Unsubscribe removes a subscription and cancels its goroutine.
-func (b *ChannelMessageBus) Unsubscribe(ctx context.Context, topic string, subscriberID string) error {
+func (b *ChannelMessageBus) Unsubscribe(ctx context.Context, topic, subscriberID string) error {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 

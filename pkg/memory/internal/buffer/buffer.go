@@ -14,12 +14,12 @@ import (
 // ChatMessageBufferMemory is a simple memory implementation that stores all messages in a buffer.
 type ChatMessageBufferMemory struct {
 	ChatHistory    iface.ChatMessageHistory
-	ReturnMessages bool   // Whether to return messages directly or as formatted string
-	MemoryKey      string // Key used for storing the memory in prompt variables
-	InputKey       string // Key for input in SaveContext
-	OutputKey      string // Key for output in SaveContext
-	HumanPrefix    string // Prefix for human messages when formatted
-	AIPrefix       string // Prefix for AI messages when formatted
+	MemoryKey      string
+	InputKey       string
+	OutputKey      string
+	HumanPrefix    string
+	AIPrefix       string
+	ReturnMessages bool
 }
 
 // NewChatMessageBufferMemory creates a new buffer memory with default settings.
@@ -63,20 +63,20 @@ func getBufferString(messages []schema.Message, humanPrefix, aiPrefix string) st
 	for _, msg := range messages {
 		switch msg.GetType() {
 		case schema.RoleHuman:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", humanPrefix, msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", humanPrefix, msg.GetContent()))
 		case schema.RoleAssistant:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", aiPrefix, msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", aiPrefix, msg.GetContent()))
 		case schema.RoleSystem:
-			buffer.WriteString(fmt.Sprintf("System: %s\n", msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("System: %s\n", msg.GetContent()))
 		case schema.RoleTool:
 			toolMsg, ok := msg.(*schema.ToolMessage)
 			if ok {
-				buffer.WriteString(fmt.Sprintf("Tool (%s): %s\n", toolMsg.ToolCallID, msg.GetContent()))
+				_, _ = buffer.WriteString(fmt.Sprintf("Tool (%s): %s\n", toolMsg.ToolCallID, msg.GetContent()))
 			} else {
-				buffer.WriteString(fmt.Sprintf("Tool: %s\n", msg.GetContent()))
+				_, _ = buffer.WriteString(fmt.Sprintf("Tool: %s\n", msg.GetContent()))
 			}
 		default:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
 		}
 	}
 
@@ -84,7 +84,7 @@ func getBufferString(messages []schema.Message, humanPrefix, aiPrefix string) st
 }
 
 // SaveContext saves a new interaction to memory.
-func (m *ChatMessageBufferMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *ChatMessageBufferMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
 
@@ -124,7 +124,7 @@ func (m *ChatMessageBufferMemory) SaveContext(ctx context.Context, inputs map[st
 }
 
 // getInputOutputKeys determines the input and output keys from the given maps.
-func getInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string) {
+func getInputOutputKeys(inputs, outputs map[string]any) (string, string) {
 	if len(inputs) == 0 || len(outputs) == 0 {
 		return "input", "output"
 	}

@@ -192,7 +192,7 @@ func (mc *MetricsCollector) RecordEmbedding(ctx context.Context, duration time.D
 }
 
 // RecordError records error metrics.
-func (mc *MetricsCollector) RecordError(ctx context.Context, errorCode string, storeName string) {
+func (mc *MetricsCollector) RecordError(ctx context.Context, errorCode, storeName string) {
 	if mc == nil {
 		return
 	}
@@ -267,7 +267,7 @@ func (tp *TracerProvider) StartDeleteDocumentsSpan(ctx context.Context, storeNam
 }
 
 // StartSearchSpan starts a span for search operations.
-func (tp *TracerProvider) StartSearchSpan(ctx context.Context, storeName string, queryLength int, k int) (context.Context, func()) {
+func (tp *TracerProvider) StartSearchSpan(ctx context.Context, storeName string, queryLength, k int) (context.Context, func()) {
 	return tp.StartSpan(ctx, "vectorstore.search",
 		attribute.String("store_name", storeName),
 		attribute.Int("query_length", queryLength),
@@ -283,7 +283,7 @@ func (tp *TracerProvider) StartEmbeddingSpan(ctx context.Context, storeName stri
 	)
 }
 
-// Global instances for convenience
+// Global instances for convenience.
 var (
 	globalMetrics *MetricsCollector
 	globalTracer  *TracerProvider

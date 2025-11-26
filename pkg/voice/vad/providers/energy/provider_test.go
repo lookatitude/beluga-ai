@@ -11,8 +11,8 @@ import (
 
 func TestNewEnergyProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *vad.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -40,10 +40,10 @@ func TestNewEnergyProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewEnergyProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -73,14 +73,14 @@ func TestEnergyProvider_Process(t *testing.T) {
 	}
 
 	speech, err := provider.Process(ctx, highEnergyAudio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// High energy should typically be detected as speech
 	_ = speech
 
 	// Test with low energy audio (should detect silence)
 	lowEnergyAudio := make([]byte, 1024)
 	speech, err = provider.Process(ctx, lowEnergyAudio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Low energy should typically be detected as silence
 	_ = speech
 }
@@ -88,7 +88,7 @@ func TestEnergyProvider_Process(t *testing.T) {
 func TestDefaultEnergyConfig(t *testing.T) {
 	config := DefaultEnergyConfig()
 	assert.NotNil(t, config)
-	assert.Equal(t, 0.01, config.Threshold)
+	assert.InEpsilon(t, 0.01, config.Threshold, 0.0001)
 	assert.Equal(t, 256, config.EnergyWindowSize)
 	assert.True(t, config.AdaptiveThreshold)
 }
@@ -141,7 +141,7 @@ func TestEnergyProvider_ProcessStream(t *testing.T) {
 	// Read results
 	result := <-resultCh
 	assert.NotNil(t, result)
-	assert.NoError(t, result.Error)
+	require.NoError(t, result.Error)
 }
 
 func TestEnergyProvider_ProcessStream_ContextCancellation(t *testing.T) {
@@ -176,7 +176,7 @@ func TestEnergyProvider_Process_EmptyAudio(t *testing.T) {
 
 	ctx := context.Background()
 	speech, err := provider.Process(ctx, []byte{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, speech)
 }
 
@@ -203,5 +203,5 @@ func TestEnergyProvider_AdaptiveThreshold(t *testing.T) {
 	// Process one more frame - adaptive threshold should be active
 	audio := make([]byte, 512)
 	_, err = provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }

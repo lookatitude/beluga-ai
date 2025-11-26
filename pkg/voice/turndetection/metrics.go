@@ -2,38 +2,39 @@ package turndetection
 
 import (
 	"context"
+	"time"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"time"
 )
 
-// MetricsRecorder defines the interface for recording metrics
+// MetricsRecorder defines the interface for recording metrics.
 type MetricsRecorder interface {
 	RecordDetection(ctx context.Context, provider string, duration time.Duration, turnDetected bool)
 	RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
 	IncrementDetections(ctx context.Context, provider string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled
+// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
 type NoOpMetrics struct{}
 
-// NewNoOpMetrics creates a new no-operation metrics recorder
+// NewNoOpMetrics creates a new no-operation metrics recorder.
 func NewNoOpMetrics() *NoOpMetrics {
 	return &NoOpMetrics{}
 }
 
-// RecordDetection is a no-op implementation
+// RecordDetection is a no-op implementation.
 func (n *NoOpMetrics) RecordDetection(ctx context.Context, provider string, duration time.Duration, turnDetected bool) {
 }
 
-// RecordError is a no-op implementation
+// RecordError is a no-op implementation.
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 }
 
-// IncrementDetections is a no-op implementation
+// IncrementDetections is a no-op implementation.
 func (n *NoOpMetrics) IncrementDetections(ctx context.Context, provider string) {}
 
-// Metrics contains all the metrics for Turn Detection operations
+// Metrics contains all the metrics for Turn Detection operations.
 type Metrics struct {
 	detections       metric.Int64Counter
 	turnsDetected    metric.Int64Counter
@@ -42,7 +43,7 @@ type Metrics struct {
 	detectionLatency metric.Float64Histogram
 }
 
-// NewMetrics creates a new Metrics instance
+// NewMetrics creates a new Metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
 	m := &Metrics{}
 
@@ -55,7 +56,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	return m
 }
 
-// RecordDetection records a detection operation
+// RecordDetection records a detection operation.
 func (m *Metrics) RecordDetection(ctx context.Context, provider string, duration time.Duration, turnDetected bool) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -70,7 +71,7 @@ func (m *Metrics) RecordDetection(ctx context.Context, provider string, duration
 	}
 }
 
-// RecordError records an error
+// RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
@@ -80,7 +81,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 	m.detectionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// IncrementDetections increments the detections counter
+// IncrementDetections increments the detections counter.
 func (m *Metrics) IncrementDetections(ctx context.Context, provider string) {
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),

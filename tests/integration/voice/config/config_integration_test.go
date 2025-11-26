@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestConfigIntegration tests integration with config package
+// TestConfigIntegration tests integration with config package.
 func TestConfigIntegration(t *testing.T) {
 	ctx := context.Background()
 
@@ -43,7 +43,7 @@ func TestConfigIntegration(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// TestConfigValidation tests config validation
+// TestConfigValidation tests config validation.
 func TestConfigValidation(t *testing.T) {
 	ctx := context.Background()
 
@@ -64,12 +64,13 @@ func TestConfigValidation(t *testing.T) {
 	_ = err
 }
 
-// Mock providers
+// Mock providers.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	return "", nil
 }
+
 func (m *mockSTTProvider) StartStreaming(ctx context.Context) (voiceiface.StreamingSession, error) {
 	return nil, nil
 }
@@ -79,6 +80,7 @@ type mockTTSProvider struct{}
 func (m *mockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	return nil, nil
 }
+
 func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	return nil, nil
 }

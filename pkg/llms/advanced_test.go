@@ -20,15 +20,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestEnsureMessagesAdvanced provides advanced table-driven tests for EnsureMessages
+// TestEnsureMessagesAdvanced provides advanced table-driven tests for EnsureMessages.
 func TestEnsureMessagesAdvanced(t *testing.T) {
 	tests := []struct {
+		input       any
 		name        string
 		description string
-		input       any
+		errContains string
 		expected    []schema.Message
 		wantErr     bool
-		errContains string
 	}{
 		{
 			name:        "string_input",
@@ -110,13 +110,13 @@ func TestEnsureMessagesAdvanced(t *testing.T) {
 	}
 }
 
-// TestConfigurationAdvanced provides comprehensive configuration testing
+// TestConfigurationAdvanced provides comprehensive configuration testing.
 func TestConfigurationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		configFn    func() *Config
 		validateFn  func(t *testing.T, config *Config)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -174,7 +174,7 @@ func TestConfigurationAdvanced(t *testing.T) {
 				assert.Equal(t, 20, config.MaxConcurrentBatches)
 				assert.Equal(t, 5, config.MaxRetries)
 				assert.Equal(t, time.Second, config.RetryDelay)
-				assert.Equal(t, 2.5, config.RetryBackoff)
+				assert.InEpsilon(t, 2.5, config.RetryBackoff, 0.0001)
 				assert.True(t, config.EnableTracing)
 				assert.True(t, config.EnableMetrics)
 				assert.True(t, config.EnableStructuredLogging)
@@ -259,13 +259,13 @@ func TestConfigurationAdvanced(t *testing.T) {
 	}
 }
 
-// TestErrorHandlingAdvanced provides comprehensive error handling tests
+// TestErrorHandlingAdvanced provides comprehensive error handling tests.
 func TestErrorHandlingAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		err         error
 		checkFn     func(t *testing.T, err error)
+		name        string
+		description string
 	}{
 		{
 			name:        "llm_error_with_code",
@@ -317,14 +317,14 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 	}
 }
 
-// TestAdvancedMockChatModel provides comprehensive tests for the advanced mock
+// TestAdvancedMockChatModel provides comprehensive tests for the advanced mock.
 func TestAdvancedMockChatModel(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name        string
-		description string
 		setupFn     func() *AdvancedMockChatModel
 		testFn      func(t *testing.T, mock *AdvancedMockChatModel)
+		name        string
+		description string
 	}{
 		{
 			name:        "basic_functionality",
@@ -343,17 +343,17 @@ func TestAdvancedMockChatModel(t *testing.T) {
 
 				// Test first response
 				response1, err := mock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, "Response 1", response1.GetContent())
 
 				// Test second response (cycles through responses)
 				response2, err := mock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, "Response 2", response2.GetContent())
 
 				// Test third response (cycles back)
 				response3, err := mock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, "Response 1", response3.GetContent())
 
 				assert.Equal(t, 3, mock.GetCallCount())
@@ -371,7 +371,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				messages := CreateTestMessages()
 
 				_, err := mock.Generate(ctx, messages)
-				assert.Error(t, err)
+				require.Error(t, err)
 				AssertErrorType(t, err, ErrCodeNetworkError)
 
 				assert.Equal(t, 1, mock.GetCallCount())
@@ -391,7 +391,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				messages := CreateTestMessages()
 
 				streamChan, err := mock.StreamChat(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				AssertStreamingResponse(t, streamChan)
 				assert.Equal(t, 1, mock.GetCallCount())
@@ -402,7 +402,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 			description: "Test tool binding functionality",
 			setupFn: func() *AdvancedMockChatModel {
 				return NewAdvancedMockChatModel("test-model",
-					WithToolResults(map[string]interface{}{
+					WithToolResults(map[string]any{
 						"calculator": "42",
 						"search":     "search results",
 					}),
@@ -446,21 +446,20 @@ func TestAdvancedMockChatModel(t *testing.T) {
 				)
 			},
 			testFn: func(t *testing.T, mock *AdvancedMockChatModel) {
-
 				// Test Invoke
 				result, err := mock.Invoke(ctx, "test input")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, result)
 
 				// Test Batch
 				inputs := []any{"input1", "input2", "input3"}
 				results, err := mock.Batch(ctx, inputs)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, results, 3)
 
 				// Test Stream
 				streamChan, err := mock.Stream(ctx, "test input")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				streamResults := make([]any, 0)
 				for result := range streamChan {
@@ -487,7 +486,7 @@ func TestAdvancedMockChatModel(t *testing.T) {
 	}
 }
 
-// TestConcurrencyAdvanced tests concurrent operations and race conditions
+// TestConcurrencyAdvanced tests concurrent operations and race conditions.
 func TestConcurrencyAdvanced(t *testing.T) {
 	ctx := context.Background()
 	if testing.Short() {
@@ -505,7 +504,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	t.Run("concurrent_generate", func(t *testing.T) {
 		ConcurrentTestRunner(t, func(t *testing.T) {
 			response, err := mock.Generate(ctx, messages)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotNil(t, response)
 		}, 10)
 	})
@@ -514,7 +513,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	t.Run("concurrent_streaming", func(t *testing.T) {
 		ConcurrentTestRunner(t, func(t *testing.T) {
 			streamChan, err := mock.StreamChat(ctx, messages)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			AssertStreamingResponse(t, streamChan)
 		}, 5)
 	})
@@ -524,18 +523,18 @@ func TestConcurrencyAdvanced(t *testing.T) {
 		ConcurrentTestRunner(t, func(t *testing.T) {
 			inputs := []any{"input1", "input2"}
 			results, err := mock.Batch(ctx, inputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Len(t, results, 2)
 		}, 5)
 	})
 
 	// Verify final call count is reasonable (should be sum of all operations)
 	finalCount := mock.GetCallCount()
-	assert.Greater(t, finalCount, 0, "Should have recorded some calls")
+	assert.Positive(t, finalCount, "Should have recorded some calls")
 	t.Logf("Total concurrent calls: %d", finalCount)
 }
 
-// TestLoadTesting demonstrates load testing capabilities
+// TestLoadTesting demonstrates load testing capabilities.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load test in short mode")
@@ -587,7 +586,7 @@ func TestLoadTesting(t *testing.T) {
 	t.Logf("Total calls during load testing: %d", mock.GetCallCount())
 }
 
-// TestIntegrationPatterns demonstrates integration testing patterns
+// TestIntegrationPatterns demonstrates integration testing patterns.
 func TestIntegrationPatterns(t *testing.T) {
 	ctx := context.Background()
 	helper := NewIntegrationTestHelper()
@@ -609,7 +608,7 @@ func TestIntegrationPatterns(t *testing.T) {
 
 		// Test provider registration
 		provider, err := factory.GetProvider("integration-test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, provider)
 
 		// Test provider listing
@@ -619,7 +618,7 @@ func TestIntegrationPatterns(t *testing.T) {
 		// Test getting the registered provider (CreateProvider requires a factory, not just registration)
 		// Since SetupMockProvider registers the provider instance, use GetProvider instead
 		createdProvider, err := factory.GetProvider("integration-test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, createdProvider)
 	})
 
@@ -629,13 +628,13 @@ func TestIntegrationPatterns(t *testing.T) {
 
 		// Generate response
 		response, err := mockProvider.Generate(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 		assert.Equal(t, "Integration test response", response.GetContent())
 
 		// Test streaming
 		streamChan, err := mockProvider.StreamChat(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		AssertStreamingResponse(t, streamChan)
 
 		// Test tool integration
@@ -646,7 +645,7 @@ func TestIntegrationPatterns(t *testing.T) {
 		// Test batch processing
 		inputs := []any{"batch1", "batch2", "batch3"}
 		results, err := mockProvider.Batch(ctx, inputs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, results, 3)
 	})
 
@@ -662,16 +661,15 @@ func TestIntegrationPatterns(t *testing.T) {
 
 		// This would normally record metrics
 		_, err := mockProvider.Generate(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify metrics expectations (using Maybe() so it doesn't fail if not called)
-		metrics.Mock.AssertExpectations(t)
+		metrics.AssertExpectations(t)
 	})
 
 	// Test tracing integration
 	t.Run("tracing_integration", func(t *testing.T) {
 		tracing := helper.GetTracing()
-
 
 		// Set up expectations - tracing may or may not be called depending on implementation
 		tracing.Mock.On("StartOperation", mock.Anything, "integration-provider.generate", "integration-provider", "integration-model").Return(ctx).Maybe()
@@ -682,20 +680,20 @@ func TestIntegrationPatterns(t *testing.T) {
 
 		// This would normally create spans
 		_, err := mockProvider.Generate(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify tracing expectations (using Maybe() so it doesn't fail if not called)
-		tracing.Mock.AssertExpectations(t)
+		tracing.AssertExpectations(t)
 	})
 }
 
-// TestEdgeCasesAdvanced tests various edge cases and error scenarios
+// TestEdgeCasesAdvanced tests various edge cases and error scenarios.
 func TestEdgeCasesAdvanced(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		testFn      func(t *testing.T)
 		name        string
 		description string
-		testFn      func(t *testing.T)
 	}{
 		{
 			name:        "empty_messages",
@@ -706,7 +704,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 				var emptyMessages []schema.Message
 
 				_, err := mock.Generate(ctx, emptyMessages)
-				assert.NoError(t, err) // Mock should handle empty messages gracefully
+				require.NoError(t, err) // Mock should handle empty messages gracefully
 			},
 		},
 		{
@@ -715,9 +713,8 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			testFn: func(t *testing.T) {
 				mock := NewAdvancedMockChatModel("test-model")
 
-
 				_, err := mock.Generate(ctx, nil)
-				assert.NoError(t, err) // Mock should handle nil messages gracefully
+				require.NoError(t, err) // Mock should handle nil messages gracefully
 			},
 		},
 		{
@@ -748,7 +745,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 				mock := NewAdvancedMockChatModel("test-model",
-					WithResponses("This is a long streaming response that should be cancelled"),
+					WithResponses("This is a long streaming response that should be canceled"),
 					WithNetworkDelay(true),
 					WithStreamingDelay(10*time.Millisecond),
 				)
@@ -756,16 +753,16 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 				messages := CreateTestMessages()
 
 				streamChan, err := mock.StreamChat(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
-				// Try to consume stream (should be cancelled)
+				// Try to consume stream (should be canceled)
 				select {
 				case chunk, ok := <-streamChan:
 					if ok && chunk.Err != nil {
 						assert.Contains(t, chunk.Err.Error(), "context")
 					}
 				case <-time.After(100 * time.Millisecond):
-					t.Log("Stream was cancelled as expected")
+					t.Log("Stream was canceled as expected")
 				}
 			},
 		},
@@ -775,7 +772,6 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 			testFn: func(t *testing.T) {
 				mock := NewAdvancedMockChatModel("test-model")
 
-
 				// Create large batch
 				batchSize := 100
 				inputs := make([]any, batchSize)
@@ -784,7 +780,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 				}
 
 				results, err := mock.Batch(ctx, inputs)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, results, batchSize)
 
 				assert.Equal(t, batchSize, mock.GetCallCount())
@@ -807,7 +803,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 
 				// Generate should still work (mock doesn't actually execute tools)
 				response, err := mock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, response)
 			},
 		},
@@ -831,7 +827,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 
 				start := time.Now()
 				streamChan, err := mock.StreamChat(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				AssertStreamingResponse(t, streamChan)
 				elapsed := time.Since(start)
@@ -857,7 +853,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 					go func() {
 						defer wg.Done()
 						_, err := mock.Generate(ctx, messages)
-						assert.NoError(t, err)
+						require.NoError(t, err)
 					}()
 				}
 				wg.Wait()
@@ -873,7 +869,7 @@ func TestEdgeCasesAdvanced(t *testing.T) {
 	}
 }
 
-// TestObservabilityAdvanced tests metrics and tracing functionality
+// TestObservabilityAdvanced tests metrics and tracing functionality.
 func TestObservabilityAdvanced(t *testing.T) {
 	ctx := context.Background()
 	provider := NewAdvancedMockChatModel("observability-test")
@@ -898,7 +894,7 @@ func TestObservabilityAdvanced(t *testing.T) {
 	// Test successful operation
 	t.Run("successful_operation", func(t *testing.T) {
 		response, err := provider.Generate(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, response)
 	})
 
@@ -909,14 +905,14 @@ func TestObservabilityAdvanced(t *testing.T) {
 		)
 
 		_, err := errorMock.Generate(ctx, messages)
-		assert.Error(t, err)
+		require.Error(t, err)
 		AssertErrorType(t, err, ErrCodeNetworkError)
 	})
 
 	// Test streaming operation
 	t.Run("streaming_operation", func(t *testing.T) {
 		streamChan, err := provider.StreamChat(ctx, messages)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		AssertStreamingResponse(t, streamChan)
 	})
 
@@ -927,7 +923,7 @@ func TestObservabilityAdvanced(t *testing.T) {
 	_ = tracing
 }
 
-// BenchmarkAdvancedMockOperations provides performance benchmarks
+// BenchmarkAdvancedMockOperations provides performance benchmarks.
 func BenchmarkAdvancedMockOperations(b *testing.B) {
 	ctx := context.Background()
 
@@ -939,7 +935,10 @@ func BenchmarkAdvancedMockOperations(b *testing.B) {
 	b.Run("Generate", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, _ = mock.Generate(ctx, messages)
+			_, err := mock.Generate(ctx, messages)
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 
@@ -947,7 +946,10 @@ func BenchmarkAdvancedMockOperations(b *testing.B) {
 		b.ResetTimer()
 		b.RunParallel(func(pb *testing.PB) {
 			for pb.Next() {
-				_, _ = mock.Generate(ctx, messages)
+				_, err := mock.Generate(ctx, messages)
+				if err != nil {
+					b.Fatal(err)
+				}
 			}
 		})
 	})
@@ -955,7 +957,10 @@ func BenchmarkAdvancedMockOperations(b *testing.B) {
 	b.Run("StreamChat", func(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			streamChan, _ := mock.StreamChat(ctx, messages)
+			streamChan, err := mock.StreamChat(ctx, messages)
+			if err != nil {
+				b.Fatal(err)
+			}
 			// Consume stream
 			for range streamChan {
 			}
@@ -966,7 +971,10 @@ func BenchmarkAdvancedMockOperations(b *testing.B) {
 		inputs := []any{"input1", "input2", "input3"}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, _ = mock.Batch(ctx, inputs)
+			_, err := mock.Batch(ctx, inputs)
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 
@@ -977,16 +985,19 @@ func BenchmarkAdvancedMockOperations(b *testing.B) {
 		}
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
-			_, _ = mock.Batch(ctx, inputs)
+			_, err := mock.Batch(ctx, inputs)
+			if err != nil {
+				b.Fatal(err)
+			}
 		}
 	})
 }
 
-// TestProviderCompliance tests that providers implement the ChatModel interface correctly
+// TestProviderCompliance tests that providers implement the ChatModel interface correctly.
 func TestProviderCompliance(t *testing.T) {
 	providers := []struct {
-		name     string
 		provider iface.ChatModel
+		name     string
 	}{
 		{
 			name:     "advanced_mock",
@@ -1001,7 +1012,7 @@ func TestProviderCompliance(t *testing.T) {
 	}
 }
 
-// TestIntegrationWorkflows tests complete integration workflows
+// TestIntegrationWorkflows tests complete integration workflows.
 func TestIntegrationWorkflows(t *testing.T) {
 	ctx := context.Background()
 	if testing.Short() {
@@ -1022,9 +1033,9 @@ func TestIntegrationWorkflows(t *testing.T) {
 	)
 
 	workflows := []struct {
+		workflowFn  func(t *testing.T)
 		name        string
 		description string
-		workflowFn  func(t *testing.T)
 	}{
 		{
 			name:        "multi_provider_comparison",
@@ -1034,10 +1045,10 @@ func TestIntegrationWorkflows(t *testing.T) {
 
 				// Get responses from both providers
 				openaiResp, err := openaiMock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				anthropicResp, err := anthropicMock.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify different responses (as configured)
 				assert.Equal(t, "OpenAI response", openaiResp.GetContent())
@@ -1048,7 +1059,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "tool_chaining_workflow",
 			description: "Test tool chaining across providers",
 			workflowFn: func(t *testing.T) {
-
 				// Create tools
 				calculator := NewMockTool("calculator")
 				search := NewMockTool("search")
@@ -1062,7 +1072,7 @@ func TestIntegrationWorkflows(t *testing.T) {
 				}
 
 				response, err := providerWithTools.Generate(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, response)
 			},
 		},
@@ -1077,10 +1087,10 @@ func TestIntegrationWorkflows(t *testing.T) {
 
 				// Start both streams
 				openaiStream, err := openaiMock.StreamChat(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				anthropicStream, err := anthropicMock.StreamChat(ctx, messages)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Collect responses
 				openaiContent := collectStreamContent(openaiStream)
@@ -1094,7 +1104,6 @@ func TestIntegrationWorkflows(t *testing.T) {
 			name:        "batch_processing_workflow",
 			description: "Test batch processing workflow",
 			workflowFn: func(t *testing.T) {
-
 				// Create batch inputs
 				inputs := []any{
 					"What is AI?",
@@ -1105,7 +1114,7 @@ func TestIntegrationWorkflows(t *testing.T) {
 
 				// Process batch
 				results, err := openaiMock.Batch(ctx, inputs)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, results, len(inputs))
 
 				// Verify all results are valid
@@ -1131,7 +1140,7 @@ func TestIntegrationWorkflows(t *testing.T) {
 
 				// This should fail as configured
 				_, err := errorMock.Generate(ctx, messages)
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "network")
 			},
 		},
@@ -1145,12 +1154,16 @@ func TestIntegrationWorkflows(t *testing.T) {
 	}
 }
 
-// Helper function to collect stream content
+// Helper function to collect stream content.
 func collectStreamContent(streamChan <-chan iface.AIMessageChunk) string {
 	var content strings.Builder
 	for chunk := range streamChan {
 		if chunk.Err == nil {
-			content.WriteString(chunk.Content)
+			// strings.Builder.WriteString never fails in practice, but check for completeness
+			if _, err := content.WriteString(chunk.Content); err != nil {
+				// This should never happen, but handle it gracefully
+				return ""
+			}
 		}
 	}
 	return content.String()

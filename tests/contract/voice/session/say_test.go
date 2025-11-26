@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSay_Contract tests the contract for the Say() and SayWithOptions() methods
+// TestSay_Contract tests the contract for the Say() and SayWithOptions() methods.
 func TestSay_Contract(t *testing.T) {
 	t.Run("say returns handle for controlling playback", func(t *testing.T) {
 		ctx := context.Background()
@@ -30,7 +30,7 @@ func TestSay_Contract(t *testing.T) {
 
 		// Don't start session
 		handle, err := sess.Say(ctx, "Hello")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, handle)
 	})
 
@@ -80,7 +80,7 @@ func TestSay_Contract(t *testing.T) {
 		require.NoError(t, err)
 
 		err = handle.Cancel()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("say respects context cancellation", func(t *testing.T) {
@@ -95,10 +95,10 @@ func TestSay_Contract(t *testing.T) {
 		handle, err := sess.Say(ctx, "Hello")
 		// Should either return error or handle cancellation
 		if err != nil {
-			assert.Error(t, err)
+			require.Error(t, err)
 		}
 		if handle != nil {
-			_ = handle.Cancel()
+			_ = handle.Cancel() // Already handled
 		}
 	})
 }

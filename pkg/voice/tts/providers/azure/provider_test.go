@@ -15,8 +15,8 @@ import (
 
 func TestNewAzureProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *tts.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -46,10 +46,10 @@ func TestNewAzureProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewAzureProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -92,7 +92,7 @@ func TestAzureProvider_GenerateSpeech_Success(t *testing.T) {
 	text := "Hello, world!"
 
 	audio, err := provider.GenerateSpeech(ctx, text)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 }
 
@@ -117,7 +117,7 @@ func TestAzureProvider_GenerateSpeech_HTTPError(t *testing.T) {
 	text := "Hello, world!"
 
 	_, err = provider.GenerateSpeech(ctx, text)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_StreamGenerate(t *testing.T) {
@@ -143,11 +143,11 @@ func TestAzureProvider_StreamGenerate(t *testing.T) {
 	text := "Hello, world!"
 
 	reader, err := provider.StreamGenerate(ctx, text)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 
 	audio, err := io.ReadAll(reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 }
 
@@ -188,7 +188,7 @@ func TestAzureProvider_GenerateSpeech_EmptyAudio(t *testing.T) {
 
 	ctx := context.Background()
 	_, err = provider.GenerateSpeech(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no audio data")
 }
 
@@ -240,5 +240,5 @@ func TestAzureProvider_StreamGenerate_Error(t *testing.T) {
 
 	ctx := context.Background()
 	_, err = provider.StreamGenerate(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 }

@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// BenchmarkSTT_Transcribe benchmarks the Transcribe operation
+// BenchmarkSTT_Transcribe benchmarks the Transcribe operation.
 func BenchmarkSTT_Transcribe(b *testing.B) {
 	// This is a placeholder - actual benchmarks would use real providers
 	ctx := context.Background()
@@ -19,7 +19,7 @@ func BenchmarkSTT_Transcribe(b *testing.B) {
 	}
 }
 
-// BenchmarkSTT_StartStreaming benchmarks streaming STT
+// BenchmarkSTT_StartStreaming benchmarks streaming STT.
 func BenchmarkSTT_StartStreaming(b *testing.B) {
 	ctx := context.Background()
 

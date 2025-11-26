@@ -22,7 +22,7 @@ func TestContainerWithTracedRunnable_Integration(t *testing.T) {
 
 	// Register metrics
 	metrics := NoOpMetrics()
-	container.Register(func() *Metrics { return metrics })
+	_ = container.Register(func() *Metrics { return metrics })
 
 	// Create a traced runnable
 	mock := NewMockRunnable().WithInvokeResult("integration_test")
@@ -30,7 +30,7 @@ func TestContainerWithTracedRunnable_Integration(t *testing.T) {
 	traced := NewTracedRunnable(mock, tracer, metrics, "integration_test", "test_instance")
 
 	// Register the traced runnable
-	container.Register(func() Runnable { return traced })
+	_ = container.Register(func() Runnable { return traced })
 
 	// Resolve and use the runnable
 	var runnable Runnable
@@ -144,12 +144,12 @@ func TestConcurrentContainerOperations_Integration(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 3 {
 				case 0: // Register
-					container.Register(func() int { return goroutineID*1000 + j })
+					_ = container.Register(func() int { return goroutineID*1000 + j })
 				case 1: // Resolve
 					var result int
-					container.Resolve(&result)
+					_ = container.Resolve(&result)
 				case 2: // Health check
-					container.CheckHealth(context.Background())
+					_ = container.CheckHealth(context.Background())
 				}
 			}
 		}(i)
@@ -356,7 +356,7 @@ func TestContextCancellationPropagation_Integration(t *testing.T) {
 	}
 }
 
-// Config is a simple configuration struct for testing
+// Config is a simple configuration struct for testing.
 type Config struct {
 	Timeout int
 }

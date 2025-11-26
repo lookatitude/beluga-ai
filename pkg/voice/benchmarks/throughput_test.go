@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BenchmarkThroughput_AudioChunks benchmarks audio chunk throughput (target 1000+ chunks/sec)
+// BenchmarkThroughput_AudioChunks benchmarks audio chunk throughput (target 1000+ chunks/sec).
 func BenchmarkThroughput_AudioChunks(b *testing.B) {
 	ctx := context.Background()
 	chunkSize := 3200 // 20ms at 16kHz
@@ -34,7 +34,7 @@ func BenchmarkThroughput_AudioChunks(b *testing.B) {
 	}
 }
 
-// BenchmarkThroughput_Transcriptions benchmarks transcription throughput
+// BenchmarkThroughput_Transcriptions benchmarks transcription throughput.
 func BenchmarkThroughput_Transcriptions(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200)
@@ -54,7 +54,7 @@ func BenchmarkThroughput_Transcriptions(b *testing.B) {
 	b.Logf("Transcription throughput: %.2f ops/sec", throughput)
 }
 
-// BenchmarkThroughput_SpeechGeneration benchmarks speech generation throughput
+// BenchmarkThroughput_SpeechGeneration benchmarks speech generation throughput.
 func BenchmarkThroughput_SpeechGeneration(b *testing.B) {
 	ctx := context.Background()
 	text := "Test text for speech generation"

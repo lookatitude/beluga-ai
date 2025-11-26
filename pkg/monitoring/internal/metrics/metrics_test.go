@@ -8,13 +8,14 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewMetricsCollector(t *testing.T) {
 	collector := NewMetricsCollector()
 	assert.NotNil(t, collector)
 	assert.NotNil(t, collector.metrics)
-	assert.Len(t, collector.metrics, 0)
+	assert.Empty(t, collector.metrics)
 }
 
 func TestMetricsCollectorCounter(t *testing.T) {
@@ -65,7 +66,7 @@ func TestMetricsCollectorGauge(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, "test_gauge", metric.Name)
 	assert.Equal(t, Gauge, metric.Type)
-	assert.Equal(t, 42.5, metric.Value)
+	assert.InEpsilon(t, 42.5, metric.Value, 0.0001)
 }
 
 func TestMetricsCollectorHistogram(t *testing.T) {
@@ -82,7 +83,7 @@ func TestMetricsCollectorHistogram(t *testing.T) {
 	assert.True(t, exists)
 	assert.Equal(t, "test_histogram", metric.Name)
 	assert.Equal(t, Histogram, metric.Type)
-	assert.Equal(t, 1.5, metric.Value)
+	assert.InEpsilon(t, 1.5, metric.Value, 0.0001)
 }
 
 func TestMetricsCollectorTiming(t *testing.T) {
@@ -136,7 +137,7 @@ func TestMetricsCollectorStartTimer(t *testing.T) {
 	})
 	assert.True(t, exists)
 	assert.NotNil(t, metric)
-	assert.True(t, metric.Value >= 0.01) // At least 10ms
+	assert.GreaterOrEqual(t, metric.Value, 0.01) // At least 10ms
 }
 
 func TestMetricsCollectorGetMetric(t *testing.T) {
@@ -174,7 +175,7 @@ func TestMetricsCollectorGetAllMetrics(t *testing.T) {
 
 	// Initially empty
 	metrics := collector.GetAllMetrics()
-	assert.Len(t, metrics, 0)
+	assert.Empty(t, metrics)
 
 	// Add some metrics
 	collector.Counter(ctx, "counter1", "Counter 1", 1, map[string]string{"type": "a"})
@@ -209,7 +210,7 @@ func TestMetricsCollectorReset(t *testing.T) {
 	collector.Reset()
 
 	metrics = collector.GetAllMetrics()
-	assert.Len(t, metrics, 0)
+	assert.Empty(t, metrics)
 }
 
 func TestMetricsCollectorConcurrency(t *testing.T) {
@@ -286,8 +287,8 @@ func TestTimerStop(t *testing.T) {
 
 	metric, exists := collector.GetMetric("test_timer", map[string]string{"test": "value"})
 	assert.True(t, exists)
-	assert.True(t, metric.Value >= 0.05) // At least 50ms
-	assert.True(t, metric.Value < 1.0)   // Less than 1 second
+	assert.GreaterOrEqual(t, metric.Value, 0.05) // At least 50ms
+	assert.Less(t, metric.Value, 1.0)            // Less than 1 second
 }
 
 func TestStatisticalMetrics(t *testing.T) {
@@ -296,7 +297,7 @@ func TestStatisticalMetrics(t *testing.T) {
 	t.Run("initial state", func(t *testing.T) {
 		assert.Equal(t, "test_stats", statMetrics.Name)
 		assert.Equal(t, "Test statistical metrics", statMetrics.Description)
-		assert.Len(t, statMetrics.Observations, 0)
+		assert.Empty(t, statMetrics.Observations)
 		assert.Equal(t, 0, statMetrics.Count())
 	})
 
@@ -306,9 +307,9 @@ func TestStatisticalMetrics(t *testing.T) {
 		statMetrics.Observe(3.0)
 
 		assert.Equal(t, 3, statMetrics.Count())
-		assert.Equal(t, 2.0, statMetrics.Mean())
-		assert.Equal(t, 1.0, statMetrics.Min())
-		assert.Equal(t, 3.0, statMetrics.Max())
+		assert.InEpsilon(t, 2.0, statMetrics.Mean(), 0.0001)
+		assert.InEpsilon(t, 1.0, statMetrics.Min(), 0.0001)
+		assert.InEpsilon(t, 3.0, statMetrics.Max(), 0.0001)
 	})
 
 	t.Run("clear", func(t *testing.T) {
@@ -333,9 +334,9 @@ func TestStatisticalMetricsEdgeCases(t *testing.T) {
 	t.Run("single observation", func(t *testing.T) {
 		statMetrics.Observe(42.0)
 		assert.Equal(t, 1, statMetrics.Count())
-		assert.Equal(t, 42.0, statMetrics.Mean())
-		assert.Equal(t, 42.0, statMetrics.Min())
-		assert.Equal(t, 42.0, statMetrics.Max())
+		assert.InEpsilon(t, 42.0, statMetrics.Mean(), 0.0001)
+		assert.InEpsilon(t, 42.0, statMetrics.Min(), 0.0001)
+		assert.InEpsilon(t, 42.0, statMetrics.Max(), 0.0001)
 	})
 }
 
@@ -375,7 +376,7 @@ func TestSimpleHealthChecker(t *testing.T) {
 
 	t.Run("initial state", func(t *testing.T) {
 		results := checker.RunChecks(context.Background())
-		assert.Len(t, results, 0)
+		assert.Empty(t, results)
 
 		healthy := checker.IsHealthy(context.Background())
 		assert.True(t, healthy)
@@ -390,7 +391,7 @@ func TestSimpleHealthChecker(t *testing.T) {
 				Timestamp: time.Now(),
 			}
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		results := checker.RunChecks(context.Background())
 		assert.Len(t, results, 1)
@@ -410,7 +411,7 @@ func TestSimpleHealthChecker(t *testing.T) {
 				Timestamp: time.Now(),
 			}
 		})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		results := checker.RunChecks(context.Background())
 		assert.Len(t, results, 2)
@@ -420,7 +421,7 @@ func TestSimpleHealthChecker(t *testing.T) {
 	})
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkMetricsCollector_Counter(b *testing.B) {
 	collector := NewMetricsCollector()
 	ctx := context.Background()

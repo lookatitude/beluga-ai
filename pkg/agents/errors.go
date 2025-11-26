@@ -8,11 +8,11 @@ import (
 // AgentError represents a custom error type for agent-related operations.
 // It includes context about the operation that failed and wraps the underlying error.
 type AgentError struct {
-	Op     string                 // Operation that failed
-	Agent  string                 // Agent name or ID
-	Code   string                 // Error code for programmatic handling
-	Err    error                  // Underlying error
-	Fields map[string]interface{} // Additional context fields
+	Err    error
+	Fields map[string]any
+	Op     string
+	Agent  string
+	Code   string
 }
 
 // Error implements the error interface.
@@ -55,14 +55,14 @@ func NewAgentError(op, agent, code string, err error) *AgentError {
 		Agent:  agent,
 		Code:   code,
 		Err:    err,
-		Fields: make(map[string]interface{}),
+		Fields: make(map[string]any),
 	}
 }
 
 // WithField adds a context field to the error.
-func (e *AgentError) WithField(key string, value interface{}) *AgentError {
+func (e *AgentError) WithField(key string, value any) *AgentError {
 	if e.Fields == nil {
-		e.Fields = make(map[string]interface{})
+		e.Fields = make(map[string]any)
 	}
 	e.Fields[key] = value
 	return e
@@ -89,9 +89,9 @@ func NewValidationError(field, message string) *ValidationError {
 
 // FactoryError represents errors that occur during agent creation.
 type FactoryError struct {
-	AgentType string
-	Config    interface{}
+	Config    any
 	Err       error
+	AgentType string
 }
 
 // Error implements the error interface.
@@ -105,7 +105,7 @@ func (e *FactoryError) Unwrap() error {
 }
 
 // NewFactoryError creates a new FactoryError.
-func NewFactoryError(agentType string, config interface{}, err error) *FactoryError {
+func NewFactoryError(agentType string, config any, err error) *FactoryError {
 	return &FactoryError{
 		AgentType: agentType,
 		Config:    config,
@@ -115,10 +115,10 @@ func NewFactoryError(agentType string, config interface{}, err error) *FactoryEr
 
 // ExecutionError represents errors that occur during agent execution.
 type ExecutionError struct {
-	Agent     string
-	Step      int
-	Action    string
 	Err       error
+	Agent     string
+	Action    string
+	Step      int
 	Retryable bool
 }
 
@@ -146,10 +146,10 @@ func NewExecutionError(agent string, step int, action string, err error, retryab
 
 // PlanningError represents errors that occur during the planning phase.
 type PlanningError struct {
-	Agent      string
-	InputKeys  []string
 	Err        error
+	Agent      string
 	Suggestion string
+	InputKeys  []string
 }
 
 // Error implements the error interface.
@@ -159,7 +159,7 @@ func (e *PlanningError) Error() string {
 		msg += fmt.Sprintf(" (expected input keys: %v)", e.InputKeys)
 	}
 	if e.Suggestion != "" {
-		msg += fmt.Sprintf(". Suggestion: %s", e.Suggestion)
+		msg += ". Suggestion: " + e.Suggestion
 	}
 	return msg
 }
@@ -190,7 +190,7 @@ var (
 	ErrInvalidConfig         = errors.New("invalid configuration")
 	ErrToolNotAvailable      = errors.New("tool not available")
 	ErrMaxIterationsExceeded = errors.New("maximum iterations exceeded")
-	ErrContextCancelled      = errors.New("context cancelled")
+	ErrContextCancelled      = errors.New("context canceled")
 	ErrTimeout               = errors.New("operation timed out")
 	ErrAgentTimeout          = errors.New("agent execution timed out")
 	ErrResourceExhausted     = errors.New("resource exhausted")

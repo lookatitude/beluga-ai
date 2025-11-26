@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// BenchmarkNoiseCancellation_Process benchmarks noise cancellation
+// BenchmarkNoiseCancellation_Process benchmarks noise cancellation.
 func BenchmarkNoiseCancellation_Process(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200) // 20ms at 16kHz
@@ -18,7 +18,7 @@ func BenchmarkNoiseCancellation_Process(b *testing.B) {
 	}
 }
 
-// BenchmarkNoiseCancellation_ProcessStream benchmarks streaming noise cancellation
+// BenchmarkNoiseCancellation_ProcessStream benchmarks streaming noise cancellation.
 func BenchmarkNoiseCancellation_ProcessStream(b *testing.B) {
 	ctx := context.Background()
 	audioCh := make(chan []byte, 10)

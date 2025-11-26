@@ -7,7 +7,7 @@ import (
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
-// Shared mock providers for e2e tests
+// Shared mock providers for e2e tests.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
@@ -28,7 +28,7 @@ func (m *mockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.R
 	return nil, nil
 }
 
-// Streaming STT provider for streaming tests
+// Streaming STT provider for streaming tests.
 type streamingSTTProvider struct{}
 
 func (s *streamingSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
@@ -39,7 +39,7 @@ func (s *streamingSTTProvider) StartStreaming(ctx context.Context) (voiceiface.S
 	return &mockStreamingSession{}, nil
 }
 
-// Mock streaming session
+// Mock streaming session.
 type mockStreamingSession struct{}
 
 func (m *mockStreamingSession) SendAudio(ctx context.Context, audio []byte) error {

@@ -5,8 +5,10 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -24,9 +26,10 @@ import (
 	memoryiface "github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// IntegrationTestHelper provides centralized utilities for integration testing
+// IntegrationTestHelper provides centralized utilities for integration testing.
 type IntegrationTestHelper struct {
 	// Component factories
 	llmFactory         *llms.Factory
@@ -50,7 +53,7 @@ type IntegrationTestHelper struct {
 	mu sync.RWMutex
 }
 
-// NewIntegrationTestHelper creates a new integration test helper
+// NewIntegrationTestHelper creates a new integration test helper.
 func NewIntegrationTestHelper() *IntegrationTestHelper {
 	return &IntegrationTestHelper{
 		llmFactory:         llms.NewFactory(),
@@ -70,7 +73,7 @@ func NewIntegrationTestHelper() *IntegrationTestHelper {
 	}
 }
 
-// shouldUseRealProviders determines whether to use real providers based on environment
+// shouldUseRealProviders determines whether to use real providers based on environment.
 func shouldUseRealProviders() bool {
 	// Use real providers only if API keys are available and not in short test mode
 	return os.Getenv("OPENAI_API_KEY") != "" && os.Getenv("INTEGRATION_TEST_REAL_PROVIDERS") == "true"
@@ -78,7 +81,7 @@ func shouldUseRealProviders() bool {
 
 // Mock Component Creation
 
-// CreateMockLLM creates a mock LLM for testing
+// CreateMockLLM creates a mock LLM for testing.
 func (h *IntegrationTestHelper) CreateMockLLM(name string) llmsiface.ChatModel {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -100,7 +103,7 @@ func (h *IntegrationTestHelper) CreateMockLLM(name string) llmsiface.ChatModel {
 	return mockLLM
 }
 
-// CreateMockMemory creates a mock memory for testing
+// CreateMockMemory creates a mock memory for testing.
 func (h *IntegrationTestHelper) CreateMockMemory(name string, memoryType memory.MemoryType) memoryiface.Memory {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -114,7 +117,7 @@ func (h *IntegrationTestHelper) CreateMockMemory(name string, memoryType memory.
 	return mockMemory
 }
 
-// CreateMockEmbedder creates a mock embedder for testing
+// CreateMockEmbedder creates a mock embedder for testing.
 func (h *IntegrationTestHelper) CreateMockEmbedder(name string, dimension int) embeddingsiface.Embedder {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -128,7 +131,7 @@ func (h *IntegrationTestHelper) CreateMockEmbedder(name string, dimension int) e
 	return mockEmbedder
 }
 
-// CreateMockVectorStore creates a mock vector store for testing
+// CreateMockVectorStore creates a mock vector store for testing.
 func (h *IntegrationTestHelper) CreateMockVectorStore(name string) vectorstoresiface.VectorStore {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -144,7 +147,7 @@ func (h *IntegrationTestHelper) CreateMockVectorStore(name string) vectorstoresi
 
 // Integration Test Scenarios
 
-// TestConversationFlow tests a complete conversation flow across LLM and Memory
+// TestConversationFlow tests a complete conversation flow across LLM and Memory.
 func (h *IntegrationTestHelper) TestConversationFlow(llm llmsiface.ChatModel, memory memoryiface.Memory, exchanges int) error {
 	ctx := context.Background()
 
@@ -194,7 +197,7 @@ func (h *IntegrationTestHelper) TestConversationFlow(llm llmsiface.ChatModel, me
 	return nil
 }
 
-// TestRAGPipeline tests a complete RAG pipeline
+// TestRAGPipeline tests a complete RAG pipeline.
 func (h *IntegrationTestHelper) TestRAGPipeline(embedder embeddingsiface.Embedder, vectorStore vectorstoresiface.VectorStore, llm llmsiface.ChatModel, memory memoryiface.Memory) error {
 	ctx := context.Background()
 
@@ -219,14 +222,16 @@ func (h *IntegrationTestHelper) TestRAGPipeline(embedder embeddingsiface.Embedde
 	}
 
 	if len(relevantDocs) == 0 {
-		return fmt.Errorf("no relevant documents found")
+		return errors.New("no relevant documents found")
 	}
 
 	// Step 3: Create context from retrieved documents
 	contextContent := ""
+	var contextContentSb227 strings.Builder
 	for _, doc := range relevantDocs {
-		contextContent += doc.GetContent() + "\n"
+		contextContentSb227.WriteString(doc.GetContent() + "\n")
 	}
+	contextContent += contextContentSb227.String()
 
 	// Step 4: Load conversation memory
 	inputs := map[string]any{"input": query}
@@ -267,18 +272,18 @@ func (h *IntegrationTestHelper) TestRAGPipeline(embedder embeddingsiface.Embedde
 
 	// Validate the pipeline worked
 	if response.GetContent() == "" {
-		return fmt.Errorf("LLM response was empty")
+		return errors.New("LLM response was empty")
 	}
 
 	if len(scores) != len(relevantDocs) {
-		return fmt.Errorf("mismatched scores and documents")
+		return errors.New("mismatched scores and documents")
 	}
 
 	return nil
 }
 
-// TestMultiAgentWorkflow tests multi-agent collaboration
-func (h *IntegrationTestHelper) TestMultiAgentWorkflow(agents []agentsiface.CompositeAgent, orchestrator interface{}, memory memoryiface.Memory) error {
+// TestMultiAgentWorkflow tests multi-agent collaboration.
+func (h *IntegrationTestHelper) TestMultiAgentWorkflow(agents []agentsiface.CompositeAgent, orchestrator any, memory memoryiface.Memory) error {
 	ctx := context.Background()
 
 	// Test agent coordination through memory and orchestration
@@ -313,18 +318,20 @@ func (h *IntegrationTestHelper) TestMultiAgentWorkflow(agents []agentsiface.Comp
 
 // Assertion helpers for cross-package testing
 
-// AssertCrossPackageMetrics validates that metrics are properly recorded across packages
+// AssertCrossPackageMetrics validates that metrics are properly recorded across packages.
 func (h *IntegrationTestHelper) AssertCrossPackageMetrics(t *testing.T, package1, package2 string) {
 	// This would validate that metrics from both packages are being recorded
 	// Implementation depends on metrics collection setup
-	assert.True(t, true, "Cross-package metrics validation for %s <-> %s", package1, package2)
+	// TODO: Implement actual cross-package metrics validation for %s <-> %s
+	_ = package1
+	_ = package2
 }
 
-// AssertHealthChecks validates health checks across multiple components
-func (h *IntegrationTestHelper) AssertHealthChecks(t *testing.T, components map[string]interface{}) {
+// AssertHealthChecks validates health checks across multiple components.
+func (h *IntegrationTestHelper) AssertHealthChecks(t *testing.T, components map[string]any) {
 	for name, component := range components {
 		// Check if component has health check method
-		if hc, ok := component.(interface{ CheckHealth() map[string]interface{} }); ok {
+		if hc, ok := component.(interface{ CheckHealth() map[string]any }); ok {
 			health := hc.CheckHealth()
 			// For mock components, health checks may not have "status" field
 			// We verify that health check returns a non-empty map
@@ -337,8 +344,8 @@ func (h *IntegrationTestHelper) AssertHealthChecks(t *testing.T, components map[
 	}
 }
 
-// AssertConfigurationConsistency validates configuration consistency across packages
-func (h *IntegrationTestHelper) AssertConfigurationConsistency(t *testing.T, configs map[string]interface{}) {
+// AssertConfigurationConsistency validates configuration consistency across packages.
+func (h *IntegrationTestHelper) AssertConfigurationConsistency(t *testing.T, configs map[string]any) {
 	// Validate that configurations are consistent and compatible
 	for name, config := range configs {
 		assert.NotNil(t, config, "Configuration for %s should not be nil", name)
@@ -353,7 +360,7 @@ func (h *IntegrationTestHelper) AssertConfigurationConsistency(t *testing.T, con
 
 // Performance and Load Testing
 
-// CrossPackageLoadTest runs load tests across multiple packages
+// CrossPackageLoadTest runs load tests across multiple packages.
 func (h *IntegrationTestHelper) CrossPackageLoadTest(t *testing.T, scenario func() error, numOperations, concurrency int) {
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
@@ -382,7 +389,7 @@ func (h *IntegrationTestHelper) CrossPackageLoadTest(t *testing.T, scenario func
 
 	// Check for errors
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Log performance metrics
@@ -392,7 +399,7 @@ func (h *IntegrationTestHelper) CrossPackageLoadTest(t *testing.T, scenario func
 
 // Test Data Creation
 
-// CreateTestDocuments creates standardized test documents for integration tests
+// CreateTestDocuments creates standardized test documents for integration tests.
 func CreateTestDocuments(count int, topic string) []schema.Document {
 	documents := make([]schema.Document, count)
 	topics := []string{"AI", "ML", "DL", "NLP", "CV"} // Rotate through topics
@@ -421,7 +428,7 @@ func CreateTestDocuments(count int, topic string) []schema.Document {
 	return documents
 }
 
-// CreateTestConversation creates a standardized test conversation
+// CreateTestConversation creates a standardized test conversation.
 func CreateTestConversation(exchanges int) []schema.Message {
 	messages := make([]schema.Message, 0, exchanges*2)
 
@@ -445,7 +452,7 @@ func CreateTestConversation(exchanges int) []schema.Message {
 	return messages
 }
 
-// CreateTestQueries creates standardized test queries
+// CreateTestQueries creates standardized test queries.
 func CreateTestQueries(count int) []string {
 	queries := make([]string, count)
 
@@ -470,7 +477,7 @@ func CreateTestQueries(count int) []string {
 
 // Environment and Configuration
 
-// GetTestConfig returns test configuration based on environment
+// GetTestConfig returns test configuration based on environment.
 func GetTestConfig() TestConfig {
 	return TestConfig{
 		UseRealProviders: shouldUseRealProviders(),
@@ -483,12 +490,12 @@ func GetTestConfig() TestConfig {
 	}
 }
 
-// TestConfig holds configuration for integration tests
+// TestConfig holds configuration for integration tests.
 type TestConfig struct {
-	UseRealProviders bool
 	DefaultTimeout   time.Duration
 	MaxRetries       int
 	ConcurrencyLimit int
+	UseRealProviders bool
 	EnableMetrics    bool
 	EnableTracing    bool
 	EnableLogging    bool
@@ -496,7 +503,7 @@ type TestConfig struct {
 
 // Cleanup and Reset
 
-// Reset clears all cached mock components
+// Reset clears all cached mock components.
 func (h *IntegrationTestHelper) Reset() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -509,7 +516,7 @@ func (h *IntegrationTestHelper) Reset() {
 	h.mockAgents = make(map[string]agentsiface.CompositeAgent)
 }
 
-// Cleanup performs cleanup after integration tests
+// Cleanup performs cleanup after integration tests.
 func (h *IntegrationTestHelper) Cleanup(ctx context.Context) error {
 	// Clear any persistent state in mock components
 	for _, memory := range h.mockMemories {
@@ -528,7 +535,7 @@ func (h *IntegrationTestHelper) Cleanup(ctx context.Context) error {
 	return nil
 }
 
-// GetMemoryContent retrieves memory content for validation
+// GetMemoryContent retrieves memory content for validation.
 func (h *IntegrationTestHelper) GetMemoryContent(memory memoryiface.Memory) string {
 	ctx := context.Background()
 
@@ -553,15 +560,17 @@ func (h *IntegrationTestHelper) GetMemoryContent(memory memoryiface.Memory) stri
 
 // Skip Integration Tests
 
-// SkipIfNoRealProviders skips a test if real providers are not available
+// SkipIfNoRealProviders skips a test if real providers are not available.
 func SkipIfNoRealProviders(t *testing.T) {
+	t.Helper()
 	if !shouldUseRealProviders() {
 		t.Skip("Skipping integration test - real providers not configured")
 	}
 }
 
-// SkipIfShortMode skips a test if running in short mode
+// SkipIfShortMode skips a test if running in short mode.
 func SkipIfShortMode(t *testing.T) {
+	t.Helper()
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}

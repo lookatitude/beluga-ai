@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestSessionLifecycle_Validation validates session lifecycle from quickstart
+// TestSessionLifecycle_Validation validates session lifecycle from quickstart.
 func TestSessionLifecycle_Validation(t *testing.T) {
 	ctx := context.Background()
 
@@ -34,7 +34,7 @@ func TestSessionLifecycle_Validation(t *testing.T) {
 	// Process audio -> may transition to processing
 	audio := []byte{1, 2, 3}
 	err = voiceSession.ProcessAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Say -> may transition to speaking
 	handle, err := voiceSession.Say(ctx, "test")
@@ -47,7 +47,7 @@ func TestSessionLifecycle_Validation(t *testing.T) {
 	assert.Equal(t, "ended", string(voiceSession.GetState()))
 }
 
-// TestStateTransitions_Validation validates state transitions
+// TestStateTransitions_Validation validates state transitions.
 func TestStateTransitions_Validation(t *testing.T) {
 	ctx := context.Background()
 

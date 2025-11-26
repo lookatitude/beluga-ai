@@ -5,7 +5,9 @@ package package_pairs
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,10 +19,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestIntegrationLLMsMemory tests the integration between LLMs and Memory packages
+// TestIntegrationLLMsMemory tests the integration between LLMs and Memory packages.
 func TestIntegrationLLMsMemory(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name         string
@@ -50,7 +52,7 @@ func TestIntegrationLLMsMemory(t *testing.T) {
 
 			// Test conversation flow
 			err := helper.TestConversationFlow(llm, mockMemory, tt.exchanges)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Verify memory variables are set correctly
 			memoryVars := mockMemory.MemoryVariables()
@@ -59,14 +61,14 @@ func TestIntegrationLLMsMemory(t *testing.T) {
 			// Verify memory contains conversation history
 			ctx := context.Background()
 			vars, err := mockMemory.LoadMemoryVariables(ctx, map[string]any{"input": "test"})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.NotEmpty(t, vars)
 
 			// Test that memory persists across multiple LLM calls
 			for i := 0; i < 3; i++ {
 				inputs := map[string]any{"input": "Follow-up question"}
 				vars, err := mockMemory.LoadMemoryVariables(ctx, inputs)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify conversation history is available
 				if len(memoryVars) > 0 {
@@ -81,14 +83,14 @@ func TestIntegrationLLMsMemory(t *testing.T) {
 	}
 }
 
-// TestIntegrationLLMsMemoryErrorHandling tests error scenarios
+// TestIntegrationLLMsMemoryErrorHandling tests error scenarios.
 func TestIntegrationLLMsMemoryErrorHandling(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
-		name        string
 		setupError  func() (*llms.AdvancedMockChatModel, *memory.AdvancedMockMemory)
+		name        string
 		expectedErr bool
 	}{
 		{
@@ -96,7 +98,7 @@ func TestIntegrationLLMsMemoryErrorHandling(t *testing.T) {
 			setupError: func() (*llms.AdvancedMockChatModel, *memory.AdvancedMockMemory) {
 				llm := llms.NewAdvancedMockChatModel("error-test")
 				mem := memory.NewAdvancedMockMemory("error-memory", memory.MemoryTypeBuffer,
-					memory.WithMockError(true, fmt.Errorf("memory save error")))
+					memory.WithMockError(true, errors.New("memory save error")))
 				return llm, mem
 			},
 			expectedErr: true,
@@ -115,7 +117,7 @@ func TestIntegrationLLMsMemoryErrorHandling(t *testing.T) {
 			name: "llm_generation_error",
 			setupError: func() (*llms.AdvancedMockChatModel, *memory.AdvancedMockMemory) {
 				llm := llms.NewAdvancedMockChatModel("error-test",
-					llms.WithError(fmt.Errorf("LLM generation error")))
+					llms.WithError(errors.New("LLM generation error")))
 				mem := memory.NewAdvancedMockMemory("normal-memory", memory.MemoryTypeBuffer)
 				return llm, mem
 			},
@@ -131,22 +133,22 @@ func TestIntegrationLLMsMemoryErrorHandling(t *testing.T) {
 			err := helper.TestConversationFlow(llm, mem, 1)
 
 			if tt.expectedErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
-// TestIntegrationLLMsMemoryPerformance tests performance characteristics
+// TestIntegrationLLMsMemoryPerformance tests performance characteristics.
 func TestIntegrationLLMsMemoryPerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance tests in short mode")
 	}
 
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
 		name          string
@@ -193,10 +195,10 @@ func TestIntegrationLLMsMemoryPerformance(t *testing.T) {
 	}
 }
 
-// TestIntegrationLLMsMemoryConcurrency tests concurrent usage patterns
+// TestIntegrationLLMsMemoryConcurrency tests concurrent usage patterns.
 func TestIntegrationLLMsMemoryConcurrency(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	const numGoroutines = 5
 	const conversationsPerGoroutine = 3
@@ -221,10 +223,10 @@ func TestIntegrationLLMsMemoryConcurrency(t *testing.T) {
 	})
 }
 
-// TestIntegrationLLMsMemoryContextPropagation tests context propagation
+// TestIntegrationLLMsMemoryContextPropagation tests context propagation.
 func TestIntegrationLLMsMemoryContextPropagation(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	// Test that context and conversation history flows correctly between LLM and Memory
 	llm := helper.CreateMockLLM("context-llm")
@@ -273,13 +275,13 @@ func TestIntegrationLLMsMemoryContextPropagation(t *testing.T) {
 	// Save the new context
 	outputs2 := map[string]any{"output": response.GetContent()}
 	err = mem.SaveContext(ctx, inputs2, outputs2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestIntegrationLLMsMemoryStreamingWithMemory tests streaming responses with memory
+// TestIntegrationLLMsMemoryStreamingWithMemory tests streaming responses with memory.
 func TestIntegrationLLMsMemoryStreamingWithMemory(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	llm := helper.CreateMockLLM("streaming-llm")
 	mem := helper.CreateMockMemory("streaming-memory", memory.MemoryTypeBuffer)
@@ -302,42 +304,45 @@ func TestIntegrationLLMsMemoryStreamingWithMemory(t *testing.T) {
 
 	// Collect streaming response
 	var fullResponse string
+	var fullResponseSb305 strings.Builder
 	for chunk := range streamCh {
 		if chunk.Err != nil {
 			t.Errorf("Streaming error: %v", chunk.Err)
 			continue
 		}
-		fullResponse += chunk.Content
+		fullResponseSb305.WriteString(chunk.Content)
 	}
+	fullResponse += fullResponseSb305.String()
 
 	// Save streaming result to memory
 	outputs := map[string]any{"output": fullResponse}
 	err = mem.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify memory contains the streamed content
 	newVars, err := mem.LoadMemoryVariables(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, newVars)
 }
 
-// TestIntegrationLLMsMemoryMemoryTypes tests different memory types with LLMs
+// TestIntegrationLLMsMemoryMemoryTypes tests different memory types with LLMs.
 func TestIntegrationLLMsMemoryMemoryTypes(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	memoryTypes := []struct {
+		testFunc   func(t *testing.T, llm *llms.AdvancedMockChatModel, mem *memory.AdvancedMockMemory)
 		name       string
 		memoryType memory.MemoryType
-		testFunc   func(t *testing.T, llm *llms.AdvancedMockChatModel, mem *memory.AdvancedMockMemory)
 	}{
 		{
 			name:       "buffer_memory",
 			memoryType: memory.MemoryTypeBuffer,
 			testFunc: func(t *testing.T, llm *llms.AdvancedMockChatModel, mem *memory.AdvancedMockMemory) {
+				t.Helper()
 				// Test that buffer memory stores all conversation history
 				err := helper.TestConversationFlow(llm, mem, 3)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify all messages are retained
 				messages := mem.GetMessages()
@@ -348,9 +353,10 @@ func TestIntegrationLLMsMemoryMemoryTypes(t *testing.T) {
 			name:       "window_memory",
 			memoryType: memory.MemoryTypeBufferWindow,
 			testFunc: func(t *testing.T, llm *llms.AdvancedMockChatModel, mem *memory.AdvancedMockMemory) {
+				t.Helper()
 				// Test that window memory limits conversation history
 				err := helper.TestConversationFlow(llm, mem, 5)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Window memory should limit the number of stored messages
 				// Note: Mock implementation may not enforce this, but we test the interface
@@ -370,18 +376,19 @@ func TestIntegrationLLMsMemoryMemoryTypes(t *testing.T) {
 	}
 }
 
-// TestIntegrationLLMsMemoryRealWorldScenarios tests realistic usage patterns
+// TestIntegrationLLMsMemoryRealWorldScenarios tests realistic usage patterns.
 func TestIntegrationLLMsMemoryRealWorldScenarios(t *testing.T) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	scenarios := []struct {
-		name     string
 		scenario func(t *testing.T)
+		name     string
 	}{
 		{
 			name: "customer_support_conversation",
 			scenario: func(t *testing.T) {
+				t.Helper()
 				llm := helper.CreateMockLLM("support-llm")
 				mem := helper.CreateMockMemory("support-memory", memory.MemoryTypeBuffer)
 				ctx := context.Background()
@@ -436,6 +443,7 @@ func TestIntegrationLLMsMemoryRealWorldScenarios(t *testing.T) {
 		{
 			name: "multi_turn_reasoning",
 			scenario: func(t *testing.T) {
+				t.Helper()
 				llm := helper.CreateMockLLM("reasoning-llm")
 				mem := helper.CreateMockMemory("reasoning-memory", memory.MemoryTypeBuffer)
 
@@ -467,10 +475,10 @@ func TestIntegrationLLMsMemoryRealWorldScenarios(t *testing.T) {
 	}
 }
 
-// BenchmarkIntegrationLLMsMemory benchmarks LLM-Memory integration performance
+// BenchmarkIntegrationLLMsMemory benchmarks LLM-Memory integration performance.
 func BenchmarkIntegrationLLMsMemory(b *testing.B) {
 	helper := utils.NewIntegrationTestHelper()
-	defer helper.Cleanup(context.Background())
+	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	llm := helper.CreateMockLLM("benchmark-llm")
 	mem := helper.CreateMockMemory("benchmark-memory", memory.MemoryTypeBuffer)

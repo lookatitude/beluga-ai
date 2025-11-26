@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,30 +22,30 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Provider constants
+// Provider constants.
 const (
 	ProviderName = "ollama"
 	DefaultModel = "llama2"
 
-	// Error codes specific to Ollama
+	// Error codes specific to Ollama.
 	ErrCodeConnectionFailed = "ollama_connection_failed"
 	ErrCodeModelNotFound    = "ollama_model_not_found"
 	ErrCodeInvalidRequest   = "ollama_invalid_request"
 )
 
-// OllamaProvider implements the ChatModel interface for Ollama models
+// OllamaProvider implements the ChatModel interface for Ollama models.
 type OllamaProvider struct {
-	config      *llms.Config
-	baseURL     string
-	modelName   string
-	tools       []tools.Tool
 	metrics     llms.MetricsRecorder
+	config      *llms.Config
 	tracing     *common.TracingHelper
 	retryConfig *common.RetryConfig
 	client      *http.Client
+	baseURL     string
+	modelName   string
+	tools       []tools.Tool
 }
 
-// NewOllamaProvider creates a new Ollama provider instance
+// NewOllamaProvider creates a new Ollama provider instance.
 func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -82,7 +83,7 @@ func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error) {
 	return provider, nil
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "ollama.generate", ProviderName, o.modelName)
@@ -91,7 +92,7 @@ func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	o.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -124,7 +125,7 @@ func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message
 	return result, nil
 }
 
-// StreamChat implements the ChatModel interface
+// StreamChat implements the ChatModel interface.
 func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = o.tracing.StartOperation(ctx, "ollama.stream", ProviderName, o.modelName)
@@ -133,7 +134,7 @@ func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Messa
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	o.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	o.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -170,7 +171,7 @@ func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Messa
 	return wrappedChan, nil
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (o *OllamaProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	newProvider := *o // Create a copy
 	newProvider.tools = make([]tools.Tool, len(toolsToBind))
@@ -178,7 +179,7 @@ func (o *OllamaProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	return &newProvider
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (o *OllamaProvider) GetModelName() string {
 	return o.modelName
 }
@@ -187,7 +188,7 @@ func (o *OllamaProvider) GetProviderName() string {
 	return ProviderName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (o *OllamaProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -196,7 +197,7 @@ func (o *OllamaProvider) Invoke(ctx context.Context, input any, options ...core.
 	return o.Generate(ctx, messages, options...)
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (o *OllamaProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	errors := make([]error, len(inputs))
@@ -228,7 +229,7 @@ func (o *OllamaProvider) Batch(ctx context.Context, inputs []any, options ...cor
 			if combinedErr == nil {
 				combinedErr = err
 			} else {
-				combinedErr = fmt.Errorf("%v; %v", combinedErr, err)
+				combinedErr = fmt.Errorf("%w; %w", combinedErr, err)
 			}
 		}
 	}
@@ -236,7 +237,7 @@ func (o *OllamaProvider) Batch(ctx context.Context, inputs []any, options ...cor
 	return results, combinedErr
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (o *OllamaProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -264,7 +265,7 @@ func (o *OllamaProvider) Stream(ctx context.Context, input any, options ...core.
 	return outputChan, nil
 }
 
-// generateInternal performs the actual generation logic
+// generateInternal performs the actual generation logic.
 func (o *OllamaProvider) generateInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (schema.Message, error) {
 	// Convert messages to Ollama format
 	ollamaRequest, err := o.convertMessages(messages, opts, false)
@@ -284,7 +285,7 @@ func (o *OllamaProvider) generateInternal(ctx context.Context, messages []schema
 	}
 
 	// Parse response
-	var ollamaResp map[string]interface{}
+	var ollamaResp map[string]any
 	if err := json.NewDecoder(resp.Body).Decode(&ollamaResp); err != nil {
 		return nil, llms.NewLLMError("generateInternal", llms.ErrCodeInvalidResponse,
 			fmt.Errorf("failed to decode Ollama response: %w", err))
@@ -294,7 +295,7 @@ func (o *OllamaProvider) generateInternal(ctx context.Context, messages []schema
 	return o.convertOllamaResponse(ollamaResp)
 }
 
-// streamInternal performs the actual streaming logic
+// streamInternal performs the actual streaming logic.
 func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (<-chan iface.AIMessageChunk, error) {
 	// Convert messages to Ollama format with streaming enabled
 	ollamaRequest, err := o.convertMessages(messages, opts, true)
@@ -303,13 +304,14 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 	}
 
 	// Make streaming API call
+	//nolint:bodyclose // Response body is closed by goroutine that reads from it (streaming pattern)
 	resp, err := o.makeRequest(ctx, "POST", "/api/generate", ollamaRequest)
 	if err != nil {
 		return nil, o.handleOllamaError("streamInternal", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		_ = resp.Body.Close() //nolint:errcheck // Best effort to close body on error
 		return nil, o.handleHTTPError("streamInternal", resp)
 	}
 
@@ -317,7 +319,11 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 
 	go func() {
 		defer close(outputChan)
-		defer resp.Body.Close()
+		defer func() {
+			if resp != nil && resp.Body != nil {
+				_ = resp.Body.Close() //nolint:errcheck // Close body when goroutine completes
+			}
+		}()
 
 		scanner := bufio.NewScanner(resp.Body)
 
@@ -327,7 +333,7 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 				continue
 			}
 
-			var ollamaResp map[string]interface{}
+			var ollamaResp map[string]any
 			if err := json.Unmarshal([]byte(line), &ollamaResp); err != nil {
 				finalChunk := iface.AIMessageChunk{
 					Err: llms.WrapError("ollama.stream.parse", err),
@@ -380,8 +386,8 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 	return outputChan, nil
 }
 
-// convertMessages converts schema messages to Ollama format
-func (o *OllamaProvider) convertMessages(messages []schema.Message, opts *llms.CallOptions, stream bool) (map[string]interface{}, error) {
+// convertMessages converts schema messages to Ollama format.
+func (o *OllamaProvider) convertMessages(messages []schema.Message, opts *llms.CallOptions, stream bool) (map[string]any, error) {
 	// Ollama uses a simple prompt format, not structured messages like ChatGPT
 	var prompt strings.Builder
 
@@ -412,7 +418,7 @@ func (o *OllamaProvider) convertMessages(messages []schema.Message, opts *llms.C
 	prompt.WriteString("\n\nAssistant: ")
 
 	// Build Ollama request
-	request := map[string]interface{}{
+	request := map[string]any{
 		"model":  o.modelName,
 		"prompt": prompt.String(),
 		"stream": stream,
@@ -435,11 +441,11 @@ func (o *OllamaProvider) convertMessages(messages []schema.Message, opts *llms.C
 	return request, nil
 }
 
-// convertOllamaResponse converts Ollama response to schema.Message
-func (o *OllamaProvider) convertOllamaResponse(ollamaResp map[string]interface{}) (schema.Message, error) {
+// convertOllamaResponse converts Ollama response to schema.Message.
+func (o *OllamaProvider) convertOllamaResponse(ollamaResp map[string]any) (schema.Message, error) {
 	response, ok := ollamaResp["response"].(string)
 	if !ok {
-		return nil, fmt.Errorf("invalid Ollama response format: missing response field")
+		return nil, errors.New("invalid Ollama response format: missing response field")
 	}
 
 	aiMsg := schema.NewAIMessage(response)
@@ -447,7 +453,7 @@ func (o *OllamaProvider) convertOllamaResponse(ollamaResp map[string]interface{}
 	// Add usage information if available
 	if evalCount, ok := ollamaResp["eval_count"].(float64); ok {
 		args := aiMsg.AdditionalArgs()
-		args["usage"] = map[string]interface{}{
+		args["usage"] = map[string]any{
 			"eval_count":     int(evalCount),
 			"eval_duration":  ollamaResp["eval_duration"],
 			"total_duration": ollamaResp["total_duration"],
@@ -457,14 +463,14 @@ func (o *OllamaProvider) convertOllamaResponse(ollamaResp map[string]interface{}
 	return aiMsg, nil
 }
 
-// convertOllamaStreamResponse converts Ollama streaming response to AIMessageChunk
-func (o *OllamaProvider) convertOllamaStreamResponse(ollamaResp map[string]interface{}) (*iface.AIMessageChunk, error) {
+// convertOllamaStreamResponse converts Ollama streaming response to AIMessageChunk.
+func (o *OllamaProvider) convertOllamaStreamResponse(ollamaResp map[string]any) (*iface.AIMessageChunk, error) {
 	response, ok := ollamaResp["response"].(string)
 	if !ok {
 		// Check if this is the final message with done=true
 		if done, ok := ollamaResp["done"].(bool); ok && done {
 			chunk := &iface.AIMessageChunk{
-				AdditionalArgs: map[string]interface{}{
+				AdditionalArgs: map[string]any{
 					"finish_reason": "stop",
 				},
 			}
@@ -475,7 +481,7 @@ func (o *OllamaProvider) convertOllamaStreamResponse(ollamaResp map[string]inter
 
 	chunk := &iface.AIMessageChunk{
 		Content:        response,
-		AdditionalArgs: make(map[string]interface{}),
+		AdditionalArgs: make(map[string]any),
 	}
 
 	// Check if this is the final chunk
@@ -484,7 +490,7 @@ func (o *OllamaProvider) convertOllamaStreamResponse(ollamaResp map[string]inter
 
 		// Add usage information if available
 		if evalCount, ok := ollamaResp["eval_count"].(float64); ok {
-			chunk.AdditionalArgs["usage"] = map[string]interface{}{
+			chunk.AdditionalArgs["usage"] = map[string]any{
 				"eval_count":     int(evalCount),
 				"eval_duration":  ollamaResp["eval_duration"],
 				"total_duration": ollamaResp["total_duration"],
@@ -495,8 +501,8 @@ func (o *OllamaProvider) convertOllamaStreamResponse(ollamaResp map[string]inter
 	return chunk, nil
 }
 
-// makeRequest makes an HTTP request to the Ollama server
-func (o *OllamaProvider) makeRequest(ctx context.Context, method, path string, body interface{}) (*http.Response, error) {
+// makeRequest makes an HTTP request to the Ollama server.
+func (o *OllamaProvider) makeRequest(ctx context.Context, method, path string, body any) (*http.Response, error) {
 	var bodyReader io.Reader
 	if body != nil {
 		bodyBytes, err := json.Marshal(body)
@@ -513,10 +519,14 @@ func (o *OllamaProvider) makeRequest(ctx context.Context, method, path string, b
 
 	req.Header.Set("Content-Type", "application/json")
 
-	return o.client.Do(req)
+	resp, err := o.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("HTTP request failed: %w", err)
+	}
+	return resp, nil
 }
 
-// handleHTTPError handles HTTP errors from Ollama
+// handleHTTPError handles HTTP errors from Ollama.
 func (o *OllamaProvider) handleHTTPError(operation string, resp *http.Response) error {
 	body, _ := io.ReadAll(resp.Body)
 	bodyStr := string(body)
@@ -543,7 +553,7 @@ func (o *OllamaProvider) handleHTTPError(operation string, resp *http.Response) 
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
-// handleOllamaError converts Ollama errors to LLM errors
+// handleOllamaError converts Ollama errors to LLM errors.
 func (o *OllamaProvider) handleOllamaError(operation string, err error) error {
 	if err == nil {
 		return nil
@@ -567,7 +577,7 @@ func (o *OllamaProvider) handleOllamaError(operation string, err error) error {
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
-// buildCallOptions merges configuration options with call-specific options
+// buildCallOptions merges configuration options with call-specific options.
 func (o *OllamaProvider) buildCallOptions(options ...core.Option) *llms.CallOptions {
 	callOpts := llms.NewCallOptions()
 
@@ -596,9 +606,9 @@ func (o *OllamaProvider) buildCallOptions(options ...core.Option) *llms.CallOpti
 	return callOpts
 }
 
-// CheckHealth implements the HealthChecker interface
-func (o *OllamaProvider) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (o *OllamaProvider) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":       "healthy",
 		"provider":    "ollama",
 		"model":       o.modelName,
@@ -608,7 +618,7 @@ func (o *OllamaProvider) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Factory function for creating Ollama providers
+// Factory function for creating Ollama providers.
 func NewOllamaProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOllamaProvider(config)

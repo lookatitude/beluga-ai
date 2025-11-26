@@ -8,4 +8,3 @@ func TestLargeIteration(t *testing.T) {
 		_ = i * 2
 	}
 }
-

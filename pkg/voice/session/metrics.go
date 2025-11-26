@@ -2,12 +2,13 @@ package session
 
 import (
 	"context"
+	"time"
+
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"time"
 )
 
-// MetricsRecorder defines the interface for recording metrics
+// MetricsRecorder defines the interface for recording metrics.
 type MetricsRecorder interface {
 	RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration)
 	RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration)
@@ -16,33 +17,33 @@ type MetricsRecorder interface {
 	DecrementActiveSessions(ctx context.Context)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled
+// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
 type NoOpMetrics struct{}
 
-// NewNoOpMetrics creates a new no-operation metrics recorder
+// NewNoOpMetrics creates a new no-operation metrics recorder.
 func NewNoOpMetrics() *NoOpMetrics {
 	return &NoOpMetrics{}
 }
 
-// RecordSessionStart is a no-op implementation
+// RecordSessionStart is a no-op implementation.
 func (n *NoOpMetrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration) {
 }
 
-// RecordSessionStop is a no-op implementation
+// RecordSessionStop is a no-op implementation.
 func (n *NoOpMetrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration) {
 }
 
-// RecordSessionError is a no-op implementation
+// RecordSessionError is a no-op implementation.
 func (n *NoOpMetrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration) {
 }
 
-// IncrementActiveSessions is a no-op implementation
+// IncrementActiveSessions is a no-op implementation.
 func (n *NoOpMetrics) IncrementActiveSessions(ctx context.Context) {}
 
-// DecrementActiveSessions is a no-op implementation
+// DecrementActiveSessions is a no-op implementation.
 func (n *NoOpMetrics) DecrementActiveSessions(ctx context.Context) {}
 
-// Metrics contains all the metrics for Session operations
+// Metrics contains all the metrics for Session operations.
 type Metrics struct {
 	sessionsStarted  metric.Int64Counter
 	sessionsStopped  metric.Int64Counter
@@ -52,7 +53,7 @@ type Metrics struct {
 	operationLatency metric.Float64Histogram
 }
 
-// NewMetrics creates a new Metrics instance
+// NewMetrics creates a new Metrics instance.
 func NewMetrics(meter metric.Meter) *Metrics {
 	m := &Metrics{}
 
@@ -66,7 +67,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	return m
 }
 
-// RecordSessionStart records a session start operation
+// RecordSessionStart records a session start operation.
 func (m *Metrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
@@ -76,7 +77,7 @@ func (m *Metrics) RecordSessionStart(ctx context.Context, sessionID string, dura
 	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// RecordSessionStop records a session stop operation
+// RecordSessionStop records a session stop operation.
 func (m *Metrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
@@ -86,7 +87,7 @@ func (m *Metrics) RecordSessionStop(ctx context.Context, sessionID string, durat
 	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// RecordSessionError records an error
+// RecordSessionError records an error.
 func (m *Metrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration) {
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
@@ -96,12 +97,12 @@ func (m *Metrics) RecordSessionError(ctx context.Context, sessionID, errorCode s
 	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
 }
 
-// IncrementActiveSessions increments the active sessions counter
+// IncrementActiveSessions increments the active sessions counter.
 func (m *Metrics) IncrementActiveSessions(ctx context.Context) {
 	m.sessionsActive.Add(ctx, 1)
 }
 
-// DecrementActiveSessions decrements the active sessions counter
+// DecrementActiveSessions decrements the active sessions counter.
 func (m *Metrics) DecrementActiveSessions(ctx context.Context) {
 	m.sessionsActive.Add(ctx, -1)
 }

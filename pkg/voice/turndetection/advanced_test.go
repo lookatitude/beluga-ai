@@ -6,6 +6,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestTurnDetector_DetectTurn(t *testing.T) {
@@ -56,9 +57,9 @@ func TestTurnDetector_DetectTurn(t *testing.T) {
 			turn, err := tt.detector.DetectTurn(ctx, tt.audio)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedTurn, turn)
 			}
 		})

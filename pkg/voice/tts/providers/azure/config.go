@@ -7,7 +7,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
 )
 
-// AzureConfig extends the base TTS config with Azure Speech Services specific settings
+// AzureConfig extends the base TTS config with Azure Speech Services specific settings.
 type AzureConfig struct {
 	*tts.Config
 
@@ -39,7 +39,7 @@ type AzureConfig struct {
 	Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" default:"30s"`
 }
 
-// DefaultAzureConfig returns a default Azure Speech Services configuration
+// DefaultAzureConfig returns a default Azure Speech Services configuration.
 func DefaultAzureConfig() *AzureConfig {
 	return &AzureConfig{
 		Config:      tts.DefaultConfig(),
@@ -53,7 +53,7 @@ func DefaultAzureConfig() *AzureConfig {
 	}
 }
 
-// GetBaseURL returns the base URL, constructing it from region if not set
+// GetBaseURL returns the base URL, constructing it from region if not set.
 func (c *AzureConfig) GetBaseURL() string {
 	if c.BaseURL != "" {
 		return c.BaseURL

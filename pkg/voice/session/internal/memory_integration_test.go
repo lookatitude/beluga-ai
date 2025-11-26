@@ -18,7 +18,7 @@ func TestMemoryIntegration_Store(t *testing.T) {
 
 	mi.Store("key1", "value1")
 	mi.Store("key2", 42)
-	mi.Store("key3", map[string]interface{}{"nested": "value"})
+	mi.Store("key3", map[string]any{"nested": "value"})
 
 	// Verify stored values
 	value, exists := mi.Retrieve("key1")
@@ -75,7 +75,7 @@ func TestMemoryIntegration_GetContext(t *testing.T) {
 
 	context := mi.GetContext()
 	assert.NotNil(t, context)
-	assert.Equal(t, 3, len(context))
+	assert.Len(t, context, 3)
 	assert.Equal(t, "value1", context["key1"])
 	assert.Equal(t, 42, context["key2"])
 	assert.Equal(t, true, context["key3"])
@@ -86,7 +86,7 @@ func TestMemoryIntegration_GetContext_Empty(t *testing.T) {
 
 	context := mi.GetContext()
 	assert.NotNil(t, context)
-	assert.Equal(t, 0, len(context))
+	assert.Empty(t, context)
 }
 
 func TestMemoryIntegration_ConcurrentAccess(t *testing.T) {

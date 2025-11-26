@@ -14,37 +14,37 @@ import (
 
 // Use iface.Span instead of local interface
 
-// spanImpl implements the iface.Span interface
+// spanImpl implements the iface.Span interface.
 type spanImpl struct {
-	ID           string                 `json:"id"`
-	TraceID      string                 `json:"trace_id"`
-	ParentID     string                 `json:"parent_id,omitempty"`
-	Name         string                 `json:"name"`
-	Service      string                 `json:"service"`
-	StartTime    time.Time              `json:"start_time"`
-	EndTime      *time.Time             `json:"end_time,omitempty"`
-	SpanDuration *time.Duration         `json:"duration,omitempty"`
-	Tags         map[string]interface{} `json:"tags,omitempty"`
-	Logs         []SpanLog              `json:"logs,omitempty"`
-	Status       string                 `json:"status"`
-	Error        string                 `json:"error,omitempty"`
+	StartTime    time.Time      `json:"start_time"`
+	EndTime      *time.Time     `json:"end_time,omitempty"`
+	SpanDuration *time.Duration `json:"duration,omitempty"`
+	Tags         map[string]any `json:"tags,omitempty"`
+	ID           string         `json:"id"`
+	TraceID      string         `json:"trace_id"`
+	ParentID     string         `json:"parent_id,omitempty"`
+	Name         string         `json:"name"`
+	Service      string         `json:"service"`
+	Status       string         `json:"status"`
+	Error        string         `json:"error,omitempty"`
+	Logs         []SpanLog      `json:"logs,omitempty"`
 }
 
-// Tracer provides distributed tracing functionality
+// Tracer provides distributed tracing functionality.
 type Tracer struct {
-	mu      sync.RWMutex
 	spans   map[string]iface.Span
 	service string
+	mu      sync.RWMutex
 }
 
-// SpanLog represents a log entry within a span
+// SpanLog represents a log entry within a span.
 type SpanLog struct {
-	Timestamp time.Time              `json:"timestamp"`
-	Message   string                 `json:"message"`
-	Fields    map[string]interface{} `json:"fields,omitempty"`
+	Timestamp time.Time      `json:"timestamp"`
+	Fields    map[string]any `json:"fields,omitempty"`
+	Message   string         `json:"message"`
 }
 
-// NewTracer creates a new tracer
+// NewTracer creates a new tracer.
 func NewTracer(service string) *Tracer {
 	return &Tracer{
 		spans:   make(map[string]iface.Span),
@@ -52,7 +52,7 @@ func NewTracer(service string) *Tracer {
 	}
 }
 
-// StartSpan starts a new span
+// StartSpan starts a new span.
 func (t *Tracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanOption) (context.Context, iface.Span) {
 	spanID := generateID()
 	traceID := spanID
@@ -75,7 +75,7 @@ func (t *Tracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanO
 		Name:      name,
 		Service:   t.service,
 		StartTime: time.Now(),
-		Tags:      make(map[string]interface{}),
+		Tags:      make(map[string]any),
 		Logs:      make([]SpanLog, 0),
 		Status:    "started",
 	}
@@ -97,7 +97,7 @@ func (t *Tracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanO
 	return ctx, span
 }
 
-// FinishSpan finishes a span
+// FinishSpan finishes a span.
 func (t *Tracer) FinishSpan(span iface.Span) {
 	if spanImpl, ok := span.(*spanImpl); ok {
 		now := time.Now()
@@ -111,7 +111,7 @@ func (t *Tracer) FinishSpan(span iface.Span) {
 	}
 }
 
-// GetSpan retrieves a span by ID
+// GetSpan retrieves a span by ID.
 func (t *Tracer) GetSpan(spanID string) (iface.Span, bool) {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -119,7 +119,7 @@ func (t *Tracer) GetSpan(spanID string) (iface.Span, bool) {
 	return span, exists
 }
 
-// GetTraceSpans retrieves all spans for a trace
+// GetTraceSpans retrieves all spans for a trace.
 func (t *Tracer) GetTraceSpans(traceID string) []iface.Span {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
@@ -133,18 +133,18 @@ func (t *Tracer) GetTraceSpans(traceID string) []iface.Span {
 	return spans
 }
 
-// SpanOption represents functional options for span configuration
+// SpanOption represents functional options for span configuration.
 type SpanOption func(iface.Span)
 
-// WithTag adds a tag to the span
-func WithTag(key string, value interface{}) SpanOption {
+// WithTag adds a tag to the span.
+func WithTag(key string, value any) SpanOption {
 	return func(s iface.Span) {
 		s.SetTag(key, value)
 	}
 }
 
-// WithTags adds multiple tags to the span
-func WithTags(tags map[string]interface{}) SpanOption {
+// WithTags adds multiple tags to the span.
+func WithTags(tags map[string]any) SpanOption {
 	return func(s iface.Span) {
 		for k, v := range tags {
 			s.SetTag(k, v)
@@ -152,7 +152,7 @@ func WithTags(tags map[string]interface{}) SpanOption {
 	}
 }
 
-// SpanFromContext extracts the current span from context
+// SpanFromContext extracts the current span from context.
 func SpanFromContext(ctx context.Context) iface.Span {
 	if span, ok := ctx.Value("current_span").(*spanImpl); ok {
 		return span
@@ -160,7 +160,7 @@ func SpanFromContext(ctx context.Context) iface.Span {
 	return nil
 }
 
-// TraceIDFromContext extracts the trace ID from context
+// TraceIDFromContext extracts the trace ID from context.
 func TraceIDFromContext(ctx context.Context) string {
 	if traceID, ok := ctx.Value("trace_id").(string); ok {
 		return traceID
@@ -168,7 +168,7 @@ func TraceIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-// SpanIDFromContext extracts the span ID from context
+// SpanIDFromContext extracts the span ID from context.
 func SpanIDFromContext(ctx context.Context) string {
 	if spanID, ok := ctx.Value("span_id").(string); ok {
 		return spanID
@@ -176,8 +176,8 @@ func SpanIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-// Log adds a log entry to a span
-func (s *spanImpl) Log(message string, fields ...map[string]interface{}) {
+// Log adds a log entry to a span.
+func (s *spanImpl) Log(message string, fields ...map[string]any) {
 	logEntry := SpanLog{
 		Timestamp: time.Now(),
 		Message:   message,
@@ -190,7 +190,7 @@ func (s *spanImpl) Log(message string, fields ...map[string]interface{}) {
 	s.Logs = append(s.Logs, logEntry)
 }
 
-// SetError sets an error on the span
+// SetError sets an error on the span.
 func (s *spanImpl) SetError(err error) {
 	if err != nil {
 		s.Error = err.Error()
@@ -200,20 +200,20 @@ func (s *spanImpl) SetError(err error) {
 	}
 }
 
-// SetStatus sets the status of the span
+// SetStatus sets the status of the span.
 func (s *spanImpl) SetStatus(status string) {
 	s.Status = status
 }
 
-// SetTag sets a tag on the span
-func (s *spanImpl) SetTag(key string, value interface{}) {
+// SetTag sets a tag on the span.
+func (s *spanImpl) SetTag(key string, value any) {
 	if s.Tags == nil {
-		s.Tags = make(map[string]interface{})
+		s.Tags = make(map[string]any)
 	}
 	s.Tags[key] = value
 }
 
-// GetDuration returns the duration of the span
+// GetDuration returns the duration of the span.
 func (s *spanImpl) GetDuration() time.Duration {
 	if s.SpanDuration != nil {
 		return *s.SpanDuration
@@ -224,19 +224,19 @@ func (s *spanImpl) GetDuration() time.Duration {
 	return s.EndTime.Sub(s.StartTime)
 }
 
-// IsFinished returns true if the span is finished
+// IsFinished returns true if the span is finished.
 func (s *spanImpl) IsFinished() bool {
 	return s.EndTime != nil
 }
 
-// generateID generates a random hex ID
+// generateID generates a random hex ID.
 func generateID() string {
 	bytes := make([]byte, 8)
-	rand.Read(bytes)
+	_, _ = rand.Read(bytes)
 	return hex.EncodeToString(bytes)
 }
 
-// TraceFunc is a convenience function for tracing function calls
+// TraceFunc is a convenience function for tracing function calls.
 func TraceFunc(ctx context.Context, tracer *Tracer, name string, fn func(context.Context) error) error {
 	ctx, span := tracer.StartSpan(ctx, name)
 	defer tracer.FinishSpan(span)
@@ -248,8 +248,8 @@ func TraceFunc(ctx context.Context, tracer *Tracer, name string, fn func(context
 	return err
 }
 
-// TraceMethod is a convenience function for tracing method calls
-func TraceMethod(ctx context.Context, tracer *Tracer, methodName string, receiver interface{}, fn func() error) error {
+// TraceMethod is a convenience function for tracing method calls.
+func TraceMethod(ctx context.Context, tracer *Tracer, methodName string, receiver any, fn func() error) error {
 	spanName := fmt.Sprintf("%T.%s", receiver, methodName)
 	ctx, span := tracer.StartSpan(ctx, spanName)
 	defer tracer.FinishSpan(span)

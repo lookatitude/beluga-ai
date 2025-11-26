@@ -1,32 +1,23 @@
 package orchestration
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 )
 
-// Config holds the main configuration for the orchestration package
+// Config holds the main configuration for the orchestration package.
 type Config struct {
-	// Chain configuration
-	Chain ChainConfig `mapstructure:"chain" yaml:"chain"`
-
-	// Graph configuration
-	Graph GraphConfig `mapstructure:"graph" yaml:"graph"`
-
-	// Workflow configuration
-	Workflow WorkflowConfig `mapstructure:"workflow" yaml:"workflow"`
-
-	// Observability configuration
 	Observability ObservabilityConfig `mapstructure:"observability" yaml:"observability"`
-
-	// Enabled features
-	Enabled EnabledFeatures `mapstructure:"enabled" yaml:"enabled"`
+	Workflow      WorkflowConfig      `mapstructure:"workflow" yaml:"workflow"`
+	Graph         GraphConfig         `mapstructure:"graph" yaml:"graph"`
+	Chain         ChainConfig         `mapstructure:"chain" yaml:"chain"`
+	Enabled       EnabledFeatures     `mapstructure:"enabled" yaml:"enabled"`
 }
 
-// ChainConfig holds configuration specific to chain orchestration
+// ChainConfig holds configuration specific to chain orchestration.
 type ChainConfig struct {
 	DefaultTimeout      time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"5m"`
 	DefaultRetries      int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"3"`
@@ -34,7 +25,7 @@ type ChainConfig struct {
 	EnableMemoryPooling bool          `mapstructure:"enable_memory_pooling" yaml:"enable_memory_pooling" default:"true"`
 }
 
-// GraphConfig holds configuration specific to graph orchestration
+// GraphConfig holds configuration specific to graph orchestration.
 type GraphConfig struct {
 	DefaultTimeout          time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"10m"`
 	DefaultRetries          int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"3"`
@@ -43,24 +34,24 @@ type GraphConfig struct {
 	QueueSize               int           `mapstructure:"queue_size" yaml:"queue_size" validate:"min=1,max=100000" default:"100"`
 }
 
-// ObservabilityConfig holds observability-related configuration
+// ObservabilityConfig holds observability-related configuration.
 type ObservabilityConfig struct {
-	EnableMetrics       bool          `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-	EnableTracing       bool          `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
 	MetricsPrefix       string        `mapstructure:"metrics_prefix" yaml:"metrics_prefix" default:"beluga_orchestration"`
 	HealthCheckInterval time.Duration `mapstructure:"health_check_interval" yaml:"health_check_interval" default:"30s"`
+	EnableMetrics       bool          `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
+	EnableTracing       bool          `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
 }
 
-// WorkflowConfig holds configuration specific to workflow orchestration
+// WorkflowConfig holds configuration specific to workflow orchestration.
 type WorkflowConfig struct {
+	TaskQueue              string        `mapstructure:"task_queue" yaml:"task_queue" validate:"required,min=1,max=255" default:"beluga-workflows"`
 	DefaultTimeout         time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"min=1ns,max=24h" default:"30m"`
 	DefaultRetries         int           `mapstructure:"default_retries" yaml:"default_retries" validate:"min=0,max=20" default:"5"`
-	TaskQueue              string        `mapstructure:"task_queue" yaml:"task_queue" validate:"required,min=1,max=255" default:"beluga-workflows"`
-	EnablePersistence      bool          `mapstructure:"enable_persistence" yaml:"enable_persistence" default:"false"`
 	MaxConcurrentWorkflows int           `mapstructure:"max_concurrent_workflows" yaml:"max_concurrent_workflows" validate:"min=1,max=1000" default:"50"`
+	EnablePersistence      bool          `mapstructure:"enable_persistence" yaml:"enable_persistence" default:"false"`
 }
 
-// EnabledFeatures holds configuration for enabling/disabling features
+// EnabledFeatures holds configuration for enabling/disabling features.
 type EnabledFeatures struct {
 	Chains     bool `mapstructure:"chains" yaml:"chains" default:"true"`
 	Graphs     bool `mapstructure:"graphs" yaml:"graphs" default:"true"`
@@ -69,7 +60,7 @@ type EnabledFeatures struct {
 	MessageBus bool `mapstructure:"message_bus" yaml:"message_bus" default:"true"`
 }
 
-// Validate validates the configuration
+// Validate validates the configuration.
 func (c *Config) Validate() error {
 	validate := validator.New()
 
@@ -79,21 +70,21 @@ func (c *Config) Validate() error {
 
 	// Custom validations
 	if c.Chain.MaxConcurrentChains < 1 {
-		return iface.NewOrchestratorError("config_validation", fmt.Errorf("max_concurrent_chains must be >= 1"), "invalid_config")
+		return iface.NewOrchestratorError("config_validation", errors.New("max_concurrent_chains must be >= 1"), "invalid_config")
 	}
 
 	if c.Graph.MaxWorkers < 1 {
-		return iface.NewOrchestratorError("config_validation", fmt.Errorf("max_workers must be >= 1"), "invalid_config")
+		return iface.NewOrchestratorError("config_validation", errors.New("max_workers must be >= 1"), "invalid_config")
 	}
 
 	if c.Workflow.MaxConcurrentWorkflows < 1 {
-		return iface.NewOrchestratorError("config_validation", fmt.Errorf("max_concurrent_workflows must be >= 1"), "invalid_config")
+		return iface.NewOrchestratorError("config_validation", errors.New("max_concurrent_workflows must be >= 1"), "invalid_config")
 	}
 
 	return nil
 }
 
-// DefaultConfig returns a default configuration
+// DefaultConfig returns a default configuration.
 func DefaultConfig() *Config {
 	return &Config{
 		Chain: ChainConfig{
@@ -132,54 +123,54 @@ func DefaultConfig() *Config {
 	}
 }
 
-// Option represents a functional option for configuring the orchestrator
+// Option represents a functional option for configuring the orchestrator.
 type Option func(*Config) error
 
-// WithChainTimeout sets the default chain timeout
+// WithChainTimeout sets the default chain timeout.
 func WithChainTimeout(timeout time.Duration) Option {
 	return func(c *Config) error {
 		if timeout <= 0 {
-			return fmt.Errorf("timeout must be positive")
+			return errors.New("timeout must be positive")
 		}
 		c.Chain.DefaultTimeout = timeout
 		return nil
 	}
 }
 
-// WithGraphMaxWorkers sets the maximum number of workers for graph execution
+// WithGraphMaxWorkers sets the maximum number of workers for graph execution.
 func WithGraphMaxWorkers(workers int) Option {
 	return func(c *Config) error {
 		if workers < 1 {
-			return fmt.Errorf("max workers must be >= 1")
+			return errors.New("max workers must be >= 1")
 		}
 		c.Graph.MaxWorkers = workers
 		return nil
 	}
 }
 
-// WithWorkflowTaskQueue sets the workflow task queue
+// WithWorkflowTaskQueue sets the workflow task queue.
 func WithWorkflowTaskQueue(queue string) Option {
 	return func(c *Config) error {
 		if queue == "" {
-			return fmt.Errorf("task queue cannot be empty")
+			return errors.New("task queue cannot be empty")
 		}
 		c.Workflow.TaskQueue = queue
 		return nil
 	}
 }
 
-// WithMetricsPrefix sets the metrics prefix
+// WithMetricsPrefix sets the metrics prefix.
 func WithMetricsPrefix(prefix string) Option {
 	return func(c *Config) error {
 		if prefix == "" {
-			return fmt.Errorf("metrics prefix cannot be empty")
+			return errors.New("metrics prefix cannot be empty")
 		}
 		c.Observability.MetricsPrefix = prefix
 		return nil
 	}
 }
 
-// WithFeatures enables/disables specific features
+// WithFeatures enables/disables specific features.
 func WithFeatures(features EnabledFeatures) Option {
 	return func(c *Config) error {
 		c.Enabled = features
@@ -187,7 +178,7 @@ func WithFeatures(features EnabledFeatures) Option {
 	}
 }
 
-// NewConfig creates a new configuration with the given options
+// NewConfig creates a new configuration with the given options.
 func NewConfig(opts ...Option) (*Config, error) {
 	config := DefaultConfig()
 

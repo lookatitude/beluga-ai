@@ -5,17 +5,17 @@ import (
 	"sync"
 )
 
-// FinalHandler manages handling of final transcripts
+// FinalHandler manages handling of final transcripts.
 type FinalHandler struct {
-	mu           sync.RWMutex
 	handler      func(transcript string)
 	lastFinal    string
 	finalCount   int
+	mu           sync.RWMutex
 	useIfSimilar bool
 	alwaysUse    bool
 }
 
-// NewFinalHandler creates a new final handler
+// NewFinalHandler creates a new final handler.
 func NewFinalHandler(handler func(transcript string), useIfSimilar, alwaysUse bool) *FinalHandler {
 	return &FinalHandler{
 		handler:      handler,
@@ -25,8 +25,8 @@ func NewFinalHandler(handler func(transcript string), useIfSimilar, alwaysUse bo
 	}
 }
 
-// Handle processes a final transcript
-func (fh *FinalHandler) Handle(ctx context.Context, transcript string, preemptiveResponse string) {
+// Handle processes a final transcript.
+func (fh *FinalHandler) Handle(ctx context.Context, transcript, preemptiveResponse string) {
 	fh.mu.Lock()
 	fh.lastFinal = transcript
 	fh.finalCount++
@@ -54,7 +54,7 @@ func (fh *FinalHandler) Handle(ctx context.Context, transcript string, preemptiv
 	}
 }
 
-// calculateStringSimilarity calculates a simple similarity score between two strings
+// calculateStringSimilarity calculates a simple similarity score between two strings.
 func calculateStringSimilarity(s1, s2 string) float64 {
 	// Simplified similarity calculation
 	// In production, use proper string similarity algorithms (Levenshtein, Jaro-Winkler, etc.)
@@ -83,7 +83,7 @@ func calculateStringSimilarity(s1, s2 string) float64 {
 	return float64(overlap) / float64(max(len(words1), len(words2)))
 }
 
-// splitWords splits a string into words (simplified)
+// splitWords splits a string into words (simplified).
 func splitWords(s string) []string {
 	// Simplified word splitting - in production, use proper tokenization
 	words := []string{}
@@ -104,7 +104,7 @@ func splitWords(s string) []string {
 	return words
 }
 
-// max returns the maximum of two integers
+// max returns the maximum of two integers.
 func max(a, b int) int {
 	if a > b {
 		return a
@@ -112,14 +112,14 @@ func max(a, b int) int {
 	return b
 }
 
-// GetLastFinal returns the last final transcript
+// GetLastFinal returns the last final transcript.
 func (fh *FinalHandler) GetLastFinal() string {
 	fh.mu.RLock()
 	defer fh.mu.RUnlock()
 	return fh.lastFinal
 }
 
-// GetFinalCount returns the number of final transcripts received
+// GetFinalCount returns the number of final transcripts received.
 func (fh *FinalHandler) GetFinalCount() int {
 	fh.mu.RLock()
 	defer fh.mu.RUnlock()

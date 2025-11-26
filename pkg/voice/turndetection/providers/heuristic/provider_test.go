@@ -12,8 +12,8 @@ import (
 
 func TestNewHeuristicProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *turndetection.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -41,10 +41,10 @@ func TestNewHeuristicProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewHeuristicProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -65,7 +65,7 @@ func TestHeuristicProvider_DetectTurn(t *testing.T) {
 
 	// Test detection
 	turn, err := provider.DetectTurn(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Result depends on implementation, but should not error
 	_ = turn
 }
@@ -84,12 +84,12 @@ func TestHeuristicProvider_DetectTurnWithSilence(t *testing.T) {
 
 	// Test with silence duration below threshold
 	turn, err := provider.DetectTurnWithSilence(ctx, audio, 100*time.Millisecond)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, turn)
 
 	// Test with silence duration above threshold
 	turn, err = provider.DetectTurnWithSilence(ctx, audio, 600*time.Millisecond)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, turn)
 }
 

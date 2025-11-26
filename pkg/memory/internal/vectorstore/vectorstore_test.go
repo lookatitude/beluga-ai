@@ -12,9 +12,10 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// MockRetriever is a mock implementation of core.Retriever for testing
+// MockRetriever is a mock implementation of core.Retriever for testing.
 type MockRetriever struct {
 	invokeFunc           func(ctx context.Context, input any, options ...core.Option) (any, error)
 	batchFunc            func(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -104,7 +105,7 @@ func (m *MockRetriever) AddDocuments(ctx context.Context, documents []schema.Doc
 	return ids, nil
 }
 
-// MockEmbedder is a mock implementation of embeddingsiface.Embedder for testing
+// MockEmbedder is a mock implementation of embeddingsiface.Embedder for testing.
 type MockEmbedder struct {
 	embedFunc           func(ctx context.Context, texts []string) ([][]float32, error)
 	embedDocumentsFunc  func(ctx context.Context, texts []string) ([][]float32, error)
@@ -152,7 +153,7 @@ func (m *MockEmbedder) GetDimension(ctx context.Context) (int, error) {
 	return 3, nil
 }
 
-// MockVectorStore is a mock implementation of vectorstores.VectorStore for testing
+// MockVectorStore is a mock implementation of vectorstores.VectorStore for testing.
 type MockVectorStore struct {
 	similaritySearchFunc         func(ctx context.Context, queryVector []float32, k int, options ...vectorstores.Option) ([]schema.Document, []float32, error)
 	similaritySearchByQueryFunc  func(ctx context.Context, query string, k int, embedder vectorstores.Embedder, options ...vectorstores.Option) ([]schema.Document, []float32, error)
@@ -242,7 +243,7 @@ func (m *MockVectorStore) GetName() string {
 	return m.name
 }
 
-// TestNewVectorStoreMemory tests the constructor
+// TestNewVectorStoreMemory tests the constructor.
 func TestNewVectorStoreMemory(t *testing.T) {
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "test_memory", false, 5)
@@ -254,7 +255,7 @@ func TestNewVectorStoreMemory(t *testing.T) {
 	assert.Equal(t, 5, memory.NumDocsToKeep)
 }
 
-// TestNewVectorStoreMemory_Defaults tests default values
+// TestNewVectorStoreMemory_Defaults tests default values.
 func TestNewVectorStoreMemory_Defaults(t *testing.T) {
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "", true, 0)
@@ -264,7 +265,7 @@ func TestNewVectorStoreMemory_Defaults(t *testing.T) {
 	assert.Equal(t, 4, memory.NumDocsToKeep) // Default number of documents
 }
 
-// TestVectorStoreMemory_MemoryVariables tests the MemoryVariables method
+// TestVectorStoreMemory_MemoryVariables tests the MemoryVariables method.
 func TestVectorStoreMemory_MemoryVariables(t *testing.T) {
 	retriever := NewMockRetriever()
 	memory := NewVectorStoreMemory(retriever, "custom_memory", false, 5)
@@ -273,7 +274,7 @@ func TestVectorStoreMemory_MemoryVariables(t *testing.T) {
 	assert.Equal(t, []string{"custom_memory"}, variables)
 }
 
-// TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs tests loading with ReturnDocs=true
+// TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs tests loading with ReturnDocs=true.
 func TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs(t *testing.T) {
 	ctx := context.Background()
 
@@ -294,7 +295,7 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs(t *testing.T) {
 	inputs := map[string]any{"query": "test query"}
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "memory")
 
 	docs, ok := vars["memory"].([]schema.Document)
@@ -302,7 +303,7 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnDocs(t *testing.T) {
 	assert.Len(t, docs, 2) // Should be limited to NumDocsToKeep
 }
 
-// TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString tests loading with ReturnDocs=false
+// TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString tests loading with ReturnDocs=false.
 func TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.T) {
 	ctx := context.Background()
 
@@ -322,7 +323,7 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.
 	inputs := map[string]any{"query": "test query"}
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "memory")
 
 	formatted, ok := vars["memory"].(string)
@@ -332,7 +333,7 @@ func TestVectorStoreMemory_LoadMemoryVariables_ReturnFormattedString(t *testing.
 	assert.Contains(t, formatted, "Document 2")
 }
 
-// TestVectorStoreMemory_LoadMemoryVariables_AutoDetectInputKey tests automatic input key detection
+// TestVectorStoreMemory_LoadMemoryVariables_AutoDetectInputKey tests automatic input key detection.
 func TestVectorStoreMemory_LoadMemoryVariables_AutoDetectInputKey(t *testing.T) {
 	ctx := context.Background()
 
@@ -373,16 +374,16 @@ func TestVectorStoreMemory_LoadMemoryVariables_AutoDetectInputKey(t *testing.T) 
 		t.Run(tc.name, func(t *testing.T) {
 			vars, err := memory.LoadMemoryVariables(ctx, tc.inputs)
 			if tc.expected != "" {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Contains(t, vars, "memory")
 			} else {
-				assert.Error(t, err)
+				require.Error(t, err)
 			}
 		})
 	}
 }
 
-// TestVectorStoreMemory_LoadMemoryVariables_ErrorHandling tests various error conditions
+// TestVectorStoreMemory_LoadMemoryVariables_ErrorHandling tests various error conditions.
 func TestVectorStoreMemory_LoadMemoryVariables_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -442,13 +443,13 @@ func TestVectorStoreMemory_LoadMemoryVariables_ErrorHandling(t *testing.T) {
 			}
 
 			_, err := memory.LoadMemoryVariables(ctx, tc.inputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestVectorStoreMemory_SaveContext tests saving context
+// TestVectorStoreMemory_SaveContext tests saving context.
 func TestVectorStoreMemory_SaveContext(t *testing.T) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
@@ -468,7 +469,7 @@ func TestVectorStoreMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify document was saved
 	assert.Len(t, savedDocs, 1)
@@ -476,7 +477,7 @@ func TestVectorStoreMemory_SaveContext(t *testing.T) {
 	assert.Contains(t, savedDocs[0].PageContent, "Output: Hi there!")
 }
 
-// TestVectorStoreMemory_SaveContext_AutoDetectKeys tests automatic key detection
+// TestVectorStoreMemory_SaveContext_AutoDetectKeys tests automatic key detection.
 func TestVectorStoreMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
@@ -494,10 +495,10 @@ func TestVectorStoreMemory_SaveContext_AutoDetectKeys(t *testing.T) {
 	outputs := map[string]any{"response": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestVectorStoreMemory_SaveContext_ErrorHandling tests error handling in SaveContext
+// TestVectorStoreMemory_SaveContext_ErrorHandling tests error handling in SaveContext.
 func TestVectorStoreMemory_SaveContext_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -581,16 +582,16 @@ func TestVectorStoreMemory_SaveContext_ErrorHandling(t *testing.T) {
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
 			if tc.expectedError != "" {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), tc.expectedError)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
-// TestVectorStoreMemory_Clear tests the Clear method
+// TestVectorStoreMemory_Clear tests the Clear method.
 func TestVectorStoreMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
@@ -598,10 +599,10 @@ func TestVectorStoreMemory_Clear(t *testing.T) {
 
 	// Clear should not error (it's currently a no-op)
 	err := memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestFormatDocuments tests the formatDocuments function
+// TestFormatDocuments tests the formatDocuments function.
 func TestFormatDocuments(t *testing.T) {
 	docs := []schema.Message{
 		schema.NewHumanMessage("Document 1"),
@@ -614,13 +615,13 @@ func TestFormatDocuments(t *testing.T) {
 	assert.Contains(t, result, "- Document 2")
 }
 
-// TestFormatDocuments_Empty tests with empty document list
+// TestFormatDocuments_Empty tests with empty document list.
 func TestFormatDocuments_Empty(t *testing.T) {
 	result := formatDocuments([]schema.Message{})
 	assert.Equal(t, "Relevant context:\n", result)
 }
 
-// TestNewVectorStoreRetrieverMemory tests the constructor
+// TestNewVectorStoreRetrieverMemory tests the constructor.
 func TestNewVectorStoreRetrieverMemory(t *testing.T) {
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
@@ -638,7 +639,7 @@ func TestNewVectorStoreRetrieverMemory(t *testing.T) {
 	assert.Equal(t, 5, memory.TopK)
 }
 
-// TestNewVectorStoreRetrieverMemory_WithOptions tests constructor with options
+// TestNewVectorStoreRetrieverMemory_WithOptions tests constructor with options.
 func TestNewVectorStoreRetrieverMemory_WithOptions(t *testing.T) {
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
@@ -660,7 +661,7 @@ func TestNewVectorStoreRetrieverMemory_WithOptions(t *testing.T) {
 	assert.Equal(t, 10, memory.TopK)
 }
 
-// TestVectorStoreRetrieverMemory_MemoryVariables tests the MemoryVariables method
+// TestVectorStoreRetrieverMemory_MemoryVariables tests the MemoryVariables method.
 func TestVectorStoreRetrieverMemory_MemoryVariables(t *testing.T) {
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
@@ -671,7 +672,7 @@ func TestVectorStoreRetrieverMemory_MemoryVariables(t *testing.T) {
 	assert.Equal(t, []string{"test_memory"}, variables)
 }
 
-// TestVectorStoreRetrieverMemory_LoadMemoryVariables tests loading memory variables
+// TestVectorStoreRetrieverMemory_LoadMemoryVariables tests loading memory variables.
 func TestVectorStoreRetrieverMemory_LoadMemoryVariables(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -691,7 +692,7 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables(t *testing.T) {
 	inputs := map[string]any{"input": "test query"}
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 	assert.Contains(t, vars, "retrieved_docs")
 
@@ -707,7 +708,7 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables(t *testing.T) {
 	assert.Len(t, docs, 2)
 }
 
-// TestVectorStoreRetrieverMemory_LoadMemoryVariables_NoReturnDocs tests loading without returning docs
+// TestVectorStoreRetrieverMemory_LoadMemoryVariables_NoReturnDocs tests loading without returning docs.
 func TestVectorStoreRetrieverMemory_LoadMemoryVariables_NoReturnDocs(t *testing.T) {
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
@@ -724,7 +725,7 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_NoReturnDocs(t *testing.
 	inputs := map[string]any{"input": "test query"}
 
 	vars, err := memory.LoadMemoryVariables(ctx, inputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 	assert.NotContains(t, vars, "retrieved_docs")
 
@@ -733,7 +734,7 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_NoReturnDocs(t *testing.
 	assert.Contains(t, history, "Document 1")
 }
 
-// TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling tests error handling
+// TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling tests error handling.
 func TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -772,13 +773,13 @@ func TestVectorStoreRetrieverMemory_LoadMemoryVariables_ErrorHandling(t *testing
 			}
 
 			_, err := memory.LoadMemoryVariables(ctx, tc.inputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestVectorStoreRetrieverMemory_SaveContext tests saving context
+// TestVectorStoreRetrieverMemory_SaveContext tests saving context.
 func TestVectorStoreRetrieverMemory_SaveContext(t *testing.T) {
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
@@ -797,7 +798,7 @@ func TestVectorStoreRetrieverMemory_SaveContext(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there!"}
 
 	err := memory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify document was saved
 	assert.Len(t, savedDocs, 1)
@@ -808,7 +809,7 @@ func TestVectorStoreRetrieverMemory_SaveContext(t *testing.T) {
 	assert.Equal(t, "conversation", savedDocs[0].Metadata["source"])
 }
 
-// TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling tests error handling in SaveContext
+// TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling tests error handling in SaveContext.
 func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 	testCases := []struct {
 		name             string
@@ -853,13 +854,13 @@ func TestVectorStoreRetrieverMemory_SaveContext_ErrorHandling(t *testing.T) {
 			memory := NewVectorStoreRetrieverMemory(embedder, vectorStore)
 
 			err := memory.SaveContext(ctx, tc.inputs, tc.outputs)
-			assert.Error(t, err)
+			require.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedError)
 		})
 	}
 }
 
-// TestVectorStoreRetrieverMemory_Clear tests the Clear method
+// TestVectorStoreRetrieverMemory_Clear tests the Clear method.
 func TestVectorStoreRetrieverMemory_Clear(t *testing.T) {
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
@@ -869,10 +870,10 @@ func TestVectorStoreRetrieverMemory_Clear(t *testing.T) {
 
 	// Clear should not error (it's currently a no-op with logging)
 	err := memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestInterfaceCompliance tests that both implementations comply with the Memory interface
+// TestInterfaceCompliance tests that both implementations comply with the Memory interface.
 func TestVectorStoreInterfaceCompliance(t *testing.T) {
 	embedder := NewMockEmbedder()
 	vectorStore := NewMockVectorStore()
@@ -887,7 +888,7 @@ func TestVectorStoreInterfaceCompliance(t *testing.T) {
 	var _ iface.Memory = vectorStoreRetrieverMemory
 }
 
-// BenchmarkVectorStoreMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
+// BenchmarkVectorStoreMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance.
 func BenchmarkVectorStoreMemory_LoadMemoryVariables(b *testing.B) {
 	ctx := context.Background()
 	retriever := NewMockRetriever()
@@ -906,11 +907,11 @@ func BenchmarkVectorStoreMemory_LoadMemoryVariables(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.LoadMemoryVariables(ctx, inputs)
+		_, _ = memory.LoadMemoryVariables(ctx, inputs)
 	}
 }
 
-// BenchmarkVectorStoreRetrieverMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance
+// BenchmarkVectorStoreRetrieverMemory_LoadMemoryVariables benchmarks LoadMemoryVariables performance.
 func BenchmarkVectorStoreRetrieverMemory_LoadMemoryVariables(b *testing.B) {
 	ctx := context.Background()
 	embedder := NewMockEmbedder()
@@ -928,6 +929,6 @@ func BenchmarkVectorStoreRetrieverMemory_LoadMemoryVariables(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		memory.LoadMemoryVariables(ctx, inputs)
+		_, _ = memory.LoadMemoryVariables(ctx, inputs)
 	}
 }

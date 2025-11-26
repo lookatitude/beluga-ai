@@ -11,7 +11,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Config holds configuration for OpenAI embedder
+// Config holds configuration for OpenAI embedder.
 type Config struct {
 	APIKey     string
 	Model      string
@@ -22,7 +22,7 @@ type Config struct {
 	Enabled    bool
 }
 
-// HealthChecker interface for health checks
+// HealthChecker interface for health checks.
 type HealthChecker interface {
 	Check(ctx context.Context) error
 }
@@ -201,7 +201,7 @@ func (e *OpenAIEmbedder) GetDimension(ctx context.Context) (int, error) {
 	}
 }
 
-// Check performs a health check on the OpenAI embedder
+// Check performs a health check on the OpenAI embedder.
 func (e *OpenAIEmbedder) Check(ctx context.Context) error {
 	_, span := e.tracer.Start(ctx, "openaiClient.health_check")
 	defer span.End()
@@ -212,5 +212,7 @@ func (e *OpenAIEmbedder) Check(ctx context.Context) error {
 }
 
 // Ensure OpenAIEmbedder implements the interfaces.
-var _ iface.Embedder = (*OpenAIEmbedder)(nil)
-var _ HealthChecker = (*OpenAIEmbedder)(nil)
+var (
+	_ iface.Embedder = (*OpenAIEmbedder)(nil)
+	_ HealthChecker  = (*OpenAIEmbedder)(nil)
+)

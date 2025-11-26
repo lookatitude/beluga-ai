@@ -17,7 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// MockRunnable is a mock implementation of core.Runnable for testing
+// MockRunnable is a mock implementation of core.Runnable for testing.
 type MockRunnable struct {
 	mock.Mock
 	name string
@@ -38,7 +38,7 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, opts ...core.Optio
 	return args.Get(0).(<-chan any), args.Error(1)
 }
 
-// MockTracer is a mock implementation of trace.Tracer for testing
+// MockTracer is a mock implementation of trace.Tracer for testing.
 type MockTracer struct {
 	mock.Mock
 }
@@ -48,7 +48,7 @@ func (m *MockTracer) Start(ctx context.Context, spanName string, opts ...trace.S
 	return args.Get(0).(context.Context), args.Get(1).(trace.Span)
 }
 
-// MockSpan is a mock implementation of trace.Span
+// MockSpan is a mock implementation of trace.Span.
 type MockSpan struct {
 	mock.Mock
 }
@@ -116,13 +116,13 @@ func TestBasicGraph_AddNode(t *testing.T) {
 
 	// Test successful addition
 	err := graph.AddNode("node1", runnable)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, graph.nodes, "node1")
 	assert.Equal(t, runnable, graph.nodes["node1"])
 
 	// Test duplicate node error
 	err = graph.AddNode("node1", runnable)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "already exists")
 }
 
@@ -140,18 +140,18 @@ func TestBasicGraph_AddEdge(t *testing.T) {
 
 	// Test successful edge addition
 	err = graph.AddEdge("node1", "node2")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, graph.edges, "node1")
 	assert.Contains(t, graph.edges["node1"], "node2")
 
 	// Test edge to non-existent source node
 	err = graph.AddEdge("nonexistent", "node2")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "source node nonexistent")
 
 	// Test edge to non-existent target node
 	err = graph.AddEdge("node1", "nonexistent")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "target node nonexistent")
 }
 
@@ -164,12 +164,12 @@ func TestBasicGraph_SetEntryPoint(t *testing.T) {
 
 	// Test successful entry point setting
 	err = graph.SetEntryPoint([]string{"entry"})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []string{"entry"}, graph.entryNodes)
 
 	// Test setting non-existent entry point
 	err = graph.SetEntryPoint([]string{"nonexistent"})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "entry node nonexistent")
 }
 
@@ -182,12 +182,12 @@ func TestBasicGraph_SetFinishPoint(t *testing.T) {
 
 	// Test successful finish point setting
 	err = graph.SetFinishPoint([]string{"exit"})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, []string{"exit"}, graph.exitNodes)
 
 	// Test setting non-existent finish point
 	err = graph.SetFinishPoint([]string{"nonexistent"})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "exit node nonexistent")
 }
 
@@ -217,7 +217,7 @@ func TestBasicGraph_Invoke_LinearGraph(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, map[string]any{"output2": "result2"}, result)
 
@@ -257,7 +257,7 @@ func TestBasicGraph_Invoke_BranchingGraph(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	// Should return results from both exit nodes
@@ -290,7 +290,7 @@ func TestBasicGraph_Invoke_WithTimeout(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	node.AssertExpectations(t)
@@ -312,7 +312,7 @@ func TestBasicGraph_Invoke_NodeError(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, result)
 	assert.Contains(t, err.Error(), "error in graph node failing")
 
@@ -343,7 +343,7 @@ func TestBasicGraph_Invoke_ParallelExecution(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	// Should return results from both exit nodes
@@ -377,7 +377,7 @@ func TestBasicGraph_Batch(t *testing.T) {
 
 	results, err := graph.Batch(context.Background(), inputs)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, results, 3)
 	for _, result := range results {
 		assert.NotNil(t, result)
@@ -410,7 +410,7 @@ func TestBasicGraph_Batch_WithErrors(t *testing.T) {
 
 	results, err := graph.Batch(context.Background(), inputs)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Len(t, results, 3)
 	assert.Contains(t, err.Error(), "error processing batch item")
 
@@ -434,7 +434,7 @@ func TestBasicGraph_Stream_Success(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := graph.Stream(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resultChan)
 
 	// Read from the stream
@@ -454,7 +454,7 @@ func TestBasicGraph_Stream_NoExitNodes(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := graph.Stream(context.Background(), input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, resultChan)
 	assert.Contains(t, err.Error(), "no exit nodes defined")
 }
@@ -463,7 +463,7 @@ func TestBasicGraph_Stream_ExitNodeNotFound(t *testing.T) {
 	graph := NewBasicGraph(iface.GraphConfig{Name: "missing-exit-graph"}, nil)
 
 	err := graph.SetFinishPoint([]string{"nonexistent"})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "exit node nonexistent not found")
 
 	// If SetFinishPoint fails, we can't test Stream
@@ -474,7 +474,7 @@ func TestBasicGraph_Stream_ExitNodeNotFound(t *testing.T) {
 	input := map[string]any{"input": "test"}
 	resultChan, err := graph.Stream(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, resultChan)
 }
 
@@ -548,7 +548,7 @@ func TestBasicGraph_ComplexTopology(t *testing.T) {
 	input := map[string]any{"input": "diamond"}
 	result, err := graph.Invoke(context.Background(), input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 	assert.Equal(t, map[string]any{"D": "final"}, result)
 

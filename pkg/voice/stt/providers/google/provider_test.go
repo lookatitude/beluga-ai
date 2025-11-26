@@ -15,8 +15,8 @@ import (
 
 func TestNewGoogleProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *stt.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +47,10 @@ func TestNewGoogleProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewGoogleProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -65,7 +65,7 @@ func TestGoogleProvider_Transcribe_Success(t *testing.T) {
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		// Parse request body
-		var requestBody map[string]interface{}
+		var requestBody map[string]any
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		require.NoError(t, err)
 
@@ -74,10 +74,10 @@ func TestGoogleProvider_Transcribe_Success(t *testing.T) {
 		assert.Contains(t, requestBody, "audio")
 
 		// Return success response
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{
+		response := map[string]any{
+			"results": []map[string]any{
 				{
-					"alternatives": []map[string]interface{}{
+					"alternatives": []map[string]any{
 						{
 							"transcript": "Hello, this is a test transcription",
 							"confidence": 0.95,
@@ -108,7 +108,7 @@ func TestGoogleProvider_Transcribe_Success(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello, this is a test transcription", transcript)
 }
 
@@ -134,7 +134,7 @@ func TestGoogleProvider_Transcribe_HTTPError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestGoogleProvider_Transcribe_InvalidResponse(t *testing.T) {
@@ -160,13 +160,13 @@ func TestGoogleProvider_Transcribe_InvalidResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestGoogleProvider_Transcribe_EmptyResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{},
+		response := map[string]any{
+			"results": []map[string]any{},
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
@@ -189,7 +189,7 @@ func TestGoogleProvider_Transcribe_EmptyResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
@@ -208,7 +208,7 @@ func TestGoogleProvider_StartStreaming(t *testing.T) {
 	ctx := context.Background()
 	session, err := provider.StartStreaming(ctx)
 	// We expect an error as streaming is not yet fully implemented
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -237,15 +237,15 @@ func TestGoogleProvider_Transcribe_ContextCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestGoogleProvider_Transcribe_NoResults(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{
+		response := map[string]any{
+			"results": []map[string]any{
 				{
-					"alternatives": []map[string]interface{}{
+					"alternatives": []map[string]any{
 						{
 							"transcript": "",
 							"confidence": 0.0,
@@ -275,7 +275,7 @@ func TestGoogleProvider_Transcribe_NoResults(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	if err != nil {
 		assert.Contains(t, err.Error(), "no transcript")
 	}
@@ -283,10 +283,10 @@ func TestGoogleProvider_Transcribe_NoResults(t *testing.T) {
 
 func TestGoogleProvider_Transcribe_MultipleAlternatives(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{
+		response := map[string]any{
+			"results": []map[string]any{
 				{
-					"alternatives": []map[string]interface{}{
+					"alternatives": []map[string]any{
 						{
 							"transcript": "First alternative",
 							"confidence": 0.9,
@@ -319,7 +319,7 @@ func TestGoogleProvider_Transcribe_MultipleAlternatives(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "First alternative", transcript)
 }
 
@@ -328,10 +328,10 @@ func TestGoogleProvider_Transcribe_WithProjectID(t *testing.T) {
 		// Verify URL contains project ID
 		assert.Contains(t, r.URL.Path, "/v1/projects/test-project/locations/global:recognize")
 
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{
+		response := map[string]any{
+			"results": []map[string]any{
 				{
-					"alternatives": []map[string]interface{}{
+					"alternatives": []map[string]any{
 						{
 							"transcript": "Test transcription",
 							"confidence": 0.95,
@@ -364,25 +364,25 @@ func TestGoogleProvider_Transcribe_WithProjectID(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test transcription", transcript)
 }
 
 func TestGoogleProvider_Transcribe_WithOptionalParams(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Parse request to verify optional params
-		var requestBody map[string]interface{}
+		var requestBody map[string]any
 		err := json.NewDecoder(r.Body).Decode(&requestBody)
 		require.NoError(t, err)
 
-		config := requestBody["config"].(map[string]interface{})
+		config := requestBody["config"].(map[string]any)
 		assert.True(t, config["enableSpeakerDiarization"].(bool))
-		assert.Equal(t, 2.0, config["diarizationSpeakerCount"])
+		assert.InEpsilon(t, 2.0, config["diarizationSpeakerCount"], 0.0001)
 
-		response := map[string]interface{}{
-			"results": []map[string]interface{}{
+		response := map[string]any{
+			"results": []map[string]any{
 				{
-					"alternatives": []map[string]interface{}{
+					"alternatives": []map[string]any{
 						{
 							"transcript": "Test",
 							"confidence": 0.95,
@@ -416,7 +416,7 @@ func TestGoogleProvider_Transcribe_WithOptionalParams(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test", transcript)
 }
 

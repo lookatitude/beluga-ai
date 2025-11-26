@@ -50,6 +50,7 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -64,23 +65,21 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/providers/graph"
 )
 
-// Orchestrator implements the main orchestration interface
+// Orchestrator implements the main orchestration interface.
 type Orchestrator struct {
-	config  *Config
-	metrics *Metrics
-	tracer  trace.Tracer
-	mu      sync.RWMutex
-
-	// Active orchestration instances
+	tracer          trace.Tracer
+	config          *Config
+	metrics         *Metrics
 	activeChains    map[string]iface.Chain
 	activeGraphs    map[string]iface.Graph
 	activeWorkflows map[string]iface.Workflow
+	mu              sync.RWMutex
 }
 
-// NewOrchestrator creates a new orchestrator with the given configuration
+// NewOrchestrator creates a new orchestrator with the given configuration.
 func NewOrchestrator(config *Config) (*Orchestrator, error) {
 	if config == nil {
-		return nil, iface.ErrInvalidConfig("orchestrator_creation", fmt.Errorf("config cannot be nil"))
+		return nil, iface.ErrInvalidConfig("orchestrator_creation", errors.New("config cannot be nil"))
 	}
 
 	if err := config.Validate(); err != nil {
@@ -110,7 +109,7 @@ func NewOrchestrator(config *Config) (*Orchestrator, error) {
 	}, nil
 }
 
-// NewOrchestratorWithOptions creates a new orchestrator with functional options
+// NewOrchestratorWithOptions creates a new orchestrator with functional options.
 func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 	config, err := NewConfig(opts...)
 	if err != nil {
@@ -120,13 +119,13 @@ func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 	return NewOrchestrator(config)
 }
 
-// NewDefaultOrchestrator creates a new orchestrator with default configuration
+// NewDefaultOrchestrator creates a new orchestrator with default configuration.
 func NewDefaultOrchestrator() (*Orchestrator, error) {
 	config := DefaultConfig()
 	return NewOrchestrator(config)
 }
 
-// CreateChain creates a new chain orchestration
+// CreateChain creates a new chain orchestration.
 func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error) {
 	if !o.config.Enabled.Chains {
 		return nil, iface.ErrInvalidState("create_chain", "chains_disabled", "chains_enabled")
@@ -171,7 +170,7 @@ func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOpt
 	return chain, nil
 }
 
-// CreateGraph creates a new graph orchestration
+// CreateGraph creates a new graph orchestration.
 func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	if !o.config.Enabled.Graphs {
 		return nil, iface.ErrInvalidState("create_graph", "graphs_disabled", "graphs_enabled")
@@ -213,7 +212,7 @@ func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, erro
 	return graph, nil
 }
 
-// CreateWorkflow creates a new workflow orchestration
+// CreateWorkflow creates a new workflow orchestration.
 func (o *Orchestrator) CreateWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error) {
 	if !o.config.Enabled.Workflows {
 		return nil, iface.ErrInvalidState("create_workflow", "workflows_disabled", "workflows_enabled")
@@ -255,7 +254,7 @@ func (o *Orchestrator) CreateWorkflow(workflowFn any, opts ...iface.WorkflowOpti
 	return workflow, nil
 }
 
-// GetMetrics returns orchestration metrics
+// GetMetrics returns orchestration metrics.
 func (o *Orchestrator) GetMetrics() iface.OrchestratorMetrics {
 	return &orchestratorMetrics{
 		activeChains:    len(o.activeChains),
@@ -264,7 +263,7 @@ func (o *Orchestrator) GetMetrics() iface.OrchestratorMetrics {
 	}
 }
 
-// Health check implementation
+// Health check implementation.
 func (o *Orchestrator) Check(ctx context.Context) error {
 	// Check if we can create a simple chain (basic functionality test)
 	// Note: We don't hold a lock here to avoid deadlock with CreateChain's write lock
@@ -279,7 +278,7 @@ func (o *Orchestrator) Check(ctx context.Context) error {
 	return nil
 }
 
-// Internal implementations that delegate to providers
+// Internal implementations that delegate to providers.
 func (o *Orchestrator) createChainImplementation(ctx context.Context, config *iface.ChainConfig) (iface.Chain, error) {
 	// Create the chain using the provider
 	tracer := otel.Tracer("beluga.orchestration.chain")
@@ -305,7 +304,7 @@ func (o *Orchestrator) createWorkflowImplementation(ctx context.Context, workflo
 	return nil, iface.ErrInvalidState("create_workflow", "temporal_client_not_configured", "temporal_client_required")
 }
 
-// orchestratorMetrics implements the OrchestratorMetrics interface
+// orchestratorMetrics implements the OrchestratorMetrics interface.
 type orchestratorMetrics struct {
 	activeChains    int
 	activeGraphs    int
@@ -336,7 +335,7 @@ func (m *orchestratorMetrics) GetErrorCount() int64 {
 
 // Factory functions for backward compatibility and convenience
 
-// NewChain creates a new chain with default orchestrator
+// NewChain creates a new chain with default orchestrator.
 func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -345,7 +344,7 @@ func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, er
 	return orch.CreateChain(steps, opts...)
 }
 
-// NewGraph creates a new graph with default orchestrator
+// NewGraph creates a new graph with default orchestrator.
 func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -354,7 +353,7 @@ func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	return orch.CreateGraph(opts...)
 }
 
-// NewWorkflow creates a new workflow with default orchestrator
+// NewWorkflow creates a new workflow with default orchestrator.
 func NewWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {

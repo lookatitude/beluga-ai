@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// MockRoundTripper is a mock implementation of http.RoundTripper for testing
+// MockRoundTripper is a mock implementation of http.RoundTripper for testing.
 type MockRoundTripper struct {
 	// Response is the response to return
 	Response *http.Response
@@ -16,7 +16,7 @@ type MockRoundTripper struct {
 	Handler func(*http.Request) (*http.Response, error)
 }
 
-// RoundTrip implements http.RoundTripper
+// RoundTrip implements http.RoundTripper.
 func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	if m.Error != nil {
 		return nil, m.Error
@@ -38,14 +38,14 @@ func (m *MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) 
 	}, nil
 }
 
-// NewMockHTTPClient creates a new HTTP client with a mock transport
+// NewMockHTTPClient creates a new HTTP client with a mock transport.
 func NewMockHTTPClient(roundTripper http.RoundTripper) *http.Client {
 	return &http.Client{
 		Transport: roundTripper,
 	}
 }
 
-// NewSuccessResponse creates a mock HTTP response with the given status code and body
+// NewSuccessResponse creates a mock HTTP response with the given status code and body.
 func NewSuccessResponse(statusCode int, body string) *http.Response {
 	return &http.Response{
 		StatusCode: statusCode,
@@ -54,7 +54,7 @@ func NewSuccessResponse(statusCode int, body string) *http.Response {
 	}
 }
 
-// NewErrorResponse creates a mock HTTP error response
+// NewErrorResponse creates a mock HTTP error response.
 func NewErrorResponse(statusCode int, errorMessage string) *http.Response {
 	return &http.Response{
 		StatusCode: statusCode,
@@ -63,7 +63,7 @@ func NewErrorResponse(statusCode int, errorMessage string) *http.Response {
 	}
 }
 
-// NewJSONResponse creates a mock HTTP response with JSON content type
+// NewJSONResponse creates a mock HTTP response with JSON content type.
 func NewJSONResponse(statusCode int, jsonBody string) *http.Response {
 	resp := NewSuccessResponse(statusCode, jsonBody)
 	resp.Header.Set("Content-Type", "application/json")

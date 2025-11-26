@@ -2,20 +2,20 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
 
-// SayHandleImpl implements the SayHandle interface
+// SayHandleImpl implements the SayHandle interface.
 type SayHandleImpl struct {
-	cancelled bool
-	mu        sync.RWMutex
+	canceled bool
+	mu       sync.RWMutex
 }
 
-// WaitForPlayout waits for audio to finish playing
+// WaitForPlayout waits for audio to finish playing.
 func (h *SayHandleImpl) WaitForPlayout(ctx context.Context) error {
 	// TODO: Implement actual wait logic
 	select {
@@ -26,20 +26,20 @@ func (h *SayHandleImpl) WaitForPlayout(ctx context.Context) error {
 	}
 }
 
-// Cancel cancels the Say operation
+// Cancel cancels the Say operation.
 func (h *SayHandleImpl) Cancel() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	h.cancelled = true
+	h.canceled = true
 	return nil
 }
 
-// Say converts text to speech and plays it
+// Say converts text to speech and plays it.
 func (s *VoiceSessionImpl) Say(ctx context.Context, text string) (sessioniface.SayHandle, error) {
 	return s.SayWithOptions(ctx, text, sessioniface.SayOptions{})
 }
 
-// SayWithOptions converts text to speech with options and plays it
+// SayWithOptions converts text to speech with options and plays it.
 func (s *VoiceSessionImpl) SayWithOptions(ctx context.Context, text string, options sessioniface.SayOptions) (sessioniface.SayHandle, error) {
 	s.mu.RLock()
 	active := s.active
@@ -47,7 +47,7 @@ func (s *VoiceSessionImpl) SayWithOptions(ctx context.Context, text string, opti
 
 	if !active {
 		return nil, newSessionError("SayWithOptions", "session_not_active",
-			fmt.Errorf("session is not active"))
+			errors.New("session is not active"))
 	}
 
 	// Transition to speaking state

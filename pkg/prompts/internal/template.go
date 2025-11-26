@@ -47,7 +47,7 @@ type ChatPromptValue struct {
 func (cpv ChatPromptValue) ToString() string {
 	var builder strings.Builder
 	for _, msg := range cpv.Messages {
-		builder.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
+		_, _ = builder.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
 	}
 	return builder.String()
 }
@@ -61,15 +61,15 @@ func (cpv ChatPromptValue) ToMessages() []schema.Message {
 // such as storing the list of expected input variables.
 // Specific template types (like StringPromptTemplate, ChatPromptTemplate) can embed this.
 type BaseTemplate struct {
-	name      string
-	variables []string
 	metrics   iface.Metrics
 	tracer    iface.Tracer
 	logger    iface.Logger
 	config    *iface.Config
+	name      string
+	variables []string
 }
 
-// Name returns the template name
+// Name returns the template name.
 func (b *BaseTemplate) Name() string {
 	return b.name
 }
@@ -79,7 +79,7 @@ func (b *BaseTemplate) InputVariables() []string {
 	return b.variables
 }
 
-// Validate validates the template structure
+// Validate validates the template structure.
 func (b *BaseTemplate) Validate() error {
 	if b.name == "" {
 		return iface.NewValidationError("validate", "template name cannot be empty", nil)
@@ -91,8 +91,8 @@ func (b *BaseTemplate) Validate() error {
 // StringPromptTemplate formats a template string using Go's text/template package.
 // It produces a StringPromptValue.
 type StringPromptTemplate struct {
+	template *template.Template
 	BaseTemplate
-	template *template.Template // The parsed Go template
 }
 
 // NewStringPromptTemplate creates a new StringPromptTemplate from a template string.
@@ -137,7 +137,7 @@ func NewStringPromptTemplate(name, templateString string, opts ...iface.Option) 
 }
 
 // Format implements the iface.Template interface.
-func (spt *StringPromptTemplate) Format(ctx context.Context, variables map[string]interface{}) (interface{}, error) {
+func (spt *StringPromptTemplate) Format(ctx context.Context, variables map[string]any) (any, error) {
 	ctx, span := spt.tracer.Start(ctx, "string_template.format",
 		trace.WithAttributes(
 			attribute.String("template.name", spt.name),
@@ -187,8 +187,8 @@ func (spt *StringPromptTemplate) GetInputVariables() []string {
 	return spt.variables
 }
 
-// validateVariables validates that all required variables are present and have correct types
-func (spt *StringPromptTemplate) validateVariables(variables map[string]interface{}) error {
+// validateVariables validates that all required variables are present and have correct types.
+func (spt *StringPromptTemplate) validateVariables(variables map[string]any) error {
 	provided := make(map[string]bool)
 	for k := range variables {
 		provided[k] = true
@@ -236,6 +236,8 @@ func extractVariables(templateString string) ([]string, error) {
 }
 
 // Compile-time checks to ensure implementations satisfy interfaces.
-var _ iface.Template = (*StringPromptTemplate)(nil)
-var _ iface.PromptValue = (*StringPromptValue)(nil)
-var _ iface.PromptValue = (*ChatPromptValue)(nil)
+var (
+	_ iface.Template    = (*StringPromptTemplate)(nil)
+	_ iface.PromptValue = (*StringPromptValue)(nil)
+	_ iface.PromptValue = (*ChatPromptValue)(nil)
+)

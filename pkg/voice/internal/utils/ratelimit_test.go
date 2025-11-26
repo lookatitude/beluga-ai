@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewRateLimiter(t *testing.T) {
@@ -33,12 +34,12 @@ func TestRateLimiter_Allow_ExceedsLimit(t *testing.T) {
 	// Allow 3 requests
 	for i := 0; i < 3; i++ {
 		err := rl.Allow(context.Background())
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// 4th request should be rate limited
 	err := rl.Allow(context.Background())
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "rate limit exceeded")
 }
 
@@ -51,14 +52,14 @@ func TestRateLimiter_Allow_AfterWindow(t *testing.T) {
 
 	// Should be rate limited
 	err := rl.Allow(context.Background())
-	assert.Error(t, err)
+	require.Error(t, err)
 
 	// Wait for window to expire
 	time.Sleep(150 * time.Millisecond)
 
 	// Should be allowed again
 	err = rl.Allow(context.Background())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRateLimiter_Wait_Success(t *testing.T) {
@@ -67,7 +68,7 @@ func TestRateLimiter_Wait_Success(t *testing.T) {
 
 	// Should succeed immediately
 	err := rl.Wait(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRateLimiter_Wait_ContextCancellation(t *testing.T) {
@@ -89,7 +90,7 @@ func TestRateLimiter_Wait_ContextCancellation(t *testing.T) {
 	// Should return context error
 	select {
 	case err := <-done:
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Equal(t, context.Canceled, err)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Wait should have returned after context cancellation")
@@ -108,7 +109,7 @@ func TestRateLimiter_Wait_EventuallySucceeds(t *testing.T) {
 	err := rl.Wait(ctx)
 	duration := time.Since(start)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Should have waited at least 100ms
 	assert.GreaterOrEqual(t, duration, 90*time.Millisecond)
 }
@@ -126,7 +127,7 @@ func TestRateLimiter_Allow_RequestCleanup(t *testing.T) {
 
 	// Should be able to make another request
 	err := rl.Allow(context.Background())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestRateLimiter_Allow_Concurrent(t *testing.T) {
@@ -135,7 +136,7 @@ func TestRateLimiter_Allow_Concurrent(t *testing.T) {
 	// Make concurrent requests
 	errors := make(chan error, 20)
 	for i := 0; i < 20; i++ {
-	ctx := context.Background()
+		ctx := context.Background()
 		go func() {
 			errors <- rl.Allow(ctx)
 		}()

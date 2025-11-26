@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestErrorRecovery_E2E tests error recovery end-to-end
+// TestErrorRecovery_E2E tests error recovery end-to-end.
 func TestErrorRecovery_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -47,7 +47,7 @@ func TestErrorRecovery_E2E(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Recovering STT provider that fails then recovers
+// Recovering STT provider that fails then recovers.
 type recoveringSTTProvider struct {
 	attempts int
 }

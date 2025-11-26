@@ -13,7 +13,7 @@ func TestActualImplementation(t *testing.T) {
 	defer cancel()
 
 	client := http.Client{}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.com", http.NoBody)
 	if err != nil {
 		t.Fatal(err)
 	}

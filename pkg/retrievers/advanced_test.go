@@ -5,7 +5,7 @@ package retrievers
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAdvancedMockRetriever tests the advanced mock retriever functionality
+// TestAdvancedMockRetriever tests the advanced mock retriever functionality.
 func TestAdvancedMockRetriever(t *testing.T) {
 	tests := []struct {
 		name              string
@@ -50,7 +50,7 @@ func TestAdvancedMockRetriever(t *testing.T) {
 		{
 			name: "retriever_with_error",
 			retriever: NewAdvancedMockRetriever("error-retriever", "vector_store",
-				WithMockError(true, fmt.Errorf("retrieval service unavailable"))),
+				WithMockError(true, errors.New("retrieval service unavailable"))),
 			query:             "test query",
 			expectedError:     true,
 			expectedCallCount: 1,
@@ -88,9 +88,9 @@ func TestAdvancedMockRetriever(t *testing.T) {
 			duration := time.Since(start)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				AssertRetrievalResults(t, documents, tt.expectedMinDocs, tt.expectedMaxDocs)
 
 				// Verify delay was respected if configured
@@ -109,20 +109,21 @@ func TestAdvancedMockRetriever(t *testing.T) {
 	}
 }
 
-// TestRetrieverScenarios tests real-world retrieval scenarios
+// TestRetrieverScenarios tests real-world retrieval scenarios.
 func TestRetrieverScenarios(t *testing.T) {
 	tests := []struct {
-		name     string
 		scenario func(t *testing.T, retriever core.Retriever)
+		name     string
 	}{
 		{
 			name: "multi_query_retrieval",
 			scenario: func(t *testing.T, retriever core.Retriever) {
+				t.Helper()
 				runner := NewRetrieverScenarioRunner(retriever)
 				queries := CreateTestRetrievalQueries(5)
 
 				results, err := runner.RunMultiQueryScenario(context.Background(), queries)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Len(t, results, len(queries))
 
 				// Verify each query returned some results
@@ -139,6 +140,7 @@ func TestRetrieverScenarios(t *testing.T) {
 		{
 			name: "relevance_testing",
 			scenario: func(t *testing.T, retriever core.Retriever) {
+				t.Helper()
 				// Create query-document pairs for relevance testing
 				pairs := []QueryDocumentPair{
 					{
@@ -162,12 +164,13 @@ func TestRetrieverScenarios(t *testing.T) {
 				// Note: Mock retriever may not implement actual relevance, so we test the interface
 				// The mock generates documents based on the query, so it may not match exact expected documents
 				// We just verify the interface works without errors
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
 			name: "ranking_consistency",
 			scenario: func(t *testing.T, retriever core.Retriever) {
+				t.Helper()
 				ctx := context.Background()
 				query := "artificial intelligence applications"
 
@@ -181,7 +184,7 @@ func TestRetrieverScenarios(t *testing.T) {
 
 				// Verify consistent results (for deterministic retrievers)
 				if len(results) > 1 {
-					assert.Equal(t, len(results[0]), len(results[1]),
+					assert.Len(t, results[1], len(results[0]),
 						"Retrieval results should be consistent")
 				}
 			},
@@ -199,12 +202,12 @@ func TestRetrieverScenarios(t *testing.T) {
 	}
 }
 
-// TestRetrieverConfiguration tests different retriever configurations
+// TestRetrieverConfiguration tests different retriever configurations.
 func TestRetrieverConfiguration(t *testing.T) {
 	tests := []struct {
-		name     string
 		setup    func() *AdvancedMockRetriever
 		validate func(t *testing.T, retriever *AdvancedMockRetriever, results []schema.Document)
+		name     string
 	}{
 		{
 			name: "different_k_values",
@@ -240,14 +243,14 @@ func TestRetrieverConfiguration(t *testing.T) {
 			ctx := context.Background()
 
 			results, err := retriever.GetRelevantDocuments(ctx, "test query")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			tt.validate(t, retriever, results)
 		})
 	}
 }
 
-// TestRetrieverPerformance tests retriever performance characteristics
+// TestRetrieverPerformance tests retriever performance characteristics.
 func TestRetrieverPerformance(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping performance tests in short mode")
@@ -298,7 +301,7 @@ func TestRetrieverPerformance(t *testing.T) {
 	}
 }
 
-// TestConcurrencyAdvanced tests concurrent retriever operations
+// TestConcurrencyAdvanced tests concurrent retriever operations.
 func TestConcurrencyAdvanced(t *testing.T) {
 	retriever := NewAdvancedMockRetriever("concurrent-test", "vector_store",
 		WithMockDocuments(CreateTestRetrievalDocuments(50)))
@@ -343,7 +346,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	})
 }
 
-// TestLoadTesting performs load testing on retriever components
+// TestLoadTesting performs load testing on retriever components.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load tests in short mode")
@@ -365,7 +368,7 @@ func TestLoadTesting(t *testing.T) {
 	})
 }
 
-// TestRetrieverIntegrationTestHelper tests the integration test helper
+// TestRetrieverIntegrationTestHelper tests the integration test helper.
 func TestRetrieverIntegrationTestHelper(t *testing.T) {
 	helper := NewIntegrationTestHelper()
 
@@ -384,7 +387,7 @@ func TestRetrieverIntegrationTestHelper(t *testing.T) {
 	defer cancel()
 	// Test operations
 	_, err := vectorRetriever.GetRelevantDocuments(ctx, "test query")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test reset
 	helper.Reset()
@@ -394,7 +397,7 @@ func TestRetrieverIntegrationTestHelper(t *testing.T) {
 	assert.Equal(t, 0, keywordRetriever.GetCallCount())
 }
 
-// TestRetrieverHelperFunctions tests utility functions
+// TestRetrieverHelperFunctions tests utility functions.
 func TestRetrieverHelperFunctions(t *testing.T) {
 	t.Run("relevance_scoring", func(t *testing.T) {
 		query := "machine learning algorithms"
@@ -451,7 +454,7 @@ func TestRetrieverHelperFunctions(t *testing.T) {
 	})
 }
 
-// TestErrorHandling tests comprehensive error handling scenarios
+// TestErrorHandling tests comprehensive error handling scenarios.
 func TestErrorHandling(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -463,7 +466,7 @@ func TestErrorHandling(t *testing.T) {
 			name: "retrieval_service_error",
 			setup: func() core.Retriever {
 				return NewAdvancedMockRetriever("error-retriever", "vector_store",
-					WithMockError(true, fmt.Errorf("vector store connection failed")))
+					WithMockError(true, errors.New("vector store connection failed")))
 			},
 			operation: func(retriever core.Retriever) error {
 				ctx := context.Background()
@@ -492,7 +495,7 @@ func TestErrorHandling(t *testing.T) {
 			retriever := tt.setup()
 			err := tt.operation(retriever)
 
-			assert.Error(t, err)
+			require.Error(t, err)
 			// For timeout_error, verify it's a context deadline exceeded error
 			if tt.name == "timeout_error" {
 				assert.ErrorContains(t, err, "context deadline exceeded")
@@ -501,7 +504,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 }
 
-// BenchmarkRetrieverOperations benchmarks retriever operation performance
+// BenchmarkRetrieverOperations benchmarks retriever operation performance.
 func BenchmarkRetrieverOperations(b *testing.B) {
 	retriever := NewAdvancedMockRetriever("benchmark", "vector_store",
 		WithMockDocuments(CreateTestRetrievalDocuments(500)))
@@ -509,7 +512,7 @@ func BenchmarkRetrieverOperations(b *testing.B) {
 	queries := CreateTestRetrievalQueries(50)
 
 	b.Run("GetRelevantDocuments", func(b *testing.B) {
-	ctx := context.Background()
+		ctx := context.Background()
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			query := queries[i%len(queries)]
@@ -531,7 +534,7 @@ func BenchmarkRetrieverOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkRetrieverBenchmark tests the benchmark helper utility
+// BenchmarkRetrieverBenchmark tests the benchmark helper utility.
 func BenchmarkRetrieverBenchmark(b *testing.B) {
 	retriever := NewAdvancedMockRetriever("benchmark-helper", "vector_store",
 		WithMockDocuments(CreateTestRetrievalDocuments(200)))
@@ -553,7 +556,7 @@ func BenchmarkRetrieverBenchmark(b *testing.B) {
 	})
 }
 
-// BenchmarkHelperFunctions benchmarks helper function performance
+// BenchmarkHelperFunctions benchmarks helper function performance.
 func BenchmarkHelperFunctions(b *testing.B) {
 	query := "machine learning artificial intelligence"
 	document := "Machine learning is a subset of artificial intelligence that enables computers to learn and improve from experience"

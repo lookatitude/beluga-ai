@@ -15,7 +15,7 @@ import (
 type LogLevel int
 
 const (
-	// Log levels
+	// Log levels.
 	DEBUG LogLevel = iota
 	INFO
 	WARNING
@@ -43,20 +43,20 @@ func (l LogLevel) String() string {
 
 // Logger provides a standardized logging mechanism.
 type Logger struct {
-	name      string
-	mutex     sync.Mutex
-	level     LogLevel
 	stdout    *log.Logger
 	fileOut   *log.Logger
 	file      *os.File
+	name      string
+	level     LogLevel
+	mutex     sync.Mutex
 	useColors bool
 }
 
 // LoggerConfig contains configuration options for creating a logger.
 type LoggerConfig struct {
+	OutputFile  string
 	Level       LogLevel
 	EnableColor bool
-	OutputFile  string
 	UseConsole  bool
 }
 
@@ -85,10 +85,10 @@ func NewLoggerWithConfig(name string, config LoggerConfig) *Logger {
 	}
 
 	if config.OutputFile != "" {
-		if err := os.MkdirAll(filepath.Dir(config.OutputFile), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(config.OutputFile), 0o755); err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating log directory: %v\n", err)
 		} else {
-			file, err := os.OpenFile(config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			file, err := os.OpenFile(config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error opening log file: %v\n", err)
 			} else {
@@ -106,7 +106,7 @@ func NewLoggerWithConfig(name string, config LoggerConfig) *Logger {
 }
 
 // formatLogMessage formats a log entry with timestamp, level, and caller information.
-func (l *Logger) formatLogMessage(level LogLevel, message string, args ...interface{}) string {
+func (l *Logger) formatLogMessage(level LogLevel, message string, args ...any) string {
 	var caller string
 	if _, file, line, ok := runtime.Caller(2); ok {
 		caller = fmt.Sprintf("%s:%d", filepath.Base(file), line)
@@ -151,7 +151,7 @@ func (l *Logger) colorize(level LogLevel, text string) string {
 }
 
 // log outputs a log entry to stdout and file if enabled.
-func (l *Logger) log(level LogLevel, message string, args ...interface{}) {
+func (l *Logger) log(level LogLevel, message string, args ...any) {
 	if level < l.level {
 		return
 	}
@@ -176,27 +176,27 @@ func (l *Logger) log(level LogLevel, message string, args ...interface{}) {
 }
 
 // Debug logs debug information.
-func (l *Logger) Debug(message string, args ...interface{}) {
+func (l *Logger) Debug(message string, args ...any) {
 	l.log(DEBUG, message, args...)
 }
 
 // Info logs informational messages.
-func (l *Logger) Info(message string, args ...interface{}) {
+func (l *Logger) Info(message string, args ...any) {
 	l.log(INFO, message, args...)
 }
 
 // Warning logs warning messages.
-func (l *Logger) Warning(message string, args ...interface{}) {
+func (l *Logger) Warning(message string, args ...any) {
 	l.log(WARNING, message, args...)
 }
 
 // Error logs error messages.
-func (l *Logger) Error(message string, args ...interface{}) {
+func (l *Logger) Error(message string, args ...any) {
 	l.log(ERROR, message, args...)
 }
 
 // Fatal logs fatal messages and exits the application with status code 1.
-func (l *Logger) Fatal(message string, args ...interface{}) {
+func (l *Logger) Fatal(message string, args ...any) {
 	l.log(FATAL, message, args...)
 }
 
@@ -213,7 +213,9 @@ func (l *Logger) Close() error {
 	defer l.mutex.Unlock()
 
 	if l.file != nil {
-		return l.file.Close()
+		if err := l.file.Close(); err != nil {
+			return fmt.Errorf("failed to close log file: %w", err)
+		}
 	}
 	return nil
 }

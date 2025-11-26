@@ -22,7 +22,7 @@ func NewCompositeProvider(providers ...iface.Provider) *CompositeProvider {
 }
 
 // Load attempts to load configuration from the first provider that succeeds.
-func (cp *CompositeProvider) Load(configStruct interface{}) error {
+func (cp *CompositeProvider) Load(configStruct any) error {
 	var lastErr error
 
 	for i, provider := range cp.providers {
@@ -44,7 +44,7 @@ func (cp *CompositeProvider) Load(configStruct interface{}) error {
 }
 
 // UnmarshalKey attempts to unmarshal a key from the first provider that has it.
-func (cp *CompositeProvider) UnmarshalKey(key string, rawVal interface{}) error {
+func (cp *CompositeProvider) UnmarshalKey(key string, rawVal any) error {
 	for i, provider := range cp.providers {
 		if provider.IsSet(key) {
 			if err := provider.UnmarshalKey(key, rawVal); err != nil {

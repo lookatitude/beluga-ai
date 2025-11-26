@@ -60,8 +60,8 @@ func TestNewContainerWithOptions(t *testing.T) {
 
 func TestContainer_Register(t *testing.T) {
 	tests := []struct {
+		factoryFunc any
 		name        string
-		factoryFunc interface{}
 		wantErr     bool
 	}{
 		{
@@ -100,15 +100,15 @@ func TestContainer_Register(t *testing.T) {
 
 func TestContainer_Resolve(t *testing.T) {
 	tests := []struct {
-		name    string
+		target  any
 		setup   func(Container)
-		target  interface{}
+		name    string
 		wantErr bool
 	}{
 		{
 			name: "resolve simple type",
 			setup: func(c Container) {
-				c.Register(func() string { return "test" })
+				_ = c.Register(func() string { return "test" })
 			},
 			target:  func() *string { var s string; return &s }(),
 			wantErr: false,
@@ -116,8 +116,8 @@ func TestContainer_Resolve(t *testing.T) {
 		{
 			name: "resolve with dependency",
 			setup: func(c Container) {
-				c.Register(func() string { return "test" })
-				c.Register(func(s string) int { return len(s) })
+				_ = c.Register(func() string { return "test" })
+				_ = c.Register(func(s string) int { return len(s) })
 			},
 			target:  func() *int { var i int; return &i }(),
 			wantErr: false,
@@ -133,7 +133,7 @@ func TestContainer_Resolve(t *testing.T) {
 		{
 			name: "resolve non-pointer",
 			setup: func(c Container) {
-				c.Register(func() string { return "test" })
+				_ = c.Register(func() string { return "test" })
 			},
 			target:  "",
 			wantErr: true,
@@ -173,7 +173,7 @@ func TestContainer_Has(t *testing.T) {
 	container := NewContainer()
 
 	// Test with registered factory
-	container.Register(func() string { return "test" })
+	_ = container.Register(func() string { return "test" })
 	if !container.Has(stringType()) {
 		t.Error("Has() should return true for registered type")
 	}
@@ -193,7 +193,7 @@ func TestContainer_Has(t *testing.T) {
 func TestContainer_Clear(t *testing.T) {
 	container := NewContainer()
 
-	container.Register(func() string { return "test" })
+	_ = container.Register(func() string { return "test" })
 	container.Singleton(42)
 
 	if !container.Has(stringType()) || !container.Has(intType()) {
@@ -209,8 +209,8 @@ func TestContainer_Clear(t *testing.T) {
 
 func TestContainer_CheckHealth(t *testing.T) {
 	tests := []struct {
-		name    string
 		setup   func(Container)
+		name    string
 		wantErr bool
 	}{
 		{
@@ -221,7 +221,7 @@ func TestContainer_CheckHealth(t *testing.T) {
 		{
 			name: "container with existing registrations",
 			setup: func(c Container) {
-				c.Register(func() string { return "existing" })
+				_ = c.Register(func() string { return "existing" })
 			},
 			wantErr: false,
 		},
@@ -262,33 +262,33 @@ func TestBuilder_WithTracerProvider(t *testing.T) {
 	}
 }
 
-// Helper functions for type reflection
+// Helper functions for type reflection.
 func stringType() reflect.Type { return reflect.TypeOf("") }
 func intType() reflect.Type    { return reflect.TypeOf(0) }
 func boolType() reflect.Type   { return reflect.TypeOf(false) }
 
-// testLogger is a simple logger implementation for testing
+// testLogger is a simple logger implementation for testing.
 type testLogger struct {
 	logs []string
 }
 
-func (t *testLogger) Debug(msg string, args ...interface{}) {
+func (t *testLogger) Debug(msg string, args ...any) {
 	t.logs = append(t.logs, "DEBUG: "+msg)
 }
 
-func (t *testLogger) Info(msg string, args ...interface{}) {
+func (t *testLogger) Info(msg string, args ...any) {
 	t.logs = append(t.logs, "INFO: "+msg)
 }
 
-func (t *testLogger) Warn(msg string, args ...interface{}) {
+func (t *testLogger) Warn(msg string, args ...any) {
 	t.logs = append(t.logs, "WARN: "+msg)
 }
 
-func (t *testLogger) Error(msg string, args ...interface{}) {
+func (t *testLogger) Error(msg string, args ...any) {
 	t.logs = append(t.logs, "ERROR: "+msg)
 }
 
-func (t *testLogger) With(args ...interface{}) Logger {
+func (t *testLogger) With(args ...any) Logger {
 	return t
 }
 
@@ -340,7 +340,7 @@ func TestContainer_ConcurrentResolution(t *testing.T) {
 	container := NewContainer()
 
 	// Register a single service that returns a constant value
-	container.Register(func() int { return 42 })
+	_ = container.Register(func() int { return 42 })
 
 	numGoroutines := 10
 	numResolutions := 100
@@ -396,7 +396,7 @@ func TestContainer_ConcurrentMixedOperations(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 4 {
 				case 0: // Register
-					container.Register(func() testService {
+					_ = container.Register(func() testService {
 						return testService{ID: goroutineID*operationsPerGoroutine + j}
 					})
 				case 1: // Resolve
@@ -468,12 +468,12 @@ func TestContainer_ConcurrentBuilderOperations(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 3 {
 				case 0: // Register
-					builder.Register(func() int { return id*operationsPerGoroutine + j })
+					_ = builder.Register(func() int { return id*operationsPerGoroutine + j })
 				case 1: // Singleton
 					builder.Singleton(fmt.Sprintf("singleton_%d_%d", id, j))
 				case 2: // Build
 					var result int
-					builder.Build(&result)
+					_ = builder.Build(&result)
 				}
 			}
 		}(i)
@@ -791,7 +791,7 @@ func TestBuilder_ComplexDependencyChain(t *testing.T) {
 	}
 }
 
-// Test interfaces and implementations for dependency testing
+// Test interfaces and implementations for dependency testing.
 type ServiceWithDep interface {
 	GetDep() string
 }

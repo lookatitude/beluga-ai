@@ -9,16 +9,13 @@ import (
 
 // Config holds the configuration for retrievers.
 type Config struct {
-	// Search configuration
-	DefaultK       int           `mapstructure:"default_k" yaml:"default_k" env:"RETRIEVERS_DEFAULT_K" default:"4" validate:"min=1,max=100"`
-	ScoreThreshold float32       `mapstructure:"score_threshold" yaml:"score_threshold" env:"RETRIEVERS_SCORE_THRESHOLD" default:"0.0" validate:"min=0,max=1"`
-	MaxRetries     int           `mapstructure:"max_retries" yaml:"max_retries" env:"RETRIEVERS_MAX_RETRIES" default:"3" validate:"min=0,max=10"`
-	Timeout        time.Duration `mapstructure:"timeout" yaml:"timeout" env:"RETRIEVERS_TIMEOUT" default:"30s" validate:"min=1s,max=5m"`
-	EnableTracing  bool          `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"RETRIEVERS_ENABLE_TRACING" default:"true"`
-	EnableMetrics  bool          `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"RETRIEVERS_ENABLE_METRICS" default:"true"`
-
-	// Vector store specific configuration
 	VectorStoreConfig VectorStoreConfig `mapstructure:"vector_store" yaml:"vector_store"`
+	DefaultK          int               `mapstructure:"default_k" yaml:"default_k" env:"RETRIEVERS_DEFAULT_K" default:"4" validate:"min=1,max=100"`
+	MaxRetries        int               `mapstructure:"max_retries" yaml:"max_retries" env:"RETRIEVERS_MAX_RETRIES" default:"3" validate:"min=0,max=10"`
+	Timeout           time.Duration     `mapstructure:"timeout" yaml:"timeout" env:"RETRIEVERS_TIMEOUT" default:"30s" validate:"min=1s,max=5m"`
+	ScoreThreshold    float32           `mapstructure:"score_threshold" yaml:"score_threshold" env:"RETRIEVERS_SCORE_THRESHOLD" default:"0.0" validate:"min=0,max=1"`
+	EnableTracing     bool              `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"RETRIEVERS_ENABLE_TRACING" default:"true"`
+	EnableMetrics     bool              `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"RETRIEVERS_ENABLE_METRICS" default:"true"`
 }
 
 // VectorStoreConfig holds vector store specific configuration.
@@ -60,19 +57,12 @@ func (c *VectorStoreConfig) Validate() error {
 
 // VectorStoreRetrieverConfig holds configuration specific to VectorStoreRetriever.
 type VectorStoreRetrieverConfig struct {
-	// Embedder configuration
-	Embedder iface.Embedder `mapstructure:"-" yaml:"-"`
-
-	// Search parameters
-	K              int     `mapstructure:"k" yaml:"k" env:"VECTOR_STORE_RETRIEVER_K" default:"4" validate:"min=1,max=100"`
-	ScoreThreshold float32 `mapstructure:"score_threshold" yaml:"score_threshold" env:"VECTOR_STORE_RETRIEVER_SCORE_THRESHOLD" default:"0.0" validate:"min=0,max=1"`
-
-	// Filtering options
+	Embedder       iface.Embedder `mapstructure:"-" yaml:"-"`
 	MetadataFilter map[string]any `mapstructure:"metadata_filter" yaml:"metadata_filter"`
-
-	// Performance settings
-	BatchSize int           `mapstructure:"batch_size" yaml:"batch_size" env:"VECTOR_STORE_RETRIEVER_BATCH_SIZE" default:"10" validate:"min=1,max=100"`
-	Timeout   time.Duration `mapstructure:"timeout" yaml:"timeout" env:"VECTOR_STORE_RETRIEVER_TIMEOUT" default:"30s" validate:"min=1s,max=5m"`
+	K              int            `mapstructure:"k" yaml:"k" env:"VECTOR_STORE_RETRIEVER_K" default:"4" validate:"min=1,max=100"`
+	BatchSize      int            `mapstructure:"batch_size" yaml:"batch_size" env:"VECTOR_STORE_RETRIEVER_BATCH_SIZE" default:"10" validate:"min=1,max=100"`
+	Timeout        time.Duration  `mapstructure:"timeout" yaml:"timeout" env:"VECTOR_STORE_RETRIEVER_TIMEOUT" default:"30s" validate:"min=1s,max=5m"`
+	ScoreThreshold float32        `mapstructure:"score_threshold" yaml:"score_threshold" env:"VECTOR_STORE_RETRIEVER_SCORE_THRESHOLD" default:"0.0" validate:"min=0,max=1"`
 }
 
 // DefaultConfig returns a default configuration for retrievers.

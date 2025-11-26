@@ -27,20 +27,20 @@ func WithScoreThreshold(threshold float32) Option {
 
 // WithMetadataFilter adds a metadata filter for search operations.
 // Only documents matching the filter criteria will be considered.
-func WithMetadataFilter(key string, value interface{}) Option {
+func WithMetadataFilter(key string, value any) Option {
 	return func(c *Config) {
 		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
+			c.MetadataFilters = make(map[string]any)
 		}
 		c.MetadataFilters[key] = value
 	}
 }
 
 // WithMetadataFilters sets multiple metadata filters for search operations.
-func WithMetadataFilters(filters map[string]interface{}) Option {
+func WithMetadataFilters(filters map[string]any) Option {
 	return func(c *Config) {
 		if c.MetadataFilters == nil {
-			c.MetadataFilters = make(map[string]interface{})
+			c.MetadataFilters = make(map[string]any)
 		}
 		for k, v := range filters {
 			c.MetadataFilters[k] = v
@@ -49,20 +49,20 @@ func WithMetadataFilters(filters map[string]interface{}) Option {
 }
 
 // WithProviderConfig sets provider-specific configuration options.
-func WithProviderConfig(key string, value interface{}) Option {
+func WithProviderConfig(key string, value any) Option {
 	return func(c *Config) {
 		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
+			c.ProviderConfig = make(map[string]any)
 		}
 		c.ProviderConfig[key] = value
 	}
 }
 
 // WithProviderConfigs sets multiple provider-specific configuration options.
-func WithProviderConfigs(config map[string]interface{}) Option {
+func WithProviderConfigs(config map[string]any) Option {
 	return func(c *Config) {
 		if c.ProviderConfig == nil {
-			c.ProviderConfig = make(map[string]interface{})
+			c.ProviderConfig = make(map[string]any)
 		}
 		for k, v := range config {
 			c.ProviderConfig[k] = v
@@ -99,7 +99,7 @@ func CloneConfig(original *Config) *Config {
 
 	// Deep copy metadata filters
 	if original.MetadataFilters != nil {
-		clone.MetadataFilters = make(map[string]interface{})
+		clone.MetadataFilters = make(map[string]any)
 		for k, v := range original.MetadataFilters {
 			clone.MetadataFilters[k] = v
 		}
@@ -107,7 +107,7 @@ func CloneConfig(original *Config) *Config {
 
 	// Deep copy provider config
 	if original.ProviderConfig != nil {
-		clone.ProviderConfig = make(map[string]interface{})
+		clone.ProviderConfig = make(map[string]any)
 		for k, v := range original.ProviderConfig {
 			clone.ProviderConfig[k] = v
 		}

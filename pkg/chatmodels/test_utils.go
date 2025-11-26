@@ -5,6 +5,7 @@ package chatmodels
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -15,36 +16,29 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockChatModel provides a comprehensive mock implementation for testing
+// AdvancedMockChatModel provides a comprehensive mock implementation for testing.
 type AdvancedMockChatModel struct {
-	mock.Mock
-
-	// Configuration
-	modelName    string
-	providerName string
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	responses        []schema.Message
-	responseIndex    int
-	streamingDelay   time.Duration
-	simulateFailures bool
-
-	// Chat model specific
-	conversationHistory []schema.Message
-	toolsSupported      bool
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	mock.Mock
+	modelName           string
+	providerName        string
+	healthState         string
+	conversationHistory []schema.Message
+	responses           []schema.Message
+	callCount           int
+	streamingDelay      time.Duration
+	responseIndex       int
+	mu                  sync.RWMutex
+	simulateFailures    bool
+	toolsSupported      bool
+	shouldError         bool
 }
 
-// NewAdvancedMockChatModel creates a new advanced mock with configurable behavior
+// NewAdvancedMockChatModel creates a new advanced mock with configurable behavior.
 func NewAdvancedMockChatModel(modelName, providerName string, options ...MockChatModelOption) *AdvancedMockChatModel {
 	mock := &AdvancedMockChatModel{
 		modelName:           modelName,
@@ -71,10 +65,10 @@ func NewAdvancedMockChatModel(modelName, providerName string, options ...MockCha
 	return mock
 }
 
-// MockChatModelOption defines functional options for mock configuration
+// MockChatModelOption defines functional options for mock configuration.
 type MockChatModelOption func(*AdvancedMockChatModel)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockChatModelOption {
 	return func(m *AdvancedMockChatModel) {
 		m.shouldError = shouldError
@@ -82,7 +76,7 @@ func WithMockError(shouldError bool, err error) MockChatModelOption {
 	}
 }
 
-// WithMockResponses sets predefined responses for the mock
+// WithMockResponses sets predefined responses for the mock.
 func WithMockResponses(responses []schema.Message) MockChatModelOption {
 	return func(m *AdvancedMockChatModel) {
 		m.responses = make([]schema.Message, len(responses))
@@ -90,21 +84,21 @@ func WithMockResponses(responses []schema.Message) MockChatModelOption {
 	}
 }
 
-// WithStreamingDelay adds artificial delay to mock operations
+// WithStreamingDelay adds artificial delay to mock operations.
 func WithStreamingDelay(delay time.Duration) MockChatModelOption {
 	return func(m *AdvancedMockChatModel) {
 		m.streamingDelay = delay
 	}
 }
 
-// WithToolsSupport configures whether the mock supports tools
+// WithToolsSupport configures whether the mock supports tools.
 func WithToolsSupport(supported bool) MockChatModelOption {
 	return func(m *AdvancedMockChatModel) {
 		m.toolsSupported = supported
 	}
 }
 
-// WithConversationHistory preloads conversation history
+// WithConversationHistory preloads conversation history.
 func WithConversationHistory(messages []schema.Message) MockChatModelOption {
 	return func(m *AdvancedMockChatModel) {
 		m.conversationHistory = make([]schema.Message, len(messages))
@@ -112,7 +106,7 @@ func WithConversationHistory(messages []schema.Message) MockChatModelOption {
 	}
 }
 
-// Mock implementation methods for core.Runnable interface
+// Mock implementation methods for core.Runnable interface.
 func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// For chat models, input is typically []schema.Message
 	if messages, ok := input.([]schema.Message); ok {
@@ -165,7 +159,7 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 	return nil, fmt.Errorf("streaming input must be []schema.Message, got %T", input)
 }
 
-// Mock implementation methods for ChatModel interface
+// Mock implementation methods for ChatModel interface.
 func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	m.mu.Lock()
 	m.callCount++
@@ -185,17 +179,17 @@ func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.
 	m.mu.Unlock()
 
 	// Return next response
-	if len(m.responses) > m.responseIndex {
-		response := m.responses[m.responseIndex]
-		m.responseIndex = (m.responseIndex + 1) % len(m.responses)
-
-		// Add response to conversation history
-		m.mu.Lock()
+	m.mu.Lock()
+	var response schema.Message
+	responseLen := len(m.responses)
+	if responseLen > 0 && m.responseIndex < responseLen {
+		response = m.responses[m.responseIndex]
+		m.responseIndex = (m.responseIndex + 1) % responseLen
 		m.conversationHistory = append(m.conversationHistory, response)
 		m.mu.Unlock()
-
 		return response, nil
 	}
+	m.mu.Unlock()
 
 	// Default response
 	defaultResponse := schema.NewAIMessage(fmt.Sprintf("Mock response from %s for %d messages", m.modelName, len(messages)))
@@ -221,7 +215,7 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 		defer close(ch)
 
 		// Simulate streaming response
-		responseText := fmt.Sprintf("Streaming response from %s", m.modelName)
+		responseText := "Streaming response from " + m.modelName
 
 		// Split response into chunks
 		chunkSize := len(responseText) / 3
@@ -242,7 +236,7 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 			chunk := llmsiface.AIMessageChunk{
 				Content:        responseText[i:end],
 				ToolCallChunks: []schema.ToolCallChunk{},
-				AdditionalArgs: make(map[string]interface{}),
+				AdditionalArgs: make(map[string]any),
 				Err:            nil,
 			}
 
@@ -278,9 +272,9 @@ func (m *AdvancedMockChatModel) GetProviderName() string {
 	return m.providerName
 }
 
-func (m *AdvancedMockChatModel) CheckHealth() map[string]interface{} {
+func (m *AdvancedMockChatModel) CheckHealth() map[string]any {
 	m.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":              m.healthState,
 		"model_name":          m.modelName,
 		"provider_name":       m.providerName,
@@ -291,7 +285,7 @@ func (m *AdvancedMockChatModel) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Additional helper methods for testing
+// Additional helper methods for testing.
 func (m *AdvancedMockChatModel) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -315,7 +309,7 @@ func (m *AdvancedMockChatModel) ResetConversation() {
 
 // Test data creation helpers
 
-// CreateTestMessages creates a set of test messages for chat model testing
+// CreateTestMessages creates a set of test messages for chat model testing.
 func CreateTestMessages(conversationLength int) []schema.Message {
 	messages := make([]schema.Message, 0, conversationLength*2)
 
@@ -333,7 +327,7 @@ func CreateTestMessages(conversationLength int) []schema.Message {
 	return messages
 }
 
-// CreateTestChatModelConfig creates a test chat model configuration
+// CreateTestChatModelConfig creates a test chat model configuration.
 func CreateTestChatModelConfig() Config {
 	return Config{
 		DefaultProvider:    "mock",
@@ -351,7 +345,7 @@ func CreateTestChatModelConfig() Config {
 
 // Assertion helpers
 
-// AssertChatResponse validates chat model response
+// AssertChatResponse validates chat model response.
 func AssertChatResponse(t *testing.T, response schema.Message, expectedMinLength int) {
 	assert.NotNil(t, response)
 	assert.NotEmpty(t, response.GetContent())
@@ -359,21 +353,25 @@ func AssertChatResponse(t *testing.T, response schema.Message, expectedMinLength
 	assert.Equal(t, schema.RoleAssistant, response.GetType())
 }
 
-// AssertStreamingResponse validates streaming response
+// AssertStreamingResponse validates streaming response.
 func AssertStreamingResponse(t *testing.T, chunks []llmsiface.AIMessageChunk, expectedMinChunks int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(chunks), expectedMinChunks)
 
 	fullContent := ""
+	var fullContentSb367 strings.Builder
 	for i, chunk := range chunks {
-		assert.NoError(t, chunk.Err, "Chunk %d should not have error", i)
-		fullContent += chunk.Content
+		require.NoError(t, chunk.Err, "Chunk %d should not have error", i)
+		_, _ = fullContentSb367.WriteString(chunk.Content)
 	}
+	fullContent += fullContentSb367.String()
 
 	assert.NotEmpty(t, fullContent, "Combined streaming content should not be empty")
 }
 
-// AssertConversationFlow validates conversation flow
+// AssertConversationFlow validates conversation flow.
 func AssertConversationFlow(t *testing.T, history []schema.Message, expectedMinLength int) {
+	t.Helper()
 	assert.GreaterOrEqual(t, len(history), expectedMinLength)
 
 	// Verify alternating human/AI pattern
@@ -387,8 +385,9 @@ func AssertConversationFlow(t *testing.T, history []schema.Message, expectedMinL
 	}
 }
 
-// AssertChatModelHealth validates chat model health check results
-func AssertChatModelHealth(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertChatModelHealth validates chat model health check results.
+func AssertChatModelHealth(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "model_name")
@@ -396,9 +395,10 @@ func AssertChatModelHealth(t *testing.T, health map[string]interface{}, expected
 	assert.Contains(t, health, "call_count")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var chatErr *ChatModelError
 	if assert.ErrorAs(t, err, &chatErr) {
 		assert.Equal(t, expectedCode, chatErr.Code)
@@ -407,11 +407,11 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs chat model tests concurrently for performance testing
+// ConcurrentTestRunner runs chat model tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -466,8 +466,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on chat model
-func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on chat model.
+func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -515,7 +516,7 @@ func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations i
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -524,7 +525,7 @@ func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations i
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	chatModels map[string]*AdvancedMockChatModel
 }
@@ -550,7 +551,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// ChatModelScenarioRunner runs common chat model scenarios
+// ChatModelScenarioRunner runs common chat model scenarios.
 type ChatModelScenarioRunner struct {
 	chatModel llmsiface.ChatModel
 }
@@ -594,13 +595,15 @@ func (r *ChatModelScenarioRunner) RunStreamingScenario(ctx context.Context, quer
 		// Collect stream
 		var fullResponse string
 		chunkCount := 0
+		var fullResponseSb597 strings.Builder
 		for chunk := range streamCh {
 			if chunk.Err != nil {
 				return fmt.Errorf("streaming chunk error in query %d: %w", i+1, chunk.Err)
 			}
-			fullResponse += chunk.Content
+			_, _ = fullResponseSb597.WriteString(chunk.Content)
 			chunkCount++
 		}
+		fullResponse += fullResponseSb597.String()
 
 		if fullResponse == "" {
 			return fmt.Errorf("streaming query %d produced empty response", i+1)
@@ -614,7 +617,7 @@ func (r *ChatModelScenarioRunner) RunStreamingScenario(ctx context.Context, quer
 	return nil
 }
 
-// BenchmarkHelper provides benchmarking utilities for chat models
+// BenchmarkHelper provides benchmarking utilities for chat models.
 type BenchmarkHelper struct {
 	chatModel    llmsiface.ChatModel
 	testMessages [][]schema.Message

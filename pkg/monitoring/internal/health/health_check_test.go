@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewHealthCheck(t *testing.T) {
@@ -33,9 +34,12 @@ func TestNewHealthCheck(t *testing.T) {
 }
 
 func TestHealthCheckStartStop(t *testing.T) {
+	var calledMu sync.Mutex
 	called := false
 	checkFunc := func() *HealthCheckResult {
+		calledMu.Lock()
 		called = true
+		calledMu.Unlock()
 		return &HealthCheckResult{
 			Status:    StatusHealthy,
 			Message:   "Test check",
@@ -53,7 +57,10 @@ func TestHealthCheckStartStop(t *testing.T) {
 
 	hc.Stop()
 
-	assert.True(t, called, "Health check function should have been called")
+	calledMu.Lock()
+	wasCalled := called
+	calledMu.Unlock()
+	assert.True(t, wasCalled, "Health check function should have been called")
 }
 
 func TestHealthCheckRunCheck(t *testing.T) {
@@ -155,9 +162,12 @@ func TestHealthCheckRegisterAlert(t *testing.T) {
 		}
 	})
 
+	var alertCalledMu sync.Mutex
 	alertCalled := false
 	alertFunc := func(result *HealthCheckResult) {
+		alertCalledMu.Lock()
 		alertCalled = true
+		alertCalledMu.Unlock()
 		assert.Equal(t, "test_check", result.CheckName)
 	}
 
@@ -167,7 +177,10 @@ func TestHealthCheckRegisterAlert(t *testing.T) {
 	hc.RunCheck()
 	// Give time for goroutine to execute
 	time.Sleep(10 * time.Millisecond)
-	assert.True(t, alertCalled)
+	alertCalledMu.Lock()
+	wasCalled := alertCalled
+	alertCalledMu.Unlock()
+	assert.True(t, wasCalled)
 }
 
 func TestHealthCheckGetLastResult(t *testing.T) {
@@ -212,14 +225,14 @@ func TestHealthCheckManagerAddCheck(t *testing.T) {
 
 	t.Run("add new check", func(t *testing.T) {
 		err := manager.AddCheck(hc)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, manager.checks, 1)
 	})
 
 	t.Run("add duplicate check", func(t *testing.T) {
 		hc2 := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
 		err := manager.AddCheck(hc2)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "already exists")
 	})
 }
@@ -236,17 +249,17 @@ func TestHealthCheckManagerRemoveCheck(t *testing.T) {
 	}
 
 	hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
-	manager.AddCheck(hc)
+	_ = manager.AddCheck(hc)
 
 	t.Run("remove existing check", func(t *testing.T) {
 		err := manager.RemoveCheck("test_component", "test_check")
-		assert.NoError(t, err)
-		assert.Len(t, manager.checks, 0)
+		require.NoError(t, err)
+		assert.Empty(t, manager.checks)
 	})
 
 	t.Run("remove non-existent check", func(t *testing.T) {
 		err := manager.RemoveCheck("non_existent", "test_check")
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not found")
 	})
 }
@@ -265,8 +278,8 @@ func TestHealthCheckManagerStartStopAllChecks(t *testing.T) {
 	hc1 := NewHealthCheck("check1", "component1", 100*time.Millisecond, checkFunc)
 	hc2 := NewHealthCheck("check2", "component2", 100*time.Millisecond, checkFunc)
 
-	manager.AddCheck(hc1)
-	manager.AddCheck(hc2)
+	_ = manager.AddCheck(hc1)
+	_ = manager.AddCheck(hc2)
 
 	manager.StartAllChecks()
 
@@ -294,7 +307,7 @@ func TestHealthCheckManagerGetCheckResults(t *testing.T) {
 	}
 
 	hc := NewHealthCheck("test_check", "test_component", time.Minute, checkFunc)
-	manager.AddCheck(hc)
+	_ = manager.AddCheck(hc)
 
 	hc.RunCheck()
 
@@ -369,8 +382,8 @@ func TestHealthCheckManagerCheckSystemHealth(t *testing.T) {
 
 func TestCreateAgentHealthCheckFunc(t *testing.T) {
 	t.Run("healthy agent", func(t *testing.T) {
-		getHealthFunc := func() map[string]interface{} {
-			return map[string]interface{}{
+		getHealthFunc := func() map[string]any {
+			return map[string]any{
 				"state":         "running",
 				"error_count":   0,
 				"name":          "test_agent",
@@ -386,8 +399,8 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 	})
 
 	t.Run("error state agent", func(t *testing.T) {
-		getHealthFunc := func() map[string]interface{} {
-			return map[string]interface{}{
+		getHealthFunc := func() map[string]any {
+			return map[string]any{
 				"state": "error",
 				"name":  "test_agent",
 			}
@@ -399,8 +412,8 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 	})
 
 	t.Run("paused agent", func(t *testing.T) {
-		getHealthFunc := func() map[string]interface{} {
-			return map[string]interface{}{
+		getHealthFunc := func() map[string]any {
+			return map[string]any{
 				"state": "paused",
 				"name":  "test_agent",
 			}
@@ -412,8 +425,8 @@ func TestCreateAgentHealthCheckFunc(t *testing.T) {
 	})
 
 	t.Run("high error count", func(t *testing.T) {
-		getHealthFunc := func() map[string]interface{} {
-			return map[string]interface{}{
+		getHealthFunc := func() map[string]any {
+			return map[string]any{
 				"state":       "running",
 				"error_count": 10,
 				"name":        "test_agent",
@@ -465,7 +478,7 @@ func TestHealthCheckConcurrency(t *testing.T) {
 	}
 
 	hc := NewHealthCheck("concurrent_check", "test_component", time.Minute, checkFunc)
-	manager.AddCheck(hc)
+	_ = manager.AddCheck(hc)
 
 	var wg sync.WaitGroup
 	numGoroutines := 10
@@ -487,7 +500,7 @@ func TestHealthCheckConcurrency(t *testing.T) {
 	assert.Equal(t, numGoroutines, finalCount)
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkHealthCheck_RunCheck(b *testing.B) {
 	checkFunc := func() *HealthCheckResult {
 		return &HealthCheckResult{
@@ -521,7 +534,7 @@ func BenchmarkHealthCheckManager_GetCheckResults(b *testing.B) {
 			}
 		}
 		hc := NewHealthCheck("bench_check", "bench_component", time.Minute, checkFunc)
-		manager.AddCheck(hc)
+		_ = manager.AddCheck(hc)
 	}
 
 	b.ResetTimer()
@@ -532,8 +545,8 @@ func BenchmarkHealthCheckManager_GetCheckResults(b *testing.B) {
 }
 
 func BenchmarkCreateAgentHealthCheckFunc(b *testing.B) {
-	getHealthFunc := func() map[string]interface{} {
-		return map[string]interface{}{
+	getHealthFunc := func() map[string]any {
+		return map[string]any{
 			"state":       "running",
 			"error_count": 0,
 			"name":        "bench_agent",

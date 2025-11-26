@@ -21,7 +21,7 @@ func TestNewDeepgramStreamingSession_Error(t *testing.T) {
 
 	session, err := NewDeepgramStreamingSession(ctx, config)
 	// Should fail without valid WebSocket connection
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -36,7 +36,7 @@ func TestNewDeepgramStreamingSession_WithHTTPResponse(t *testing.T) {
 
 	session, err := NewDeepgramStreamingSession(ctx, config)
 	// Should fail with HTTP error
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -52,7 +52,7 @@ func TestNewDeepgramStreamingSession_WithOptionalParams(t *testing.T) {
 	defer cancel()
 
 	session, err := NewDeepgramStreamingSession(ctx, config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -66,7 +66,7 @@ func TestNewDeepgramStreamingSession_WithMetrics(t *testing.T) {
 	defer cancel()
 
 	session, err := NewDeepgramStreamingSession(ctx, config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -84,7 +84,7 @@ func TestDeepgramStreamingSession_Close(t *testing.T) {
 	if err == nil && session != nil {
 		// If somehow it connected, test close
 		err := session.Close()
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
@@ -106,7 +106,7 @@ func TestDeepgramStreamingSession_SendAudio_Closed(t *testing.T) {
 		// Try to send audio to closed session
 		audio := []byte{1, 2, 3, 4, 5}
 		err = session.SendAudio(ctx, audio)
-		assert.Error(t, err)
+		require.Error(t, err)
 	}
 }
 
@@ -148,7 +148,7 @@ func TestDeepgramStreamingSession_SendAudio_Success(t *testing.T) {
 	// Send audio
 	audio := []byte{1, 2, 3, 4, 5}
 	err = session.SendAudio(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Give server time to receive message
 	time.Sleep(100 * time.Millisecond)
@@ -160,7 +160,7 @@ func TestDeepgramStreamingSession_SendAudio_Success(t *testing.T) {
 		time.Sleep(200 * time.Millisecond)
 		messages = mockServer.GetMessages()
 	}
-	assert.Greater(t, len(messages), 0, "Expected at least one message")
+	assert.NotEmpty(t, messages, "Expected at least one message")
 	if len(messages) > 0 {
 		assert.Equal(t, audio, messages[0])
 	}
@@ -172,10 +172,10 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 
 	// Set up handler to send transcript response
 	mockServer.SetOnMessage(func([]byte) []byte {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"type": "Results",
-			"channel": map[string]interface{}{
-				"alternatives": []map[string]interface{}{
+			"channel": map[string]any{
+				"alternatives": []map[string]any{
 					{
 						"transcript": "Hello world",
 						"confidence": 0.95,
@@ -210,10 +210,10 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Success(t *testing.T) {
 	ch := session.ReceiveTranscript()
 	select {
 	case result := <-ch:
-		assert.NoError(t, result.Error)
+		require.NoError(t, result.Error)
 		assert.Equal(t, "Hello world", result.Text)
 		assert.True(t, result.IsFinal)
-		assert.Equal(t, 0.95, result.Confidence)
+		assert.InEpsilon(t, 0.95, result.Confidence, 0.0001)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for transcript")
 	}
@@ -237,11 +237,11 @@ func TestDeepgramStreamingSession_Close_WithConnection(t *testing.T) {
 
 	// Close session
 	err = session.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Try to send after close
 	err = session.SendAudio(ctx, []byte{1, 2, 3})
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDeepgramStreamingSession_ReceiveTranscript_Interim(t *testing.T) {
@@ -250,10 +250,10 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Interim(t *testing.T) {
 
 	// Set up handler to send interim transcript
 	mockServer.SetOnMessage(func([]byte) []byte {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"type": "Results",
-			"channel": map[string]interface{}{
-				"alternatives": []map[string]interface{}{
+			"channel": map[string]any{
+				"alternatives": []map[string]any{
 					{
 						"transcript": "Hello",
 						"confidence": 0.8,
@@ -287,7 +287,7 @@ func TestDeepgramStreamingSession_ReceiveTranscript_Interim(t *testing.T) {
 	ch := session.ReceiveTranscript()
 	select {
 	case result := <-ch:
-		assert.NoError(t, result.Error)
+		require.NoError(t, result.Error)
 		assert.Equal(t, "Hello", result.Text)
 		assert.False(t, result.IsFinal)
 	case <-time.After(2 * time.Second):
@@ -325,7 +325,7 @@ func TestDeepgramStreamingSession_ReceiveTranscript_MalformedResponse(t *testing
 	ch := session.ReceiveTranscript()
 	select {
 	case result := <-ch:
-		assert.Error(t, result.Error)
+		require.Error(t, result.Error)
 	case <-time.After(2 * time.Second):
 		t.Fatal("Timeout waiting for error")
 	}

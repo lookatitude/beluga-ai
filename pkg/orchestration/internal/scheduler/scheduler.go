@@ -101,7 +101,7 @@ func (s *Scheduler) ExecuteAutonomous() error {
 	for id, task := range s.tasks {
 		go func(taskID string, t *Task) {
 			if err := t.Execute(); err != nil {
-				fmt.Printf("Task %s failed: %v\n", taskID, err)
+				_, _ = fmt.Printf("Task %s failed: %v\n", taskID, err)
 			}
 		}(id, task)
 	}
@@ -109,7 +109,7 @@ func (s *Scheduler) ExecuteAutonomous() error {
 	return nil
 }
 
-// ExecuteConcurrent runs tasks concurrently using a worker pool
+// ExecuteConcurrent runs tasks concurrently using a worker pool.
 func (s *Scheduler) ExecuteConcurrent(workers int) error {
 	workerPool := NewWorkerPool(workers)
 	workerPool.Start()
@@ -128,7 +128,7 @@ func (s *Scheduler) ExecuteConcurrent(workers int) error {
 	return s.collectWorkerResults(results, len(s.tasks))
 }
 
-// collectWorkerResults collects results from worker pool
+// collectWorkerResults collects results from worker pool.
 func (s *Scheduler) collectWorkerResults(results <-chan TaskResult, totalTasks int) error {
 	completedTasks := 0
 
@@ -141,14 +141,14 @@ func (s *Scheduler) collectWorkerResults(results <-chan TaskResult, totalTasks i
 		completedTasks++
 
 		if !result.Success {
-			fmt.Printf("Task %s failed: %v\n", result.TaskID, result.Error)
+			_, _ = fmt.Printf("Task %s failed: %v\n", result.TaskID, result.Error)
 		}
 	}
 
 	return nil
 }
 
-// ExecuteWithRetry runs tasks with retry logic
+// ExecuteWithRetry runs tasks with retry logic.
 func (s *Scheduler) ExecuteWithRetry(maxRetries int) error {
 	retryExecutor := NewRetryExecutor(RetryConfig{
 		MaxAttempts:   maxRetries,
@@ -169,7 +169,7 @@ func (s *Scheduler) ExecuteWithRetry(maxRetries int) error {
 	return nil
 }
 
-// runTaskWithRetry runs a single task with retry logic
+// runTaskWithRetry runs a single task with retry logic.
 func (s *Scheduler) runTaskWithRetry(id string, task *Task, retryExecutor *RetryExecutor) error {
 	if s.completed[id] {
 		return nil

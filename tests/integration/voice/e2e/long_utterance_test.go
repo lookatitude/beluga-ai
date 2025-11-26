@@ -5,11 +5,10 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// TestLongUtterance_E2E tests long utterance handling end-to-end
+// TestLongUtterance_E2E tests long utterance handling end-to-end.
 func TestLongUtterance_E2E(t *testing.T) {
 	ctx := context.Background()
 
@@ -38,13 +37,13 @@ func TestLongUtterance_E2E(t *testing.T) {
 
 	err = voiceSession.ProcessAudio(ctx, largeAudio)
 	// Should handle large chunks (may chunk internally)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Process multiple large chunks
 	for i := 0; i < 10; i++ {
 		chunk := make([]byte, 100*1024) // 100KB chunks
 		err = voiceSession.ProcessAudio(ctx, chunk)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	err = voiceSession.Stop(ctx)

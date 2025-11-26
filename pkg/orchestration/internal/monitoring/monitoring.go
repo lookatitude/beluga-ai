@@ -8,8 +8,8 @@ import (
 // WorkflowMonitor tracks the state and progress of workflows.
 type WorkflowMonitor struct {
 	state   map[string]string
-	mutex   sync.Mutex
 	logChan chan string
+	mutex   sync.Mutex
 }
 
 // NewWorkflowMonitor initializes a new WorkflowMonitor.
@@ -39,7 +39,7 @@ func (wm *WorkflowMonitor) GetState(taskID string) string {
 func (wm *WorkflowMonitor) StartLogging() {
 	go func() {
 		for logEntry := range wm.logChan {
-			fmt.Println(logEntry)
+			_, _ = fmt.Println(logEntry)
 		}
 	}()
 }

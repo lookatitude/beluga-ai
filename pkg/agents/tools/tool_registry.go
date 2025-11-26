@@ -1,12 +1,13 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	// "context" // Unused
 	// "regexp" // Unused
 	// "strconv" // Unused
-	// "github.com/lookatitude/beluga-ai/pkg/schema" // Unused for now, tool.go handles schema related types
+	// "github.com/lookatitude/beluga-ai/pkg/schema" // Unused for now, tool.go handles schema related types.
 )
 
 // Registry defines the interface for a tool registry.
@@ -33,7 +34,7 @@ func NewInMemoryToolRegistry() *InMemoryToolRegistry {
 // RegisterTool adds a tool to the registry.
 func (r *InMemoryToolRegistry) RegisterTool(tool Tool) error {
 	if tool.Name() == "" {
-		return fmt.Errorf("tool name cannot be empty")
+		return errors.New("tool name cannot be empty")
 	}
 	if _, exists := r.tools[tool.Name()]; exists {
 		return fmt.Errorf("tool with name %s already registered", tool.Name())

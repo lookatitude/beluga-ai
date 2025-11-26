@@ -3,6 +3,7 @@ package tools
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -29,17 +30,17 @@ type Tool interface {
 
 // ToolDefinition provides metadata about a tool for LLM consumption.
 type ToolDefinition struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	InputSchema interface{} `json:"input_schema"` // Can be string or map[string]any
+	InputSchema any    `json:"input_schema"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // BaseTool provides a default implementation of the Tool interface.
 // It can be embedded in tool implementations to simplify implementing the interface.
 type BaseTool struct {
+	inputSchema any
 	name        string
 	description string
-	inputSchema interface{}
 }
 
 // Name returns the tool's name.
@@ -72,13 +73,13 @@ func (b *BaseTool) SetDescription(description string) {
 }
 
 // SetInputSchema sets the tool's input schema.
-func (b *BaseTool) SetInputSchema(schema interface{}) {
+func (b *BaseTool) SetInputSchema(schema any) {
 	b.inputSchema = schema
 }
 
-// Execute is a placeholder implementation that must be overridden by concrete tool implementations
+// Execute is a placeholder implementation that must be overridden by concrete tool implementations.
 func (b *BaseTool) Execute(ctx context.Context, input any) (any, error) {
-	return nil, fmt.Errorf("Execute not implemented in base tool")
+	return nil, errors.New("Execute not implemented in base tool")
 }
 
 // Batch implements parallel execution of multiple inputs.
@@ -114,7 +115,7 @@ func (b *BaseTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, firstErr
 }
 
-// funcOption implements core.Option
+// funcOption implements core.Option.
 type funcOption struct {
 	f func(*map[string]any)
 }
@@ -123,7 +124,7 @@ func (fo *funcOption) Apply(config *map[string]any) {
 	fo.f(config)
 }
 
-// Helper function to create an option
+// Helper function to create an option.
 func newOption(f func(*map[string]any)) core.Option {
 	return &funcOption{f: f}
 }
@@ -149,21 +150,21 @@ func WithRetries(n int) core.Option {
 	})
 }
 
-// WithEmbedder provides an embedder to use with tools that require one
-func WithEmbedder(embedder interface{}) core.Option {
+// WithEmbedder provides an embedder to use with tools that require one.
+func WithEmbedder(embedder any) core.Option {
 	return newOption(func(config *map[string]any) {
 		(*config)["embedder"] = embedder
 	})
 }
 
-// WithK sets the number of items to retrieve
+// WithK sets the number of items to retrieve.
 func WithK(k int) core.Option {
 	return newOption(func(config *map[string]any) {
 		(*config)["k"] = k
 	})
 }
 
-// WithFilter provides a metadata filter
+// WithFilter provides a metadata filter.
 func WithFilter(filter map[string]any) core.Option {
 	return newOption(func(config *map[string]any) {
 		(*config)["filter"] = filter

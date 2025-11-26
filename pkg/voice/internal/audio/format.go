@@ -2,21 +2,22 @@
 package audio
 
 import (
+	"errors"
 	"fmt"
 )
 
 // AudioFormat represents audio format specifications.
 type AudioFormat struct {
-	SampleRate int    // Sample rate in Hz (e.g., 16000, 48000)
-	Channels   int    // Number of channels (1 for mono, 2 for stereo)
-	BitDepth   int    // Bit depth (16, 24, 32)
-	Encoding   string // Encoding format ("pcm", "opus", "mp3", etc.)
+	Encoding   string
+	SampleRate int
+	Channels   int
+	BitDepth   int
 }
 
 // Validate validates the audio format.
 func (af *AudioFormat) Validate() error {
 	if af.SampleRate <= 0 {
-		return fmt.Errorf("sample rate must be greater than 0")
+		return errors.New("sample rate must be greater than 0")
 	}
 
 	if af.Channels != 1 && af.Channels != 2 {
@@ -28,7 +29,7 @@ func (af *AudioFormat) Validate() error {
 	}
 
 	if af.Encoding == "" {
-		return fmt.Errorf("encoding must be non-empty")
+		return errors.New("encoding must be non-empty")
 	}
 
 	return nil

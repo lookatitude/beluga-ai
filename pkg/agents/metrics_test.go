@@ -13,7 +13,7 @@ import (
 // mockMeterProvider implements a simple meter provider for testing.
 type mockMeterProvider struct{}
 
-func (m *mockMeterProvider) Meter(name string, opts ...interface{}) interface{} {
+func (m *mockMeterProvider) Meter(name string, opts ...any) any {
 	return noop.NewMeterProvider().Meter(name)
 }
 
@@ -39,7 +39,7 @@ func TestNewMetrics(t *testing.T) {
 	if metrics.toolCalls == nil {
 		t.Error("toolCalls metric not initialized")
 	}
-	if 		metrics.planningCalls == nil {
+	if metrics.planningCalls == nil {
 		t.Error("planningCalls metric not initialized")
 	}
 }

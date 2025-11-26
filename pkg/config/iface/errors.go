@@ -1,13 +1,16 @@
 package iface
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // ConfigError represents errors specific to configuration operations.
 // It provides structured error information for programmatic error handling.
 type ConfigError struct {
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable error message
-	Cause   error  // Underlying error that caused this error
+	Cause   error
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -24,7 +27,7 @@ func (e *ConfigError) Unwrap() error {
 }
 
 // NewConfigError creates a new ConfigError with the given code and message.
-func NewConfigError(code, message string, args ...interface{}) *ConfigError {
+func NewConfigError(code, message string, args ...any) *ConfigError {
 	return &ConfigError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -32,7 +35,7 @@ func NewConfigError(code, message string, args ...interface{}) *ConfigError {
 }
 
 // WrapError wraps an existing error with config context.
-func WrapError(cause error, code, message string, args ...interface{}) *ConfigError {
+func WrapError(cause error, code, message string, args ...any) *ConfigError {
 	return &ConfigError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -40,7 +43,7 @@ func WrapError(cause error, code, message string, args ...interface{}) *ConfigEr
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeInvalidConfig       = "invalid_config"
 	ErrCodeValidationFailed    = "validation_failed"
@@ -64,7 +67,8 @@ const (
 // It unwraps the error chain to find any ConfigError with the matching code.
 func IsConfigError(err error, code string) bool {
 	for err != nil {
-		if cfgErr, ok := err.(*ConfigError); ok {
+		cfgErr := &ConfigError{}
+		if errors.As(err, &cfgErr) {
 			if cfgErr.Code == code {
 				return true
 			}
@@ -85,6 +89,7 @@ func IsConfigError(err error, code string) bool {
 // regular errors (like fmt.Errorf) that might wrap ConfigErrors.
 func AsConfigError(err error, target **ConfigError) bool {
 	for err != nil {
+		// Check if err is directly a ConfigError (not wrapped)
 		if cfgErr, ok := err.(*ConfigError); ok {
 			// Set target to the first ConfigError found (outermost)
 			if *target == nil {
@@ -100,6 +105,7 @@ func AsConfigError(err error, target **ConfigError) bool {
 		}
 		// For non-ConfigError types, stop here - don't unwrap
 		// This prevents finding ConfigErrors wrapped in regular errors (like fmt.Errorf)
+		// The test expects that ConfigErrors wrapped in regular errors should not be found
 		break
 	}
 	return *target != nil

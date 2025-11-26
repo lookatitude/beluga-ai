@@ -11,8 +11,8 @@ import (
 
 func TestNewWebRTCProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *vad.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -40,10 +40,10 @@ func TestNewWebRTCProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewWebRTCProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -64,7 +64,7 @@ func TestWebRTCProvider_Process(t *testing.T) {
 
 	// Test processing
 	speech, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Result depends on audio content, but should not error
 	_ = speech
 }
@@ -144,6 +144,6 @@ func TestWebRTCProvider_Process_EmptyAudio(t *testing.T) {
 	ctx := context.Background()
 	// Empty audio should return an error for WebRTC (requires minimum frame size)
 	_, err = provider.Process(ctx, []byte{})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "frame_size_error")
 }

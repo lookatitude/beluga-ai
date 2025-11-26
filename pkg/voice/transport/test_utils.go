@@ -12,27 +12,23 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockTransport provides a comprehensive mock implementation for testing
+// AdvancedMockTransport provides a comprehensive mock implementation for testing.
 type AdvancedMockTransport struct {
+	errorToReturn error
+	audioCallback func([]byte)
 	mock.Mock
-
-	// Configuration
-	transportName string
-	callCount     int
-	mu            sync.RWMutex
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	transportName        string
 	audioData            [][]byte
+	callCount            int
 	dataIndex            int
 	processingDelay      time.Duration
+	mu                   sync.RWMutex
+	shouldError          bool
 	simulateNetworkDelay bool
 	connected            bool
-	audioCallback        func([]byte)
 }
 
-// NewAdvancedMockTransport creates a new advanced mock with configurable behavior
+// NewAdvancedMockTransport creates a new advanced mock with configurable behavior.
 func NewAdvancedMockTransport(transportName string, opts ...MockOption) *AdvancedMockTransport {
 	m := &AdvancedMockTransport{
 		transportName:   transportName,
@@ -49,24 +45,24 @@ func NewAdvancedMockTransport(transportName string, opts ...MockOption) *Advance
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockTransport
+// MockOption configures the behavior of AdvancedMockTransport.
 type MockOption func(*AdvancedMockTransport)
 
-// WithTransportName sets the transport name
+// WithTransportName sets the transport name.
 func WithTransportName(name string) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.transportName = name
 	}
 }
 
-// WithAudioData sets the audio data to return
+// WithAudioData sets the audio data to return.
 func WithAudioData(data ...[]byte) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.audioData = data
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.shouldError = true
@@ -74,28 +70,28 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithProcessingDelay sets the delay for processing
+// WithProcessingDelay sets the delay for processing.
 func WithProcessingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.processingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// WithConnected sets the connection state
+// WithConnected sets the connection state.
 func WithConnected(connected bool) MockOption {
 	return func(m *AdvancedMockTransport) {
 		m.connected = connected
 	}
 }
 
-// Connect is a helper method for testing (not part of the interface)
+// Connect is a helper method for testing (not part of the interface).
 func (m *AdvancedMockTransport) Connect(ctx context.Context) error {
 	m.mu.Lock()
 	m.callCount++
@@ -125,7 +121,7 @@ func (m *AdvancedMockTransport) Connect(ctx context.Context) error {
 	return nil
 }
 
-// Disconnect is a helper method for testing (not part of the interface)
+// Disconnect is a helper method for testing (not part of the interface).
 func (m *AdvancedMockTransport) Disconnect(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -145,7 +141,7 @@ func (m *AdvancedMockTransport) Disconnect(ctx context.Context) error {
 	return nil
 }
 
-// SendAudio implements the Transport interface
+// SendAudio implements the Transport interface.
 func (m *AdvancedMockTransport) SendAudio(ctx context.Context, audio []byte) error {
 	m.mu.Lock()
 	m.callCount++
@@ -182,7 +178,7 @@ func (m *AdvancedMockTransport) SendAudio(ctx context.Context, audio []byte) err
 	return nil
 }
 
-// ReceiveAudio implements the Transport interface
+// ReceiveAudio implements the Transport interface.
 func (m *AdvancedMockTransport) ReceiveAudio() <-chan []byte {
 	audioCh := make(chan []byte, 10)
 
@@ -207,14 +203,14 @@ func (m *AdvancedMockTransport) ReceiveAudio() <-chan []byte {
 	return audioCh
 }
 
-// OnAudioReceived implements the Transport interface
+// OnAudioReceived implements the Transport interface.
 func (m *AdvancedMockTransport) OnAudioReceived(callback func(audio []byte)) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.audioCallback = callback
 }
 
-// Close implements the Transport interface
+// Close implements the Transport interface.
 func (m *AdvancedMockTransport) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -234,22 +230,23 @@ func (m *AdvancedMockTransport) Close() error {
 	return nil
 }
 
-// IsConnected is a helper method for testing
+// IsConnected is a helper method for testing.
 func (m *AdvancedMockTransport) IsConnected() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.connected
 }
 
-// GetCallCount returns the number of times methods have been called
+// GetCallCount returns the number of times methods have been called.
 func (m *AdvancedMockTransport) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// AssertTransportInterface ensures that a type implements the Transport interface
+// AssertTransportInterface ensures that a type implements the Transport interface.
 func AssertTransportInterface(t *testing.T, transport iface.Transport) {
+	t.Helper()
 	assert.NotNil(t, transport, "Transport should not be nil")
 
 	// Test SendAudio method

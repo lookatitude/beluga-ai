@@ -4,6 +4,7 @@ package providers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -12,12 +13,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/server/providers/rest"
 )
 
-// RESTProvider provides a ready-to-use REST server implementation
+// RESTProvider provides a ready-to-use REST server implementation.
 type RESTProvider struct {
 	server iface.RESTServer
 }
 
-// NewRESTProvider creates a new REST provider with default configuration
+// NewRESTProvider creates a new REST provider with default configuration.
 func NewRESTProvider(opts ...iface.Option) (*RESTProvider, error) {
 	// Set default REST configuration if not provided
 	hasRESTConfig := false
@@ -64,24 +65,24 @@ func NewRESTProvider(opts ...iface.Option) (*RESTProvider, error) {
 	}, nil
 }
 
-// Start starts the REST server
+// Start starts the REST server.
 func (p *RESTProvider) Start(ctx context.Context) error {
 	return p.server.Start(ctx)
 }
 
-// Stop stops the REST server
+// Stop stops the REST server.
 func (p *RESTProvider) Stop(ctx context.Context) error {
 	return p.server.Stop(ctx)
 }
 
-// RegisterAgentHandler registers an agent handler for REST endpoints
+// RegisterAgentHandler registers an agent handler for REST endpoints.
 func (p *RESTProvider) RegisterAgentHandler(name string, handler AgentRESTHandler) {
 	adapter := &agentRESTAdapter{name: name, handler: handler}
 	p.server.RegisterHTTPHandler("POST", fmt.Sprintf("/api/v1/agents/%s/execute", name), adapter.handleExecuteHTTP)
 	p.server.RegisterHTTPHandler("GET", fmt.Sprintf("/api/v1/agents/%s/status", name), adapter.handleStatusHTTP)
 }
 
-// RegisterChainHandler registers a chain handler for REST endpoints
+// RegisterChainHandler registers a chain handler for REST endpoints.
 func (p *RESTProvider) RegisterChainHandler(name string, handler ChainRESTHandler) {
 	adapter := &chainRESTAdapter{name: name, handler: handler}
 	p.server.RegisterHTTPHandler("POST", fmt.Sprintf("/api/v1/chains/%s/execute", name), adapter.handleExecuteHTTP)
@@ -94,37 +95,37 @@ func (p *RESTProvider) RegisterWorkflowHandler(name string, handler WorkflowREST
 	p.server.RegisterHTTPHandler("GET", fmt.Sprintf("/api/v1/workflows/%s/status", name), adapter.handleStatusHTTP)
 }
 
-// GetServer returns the underlying REST server for advanced usage
+// GetServer returns the underlying REST server for advanced usage.
 func (p *RESTProvider) GetServer() iface.RESTServer {
 	return p.server
 }
 
-// AgentRESTHandler handles REST requests for agents
+// AgentRESTHandler handles REST requests for agents.
 type AgentRESTHandler interface {
-	Execute(ctx context.Context, request interface{}) (interface{}, error)
-	GetStatus(ctx context.Context, id string) (interface{}, error)
+	Execute(ctx context.Context, request any) (any, error)
+	GetStatus(ctx context.Context, id string) (any, error)
 }
 
-// ChainRESTHandler handles REST requests for chains
+// ChainRESTHandler handles REST requests for chains.
 type ChainRESTHandler interface {
-	Execute(ctx context.Context, request interface{}) (interface{}, error)
-	GetStatus(ctx context.Context, id string) (interface{}, error)
+	Execute(ctx context.Context, request any) (any, error)
+	GetStatus(ctx context.Context, id string) (any, error)
 }
 
 type WorkflowRESTHandler interface {
-	Execute(ctx context.Context, request interface{}) (interface{}, error)
-	GetStatus(ctx context.Context, id string) (interface{}, error)
+	Execute(ctx context.Context, request any) (any, error)
+	GetStatus(ctx context.Context, id string) (any, error)
 }
 
-// agentRESTAdapter adapts AgentRESTHandler to StreamingHandler interface
+// agentRESTAdapter adapts AgentRESTHandler to StreamingHandler interface.
 type agentRESTAdapter struct {
-	name    string
 	handler AgentRESTHandler
+	name    string
 }
 
 func (a *agentRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("agent_streaming", "invalid JSON request", err)
 	}
@@ -141,27 +142,30 @@ func (a *agentRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	encoder := json.NewEncoder(w)
-	return encoder.Encode(map[string]interface{}{
+	if err := encoder.Encode(map[string]any{
 		"agent":     a.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode streaming response: %w", err)
+	}
+	return nil
 }
 
 func (a *agentRESTAdapter) HandleNonStreaming(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		return a.handleExecute(w, r)
-	case "GET":
+	case http.MethodGet:
 		return a.handleStatus(w, r)
 	default:
-		return iface.NewInvalidRequestError("agent_method", fmt.Sprintf("unsupported method: %s", r.Method), nil)
+		return iface.NewInvalidRequestError("agent_method", "unsupported method: "+r.Method, nil)
 	}
 }
 
 func (a *agentRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("agent_execute", "invalid JSON request", err)
 	}
@@ -175,11 +179,14 @@ func (a *agentRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Request)
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"agent":     a.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode response: %w", err)
+	}
+	return nil
 }
 
 func (a *agentRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Request) error {
@@ -198,39 +205,50 @@ func (a *agentRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Request) 
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"agent":     a.name,
 		"id":        id,
 		"status":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode status response: %w", err)
+	}
+	return nil
 }
 
 func (a *agentRESTAdapter) handleExecuteHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := a.handleExecute(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }
 
 func (a *agentRESTAdapter) handleStatusHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := a.handleStatus(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }
 
-// chainRESTAdapter adapts ChainRESTHandler to StreamingHandler interface
+// chainRESTAdapter adapts ChainRESTHandler to StreamingHandler interface.
 type chainRESTAdapter struct {
-	name    string
 	handler ChainRESTHandler
+	name    string
 }
 
 func (c *chainRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("chain_streaming", "invalid JSON request", err)
 	}
@@ -247,27 +265,30 @@ func (c *chainRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Reques
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	encoder := json.NewEncoder(w)
-	return encoder.Encode(map[string]interface{}{
+	if err := encoder.Encode(map[string]any{
 		"chain":     c.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode streaming response: %w", err)
+	}
+	return nil
 }
 
 func (c *chainRESTAdapter) HandleNonStreaming(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		return c.handleExecute(w, r)
-	case "GET":
+	case http.MethodGet:
 		return c.handleStatus(w, r)
 	default:
-		return iface.NewInvalidRequestError("chain_method", fmt.Sprintf("unsupported method: %s", r.Method), nil)
+		return iface.NewInvalidRequestError("chain_method", "unsupported method: "+r.Method, nil)
 	}
 }
 
 func (c *chainRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("chain_execute", "invalid JSON request", err)
 	}
@@ -281,11 +302,14 @@ func (c *chainRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Request)
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"chain":     c.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode response: %w", err)
+	}
+	return nil
 }
 
 func (c *chainRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Request) error {
@@ -304,38 +328,49 @@ func (c *chainRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Request) 
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"chain":     c.name,
 		"id":        id,
 		"status":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode status response: %w", err)
+	}
+	return nil
 }
 
 func (c *chainRESTAdapter) handleExecuteHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := c.handleExecute(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }
 
 func (c *chainRESTAdapter) handleStatusHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := c.handleStatus(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }
 
 type workflowRESTAdapter struct {
-	name    string
 	handler WorkflowRESTHandler
+	name    string
 }
 
 func (wf *workflowRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("workflow_streaming", "invalid JSON request", err)
 	}
@@ -352,27 +387,30 @@ func (wf *workflowRESTAdapter) HandleStreaming(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Transfer-Encoding", "chunked")
 
 	encoder := json.NewEncoder(w)
-	return encoder.Encode(map[string]interface{}{
+	if err := encoder.Encode(map[string]any{
 		"workflow":  wf.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode streaming response: %w", err)
+	}
+	return nil
 }
 
 func (wf *workflowRESTAdapter) HandleNonStreaming(w http.ResponseWriter, r *http.Request) error {
 	switch r.Method {
-	case "POST":
+	case http.MethodPost:
 		return wf.handleExecute(w, r)
-	case "GET":
+	case http.MethodGet:
 		return wf.handleStatus(w, r)
 	default:
-		return iface.NewInvalidRequestError("workflow_method", fmt.Sprintf("unsupported method: %s", r.Method), nil)
+		return iface.NewInvalidRequestError("workflow_method", "unsupported method: "+r.Method, nil)
 	}
 }
 
 func (wf *workflowRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Request) error {
 	// Parse request
-	var req map[string]interface{}
+	var req map[string]any
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return iface.NewInvalidRequestError("workflow_execute", "invalid JSON request", err)
 	}
@@ -386,11 +424,14 @@ func (wf *workflowRESTAdapter) handleExecute(w http.ResponseWriter, r *http.Requ
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"workflow":  wf.name,
 		"result":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode response: %w", err)
+	}
+	return nil
 }
 
 func (wf *workflowRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Request) error {
@@ -409,26 +450,37 @@ func (wf *workflowRESTAdapter) handleStatus(w http.ResponseWriter, r *http.Reque
 
 	// Send response
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	if err := json.NewEncoder(w).Encode(map[string]any{
 		"workflow":  wf.name,
 		"id":        id,
 		"status":    result,
 		"timestamp": time.Now().UTC(),
-	})
+	}); err != nil {
+		return fmt.Errorf("failed to encode status response: %w", err)
+	}
+	return nil
 }
 
 func (wf *workflowRESTAdapter) handleExecuteHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := wf.handleExecute(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }
 
 func (wf *workflowRESTAdapter) handleStatusHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := wf.handleStatus(w, r); err != nil {
-		serverError := err.(*iface.ServerError)
+		serverError := func() *iface.ServerError {
+			target := &iface.ServerError{}
+			_ = errors.As(err, &target)
+			return target
+		}()
 		w.WriteHeader(serverError.HTTPStatus())
-		json.NewEncoder(w).Encode(serverError)
+		_ = json.NewEncoder(w).Encode(serverError) //nolint:errcheck // Error already handled, best effort to send error response
 	}
 }

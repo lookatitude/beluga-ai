@@ -5,7 +5,7 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -25,7 +25,7 @@ type mockLogger struct {
 type logEntry struct {
 	level   string
 	message string
-	args    []interface{}
+	args    []any
 }
 
 func newMockLogger() *mockLogger {
@@ -34,25 +34,25 @@ func newMockLogger() *mockLogger {
 	}
 }
 
-func (m *mockLogger) Debug(msg string, args ...interface{}) {
+func (m *mockLogger) Debug(msg string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.logs = append(m.logs, logEntry{level: "DEBUG", message: msg, args: args})
 }
 
-func (m *mockLogger) Info(msg string, args ...interface{}) {
+func (m *mockLogger) Info(msg string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.logs = append(m.logs, logEntry{level: "INFO", message: msg, args: args})
 }
 
-func (m *mockLogger) Warn(msg string, args ...interface{}) {
+func (m *mockLogger) Warn(msg string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.logs = append(m.logs, logEntry{level: "WARN", message: msg, args: args})
 }
 
-func (m *mockLogger) Error(msg string, args ...interface{}) {
+func (m *mockLogger) Error(msg string, args ...any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.logs = append(m.logs, logEntry{level: "ERROR", message: msg, args: args})
@@ -86,8 +86,8 @@ type mockTracer struct {
 }
 
 type mockSpan struct {
+	attributes map[string]any
 	name       string
-	attributes map[string]interface{}
 	ended      bool
 }
 
@@ -102,7 +102,7 @@ func (m *mockTracer) Start(ctx context.Context, name string) (context.Context, S
 	defer m.mu.Unlock()
 	span := &mockSpan{
 		name:       name,
-		attributes: make(map[string]interface{}),
+		attributes: make(map[string]any),
 		ended:      false,
 	}
 	m.spans = append(m.spans, span)
@@ -113,7 +113,7 @@ func (m *mockSpan) End() {
 	// Mark span as ended
 }
 
-func (m *mockSpan) SetAttributes(attrs ...interface{}) {
+func (m *mockSpan) SetAttributes(attrs ...any) {
 	// Store attributes for testing
 	for i := 0; i < len(attrs); i += 2 {
 		if i+1 < len(attrs) {
@@ -142,7 +142,7 @@ func (m *mockTracer) getSpans(name string) []*mockSpan {
 	return filtered
 }
 
-// Simplified mock meter for testing - avoids complex interface matching
+// Simplified mock meter for testing - avoids complex interface matching.
 type mockMeter struct{}
 
 func newMockMeter() *mockMeter {
@@ -162,10 +162,10 @@ func newMockStreamingHandler() *mockStreamingHandler {
 func (m *mockStreamingHandler) HandleStreaming(w http.ResponseWriter, r *http.Request) error {
 	m.streamingCalls++
 	if m.shouldError {
-		return fmt.Errorf("streaming handler error")
+		return errors.New("streaming handler error")
 	}
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	return json.NewEncoder(w).Encode(map[string]any{
 		"status":  "streaming",
 		"handler": "mock",
 		"calls":   m.streamingCalls,
@@ -175,10 +175,10 @@ func (m *mockStreamingHandler) HandleStreaming(w http.ResponseWriter, r *http.Re
 func (m *mockStreamingHandler) HandleNonStreaming(w http.ResponseWriter, r *http.Request) error {
 	m.nonStreamingCalls++
 	if m.shouldError {
-		return fmt.Errorf("non-streaming handler error")
+		return errors.New("non-streaming handler error")
 	}
 	w.Header().Set("Content-Type", "application/json")
-	return json.NewEncoder(w).Encode(map[string]interface{}{
+	return json.NewEncoder(w).Encode(map[string]any{
 		"status":  "success",
 		"handler": "mock",
 		"calls":   m.nonStreamingCalls,
@@ -208,23 +208,23 @@ func (m *mockMCPTool) Description() string {
 	return m.description
 }
 
-func (m *mockMCPTool) InputSchema() map[string]interface{} {
-	return map[string]interface{}{
+func (m *mockMCPTool) InputSchema() map[string]any {
+	return map[string]any{
 		"type": "object",
-		"properties": map[string]interface{}{
-			"input": map[string]interface{}{
+		"properties": map[string]any{
+			"input": map[string]any{
 				"type": "string",
 			},
 		},
 	}
 }
 
-func (m *mockMCPTool) Execute(ctx context.Context, input map[string]interface{}) (interface{}, error) {
+func (m *mockMCPTool) Execute(ctx context.Context, input map[string]any) (any, error) {
 	m.callCount++
 	if m.shouldError {
-		return nil, fmt.Errorf("tool execution error")
+		return nil, errors.New("tool execution error")
 	}
-	return map[string]interface{}{
+	return map[string]any{
 		"tool":   m.name,
 		"input":  input,
 		"calls":  m.callCount,
@@ -272,7 +272,7 @@ func (m *mockMCPResource) MimeType() string {
 func (m *mockMCPResource) Read(ctx context.Context) ([]byte, error) {
 	m.readCount++
 	if m.shouldError {
-		return nil, fmt.Errorf("resource read error")
+		return nil, errors.New("resource read error")
 	}
 	return []byte(m.content), nil
 }
@@ -314,7 +314,7 @@ func TestNewRESTServer(t *testing.T) {
 			}
 			if server != nil {
 				// Test that it implements the RESTServer interface
-				var _ RESTServer = server
+				_ = server
 			}
 		})
 	}
@@ -355,7 +355,7 @@ func TestNewMCPServer(t *testing.T) {
 			}
 			if server != nil {
 				// Test that it implements the MCPServer interface
-				var _ MCPServer = server
+				_ = server
 			}
 		})
 	}
@@ -406,8 +406,8 @@ func TestMiddlewareFunctions(t *testing.T) {
 	t.Run("cors_middleware", func(t *testing.T) {
 		tests := []struct {
 			name           string
-			allowedOrigins []string
 			requestOrigin  string
+			allowedOrigins []string
 			expectHeader   bool
 		}{
 			{
@@ -443,7 +443,7 @@ func TestMiddlewareFunctions(t *testing.T) {
 					w.WriteHeader(http.StatusOK)
 				}))
 
-				req := httptest.NewRequest("GET", "/test", nil)
+				req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 				if tt.requestOrigin != "" {
 					req.Header.Set("Origin", tt.requestOrigin)
 				}
@@ -471,7 +471,7 @@ func TestMiddlewareFunctions(t *testing.T) {
 			t.Error("Handler should not be called for OPTIONS request")
 		}))
 
-		req := httptest.NewRequest("OPTIONS", "/test", nil)
+		req := httptest.NewRequest(http.MethodOptions, "/test", http.NoBody)
 		req.Header.Set("Origin", "http://example.com")
 		w := httptest.NewRecorder()
 
@@ -492,7 +492,7 @@ func TestMiddlewareFunctions(t *testing.T) {
 			w.WriteHeader(http.StatusOK)
 		}))
 
-		req := httptest.NewRequest("GET", "/api/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/test", http.NoBody)
 		req.Header.Set("User-Agent", "test-agent")
 		w := httptest.NewRecorder()
 
@@ -510,7 +510,7 @@ func TestMiddlewareFunctions(t *testing.T) {
 			panic("test panic")
 		}))
 
-		req := httptest.NewRequest("GET", "/test", nil)
+		req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 		w := httptest.NewRecorder()
 
 		handler.ServeHTTP(w, req)
@@ -551,7 +551,7 @@ func TestErrorHandling(t *testing.T) {
 			{
 				name: "internal_error",
 				createError: func() *ServerError {
-					return NewInternalError("test_op", fmt.Errorf("underlying error"))
+					return NewInternalError("test_op", errors.New("underlying error"))
 				},
 				expectedCode: ErrCodeInternalError,
 				expectedOp:   "test_op",
@@ -592,8 +592,8 @@ func TestErrorHandling(t *testing.T) {
 
 	t.Run("http_status_mapping", func(t *testing.T) {
 		tests := []struct {
-			name         string
 			createError  func() *ServerError
+			name         string
 			expectedCode int
 		}{
 			{
@@ -650,7 +650,7 @@ func TestErrorHandling(t *testing.T) {
 		if wrappedErr.Operation != "test_operation" {
 			t.Errorf("Expected operation 'test_operation', got '%s'", wrappedErr.Operation)
 		}
-		if wrappedErr.Err != originalErr {
+		if !errors.Is(wrappedErr.Err, originalErr) {
 			t.Error("Expected wrapped error to contain original error")
 		}
 	})
@@ -663,7 +663,7 @@ func TestErrorHandling(t *testing.T) {
 		}
 
 		// Test with underlying error
-		wrappedErr := NewInternalError("test_op", fmt.Errorf("underlying"))
+		wrappedErr := NewInternalError("test_op", errors.New("underlying"))
 		if !strings.Contains(wrappedErr.Error(), "underlying") {
 			t.Error("Expected error string to contain underlying error")
 		}
@@ -673,8 +673,8 @@ func TestErrorHandling(t *testing.T) {
 func TestFunctionalOptions(t *testing.T) {
 	t.Run("option_functions", func(t *testing.T) {
 		tests := []struct {
-			name string
 			opt  iface.Option
+			name string
 		}{
 			{
 				name: "with_config",
@@ -947,7 +947,7 @@ func BenchmarkMiddlewareChain(b *testing.B) {
 		w.WriteHeader(http.StatusOK)
 	})))
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", http.NoBody)
 	w := httptest.NewRecorder()
 
 	b.ResetTimer()

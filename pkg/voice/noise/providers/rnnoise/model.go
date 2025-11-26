@@ -1,19 +1,19 @@
 package rnnoise
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 )
 
 // RNNoiseModel represents an RNNoise model instance
-// In a real implementation, this would wrap the actual RNNoise C library
+// In a real implementation, this would wrap the actual RNNoise C library.
 type RNNoiseModel struct {
+	path   string
 	mu     sync.RWMutex
 	loaded bool
-	path   string
 }
 
-// NewRNNoiseModel creates a new RNNoise model instance
+// NewRNNoiseModel creates a new RNNoise model instance.
 func NewRNNoiseModel(modelPath string) *RNNoiseModel {
 	return &RNNoiseModel{
 		path:   modelPath,
@@ -22,7 +22,7 @@ func NewRNNoiseModel(modelPath string) *RNNoiseModel {
 }
 
 // Load loads the RNNoise model
-// In a real implementation, this would load the model from file
+// In a real implementation, this would load the model from file.
 func (m *RNNoiseModel) Load() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -38,14 +38,14 @@ func (m *RNNoiseModel) Load() error {
 }
 
 // Process processes a frame of audio using RNNoise
-// In a real implementation, this would call the RNNoise C library
+// In a real implementation, this would call the RNNoise C library.
 func (m *RNNoiseModel) Process(frame []byte) ([]byte, error) {
 	m.mu.RLock()
 	loaded := m.loaded
 	m.mu.RUnlock()
 
 	if !loaded {
-		return nil, fmt.Errorf("model not loaded")
+		return nil, errors.New("model not loaded")
 	}
 
 	// TODO: In a real implementation, this would:
@@ -57,14 +57,14 @@ func (m *RNNoiseModel) Process(frame []byte) ([]byte, error) {
 	return frame, nil
 }
 
-// IsLoaded returns whether the model is loaded
+// IsLoaded returns whether the model is loaded.
 func (m *RNNoiseModel) IsLoaded() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.loaded
 }
 
-// Close closes the model and releases resources
+// Close closes the model and releases resources.
 func (m *RNNoiseModel) Close() error {
 	m.mu.Lock()
 	defer m.mu.Unlock()

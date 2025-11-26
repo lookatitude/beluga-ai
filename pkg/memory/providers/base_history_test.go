@@ -11,7 +11,6 @@ import (
 
 // TestBaseChatMessageHistory tests the base chat message history implementation.
 func TestBaseChatMessageHistory(t *testing.T) {
-
 	t.Run("NewBaseChatMessageHistory", func(t *testing.T) {
 		history := NewBaseChatMessageHistory()
 		assert.NotNil(t, history)
@@ -30,14 +29,14 @@ func TestBaseChatMessageHistory(t *testing.T) {
 
 		// Add messages
 		err := history.AddUserMessage(ctx, "Hello")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = history.AddAIMessage(ctx, "Hi there!")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Get messages
 		messages, err := history.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, messages, 2)
 		assert.Equal(t, "Hello", messages[0].GetContent())
 		assert.Equal(t, "Hi there!", messages[1].GetContent())
@@ -50,12 +49,12 @@ func TestBaseChatMessageHistory(t *testing.T) {
 		// Add more messages than the limit
 		for i := 0; i < 5; i++ {
 			err := history.AddUserMessage(ctx, "Message "+string(rune(i+'0')))
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Should only keep the last 3 messages
 		messages, err := history.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, messages, 3)
 		assert.Equal(t, "Message 2", messages[0].GetContent())
 		assert.Equal(t, "Message 3", messages[1].GetContent())
@@ -68,48 +67,47 @@ func TestBaseChatMessageHistory(t *testing.T) {
 
 		// Add messages
 		err := history.AddUserMessage(ctx, "Hello")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify messages exist
 		messages, err := history.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, messages, 1)
 
 		// Clear messages
 		err = history.Clear(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify messages are cleared
 		messages, err = history.GetMessages(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, messages, 0)
+		require.NoError(t, err)
+		assert.Empty(t, messages)
 	})
 
 	t.Run("ContextCancellation", func(t *testing.T) {
 		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
 
-		// Create a cancelled context
+		// Create a canceled context
 		cancelledCtx, cancel := context.WithCancel(ctx)
 		cancel()
 
-		// Test AddMessage with cancelled context
+		// Test AddMessage with canceled context
 		err := history.AddMessage(cancelledCtx, nil)
-		assert.Error(t, err)
+		require.Error(t, err)
 
-		// Test GetMessages with cancelled context
+		// Test GetMessages with canceled context
 		_, err = history.GetMessages(cancelledCtx)
-		assert.Error(t, err)
+		require.Error(t, err)
 
-		// Test Clear with cancelled context
+		// Test Clear with canceled context
 		err = history.Clear(cancelledCtx)
-		assert.Error(t, err)
+		require.Error(t, err)
 	})
 }
 
 // TestCompositeChatMessageHistory tests the composite chat message history implementation.
 func TestCompositeChatMessageHistory(t *testing.T) {
-
 	t.Run("NewCompositeChatMessageHistory", func(t *testing.T) {
 		primary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary)
@@ -137,14 +135,14 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 
 		// Add messages
 		err := composite.AddUserMessage(ctx, "Hello")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		err = composite.AddAIMessage(ctx, "Hi there!")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Get messages
 		messages, err := composite.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, messages, 2)
 	})
 
@@ -156,15 +154,15 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 
 		// Add message (should be added to both)
 		err := composite.AddUserMessage(ctx, "Test message")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify both histories have the message
 		primaryMessages, err := primary.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, primaryMessages, 1)
 
 		secondaryMessages, err := secondary.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, secondaryMessages, 1)
 	})
 
@@ -186,12 +184,12 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 
 		// Add message (should trigger add hook)
 		err := composite.AddUserMessage(ctx, "Test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, addHookCalled)
 
 		// Get messages (should trigger get hook)
 		_, err = composite.GetMessages(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.True(t, getHookCalled)
 	})
 
@@ -203,20 +201,20 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 
 		// Add messages to both
 		err := composite.AddUserMessage(ctx, "Test")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Clear composite (should clear both)
 		err = composite.Clear(ctx)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		// Verify both are cleared
 		primaryMessages, err := primary.GetMessages(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, primaryMessages, 0)
+		require.NoError(t, err)
+		assert.Empty(t, primaryMessages)
 
 		secondaryMessages, err := secondary.GetMessages(ctx)
-		assert.NoError(t, err)
-		assert.Len(t, secondaryMessages, 0)
+		require.NoError(t, err)
+		assert.Empty(t, secondaryMessages)
 	})
 }
 
@@ -280,11 +278,11 @@ func TestBaseChatMessageHistory_TableDriven(t *testing.T) {
 	ctx := context.Background()
 
 	testCases := []struct {
-		name           string
 		setup          func() *BaseChatMessageHistory
 		action         func(*BaseChatMessageHistory) error
-		expectedError  bool
 		validateResult func(*BaseChatMessageHistory, *testing.T)
+		name           string
+		expectedError  bool
 	}{
 		{
 			name: "AddUserMessage_Success",
@@ -330,7 +328,7 @@ func TestBaseChatMessageHistory_TableDriven(t *testing.T) {
 			validateResult: func(h *BaseChatMessageHistory, t *testing.T) {
 				messages, err := h.GetMessages(ctx)
 				require.NoError(t, err)
-				assert.Len(t, messages, 0)
+				assert.Empty(t, messages)
 			},
 		},
 		{
@@ -363,9 +361,9 @@ func TestBaseChatMessageHistory_TableDriven(t *testing.T) {
 			err := tc.action(history)
 
 			if tc.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 
 			if tc.validateResult != nil {

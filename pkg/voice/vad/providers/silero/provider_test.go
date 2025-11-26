@@ -12,8 +12,8 @@ import (
 
 func TestNewSileroProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *vad.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -41,10 +41,10 @@ func TestNewSileroProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewSileroProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -82,7 +82,7 @@ func TestSileroProvider_Process(t *testing.T) {
 
 	// Test processing
 	speech, err := sileroProvider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// Result depends on audio content, but should not error
 	_ = speech
 }
@@ -151,7 +151,7 @@ func TestDefaultSileroConfig(t *testing.T) {
 	config := DefaultSileroConfig()
 	assert.NotNil(t, config)
 	assert.Equal(t, "silero_vad.onnx", config.ModelPath)
-	assert.Equal(t, 0.5, config.Threshold)
+	assert.InEpsilon(t, 0.5, config.Threshold, 0.0001)
 	assert.Equal(t, 16000, config.SampleRate)
 	assert.Equal(t, 512, config.FrameSize)
 }

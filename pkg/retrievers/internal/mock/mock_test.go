@@ -3,7 +3,9 @@ package providers
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/retrievers"
@@ -44,7 +46,6 @@ func TestMockRetriever(t *testing.T) {
 	t.Run("GetRelevantDocuments", func(t *testing.T) {
 		ctx := context.Background()
 		result, err := mockRetriever.GetRelevantDocuments(ctx, "machine learning")
-
 		if err != nil {
 			t.Fatalf("GetRelevantDocuments() error = %v", err)
 		}
@@ -68,7 +69,6 @@ func TestMockRetriever(t *testing.T) {
 	t.Run("Invoke", func(t *testing.T) {
 		ctx := context.Background()
 		result, err := mockRetriever.Invoke(ctx, "test query")
-
 		if err != nil {
 			t.Fatalf("Invoke() error = %v", err)
 		}
@@ -92,7 +92,8 @@ func TestMockRetriever(t *testing.T) {
 		}
 
 		// Check if it's a RetrieverError
-		if _, ok := err.(*retrievers.RetrieverError); !ok {
+		retrieverError := &retrievers.RetrieverError{}
+		if !errors.As(err, &retrieverError) {
 			t.Errorf("Invoke() error = %T, want *retrievers.RetrieverError", err)
 		}
 	})
@@ -153,8 +154,8 @@ func BenchmarkMockRetriever_GetRelevantDocuments(b *testing.B) {
 		docs[i] = schema.Document{
 			PageContent: fmt.Sprintf("This is test document number %d with some content.", i),
 			Metadata: map[string]string{
-				"id":    fmt.Sprintf("%d", i),
-				"index": fmt.Sprintf("%d", i),
+				"id":    strconv.Itoa(i),
+				"index": strconv.Itoa(i),
 			},
 		}
 	}

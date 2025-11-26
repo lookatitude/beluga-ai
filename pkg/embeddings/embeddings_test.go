@@ -117,7 +117,7 @@ func TestEmbedderFactory_NewEmbedder(t *testing.T) {
 					t.Error("EmbedderFactory.NewEmbedder() returned nil embedder")
 				}
 				// Verify interface compliance
-				var _ iface.Embedder = embedder
+				_ = embedder
 			}
 		})
 	}
@@ -191,9 +191,9 @@ func TestEmbedderFactory_CheckHealth(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	tests := []struct {
+		check func(*optionConfig) bool
 		name  string
 		opts  []Option
-		check func(*optionConfig) bool
 	}{
 		{
 			name: "WithTimeout",
@@ -517,11 +517,11 @@ func TestEmbedderFactory_ContextCancellation(t *testing.T) {
 		t.Fatalf("Failed to create embedder: %v", err)
 	}
 
-	// Create a cancelled context
+	// Create a canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
-	// Test that embedder respects cancelled context
+	// Test that embedder respects canceled context
 	_, err = embedder.EmbedQuery(ctx, "test")
 	// Mock embedder may or may not respect context cancellation
 	// This test mainly ensures the embedder can be created and called

@@ -5,6 +5,7 @@ package anthropic
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -23,30 +24,30 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// Provider constants
+// Provider constants.
 const (
 	ProviderName = "anthropic"
 	DefaultModel = "claude-3-haiku-20240307"
 
-	// Error codes specific to Anthropic
+	// Error codes specific to Anthropic.
 	ErrCodeInvalidAPIKey  = "anthropic_invalid_api_key"
 	ErrCodeRateLimit      = "anthropic_rate_limit"
 	ErrCodeModelNotFound  = "anthropic_model_not_found"
 	ErrCodeInvalidRequest = "anthropic_invalid_request"
 )
 
-// AnthropicProvider implements the ChatModel interface for Anthropic Claude models
+// AnthropicProvider implements the ChatModel interface for Anthropic Claude models.
 type AnthropicProvider struct {
+	metrics     llms.MetricsRecorder
 	config      *llms.Config
 	client      *anthropic.Client
-	modelName   string
-	tools       []tools.Tool
-	metrics     llms.MetricsRecorder
 	tracing     *common.TracingHelper
 	retryConfig *common.RetryConfig
+	modelName   string
+	tools       []tools.Tool
 }
 
-// NewAnthropicProvider creates a new Anthropic provider instance
+// NewAnthropicProvider creates a new Anthropic provider instance.
 func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -91,7 +92,7 @@ func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error) {
 	return provider, nil
 }
 
-// Generate implements the ChatModel interface
+// Generate implements the ChatModel interface.
 func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Start tracing
 	ctx = a.tracing.StartOperation(ctx, "anthropic.generate", ProviderName, a.modelName)
@@ -100,7 +101,7 @@ func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Mess
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	a.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	a.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -133,7 +134,7 @@ func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Mess
 	return result, nil
 }
 
-// StreamChat implements the ChatModel interface
+// StreamChat implements the ChatModel interface.
 func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	// Start tracing
 	ctx = a.tracing.StartOperation(ctx, "anthropic.stream", ProviderName, a.modelName)
@@ -142,7 +143,7 @@ func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Me
 	for _, m := range messages {
 		inputSize += len(m.GetContent())
 	}
-	a.tracing.AddSpanAttributes(ctx, map[string]interface{}{"input_size": inputSize})
+	a.tracing.AddSpanAttributes(ctx, map[string]any{"input_size": inputSize})
 
 	start := time.Now()
 
@@ -179,7 +180,7 @@ func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Me
 	return wrappedChan, nil
 }
 
-// BindTools implements the ChatModel interface
+// BindTools implements the ChatModel interface.
 func (a *AnthropicProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
 	newProvider := *a // Create a copy
 	newProvider.tools = make([]tools.Tool, len(toolsToBind))
@@ -187,7 +188,7 @@ func (a *AnthropicProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel 
 	return &newProvider
 }
 
-// GetModelName implements the ChatModel interface
+// GetModelName implements the ChatModel interface.
 func (a *AnthropicProvider) GetModelName() string {
 	return a.modelName
 }
@@ -196,7 +197,7 @@ func (a *AnthropicProvider) GetProviderName() string {
 	return ProviderName
 }
 
-// Invoke implements the Runnable interface
+// Invoke implements the Runnable interface.
 func (a *AnthropicProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -205,7 +206,7 @@ func (a *AnthropicProvider) Invoke(ctx context.Context, input any, options ...co
 	return a.Generate(ctx, messages, options...)
 }
 
-// Batch implements the Runnable interface
+// Batch implements the Runnable interface.
 func (a *AnthropicProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	errors := make([]error, len(inputs))
@@ -237,7 +238,7 @@ func (a *AnthropicProvider) Batch(ctx context.Context, inputs []any, options ...
 			if combinedErr == nil {
 				combinedErr = err
 			} else {
-				combinedErr = fmt.Errorf("%v; %v", combinedErr, err)
+				combinedErr = fmt.Errorf("%w; %w", combinedErr, err)
 			}
 		}
 	}
@@ -245,7 +246,7 @@ func (a *AnthropicProvider) Batch(ctx context.Context, inputs []any, options ...
 	return results, combinedErr
 }
 
-// Stream implements the Runnable interface
+// Stream implements the Runnable interface.
 func (a *AnthropicProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	messages, err := llms.EnsureMessages(input)
 	if err != nil {
@@ -273,7 +274,7 @@ func (a *AnthropicProvider) Stream(ctx context.Context, input any, options ...co
 	return outputChan, nil
 }
 
-// generateInternal performs the actual generation logic
+// generateInternal performs the actual generation logic.
 func (a *AnthropicProvider) generateInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (schema.Message, error) {
 	// Convert messages to Anthropic format
 	systemPrompt, anthropicMessages, err := a.convertMessages(messages)
@@ -294,7 +295,7 @@ func (a *AnthropicProvider) generateInternal(ctx context.Context, messages []sch
 	return a.convertAnthropicResponse(resp)
 }
 
-// streamInternal performs the actual streaming logic
+// streamInternal performs the actual streaming logic.
 func (a *AnthropicProvider) streamInternal(ctx context.Context, messages []schema.Message, opts *llms.CallOptions) (<-chan iface.AIMessageChunk, error) {
 	// Convert messages to Anthropic format
 	systemPrompt, anthropicMessages, err := a.convertMessages(messages)
@@ -321,7 +322,7 @@ func (a *AnthropicProvider) streamInternal(ctx context.Context, messages []schem
 		for {
 			event := stream.Next()
 			if stream.Err() != nil {
-				if stream.Err() == io.EOF {
+				if errors.Is(stream.Err(), io.EOF) {
 					break
 				}
 				finalChunk := iface.AIMessageChunk{
@@ -360,7 +361,7 @@ func (a *AnthropicProvider) streamInternal(ctx context.Context, messages []schem
 	return outputChan, nil
 }
 
-// convertMessages converts schema messages to Anthropic format
+// convertMessages converts schema messages to Anthropic format.
 func (a *AnthropicProvider) convertMessages(messages []schema.Message) (*string, []anthropic.BetaMessageParam, error) {
 	var systemPrompt *string
 	var anthropicMsgs []anthropic.BetaMessageParam
@@ -410,13 +411,13 @@ func (a *AnthropicProvider) convertMessages(messages []schema.Message) (*string,
 	}
 
 	if len(anthropicMsgs) == 0 && systemPrompt == nil {
-		return nil, nil, fmt.Errorf("no valid messages provided for Anthropic conversion")
+		return nil, nil, errors.New("no valid messages provided for Anthropic conversion")
 	}
 
 	return systemPrompt, anthropicMsgs, nil
 }
 
-// buildAnthropicRequest builds the Anthropic API request
+// buildAnthropicRequest builds the Anthropic API request.
 func (a *AnthropicProvider) buildAnthropicRequest(systemPrompt *string, messages []anthropic.BetaMessageParam, opts *llms.CallOptions) anthropic.BetaMessageNewParams {
 	req := anthropic.BetaMessageNewParams{
 		Model:     a.modelName,
@@ -456,7 +457,7 @@ func (a *AnthropicProvider) buildAnthropicRequest(systemPrompt *string, messages
 	return req
 }
 
-// convertTools converts tools to Anthropic format
+// convertTools converts tools to Anthropic format.
 func (a *AnthropicProvider) convertTools(tools []tools.Tool) []anthropic.BetaToolUnionParam {
 	if len(tools) == 0 {
 		return nil
@@ -467,7 +468,7 @@ func (a *AnthropicProvider) convertTools(tools []tools.Tool) []anthropic.BetaToo
 		def := tool.Definition()
 
 		// Create tool schema
-		toolMap := map[string]interface{}{
+		toolMap := map[string]any{
 			"name":        def.Name,
 			"description": def.Description,
 		}
@@ -475,7 +476,7 @@ func (a *AnthropicProvider) convertTools(tools []tools.Tool) []anthropic.BetaToo
 		// Add parameters schema
 		if def.InputSchema != nil {
 			if schemaStr, ok := def.InputSchema.(string); ok && schemaStr != "" {
-				var params map[string]interface{}
+				var params map[string]any
 				if err := json.Unmarshal([]byte(schemaStr), &params); err == nil {
 					toolMap["input_schema"] = params
 				}
@@ -493,10 +494,10 @@ func (a *AnthropicProvider) convertTools(tools []tools.Tool) []anthropic.BetaToo
 	return anthropicTools
 }
 
-// convertAnthropicResponse converts Anthropic response to schema.Message
+// convertAnthropicResponse converts Anthropic response to schema.Message.
 func (a *AnthropicProvider) convertAnthropicResponse(resp *anthropic.BetaMessage) (schema.Message, error) {
 	if len(resp.Content) == 0 {
-		return nil, fmt.Errorf("empty response from Anthropic")
+		return nil, errors.New("empty response from Anthropic")
 	}
 
 	var responseText string
@@ -535,7 +536,7 @@ func (a *AnthropicProvider) convertAnthropicResponse(resp *anthropic.BetaMessage
 	return aiMsg, nil
 }
 
-// convertAnthropicStreamEvent converts Anthropic stream events to AIMessageChunk
+// convertAnthropicStreamEvent converts Anthropic stream events to AIMessageChunk.
 func (a *AnthropicProvider) convertAnthropicStreamEvent(event any) (*iface.AIMessageChunk, error) {
 	// This is a simplified implementation
 	// In a real implementation, you'd handle all the different event types
@@ -546,7 +547,7 @@ func (a *AnthropicProvider) convertAnthropicStreamEvent(event any) (*iface.AIMes
 	return nil, nil
 }
 
-// buildCallOptions merges configuration options with call-specific options
+// buildCallOptions merges configuration options with call-specific options.
 func (a *AnthropicProvider) buildCallOptions(options ...core.Option) *llms.CallOptions {
 	callOpts := llms.NewCallOptions()
 
@@ -578,7 +579,7 @@ func (a *AnthropicProvider) buildCallOptions(options ...core.Option) *llms.CallO
 	return callOpts
 }
 
-// handleAnthropicError converts Anthropic errors to LLM errors
+// handleAnthropicError converts Anthropic errors to LLM errors.
 func (a *AnthropicProvider) handleAnthropicError(operation string, err error) error {
 	if err == nil {
 		return nil
@@ -606,9 +607,9 @@ func (a *AnthropicProvider) handleAnthropicError(operation string, err error) er
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
-// CheckHealth implements the HealthChecker interface
-func (a *AnthropicProvider) CheckHealth() map[string]interface{} {
-	return map[string]interface{}{
+// CheckHealth implements the HealthChecker interface.
+func (a *AnthropicProvider) CheckHealth() map[string]any {
+	return map[string]any{
 		"state":       "healthy",
 		"provider":    "anthropic",
 		"model":       a.modelName,
@@ -618,7 +619,7 @@ func (a *AnthropicProvider) CheckHealth() map[string]interface{} {
 	}
 }
 
-// Factory function for creating Anthropic providers
+// Factory function for creating Anthropic providers.
 func NewAnthropicProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewAnthropicProvider(config)

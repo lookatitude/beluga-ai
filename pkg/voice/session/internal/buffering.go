@@ -4,7 +4,7 @@ import (
 	"sync"
 )
 
-// BufferingStrategy defines buffering strategies for long utterances
+// BufferingStrategy defines buffering strategies for long utterances.
 type BufferingStrategy int
 
 const (
@@ -13,15 +13,15 @@ const (
 	BufferingStrategyAdaptive
 )
 
-// Buffering manages buffering strategy for long utterances
+// Buffering manages buffering strategy for long utterances.
 type Buffering struct {
-	mu       sync.RWMutex
-	strategy BufferingStrategy
 	buffer   []byte
+	strategy BufferingStrategy
 	maxSize  int
+	mu       sync.RWMutex
 }
 
-// NewBuffering creates a new buffering manager
+// NewBuffering creates a new buffering manager.
 func NewBuffering(strategy BufferingStrategy, maxSize int) *Buffering {
 	return &Buffering{
 		strategy: strategy,
@@ -30,7 +30,7 @@ func NewBuffering(strategy BufferingStrategy, maxSize int) *Buffering {
 	}
 }
 
-// Add adds data to the buffer
+// Add adds data to the buffer.
 func (b *Buffering) Add(data []byte) bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -58,7 +58,7 @@ func (b *Buffering) Add(data []byte) bool {
 	}
 }
 
-// Flush returns and clears the buffer
+// Flush returns and clears the buffer.
 func (b *Buffering) Flush() []byte {
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -69,21 +69,21 @@ func (b *Buffering) Flush() []byte {
 	return result
 }
 
-// GetSize returns the current buffer size
+// GetSize returns the current buffer size.
 func (b *Buffering) GetSize() int {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return len(b.buffer)
 }
 
-// IsFull returns whether the buffer is full
+// IsFull returns whether the buffer is full.
 func (b *Buffering) IsFull() bool {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
 	return len(b.buffer) >= b.maxSize
 }
 
-// Clear clears the buffer
+// Clear clears the buffer.
 func (b *Buffering) Clear() {
 	b.mu.Lock()
 	defer b.mu.Unlock()

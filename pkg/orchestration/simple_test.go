@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// Simple test that doesn't depend on external packages
+// Simple test that doesn't depend on external packages.
 func TestOrchestratorCreation(t *testing.T) {
 	// Test config creation
 	config := DefaultConfig()
@@ -45,7 +45,6 @@ func TestConfigurationOptions(t *testing.T) {
 		WithGraphMaxWorkers(8),
 		WithMetricsPrefix("test.prefix"),
 	)
-
 	if err != nil {
 		t.Fatalf("Failed to create config with options: %v", err)
 	}

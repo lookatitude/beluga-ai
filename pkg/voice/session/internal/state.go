@@ -6,27 +6,27 @@ import (
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
 
-// StateMachine manages session state transitions
+// StateMachine manages session state transitions.
 type StateMachine struct {
-	mu    sync.RWMutex
 	state sessioniface.SessionState
+	mu    sync.RWMutex
 }
 
-// NewStateMachine creates a new state machine
+// NewStateMachine creates a new state machine.
 func NewStateMachine() *StateMachine {
 	return &StateMachine{
 		state: sessioniface.SessionState("initial"),
 	}
 }
 
-// GetState returns the current state
+// GetState returns the current state.
 func (sm *StateMachine) GetState() sessioniface.SessionState {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
 	return sm.state
 }
 
-// SetState sets the state (with validation)
+// SetState sets the state (with validation).
 func (sm *StateMachine) SetState(newState sessioniface.SessionState) bool {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
@@ -40,7 +40,7 @@ func (sm *StateMachine) SetState(newState sessioniface.SessionState) bool {
 	return true
 }
 
-// isValidTransition checks if a state transition is valid
+// isValidTransition checks if a state transition is valid.
 func isValidTransition(from, to sessioniface.SessionState) bool {
 	// Define valid transitions
 	validTransitions := map[sessioniface.SessionState][]sessioniface.SessionState{

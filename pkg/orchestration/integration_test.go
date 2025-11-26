@@ -2,6 +2,7 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -12,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestDataProcessor simulates a data processing step
+// TestDataProcessor simulates a data processing step.
 type TestDataProcessor struct {
 	name string
 }
@@ -58,7 +59,7 @@ func (p *TestDataProcessor) Stream(ctx context.Context, input any, opts ...core.
 	return ch, nil
 }
 
-// TestDataValidator simulates data validation
+// TestDataValidator simulates data validation.
 type TestDataValidator struct {
 	name string
 }
@@ -72,7 +73,7 @@ func (v *TestDataValidator) Invoke(ctx context.Context, input any, opts ...core.
 	// Simulate validation
 	processedData, exists := inputMap["processed_data"]
 	if !exists {
-		return nil, fmt.Errorf("missing processed_data field")
+		return nil, errors.New("missing processed_data field")
 	}
 
 	result := map[string]any{
@@ -115,7 +116,7 @@ func (v *TestDataValidator) Stream(ctx context.Context, input any, opts ...core.
 	return ch, nil
 }
 
-// TestDataAggregator simulates data aggregation
+// TestDataAggregator simulates data aggregation.
 type TestDataAggregator struct {
 	name string
 }
@@ -161,7 +162,7 @@ func (a *TestDataAggregator) Stream(ctx context.Context, input any, opts ...core
 	return ch, nil
 }
 
-// TestWorkflowStep simulates a workflow step
+// TestWorkflowStep simulates a workflow step.
 type TestWorkflowStep struct {
 	name  string
 	delay time.Duration
@@ -213,7 +214,7 @@ func (w *TestWorkflowStep) Stream(ctx context.Context, input any, opts ...core.O
 	return ch, nil
 }
 
-// Integration test: Complete data processing pipeline
+// Integration test: Complete data processing pipeline.
 func TestDataProcessingPipelineIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -233,7 +234,7 @@ func TestDataProcessingPipelineIntegration(t *testing.T) {
 	input := map[string]any{"data": "test-item-123"}
 	result, err := chain.Invoke(ctx, input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	resultMap, ok := result.(map[string]any)
@@ -243,7 +244,7 @@ func TestDataProcessingPipelineIntegration(t *testing.T) {
 	assert.Equal(t, true, resultMap["final_result"])
 }
 
-// Integration test: Batch processing pipeline
+// Integration test: Batch processing pipeline.
 func TestBatchProcessingPipelineIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -266,7 +267,7 @@ func TestBatchProcessingPipelineIntegration(t *testing.T) {
 	defer cancel()
 	results, err := chain.Batch(ctx, inputs)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, results, batchSize)
 
 	// Verify each result
@@ -280,7 +281,7 @@ func TestBatchProcessingPipelineIntegration(t *testing.T) {
 	}
 }
 
-// Integration test: Graph-based workflow
+// Integration test: Graph-based workflow.
 func TestGraphWorkflowIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -326,7 +327,7 @@ func TestGraphWorkflowIntegration(t *testing.T) {
 	input := map[string]any{"data": "workflow-input"}
 	result, err := graph.Invoke(ctx, input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	resultMap, ok := result.(map[string]any)
@@ -336,7 +337,7 @@ func TestGraphWorkflowIntegration(t *testing.T) {
 	assert.Equal(t, "reporter", resultMap["step"])
 }
 
-// Integration test: Parallel processing graph
+// Integration test: Parallel processing graph.
 func TestParallelProcessingGraphIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -386,19 +387,19 @@ func TestParallelProcessingGraphIntegration(t *testing.T) {
 	result, err := graph.Invoke(ctx, input)
 	duration := time.Since(start)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	// Should complete faster than sequential execution
 	// (processor1 + processor2 in parallel should be faster than sequential)
-	assert.True(t, duration < 100*time.Millisecond, "Parallel execution took too long: %v", duration)
+	assert.Less(t, duration, 100*time.Millisecond, "Parallel execution took too long: %v", duration)
 
 	resultMap, ok := result.(map[string]any)
 	assert.True(t, ok)
 	assert.Equal(t, "merger", resultMap["step"])
 }
 
-// Integration test: Error handling and recovery
+// Integration test: Error handling and recovery.
 func TestErrorHandlingIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -422,11 +423,11 @@ func TestErrorHandlingIntegration(t *testing.T) {
 	_, err = chain.Invoke(ctx, input)
 
 	// Should fail at the first step
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "simulated failure")
 }
 
-// Integration test: Timeout handling
+// Integration test: Timeout handling.
 func TestTimeoutHandlingIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -444,11 +445,11 @@ func TestTimeoutHandlingIntegration(t *testing.T) {
 	input := map[string]any{"data": "timeout-test"}
 	_, err = chain.Invoke(ctx, input)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "context")
 }
 
-// Integration test: Concurrent orchestration
+// Integration test: Concurrent orchestration.
 func TestConcurrentOrchestrationIntegration(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -502,11 +503,11 @@ func TestConcurrentOrchestrationIntegration(t *testing.T) {
 
 	// Check all chains executed successfully
 	for err := range results {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
-// Integration test: Complex graph with conditional paths
+// Integration test: Complex graph with conditional paths.
 func TestComplexGraphIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -558,7 +559,7 @@ func TestComplexGraphIntegration(t *testing.T) {
 	input := map[string]any{"data": "complex-input"}
 	result, err := graph.Invoke(ctx, input)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	resultMap, ok := result.(map[string]any)
@@ -566,7 +567,7 @@ func TestComplexGraphIntegration(t *testing.T) {
 	assert.Equal(t, "converge", resultMap["step"])
 }
 
-// Integration test: Resource cleanup
+// Integration test: Resource cleanup.
 func TestResourceCleanupIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -618,16 +619,16 @@ func TestResourceCleanupIntegration(t *testing.T) {
 	defer cancel()
 	for _, chain := range chains {
 		_, err := chain.Invoke(ctx, map[string]any{"data": "cleanup-test"})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	for _, graph := range graphs {
 		_, err := graph.Invoke(ctx, map[string]any{"data": "cleanup-test"})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 }
 
-// Integration test: Performance monitoring
+// Integration test: Performance monitoring.
 func TestPerformanceMonitoringIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -650,21 +651,21 @@ func TestPerformanceMonitoringIntegration(t *testing.T) {
 	result, err := chain.Invoke(ctx, input)
 	duration := time.Since(start)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, result)
 
 	// Should take at least the sum of all step delays
 	minExpectedDuration := 45 * time.Millisecond // 10 + 15 + 20
-	assert.True(t, duration >= minExpectedDuration,
+	assert.GreaterOrEqual(t, duration, minExpectedDuration,
 		"Execution too fast: expected >= %v, got %v", minExpectedDuration, duration)
 
 	// Should complete within reasonable time
 	maxExpectedDuration := 200 * time.Millisecond
-	assert.True(t, duration <= maxExpectedDuration,
+	assert.LessOrEqual(t, duration, maxExpectedDuration,
 		"Execution too slow: expected <= %v, got %v", maxExpectedDuration, duration)
 }
 
-// Integration test: Large scale batch processing
+// Integration test: Large scale batch processing.
 func TestLargeScaleBatchProcessingIntegration(t *testing.T) {
 	orch, err := NewDefaultOrchestrator()
 	require.NoError(t, err)
@@ -689,7 +690,7 @@ func TestLargeScaleBatchProcessingIntegration(t *testing.T) {
 	results, err := chain.Batch(ctx, inputs)
 	duration := time.Since(start)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Len(t, results, batchSize)
 
 	// Verify results
@@ -704,14 +705,14 @@ func TestLargeScaleBatchProcessingIntegration(t *testing.T) {
 
 	// Performance check - should complete within reasonable time
 	maxExpectedDuration := 2 * time.Second
-	assert.True(t, duration <= maxExpectedDuration,
+	assert.LessOrEqual(t, duration, maxExpectedDuration,
 		"Large batch processing too slow: expected <= %v, got %v", maxExpectedDuration, duration)
 
 	t.Logf("Processed %d items in %v (%.2f items/sec)",
 		batchSize, duration, float64(batchSize)/duration.Seconds())
 }
 
-// FailingWorkflowStep extends TestWorkflowStep with failure capability
+// FailingWorkflowStep extends TestWorkflowStep with failure capability.
 type FailingWorkflowStep struct {
 	TestWorkflowStep
 	shouldFail bool
@@ -724,10 +725,10 @@ func (f *FailingWorkflowStep) Invoke(ctx context.Context, input any, opts ...cor
 	return f.TestWorkflowStep.Invoke(ctx, input, opts...)
 }
 
-// DecisionWorkflowStep makes decisions about execution paths
+// DecisionWorkflowStep makes decisions about execution paths.
 type DecisionWorkflowStep struct {
-	TestWorkflowStep
 	decisionPath string
+	TestWorkflowStep
 }
 
 func (d *DecisionWorkflowStep) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {

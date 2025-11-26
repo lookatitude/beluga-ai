@@ -219,7 +219,7 @@ mockConfig := llms.NewConfig(
 // Use in tests
 messages := []schema.Message{schema.NewHumanMessage("Test")}
 response, err := mockProvider.Generate(context.Background(), messages)
-assert.NoError(t, err)
+require.NoError(t, err)
 assert.Equal(t, "Mock response 1", response.GetContent())
 ```
 

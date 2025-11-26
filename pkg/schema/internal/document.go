@@ -22,7 +22,7 @@ func NewDocument(pageContent string, metadata map[string]string) Document {
 }
 
 // NewDocumentWithID creates a new Document with an ID.
-func NewDocumentWithID(id string, pageContent string, metadata map[string]string) Document {
+func NewDocumentWithID(id, pageContent string, metadata map[string]string) Document {
 	return Document{
 		ID:          id,
 		PageContent: pageContent,
@@ -46,8 +46,8 @@ func (d Document) ToolCalls() []ToolCall {
 }
 
 // AdditionalArgs returns an empty map for documents.
-func (d Document) AdditionalArgs() map[string]interface{} {
-	return make(map[string]interface{})
+func (d Document) AdditionalArgs() map[string]any {
+	return make(map[string]any)
 }
 
 // Ensure Document implements the Message interface.

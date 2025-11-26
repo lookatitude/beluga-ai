@@ -19,7 +19,7 @@
 //	model, err := chatmodels.NewChatModel("gpt-4", config)
 //
 //	// Generate messages
-//	messages := []schema.Message{
+//	:= []schema.Message{
 //		{Role: "user", Content: "Hello, how are you?"},
 //	}
 //	response, err := model.GenerateMessages(ctx, messages)
@@ -282,7 +282,7 @@ func GetSupportedModels(provider string) []string {
 //	if status["state"] == "error" {
 //		log.Warn("Model is in error state")
 //	}
-func HealthCheck(model iface.ChatModel) map[string]interface{} {
+func HealthCheck(model iface.ChatModel) map[string]any {
 	return model.CheckHealth()
 }
 
@@ -362,7 +362,7 @@ func StreamMessages(ctx context.Context, model iface.ChatModel, messages []schem
 }
 
 // Compile-time checks to ensure implementations satisfy interfaces
-// These are checked at build time to ensure proper interface implementation
+// These are checked at build time to ensure proper interface implementation.
 var (
 	_ iface.ChatModel            = (*openai.OpenAIChatModel)(nil)
 	_ iface.ChatModel            = (*mock.MockChatModel)(nil)

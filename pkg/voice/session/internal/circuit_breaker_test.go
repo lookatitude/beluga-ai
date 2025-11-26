@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewCircuitBreaker(t *testing.T) {
@@ -21,7 +22,7 @@ func TestCircuitBreaker_Call_Success(t *testing.T) {
 	err := cb.Call(func() error {
 		return nil
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, CircuitBreakerClosed, cb.GetState())
 }
 
@@ -32,7 +33,7 @@ func TestCircuitBreaker_Call_Failure(t *testing.T) {
 	err := cb.Call(func() error {
 		return testErr
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, testErr, err)
 	assert.Equal(t, CircuitBreakerClosed, cb.GetState()) // Not open yet
 }
@@ -56,7 +57,7 @@ func TestCircuitBreaker_Call_OpenState(t *testing.T) {
 	err := cb.Call(func() error {
 		return nil
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "circuit breaker is open")
 }
 
@@ -79,7 +80,7 @@ func TestCircuitBreaker_Call_HalfOpenState(t *testing.T) {
 	err := cb.Call(func() error {
 		return nil
 	})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	// After success in half-open, should close
 	assert.Equal(t, CircuitBreakerClosed, cb.GetState())
 }
@@ -103,7 +104,7 @@ func TestCircuitBreaker_Call_HalfOpenToOpen(t *testing.T) {
 	err := cb.Call(func() error {
 		return testErr
 	})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, CircuitBreakerOpen, cb.GetState())
 }
 

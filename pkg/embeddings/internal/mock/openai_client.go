@@ -7,33 +7,29 @@ import (
 	openaiClient "github.com/sashabaranov/go-openai"
 )
 
-// OpenAIClientMock implements the OpenAI API client interface for testing
+// OpenAIClientMock implements the OpenAI API client interface for testing.
 type OpenAIClientMock struct {
-	mu sync.Mutex
-
-	// CreateEmbeddings behavior
+	EmbeddingsError       error
 	CreateEmbeddingsFunc  func(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error)
 	CreateEmbeddingsCalls []CreateEmbeddingsCall
-
-	// Error injection
-	ShouldFailEmbeddings bool
-	EmbeddingsError      error
+	mu                    sync.Mutex
+	ShouldFailEmbeddings  bool
 }
 
-// CreateEmbeddingsCall records a call to CreateEmbeddings
+// CreateEmbeddingsCall records a call to CreateEmbeddings.
 type CreateEmbeddingsCall struct {
 	Ctx context.Context
 	Req openaiClient.EmbeddingRequestConverter
 }
 
-// NewOpenAIClientMock creates a new mock OpenAI client
+// NewOpenAIClientMock creates a new mock OpenAI client.
 func NewOpenAIClientMock() *OpenAIClientMock {
 	return &OpenAIClientMock{
 		CreateEmbeddingsCalls: make([]CreateEmbeddingsCall, 0),
 	}
 }
 
-// CreateEmbeddings mocks the OpenAI embeddings API call
+// CreateEmbeddings mocks the OpenAI embeddings API call.
 func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -81,7 +77,7 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openaiClien
 	}, nil
 }
 
-// Reset resets the mock state
+// Reset resets the mock state.
 func (m *OpenAIClientMock) Reset() {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -92,14 +88,14 @@ func (m *OpenAIClientMock) Reset() {
 	m.CreateEmbeddingsFunc = nil
 }
 
-// SetCreateEmbeddingsResponse sets a custom response function for embeddings
+// SetCreateEmbeddingsResponse sets a custom response function for embeddings.
 func (m *OpenAIClientMock) SetCreateEmbeddingsResponse(response openaiClient.EmbeddingResponse) {
 	m.CreateEmbeddingsFunc = func(ctx context.Context, req openaiClient.EmbeddingRequestConverter) (openaiClient.EmbeddingResponse, error) {
 		return response, nil
 	}
 }
 
-// SetCreateEmbeddingsError sets the mock to return an error
+// SetCreateEmbeddingsError sets the mock to return an error.
 func (m *OpenAIClientMock) SetCreateEmbeddingsError(err error) {
 	m.ShouldFailEmbeddings = true
 	m.EmbeddingsError = err

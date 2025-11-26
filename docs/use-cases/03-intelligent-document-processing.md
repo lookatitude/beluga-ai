@@ -450,7 +450,7 @@ func TestCategorizeStep(t *testing.T) {
     doc := &ProcessedDocument{Content: "Invoice #12345"}
     result, err := step.Invoke(context.Background(), doc)
     
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Equal(t, "invoice", result.(*ProcessedDocument).Metadata.Category)
 }
 ```

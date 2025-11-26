@@ -463,11 +463,11 @@ func TestBufferMemory(t *testing.T) {
     outputs := map[string]any{"output": "response"}
 
     err := bufferMem.SaveContext(ctx, inputs, outputs)
-    assert.NoError(t, err)
+    require.NoError(t, err)
 
     // Test loading memory
     vars, err := bufferMem.LoadMemoryVariables(ctx, map[string]any{})
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, vars, "history")
 }
 
@@ -483,7 +483,7 @@ func TestFactory(t *testing.T) {
     }
 
     mem, err := factory.CreateMemory(ctx, config)
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Equal(t, []string{"test_history"}, mem.MemoryVariables())
 }
 ```

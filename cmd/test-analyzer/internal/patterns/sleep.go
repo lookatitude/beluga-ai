@@ -117,7 +117,7 @@ func (d *sleepDetector) extractDuration(expr ast.Expr) time.Duration {
 		if basicLit, ok := binary.X.(*ast.BasicLit); ok {
 			if sel, ok := binary.Y.(*ast.SelectorExpr); ok {
 				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "time" {
-					multiplier, _ := strconv.ParseInt(basicLit.Value, 10, 64)
+					multiplier, _ := strconv.ParseInt(basicLit.Value, 10, 64) // Error ignored as this is parsing test code
 					unit := d.getTimeUnit(sel.Sel.Name)
 					return time.Duration(multiplier) * unit
 				}

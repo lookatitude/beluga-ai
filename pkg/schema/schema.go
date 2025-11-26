@@ -11,7 +11,7 @@ package schema
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
@@ -22,13 +22,13 @@ import (
 
 // Core types and interfaces
 
-// Re-export types from iface and internal packages
+// Re-export types from iface and internal packages.
 type (
-	// Interfaces from iface
+	// Interfaces from iface.
 	Message     = iface.Message
 	ChatHistory = iface.ChatHistory
 
-	// Types from internal
+	// Types from internal.
 	Document             = internal.Document
 	AgentAction          = internal.AgentAction
 	AgentObservation     = internal.AgentObservation
@@ -49,14 +49,14 @@ type (
 	AIMessage            = internal.AIMessage
 	ToolMessage          = internal.ToolMessage
 
-	// A2A Communication Types
+	// A2A Communication Types.
 	AgentMessage     = internal.AgentMessage
 	AgentMessageType = internal.AgentMessageType
 	AgentRequest     = internal.AgentRequest
 	AgentResponse    = internal.AgentResponse
 	AgentError       = internal.AgentError
 
-	// Event Types
+	// Event Types.
 	Event                   = internal.Event
 	AgentLifecycleEvent     = internal.AgentLifecycleEvent
 	AgentLifecycleEventType = internal.AgentLifecycleEventType
@@ -66,10 +66,10 @@ type (
 	WorkflowEventType       = internal.WorkflowEventType
 )
 
-// Re-export MessageType from iface
+// Re-export MessageType from iface.
 type MessageType = iface.MessageType
 
-// Re-export constants from iface
+// Re-export constants from iface.
 const (
 	RoleHuman     = iface.RoleHuman
 	RoleAssistant = iface.RoleAssistant
@@ -78,7 +78,7 @@ const (
 	RoleFunction  = iface.RoleFunction
 )
 
-// Re-export A2A Communication constants
+// Re-export A2A Communication constants.
 const (
 	AgentMessageRequest      = internal.AgentMessageRequest
 	AgentMessageResponse     = internal.AgentMessageResponse
@@ -87,7 +87,7 @@ const (
 	AgentMessageError        = internal.AgentMessageError
 )
 
-// Re-export Event constants
+// Re-export Event constants.
 const (
 	AgentStarted       = internal.AgentStarted
 	AgentStopped       = internal.AgentStopped
@@ -135,7 +135,7 @@ func NewSystemMessage(content string) Message {
 }
 
 // NewToolMessage creates a new tool message.
-func NewToolMessage(content string, toolCallID string) Message {
+func NewToolMessage(content, toolCallID string) Message {
 	return &internal.ToolMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
 		ToolCallID:  toolCallID,
@@ -143,7 +143,7 @@ func NewToolMessage(content string, toolCallID string) Message {
 }
 
 // NewFunctionMessage creates a new function message.
-func NewFunctionMessage(name string, content string) Message {
+func NewFunctionMessage(name, content string) Message {
 	return &internal.FunctionMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
 		Name:        name,
@@ -166,7 +166,7 @@ func NewDocument(pageContent string, metadata map[string]string) Document {
 }
 
 // NewDocumentWithID creates a new Document with an ID.
-func NewDocumentWithID(id string, pageContent string, metadata map[string]string) Document {
+func NewDocumentWithID(id, pageContent string, metadata map[string]string) Document {
 	return internal.NewDocumentWithID(id, pageContent, metadata)
 }
 
@@ -192,7 +192,7 @@ func NewBaseChatHistory(opts ...ChatHistoryOption) (ChatHistory, error) {
 // Agent I/O factory functions
 
 // NewAgentAction creates a new AgentAction.
-func NewAgentAction(tool string, toolInput interface{}, log string) AgentAction {
+func NewAgentAction(tool string, toolInput any, log string) AgentAction {
 	return internal.AgentAction{
 		Tool:      tool,
 		ToolInput: toolInput,
@@ -201,7 +201,7 @@ func NewAgentAction(tool string, toolInput interface{}, log string) AgentAction 
 }
 
 // NewAgentObservation creates a new AgentObservation.
-func NewAgentObservation(actionLog, output string, parsedOutput interface{}) AgentObservation {
+func NewAgentObservation(actionLog, output string, parsedOutput any) AgentObservation {
 	return internal.AgentObservation{
 		ActionLog:    actionLog,
 		Output:       output,
@@ -218,7 +218,7 @@ func NewStep(action AgentAction, observation AgentObservation) Step {
 }
 
 // NewFinalAnswer creates a new FinalAnswer.
-func NewFinalAnswer(output string, sourceDocuments []interface{}, intermediateSteps []Step) FinalAnswer {
+func NewFinalAnswer(output string, sourceDocuments []any, intermediateSteps []Step) FinalAnswer {
 	return internal.FinalAnswer{
 		Output:            output,
 		SourceDocuments:   sourceDocuments,
@@ -227,7 +227,7 @@ func NewFinalAnswer(output string, sourceDocuments []interface{}, intermediateSt
 }
 
 // NewAgentFinish creates a new AgentFinish.
-func NewAgentFinish(returnValues map[string]interface{}, log string) AgentFinish {
+func NewAgentFinish(returnValues map[string]any, log string) AgentFinish {
 	return internal.AgentFinish{
 		ReturnValues: returnValues,
 		Log:          log,
@@ -239,7 +239,7 @@ func NewAgentFinish(returnValues map[string]interface{}, log string) AgentFinish
 // NewCallOptions creates a new CallOptions with default values.
 func NewCallOptions() *CallOptions {
 	return &CallOptions{
-		ProviderSpecificArgs: make(map[string]interface{}),
+		ProviderSpecificArgs: make(map[string]any),
 	}
 }
 
@@ -293,10 +293,10 @@ func WithStreaming(streaming bool) LLMOption {
 }
 
 // WithProviderSpecificArg adds a provider-specific argument.
-func WithProviderSpecificArg(key string, value interface{}) LLMOption {
+func WithProviderSpecificArg(key string, value any) LLMOption {
 	return func(o *CallOptions) {
 		if o.ProviderSpecificArgs == nil {
-			o.ProviderSpecificArgs = make(map[string]interface{})
+			o.ProviderSpecificArgs = make(map[string]any)
 		}
 		o.ProviderSpecificArgs[key] = value
 	}
@@ -305,7 +305,7 @@ func WithProviderSpecificArg(key string, value interface{}) LLMOption {
 // Generation and response factory functions
 
 // NewGeneration creates a new Generation.
-func NewGeneration(text string, message Message, generationInfo map[string]interface{}) *Generation {
+func NewGeneration(text string, message Message, generationInfo map[string]any) *Generation {
 	return &internal.Generation{
 		Text:           text,
 		Message:        message,
@@ -314,7 +314,7 @@ func NewGeneration(text string, message Message, generationInfo map[string]inter
 }
 
 // NewLLMResponse creates a new LLMResponse.
-func NewLLMResponse(generations [][]*Generation, llmOutput map[string]interface{}) *LLMResponse {
+func NewLLMResponse(generations [][]*Generation, llmOutput map[string]any) *LLMResponse {
 	return &internal.LLMResponse{
 		Generations: generations,
 		LLMOutput:   llmOutput,
@@ -324,19 +324,19 @@ func NewLLMResponse(generations [][]*Generation, llmOutput map[string]interface{
 // Factory functions for A2A communication
 
 // NewAgentMessage creates a new AgentMessage.
-func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType, payload interface{}) AgentMessage {
+func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType, payload any) AgentMessage {
 	return internal.AgentMessage{
 		FromAgentID: fromAgentID,
 		MessageID:   messageID,
 		Timestamp:   time.Now().Unix(),
 		MessageType: messageType,
 		Payload:     payload,
-		Metadata:    make(map[string]interface{}),
+		Metadata:    make(map[string]any),
 	}
 }
 
 // NewAgentRequest creates a new AgentRequest.
-func NewAgentRequest(action string, parameters map[string]interface{}) AgentRequest {
+func NewAgentRequest(action string, parameters map[string]any) AgentRequest {
 	return internal.AgentRequest{
 		Action:     action,
 		Parameters: parameters,
@@ -344,7 +344,7 @@ func NewAgentRequest(action string, parameters map[string]interface{}) AgentRequ
 }
 
 // NewAgentResponse creates a new AgentResponse.
-func NewAgentResponse(requestID, status string, result interface{}) AgentResponse {
+func NewAgentResponse(requestID, status string, result any) AgentResponse {
 	return internal.AgentResponse{
 		RequestID: requestID,
 		Status:    status,
@@ -353,7 +353,7 @@ func NewAgentResponse(requestID, status string, result interface{}) AgentRespons
 }
 
 // NewAgentError creates a new AgentError.
-func NewAgentError(code, message string, details map[string]interface{}) *AgentError {
+func NewAgentError(code, message string, details map[string]any) *AgentError {
 	return &internal.AgentError{
 		Code:    code,
 		Message: message,
@@ -364,7 +364,7 @@ func NewAgentError(code, message string, details map[string]interface{}) *AgentE
 // Factory functions for events
 
 // NewEvent creates a new Event.
-func NewEvent(eventID, eventType, source string, payload interface{}) Event {
+func NewEvent(eventID, eventType, source string, payload any) Event {
 	return internal.Event{
 		EventID:   eventID,
 		EventType: eventType,
@@ -372,7 +372,7 @@ func NewEvent(eventID, eventType, source string, payload interface{}) Event {
 		Timestamp: time.Now().Unix(),
 		Version:   "1.0",
 		Payload:   payload,
-		Metadata:  make(map[string]interface{}),
+		Metadata:  make(map[string]any),
 	}
 }
 
@@ -434,15 +434,15 @@ func NewAIMessageWithContext(ctx context.Context, content string) Message {
 // ValidateMessage validates a message implementation.
 func ValidateMessage(msg Message) error {
 	if msg == nil {
-		return fmt.Errorf("message cannot be nil")
+		return errors.New("message cannot be nil")
 	}
 
 	if msg.GetType() == "" {
-		return fmt.Errorf("message type cannot be empty")
+		return errors.New("message type cannot be empty")
 	}
 
 	if msg.GetContent() == "" {
-		return fmt.Errorf("message content cannot be empty")
+		return errors.New("message content cannot be empty")
 	}
 
 	return nil
@@ -451,17 +451,17 @@ func ValidateMessage(msg Message) error {
 // ValidateDocument validates a document.
 func ValidateDocument(doc Document) error {
 	if doc.PageContent == "" {
-		return fmt.Errorf("document page content cannot be empty")
+		return errors.New("document page content cannot be empty")
 	}
 
 	if doc.Metadata == nil {
-		return fmt.Errorf("document metadata cannot be nil")
+		return errors.New("document metadata cannot be nil")
 	}
 
 	return nil
 }
 
-// Ensure interface compliance
+// Ensure interface compliance.
 var (
 	_ Message     = (*internal.ChatMessage)(nil)
 	_ Message     = (*internal.ToolMessage)(nil)

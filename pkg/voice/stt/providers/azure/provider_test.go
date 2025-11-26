@@ -3,6 +3,7 @@ package azure
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -15,8 +16,8 @@ import (
 
 func TestNewAzureProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *stt.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +48,10 @@ func TestNewAzureProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewAzureProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -66,7 +67,7 @@ func TestAzureProvider_Transcribe_Success(t *testing.T) {
 		assert.Equal(t, "audio/wav", r.Header.Get("Content-Type"))
 
 		// Return success response
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "Hello, this is a test transcription",
 			"Offset":            0,
@@ -93,14 +94,14 @@ func TestAzureProvider_Transcribe_Success(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Hello, this is a test transcription", transcript)
 }
 
 func TestAzureProvider_Transcribe_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error"))
 	}))
 	defer server.Close()
 
@@ -118,14 +119,14 @@ func TestAzureProvider_Transcribe_HTTPError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_InvalidResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("invalid json"))
+		_, _ = w.Write([]byte("invalid json"))
 	}))
 	defer server.Close()
 
@@ -143,12 +144,12 @@ func TestAzureProvider_Transcribe_InvalidResponse(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_FailedRecognition(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "NoMatch",
 			"DisplayText":       "",
 		}
@@ -172,13 +173,13 @@ func TestAzureProvider_Transcribe_FailedRecognition(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "recognition failed")
 }
 
 func TestAzureProvider_Transcribe_EmptyText(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "",
 		}
@@ -202,7 +203,7 @@ func TestAzureProvider_Transcribe_EmptyText(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no transcript")
 }
 
@@ -223,7 +224,7 @@ func TestAzureProvider_StartStreaming(t *testing.T) {
 	// It may fail without a valid WebSocket connection, but we test the creation
 	// The actual WebSocket connection would require a real server
 	if err != nil {
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Nil(t, session)
 	} else {
 		assert.NotNil(t, session)
@@ -273,7 +274,7 @@ func TestAzureProvider_Transcribe_WithEndpointID(t *testing.T) {
 		// Verify endpoint ID in URL
 		assert.Contains(t, r.URL.RawQuery, "endpointId=test-endpoint")
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "Test transcription",
 		}
@@ -303,7 +304,7 @@ func TestAzureProvider_Transcribe_WithEndpointID(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test transcription", transcript)
 }
 
@@ -314,7 +315,7 @@ func TestAzureProvider_Transcribe_WithOptionalParams(t *testing.T) {
 		assert.Contains(t, r.URL.RawQuery, "wordLevelTimestamps=true")
 		assert.Contains(t, r.URL.RawQuery, "diarization=true")
 
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "Test transcription",
 		}
@@ -346,7 +347,7 @@ func TestAzureProvider_Transcribe_WithOptionalParams(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test transcription", transcript)
 }
 
@@ -376,12 +377,12 @@ func TestAzureProvider_Transcribe_ReadBodyError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_RecognitionStatusFailed(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "NoMatch",
 			"DisplayText":       "",
 		}
@@ -406,13 +407,13 @@ func TestAzureProvider_Transcribe_RecognitionStatusFailed(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "recognition failed")
 }
 
 func TestAzureProvider_Transcribe_WithMetrics(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		response := map[string]interface{}{
+		response := map[string]any{
 			"RecognitionStatus": "Success",
 			"DisplayText":       "Test with metrics",
 		}
@@ -438,7 +439,7 @@ func TestAzureProvider_Transcribe_WithMetrics(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	transcript, err := provider.Transcribe(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "Test with metrics", transcript)
 }
 
@@ -466,13 +467,13 @@ func TestAzureProvider_Transcribe_NonRetryableError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_ServerError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("Internal Server Error"))
+		_, _ = w.Write([]byte("Internal Server Error"))
 	}))
 	defer server.Close()
 
@@ -493,7 +494,7 @@ func TestAzureProvider_Transcribe_ServerError(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_Timeout(t *testing.T) {
@@ -519,7 +520,7 @@ func TestAzureProvider_Transcribe_Timeout(t *testing.T) {
 	audio := []byte{1, 2, 3, 4, 5}
 
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestNewAzureProvider_WithBaseURL(t *testing.T) {
@@ -604,7 +605,7 @@ func TestAzureProvider_StartStreaming_Error(t *testing.T) {
 
 	session, err := provider.StartStreaming(ctx)
 	// Should fail without valid WebSocket connection
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, session)
 }
 
@@ -627,10 +628,9 @@ func TestAzureProvider_Transcribe_ContextDeadlineExceeded(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, provider)
 
-
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_RetryContextCancellation(t *testing.T) {
@@ -667,7 +667,7 @@ func TestAzureProvider_Transcribe_RetryContextCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestAzureProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
@@ -678,7 +678,7 @@ func TestAzureProvider_Transcribe_RetryOnRateLimit(t *testing.T) {
 			w.WriteHeader(http.StatusTooManyRequests)
 			w.Write([]byte("Rate limit exceeded"))
 		} else {
-			response := map[string]interface{}{
+			response := map[string]any{
 				"RecognitionStatus": "Success",
 				"DisplayText":       "Success after retry",
 			}
@@ -740,10 +740,10 @@ func TestAzureProvider_Transcribe_ContextCancellation(t *testing.T) {
 
 	audio := []byte{1, 2, 3, 4, 5}
 	_, err = provider.Transcribe(ctx, audio)
-	assert.Error(t, err)
+	require.Error(t, err)
 	// Error should be context.Canceled or wrapped in STTError
 	// Check if it's context.Canceled or if the underlying error is context.Canceled
-	if err != context.Canceled && err != ctx.Err() {
+	if !errors.Is(err, context.Canceled) && !errors.Is(err, ctx.Err()) {
 		// Check if it's a wrapped context error
 		assert.Contains(t, err.Error(), "context")
 	}

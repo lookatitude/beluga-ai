@@ -12,34 +12,34 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/logger"
 )
 
-// EthicalAIChecker provides comprehensive ethical AI validation
+// EthicalAIChecker provides comprehensive ethical AI validation.
 type EthicalAIChecker struct {
 	logger          *logger.StructuredLogger
-	biasDetectors   []BiasDetector
 	fairnessMetrics *FairnessMetrics
 	privacyChecker  *PrivacyChecker
+	biasDetectors   []BiasDetector
 }
 
-// BiasDetector detects various types of bias in AI outputs
+// BiasDetector detects various types of bias in AI outputs.
 type BiasDetector interface {
 	Name() string
 	Detect(content string, context iface.EthicalContext) []iface.BiasIssue
 }
 
-// FairnessMetrics tracks fairness and equity metrics
+// FairnessMetrics tracks fairness and equity metrics.
 type FairnessMetrics struct {
 	DemographicParity map[string]float64 `json:"demographic_parity"`
 	EqualOpportunity  map[string]float64 `json:"equal_opportunity"`
 	DisparateImpact   map[string]float64 `json:"disparate_impact"`
 }
 
-// PrivacyChecker checks for privacy violations
+// PrivacyChecker checks for privacy violations.
 type PrivacyChecker struct {
-	piiPatterns []*regexp.Regexp
 	logger      *logger.StructuredLogger
+	piiPatterns []*regexp.Regexp
 }
 
-// NewEthicalAIChecker creates a new ethical AI checker
+// NewEthicalAIChecker creates a new ethical AI checker.
 func NewEthicalAIChecker(logger *logger.StructuredLogger) *EthicalAIChecker {
 	checker := &EthicalAIChecker{
 		logger: logger,
@@ -57,7 +57,7 @@ func NewEthicalAIChecker(logger *logger.StructuredLogger) *EthicalAIChecker {
 	return checker
 }
 
-// NewPrivacyChecker creates a new privacy checker
+// NewPrivacyChecker creates a new privacy checker.
 func NewPrivacyChecker(logger *logger.StructuredLogger) *PrivacyChecker {
 	pc := &PrivacyChecker{
 		logger: logger,
@@ -69,7 +69,7 @@ func NewPrivacyChecker(logger *logger.StructuredLogger) *PrivacyChecker {
 	return pc
 }
 
-// initializeBiasDetectors sets up various bias detection algorithms
+// initializeBiasDetectors sets up various bias detection algorithms.
 func (eac *EthicalAIChecker) initializeBiasDetectors() {
 	eac.biasDetectors = []BiasDetector{
 		&GenderBiasDetector{},
@@ -80,7 +80,7 @@ func (eac *EthicalAIChecker) initializeBiasDetectors() {
 	}
 }
 
-// initializePIIPatterns sets up PII detection patterns
+// initializePIIPatterns sets up PII detection patterns.
 func (pc *PrivacyChecker) initializePIIPatterns() {
 	patterns := []string{
 		`\b\d{3}-\d{2}-\d{4}\b`,                               // SSN
@@ -97,7 +97,7 @@ func (pc *PrivacyChecker) initializePIIPatterns() {
 	}
 }
 
-// CheckContent performs comprehensive ethical analysis of content
+// CheckContent performs comprehensive ethical analysis of content.
 func (eac *EthicalAIChecker) CheckContent(ctx context.Context, content string, ethicalCtx iface.EthicalContext) (iface.EthicalAnalysis, error) {
 	analysis := iface.EthicalAnalysis{
 		Content:         content,
@@ -131,7 +131,7 @@ func (eac *EthicalAIChecker) CheckContent(ctx context.Context, content string, e
 
 	// Log analysis
 	eac.logger.Info(ctx, "Ethical analysis completed",
-		map[string]interface{}{
+		map[string]any{
 			"bias_issues":    len(analysis.BiasIssues),
 			"privacy_issues": len(analysis.PrivacyIssues),
 			"fairness_score": analysis.FairnessScore,
@@ -141,7 +141,7 @@ func (eac *EthicalAIChecker) CheckContent(ctx context.Context, content string, e
 	return analysis, nil
 }
 
-// CheckPrivacy checks for privacy violations in content
+// CheckPrivacy checks for privacy violations in content.
 func (pc *PrivacyChecker) CheckPrivacy(content string) []iface.PrivacyIssue {
 	issues := make([]iface.PrivacyIssue, 0)
 
@@ -161,7 +161,7 @@ func (pc *PrivacyChecker) CheckPrivacy(content string) []iface.PrivacyIssue {
 	return issues
 }
 
-// classifyPII classifies the type of PII detected
+// classifyPII classifies the type of PII detected.
 func (pc *PrivacyChecker) classifyPII(pattern string) string {
 	switch {
 	case strings.Contains(pattern, "email") || strings.Contains(pattern, "@"):
@@ -181,7 +181,7 @@ func (pc *PrivacyChecker) classifyPII(pattern string) string {
 	}
 }
 
-// GenderBiasDetector detects gender-related bias
+// GenderBiasDetector detects gender-related bias.
 type GenderBiasDetector struct{}
 
 func (gbd *GenderBiasDetector) Name() string { return "gender_bias" }
@@ -200,7 +200,8 @@ func (gbd *GenderBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 	}
 
 	for _, p := range patterns {
-		if matched, _ := regexp.MatchString(p.pattern, content); matched {
+		matched, err := regexp.MatchString(p.pattern, content)
+		if err == nil && matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "gender_bias",
 				Description: p.message,
@@ -214,7 +215,7 @@ func (gbd *GenderBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 	return issues
 }
 
-// RacialBiasDetector detects racial and ethnic bias
+// RacialBiasDetector detects racial and ethnic bias.
 type RacialBiasDetector struct{}
 
 func (rbd *RacialBiasDetector) Name() string { return "racial_bias" }
@@ -230,7 +231,8 @@ func (rbd *RacialBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 	}
 
 	for _, pattern := range patterns {
-		if matched, _ := regexp.MatchString(pattern, content); matched {
+		matched, err := regexp.MatchString(pattern, content)
+		if err == nil && matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "racial_bias",
 				Description: "Potential racial or ethnic bias detected",
@@ -246,7 +248,7 @@ func (rbd *RacialBiasDetector) Detect(content string, ctx iface.EthicalContext) 
 	return issues
 }
 
-// SocioeconomicBiasDetector detects socioeconomic bias
+// SocioeconomicBiasDetector detects socioeconomic bias.
 type SocioeconomicBiasDetector struct{}
 
 func (sebd *SocioeconomicBiasDetector) Name() string { return "socioeconomic_bias" }
@@ -262,7 +264,8 @@ func (sebd *SocioeconomicBiasDetector) Detect(content string, ctx iface.EthicalC
 	}
 
 	for _, pattern := range patterns {
-		if matched, _ := regexp.MatchString(pattern, content); matched {
+		matched, err := regexp.MatchString(pattern, content)
+		if err == nil && matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "socioeconomic_bias",
 				Description: "Potential socioeconomic or class bias detected",
@@ -278,7 +281,7 @@ func (sebd *SocioeconomicBiasDetector) Detect(content string, ctx iface.EthicalC
 	return issues
 }
 
-// CulturalBiasDetector detects cultural bias
+// CulturalBiasDetector detects cultural bias.
 type CulturalBiasDetector struct{}
 
 func (cbd *CulturalBiasDetector) Name() string { return "cultural_bias" }
@@ -294,7 +297,8 @@ func (cbd *CulturalBiasDetector) Detect(content string, ctx iface.EthicalContext
 	}
 
 	for _, pattern := range patterns {
-		if matched, _ := regexp.MatchString(pattern, content); matched {
+		matched, err := regexp.MatchString(pattern, content)
+		if err == nil && matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "cultural_bias",
 				Description: "Potential cultural bias detected",
@@ -310,7 +314,7 @@ func (cbd *CulturalBiasDetector) Detect(content string, ctx iface.EthicalContext
 	return issues
 }
 
-// ConfirmationBiasDetector detects confirmation bias
+// ConfirmationBiasDetector detects confirmation bias.
 type ConfirmationBiasDetector struct{}
 
 func (cbd *ConfirmationBiasDetector) Name() string { return "confirmation_bias" }
@@ -325,7 +329,8 @@ func (cbd *ConfirmationBiasDetector) Detect(content string, ctx iface.EthicalCon
 	}
 
 	for _, pattern := range patterns {
-		if matched, _ := regexp.MatchString(pattern, content); matched {
+		matched, err := regexp.MatchString(pattern, content)
+		if err == nil && matched {
 			issues = append(issues, iface.BiasIssue{
 				Type:        "confirmation_bias",
 				Description: "Potential confirmation bias detected",
@@ -339,7 +344,7 @@ func (cbd *ConfirmationBiasDetector) Detect(content string, ctx iface.EthicalCon
 	return issues
 }
 
-// calculateOverallRisk calculates the overall risk level
+// calculateOverallRisk calculates the overall risk level.
 func calculateOverallRisk(ea *iface.EthicalAnalysis) {
 	totalIssues := len(ea.BiasIssues) + len(ea.PrivacyIssues)
 	maxSeverity := 0.0
@@ -402,7 +407,7 @@ func calculateOverallRisk(ea *iface.EthicalAnalysis) {
 	}
 }
 
-// generateRecommendations generates recommendations based on analysis
+// generateRecommendations generates recommendations based on analysis.
 func generateRecommendations(ea *iface.EthicalAnalysis) {
 	if len(ea.BiasIssues) > 0 {
 		ea.Recommendations = append(ea.Recommendations,
@@ -425,14 +430,14 @@ func generateRecommendations(ea *iface.EthicalAnalysis) {
 	}
 }
 
-// HumanInTheLoopIntegration provides integration with human reviewers
+// HumanInTheLoopIntegration provides integration with human reviewers.
 type HumanInTheLoopIntegration struct {
 	logger     *logger.StructuredLogger
-	reviewers  []string
 	thresholds map[string]float64
+	reviewers  []string
 }
 
-// NewHumanInTheLoopIntegration creates a new HITL integration
+// NewHumanInTheLoopIntegration creates a new HITL integration.
 func NewHumanInTheLoopIntegration(logger *logger.StructuredLogger) *HumanInTheLoopIntegration {
 	return &HumanInTheLoopIntegration{
 		logger: logger,
@@ -444,7 +449,7 @@ func NewHumanInTheLoopIntegration(logger *logger.StructuredLogger) *HumanInTheLo
 	}
 }
 
-// ShouldTriggerReview determines if human review is needed
+// ShouldTriggerReview determines if human review is needed.
 func (hitl *HumanInTheLoopIntegration) ShouldTriggerReview(analysis *iface.EthicalAnalysis) bool {
 	if analysis.OverallRisk == "high" {
 		return true
@@ -457,10 +462,10 @@ func (hitl *HumanInTheLoopIntegration) ShouldTriggerReview(analysis *iface.Ethic
 	return len(analysis.BiasIssues) > 2 || len(analysis.PrivacyIssues) > 0
 }
 
-// RequestReview requests human review for flagged content
+// RequestReview requests human review for flagged content.
 func (hitl *HumanInTheLoopIntegration) RequestReview(ctx context.Context, analysis *iface.EthicalAnalysis) error {
 	hitl.logger.Warning(ctx, "Human review requested for ethical concerns",
-		map[string]interface{}{
+		map[string]any{
 			"risk_level":     analysis.OverallRisk,
 			"bias_issues":    len(analysis.BiasIssues),
 			"privacy_issues": len(analysis.PrivacyIssues),

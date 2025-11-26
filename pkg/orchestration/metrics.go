@@ -9,7 +9,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Metrics holds all orchestration-related metrics
+// Metrics holds all orchestration-related metrics.
 type Metrics struct {
 	// Chain metrics
 	chainExecutions metric.Int64Counter
@@ -38,7 +38,7 @@ type Metrics struct {
 	tracer trace.Tracer
 }
 
-// NewMetrics creates a new metrics instance with OTEL instrumentation
+// NewMetrics creates a new metrics instance with OTEL instrumentation.
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	m := &Metrics{tracer: tracer}
 
@@ -186,7 +186,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	return m, nil
 }
 
-// RecordChainExecution records a chain execution
+// RecordChainExecution records a chain execution.
 func (m *Metrics) RecordChainExecution(ctx context.Context, duration time.Duration, success bool, chainName string) {
 	if m == nil {
 		return
@@ -217,7 +217,7 @@ func (m *Metrics) RecordChainExecution(ctx context.Context, duration time.Durati
 	}
 }
 
-// RecordChainActive records active chain count changes
+// RecordChainActive records active chain count changes.
 func (m *Metrics) RecordChainActive(ctx context.Context, delta int64, chainName string) {
 	if m == nil || m.activeChains == nil {
 		return
@@ -230,7 +230,7 @@ func (m *Metrics) RecordChainActive(ctx context.Context, delta int64, chainName 
 	m.activeChains.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
-// RecordGraphExecution records a graph execution
+// RecordGraphExecution records a graph execution.
 func (m *Metrics) RecordGraphExecution(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int) {
 	if m == nil {
 		return
@@ -264,7 +264,7 @@ func (m *Metrics) RecordGraphExecution(ctx context.Context, duration time.Durati
 	}
 }
 
-// RecordGraphActive records active graph count changes
+// RecordGraphActive records active graph count changes.
 func (m *Metrics) RecordGraphActive(ctx context.Context, delta int64, graphName string) {
 	if m == nil || m.activeGraphs == nil {
 		return
@@ -277,7 +277,7 @@ func (m *Metrics) RecordGraphActive(ctx context.Context, delta int64, graphName 
 	m.activeGraphs.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
-// RecordWorkflowExecution records a workflow execution
+// RecordWorkflowExecution records a workflow execution.
 func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration time.Duration, success bool, workflowName string) {
 	if m == nil {
 		return
@@ -308,7 +308,7 @@ func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration time.Dur
 	}
 }
 
-// RecordWorkflowActive records active workflow count changes
+// RecordWorkflowActive records active workflow count changes.
 func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflowName string) {
 	if m == nil || m.activeWorkflows == nil {
 		return
@@ -321,43 +321,52 @@ func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflo
 	m.activeWorkflows.Add(ctx, delta, metric.WithAttributes(attrs...))
 }
 
-// StartChainSpan starts a new span for chain execution
+// StartChainSpan starts a new span for chain execution.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
 	}
 
-	return m.tracer.Start(ctx, "orchestration.chain."+operation,
+	ctx, span := m.tracer.Start(ctx, "orchestration.chain."+operation,
 		trace.WithAttributes(
 			attribute.String("chain.name", chainName),
 		),
 	)
+	return ctx, span
 }
 
-// StartGraphSpan starts a new span for graph execution
+// StartGraphSpan starts a new span for graph execution.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
 	}
 
-	return m.tracer.Start(ctx, "orchestration.graph."+operation,
+	ctx, span := m.tracer.Start(ctx, "orchestration.graph."+operation,
 		trace.WithAttributes(
 			attribute.String("graph.name", graphName),
 		),
 	)
+	return ctx, span
 }
 
-// StartWorkflowSpan starts a new span for workflow execution
+// StartWorkflowSpan starts a new span for workflow execution.
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartWorkflowSpan(ctx context.Context, workflowName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
 	}
 
-	return m.tracer.Start(ctx, "orchestration.workflow."+operation,
+	ctx, span := m.tracer.Start(ctx, "orchestration.workflow."+operation,
 		trace.WithAttributes(
 			attribute.String("workflow.name", workflowName),
 		),
 	)
+	return ctx, span
 }
 
 // NoOpMetrics returns a metrics instance that does nothing.

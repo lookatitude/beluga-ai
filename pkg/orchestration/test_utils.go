@@ -5,6 +5,7 @@ package orchestration
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -14,46 +15,39 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockOrchestrator provides a comprehensive mock implementation for testing
+// AdvancedMockOrchestrator provides a comprehensive mock implementation for testing.
 type AdvancedMockOrchestrator struct {
+	lastHealthCheck time.Time
+	errorToReturn   error
+	nodeResults     map[string]any
+	edges           map[string][]string
 	mock.Mock
-
-	// Configuration
-	name        string
-	orchestType string
-	callCount   int
-	mu          sync.RWMutex
-
-	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	responses        []interface{}
+	name             string
+	orchestType      string
+	healthState      string
+	nodes            []string
+	responses        []any
+	executionOrder   []string
 	responseIndex    int
 	executionDelay   time.Duration
+	callCount        int
+	mu               sync.RWMutex
 	simulateFailures bool
-
-	// Chain/Graph/Workflow support
-	nodes          []string
-	edges          map[string][]string
-	executionOrder []string
-	nodeResults    map[string]interface{}
-
-	// Health check data
-	healthState     string
-	lastHealthCheck time.Time
+	shouldError      bool
 }
 
-// NewAdvancedMockOrchestrator creates a new advanced mock with configurable behavior
+// NewAdvancedMockOrchestrator creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOrchestrator(name, orchType string, options ...MockOrchestratorOption) *AdvancedMockOrchestrator {
 	mock := &AdvancedMockOrchestrator{
 		name:        name,
 		orchestType: orchType,
-		responses:   []interface{}{},
+		responses:   []any{},
 		nodes:       []string{},
 		edges:       make(map[string][]string),
-		nodeResults: make(map[string]interface{}),
+		nodeResults: make(map[string]any),
 		healthState: "healthy",
 	}
 
@@ -65,17 +59,17 @@ func NewAdvancedMockOrchestrator(name, orchType string, options ...MockOrchestra
 	return mock
 }
 
-// MockOrchestratorOption defines functional options for mock configuration
+// MockOrchestratorOption defines functional options for mock configuration.
 type MockOrchestratorOption func(*AdvancedMockOrchestrator)
 
-// WithMockResponses sets predefined responses for the mock
-func WithMockResponses(responses []interface{}) MockOrchestratorOption {
+// WithMockResponses sets predefined responses for the mock.
+func WithMockResponses(responses []any) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.responses = responses
 	}
 }
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.shouldError = shouldError
@@ -83,29 +77,29 @@ func WithMockError(shouldError bool, err error) MockOrchestratorOption {
 	}
 }
 
-// WithExecutionDelay adds artificial delay to mock operations
+// WithExecutionDelay adds artificial delay to mock operations.
 func WithExecutionDelay(delay time.Duration) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.executionDelay = delay
 	}
 }
 
-// WithNodes sets the nodes for the mock orchestrator
+// WithNodes sets the nodes for the mock orchestrator.
 func WithNodes(nodes []string) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.nodes = nodes
 	}
 }
 
-// WithEdges sets the edges for the mock orchestrator
+// WithEdges sets the edges for the mock orchestrator.
 func WithEdges(edges map[string][]string) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.edges = edges
 	}
 }
 
-// Mock implementation methods
-func (m *AdvancedMockOrchestrator) Execute(ctx context.Context, input interface{}) (interface{}, error) {
+// Mock implementation methods.
+func (m *AdvancedMockOrchestrator) Execute(ctx context.Context, input any) (any, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
@@ -118,16 +112,20 @@ func (m *AdvancedMockOrchestrator) Execute(ctx context.Context, input interface{
 		return nil, m.errorToReturn
 	}
 
+	m.mu.Lock()
+	var result any
 	if len(m.responses) > m.responseIndex {
-		result := m.responses[m.responseIndex]
+		result = m.responses[m.responseIndex]
 		m.responseIndex = (m.responseIndex + 1) % len(m.responses)
+		m.mu.Unlock()
 		return result, nil
 	}
+	m.mu.Unlock()
 
-	return fmt.Sprintf("mock result for %s", m.name), nil
+	return "mock result for " + m.name, nil
 }
 
-func (m *AdvancedMockOrchestrator) ExecuteChain(ctx context.Context, chain iface.Chain) (interface{}, error) {
+func (m *AdvancedMockOrchestrator) ExecuteChain(ctx context.Context, chain iface.Chain) (any, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
@@ -140,10 +138,10 @@ func (m *AdvancedMockOrchestrator) ExecuteChain(ctx context.Context, chain iface
 		return nil, m.errorToReturn
 	}
 
-	return fmt.Sprintf("chain execution result for %s", m.name), nil
+	return "chain execution result for " + m.name, nil
 }
 
-func (m *AdvancedMockOrchestrator) ExecuteGraph(ctx context.Context, graph iface.Graph) (interface{}, error) {
+func (m *AdvancedMockOrchestrator) ExecuteGraph(ctx context.Context, graph iface.Graph) (any, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
@@ -156,10 +154,10 @@ func (m *AdvancedMockOrchestrator) ExecuteGraph(ctx context.Context, graph iface
 		return nil, m.errorToReturn
 	}
 
-	return fmt.Sprintf("graph execution result for %s", m.name), nil
+	return "graph execution result for " + m.name, nil
 }
 
-func (m *AdvancedMockOrchestrator) ExecuteWorkflow(ctx context.Context, workflow iface.Workflow) (interface{}, error) {
+func (m *AdvancedMockOrchestrator) ExecuteWorkflow(ctx context.Context, workflow iface.Workflow) (any, error) {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
@@ -172,7 +170,7 @@ func (m *AdvancedMockOrchestrator) ExecuteWorkflow(ctx context.Context, workflow
 		return nil, m.errorToReturn
 	}
 
-	return fmt.Sprintf("workflow execution result for %s", m.name), nil
+	return "workflow execution result for " + m.name, nil
 }
 
 func (m *AdvancedMockOrchestrator) GetName() string {
@@ -189,9 +187,9 @@ func (m *AdvancedMockOrchestrator) GetCallCount() int {
 	return m.callCount
 }
 
-func (m *AdvancedMockOrchestrator) CheckHealth() map[string]interface{} {
+func (m *AdvancedMockOrchestrator) CheckHealth() map[string]any {
 	m.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":       m.healthState,
 		"name":         m.name,
 		"type":         m.orchestType,
@@ -202,7 +200,7 @@ func (m *AdvancedMockOrchestrator) CheckHealth() map[string]interface{} {
 	}
 }
 
-// MockMetricsRecorder provides a mock metrics collector for testing
+// MockMetricsRecorder provides a mock metrics collector for testing.
 type MockMetricsRecorder struct {
 	mock.Mock
 	recordings []MetricRecord
@@ -210,11 +208,11 @@ type MockMetricsRecorder struct {
 }
 
 type MetricRecord struct {
+	Timestamp time.Time
+	Value     any
+	Labels    map[string]string
 	Operation string
 	Type      string
-	Value     interface{}
-	Labels    map[string]string
-	Timestamp time.Time
 }
 
 func NewMockMetricsRecorder() *MockMetricsRecorder {
@@ -231,7 +229,7 @@ func (m *MockMetricsRecorder) RecordChainExecution(ctx context.Context, duration
 		Operation: "chain_execution",
 		Type:      "duration",
 		Value:     duration,
-		Labels:    map[string]string{"chain_name": chainName, "success": fmt.Sprintf("%t", success)},
+		Labels:    map[string]string{"chain_name": chainName, "success": strconv.FormatBool(success)},
 		Timestamp: time.Now(),
 	})
 }
@@ -244,7 +242,7 @@ func (m *MockMetricsRecorder) RecordGraphExecution(ctx context.Context, duration
 		Operation: "graph_execution",
 		Type:      "duration",
 		Value:     duration,
-		Labels:    map[string]string{"graph_name": graphName, "success": fmt.Sprintf("%t", success), "node_count": fmt.Sprintf("%d", nodeCount)},
+		Labels:    map[string]string{"graph_name": graphName, "success": strconv.FormatBool(success), "node_count": strconv.Itoa(nodeCount)},
 		Timestamp: time.Now(),
 	})
 }
@@ -257,7 +255,7 @@ func (m *MockMetricsRecorder) RecordWorkflowExecution(ctx context.Context, durat
 		Operation: "workflow_execution",
 		Type:      "duration",
 		Value:     duration,
-		Labels:    map[string]string{"workflow_name": workflowName, "success": fmt.Sprintf("%t", success)},
+		Labels:    map[string]string{"workflow_name": workflowName, "success": strconv.FormatBool(success)},
 		Timestamp: time.Now(),
 	})
 }
@@ -278,7 +276,7 @@ func (m *MockMetricsRecorder) Clear() {
 
 // Test data creation helpers
 
-// CreateTestChain creates a test chain configuration
+// CreateTestChain creates a test chain configuration.
 func CreateTestChain(name string, steps []string) iface.Chain {
 	return &TestChain{
 		name:  name,
@@ -296,6 +294,7 @@ func (c *TestChain) GetSteps() []string { return c.steps }
 func (c *TestChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return fmt.Sprintf("executed chain %s with %d steps", c.name, len(c.steps)), nil
 }
+
 func (c *TestChain) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i := range inputs {
@@ -303,11 +302,12 @@ func (c *TestChain) Batch(ctx context.Context, inputs []any, options ...core.Opt
 	}
 	return results, nil
 }
+
 func (c *TestChain) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	ch := make(chan any, 1)
 	go func() {
 		defer close(ch)
-		ch <- fmt.Sprintf("stream result for chain %s", c.name)
+		ch <- "stream result for chain " + c.name
 	}()
 	return ch, nil
 }
@@ -315,7 +315,7 @@ func (c *TestChain) GetInputKeys() []string        { return []string{"input"} }
 func (c *TestChain) GetOutputKeys() []string       { return []string{"output"} }
 func (c *TestChain) GetMemory() memoryiface.Memory { return nil }
 
-// CreateTestGraph creates a test graph configuration
+// CreateTestGraph creates a test graph configuration.
 func CreateTestGraph(name string, nodes []string, edges map[string][]string) iface.Graph {
 	return &TestGraph{
 		name:  name,
@@ -325,9 +325,9 @@ func CreateTestGraph(name string, nodes []string, edges map[string][]string) ifa
 }
 
 type TestGraph struct {
+	edges map[string][]string
 	name  string
 	nodes []string
-	edges map[string][]string
 }
 
 func (g *TestGraph) GetName() string               { return g.name }
@@ -336,6 +336,7 @@ func (g *TestGraph) GetEdges() map[string][]string { return g.edges }
 func (g *TestGraph) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return fmt.Sprintf("executed graph %s with %d nodes", g.name, len(g.nodes)), nil
 }
+
 func (g *TestGraph) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i := range inputs {
@@ -343,19 +344,22 @@ func (g *TestGraph) Batch(ctx context.Context, inputs []any, options ...core.Opt
 	}
 	return results, nil
 }
+
 func (g *TestGraph) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	ch := make(chan any, 1)
 	go func() {
 		defer close(ch)
-		ch <- fmt.Sprintf("stream result for graph %s", g.name)
+		ch <- "stream result for graph " + g.name
 	}()
 	return ch, nil
 }
+
 func (g *TestGraph) AddNode(name string, runnable core.Runnable) error {
 	g.nodes = append(g.nodes, name)
 	return nil
 }
-func (g *TestGraph) AddEdge(sourceNode string, targetNode string) error {
+
+func (g *TestGraph) AddEdge(sourceNode, targetNode string) error {
 	if g.edges == nil {
 		g.edges = make(map[string][]string)
 	}
@@ -365,7 +369,7 @@ func (g *TestGraph) AddEdge(sourceNode string, targetNode string) error {
 func (g *TestGraph) SetEntryPoint(nodeNames []string) error  { return nil }
 func (g *TestGraph) SetFinishPoint(nodeNames []string) error { return nil }
 
-// CreateTestWorkflow creates a test workflow configuration
+// CreateTestWorkflow creates a test workflow configuration.
 func CreateTestWorkflow(name string, tasks []string) iface.Workflow {
 	return &TestWorkflow{
 		name:  name,
@@ -380,58 +384,65 @@ type TestWorkflow struct {
 
 func (w *TestWorkflow) GetName() string    { return w.name }
 func (w *TestWorkflow) GetTasks() []string { return w.tasks }
-func (w *TestWorkflow) Execute(ctx context.Context, input interface{}) (string, string, error) {
+func (w *TestWorkflow) Execute(ctx context.Context, input any) (string, string, error) {
 	workflowID := fmt.Sprintf("workflow-%s-%d", w.name, time.Now().UnixNano())
 	runID := fmt.Sprintf("run-%d", time.Now().UnixNano())
 	return workflowID, runID, nil
 }
-func (w *TestWorkflow) GetResult(ctx context.Context, workflowID string, runID string) (interface{}, error) {
+
+func (w *TestWorkflow) GetResult(ctx context.Context, workflowID, runID string) (any, error) {
 	return fmt.Sprintf("result for workflow %s (run: %s)", workflowID, runID), nil
 }
-func (w *TestWorkflow) Signal(ctx context.Context, workflowID string, runID string, signalName string, data interface{}) error {
+
+func (w *TestWorkflow) Signal(ctx context.Context, workflowID, runID, signalName string, data any) error {
 	return nil
 }
-func (w *TestWorkflow) Query(ctx context.Context, workflowID string, runID string, queryType string, args ...interface{}) (interface{}, error) {
-	return fmt.Sprintf("query result for %s", queryType), nil
+
+func (w *TestWorkflow) Query(ctx context.Context, workflowID, runID, queryType string, args ...any) (any, error) {
+	return "query result for " + queryType, nil
 }
-func (w *TestWorkflow) Cancel(ctx context.Context, workflowID string, runID string) error {
+
+func (w *TestWorkflow) Cancel(ctx context.Context, workflowID, runID string) error {
 	return nil
 }
-func (w *TestWorkflow) Terminate(ctx context.Context, workflowID string, runID string, reason string, details ...interface{}) error {
+
+func (w *TestWorkflow) Terminate(ctx context.Context, workflowID, runID, reason string, details ...any) error {
 	return nil
 }
 
 // Assertion helpers
 
-// AssertHealthCheck validates health check results
-func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertHealthCheck validates health check results.
+func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string) {
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "name")
 	assert.Contains(t, health, "type")
 }
 
-// AssertExecutionResult validates execution results
-func AssertExecutionResult(t *testing.T, result interface{}, expectedPattern string) {
+// AssertExecutionResult validates execution results.
+func AssertExecutionResult(t *testing.T, result any, expectedPattern string) {
+	t.Helper()
 	assert.NotNil(t, result)
 	if str, ok := result.(string); ok {
 		assert.Contains(t, str, expectedPattern)
 	}
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	// Add specific orchestration error type checking if available
 }
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs tests concurrently for performance testing
+// ConcurrentTestRunner runs tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -486,8 +497,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario
-func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numRequests int, concurrency int) {
+// RunLoadTest executes a load test scenario.
+func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numRequests, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numRequests)
 
@@ -514,7 +526,7 @@ func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numReques
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -523,7 +535,7 @@ func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numReques
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	orchestrators map[string]*AdvancedMockOrchestrator
 	metrics       *MockMetricsRecorder

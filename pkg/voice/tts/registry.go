@@ -7,19 +7,19 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
 )
 
-// Global registry for TTS providers
+// Global registry for TTS providers.
 var (
 	globalRegistry *Registry
 	registryOnce   sync.Once
 )
 
-// Registry manages TTS provider registration and retrieval
+// Registry manages TTS provider registration and retrieval.
 type Registry struct {
 	providers map[string]func(*Config) (iface.TTSProvider, error)
 	mu        sync.RWMutex
 }
 
-// GetRegistry returns the global registry instance
+// GetRegistry returns the global registry instance.
 func GetRegistry() *Registry {
 	registryOnce.Do(func() {
 		globalRegistry = &Registry{
@@ -29,14 +29,14 @@ func GetRegistry() *Registry {
 	return globalRegistry
 }
 
-// Register registers a provider factory function
+// Register registers a provider factory function.
 func (r *Registry) Register(name string, factory func(*Config) (iface.TTSProvider, error)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.providers[name] = factory
 }
 
-// GetProvider returns a provider instance for the given name
+// GetProvider returns a provider instance for the given name.
 func (r *Registry) GetProvider(name string, config *Config) (iface.TTSProvider, error) {
 	r.mu.RLock()
 	factory, exists := r.providers[name]
@@ -50,7 +50,7 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.TTSProvider, 
 	return factory(config)
 }
 
-// ListProviders returns a list of all registered provider names
+// ListProviders returns a list of all registered provider names.
 func (r *Registry) ListProviders() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -62,7 +62,7 @@ func (r *Registry) ListProviders() []string {
 	return names
 }
 
-// IsRegistered checks if a provider is registered
+// IsRegistered checks if a provider is registered.
 func (r *Registry) IsRegistered(name string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()

@@ -44,14 +44,14 @@ func TestWorkerPool_SubmitTask(t *testing.T) {
 	}
 
 	err := pool.SubmitTask(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Wait for result
 	select {
 	case result := <-pool.GetResults():
 		assert.Equal(t, "test-task", result.TaskID)
 		assert.True(t, result.Success)
-		assert.Nil(t, result.Error)
+		assert.NoError(t, result.Error)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected result not received")
 	}
@@ -67,7 +67,7 @@ func TestWorkerPool_SubmitTaskWhenNotRunning(t *testing.T) {
 	}
 
 	err := pool.SubmitTask(task)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not running")
 }
 
@@ -106,7 +106,7 @@ func TestWorkerPool_ConcurrentTasks(t *testing.T) {
 		select {
 		case result := <-results:
 			assert.True(t, result.Success)
-			assert.Nil(t, result.Error)
+			assert.NoError(t, result.Error)
 			resultCount++
 		case <-timeout:
 			t.Fatalf("Only received %d results out of 5", resultCount)
@@ -127,13 +127,13 @@ func TestWorkerPool_TaskFailure(t *testing.T) {
 	}
 
 	err := pool.SubmitTask(task)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	select {
 	case result := <-pool.GetResults():
 		assert.Equal(t, "failing-task", result.TaskID)
 		assert.False(t, result.Success)
-		assert.NotNil(t, result.Error)
+		assert.Error(t, result.Error)
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Expected result not received")
 	}

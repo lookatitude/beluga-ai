@@ -5,7 +5,9 @@ package llms
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
@@ -15,20 +17,20 @@ import (
 	"go.opentelemetry.io/otel/metric"
 )
 
-// Global metrics instance - initialized once
+// Global metrics instance - initialized once.
 var (
 	globalMetrics *Metrics
 	metricsOnce   sync.Once
 )
 
-// InitMetrics initializes the global metrics instance
+// InitMetrics initializes the global metrics instance.
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter)
 	})
 }
 
-// GetMetrics returns the global metrics instance
+// GetMetrics returns the global metrics instance.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -43,7 +45,7 @@ type Factory struct {
 	mu                sync.RWMutex
 }
 
-// NewFactory creates a new LLM factory
+// NewFactory creates a new LLM factory.
 func NewFactory() *Factory {
 	return &Factory{
 		providers:         make(map[string]iface.ChatModel),
@@ -53,21 +55,21 @@ func NewFactory() *Factory {
 	}
 }
 
-// RegisterProvider registers a ChatModel provider with the factory
+// RegisterProvider registers a ChatModel provider with the factory.
 func (f *Factory) RegisterProvider(name string, provider iface.ChatModel) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.providers[name] = provider
 }
 
-// RegisterLLM registers an LLM provider with the factory
+// RegisterLLM registers an LLM provider with the factory.
 func (f *Factory) RegisterLLM(name string, llm iface.LLM) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.llms[name] = llm
 }
 
-// GetProvider returns a registered ChatModel provider
+// GetProvider returns a registered ChatModel provider.
 func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -80,7 +82,7 @@ func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 	return provider, nil
 }
 
-// GetLLM returns a registered LLM provider
+// GetLLM returns a registered LLM provider.
 func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -93,7 +95,7 @@ func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 	return llm, nil
 }
 
-// ListProviders returns a list of all registered provider names
+// ListProviders returns a list of all registered provider names.
 func (f *Factory) ListProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -105,7 +107,7 @@ func (f *Factory) ListProviders() []string {
 	return names
 }
 
-// ListLLMs returns a list of all registered LLM names
+// ListLLMs returns a list of all registered LLM names.
 func (f *Factory) ListLLMs() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -117,7 +119,7 @@ func (f *Factory) ListLLMs() []string {
 	return names
 }
 
-// CreateProvider creates a provider instance using the registered factory
+// CreateProvider creates a provider instance using the registered factory.
 func (f *Factory) CreateProvider(providerName string, config *Config) (iface.ChatModel, error) {
 	f.mu.RLock()
 	factory, exists := f.providerFactories[providerName]
@@ -136,7 +138,7 @@ func (f *Factory) CreateProvider(providerName string, config *Config) (iface.Cha
 	return factory(config)
 }
 
-// CreateLLM creates an LLM instance using the registered factory
+// CreateLLM creates an LLM instance using the registered factory.
 func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, error) {
 	f.mu.RLock()
 	factory, exists := f.llmFactories[providerName]
@@ -155,7 +157,7 @@ func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, err
 	return factory(config)
 }
 
-// ListAvailableProviders returns a list of all available provider names
+// ListAvailableProviders returns a list of all available provider names.
 func (f *Factory) ListAvailableProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -167,7 +169,7 @@ func (f *Factory) ListAvailableProviders() []string {
 	return names
 }
 
-// RegisterProviderFactory registers a provider factory function
+// RegisterProviderFactory registers a provider factory function.
 func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (iface.ChatModel, error)) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -217,18 +219,20 @@ func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, stri
 		}
 	}
 	fullHumanPrompt := ""
+	var fullHumanPromptSb220 strings.Builder
 	for i, p := range humanPrompts {
 		if i > 0 {
-			fullHumanPrompt += "\n"
+			_, _ = fullHumanPromptSb220.WriteString("\n")
 		}
-		fullHumanPrompt += p
+		_, _ = fullHumanPromptSb220.WriteString(p)
 	}
+	fullHumanPrompt += fullHumanPromptSb220.String()
 	return systemPrompt, fullHumanPrompt
 }
 
 // Utility functions for common LLM operations
 
-// GenerateText is a convenience function for generating text with a ChatModel
+// GenerateText is a convenience function for generating text with a ChatModel.
 func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (string, error) {
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
@@ -243,7 +247,7 @@ func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, opt
 	return response.GetContent(), nil
 }
 
-// GenerateTextWithTools is a convenience function for generating text with tool calling
+// GenerateTextWithTools is a convenience function for generating text with tool calling.
 func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt string, tools []tools.Tool, options ...core.Option) (string, error) {
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
@@ -261,7 +265,7 @@ func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt st
 	return response.GetContent(), nil
 }
 
-// StreamText is a convenience function for streaming text generation
+// StreamText is a convenience function for streaming text generation.
 func StreamText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
@@ -271,7 +275,7 @@ func StreamText(ctx context.Context, model iface.ChatModel, prompt string, optio
 	return model.StreamChat(ctx, messages, options...)
 }
 
-// BatchGenerate is a convenience function for batch text generation
+// BatchGenerate is a convenience function for batch text generation.
 func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string, options ...core.Option) ([]string, error) {
 	inputs := make([]any, len(prompts))
 	for i, prompt := range prompts {
@@ -299,11 +303,11 @@ func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string,
 	return responses, nil
 }
 
-// ValidateModelName validates that a model name is supported by a provider
+// ValidateModelName validates that a model name is supported by a provider.
 func ValidateModelName(provider, modelName string) error {
 	if modelName == "" {
 		return NewLLMError("ValidateModelName", ErrCodeInvalidModel,
-			fmt.Errorf("model name cannot be empty"))
+			errors.New("model name cannot be empty"))
 	}
 
 	// Provider-specific validation could be added here
@@ -332,7 +336,7 @@ func ValidateModelName(provider, modelName string) error {
 	}
 }
 
-// DefaultConfig returns a default configuration for LLM operations
+// DefaultConfig returns a default configuration for LLM operations.
 func DefaultConfig() *Config {
 	return &Config{
 		Provider:                "",
@@ -350,7 +354,7 @@ func DefaultConfig() *Config {
 		MaxRetries:              3,
 		RetryDelay:              1000000000, // 1 second
 		RetryBackoff:            2.0,
-		ProviderSpecific:        make(map[string]interface{}),
+		ProviderSpecific:        make(map[string]any),
 		EnableTracing:           true,
 		EnableMetrics:           true,
 		EnableStructuredLogging: true,
@@ -361,37 +365,37 @@ func DefaultConfig() *Config {
 // Helper functions for backward compatibility
 // These provide compatibility with the old interface while encouraging migration
 
-// WithMaxTokensLegacy sets the maximum number of tokens to generate (deprecated, use core.WithOption)
+// WithMaxTokensLegacy sets the maximum number of tokens to generate (deprecated, use core.WithOption).
 func WithMaxTokensLegacy(tokens int) core.Option {
 	return core.WithOption("max_tokens", tokens)
 }
 
-// WithTemperatureLegacy sets the sampling temperature (deprecated, use core.WithOption)
+// WithTemperatureLegacy sets the sampling temperature (deprecated, use core.WithOption).
 func WithTemperatureLegacy(temp float32) core.Option {
 	return core.WithOption("temperature", temp)
 }
 
-// WithTopPLegacy sets the nucleus sampling probability (deprecated, use core.WithOption)
+// WithTopPLegacy sets the nucleus sampling probability (deprecated, use core.WithOption).
 func WithTopPLegacy(topP float32) core.Option {
 	return core.WithOption("top_p", topP)
 }
 
-// WithTopKLegacy sets the top-k sampling parameter (deprecated, use core.WithOption)
+// WithTopKLegacy sets the top-k sampling parameter (deprecated, use core.WithOption).
 func WithTopKLegacy(topK int) core.Option {
 	return core.WithOption("top_k", topK)
 }
 
-// WithStopWordsLegacy sets the stop sequences for generation (deprecated, use core.WithOption)
+// WithStopWordsLegacy sets the stop sequences for generation (deprecated, use core.WithOption).
 func WithStopWordsLegacy(stop []string) core.Option {
 	return core.WithOption("stop_words", stop)
 }
 
-// WithToolsLegacy sets the tools that the model can call (deprecated, use core.WithOption)
+// WithToolsLegacy sets the tools that the model can call (deprecated, use core.WithOption).
 func WithToolsLegacy(toolsToUse []tools.Tool) core.Option {
 	return core.WithOption("tools", toolsToUse)
 }
 
-// WithToolChoiceLegacy forces the model to call a specific tool (deprecated, use core.WithOption)
+// WithToolChoiceLegacy forces the model to call a specific tool (deprecated, use core.WithOption).
 func WithToolChoiceLegacy(choice string) core.Option {
 	return core.WithOption("tool_choice", choice)
 }
@@ -411,7 +415,7 @@ func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	factory.RegisterProviderFactory("anthropic", func(c *Config) (iface.ChatModel, error) {
 		// Import the anthropic package dynamically to avoid circular imports
 		// This is a simplified implementation - in production, this would be handled differently
-		return nil, fmt.Errorf("anthropic provider not available - use factory pattern with explicit import")
+		return nil, errors.New("anthropic provider not available - use factory pattern with explicit import")
 	})
 
 	return factory.CreateProvider("anthropic", config)
@@ -431,7 +435,7 @@ func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	factory := NewFactory()
 	factory.RegisterProviderFactory("openai", func(c *Config) (iface.ChatModel, error) {
 		// Import the openai package dynamically to avoid circular imports
-		return nil, fmt.Errorf("openai provider not available - use factory pattern with explicit import")
+		return nil, errors.New("openai provider not available - use factory pattern with explicit import")
 	})
 	return factory.CreateProvider("openai", config)
 }
@@ -450,7 +454,7 @@ func NewOllamaChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	factory := NewFactory()
 	factory.RegisterProviderFactory("ollama", func(c *Config) (iface.ChatModel, error) {
 		// Import the ollama package dynamically to avoid circular imports
-		return nil, fmt.Errorf("ollama provider not available - use factory pattern with explicit import")
+		return nil, errors.New("ollama provider not available - use factory pattern with explicit import")
 	})
 	return factory.CreateProvider("ollama", config)
 }
@@ -468,7 +472,7 @@ func NewAnthropicLLM(opts ...ConfigOption) (iface.LLM, error) {
 	}
 	factory := NewFactory()
 	factory.RegisterLLMFactory("anthropic", func(c *Config) (iface.LLM, error) {
-		return nil, fmt.Errorf("anthropic LLM not available - use factory pattern with explicit import")
+		return nil, errors.New("anthropic LLM not available - use factory pattern with explicit import")
 	})
 	return factory.CreateLLM("anthropic", config)
 }
@@ -486,7 +490,7 @@ func NewOpenAILLM(opts ...ConfigOption) (iface.LLM, error) {
 	}
 	factory := NewFactory()
 	factory.RegisterLLMFactory("openai", func(c *Config) (iface.LLM, error) {
-		return nil, fmt.Errorf("openai LLM not available - use factory pattern with explicit import")
+		return nil, errors.New("openai LLM not available - use factory pattern with explicit import")
 	})
 	return factory.CreateLLM("openai", config)
 }
@@ -504,7 +508,7 @@ func NewBedrockLLM(opts ...ConfigOption) (iface.LLM, error) {
 	}
 	factory := NewFactory()
 	factory.RegisterLLMFactory("bedrock", func(c *Config) (iface.LLM, error) {
-		return nil, fmt.Errorf("bedrock LLM not available - use factory pattern with explicit import")
+		return nil, errors.New("bedrock LLM not available - use factory pattern with explicit import")
 	})
 	return factory.CreateLLM("bedrock", config)
 }
@@ -522,7 +526,7 @@ func NewOllamaLLM(opts ...ConfigOption) (iface.LLM, error) {
 	}
 	factory := NewFactory()
 	factory.RegisterLLMFactory("ollama", func(c *Config) (iface.LLM, error) {
-		return nil, fmt.Errorf("ollama LLM not available - use factory pattern with explicit import")
+		return nil, errors.New("ollama LLM not available - use factory pattern with explicit import")
 	})
 	return factory.CreateLLM("ollama", config)
 }
@@ -540,12 +544,12 @@ func NewMockLLM(opts ...ConfigOption) (iface.LLM, error) {
 	}
 	factory := NewFactory()
 	factory.RegisterLLMFactory("mock", func(c *Config) (iface.LLM, error) {
-		return nil, fmt.Errorf("mock LLM not available - use factory pattern with explicit import")
+		return nil, errors.New("mock LLM not available - use factory pattern with explicit import")
 	})
 	return factory.CreateLLM("mock", config)
 }
 
-// InitializeDefaultFactory creates and returns a factory with all built-in providers registered
+// InitializeDefaultFactory creates and returns a factory with all built-in providers registered.
 func InitializeDefaultFactory() *Factory {
 	factory := NewFactory()
 

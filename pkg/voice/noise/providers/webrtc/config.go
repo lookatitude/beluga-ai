@@ -4,7 +4,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
 )
 
-// WebRTCNoiseConfig extends the base Noise Cancellation config with WebRTC-specific settings
+// WebRTCNoiseConfig extends the base Noise Cancellation config with WebRTC-specific settings.
 type WebRTCNoiseConfig struct {
 	*noise.Config
 
@@ -21,7 +21,7 @@ type WebRTCNoiseConfig struct {
 	EnableGainControl bool `mapstructure:"enable_gain_control" yaml:"enable_gain_control" default:"false"`
 }
 
-// DefaultWebRTCNoiseConfig returns a default WebRTC noise cancellation configuration
+// DefaultWebRTCNoiseConfig returns a default WebRTC noise cancellation configuration.
 func DefaultWebRTCNoiseConfig() *WebRTCNoiseConfig {
 	return &WebRTCNoiseConfig{
 		Config:                 noise.DefaultConfig(),

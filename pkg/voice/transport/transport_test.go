@@ -20,9 +20,9 @@ func TestNewProvider(t *testing.T) {
 	registry.Register("webrtc", testFactory)
 
 	tests := []struct {
+		config       *Config
 		name         string
 		providerName string
-		config       *Config
 		wantErr      bool
 	}{
 		{
@@ -61,10 +61,10 @@ func TestNewProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewProvider(ctx, tt.providerName, tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -107,7 +107,7 @@ func TestNewProvider_OverrideProviderName(t *testing.T) {
 	registry.Register("websocket", testFactory2)
 
 	config := DefaultConfig()
-	config.Provider = "websocket" // Different from providerName
+	config.Provider = "websocket"    // Different from providerName
 	config.URL = "wss://example.com" // Required field
 
 	provider, err := NewProvider(ctx, "webrtc", config)

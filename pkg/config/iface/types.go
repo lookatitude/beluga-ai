@@ -20,23 +20,23 @@ type Config struct {
 
 // ToolConfig defines the configuration for a specific tool instance.
 type ToolConfig struct {
-	Name        string                 `mapstructure:"name" yaml:"name" validate:"required"`         // Unique name for this tool instance
-	Description string                 `mapstructure:"description" yaml:"description"`               // Description of what the tool does
-	Provider    string                 `mapstructure:"provider" yaml:"provider" validate:"required"` // The provider for this tool (e.g., "echo", "calculator")
-	Enabled     bool                   `mapstructure:"enabled" yaml:"enabled" default:"true"`        // Whether the tool is enabled
-	Config      map[string]interface{} `mapstructure:"config" yaml:"config,omitempty"`               // Provider-specific configuration for the tool
+	Config      map[string]any `mapstructure:"config" yaml:"config,omitempty"`
+	Name        string         `mapstructure:"name" yaml:"name" validate:"required"`
+	Description string         `mapstructure:"description" yaml:"description"`
+	Provider    string         `mapstructure:"provider" yaml:"provider" validate:"required"`
+	Enabled     bool           `mapstructure:"enabled" yaml:"enabled" default:"true"`
 }
 
-// LoaderOptions contains options for configuring the loader
+// LoaderOptions contains options for configuring the loader.
 type LoaderOptions struct {
 	ConfigName  string
-	ConfigPaths []string
 	EnvPrefix   string
+	ConfigPaths []string
 	Validate    bool
 	SetDefaults bool
 }
 
-// ValidationError represents a configuration validation error
+// ValidationError represents a configuration validation error.
 type ValidationError struct {
 	Field   string
 	Message string
@@ -46,7 +46,7 @@ func (e ValidationError) Error() string {
 	return fmt.Sprintf("validation error for field '%s': %s", e.Field, e.Message)
 }
 
-// ValidationErrors represents multiple validation errors
+// ValidationErrors represents multiple validation errors.
 type ValidationErrors []ValidationError
 
 func (e ValidationErrors) Error() string {
@@ -54,5 +54,5 @@ func (e ValidationErrors) Error() string {
 	for _, err := range e {
 		msgs = append(msgs, err.Error())
 	}
-	return fmt.Sprintf("configuration validation failed: %s", strings.Join(msgs, "; "))
+	return "configuration validation failed: " + strings.Join(msgs, "; ")
 }

@@ -33,7 +33,7 @@
 //	)
 //
 //	// Use with executor
-//	executor := agents.NewAgentExecutor()
+//	:= agents.NewAgentExecutor()
 //	result, err := executor.ExecutePlan(ctx, agent, plan)
 package agents
 
@@ -129,7 +129,7 @@ func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llm
 }
 
 // CreateReActAgent creates a ReAct agent using the factory's configuration.
-func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt interface{}, opts ...iface.Option) (iface.CompositeAgent, error) {
+func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
 	// Merge factory config with provided options
 	allOpts := []iface.Option{
 		WithMaxRetries(f.config.DefaultMaxRetries),
@@ -173,7 +173,7 @@ func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm ll
 //	tools := []tools.Tool{calculator, webSearch}
 //	prompt := prompts.NewReActPrompt()
 //	agent, err := agents.NewReActAgent("researcher", llm, tools, prompt)
-func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt interface{}, opts ...iface.Option) (iface.CompositeAgent, error) {
+func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
 	return react.NewReActAgent(name, llm, agentTools, prompt, opts...)
 }
 
@@ -277,7 +277,7 @@ func ValidateConfig(config *Config) error {
 //	if status["state"] == "error" {
 //		log.Warn("Agent is in error state")
 //	}
-func HealthCheck(agent iface.CompositeAgent) map[string]interface{} {
+func HealthCheck(agent iface.CompositeAgent) map[string]any {
 	return agent.CheckHealth()
 }
 

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDefaultAudioFormat(t *testing.T) {
@@ -18,10 +19,10 @@ func TestDefaultAudioFormat(t *testing.T) {
 
 func TestAudioFormat_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		format  *AudioFormat
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "valid format",
@@ -146,12 +147,12 @@ func TestAudioFormat_Validate(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			err := tt.format.Validate()
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				if tt.errMsg != "" {
 					assert.Contains(t, err.Error(), tt.errMsg)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}

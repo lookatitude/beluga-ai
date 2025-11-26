@@ -16,11 +16,11 @@ import (
 // MockRetriever is a mock implementation of the core.Retriever interface for testing purposes.
 // It generates random documents based on the query and can be configured to simulate different scenarios.
 type MockRetriever struct {
+	logger         *slog.Logger
 	name           string
 	documents      []schema.Document
 	defaultK       int
 	scoreThreshold float32
-	logger         *slog.Logger
 }
 
 // NewMockRetriever creates a new MockRetriever with the specified configuration.
@@ -191,6 +191,8 @@ func (mr *MockRetriever) CheckHealth(ctx context.Context) error {
 }
 
 // Compile-time check to ensure MockRetriever implements interfaces.
-var _ core.Retriever = (*MockRetriever)(nil)
-var _ core.Runnable = (*MockRetriever)(nil)
-var _ core.HealthChecker = (*MockRetriever)(nil)
+var (
+	_ core.Retriever     = (*MockRetriever)(nil)
+	_ core.Runnable      = (*MockRetriever)(nil)
+	_ core.HealthChecker = (*MockRetriever)(nil)
+)

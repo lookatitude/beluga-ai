@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,18 +16,18 @@ import (
 	ttsiface "github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
 )
 
-// GoogleProvider implements the TTSProvider interface for Google Cloud Text-to-Speech
+// GoogleProvider implements the TTSProvider interface for Google Cloud Text-to-Speech.
 type GoogleProvider struct {
 	config     *GoogleConfig
 	httpClient *http.Client
 	mu         sync.RWMutex
 }
 
-// NewGoogleProvider creates a new Google Cloud Text-to-Speech provider
+// NewGoogleProvider creates a new Google Cloud Text-to-Speech provider.
 func NewGoogleProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	if config == nil {
 		return nil, tts.NewTTSError("NewGoogleProvider", tts.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Google config
@@ -76,40 +77,40 @@ func NewGoogleProvider(config *tts.Config) (ttsiface.TTSProvider, error) {
 	}, nil
 }
 
-// GenerateSpeech implements the TTSProvider interface using Google Cloud Text-to-Speech API
+// GenerateSpeech implements the TTSProvider interface using Google Cloud Text-to-Speech API.
 func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
 	startTime := time.Now()
 
 	// Build request URL
-	url := fmt.Sprintf("%s/v1/text:synthesize", p.config.BaseURL)
+	url := p.config.BaseURL + "/v1/text:synthesize"
 	if p.config.ProjectID != "" {
 		url = fmt.Sprintf("%s/v1/projects/%s/locations/global:text:synthesize", p.config.BaseURL, p.config.ProjectID)
 	}
 
 	// Build request body
-	requestBody := map[string]interface{}{
-		"input": map[string]interface{}{
+	requestBody := map[string]any{
+		"input": map[string]any{
 			"text": text,
 		},
-		"voice": map[string]interface{}{
+		"voice": map[string]any{
 			"languageCode": p.config.LanguageCode,
 			"name":         p.config.VoiceName,
 			"ssmlGender":   p.config.SSMLGender,
 		},
-		"audioConfig": map[string]interface{}{
+		"audioConfig": map[string]any{
 			"audioEncoding":   p.config.AudioEncoding,
 			"sampleRateHertz": p.config.SampleRateHertz,
 		},
 	}
 
 	if p.config.SpeakingRate > 0 {
-		requestBody["audioConfig"].(map[string]interface{})["speakingRate"] = p.config.SpeakingRate
+		requestBody["audioConfig"].(map[string]any)["speakingRate"] = p.config.SpeakingRate
 	}
 	if p.config.Pitch != 0 {
-		requestBody["audioConfig"].(map[string]interface{})["pitch"] = p.config.Pitch
+		requestBody["audioConfig"].(map[string]any)["pitch"] = p.config.Pitch
 	}
 	if p.config.VolumeGainDb != 0 {
-		requestBody["audioConfig"].(map[string]interface{})["volumeGainDb"] = p.config.VolumeGainDb
+		requestBody["audioConfig"].(map[string]any)["volumeGainDb"] = p.config.VolumeGainDb
 	}
 
 	bodyBytes, err := json.Marshal(requestBody)
@@ -126,7 +127,7 @@ func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 	// Set headers
 	req.Header.Set("Content-Type", "application/json")
 	if p.config.APIKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+		req.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 	}
 
 	// Execute request with retry logic
@@ -157,13 +158,13 @@ func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 		}
 
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 	}
 
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeTimeout, err)
 		}
 		return nil, tts.ErrorFromHTTPStatus("GenerateSpeech", 0, err)
@@ -192,7 +193,7 @@ func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 
 	if response.AudioContent == "" {
 		return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeEmptyResponse,
-			fmt.Errorf("no audio content in response"))
+			errors.New("no audio content in response"))
 	}
 
 	// Decode base64 audio
@@ -203,7 +204,7 @@ func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 
 	if len(audio) == 0 {
 		return nil, tts.NewTTSError("GenerateSpeech", tts.ErrCodeEmptyResponse,
-			fmt.Errorf("decoded audio is empty"))
+			errors.New("decoded audio is empty"))
 	}
 
 	duration := time.Since(startTime)
@@ -220,7 +221,7 @@ func (p *GoogleProvider) GenerateSpeech(ctx context.Context, text string) ([]byt
 }
 
 // StreamGenerate implements the TTSProvider interface
-// Google Cloud Text-to-Speech API doesn't support streaming, so we return the full audio as a reader
+// Google Cloud Text-to-Speech API doesn't support streaming, so we return the full audio as a reader.
 func (p *GoogleProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error) {
 	// Generate speech first
 	audio, err := p.GenerateSpeech(ctx, text)

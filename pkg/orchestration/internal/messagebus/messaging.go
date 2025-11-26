@@ -3,6 +3,7 @@ package messagebus
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -52,19 +53,19 @@ func (ms *MessagingSystem) SendMessageWithRetry(msg Message, retries int, backof
 }
 
 // ReceiveMessage receives a message from the messaging system.
-// Note: This is a simplified implementation - in practice you'd need a subscription
+// Note: This is a simplified implementation - in practice you'd need a subscription.
 func (ms *MessagingSystem) ReceiveMessage() (Message, error) {
-	return Message{}, fmt.Errorf("ReceiveMessage not implemented - use MessageBus subscription")
+	return Message{}, errors.New("ReceiveMessage not implemented - use MessageBus subscription")
 }
 
 // ValidateMessage validates the structure of a message.
 func ValidateMessage(msg Message) error {
 	if msg.ID == "" || msg.Topic == "" {
-		return fmt.Errorf("invalid message: missing required fields")
+		return errors.New("invalid message: missing required fields")
 	}
 	// Check for whitespace-only strings
 	if strings.TrimSpace(msg.ID) == "" || strings.TrimSpace(msg.Topic) == "" {
-		return fmt.Errorf("invalid message: ID and Topic cannot be whitespace-only")
+		return errors.New("invalid message: ID and Topic cannot be whitespace-only")
 	}
 	return nil
 }

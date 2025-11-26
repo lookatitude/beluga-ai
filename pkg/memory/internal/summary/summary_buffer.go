@@ -16,17 +16,16 @@ import (
 // ConversationSummaryBufferMemory combines buffer memory with summarization.
 // It keeps a buffer of recent interactions and summarizes older ones using an LLM.
 type ConversationSummaryBufferMemory struct {
-	ChatHistory         iface.ChatMessageHistory // Underlying storage for all messages
-	LLM                 core.Runnable            // LLM used for generating summaries
-	SummaryPrompt       promptsiface.Template    // Prompt template used for summarization
-	MemoryKey           string                   // Key name for the combined history/summary variable
-	InputKey            string                   // Key name for the user input variable (optional)
-	OutputKey           string                   // Key name for the AI output variable (optional)
-	HumanPrefix         string                   // Prefix for human messages
-	AiPrefix            string                   // Prefix for AI messages
-	MaxTokenLimit       int                      // Maximum number of tokens before summarizing
-	movingSummaryBuffer string                   // The current summarized history
-	// TODO: Add mutex for concurrent access?
+	ChatHistory         iface.ChatMessageHistory
+	LLM                 core.Runnable
+	SummaryPrompt       promptsiface.Template
+	MemoryKey           string
+	InputKey            string
+	OutputKey           string
+	HumanPrefix         string
+	AiPrefix            string
+	movingSummaryBuffer string
+	MaxTokenLimit       int
 }
 
 // NewConversationSummaryBufferMemory creates a new ConversationSummaryBufferMemory.
@@ -108,8 +107,7 @@ func (m *ConversationSummaryBufferMemory) predictNewSummary(ctx context.Context,
 	case schema.Message: // ChatModels will return schema.Message
 		newSummary = output.GetContent()
 	default:
-		return "", fmt.Errorf(
-			"LLM Invoke returned unexpected type for summary")
+		return "", errors.New("LLM Invoke returned unexpected type for summary")
 	}
 
 	return newSummary, nil
@@ -117,7 +115,7 @@ func (m *ConversationSummaryBufferMemory) predictNewSummary(ctx context.Context,
 
 // SaveContext adds the latest user input and AI output to the history.
 // It potentially triggers summarization if the buffer exceeds the token limit.
-func (m *ConversationSummaryBufferMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *ConversationSummaryBufferMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
 

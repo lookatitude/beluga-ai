@@ -4,6 +4,7 @@ package shell
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os/exec"
 	"strings"
@@ -59,7 +60,7 @@ func (st *ShellTool) Name() string {
 }
 
 // Execute runs the shell command.
-// Corrected input type to any and return type to any
+// Corrected input type to any and return type to any.
 func (st *ShellTool) Execute(ctx context.Context, input any) (any, error) {
 	var commandStr string
 	// Handle input type: map[string]any or string
@@ -67,13 +68,13 @@ func (st *ShellTool) Execute(ctx context.Context, input any) (any, error) {
 	case map[string]any:
 		cmdVal, ok := v["command"].(string)
 		if !ok || cmdVal == "" {
-			return nil, fmt.Errorf("invalid input map: missing or empty \"command\" string")
+			return nil, errors.New("invalid input map: missing or empty \"command\" string")
 		}
 		commandStr = cmdVal
 	case string:
 		// Allow direct string input for convenience, assuming it's the command
 		if v == "" {
-			return nil, fmt.Errorf("invalid input string: command cannot be empty")
+			return nil, errors.New("invalid input string: command cannot be empty")
 		}
 		commandStr = v
 	default:
@@ -91,12 +92,14 @@ func (st *ShellTool) Execute(ctx context.Context, input any) (any, error) {
 	// Execute the command using sh -c
 	// SECURITY WARNING: This executes the command string directly. Ensure proper sanitization
 	// or sandboxing if the command string originates from untrusted input (like an LLM).
+	// This is intentional for the shell tool - commands are expected to come from trusted sources.
+	//nolint:gosec // G204: Subprocess launched with variable - intentional for shell tool functionality
 	cmd := exec.CommandContext(execCtx, "sh", "-c", commandStr)
 
 	outputBytes, err := cmd.CombinedOutput() // Get both stdout and stderr
 	output := string(outputBytes)
 
-	if execCtx.Err() == context.DeadlineExceeded {
+	if errors.Is(execCtx.Err(), context.DeadlineExceeded) {
 		// Return timeout as part of output string, not error
 		return fmt.Sprintf("Command timed out after %s. Output:\n%s", st.Timeout, output), nil
 	}
@@ -109,14 +112,14 @@ func (st *ShellTool) Execute(ctx context.Context, input any) (any, error) {
 	return strings.TrimSpace(output), nil
 }
 
-// Implement core.Runnable Invoke for ShellTool
+// Implement core.Runnable Invoke for ShellTool.
 func (st *ShellTool) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Execute now takes any
 	return st.Execute(ctx, input)
 }
 
 // Batch implementation
-// Batch implements the tools.Tool interface
+// Batch implements the tools.Tool interface.
 func (st *ShellTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	results := make([]any, len(inputs))
 	for i, input := range inputs {
@@ -129,7 +132,7 @@ func (st *ShellTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
-// Run implements the core.Runnable Batch method with options
+// Run implements the core.Runnable Batch method with options.
 func (st *ShellTool) Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	return st.Batch(ctx, inputs) // Options are ignored for now
 }
@@ -150,10 +153,10 @@ func (st *ShellTool) Stream(ctx context.Context, input any, options ...core.Opti
 }
 
 // Ensure implementation satisfies interfaces
-// Make sure interfaces are correctly implemented
+// Make sure interfaces are correctly implemented.
 var _ tools.Tool = (*ShellTool)(nil)
 
-// Define a custom interface that matches what we've implemented
+// Define a custom interface that matches what we've implemented.
 type batcherWithOptions interface {
 	Run(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 	Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)

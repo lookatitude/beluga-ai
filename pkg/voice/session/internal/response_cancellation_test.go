@@ -7,15 +7,16 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type mockCancellableHandle struct {
-	cancelled bool
-	err       error
+	err      error
+	canceled bool
 }
 
 func (m *mockCancellableHandle) Cancel() error {
-	m.cancelled = true
+	m.canceled = true
 	return m.err
 }
 
@@ -41,13 +42,13 @@ func TestResponseCancellation_Cancel(t *testing.T) {
 
 	// Cancel
 	err := rc.Cancel()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, rc.IsCancelled())
-	assert.True(t, handle.cancelled)
+	assert.True(t, handle.canceled)
 
 	// Cancel again (should be idempotent)
 	err = rc.Cancel()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, rc.IsCancelled())
 }
 
@@ -59,7 +60,7 @@ func TestResponseCancellation_Cancel_WithError(t *testing.T) {
 	rc.SetActiveHandle(handle)
 
 	err := rc.Cancel()
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expectedErr, err)
 	assert.True(t, rc.IsCancelled())
 }
@@ -70,7 +71,7 @@ func TestResponseCancellation_Cancel_NonCancellableHandle(t *testing.T) {
 	rc.SetActiveHandle("not cancellable")
 
 	err := rc.Cancel()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, rc.IsCancelled())
 }
 
@@ -78,7 +79,7 @@ func TestResponseCancellation_IsCancelled(t *testing.T) {
 	rc := NewResponseCancellation()
 	assert.False(t, rc.IsCancelled())
 
-	rc.Cancel()
+	_ = rc.Cancel()
 	assert.True(t, rc.IsCancelled())
 }
 
@@ -87,7 +88,7 @@ func TestResponseCancellation_Clear(t *testing.T) {
 	handle := &mockCancellableHandle{}
 
 	rc.SetActiveHandle(handle)
-	rc.Cancel()
+	_ = rc.Cancel()
 	assert.True(t, rc.IsCancelled())
 
 	// Clear
@@ -109,7 +110,7 @@ func TestResponseCancellation_CancelOnInterruption(t *testing.T) {
 
 	// No interruption
 	err := rc.CancelOnInterruption(context.Background(), detector)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, rc.IsCancelled())
 
 	// Trigger interruption (need both word count and duration thresholds)
@@ -117,7 +118,7 @@ func TestResponseCancellation_CancelOnInterruption(t *testing.T) {
 	assert.True(t, detector.IsInterrupted())
 
 	err = rc.CancelOnInterruption(context.Background(), detector)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, rc.IsCancelled())
 }
 
@@ -131,7 +132,7 @@ func TestResponseCancellation_ConcurrentAccess(t *testing.T) {
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
 		go func() {
-			rc.Cancel()
+			_ = rc.Cancel()
 			rc.IsCancelled()
 			rc.Clear()
 			done <- true

@@ -11,33 +11,35 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestChainedTask_Run_Success_NoNext(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	require.NoError(t, err)
 	os.Stdout = w
 
 	task := &ChainedTask{
 		ID: "test-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "success_output", nil
 		},
 	}
 
-	err := task.Run("test_input")
+	err = task.Run("test_input")
 
 	// Restore stdout
-	w.Close()
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task test-task succeeded with output: success_output")
 }
 
@@ -49,14 +51,14 @@ func TestChainedTask_Run_Success_WithNext(t *testing.T) {
 
 	nextTask := &ChainedTask{
 		ID: "next-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "next_output", nil
 		},
 	}
 
 	task := &ChainedTask{
 		ID: "first-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "first_output", nil
 		},
 		Next: nextTask,
@@ -70,10 +72,10 @@ func TestChainedTask_Run_Success_WithNext(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task first-task succeeded with output: first_output")
 	assert.Contains(t, output, "Task next-task succeeded with output: next_output")
 }
@@ -86,7 +88,7 @@ func TestChainedTask_Run_Error_NoFallback(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "failing-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("task execution failed")
 		},
 	}
@@ -99,10 +101,10 @@ func TestChainedTask_Run_Error_NoFallback(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "task execution failed")
 	assert.Contains(t, output, "Task failing-task failed: task execution failed")
 }
@@ -115,14 +117,14 @@ func TestChainedTask_Run_Error_WithFallback(t *testing.T) {
 
 	fallbackTask := &ChainedTask{
 		ID: "fallback-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "fallback_output", nil
 		},
 	}
 
 	task := &ChainedTask{
 		ID: "main-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("main task failed")
 		},
 		Fallback: fallbackTask,
@@ -136,10 +138,10 @@ func TestChainedTask_Run_Error_WithFallback(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err) // Should succeed due to fallback
+	require.NoError(t, err) // Should succeed due to fallback
 	assert.Contains(t, output, "Task main-task failed: main task failed")
 	assert.Contains(t, output, "Executing fallback for task main-task")
 	assert.Contains(t, output, "Task fallback-task succeeded with output: fallback_output")
@@ -153,14 +155,14 @@ func TestChainedTask_Run_FallbackAlsoFails(t *testing.T) {
 
 	fallbackTask := &ChainedTask{
 		ID: "failing-fallback",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("fallback also failed")
 		},
 	}
 
 	task := &ChainedTask{
 		ID: "main-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("main task failed")
 		},
 		Fallback: fallbackTask,
@@ -174,10 +176,10 @@ func TestChainedTask_Run_FallbackAlsoFails(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "fallback also failed")
 	assert.Contains(t, output, "Task main-task failed: main task failed")
 	assert.Contains(t, output, "Executing fallback for task main-task")
@@ -193,14 +195,14 @@ func TestChainedTask_Run_ChainWithMultipleTasks(t *testing.T) {
 	// Create a chain: task1 -> task2 -> task3
 	task3 := &ChainedTask{
 		ID: "task3",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "final_output", nil
 		},
 	}
 
 	task2 := &ChainedTask{
 		ID: "task2",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "task2_output", nil
 		},
 		Next: task3,
@@ -208,7 +210,7 @@ func TestChainedTask_Run_ChainWithMultipleTasks(t *testing.T) {
 
 	task1 := &ChainedTask{
 		ID: "task1",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "task1_output", nil
 		},
 		Next: task2,
@@ -222,10 +224,10 @@ func TestChainedTask_Run_ChainWithMultipleTasks(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task task1 succeeded with output: task1_output")
 	assert.Contains(t, output, "Task task2 succeeded with output: task2_output")
 	assert.Contains(t, output, "Task task3 succeeded with output: final_output")
@@ -240,12 +242,12 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 	// Create a chain where middle task fails and has fallback
 	fallbackTask := &ChainedTask{
 		ID: "fallback-middle",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "fallback_output", nil
 		},
 		Next: &ChainedTask{
 			ID: "after-fallback",
-			Execute: func(input interface{}) (interface{}, error) {
+			Execute: func(input any) (any, error) {
 				return "after_fallback_output", nil
 			},
 		},
@@ -253,13 +255,13 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 
 	task2 := &ChainedTask{
 		ID: "failing-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("middle task failed")
 		},
 		Fallback: fallbackTask,
 		Next: &ChainedTask{
 			ID: "never-reached",
-			Execute: func(input interface{}) (interface{}, error) {
+			Execute: func(input any) (any, error) {
 				return "should_not_reach", nil
 			},
 		},
@@ -267,7 +269,7 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 
 	task1 := &ChainedTask{
 		ID: "first-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "first_output", nil
 		},
 		Next: task2,
@@ -281,10 +283,10 @@ func TestChainedTask_Run_ChainWithFallbackInMiddle(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task first-task succeeded with output: first_output")
 	assert.Contains(t, output, "Task failing-task failed: middle task failed")
 	assert.Contains(t, output, "Executing fallback for task failing-task")
@@ -314,7 +316,7 @@ func TestChainedTask_Run_NilExecuteFunction(t *testing.T) {
 
 	select {
 	case err := <-done:
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "panic") // Should contain panic information
 	case <-time.After(5 * time.Second):
 		t.Fatal("Test timed out waiting for nil execute function to panic")
@@ -329,7 +331,7 @@ func TestChainedTask_Run_EmptyID(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "output", nil
 		},
 	}
@@ -342,10 +344,10 @@ func TestChainedTask_Run_EmptyID(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task  succeeded with output: output") // Empty ID
 }
 
@@ -357,7 +359,7 @@ func TestChainedTask_Run_SpecialCharacters(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "task:with:colons@domain.com",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "special!@#$%^&*()_output", nil
 		},
 	}
@@ -370,10 +372,10 @@ func TestChainedTask_Run_SpecialCharacters(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task task:with:colons@domain.com succeeded with output: special!@#$%^&*()_output")
 }
 
@@ -385,7 +387,7 @@ func TestChainedTask_Run_NilInput(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "nil-input-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			if input == nil {
 				return "handled_nil", nil
 			}
@@ -401,10 +403,10 @@ func TestChainedTask_Run_NilInput(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task nil-input-task succeeded with output: handled_nil")
 }
 
@@ -416,10 +418,10 @@ func TestChainedTask_Run_ComplexDataTypes(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "complex-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			// Input should be a slice
 			if slice, ok := input.([]string); ok {
-				return map[string]interface{}{
+				return map[string]any{
 					"processed": slice,
 					"count":     len(slice),
 					"first":     slice[0],
@@ -438,10 +440,10 @@ func TestChainedTask_Run_ComplexDataTypes(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task complex-task succeeded with output:")
 	assert.Contains(t, output, "processed")
 	assert.Contains(t, output, "count")
@@ -456,14 +458,14 @@ func TestChainedTask_Run_CircularReferencePrevention(t *testing.T) {
 	// Create a circular reference: task1 -> task2 -> task1
 	task1 := &ChainedTask{
 		ID: "task1",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "task1_output", nil
 		},
 	}
 
 	task2 := &ChainedTask{
 		ID: "task2",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return "task2_output", nil
 		},
 		Next: task1, // This creates a cycle
@@ -520,7 +522,7 @@ func TestChainedTask_Run_CircularReferencePrevention(t *testing.T) {
 func TestChainedTask_Run_OutputTypeHandling(t *testing.T) {
 	testCases := []struct {
 		name     string
-		output   interface{}
+		output   any
 		expected string
 	}{
 		{
@@ -558,8 +560,8 @@ func TestChainedTask_Run_OutputTypeHandling(t *testing.T) {
 			os.Stdout = w
 
 			task := &ChainedTask{
-				ID: fmt.Sprintf("test-%s", tc.name),
-				Execute: func(input interface{}) (interface{}, error) {
+				ID: "test-" + tc.name,
+				Execute: func(input any) (any, error) {
 					return tc.output, nil
 				},
 			}
@@ -575,7 +577,7 @@ func TestChainedTask_Run_OutputTypeHandling(t *testing.T) {
 			io.Copy(&buf, r)
 			output := buf.String()
 
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			assert.Contains(t, output, fmt.Sprintf("Task test-%s succeeded with output:", tc.name))
 		})
 	}
@@ -587,14 +589,14 @@ func TestChainedTask_Run_ErrorPropagation(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "error-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, customError
 		},
 	}
 
 	err := task.Run("input")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, customError, err)
 }
 
@@ -608,7 +610,7 @@ func TestChainedTask_Run_FallbackReceivesOriginalInput(t *testing.T) {
 
 	fallbackTask := &ChainedTask{
 		ID: "fallback-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			// Fallback should receive the original input, not the failed task's output
 			if input == originalInput {
 				return "fallback_success", nil
@@ -619,7 +621,7 @@ func TestChainedTask_Run_FallbackReceivesOriginalInput(t *testing.T) {
 
 	task := &ChainedTask{
 		ID: "main-task",
-		Execute: func(input interface{}) (interface{}, error) {
+		Execute: func(input any) (any, error) {
 			return nil, errors.New("main failed")
 		},
 		Fallback: fallbackTask,
@@ -633,9 +635,9 @@ func TestChainedTask_Run_FallbackReceivesOriginalInput(t *testing.T) {
 
 	// Read captured output
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, _ = io.Copy(&buf, r)
 	output := buf.String()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, output, "Task fallback-task succeeded with output: fallback_success")
 }

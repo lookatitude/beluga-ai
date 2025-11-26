@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewStreamingIncremental(t *testing.T) {
@@ -36,7 +37,7 @@ func TestStreamingIncremental_ProcessChunk_Enabled(t *testing.T) {
 	ctx := context.Background()
 	chunk := []byte{1, 2, 3, 4, 5}
 	err := si.ProcessChunk(ctx, chunk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, called)
 	assert.Equal(t, chunk, receivedChunk)
 }
@@ -52,7 +53,7 @@ func TestStreamingIncremental_ProcessChunk_Disabled(t *testing.T) {
 	ctx := context.Background()
 	chunk := []byte{1, 2, 3, 4, 5}
 	err := si.ProcessChunk(ctx, chunk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestStreamingIncremental_ProcessChunk_NoProcessor(t *testing.T) {
@@ -61,7 +62,7 @@ func TestStreamingIncremental_ProcessChunk_NoProcessor(t *testing.T) {
 	ctx := context.Background()
 	chunk := []byte{1, 2, 3, 4, 5}
 	err := si.ProcessChunk(ctx, chunk)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestStreamingIncremental_ProcessChunk_Error(t *testing.T) {
@@ -75,7 +76,7 @@ func TestStreamingIncremental_ProcessChunk_Error(t *testing.T) {
 	ctx := context.Background()
 	chunk := []byte{1, 2, 3, 4, 5}
 	err := si.ProcessChunk(ctx, chunk)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Equal(t, expectedErr, err)
 }
 
@@ -89,7 +90,7 @@ func TestStreamingIncremental_AddResult(t *testing.T) {
 	si.AddResult(result2)
 
 	results := si.GetResults()
-	assert.Equal(t, 2, len(results))
+	assert.Len(t, results, 2)
 	assert.Equal(t, result1, results[0])
 	assert.Equal(t, result2, results[1])
 }
@@ -106,7 +107,7 @@ func TestStreamingIncremental_GetResults(t *testing.T) {
 	si.AddResult("result2")
 
 	results = si.GetResults()
-	assert.Equal(t, 2, len(results))
+	assert.Len(t, results, 2)
 
 	// Results should be a copy
 	results[0] = "modified"
@@ -121,7 +122,7 @@ func TestStreamingIncremental_ClearResults(t *testing.T) {
 	si.AddResult("result2")
 
 	results := si.GetResults()
-	assert.Equal(t, 2, len(results))
+	assert.Len(t, results, 2)
 
 	si.ClearResults()
 
@@ -157,5 +158,5 @@ func TestStreamingIncremental_ConcurrentAccess(t *testing.T) {
 	}
 
 	results := si.GetResults()
-	assert.Equal(t, 10, len(results))
+	assert.Len(t, results, 10)
 }

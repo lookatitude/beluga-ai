@@ -1,44 +1,45 @@
 package embeddings
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
 	validator "github.com/go-playground/validator/v10"
 )
 
-// Option is a functional option for configuring embedders
+// Option is a functional option for configuring embedders.
 type Option func(*optionConfig)
 
-// optionConfig holds the internal configuration options
+// optionConfig holds the internal configuration options.
 type optionConfig struct {
+	model      string
 	timeout    time.Duration
 	maxRetries int
-	model      string
 }
 
-// WithTimeout sets the timeout for embedding operations
+// WithTimeout sets the timeout for embedding operations.
 func WithTimeout(timeout time.Duration) Option {
 	return func(c *optionConfig) {
 		c.timeout = timeout
 	}
 }
 
-// WithMaxRetries sets the maximum number of retries for failed operations
+// WithMaxRetries sets the maximum number of retries for failed operations.
 func WithMaxRetries(maxRetries int) Option {
 	return func(c *optionConfig) {
 		c.maxRetries = maxRetries
 	}
 }
 
-// WithModel sets the model to use for embeddings
+// WithModel sets the model to use for embeddings.
 func WithModel(model string) Option {
 	return func(c *optionConfig) {
 		c.model = model
 	}
 }
 
-// defaultOptionConfig returns the default option configuration
+// defaultOptionConfig returns the default option configuration.
 func defaultOptionConfig() *optionConfig {
 	return &optionConfig{
 		timeout:    30 * time.Second,
@@ -47,7 +48,7 @@ func defaultOptionConfig() *optionConfig {
 	}
 }
 
-// Config holds configuration for the embeddings package
+// Config holds configuration for the embeddings package.
 type Config struct {
 	// Provider-specific configurations
 	OpenAI *OpenAIConfig `mapstructure:"openai" yaml:"openai"`
@@ -55,7 +56,7 @@ type Config struct {
 	Mock   *MockConfig   `mapstructure:"mock" yaml:"mock"`
 }
 
-// OpenAIConfig holds configuration for OpenAI embedding provider
+// OpenAIConfig holds configuration for OpenAI embedding provider.
 type OpenAIConfig struct {
 	APIKey     string        `mapstructure:"api_key" yaml:"api_key" env:"OPENAI_API_KEY" validate:"required"`
 	Model      string        `mapstructure:"model" yaml:"model" env:"OPENAI_MODEL" default:"text-embedding-ada-002"`
@@ -66,17 +67,17 @@ type OpenAIConfig struct {
 	Enabled    bool          `mapstructure:"enabled" yaml:"enabled" env:"OPENAI_ENABLED" default:"true"`
 }
 
-// OllamaConfig holds configuration for Ollama embedding provider
+// OllamaConfig holds configuration for Ollama embedding provider.
 type OllamaConfig struct {
 	ServerURL  string        `mapstructure:"server_url" yaml:"server_url" env:"OLLAMA_SERVER_URL" default:"http://localhost:11434"`
 	Model      string        `mapstructure:"model" yaml:"model" env:"OLLAMA_MODEL" validate:"required"`
+	KeepAlive  string        `mapstructure:"keep_alive" yaml:"keep_alive" env:"OLLAMA_KEEP_ALIVE" default:"5m"`
 	Timeout    time.Duration `mapstructure:"timeout" yaml:"timeout" env:"OLLAMA_TIMEOUT" default:"30s"`
 	MaxRetries int           `mapstructure:"max_retries" yaml:"max_retries" env:"OLLAMA_MAX_RETRIES" default:"3"`
-	KeepAlive  string        `mapstructure:"keep_alive" yaml:"keep_alive" env:"OLLAMA_KEEP_ALIVE" default:"5m"`
 	Enabled    bool          `mapstructure:"enabled" yaml:"enabled" env:"OLLAMA_ENABLED" default:"true"`
 }
 
-// MockConfig holds configuration for mock embedding provider
+// MockConfig holds configuration for mock embedding provider.
 type MockConfig struct {
 	Dimension    int   `mapstructure:"dimension" yaml:"dimension" env:"MOCK_EMBEDDING_DIMENSION" default:"128"`
 	Seed         int64 `mapstructure:"seed" yaml:"seed" env:"MOCK_EMBEDDING_SEED" default:"0"`
@@ -84,11 +85,11 @@ type MockConfig struct {
 	Enabled      bool  `mapstructure:"enabled" yaml:"enabled" env:"MOCK_EMBEDDING_ENABLED" default:"true"`
 }
 
-// Validate validates the configuration
+// Validate validates the configuration.
 func (c *Config) Validate() error {
 	validate := validator.New()
 	if err := validate.Struct(c); err != nil {
-		return err
+		return fmt.Errorf("configuration validation failed: %w", err)
 	}
 
 	// Validate individual provider configs
@@ -111,7 +112,7 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// SetDefaults sets default values for the configuration
+// SetDefaults sets default values for the configuration.
 func (c *Config) SetDefaults() {
 	if c.OpenAI == nil {
 		c.OpenAI = &OpenAIConfig{}
@@ -153,29 +154,29 @@ func (c *Config) SetDefaults() {
 	c.Mock.Enabled = true
 }
 
-// ValidateOpenAI validates OpenAI configuration
+// ValidateOpenAI validates OpenAI configuration.
 func (c *OpenAIConfig) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("openai API key is required")
+		return errors.New("openai API key is required")
 	}
 	if c.Model == "" {
-		return fmt.Errorf("openai model is required")
+		return errors.New("openai model is required")
 	}
 	return nil
 }
 
-// ValidateOllama validates Ollama configuration
+// ValidateOllama validates Ollama configuration.
 func (c *OllamaConfig) Validate() error {
 	if c.Model == "" {
-		return fmt.Errorf("ollama model is required")
+		return errors.New("ollama model is required")
 	}
 	return nil
 }
 
-// ValidateMock validates Mock configuration
+// ValidateMock validates Mock configuration.
 func (c *MockConfig) Validate() error {
 	if c.Dimension <= 0 {
-		return fmt.Errorf("mock dimension must be positive")
+		return errors.New("mock dimension must be positive")
 	}
 	return nil
 }

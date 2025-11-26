@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestProviderSetup_Validation validates provider setup from quickstart
+// TestProviderSetup_Validation validates provider setup from quickstart.
 func TestProviderSetup_Validation(t *testing.T) {
 	ctx := context.Background()
 
@@ -34,7 +34,7 @@ func TestProviderSetup_Validation(t *testing.T) {
 	assert.NotEmpty(t, sessionID)
 }
 
-// TestProviderConfiguration_Validation validates provider configuration
+// TestProviderConfiguration_Validation validates provider configuration.
 func TestProviderConfiguration_Validation(t *testing.T) {
 	ctx := context.Background()
 

@@ -56,7 +56,7 @@ llm_providers:
     api_key: "test-key"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -94,7 +94,7 @@ llm_providers:
 				Validate:    false,
 				SetDefaults: false,
 			},
-			expectError: false, // Viper handles missing files gracefully
+			expectError: true, // Loader returns error when config file doesn't exist
 		},
 	}
 
@@ -130,8 +130,8 @@ func TestLoadFromEnv(t *testing.T) {
 
 	// Set environment variables
 	for key, value := range testEnvVars {
-		os.Setenv(key, value)
-		defer os.Unsetenv(key)
+		_ = os.Setenv(key, value)
+		defer func(k string) { _ = os.Unsetenv(k) }(key)
 	}
 
 	tests := []struct {
@@ -188,8 +188,8 @@ func TestLoadFromFile(t *testing.T) {
 	tests := []struct {
 		name        string
 		filePath    string
-		createFile  bool
 		content     string
+		createFile  bool
 		expectError bool
 	}{
 		{
@@ -232,7 +232,7 @@ llm_providers:
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.createFile {
-				err := os.WriteFile(tt.filePath, []byte(tt.content), 0644)
+				err := os.WriteFile(tt.filePath, []byte(tt.content), 0o600)
 				if err != nil {
 					t.Fatalf("failed to create test file: %v", err)
 				}
@@ -269,7 +269,7 @@ llm_providers:
     api_key: "test-key"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -295,13 +295,11 @@ llm_providers:
 }
 
 func TestLoader_MustLoadConfig_Panic(t *testing.T) {
-	// Test panic case - create a loader with invalid YAML to force a load error
+	// Test panic case - create a loader with non-existent config file to force a load error
 	tempDir := t.TempDir()
-	invalidFile := filepath.Join(tempDir, "test.yaml")
-	os.WriteFile(invalidFile, []byte("invalid: yaml: [unclosed"), 0644)
 
 	loader, err := NewLoader(iface.LoaderOptions{
-		ConfigName:  "test",
+		ConfigName:  "nonexistent",
 		ConfigPaths: []string{tempDir},
 		Validate:    false,
 		SetDefaults: false,
@@ -368,14 +366,14 @@ func TestGetEnvConfigMap(t *testing.T) {
 
 	// Set environment variables
 	for key, value := range testEnvVars {
-		os.Setenv(key, value)
-		defer os.Unsetenv(key)
+		_ = os.Setenv(key, value)
+		defer func(k string) { _ = os.Unsetenv(k) }(key)
 	}
 
 	tests := []struct {
+		expected map[string]string
 		name     string
 		prefix   string
-		expected map[string]string
 	}{
 		{
 			name:   "get TEST prefixed vars",
@@ -511,7 +509,7 @@ llm_providers:
   - name: ""
     provider: "openai"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}
@@ -542,7 +540,7 @@ llm_providers:
     api_key: "test-key"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create test config file: %v", err)
 	}

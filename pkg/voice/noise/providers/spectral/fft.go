@@ -4,10 +4,10 @@ import (
 	"math"
 )
 
-// WindowFunction applies a window function to a signal
+// WindowFunction applies a window function to a signal.
 type WindowFunction func([]float64)
 
-// ApplyHann applies a Hann window
+// ApplyHann applies a Hann window.
 func ApplyHann(signal []float64) {
 	n := len(signal)
 	for i := 0; i < n; i++ {
@@ -15,7 +15,7 @@ func ApplyHann(signal []float64) {
 	}
 }
 
-// ApplyHamming applies a Hamming window
+// ApplyHamming applies a Hamming window.
 func ApplyHamming(signal []float64) {
 	n := len(signal)
 	for i := 0; i < n; i++ {
@@ -23,7 +23,7 @@ func ApplyHamming(signal []float64) {
 	}
 }
 
-// ApplyBlackman applies a Blackman window
+// ApplyBlackman applies a Blackman window.
 func ApplyBlackman(signal []float64) {
 	n := len(signal)
 	for i := 0; i < n; i++ {
@@ -34,7 +34,7 @@ func ApplyBlackman(signal []float64) {
 	}
 }
 
-// GetWindowFunction returns the appropriate window function
+// GetWindowFunction returns the appropriate window function.
 func GetWindowFunction(windowType string) WindowFunction {
 	switch windowType {
 	case "hamming":
@@ -47,7 +47,7 @@ func GetWindowFunction(windowType string) WindowFunction {
 }
 
 // FFT performs a simple FFT (placeholder - in production, use a proper FFT library)
-// This is a simplified version for demonstration purposes
+// This is a simplified version for demonstration purposes.
 func FFT(signal []float64) []complex128 {
 	n := len(signal)
 	if n == 0 {
@@ -67,7 +67,7 @@ func FFT(signal []float64) []complex128 {
 	return result
 }
 
-// IFFT performs an inverse FFT (placeholder - in production, use a proper FFT library)
+// IFFT performs an inverse FFT (placeholder - in production, use a proper FFT library).
 func IFFT(spectrum []complex128) []float64 {
 	n := len(spectrum)
 	if n == 0 {
@@ -87,7 +87,7 @@ func IFFT(spectrum []complex128) []float64 {
 	return result
 }
 
-// MagnitudeSpectrum computes the magnitude spectrum from complex FFT output
+// MagnitudeSpectrum computes the magnitude spectrum from complex FFT output.
 func MagnitudeSpectrum(fft []complex128) []float64 {
 	magnitude := make([]float64, len(fft))
 	for i, val := range fft {
@@ -96,7 +96,7 @@ func MagnitudeSpectrum(fft []complex128) []float64 {
 	return magnitude
 }
 
-// PhaseSpectrum computes the phase spectrum from complex FFT output
+// PhaseSpectrum computes the phase spectrum from complex FFT output.
 func PhaseSpectrum(fft []complex128) []float64 {
 	phase := make([]float64, len(fft))
 	for i, val := range fft {
@@ -105,7 +105,7 @@ func PhaseSpectrum(fft []complex128) []float64 {
 	return phase
 }
 
-// ReconstructFromMagnitudePhase reconstructs complex FFT from magnitude and phase
+// ReconstructFromMagnitudePhase reconstructs complex FFT from magnitude and phase.
 func ReconstructFromMagnitudePhase(magnitude, phase []float64) []complex128 {
 	result := make([]complex128, len(magnitude))
 	for i := range magnitude {

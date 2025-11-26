@@ -4,6 +4,7 @@ package embeddings
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"sync"
@@ -13,34 +14,29 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
-// AdvancedMockEmbedder provides a comprehensive mock implementation for testing
+// AdvancedMockEmbedder provides a comprehensive mock implementation for testing.
 type AdvancedMockEmbedder struct {
+	lastHealthCheck time.Time
+	errorToReturn   error
 	mock.Mock
-
-	// Configuration
-	modelName    string
-	providerName string
-	dimension    int
-	callCount    int
-	mu           sync.RWMutex
-
-	// Configurable behavior
-	shouldError       bool
-	errorToReturn     error
+	modelName         string
+	providerName      string
+	healthState       string
 	embeddings        [][]float32
 	embeddingIndex    int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-
-	// Health check data
-	healthState     string
-	lastHealthCheck time.Time
+	callCount         int
+	dimension         int
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
-// NewAdvancedMockEmbedder creates a new advanced mock with configurable behavior
+// NewAdvancedMockEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockEmbedder(providerName, modelName string, dimension int, options ...MockEmbedderOption) *AdvancedMockEmbedder {
 	mock := &AdvancedMockEmbedder{
 		providerName: providerName,
@@ -63,10 +59,10 @@ func NewAdvancedMockEmbedder(providerName, modelName string, dimension int, opti
 	return mock
 }
 
-// MockEmbedderOption defines functional options for mock configuration
+// MockEmbedderOption defines functional options for mock configuration.
 type MockEmbedderOption func(*AdvancedMockEmbedder)
 
-// WithMockError configures the mock to return errors
+// WithMockError configures the mock to return errors.
 func WithMockError(shouldError bool, err error) MockEmbedderOption {
 	return func(e *AdvancedMockEmbedder) {
 		e.shouldError = shouldError
@@ -74,7 +70,7 @@ func WithMockError(shouldError bool, err error) MockEmbedderOption {
 	}
 }
 
-// WithMockEmbeddings sets predefined embeddings for the mock
+// WithMockEmbeddings sets predefined embeddings for the mock.
 func WithMockEmbeddings(embeddings [][]float32) MockEmbedderOption {
 	return func(e *AdvancedMockEmbedder) {
 		e.embeddings = make([][]float32, len(embeddings))
@@ -82,21 +78,21 @@ func WithMockEmbeddings(embeddings [][]float32) MockEmbedderOption {
 	}
 }
 
-// WithMockDelay adds artificial delay to mock operations
+// WithMockDelay adds artificial delay to mock operations.
 func WithMockDelay(delay time.Duration) MockEmbedderOption {
 	return func(e *AdvancedMockEmbedder) {
 		e.simulateDelay = delay
 	}
 }
 
-// WithMockRateLimit simulates rate limiting behavior
+// WithMockRateLimit simulates rate limiting behavior.
 func WithMockRateLimit(enabled bool) MockEmbedderOption {
 	return func(e *AdvancedMockEmbedder) {
 		e.simulateRateLimit = enabled
 	}
 }
 
-// generateDefaultEmbeddings creates random embeddings for testing
+// generateDefaultEmbeddings creates random embeddings for testing.
 func (e *AdvancedMockEmbedder) generateDefaultEmbeddings(count int) {
 	rand.Seed(time.Now().UnixNano())
 	e.embeddings = make([][]float32, count)
@@ -110,41 +106,62 @@ func (e *AdvancedMockEmbedder) generateDefaultEmbeddings(count int) {
 	}
 }
 
-// Mock implementation methods
+// Mock implementation methods.
 func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
 	e.mu.Lock()
 	e.callCount++
+	shouldError := e.shouldError
+	errorToReturn := e.errorToReturn
+	simulateRateLimit := e.simulateRateLimit
+	rateLimitCount := e.rateLimitCount
+	embeddingIndex := e.embeddingIndex
+	embeddingsCopy := make([][]float32, len(e.embeddings))
+	for i := range e.embeddings {
+		embeddingsCopy[i] = make([]float32, len(e.embeddings[i]))
+		copy(embeddingsCopy[i], e.embeddings[i])
+	}
+	dimension := e.dimension
 	e.mu.Unlock()
 
 	if e.simulateDelay > 0 {
 		time.Sleep(e.simulateDelay)
 	}
 
-	if e.simulateRateLimit && e.rateLimitCount > 5 {
-		return nil, fmt.Errorf("rate limit exceeded")
+	e.mu.Lock()
+	if simulateRateLimit && rateLimitCount > 5 {
+		e.mu.Unlock()
+		return nil, errors.New("rate limit exceeded")
 	}
 	e.rateLimitCount++
+	newEmbeddingIndex := embeddingIndex
+	e.mu.Unlock()
 
-	if e.shouldError {
-		return nil, e.errorToReturn
+	if shouldError {
+		return nil, errorToReturn
 	}
 
 	results := make([][]float32, len(texts))
 	for i := range texts {
-		if e.embeddingIndex < len(e.embeddings) {
+		e.mu.Lock()
+		currentIndex := newEmbeddingIndex
+		if currentIndex < len(embeddingsCopy) {
 			// Create a copy to avoid shared memory issues
-			embedding := make([]float32, len(e.embeddings[e.embeddingIndex]))
-			copy(embedding, e.embeddings[e.embeddingIndex])
+			embedding := make([]float32, len(embeddingsCopy[currentIndex]))
+			copy(embedding, embeddingsCopy[currentIndex])
 			results[i] = embedding
-			e.embeddingIndex = (e.embeddingIndex + 1) % len(e.embeddings)
+			newEmbeddingIndex = (currentIndex + 1) % len(embeddingsCopy)
+			e.embeddingIndex = newEmbeddingIndex
 		} else {
+			e.mu.Unlock()
 			// Generate random embedding if we run out
-			embedding := make([]float32, e.dimension)
-			for j := 0; j < e.dimension; j++ {
+			embedding := make([]float32, dimension)
+			for j := 0; j < dimension; j++ {
 				embedding[j] = rand.Float32()*2 - 1
 			}
 			results[i] = embedding
+			e.mu.Lock()
 		}
+		e.mu.Unlock()
 	}
 
 	return results, nil
@@ -153,32 +170,50 @@ func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []strin
 func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, error) {
 	e.mu.Lock()
 	e.callCount++
+	shouldError := e.shouldError
+	errorToReturn := e.errorToReturn
+	simulateRateLimit := e.simulateRateLimit
+	rateLimitCount := e.rateLimitCount
+	embeddingIndex := e.embeddingIndex
+	embeddingsCopy := make([][]float32, len(e.embeddings))
+	for i := range e.embeddings {
+		embeddingsCopy[i] = make([]float32, len(e.embeddings[i]))
+		copy(embeddingsCopy[i], e.embeddings[i])
+	}
+	dimension := e.dimension
 	e.mu.Unlock()
 
 	if e.simulateDelay > 0 {
 		time.Sleep(e.simulateDelay)
 	}
 
-	if e.simulateRateLimit && e.rateLimitCount > 5 {
-		return nil, fmt.Errorf("rate limit exceeded")
+	e.mu.Lock()
+	if simulateRateLimit && rateLimitCount > 5 {
+		e.mu.Unlock()
+		return nil, errors.New("rate limit exceeded")
 	}
 	e.rateLimitCount++
+	e.mu.Unlock()
 
-	if e.shouldError {
-		return nil, e.errorToReturn
+	if shouldError {
+		return nil, errorToReturn
 	}
 
-	if e.embeddingIndex < len(e.embeddings) {
+	e.mu.Lock()
+	var embedding []float32
+	if embeddingIndex < len(embeddingsCopy) {
 		// Create a copy to avoid shared memory issues
-		embedding := make([]float32, len(e.embeddings[e.embeddingIndex]))
-		copy(embedding, e.embeddings[e.embeddingIndex])
-		e.embeddingIndex = (e.embeddingIndex + 1) % len(e.embeddings)
+		embedding = make([]float32, len(embeddingsCopy[embeddingIndex]))
+		copy(embedding, embeddingsCopy[embeddingIndex])
+		e.embeddingIndex = (embeddingIndex + 1) % len(embeddingsCopy)
+		e.mu.Unlock()
 		return embedding, nil
 	}
+	e.mu.Unlock()
 
 	// Generate random embedding if we run out
-	embedding := make([]float32, e.dimension)
-	for j := 0; j < e.dimension; j++ {
+	embedding = make([]float32, dimension)
+	for j := 0; j < dimension; j++ {
 		embedding[j] = rand.Float32()*2 - 1
 	}
 	return embedding, nil
@@ -216,9 +251,9 @@ func (e *AdvancedMockEmbedder) ResetRateLimit() {
 	e.rateLimitCount = 0
 }
 
-func (e *AdvancedMockEmbedder) CheckHealth() map[string]interface{} {
+func (e *AdvancedMockEmbedder) CheckHealth() map[string]any {
 	e.lastHealthCheck = time.Now()
-	return map[string]interface{}{
+	return map[string]any{
 		"status":           e.healthState,
 		"provider":         e.providerName,
 		"model":            e.modelName,
@@ -231,7 +266,7 @@ func (e *AdvancedMockEmbedder) CheckHealth() map[string]interface{} {
 
 // Test data creation helpers
 
-// CreateTestTexts creates a set of test texts for embedding
+// CreateTestTexts creates a set of test texts for embedding.
 func CreateTestTexts(count int) []string {
 	texts := make([]string, count)
 	for i := 0; i < count; i++ {
@@ -240,7 +275,7 @@ func CreateTestTexts(count int) []string {
 	return texts
 }
 
-// CreateTestEmbeddings creates a set of test embeddings
+// CreateTestEmbeddings creates a set of test embeddings.
 func CreateTestEmbeddings(count, dimension int) [][]float32 {
 	rand.Seed(time.Now().UnixNano())
 	embeddings := make([][]float32, count)
@@ -256,7 +291,7 @@ func CreateTestEmbeddings(count, dimension int) [][]float32 {
 	return embeddings
 }
 
-// CreateTestConfig creates a test embedding configuration
+// CreateTestConfig creates a test embedding configuration.
 func CreateTestConfig(provider string) Config {
 	config := Config{}
 
@@ -294,7 +329,7 @@ func CreateTestConfig(provider string) Config {
 
 // Assertion helpers
 
-// AssertEmbedding validates an embedding result
+// AssertEmbedding validates an embedding result.
 func AssertEmbedding(t *testing.T, embedding []float32, expectedDim int) {
 	assert.NotNil(t, embedding)
 	assert.Len(t, embedding, expectedDim)
@@ -306,8 +341,9 @@ func AssertEmbedding(t *testing.T, embedding []float32, expectedDim int) {
 	}
 }
 
-// AssertEmbeddings validates multiple embedding results
+// AssertEmbeddings validates multiple embedding results.
 func AssertEmbeddings(t *testing.T, embeddings [][]float32, expectedCount, expectedDim int) {
+	t.Helper()
 	assert.Len(t, embeddings, expectedCount)
 
 	for i, embedding := range embeddings {
@@ -325,15 +361,17 @@ func AssertEmbeddings(t *testing.T, embeddings [][]float32, expectedCount, expec
 	}
 }
 
-// AssertSimilarityScore validates similarity between embeddings
+// AssertSimilarityScore validates similarity between embeddings.
 func AssertSimilarityScore(t *testing.T, emb1, emb2 []float32, minSimilarity float32) {
+	t.Helper()
 	similarity := CosineSimilarity(emb1, emb2)
 	assert.GreaterOrEqual(t, similarity, minSimilarity,
 		"Embeddings should have similarity >= %f, got %f", minSimilarity, similarity)
 }
 
-// AssertHealthCheck validates health check results
-func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStatus string) {
+// AssertHealthCheck validates health check results.
+func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string) {
+	t.Helper()
 	assert.Contains(t, health, "status")
 	assert.Equal(t, expectedStatus, health["status"])
 	assert.Contains(t, health, "provider")
@@ -341,9 +379,10 @@ func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStat
 	assert.Contains(t, health, "dimension")
 }
 
-// AssertErrorType validates error types and codes
+// AssertErrorType validates error types and codes.
 func AssertErrorType(t *testing.T, err error, expectedCode string) {
-	assert.Error(t, err)
+	t.Helper()
+	require.Error(t, err)
 	var embErr *iface.EmbeddingError
 	if assert.ErrorAs(t, err, &embErr) {
 		assert.Equal(t, expectedCode, embErr.Code)
@@ -352,7 +391,7 @@ func AssertErrorType(t *testing.T, err error, expectedCode string) {
 
 // Helper functions
 
-// CosineSimilarity calculates cosine similarity between two embeddings
+// CosineSimilarity calculates cosine similarity between two embeddings.
 func CosineSimilarity(a, b []float32) float32 {
 	if len(a) != len(b) {
 		return 0.0
@@ -373,7 +412,7 @@ func CosineSimilarity(a, b []float32) float32 {
 	return dotProduct / (sqrt(normA) * sqrt(normB))
 }
 
-// EuclideanDistance calculates Euclidean distance between two embeddings
+// EuclideanDistance calculates Euclidean distance between two embeddings.
 func EuclideanDistance(a, b []float32) float32 {
 	if len(a) != len(b) {
 		return float32(^uint(0) >> 1) // Max float32 value
@@ -388,7 +427,7 @@ func EuclideanDistance(a, b []float32) float32 {
 	return sqrt(sum)
 }
 
-// Helper functions for float operations
+// Helper functions for float operations.
 func isNaN(f float32) bool {
 	return f != f
 }
@@ -416,11 +455,11 @@ func sqrt(f float32) float32 {
 
 // Performance testing helpers
 
-// ConcurrentTestRunner runs embedding tests concurrently for performance testing
+// ConcurrentTestRunner runs embedding tests concurrently for performance testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
@@ -475,8 +514,9 @@ func (r *ConcurrentTestRunner) Run() error {
 	return nil
 }
 
-// RunLoadTest executes a load test scenario on embedder
-func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations int, concurrency int) {
+// RunLoadTest executes a load test scenario on embedder.
+func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations, concurrency int) {
+	t.Helper()
 	var wg sync.WaitGroup
 	errChan := make(chan error, numOperations)
 
@@ -514,7 +554,7 @@ func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations int
 
 	// Verify no errors occurred
 	for err := range errChan {
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	}
 
 	// Verify expected call count
@@ -523,7 +563,7 @@ func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations int
 
 // Integration test helpers
 
-// IntegrationTestHelper provides utilities for integration testing
+// IntegrationTestHelper provides utilities for integration testing.
 type IntegrationTestHelper struct {
 	embedders map[string]*AdvancedMockEmbedder
 	registry  *ProviderRegistry
@@ -556,7 +596,7 @@ func (h *IntegrationTestHelper) Reset() {
 	}
 }
 
-// EmbeddingBenchmark provides benchmarking utilities
+// EmbeddingBenchmark provides benchmarking utilities.
 type EmbeddingBenchmark struct {
 	embedder iface.Embedder
 	texts    []string
@@ -598,7 +638,7 @@ func (b *EmbeddingBenchmark) BenchmarkBatchEmbedding(batchSize, iterations int) 
 	return time.Since(start), nil
 }
 
-// EmbeddingQualityTester provides utilities for testing embedding quality
+// EmbeddingQualityTester provides utilities for testing embedding quality.
 type EmbeddingQualityTester struct {
 	embedder iface.Embedder
 }
@@ -640,7 +680,7 @@ func (q *EmbeddingQualityTester) TestSimilarityConsistency(ctx context.Context, 
 
 func (q *EmbeddingQualityTester) TestSemanticSimilarity(ctx context.Context, similarTexts []string) (float32, error) {
 	if len(similarTexts) < 2 {
-		return 0, fmt.Errorf("need at least 2 texts to test semantic similarity")
+		return 0, errors.New("need at least 2 texts to test semantic similarity")
 	}
 
 	embeddings := make([][]float32, len(similarTexts))

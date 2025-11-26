@@ -2,12 +2,12 @@ package internal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
 
-// ProcessAudio processes incoming audio data
+// ProcessAudio processes incoming audio data.
 func (s *VoiceSessionImpl) ProcessAudio(ctx context.Context, audio []byte) error {
 	s.mu.RLock()
 	active := s.active
@@ -16,7 +16,7 @@ func (s *VoiceSessionImpl) ProcessAudio(ctx context.Context, audio []byte) error
 
 	if !active {
 		return newSessionError("ProcessAudio", "session_not_active",
-			fmt.Errorf("session is not active"))
+			errors.New("session is not active"))
 	}
 
 	// Apply noise cancellation if available

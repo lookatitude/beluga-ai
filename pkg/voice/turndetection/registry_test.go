@@ -39,7 +39,7 @@ func TestRegistry_GetProvider_NotFound(t *testing.T) {
 	config := DefaultConfig()
 
 	provider, err := registry.GetProvider("non-existent", config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, provider)
 	assert.Contains(t, err.Error(), "not registered")
 }

@@ -15,7 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// MockEmbedder for testing with configurable behavior
+// MockEmbedder for testing with configurable behavior.
 type MockEmbedder struct {
 	embedDocumentsFunc      func(ctx context.Context, texts []string) ([][]float32, error)
 	embedQueryFunc          func(ctx context.Context, text string) ([]float32, error)
@@ -30,7 +30,7 @@ func (m *MockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]
 	m.mu.Unlock()
 
 	if m.embedDocumentsFunc != nil {
-	ctx := context.Background()
+		ctx := context.Background()
 		return m.embedDocumentsFunc(ctx, texts)
 	}
 	// Return mock embeddings
@@ -64,7 +64,7 @@ func (m *MockEmbedder) GetEmbedQueryCallCount() int {
 	return m.embedQueryCallCount
 }
 
-// MockVectorStore for testing
+// MockVectorStore for testing.
 type MockVectorStore struct {
 	addDocumentsFunc            func(ctx context.Context, documents []schema.Document, opts ...Option) ([]string, error)
 	deleteDocumentsFunc         func(ctx context.Context, ids []string, opts ...Option) error
@@ -153,7 +153,7 @@ func (m *MockVectorStore) GetName() string {
 	return "mock"
 }
 
-// MockRetriever for testing
+// MockRetriever for testing.
 type MockRetriever struct {
 	getRelevantDocumentsFunc  func(ctx context.Context, query string) ([]schema.Document, error)
 	getRelevantDocumentsCount int
@@ -171,8 +171,10 @@ func (m *MockRetriever) GetRelevantDocuments(ctx context.Context, query string) 
 	return []schema.Document{}, nil
 }
 
-// MockMetricsCollector for testing observability
+// MockMetricsCollector for testing observability.
 type MockMetricsCollector struct {
+	lastStoreName               string
+	lastErrorCode               string
 	recordDocumentsAddedCount   int
 	recordDocumentsDeletedCount int
 	recordSearchCount           int
@@ -180,10 +182,8 @@ type MockMetricsCollector struct {
 	recordErrorCount            int
 	recordMemoryUsageCount      int
 	recordDiskUsageCount        int
-	mu                          sync.RWMutex
-	lastStoreName               string
 	lastCount                   int
-	lastErrorCode               string
+	mu                          sync.RWMutex
 }
 
 func (m *MockMetricsCollector) RecordDocumentsAdded(ctx context.Context, count int, storeName string) {
@@ -216,7 +216,7 @@ func (m *MockMetricsCollector) RecordEmbedding(ctx context.Context, duration tim
 	m.mu.Unlock()
 }
 
-func (m *MockMetricsCollector) RecordError(ctx context.Context, errorCode string, storeName string) {
+func (m *MockMetricsCollector) RecordError(ctx context.Context, errorCode, storeName string) {
 	m.mu.Lock()
 	m.recordErrorCount++
 	m.lastErrorCode = errorCode
@@ -268,15 +268,15 @@ func (m *MockMetricsCollector) GetLastErrorCode() string {
 	return m.lastErrorCode
 }
 
-// MockTracerProvider for testing observability
+// MockTracerProvider for testing observability.
 type MockTracerProvider struct {
+	lastOperation             string
 	startSpanCount            int
 	startAddDocumentsCount    int
 	startDeleteDocumentsCount int
 	startSearchCount          int
 	startEmbeddingCount       int
 	mu                        sync.RWMutex
-	lastOperation             string
 }
 
 func (m *MockTracerProvider) StartSpan(ctx context.Context, operation string, opts ...attribute.KeyValue) (context.Context, func()) {
@@ -308,7 +308,7 @@ func (m *MockTracerProvider) StartDeleteDocumentsSpan(ctx context.Context, store
 	return ctx, func() {}
 }
 
-func (m *MockTracerProvider) StartSearchSpan(ctx context.Context, storeName string, queryLength int, k int) (context.Context, func()) {
+func (m *MockTracerProvider) StartSearchSpan(ctx context.Context, storeName string, queryLength, k int) (context.Context, func()) {
 	m.mu.Lock()
 	m.startSpanCount++
 	m.startSearchCount++
@@ -340,12 +340,12 @@ func (m *MockTracerProvider) GetLastOperation() string {
 	return m.lastOperation
 }
 
-// MockLogger for testing logging functionality
+// MockLogger for testing logging functionality.
 type MockLogger struct {
-	logAttrsCount int
-	lastLevel     slog.Level
 	lastMessage   string
 	lastAttrs     []slog.Attr
+	logAttrsCount int
+	lastLevel     slog.Level
 	mu            sync.RWMutex
 }
 
@@ -380,19 +380,19 @@ func (m *MockLogger) GetLastLevel() slog.Level {
 	return m.lastLevel
 }
 
-// Test setup function to register providers
+// Test setup function to register providers.
 func setupTestProviders() {
 	// For testing, we'll directly use the inmemory provider constructor
 	// instead of relying on global registration to avoid import cycles
 }
 
-// Table-driven tests for VectorStore operations using mocks
+// Table-driven tests for VectorStore operations using mocks.
 func TestVectorStoreOperations(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name       string
 		setupStore func() VectorStore
 		testFunc   func(t *testing.T, store VectorStore)
+		name       string
 	}{
 		{
 			name: "AddDocuments_DefaultBehavior",
@@ -400,6 +400,7 @@ func TestVectorStoreOperations(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				docs := []schema.Document{
 					schema.NewDocument("test content 1", map[string]string{"source": "test1"}),
 					schema.NewDocument("test content 2", map[string]string{"source": "test2"}),
@@ -418,11 +419,12 @@ func TestVectorStoreOperations(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				queryVector := []float32{0.1, 0.2, 0.3}
 				results, scores, err := store.SimilaritySearch(ctx, queryVector, 5)
 				require.NoError(t, err)
-				assert.Len(t, results, 0)
-				assert.Len(t, scores, 0)
+				assert.Empty(t, results)
+				assert.Empty(t, scores)
 			},
 		},
 		{
@@ -431,11 +433,12 @@ func TestVectorStoreOperations(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				embedder := &MockEmbedder{}
 				results, scores, err := store.SimilaritySearchByQuery(ctx, "machine learning", 5, embedder)
 				require.NoError(t, err)
-				assert.Len(t, results, 0)
-				assert.Len(t, scores, 0)
+				assert.Empty(t, results)
+				assert.Empty(t, scores)
 			},
 		},
 		{
@@ -444,8 +447,9 @@ func TestVectorStoreOperations(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				err := store.DeleteDocuments(ctx, []string{"test-id"})
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
@@ -454,6 +458,7 @@ func TestVectorStoreOperations(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				retriever := store.AsRetriever()
 				assert.NotNil(t, retriever)
 				assert.Equal(t, "mock", store.GetName())
@@ -469,6 +474,7 @@ func TestVectorStoreOperations(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				docs := []schema.Document{schema.NewDocument("test", nil)}
 				ids, err := store.AddDocuments(ctx, docs)
 				require.NoError(t, err)
@@ -485,9 +491,10 @@ func TestVectorStoreOperations(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, store VectorStore) {
+				t.Helper()
 				docs := []schema.Document{schema.NewDocument("test", nil)}
 				_, err := store.AddDocuments(ctx, docs)
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "add documents failed")
 			},
 		},
@@ -501,13 +508,13 @@ func TestVectorStoreOperations(t *testing.T) {
 	}
 }
 
-// TestMockEmbedder tests the MockEmbedder functionality
+// TestMockEmbedder tests the MockEmbedder functionality.
 func TestMockEmbedder(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name      string
 		setupFunc func() *MockEmbedder
 		testFunc  func(t *testing.T, embedder *MockEmbedder)
+		name      string
 	}{
 		{
 			name: "DefaultEmbedDocuments",
@@ -515,6 +522,7 @@ func TestMockEmbedder(t *testing.T) {
 				return &MockEmbedder{}
 			},
 			testFunc: func(t *testing.T, embedder *MockEmbedder) {
+				t.Helper()
 				texts := []string{"test document 1", "test document 2"}
 				embeddings, err := embedder.EmbedDocuments(ctx, texts)
 				require.NoError(t, err)
@@ -537,6 +545,7 @@ func TestMockEmbedder(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, embedder *MockEmbedder) {
+				t.Helper()
 				texts := []string{"custom test"}
 				embeddings, err := embedder.EmbedDocuments(ctx, texts)
 				require.NoError(t, err)
@@ -553,9 +562,10 @@ func TestMockEmbedder(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, embedder *MockEmbedder) {
+				t.Helper()
 				texts := []string{"test"}
 				_, err := embedder.EmbedDocuments(ctx, texts)
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "embedding failed")
 			},
 		},
@@ -565,21 +575,22 @@ func TestMockEmbedder(t *testing.T) {
 				return &MockEmbedder{}
 			},
 			testFunc: func(t *testing.T, embedder *MockEmbedder) {
+				t.Helper()
 				ctx := context.Background()
 
 				// Test EmbedDocuments call count
 				texts := []string{"test1", "test2"}
-				embedder.EmbedDocuments(ctx, texts)
+				_, _ = embedder.EmbedDocuments(ctx, texts)
 				assert.Equal(t, 1, embedder.GetEmbedDocumentsCallCount())
 
-				embedder.EmbedDocuments(ctx, texts)
+				_, _ = embedder.EmbedDocuments(ctx, texts)
 				assert.Equal(t, 2, embedder.GetEmbedDocumentsCallCount())
 
 				// Test EmbedQuery call count
-				embedder.EmbedQuery(ctx, "test query")
+				_, _ = embedder.EmbedQuery(ctx, "test query")
 				assert.Equal(t, 1, embedder.GetEmbedQueryCallCount())
 
-				embedder.EmbedQuery(ctx, "another query")
+				_, _ = embedder.EmbedQuery(ctx, "another query")
 				assert.Equal(t, 2, embedder.GetEmbedQueryCallCount())
 			},
 		},
@@ -593,12 +604,12 @@ func TestMockEmbedder(t *testing.T) {
 	}
 }
 
-// TestMockVectorStore tests the MockVectorStore functionality
+// TestMockVectorStore tests the MockVectorStore functionality.
 func TestMockVectorStore(t *testing.T) {
 	tests := []struct {
-		name      string
 		setupFunc func() *MockVectorStore
 		testFunc  func(t *testing.T, store *MockVectorStore)
+		name      string
 	}{
 		{
 			name: "DefaultBehavior",
@@ -606,6 +617,7 @@ func TestMockVectorStore(t *testing.T) {
 				return &MockVectorStore{}
 			},
 			testFunc: func(t *testing.T, store *MockVectorStore) {
+				t.Helper()
 				ctx := context.Background()
 
 				// Test AddDocuments
@@ -639,6 +651,7 @@ func TestMockVectorStore(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, store *MockVectorStore) {
+				t.Helper()
 				ctx := context.Background()
 
 				// Test custom AddDocuments
@@ -662,10 +675,11 @@ func TestMockVectorStore(t *testing.T) {
 				}
 			},
 			testFunc: func(t *testing.T, store *MockVectorStore) {
+				t.Helper()
 				ctx := context.Background()
 				docs := []schema.Document{schema.NewDocument("test", nil)}
 				_, err := store.AddDocuments(ctx, docs)
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "add documents failed")
 			},
 		},
@@ -679,17 +693,18 @@ func TestMockVectorStore(t *testing.T) {
 	}
 }
 
-// Table-driven tests for configuration options
+// Table-driven tests for configuration options.
 func TestConfigOptions(t *testing.T) {
 	tests := []struct {
+		validateFunc func(t *testing.T, config *vectorstoresiface.Config)
 		name         string
 		options      []Option
-		validateFunc func(t *testing.T, config *vectorstoresiface.Config)
 	}{
 		{
 			name:    "DefaultConfig",
 			options: []Option{},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Equal(t, 5, config.SearchK)
 				assert.Equal(t, float32(0.0), config.ScoreThreshold)
 				assert.Nil(t, config.Embedder)
@@ -701,6 +716,7 @@ func TestConfigOptions(t *testing.T) {
 			name:    "WithSearchK",
 			options: []Option{WithSearchK(10)},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Equal(t, 10, config.SearchK)
 			},
 		},
@@ -708,6 +724,7 @@ func TestConfigOptions(t *testing.T) {
 			name:    "WithScoreThreshold",
 			options: []Option{WithScoreThreshold(0.8)},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Equal(t, float32(0.8), config.ScoreThreshold)
 			},
 		},
@@ -715,6 +732,7 @@ func TestConfigOptions(t *testing.T) {
 			name:    "WithEmbedder",
 			options: []Option{WithEmbedder(&MockEmbedder{})},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.NotNil(t, config.Embedder)
 			},
 		},
@@ -722,17 +740,19 @@ func TestConfigOptions(t *testing.T) {
 			name:    "WithMetadataFilter",
 			options: []Option{WithMetadataFilter("category", "test")},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Contains(t, config.MetadataFilters, "category")
 				assert.Equal(t, "test", config.MetadataFilters["category"])
 			},
 		},
 		{
 			name: "WithMetadataFilters",
-			options: []Option{WithMetadataFilters(map[string]interface{}{
+			options: []Option{WithMetadataFilters(map[string]any{
 				"category": "tech",
 				"status":   "published",
 			})},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Contains(t, config.MetadataFilters, "category")
 				assert.Contains(t, config.MetadataFilters, "status")
 				assert.Equal(t, "tech", config.MetadataFilters["category"])
@@ -743,17 +763,19 @@ func TestConfigOptions(t *testing.T) {
 			name:    "WithProviderConfig",
 			options: []Option{WithProviderConfig("connection_string", "postgres://test")},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Contains(t, config.ProviderConfig, "connection_string")
 				assert.Equal(t, "postgres://test", config.ProviderConfig["connection_string"])
 			},
 		},
 		{
 			name: "WithProviderConfigs",
-			options: []Option{WithProviderConfigs(map[string]interface{}{
+			options: []Option{WithProviderConfigs(map[string]any{
 				"host": "localhost",
 				"port": 5432,
 			})},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Contains(t, config.ProviderConfig, "host")
 				assert.Contains(t, config.ProviderConfig, "port")
 				assert.Equal(t, "localhost", config.ProviderConfig["host"])
@@ -770,6 +792,7 @@ func TestConfigOptions(t *testing.T) {
 				WithProviderConfig("table_name", "documents"),
 			},
 			validateFunc: func(t *testing.T, config *vectorstoresiface.Config) {
+				t.Helper()
 				assert.Equal(t, 20, config.SearchK)
 				assert.Equal(t, float32(0.9), config.ScoreThreshold)
 				assert.NotNil(t, config.Embedder)
@@ -788,12 +811,12 @@ func TestConfigOptions(t *testing.T) {
 	}
 }
 
-// Table-driven tests for error handling
+// Table-driven tests for error handling.
 func TestErrorHandling(t *testing.T) {
 	tests := []struct {
-		name         string
 		errorFunc    func() error
 		validateFunc func(t *testing.T, err error)
+		name         string
 	}{
 		{
 			name: "NewVectorStoreError",
@@ -801,7 +824,8 @@ func TestErrorHandling(t *testing.T) {
 				return NewVectorStoreError(ErrCodeUnknownProvider, "provider %s not found", "test")
 			},
 			validateFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				t.Helper()
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "provider test not found")
 
 				var vsErr *VectorStoreError
@@ -816,13 +840,14 @@ func TestErrorHandling(t *testing.T) {
 				return WrapError(cause, ErrCodeConnectionFailed, "failed to connect to database")
 			},
 			validateFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				t.Helper()
+				require.Error(t, err)
 				assert.Contains(t, err.Error(), "failed to connect to database")
 
 				var vsErr *VectorStoreError
 				assert.True(t, AsVectorStoreError(err, &vsErr))
 				assert.Equal(t, ErrCodeConnectionFailed, vsErr.Code)
-				assert.NotNil(t, vsErr.Cause)
+				assert.Error(t, vsErr.Cause)
 			},
 		},
 		{
@@ -831,6 +856,7 @@ func TestErrorHandling(t *testing.T) {
 				return NewVectorStoreError(ErrCodeInvalidConfig, "invalid configuration")
 			},
 			validateFunc: func(t *testing.T, err error) {
+				t.Helper()
 				assert.True(t, IsVectorStoreError(err, ErrCodeInvalidConfig))
 				assert.False(t, IsVectorStoreError(err, ErrCodeUnknownProvider))
 			},
@@ -843,7 +869,8 @@ func TestErrorHandling(t *testing.T) {
 				return WrapError(wrapped1, ErrCodeRetrievalFailed, "retrieval operation failed")
 			},
 			validateFunc: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				t.Helper()
+				require.Error(t, err)
 
 				// Should find the most recent error in the chain
 				var vsErr *VectorStoreError
@@ -861,7 +888,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 }
 
-// Test for observability (metrics, logging, tracing)
+// Test for observability (metrics, logging, tracing).
 func TestObservability(t *testing.T) {
 	ctx := context.Background()
 
@@ -913,13 +940,13 @@ func TestObservability(t *testing.T) {
 	})
 }
 
-// Test for factory and provider management
+// Test for factory and provider management.
 func TestFactoryAndProviders(t *testing.T) {
 	t.Run("ListProviders", func(t *testing.T) {
 		providers := ListProviders()
 		assert.Contains(t, providers, "inmemory")
 		assert.Contains(t, providers, "pgvector")
-		assert.Greater(t, len(providers), 0)
+		assert.NotEmpty(t, providers)
 	})
 
 	t.Run("ValidateProvider", func(t *testing.T) {
@@ -954,13 +981,13 @@ func TestFactoryAndProviders(t *testing.T) {
 		ctx := context.Background()
 		config := NewDefaultConfig()
 		store, err := factory.Create(ctx, "test-provider", *config)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, store)
 		assert.Equal(t, "mock", store.GetName())
 
 		// Test creating with unregistered provider
 		_, err = factory.Create(ctx, "nonexistent", *config)
-		assert.Error(t, err)
+		require.Error(t, err)
 		assert.Contains(t, err.Error(), "not found")
 	})
 
@@ -976,12 +1003,12 @@ func TestFactoryAndProviders(t *testing.T) {
 		ctx := context.Background()
 		config := NewDefaultConfig()
 		store, err := NewVectorStore(ctx, "test-global", *config)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, store)
 	})
 }
 
-// Test for global instances (logger, tracer, metrics)
+// Test for global instances (logger, tracer, metrics).
 func TestGlobalInstances(t *testing.T) {
 	t.Run("GlobalLogger", func(t *testing.T) {
 		logger := NewLogger(nil)
@@ -1008,7 +1035,7 @@ func TestGlobalInstances(t *testing.T) {
 	})
 }
 
-// Test for convenience functions
+// Test for convenience functions.
 func TestConvenienceFunctions(t *testing.T) {
 	ctx := context.Background()
 	embedder := &MockEmbedder{}
@@ -1020,14 +1047,14 @@ func TestConvenienceFunctions(t *testing.T) {
 		}
 
 		ids, err := AddDocuments(ctx, mockStore, docs, embedder)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, ids, 1)
 	})
 
 	t.Run("SearchByQueryConvenience", func(t *testing.T) {
 		mockStore := &MockVectorStore{}
 		results, scores, err := SearchByQuery(ctx, mockStore, "test query", 5, embedder)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, results)
 		assert.NotNil(t, scores)
 	})
@@ -1036,7 +1063,7 @@ func TestConvenienceFunctions(t *testing.T) {
 		mockStore := &MockVectorStore{}
 		queryVector := []float32{0.1, 0.2, 0.3}
 		results, scores, err := SearchByVector(ctx, mockStore, queryVector, 5)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, results)
 		assert.NotNil(t, scores)
 	})
@@ -1049,7 +1076,7 @@ func TestConvenienceFunctions(t *testing.T) {
 
 		// Delete using convenience function
 		err := DeleteDocuments(ctx, mockStore, ids)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 	})
 
 	t.Run("AsRetrieverConvenience", func(t *testing.T) {
@@ -1058,12 +1085,12 @@ func TestConvenienceFunctions(t *testing.T) {
 		assert.NotNil(t, retriever)
 
 		results, err := retriever.GetRelevantDocuments(ctx, "test query")
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.NotNil(t, results)
 	})
 }
 
-// Test for edge cases and error conditions
+// Test for edge cases and error conditions.
 func TestEdgeCases(t *testing.T) {
 	ctx := context.Background()
 	embedder := &MockEmbedder{}
@@ -1071,8 +1098,8 @@ func TestEdgeCases(t *testing.T) {
 	t.Run("EmptyDocuments", func(t *testing.T) {
 		mockStore := &MockVectorStore{}
 		ids, err := mockStore.AddDocuments(ctx, []schema.Document{})
-		assert.NoError(t, err)
-		assert.Len(t, ids, 0)
+		require.NoError(t, err)
+		assert.Empty(t, ids)
 	})
 
 	t.Run("NilEmbedder", func(t *testing.T) {
@@ -1096,7 +1123,7 @@ func TestEdgeCases(t *testing.T) {
 		}
 
 		ids, err := mockStore.AddDocuments(ctx, docs)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, ids, 1)
 	})
 
@@ -1107,7 +1134,7 @@ func TestEdgeCases(t *testing.T) {
 		}
 
 		ids, err := BatchAddDocuments(ctx, mockStore, docs, 1000, embedder)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, ids, 1)
 	})
 
@@ -1118,12 +1145,12 @@ func TestEdgeCases(t *testing.T) {
 		}
 
 		ids, err := BatchAddDocuments(ctx, mockStore, docs, 0, embedder)
-		assert.NoError(t, err)
+		require.NoError(t, err)
 		assert.Len(t, ids, 1) // Should default to some reasonable batch size
 	})
 }
 
-// Integration test template (for future expansion)
+// Integration test template (for future expansion).
 func TestIntegrationTemplate(t *testing.T) {
 	t.Skip("Integration test template - enable when integration environment is available")
 
@@ -1132,45 +1159,45 @@ func TestIntegrationTemplate(t *testing.T) {
 
 	/*
 
-		t.Run("FullWorkflow", func(t *testing.T) {
-			// 1. Create vector store
-			store, err := NewInMemoryStore(ctx, WithEmbedder(&MockEmbedder{}))
-			require.NoError(t, err)
+			t.Run("FullWorkflow", func(t *testing.T) {
+				// 1. Create vector store
+				store, err := NewInMemoryStore(ctx, WithEmbedder(&MockEmbedder{}))
+				require.NoError(t, err)
 
-			// 2. Add documents
-			docs := []schema.Document{
-				schema.NewDocument("Integration test document 1", map[string]string{"category": "test"}),
-				schema.NewDocument("Integration test document 2", map[string]string{"category": "test"}),
-			}
-			ids, err := store.AddDocuments(ctx, docs)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-			require.NoError(t, err)
-			assert.Len(t, ids, 2)
+				// 2. Add documents
+				docs := []schema.Document{
+					schema.NewDocument("Integration test document 1", map[string]string{"category": "test"}),
+					schema.NewDocument("Integration test document 2", map[string]string{"category": "test"}),
+				}
+				ids, err := store.AddDocuments(ctx, docs)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+				require.NoError(t, err)
+				assert.Len(t, ids, 2)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-			// 3. Search documents
-			results, scores, err := store.SimilaritySearchByQuery(ctx, "integration test", 10, &MockEmbedder{})
-			require.NoError(t, err)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-			assert.Greater(t, len(results), 0)
-			assert.Len(t, scores, len(results))
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+				// 3. Search documents
+				results, scores, err := store.SimilaritySearchByQuery(ctx, "integration test", 10, &MockEmbedder{})
+				require.NoError(t, err)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+				assert.Greater(t, len(results), 0)
+				assert.Len(t, scores, len(results))
 
-			// 4. Delete documents
-			err = store.DeleteDocuments(ctx, ids[:1])
-			require.NoError(t, err)
+				// 4. Delete documents
+				err = store.DeleteDocuments(ctx, ids[:1])
+				require.NoError(t, err)
 
-			// 5. Verify deletion
-			finalResults, _, err := store.SimilaritySearch(ctx, []float32{0.1, 0.2, 0.3}, 10)
-			require.NoError(t, err)
-			assert.Len(t, finalResults, 1)
-		})
+				// 5. Verify deletion
+				finalResults, _, err := store.SimilaritySearch(ctx, []float32{0.1, 0.2, 0.3}, 10)
+				require.NoError(t, err)
+				assert.Len(t, finalResults, 1)
+			})
 	*/
 }
 
-// Benchmark tests for performance-critical operations
+// Benchmark tests for performance-critical operations.
 func BenchmarkVectorStoreOperations(b *testing.B) {
 	b.Skip("Skipping vector store operations benchmark due to type compatibility issues with inmemory store")
 	// TODO: Re-enable when inmemory store implements main VectorStore interface
@@ -1192,7 +1219,7 @@ func BenchmarkMockEmbedder(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			embedder.EmbedDocuments(ctx, texts)
+			_, _ = embedder.EmbedDocuments(ctx, texts)
 		}
 	})
 
@@ -1203,7 +1230,7 @@ func BenchmarkMockEmbedder(b *testing.B) {
 		b.ReportAllocs()
 
 		for i := 0; i < b.N; i++ {
-			embedder.EmbedQuery(ctx, query)
+			_, _ = embedder.EmbedQuery(ctx, query)
 		}
 	})
 }
@@ -1233,7 +1260,7 @@ func BenchmarkConfigOperations(b *testing.B) {
 	})
 }
 
-// Performance comparison benchmarks
+// Performance comparison benchmarks.
 func BenchmarkVectorStoreComparison(b *testing.B) {
 	b.Skip("Skipping vector store comparison benchmark due to type compatibility issues with inmemory store")
 	// TODO: Re-enable when inmemory store implements main VectorStore interface

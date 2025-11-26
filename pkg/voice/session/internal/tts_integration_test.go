@@ -7,6 +7,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewTTSIntegration(t *testing.T) {
@@ -26,7 +27,7 @@ func TestTTSIntegration_GenerateSpeech_Success(t *testing.T) {
 
 	ctx := context.Background()
 	audio, err := tti.GenerateSpeech(ctx, "Hello, world!")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, audio)
 }
 
@@ -35,7 +36,7 @@ func TestTTSIntegration_GenerateSpeech_NilProvider(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := tti.GenerateSpeech(ctx, "Hello, world!")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not set")
 }
 
@@ -45,14 +46,14 @@ func TestTTSIntegration_StreamGenerate_Success(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := tti.StreamGenerate(ctx, "Hello, world!")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 
 	// Read from reader
 	data := make([]byte, 100)
 	n, err := reader.Read(data)
-	assert.NoError(t, err)
-	assert.Greater(t, n, 0)
+	require.NoError(t, err)
+	assert.Positive(t, n)
 }
 
 func TestTTSIntegration_StreamGenerate_NilProvider(t *testing.T) {
@@ -60,7 +61,7 @@ func TestTTSIntegration_StreamGenerate_NilProvider(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := tti.StreamGenerate(ctx, "Hello, world!")
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "not set")
 }
 
@@ -70,7 +71,7 @@ func TestTTSIntegration_StreamGenerate_ProviderError(t *testing.T) {
 
 	ctx := context.Background()
 	_, err := tti.StreamGenerate(ctx, "Hello, world!")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestTTSIntegration_ConcurrentAccess(t *testing.T) {
@@ -79,7 +80,7 @@ func TestTTSIntegration_ConcurrentAccess(t *testing.T) {
 
 	done := make(chan bool)
 	for i := 0; i < 10; i++ {
-	ctx := context.Background()
+		ctx := context.Background()
 		go func() {
 			_, _ = tti.GenerateSpeech(ctx, "test")
 			_, _ = tti.StreamGenerate(ctx, "test")

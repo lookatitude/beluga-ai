@@ -13,7 +13,9 @@ import (
 
 func BenchmarkContainer_Resolve(b *testing.B) {
 	container := NewContainer()
-	container.Register(func() string { return "benchmark_value" })
+	if err := container.Register(func() string { return "benchmark_value" }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -34,11 +36,21 @@ func BenchmarkContainer_Resolve_WithDependencyChain(b *testing.B) {
 	container := NewContainer()
 
 	// Create a dependency chain: A -> B -> C -> D
-	container.Register(func() string { return "D" })
-	container.Register(func(d string) BenchmarkServiceD { return &benchmarkServiceDImpl{dep: d} })
-	container.Register(func(d BenchmarkServiceD) BenchmarkServiceC { return &benchmarkServiceCImpl{dep: d} })
-	container.Register(func(c BenchmarkServiceC) BenchmarkServiceB { return &benchmarkServiceBImpl{dep: c} })
-	container.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} })
+	if err := container.Register(func() string { return "D" }); err != nil {
+		b.Fatal(err)
+	}
+	if err := container.Register(func(d string) BenchmarkServiceD { return &benchmarkServiceDImpl{dep: d} }); err != nil {
+		b.Fatal(err)
+	}
+	if err := container.Register(func(d BenchmarkServiceD) BenchmarkServiceC { return &benchmarkServiceCImpl{dep: d} }); err != nil {
+		b.Fatal(err)
+	}
+	if err := container.Register(func(c BenchmarkServiceC) BenchmarkServiceB { return &benchmarkServiceBImpl{dep: c} }); err != nil {
+		b.Fatal(err)
+	}
+	if err := container.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -54,7 +66,9 @@ func BenchmarkContainer_Resolve_WithDependencyChain(b *testing.B) {
 
 func BenchmarkContainer_ConcurrentResolve(b *testing.B) {
 	container := NewContainer()
-	container.Register(func() string { return "concurrent_value" })
+	if err := container.Register(func() string { return "concurrent_value" }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -77,7 +91,9 @@ func BenchmarkContainer_Register(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		container.Register(func() int { return i })
+		if err := container.Register(func() int { return i }); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -172,7 +188,9 @@ func BenchmarkTracedRunnable_Stream(b *testing.B) {
 
 func BenchmarkContainer_CheckHealth(b *testing.B) {
 	container := NewContainer()
-	container.Register(func() string { return "health_check" })
+	if err := container.Register(func() string { return "health_check" }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -234,7 +252,9 @@ func BenchmarkBuilder_Build(b *testing.B) {
 	container := NewContainer()
 	builder := NewBuilder(container)
 
-	builder.Register(func() string { return "builder_test" })
+	if err := builder.Register(func() string { return "builder_test" }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -256,11 +276,17 @@ func BenchmarkBuilder_ComplexDependencyChain(b *testing.B) {
 	builder := NewBuilder(container)
 
 	// Create a dependency chain
-	builder.Register(func() string { return "dep1" })
-	builder.Register(func(s string) BenchmarkServiceB {
+	if err := builder.Register(func() string { return "dep1" }); err != nil {
+		b.Fatal(err)
+	}
+	if err := builder.Register(func(s string) BenchmarkServiceB {
 		return &benchmarkServiceBImpl{dep: &benchmarkServiceCImpl{dep: &benchmarkServiceDImpl{dep: s}}}
-	})
-	builder.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} })
+	}); err != nil {
+		b.Fatal(err)
+	}
+	if err := builder.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} }); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -278,11 +304,13 @@ func BenchmarkBuilder_ComplexDependencyChain(b *testing.B) {
 
 func BenchmarkContainer_Resolve_Memory(b *testing.B) {
 	container := NewContainer()
-	container.Register(func() *LargeStruct {
+	if err := container.Register(func() *LargeStruct {
 		return &LargeStruct{
 			data: make([]byte, 1024), // 1KB of data
 		}
-	})
+	}); err != nil {
+		b.Fatal(err)
+	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -359,7 +387,7 @@ func (s *benchmarkServiceDImpl) GetDep() string {
 	return s.dep
 }
 
-// Interface definitions for benchmark services
+// Interface definitions for benchmark services.
 type BenchmarkServiceA interface {
 	GetB() BenchmarkServiceB
 }

@@ -24,7 +24,7 @@ type VADProvider interface {
 
 // VADResult represents a voice activity detection result.
 type VADResult struct {
-	HasVoice   bool
-	Confidence float64
 	Error      error
+	Confidence float64
+	HasVoice   bool
 }

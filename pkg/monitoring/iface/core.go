@@ -10,24 +10,24 @@ import (
 	"time"
 )
 
-// Logger provides structured logging with context support
+// Logger provides structured logging with context support.
 type Logger interface {
-	Debug(ctx context.Context, message string, fields ...map[string]interface{})
-	Info(ctx context.Context, message string, fields ...map[string]interface{})
-	Warning(ctx context.Context, message string, fields ...map[string]interface{})
-	Error(ctx context.Context, message string, fields ...map[string]interface{})
-	Fatal(ctx context.Context, message string, fields ...map[string]interface{})
-	WithFields(fields map[string]interface{}) ContextLogger
+	Debug(ctx context.Context, message string, fields ...map[string]any)
+	Info(ctx context.Context, message string, fields ...map[string]any)
+	Warning(ctx context.Context, message string, fields ...map[string]any)
+	Error(ctx context.Context, message string, fields ...map[string]any)
+	Fatal(ctx context.Context, message string, fields ...map[string]any)
+	WithFields(fields map[string]any) ContextLogger
 }
 
-// ContextLogger provides logging with persistent context fields
+// ContextLogger provides logging with persistent context fields.
 type ContextLogger interface {
-	Debug(ctx context.Context, message string, fields ...map[string]interface{})
-	Info(ctx context.Context, message string, fields ...map[string]interface{})
-	Error(ctx context.Context, message string, fields ...map[string]interface{})
+	Debug(ctx context.Context, message string, fields ...map[string]any)
+	Info(ctx context.Context, message string, fields ...map[string]any)
+	Error(ctx context.Context, message string, fields ...map[string]any)
 }
 
-// Tracer provides distributed tracing functionality
+// Tracer provides distributed tracing functionality.
 type Tracer interface {
 	StartSpan(ctx context.Context, name string, opts ...SpanOption) (context.Context, Span)
 	FinishSpan(span Span)
@@ -35,20 +35,20 @@ type Tracer interface {
 	GetTraceSpans(traceID string) []Span
 }
 
-// Span represents a trace span
+// Span represents a trace span.
 type Span interface {
-	Log(message string, fields ...map[string]interface{})
+	Log(message string, fields ...map[string]any)
 	SetError(err error)
 	SetStatus(status string)
 	GetDuration() time.Duration
 	IsFinished() bool
-	SetTag(key string, value interface{})
+	SetTag(key string, value any)
 }
 
-// SpanOption represents functional options for span configuration
+// SpanOption represents functional options for span configuration.
 type SpanOption func(Span)
 
-// MetricsCollector provides metrics collection and reporting
+// MetricsCollector provides metrics collection and reporting.
 type MetricsCollector interface {
 	Counter(ctx context.Context, name, description string, value float64, labels map[string]string)
 	Gauge(ctx context.Context, name, description string, value float64, labels map[string]string)
@@ -58,31 +58,31 @@ type MetricsCollector interface {
 	StartTimer(ctx context.Context, name string, labels map[string]string) Timer
 }
 
-// Timer provides convenient operation timing
+// Timer provides convenient operation timing.
 type Timer interface {
 	Stop(ctx context.Context, description string)
 }
 
-// HealthChecker provides health monitoring capabilities
+// HealthChecker provides health monitoring capabilities.
 type HealthChecker interface {
 	RegisterCheck(name string, check HealthCheckFunc) error
 	RunChecks(ctx context.Context) map[string]HealthCheckResult
 	IsHealthy(ctx context.Context) bool
 }
 
-// HealthCheckFunc represents a health check function
+// HealthCheckFunc represents a health check function.
 type HealthCheckFunc func(ctx context.Context) HealthCheckResult
 
-// HealthCheckResult represents the result of a health check
+// HealthCheckResult represents the result of a health check.
 type HealthCheckResult struct {
+	Timestamp time.Time
+	Details   map[string]any
 	Status    HealthStatus
 	Message   string
-	Details   map[string]interface{}
 	CheckName string
-	Timestamp time.Time
 }
 
-// HealthStatus represents health check status
+// HealthStatus represents health check status.
 type HealthStatus string
 
 const (
@@ -91,7 +91,7 @@ const (
 	StatusUnhealthy HealthStatus = "unhealthy"
 )
 
-// Monitor provides the main interface for comprehensive monitoring
+// Monitor provides the main interface for comprehensive monitoring.
 type Monitor interface {
 	// Core monitoring components
 	Logger() Logger

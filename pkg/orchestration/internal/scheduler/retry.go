@@ -2,23 +2,24 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"sync"
 	"time"
 )
 
-// RetryConfig holds configuration for retry behavior
+// RetryConfig holds configuration for retry behavior.
 type RetryConfig struct {
+	RetryableErrors []error
 	MaxAttempts     int
 	InitialDelay    time.Duration
 	MaxDelay        time.Duration
 	BackoffFactor   float64
 	JitterFactor    float64
-	RetryableErrors []error
 }
 
-// DefaultRetryConfig returns a default retry configuration
+// DefaultRetryConfig returns a default retry configuration.
 func DefaultRetryConfig() RetryConfig {
 	return RetryConfig{
 		MaxAttempts:   3,
@@ -29,24 +30,24 @@ func DefaultRetryConfig() RetryConfig {
 	}
 }
 
-// RetryExecutor handles retry logic with exponential backoff
+// RetryExecutor handles retry logic with exponential backoff.
 type RetryExecutor struct {
 	config RetryConfig
 }
 
-// NewRetryExecutor creates a new retry executor
+// NewRetryExecutor creates a new retry executor.
 func NewRetryExecutor(config RetryConfig) *RetryExecutor {
 	return &RetryExecutor{config: config}
 }
 
-// ExecuteWithRetry executes a function with retry logic
+// ExecuteWithRetry executes a function with retry logic.
 func (re *RetryExecutor) ExecuteWithRetry(ctx context.Context, operation func() error) error {
 	var lastErr error
 
 	for attempt := 1; attempt <= re.config.MaxAttempts; attempt++ {
 		select {
 		case <-ctx.Done():
-			return fmt.Errorf("operation cancelled: %w", ctx.Err())
+			return fmt.Errorf("operation canceled: %w", ctx.Err())
 		default:
 		}
 
@@ -88,19 +89,19 @@ func (re *RetryExecutor) ExecuteWithRetry(ctx context.Context, operation func() 
 		case <-time.After(delay):
 			// Continue to next attempt
 		case <-ctx.Done():
-			return fmt.Errorf("operation cancelled during backoff: %w", ctx.Err())
+			return fmt.Errorf("operation canceled during backoff: %w", ctx.Err())
 		}
 	}
 
 	return fmt.Errorf("operation failed after %d attempts, last error: %w", re.config.MaxAttempts, lastErr)
 }
 
-// ExecuteTaskWithRetry executes a task with retry logic
+// ExecuteTaskWithRetry executes a task with retry logic.
 func (re *RetryExecutor) ExecuteTaskWithRetry(ctx context.Context, task Task) error {
 	return re.ExecuteWithRetry(ctx, task.Execute)
 }
 
-// calculateDelay calculates the delay for the given attempt using exponential backoff
+// calculateDelay calculates the delay for the given attempt using exponential backoff.
 func (re *RetryExecutor) calculateDelay(attempt int) time.Duration {
 	// Exponential backoff: initialDelay * (backoffFactor ^ (attempt - 1))
 	delay := float64(re.config.InitialDelay) * math.Pow(re.config.BackoffFactor, float64(attempt-1))
@@ -116,7 +117,7 @@ func (re *RetryExecutor) calculateDelay(attempt int) time.Duration {
 	return time.Duration(delay + jitter)
 }
 
-// isRetryableError checks if an error should be retried
+// isRetryableError checks if an error should be retried.
 func (re *RetryExecutor) isRetryableError(err error) bool {
 	if len(re.config.RetryableErrors) == 0 {
 		// If no specific retryable errors are configured, retry all errors
@@ -132,17 +133,17 @@ func (re *RetryExecutor) isRetryableError(err error) bool {
 	return false
 }
 
-// CircuitBreaker provides circuit breaker functionality
+// CircuitBreaker provides circuit breaker functionality.
 type CircuitBreaker struct {
-	mu               sync.RWMutex
+	lastFailureTime  time.Time
 	failureThreshold int
 	resetTimeout     time.Duration
 	failureCount     int
-	lastFailureTime  time.Time
 	state            CircuitState
+	mu               sync.RWMutex
 }
 
-// CircuitState represents the state of the circuit breaker
+// CircuitState represents the state of the circuit breaker.
 type CircuitState int
 
 const (
@@ -151,7 +152,7 @@ const (
 	StateHalfOpen
 )
 
-// NewCircuitBreaker creates a new circuit breaker
+// NewCircuitBreaker creates a new circuit breaker.
 func NewCircuitBreaker(failureThreshold int, resetTimeout time.Duration) *CircuitBreaker {
 	return &CircuitBreaker{
 		failureThreshold: failureThreshold,
@@ -160,7 +161,7 @@ func NewCircuitBreaker(failureThreshold int, resetTimeout time.Duration) *Circui
 	}
 }
 
-// Call executes a function with circuit breaker protection
+// Call executes a function with circuit breaker protection.
 func (cb *CircuitBreaker) Call(operation func() error) error {
 	cb.mu.Lock()
 
@@ -168,7 +169,7 @@ func (cb *CircuitBreaker) Call(operation func() error) error {
 	case StateOpen:
 		if time.Since(cb.lastFailureTime) < cb.resetTimeout {
 			cb.mu.Unlock()
-			return fmt.Errorf("circuit breaker is open")
+			return errors.New("circuit breaker is open")
 		}
 		cb.state = StateHalfOpen
 	case StateHalfOpen:
@@ -204,26 +205,26 @@ func (cb *CircuitBreaker) Call(operation func() error) error {
 	return nil
 }
 
-// GetState returns the current state of the circuit breaker
+// GetState returns the current state of the circuit breaker.
 func (cb *CircuitBreaker) GetState() CircuitState {
 	cb.mu.RLock()
 	defer cb.mu.RUnlock()
 	return cb.state
 }
 
-// Bulkhead provides bulkhead pattern implementation for limiting concurrent operations
+// Bulkhead provides bulkhead pattern implementation for limiting concurrent operations.
 type Bulkhead struct {
 	semaphore chan struct{}
 }
 
-// NewBulkhead creates a new bulkhead with the specified capacity
+// NewBulkhead creates a new bulkhead with the specified capacity.
 func NewBulkhead(capacity int) *Bulkhead {
 	return &Bulkhead{
 		semaphore: make(chan struct{}, capacity),
 	}
 }
 
-// Execute executes a function within the bulkhead
+// Execute executes a function within the bulkhead.
 func (b *Bulkhead) Execute(ctx context.Context, operation func() error) error {
 	select {
 	case b.semaphore <- struct{}{}:
@@ -232,16 +233,16 @@ func (b *Bulkhead) Execute(ctx context.Context, operation func() error) error {
 	case <-ctx.Done():
 		return ctx.Err()
 	default:
-		return fmt.Errorf("bulkhead capacity exceeded")
+		return errors.New("bulkhead capacity exceeded")
 	}
 }
 
-// GetCurrentConcurrency returns the current number of concurrent operations
+// GetCurrentConcurrency returns the current number of concurrent operations.
 func (b *Bulkhead) GetCurrentConcurrency() int {
 	return len(b.semaphore)
 }
 
-// GetCapacity returns the total capacity of the bulkhead
+// GetCapacity returns the total capacity of the bulkhead.
 func (b *Bulkhead) GetCapacity() int {
 	return cap(b.semaphore)
 }

@@ -15,7 +15,7 @@ func TestApplyHamming(t *testing.T) {
 
 	// Signal should be modified
 	assert.NotEqual(t, original, signal)
-	assert.Equal(t, len(original), len(signal))
+	assert.Len(t, signal, len(original))
 
 	// Check that at least some values are modified (windowed)
 	// Window functions may not modify all values equally, especially at edges
@@ -38,7 +38,7 @@ func TestApplyHamming_Empty(t *testing.T) {
 func TestApplyHamming_SingleValue(t *testing.T) {
 	signal := []float64{1.0}
 	ApplyHamming(signal)
-	assert.Equal(t, 1, len(signal))
+	assert.Len(t, signal, 1)
 }
 
 func TestApplyBlackman(t *testing.T) {
@@ -50,7 +50,7 @@ func TestApplyBlackman(t *testing.T) {
 
 	// Signal should be modified
 	assert.NotEqual(t, original, signal)
-	assert.Equal(t, len(original), len(signal))
+	assert.Len(t, signal, len(original))
 
 	// Check that values are modified (windowed)
 	for i := range signal {
@@ -67,7 +67,7 @@ func TestApplyBlackman_Empty(t *testing.T) {
 func TestApplyBlackman_SingleValue(t *testing.T) {
 	signal := []float64{1.0}
 	ApplyBlackman(signal)
-	assert.Equal(t, 1, len(signal))
+	assert.Len(t, signal, 1)
 }
 
 func TestGetWindowFunction(t *testing.T) {

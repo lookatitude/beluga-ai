@@ -6,6 +6,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/session/internal"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestStreamingSTT_StartStop(t *testing.T) {
@@ -14,11 +15,11 @@ func TestStreamingSTT_StartStop(t *testing.T) {
 
 	ctx := context.Background()
 	err := streamingSTT.Start(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, streamingSTT.IsActive())
 
 	err = streamingSTT.Stop()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, streamingSTT.IsActive())
 }
 
@@ -28,7 +29,7 @@ func TestStreamingTTS_StartStop(t *testing.T) {
 
 	ctx := context.Background()
 	reader, err := streamingTTS.StartStream(ctx, "test text")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 	assert.True(t, streamingTTS.IsActive())
 
@@ -45,7 +46,7 @@ func TestStreamingAgent_StartStop(t *testing.T) {
 
 	ctx := context.Background()
 	responseCh, err := streamingAgent.StartStreaming(ctx, "test")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, responseCh)
 	assert.True(t, streamingAgent.IsStreaming())
 

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestInterfaceCompliance tests that implementations properly satisfy interfaces
+// TestInterfaceCompliance tests that implementations properly satisfy interfaces.
 func TestInterfaceCompliance(t *testing.T) {
 	ctx := context.Background()
 
@@ -69,7 +69,7 @@ func TestInterfaceCompliance(t *testing.T) {
 	})
 }
 
-// TestConfigInterfaceCompliance tests that Config works with all expected options
+// TestConfigInterfaceCompliance tests that Config works with all expected options.
 func TestConfigInterfaceCompliance(t *testing.T) {
 	config := &Config{}
 
@@ -79,9 +79,9 @@ func TestConfigInterfaceCompliance(t *testing.T) {
 		WithScoreThreshold(0.8),
 		WithEmbedder(&MockEmbedder{}),
 		WithMetadataFilter("key", "value"),
-		WithMetadataFilters(map[string]interface{}{"k1": "v1", "k2": "v2"}),
+		WithMetadataFilters(map[string]any{"k1": "v1", "k2": "v2"}),
 		WithProviderConfig("config_key", "config_value"),
-		WithProviderConfigs(map[string]interface{}{"c1": "v1", "c2": "v2"}),
+		WithProviderConfigs(map[string]any{"c1": "v1", "c2": "v2"}),
 	}
 
 	// Apply all options - this tests that the Option type is compatible
@@ -97,7 +97,7 @@ func TestConfigInterfaceCompliance(t *testing.T) {
 	assert.Contains(t, config.ProviderConfig, "config_key")
 }
 
-// TestStoreFactoryCompliance tests StoreFactory functionality
+// TestStoreFactoryCompliance tests StoreFactory functionality.
 func TestStoreFactoryCompliance(t *testing.T) {
 	ctx := context.Background()
 
@@ -114,12 +114,12 @@ func TestStoreFactoryCompliance(t *testing.T) {
 	factory.Register("test", mockCreator)
 
 	store, err := factory.Create(ctx, "test", *config)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, store)
 	assert.Equal(t, "mock", store.GetName())
 }
 
-// TestTypeAssertions tests that our mock implementations can be properly type-asserted
+// TestTypeAssertions tests that our mock implementations can be properly type-asserted.
 func TestTypeAssertions(t *testing.T) {
 	t.Run("VectorStoreTypeAssertion", func(t *testing.T) {
 		var storeInterface VectorStore = &MockVectorStore{}
@@ -149,7 +149,7 @@ func TestTypeAssertions(t *testing.T) {
 	})
 }
 
-// TestInterfaceMethodSignatures tests that interface methods have correct signatures
+// TestInterfaceMethodSignatures tests that interface methods have correct signatures.
 func TestInterfaceMethodSignatures(t *testing.T) {
 	ctx := context.Background()
 
@@ -188,7 +188,7 @@ func TestInterfaceMethodSignatures(t *testing.T) {
 	})
 }
 
-// TestNilInterfaceHandling tests how interfaces handle nil implementations
+// TestNilInterfaceHandling tests how interfaces handle nil implementations.
 func TestNilInterfaceHandling(t *testing.T) {
 	t.Run("NilVectorStore", func(t *testing.T) {
 		var store VectorStore
@@ -209,7 +209,7 @@ func TestNilInterfaceHandling(t *testing.T) {
 	})
 }
 
-// Mock implementations for interface compliance testing
+// Mock implementations for interface compliance testing.
 type MockVectorStore struct {
 	addDocumentsFunc            func(ctx context.Context, documents []schema.Document, opts ...Option) ([]string, error)
 	deleteDocumentsFunc         func(ctx context.Context, ids []string, opts ...Option) error

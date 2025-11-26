@@ -10,8 +10,8 @@ import (
 
 func TestNewMockEmbedder(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -215,7 +215,7 @@ func TestMockEmbedder_InterfaceCompliance(t *testing.T) {
 	var _ HealthChecker = embedder
 }
 
-// Benchmark tests
+// Benchmark tests.
 func BenchmarkMockEmbedder_EmbedDocuments(b *testing.B) {
 	config := &Config{
 		Dimension: 128,

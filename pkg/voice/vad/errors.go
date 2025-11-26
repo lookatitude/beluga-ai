@@ -5,25 +5,25 @@ import (
 	"fmt"
 )
 
-// Error codes for VAD operations
+// Error codes for VAD operations.
 const (
-	// General errors
+	// General errors.
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeInternalError = "internal_error"
 	ErrCodeInvalidInput  = "invalid_input"
 	ErrCodeTimeout       = "timeout"
 
-	// Provider-specific errors
+	// Provider-specific errors.
 	ErrCodeUnsupportedProvider = "unsupported_provider"
 	ErrCodeModelLoadFailed     = "model_load_failed"
 	ErrCodeModelNotFound       = "model_not_found"
 
-	// Processing errors
+	// Processing errors.
 	ErrCodeProcessingError = "processing_error"
 	ErrCodeFrameSizeError  = "frame_size_error"
 	ErrCodeSampleRateError = "sample_rate_error"
 
-	// Context errors
+	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
 )
@@ -31,14 +31,14 @@ const (
 // VADError represents an error that occurred during VAD operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type VADError struct {
-	Op      string                 // Operation that failed (e.g., "Process", "LoadModel")
-	Err     error                  // Underlying error
-	Code    string                 // Error code for programmatic handling
-	Message string                 // Human-readable error message
-	Details map[string]interface{} // Additional error details
+	Err     error
+	Details map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e *VADError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("vad %s: %s (code: %s)", e.Op, e.Message, e.Code)
@@ -49,12 +49,12 @@ func (e *VADError) Error() string {
 	return fmt.Sprintf("vad %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying error
+// Unwrap returns the underlying error.
 func (e *VADError) Unwrap() error {
 	return e.Err
 }
 
-// NewVADError creates a new VADError
+// NewVADError creates a new VADError.
 func NewVADError(op, code string, err error) *VADError {
 	return &VADError{
 		Op:   op,
@@ -63,7 +63,7 @@ func NewVADError(op, code string, err error) *VADError {
 	}
 }
 
-// NewVADErrorWithMessage creates a new VADError with a custom message
+// NewVADErrorWithMessage creates a new VADError with a custom message.
 func NewVADErrorWithMessage(op, code, message string, err error) *VADError {
 	return &VADError{
 		Op:      op,
@@ -73,8 +73,8 @@ func NewVADErrorWithMessage(op, code, message string, err error) *VADError {
 	}
 }
 
-// NewVADErrorWithDetails creates a new VADError with additional details
-func NewVADErrorWithDetails(op, code, message string, err error, details map[string]interface{}) *VADError {
+// NewVADErrorWithDetails creates a new VADError with additional details.
+func NewVADErrorWithDetails(op, code, message string, err error, details map[string]any) *VADError {
 	return &VADError{
 		Op:      op,
 		Code:    code,
@@ -84,7 +84,7 @@ func NewVADErrorWithDetails(op, code, message string, err error, details map[str
 	}
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false

@@ -18,7 +18,7 @@ import (
 type MockMemory struct {
 	MockMemoryVariables     func() []string
 	MockLoadMemoryVariables func(ctx context.Context, inputs map[string]any) (map[string]any, error)
-	MockSaveContext         func(ctx context.Context, inputs map[string]any, outputs map[string]any) error
+	MockSaveContext         func(ctx context.Context, inputs, outputs map[string]any) error
 	MockClear               func(ctx context.Context) error
 }
 
@@ -36,7 +36,7 @@ func (m *MockMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]
 	return map[string]any{"mock_loaded_var": "mock_value"}, nil
 }
 
-func (m *MockMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *MockMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	if m.MockSaveContext != nil {
 		return m.MockSaveContext(ctx, inputs, outputs)
 	}
@@ -60,20 +60,20 @@ func TestMemoryInterface(t *testing.T) {
 
 	// Test LoadMemoryVariables
 	loadedVars, err := mockMem.LoadMemoryVariables(ctx, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, loadedVars)
 	assert.Equal(t, "mock_value", loadedVars["mock_loaded_var"])
 
 	// Test SaveContext
 	err = mockMem.SaveContext(ctx, nil, nil)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test Clear
 	err = mockMem.Clear(context.Background())
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
-// TestNoOpMemory tests the NoOpMemory implementation
+// TestNoOpMemory tests the NoOpMemory implementation.
 func TestNoOpMemory(t *testing.T) {
 	ctx := context.Background()
 	noOpMem := &NoOpMemory{}
@@ -83,14 +83,14 @@ func TestNoOpMemory(t *testing.T) {
 	assert.Equal(t, []string{}, variables)
 
 	vars, err := noOpMem.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, map[string]any{}, vars)
 
 	err = noOpMem.SaveContext(ctx, map[string]any{}, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = noOpMem.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 // TestFactory tests the memory factory functionality.
@@ -115,11 +115,11 @@ func TestFactory(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "test_history")
 }
 
-// TestFactory_AllMemoryTypes tests creating all supported memory types
+// TestFactory_AllMemoryTypes tests creating all supported memory types.
 func TestFactory_AllMemoryTypes(t *testing.T) {
 	ctx := context.Background()
 	factory := NewFactory()
@@ -146,26 +146,26 @@ func TestFactory_AllMemoryTypes(t *testing.T) {
 
 			memory, err := factory.CreateMemory(ctx, config)
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, memory)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, memory)
 			}
 		})
 	}
 }
 
-// TestFactory_ConfigurationValidation tests configuration validation
+// TestFactory_ConfigurationValidation tests configuration validation.
 func TestFactory_ConfigurationValidation(t *testing.T) {
 	ctx := context.Background()
 	factory := NewFactory()
 
 	testCases := []struct {
 		name        string
+		errorMsg    string
 		config      Config
 		expectError bool
-		errorMsg    string
 	}{
 		{
 			name: "Valid configuration",
@@ -225,13 +225,13 @@ func TestFactory_ConfigurationValidation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			memory, err := factory.CreateMemory(ctx, tc.config)
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, memory)
 				if tc.errorMsg != "" {
 					assert.Contains(t, err.Error(), tc.errorMsg)
 				}
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				if tc.config.Enabled {
 					assert.NotNil(t, memory)
 				} else {
@@ -262,15 +262,15 @@ func TestConvenienceFunctions(t *testing.T) {
 	outputs := map[string]any{"output": "Hi there"}
 
 	err := bufferMem.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	vars, err := bufferMem.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 	assert.NotEmpty(t, vars["history"])
 }
 
-// TestNewMemory tests the NewMemory convenience function
+// TestNewMemory tests the NewMemory convenience function.
 func TestNewMemory(t *testing.T) {
 	testCases := []struct {
 		name        string
@@ -304,10 +304,10 @@ func TestNewMemory(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			memory, err := NewMemory(tc.memoryType, tc.options...)
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, memory)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, memory)
 			}
 		})
@@ -339,7 +339,7 @@ func TestConfiguration(t *testing.T) {
 	assert.Equal(t, 10, config.WindowSize)
 
 	WithReturnMessages(true)(&config)
-	assert.Equal(t, true, config.ReturnMessages)
+	assert.True(t, config.ReturnMessages)
 
 	WithInputKey("query")(&config)
 	assert.Equal(t, "query", config.InputKey)
@@ -363,7 +363,7 @@ func TestConfiguration(t *testing.T) {
 	assert.Equal(t, 60*time.Second, config.Timeout)
 }
 
-// TestConfiguration_Validation tests configuration validation
+// TestConfiguration_Validation tests configuration validation.
 func TestConfiguration_Validation(t *testing.T) {
 	validate := validator.New()
 
@@ -423,9 +423,9 @@ func TestConfiguration_Validation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			err := validate.Struct(tc.config)
 			if tc.expectError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
@@ -443,7 +443,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 
 	_, err := factory.CreateMemory(ctx, invalidConfig)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid memory configuration")
 
 	// Test disabled memory
@@ -453,7 +453,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 
 	memory, err := factory.CreateMemory(ctx, disabledConfig)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.IsType(t, &NoOpMemory{}, memory)
 }
 
@@ -461,7 +461,7 @@ func TestErrorHandling(t *testing.T) {
 func TestGetInputOutputKeys(t *testing.T) {
 	// Test with empty maps
 	_, _, err := GetInputOutputKeys(map[string]any{}, map[string]any{})
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "inputs map is empty")
 
 	// Test with valid inputs
@@ -469,7 +469,7 @@ func TestGetInputOutputKeys(t *testing.T) {
 	outputs := map[string]any{"output": "test output"}
 
 	inputKey, outputKey, err := GetInputOutputKeys(inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "input", inputKey)
 	assert.Equal(t, "output", outputKey)
 
@@ -478,7 +478,7 @@ func TestGetInputOutputKeys(t *testing.T) {
 	outputs = map[string]any{"answer": "test answer"}
 
 	inputKey, outputKey, err = GetInputOutputKeys(inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "query", inputKey)
 	assert.Equal(t, "answer", outputKey)
 
@@ -487,7 +487,7 @@ func TestGetInputOutputKeys(t *testing.T) {
 	outputs = map[string]any{"response": "test", "output": "also test"}
 
 	inputKey, outputKey, err = GetInputOutputKeys(inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "input", inputKey)   // Should prefer "input" over "question"
 	assert.Equal(t, "output", outputKey) // Should prefer "output" over "response"
 
@@ -496,12 +496,12 @@ func TestGetInputOutputKeys(t *testing.T) {
 	outputs = map[string]any{"custom_output": "test"}
 
 	inputKey, outputKey, err = GetInputOutputKeys(inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Equal(t, "custom_input", inputKey)
 	assert.Equal(t, "custom_output", outputKey)
 }
 
-// TestGetBufferString tests the GetBufferString function
+// TestGetBufferString tests the GetBufferString function.
 func TestGetBufferString(t *testing.T) {
 	ctx := context.Background()
 
@@ -527,10 +527,10 @@ func TestGetBufferString(t *testing.T) {
 
 	// Test with empty messages
 	result = GetBufferString([]schema.Message{}, "Human", "AI")
-	assert.Equal(t, "", result)
+	assert.Empty(t, result)
 }
 
-// TestMemoryLifecycle tests the complete lifecycle of memory operations
+// TestMemoryLifecycle tests the complete lifecycle of memory operations.
 func TestMemoryLifecycle(t *testing.T) {
 	ctx := context.Background()
 
@@ -542,23 +542,23 @@ func TestMemoryLifecycle(t *testing.T) {
 
 	// Test initial state
 	vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Contains(t, vars, "history")
 
 	// Add some context
 	inputs1 := map[string]any{"input": "Hello"}
 	outputs1 := map[string]any{"output": "Hi there!"}
 	err = memory.SaveContext(ctx, inputs1, outputs1)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	inputs2 := map[string]any{"input": "How are you?"}
 	outputs2 := map[string]any{"output": "I'm doing well, thank you!"}
 	err = memory.SaveContext(ctx, inputs2, outputs2)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Load and verify
 	vars, err = memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	historyStr, ok := vars["history"].(string)
 	assert.True(t, ok)
@@ -569,17 +569,17 @@ func TestMemoryLifecycle(t *testing.T) {
 
 	// Clear memory
 	err = memory.Clear(ctx)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Verify cleared
 	vars, err = memory.LoadMemoryVariables(ctx, map[string]any{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	historyStr, ok = vars["history"].(string)
 	assert.True(t, ok)
-	assert.Equal(t, "", historyStr)
+	assert.Empty(t, historyStr)
 }
 
-// TestMemoryErrorTypes tests custom error types
+// TestMemoryErrorTypes tests custom error types.
 func TestMemoryErrorTypes(t *testing.T) {
 	// Test creating different error types
 	err1 := NewMemoryError("test_op", MemoryTypeBuffer, ErrCodeInvalidConfig, errors.New("config error"))
@@ -610,7 +610,7 @@ func TestMemoryErrorTypes(t *testing.T) {
 	assert.Equal(t, "value1", err1.Context["key1"])
 }
 
-// TestConcurrentAccess tests concurrent access to memory
+// TestConcurrentAccess tests concurrent access to memory.
 func TestConcurrentAccess(t *testing.T) {
 	ctx := context.Background()
 	history := NewBaseChatMessageHistory()
@@ -619,13 +619,13 @@ func TestConcurrentAccess(t *testing.T) {
 	// Test concurrent SaveContext operations
 	done := make(chan bool, 10)
 	for i := 0; i < 10; i++ {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 		go func(id int) {
 			inputs := map[string]any{"input": "Message " + string(rune(id+'0'))}
 			outputs := map[string]any{"output": "Response " + string(rune(id+'0'))}
 			err := memory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			done <- true
 		}(i)
 	}
@@ -639,7 +639,7 @@ func TestConcurrentAccess(t *testing.T) {
 	for i := 0; i < 5; i++ {
 		go func() {
 			_, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 			done <- true
 		}()
 	}
@@ -650,7 +650,7 @@ func TestConcurrentAccess(t *testing.T) {
 	}
 }
 
-// BenchmarkMemoryOperations benchmarks memory operations
+// BenchmarkMemoryOperations benchmarks memory operations.
 func BenchmarkMemoryOperations(b *testing.B) {
 	ctx := context.Background()
 	history := NewBaseChatMessageHistory()
@@ -679,7 +679,7 @@ func BenchmarkMemoryOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkFactory benchmarks factory creation
+// BenchmarkFactory benchmarks factory creation.
 func BenchmarkFactory(b *testing.B) {
 	ctx := context.Background()
 	factory := NewFactory()
@@ -699,9 +699,8 @@ func BenchmarkFactory(b *testing.B) {
 	}
 }
 
-// TestMemoryIntegration tests integration scenarios
+// TestMemoryIntegration tests integration scenarios.
 func TestMemoryIntegration(t *testing.T) {
-
 	t.Run("BufferMemoryWorkflow", func(t *testing.T) {
 		ctx := context.Background()
 		history := NewBaseChatMessageHistory()
@@ -724,12 +723,12 @@ func TestMemoryIntegration(t *testing.T) {
 			inputs := map[string]any{"input": msg.input}
 			outputs := map[string]any{"output": msg.output}
 			err := memory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Load and verify
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		historyStr := vars["history"].(string)
 		for _, msg := range conversation {
@@ -752,12 +751,12 @@ func TestMemoryIntegration(t *testing.T) {
 			inputs := map[string]any{"input": "Message " + string(rune(i+'0'))}
 			outputs := map[string]any{"output": "Response " + string(rune(i+'0'))}
 			err := memory.SaveContext(ctx, inputs, outputs)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		}
 
 		// Load and verify only last 3 messages are kept (window size is 3 messages, not interactions)
 		vars, err := memory.LoadMemoryVariables(ctx, map[string]any{})
-		assert.NoError(t, err)
+		require.NoError(t, err)
 
 		historyStr := vars["history"].(string)
 		// With 5 interactions (10 messages: M0, R0, M1, R1, M2, R2, M3, R3, M4, R4) and window of 3

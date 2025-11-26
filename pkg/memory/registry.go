@@ -4,6 +4,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -23,8 +24,8 @@ type MemoryFactory interface {
 // MemoryRegistry is the global registry for creating memory instances.
 // It maintains a registry of available memory types and their creation functions.
 type MemoryRegistry struct {
-	mu       sync.RWMutex
 	creators map[string]func(ctx context.Context, config Config) (iface.Memory, error)
+	mu       sync.RWMutex
 }
 
 // NewMemoryRegistry creates a new MemoryRegistry instance.
@@ -70,7 +71,7 @@ func (r *MemoryRegistry) ListMemoryTypes() []string {
 	return names
 }
 
-// Global registry instance for easy access
+// Global registry instance for easy access.
 var globalMemoryRegistry = NewMemoryRegistry()
 
 // RegisterMemoryType registers a memory type with the global registry.
@@ -93,7 +94,7 @@ func GetGlobalMemoryRegistry() *MemoryRegistry {
 	return globalMemoryRegistry
 }
 
-// init registers the built-in memory types
+// init registers the built-in memory types.
 func init() {
 	// Register built-in memory types
 	RegisterMemoryType(string(MemoryTypeBuffer), createBufferMemory)
@@ -104,7 +105,7 @@ func init() {
 	RegisterMemoryType(string(MemoryTypeVectorStoreRetriever), createVectorStoreRetrieverMemory)
 }
 
-// Built-in memory type creators (moved from DefaultFactory)
+// Built-in memory type creators (moved from DefaultFactory).
 func createBufferMemory(ctx context.Context, config Config) (iface.Memory, error) {
 	history := NewBaseChatMessageHistory()
 	memory := NewChatMessageBufferMemory(history).(*buffer.ChatMessageBufferMemory)
@@ -135,20 +136,20 @@ func createBufferWindowMemory(ctx context.Context, config Config) (iface.Memory,
 
 func createSummaryMemory(ctx context.Context, config Config) (iface.Memory, error) {
 	// This requires an LLM to be provided via dependency injection
-	return nil, fmt.Errorf("summary memory requires LLM dependency injection - use NewConversationSummaryMemory directly")
+	return nil, errors.New("summary memory requires LLM dependency injection - use NewConversationSummaryMemory directly")
 }
 
 func createSummaryBufferMemory(ctx context.Context, config Config) (iface.Memory, error) {
 	// This requires an LLM to be provided via dependency injection
-	return nil, fmt.Errorf("summary buffer memory requires LLM dependency injection - use NewConversationSummaryBufferMemory directly")
+	return nil, errors.New("summary buffer memory requires LLM dependency injection - use NewConversationSummaryBufferMemory directly")
 }
 
 func createVectorStoreMemory(ctx context.Context, config Config) (iface.Memory, error) {
 	// This requires a retriever to be provided via dependency injection
-	return nil, fmt.Errorf("vector store memory requires retriever dependency injection - use NewVectorStoreMemory directly")
+	return nil, errors.New("vector store memory requires retriever dependency injection - use NewVectorStoreMemory directly")
 }
 
 func createVectorStoreRetrieverMemory(ctx context.Context, config Config) (iface.Memory, error) {
 	// This requires embedder and vector store to be provided via dependency injection
-	return nil, fmt.Errorf("vector store retriever memory requires embedder and vector store dependency injection - use NewVectorStoreRetrieverMemory directly")
+	return nil, errors.New("vector store retriever memory requires embedder and vector store dependency injection - use NewVectorStoreRetrieverMemory directly")
 }

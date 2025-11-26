@@ -19,15 +19,15 @@ import (
 
 // MockVectorStore is a test implementation of the VectorStore interface for testing retrievers.
 type MockVectorStore struct {
-	documents          []schema.Document
-	similarityResults  []schema.Document
-	similarityScores   []float32
 	searchByQueryErr   error
 	addDocumentsErr    error
 	deleteDocumentsErr error
 	searchErr          error
 	embedder           vectorstores.Embedder
 	callCount          map[string]int
+	documents          []schema.Document
+	similarityResults  []schema.Document
+	similarityScores   []float32
 }
 
 func NewMockVectorStore() *MockVectorStore {
@@ -132,8 +132,8 @@ func (m *MockVectorStore) ResetCallCount() {
 
 // MockEmbedder is a test implementation of the vectorstores.Embedder interface.
 type MockEmbedder struct {
-	dimension int
 	embedErr  error
+	dimension int
 }
 
 func NewMockEmbedder(dimension int) *MockEmbedder {
@@ -170,7 +170,7 @@ func (m *MockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, 
 	return result, nil
 }
 
-// Helper function to create test documents
+// Helper function to create test documents.
 func createTestDocuments(count int) []schema.Document {
 	docs := make([]schema.Document, count)
 	for i := 0; i < count; i++ {
@@ -186,7 +186,7 @@ func createTestDocuments(count int) []schema.Document {
 	return docs
 }
 
-// Helper function to create test scores
+// Helper function to create test scores.
 func createTestScores(count int) []float32 {
 	scores := make([]float32, count)
 	for i := 0; i < count; i++ {
@@ -303,9 +303,9 @@ func TestNewVectorStoreRetrieverFromConfig(t *testing.T) {
 
 func TestRetrieverOptions(t *testing.T) {
 	tests := []struct {
+		expected *RetrieverOptions
 		name     string
 		options  []Option
-		expected *RetrieverOptions
 	}{
 		{
 			name:    "default options",
@@ -692,11 +692,11 @@ func TestVectorStoreRetriever_GetRelevantDocuments(t *testing.T) {
 // TestVectorStoreRetriever_Invoke tests the Runnable interface Invoke method.
 func TestVectorStoreRetriever_Invoke(t *testing.T) {
 	tests := []struct {
-		name         string
 		input        any
 		setupMock    func() vectorstores.VectorStore
-		expectError  bool
+		name         string
 		expectedType string
+		expectError  bool
 	}{
 		{
 			name:  "successful invoke with string input",
@@ -766,9 +766,9 @@ func TestVectorStoreRetriever_Invoke(t *testing.T) {
 // TestVectorStoreRetriever_Batch tests the Runnable interface Batch method.
 func TestVectorStoreRetriever_Batch(t *testing.T) {
 	tests := []struct {
+		setupMock   func() vectorstores.VectorStore
 		name        string
 		inputs      []any
-		setupMock   func() vectorstores.VectorStore
 		expectError bool
 	}{
 		{
@@ -877,9 +877,9 @@ func TestVectorStoreRetriever_Stream(t *testing.T) {
 // TestVectorStoreRetriever_CheckHealth tests the health check functionality.
 func TestVectorStoreRetriever_CheckHealth(t *testing.T) {
 	tests := []struct {
-		name        string
 		setupMock   func() vectorstores.VectorStore
 		config      *RetrieverOptions
+		name        string
 		expectError bool
 	}{
 		{
@@ -992,11 +992,11 @@ func TestVectorStoreRetriever_WithOptions(t *testing.T) {
 // TestVectorStoreRetriever_ErrorHandling tests various error scenarios.
 func TestVectorStoreRetriever_ErrorHandling(t *testing.T) {
 	tests := []struct {
-		name          string
 		setupMock     func() vectorstores.VectorStore
+		name          string
 		query         string
-		expectError   bool
 		errorContains string
+		expectError   bool
 	}{
 		{
 			name: "vector store returns error",

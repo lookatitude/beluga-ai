@@ -7,7 +7,7 @@ import (
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
-// Shared mock providers for quickstart tests
+// Shared mock providers for quickstart tests.
 type mockSTTProvider struct{}
 
 func (m *mockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {

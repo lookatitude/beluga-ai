@@ -322,7 +322,7 @@ func TestReviewAgent(t *testing.T) {
         "code": "package main\nfunc main() { var x int }",
     })
     
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, result.(string), "review")
 }
 ```

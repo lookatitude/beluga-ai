@@ -1,13 +1,16 @@
 package iface
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // SchemaError represents errors specific to schema operations.
 // It provides structured error information for programmatic error handling.
 type SchemaError struct {
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable error message
-	Cause   error  // Underlying error that caused this error
+	Cause   error
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -24,7 +27,7 @@ func (e *SchemaError) Unwrap() error {
 }
 
 // NewSchemaError creates a new SchemaError with the given code and message.
-func NewSchemaError(code, message string, args ...interface{}) *SchemaError {
+func NewSchemaError(code, message string, args ...any) *SchemaError {
 	return &SchemaError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -32,7 +35,7 @@ func NewSchemaError(code, message string, args ...interface{}) *SchemaError {
 }
 
 // WrapError wraps an existing error with schema context.
-func WrapError(cause error, code, message string, args ...interface{}) *SchemaError {
+func WrapError(cause error, code, message string, args ...any) *SchemaError {
 	return &SchemaError{
 		Code:    code,
 		Message: fmt.Sprintf(message, args...),
@@ -40,7 +43,7 @@ func WrapError(cause error, code, message string, args ...interface{}) *SchemaEr
 	}
 }
 
-// Common error codes
+// Common error codes.
 const (
 	ErrCodeInvalidConfig         = "invalid_config"
 	ErrCodeValidationFailed      = "validation_failed"
@@ -52,7 +55,7 @@ const (
 	ErrCodeSchemaMismatch        = "schema_mismatch"
 	ErrCodeInvalidParameters     = "invalid_parameters"
 
-	// A2A Communication error codes
+	// A2A Communication error codes.
 	ErrCodeAgentMessageInvalid  = "agent_message_invalid"
 	ErrCodeAgentRequestInvalid  = "agent_request_invalid"
 	ErrCodeAgentResponseInvalid = "agent_response_invalid"
@@ -61,21 +64,21 @@ const (
 	ErrCodeCommunicationFailed  = "communication_failed"
 	ErrCodeConversationNotFound = "conversation_not_found"
 
-	// Event error codes
+	// Event error codes.
 	ErrCodeEventInvalid          = "event_invalid"
 	ErrCodeEventPublishFailed    = "event_publish_failed"
 	ErrCodeEventConsumeFailed    = "event_consume_failed"
 	ErrCodeEventHandlerNotFound  = "event_handler_not_found"
 	ErrCodeEventValidationFailed = "event_validation_failed"
 
-	// Task and Workflow error codes
+	// Task and Workflow error codes.
 	ErrCodeTaskNotFound            = "task_not_found"
 	ErrCodeTaskInvalid             = "task_invalid"
 	ErrCodeWorkflowNotFound        = "workflow_not_found"
 	ErrCodeWorkflowInvalid         = "workflow_invalid"
 	ErrCodeWorkflowExecutionFailed = "workflow_execution_failed"
 
-	// Validation error codes
+	// Validation error codes.
 	ErrCodeMessageTooLong          = "message_too_long"
 	ErrCodeMessageEmpty            = "message_empty"
 	ErrCodeInvalidMessageType      = "invalid_message_type"
@@ -86,18 +89,18 @@ const (
 	ErrCodeInvalidFieldValue       = "invalid_field_value"
 	ErrCodeContentValidationFailed = "content_validation_failed"
 
-	// Configuration error codes
+	// Configuration error codes.
 	ErrCodeConfigValidationFailed = "config_validation_failed"
 	ErrCodeConfigLoadFailed       = "config_load_failed"
 	ErrCodeConfigParseFailed      = "config_parse_failed"
 	ErrCodeInvalidConfigFormat    = "invalid_config_format"
 
-	// Factory error codes
+	// Factory error codes.
 	ErrCodeFactoryCreationFailed = "factory_creation_failed"
 	ErrCodeFactoryNotFound       = "factory_not_found"
 	ErrCodeInvalidFactoryConfig  = "invalid_factory_config"
 
-	// Storage and persistence error codes
+	// Storage and persistence error codes.
 	ErrCodeStorageOperationFailed = "storage_operation_failed"
 	ErrCodePersistenceFailed      = "persistence_failed"
 	ErrCodeHistoryOperationFailed = "history_operation_failed"
@@ -116,7 +119,8 @@ func IsSchemaError(err error, code string) bool {
 // AsSchemaError attempts to cast an error to SchemaError.
 func AsSchemaError(err error, target **SchemaError) bool {
 	for err != nil {
-		if schErr, ok := err.(*SchemaError); ok {
+		schErr := &SchemaError{}
+		if errors.As(err, &schErr) {
 			*target = schErr
 			return true
 		}

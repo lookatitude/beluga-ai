@@ -4,17 +4,17 @@ import (
 	"sync"
 )
 
-// AdaptiveNoiseProfile maintains an adaptive noise profile for spectral subtraction
+// AdaptiveNoiseProfile maintains an adaptive noise profile for spectral subtraction.
 type AdaptiveNoiseProfile struct {
-	mu             sync.RWMutex
 	noiseMagnitude []float64
 	updateCount    int
 	updateRate     int
-	alpha          float64 // Smoothing factor
+	alpha          float64
+	mu             sync.RWMutex
 }
 
-// NewAdaptiveNoiseProfile creates a new adaptive noise profile
-func NewAdaptiveNoiseProfile(fftSize int, updateRate int, alpha float64) *AdaptiveNoiseProfile {
+// NewAdaptiveNoiseProfile creates a new adaptive noise profile.
+func NewAdaptiveNoiseProfile(fftSize, updateRate int, alpha float64) *AdaptiveNoiseProfile {
 	return &AdaptiveNoiseProfile{
 		noiseMagnitude: make([]float64, fftSize),
 		updateRate:     updateRate,
@@ -22,7 +22,7 @@ func NewAdaptiveNoiseProfile(fftSize int, updateRate int, alpha float64) *Adapti
 	}
 }
 
-// Update updates the noise profile with a new noise estimate
+// Update updates the noise profile with a new noise estimate.
 func (anp *AdaptiveNoiseProfile) Update(noiseMagnitude []float64) {
 	anp.mu.Lock()
 	defer anp.mu.Unlock()
@@ -40,7 +40,7 @@ func (anp *AdaptiveNoiseProfile) Update(noiseMagnitude []float64) {
 	}
 }
 
-// GetNoiseMagnitude returns the current noise magnitude estimate
+// GetNoiseMagnitude returns the current noise magnitude estimate.
 func (anp *AdaptiveNoiseProfile) GetNoiseMagnitude() []float64 {
 	anp.mu.RLock()
 	defer anp.mu.RUnlock()
@@ -51,7 +51,7 @@ func (anp *AdaptiveNoiseProfile) GetNoiseMagnitude() []float64 {
 	return result
 }
 
-// SpectralSubtraction performs spectral subtraction noise reduction
+// SpectralSubtraction performs spectral subtraction noise reduction.
 func SpectralSubtraction(signalMagnitude, noiseMagnitude []float64, alpha, beta float64) []float64 {
 	result := make([]float64, len(signalMagnitude))
 	for i := range signalMagnitude {
@@ -75,7 +75,7 @@ func SpectralSubtraction(signalMagnitude, noiseMagnitude []float64, alpha, beta 
 }
 
 // EstimateNoiseMagnitude estimates noise magnitude from signal
-// This is a simple implementation - in production, use VAD or other methods
+// This is a simple implementation - in production, use VAD or other methods.
 func EstimateNoiseMagnitude(signalMagnitude []float64, percentile float64) []float64 {
 	// Simple percentile-based estimation
 	// In production, use more sophisticated methods
@@ -99,7 +99,7 @@ func EstimateNoiseMagnitude(signalMagnitude []float64, percentile float64) []flo
 	return noiseEstimate
 }
 
-// maxFloat64 returns the maximum value in a slice
+// maxFloat64 returns the maximum value in a slice.
 func maxFloat64(values []float64) float64 {
 	if len(values) == 0 {
 		return 0

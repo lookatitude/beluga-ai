@@ -5,6 +5,7 @@ package orchestration
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -14,19 +15,19 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestAdvancedMockOrchestrator tests the advanced mock orchestrator functionality
+// TestAdvancedMockOrchestrator tests the advanced mock orchestrator functionality.
 func TestAdvancedMockOrchestrator(t *testing.T) {
 	tests := []struct {
-		name           string
+		input          any
 		orchestrator   *AdvancedMockOrchestrator
-		input          interface{}
-		expectedError  bool
+		name           string
 		expectedResult string
+		expectedError  bool
 	}{
 		{
 			name: "successful execution",
 			orchestrator: NewAdvancedMockOrchestrator("test-orch", "chain",
-				WithMockResponses([]interface{}{"success result"})),
+				WithMockResponses([]any{"success result"})),
 			input:          "test input",
 			expectedError:  false,
 			expectedResult: "success result",
@@ -34,7 +35,7 @@ func TestAdvancedMockOrchestrator(t *testing.T) {
 		{
 			name: "error execution",
 			orchestrator: NewAdvancedMockOrchestrator("error-orch", "chain",
-				WithMockError(true, fmt.Errorf("test error"))),
+				WithMockError(true, errors.New("test error"))),
 			input:         "test input",
 			expectedError: true,
 		},
@@ -42,7 +43,7 @@ func TestAdvancedMockOrchestrator(t *testing.T) {
 			name: "execution with delay",
 			orchestrator: NewAdvancedMockOrchestrator("delay-orch", "chain",
 				WithExecutionDelay(10*time.Millisecond),
-				WithMockResponses([]interface{}{"delayed result"})),
+				WithMockResponses([]any{"delayed result"})),
 			input:          "test input",
 			expectedError:  false,
 			expectedResult: "delayed result",
@@ -50,7 +51,7 @@ func TestAdvancedMockOrchestrator(t *testing.T) {
 		{
 			name: "multiple responses",
 			orchestrator: NewAdvancedMockOrchestrator("multi-orch", "chain",
-				WithMockResponses([]interface{}{"result1", "result2", "result3"})),
+				WithMockResponses([]any{"result1", "result2", "result3"})),
 			input:          "test input",
 			expectedError:  false,
 			expectedResult: "result1",
@@ -66,9 +67,9 @@ func TestAdvancedMockOrchestrator(t *testing.T) {
 			duration := time.Since(start)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Equal(t, tt.expectedResult, result)
 			}
 
@@ -83,7 +84,7 @@ func TestAdvancedMockOrchestrator(t *testing.T) {
 	}
 }
 
-// TestChainExecution tests chain execution scenarios
+// TestChainExecution tests chain execution scenarios.
 func TestChainExecution(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -119,21 +120,21 @@ func TestChainExecution(t *testing.T) {
 			result, err := chain.Invoke(ctx, "test input")
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Contains(t, result.(string), tt.chainName)
 				assert.Contains(t, result.(string), fmt.Sprintf("%d steps", len(tt.steps)))
 			}
 
 			// Test batch execution
-			batchResults, err := chain.Batch(ctx, []interface{}{"input1", "input2"})
-			assert.NoError(t, err)
+			batchResults, err := chain.Batch(ctx, []any{"input1", "input2"})
+			require.NoError(t, err)
 			assert.Len(t, batchResults, 2)
 
 			// Test stream execution
 			streamCh, err := chain.Stream(ctx, "stream input")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			select {
 			case streamResult := <-streamCh:
@@ -150,13 +151,13 @@ func TestChainExecution(t *testing.T) {
 	}
 }
 
-// TestGraphExecution tests graph execution scenarios
+// TestGraphExecution tests graph execution scenarios.
 func TestGraphExecution(t *testing.T) {
 	tests := []struct {
+		edges         map[string][]string
 		name          string
 		graphName     string
 		nodes         []string
-		edges         map[string][]string
 		expectedError bool
 	}{
 		{
@@ -191,21 +192,21 @@ func TestGraphExecution(t *testing.T) {
 			result, err := graph.Invoke(ctx, "test input")
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Contains(t, result.(string), tt.graphName)
 				assert.Contains(t, result.(string), fmt.Sprintf("%d nodes", len(tt.nodes)))
 			}
 
 			// Test batch execution
-			batchResults, err := graph.Batch(ctx, []interface{}{"input1", "input2"})
-			assert.NoError(t, err)
+			batchResults, err := graph.Batch(ctx, []any{"input1", "input2"})
+			require.NoError(t, err)
 			assert.Len(t, batchResults, 2)
 
 			// Test stream execution
 			streamCh, err := graph.Stream(ctx, "stream input")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			select {
 			case streamResult := <-streamCh:
@@ -216,21 +217,21 @@ func TestGraphExecution(t *testing.T) {
 
 			// Test graph-specific operations
 			err = graph.AddNode("new_node", nil)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = graph.AddEdge("node1", "new_node")
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = graph.SetEntryPoint([]string{"node1"})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			err = graph.SetFinishPoint([]string{"new_node"})
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
 
-// TestWorkflowExecution tests workflow execution scenarios
+// TestWorkflowExecution tests workflow execution scenarios.
 func TestWorkflowExecution(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -259,9 +260,9 @@ func TestWorkflowExecution(t *testing.T) {
 			workflowID, runID, err := workflow.Execute(ctx, "test input")
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, workflowID)
 				assert.NotEmpty(t, runID)
 				assert.Contains(t, workflowID, tt.workflowName)
@@ -270,41 +271,41 @@ func TestWorkflowExecution(t *testing.T) {
 			if !tt.expectedError {
 				// Test workflow result retrieval
 				result, err := workflow.GetResult(ctx, workflowID, runID)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.Contains(t, result.(string), workflowID)
 
 				// Test workflow signaling
 				err = workflow.Signal(ctx, workflowID, runID, "test_signal", "signal_data")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Test workflow querying
 				queryResult, err := workflow.Query(ctx, workflowID, runID, "status")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, queryResult)
 
 				// Test workflow cancellation
 				err = workflow.Cancel(ctx, workflowID, runID)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Test workflow termination
 				err = workflow.Terminate(ctx, workflowID, runID, "test termination")
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			}
 		})
 	}
 }
 
-// TestConcurrencyAdvanced tests concurrent execution scenarios
+// TestConcurrencyAdvanced tests concurrent execution scenarios.
 func TestConcurrencyAdvanced(t *testing.T) {
 	orchestrator := NewAdvancedMockOrchestrator("concurrent-test", "chain",
-		WithMockResponses([]interface{}{"concurrent result"}))
+		WithMockResponses([]any{"concurrent result"}))
 
 	const numGoroutines = 10
 	const numRequests = 5
 
 	t.Run("concurrent_execution", func(t *testing.T) {
 		var wg sync.WaitGroup
-		results := make(chan interface{}, numGoroutines*numRequests)
+		results := make(chan any, numGoroutines*numRequests)
 		errors := make(chan error, numGoroutines*numRequests)
 
 		for i := 0; i < numGoroutines; i++ {
@@ -346,14 +347,14 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	})
 }
 
-// TestLoadTesting performs load testing on orchestration components
+// TestLoadTesting performs load testing on orchestration components.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load tests in short mode")
 	}
 
 	orchestrator := NewAdvancedMockOrchestrator("load-test", "chain",
-		WithMockResponses([]interface{}{"load result"}))
+		WithMockResponses([]any{"load result"}))
 
 	const numRequests = 100
 	const concurrency = 10
@@ -368,14 +369,14 @@ func TestLoadTesting(t *testing.T) {
 	})
 }
 
-// TestMetricsRecording tests metrics recording functionality
+// TestMetricsRecording tests metrics recording functionality.
 func TestMetricsRecording(t *testing.T) {
 	metrics := NewMockMetricsRecorder()
 
 	tests := []struct {
-		name      string
 		operation func()
 		check     func(t *testing.T, recordings []MetricRecord)
+		name      string
 	}{
 		{
 			name: "chain execution metrics",
@@ -433,7 +434,7 @@ func TestMetricsRecording(t *testing.T) {
 	}
 }
 
-// TestIntegrationTestHelper tests the integration test helper functionality
+// TestIntegrationTestHelper tests the integration test helper functionality.
 func TestIntegrationTestHelper(t *testing.T) {
 	helper := NewIntegrationTestHelper()
 
@@ -461,10 +462,10 @@ func TestIntegrationTestHelper(t *testing.T) {
 	// Test reset functionality
 	helper.Reset()
 	recordings = helper.GetMetrics().GetRecordings()
-	assert.Len(t, recordings, 0)
+	assert.Empty(t, recordings)
 }
 
-// TestErrorHandling tests error handling scenarios
+// TestErrorHandling tests error handling scenarios.
 func TestErrorHandling(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -476,7 +477,7 @@ func TestErrorHandling(t *testing.T) {
 			name: "execution error",
 			setup: func() *AdvancedMockOrchestrator {
 				return NewAdvancedMockOrchestrator("error-orch", "chain",
-					WithMockError(true, fmt.Errorf("execution failed")))
+					WithMockError(true, errors.New("execution failed")))
 			},
 			operation: func(orch *AdvancedMockOrchestrator) error {
 				ctx := context.Background()
@@ -491,18 +492,17 @@ func TestErrorHandling(t *testing.T) {
 			orch := tt.setup()
 			err := tt.operation(orch)
 
-			assert.Error(t, err)
+			require.Error(t, err)
 			// Add specific error type checking if available
 		})
 	}
 }
 
-// BenchmarkOrchestratorExecution benchmarks orchestrator execution performance
+// BenchmarkOrchestratorExecution benchmarks orchestrator execution performance.
 func BenchmarkOrchestratorExecution(b *testing.B) {
 	orchestrator := NewAdvancedMockOrchestrator("bench-orch", "chain",
-		WithMockResponses([]interface{}{"benchmark result"}))
+		WithMockResponses([]any{"benchmark result"}))
 	ctx := context.Background()
-
 
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
@@ -515,7 +515,7 @@ func BenchmarkOrchestratorExecution(b *testing.B) {
 	})
 }
 
-// BenchmarkChainExecution benchmarks chain execution performance
+// BenchmarkChainExecution benchmarks chain execution performance.
 func BenchmarkChainExecution(b *testing.B) {
 	chain := CreateTestChain("benchmark-chain", []string{"step1", "step2", "step3"})
 	ctx := context.Background()
@@ -529,7 +529,7 @@ func BenchmarkChainExecution(b *testing.B) {
 	}
 }
 
-// BenchmarkGraphExecution benchmarks graph execution performance
+// BenchmarkGraphExecution benchmarks graph execution performance.
 func BenchmarkGraphExecution(b *testing.B) {
 	edges := map[string][]string{
 		"node1": {"node2", "node3"},
@@ -548,7 +548,7 @@ func BenchmarkGraphExecution(b *testing.B) {
 	}
 }
 
-// BenchmarkWorkflowExecution benchmarks workflow execution performance
+// BenchmarkWorkflowExecution benchmarks workflow execution performance.
 func BenchmarkWorkflowExecution(b *testing.B) {
 	workflow := CreateTestWorkflow("benchmark-workflow", []string{"task1", "task2", "task3"})
 	ctx := context.Background()

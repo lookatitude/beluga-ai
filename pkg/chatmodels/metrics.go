@@ -2,12 +2,14 @@ package chatmodels
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
 
 // OpenTelemetry metric instruments
@@ -52,7 +54,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 		metric.WithDescription("Total number of message generations"),
 	)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create message_generations_total counter: %w", err)
 	}
 
 	messageGenerationTime, err := meter.Float64Histogram(
@@ -195,7 +197,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	}, nil
 }
 
-// Message generation metrics
+// Message generation metrics.
 func (m *Metrics) RecordMessageGeneration(model, provider string, duration time.Duration, success bool, tokenCount int) {
 	if m.messageGenerations == nil || m.messageGenerationTime == nil || m.messageGenerationErrors == nil || m.tokensGenerated == nil {
 		return // No-op if metrics are not initialized
@@ -239,7 +241,7 @@ func (m *Metrics) RecordMessageGenerationError(model, provider, errorType string
 	m.messageGenerationErrors.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
-// Streaming metrics
+// Streaming metrics.
 func (m *Metrics) RecordStreamingSession(model, provider string, duration time.Duration, success bool, messageCount int) {
 	if m.streamingSessions == nil || m.streamingDuration == nil || m.messagesStreamed == nil || m.streamingErrors == nil {
 		return // No-op if metrics are not initialized
@@ -283,7 +285,7 @@ func (m *Metrics) RecordStreamingError(model, provider, errorType string) {
 	m.streamingErrors.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
-// Token metrics
+// Token metrics.
 func (m *Metrics) RecordTokenUsage(model, provider string, tokensGenerated, tokensConsumed int) {
 	if m.tokensGenerated == nil || m.tokensConsumed == nil {
 		return // No-op if metrics are not initialized
@@ -304,7 +306,7 @@ func (m *Metrics) RecordTokenUsage(model, provider string, tokensGenerated, toke
 	}
 }
 
-// Provider metrics
+// Provider metrics.
 func (m *Metrics) RecordProviderRequest(provider string, duration time.Duration, success bool) {
 	if m.providerRequests == nil || m.providerLatency == nil || m.providerErrors == nil {
 		return // No-op if metrics are not initialized
@@ -341,7 +343,7 @@ func (m *Metrics) RecordProviderError(provider, errorType string) {
 	m.providerErrors.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
-// Model metrics
+// Model metrics.
 func (m *Metrics) RecordModelRequest(model, provider string, duration time.Duration, success bool) {
 	if m.modelRequests == nil || m.modelLatency == nil || m.modelErrors == nil {
 		return // No-op if metrics are not initialized
@@ -380,31 +382,39 @@ func (m *Metrics) RecordModelError(model, provider, errorType string) {
 	m.modelErrors.Add(ctx, 1, metric.WithAttributeSet(attrs))
 }
 
-// Tracing helpers
+// Tracing helpers.
+// Spans returned by these methods must be ended by the caller using span.End().
+//
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartGenerationSpan(ctx context.Context, model, provider, operation string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "chatmodel."+operation,
+	ctx, span := m.tracer.Start(ctx, "chatmodel."+operation,
 		trace.WithAttributes(
 			attribute.String("chatmodel.model", model),
 			attribute.String("chatmodel.provider", provider),
 		),
 	)
+	return ctx, span
 }
 
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartStreamingSpan(ctx context.Context, model, provider string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "chatmodel.stream",
+	ctx, span := m.tracer.Start(ctx, "chatmodel.stream",
 		trace.WithAttributes(
 			attribute.String("chatmodel.model", model),
 			attribute.String("chatmodel.provider", provider),
 		),
 	)
+	return ctx, span
 }
 
+//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartProviderSpan(ctx context.Context, provider, operation string) (context.Context, trace.Span) {
-	return m.tracer.Start(ctx, "chatmodel.provider."+operation,
+	ctx, span := m.tracer.Start(ctx, "chatmodel.provider."+operation,
 		trace.WithAttributes(
 			attribute.String("chatmodel.provider", provider),
 		),
 	)
+	return ctx, span
 }
 
 // DefaultMetrics creates a metrics instance with default meter and tracer.
@@ -424,7 +434,7 @@ func DefaultMetrics() *Metrics {
 func NoOpMetrics() *Metrics {
 	// Create a metrics instance with nil values that won't panic but won't record anything
 	return &Metrics{
-		tracer: trace.NewNoopTracerProvider().Tracer("noop"),
+		tracer: noop.NewTracerProvider().Tracer("noop"),
 		// All metric fields will be nil, which is fine for no-op behavior
 	}
 }

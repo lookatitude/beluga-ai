@@ -2,7 +2,7 @@ package heuristic
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -11,17 +11,17 @@ import (
 	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
 )
 
-// HeuristicProvider implements the TurnDetector interface for Heuristic-based Turn Detection
+// HeuristicProvider implements the TurnDetector interface for Heuristic-based Turn Detection.
 type HeuristicProvider struct {
 	config *HeuristicConfig
 	mu     sync.RWMutex
 }
 
-// NewHeuristicProvider creates a new Heuristic Turn Detection provider
+// NewHeuristicProvider creates a new Heuristic Turn Detection provider.
 func NewHeuristicProvider(config *turndetection.Config) (turndetectioniface.TurnDetector, error) {
 	if config == nil {
 		return nil, turndetection.NewTurnDetectionError("NewHeuristicProvider", turndetection.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to Heuristic config
@@ -54,7 +54,7 @@ func NewHeuristicProvider(config *turndetection.Config) (turndetectioniface.Turn
 // DetectTurn implements the TurnDetector interface
 // Note: Heuristic provider works with transcripts, but the interface uses audio
 // For now, we'll use a simple placeholder that always returns false
-// In a real implementation, this would need transcript data from STT
+// In a real implementation, this would need transcript data from STT.
 func (p *HeuristicProvider) DetectTurn(ctx context.Context, audio []byte) (bool, error) {
 	// Heuristic detection typically works with transcripts, not raw audio
 	// For now, return false (no turn detected) as a placeholder
@@ -75,7 +75,7 @@ func (p *HeuristicProvider) DetectTurn(ctx context.Context, audio []byte) (bool,
 	return false, nil
 }
 
-// DetectTurnWithSilence implements the TurnDetector interface
+// DetectTurnWithSilence implements the TurnDetector interface.
 func (p *HeuristicProvider) DetectTurnWithSilence(ctx context.Context, audio []byte, silenceDuration time.Duration) (bool, error) {
 	// Check if silence duration exceeds minimum threshold
 	if silenceDuration >= p.config.MinSilenceDuration {
@@ -87,7 +87,7 @@ func (p *HeuristicProvider) DetectTurnWithSilence(ctx context.Context, audio []b
 }
 
 // detectTurnFromTranscript performs heuristic turn detection on a transcript
-// This is a helper method that would be used when transcript data is available
+// This is a helper method that would be used when transcript data is available.
 func (p *HeuristicProvider) detectTurnFromTranscript(transcript string, isFinal bool) bool {
 	// Check minimum turn length
 	if len(transcript) < p.config.MinTurnLength {

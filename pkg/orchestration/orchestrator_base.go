@@ -36,7 +36,7 @@ type Graph interface {
 	AddNode(name string, runnable core.Runnable) error
 	// AddEdge defines a dependency between two nodes.
 	// The output of the source node might be used as input for the target node.
-	AddEdge(sourceNode string, targetNode string) error
+	AddEdge(sourceNode, targetNode string) error
 	// SetEntryPoint defines the starting node(s) of the graph.
 	SetEntryPoint(nodeNames []string) error
 	// SetFinishPoint defines the final node(s) whose output is the graph's output.
@@ -49,23 +49,23 @@ type Workflow interface {
 	// Execute starts the workflow execution.
 	// Input can be specific to the workflow definition.
 	// Returns a unique ID for the workflow instance and an error.
-	Execute(ctx context.Context, input any) (workflowID string, runID string, err error)
+	Execute(ctx context.Context, input any) (workflowID, runID string, err error)
 
 	// GetResult retrieves the final result of a completed workflow instance.
 	// Blocks until the workflow completes or the context times out.
-	GetResult(ctx context.Context, workflowID string, runID string) (any, error)
+	GetResult(ctx context.Context, workflowID, runID string) (any, error)
 
 	// Signal sends a signal to a running workflow instance.
-	Signal(ctx context.Context, workflowID string, runID string, signalName string, data any) error
+	Signal(ctx context.Context, workflowID, runID, signalName string, data any) error
 
 	// Query queries the state of a running workflow instance.
-	Query(ctx context.Context, workflowID string, runID string, queryType string, args ...any) (any, error)
+	Query(ctx context.Context, workflowID, runID, queryType string, args ...any) (any, error)
 
 	// Cancel requests cancellation of a running workflow instance.
-	Cancel(ctx context.Context, workflowID string, runID string) error
+	Cancel(ctx context.Context, workflowID, runID string) error
 
 	// Terminate forcefully stops a running workflow instance.
-	Terminate(ctx context.Context, workflowID string, runID string, reason string, details ...any) error
+	Terminate(ctx context.Context, workflowID, runID, reason string, details ...any) error
 }
 
 // Activity represents a unit of work within a workflow, often corresponding to a Beluga Runnable.
@@ -80,9 +80,8 @@ type Activity interface {
 
 // SimpleChain provides a basic implementation of the Chain interface.
 type SimpleChain struct {
-	Steps []core.Runnable
 	Mem   memory.Memory
-	// TODO: Define input/output keys more explicitly
+	Steps []core.Runnable
 }
 
 // NewSimpleChain creates a new SimpleChain.
@@ -212,7 +211,7 @@ func (c *SimpleChain) Stream(ctx context.Context, input any, options ...core.Opt
 	}
 
 	// Execute all steps except the last one
-	var intermediateOutput any = input
+	intermediateOutput := input
 	var err error
 	for i := 0; i < len(c.Steps)-1; i++ {
 		step := c.Steps[i]
@@ -227,8 +226,10 @@ func (c *SimpleChain) Stream(ctx context.Context, input any, options ...core.Opt
 	return lastStep.Stream(ctx, intermediateOutput, options...)
 }
 
-var _ Chain = (*SimpleChain)(nil)
-var _ core.Runnable = (*SimpleChain)(nil)
+var (
+	_ Chain         = (*SimpleChain)(nil)
+	_ core.Runnable = (*SimpleChain)(nil)
+)
 
 // TODO:
 // - Implement Graph orchestration (e.g., using a DAG library or manually)

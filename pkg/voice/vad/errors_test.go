@@ -45,8 +45,8 @@ func TestVADError_Unwrap(t *testing.T) {
 
 func TestIsRetryableError(t *testing.T) {
 	tests := []struct {
-		name string
 		err  error
+		name string
 		want bool
 	}{
 		{

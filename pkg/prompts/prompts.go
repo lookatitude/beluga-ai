@@ -132,17 +132,17 @@ func (pm *PromptManager) NewChatAdapter(name, systemTemplate, userTemplate strin
 	)
 }
 
-// GetConfig returns the current configuration
+// GetConfig returns the current configuration.
 func (pm *PromptManager) GetConfig() *Config {
 	return pm.config
 }
 
-// GetMetrics returns the metrics collector
+// GetMetrics returns the metrics collector.
 func (pm *PromptManager) GetMetrics() iface.Metrics {
 	return pm.metrics
 }
 
-// Check implements the HealthChecker interface
+// Check implements the HealthChecker interface.
 func (pm *PromptManager) Check(ctx context.Context) error {
 	// Test basic template creation
 	_, err := pm.NewStringTemplate("health_check", "Hello {{.name}}")
@@ -159,7 +159,7 @@ func (pm *PromptManager) Check(ctx context.Context) error {
 	return nil
 }
 
-// HealthCheck performs a health check on the prompt manager
+// HealthCheck performs a health check on the prompt manager.
 func (pm *PromptManager) HealthCheck(ctx context.Context) error {
 	return pm.Check(ctx)
 }

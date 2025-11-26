@@ -3,9 +3,11 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/stretchr/testify/require"
 )
 
 func TestIntegration_LoadConfigWithFileAndEnvOverrides(t *testing.T) {
@@ -45,7 +47,7 @@ tools:
     description: "Performs mathematical calculations"
     enabled: false
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0o644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create config file: %v", err)
 	}
@@ -62,14 +64,15 @@ tools:
 	}
 
 	for key, value := range envVars {
-		os.Setenv(key, value)
-		defer os.Unsetenv(key)
+		_ = os.Setenv(key, value)
+		defer func(k string) { _ = os.Unsetenv(k) }(key)
 	}
 
 	// Change to temp directory and load config
-	oldWd, _ := os.Getwd()
-	os.Chdir(tempDir)
-	defer os.Chdir(oldWd)
+	oldWd, err := os.Getwd()
+	require.NoError(t, err)
+	_ = os.Chdir(tempDir)
+	defer func() { _ = os.Chdir(oldWd) }()
 
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -148,7 +151,7 @@ llm_providers:
     api_key: "file-key"
     model_name: "gpt-4"
 `
-	err := os.WriteFile(fileConfig, []byte(fileContent), 0o644)
+	err := os.WriteFile(fileConfig, []byte(fileContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create file config: %v", err)
 	}
@@ -162,8 +165,8 @@ llm_providers:
 	}
 
 	for key, value := range envVars {
-		os.Setenv(key, value)
-		defer os.Unsetenv(key)
+		_ = os.Setenv(key, value)
+		defer func(k string) { _ = os.Unsetenv(k) }(key)
 	}
 
 	// Create providers
@@ -256,7 +259,7 @@ tools:
     description: "Test tool"
     enabled: true
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0o644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create config file: %v", err)
 	}
@@ -319,7 +322,7 @@ agents:
     llm_provider_name: "roundtrip-llm"
     max_iterations: 3
 `
-	err := os.WriteFile(configFile, []byte(configYAML), 0644)
+	err := os.WriteFile(configFile, []byte(configYAML), 0o600)
 	if err != nil {
 		t.Fatalf("failed to write config file: %v", err)
 	}
@@ -376,7 +379,7 @@ llm_providers:
   - name: ""  # Invalid: empty name
     provider: "openai"
 `
-	err := os.WriteFile(invalidConfigFile, []byte(invalidContent), 0o644)
+	err := os.WriteFile(invalidConfigFile, []byte(invalidContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create invalid config file: %v", err)
 	}
@@ -401,7 +404,7 @@ llm_providers:
     api_key: "sk-recovery"
     model_name: "gpt-4"
 `
-	err = os.WriteFile(validConfigFile, []byte(validContent), 0o644)
+	err = os.WriteFile(validConfigFile, []byte(validContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create valid config file: %v", err)
 	}
@@ -472,7 +475,7 @@ tools:
     description: "Web search tool"
     enabled: false
 `
-	err := os.WriteFile(configFile, []byte(configContent), 0o644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create complex config file: %v", err)
 	}
@@ -538,26 +541,30 @@ func TestIntegration_Performance_LoadLargeConfig(t *testing.T) {
 	// Create a moderately large config with multiple providers
 	var configContent string
 	configContent += "llm_providers:\n"
+	var configContentSb541 strings.Builder
 	for i := 0; i < 10; i++ {
-		configContent += `
+		_, _ = configContentSb541.WriteString(`
   - name: "llm-` + string(rune(i+'0')) + `"
     provider: "openai"
     api_key: "sk-test-` + string(rune(i+'0')) + `"
     model_name: "gpt-4"
-`
+`)
 	}
+	configContent += configContentSb541.String()
 
 	configContent += "embedding_providers:\n"
+	var configContentSb551 strings.Builder
 	for i := 0; i < 5; i++ {
-		configContent += `
+		_, _ = configContentSb551.WriteString(`
   - name: "embed-` + string(rune(i+'0')) + `"
     provider: "openai"
     api_key: "sk-embed-` + string(rune(i+'0')) + `"
     model_name: "text-embedding-ada-002"
-`
+`)
 	}
+	configContent += configContentSb551.String()
 
-	err := os.WriteFile(configFile, []byte(configContent), 0o644)
+	err := os.WriteFile(configFile, []byte(configContent), 0o600)
 	if err != nil {
 		t.Fatalf("failed to create large config file: %v", err)
 	}

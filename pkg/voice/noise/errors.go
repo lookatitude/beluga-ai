@@ -5,25 +5,25 @@ import (
 	"fmt"
 )
 
-// Error codes for Noise Cancellation operations
+// Error codes for Noise Cancellation operations.
 const (
-	// General errors
+	// General errors.
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeInternalError = "internal_error"
 	ErrCodeInvalidInput  = "invalid_input"
 	ErrCodeTimeout       = "timeout"
 
-	// Provider-specific errors
+	// Provider-specific errors.
 	ErrCodeUnsupportedProvider = "unsupported_provider"
 	ErrCodeModelLoadFailed     = "model_load_failed"
 	ErrCodeModelNotFound       = "model_not_found"
 
-	// Processing errors
+	// Processing errors.
 	ErrCodeProcessingError = "processing_error"
 	ErrCodeFrameSizeError  = "frame_size_error"
 	ErrCodeSampleRateError = "sample_rate_error"
 
-	// Context errors
+	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
 )
@@ -31,14 +31,14 @@ const (
 // NoiseCancellationError represents an error that occurred during Noise Cancellation operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type NoiseCancellationError struct {
-	Op      string                 // Operation that failed (e.g., "Process", "LoadModel")
-	Err     error                  // Underlying error
-	Code    string                 // Error code for programmatic handling
-	Message string                 // Human-readable error message
-	Details map[string]interface{} // Additional error details
+	Err     error
+	Details map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e *NoiseCancellationError) Error() string {
 	if e.Message != "" {
 		return fmt.Sprintf("noise %s: %s (code: %s)", e.Op, e.Message, e.Code)
@@ -49,12 +49,12 @@ func (e *NoiseCancellationError) Error() string {
 	return fmt.Sprintf("noise %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying error
+// Unwrap returns the underlying error.
 func (e *NoiseCancellationError) Unwrap() error {
 	return e.Err
 }
 
-// NewNoiseCancellationError creates a new NoiseCancellationError
+// NewNoiseCancellationError creates a new NoiseCancellationError.
 func NewNoiseCancellationError(op, code string, err error) *NoiseCancellationError {
 	return &NoiseCancellationError{
 		Op:   op,
@@ -63,7 +63,7 @@ func NewNoiseCancellationError(op, code string, err error) *NoiseCancellationErr
 	}
 }
 
-// NewNoiseCancellationErrorWithMessage creates a new NoiseCancellationError with a custom message
+// NewNoiseCancellationErrorWithMessage creates a new NoiseCancellationError with a custom message.
 func NewNoiseCancellationErrorWithMessage(op, code, message string, err error) *NoiseCancellationError {
 	return &NoiseCancellationError{
 		Op:      op,
@@ -73,8 +73,8 @@ func NewNoiseCancellationErrorWithMessage(op, code, message string, err error) *
 	}
 }
 
-// NewNoiseCancellationErrorWithDetails creates a new NoiseCancellationError with additional details
-func NewNoiseCancellationErrorWithDetails(op, code, message string, err error, details map[string]interface{}) *NoiseCancellationError {
+// NewNoiseCancellationErrorWithDetails creates a new NoiseCancellationError with additional details.
+func NewNoiseCancellationErrorWithDetails(op, code, message string, err error, details map[string]any) *NoiseCancellationError {
 	return &NoiseCancellationError{
 		Op:      op,
 		Code:    code,
@@ -84,7 +84,7 @@ func NewNoiseCancellationErrorWithDetails(op, code, message string, err error, d
 	}
 }
 
-// IsRetryableError checks if an error is retryable
+// IsRetryableError checks if an error is retryable.
 func IsRetryableError(err error) bool {
 	if err == nil {
 		return false

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// BenchmarkLatency_EndToEnd benchmarks end-to-end latency (target <200ms)
+// BenchmarkLatency_EndToEnd benchmarks end-to-end latency (target <200ms).
 func BenchmarkLatency_EndToEnd(b *testing.B) {
 	ctx := context.Background()
 
@@ -25,7 +25,7 @@ func BenchmarkLatency_EndToEnd(b *testing.B) {
 	}
 }
 
-// BenchmarkLatency_STT benchmarks STT latency
+// BenchmarkLatency_STT benchmarks STT latency.
 func BenchmarkLatency_STT(b *testing.B) {
 	ctx := context.Background()
 	audio := make([]byte, 3200) // 20ms
@@ -42,7 +42,7 @@ func BenchmarkLatency_STT(b *testing.B) {
 	}
 }
 
-// BenchmarkLatency_TTS benchmarks TTS latency
+// BenchmarkLatency_TTS benchmarks TTS latency.
 func BenchmarkLatency_TTS(b *testing.B) {
 	ctx := context.Background()
 	text := "Test text for TTS latency benchmarking"

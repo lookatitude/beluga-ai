@@ -389,12 +389,12 @@ func TestConversationManager(t *testing.T) {
     cm := createTestConversationManager(t)
     
     response, err := cm.Chat(context.Background(), "user1", "Hello")
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.NotEmpty(t, response)
     
     // Test context retention
     response2, err := cm.Chat(context.Background(), "user1", "What did I say?")
-    assert.NoError(t, err)
+    require.NoError(t, err)
     assert.Contains(t, response2, "Hello")
 }
 ```

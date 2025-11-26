@@ -12,28 +12,22 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// AdvancedMockSession provides a comprehensive mock implementation for testing
+// AdvancedMockSession provides a comprehensive mock implementation for testing.
 type AdvancedMockSession struct {
+	errorToReturn error
 	mock.Mock
-
-	// Configuration
-	sessionID string
-	callCount int
-	mu        sync.RWMutex
-
-	// State
-	active  bool
-	started bool
-	stopped bool
-
-	// Configurable behavior
-	shouldError          bool
-	errorToReturn        error
+	sessionID            string
+	callCount            int
 	processingDelay      time.Duration
+	mu                   sync.RWMutex
+	active               bool
+	started              bool
+	stopped              bool
+	shouldError          bool
 	simulateNetworkDelay bool
 }
 
-// NewAdvancedMockSession creates a new advanced mock with configurable behavior
+// NewAdvancedMockSession creates a new advanced mock with configurable behavior.
 func NewAdvancedMockSession(sessionID string, opts ...MockOption) *AdvancedMockSession {
 	m := &AdvancedMockSession{
 		sessionID:       sessionID,
@@ -51,31 +45,31 @@ func NewAdvancedMockSession(sessionID string, opts ...MockOption) *AdvancedMockS
 	return m
 }
 
-// MockOption configures the behavior of AdvancedMockSession
+// MockOption configures the behavior of AdvancedMockSession.
 type MockOption func(*AdvancedMockSession)
 
-// WithMockSessionID sets the session ID for the mock
+// WithMockSessionID sets the session ID for the mock.
 func WithMockSessionID(id string) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.sessionID = id
 	}
 }
 
-// WithActive sets the active state
+// WithActive sets the active state.
 func WithActive(active bool) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.active = active
 	}
 }
 
-// WithStarted sets the started state
+// WithStarted sets the started state.
 func WithStarted(started bool) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.started = started
 	}
 }
 
-// WithError configures the mock to return an error
+// WithError configures the mock to return an error.
 func WithError(err error) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.shouldError = true
@@ -83,28 +77,28 @@ func WithError(err error) MockOption {
 	}
 }
 
-// WithProcessingDelay sets the delay for processing
+// WithProcessingDelay sets the delay for processing.
 func WithProcessingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.processingDelay = delay
 	}
 }
 
-// WithNetworkDelay enables network delay simulation
+// WithNetworkDelay enables network delay simulation.
 func WithNetworkDelay(enabled bool) MockOption {
 	return func(m *AdvancedMockSession) {
 		m.simulateNetworkDelay = enabled
 	}
 }
 
-// Start implements the Session interface
+// Start implements the Session interface.
 func (m *AdvancedMockSession) Start(ctx context.Context) error {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx)
 		return args.Error(0)
 	}
@@ -150,14 +144,14 @@ func (m *AdvancedMockSession) Start(ctx context.Context) error {
 	return nil
 }
 
-// Stop implements the Session interface
+// Stop implements the Session interface.
 func (m *AdvancedMockSession) Stop(ctx context.Context) error {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
 
 	// Check if mock expectations are set up
-	if m.Mock.ExpectedCalls != nil && len(m.Mock.ExpectedCalls) > 0 {
+	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx)
 		return args.Error(0)
 	}
@@ -194,21 +188,21 @@ func (m *AdvancedMockSession) Stop(ctx context.Context) error {
 	return nil
 }
 
-// IsActive implements the Session interface
+// IsActive implements the Session interface.
 func (m *AdvancedMockSession) IsActive() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.active
 }
 
-// GetSessionID implements the VoiceSession interface
+// GetSessionID implements the VoiceSession interface.
 func (m *AdvancedMockSession) GetSessionID() string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.sessionID
 }
 
-// GetState implements the VoiceSession interface
+// GetState implements the VoiceSession interface.
 func (m *AdvancedMockSession) GetState() iface.SessionState {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -221,38 +215,39 @@ func (m *AdvancedMockSession) GetState() iface.SessionState {
 	return iface.SessionStateInitial
 }
 
-// Say implements the VoiceSession interface
+// Say implements the VoiceSession interface.
 func (m *AdvancedMockSession) Say(ctx context.Context, text string) (iface.SayHandle, error) {
 	// Placeholder implementation
 	return nil, nil
 }
 
-// SayWithOptions implements the VoiceSession interface
+// SayWithOptions implements the VoiceSession interface.
 func (m *AdvancedMockSession) SayWithOptions(ctx context.Context, text string, options iface.SayOptions) (iface.SayHandle, error) {
 	// Placeholder implementation
 	return nil, nil
 }
 
-// ProcessAudio implements the VoiceSession interface
+// ProcessAudio implements the VoiceSession interface.
 func (m *AdvancedMockSession) ProcessAudio(ctx context.Context, audio []byte) error {
 	// Placeholder implementation
 	return nil
 }
 
-// OnStateChanged implements the VoiceSession interface
+// OnStateChanged implements the VoiceSession interface.
 func (m *AdvancedMockSession) OnStateChanged(callback func(iface.SessionState)) {
 	// Placeholder implementation
 }
 
-// GetCallCount returns the number of times methods have been called
+// GetCallCount returns the number of times methods have been called.
 func (m *AdvancedMockSession) GetCallCount() int {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 	return m.callCount
 }
 
-// AssertSessionInterface ensures that a type implements the VoiceSession interface
+// AssertSessionInterface ensures that a type implements the VoiceSession interface.
 func AssertSessionInterface(t *testing.T, s iface.VoiceSession) {
+	t.Helper()
 	assert.NotNil(t, s, "VoiceSession should not be nil")
 
 	// Test GetSessionID method

@@ -10,20 +10,11 @@ import (
 
 // MemoryError represents a memory-specific error with additional context.
 type MemoryError struct {
-	// Op is the operation that failed
-	Op string
-
-	// Err is the underlying error
-	Err error
-
-	// Code is a machine-readable error code
-	Code string
-
-	// MemoryType indicates which memory implementation was involved
+	Err        error
+	Context    map[string]any
+	Op         string
+	Code       string
 	MemoryType MemoryType
-
-	// Context provides additional context about the error
-	Context map[string]interface{}
 }
 
 // Error implements the error interface.
@@ -71,14 +62,14 @@ func NewMemoryError(op string, memoryType MemoryType, code string, err error) *M
 		Err:        err,
 		Code:       code,
 		MemoryType: memoryType,
-		Context:    make(map[string]interface{}),
+		Context:    make(map[string]any),
 	}
 }
 
 // WithContext adds context information to the error.
-func (e *MemoryError) WithContext(key string, value interface{}) *MemoryError {
+func (e *MemoryError) WithContext(key string, value any) *MemoryError {
 	if e.Context == nil {
-		e.Context = make(map[string]interface{})
+		e.Context = make(map[string]any)
 	}
 	e.Context[key] = value
 	return e

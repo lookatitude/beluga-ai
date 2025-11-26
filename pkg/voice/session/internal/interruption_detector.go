@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-// WordCountDetector detects interruptions based on word count
+// WordCountDetector detects interruptions based on word count.
 type WordCountDetector struct {
 	mu           sync.RWMutex
 	threshold    int
 	currentCount int
 }
 
-// NewWordCountDetector creates a new word count detector
+// NewWordCountDetector creates a new word count detector.
 func NewWordCountDetector(threshold int) *WordCountDetector {
 	return &WordCountDetector{
 		threshold:    threshold,
@@ -20,36 +20,36 @@ func NewWordCountDetector(threshold int) *WordCountDetector {
 	}
 }
 
-// AddWords adds words to the count
+// AddWords adds words to the count.
 func (wcd *WordCountDetector) AddWords(count int) {
 	wcd.mu.Lock()
 	defer wcd.mu.Unlock()
 	wcd.currentCount += count
 }
 
-// CheckThreshold checks if the word count threshold is met
+// CheckThreshold checks if the word count threshold is met.
 func (wcd *WordCountDetector) CheckThreshold() bool {
 	wcd.mu.RLock()
 	defer wcd.mu.RUnlock()
 	return wcd.currentCount >= wcd.threshold
 }
 
-// Reset resets the word count
+// Reset resets the word count.
 func (wcd *WordCountDetector) Reset() {
 	wcd.mu.Lock()
 	defer wcd.mu.Unlock()
 	wcd.currentCount = 0
 }
 
-// DurationDetector detects interruptions based on duration
+// DurationDetector detects interruptions based on duration.
 type DurationDetector struct {
-	mu        sync.RWMutex
-	threshold time.Duration
 	startTime time.Time
+	threshold time.Duration
+	mu        sync.RWMutex
 	active    bool
 }
 
-// NewDurationDetector creates a new duration detector
+// NewDurationDetector creates a new duration detector.
 func NewDurationDetector(threshold time.Duration) *DurationDetector {
 	return &DurationDetector{
 		threshold: threshold,
@@ -57,7 +57,7 @@ func NewDurationDetector(threshold time.Duration) *DurationDetector {
 	}
 }
 
-// Start starts the duration measurement
+// Start starts the duration measurement.
 func (dd *DurationDetector) Start() {
 	dd.mu.Lock()
 	defer dd.mu.Unlock()
@@ -65,14 +65,14 @@ func (dd *DurationDetector) Start() {
 	dd.active = true
 }
 
-// Stop stops the duration measurement
+// Stop stops the duration measurement.
 func (dd *DurationDetector) Stop() {
 	dd.mu.Lock()
 	defer dd.mu.Unlock()
 	dd.active = false
 }
 
-// CheckThreshold checks if the duration threshold is met
+// CheckThreshold checks if the duration threshold is met.
 func (dd *DurationDetector) CheckThreshold() bool {
 	dd.mu.RLock()
 	defer dd.mu.RUnlock()
@@ -85,7 +85,7 @@ func (dd *DurationDetector) CheckThreshold() bool {
 	return elapsed >= dd.threshold
 }
 
-// GetElapsed returns the elapsed duration
+// GetElapsed returns the elapsed duration.
 func (dd *DurationDetector) GetElapsed() time.Duration {
 	dd.mu.RLock()
 	defer dd.mu.RUnlock()

@@ -13,7 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/metrics"
 )
 
-// BestPracticesChecker provides comprehensive best practices validation
+// BestPracticesChecker provides comprehensive best practices validation.
 type BestPracticesChecker struct {
 	logger     *logger.StructuredLogger
 	metrics    *metrics.MetricsCollector
@@ -21,7 +21,7 @@ type BestPracticesChecker struct {
 	mutex      sync.RWMutex
 }
 
-// NewBestPracticesChecker creates a new best practices checker
+// NewBestPracticesChecker creates a new best practices checker.
 func NewBestPracticesChecker(logger *logger.StructuredLogger, metrics *metrics.MetricsCollector) *BestPracticesChecker {
 	checker := &BestPracticesChecker{
 		logger:  logger,
@@ -37,8 +37,8 @@ func NewBestPracticesChecker(logger *logger.StructuredLogger, metrics *metrics.M
 	return checker
 }
 
-// Validate checks data against all registered validators
-func (bpc *BestPracticesChecker) Validate(ctx context.Context, data interface{}, component string) []iface.ValidationIssue {
+// Validate checks data against all registered validators.
+func (bpc *BestPracticesChecker) Validate(ctx context.Context, data any, component string) []iface.ValidationIssue {
 	allIssues := make([]iface.ValidationIssue, 0)
 
 	for _, validator := range bpc.validators {
@@ -61,7 +61,7 @@ func (bpc *BestPracticesChecker) Validate(ctx context.Context, data interface{},
 
 		// Log issues
 		bpc.logger.Warning(ctx, "Best practices violations detected",
-			map[string]interface{}{
+			map[string]any{
 				"component": component,
 				"issues":    len(allIssues),
 			})
@@ -70,19 +70,19 @@ func (bpc *BestPracticesChecker) Validate(ctx context.Context, data interface{},
 	return allIssues
 }
 
-// AddValidator adds a custom validator
+// AddValidator adds a custom validator.
 func (bpc *BestPracticesChecker) AddValidator(validator iface.Validator) {
 	bpc.mutex.Lock()
 	defer bpc.mutex.Unlock()
 	bpc.validators = append(bpc.validators, validator)
 }
 
-// ConcurrencyValidator checks for concurrency best practices
+// ConcurrencyValidator checks for concurrency best practices.
 type ConcurrencyValidator struct{}
 
 func (cv *ConcurrencyValidator) Name() string { return "concurrency" }
 
-func (cv *ConcurrencyValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+func (cv *ConcurrencyValidator) Validate(ctx context.Context, data any) []iface.ValidationIssue {
 	issues := make([]iface.ValidationIssue, 0)
 
 	// This is a placeholder - in a real implementation, you would analyze
@@ -104,12 +104,12 @@ func (cv *ConcurrencyValidator) Validate(ctx context.Context, data interface{}) 
 	return issues
 }
 
-// ErrorHandlingValidator checks for proper error handling
+// ErrorHandlingValidator checks for proper error handling.
 type ErrorHandlingValidator struct{}
 
 func (ehv *ErrorHandlingValidator) Name() string { return "error_handling" }
 
-func (ehv *ErrorHandlingValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+func (ehv *ErrorHandlingValidator) Validate(ctx context.Context, data any) []iface.ValidationIssue {
 	issues := make([]iface.ValidationIssue, 0)
 
 	if str, ok := data.(string); ok {
@@ -127,12 +127,12 @@ func (ehv *ErrorHandlingValidator) Validate(ctx context.Context, data interface{
 	return issues
 }
 
-// ResourceManagementValidator checks for proper resource management
+// ResourceManagementValidator checks for proper resource management.
 type ResourceManagementValidator struct{}
 
 func (rmv *ResourceManagementValidator) Name() string { return "resource_management" }
 
-func (rmv *ResourceManagementValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+func (rmv *ResourceManagementValidator) Validate(ctx context.Context, data any) []iface.ValidationIssue {
 	issues := make([]iface.ValidationIssue, 0)
 
 	// Check for resource leaks, proper cleanup, etc.
@@ -152,12 +152,12 @@ func (rmv *ResourceManagementValidator) Validate(ctx context.Context, data inter
 	return issues
 }
 
-// SecurityValidator checks for security best practices
+// SecurityValidator checks for security best practices.
 type SecurityValidator struct{}
 
 func (sv *SecurityValidator) Name() string { return "security" }
 
-func (sv *SecurityValidator) Validate(ctx context.Context, data interface{}) []iface.ValidationIssue {
+func (sv *SecurityValidator) Validate(ctx context.Context, data any) []iface.ValidationIssue {
 	issues := make([]iface.ValidationIssue, 0)
 
 	if str, ok := data.(string); ok {
@@ -174,7 +174,7 @@ func (sv *SecurityValidator) Validate(ctx context.Context, data interface{}) []i
 	return issues
 }
 
-// Helper functions for pattern detection
+// Helper functions for pattern detection.
 func containsUnsafePatterns(code string) bool {
 	patterns := []string{
 		"go func()",   // Uncontrolled goroutines
@@ -286,13 +286,13 @@ func containsPattern(text, pattern string) bool {
 	return strings.Contains(text, pattern)
 }
 
-// PerformanceMonitor monitors performance metrics
+// PerformanceMonitor monitors performance metrics.
 type PerformanceMonitor struct {
 	logger  *logger.StructuredLogger
 	metrics *metrics.MetricsCollector
 }
 
-// NewPerformanceMonitor creates a new performance monitor
+// NewPerformanceMonitor creates a new performance monitor.
 func NewPerformanceMonitor(logger *logger.StructuredLogger, metrics *metrics.MetricsCollector) *PerformanceMonitor {
 	return &PerformanceMonitor{
 		logger:  logger,
@@ -300,7 +300,7 @@ func NewPerformanceMonitor(logger *logger.StructuredLogger, metrics *metrics.Met
 	}
 }
 
-// MonitorOperation monitors the performance of an operation
+// MonitorOperation monitors the performance of an operation.
 func (pm *PerformanceMonitor) MonitorOperation(ctx context.Context, operationName string, fn func() error) error {
 	start := time.Now()
 	defer func() {
@@ -312,7 +312,7 @@ func (pm *PerformanceMonitor) MonitorOperation(ctx context.Context, operationNam
 		// Log slow operations
 		if duration > 100*time.Millisecond {
 			pm.logger.Warning(ctx, "Slow operation detected",
-				map[string]interface{}{
+				map[string]any{
 					"operation": operationName,
 					"duration":  duration.String(),
 				})
@@ -322,7 +322,7 @@ func (pm *PerformanceMonitor) MonitorOperation(ctx context.Context, operationNam
 	return fn()
 }
 
-// MonitorGoroutines monitors goroutine count
+// MonitorGoroutines monitors goroutine count.
 func (pm *PerformanceMonitor) MonitorGoroutines(ctx context.Context) {
 	// Note: In Go 1.14+, you can use runtime.NumGoroutine()
 	goroutines := runtime.NumGoroutine()
@@ -331,13 +331,13 @@ func (pm *PerformanceMonitor) MonitorGoroutines(ctx context.Context) {
 
 	if goroutines > 1000 {
 		pm.logger.Warning(ctx, "High goroutine count detected",
-			map[string]interface{}{
+			map[string]any{
 				"goroutines": goroutines,
 			})
 	}
 }
 
-// DeadlockDetector provides basic deadlock detection
+// DeadlockDetector provides basic deadlock detection.
 type DeadlockDetector struct {
 	logger        *logger.StructuredLogger
 	lastActivity  map[string]time.Time
@@ -345,7 +345,7 @@ type DeadlockDetector struct {
 	mutex         sync.RWMutex
 }
 
-// NewDeadlockDetector creates a new deadlock detector
+// NewDeadlockDetector creates a new deadlock detector.
 func NewDeadlockDetector(logger *logger.StructuredLogger, checkInterval time.Duration) *DeadlockDetector {
 	dd := &DeadlockDetector{
 		logger:        logger,
@@ -359,14 +359,14 @@ func NewDeadlockDetector(logger *logger.StructuredLogger, checkInterval time.Dur
 	return dd
 }
 
-// RecordActivity records activity for a component
+// RecordActivity records activity for a component.
 func (dd *DeadlockDetector) RecordActivity(component string) {
 	dd.mutex.Lock()
 	defer dd.mutex.Unlock()
 	dd.lastActivity[component] = time.Now()
 }
 
-// monitor checks for inactive components
+// monitor checks for inactive components.
 func (dd *DeadlockDetector) monitor() {
 	ticker := time.NewTicker(dd.checkInterval)
 	defer ticker.Stop()
@@ -386,7 +386,7 @@ func (dd *DeadlockDetector) checkForDeadlocks() {
 	for component, lastActivity := range dd.lastActivity {
 		if now.Sub(lastActivity) > threshold {
 			dd.logger.Warning(context.Background(), "Potential deadlock or inactive component",
-				map[string]interface{}{
+				map[string]any{
 					"component":     component,
 					"last_activity": lastActivity,
 					"time_since":    now.Sub(lastActivity).String(),

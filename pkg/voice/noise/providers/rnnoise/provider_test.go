@@ -11,8 +11,8 @@ import (
 
 func TestNewRNNoiseProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *noise.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -53,10 +53,10 @@ func TestNewRNNoiseProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewRNNoiseProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -79,7 +79,7 @@ func TestRNNoiseProvider_Process(t *testing.T) {
 	audio := make([]byte, 960)
 
 	processed, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processed)
 }
 
@@ -101,7 +101,7 @@ func TestRNNoiseProvider_ProcessStream(t *testing.T) {
 	close(audioCh)
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Receive processed audio
 	processed := <-processedCh
@@ -124,7 +124,7 @@ func TestRNNoiseProvider_ProcessStream_ContextCancellation(t *testing.T) {
 	cancel()
 
 	processedCh, err := provider.ProcessStream(ctx, audioCh)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Channel should be closed
 	_, ok := <-processedCh
@@ -143,7 +143,7 @@ func TestRNNoiseProvider_Process_EmptyAudio(t *testing.T) {
 
 	ctx := context.Background()
 	processed, err := provider.Process(ctx, []byte{})
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.Empty(t, processed)
 }
 
@@ -170,9 +170,9 @@ func TestRNNoiseProvider_Process_Padding(t *testing.T) {
 	audio := make([]byte, 480) // 240 samples * 2 bytes
 
 	processed, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processed)
-	assert.Equal(t, len(audio), len(processed))
+	assert.Len(t, processed, len(audio))
 }
 
 func TestRNNoiseProvider_Process_Truncation(t *testing.T) {
@@ -190,9 +190,9 @@ func TestRNNoiseProvider_Process_Truncation(t *testing.T) {
 	audio := make([]byte, 2000) // Larger than 960 bytes
 
 	processed, err := provider.Process(ctx, audio)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, processed)
-	assert.Equal(t, 960, len(processed)) // Should be truncated to expected size
+	assert.Len(t, processed, 960) // Should be truncated to expected size
 }
 
 func TestRNNoiseModel_IsLoaded(t *testing.T) {
@@ -202,7 +202,7 @@ func TestRNNoiseModel_IsLoaded(t *testing.T) {
 
 	// Load model
 	err := model.Load()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, model.IsLoaded())
 }
 
@@ -212,11 +212,11 @@ func TestRNNoiseModel_Close(t *testing.T) {
 
 	// Load first
 	err := model.Load()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, model.IsLoaded())
 
 	// Close model
 	err = model.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.False(t, model.IsLoaded())
 }

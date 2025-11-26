@@ -4,6 +4,7 @@ package summary
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -71,7 +72,7 @@ func (m *ConversationSummaryMemory) predictNewSummary(ctx context.Context, newLi
 		"new_lines": newLines,
 	})
 	if err != nil {
-		return "", fmt.Errorf("error")
+		return "", errors.New("error")
 	}
 
 	// LLM is now core.Runnable, so we use Invoke.
@@ -89,7 +90,7 @@ func (m *ConversationSummaryMemory) predictNewSummary(ctx context.Context, newLi
 	}
 	llmOutput, err := m.LLM.Invoke(ctx, promptStr)
 	if err != nil {
-		return "", fmt.Errorf("error")
+		return "", errors.New("error")
 	}
 
 	var newSummary string
@@ -99,15 +100,14 @@ func (m *ConversationSummaryMemory) predictNewSummary(ctx context.Context, newLi
 	case schema.Message: // ChatModels will return schema.Message
 		newSummary = output.GetContent()
 	default:
-		return "", fmt.Errorf(
-			"LLM Invoke returned unexpected type for summary")
+		return "", errors.New("LLM Invoke returned unexpected type for summary")
 	}
 
 	return newSummary, nil
 }
 
 // SaveContext adds the latest user input and AI output, then updates the summary.
-func (m *ConversationSummaryMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error {
+func (m *ConversationSummaryMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error {
 	inputKey := m.InputKey
 	outputKey := m.OutputKey
 
@@ -125,24 +125,20 @@ func (m *ConversationSummaryMemory) SaveContext(ctx context.Context, inputs map[
 	outputVal, outputOk := outputs[outputKey]
 
 	if !inputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 	if !outputOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 
 	inputStr, inputStrOk := inputVal.(string)
 	outputStr, outputStrOk := outputVal.(string)
 
 	if !inputStrOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 	if !outputStrOk {
-		return fmt.Errorf(
-			"error")
+		return errors.New("error")
 	}
 
 	newLines := getBufferString([]schema.Message{
@@ -166,7 +162,7 @@ func (m *ConversationSummaryMemory) Clear(ctx context.Context) error {
 }
 
 // getInputOutputKeys determines the input and output keys from the given maps.
-func getInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string) {
+func getInputOutputKeys(inputs, outputs map[string]any) (string, string) {
 	if len(inputs) == 0 || len(outputs) == 0 {
 		return "input", "output"
 	}
@@ -219,20 +215,20 @@ func getBufferString(messages []schema.Message, humanPrefix, aiPrefix string) st
 	for _, msg := range messages {
 		switch msg.GetType() {
 		case schema.RoleHuman:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", humanPrefix, msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", humanPrefix, msg.GetContent()))
 		case schema.RoleAssistant:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", aiPrefix, msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", aiPrefix, msg.GetContent()))
 		case schema.RoleSystem:
-			buffer.WriteString(fmt.Sprintf("System: %s\n", msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("System: %s\n", msg.GetContent()))
 		case schema.RoleTool:
 			toolMsg, ok := msg.(*schema.ToolMessage)
 			if ok {
-				buffer.WriteString(fmt.Sprintf("Tool (%s): %s\n", toolMsg.ToolCallID, msg.GetContent()))
+				_, _ = buffer.WriteString(fmt.Sprintf("Tool (%s): %s\n", toolMsg.ToolCallID, msg.GetContent()))
 			} else {
-				buffer.WriteString(fmt.Sprintf("Tool: %s\n", msg.GetContent()))
+				_, _ = buffer.WriteString(fmt.Sprintf("Tool: %s\n", msg.GetContent()))
 			}
 		default:
-			buffer.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
+			_, _ = buffer.WriteString(fmt.Sprintf("%s: %s\n", msg.GetType(), msg.GetContent()))
 		}
 	}
 

@@ -5,14 +5,14 @@ import (
 	"time"
 )
 
-// InterruptionConfig configures interruption detection
+// InterruptionConfig configures interruption detection.
 type InterruptionConfig struct {
 	WordCountThreshold int
 	DurationThreshold  time.Duration
 	Enabled            bool
 }
 
-// DefaultInterruptionConfig returns default interruption configuration
+// DefaultInterruptionConfig returns default interruption configuration.
 func DefaultInterruptionConfig() *InterruptionConfig {
 	return &InterruptionConfig{
 		WordCountThreshold: 3,
@@ -21,14 +21,14 @@ func DefaultInterruptionConfig() *InterruptionConfig {
 	}
 }
 
-// InterruptionDetector detects user interruptions
+// InterruptionDetector detects user interruptions.
 type InterruptionDetector struct {
-	mu       sync.RWMutex
 	config   *InterruptionConfig
+	mu       sync.RWMutex
 	detected bool
 }
 
-// NewInterruptionDetector creates a new interruption detector
+// NewInterruptionDetector creates a new interruption detector.
 func NewInterruptionDetector(config *InterruptionConfig) *InterruptionDetector {
 	if config == nil {
 		config = DefaultInterruptionConfig()
@@ -40,7 +40,7 @@ func NewInterruptionDetector(config *InterruptionConfig) *InterruptionDetector {
 	}
 }
 
-// CheckInterruption checks if an interruption should be triggered based on word count and duration
+// CheckInterruption checks if an interruption should be triggered based on word count and duration.
 func (id *InterruptionDetector) CheckInterruption(wordCount int, duration time.Duration) bool {
 	if !id.config.Enabled {
 		return false
@@ -58,14 +58,14 @@ func (id *InterruptionDetector) CheckInterruption(wordCount int, duration time.D
 	return id.detected
 }
 
-// IsInterrupted returns whether an interruption is currently detected
+// IsInterrupted returns whether an interruption is currently detected.
 func (id *InterruptionDetector) IsInterrupted() bool {
 	id.mu.RLock()
 	defer id.mu.RUnlock()
 	return id.detected
 }
 
-// Reset resets the interruption detection state
+// Reset resets the interruption detection state.
 func (id *InterruptionDetector) Reset() {
 	id.mu.Lock()
 	defer id.mu.Unlock()

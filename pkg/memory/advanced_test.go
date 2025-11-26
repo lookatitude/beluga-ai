@@ -5,6 +5,7 @@ package memory
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"testing"
@@ -13,18 +14,19 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-// TestAdvancedMockMemory tests the advanced mock memory functionality
+// TestAdvancedMockMemory tests the advanced mock memory functionality.
 func TestAdvancedMockMemory(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name            string
 		memory          *AdvancedMockMemory
 		operations      func(ctx context.Context, memory *AdvancedMockMemory) error
-		expectedError   bool
+		name            string
 		expectedVarLen  int
 		expectedCallMin int
+		expectedError   bool
 	}{
 		{
 			name:   "successful memory operations",
@@ -44,7 +46,7 @@ func TestAdvancedMockMemory(t *testing.T) {
 				}
 
 				if len(vars) == 0 {
-					return fmt.Errorf("expected non-empty memory variables")
+					return errors.New("expected non-empty memory variables")
 				}
 
 				return nil
@@ -56,7 +58,7 @@ func TestAdvancedMockMemory(t *testing.T) {
 		{
 			name: "memory with error",
 			memory: NewAdvancedMockMemory("error_memory", MemoryTypeBuffer,
-				WithMockError(true, fmt.Errorf("mock error"))),
+				WithMockError(true, errors.New("mock error"))),
 			operations: func(ctx context.Context, memory *AdvancedMockMemory) error {
 				inputs, outputs := CreateTestInputOutput("Hello", "Hi there!")
 				return memory.SaveContext(ctx, inputs, outputs)
@@ -76,7 +78,7 @@ func TestAdvancedMockMemory(t *testing.T) {
 				duration := time.Since(start)
 
 				if duration < 10*time.Millisecond {
-					return fmt.Errorf("expected delay was not respected")
+					return errors.New("expected delay was not respected")
 				}
 
 				return err
@@ -96,14 +98,14 @@ func TestAdvancedMockMemory(t *testing.T) {
 
 				historyContent := vars["preloaded_memory"]
 				if historyContent == nil {
-					return fmt.Errorf("expected preloaded messages in history")
+					return errors.New("expected preloaded messages in history")
 				}
 				// Check if it's a string (formatted) or slice (messages)
 				if str, ok := historyContent.(string); ok && str == "" {
-					return fmt.Errorf("expected preloaded messages in history")
+					return errors.New("expected preloaded messages in history")
 				}
 				if msgs, ok := historyContent.([]schema.Message); ok && len(msgs) == 0 {
-					return fmt.Errorf("expected preloaded messages in history")
+					return errors.New("expected preloaded messages in history")
 				}
 
 				return nil
@@ -115,14 +117,13 @@ func TestAdvancedMockMemory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// Run operations
 			err := tt.operations(ctx, tt.memory)
 
 			if tt.expectedError {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify memory variables
 				if tt.expectedVarLen > 0 {
@@ -141,14 +142,14 @@ func TestAdvancedMockMemory(t *testing.T) {
 	}
 }
 
-// TestMemoryTypes tests different memory type implementations
+// TestMemoryTypes tests different memory type implementations.
 func TestMemoryTypes(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
+		operations func(ctx context.Context, memory iface.Memory) error
 		name       string
 		memoryType MemoryType
 		config     Config
-		operations func(ctx context.Context, memory iface.Memory) error
 	}{
 		{
 			name:       "buffer memory",
@@ -171,7 +172,7 @@ func TestMemoryTypes(t *testing.T) {
 				}
 
 				if len(vars) == 0 {
-					return fmt.Errorf("buffer memory should have stored content")
+					return errors.New("buffer memory should have stored content")
 				}
 
 				return nil
@@ -205,7 +206,7 @@ func TestMemoryTypes(t *testing.T) {
 
 				// Window memory should limit content
 				if len(vars) == 0 {
-					return fmt.Errorf("window memory should have some content")
+					return errors.New("window memory should have some content")
 				}
 
 				return nil
@@ -215,7 +216,6 @@ func TestMemoryTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			// Create memory using registry
 			memory, err := CreateMemory(ctx, string(tt.memoryType), tt.config)
 			if err != nil {
@@ -225,7 +225,7 @@ func TestMemoryTypes(t *testing.T) {
 
 			// Run operations
 			err = tt.operations(ctx, memory)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 
 			// Test memory variables
 			vars := memory.MemoryVariables()
@@ -233,18 +233,18 @@ func TestMemoryTypes(t *testing.T) {
 
 			// Test clear functionality
 			err = memory.Clear(ctx)
-			assert.NoError(t, err)
+			require.NoError(t, err)
 		})
 	}
 }
 
-// TestChatMessageHistory tests chat message history functionality
+// TestChatMessageHistory tests chat message history functionality.
 func TestChatMessageHistory(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name        string
 		history     *AdvancedMockChatMessageHistory
 		operations  func(ctx context.Context, history iface.ChatMessageHistory) error
+		name        string
 		expectedErr bool
 	}{
 		{
@@ -309,7 +309,7 @@ func TestChatMessageHistory(t *testing.T) {
 		{
 			name: "history with error",
 			history: NewAdvancedMockChatMessageHistory(
-				WithHistoryError(true, fmt.Errorf("history error")),
+				WithHistoryError(true, errors.New("history error")),
 			),
 			operations: func(ctx context.Context, history iface.ChatMessageHistory) error {
 				return history.AddUserMessage(ctx, "This should fail")
@@ -320,22 +320,21 @@ func TestChatMessageHistory(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-
 			err := tt.operations(ctx, tt.history)
 
 			if tt.expectedErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify call count
-				assert.Greater(t, tt.history.GetCallCount(), 0)
+				assert.Positive(t, tt.history.GetCallCount())
 			}
 		})
 	}
 }
 
-// TestMemoryRegistry tests the memory registry functionality
+// TestMemoryRegistry tests the memory registry functionality.
 func TestMemoryRegistry(t *testing.T) {
 	ctx := context.Background()
 	registry := NewMemoryRegistry()
@@ -355,12 +354,12 @@ func TestMemoryRegistry(t *testing.T) {
 	config := CreateTestMemoryConfig(MemoryTypeBuffer)
 
 	memory, err := registry.Create(ctx, "test_memory", config)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, memory)
 
 	// Test unknown type
 	_, err = registry.Create(ctx, "unknown_type", config)
-	assert.Error(t, err)
+	require.Error(t, err)
 	AssertErrorType(t, err, ErrCodeTypeMismatch)
 
 	// Test global registry functions
@@ -371,7 +370,7 @@ func TestMemoryRegistry(t *testing.T) {
 	assert.NotNil(t, globalRegistry)
 }
 
-// TestConcurrencyAdvanced tests concurrent memory access
+// TestConcurrencyAdvanced tests concurrent memory access.
 func TestConcurrencyAdvanced(t *testing.T) {
 	memory := NewAdvancedMockMemory("concurrent_test", MemoryTypeBuffer)
 
@@ -379,7 +378,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	const numOperationsPerGoroutine = 5
 
 	t.Run("concurrent_memory_operations", func(t *testing.T) {
-	ctx := context.Background()
+		ctx := context.Background()
 		var wg sync.WaitGroup
 		errChan := make(chan error, numGoroutines*numOperationsPerGoroutine)
 
@@ -423,7 +422,7 @@ func TestConcurrencyAdvanced(t *testing.T) {
 	})
 }
 
-// TestLoadTesting performs load testing on memory components
+// TestLoadTesting performs load testing on memory components.
 func TestLoadTesting(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping load tests in short mode")
@@ -444,67 +443,69 @@ func TestLoadTesting(t *testing.T) {
 	})
 }
 
-// TestMemoryScenarios tests real-world memory usage scenarios
+// TestMemoryScenarios tests real-world memory usage scenarios.
 func TestMemoryScenarios(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
-		name     string
 		scenario func(t *testing.T, memory iface.Memory)
+		name     string
 	}{
 		{
 			name: "conversation_flow",
 			scenario: func(t *testing.T, memory iface.Memory) {
+				t.Helper()
 				runner := NewMemoryScenarioRunner(memory)
 
 				err := runner.RunConversationScenario(ctx, 5)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify memory contains conversation history
 				vars, err := memory.LoadMemoryVariables(ctx, map[string]any{"input": "test"})
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, vars)
 			},
 		},
 		{
 			name: "memory_retention",
 			scenario: func(t *testing.T, memory iface.Memory) {
+				t.Helper()
 				runner := NewMemoryScenarioRunner(memory)
 
 				err := runner.RunMemoryRetentionTest(ctx, 20, 10)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 			},
 		},
 		{
 			name: "memory_persistence",
 			scenario: func(t *testing.T, memory iface.Memory) {
-
+				t.Helper()
 				// Save initial state
 				inputs1, outputs1 := CreateTestInputOutput("Initial question", "Initial answer")
 				err := memory.SaveContext(ctx, inputs1, outputs1)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Load and verify
 				vars1, err := memory.LoadMemoryVariables(ctx, inputs1)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, vars1)
 
 				// Add more context
 				inputs2, outputs2 := CreateTestInputOutput("Follow-up question", "Follow-up answer")
 				err = memory.SaveContext(ctx, inputs2, outputs2)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify both contexts are available
 				vars2, err := memory.LoadMemoryVariables(ctx, inputs2)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotEmpty(t, vars2)
 
 				// Clear memory
 				err = memory.Clear(ctx)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 
 				// Verify memory is cleared
 				_, err = memory.LoadMemoryVariables(ctx, inputs1)
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				// After clear, memory should be empty or reset
 			},
 		},
@@ -519,7 +520,7 @@ func TestMemoryScenarios(t *testing.T) {
 	}
 }
 
-// TestIntegrationTestHelper tests the integration test helper functionality
+// TestIntegrationTestHelper tests the integration test helper functionality.
 func TestIntegrationTestHelper(t *testing.T) {
 	helper := NewIntegrationTestHelper()
 
@@ -542,10 +543,10 @@ func TestIntegrationTestHelper(t *testing.T) {
 	inputs, outputs := CreateTestInputOutput("test input", "test output")
 
 	err := bufferMemory.SaveContext(ctx, inputs, outputs)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	err = chatHistory.AddUserMessage(ctx, "test message")
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Test reset
 	helper.Reset()
@@ -555,7 +556,7 @@ func TestIntegrationTestHelper(t *testing.T) {
 	assert.Equal(t, 0, chatHistory.GetCallCount())
 }
 
-// TestMemoryErrorHandling tests comprehensive error handling scenarios
+// TestMemoryErrorHandling tests comprehensive error handling scenarios.
 func TestMemoryErrorHandling(t *testing.T) {
 	ctx := context.Background()
 	tests := []struct {
@@ -568,7 +569,7 @@ func TestMemoryErrorHandling(t *testing.T) {
 			name: "save_context_error",
 			setup: func() iface.Memory {
 				return NewAdvancedMockMemory("error_memory", MemoryTypeBuffer,
-					WithMockError(true, fmt.Errorf("save failed")))
+					WithMockError(true, errors.New("save failed")))
 			},
 			operation: func(memory iface.Memory) error {
 				inputs, outputs := CreateTestInputOutput("test", "test")
@@ -579,7 +580,7 @@ func TestMemoryErrorHandling(t *testing.T) {
 			name: "load_variables_error",
 			setup: func() iface.Memory {
 				return NewAdvancedMockMemory("error_memory", MemoryTypeBuffer,
-					WithMockError(true, fmt.Errorf("load failed")))
+					WithMockError(true, errors.New("load failed")))
 			},
 			operation: func(memory iface.Memory) error {
 				_, err := memory.LoadMemoryVariables(ctx, map[string]any{"input": "test"})
@@ -590,7 +591,7 @@ func TestMemoryErrorHandling(t *testing.T) {
 			name: "clear_error",
 			setup: func() iface.Memory {
 				return NewAdvancedMockMemory("error_memory", MemoryTypeBuffer,
-					WithMockError(true, fmt.Errorf("clear failed")))
+					WithMockError(true, errors.New("clear failed")))
 			},
 			operation: func(memory iface.Memory) error {
 				return memory.Clear(ctx)
@@ -603,12 +604,12 @@ func TestMemoryErrorHandling(t *testing.T) {
 			memory := tt.setup()
 			err := tt.operation(memory)
 
-			assert.Error(t, err)
+			require.Error(t, err)
 		})
 	}
 }
 
-// BenchmarkAdvancedMemoryOperations benchmarks memory operation performance
+// BenchmarkAdvancedMemoryOperations benchmarks memory operation performance.
 func BenchmarkAdvancedMemoryOperations(b *testing.B) {
 	ctx := context.Background()
 	memory := NewAdvancedMockMemory("benchmark", MemoryTypeBuffer)
@@ -631,7 +632,7 @@ func BenchmarkAdvancedMemoryOperations(b *testing.B) {
 	b.Run("LoadMemoryVariables", func(b *testing.B) {
 		// Pre-populate memory
 		inputs, outputs := CreateTestInputOutput("test input", "test output")
-		memory.SaveContext(ctx, inputs, outputs)
+		_ = memory.SaveContext(ctx, inputs, outputs)
 
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
@@ -653,7 +654,7 @@ func BenchmarkAdvancedMemoryOperations(b *testing.B) {
 	})
 }
 
-// BenchmarkChatMessageHistory benchmarks chat message history performance
+// BenchmarkChatMessageHistory benchmarks chat message history performance.
 func BenchmarkChatMessageHistory(b *testing.B) {
 	history := NewAdvancedMockChatMessageHistory()
 	ctx := context.Background()
@@ -682,7 +683,7 @@ func BenchmarkChatMessageHistory(b *testing.B) {
 	b.Run("GetMessages", func(b *testing.B) {
 		// Pre-populate history
 		for i := 0; i < 10; i++ {
-			history.AddUserMessage(ctx, fmt.Sprintf("Message %d", i))
+			_ = history.AddUserMessage(ctx, fmt.Sprintf("Message %d", i))
 		}
 
 		b.ResetTimer()
@@ -695,7 +696,7 @@ func BenchmarkChatMessageHistory(b *testing.B) {
 	})
 }
 
-// BenchmarkMemoryRegistry benchmarks memory registry performance
+// BenchmarkMemoryRegistry benchmarks memory registry performance.
 func BenchmarkMemoryRegistry(b *testing.B) {
 	registry := NewMemoryRegistry()
 	config := CreateTestMemoryConfig(MemoryTypeBuffer)

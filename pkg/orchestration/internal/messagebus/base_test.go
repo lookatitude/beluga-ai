@@ -2,6 +2,7 @@ package messagebus
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -27,7 +28,7 @@ func TestChannelMessageBus_Publish_NoSubscribers(t *testing.T) {
 	ctx := context.Background()
 	err := bus.Publish(ctx, "test.topic", "test_payload", nil)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "no subscribers for topic test.topic")
 }
 
@@ -42,9 +43,9 @@ func TestChannelMessageBus_Publish_Success(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, subID)
 	// Now publish
-	err = bus.Publish(ctx, "test.topic", "test_payload", map[string]interface{}{"key": "value"})
+	err = bus.Publish(ctx, "test.topic", "test_payload", map[string]any{"key": "value"})
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 }
 
 func TestChannelMessageBus_Publish_AfterClose(t *testing.T) {
@@ -64,7 +65,7 @@ func TestChannelMessageBus_Publish_AfterClose(t *testing.T) {
 	// Try to publish after close
 	err = bus.Publish(ctx, "test.topic", "test_payload", nil)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "message bus is closed")
 }
 
@@ -105,12 +106,12 @@ func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 	defer cancel()
 	cancel() // Cancel immediately
 
-	// This should fail because context is already cancelled
+	// This should fail because context is already canceled
 	err = bus.Publish(shortCtx, "test.topic", "test_payload", nil)
 
-	assert.Error(t, err)
-	// Should get context cancelled error
-	assert.True(t, err == context.Canceled || strings.Contains(err.Error(), "canceled") || strings.Contains(err.Error(), "context canceled"),
+	require.Error(t, err)
+	// Should get context canceled error
+	assert.True(t, errors.Is(err, context.Canceled) || strings.Contains(err.Error(), "canceled") || strings.Contains(err.Error(), "context canceled"),
 		"Expected context canceled error, got: %v", err)
 }
 
@@ -124,7 +125,7 @@ func TestChannelMessageBus_Subscribe_Success(t *testing.T) {
 
 	subID, err := bus.Subscribe(ctx, "test.topic", handler)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, subID)
 	assert.Contains(t, subID, "sub-")
 
@@ -148,7 +149,7 @@ func TestChannelMessageBus_Subscribe_AfterClose(t *testing.T) {
 		return nil
 	})
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "message bus is closed")
 }
 
@@ -190,11 +191,11 @@ func TestChannelMessageBus_Unsubscribe(t *testing.T) {
 	// Try to unsubscribe
 	err = bus.Unsubscribe(ctx, "test.topic", subID)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Try to unsubscribe again (should fail)
 	err = bus.Unsubscribe(ctx, "test.topic", subID)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "subscriber")
 }
 
@@ -205,7 +206,7 @@ func TestChannelMessageBus_Start(t *testing.T) {
 
 	err := bus.Start(ctx)
 
-	assert.NoError(t, err) // Should be a no-op
+	require.NoError(t, err) // Should be a no-op
 }
 
 func TestChannelMessageBus_Stop(t *testing.T) {
@@ -214,7 +215,7 @@ func TestChannelMessageBus_Stop(t *testing.T) {
 	ctx := context.Background()
 	err := bus.Stop(ctx)
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, bus.closed)
 }
 
@@ -243,7 +244,7 @@ func TestChannelMessageBus_Close(t *testing.T) {
 	// Close the bus
 	err = bus.Close()
 
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.True(t, bus.closed)
 
 	// Verify channels are closed
@@ -258,12 +259,12 @@ func TestChannelMessageBus_Close_AlreadyClosed(t *testing.T) {
 
 	// Close once
 	err := bus.Close()
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	// Try to close again
 	err = bus.Close()
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "message bus already closed")
 }
 
@@ -278,7 +279,7 @@ func TestChannelMessageBus_ConcurrentOperations(t *testing.T) {
 		go func(id int) {
 			defer wg.Done()
 			for j := 0; j < 10; j++ {
-				bus.Publish(ctx, "concurrent.topic", "payload", nil)
+				_ = bus.Publish(ctx, "concurrent.topic", "payload", nil)
 			}
 		}(i)
 	}
@@ -288,7 +289,7 @@ func TestChannelMessageBus_ConcurrentOperations(t *testing.T) {
 		wg.Add(1)
 		go func(id int) {
 			defer wg.Done()
-			bus.Subscribe(ctx, "concurrent.topic", func(ctx context.Context, msg Message) error {
+			_, _ = bus.Subscribe(ctx, "concurrent.topic", func(ctx context.Context, msg Message) error {
 				return nil
 			})
 		}(i)
@@ -305,19 +306,22 @@ func TestChannelMessageBus_MessageStructure(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	var mu sync.Mutex
 	var receivedMsg Message
 	var msgReceived bool
 
 	// Subscribe with a handler that captures the message
 	_, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
+		mu.Lock()
 		receivedMsg = msg
 		msgReceived = true
+		mu.Unlock()
 		return nil
 	})
 	require.NoError(t, err)
 
-	payload := map[string]interface{}{"data": "test"}
-	metadata := map[string]interface{}{"source": "test", "priority": "high"}
+	payload := map[string]any{"data": "test"}
+	metadata := map[string]any{"source": "test", "priority": "high"}
 
 	// Publish a message
 	err = bus.Publish(ctx, "test.topic", payload, metadata)
@@ -327,12 +331,16 @@ func TestChannelMessageBus_MessageStructure(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Verify message structure
-	assert.True(t, msgReceived)
-	assert.NotEmpty(t, receivedMsg.ID)
-	assert.Equal(t, "test.topic", receivedMsg.Topic)
-	assert.Equal(t, payload, receivedMsg.Payload)
-	assert.Equal(t, metadata, receivedMsg.Metadata)
-	assert.Contains(t, receivedMsg.ID, "msg-")
+	mu.Lock()
+	wasReceived := msgReceived
+	msg := receivedMsg
+	mu.Unlock()
+	assert.True(t, wasReceived)
+	assert.NotEmpty(t, msg.ID)
+	assert.Equal(t, "test.topic", msg.Topic)
+	assert.Equal(t, payload, msg.Payload)
+	assert.Equal(t, metadata, msg.Metadata)
+	assert.Contains(t, msg.ID, "msg-")
 }
 
 func TestChannelMessageBus_BufferSize(t *testing.T) {
@@ -384,24 +392,32 @@ func TestChannelMessageBus_MultipleSubscribers(t *testing.T) {
 
 	// Since this implementation only supports one channel per topic,
 	// only one message should be sent
-	assert.Equal(t, 1, receivedCount)
+	mu.Lock()
+	count := receivedCount
+	mu.Unlock()
+	assert.Equal(t, 1, count)
 }
 
 func TestChannelMessageBus_TopicIsolation(t *testing.T) {
 	bus := NewChannelMessageBus()
 
 	ctx := context.Background()
+	var mu sync.Mutex
 	var topic1Received, topic2Received bool
 
 	// Subscribe to different topics
 	_, err := bus.Subscribe(ctx, "topic1", func(ctx context.Context, msg Message) error {
+		mu.Lock()
 		topic1Received = true
+		mu.Unlock()
 		return nil
 	})
 	require.NoError(t, err)
 
 	_, err = bus.Subscribe(ctx, "topic2", func(ctx context.Context, msg Message) error {
+		mu.Lock()
 		topic2Received = true
+		mu.Unlock()
 		return nil
 	})
 	require.NoError(t, err)
@@ -414,6 +430,10 @@ func TestChannelMessageBus_TopicIsolation(t *testing.T) {
 	time.Sleep(10 * time.Millisecond)
 
 	// Only topic1 should have received the message
-	assert.True(t, topic1Received)
-	assert.False(t, topic2Received)
+	mu.Lock()
+	topic1 := topic1Received
+	topic2 := topic2Received
+	mu.Unlock()
+	assert.True(t, topic1)
+	assert.False(t, topic2)
 }

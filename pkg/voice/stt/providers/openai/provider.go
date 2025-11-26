@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -16,18 +17,18 @@ import (
 	sttiface "github.com/lookatitude/beluga-ai/pkg/voice/stt/iface"
 )
 
-// OpenAIProvider implements the STTProvider interface for OpenAI Whisper
+// OpenAIProvider implements the STTProvider interface for OpenAI Whisper.
 type OpenAIProvider struct {
 	config     *OpenAIConfig
 	httpClient *http.Client
 	mu         sync.RWMutex
 }
 
-// NewOpenAIProvider creates a new OpenAI Whisper provider
+// NewOpenAIProvider creates a new OpenAI Whisper provider.
 func NewOpenAIProvider(config *stt.Config) (sttiface.STTProvider, error) {
 	if config == nil {
 		return nil, stt.NewSTTError("NewOpenAIProvider", stt.ErrCodeInvalidConfig,
-			fmt.Errorf("config cannot be nil"))
+			errors.New("config cannot be nil"))
 	}
 
 	// Convert base config to OpenAI config
@@ -69,12 +70,12 @@ func NewOpenAIProvider(config *stt.Config) (sttiface.STTProvider, error) {
 	}, nil
 }
 
-// Transcribe implements the STTProvider interface using OpenAI Whisper API
+// Transcribe implements the STTProvider interface using OpenAI Whisper API.
 func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, error) {
 	startTime := time.Now()
 
 	// Build request URL
-	url := fmt.Sprintf("%s/v1/audio/transcriptions", p.config.BaseURL)
+	url := p.config.BaseURL + "/v1/audio/transcriptions"
 
 	// Create multipart form
 	var body bytes.Buffer
@@ -125,7 +126,7 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 	}
 
 	// Set headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	req.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Execute request with retry logic
@@ -166,7 +167,7 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 		if resp != nil {
 			statusCode := resp.StatusCode
 			// Close response body before retrying
-			resp.Body.Close()
+			_ = resp.Body.Close()
 
 			// Don't retry on non-retryable status codes (except 429 and 5xx)
 			if statusCode != http.StatusTooManyRequests && statusCode < 500 {
@@ -184,14 +185,14 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 	// Handle final error or non-200 response
 	if err != nil {
 		_ = time.Since(startTime) // Record duration for potential metrics
-		if ctx.Err() == context.DeadlineExceeded {
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			return "", stt.NewSTTError("Transcribe", stt.ErrCodeTimeout, err)
 		}
 		return "", stt.ErrorFromHTTPStatus("Transcribe", 0, err)
 	}
 
 	if resp == nil {
-		return "", stt.NewSTTError("Transcribe", stt.ErrCodeNetworkError, fmt.Errorf("no response received"))
+		return "", stt.NewSTTError("Transcribe", stt.ErrCodeNetworkError, errors.New("no response received"))
 	}
 
 	defer resp.Body.Close()
@@ -218,7 +219,7 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 
 	if response.Text == "" {
 		return "", stt.NewSTTError("Transcribe", stt.ErrCodeEmptyResponse,
-			fmt.Errorf("no transcript in response"))
+			errors.New("no transcript in response"))
 	}
 
 	transcript := response.Text
@@ -237,10 +238,10 @@ func (p *OpenAIProvider) Transcribe(ctx context.Context, audio []byte) (string, 
 
 // StartStreaming implements the STTProvider interface
 // Note: OpenAI Whisper API doesn't support streaming transcription directly
-// This would require using a different approach or API
+// This would require using a different approach or API.
 func (p *OpenAIProvider) StartStreaming(ctx context.Context) (iface.StreamingSession, error) {
 	// OpenAI Whisper API doesn't support streaming transcription
 	// Return an error indicating this limitation
 	return nil, stt.NewSTTError("StartStreaming", stt.ErrCodeStreamError,
-		fmt.Errorf("OpenAI Whisper API does not support streaming transcription"))
+		errors.New("OpenAI Whisper API does not support streaming transcription"))
 }

@@ -15,8 +15,8 @@ import (
 
 func TestNewOpenAIProvider(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *tts.Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -47,10 +47,10 @@ func TestNewOpenAIProvider(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			provider, err := NewOpenAIProvider(tt.config)
 			if tt.wantErr {
-				assert.Error(t, err)
+				require.Error(t, err)
 				assert.Nil(t, provider)
 			} else {
-				assert.NoError(t, err)
+				require.NoError(t, err)
 				assert.NotNil(t, provider)
 			}
 		})
@@ -89,7 +89,7 @@ func TestOpenAIProvider_GenerateSpeech_Success(t *testing.T) {
 	text := "Hello, world!"
 
 	audio, err := provider.GenerateSpeech(ctx, text)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 	assert.Equal(t, []byte{1, 2, 3, 4, 5, 6, 7, 8}, audio)
 }
@@ -116,7 +116,7 @@ func TestOpenAIProvider_GenerateSpeech_HTTPError(t *testing.T) {
 	text := "Hello, world!"
 
 	_, err = provider.GenerateSpeech(ctx, text)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_StreamGenerate_Success(t *testing.T) {
@@ -150,12 +150,12 @@ func TestOpenAIProvider_StreamGenerate_Success(t *testing.T) {
 	text := "Hello, world!"
 
 	reader, err := provider.StreamGenerate(ctx, text)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotNil(t, reader)
 
 	// Read from stream
 	audio, err := io.ReadAll(reader)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 	assert.NotEmpty(t, audio)
 }
 
@@ -181,7 +181,7 @@ func TestOpenAIProvider_StreamGenerate_HTTPError(t *testing.T) {
 	text := "Hello, world!"
 
 	_, err = provider.StreamGenerate(ctx, text)
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_GenerateSpeech_ContextCancellation(t *testing.T) {
@@ -208,7 +208,7 @@ func TestOpenAIProvider_GenerateSpeech_ContextCancellation(t *testing.T) {
 	}()
 
 	_, err = provider.GenerateSpeech(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestOpenAIProvider_StreamGenerate_ContextCancellation(t *testing.T) {
@@ -235,7 +235,7 @@ func TestOpenAIProvider_StreamGenerate_ContextCancellation(t *testing.T) {
 	}()
 
 	_, err = provider.StreamGenerate(ctx, "test")
-	assert.Error(t, err)
+	require.Error(t, err)
 }
 
 func TestDefaultOpenAIConfig(t *testing.T) {
@@ -244,6 +244,6 @@ func TestDefaultOpenAIConfig(t *testing.T) {
 	assert.Equal(t, "tts-1", config.Model)
 	assert.Equal(t, "alloy", config.Voice)
 	assert.Equal(t, "mp3", config.ResponseFormat)
-	assert.Equal(t, 1.0, config.Speed)
+	assert.InEpsilon(t, 1.0, config.Speed, 0.0001)
 	assert.Equal(t, "https://api.openai.com", config.BaseURL)
 }

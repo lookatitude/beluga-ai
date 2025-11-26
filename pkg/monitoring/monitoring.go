@@ -46,6 +46,7 @@ package monitoring
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -61,7 +62,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/monitoring/internal/tracer"
 )
 
-// Monitor provides the main interface for comprehensive monitoring
+// Monitor provides the main interface for comprehensive monitoring.
 type Monitor interface {
 	// Core monitoring components
 	Logger() monitoringIface.Logger
@@ -80,26 +81,26 @@ type Monitor interface {
 	IsHealthy(ctx context.Context) bool
 }
 
-// Option represents functional options for Monitor configuration
+// Option represents functional options for Monitor configuration.
 type Option func(*monitorConfig)
 
-// monitorConfig holds the configuration for the Monitor
+// monitorConfig holds the configuration for the Monitor.
 type monitorConfig struct {
 	serviceName         string
-	enableOpenTelemetry bool
 	otelEndpoint        string
+	logging             LoggingConfig
+	config              Config
+	logLevel            LogLevel
+	enableOpenTelemetry bool
 	enableSafetyChecks  bool
 	enableEthicalChecks bool
 	enableTracing       bool
 	enableMetrics       bool
 	enableHealthChecks  bool
 	enableLogging       bool
-	logLevel            LogLevel
-	config              Config
-	logging             LoggingConfig
 }
 
-// NewMonitor creates a new comprehensive monitoring system
+// NewMonitor creates a new comprehensive monitoring system.
 func NewMonitor(opts ...Option) (Monitor, error) {
 	config := &monitorConfig{
 		serviceName:         "beluga-ai-service",
@@ -142,7 +143,7 @@ func NewMonitor(opts ...Option) (Monitor, error) {
 	return monitor, nil
 }
 
-// NewMonitorWithConfig creates a new monitoring system integrated with the main config package
+// NewMonitorWithConfig creates a new monitoring system integrated with the main config package.
 func NewMonitorWithConfig(mainConfig *iface.Config, opts ...Option) (Monitor, error) {
 	config := &monitorConfig{
 		serviceName:         "beluga-ai-service",
@@ -191,7 +192,7 @@ func NewMonitorWithConfig(mainConfig *iface.Config, opts ...Option) (Monitor, er
 	return monitor, nil
 }
 
-// defaultMonitor implements the Monitor interface
+// defaultMonitor implements the Monitor interface.
 type defaultMonitor struct {
 	config               *monitorConfig
 	logger               monitoringIface.Logger
@@ -203,7 +204,7 @@ type defaultMonitor struct {
 	bestPracticesChecker monitoringIface.BestPracticesChecker
 }
 
-// initializeComponents sets up all monitoring components
+// initializeComponents sets up all monitoring components.
 func (m *defaultMonitor) initializeComponents() error {
 	// Initialize logger
 	if m.config.enableLogging {
@@ -232,7 +233,7 @@ func (m *defaultMonitor) initializeComponents() error {
 	if m.config.enableSafetyChecks {
 		loggerImpl, ok := m.logger.(*logger.StructuredLogger)
 		if !ok {
-			return fmt.Errorf("logger does not implement StructuredLogger")
+			return errors.New("logger does not implement StructuredLogger")
 		}
 		safetyChecker := safety.NewSafetyChecker(loggerImpl)
 		m.safetyChecker = safetyChecker
@@ -242,7 +243,7 @@ func (m *defaultMonitor) initializeComponents() error {
 	if m.config.enableEthicalChecks {
 		loggerImpl, ok := m.logger.(*logger.StructuredLogger)
 		if !ok {
-			return fmt.Errorf("logger does not implement StructuredLogger")
+			return errors.New("logger does not implement StructuredLogger")
 		}
 		ethicalChecker := ethics.NewEthicalAIChecker(loggerImpl)
 		m.ethicalChecker = ethicalChecker
@@ -251,11 +252,11 @@ func (m *defaultMonitor) initializeComponents() error {
 	// Initialize best practices checker
 	loggerImpl, ok := m.logger.(*logger.StructuredLogger)
 	if !ok {
-		return fmt.Errorf("logger does not implement StructuredLogger")
+		return errors.New("logger does not implement StructuredLogger")
 	}
 	metricsImpl, ok := m.metrics.(*metrics.MetricsCollector)
 	if !ok {
-		return fmt.Errorf("metrics does not implement MetricsCollector")
+		return errors.New("metrics does not implement MetricsCollector")
 	}
 	bestPracticesChecker := best_practices.NewBestPracticesChecker(loggerImpl, metricsImpl)
 	m.bestPracticesChecker = bestPracticesChecker
@@ -263,7 +264,7 @@ func (m *defaultMonitor) initializeComponents() error {
 	return nil
 }
 
-// Core interface implementations
+// Core interface implementations.
 func (m *defaultMonitor) Logger() monitoringIface.Logger                 { return m.logger }
 func (m *defaultMonitor) Tracer() monitoringIface.Tracer                 { return m.tracer }
 func (m *defaultMonitor) Metrics() monitoringIface.MetricsCollector      { return m.metrics }
@@ -274,7 +275,7 @@ func (m *defaultMonitor) BestPracticesChecker() monitoringIface.BestPracticesChe
 	return m.bestPracticesChecker
 }
 
-// Lifecycle management
+// Lifecycle management.
 func (m *defaultMonitor) Start(ctx context.Context) error {
 	// Start health check monitoring
 	if m.healthChecker != nil {
@@ -284,7 +285,7 @@ func (m *defaultMonitor) Start(ctx context.Context) error {
 
 	if m.logger != nil {
 		m.logger.Info(ctx, "Monitoring system started",
-			map[string]interface{}{
+			map[string]any{
 				"service":    m.config.serviceName,
 				"components": m.getEnabledComponents(),
 			})
@@ -296,7 +297,7 @@ func (m *defaultMonitor) Start(ctx context.Context) error {
 func (m *defaultMonitor) Stop(ctx context.Context) error {
 	if m.logger != nil {
 		m.logger.Info(ctx, "Monitoring system stopping",
-			map[string]interface{}{
+			map[string]any{
 				"service": m.config.serviceName,
 			})
 	}
@@ -318,26 +319,26 @@ func (m *defaultMonitor) IsHealthy(ctx context.Context) bool {
 	return true
 }
 
-// registerDefaultHealthChecks registers basic health checks
+// registerDefaultHealthChecks registers basic health checks.
 func (m *defaultMonitor) registerDefaultHealthChecks() {
 	// System health check
-	m.healthChecker.RegisterCheck("system", func(ctx context.Context) monitoringIface.HealthCheckResult {
+	_ = m.healthChecker.RegisterCheck("system", func(ctx context.Context) monitoringIface.HealthCheckResult {
 		return monitoringIface.HealthCheckResult{
 			Status:    monitoringIface.StatusHealthy,
 			Message:   "System is operational",
 			CheckName: "system",
 			Timestamp: time.Now(),
-			Details: map[string]interface{}{
+			Details: map[string]any{
 				"service": m.config.serviceName,
 			},
 		}
 	})
 
 	// Components health check
-	m.healthChecker.RegisterCheck("components", func(ctx context.Context) monitoringIface.HealthCheckResult {
+	_ = m.healthChecker.RegisterCheck("components", func(ctx context.Context) monitoringIface.HealthCheckResult {
 		status := monitoringIface.StatusHealthy
 		message := "All components healthy"
-		details := make(map[string]interface{})
+		details := make(map[string]any)
 
 		if m.logger == nil {
 			status = monitoringIface.StatusDegraded
@@ -370,7 +371,7 @@ func (m *defaultMonitor) registerDefaultHealthChecks() {
 	})
 }
 
-// getEnabledComponents returns a list of enabled components
+// getEnabledComponents returns a list of enabled components.
 func (m *defaultMonitor) getEnabledComponents() []string {
 	components := []string{}
 
@@ -396,7 +397,7 @@ func (m *defaultMonitor) getEnabledComponents() []string {
 	return components
 }
 
-// createLogger creates a configured logger instance
+// createLogger creates a configured logger instance.
 func (m *defaultMonitor) createLogger() monitoringIface.Logger {
 	var opts []logger.LoggerOption
 
@@ -416,7 +417,7 @@ func (m *defaultMonitor) createLogger() monitoringIface.Logger {
 	return logger.NewStructuredLogger(m.config.serviceName, opts...)
 }
 
-// initOpenTelemetry initializes OpenTelemetry with the provided endpoint
+// initOpenTelemetry initializes OpenTelemetry with the provided endpoint.
 func initOpenTelemetry(serviceName, endpoint string) error {
 	// This would initialize OpenTelemetry SDK
 	// For now, we'll use a placeholder implementation
@@ -432,11 +433,11 @@ func initOpenTelemetry(serviceName, endpoint string) error {
 	return nil
 }
 
-// LogLevel represents the severity of a log entry
+// LogLevel represents the severity of a log entry.
 type LogLevel int
 
 const (
-	// Log levels
+	// Log levels.
 	DEBUG LogLevel = iota
 	INFO
 	WARNING
@@ -444,7 +445,7 @@ const (
 	FATAL
 )
 
-// String returns the string representation of the log level
+// String returns the string representation of the log level.
 func (l LogLevel) String() string {
 	switch l {
 	case DEBUG:

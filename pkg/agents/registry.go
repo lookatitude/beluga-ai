@@ -13,13 +13,13 @@ import (
 )
 
 // AgentCreatorFunc defines the function signature for creating agents.
-type AgentCreatorFunc func(ctx context.Context, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
+type AgentCreatorFunc func(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
 
 // AgentRegistry is the global registry for creating agent instances.
 // It maintains a registry of available agent types and their creation functions.
 type AgentRegistry struct {
-	mu       sync.RWMutex
 	creators map[string]AgentCreatorFunc
+	mu       sync.RWMutex
 }
 
 // NewAgentRegistry creates a new AgentRegistry instance.
@@ -37,7 +37,7 @@ func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 }
 
 // Create creates a new agent instance using the registered agent type.
-func (r *AgentRegistry) Create(ctx context.Context, agentType string, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	r.mu.RLock()
 	creator, exists := r.creators[agentType]
 	r.mu.RUnlock()
@@ -74,7 +74,7 @@ func RegisterAgentType(agentType string, creator AgentCreatorFunc) {
 }
 
 // CreateAgent creates an agent using the global registry.
-func CreateAgent(ctx context.Context, agentType string, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	return globalAgentRegistry.Create(ctx, agentType, name, llm, agentTools, config)
 }
 
@@ -102,7 +102,7 @@ func init() {
 }
 
 // Built-in agent creators.
-func createBaseAgent(ctx context.Context, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func createBaseAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	baseLLM, ok := llm.(llmsiface.LLM)
 	if !ok {
 		return nil, NewAgentError(
@@ -117,7 +117,7 @@ func createBaseAgent(ctx context.Context, name string, llm interface{}, agentToo
 	return factory.CreateBaseAgent(ctx, name, baseLLM, agentTools)
 }
 
-func createReActAgent(ctx context.Context, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func createReActAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	chatModel, ok := llm.(llmsiface.ChatModel)
 	if !ok {
 		return nil, NewAgentError(
@@ -130,7 +130,7 @@ func createReActAgent(ctx context.Context, name string, llm interface{}, agentTo
 
 	factory := NewAgentFactory(&config)
 	// ReAct agent needs a prompt, use default or from config
-	var prompt interface{}
+	var prompt any
 	// TODO: Extract prompt from config or use default
 	return factory.CreateReActAgent(ctx, name, chatModel, agentTools, prompt)
 }

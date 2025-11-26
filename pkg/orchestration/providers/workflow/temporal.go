@@ -13,15 +13,15 @@ import (
 	"go.temporal.io/sdk/client"
 )
 
-// TemporalWorkflow implements the Workflow interface using Temporal
+// TemporalWorkflow implements the Workflow interface using Temporal.
 type TemporalWorkflow struct {
-	config     iface.WorkflowConfig
 	client     client.Client
 	tracer     trace.Tracer
 	workflowFn any
+	config     iface.WorkflowConfig
 }
 
-// NewTemporalWorkflow creates a new TemporalWorkflow
+// NewTemporalWorkflow creates a new TemporalWorkflow.
 func NewTemporalWorkflow(config iface.WorkflowConfig, client client.Client, tracer trace.Tracer, workflowFn any) *TemporalWorkflow {
 	return &TemporalWorkflow{
 		config:     config,
@@ -60,7 +60,7 @@ func (tw *TemporalWorkflow) Execute(ctx context.Context, input any) (string, str
 	return we.GetID(), we.GetRunID(), nil
 }
 
-func (tw *TemporalWorkflow) GetResult(ctx context.Context, workflowID string, runID string) (any, error) {
+func (tw *TemporalWorkflow) GetResult(ctx context.Context, workflowID, runID string) (any, error) {
 	ctx, span := tw.tracer.Start(ctx, "temporal_workflow.get_result",
 		trace.WithAttributes(
 			attribute.String("workflow.id", workflowID),
@@ -79,7 +79,7 @@ func (tw *TemporalWorkflow) GetResult(ctx context.Context, workflowID string, ru
 	return result, nil
 }
 
-func (tw *TemporalWorkflow) Signal(ctx context.Context, workflowID string, runID string, signalName string, data any) error {
+func (tw *TemporalWorkflow) Signal(ctx context.Context, workflowID, runID, signalName string, data any) error {
 	ctx, span := tw.tracer.Start(ctx, "temporal_workflow.signal",
 		trace.WithAttributes(
 			attribute.String("workflow.id", workflowID),
@@ -97,7 +97,7 @@ func (tw *TemporalWorkflow) Signal(ctx context.Context, workflowID string, runID
 	return nil
 }
 
-func (tw *TemporalWorkflow) Query(ctx context.Context, workflowID string, runID string, queryType string, args ...any) (any, error) {
+func (tw *TemporalWorkflow) Query(ctx context.Context, workflowID, runID, queryType string, args ...any) (any, error) {
 	ctx, span := tw.tracer.Start(ctx, "temporal_workflow.query",
 		trace.WithAttributes(
 			attribute.String("workflow.id", workflowID),
@@ -120,7 +120,7 @@ func (tw *TemporalWorkflow) Query(ctx context.Context, workflowID string, runID 
 	return result, nil
 }
 
-func (tw *TemporalWorkflow) Cancel(ctx context.Context, workflowID string, runID string) error {
+func (tw *TemporalWorkflow) Cancel(ctx context.Context, workflowID, runID string) error {
 	ctx, span := tw.tracer.Start(ctx, "temporal_workflow.cancel",
 		trace.WithAttributes(
 			attribute.String("workflow.id", workflowID),
@@ -137,7 +137,7 @@ func (tw *TemporalWorkflow) Cancel(ctx context.Context, workflowID string, runID
 	return nil
 }
 
-func (tw *TemporalWorkflow) Terminate(ctx context.Context, workflowID string, runID string, reason string, details ...any) error {
+func (tw *TemporalWorkflow) Terminate(ctx context.Context, workflowID, runID, reason string, details ...any) error {
 	ctx, span := tw.tracer.Start(ctx, "temporal_workflow.terminate",
 		trace.WithAttributes(
 			attribute.String("workflow.id", workflowID),
@@ -155,13 +155,13 @@ func (tw *TemporalWorkflow) Terminate(ctx context.Context, workflowID string, ru
 	return nil
 }
 
-// TemporalActivityWrapper wraps a Beluga Runnable as a Temporal Activity
+// TemporalActivityWrapper wraps a Beluga Runnable as a Temporal Activity.
 type TemporalActivityWrapper struct {
 	Runnable core.Runnable
 	tracer   trace.Tracer
 }
 
-// NewTemporalActivityWrapper creates a new activity wrapper
+// NewTemporalActivityWrapper creates a new activity wrapper.
 func NewTemporalActivityWrapper(runnable core.Runnable, tracer trace.Tracer) *TemporalActivityWrapper {
 	return &TemporalActivityWrapper{
 		Runnable: runnable,
@@ -169,7 +169,7 @@ func NewTemporalActivityWrapper(runnable core.Runnable, tracer trace.Tracer) *Te
 	}
 }
 
-// Execute runs the underlying Beluga Runnable as a Temporal Activity
+// Execute runs the underlying Beluga Runnable as a Temporal Activity.
 func (w *TemporalActivityWrapper) Execute(ctx context.Context, input any) (any, error) {
 	ctx, span := w.tracer.Start(ctx, "temporal_activity.execute",
 		trace.WithAttributes(
@@ -187,7 +187,7 @@ func (w *TemporalActivityWrapper) Execute(ctx context.Context, input any) (any, 
 }
 
 // RegisterActivities registers Beluga Runnables as Temporal Activities
-// Note: This is a placeholder for Temporal activity registration
+// Note: This is a placeholder for Temporal activity registration.
 func RegisterActivities(runnables map[string]core.Runnable, tracer trace.Tracer) {
 	for name, runnable := range runnables {
 		wrapper := NewTemporalActivityWrapper(runnable, tracer)
@@ -198,5 +198,5 @@ func RegisterActivities(runnables map[string]core.Runnable, tracer trace.Tracer)
 	}
 }
 
-// Ensure TemporalWorkflow implements the Workflow interface
+// Ensure TemporalWorkflow implements the Workflow interface.
 var _ iface.Workflow = (*TemporalWorkflow)(nil)
