@@ -1,5 +1,36 @@
 # Changelog
 
+## [2.0.0](https://github.com/lookatitude/beluga-ai/compare/v1.3.1...v2.0.0) (2025-11-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* **voice:** This release introduces the Voice Agents feature, a major new capability for the Beluga AI framework.
+
+### Features
+
+* adjust GitHub workflows with manual triggers and enhanced CI/CD ([1c84903](https://github.com/lookatitude/beluga-ai/commit/1c84903c87a385ee173400e4160243e66ecd9f8d))
+* **voice:** introduce Voice Agents feature with comprehensive test coverage ([fdeb7d1](https://github.com/lookatitude/beluga-ai/commit/fdeb7d13ba29ff4b7bb647464eafa86d8ac87c2e))
+
+
+### Bug Fixes
+
+* apply lint auto-fixes and format code ([6fe68f3](https://github.com/lookatitude/beluga-ai/commit/6fe68f356f8d4765ad26686f0754cff7800c06e4))
+* change version field format for golangci-lint v2.0.1 ([fe01327](https://github.com/lookatitude/beluga-ai/commit/fe0132770177308c9d0cfe533dbbd27a2402e520))
+* Fix GitHub workflows, coverage calculation, PR checks, and documentation generation ([cce44aa](https://github.com/lookatitude/beluga-ai/commit/cce44aae97074a9d928d789140e3bc0b3cc78710))
+* migrate golangci-lint config to v2 format ([c6a9f15](https://github.com/lookatitude/beluga-ai/commit/c6a9f15cbcb3a04b2ce2fd39a47e933a2f106d90))
+* remove deprecated --out-format flag from golangci-lint v2 ([e87b355](https://github.com/lookatitude/beluga-ai/commit/e87b355d72f991301f6abcd58c1da264c2c8ffef))
+* remove invalid typecheck disable from golangci config ([eee9f16](https://github.com/lookatitude/beluga-ai/commit/eee9f16326495ab8c30d89ac485eb08c070218a9))
+* resolve all CI pipeline issues and ensure all checks pass ([078ddf3](https://github.com/lookatitude/beluga-ai/commit/078ddf32406bfe3b7914eddf124bf30b620376fc))
+* resolve all test issues and linting problems ([c3c1da0](https://github.com/lookatitude/beluga-ai/commit/c3c1da07309315e540a32ba7ea4f75dee6e9b0f4))
+* resolve CI golangci-lint panic and release workflow issues ([51c504c](https://github.com/lookatitude/beluga-ai/commit/51c504c22b06fff5502a2affac0229fc98259ef6))
+* set version to string format for golangci-lint v2.0.1 ([aa340ed](https://github.com/lookatitude/beluga-ai/commit/aa340ed5a93c109a3dc467218d6c64cf4d26a5f5))
+* simplify golangci-lint config to v2 compatible format ([06cedfb](https://github.com/lookatitude/beluga-ai/commit/06cedfb2235b42d62ec95211b658b75c82accfe0))
+* update build job to properly filter test-only packages ([c05891f](https://github.com/lookatitude/beluga-ai/commit/c05891f5e36bedb8cf8291a4180a63a9f2a9c39d))
+* update golangci config for v2.0.1 compatibility ([98222e3](https://github.com/lookatitude/beluga-ai/commit/98222e32d54a598333c23db220748256659868e4))
+* update golangci-lint to v2 and use v6 action ([8007264](https://github.com/lookatitude/beluga-ai/commit/8007264dd2287d40efb2d8f76b06b11fcffca8e8))
+* update golangci-lint-action to v7 for golangci-lint v2 support ([a42da78](https://github.com/lookatitude/beluga-ai/commit/a42da783a9aa99499b100f7e5b659e06f7b3a08e))
+
 ## [Unreleased]
 
 ### Features
