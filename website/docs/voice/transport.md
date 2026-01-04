@@ -24,7 +24,7 @@ The Transport package follows the Beluga AI Framework design patterns, providing
 
 - **Features**: Peer-to-peer, low latency, STUN/TURN support
 - **Best for**: Direct peer connections, low latency requirements
-- **Latency**: <100ms
+- **Latency**: &lt;100ms
 - **Protocol**: WebRTC (UDP)
 
 ### WebSocket
@@ -140,7 +140,7 @@ if err != nil {
 
 ## Performance
 
-- **Latency**: <200ms for WebRTC, 100-200ms for WebSocket
+- **Latency**: &lt;200ms for WebRTC, 100-200ms for WebSocket
 - **Throughput**: 1000+ audio chunks per second
 - **Reliability**: Automatic reconnection on failure
 

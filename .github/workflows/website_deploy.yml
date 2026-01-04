@@ -66,7 +66,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18' # Or your preferred Docusaurus Node version
+          node-version: '20' # Docusaurus v3.9.2 supports Node 18+, using Node 20 LTS for better performance
           cache: 'yarn'
           cache-dependency-path: website/yarn.lock
 

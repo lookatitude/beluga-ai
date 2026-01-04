@@ -1,5 +1,6 @@
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const { themes } = require('prism-react-renderer');
+const lightCodeTheme = themes.github;
+const darkCodeTheme = themes.dracula;
 
 // With JSDoc @type annotations, IDEs can provide config autocompletion
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
@@ -9,16 +10,14 @@ module.exports = {
   url: 'https://lookatitude.github.io',
   baseUrl: '/beluga-ai/',
   onBrokenLinks: 'warn',
-  onBrokenMarkdownLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
   favicon: 'img/favicon.ico',
   organizationName: 'lookatitude',
   projectName: 'beluga-ai',
-  
-  // Metadata
-  metadata: [
-    {name: 'keywords', content: 'go, golang, ai, llm, langchain, agents, rag, vectorstore, embeddings, ai-framework'},
-    {name: 'description', content: 'Beluga AI Framework - A production-ready Go framework for building sophisticated AI and agentic applications with enterprise-grade observability.'},
-  ],
   
   // i18n configuration
   i18n: {
@@ -162,11 +161,13 @@ module.exports = {
         disableSwitch: false,
         respectPrefersColorScheme: true,
       },
-      algolia: {
-        // Optional: Add Algolia search configuration if needed
-        // appId: 'YOUR_APP_ID',
-        // apiKey: 'YOUR_SEARCH_API_KEY',
-        // indexName: 'YOUR_INDEX_NAME',
-      },
     }),
+  
+  // Custom fields for metadata
+  customFields: {
+    metadata: [
+      {name: 'keywords', content: 'go, golang, ai, llm, langchain, agents, rag, vectorstore, embeddings, ai-framework'},
+      {name: 'description', content: 'Beluga AI Framework - A production-ready Go framework for building sophisticated AI and agentic applications with enterprise-grade observability.'},
+    ],
+  },
 };

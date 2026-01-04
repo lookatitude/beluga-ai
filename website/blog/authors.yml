@@ -3,3 +3,15 @@ beluga-team:
   title: Beluga AI Framework Maintainers
   url: https://github.com/lookatitude/beluga-ai
   image_url: https://github.com/lookatitude.png
+
+slorber:
+  name: Sébastien Lorber
+  title: Docusaurus Maintainer
+  url: https://github.com/slorber
+  image_url: https://github.com/slorber.png
+
+yangshun:
+  name: Yangshun Tay
+  title: Docusaurus Maintainer
+  url: https://github.com/yangshun
+  image_url: https://github.com/yangshun.png
