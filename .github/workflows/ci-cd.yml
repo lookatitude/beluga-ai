@@ -212,8 +212,14 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore: auto-fix linting and formatting issues [skip ci]"
-            git push
+            git commit -m "chore: auto-fix linting and formatting issues [skip ci]" || {
+              echo "::warning::Failed to commit auto-fixed files (advisory - does not block merge)"
+              exit 0
+            }
+            git push || {
+              echo "::warning::Failed to push auto-fixed files (advisory - does not block merge)"
+              exit 0
+            }
             echo "✅ Auto-fixed files committed to PR branch"
           fi
       
