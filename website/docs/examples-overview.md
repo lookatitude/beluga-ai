@@ -39,6 +39,23 @@ Each subdirectory there typically focuses on a specific package or concept:
     go run main.go
     ```
 
+## API Reference
+
+For detailed API documentation on the packages used in these examples:
+
+- **[Agents Package](../api/packages/agents)** - Agent interfaces and implementations
+- **[Tools Package](../api/packages/tools)** - Tool interfaces and implementations
+- **[LLMs Package](../api/packages/llms)** - LLM interfaces and provider implementations
+- **[Memory Package](../api/packages/memory)** - Memory management interfaces
+- **[Embeddings Package](../api/packages/embeddings)** - Embedding model interfaces
+- **[VectorStores Package](../api/packages/vectorstores)** - Vector storage interfaces
+- **[Retrievers Package](../api/packages/retrievers)** - Document retrieval components
+- **[Orchestration Package](../api/packages/orchestration)** - Workflow orchestration
+- **[Voice Packages](../api/packages/voice/)** - Voice agent components (STT, TTS, VAD, etc.)
+- **[Schema Package](../api/packages/schema)** - Data schemas and message types
+
+See the [complete API Reference](../api/index) for all available packages.
+
 ## Contributing Examples
 
 We welcome contributions of new examples! If you build something interesting with Beluga-AI or want to showcase a feature not yet covered, please feel free to open a Pull Request. Refer to our [CONTRIBUTING.md](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING) guide.

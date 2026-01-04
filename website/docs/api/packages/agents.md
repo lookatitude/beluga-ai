@@ -50,7 +50,7 @@ agent, err := agents.NewBaseAgent("my-agent", llm, tools,
 )
 
 // Use with executor
-executor := agents.NewAgentExecutor()
+:= agents.NewAgentExecutor()
 result, err := executor.ExecutePlan(ctx, agent, plan)
 ```
 
@@ -62,17 +62,20 @@ Package agents provides advanced test utilities and comprehensive mocks for test
 
 - [Constants](<#constants>)
 - [Variables](<#variables>)
-- [func AssertAgentExecution\(t \*testing.T, result interface\{\}, expectedPattern string\)](<#AssertAgentExecution>)
-- [func AssertAgentHealth\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertAgentHealth>)
+- [func AssertAgentExecution\(t \*testing.T, result any, expectedPattern string\)](<#AssertAgentExecution>)
+- [func AssertAgentHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertAgentHealth>)
 - [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
 - [func AssertPlanningResult\(t \*testing.T, steps \[\]string, expectedMinSteps int\)](<#AssertPlanningResult>)
-- [func CreateAgent\(ctx context.Context, agentType string, name string, llm interface\{\}, agentTools \[\]tools.Tool, config Config\) \(iface.CompositeAgent, error\)](<#CreateAgent>)
+- [func CollectStreamChunks\(ch \<\-chan iface.AgentStreamChunk\) \(\[\]iface.AgentStreamChunk, error\)](<#CollectStreamChunks>)
+- [func CreateAgent\(ctx context.Context, agentType, name string, llm any, agentTools \[\]tools.Tool, config Config\) \(iface.CompositeAgent, error\)](<#CreateAgent>)
 - [func CreateTestExecutionPlan\(steps int\) \[\]string](<#CreateTestExecutionPlan>)
 - [func CreateTestTools\(count int\) \[\]tools.Tool](<#CreateTestTools>)
+- [func GenerateStreamChunks\(response string, chunkSize int\) \[\]iface.AgentStreamChunk](<#GenerateStreamChunks>)
 - [func GetAgentStateString\(state iface.AgentState\) string](<#GetAgentStateString>)
-- [func HealthCheck\(agent iface.CompositeAgent\) map\[string\]interface\{\}](<#HealthCheck>)
+- [func HealthCheck\(agent iface.CompositeAgent\) map\[string\]any](<#HealthCheck>)
 - [func IsFactoryError\(err error\) bool](<#IsFactoryError>)
 - [func IsRetryable\(err error\) bool](<#IsRetryable>)
+- [func IsStreamingError\(err error\) bool](<#IsStreamingError>)
 - [func IsValidationError\(err error\) bool](<#IsValidationError>)
 - [func ListAgentStates\(\) \[\]iface.AgentState](<#ListAgentStates>)
 - [func ListAvailableAgentTypes\(\) \[\]string](<#ListAvailableAgentTypes>)
@@ -81,46 +84,55 @@ Package agents provides advanced test utilities and comprehensive mocks for test
 - [func NewExecutorWithHandleParsingErrors\(handle bool\) iface.Executor](<#NewExecutorWithHandleParsingErrors>)
 - [func NewExecutorWithMaxIterations\(max int\) iface.Executor](<#NewExecutorWithMaxIterations>)
 - [func NewExecutorWithReturnIntermediateSteps\(returnSteps bool\) iface.Executor](<#NewExecutorWithReturnIntermediateSteps>)
-- [func NewReActAgent\(name string, llm llmsiface.ChatModel, agentTools \[\]tools.Tool, prompt interface\{\}, opts ...iface.Option\) \(iface.CompositeAgent, error\)](<#NewReActAgent>)
+- [func NewReActAgent\(name string, llm llmsiface.ChatModel, agentTools \[\]tools.Tool, prompt any, opts ...iface.Option\) \(iface.CompositeAgent, error\)](<#NewReActAgent>)
 - [func NewToolRegistry\(\) tools.Registry](<#NewToolRegistry>)
 - [func RegisterAgentType\(agentType string, creator AgentCreatorFunc\)](<#RegisterAgentType>)
-- [func RunLoadTest\(t \*testing.T, agent \*AdvancedMockAgent, numOperations int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, agent \*AdvancedMockAgent, numOperations, concurrency int\)](<#RunLoadTest>)
 - [func ValidateConfig\(config \*Config\) error](<#ValidateConfig>)
+- [func ValidateStreamChunk\(t \*testing.T, chunk iface.AgentStreamChunk, allowEmpty bool\)](<#ValidateStreamChunk>)
+- [func ValidateStreamingConfig\(config iface.StreamingConfig\) error](<#ValidateStreamingConfig>)
 - [func WithEventHandler\(eventType string, handler iface.EventHandler\) iface.Option](<#WithEventHandler>)
 - [func WithMaxIterations\(iterations int\) iface.Option](<#WithMaxIterations>)
 - [func WithMaxRetries\(retries int\) iface.Option](<#WithMaxRetries>)
 - [func WithMetrics\(enabled bool\) iface.Option](<#WithMetrics>)
 - [func WithRetryDelay\(delay time.Duration\) iface.Option](<#WithRetryDelay>)
+- [func WithStreaming\(enabled bool\) iface.Option](<#WithStreaming>)
+- [func WithStreamingConfig\(config iface.StreamingConfig\) iface.Option](<#WithStreamingConfig>)
 - [func WithTimeout\(timeout time.Duration\) iface.Option](<#WithTimeout>)
 - [func WithTracing\(enabled bool\) iface.Option](<#WithTracing>)
 - [type AdvancedMockAgent](<#AdvancedMockAgent>)
-  - [func CreateCollaborativeAgents\(count int, sharedState map\[string\]interface\{\}\) \[\]\*AdvancedMockAgent](<#CreateCollaborativeAgents>)
-  - [func CreateTestAgentWithState\(name string, state map\[string\]interface\{\}\) \*AdvancedMockAgent](<#CreateTestAgentWithState>)
+  - [func CreateCollaborativeAgents\(count int, sharedState map\[string\]any\) \[\]\*AdvancedMockAgent](<#CreateCollaborativeAgents>)
+  - [func CreateTestAgentWithState\(name string, state map\[string\]any\) \*AdvancedMockAgent](<#CreateTestAgentWithState>)
   - [func CreateTestAgentWithTools\(name string, toolCount int\) \*AdvancedMockAgent](<#CreateTestAgentWithTools>)
   - [func NewAdvancedMockAgent\(name, agentType string, options ...MockAgentOption\) \*AdvancedMockAgent](<#NewAdvancedMockAgent>)
   - [func \(a \*AdvancedMockAgent\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#AdvancedMockAgent.Batch>)
-  - [func \(a \*AdvancedMockAgent\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockAgent.CheckHealth>)
-  - [func \(a \*AdvancedMockAgent\) EmitEvent\(eventType string, payload interface\{\}\)](<#AdvancedMockAgent.EmitEvent>)
+  - [func \(a \*AdvancedMockAgent\) CheckHealth\(\) map\[string\]any](<#AdvancedMockAgent.CheckHealth>)
+  - [func \(a \*AdvancedMockAgent\) EmitEvent\(eventType string, payload any\)](<#AdvancedMockAgent.EmitEvent>)
   - [func \(a \*AdvancedMockAgent\) Execute\(\) error](<#AdvancedMockAgent.Execute>)
   - [func \(a \*AdvancedMockAgent\) GetCallCount\(\) int](<#AdvancedMockAgent.GetCallCount>)
   - [func \(a \*AdvancedMockAgent\) GetConfig\(\) schema.AgentConfig](<#AdvancedMockAgent.GetConfig>)
   - [func \(a \*AdvancedMockAgent\) GetExecutionHistory\(\) \[\]ExecutionRecord](<#AdvancedMockAgent.GetExecutionHistory>)
-  - [func \(a \*AdvancedMockAgent\) GetInternalState\(\) map\[string\]interface\{\}](<#AdvancedMockAgent.GetInternalState>)
+  - [func \(a \*AdvancedMockAgent\) GetInternalState\(\) map\[string\]any](<#AdvancedMockAgent.GetInternalState>)
   - [func \(a \*AdvancedMockAgent\) GetLLM\(\) llmsiface.LLM](<#AdvancedMockAgent.GetLLM>)
   - [func \(a \*AdvancedMockAgent\) GetMetrics\(\) iface.MetricsRecorder](<#AdvancedMockAgent.GetMetrics>)
   - [func \(a \*AdvancedMockAgent\) GetName\(\) string](<#AdvancedMockAgent.GetName>)
   - [func \(a \*AdvancedMockAgent\) GetState\(\) iface.AgentState](<#AdvancedMockAgent.GetState>)
   - [func \(a \*AdvancedMockAgent\) GetTools\(\) \[\]tools.Tool](<#AdvancedMockAgent.GetTools>)
   - [func \(a \*AdvancedMockAgent\) GetType\(\) string](<#AdvancedMockAgent.GetType>)
-  - [func \(a \*AdvancedMockAgent\) Initialize\(config map\[string\]interface\{\}\) error](<#AdvancedMockAgent.Initialize>)
+  - [func \(a \*AdvancedMockAgent\) Initialize\(config map\[string\]any\) error](<#AdvancedMockAgent.Initialize>)
   - [func \(a \*AdvancedMockAgent\) InputVariables\(\) \[\]string](<#AdvancedMockAgent.InputVariables>)
   - [func \(a \*AdvancedMockAgent\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#AdvancedMockAgent.Invoke>)
   - [func \(a \*AdvancedMockAgent\) OutputVariables\(\) \[\]string](<#AdvancedMockAgent.OutputVariables>)
   - [func \(a \*AdvancedMockAgent\) Plan\(ctx context.Context, intermediateSteps \[\]iface.IntermediateStep, inputs map\[string\]any\) \(iface.AgentAction, iface.AgentFinish, error\)](<#AdvancedMockAgent.Plan>)
   - [func \(a \*AdvancedMockAgent\) RegisterEventHandler\(eventType string, handler iface.EventHandler\)](<#AdvancedMockAgent.RegisterEventHandler>)
-  - [func \(a \*AdvancedMockAgent\) SetInternalState\(key string, value interface\{\}\)](<#AdvancedMockAgent.SetInternalState>)
+  - [func \(a \*AdvancedMockAgent\) SetInternalState\(key string, value any\)](<#AdvancedMockAgent.SetInternalState>)
   - [func \(a \*AdvancedMockAgent\) Shutdown\(\) error](<#AdvancedMockAgent.Shutdown>)
   - [func \(a \*AdvancedMockAgent\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#AdvancedMockAgent.Stream>)
+- [type AdvancedMockStreamingAgent](<#AdvancedMockStreamingAgent>)
+  - [func NewAdvancedMockStreamingAgent\(baseAgent \*AdvancedMockAgent, options ...MockStreamingAgentOption\) \*AdvancedMockStreamingAgent](<#NewAdvancedMockStreamingAgent>)
+  - [func \(a \*AdvancedMockStreamingAgent\) GetStreamCount\(\) int](<#AdvancedMockStreamingAgent.GetStreamCount>)
+  - [func \(a \*AdvancedMockStreamingAgent\) StreamExecute\(ctx context.Context, inputs map\[string\]any\) \(\<\-chan iface.AgentStreamChunk, error\)](<#AdvancedMockStreamingAgent.StreamExecute>)
+  - [func \(a \*AdvancedMockStreamingAgent\) StreamPlan\(ctx context.Context, intermediateSteps \[\]iface.IntermediateStep, inputs map\[string\]any\) \(\<\-chan iface.AgentStreamChunk, error\)](<#AdvancedMockStreamingAgent.StreamPlan>)
 - [type AgentBenchmark](<#AgentBenchmark>)
   - [func NewAgentBenchmark\(agent iface.CompositeAgent, taskCount int\) \*AgentBenchmark](<#NewAgentBenchmark>)
   - [func \(b \*AgentBenchmark\) BenchmarkExecution\(iterations int\) \(time.Duration, error\)](<#AgentBenchmark.BenchmarkExecution>)
@@ -130,16 +142,16 @@ Package agents provides advanced test utilities and comprehensive mocks for test
   - [func NewAgentError\(op, agent, code string, err error\) \*AgentError](<#NewAgentError>)
   - [func \(e \*AgentError\) Error\(\) string](<#AgentError.Error>)
   - [func \(e \*AgentError\) Unwrap\(\) error](<#AgentError.Unwrap>)
-  - [func \(e \*AgentError\) WithField\(key string, value interface\{\}\) \*AgentError](<#AgentError.WithField>)
+  - [func \(e \*AgentError\) WithField\(key string, value any\) \*AgentError](<#AgentError.WithField>)
 - [type AgentFactory](<#AgentFactory>)
   - [func NewAgentFactory\(config \*Config\) \*AgentFactory](<#NewAgentFactory>)
   - [func NewAgentFactoryWithMetrics\(config \*Config, metrics \*Metrics\) \*AgentFactory](<#NewAgentFactoryWithMetrics>)
   - [func \(f \*AgentFactory\) CreateBaseAgent\(ctx context.Context, name string, llm llmsiface.LLM, agentTools \[\]tools.Tool, opts ...iface.Option\) \(iface.CompositeAgent, error\)](<#AgentFactory.CreateBaseAgent>)
-  - [func \(f \*AgentFactory\) CreateReActAgent\(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools \[\]tools.Tool, prompt interface\{\}, opts ...iface.Option\) \(iface.CompositeAgent, error\)](<#AgentFactory.CreateReActAgent>)
+  - [func \(f \*AgentFactory\) CreateReActAgent\(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools \[\]tools.Tool, prompt any, opts ...iface.Option\) \(iface.CompositeAgent, error\)](<#AgentFactory.CreateReActAgent>)
 - [type AgentRegistry](<#AgentRegistry>)
   - [func GetGlobalAgentRegistry\(\) \*AgentRegistry](<#GetGlobalAgentRegistry>)
   - [func NewAgentRegistry\(\) \*AgentRegistry](<#NewAgentRegistry>)
-  - [func \(r \*AgentRegistry\) Create\(ctx context.Context, agentType string, name string, llm interface\{\}, agentTools \[\]tools.Tool, config Config\) \(iface.CompositeAgent, error\)](<#AgentRegistry.Create>)
+  - [func \(r \*AgentRegistry\) Create\(ctx context.Context, agentType, name string, llm any, agentTools \[\]tools.Tool, config Config\) \(iface.CompositeAgent, error\)](<#AgentRegistry.Create>)
   - [func \(r \*AgentRegistry\) ListAgentTypes\(\) \[\]string](<#AgentRegistry.ListAgentTypes>)
   - [func \(r \*AgentRegistry\) Register\(agentType string, creator AgentCreatorFunc\)](<#AgentRegistry.Register>)
 - [type AgentScenarioRunner](<#AgentScenarioRunner>)
@@ -147,6 +159,9 @@ Package agents provides advanced test utilities and comprehensive mocks for test
   - [func \(r \*AgentScenarioRunner\) RunPlanningScenario\(ctx context.Context, problems \[\]string\) \(\[\]\[\]string, error\)](<#AgentScenarioRunner.RunPlanningScenario>)
   - [func \(r \*AgentScenarioRunner\) RunTaskExecutionScenario\(ctx context.Context, tasks \[\]string\) error](<#AgentScenarioRunner.RunTaskExecutionScenario>)
   - [func \(r \*AgentScenarioRunner\) RunToolUsageScenario\(ctx context.Context, toolTasks \[\]string\) error](<#AgentScenarioRunner.RunToolUsageScenario>)
+- [type ConcurrentStreamingTestRunner](<#ConcurrentStreamingTestRunner>)
+  - [func NewConcurrentStreamingTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentStreamingTestRunner](<#NewConcurrentStreamingTestRunner>)
+  - [func \(r \*ConcurrentStreamingTestRunner\) Run\(\) error](<#ConcurrentStreamingTestRunner.Run>)
 - [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
   - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
   - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
@@ -155,6 +170,7 @@ Package agents provides advanced test utilities and comprehensive mocks for test
   - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
   - [func NewDefaultConfig\(\) \*Config](<#NewDefaultConfig>)
   - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
+- [type ExecutionChunk](<#ExecutionChunk>)
 - [type ExecutionError](<#ExecutionError>)
   - [func NewExecutionError\(agent string, step int, action string, err error, retryable bool\) \*ExecutionError](<#NewExecutionError>)
   - [func \(e \*ExecutionError\) Error\(\) string](<#ExecutionError.Error>)
@@ -162,7 +178,7 @@ Package agents provides advanced test utilities and comprehensive mocks for test
 - [type ExecutionRecord](<#ExecutionRecord>)
 - [type ExecutorConfig](<#ExecutorConfig>)
 - [type FactoryError](<#FactoryError>)
-  - [func NewFactoryError\(agentType string, config interface\{\}, err error\) \*FactoryError](<#NewFactoryError>)
+  - [func NewFactoryError\(agentType string, config any, err error\) \*FactoryError](<#NewFactoryError>)
   - [func \(e \*FactoryError\) Error\(\) string](<#FactoryError.Error>)
   - [func \(e \*FactoryError\) Unwrap\(\) error](<#FactoryError.Unwrap>)
 - [type IntegrationTestHelper](<#IntegrationTestHelper>)
@@ -181,24 +197,34 @@ Package agents provides advanced test utilities and comprehensive mocks for test
   - [func \(m \*Metrics\) RecordAgentExecution\(ctx context.Context, agentName, agentType string, duration time.Duration, success bool\)](<#Metrics.RecordAgentExecution>)
   - [func \(m \*Metrics\) RecordExecutorRun\(ctx context.Context, executorType string, duration time.Duration, steps int, success bool\)](<#Metrics.RecordExecutorRun>)
   - [func \(m \*Metrics\) RecordPlanningCall\(ctx context.Context, agentName string, duration time.Duration, success bool\)](<#Metrics.RecordPlanningCall>)
+  - [func \(m \*Metrics\) RecordStreamingChunk\(ctx context.Context, agentName string\)](<#Metrics.RecordStreamingChunk>)
+  - [func \(m \*Metrics\) RecordStreamingOperation\(ctx context.Context, agentName string, latency, duration time.Duration\)](<#Metrics.RecordStreamingOperation>)
   - [func \(m \*Metrics\) RecordToolCall\(ctx context.Context, toolName string, duration time.Duration, success bool\)](<#Metrics.RecordToolCall>)
   - [func \(m \*Metrics\) StartAgentSpan\(ctx context.Context, agentName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartAgentSpan>)
   - [func \(m \*Metrics\) StartExecutorSpan\(ctx context.Context, executorType, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartExecutorSpan>)
   - [func \(m \*Metrics\) StartToolSpan\(ctx context.Context, toolName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartToolSpan>)
 - [type MockAgentOption](<#MockAgentOption>)
-  - [func WithAgentState\(state map\[string\]interface\{\}\) MockAgentOption](<#WithAgentState>)
+  - [func WithAgentState\(state map\[string\]any\) MockAgentOption](<#WithAgentState>)
   - [func WithExecutionDelay\(delay time.Duration\) MockAgentOption](<#WithExecutionDelay>)
   - [func WithMockError\(shouldError bool, err error\) MockAgentOption](<#WithMockError>)
-  - [func WithMockResponses\(responses \[\]interface\{\}\) MockAgentOption](<#WithMockResponses>)
+  - [func WithMockResponses\(responses \[\]any\) MockAgentOption](<#WithMockResponses>)
   - [func WithMockTools\(agentTools \[\]tools.Tool\) MockAgentOption](<#WithMockTools>)
   - [func WithPlanningSteps\(steps \[\]string\) MockAgentOption](<#WithPlanningSteps>)
 - [type MockExecutor](<#MockExecutor>)
   - [func NewMockExecutor\(\) \*MockExecutor](<#NewMockExecutor>)
-  - [func \(e \*MockExecutor\) Execute\(ctx context.Context, agent iface.CompositeAgent, input interface\{\}\) \(interface\{\}, error\)](<#MockExecutor.Execute>)
+  - [func \(e \*MockExecutor\) Execute\(ctx context.Context, agent iface.CompositeAgent, input any\) \(any, error\)](<#MockExecutor.Execute>)
   - [func \(e \*MockExecutor\) GetCallCount\(\) int](<#MockExecutor.GetCallCount>)
   - [func \(e \*MockExecutor\) GetExecutions\(\) \[\]ExecutionRecord](<#MockExecutor.GetExecutions>)
   - [func \(e \*MockExecutor\) Reset\(\)](<#MockExecutor.Reset>)
   - [func \(e \*MockExecutor\) WithError\(err error\)](<#MockExecutor.WithError>)
+- [type MockStreamingAgentOption](<#MockStreamingAgentOption>)
+  - [func WithChunkGenerator\(generator func\(\) iface.AgentStreamChunk\) MockStreamingAgentOption](<#WithChunkGenerator>)
+  - [func WithMockStreamingChunks\(chunks \[\]iface.AgentStreamChunk\) MockStreamingAgentOption](<#WithMockStreamingChunks>)
+  - [func WithStreamingDelay\(delay time.Duration\) MockStreamingAgentOption](<#WithStreamingDelay>)
+  - [func WithStreamingError\(shouldError bool, err error\) MockStreamingAgentOption](<#WithStreamingError>)
+- [type MockStreamingExecutor](<#MockStreamingExecutor>)
+  - [func NewMockStreamingExecutor\(baseExecutor \*MockExecutor\) \*MockStreamingExecutor](<#NewMockStreamingExecutor>)
+  - [func \(e \*MockStreamingExecutor\) ExecuteStreamingPlan\(ctx context.Context, agent iface.Agent, plan \[\]schema.Step\) \(\<\-chan ExecutionChunk, error\)](<#MockStreamingExecutor.ExecuteStreamingPlan>)
 - [type MockTool](<#MockTool>)
   - [func NewMockTool\(name, description string\) \*MockTool](<#NewMockTool>)
   - [func \(t \*MockTool\) Execute\(ctx context.Context, input any\) \(any, error\)](<#MockTool.Execute>)
@@ -209,6 +235,13 @@ Package agents provides advanced test utilities and comprehensive mocks for test
   - [func \(e \*PlanningError\) Error\(\) string](<#PlanningError.Error>)
   - [func \(e \*PlanningError\) Unwrap\(\) error](<#PlanningError.Unwrap>)
   - [func \(e \*PlanningError\) WithSuggestion\(suggestion string\) \*PlanningError](<#PlanningError.WithSuggestion>)
+- [type StreamingError](<#StreamingError>)
+  - [func NewStreamingError\(op, agent, code string, err error\) \*StreamingError](<#NewStreamingError>)
+  - [func WrapStreamingError\(op, agent, code string, err error\) \*StreamingError](<#WrapStreamingError>)
+  - [func \(e \*StreamingError\) Error\(\) string](<#StreamingError.Error>)
+  - [func \(e \*StreamingError\) Unwrap\(\) error](<#StreamingError.Unwrap>)
+  - [func \(e \*StreamingError\) WithField\(key string, value any\) \*StreamingError](<#StreamingError.WithField>)
+- [type ToolExecutionResult](<#ToolExecutionResult>)
 - [type ValidationError](<#ValidationError>)
   - [func NewValidationError\(field, message string\) \*ValidationError](<#NewValidationError>)
   - [func \(e \*ValidationError\) Error\(\) string](<#ValidationError.Error>)
@@ -235,10 +268,15 @@ const (
     ErrCodeEventHandler      = "event_handler_error"
     ErrCodeStateTransition   = "state_transition_error"
     ErrCodeShutdown          = "shutdown_failed"
+
+    // Streaming error codes.
+    ErrCodeStreamingNotSupported = "streaming_not_supported"
+    ErrCodeStreamInterrupted     = "stream_interrupted"
+    ErrCodeStreamError           = "stream_error"
 )
 ```
 
-<a name="AgentTypeBase"></a>Built\-in agent type constants
+<a name="AgentTypeBase"></a>Built\-in agent type constants.
 
 ```go
 const (
@@ -257,7 +295,7 @@ var (
     ErrInvalidConfig         = errors.New("invalid configuration")
     ErrToolNotAvailable      = errors.New("tool not available")
     ErrMaxIterationsExceeded = errors.New("maximum iterations exceeded")
-    ErrContextCancelled      = errors.New("context cancelled")
+    ErrContextCancelled      = errors.New("context canceled")
     ErrTimeout               = errors.New("operation timed out")
     ErrAgentTimeout          = errors.New("agent execution timed out")
     ErrResourceExhausted     = errors.New("resource exhausted")
@@ -270,70 +308,88 @@ var (
 ```
 
 <a name="AssertAgentExecution"></a>
-## func [AssertAgentExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L429>)
+## func [AssertAgentExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L424>)
 
 ```go
-func AssertAgentExecution(t *testing.T, result interface{}, expectedPattern string)
+func AssertAgentExecution(t *testing.T, result any, expectedPattern string)
 ```
 
-AssertAgentExecution validates agent execution results
+AssertAgentExecution validates agent execution results.
 
 <a name="AssertAgentHealth"></a>
-## func [AssertAgentHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L445>)
+## func [AssertAgentHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L440>)
 
 ```go
-func AssertAgentHealth(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertAgentHealth(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertAgentHealth validates agent health check results
+AssertAgentHealth validates agent health check results.
 
 <a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L454>)
+## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L449>)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
 ```
 
-AssertErrorType validates error types and codes
+AssertErrorType validates error types and codes.
 
 <a name="AssertPlanningResult"></a>
-## func [AssertPlanningResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L437>)
+## func [AssertPlanningResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L432>)
 
 ```go
 func AssertPlanningResult(t *testing.T, steps []string, expectedMinSteps int)
 ```
 
-AssertPlanningResult validates agent planning results
+AssertPlanningResult validates agent planning results.
+
+<a name="CollectStreamChunks"></a>
+## func [CollectStreamChunks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1356>)
+
+```go
+func CollectStreamChunks(ch <-chan iface.AgentStreamChunk) ([]iface.AgentStreamChunk, error)
+```
+
+CollectStreamChunks collects all chunks from a stream channel.
 
 <a name="CreateAgent"></a>
 ## func [CreateAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/registry.go#L77>)
 
 ```go
-func CreateAgent(ctx context.Context, agentType string, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
+func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
 ```
 
 CreateAgent creates an agent using the global registry.
 
 <a name="CreateTestExecutionPlan"></a>
-## func [CreateTestExecutionPlan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L774>)
+## func [CreateTestExecutionPlan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L803>)
 
 ```go
 func CreateTestExecutionPlan(steps int) []string
 ```
 
-CreateTestExecutionPlan creates a test execution plan
+CreateTestExecutionPlan creates a test execution plan.
 
 <a name="CreateTestTools"></a>
-## func [CreateTestTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L416>)
+## func [CreateTestTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L411>)
 
 ```go
 func CreateTestTools(count int) []tools.Tool
 ```
 
-CreateTestTools creates a set of mock tools for testing
+CreateTestTools creates a set of mock tools for testing.
+
+<a name="GenerateStreamChunks"></a>
+## func [GenerateStreamChunks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1303>)
+
+```go
+func GenerateStreamChunks(response string, chunkSize int) []iface.AgentStreamChunk
+```
+
+GenerateStreamChunks creates a slice of AgentStreamChunk from a string response.
 
 <a name="GetAgentStateString"></a>
-## func [GetAgentStateString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L300>)
+## func [GetAgentStateString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L307>)
 
 ```go
 func GetAgentStateString(state iface.AgentState) string
@@ -350,10 +406,10 @@ Returns:
 - Human\-readable state string
 
 <a name="HealthCheck"></a>
-## func [HealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L273>)
+## func [HealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L280>)
 
 ```go
-func HealthCheck(agent iface.CompositeAgent) map[string]interface{}
+func HealthCheck(agent iface.CompositeAgent) map[string]any
 ```
 
 HealthCheck performs a health check on an agent. This can be used for monitoring and ensuring agent availability.
@@ -376,7 +432,7 @@ if status["state"] == "error" {
 ```
 
 <a name="IsFactoryError"></a>
-## func [IsFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L227>)
+## func [IsFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L245>)
 
 ```go
 func IsFactoryError(err error) bool
@@ -385,7 +441,7 @@ func IsFactoryError(err error) bool
 IsFactoryError checks if an error is a factory error.
 
 <a name="IsRetryable"></a>
-## func [IsRetryable](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L205>)
+## func [IsRetryable](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L210>)
 
 ```go
 func IsRetryable(err error) bool
@@ -393,8 +449,17 @@ func IsRetryable(err error) bool
 
 IsRetryable checks if an error is retryable.
 
+<a name="IsStreamingError"></a>
+## func [IsStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L298>)
+
+```go
+func IsStreamingError(err error) bool
+```
+
+IsStreamingError checks if an error is a streaming error.
+
 <a name="IsValidationError"></a>
-## func [IsValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L221>)
+## func [IsValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L239>)
 
 ```go
 func IsValidationError(err error) bool
@@ -403,7 +468,7 @@ func IsValidationError(err error) bool
 IsValidationError checks if an error is a validation error.
 
 <a name="ListAgentStates"></a>
-## func [ListAgentStates](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L282>)
+## func [ListAgentStates](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L289>)
 
 ```go
 func ListAgentStates() []iface.AgentState
@@ -425,7 +490,7 @@ func ListAvailableAgentTypes() []string
 ListAvailableAgentTypes returns all available agent types from the global registry.
 
 <a name="NewAgentExecutor"></a>
-## func [NewAgentExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L186>)
+## func [NewAgentExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L193>)
 
 ```go
 func NewAgentExecutor(opts ...executor.ExecutorOption) iface.Executor
@@ -480,7 +545,7 @@ agent, err := agents.NewBaseAgent("assistant", llm, tools,
 ```
 
 <a name="NewExecutorWithHandleParsingErrors"></a>
-## func [NewExecutorWithHandleParsingErrors](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L203>)
+## func [NewExecutorWithHandleParsingErrors](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L210>)
 
 ```go
 func NewExecutorWithHandleParsingErrors(handle bool) iface.Executor
@@ -489,7 +554,7 @@ func NewExecutorWithHandleParsingErrors(handle bool) iface.Executor
 NewExecutorWithHandleParsingErrors creates a new executor with the specified error handling behavior.
 
 <a name="NewExecutorWithMaxIterations"></a>
-## func [NewExecutorWithMaxIterations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L193>)
+## func [NewExecutorWithMaxIterations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L200>)
 
 ```go
 func NewExecutorWithMaxIterations(max int) iface.Executor
@@ -498,7 +563,7 @@ func NewExecutorWithMaxIterations(max int) iface.Executor
 NewExecutorWithMaxIterations creates a new executor with the specified maximum iterations.
 
 <a name="NewExecutorWithReturnIntermediateSteps"></a>
-## func [NewExecutorWithReturnIntermediateSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L198>)
+## func [NewExecutorWithReturnIntermediateSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L205>)
 
 ```go
 func NewExecutorWithReturnIntermediateSteps(returnSteps bool) iface.Executor
@@ -507,10 +572,10 @@ func NewExecutorWithReturnIntermediateSteps(returnSteps bool) iface.Executor
 NewExecutorWithReturnIntermediateSteps creates a new executor that returns intermediate steps.
 
 <a name="NewReActAgent"></a>
-## func [NewReActAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L169>)
+## func [NewReActAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L176>)
 
 ```go
-func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt interface{}, opts ...iface.Option) (iface.CompositeAgent, error)
+func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error)
 ```
 
 NewReActAgent creates a new ReAct \(Reasoning \+ Acting\) agent. ReAct agents iteratively reason about problems and execute actions using tools.
@@ -538,7 +603,7 @@ agent, err := agents.NewReActAgent("researcher", llm, tools, prompt)
 ```
 
 <a name="NewToolRegistry"></a>
-## func [NewToolRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L218>)
+## func [NewToolRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L225>)
 
 ```go
 func NewToolRegistry() tools.Registry
@@ -568,16 +633,16 @@ func RegisterAgentType(agentType string, creator AgentCreatorFunc)
 RegisterAgentType registers an agent type with the global registry.
 
 <a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L524>)
+## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L553>)
 
 ```go
-func RunLoadTest(t *testing.T, agent *AdvancedMockAgent, numOperations int, concurrency int)
+func RunLoadTest(t *testing.T, agent *AdvancedMockAgent, numOperations, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on agents
+RunLoadTest executes a load test scenario on agents.
 
 <a name="ValidateConfig"></a>
-## func [ValidateConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L254>)
+## func [ValidateConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L261>)
 
 ```go
 func ValidateConfig(config *Config) error
@@ -602,8 +667,26 @@ if err := agents.ValidateConfig(config); err != nil {
 }
 ```
 
+<a name="ValidateStreamChunk"></a>
+## func [ValidateStreamChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1344>)
+
+```go
+func ValidateStreamChunk(t *testing.T, chunk iface.AgentStreamChunk, allowEmpty bool)
+```
+
+ValidateStreamChunk validates that a stream chunk has valid structure.
+
+<a name="ValidateStreamingConfig"></a>
+## func [ValidateStreamingConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L177>)
+
+```go
+func ValidateStreamingConfig(config iface.StreamingConfig) error
+```
+
+ValidateStreamingConfig validates streaming configuration values.
+
 <a name="WithEventHandler"></a>
-## func [WithEventHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L103>)
+## func [WithEventHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L96>)
 
 ```go
 func WithEventHandler(eventType string, handler iface.EventHandler) iface.Option
@@ -612,7 +695,7 @@ func WithEventHandler(eventType string, handler iface.EventHandler) iface.Option
 WithEventHandler registers an event handler for a specific event type.
 
 <a name="WithMaxIterations"></a>
-## func [WithMaxIterations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L82>)
+## func [WithMaxIterations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L75>)
 
 ```go
 func WithMaxIterations(iterations int) iface.Option
@@ -621,7 +704,7 @@ func WithMaxIterations(iterations int) iface.Option
 WithMaxIterations sets the maximum number of iterations for agent planning.
 
 <a name="WithMaxRetries"></a>
-## func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L61>)
+## func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L54>)
 
 ```go
 func WithMaxRetries(retries int) iface.Option
@@ -630,7 +713,7 @@ func WithMaxRetries(retries int) iface.Option
 WithMaxRetries sets the maximum number of retries for agent operations.
 
 <a name="WithMetrics"></a>
-## func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L89>)
+## func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L82>)
 
 ```go
 func WithMetrics(enabled bool) iface.Option
@@ -639,7 +722,7 @@ func WithMetrics(enabled bool) iface.Option
 WithMetrics enables or disables metrics collection.
 
 <a name="WithRetryDelay"></a>
-## func [WithRetryDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L68>)
+## func [WithRetryDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L61>)
 
 ```go
 func WithRetryDelay(delay time.Duration) iface.Option
@@ -647,8 +730,26 @@ func WithRetryDelay(delay time.Duration) iface.Option
 
 WithRetryDelay sets the delay between retries.
 
+<a name="WithStreaming"></a>
+## func [WithStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L156>)
+
+```go
+func WithStreaming(enabled bool) iface.Option
+```
+
+WithStreaming enables streaming mode for agents. This is a convenience function that sets EnableStreaming to true in StreamingConfig.
+
+<a name="WithStreamingConfig"></a>
+## func [WithStreamingConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L170>)
+
+```go
+func WithStreamingConfig(config iface.StreamingConfig) iface.Option
+```
+
+WithStreamingConfig sets the complete streaming configuration.
+
 <a name="WithTimeout"></a>
-## func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L75>)
+## func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L68>)
 
 ```go
 func WithTimeout(timeout time.Duration) iface.Option
@@ -657,7 +758,7 @@ func WithTimeout(timeout time.Duration) iface.Option
 WithTimeout sets the timeout for agent operations.
 
 <a name="WithTracing"></a>
-## func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L96>)
+## func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L89>)
 
 ```go
 func WithTracing(enabled bool) iface.Option
@@ -666,9 +767,9 @@ func WithTracing(enabled bool) iface.Option
 WithTracing enables or disables tracing.
 
 <a name="AdvancedMockAgent"></a>
-## type [AdvancedMockAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L22-L48>)
+## type [AdvancedMockAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L25-L43>)
 
-AdvancedMockAgent provides a comprehensive mock implementation for testing
+AdvancedMockAgent provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockAgent struct {
@@ -678,218 +779,266 @@ type AdvancedMockAgent struct {
 ```
 
 <a name="CreateCollaborativeAgents"></a>
-### func [CreateCollaborativeAgents](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L783>)
+### func [CreateCollaborativeAgents](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L812>)
 
 ```go
-func CreateCollaborativeAgents(count int, sharedState map[string]interface{}) []*AdvancedMockAgent
+func CreateCollaborativeAgents(count int, sharedState map[string]any) []*AdvancedMockAgent
 ```
 
-CreateCollaborativeAgents creates agents configured for collaboration
+CreateCollaborativeAgents creates agents configured for collaboration.
 
 <a name="CreateTestAgentWithState"></a>
-### func [CreateTestAgentWithState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L769>)
+### func [CreateTestAgentWithState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L798>)
 
 ```go
-func CreateTestAgentWithState(name string, state map[string]interface{}) *AdvancedMockAgent
+func CreateTestAgentWithState(name string, state map[string]any) *AdvancedMockAgent
 ```
 
-CreateTestAgentWithState creates an agent with predefined state
+CreateTestAgentWithState creates an agent with predefined state.
 
 <a name="CreateTestAgentWithTools"></a>
-### func [CreateTestAgentWithTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L763>)
+### func [CreateTestAgentWithTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L792>)
 
 ```go
 func CreateTestAgentWithTools(name string, toolCount int) *AdvancedMockAgent
 ```
 
-CreateTestAgentWithTools creates an agent configured with test tools
+CreateTestAgentWithTools creates an agent configured with test tools.
 
 <a name="NewAdvancedMockAgent"></a>
-### func [NewAdvancedMockAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L60>)
+### func [NewAdvancedMockAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L55>)
 
 ```go
 func NewAdvancedMockAgent(name, agentType string, options ...MockAgentOption) *AdvancedMockAgent
 ```
 
-NewAdvancedMockAgent creates a new advanced mock with configurable behavior
+NewAdvancedMockAgent creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockAgent.Batch"></a>
-### func \(\*AdvancedMockAgent\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L134>)
+### func \(\*AdvancedMockAgent\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L129>)
 
 ```go
 func (a *AdvancedMockAgent) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
 <a name="AdvancedMockAgent.CheckHealth"></a>
-### func \(\*AdvancedMockAgent\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L304>)
+### func \(\*AdvancedMockAgent\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L299>)
 
 ```go
-func (a *AdvancedMockAgent) CheckHealth() map[string]interface{}
+func (a *AdvancedMockAgent) CheckHealth() map[string]any
 ```
 
-HealthChecker interface implementation
+HealthChecker interface implementation.
 
 <a name="AdvancedMockAgent.EmitEvent"></a>
-### func \(\*AdvancedMockAgent\) [EmitEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L299>)
+### func \(\*AdvancedMockAgent\) [EmitEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L294>)
 
 ```go
-func (a *AdvancedMockAgent) EmitEvent(eventType string, payload interface{})
+func (a *AdvancedMockAgent) EmitEvent(eventType string, payload any)
 ```
 
 <a name="AdvancedMockAgent.Execute"></a>
-### func \(\*AdvancedMockAgent\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L275>)
+### func \(\*AdvancedMockAgent\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L270>)
 
 ```go
 func (a *AdvancedMockAgent) Execute() error
 ```
 
 <a name="AdvancedMockAgent.GetCallCount"></a>
-### func \(\*AdvancedMockAgent\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L343>)
+### func \(\*AdvancedMockAgent\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L338>)
 
 ```go
 func (a *AdvancedMockAgent) GetCallCount() int
 ```
 
 <a name="AdvancedMockAgent.GetConfig"></a>
-### func \(\*AdvancedMockAgent\) [GetConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L247>)
+### func \(\*AdvancedMockAgent\) [GetConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L242>)
 
 ```go
 func (a *AdvancedMockAgent) GetConfig() schema.AgentConfig
 ```
 
 <a name="AdvancedMockAgent.GetExecutionHistory"></a>
-### func \(\*AdvancedMockAgent\) [GetExecutionHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L349>)
+### func \(\*AdvancedMockAgent\) [GetExecutionHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L344>)
 
 ```go
 func (a *AdvancedMockAgent) GetExecutionHistory() []ExecutionRecord
 ```
 
 <a name="AdvancedMockAgent.GetInternalState"></a>
-### func \(\*AdvancedMockAgent\) [GetInternalState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L327>)
+### func \(\*AdvancedMockAgent\) [GetInternalState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L322>)
 
 ```go
-func (a *AdvancedMockAgent) GetInternalState() map[string]interface{}
+func (a *AdvancedMockAgent) GetInternalState() map[string]any
 ```
 
 <a name="AdvancedMockAgent.GetLLM"></a>
-### func \(\*AdvancedMockAgent\) [GetLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L252>)
+### func \(\*AdvancedMockAgent\) [GetLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L247>)
 
 ```go
 func (a *AdvancedMockAgent) GetLLM() llmsiface.LLM
 ```
 
 <a name="AdvancedMockAgent.GetMetrics"></a>
-### func \(\*AdvancedMockAgent\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L257>)
+### func \(\*AdvancedMockAgent\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L252>)
 
 ```go
 func (a *AdvancedMockAgent) GetMetrics() iface.MetricsRecorder
 ```
 
 <a name="AdvancedMockAgent.GetName"></a>
-### func \(\*AdvancedMockAgent\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L319>)
+### func \(\*AdvancedMockAgent\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L314>)
 
 ```go
 func (a *AdvancedMockAgent) GetName() string
 ```
 
-Additional helper methods for testing
+Additional helper methods for testing.
 
 <a name="AdvancedMockAgent.GetState"></a>
-### func \(\*AdvancedMockAgent\) [GetState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L288>)
+### func \(\*AdvancedMockAgent\) [GetState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L283>)
 
 ```go
 func (a *AdvancedMockAgent) GetState() iface.AgentState
 ```
 
 <a name="AdvancedMockAgent.GetTools"></a>
-### func \(\*AdvancedMockAgent\) [GetTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L239>)
+### func \(\*AdvancedMockAgent\) [GetTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L234>)
 
 ```go
 func (a *AdvancedMockAgent) GetTools() []tools.Tool
 ```
 
 <a name="AdvancedMockAgent.GetType"></a>
-### func \(\*AdvancedMockAgent\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L323>)
+### func \(\*AdvancedMockAgent\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L318>)
 
 ```go
 func (a *AdvancedMockAgent) GetType() string
 ```
 
 <a name="AdvancedMockAgent.Initialize"></a>
-### func \(\*AdvancedMockAgent\) [Initialize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L263>)
+### func \(\*AdvancedMockAgent\) [Initialize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L258>)
 
 ```go
-func (a *AdvancedMockAgent) Initialize(config map[string]interface{}) error
+func (a *AdvancedMockAgent) Initialize(config map[string]any) error
 ```
 
-LifecycleManager interface implementation
+LifecycleManager interface implementation.
 
 <a name="AdvancedMockAgent.InputVariables"></a>
-### func \(\*AdvancedMockAgent\) [InputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L231>)
+### func \(\*AdvancedMockAgent\) [InputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L226>)
 
 ```go
 func (a *AdvancedMockAgent) InputVariables() []string
 ```
 
 <a name="AdvancedMockAgent.Invoke"></a>
-### func \(\*AdvancedMockAgent\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L130>)
+### func \(\*AdvancedMockAgent\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L125>)
 
 ```go
 func (a *AdvancedMockAgent) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-Mock implementation methods for core.Runnable interface
+Mock implementation methods for core.Runnable interface.
 
 <a name="AdvancedMockAgent.OutputVariables"></a>
-### func \(\*AdvancedMockAgent\) [OutputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L235>)
+### func \(\*AdvancedMockAgent\) [OutputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L230>)
 
 ```go
 func (a *AdvancedMockAgent) OutputVariables() []string
 ```
 
 <a name="AdvancedMockAgent.Plan"></a>
-### func \(\*AdvancedMockAgent\) [Plan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L201>)
+### func \(\*AdvancedMockAgent\) [Plan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L196>)
 
 ```go
 func (a *AdvancedMockAgent) Plan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error)
 ```
 
-Mock implementation methods for Agent interface
+Mock implementation methods for Agent interface.
 
 <a name="AdvancedMockAgent.RegisterEventHandler"></a>
-### func \(\*AdvancedMockAgent\) [RegisterEventHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L295>)
+### func \(\*AdvancedMockAgent\) [RegisterEventHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L290>)
 
 ```go
 func (a *AdvancedMockAgent) RegisterEventHandler(eventType string, handler iface.EventHandler)
 ```
 
-EventEmitter interface implementation
+EventEmitter interface implementation.
 
 <a name="AdvancedMockAgent.SetInternalState"></a>
-### func \(\*AdvancedMockAgent\) [SetInternalState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L337>)
+### func \(\*AdvancedMockAgent\) [SetInternalState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L332>)
 
 ```go
-func (a *AdvancedMockAgent) SetInternalState(key string, value interface{})
+func (a *AdvancedMockAgent) SetInternalState(key string, value any)
 ```
 
 <a name="AdvancedMockAgent.Shutdown"></a>
-### func \(\*AdvancedMockAgent\) [Shutdown](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L281>)
+### func \(\*AdvancedMockAgent\) [Shutdown](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L276>)
 
 ```go
 func (a *AdvancedMockAgent) Shutdown() error
 ```
 
 <a name="AdvancedMockAgent.Stream"></a>
-### func \(\*AdvancedMockAgent\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L146>)
+### func \(\*AdvancedMockAgent\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L141>)
 
 ```go
 func (a *AdvancedMockAgent) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-<a name="AgentBenchmark"></a>
-## type [AgentBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L809-L812>)
+<a name="AdvancedMockStreamingAgent"></a>
+## type [AdvancedMockStreamingAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L892-L901>)
 
-AgentBenchmark provides benchmarking utilities for agents
+AdvancedMockStreamingAgent provides a comprehensive mock implementation for streaming agents. This struct extends AdvancedMockAgent with streaming capabilities.
+
+```go
+type AdvancedMockStreamingAgent struct {
+    *AdvancedMockAgent
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewAdvancedMockStreamingAgent"></a>
+### func [NewAdvancedMockStreamingAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L936>)
+
+```go
+func NewAdvancedMockStreamingAgent(baseAgent *AdvancedMockAgent, options ...MockStreamingAgentOption) *AdvancedMockStreamingAgent
+```
+
+NewAdvancedMockStreamingAgent creates a new advanced streaming agent mock.
+
+<a name="AdvancedMockStreamingAgent.GetStreamCount"></a>
+### func \(\*AdvancedMockStreamingAgent\) [GetStreamCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1117>)
+
+```go
+func (a *AdvancedMockStreamingAgent) GetStreamCount() int
+```
+
+GetStreamCount returns the number of streams started.
+
+<a name="AdvancedMockStreamingAgent.StreamExecute"></a>
+### func \(\*AdvancedMockStreamingAgent\) [StreamExecute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L953>)
+
+```go
+func (a *AdvancedMockStreamingAgent) StreamExecute(ctx context.Context, inputs map[string]any) (<-chan iface.AgentStreamChunk, error)
+```
+
+StreamExecute implements the StreamingAgent interface. This method simulates streaming execution by returning a channel of chunks.
+
+<a name="AdvancedMockStreamingAgent.StreamPlan"></a>
+### func \(\*AdvancedMockStreamingAgent\) [StreamPlan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1042>)
+
+```go
+func (a *AdvancedMockStreamingAgent) StreamPlan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (<-chan iface.AgentStreamChunk, error)
+```
+
+StreamPlan implements the StreamingAgent interface. This method simulates streaming planning by returning a channel of chunks.
+
+<a name="AgentBenchmark"></a>
+## type [AgentBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L838-L841>)
+
+AgentBenchmark provides benchmarking utilities for agents.
 
 ```go
 type AgentBenchmark struct {
@@ -898,21 +1047,21 @@ type AgentBenchmark struct {
 ```
 
 <a name="NewAgentBenchmark"></a>
-### func [NewAgentBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L814>)
+### func [NewAgentBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L843>)
 
 ```go
 func NewAgentBenchmark(agent iface.CompositeAgent, taskCount int) *AgentBenchmark
 ```
 
 <a name="AgentBenchmark.BenchmarkExecution"></a>
-### func \(\*AgentBenchmark\) [BenchmarkExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L826>)
+### func \(\*AgentBenchmark\) [BenchmarkExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L855>)
 
 ```go
 func (b *AgentBenchmark) BenchmarkExecution(iterations int) (time.Duration, error)
 ```
 
 <a name="AgentBenchmark.BenchmarkPlanning"></a>
-### func \(\*AgentBenchmark\) [BenchmarkPlanning](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L841>)
+### func \(\*AgentBenchmark\) [BenchmarkPlanning](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L870>)
 
 ```go
 func (b *AgentBenchmark) BenchmarkPlanning(iterations int) (time.Duration, error)
@@ -924,7 +1073,7 @@ func (b *AgentBenchmark) BenchmarkPlanning(iterations int) (time.Duration, error
 AgentCreatorFunc defines the function signature for creating agents.
 
 ```go
-type AgentCreatorFunc func(ctx context.Context, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
+type AgentCreatorFunc func(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
 ```
 
 <a name="AgentError"></a>
@@ -934,16 +1083,16 @@ AgentError represents a custom error type for agent\-related operations. It incl
 
 ```go
 type AgentError struct {
-    Op     string                 // Operation that failed
-    Agent  string                 // Agent name or ID
-    Code   string                 // Error code for programmatic handling
-    Err    error                  // Underlying error
-    Fields map[string]interface{} // Additional context fields
+    Err    error
+    Fields map[string]any
+    Op     string
+    Agent  string
+    Code   string
 }
 ```
 
 <a name="NewAgentError"></a>
-### func [NewAgentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L52>)
+### func [NewAgentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L57>)
 
 ```go
 func NewAgentError(op, agent, code string, err error) *AgentError
@@ -970,10 +1119,10 @@ func (e *AgentError) Unwrap() error
 Unwrap returns the underlying error for error wrapping.
 
 <a name="AgentError.WithField"></a>
-### func \(\*AgentError\) [WithField](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L63>)
+### func \(\*AgentError\) [WithField](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L68>)
 
 ```go
-func (e *AgentError) WithField(key string, value interface{}) *AgentError
+func (e *AgentError) WithField(key string, value any) *AgentError
 ```
 
 WithField adds a context field to the error.
@@ -1017,10 +1166,10 @@ func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llm
 CreateBaseAgent creates a base agent using the factory's configuration.
 
 <a name="AgentFactory.CreateReActAgent"></a>
-### func \(\*AgentFactory\) [CreateReActAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L125>)
+### func \(\*AgentFactory\) [CreateReActAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L132>)
 
 ```go
-func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt interface{}, opts ...iface.Option) (iface.CompositeAgent, error)
+func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error)
 ```
 
 CreateReActAgent creates a ReAct agent using the factory's configuration.
@@ -1058,7 +1207,7 @@ NewAgentRegistry creates a new AgentRegistry instance.
 ### func \(\*AgentRegistry\) [Create](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/registry.go#L40>)
 
 ```go
-func (r *AgentRegistry) Create(ctx context.Context, agentType string, name string, llm interface{}, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
+func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
 ```
 
 Create creates a new agent instance using the registered agent type.
@@ -1082,9 +1231,9 @@ func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc)
 Register registers a new agent type with the registry.
 
 <a name="AgentScenarioRunner"></a>
-## type [AgentScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L692-L695>)
+## type [AgentScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L722-L725>)
 
-AgentScenarioRunner runs common agent scenarios
+AgentScenarioRunner runs common agent scenarios.
 
 ```go
 type AgentScenarioRunner struct {
@@ -1093,37 +1242,68 @@ type AgentScenarioRunner struct {
 ```
 
 <a name="NewAgentScenarioRunner"></a>
-### func [NewAgentScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L697>)
+### func [NewAgentScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L727>)
 
 ```go
 func NewAgentScenarioRunner(agent iface.CompositeAgent) *AgentScenarioRunner
 ```
 
 <a name="AgentScenarioRunner.RunPlanningScenario"></a>
-### func \(\*AgentScenarioRunner\) [RunPlanningScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L719>)
+### func \(\*AgentScenarioRunner\) [RunPlanningScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L749>)
 
 ```go
 func (r *AgentScenarioRunner) RunPlanningScenario(ctx context.Context, problems []string) ([][]string, error)
 ```
 
 <a name="AgentScenarioRunner.RunTaskExecutionScenario"></a>
-### func \(\*AgentScenarioRunner\) [RunTaskExecutionScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L704>)
+### func \(\*AgentScenarioRunner\) [RunTaskExecutionScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L734>)
 
 ```go
 func (r *AgentScenarioRunner) RunTaskExecutionScenario(ctx context.Context, tasks []string) error
 ```
 
 <a name="AgentScenarioRunner.RunToolUsageScenario"></a>
-### func \(\*AgentScenarioRunner\) [RunToolUsageScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L744>)
+### func \(\*AgentScenarioRunner\) [RunToolUsageScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L773>)
 
 ```go
 func (r *AgentScenarioRunner) RunToolUsageScenario(ctx context.Context, toolTasks []string) error
 ```
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L465-L469>)
+<a name="ConcurrentStreamingTestRunner"></a>
+## type [ConcurrentStreamingTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1215-L1219>)
 
-ConcurrentTestRunner runs agent tests concurrently for performance testing
+ConcurrentStreamingTestRunner runs concurrent streaming operations for testing.
+
+```go
+type ConcurrentStreamingTestRunner struct {
+    NumGoroutines int
+    TestDuration  time.Duration
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewConcurrentStreamingTestRunner"></a>
+### func [NewConcurrentStreamingTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1222>)
+
+```go
+func NewConcurrentStreamingTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentStreamingTestRunner
+```
+
+NewConcurrentStreamingTestRunner creates a new concurrent streaming test runner.
+
+<a name="ConcurrentStreamingTestRunner.Run"></a>
+### func \(\*ConcurrentStreamingTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1231>)
+
+```go
+func (r *ConcurrentStreamingTestRunner) Run() error
+```
+
+Run executes the concurrent streaming test.
+
+<a name="ConcurrentTestRunner"></a>
+## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L460-L464>)
+
+ConcurrentTestRunner runs agent tests concurrently for performance testing.
 
 ```go
 type ConcurrentTestRunner struct {
@@ -1134,57 +1314,50 @@ type ConcurrentTestRunner struct {
 ```
 
 <a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L471>)
+### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L466>)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
 <a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L479>)
+### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L474>)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L12-L30>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L12-L23>)
 
 Config represents the configuration for the agents package. It includes settings for agent behavior, execution, and monitoring.
 
 ```go
 type Config struct {
-    // Default settings for all agents
-    DefaultMaxRetries    int           `mapstructure:"default_max_retries" yaml:"default_max_retries" validate:"min=0" default:"3"`
-    DefaultRetryDelay    time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" validate:"min=0" default:"2s"`
-    DefaultTimeout       time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" validate:"gt=0" default:"30s"`
-    DefaultMaxIterations int           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" validate:"gt=0" default:"15"`
-
-    // Monitoring and observability settings
-    EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-    EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-    MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" validate:"required" default:"beluga_agents"`
-    TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" validate:"required" default:"beluga-agents"`
-
-    // Executor settings
-    ExecutorConfig ExecutorConfig `mapstructure:"executor" yaml:"executor"`
-
-    // Agent-specific configurations
-    AgentConfigs map[string]schema.AgentConfig `mapstructure:"agents" yaml:"agents"`
+    AgentConfigs         map[string]schema.AgentConfig `mapstructure:"agents" yaml:"agents"`
+    MetricsPrefix        string                        `mapstructure:"metrics_prefix" yaml:"metrics_prefix" validate:"required" default:"beluga_agents"`
+    TracingServiceName   string                        `mapstructure:"tracing_service_name" yaml:"tracing_service_name" validate:"required" default:"beluga-agents"`
+    ExecutorConfig       ExecutorConfig                `mapstructure:"executor" yaml:"executor"`
+    DefaultMaxRetries    int                           `mapstructure:"default_max_retries" yaml:"default_max_retries" validate:"min=0" default:"3"`
+    DefaultRetryDelay    time.Duration                 `mapstructure:"default_retry_delay" yaml:"default_retry_delay" validate:"min=0" default:"2s"`
+    DefaultTimeout       time.Duration                 `mapstructure:"default_timeout" yaml:"default_timeout" validate:"gt=0" default:"30s"`
+    DefaultMaxIterations int                           `mapstructure:"default_max_iterations" yaml:"default_max_iterations" validate:"gt=0" default:"15"`
+    EnableMetrics        bool                          `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
+    EnableTracing        bool                          `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
 }
 ```
 
 <a name="CreateTestAgentConfig"></a>
-### func [CreateTestAgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L394>)
+### func [CreateTestAgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L389>)
 
 ```go
 func CreateTestAgentConfig(agentType string) Config
 ```
 
-CreateTestAgentConfig creates a test agent configuration
+CreateTestAgentConfig creates a test agent configuration.
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L113>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L106>)
 
 ```go
 func DefaultConfig() *Config
@@ -1193,7 +1366,7 @@ func DefaultConfig() *Config
 DefaultConfig returns a default configuration for the agents package.
 
 <a name="NewDefaultConfig"></a>
-### func [NewDefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L235>)
+### func [NewDefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/agents.go#L242>)
 
 ```go
 func NewDefaultConfig() *Config
@@ -1216,7 +1389,7 @@ agent, err := agents.NewBaseAgent("my-agent", llm, tools,
 ```
 
 <a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L135>)
+### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L128>)
 
 ```go
 func (c *Config) Validate() error
@@ -1224,23 +1397,39 @@ func (c *Config) Validate() error
 
 Validate validates the configuration and returns an error if invalid.
 
+<a name="ExecutionChunk"></a>
+## type [ExecutionChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1135-L1142>)
+
+ExecutionChunk represents a chunk of execution output. This type matches the contract definition for streaming executor chunks.
+
+```go
+type ExecutionChunk struct {
+    Timestamp   time.Time
+    Err         error
+    ToolResult  *ToolExecutionResult
+    FinalAnswer *schema.FinalAnswer
+    Step        schema.Step
+    Content     string
+}
+```
+
 <a name="ExecutionError"></a>
-## type [ExecutionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L117-L123>)
+## type [ExecutionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L122-L128>)
 
 ExecutionError represents errors that occur during agent execution.
 
 ```go
 type ExecutionError struct {
-    Agent     string
-    Step      int
-    Action    string
     Err       error
+    Agent     string
+    Action    string
+    Step      int
     Retryable bool
 }
 ```
 
 <a name="NewExecutionError"></a>
-### func [NewExecutionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L137>)
+### func [NewExecutionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L142>)
 
 ```go
 func NewExecutionError(agent string, step int, action string, err error, retryable bool) *ExecutionError
@@ -1249,7 +1438,7 @@ func NewExecutionError(agent string, step int, action string, err error, retryab
 NewExecutionError creates a new ExecutionError.
 
 <a name="ExecutionError.Error"></a>
-### func \(\*ExecutionError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L126>)
+### func \(\*ExecutionError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L131>)
 
 ```go
 func (e *ExecutionError) Error() string
@@ -1258,7 +1447,7 @@ func (e *ExecutionError) Error() string
 Error implements the error interface.
 
 <a name="ExecutionError.Unwrap"></a>
-### func \(\*ExecutionError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L132>)
+### func \(\*ExecutionError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L137>)
 
 ```go
 func (e *ExecutionError) Unwrap() error
@@ -1267,22 +1456,22 @@ func (e *ExecutionError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="ExecutionRecord"></a>
-## type [ExecutionRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L51-L57>)
+## type [ExecutionRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L46-L52>)
 
-ExecutionRecord tracks agent execution history for testing
+ExecutionRecord tracks agent execution history for testing.
 
 ```go
 type ExecutionRecord struct {
-    Input     interface{}
-    Output    interface{}
+    Timestamp time.Time
+    Input     any
+    Output    any
     Error     error
     Duration  time.Duration
-    Timestamp time.Time
 }
 ```
 
 <a name="ExecutorConfig"></a>
-## type [ExecutorConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L33-L44>)
+## type [ExecutorConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L26-L37>)
 
 ExecutorConfig defines configuration for agent execution.
 
@@ -1302,29 +1491,29 @@ type ExecutorConfig struct {
 ```
 
 <a name="FactoryError"></a>
-## type [FactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L91-L95>)
+## type [FactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L96-L100>)
 
 FactoryError represents errors that occur during agent creation.
 
 ```go
 type FactoryError struct {
-    AgentType string
-    Config    interface{}
+    Config    any
     Err       error
+    AgentType string
 }
 ```
 
 <a name="NewFactoryError"></a>
-### func [NewFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L108>)
+### func [NewFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L113>)
 
 ```go
-func NewFactoryError(agentType string, config interface{}, err error) *FactoryError
+func NewFactoryError(agentType string, config any, err error) *FactoryError
 ```
 
 NewFactoryError creates a new FactoryError.
 
 <a name="FactoryError.Error"></a>
-### func \(\*FactoryError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L98>)
+### func \(\*FactoryError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L103>)
 
 ```go
 func (e *FactoryError) Error() string
@@ -1333,7 +1522,7 @@ func (e *FactoryError) Error() string
 Error implements the error interface.
 
 <a name="FactoryError.Unwrap"></a>
-### func \(\*FactoryError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L103>)
+### func \(\*FactoryError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L108>)
 
 ```go
 func (e *FactoryError) Unwrap() error
@@ -1342,9 +1531,9 @@ func (e *FactoryError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L572-L576>)
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L602-L606>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -1353,56 +1542,56 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L578>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L608>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddAgent"></a>
-### func \(\*IntegrationTestHelper\) [AddAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L586>)
+### func \(\*IntegrationTestHelper\) [AddAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L616>)
 
 ```go
 func (h *IntegrationTestHelper) AddAgent(name string, agent *AdvancedMockAgent)
 ```
 
 <a name="IntegrationTestHelper.AddTool"></a>
-### func \(\*IntegrationTestHelper\) [AddTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L590>)
+### func \(\*IntegrationTestHelper\) [AddTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L620>)
 
 ```go
 func (h *IntegrationTestHelper) AddTool(name string, tool *MockTool)
 ```
 
 <a name="IntegrationTestHelper.GetAgent"></a>
-### func \(\*IntegrationTestHelper\) [GetAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L594>)
+### func \(\*IntegrationTestHelper\) [GetAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L624>)
 
 ```go
 func (h *IntegrationTestHelper) GetAgent(name string) *AdvancedMockAgent
 ```
 
 <a name="IntegrationTestHelper.GetExecutor"></a>
-### func \(\*IntegrationTestHelper\) [GetExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L602>)
+### func \(\*IntegrationTestHelper\) [GetExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L632>)
 
 ```go
 func (h *IntegrationTestHelper) GetExecutor() *MockExecutor
 ```
 
 <a name="IntegrationTestHelper.GetTool"></a>
-### func \(\*IntegrationTestHelper\) [GetTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L598>)
+### func \(\*IntegrationTestHelper\) [GetTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L628>)
 
 ```go
 func (h *IntegrationTestHelper) GetTool(name string) *MockTool
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L606>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L636>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L17-L42>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L18-L48>)
 
 Metrics holds the metrics for the agents package.
 
@@ -1413,7 +1602,7 @@ type Metrics struct {
 ```
 
 <a name="DefaultMetrics"></a>
-### func [DefaultMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L270>)
+### func [DefaultMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L331>)
 
 ```go
 func DefaultMetrics() *Metrics
@@ -1422,7 +1611,7 @@ func DefaultMetrics() *Metrics
 DefaultMetrics creates a metrics instance with default meter and tracer.
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L45>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L51>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
@@ -1431,7 +1620,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
 NewMetrics creates a new Metrics instance with OpenTelemetry metrics.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L278>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L339>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -1440,140 +1629,158 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.RecordAgentCreation"></a>
-### func \(\*Metrics\) [RecordAgentCreation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L176>)
+### func \(\*Metrics\) [RecordAgentCreation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L209>)
 
 ```go
 func (m *Metrics) RecordAgentCreation(ctx context.Context, agentType string)
 ```
 
-Agent creation metrics
+Agent creation metrics.
 
 <a name="Metrics.RecordAgentExecution"></a>
-### func \(\*Metrics\) [RecordAgentExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L183>)
+### func \(\*Metrics\) [RecordAgentExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L216>)
 
 ```go
 func (m *Metrics) RecordAgentExecution(ctx context.Context, agentName, agentType string, duration time.Duration, success bool)
 ```
 
-Agent execution metrics
+Agent execution metrics.
 
 <a name="Metrics.RecordExecutorRun"></a>
-### func \(\*Metrics\) [RecordExecutorRun](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L199>)
+### func \(\*Metrics\) [RecordExecutorRun](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L232>)
 
 ```go
 func (m *Metrics) RecordExecutorRun(ctx context.Context, executorType string, duration time.Duration, steps int, success bool)
 ```
 
-Executor metrics
+Executor metrics.
 
 <a name="Metrics.RecordPlanningCall"></a>
-### func \(\*Metrics\) [RecordPlanningCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L230>)
+### func \(\*Metrics\) [RecordPlanningCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L263>)
 
 ```go
 func (m *Metrics) RecordPlanningCall(ctx context.Context, agentName string, duration time.Duration, success bool)
 ```
 
-Planning metrics
+Planning metrics.
+
+<a name="Metrics.RecordStreamingChunk"></a>
+### func \(\*Metrics\) [RecordStreamingChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L289>)
+
+```go
+func (m *Metrics) RecordStreamingChunk(ctx context.Context, agentName string)
+```
+
+RecordStreamingChunk records that a streaming chunk was produced.
+
+<a name="Metrics.RecordStreamingOperation"></a>
+### func \(\*Metrics\) [RecordStreamingOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L279>)
+
+```go
+func (m *Metrics) RecordStreamingOperation(ctx context.Context, agentName string, latency, duration time.Duration)
+```
+
+Streaming metrics. RecordStreamingOperation records streaming operation metrics \(latency and duration\).
 
 <a name="Metrics.RecordToolCall"></a>
-### func \(\*Metrics\) [RecordToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L215>)
+### func \(\*Metrics\) [RecordToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L248>)
 
 ```go
 func (m *Metrics) RecordToolCall(ctx context.Context, toolName string, duration time.Duration, success bool)
 ```
 
-Tool metrics
+Tool metrics.
 
 <a name="Metrics.StartAgentSpan"></a>
-### func \(\*Metrics\) [StartAgentSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L245>)
+### func \(\*Metrics\) [StartAgentSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L301>)
 
 ```go
 func (m *Metrics) StartAgentSpan(ctx context.Context, agentName, operation string) (context.Context, trace.Span)
 ```
 
-Tracing helpers
+Tracing helpers. Spans returned by these methods must be ended by the caller using span.End\(\).
 
 <a name="Metrics.StartExecutorSpan"></a>
-### func \(\*Metrics\) [StartExecutorSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L253>)
+### func \(\*Metrics\) [StartExecutorSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L311>)
 
 ```go
 func (m *Metrics) StartExecutorSpan(ctx context.Context, executorType, operation string) (context.Context, trace.Span)
 ```
 
 <a name="Metrics.StartToolSpan"></a>
-### func \(\*Metrics\) [StartToolSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L261>)
+### func \(\*Metrics\) [StartToolSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/metrics.go#L321>)
 
 ```go
 func (m *Metrics) StartToolSpan(ctx context.Context, toolName, operation string) (context.Context, trace.Span)
 ```
 
 <a name="MockAgentOption"></a>
-## type [MockAgentOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L81>)
+## type [MockAgentOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L76>)
 
-MockAgentOption defines functional options for mock configuration
+MockAgentOption defines functional options for mock configuration.
 
 ```go
 type MockAgentOption func(*AdvancedMockAgent)
 ```
 
 <a name="WithAgentState"></a>
-### func [WithAgentState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L120>)
+### func [WithAgentState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L115>)
 
 ```go
-func WithAgentState(state map[string]interface{}) MockAgentOption
+func WithAgentState(state map[string]any) MockAgentOption
 ```
 
-WithAgentState sets initial state for the mock agent
+WithAgentState sets initial state for the mock agent.
 
 <a name="WithExecutionDelay"></a>
-### func [WithExecutionDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L99>)
+### func [WithExecutionDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L94>)
 
 ```go
 func WithExecutionDelay(delay time.Duration) MockAgentOption
 ```
 
-WithExecutionDelay adds artificial delay to mock operations
+WithExecutionDelay adds artificial delay to mock operations.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L84>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L79>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockAgentOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithMockResponses"></a>
-### func [WithMockResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L92>)
+### func [WithMockResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L87>)
 
 ```go
-func WithMockResponses(responses []interface{}) MockAgentOption
+func WithMockResponses(responses []any) MockAgentOption
 ```
 
-WithMockResponses sets predefined responses for the mock
+WithMockResponses sets predefined responses for the mock.
 
 <a name="WithMockTools"></a>
-### func [WithMockTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L106>)
+### func [WithMockTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L101>)
 
 ```go
 func WithMockTools(agentTools []tools.Tool) MockAgentOption
 ```
 
-WithMockTools sets the tools available to the agent
+WithMockTools sets the tools available to the agent.
 
 <a name="WithPlanningSteps"></a>
-### func [WithPlanningSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L113>)
+### func [WithPlanningSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L108>)
 
 ```go
 func WithPlanningSteps(steps []string) MockAgentOption
 ```
 
-WithPlanningSteps sets planning steps for the mock agent
+WithPlanningSteps sets planning steps for the mock agent.
 
 <a name="MockExecutor"></a>
-## type [MockExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L621-L627>)
+## type [MockExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L651-L657>)
 
-MockExecutor provides a mock executor for testing
+MockExecutor provides a mock executor for testing.
 
 ```go
 type MockExecutor struct {
@@ -1582,51 +1789,126 @@ type MockExecutor struct {
 ```
 
 <a name="NewMockExecutor"></a>
-### func [NewMockExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L629>)
+### func [NewMockExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L659>)
 
 ```go
 func NewMockExecutor() *MockExecutor
 ```
 
 <a name="MockExecutor.Execute"></a>
-### func \(\*MockExecutor\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L635>)
+### func \(\*MockExecutor\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L665>)
 
 ```go
-func (e *MockExecutor) Execute(ctx context.Context, agent iface.CompositeAgent, input interface{}) (interface{}, error)
+func (e *MockExecutor) Execute(ctx context.Context, agent iface.CompositeAgent, input any) (any, error)
 ```
 
 <a name="MockExecutor.GetCallCount"></a>
-### func \(\*MockExecutor\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L671>)
+### func \(\*MockExecutor\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L701>)
 
 ```go
 func (e *MockExecutor) GetCallCount() int
 ```
 
 <a name="MockExecutor.GetExecutions"></a>
-### func \(\*MockExecutor\) [GetExecutions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L663>)
+### func \(\*MockExecutor\) [GetExecutions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L693>)
 
 ```go
 func (e *MockExecutor) GetExecutions() []ExecutionRecord
 ```
 
 <a name="MockExecutor.Reset"></a>
-### func \(\*MockExecutor\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L677>)
+### func \(\*MockExecutor\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L707>)
 
 ```go
 func (e *MockExecutor) Reset()
 ```
 
 <a name="MockExecutor.WithError"></a>
-### func \(\*MockExecutor\) [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L684>)
+### func \(\*MockExecutor\) [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L714>)
 
 ```go
 func (e *MockExecutor) WithError(err error)
 ```
 
-<a name="MockTool"></a>
-## type [MockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L358-L362>)
+<a name="MockStreamingAgentOption"></a>
+## type [MockStreamingAgentOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L904>)
 
-MockTool provides a simple mock tool for testing
+MockStreamingAgentOption defines functional options for configuring streaming agent mocks.
+
+```go
+type MockStreamingAgentOption func(*AdvancedMockStreamingAgent)
+```
+
+<a name="WithChunkGenerator"></a>
+### func [WithChunkGenerator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L929>)
+
+```go
+func WithChunkGenerator(generator func() iface.AgentStreamChunk) MockStreamingAgentOption
+```
+
+WithChunkGenerator sets a custom function to generate chunks dynamically.
+
+<a name="WithMockStreamingChunks"></a>
+### func [WithMockStreamingChunks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L907>)
+
+```go
+func WithMockStreamingChunks(chunks []iface.AgentStreamChunk) MockStreamingAgentOption
+```
+
+WithMockStreamingChunks sets predefined chunks to stream.
+
+<a name="WithStreamingDelay"></a>
+### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L914>)
+
+```go
+func WithStreamingDelay(delay time.Duration) MockStreamingAgentOption
+```
+
+WithStreamingDelay adds artificial delay between streaming chunks.
+
+<a name="WithStreamingError"></a>
+### func [WithStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L921>)
+
+```go
+func WithStreamingError(shouldError bool, err error) MockStreamingAgentOption
+```
+
+WithStreamingError configures the mock to return an error during streaming.
+
+<a name="MockStreamingExecutor"></a>
+## type [MockStreamingExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1124-L1131>)
+
+MockStreamingExecutor provides a mock executor with streaming capabilities.
+
+```go
+type MockStreamingExecutor struct {
+    *MockExecutor
+    // contains filtered or unexported fields
+}
+```
+
+<a name="NewMockStreamingExecutor"></a>
+### func [NewMockStreamingExecutor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1154>)
+
+```go
+func NewMockStreamingExecutor(baseExecutor *MockExecutor) *MockStreamingExecutor
+```
+
+NewMockStreamingExecutor creates a new mock streaming executor.
+
+<a name="MockStreamingExecutor.ExecuteStreamingPlan"></a>
+### func \(\*MockStreamingExecutor\) [ExecuteStreamingPlan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1163>)
+
+```go
+func (e *MockStreamingExecutor) ExecuteStreamingPlan(ctx context.Context, agent iface.Agent, plan []schema.Step) (<-chan ExecutionChunk, error)
+```
+
+ExecuteStreamingPlan implements the StreamingExecutor interface \(to be defined in Phase 3.4\).
+
+<a name="MockTool"></a>
+## type [MockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L353-L357>)
+
+MockTool provides a simple mock tool for testing.
 
 ```go
 type MockTool struct {
@@ -1636,28 +1918,28 @@ type MockTool struct {
 ```
 
 <a name="NewMockTool"></a>
-### func [NewMockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L364>)
+### func [NewMockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L359>)
 
 ```go
 func NewMockTool(name, description string) *MockTool
 ```
 
 <a name="MockTool.Execute"></a>
-### func \(\*MockTool\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L377>)
+### func \(\*MockTool\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L372>)
 
 ```go
 func (t *MockTool) Execute(ctx context.Context, input any) (any, error)
 ```
 
 <a name="MockTool.GetCallCount"></a>
-### func \(\*MockTool\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L385>)
+### func \(\*MockTool\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L380>)
 
 ```go
 func (t *MockTool) GetCallCount() int
 ```
 
 <a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L47>)
+## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/config.go#L40>)
 
 Option represents a functional option for configuring agents.
 
@@ -1666,21 +1948,21 @@ type Option func(*options)
 ```
 
 <a name="PlanningError"></a>
-## type [PlanningError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L148-L153>)
+## type [PlanningError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L153-L158>)
 
 PlanningError represents errors that occur during the planning phase.
 
 ```go
 type PlanningError struct {
-    Agent      string
-    InputKeys  []string
     Err        error
+    Agent      string
     Suggestion string
+    InputKeys  []string
 }
 ```
 
 <a name="NewPlanningError"></a>
-### func [NewPlanningError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L173>)
+### func [NewPlanningError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L178>)
 
 ```go
 func NewPlanningError(agent string, inputKeys []string, err error) *PlanningError
@@ -1689,7 +1971,7 @@ func NewPlanningError(agent string, inputKeys []string, err error) *PlanningErro
 NewPlanningError creates a new PlanningError.
 
 <a name="PlanningError.Error"></a>
-### func \(\*PlanningError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L156>)
+### func \(\*PlanningError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L161>)
 
 ```go
 func (e *PlanningError) Error() string
@@ -1698,7 +1980,7 @@ func (e *PlanningError) Error() string
 Error implements the error interface.
 
 <a name="PlanningError.Unwrap"></a>
-### func \(\*PlanningError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L168>)
+### func \(\*PlanningError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L173>)
 
 ```go
 func (e *PlanningError) Unwrap() error
@@ -1707,7 +1989,7 @@ func (e *PlanningError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="PlanningError.WithSuggestion"></a>
-### func \(\*PlanningError\) [WithSuggestion](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L182>)
+### func \(\*PlanningError\) [WithSuggestion](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L187>)
 
 ```go
 func (e *PlanningError) WithSuggestion(suggestion string) *PlanningError
@@ -1715,8 +1997,83 @@ func (e *PlanningError) WithSuggestion(suggestion string) *PlanningError
 
 WithSuggestion adds a suggestion to help resolve the planning error.
 
+<a name="StreamingError"></a>
+## type [StreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L251-L257>)
+
+StreamingError represents errors that occur during streaming operations.
+
+```go
+type StreamingError struct {
+    Err    error
+    Fields map[string]any
+    Op     string
+    Agent  string
+    Code   string
+}
+```
+
+<a name="NewStreamingError"></a>
+### func [NewStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L282>)
+
+```go
+func NewStreamingError(op, agent, code string, err error) *StreamingError
+```
+
+NewStreamingError creates a new StreamingError following Op/Err/Code pattern.
+
+<a name="WrapStreamingError"></a>
+### func [WrapStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L293>)
+
+```go
+func WrapStreamingError(op, agent, code string, err error) *StreamingError
+```
+
+WrapStreamingError wraps an existing error as a StreamingError.
+
+<a name="StreamingError.Error"></a>
+### func \(\*StreamingError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L260>)
+
+```go
+func (e *StreamingError) Error() string
+```
+
+Error implements the error interface.
+
+<a name="StreamingError.Unwrap"></a>
+### func \(\*StreamingError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L268>)
+
+```go
+func (e *StreamingError) Unwrap() error
+```
+
+Unwrap returns the underlying error.
+
+<a name="StreamingError.WithField"></a>
+### func \(\*StreamingError\) [WithField](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L273>)
+
+```go
+func (e *StreamingError) WithField(key string, value any) *StreamingError
+```
+
+WithField adds a context field to the error.
+
+<a name="ToolExecutionResult"></a>
+## type [ToolExecutionResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/test_utils.go#L1145-L1151>)
+
+ToolExecutionResult represents the result of tool execution.
+
+```go
+type ToolExecutionResult struct {
+    Err      error
+    Input    map[string]any
+    Output   map[string]any
+    ToolName string
+    Duration time.Duration
+}
+```
+
 <a name="ValidationError"></a>
-## type [ValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L72-L75>)
+## type [ValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L77-L80>)
 
 ValidationError represents configuration validation errors.
 
@@ -1728,7 +2085,7 @@ type ValidationError struct {
 ```
 
 <a name="NewValidationError"></a>
-### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L83>)
+### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L88>)
 
 ```go
 func NewValidationError(field, message string) *ValidationError
@@ -1737,7 +2094,7 @@ func NewValidationError(field, message string) *ValidationError
 NewValidationError creates a new ValidationError.
 
 <a name="ValidationError.Error"></a>
-### func \(\*ValidationError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L78>)
+### func \(\*ValidationError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/errors.go#L83>)
 
 ```go
 func (e *ValidationError) Error() string

@@ -34,7 +34,7 @@ config.DefaultProvider = "openai"
 model, err := chatmodels.NewChatModel("gpt-4", config)
 
 // Generate messages
-messages := []schema.Message{
+:= []schema.Message{
 	{Role: "user", Content: "Hello, how are you?"},
 }
 response, err := model.GenerateMessages(ctx, messages)
@@ -63,7 +63,7 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
 
 - [Constants](<#constants>)
 - [Variables](<#variables>)
-- [func AssertChatModelHealth\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertChatModelHealth>)
+- [func AssertChatModelHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertChatModelHealth>)
 - [func AssertChatResponse\(t \*testing.T, response schema.Message, expectedMinLength int\)](<#AssertChatResponse>)
 - [func AssertConversationFlow\(t \*testing.T, history \[\]schema.Message, expectedMinLength int\)](<#AssertConversationFlow>)
 - [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
@@ -73,7 +73,7 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
 - [func GetModelInfo\(model iface.ChatModel\) iface.ModelInfo](<#GetModelInfo>)
 - [func GetSupportedModels\(provider string\) \[\]string](<#GetSupportedModels>)
 - [func GetSupportedProviders\(\) \[\]string](<#GetSupportedProviders>)
-- [func HealthCheck\(model iface.ChatModel\) map\[string\]interface\{\}](<#HealthCheck>)
+- [func HealthCheck\(model iface.ChatModel\) map\[string\]any](<#HealthCheck>)
 - [func IsAuthenticationError\(err error\) bool](<#IsAuthenticationError>)
 - [func IsGenerationError\(err error\) bool](<#IsGenerationError>)
 - [func IsProviderError\(err error\) bool](<#IsProviderError>)
@@ -84,7 +84,7 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
 - [func NewChatModel\(model string, config \*Config, opts ...iface.Option\) \(iface.ChatModel, error\)](<#NewChatModel>)
 - [func NewMockChatModel\(model string, opts ...iface.Option\) \(iface.ChatModel, error\)](<#NewMockChatModel>)
 - [func NewOpenAIChatModel\(model, apiKey string, opts ...iface.Option\) \(iface.ChatModel, error\)](<#NewOpenAIChatModel>)
-- [func RunLoadTest\(t \*testing.T, chatModel \*AdvancedMockChatModel, numOperations int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, chatModel \*AdvancedMockChatModel, numOperations, concurrency int\)](<#RunLoadTest>)
 - [func StreamMessages\(ctx context.Context, model iface.ChatModel, messages \[\]schema.Message, opts ...iface.Option\) \(\<\-chan schema.Message, error\)](<#StreamMessages>)
 - [func ValidateConfig\(config \*Config\) error](<#ValidateConfig>)
 - [func WithFunctionCalling\(enabled bool\) iface.Option](<#WithFunctionCalling>)
@@ -101,7 +101,7 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
   - [func NewAdvancedMockChatModel\(modelName, providerName string, options ...MockChatModelOption\) \*AdvancedMockChatModel](<#NewAdvancedMockChatModel>)
   - [func \(m \*AdvancedMockChatModel\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#AdvancedMockChatModel.Batch>)
   - [func \(m \*AdvancedMockChatModel\) BindTools\(toolsToBind \[\]tools.Tool\) llmsiface.ChatModel](<#AdvancedMockChatModel.BindTools>)
-  - [func \(m \*AdvancedMockChatModel\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockChatModel.CheckHealth>)
+  - [func \(m \*AdvancedMockChatModel\) CheckHealth\(\) map\[string\]any](<#AdvancedMockChatModel.CheckHealth>)
   - [func \(m \*AdvancedMockChatModel\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#AdvancedMockChatModel.Generate>)
   - [func \(m \*AdvancedMockChatModel\) GetCallCount\(\) int](<#AdvancedMockChatModel.GetCallCount>)
   - [func \(m \*AdvancedMockChatModel\) GetConversationHistory\(\) \[\]schema.Message](<#AdvancedMockChatModel.GetConversationHistory>)
@@ -111,6 +111,8 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
   - [func \(m \*AdvancedMockChatModel\) ResetConversation\(\)](<#AdvancedMockChatModel.ResetConversation>)
   - [func \(m \*AdvancedMockChatModel\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#AdvancedMockChatModel.Stream>)
   - [func \(m \*AdvancedMockChatModel\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan llmsiface.AIMessageChunk, error\)](<#AdvancedMockChatModel.StreamChat>)
+- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
 - [type BenchmarkHelper](<#BenchmarkHelper>)
   - [func NewBenchmarkHelper\(chatModel llmsiface.ChatModel, conversationCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
   - [func \(b \*BenchmarkHelper\) BenchmarkGeneration\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkGeneration>)
@@ -119,7 +121,7 @@ Package chatmodels provides advanced test utilities and comprehensive mocks for 
   - [func NewChatModelError\(op, model, provider, code string, err error\) \*ChatModelError](<#NewChatModelError>)
   - [func \(e \*ChatModelError\) Error\(\) string](<#ChatModelError.Error>)
   - [func \(e \*ChatModelError\) Unwrap\(\) error](<#ChatModelError.Unwrap>)
-  - [func \(e \*ChatModelError\) WithField\(key string, value interface\{\}\) \*ChatModelError](<#ChatModelError.WithField>)
+  - [func \(e \*ChatModelError\) WithField\(key string, value any\) \*ChatModelError](<#ChatModelError.WithField>)
 - [type ChatModelScenarioRunner](<#ChatModelScenarioRunner>)
   - [func NewChatModelScenarioRunner\(chatModel llmsiface.ChatModel\) \*ChatModelScenarioRunner](<#NewChatModelScenarioRunner>)
   - [func \(r \*ChatModelScenarioRunner\) RunConversationScenario\(ctx context.Context, turns int\) error](<#ChatModelScenarioRunner.RunConversationScenario>)
@@ -216,7 +218,7 @@ var (
     ErrProviderNotAvailable = errors.New("provider not available")
     ErrModelNotSupported    = errors.New("model not supported")
     ErrMaxRetriesExceeded   = errors.New("maximum retries exceeded")
-    ErrContextCancelled     = errors.New("context cancelled")
+    ErrContextCancelled     = errors.New("context canceled")
     ErrTimeout              = errors.New("operation timed out")
     ErrRateLimitExceeded    = errors.New("rate limit exceeded")
     ErrQuotaExceeded        = errors.New("quota exceeded")
@@ -227,58 +229,58 @@ var (
 ```
 
 <a name="AssertChatModelHealth"></a>
-## func [AssertChatModelHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L391>)
+## func [AssertChatModelHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L389>)
 
 ```go
-func AssertChatModelHealth(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertChatModelHealth(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertChatModelHealth validates chat model health check results
+AssertChatModelHealth validates chat model health check results.
 
 <a name="AssertChatResponse"></a>
-## func [AssertChatResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L355>)
+## func [AssertChatResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L349>)
 
 ```go
 func AssertChatResponse(t *testing.T, response schema.Message, expectedMinLength int)
 ```
 
-AssertChatResponse validates chat model response
+AssertChatResponse validates chat model response.
 
 <a name="AssertConversationFlow"></a>
-## func [AssertConversationFlow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L376>)
+## func [AssertConversationFlow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L373>)
 
 ```go
 func AssertConversationFlow(t *testing.T, history []schema.Message, expectedMinLength int)
 ```
 
-AssertConversationFlow validates conversation flow
+AssertConversationFlow validates conversation flow.
 
 <a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L400>)
+## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L399>)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
 ```
 
-AssertErrorType validates error types and codes
+AssertErrorType validates error types and codes.
 
 <a name="AssertStreamingResponse"></a>
-## func [AssertStreamingResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L363>)
+## func [AssertStreamingResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L357>)
 
 ```go
 func AssertStreamingResponse(t *testing.T, chunks []llmsiface.AIMessageChunk, expectedMinChunks int)
 ```
 
-AssertStreamingResponse validates streaming response
+AssertStreamingResponse validates streaming response.
 
 <a name="CreateTestMessages"></a>
-## func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L319>)
+## func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L313>)
 
 ```go
 func CreateTestMessages(conversationLength int) []schema.Message
 ```
 
-CreateTestMessages creates a set of test messages for chat model testing
+CreateTestMessages creates a set of test messages for chat model testing.
 
 <a name="GenerateMessages"></a>
 ## func [GenerateMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/chatmodels.go#L324>)
@@ -382,7 +384,7 @@ fmt.Printf("Supported providers: %v\n", providers)
 ## func [HealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/chatmodels.go#L285>)
 
 ```go
-func HealthCheck(model iface.ChatModel) map[string]interface{}
+func HealthCheck(model iface.ChatModel) map[string]any
 ```
 
 HealthCheck performs a health check on a chat model. This can be used for monitoring and ensuring model availability.
@@ -556,10 +558,10 @@ model, err := chatmodels.NewOpenAIChatModel("gpt-4", "your-api-key",
 ## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L470>)
 
 ```go
-func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations int, concurrency int)
+func RunLoadTest(t *testing.T, chatModel *AdvancedMockChatModel, numOperations, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on chat model
+RunLoadTest executes a load test scenario on chat model.
 
 <a name="StreamMessages"></a>
 ## func [StreamMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/chatmodels.go#L355>)
@@ -621,7 +623,7 @@ if err := chatmodels.ValidateConfig(config); err != nil {
 ```
 
 <a name="WithFunctionCalling"></a>
-## func [WithFunctionCalling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L118>)
+## func [WithFunctionCalling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L105>)
 
 ```go
 func WithFunctionCalling(enabled bool) iface.Option
@@ -630,7 +632,7 @@ func WithFunctionCalling(enabled bool) iface.Option
 WithFunctionCalling enables or disables function calling.
 
 <a name="WithMaxRetries"></a>
-## func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L138>)
+## func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L125>)
 
 ```go
 func WithMaxRetries(retries int) iface.Option
@@ -639,7 +641,7 @@ func WithMaxRetries(retries int) iface.Option
 WithMaxRetries sets the maximum number of retries.
 
 <a name="WithMaxTokens"></a>
-## func [WithMaxTokens](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L78>)
+## func [WithMaxTokens](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L65>)
 
 ```go
 func WithMaxTokens(maxTokens int) iface.Option
@@ -648,7 +650,7 @@ func WithMaxTokens(maxTokens int) iface.Option
 WithMaxTokens sets the maximum number of tokens to generate.
 
 <a name="WithMetrics"></a>
-## func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L148>)
+## func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L135>)
 
 ```go
 func WithMetrics(enabled bool) iface.Option
@@ -657,7 +659,7 @@ func WithMetrics(enabled bool) iface.Option
 WithMetrics enables or disables metrics collection.
 
 <a name="WithStopSequences"></a>
-## func [WithStopSequences](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L98>)
+## func [WithStopSequences](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L85>)
 
 ```go
 func WithStopSequences(sequences []string) iface.Option
@@ -666,7 +668,7 @@ func WithStopSequences(sequences []string) iface.Option
 WithStopSequences sets the stop sequences for generation.
 
 <a name="WithSystemPrompt"></a>
-## func [WithSystemPrompt](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L108>)
+## func [WithSystemPrompt](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L95>)
 
 ```go
 func WithSystemPrompt(prompt string) iface.Option
@@ -675,7 +677,7 @@ func WithSystemPrompt(prompt string) iface.Option
 WithSystemPrompt sets the system prompt.
 
 <a name="WithTemperature"></a>
-## func [WithTemperature](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L68>)
+## func [WithTemperature](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L55>)
 
 ```go
 func WithTemperature(temp float32) iface.Option
@@ -684,7 +686,7 @@ func WithTemperature(temp float32) iface.Option
 WithTemperature sets the temperature for response generation.
 
 <a name="WithTimeout"></a>
-## func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L128>)
+## func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L115>)
 
 ```go
 func WithTimeout(timeout time.Duration) iface.Option
@@ -693,7 +695,7 @@ func WithTimeout(timeout time.Duration) iface.Option
 WithTimeout sets the timeout for operations.
 
 <a name="WithTopP"></a>
-## func [WithTopP](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L88>)
+## func [WithTopP](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L75>)
 
 ```go
 func WithTopP(topP float32) iface.Option
@@ -702,7 +704,7 @@ func WithTopP(topP float32) iface.Option
 WithTopP sets the nucleus sampling parameter.
 
 <a name="WithTracing"></a>
-## func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L158>)
+## func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L145>)
 
 ```go
 func WithTracing(enabled bool) iface.Option
@@ -711,9 +713,9 @@ func WithTracing(enabled bool) iface.Option
 WithTracing enables or disables tracing.
 
 <a name="AdvancedMockChatModel"></a>
-## type [AdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L21-L45>)
+## type [AdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L23-L39>)
 
-AdvancedMockChatModel provides a comprehensive mock implementation for testing
+AdvancedMockChatModel provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockChatModel struct {
@@ -723,108 +725,128 @@ type AdvancedMockChatModel struct {
 ```
 
 <a name="NewAdvancedMockChatModel"></a>
-### func [NewAdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L48>)
+### func [NewAdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L42>)
 
 ```go
 func NewAdvancedMockChatModel(modelName, providerName string, options ...MockChatModelOption) *AdvancedMockChatModel
 ```
 
-NewAdvancedMockChatModel creates a new advanced mock with configurable behavior
+NewAdvancedMockChatModel creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockChatModel.Batch"></a>
-### func \(\*AdvancedMockChatModel\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L133>)
+### func \(\*AdvancedMockChatModel\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L127>)
 
 ```go
 func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
 <a name="AdvancedMockChatModel.BindTools"></a>
-### func \(\*AdvancedMockChatModel\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L256>)
+### func \(\*AdvancedMockChatModel\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L250>)
 
 ```go
 func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel
 ```
 
 <a name="AdvancedMockChatModel.CheckHealth"></a>
-### func \(\*AdvancedMockChatModel\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L281>)
+### func \(\*AdvancedMockChatModel\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L275>)
 
 ```go
-func (m *AdvancedMockChatModel) CheckHealth() map[string]interface{}
+func (m *AdvancedMockChatModel) CheckHealth() map[string]any
 ```
 
 <a name="AdvancedMockChatModel.Generate"></a>
-### func \(\*AdvancedMockChatModel\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L169>)
+### func \(\*AdvancedMockChatModel\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L163>)
 
 ```go
 func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
 ```
 
-Mock implementation methods for ChatModel interface
+Mock implementation methods for ChatModel interface.
 
 <a name="AdvancedMockChatModel.GetCallCount"></a>
-### func \(\*AdvancedMockChatModel\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L295>)
+### func \(\*AdvancedMockChatModel\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L289>)
 
 ```go
 func (m *AdvancedMockChatModel) GetCallCount() int
 ```
 
-Additional helper methods for testing
+Additional helper methods for testing.
 
 <a name="AdvancedMockChatModel.GetConversationHistory"></a>
-### func \(\*AdvancedMockChatModel\) [GetConversationHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L301>)
+### func \(\*AdvancedMockChatModel\) [GetConversationHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L295>)
 
 ```go
 func (m *AdvancedMockChatModel) GetConversationHistory() []schema.Message
 ```
 
 <a name="AdvancedMockChatModel.GetModelName"></a>
-### func \(\*AdvancedMockChatModel\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L273>)
+### func \(\*AdvancedMockChatModel\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L267>)
 
 ```go
 func (m *AdvancedMockChatModel) GetModelName() string
 ```
 
 <a name="AdvancedMockChatModel.GetProviderName"></a>
-### func \(\*AdvancedMockChatModel\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L277>)
+### func \(\*AdvancedMockChatModel\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L271>)
 
 ```go
 func (m *AdvancedMockChatModel) GetProviderName() string
 ```
 
 <a name="AdvancedMockChatModel.Invoke"></a>
-### func \(\*AdvancedMockChatModel\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L116>)
+### func \(\*AdvancedMockChatModel\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L110>)
 
 ```go
 func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-Mock implementation methods for core.Runnable interface
+Mock implementation methods for core.Runnable interface.
 
 <a name="AdvancedMockChatModel.ResetConversation"></a>
-### func \(\*AdvancedMockChatModel\) [ResetConversation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L309>)
+### func \(\*AdvancedMockChatModel\) [ResetConversation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L303>)
 
 ```go
 func (m *AdvancedMockChatModel) ResetConversation()
 ```
 
 <a name="AdvancedMockChatModel.Stream"></a>
-### func \(\*AdvancedMockChatModel\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L145>)
+### func \(\*AdvancedMockChatModel\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L139>)
 
 ```go
 func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
 <a name="AdvancedMockChatModel.StreamChat"></a>
-### func \(\*AdvancedMockChatModel\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L209>)
+### func \(\*AdvancedMockChatModel\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L203>)
 
 ```go
 func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error)
 ```
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L618-L621>)
+<a name="AdvancedMockcomponent"></a>
+## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/advanced_mock.go#L8-L10>)
 
-BenchmarkHelper provides benchmarking utilities for chat models
+AdvancedMockcomponent is a mock implementation of Interface.
+
+```go
+type AdvancedMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewAdvancedMockcomponent"></a>
+### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/advanced_mock.go#L13>)
+
+```go
+func NewAdvancedMockcomponent() *AdvancedMockcomponent
+```
+
+NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+
+<a name="BenchmarkHelper"></a>
+## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L621-L624>)
+
+BenchmarkHelper provides benchmarking utilities for chat models.
 
 ```go
 type BenchmarkHelper struct {
@@ -833,21 +855,21 @@ type BenchmarkHelper struct {
 ```
 
 <a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L623>)
+### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L626>)
 
 ```go
 func NewBenchmarkHelper(chatModel llmsiface.ChatModel, conversationCount int) *BenchmarkHelper
 ```
 
 <a name="BenchmarkHelper.BenchmarkGeneration"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L635>)
+### func \(\*BenchmarkHelper\) [BenchmarkGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L638>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkGeneration(iterations int) (time.Duration, error)
 ```
 
 <a name="BenchmarkHelper.BenchmarkStreaming"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L650>)
+### func \(\*BenchmarkHelper\) [BenchmarkStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L653>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkStreaming(iterations int) (time.Duration, error)
@@ -860,12 +882,12 @@ ChatModelError represents a custom error type for chat model operations. It incl
 
 ```go
 type ChatModelError struct {
-    Op       string                 // Operation that failed
-    Model    string                 // Model name or ID
-    Provider string                 // Provider name
-    Code     string                 // Error code for programmatic handling
-    Err      error                  // Underlying error
-    Fields   map[string]interface{} // Additional context fields
+    Err      error
+    Fields   map[string]any
+    Op       string
+    Model    string
+    Provider string
+    Code     string
 }
 ```
 
@@ -900,15 +922,15 @@ Unwrap returns the underlying error for error wrapping.
 ### func \(\*ChatModelError\) [WithField](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/errors.go#L67>)
 
 ```go
-func (e *ChatModelError) WithField(key string, value interface{}) *ChatModelError
+func (e *ChatModelError) WithField(key string, value any) *ChatModelError
 ```
 
 WithField adds a context field to the error.
 
 <a name="ChatModelScenarioRunner"></a>
-## type [ChatModelScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L554-L556>)
+## type [ChatModelScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L555-L557>)
 
-ChatModelScenarioRunner runs common chat model scenarios
+ChatModelScenarioRunner runs common chat model scenarios.
 
 ```go
 type ChatModelScenarioRunner struct {
@@ -917,21 +939,21 @@ type ChatModelScenarioRunner struct {
 ```
 
 <a name="NewChatModelScenarioRunner"></a>
-### func [NewChatModelScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L558>)
+### func [NewChatModelScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L559>)
 
 ```go
 func NewChatModelScenarioRunner(chatModel llmsiface.ChatModel) *ChatModelScenarioRunner
 ```
 
 <a name="ChatModelScenarioRunner.RunConversationScenario"></a>
-### func \(\*ChatModelScenarioRunner\) [RunConversationScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L564>)
+### func \(\*ChatModelScenarioRunner\) [RunConversationScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L565>)
 
 ```go
 func (r *ChatModelScenarioRunner) RunConversationScenario(ctx context.Context, turns int) error
 ```
 
 <a name="ChatModelScenarioRunner.RunStreamingScenario"></a>
-### func \(\*ChatModelScenarioRunner\) [RunStreamingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L585>)
+### func \(\*ChatModelScenarioRunner\) [RunStreamingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L586>)
 
 ```go
 func (r *ChatModelScenarioRunner) RunStreamingScenario(ctx context.Context, queries []string) error
@@ -940,7 +962,7 @@ func (r *ChatModelScenarioRunner) RunStreamingScenario(ctx context.Context, quer
 <a name="ConcurrentTestRunner"></a>
 ## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L411-L415>)
 
-ConcurrentTestRunner runs chat model tests concurrently for performance testing
+ConcurrentTestRunner runs chat model tests concurrently for performance testing.
 
 ```go
 type ConcurrentTestRunner struct {
@@ -965,63 +987,50 @@ func (r *ConcurrentTestRunner) Run() error
 ```
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L11-L49>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L11-L36>)
 
 Config represents the configuration for the chatmodels package. It includes settings for model behavior, generation parameters, and observability.
 
 ```go
 type Config struct {
-    // Model configuration
-    DefaultModel       string        `mapstructure:"default_model" yaml:"default_model" env:"CHATMODEL_DEFAULT_MODEL" default:"gpt-3.5-turbo"`
-    DefaultProvider    string        `mapstructure:"default_provider" yaml:"default_provider" env:"CHATMODEL_DEFAULT_PROVIDER" default:"openai"`
-    DefaultTemperature float32       `mapstructure:"default_temperature" yaml:"default_temperature" env:"CHATMODEL_DEFAULT_TEMPERATURE" validate:"gte=0,lte=2" default:"0.7"`
-    DefaultMaxTokens   int           `mapstructure:"default_max_tokens" yaml:"default_max_tokens" env:"CHATMODEL_DEFAULT_MAX_TOKENS" validate:"gt=0" default:"1000"`
-    DefaultTimeout     time.Duration `mapstructure:"default_timeout" yaml:"default_timeout" env:"CHATMODEL_DEFAULT_TIMEOUT" validate:"gt=0" default:"30s"`
-
-    // Generation parameters
-    DefaultTopP            float32  `mapstructure:"default_top_p" yaml:"default_top_p" env:"CHATMODEL_DEFAULT_TOP_P" validate:"gte=0,lte=1" default:"1.0"`
-    DefaultStopSequences   []string `mapstructure:"default_stop_sequences" yaml:"default_stop_sequences" env:"CHATMODEL_DEFAULT_STOP_SEQUENCES"`
-    DefaultSystemPrompt    string   `mapstructure:"default_system_prompt" yaml:"default_system_prompt" env:"CHATMODEL_DEFAULT_SYSTEM_PROMPT"`
-    DefaultFunctionCalling bool     `mapstructure:"default_function_calling" yaml:"default_function_calling" env:"CHATMODEL_DEFAULT_FUNCTION_CALLING" default:"false"`
-
-    // Retry and error handling
-    DefaultMaxRetries  int           `mapstructure:"default_max_retries" yaml:"default_max_retries" env:"CHATMODEL_DEFAULT_MAX_RETRIES" validate:"gte=0" default:"3"`
-    DefaultRetryDelay  time.Duration `mapstructure:"default_retry_delay" yaml:"default_retry_delay" env:"CHATMODEL_DEFAULT_RETRY_DELAY" validate:"gt=0" default:"2s"`
-    MaxRetryDelay      time.Duration `mapstructure:"max_retry_delay" yaml:"max_retry_delay" env:"CHATMODEL_MAX_RETRY_DELAY" validate:"gt=0" default:"30s"`
-    RetryBackoffFactor float64       `mapstructure:"retry_backoff_factor" yaml:"retry_backoff_factor" env:"CHATMODEL_RETRY_BACKOFF_FACTOR" validate:"gt=0" default:"2.0"`
-
-    // Observability settings
-    EnableMetrics      bool   `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"CHATMODEL_ENABLE_METRICS" default:"true"`
-    EnableTracing      bool   `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"CHATMODEL_ENABLE_TRACING" default:"true"`
-    MetricsPrefix      string `mapstructure:"metrics_prefix" yaml:"metrics_prefix" env:"CHATMODEL_METRICS_PREFIX" default:"beluga_chatmodels"`
-    TracingServiceName string `mapstructure:"tracing_service_name" yaml:"tracing_service_name" env:"CHATMODEL_TRACING_SERVICE_NAME" default:"beluga-chatmodels"`
-
-    // Streaming configuration
-    DefaultStreamingEnabled bool          `mapstructure:"default_streaming_enabled" yaml:"default_streaming_enabled" env:"CHATMODEL_DEFAULT_STREAMING_ENABLED" default:"false"`
-    StreamBufferSize        int           `mapstructure:"stream_buffer_size" yaml:"stream_buffer_size" env:"CHATMODEL_STREAM_BUFFER_SIZE" validate:"gt=0" default:"100"`
-    StreamTimeout           time.Duration `mapstructure:"stream_timeout" yaml:"stream_timeout" env:"CHATMODEL_STREAM_TIMEOUT" validate:"gt=0" default:"5m"`
-
-    // Resource limits
-    MaxConcurrentRequests int           `mapstructure:"max_concurrent_requests" yaml:"max_concurrent_requests" env:"CHATMODEL_MAX_CONCURRENT_REQUESTS" validate:"gt=0" default:"100"`
-    RequestTimeout        time.Duration `mapstructure:"request_timeout" yaml:"request_timeout" env:"CHATMODEL_REQUEST_TIMEOUT" validate:"gt=0" default:"2m"`
-    ConnectionTimeout     time.Duration `mapstructure:"connection_timeout" yaml:"connection_timeout" env:"CHATMODEL_CONNECTION_TIMEOUT" validate:"gt=0" default:"10s"`
-
-    // Provider-specific configurations
-    Providers map[string]interface{} `mapstructure:"providers" yaml:"providers"`
+    Providers               map[string]any `mapstructure:"providers" yaml:"providers"`
+    DefaultSystemPrompt     string         `mapstructure:"default_system_prompt" yaml:"default_system_prompt" env:"CHATMODEL_DEFAULT_SYSTEM_PROMPT"`
+    DefaultProvider         string         `mapstructure:"default_provider" yaml:"default_provider" env:"CHATMODEL_DEFAULT_PROVIDER" default:"openai"`
+    TracingServiceName      string         `mapstructure:"tracing_service_name" yaml:"tracing_service_name" env:"CHATMODEL_TRACING_SERVICE_NAME" default:"beluga-chatmodels"`
+    MetricsPrefix           string         `mapstructure:"metrics_prefix" yaml:"metrics_prefix" env:"CHATMODEL_METRICS_PREFIX" default:"beluga_chatmodels"`
+    DefaultModel            string         `mapstructure:"default_model" yaml:"default_model" env:"CHATMODEL_DEFAULT_MODEL" default:"gpt-3.5-turbo"`
+    DefaultStopSequences    []string       `mapstructure:"default_stop_sequences" yaml:"default_stop_sequences" env:"CHATMODEL_DEFAULT_STOP_SEQUENCES"`
+    RetryBackoffFactor      float64        `mapstructure:"retry_backoff_factor" yaml:"retry_backoff_factor" env:"CHATMODEL_RETRY_BACKOFF_FACTOR" validate:"gt=0" default:"2.0"`
+    MaxConcurrentRequests   int            `mapstructure:"max_concurrent_requests" yaml:"max_concurrent_requests" env:"CHATMODEL_MAX_CONCURRENT_REQUESTS" validate:"gt=0" default:"100"`
+    DefaultMaxRetries       int            `mapstructure:"default_max_retries" yaml:"default_max_retries" env:"CHATMODEL_DEFAULT_MAX_RETRIES" validate:"gte=0" default:"3"`
+    DefaultRetryDelay       time.Duration  `mapstructure:"default_retry_delay" yaml:"default_retry_delay" env:"CHATMODEL_DEFAULT_RETRY_DELAY" validate:"gt=0" default:"2s"`
+    MaxRetryDelay           time.Duration  `mapstructure:"max_retry_delay" yaml:"max_retry_delay" env:"CHATMODEL_MAX_RETRY_DELAY" validate:"gt=0" default:"30s"`
+    ConnectionTimeout       time.Duration  `mapstructure:"connection_timeout" yaml:"connection_timeout" env:"CHATMODEL_CONNECTION_TIMEOUT" validate:"gt=0" default:"10s"`
+    RequestTimeout          time.Duration  `mapstructure:"request_timeout" yaml:"request_timeout" env:"CHATMODEL_REQUEST_TIMEOUT" validate:"gt=0" default:"2m"`
+    StreamTimeout           time.Duration  `mapstructure:"stream_timeout" yaml:"stream_timeout" env:"CHATMODEL_STREAM_TIMEOUT" validate:"gt=0" default:"5m"`
+    DefaultTimeout          time.Duration  `mapstructure:"default_timeout" yaml:"default_timeout" env:"CHATMODEL_DEFAULT_TIMEOUT" validate:"gt=0" default:"30s"`
+    DefaultMaxTokens        int            `mapstructure:"default_max_tokens" yaml:"default_max_tokens" env:"CHATMODEL_DEFAULT_MAX_TOKENS" validate:"gt=0" default:"1000"`
+    StreamBufferSize        int            `mapstructure:"stream_buffer_size" yaml:"stream_buffer_size" env:"CHATMODEL_STREAM_BUFFER_SIZE" validate:"gt=0" default:"100"`
+    DefaultTopP             float32        `mapstructure:"default_top_p" yaml:"default_top_p" env:"CHATMODEL_DEFAULT_TOP_P" validate:"gte=0,lte=1" default:"1.0"`
+    DefaultTemperature      float32        `mapstructure:"default_temperature" yaml:"default_temperature" env:"CHATMODEL_DEFAULT_TEMPERATURE" validate:"gte=0,lte=2" default:"0.7"`
+    DefaultStreamingEnabled bool           `mapstructure:"default_streaming_enabled" yaml:"default_streaming_enabled" env:"CHATMODEL_DEFAULT_STREAMING_ENABLED" default:"false"`
+    EnableTracing           bool           `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"CHATMODEL_ENABLE_TRACING" default:"true"`
+    DefaultFunctionCalling  bool           `mapstructure:"default_function_calling" yaml:"default_function_calling" env:"CHATMODEL_DEFAULT_FUNCTION_CALLING" default:"false"`
+    EnableMetrics           bool           `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"CHATMODEL_ENABLE_METRICS" default:"true"`
 }
 ```
 
 <a name="CreateTestChatModelConfig"></a>
-### func [CreateTestChatModelConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L337>)
+### func [CreateTestChatModelConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L331>)
 
 ```go
 func CreateTestChatModelConfig() Config
 ```
 
-CreateTestChatModelConfig creates a test chat model configuration
+CreateTestChatModelConfig creates a test chat model configuration.
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L168>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L155>)
 
 ```go
 func DefaultConfig() *Config
@@ -1051,7 +1060,7 @@ model, err := chatmodels.NewChatModel("gpt-4", config)
 ```
 
 <a name="Config.GetProviderConfig"></a>
-### func \(\*Config\) [GetProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L228>)
+### func \(\*Config\) [GetProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L215>)
 
 ```go
 func (c *Config) GetProviderConfig(provider string) (*ProviderConfig, error)
@@ -1060,7 +1069,7 @@ func (c *Config) GetProviderConfig(provider string) (*ProviderConfig, error)
 GetProviderConfig returns the configuration for a specific provider.
 
 <a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L198>)
+### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L185>)
 
 ```go
 func (c *Config) Validate() error
@@ -1075,11 +1084,11 @@ GenerationError represents errors that occur during message generation.
 
 ```go
 type GenerationError struct {
-    Model      string
-    Messages   int // Number of input messages
-    Tokens     int // Approximate token count
     Err        error
-    Suggestion string // Suggestion for fixing the error
+    Model      string
+    Suggestion string
+    Messages   int
+    Tokens     int
 }
 ```
 
@@ -1129,9 +1138,9 @@ func (e *GenerationError) WithTokenCount(tokens int) *GenerationError
 WithTokenCount adds token count information to the error.
 
 <a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L528-L530>)
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L529-L531>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -1140,35 +1149,35 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L532>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L533>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddChatModel"></a>
-### func \(\*IntegrationTestHelper\) [AddChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L538>)
+### func \(\*IntegrationTestHelper\) [AddChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L539>)
 
 ```go
 func (h *IntegrationTestHelper) AddChatModel(name string, chatModel *AdvancedMockChatModel)
 ```
 
 <a name="IntegrationTestHelper.GetChatModel"></a>
-### func \(\*IntegrationTestHelper\) [GetChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L542>)
+### func \(\*IntegrationTestHelper\) [GetChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L543>)
 
 ```go
 func (h *IntegrationTestHelper) GetChatModel(name string) *AdvancedMockChatModel
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L546>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L547>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L17-L45>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L19-L47>)
 
 Metrics holds the metrics for the chatmodels package.
 
@@ -1179,7 +1188,7 @@ type Metrics struct {
 ```
 
 <a name="DefaultMetrics"></a>
-### func [DefaultMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L411>)
+### func [DefaultMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L421>)
 
 ```go
 func DefaultMetrics() *Metrics
@@ -1188,7 +1197,7 @@ func DefaultMetrics() *Metrics
 DefaultMetrics creates a metrics instance with default meter and tracer.
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L48>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L50>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
@@ -1197,7 +1206,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
 NewMetrics creates a new Metrics instance with OpenTelemetry metrics.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L424>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L434>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -1206,157 +1215,157 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.RecordMessageGeneration"></a>
-### func \(\*Metrics\) [RecordMessageGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L199>)
+### func \(\*Metrics\) [RecordMessageGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L201>)
 
 ```go
 func (m *Metrics) RecordMessageGeneration(model, provider string, duration time.Duration, success bool, tokenCount int)
 ```
 
-Message generation metrics
+Message generation metrics.
 
 <a name="Metrics.RecordMessageGenerationError"></a>
-### func \(\*Metrics\) [RecordMessageGenerationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L227>)
+### func \(\*Metrics\) [RecordMessageGenerationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L229>)
 
 ```go
 func (m *Metrics) RecordMessageGenerationError(model, provider, errorType string)
 ```
 
 <a name="Metrics.RecordModelError"></a>
-### func \(\*Metrics\) [RecordModelError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L368>)
+### func \(\*Metrics\) [RecordModelError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L370>)
 
 ```go
 func (m *Metrics) RecordModelError(model, provider, errorType string)
 ```
 
 <a name="Metrics.RecordModelRequest"></a>
-### func \(\*Metrics\) [RecordModelRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L345>)
+### func \(\*Metrics\) [RecordModelRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L347>)
 
 ```go
 func (m *Metrics) RecordModelRequest(model, provider string, duration time.Duration, success bool)
 ```
 
-Model metrics
+Model metrics.
 
 <a name="Metrics.RecordProviderError"></a>
-### func \(\*Metrics\) [RecordProviderError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L330>)
+### func \(\*Metrics\) [RecordProviderError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L332>)
 
 ```go
 func (m *Metrics) RecordProviderError(provider, errorType string)
 ```
 
 <a name="Metrics.RecordProviderRequest"></a>
-### func \(\*Metrics\) [RecordProviderRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L308>)
+### func \(\*Metrics\) [RecordProviderRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L310>)
 
 ```go
 func (m *Metrics) RecordProviderRequest(provider string, duration time.Duration, success bool)
 ```
 
-Provider metrics
+Provider metrics.
 
 <a name="Metrics.RecordStreamingError"></a>
-### func \(\*Metrics\) [RecordStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L271>)
+### func \(\*Metrics\) [RecordStreamingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L273>)
 
 ```go
 func (m *Metrics) RecordStreamingError(model, provider, errorType string)
 ```
 
 <a name="Metrics.RecordStreamingSession"></a>
-### func \(\*Metrics\) [RecordStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L243>)
+### func \(\*Metrics\) [RecordStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L245>)
 
 ```go
 func (m *Metrics) RecordStreamingSession(model, provider string, duration time.Duration, success bool, messageCount int)
 ```
 
-Streaming metrics
+Streaming metrics.
 
 <a name="Metrics.RecordTokenUsage"></a>
-### func \(\*Metrics\) [RecordTokenUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L287>)
+### func \(\*Metrics\) [RecordTokenUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L289>)
 
 ```go
 func (m *Metrics) RecordTokenUsage(model, provider string, tokensGenerated, tokensConsumed int)
 ```
 
-Token metrics
+Token metrics.
 
 <a name="Metrics.StartGenerationSpan"></a>
-### func \(\*Metrics\) [StartGenerationSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L384>)
+### func \(\*Metrics\) [StartGenerationSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L389>)
 
 ```go
 func (m *Metrics) StartGenerationSpan(ctx context.Context, model, provider, operation string) (context.Context, trace.Span)
 ```
 
-Tracing helpers
+Tracing helpers. Spans returned by these methods must be ended by the caller using span.End\(\).
 
 <a name="Metrics.StartProviderSpan"></a>
-### func \(\*Metrics\) [StartProviderSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L402>)
+### func \(\*Metrics\) [StartProviderSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L411>)
 
 ```go
 func (m *Metrics) StartProviderSpan(ctx context.Context, provider, operation string) (context.Context, trace.Span)
 ```
 
 <a name="Metrics.StartStreamingSpan"></a>
-### func \(\*Metrics\) [StartStreamingSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L393>)
+### func \(\*Metrics\) [StartStreamingSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/metrics.go#L400>)
 
 ```go
 func (m *Metrics) StartStreamingSpan(ctx context.Context, model, provider string) (context.Context, trace.Span)
 ```
 
 <a name="MockChatModelOption"></a>
-## type [MockChatModelOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L75>)
+## type [MockChatModelOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L69>)
 
-MockChatModelOption defines functional options for mock configuration
+MockChatModelOption defines functional options for mock configuration.
 
 ```go
 type MockChatModelOption func(*AdvancedMockChatModel)
 ```
 
 <a name="WithConversationHistory"></a>
-### func [WithConversationHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L108>)
+### func [WithConversationHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L102>)
 
 ```go
 func WithConversationHistory(messages []schema.Message) MockChatModelOption
 ```
 
-WithConversationHistory preloads conversation history
+WithConversationHistory preloads conversation history.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L78>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L72>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockChatModelOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithMockResponses"></a>
-### func [WithMockResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L86>)
+### func [WithMockResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L80>)
 
 ```go
 func WithMockResponses(responses []schema.Message) MockChatModelOption
 ```
 
-WithMockResponses sets predefined responses for the mock
+WithMockResponses sets predefined responses for the mock.
 
 <a name="WithStreamingDelay"></a>
-### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L94>)
+### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L88>)
 
 ```go
 func WithStreamingDelay(delay time.Duration) MockChatModelOption
 ```
 
-WithStreamingDelay adds artificial delay to mock operations
+WithStreamingDelay adds artificial delay to mock operations.
 
 <a name="WithToolsSupport"></a>
-### func [WithToolsSupport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L101>)
+### func [WithToolsSupport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/test_utils.go#L95>)
 
 ```go
 func WithToolsSupport(supported bool) MockChatModelOption
 ```
 
-WithToolsSupport configures whether the mock supports tools
+WithToolsSupport configures whether the mock supports tools.
 
 <a name="ProviderConfig"></a>
-## type [ProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L52-L58>)
+## type [ProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L39-L45>)
 
 ProviderConfig represents configuration for a specific provider.
 
@@ -1377,9 +1386,9 @@ ProviderError represents errors that occur with specific providers.
 
 ```go
 type ProviderError struct {
+    Err       error
     Provider  string
     Operation string
-    Err       error
 }
 ```
 
@@ -1411,7 +1420,7 @@ func (e *ProviderError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="RateLimitConfig"></a>
-## type [RateLimitConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L61-L65>)
+## type [RateLimitConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/chatmodels/config.go#L48-L52>)
 
 RateLimitConfig represents rate limiting configuration.
 
@@ -1430,9 +1439,9 @@ StreamingError represents errors that occur during streaming operations.
 
 ```go
 type StreamingError struct {
-    Model    string
-    Duration string // How long the stream was active
     Err      error
+    Model    string
+    Duration string
 }
 ```
 

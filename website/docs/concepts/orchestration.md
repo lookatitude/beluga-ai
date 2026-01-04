@@ -179,6 +179,14 @@ Graphs handle errors by:
 - [Agent Concepts](./agents) - Agent orchestration
 - [Getting Started: Orchestration](../../getting-started/tutorials/orchestration-basics) - Tutorial
 
+## API Reference
+
+For detailed API documentation on orchestration:
+
+- **[Orchestration Package](../../api/packages/orchestration)** - Chains, graphs, and workflow interfaces
+- **[Core Package](../../api/packages/core)** - Runnable interface and core abstractions
+- **[Agents Package](../../api/packages/agents)** - Agent interfaces used in orchestration
+
 ---
 
 **Next:** Review [Best Practices](../../guides/best-practices) or explore [Use Cases](../../use-cases/)

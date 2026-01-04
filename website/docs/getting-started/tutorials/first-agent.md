@@ -354,6 +354,14 @@ Congratulations! You've created your first agent. Next, learn how to:
 - **[Part 5: Memory Management](./memory-management)** - Add conversation memory
 - **[Concepts: Agents](../../concepts/agents)** - Deep dive into agent concepts
 
+## API Reference
+
+For detailed API documentation on the packages used in this tutorial:
+
+- **[Agents Package](../../api/packages/agents)** - Agent interfaces and implementations
+- **[Tools Package](../../api/packages/tools)** - Tool interfaces and implementations
+- **[LLMs Package](../../api/packages/llms)** - LLM interfaces used by agents
+
 ---
 
 **Ready for the next step?** Continue to [Part 4: Working with Tools](./working-with-tools)!

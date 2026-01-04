@@ -26,10 +26,12 @@ Package core provides tracing and metrics instrumentation for Runnable component
 - [func IsErrorType\(err error, errorType ErrorType\) bool](<#IsErrorType>)
 - [func UnwrapError\(err error\) error](<#UnwrapError>)
 - [func WrapError\(err error, message string\) error](<#WrapError>)
+- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
 - [type Builder](<#Builder>)
   - [func NewBuilder\(container Container\) \*Builder](<#NewBuilder>)
-  - [func \(b \*Builder\) Build\(target interface\{\}\) error](<#Builder.Build>)
-  - [func \(b \*Builder\) Register\(factoryFunc interface\{\}\) error](<#Builder.Register>)
+  - [func \(b \*Builder\) Build\(target any\) error](<#Builder.Build>)
+  - [func \(b \*Builder\) Register\(factoryFunc any\) error](<#Builder.Register>)
   - [func \(b \*Builder\) RegisterLogger\(factory func\(\) Logger\) error](<#Builder.RegisterLogger>)
   - [func \(b \*Builder\) RegisterMeterProvider\(factory func\(\) MeterProvider\) error](<#Builder.RegisterMeterProvider>)
   - [func \(b \*Builder\) RegisterMetrics\(factory func\(\) \(\*Metrics, error\)\) error](<#Builder.RegisterMetrics>)
@@ -37,7 +39,7 @@ Package core provides tracing and metrics instrumentation for Runnable component
   - [func \(b \*Builder\) RegisterNoOpMetrics\(\) error](<#Builder.RegisterNoOpMetrics>)
   - [func \(b \*Builder\) RegisterNoOpTracerProvider\(\) error](<#Builder.RegisterNoOpTracerProvider>)
   - [func \(b \*Builder\) RegisterTracerProvider\(factory func\(\) TracerProvider\) error](<#Builder.RegisterTracerProvider>)
-  - [func \(b \*Builder\) Singleton\(instance interface\{\}\)](<#Builder.Singleton>)
+  - [func \(b \*Builder\) Singleton\(instance any\)](<#Builder.Singleton>)
   - [func \(b \*Builder\) WithLogger\(logger Logger\) \*Builder](<#Builder.WithLogger>)
   - [func \(b \*Builder\) WithTracerProvider\(tracerProvider TracerProvider\) \*Builder](<#Builder.WithTracerProvider>)
 - [type Container](<#Container>)
@@ -57,10 +59,12 @@ Package core provides tracing and metrics instrumentation for Runnable component
   - [func NewInternalError\(message string, cause error\) \*FrameworkError](<#NewInternalError>)
   - [func NewNetworkError\(message string, cause error\) \*FrameworkError](<#NewNetworkError>)
   - [func NewValidationError\(message string, cause error\) \*FrameworkError](<#NewValidationError>)
-  - [func \(e \*FrameworkError\) AddContext\(key string, value interface\{\}\) \*FrameworkError](<#FrameworkError.AddContext>)
+  - [func \(e \*FrameworkError\) AddContext\(key string, value any\) \*FrameworkError](<#FrameworkError.AddContext>)
   - [func \(e \*FrameworkError\) Error\(\) string](<#FrameworkError.Error>)
   - [func \(e \*FrameworkError\) Unwrap\(\) error](<#FrameworkError.Unwrap>)
 - [type HealthChecker](<#HealthChecker>)
+- [type IntegrationMockcomponent](<#IntegrationMockcomponent>)
+  - [func NewIntegrationMockcomponent\(\) \*IntegrationMockcomponent](<#NewIntegrationMockcomponent>)
 - [type Loader](<#Loader>)
 - [type Logger](<#Logger>)
 - [type MeterProvider](<#MeterProvider>)
@@ -76,6 +80,8 @@ Package core provides tracing and metrics instrumentation for Runnable component
 - [type Runnable](<#Runnable>)
   - [func RunnableWithTracing\(runnable Runnable, tracer trace.Tracer, metrics \*Metrics, componentType string\) Runnable](<#RunnableWithTracing>)
   - [func RunnableWithTracingAndName\(runnable Runnable, tracer trace.Tracer, metrics \*Metrics, componentType string, componentName string\) Runnable](<#RunnableWithTracingAndName>)
+- [type RunnableMockcomponent](<#RunnableMockcomponent>)
+  - [func NewRunnableMockcomponent\(\) \*RunnableMockcomponent](<#NewRunnableMockcomponent>)
 - [type TracedRunnable](<#TracedRunnable>)
   - [func NewTracedRunnable\(runnable Runnable, tracer trace.Tracer, metrics \*Metrics, componentType string, componentName string\) \*TracedRunnable](<#NewTracedRunnable>)
   - [func \(tr \*TracedRunnable\) Batch\(ctx context.Context, inputs \[\]any, options ...Option\) \(\[\]any, error\)](<#TracedRunnable.Batch>)
@@ -84,7 +90,7 @@ Package core provides tracing and metrics instrumentation for Runnable component
 - [type TracerProvider](<#TracerProvider>)
 
 <a name="AsFrameworkError"></a>
-## func [AsFrameworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L111>)
+## func [AsFrameworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L112>)
 
 ```go
 func AsFrameworkError(err error, target **FrameworkError) bool
@@ -93,7 +99,7 @@ func AsFrameworkError(err error, target **FrameworkError) bool
 AsFrameworkError attempts to convert an error to a FrameworkError.
 
 <a name="IsErrorType"></a>
-## func [IsErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L102>)
+## func [IsErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L103>)
 
 ```go
 func IsErrorType(err error, errorType ErrorType) bool
@@ -102,7 +108,7 @@ func IsErrorType(err error, errorType ErrorType) bool
 IsErrorType checks if an error is of a specific FrameworkError type.
 
 <a name="UnwrapError"></a>
-## func [UnwrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L130>)
+## func [UnwrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L133>)
 
 ```go
 func UnwrapError(err error) error
@@ -111,7 +117,7 @@ func UnwrapError(err error) error
 UnwrapError unwraps an error to get its underlying cause. This is a compatibility function for Go versions before 1.13.
 
 <a name="WrapError"></a>
-## func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L138>)
+## func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L141>)
 
 ```go
 func WrapError(err error, message string) error
@@ -119,10 +125,30 @@ func WrapError(err error, message string) error
 
 WrapError wraps an error with additional context.
 
-<a name="Builder"></a>
-## type [Builder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L393-L395>)
+<a name="AdvancedMockcomponent"></a>
+## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di_mock.go#L8-L10>)
 
-Builder provides a fluent interface for building objects with DI
+AdvancedMockcomponent is a mock implementation of Interface.
+
+```go
+type AdvancedMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewAdvancedMockcomponent"></a>
+### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di_mock.go#L13>)
+
+```go
+func NewAdvancedMockcomponent() *AdvancedMockcomponent
+```
+
+NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+
+<a name="Builder"></a>
+## type [Builder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L389-L391>)
+
+Builder provides a fluent interface for building objects with DI.
 
 ```go
 type Builder struct {
@@ -131,137 +157,137 @@ type Builder struct {
 ```
 
 <a name="NewBuilder"></a>
-### func [NewBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L398>)
+### func [NewBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L394>)
 
 ```go
 func NewBuilder(container Container) *Builder
 ```
 
-NewBuilder creates a new builder with the given container
+NewBuilder creates a new builder with the given container.
 
 <a name="Builder.Build"></a>
-### func \(\*Builder\) [Build](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L403>)
+### func \(\*Builder\) [Build](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L399>)
 
 ```go
-func (b *Builder) Build(target interface{}) error
+func (b *Builder) Build(target any) error
 ```
 
-Build builds an object using the registered factory
+Build builds an object using the registered factory.
 
 <a name="Builder.Register"></a>
-### func \(\*Builder\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L408>)
+### func \(\*Builder\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L404>)
 
 ```go
-func (b *Builder) Register(factoryFunc interface{}) error
+func (b *Builder) Register(factoryFunc any) error
 ```
 
-Register registers a factory function
+Register registers a factory function.
 
 <a name="Builder.RegisterLogger"></a>
-### func \(\*Builder\) [RegisterLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L442>)
+### func \(\*Builder\) [RegisterLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L438>)
 
 ```go
 func (b *Builder) RegisterLogger(factory func() Logger) error
 ```
 
-RegisterLogger registers a logger factory function
+RegisterLogger registers a logger factory function.
 
 <a name="Builder.RegisterMeterProvider"></a>
-### func \(\*Builder\) [RegisterMeterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L468>)
+### func \(\*Builder\) [RegisterMeterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L464>)
 
 ```go
 func (b *Builder) RegisterMeterProvider(factory func() MeterProvider) error
 ```
 
-RegisterMeterProvider registers a meter provider factory function
+RegisterMeterProvider registers a meter provider factory function.
 
 <a name="Builder.RegisterMetrics"></a>
-### func \(\*Builder\) [RegisterMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L473>)
+### func \(\*Builder\) [RegisterMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L469>)
 
 ```go
 func (b *Builder) RegisterMetrics(factory func() (*Metrics, error)) error
 ```
 
-RegisterMetrics registers a metrics factory function
+RegisterMetrics registers a metrics factory function.
 
 <a name="Builder.RegisterNoOpLogger"></a>
-### func \(\*Builder\) [RegisterNoOpLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L478>)
+### func \(\*Builder\) [RegisterNoOpLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L474>)
 
 ```go
 func (b *Builder) RegisterNoOpLogger() error
 ```
 
-RegisterNoOpLogger registers a no\-op logger \(useful for testing\)
+RegisterNoOpLogger registers a no\-op logger \(useful for testing\).
 
 <a name="Builder.RegisterNoOpMetrics"></a>
-### func \(\*Builder\) [RegisterNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L488>)
+### func \(\*Builder\) [RegisterNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L484>)
 
 ```go
 func (b *Builder) RegisterNoOpMetrics() error
 ```
 
-RegisterNoOpMetrics registers no\-op metrics
+RegisterNoOpMetrics registers no\-op metrics.
 
 <a name="Builder.RegisterNoOpTracerProvider"></a>
-### func \(\*Builder\) [RegisterNoOpTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L483>)
+### func \(\*Builder\) [RegisterNoOpTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L479>)
 
 ```go
 func (b *Builder) RegisterNoOpTracerProvider() error
 ```
 
-RegisterNoOpTracerProvider registers a no\-op tracer provider
+RegisterNoOpTracerProvider registers a no\-op tracer provider.
 
 <a name="Builder.RegisterTracerProvider"></a>
-### func \(\*Builder\) [RegisterTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L447>)
+### func \(\*Builder\) [RegisterTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L443>)
 
 ```go
 func (b *Builder) RegisterTracerProvider(factory func() TracerProvider) error
 ```
 
-RegisterTracerProvider registers a tracer provider factory function
+RegisterTracerProvider registers a tracer provider factory function.
 
 <a name="Builder.Singleton"></a>
-### func \(\*Builder\) [Singleton](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L413>)
+### func \(\*Builder\) [Singleton](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L409>)
 
 ```go
-func (b *Builder) Singleton(instance interface{})
+func (b *Builder) Singleton(instance any)
 ```
 
-Singleton registers a singleton instance
+Singleton registers a singleton instance.
 
 <a name="Builder.WithLogger"></a>
-### func \(\*Builder\) [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L452>)
+### func \(\*Builder\) [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L448>)
 
 ```go
 func (b *Builder) WithLogger(logger Logger) *Builder
 ```
 
-WithLogger sets the logger for the container \(if supported\)
+WithLogger sets the logger for the container \(if supported\).
 
 <a name="Builder.WithTracerProvider"></a>
-### func \(\*Builder\) [WithTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L460>)
+### func \(\*Builder\) [WithTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L456>)
 
 ```go
 func (b *Builder) WithTracerProvider(tracerProvider TracerProvider) *Builder
 ```
 
-WithTracerProvider sets the tracer provider for the container \(if supported\)
+WithTracerProvider sets the tracer provider for the container \(if supported\).
 
 <a name="Container"></a>
-## type [Container](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L16-L37>)
+## type [Container](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L17-L38>)
 
-Container represents a dependency injection container
+Container represents a dependency injection container.
 
 ```go
 type Container interface {
     // Register registers a factory function for a type
-    Register(factoryFunc interface{}) error
+    Register(factoryFunc any) error
 
     // Resolve resolves a dependency by type
-    Resolve(target interface{}) error
+    Resolve(target any) error
 
     // MustResolve resolves a dependency or panics
-    MustResolve(target interface{})
+    MustResolve(target any)
 
     // Has checks if a type is registered
     Has(typ reflect.Type) bool
@@ -270,7 +296,7 @@ type Container interface {
     Clear()
 
     // Singleton registers a singleton instance
-    Singleton(instance interface{})
+    Singleton(instance any)
 
     // HealthChecker provides health check functionality
     HealthChecker
@@ -278,70 +304,70 @@ type Container interface {
 ```
 
 <a name="NewContainer"></a>
-### func [NewContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L51>)
+### func [NewContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L50>)
 
 ```go
 func NewContainer() Container
 ```
 
-NewContainer creates a new dependency injection container with no\-op monitoring
+NewContainer creates a new dependency injection container with no\-op monitoring.
 
 <a name="NewContainerWithOptions"></a>
-### func [NewContainerWithOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L61>)
+### func [NewContainerWithOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L60>)
 
 ```go
 func NewContainerWithOptions(opts ...DIOption) Container
 ```
 
-NewContainerWithOptions creates a new dependency injection container with custom options
+NewContainerWithOptions creates a new dependency injection container with custom options.
 
 <a name="DIOption"></a>
-## type [DIOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L358>)
+## type [DIOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L354>)
 
-DIOption represents a functional option for DI configuration
+DIOption represents a functional option for DI configuration.
 
 ```go
 type DIOption func(*optionConfig)
 ```
 
 <a name="DefaultContainer"></a>
-### func [DefaultContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L388>)
+### func [DefaultContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L384>)
 
 ```go
 func DefaultContainer() DIOption
 ```
 
-DefaultContainer returns the default container option
+DefaultContainer returns the default container option.
 
 <a name="WithContainer"></a>
-### func [WithContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L367>)
+### func [WithContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L363>)
 
 ```go
 func WithContainer(container Container) DIOption
 ```
 
-WithContainer sets the DI container
+WithContainer sets the DI container.
 
 <a name="WithLogger"></a>
-### func [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L374>)
+### func [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L370>)
 
 ```go
 func WithLogger(logger Logger) DIOption
 ```
 
-WithLogger sets the logger for the DI container
+WithLogger sets the logger for the DI container.
 
 <a name="WithTracerProvider"></a>
-### func [WithTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L381>)
+### func [WithTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L377>)
 
 ```go
 func WithTracerProvider(tracerProvider TracerProvider) DIOption
 ```
 
-WithTracerProvider sets the tracer provider for the DI container
+WithTracerProvider sets the tracer provider for the DI container.
 
 <a name="ErrorCode"></a>
-## type [ErrorCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L150>)
+## type [ErrorCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L153>)
 
 ErrorCode represents standardized error codes for programmatic error handling.
 
@@ -353,28 +379,28 @@ type ErrorCode string
 
 ```go
 const (
-    // ErrorCodeInvalidInput indicates invalid input parameters
+    // ErrorCodeInvalidInput indicates invalid input parameters.
     ErrorCodeInvalidInput ErrorCode = "INVALID_INPUT"
 
-    // ErrorCodeNotFound indicates a resource was not found
+    // ErrorCodeNotFound indicates a resource was not found.
     ErrorCodeNotFound ErrorCode = "NOT_FOUND"
 
-    // ErrorCodeUnauthorized indicates unauthorized access
+    // ErrorCodeUnauthorized indicates unauthorized access.
     ErrorCodeUnauthorized ErrorCode = "UNAUTHORIZED"
 
-    // ErrorCodeTimeout indicates a timeout occurred
+    // ErrorCodeTimeout indicates a timeout occurred.
     ErrorCodeTimeout ErrorCode = "TIMEOUT"
 
-    // ErrorCodeRateLimited indicates rate limiting was applied
+    // ErrorCodeRateLimited indicates rate limiting was applied.
     ErrorCodeRateLimited ErrorCode = "RATE_LIMITED"
 
-    // ErrorCodeInternalError indicates an internal system error
+    // ErrorCodeInternalError indicates an internal system error.
     ErrorCodeInternalError ErrorCode = "INTERNAL_ERROR"
 )
 ```
 
 <a name="ErrorType"></a>
-## type [ErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L9>)
+## type [ErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L10>)
 
 ErrorType represents different categories of errors in the framework.
 
@@ -392,40 +418,40 @@ const (
     // ErrorTypeNetwork indicates network-related errors (connection failures, timeouts, etc.)
     ErrorTypeNetwork ErrorType = "network"
 
-    // ErrorTypeAuthentication indicates authentication/authorization errors
+    // ErrorTypeAuthentication indicates authentication/authorization errors.
     ErrorTypeAuthentication ErrorType = "authentication"
 
-    // ErrorTypeRateLimit indicates rate limiting errors
+    // ErrorTypeRateLimit indicates rate limiting errors.
     ErrorTypeRateLimit ErrorType = "rate_limit"
 
-    // ErrorTypeInternal indicates internal system errors
+    // ErrorTypeInternal indicates internal system errors.
     ErrorTypeInternal ErrorType = "internal"
 
-    // ErrorTypeExternal indicates errors from external services/APIs
+    // ErrorTypeExternal indicates errors from external services/APIs.
     ErrorTypeExternal ErrorType = "external"
 
-    // ErrorTypeConfiguration indicates configuration-related errors
+    // ErrorTypeConfiguration indicates configuration-related errors.
     ErrorTypeConfiguration ErrorType = "configuration"
 )
 ```
 
 <a name="FrameworkError"></a>
-## type [FrameworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L35-L41>)
+## type [FrameworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L36-L42>)
 
 FrameworkError represents a standardized error in the Beluga AI framework.
 
 ```go
 type FrameworkError struct {
+    Cause   error
+    Context map[string]any
     Type    ErrorType
     Message string
-    Cause   error
-    Code    string                 // Optional error code for programmatic handling
-    Context map[string]interface{} // Additional context information
+    Code    string
 }
 ```
 
 <a name="NewAuthenticationError"></a>
-### func [NewAuthenticationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L75>)
+### func [NewAuthenticationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L76>)
 
 ```go
 func NewAuthenticationError(message string, cause error) *FrameworkError
@@ -434,7 +460,7 @@ func NewAuthenticationError(message string, cause error) *FrameworkError
 NewAuthenticationError creates a new authentication error.
 
 <a name="NewConfigurationError"></a>
-### func [NewConfigurationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L93>)
+### func [NewConfigurationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L94>)
 
 ```go
 func NewConfigurationError(message string, cause error) *FrameworkError
@@ -443,7 +469,7 @@ func NewConfigurationError(message string, cause error) *FrameworkError
 NewConfigurationError creates a new configuration error.
 
 <a name="NewFrameworkErrorWithCode"></a>
-### func [NewFrameworkErrorWithCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L173>)
+### func [NewFrameworkErrorWithCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L176>)
 
 ```go
 func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message string, cause error) *FrameworkError
@@ -452,7 +478,7 @@ func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message stri
 NewFrameworkErrorWithCode creates a FrameworkError with a specific error code.
 
 <a name="NewInternalError"></a>
-### func [NewInternalError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L84>)
+### func [NewInternalError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L85>)
 
 ```go
 func NewInternalError(message string, cause error) *FrameworkError
@@ -461,7 +487,7 @@ func NewInternalError(message string, cause error) *FrameworkError
 NewInternalError creates a new internal error.
 
 <a name="NewNetworkError"></a>
-### func [NewNetworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L66>)
+### func [NewNetworkError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L67>)
 
 ```go
 func NewNetworkError(message string, cause error) *FrameworkError
@@ -470,7 +496,7 @@ func NewNetworkError(message string, cause error) *FrameworkError
 NewNetworkError creates a new network error.
 
 <a name="NewValidationError"></a>
-### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L57>)
+### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L58>)
 
 ```go
 func NewValidationError(message string, cause error) *FrameworkError
@@ -479,16 +505,16 @@ func NewValidationError(message string, cause error) *FrameworkError
 NewValidationError creates a new validation error.
 
 <a name="FrameworkError.AddContext"></a>
-### func \(\*FrameworkError\) [AddContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L184>)
+### func \(\*FrameworkError\) [AddContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L187>)
 
 ```go
-func (e *FrameworkError) AddContext(key string, value interface{}) *FrameworkError
+func (e *FrameworkError) AddContext(key string, value any) *FrameworkError
 ```
 
 AddContext adds context information to a FrameworkError.
 
 <a name="FrameworkError.Error"></a>
-### func \(\*FrameworkError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L44>)
+### func \(\*FrameworkError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L45>)
 
 ```go
 func (e *FrameworkError) Error() string
@@ -497,7 +523,7 @@ func (e *FrameworkError) Error() string
 Error implements the error interface.
 
 <a name="FrameworkError.Unwrap"></a>
-### func \(\*FrameworkError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L52>)
+### func \(\*FrameworkError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/errors.go#L53>)
 
 ```go
 func (e *FrameworkError) Unwrap() error
@@ -516,6 +542,26 @@ type HealthChecker interface {
     CheckHealth(ctx context.Context) error
 }
 ```
+
+<a name="IntegrationMockcomponent"></a>
+## type [IntegrationMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/integration_mock.go#L8-L10>)
+
+IntegrationMockcomponent is a mock implementation of Interface.
+
+```go
+type IntegrationMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewIntegrationMockcomponent"></a>
+### func [NewIntegrationMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/integration_mock.go#L13>)
+
+```go
+func NewIntegrationMockcomponent() *IntegrationMockcomponent
+```
+
+NewIntegrationMockcomponent creates a new IntegrationMockcomponent.
 
 <a name="Loader"></a>
 ## type [Loader](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/interfaces.go#L14-L23>)
@@ -536,24 +582,24 @@ type Loader interface {
 ```
 
 <a name="Logger"></a>
-## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L422-L428>)
+## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L418-L424>)
 
-Logger interface for structured logging
+Logger interface for structured logging.
 
 ```go
 type Logger interface {
-    Debug(msg string, args ...interface{})
-    Info(msg string, args ...interface{})
-    Warn(msg string, args ...interface{})
-    Error(msg string, args ...interface{})
-    With(args ...interface{}) Logger
+    Debug(msg string, args ...any)
+    Info(msg string, args ...any)
+    Warn(msg string, args ...any)
+    Error(msg string, args ...any)
+    With(args ...any) Logger
 }
 ```
 
 <a name="MeterProvider"></a>
-## type [MeterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L436-L438>)
+## type [MeterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L432-L434>)
 
-MeterProvider interface for metrics collection
+MeterProvider interface for metrics collection.
 
 ```go
 type MeterProvider interface {
@@ -689,7 +735,7 @@ type Runnable interface {
 ```
 
 <a name="RunnableWithTracing"></a>
-### func [RunnableWithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/traced_runnable.go#L162-L167>)
+### func [RunnableWithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/traced_runnable.go#L161-L166>)
 
 ```go
 func RunnableWithTracing(runnable Runnable, tracer trace.Tracer, metrics *Metrics, componentType string) Runnable
@@ -698,13 +744,33 @@ func RunnableWithTracing(runnable Runnable, tracer trace.Tracer, metrics *Metric
 RunnableWithTracing is a helper function that creates a TracedRunnable with the given component information.
 
 <a name="RunnableWithTracingAndName"></a>
-### func [RunnableWithTracingAndName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/traced_runnable.go#L173-L179>)
+### func [RunnableWithTracingAndName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/traced_runnable.go#L172-L178>)
 
 ```go
 func RunnableWithTracingAndName(runnable Runnable, tracer trace.Tracer, metrics *Metrics, componentType string, componentName string) Runnable
 ```
 
 RunnableWithTracingAndName is a helper function that creates a TracedRunnable with the given component information including a name.
+
+<a name="RunnableMockcomponent"></a>
+## type [RunnableMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/runnable_mock.go#L8-L10>)
+
+RunnableMockcomponent is a mock implementation of Interface.
+
+```go
+type RunnableMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewRunnableMockcomponent"></a>
+### func [NewRunnableMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/runnable_mock.go#L13>)
+
+```go
+func NewRunnableMockcomponent() *RunnableMockcomponent
+```
+
+NewRunnableMockcomponent creates a new RunnableMockcomponent.
 
 <a name="TracedRunnable"></a>
 ## type [TracedRunnable](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/traced_runnable.go#L15-L21>)
@@ -754,9 +820,9 @@ func (tr *TracedRunnable) Stream(ctx context.Context, input any, options ...Opti
 Stream executes the wrapped Runnable with tracing and metrics.
 
 <a name="TracerProvider"></a>
-## type [TracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L431-L433>)
+## type [TracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/core/di.go#L427-L429>)
 
-TracerProvider interface for distributed tracing
+TracerProvider interface for distributed tracing.
 
 ```go
 type TracerProvider interface {

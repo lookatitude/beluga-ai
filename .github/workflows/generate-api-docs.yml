@@ -1,0 +1,74 @@
+name: Generate API Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'pkg/**/*.go'
+      - 'scripts/generate-docs.sh'
+      - '.github/workflows/generate-api-docs.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'pkg/**/*.go'
+      - 'scripts/generate-docs.sh'
+  workflow_dispatch:
+
+jobs:
+  generate-docs:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Install gomarkdoc
+        run: |
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Generate API documentation
+        run: |
+          bash scripts/generate-docs.sh
+
+      - name: Validate generated documentation
+        run: |
+          bash scripts/validate-godoc-output.sh
+
+      - name: Check for documentation changes
+        id: check-changes
+        run: |
+          if [ -n "$(git status --porcelain website/docs/api/packages)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes (main branch only)
+        if: github.ref == 'refs/heads/main' && steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add website/docs/api/packages/
+          git commit -m "docs: auto-generate API documentation [skip ci]" || exit 0
+          git push
+
+      - name: Fail if docs are outdated (PR only)
+        if: github.event_name == 'pull_request' && steps.check-changes.outputs.has_changes == 'true'
+        run: |
+          echo "::error::API documentation is out of date. Please run 'bash scripts/generate-docs.sh' and commit the changes."
+          exit 1

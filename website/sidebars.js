@@ -145,7 +145,7 @@ module.exports = {
               items: [
                 'api/packages/llms/anthropic',
                 'api/packages/llms/bedrock',
-                'api/packages/llms/cohere',
+                'api/packages/llms/mock',
                 'api/packages/llms/ollama',
                 'api/packages/llms/openai',
               ],

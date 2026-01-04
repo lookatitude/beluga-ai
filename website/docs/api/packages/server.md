@@ -78,14 +78,14 @@ Package server provides advanced test utilities and comprehensive mocks for test
 - [Constants](<#constants>)
 - [Variables](<#variables>)
 - [func AssertRequestHandling\(t \*testing.T, statusCode int, duration time.Duration, err error, expectError bool\)](<#AssertRequestHandling>)
-- [func AssertServerHealth\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertServerHealth>)
+- [func AssertServerHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertServerHealth>)
 - [func AssertServerStatus\(t \*testing.T, server \*AdvancedMockServer, expectedRunning bool\)](<#AssertServerStatus>)
-- [func RunLoadTest\(t \*testing.T, server \*AdvancedMockServer, numRequests int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, server \*AdvancedMockServer, numRequests, concurrency int\)](<#RunLoadTest>)
 - [type APIEndpoint](<#APIEndpoint>)
 - [type AdvancedMockServer](<#AdvancedMockServer>)
   - [func NewAdvancedMockServer\(name, serverType string, port int, options ...MockServerOption\) \*AdvancedMockServer](<#NewAdvancedMockServer>)
   - [func \(s \*AdvancedMockServer\) AddConnection\(\)](<#AdvancedMockServer.AddConnection>)
-  - [func \(s \*AdvancedMockServer\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockServer.CheckHealth>)
+  - [func \(s \*AdvancedMockServer\) CheckHealth\(\) map\[string\]any](<#AdvancedMockServer.CheckHealth>)
   - [func \(s \*AdvancedMockServer\) GetCallCount\(\) int](<#AdvancedMockServer.GetCallCount>)
   - [func \(s \*AdvancedMockServer\) GetConnectionCount\(\) int](<#AdvancedMockServer.GetConnectionCount>)
   - [func \(s \*AdvancedMockServer\) GetHandlerCount\(\) int](<#AdvancedMockServer.GetHandlerCount>)
@@ -108,6 +108,8 @@ Package server provides advanced test utilities and comprehensive mocks for test
 - [type ErrorCode](<#ErrorCode>)
 - [type Float64Histogram](<#Float64Histogram>)
 - [type Int64Counter](<#Int64Counter>)
+- [type IntegrationMockcomponent](<#IntegrationMockcomponent>)
+  - [func NewIntegrationMockcomponent\(\) \*IntegrationMockcomponent](<#NewIntegrationMockcomponent>)
 - [type IntegrationTestHelper](<#IntegrationTestHelper>)
   - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
   - [func \(h \*IntegrationTestHelper\) AddServer\(name string, server \*AdvancedMockServer\)](<#IntegrationTestHelper.AddServer>)
@@ -119,6 +121,8 @@ Package server provides advanced test utilities and comprehensive mocks for test
 - [type MCPResource](<#MCPResource>)
 - [type MCPServer](<#MCPServer>)
   - [func NewMCPServer\(opts ...iface.Option\) \(MCPServer, error\)](<#NewMCPServer>)
+- [type MCPServerMockcomponent](<#MCPServerMockcomponent>)
+  - [func NewMCPServerMockcomponent\(\) \*MCPServerMockcomponent](<#NewMCPServerMockcomponent>)
 - [type MCPTool](<#MCPTool>)
 - [type Meter](<#Meter>)
 - [type Metrics](<#Metrics>)
@@ -135,10 +139,14 @@ Package server provides advanced test utilities and comprehensive mocks for test
   - [func CORSMiddleware\(allowedOrigins \[\]string\) Middleware](<#CORSMiddleware>)
   - [func LoggingMiddleware\(logger Logger\) Middleware](<#LoggingMiddleware>)
   - [func RecoveryMiddleware\(logger Logger\) Middleware](<#RecoveryMiddleware>)
+- [type MiddlewareMockcomponent](<#MiddlewareMockcomponent>)
+  - [func NewMiddlewareMockcomponent\(\) \*MiddlewareMockcomponent](<#NewMiddlewareMockcomponent>)
 - [type MockServerOption](<#MockServerOption>)
   - [func WithLoadSimulation\(enabled bool\) MockServerOption](<#WithLoadSimulation>)
   - [func WithMockError\(shouldError bool, err error\) MockServerOption](<#WithMockError>)
   - [func WithResponseDelay\(delay time.Duration\) MockServerOption](<#WithResponseDelay>)
+- [type ObservabilityMockcomponent](<#ObservabilityMockcomponent>)
+  - [func NewObservabilityMockcomponent\(\) \*ObservabilityMockcomponent](<#NewObservabilityMockcomponent>)
 - [type Option](<#Option>)
 - [type RESTConfig](<#RESTConfig>)
   - [func DefaultRESTConfig\(\) RESTConfig](<#DefaultRESTConfig>)
@@ -147,6 +155,8 @@ Package server provides advanced test utilities and comprehensive mocks for test
 - [type RequestRecord](<#RequestRecord>)
 - [type Server](<#Server>)
 - [type ServerError](<#ServerError>)
+- [type ServerMockcomponent](<#ServerMockcomponent>)
+  - [func NewServerMockcomponent\(\) \*ServerMockcomponent](<#NewServerMockcomponent>)
 - [type ServerScenarioRunner](<#ServerScenarioRunner>)
   - [func NewServerScenarioRunner\(server \*AdvancedMockServer\) \*ServerScenarioRunner](<#NewServerScenarioRunner>)
   - [func \(r \*ServerScenarioRunner\) RunAPIEndpointScenario\(ctx context.Context, endpoints \[\]APIEndpoint\) error](<#ServerScenarioRunner.RunAPIEndpointScenario>)
@@ -185,7 +195,7 @@ const (
 
 ## Variables
 
-<a name="WithConfig"></a>Re\-export functions from iface
+<a name="WithConfig"></a>Re\-export functions from iface.
 
 ```go
 var (
@@ -213,43 +223,43 @@ var (
 ```
 
 <a name="AssertRequestHandling"></a>
-## func [AssertRequestHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L303>)
+## func [AssertRequestHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L297>)
 
 ```go
 func AssertRequestHandling(t *testing.T, statusCode int, duration time.Duration, err error, expectError bool)
 ```
 
-AssertRequestHandling validates request handling
+AssertRequestHandling validates request handling.
 
 <a name="AssertServerHealth"></a>
-## func [AssertServerHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L316>)
+## func [AssertServerHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L310>)
 
 ```go
-func AssertServerHealth(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertServerHealth(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertServerHealth validates server health check results
+AssertServerHealth validates server health check results.
 
 <a name="AssertServerStatus"></a>
-## func [AssertServerStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L298>)
+## func [AssertServerStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L291>)
 
 ```go
 func AssertServerStatus(t *testing.T, server *AdvancedMockServer, expectedRunning bool)
 ```
 
-AssertServerStatus validates server status
+AssertServerStatus validates server status.
 
 <a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L328>)
+## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L323>)
 
 ```go
-func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests int, concurrency int)
+func RunLoadTest(t *testing.T, server *AdvancedMockServer, numRequests, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on server
+RunLoadTest executes a load test scenario on server.
 
 <a name="APIEndpoint"></a>
-## type [APIEndpoint](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L460-L464>)
+## type [APIEndpoint](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L456-L460>)
 
 ```go
 type APIEndpoint struct {
@@ -260,9 +270,9 @@ type APIEndpoint struct {
 ```
 
 <a name="AdvancedMockServer"></a>
-## type [AdvancedMockServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L18-L43>)
+## type [AdvancedMockServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L19-L36>)
 
-AdvancedMockServer provides a comprehensive mock implementation for testing
+AdvancedMockServer provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockServer struct {
@@ -272,127 +282,127 @@ type AdvancedMockServer struct {
 ```
 
 <a name="NewAdvancedMockServer"></a>
-### func [NewAdvancedMockServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L55>)
+### func [NewAdvancedMockServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L48>)
 
 ```go
 func NewAdvancedMockServer(name, serverType string, port int, options ...MockServerOption) *AdvancedMockServer
 ```
 
-NewAdvancedMockServer creates a new advanced mock server
+NewAdvancedMockServer creates a new advanced mock server.
 
 <a name="AdvancedMockServer.AddConnection"></a>
-### func \(\*AdvancedMockServer\) [AddConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L177>)
+### func \(\*AdvancedMockServer\) [AddConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L170>)
 
 ```go
 func (s *AdvancedMockServer) AddConnection()
 ```
 
 <a name="AdvancedMockServer.CheckHealth"></a>
-### func \(\*AdvancedMockServer\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L236>)
+### func \(\*AdvancedMockServer\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L229>)
 
 ```go
-func (s *AdvancedMockServer) CheckHealth() map[string]interface{}
+func (s *AdvancedMockServer) CheckHealth() map[string]any
 ```
 
 <a name="AdvancedMockServer.GetCallCount"></a>
-### func \(\*AdvancedMockServer\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L210>)
+### func \(\*AdvancedMockServer\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L203>)
 
 ```go
 func (s *AdvancedMockServer) GetCallCount() int
 ```
 
 <a name="AdvancedMockServer.GetConnectionCount"></a>
-### func \(\*AdvancedMockServer\) [GetConnectionCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L216>)
+### func \(\*AdvancedMockServer\) [GetConnectionCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L209>)
 
 ```go
 func (s *AdvancedMockServer) GetConnectionCount() int
 ```
 
 <a name="AdvancedMockServer.GetHandlerCount"></a>
-### func \(\*AdvancedMockServer\) [GetHandlerCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L230>)
+### func \(\*AdvancedMockServer\) [GetHandlerCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L223>)
 
 ```go
 func (s *AdvancedMockServer) GetHandlerCount() int
 ```
 
 <a name="AdvancedMockServer.GetName"></a>
-### func \(\*AdvancedMockServer\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L192>)
+### func \(\*AdvancedMockServer\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L185>)
 
 ```go
 func (s *AdvancedMockServer) GetName() string
 ```
 
-Helper methods for testing
+Helper methods for testing.
 
 <a name="AdvancedMockServer.GetPort"></a>
-### func \(\*AdvancedMockServer\) [GetPort](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L200>)
+### func \(\*AdvancedMockServer\) [GetPort](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L193>)
 
 ```go
 func (s *AdvancedMockServer) GetPort() int
 ```
 
 <a name="AdvancedMockServer.GetRequestHistory"></a>
-### func \(\*AdvancedMockServer\) [GetRequestHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L222>)
+### func \(\*AdvancedMockServer\) [GetRequestHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L215>)
 
 ```go
 func (s *AdvancedMockServer) GetRequestHistory() []RequestRecord
 ```
 
 <a name="AdvancedMockServer.GetServerType"></a>
-### func \(\*AdvancedMockServer\) [GetServerType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L196>)
+### func \(\*AdvancedMockServer\) [GetServerType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L189>)
 
 ```go
 func (s *AdvancedMockServer) GetServerType() string
 ```
 
 <a name="AdvancedMockServer.HandleRequest"></a>
-### func \(\*AdvancedMockServer\) [HandleRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L136>)
+### func \(\*AdvancedMockServer\) [HandleRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L129>)
 
 ```go
 func (s *AdvancedMockServer) HandleRequest(method, path string) (int, time.Duration, error)
 ```
 
 <a name="AdvancedMockServer.IsRunning"></a>
-### func \(\*AdvancedMockServer\) [IsRunning](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L204>)
+### func \(\*AdvancedMockServer\) [IsRunning](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L197>)
 
 ```go
 func (s *AdvancedMockServer) IsRunning() bool
 ```
 
 <a name="AdvancedMockServer.RegisterHandler"></a>
-### func \(\*AdvancedMockServer\) [RegisterHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L171>)
+### func \(\*AdvancedMockServer\) [RegisterHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L164>)
 
 ```go
 func (s *AdvancedMockServer) RegisterHandler(pattern string, handler http.HandlerFunc)
 ```
 
 <a name="AdvancedMockServer.RemoveConnection"></a>
-### func \(\*AdvancedMockServer\) [RemoveConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L183>)
+### func \(\*AdvancedMockServer\) [RemoveConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L176>)
 
 ```go
 func (s *AdvancedMockServer) RemoveConnection()
 ```
 
 <a name="AdvancedMockServer.Start"></a>
-### func \(\*AdvancedMockServer\) [Start](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L99>)
+### func \(\*AdvancedMockServer\) [Start](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L92>)
 
 ```go
 func (s *AdvancedMockServer) Start(ctx context.Context) error
 ```
 
-Mock server operations
+Mock server operations.
 
 <a name="AdvancedMockServer.Stop"></a>
-### func \(\*AdvancedMockServer\) [Stop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L117>)
+### func \(\*AdvancedMockServer\) [Stop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L110>)
 
 ```go
 func (s *AdvancedMockServer) Stop(ctx context.Context) error
 ```
 
 <a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L500-L503>)
+## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L496-L499>)
 
-BenchmarkHelper provides benchmarking utilities for servers
+BenchmarkHelper provides benchmarking utilities for servers.
 
 ```go
 type BenchmarkHelper struct {
@@ -401,21 +411,21 @@ type BenchmarkHelper struct {
 ```
 
 <a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L505>)
+### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L501>)
 
 ```go
 func NewBenchmarkHelper(server *AdvancedMockServer, requestCount int) *BenchmarkHelper
 ```
 
 <a name="BenchmarkHelper.BenchmarkRequestHandling"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkRequestHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L512>)
+### func \(\*BenchmarkHelper\) [BenchmarkRequestHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L508>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkRequestHandling(iterations int) (time.Duration, error)
 ```
 
 <a name="BenchmarkHelper.BenchmarkServerLifecycle"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkServerLifecycle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L537>)
+### func \(\*BenchmarkHelper\) [BenchmarkServerLifecycle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L533>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkServerLifecycle(iterations int) (time.Duration, error)
@@ -424,25 +434,25 @@ func (b *BenchmarkHelper) BenchmarkServerLifecycle(iterations int) (time.Duratio
 <a name="Config"></a>
 ## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L10>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Config = iface.Config
 ```
 
 <a name="CreateTestServerConfig"></a>
-### func [CreateTestServerConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L255>)
+### func [CreateTestServerConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L248>)
 
 ```go
 func CreateTestServerConfig() Config
 ```
 
-CreateTestServerConfig creates a test server configuration
+CreateTestServerConfig creates a test server configuration.
 
 <a name="ErrorCode"></a>
 ## type [ErrorCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L27>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type ErrorCode = iface.ErrorCode
@@ -451,7 +461,7 @@ type ErrorCode = iface.ErrorCode
 <a name="Float64Histogram"></a>
 ## type [Float64Histogram](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L20>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Float64Histogram = iface.Float64Histogram
@@ -460,16 +470,36 @@ type Float64Histogram = iface.Float64Histogram
 <a name="Int64Counter"></a>
 ## type [Int64Counter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L19>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Int64Counter = iface.Int64Counter
 ```
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L389-L391>)
+<a name="IntegrationMockcomponent"></a>
+## type [IntegrationMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/integration_mock.go#L8-L10>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationMockcomponent is a mock implementation of Interface.
+
+```go
+type IntegrationMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewIntegrationMockcomponent"></a>
+### func [NewIntegrationMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/integration_mock.go#L13>)
+
+```go
+func NewIntegrationMockcomponent() *IntegrationMockcomponent
+```
+
+NewIntegrationMockcomponent creates a new IntegrationMockcomponent.
+
+<a name="IntegrationTestHelper"></a>
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L385-L387>)
+
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -478,28 +508,28 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L393>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L389>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddServer"></a>
-### func \(\*IntegrationTestHelper\) [AddServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L399>)
+### func \(\*IntegrationTestHelper\) [AddServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L395>)
 
 ```go
 func (h *IntegrationTestHelper) AddServer(name string, server *AdvancedMockServer)
 ```
 
 <a name="IntegrationTestHelper.GetServer"></a>
-### func \(\*IntegrationTestHelper\) [GetServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L403>)
+### func \(\*IntegrationTestHelper\) [GetServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L399>)
 
 ```go
 func (h *IntegrationTestHelper) GetServer(name string) *AdvancedMockServer
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L407>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L403>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
@@ -508,7 +538,7 @@ func (h *IntegrationTestHelper) Reset()
 <a name="Logger"></a>
 ## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L15>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Logger = iface.Logger
@@ -517,7 +547,7 @@ type Logger = iface.Logger
 <a name="MCPConfig"></a>
 ## type [MCPConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L12>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type MCPConfig = iface.MCPConfig
@@ -530,12 +560,12 @@ type MCPConfig = iface.MCPConfig
 func DefaultMCPConfig() MCPConfig
 ```
 
-DefaultMCPConfig returns a default MCP server configuration
+DefaultMCPConfig returns a default MCP server configuration.
 
 <a name="MCPResource"></a>
 ## type [MCPResource](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L22>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type MCPResource = iface.MCPResource
@@ -544,7 +574,7 @@ type MCPResource = iface.MCPResource
 <a name="MCPServer"></a>
 ## type [MCPServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L26>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type MCPServer = iface.MCPServer
@@ -561,10 +591,30 @@ NewMCPServer creates a new MCP server instance with the provided options. It imp
 
 This factory function creates the MCP server implementation directly.
 
+<a name="MCPServerMockcomponent"></a>
+## type [MCPServerMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/mcp_server_mock.go#L8-L10>)
+
+MCPServerMockcomponent is a mock implementation of Interface.
+
+```go
+type MCPServerMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewMCPServerMockcomponent"></a>
+### func [NewMCPServerMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/mcp_server_mock.go#L13>)
+
+```go
+func NewMCPServerMockcomponent() *MCPServerMockcomponent
+```
+
+NewMCPServerMockcomponent creates a new MCPServerMockcomponent.
+
 <a name="MCPTool"></a>
 ## type [MCPTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L21>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type MCPTool = iface.MCPTool
@@ -573,7 +623,7 @@ type MCPTool = iface.MCPTool
 <a name="Meter"></a>
 ## type [Meter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L18>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Meter = iface.Meter
@@ -582,7 +632,7 @@ type Meter = iface.Meter
 <a name="Metrics"></a>
 ## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L13-L32>)
 
-Metrics contains all metrics for the server package
+Metrics contains all metrics for the server package.
 
 ```go
 type Metrics struct {
@@ -597,7 +647,7 @@ type Metrics struct {
 func NewMetrics(meter metric.Meter) (*Metrics, error)
 ```
 
-NewMetrics creates a new Metrics instance with the given meter
+NewMetrics creates a new Metrics instance with the given meter.
 
 <a name="Metrics.RecordActiveConnections"></a>
 ### func \(\*Metrics\) [RecordActiveConnections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L192>)
@@ -606,7 +656,7 @@ NewMetrics creates a new Metrics instance with the given meter
 func (m *Metrics) RecordActiveConnections(ctx context.Context, count int64)
 ```
 
-RecordActiveConnections records the number of active connections
+RecordActiveConnections records the number of active connections.
 
 <a name="Metrics.RecordHTTPRequest"></a>
 ### func \(\*Metrics\) [RecordHTTPRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L164>)
@@ -615,7 +665,7 @@ RecordActiveConnections records the number of active connections
 func (m *Metrics) RecordHTTPRequest(ctx context.Context, method, path string, statusCode int, duration time.Duration)
 ```
 
-RecordHTTPRequest records an HTTP request with its duration and status
+RecordHTTPRequest records an HTTP request with its duration and status.
 
 <a name="Metrics.RecordHealthCheck"></a>
 ### func \(\*Metrics\) [RecordHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L265>)
@@ -624,7 +674,7 @@ RecordHTTPRequest records an HTTP request with its duration and status
 func (m *Metrics) RecordHealthCheck(ctx context.Context, healthy bool)
 ```
 
-RecordHealthCheck records a health check
+RecordHealthCheck records a health check.
 
 <a name="Metrics.RecordMCPResourceRead"></a>
 ### func \(\*Metrics\) [RecordMCPResourceRead](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L222>)
@@ -633,7 +683,7 @@ RecordHealthCheck records a health check
 func (m *Metrics) RecordMCPResourceRead(ctx context.Context, resourceURI string, success bool, duration time.Duration)
 ```
 
-RecordMCPResourceRead records an MCP resource read with its duration and success status
+RecordMCPResourceRead records an MCP resource read with its duration and success status.
 
 <a name="Metrics.RecordMCPToolCall"></a>
 ### func \(\*Metrics\) [RecordMCPToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L197>)
@@ -642,7 +692,7 @@ RecordMCPResourceRead records an MCP resource read with its duration and success
 func (m *Metrics) RecordMCPToolCall(ctx context.Context, toolName string, success bool, duration time.Duration)
 ```
 
-RecordMCPToolCall records an MCP tool call with its duration and success status
+RecordMCPToolCall records an MCP tool call with its duration and success status.
 
 <a name="Metrics.RecordResourceRegistration"></a>
 ### func \(\*Metrics\) [RecordResourceRegistration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L256>)
@@ -651,7 +701,7 @@ RecordMCPToolCall records an MCP tool call with its duration and success status
 func (m *Metrics) RecordResourceRegistration(ctx context.Context, resourceURI string)
 ```
 
-RecordResourceRegistration records the registration of an MCP resource
+RecordResourceRegistration records the registration of an MCP resource.
 
 <a name="Metrics.RecordServerUptime"></a>
 ### func \(\*Metrics\) [RecordServerUptime](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L274>)
@@ -660,7 +710,7 @@ RecordResourceRegistration records the registration of an MCP resource
 func (m *Metrics) RecordServerUptime(ctx context.Context, uptime time.Duration)
 ```
 
-RecordServerUptime records server uptime
+RecordServerUptime records server uptime.
 
 <a name="Metrics.RecordToolRegistration"></a>
 ### func \(\*Metrics\) [RecordToolRegistration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/metrics.go#L247>)
@@ -669,12 +719,12 @@ RecordServerUptime records server uptime
 func (m *Metrics) RecordToolRegistration(ctx context.Context, toolName string)
 ```
 
-RecordToolRegistration records the registration of an MCP tool
+RecordToolRegistration records the registration of an MCP tool.
 
 <a name="Middleware"></a>
 ## type [Middleware](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L14>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Middleware = iface.Middleware
@@ -687,7 +737,7 @@ type Middleware = iface.Middleware
 func CORSMiddleware(allowedOrigins []string) Middleware
 ```
 
-CORSMiddleware returns a CORS middleware function
+CORSMiddleware returns a CORS middleware function.
 
 <a name="LoggingMiddleware"></a>
 ### func [LoggingMiddleware](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/server.go#L176>)
@@ -696,7 +746,7 @@ CORSMiddleware returns a CORS middleware function
 func LoggingMiddleware(logger Logger) Middleware
 ```
 
-LoggingMiddleware returns a logging middleware function
+LoggingMiddleware returns a logging middleware function.
 
 <a name="RecoveryMiddleware"></a>
 ### func [RecoveryMiddleware](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/server.go#L191>)
@@ -705,48 +755,88 @@ LoggingMiddleware returns a logging middleware function
 func RecoveryMiddleware(logger Logger) Middleware
 ```
 
-RecoveryMiddleware returns a panic recovery middleware function
+RecoveryMiddleware returns a panic recovery middleware function.
+
+<a name="MiddlewareMockcomponent"></a>
+## type [MiddlewareMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/middleware_mock.go#L8-L10>)
+
+MiddlewareMockcomponent is a mock implementation of Interface.
+
+```go
+type MiddlewareMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewMiddlewareMockcomponent"></a>
+### func [NewMiddlewareMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/middleware_mock.go#L13>)
+
+```go
+func NewMiddlewareMockcomponent() *MiddlewareMockcomponent
+```
+
+NewMiddlewareMockcomponent creates a new MiddlewareMockcomponent.
 
 <a name="MockServerOption"></a>
-## type [MockServerOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L74>)
+## type [MockServerOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L67>)
 
-MockServerOption defines functional options for mock configuration
+MockServerOption defines functional options for mock configuration.
 
 ```go
 type MockServerOption func(*AdvancedMockServer)
 ```
 
 <a name="WithLoadSimulation"></a>
-### func [WithLoadSimulation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L92>)
+### func [WithLoadSimulation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L85>)
 
 ```go
 func WithLoadSimulation(enabled bool) MockServerOption
 ```
 
-WithLoadSimulation enables load simulation
+WithLoadSimulation enables load simulation.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L77>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L70>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockServerOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithResponseDelay"></a>
-### func [WithResponseDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L85>)
+### func [WithResponseDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L78>)
 
 ```go
 func WithResponseDelay(delay time.Duration) MockServerOption
 ```
 
-WithResponseDelay adds artificial delay to mock operations
+WithResponseDelay adds artificial delay to mock operations.
+
+<a name="ObservabilityMockcomponent"></a>
+## type [ObservabilityMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/observability_mock.go#L8-L10>)
+
+ObservabilityMockcomponent is a mock implementation of Interface.
+
+```go
+type ObservabilityMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewObservabilityMockcomponent"></a>
+### func [NewObservabilityMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/observability_mock.go#L13>)
+
+```go
+func NewObservabilityMockcomponent() *ObservabilityMockcomponent
+```
+
+NewObservabilityMockcomponent creates a new ObservabilityMockcomponent.
 
 <a name="Option"></a>
 ## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L13>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Option = iface.Option
@@ -755,7 +845,7 @@ type Option = iface.Option
 <a name="RESTConfig"></a>
 ## type [RESTConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L11>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type RESTConfig = iface.RESTConfig
@@ -768,12 +858,12 @@ type RESTConfig = iface.RESTConfig
 func DefaultRESTConfig() RESTConfig
 ```
 
-DefaultRESTConfig returns a default REST server configuration
+DefaultRESTConfig returns a default REST server configuration.
 
 <a name="RESTServer"></a>
 ## type [RESTServer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L25>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type RESTServer = iface.RESTServer
@@ -791,24 +881,24 @@ NewRESTServer creates a new REST server instance with the provided options. It i
 This factory function creates the REST server implementation directly.
 
 <a name="RequestRecord"></a>
-## type [RequestRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L46-L52>)
+## type [RequestRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L39-L45>)
 
-RequestRecord tracks server request history for testing
+RequestRecord tracks server request history for testing.
 
 ```go
 type RequestRecord struct {
+    Timestamp  time.Time
     Method     string
     Path       string
     StatusCode int
     Duration   time.Duration
-    Timestamp  time.Time
 }
 ```
 
 <a name="Server"></a>
 ## type [Server](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L24>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Server = iface.Server
@@ -817,16 +907,36 @@ type Server = iface.Server
 <a name="ServerError"></a>
 ## type [ServerError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L28>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type ServerError = iface.ServerError
 ```
 
-<a name="ServerScenarioRunner"></a>
-## type [ServerScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L417-L419>)
+<a name="ServerMockcomponent"></a>
+## type [ServerMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/server_mock.go#L8-L10>)
 
-ServerScenarioRunner runs common server scenarios
+ServerMockcomponent is a mock implementation of Interface.
+
+```go
+type ServerMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewServerMockcomponent"></a>
+### func [NewServerMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/server_mock.go#L13>)
+
+```go
+func NewServerMockcomponent() *ServerMockcomponent
+```
+
+NewServerMockcomponent creates a new ServerMockcomponent.
+
+<a name="ServerScenarioRunner"></a>
+## type [ServerScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L413-L415>)
+
+ServerScenarioRunner runs common server scenarios.
 
 ```go
 type ServerScenarioRunner struct {
@@ -835,21 +945,21 @@ type ServerScenarioRunner struct {
 ```
 
 <a name="NewServerScenarioRunner"></a>
-### func [NewServerScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L421>)
+### func [NewServerScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L417>)
 
 ```go
 func NewServerScenarioRunner(server *AdvancedMockServer) *ServerScenarioRunner
 ```
 
 <a name="ServerScenarioRunner.RunAPIEndpointScenario"></a>
-### func \(\*ServerScenarioRunner\) [RunAPIEndpointScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L427>)
+### func \(\*ServerScenarioRunner\) [RunAPIEndpointScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L423>)
 
 ```go
 func (r *ServerScenarioRunner) RunAPIEndpointScenario(ctx context.Context, endpoints []APIEndpoint) error
 ```
 
 <a name="ServerScenarioRunner.RunConnectionManagementScenario"></a>
-### func \(\*ServerScenarioRunner\) [RunConnectionManagementScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L466>)
+### func \(\*ServerScenarioRunner\) [RunConnectionManagementScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L462>)
 
 ```go
 func (r *ServerScenarioRunner) RunConnectionManagementScenario(ctx context.Context, connectionCount int) error
@@ -858,7 +968,7 @@ func (r *ServerScenarioRunner) RunConnectionManagementScenario(ctx context.Conte
 <a name="Span"></a>
 ## type [Span](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L17>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Span = iface.Span
@@ -867,14 +977,14 @@ type Span = iface.Span
 <a name="StreamingHandler"></a>
 ## type [StreamingHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L23>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type StreamingHandler = iface.StreamingHandler
 ```
 
 <a name="TestRequest"></a>
-## type [TestRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L289-L293>)
+## type [TestRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L282-L286>)
 
 ```go
 type TestRequest struct {
@@ -885,18 +995,18 @@ type TestRequest struct {
 ```
 
 <a name="CreateTestRequests"></a>
-### func [CreateTestRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L273>)
+### func [CreateTestRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/test_utils.go#L266>)
 
 ```go
 func CreateTestRequests(count int) []TestRequest
 ```
 
-CreateTestRequests creates test HTTP requests for simulation
+CreateTestRequests creates test HTTP requests for simulation.
 
 <a name="Tracer"></a>
 ## type [Tracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/server/config.go#L16>)
 
-Re\-export types from iface to maintain backward compatibility
+Re\-export types from iface to maintain backward compatibility.
 
 ```go
 type Tracer = iface.Tracer

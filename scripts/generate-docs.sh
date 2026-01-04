@@ -60,6 +60,9 @@ generate_package_docs() {
     cd "${ROOT_DIR}" && "${gomarkdoc_bin}" --output "${temp_file}" --format github "${import_path}" 2>&1 || {
         rm -f "${temp_file}"
         echo -e "${RED}Failed to generate docs for ${pkg_name}${NC}" >&2
+        echo -e "${YELLOW}Error logged for ${pkg_name}${NC}" >&2
+        # Log failure to error file
+        echo "$(date): Failed to generate docs for ${pkg_name} (${import_path})" >> "${ROOT_DIR}/docs-generation-errors.log" 2>/dev/null || true
         return 1
     }
     
@@ -171,7 +174,7 @@ mkdir -p "${LLM_PROVIDERS_DIR}"
 LLM_PROVIDERS=(
     "pkg/llms/providers/anthropic"
     "pkg/llms/providers/bedrock"
-    "pkg/llms/providers/cohere"
+    "pkg/llms/providers/mock"
     "pkg/llms/providers/ollama"
     "pkg/llms/providers/openai"
 )
@@ -250,6 +253,63 @@ if [ ! -f "${OUTPUT_DIR}/llms_base.md" ]; then
     fi
 fi
 
-echo -e "${GREEN}Documentation generation complete!${NC}"
+# Validation step: verify all expected output files exist
+echo -e "\n${GREEN}Validating generated documentation...${NC}"
+VALIDATION_ERRORS=0
+VALIDATION_WARNINGS=0
+
+# Check main package files
+for pkg in "${PACKAGES[@]}"; do
+    pkg_name=$(basename "$pkg")
+    output_file="${OUTPUT_DIR}/${pkg_name}.md"
+    if [ ! -f "${output_file}" ]; then
+        echo -e "${YELLOW}Warning: Expected file not found: ${pkg_name}.md${NC}"
+        ((VALIDATION_WARNINGS++))
+    elif [ ! -s "${output_file}" ]; then
+        echo -e "${RED}Error: File is empty: ${pkg_name}.md${NC}"
+        ((VALIDATION_ERRORS++))
+    fi
+done
+
+# Check LLM provider files
+for provider in "${LLM_PROVIDERS[@]}"; do
+    provider_name=$(basename "$provider")
+    output_file="${LLM_PROVIDERS_DIR}/${provider_name}.md"
+    if [ ! -f "${output_file}" ]; then
+        echo -e "${YELLOW}Warning: Expected LLM provider file not found: ${provider_name}.md${NC}"
+        ((VALIDATION_WARNINGS++))
+    elif [ ! -s "${output_file}" ]; then
+        echo -e "${RED}Error: LLM provider file is empty: ${provider_name}.md${NC}"
+        ((VALIDATION_ERRORS++))
+    fi
+done
+
+# Check voice package files
+for pkg in "${VOICE_PACKAGES[@]}"; do
+    pkg_name=$(basename "$pkg")
+    output_file="${VOICE_DIR}/${pkg_name}.md"
+    if [ ! -f "${output_file}" ]; then
+        echo -e "${YELLOW}Warning: Expected voice package file not found: ${pkg_name}.md${NC}"
+        ((VALIDATION_WARNINGS++))
+    elif [ ! -s "${output_file}" ]; then
+        echo -e "${RED}Error: Voice package file is empty: ${pkg_name}.md${NC}"
+        ((VALIDATION_ERRORS++))
+    fi
+done
+
+# Summary report
+echo -e "\n${GREEN}Documentation generation complete!${NC}"
 echo -e "${GREEN}Generated docs are in: ${OUTPUT_DIR}${NC}"
 
+# Count generated files
+GENERATED_COUNT=$(find "${OUTPUT_DIR}" -name "*.md" -type f | wc -l)
+echo -e "${GREEN}Total files generated: ${GENERATED_COUNT}${NC}"
+
+if [ $VALIDATION_ERRORS -gt 0 ]; then
+    echo -e "${RED}Validation failed with ${VALIDATION_ERRORS} error(s)${NC}"
+    exit 1
+elif [ $VALIDATION_WARNINGS -gt 0 ]; then
+    echo -e "${YELLOW}Validation passed with ${VALIDATION_WARNINGS} warning(s)${NC}"
+else
+    echo -e "${GREEN}Validation passed: All expected files generated successfully${NC}"
+fi

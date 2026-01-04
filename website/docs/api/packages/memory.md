@@ -31,7 +31,7 @@ Package memory provides advanced test utilities and comprehensive mocks for test
 - [Constants](<#constants>)
 - [Variables](<#variables>)
 - [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertHealthCheck\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertHealthCheck>)
+- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertHealthCheck>)
 - [func AssertMemoryContent\(t \*testing.T, content map\[string\]any, expectedKeys \[\]string\)](<#AssertMemoryContent>)
 - [func AssertMemoryVariables\(t \*testing.T, memory iface.Memory, expectedVars \[\]string\)](<#AssertMemoryVariables>)
 - [func AssertMessageHistory\(t \*testing.T, messages \[\]schema.Message, expectedCount int\)](<#AssertMessageHistory>)
@@ -39,7 +39,7 @@ Package memory provides advanced test utilities and comprehensive mocks for test
 - [func CreateTestInputOutput\(input, output string\) \(map\[string\]any, map\[string\]any\)](<#CreateTestInputOutput>)
 - [func CreateTestMessages\(count int\) \[\]schema.Message](<#CreateTestMessages>)
 - [func GetBufferString\(messages \[\]schema.Message, humanPrefix, aiPrefix string\) string](<#GetBufferString>)
-- [func GetInputOutputKeys\(inputs map\[string\]any, outputs map\[string\]any\) \(string, string, error\)](<#GetInputOutputKeys>)
+- [func GetInputOutputKeys\(inputs, outputs map\[string\]any\) \(string, string, error\)](<#GetInputOutputKeys>)
 - [func IsMemoryError\(err error, code string\) bool](<#IsMemoryError>)
 - [func ListAvailableMemoryTypes\(\) \[\]string](<#ListAvailableMemoryTypes>)
 - [func NewBaseChatMessageHistory\(options ...providers.BaseHistoryOption\) iface.ChatMessageHistory](<#NewBaseChatMessageHistory>)
@@ -51,7 +51,7 @@ Package memory provides advanced test utilities and comprehensive mocks for test
 - [func NewVectorStoreMemory\(retriever core.Retriever, memoryKey string, returnDocs bool, k int\) iface.Memory](<#NewVectorStoreMemory>)
 - [func NewVectorStoreRetrieverMemory\(embedder embeddingsiface.Embedder, vectorStore vectorstores.VectorStore, options ...vectorstore.VectorStoreMemoryOption\) iface.Memory](<#NewVectorStoreRetrieverMemory>)
 - [func RegisterMemoryType\(memoryType string, creator func\(ctx context.Context, config Config\) \(iface.Memory, error\)\)](<#RegisterMemoryType>)
-- [func RunLoadTest\(t \*testing.T, memory \*AdvancedMockMemory, numOperations int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, memory \*AdvancedMockMemory, numOperations, concurrency int\)](<#RunLoadTest>)
 - [func SetGlobalLogger\(logger \*Logger\)](<#SetGlobalLogger>)
 - [func SetGlobalMetrics\(meter metric.Meter\)](<#SetGlobalMetrics>)
 - [func SetGlobalTracer\(\)](<#SetGlobalTracer>)
@@ -70,14 +70,16 @@ Package memory provides advanced test utilities and comprehensive mocks for test
   - [func \(h \*AdvancedMockChatMessageHistory\) GetMessages\(ctx context.Context\) \(\[\]schema.Message, error\)](<#AdvancedMockChatMessageHistory.GetMessages>)
 - [type AdvancedMockMemory](<#AdvancedMockMemory>)
   - [func NewAdvancedMockMemory\(memoryKey string, memoryType MemoryType, options ...MockMemoryOption\) \*AdvancedMockMemory](<#NewAdvancedMockMemory>)
-  - [func \(m \*AdvancedMockMemory\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockMemory.CheckHealth>)
+  - [func \(m \*AdvancedMockMemory\) CheckHealth\(\) map\[string\]any](<#AdvancedMockMemory.CheckHealth>)
   - [func \(m \*AdvancedMockMemory\) Clear\(ctx context.Context\) error](<#AdvancedMockMemory.Clear>)
   - [func \(m \*AdvancedMockMemory\) GetCallCount\(\) int](<#AdvancedMockMemory.GetCallCount>)
-  - [func \(m \*AdvancedMockMemory\) GetContextHistory\(\) \[\]map\[string\]interface\{\}](<#AdvancedMockMemory.GetContextHistory>)
+  - [func \(m \*AdvancedMockMemory\) GetContextHistory\(\) \[\]map\[string\]any](<#AdvancedMockMemory.GetContextHistory>)
   - [func \(m \*AdvancedMockMemory\) GetMessages\(\) \[\]schema.Message](<#AdvancedMockMemory.GetMessages>)
   - [func \(m \*AdvancedMockMemory\) LoadMemoryVariables\(ctx context.Context, inputs map\[string\]any\) \(map\[string\]any, error\)](<#AdvancedMockMemory.LoadMemoryVariables>)
   - [func \(m \*AdvancedMockMemory\) MemoryVariables\(\) \[\]string](<#AdvancedMockMemory.MemoryVariables>)
-  - [func \(m \*AdvancedMockMemory\) SaveContext\(ctx context.Context, inputs map\[string\]any, outputs map\[string\]any\) error](<#AdvancedMockMemory.SaveContext>)
+  - [func \(m \*AdvancedMockMemory\) SaveContext\(ctx context.Context, inputs, outputs map\[string\]any\) error](<#AdvancedMockMemory.SaveContext>)
+- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
 - [type BufferConfig](<#BufferConfig>)
 - [type ChatMessageHistory](<#ChatMessageHistory>)
 - [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
@@ -122,8 +124,10 @@ Package memory provides advanced test utilities and comprehensive mocks for test
   - [func \(e \*MemoryError\) Error\(\) string](<#MemoryError.Error>)
   - [func \(e \*MemoryError\) Is\(target error\) bool](<#MemoryError.Is>)
   - [func \(e \*MemoryError\) Unwrap\(\) error](<#MemoryError.Unwrap>)
-  - [func \(e \*MemoryError\) WithContext\(key string, value interface\{\}\) \*MemoryError](<#MemoryError.WithContext>)
+  - [func \(e \*MemoryError\) WithContext\(key string, value any\) \*MemoryError](<#MemoryError.WithContext>)
 - [type MemoryFactory](<#MemoryFactory>)
+- [type MemoryMockcomponent](<#MemoryMockcomponent>)
+  - [func NewMemoryMockcomponent\(\) \*MemoryMockcomponent](<#NewMemoryMockcomponent>)
 - [type MemoryRegistry](<#MemoryRegistry>)
   - [func GetGlobalMemoryRegistry\(\) \*MemoryRegistry](<#GetGlobalMemoryRegistry>)
   - [func NewMemoryRegistry\(\) \*MemoryRegistry](<#NewMemoryRegistry>)
@@ -143,6 +147,8 @@ Package memory provides advanced test utilities and comprehensive mocks for test
   - [func \(m \*Metrics\) RecordMemorySize\(ctx context.Context, memoryType MemoryType, size int\)](<#Metrics.RecordMemorySize>)
   - [func \(m \*Metrics\) RecordOperation\(ctx context.Context, operation string, memoryType MemoryType, success bool\)](<#Metrics.RecordOperation>)
   - [func \(m \*Metrics\) RecordOperationDuration\(ctx context.Context, operation string, memoryType MemoryType, duration time.Duration\)](<#Metrics.RecordOperationDuration>)
+- [type MetricsMockcomponent](<#MetricsMockcomponent>)
+  - [func NewMetricsMockcomponent\(\) \*MetricsMockcomponent](<#NewMetricsMockcomponent>)
 - [type MockHistoryOption](<#MockHistoryOption>)
   - [func WithHistoryDelay\(delay time.Duration\) MockHistoryOption](<#WithHistoryDelay>)
   - [func WithHistoryError\(shouldError bool, err error\) MockHistoryOption](<#WithHistoryError>)
@@ -159,7 +165,7 @@ Package memory provides advanced test utilities and comprehensive mocks for test
   - [func \(m \*NoOpMemory\) Clear\(ctx context.Context\) error](<#NoOpMemory.Clear>)
   - [func \(m \*NoOpMemory\) LoadMemoryVariables\(ctx context.Context, inputs map\[string\]any\) \(map\[string\]any, error\)](<#NoOpMemory.LoadMemoryVariables>)
   - [func \(m \*NoOpMemory\) MemoryVariables\(\) \[\]string](<#NoOpMemory.MemoryVariables>)
-  - [func \(m \*NoOpMemory\) SaveContext\(ctx context.Context, inputs map\[string\]any, outputs map\[string\]any\) error](<#NoOpMemory.SaveContext>)
+  - [func \(m \*NoOpMemory\) SaveContext\(ctx context.Context, inputs, outputs map\[string\]any\) error](<#NoOpMemory.SaveContext>)
 - [type Option](<#Option>)
   - [func WithAIPrefix\(prefix string\) Option](<#WithAIPrefix>)
   - [func WithHumanPrefix\(prefix string\) Option](<#WithHumanPrefix>)
@@ -202,7 +208,7 @@ const (
 
 ## Variables
 
-<a name="LogMemoryOperation"></a>Default convenience functions that use the global logger
+<a name="LogMemoryOperation"></a>Default convenience functions that use the global logger.
 
 ```go
 var (
@@ -221,52 +227,52 @@ var (
 ```
 
 <a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L473>)
+## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L479>)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
 ```
 
-AssertErrorType validates error types and codes
+AssertErrorType validates error types and codes.
 
 <a name="AssertHealthCheck"></a>
-## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L465>)
+## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L470>)
 
 ```go
-func AssertHealthCheck(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertHealthCheck validates health check results
+AssertHealthCheck validates health check results.
 
 <a name="AssertMemoryContent"></a>
-## func [AssertMemoryContent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L445>)
+## func [AssertMemoryContent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L448>)
 
 ```go
 func AssertMemoryContent(t *testing.T, content map[string]any, expectedKeys []string)
 ```
 
-AssertMemoryContent validates memory content
+AssertMemoryContent validates memory content.
 
 <a name="AssertMemoryVariables"></a>
-## func [AssertMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L439>)
+## func [AssertMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L441>)
 
 ```go
 func AssertMemoryVariables(t *testing.T, memory iface.Memory, expectedVars []string)
 ```
 
-AssertMemoryVariables validates memory variables
+AssertMemoryVariables validates memory variables.
 
 <a name="AssertMessageHistory"></a>
-## func [AssertMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L453>)
+## func [AssertMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L457>)
 
 ```go
 func AssertMessageHistory(t *testing.T, messages []schema.Message, expectedCount int)
 ```
 
-AssertMessageHistory validates message history
+AssertMessageHistory validates message history.
 
 <a name="CreateMemory"></a>
-## func [CreateMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L82>)
+## func [CreateMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L83>)
 
 ```go
 func CreateMemory(ctx context.Context, memoryType string, config Config) (iface.Memory, error)
@@ -275,25 +281,25 @@ func CreateMemory(ctx context.Context, memoryType string, config Config) (iface.
 CreateMemory creates a memory using the global registry.
 
 <a name="CreateTestInputOutput"></a>
-## func [CreateTestInputOutput](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L426>)
+## func [CreateTestInputOutput](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L428>)
 
 ```go
 func CreateTestInputOutput(input, output string) (map[string]any, map[string]any)
 ```
 
-CreateTestInputOutput creates test input/output maps
+CreateTestInputOutput creates test input/output maps.
 
 <a name="CreateTestMessages"></a>
-## func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L394>)
+## func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L396>)
 
 ```go
 func CreateTestMessages(count int) []schema.Message
 ```
 
-CreateTestMessages creates a set of test messages
+CreateTestMessages creates a set of test messages.
 
 <a name="GetBufferString"></a>
-## func [GetBufferString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L300>)
+## func [GetBufferString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L303>)
 
 ```go
 func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) string
@@ -302,16 +308,16 @@ func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) st
 GetBufferString formats messages into a text buffer with human/AI prefixes. This utility function is exposed for use by memory implementations.
 
 <a name="GetInputOutputKeys"></a>
-## func [GetInputOutputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L249>)
+## func [GetInputOutputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L252>)
 
 ```go
-func GetInputOutputKeys(inputs map[string]any, outputs map[string]any) (string, string, error)
+func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error)
 ```
 
 GetInputOutputKeys determines the input and output keys from the given maps. This utility function is exposed for use by memory implementations.
 
 <a name="IsMemoryError"></a>
-## func [IsMemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L96>)
+## func [IsMemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L87>)
 
 ```go
 func IsMemoryError(err error, code string) bool
@@ -320,7 +326,7 @@ func IsMemoryError(err error, code string) bool
 IsMemoryError checks if an error is a MemoryError with the given code.
 
 <a name="ListAvailableMemoryTypes"></a>
-## func [ListAvailableMemoryTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L87>)
+## func [ListAvailableMemoryTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L88>)
 
 ```go
 func ListAvailableMemoryTypes() []string
@@ -329,7 +335,7 @@ func ListAvailableMemoryTypes() []string
 ListAvailableMemoryTypes returns all available memory types from the global registry.
 
 <a name="NewBaseChatMessageHistory"></a>
-## func [NewBaseChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L329>)
+## func [NewBaseChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L332>)
 
 ```go
 func NewBaseChatMessageHistory(options ...providers.BaseHistoryOption) iface.ChatMessageHistory
@@ -338,7 +344,7 @@ func NewBaseChatMessageHistory(options ...providers.BaseHistoryOption) iface.Cha
 NewBaseChatMessageHistory creates a new base chat message history with functional options.
 
 <a name="NewChatMessageBufferMemory"></a>
-## func [NewChatMessageBufferMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L364>)
+## func [NewChatMessageBufferMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L367>)
 
 ```go
 func NewChatMessageBufferMemory(history iface.ChatMessageHistory) iface.Memory
@@ -347,7 +353,7 @@ func NewChatMessageBufferMemory(history iface.ChatMessageHistory) iface.Memory
 NewChatMessageBufferMemory creates a new chat message buffer memory.
 
 <a name="NewCompositeChatMessageHistory"></a>
-## func [NewCompositeChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L339>)
+## func [NewCompositeChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L342>)
 
 ```go
 func NewCompositeChatMessageHistory(primary iface.ChatMessageHistory, options ...providers.CompositeHistoryOption) iface.ChatMessageHistory
@@ -356,7 +362,7 @@ func NewCompositeChatMessageHistory(primary iface.ChatMessageHistory, options ..
 NewCompositeChatMessageHistory creates a new composite chat message history with functional options.
 
 <a name="NewConversationBufferWindowMemory"></a>
-## func [NewConversationBufferWindowMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L369>)
+## func [NewConversationBufferWindowMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L372>)
 
 ```go
 func NewConversationBufferWindowMemory(history iface.ChatMessageHistory, k int, memoryKey string, returnMessages bool) iface.Memory
@@ -365,7 +371,7 @@ func NewConversationBufferWindowMemory(history iface.ChatMessageHistory, k int, 
 NewConversationBufferWindowMemory creates a new conversation buffer window memory.
 
 <a name="NewConversationSummaryBufferMemory"></a>
-## func [NewConversationSummaryBufferMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L379>)
+## func [NewConversationSummaryBufferMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L382>)
 
 ```go
 func NewConversationSummaryBufferMemory(history iface.ChatMessageHistory, llm core.Runnable, memoryKey string, maxTokenLimit int) iface.Memory
@@ -374,7 +380,7 @@ func NewConversationSummaryBufferMemory(history iface.ChatMessageHistory, llm co
 NewConversationSummaryBufferMemory creates a new conversation summary buffer memory.
 
 <a name="NewConversationSummaryMemory"></a>
-## func [NewConversationSummaryMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L374>)
+## func [NewConversationSummaryMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L377>)
 
 ```go
 func NewConversationSummaryMemory(history iface.ChatMessageHistory, llm core.Runnable, memoryKey string) iface.Memory
@@ -383,7 +389,7 @@ func NewConversationSummaryMemory(history iface.ChatMessageHistory, llm core.Run
 NewConversationSummaryMemory creates a new conversation summary memory.
 
 <a name="NewVectorStoreMemory"></a>
-## func [NewVectorStoreMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L384>)
+## func [NewVectorStoreMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L387>)
 
 ```go
 func NewVectorStoreMemory(retriever core.Retriever, memoryKey string, returnDocs bool, k int) iface.Memory
@@ -392,7 +398,7 @@ func NewVectorStoreMemory(retriever core.Retriever, memoryKey string, returnDocs
 NewVectorStoreMemory creates a new vector store memory.
 
 <a name="NewVectorStoreRetrieverMemory"></a>
-## func [NewVectorStoreRetrieverMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L389>)
+## func [NewVectorStoreRetrieverMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L392>)
 
 ```go
 func NewVectorStoreRetrieverMemory(embedder embeddingsiface.Embedder, vectorStore vectorstores.VectorStore, options ...vectorstore.VectorStoreMemoryOption) iface.Memory
@@ -401,7 +407,7 @@ func NewVectorStoreRetrieverMemory(embedder embeddingsiface.Embedder, vectorStor
 NewVectorStoreRetrieverMemory creates a new vector store retriever memory.
 
 <a name="RegisterMemoryType"></a>
-## func [RegisterMemoryType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L77>)
+## func [RegisterMemoryType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L78>)
 
 ```go
 func RegisterMemoryType(memoryType string, creator func(ctx context.Context, config Config) (iface.Memory, error))
@@ -410,16 +416,16 @@ func RegisterMemoryType(memoryType string, creator func(ctx context.Context, con
 RegisterMemoryType registers a memory type with the global registry.
 
 <a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L543>)
+## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L550>)
 
 ```go
-func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations int, concurrency int)
+func RunLoadTest(t *testing.T, memory *AdvancedMockMemory, numOperations, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on memory
+RunLoadTest executes a load test scenario on memory.
 
 <a name="SetGlobalLogger"></a>
-## func [SetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L284>)
+## func [SetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L305>)
 
 ```go
 func SetGlobalLogger(logger *Logger)
@@ -428,7 +434,7 @@ func SetGlobalLogger(logger *Logger)
 SetGlobalLogger sets the global logger instance.
 
 <a name="SetGlobalMetrics"></a>
-## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L177>)
+## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L189>)
 
 ```go
 func SetGlobalMetrics(meter metric.Meter)
@@ -437,7 +443,7 @@ func SetGlobalMetrics(meter metric.Meter)
 SetGlobalMetrics sets the global metrics instance with proper OTEL meter.
 
 <a name="SetGlobalTracer"></a>
-## func [SetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L187>)
+## func [SetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L199>)
 
 ```go
 func SetGlobalTracer()
@@ -446,7 +452,7 @@ func SetGlobalTracer()
 SetGlobalTracer sets the global tracer instance.
 
 <a name="WithMaxHistorySize"></a>
-## func [WithMaxHistorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L334>)
+## func [WithMaxHistorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L337>)
 
 ```go
 func WithMaxHistorySize(maxSize int) providers.BaseHistoryOption
@@ -455,7 +461,7 @@ func WithMaxHistorySize(maxSize int) providers.BaseHistoryOption
 WithMaxHistorySize sets the maximum number of messages for the base history.
 
 <a name="WithMaxSize"></a>
-## func [WithMaxSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L349>)
+## func [WithMaxSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L352>)
 
 ```go
 func WithMaxSize(maxSize int) providers.CompositeHistoryOption
@@ -464,7 +470,7 @@ func WithMaxSize(maxSize int) providers.CompositeHistoryOption
 WithMaxSize sets the maximum number of messages for the composite history.
 
 <a name="WithOnAddHook"></a>
-## func [WithOnAddHook](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L354>)
+## func [WithOnAddHook](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L357>)
 
 ```go
 func WithOnAddHook(hook func(context.Context, schema.Message) error) providers.CompositeHistoryOption
@@ -473,7 +479,7 @@ func WithOnAddHook(hook func(context.Context, schema.Message) error) providers.C
 WithOnAddHook sets an add hook for the composite history.
 
 <a name="WithOnGetHook"></a>
-## func [WithOnGetHook](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L359>)
+## func [WithOnGetHook](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L362>)
 
 ```go
 func WithOnGetHook(hook func(context.Context, []schema.Message) ([]schema.Message, error)) providers.CompositeHistoryOption
@@ -482,7 +488,7 @@ func WithOnGetHook(hook func(context.Context, []schema.Message) ([]schema.Messag
 WithOnGetHook sets a get hook for the composite history.
 
 <a name="WithSecondaryHistory"></a>
-## func [WithSecondaryHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L344>)
+## func [WithSecondaryHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L347>)
 
 ```go
 func WithSecondaryHistory(secondary iface.ChatMessageHistory) providers.CompositeHistoryOption
@@ -491,9 +497,9 @@ func WithSecondaryHistory(secondary iface.ChatMessageHistory) providers.Composit
 WithSecondaryHistory sets a secondary history for the composite history.
 
 <a name="AdvancedMockChatMessageHistory"></a>
-## type [AdvancedMockChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L254-L265>)
+## type [AdvancedMockChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L258-L267>)
 
-AdvancedMockChatMessageHistory provides a comprehensive mock for chat message history
+AdvancedMockChatMessageHistory provides a comprehensive mock for chat message history.
 
 ```go
 type AdvancedMockChatMessageHistory struct {
@@ -503,62 +509,62 @@ type AdvancedMockChatMessageHistory struct {
 ```
 
 <a name="NewAdvancedMockChatMessageHistory"></a>
-### func [NewAdvancedMockChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L268>)
+### func [NewAdvancedMockChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L270>)
 
 ```go
 func NewAdvancedMockChatMessageHistory(options ...MockHistoryOption) *AdvancedMockChatMessageHistory
 ```
 
-NewAdvancedMockChatMessageHistory creates a new advanced mock chat message history
+NewAdvancedMockChatMessageHistory creates a new advanced mock chat message history.
 
 <a name="AdvancedMockChatMessageHistory.AddAIMessage"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [AddAIMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L344>)
+### func \(\*AdvancedMockChatMessageHistory\) [AddAIMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L346>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) AddAIMessage(ctx context.Context, content string) error
 ```
 
 <a name="AdvancedMockChatMessageHistory.AddMessage"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [AddMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L316>)
+### func \(\*AdvancedMockChatMessageHistory\) [AddMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L318>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) AddMessage(ctx context.Context, message schema.Message) error
 ```
 
-Mock implementation methods for ChatMessageHistory
+Mock implementation methods for ChatMessageHistory.
 
 <a name="AdvancedMockChatMessageHistory.AddUserMessage"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [AddUserMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L340>)
+### func \(\*AdvancedMockChatMessageHistory\) [AddUserMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L342>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) AddUserMessage(ctx context.Context, content string) error
 ```
 
 <a name="AdvancedMockChatMessageHistory.Clear"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L367>)
+### func \(\*AdvancedMockChatMessageHistory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L369>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) Clear(ctx context.Context) error
 ```
 
 <a name="AdvancedMockChatMessageHistory.GetCallCount"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L385>)
+### func \(\*AdvancedMockChatMessageHistory\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L387>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) GetCallCount() int
 ```
 
 <a name="AdvancedMockChatMessageHistory.GetMessages"></a>
-### func \(\*AdvancedMockChatMessageHistory\) [GetMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L348>)
+### func \(\*AdvancedMockChatMessageHistory\) [GetMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L350>)
 
 ```go
 func (h *AdvancedMockChatMessageHistory) GetMessages(ctx context.Context) ([]schema.Message, error)
 ```
 
 <a name="AdvancedMockMemory"></a>
-## type [AdvancedMockMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L19-L44>)
+## type [AdvancedMockMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L21-L38>)
 
-AdvancedMockMemory provides a comprehensive mock implementation for testing
+AdvancedMockMemory provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockMemory struct {
@@ -568,98 +574,117 @@ type AdvancedMockMemory struct {
 ```
 
 <a name="NewAdvancedMockMemory"></a>
-### func [NewAdvancedMockMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L47>)
+### func [NewAdvancedMockMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L41>)
 
 ```go
 func NewAdvancedMockMemory(memoryKey string, memoryType MemoryType, options ...MockMemoryOption) *AdvancedMockMemory
 ```
 
-NewAdvancedMockMemory creates a new advanced mock with configurable behavior
+NewAdvancedMockMemory creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockMemory.CheckHealth"></a>
-### func \(\*AdvancedMockMemory\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L240>)
+### func \(\*AdvancedMockMemory\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L244>)
 
 ```go
-func (m *AdvancedMockMemory) CheckHealth() map[string]interface{}
+func (m *AdvancedMockMemory) CheckHealth() map[string]any
 ```
 
 <a name="AdvancedMockMemory.Clear"></a>
-### func \(\*AdvancedMockMemory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L197>)
+### func \(\*AdvancedMockMemory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L201>)
 
 ```go
 func (m *AdvancedMockMemory) Clear(ctx context.Context) error
 ```
 
 <a name="AdvancedMockMemory.GetCallCount"></a>
-### func \(\*AdvancedMockMemory\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L218>)
+### func \(\*AdvancedMockMemory\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L222>)
 
 ```go
 func (m *AdvancedMockMemory) GetCallCount() int
 ```
 
 <a name="AdvancedMockMemory.GetContextHistory"></a>
-### func \(\*AdvancedMockMemory\) [GetContextHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L232>)
+### func \(\*AdvancedMockMemory\) [GetContextHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L236>)
 
 ```go
-func (m *AdvancedMockMemory) GetContextHistory() []map[string]interface{}
+func (m *AdvancedMockMemory) GetContextHistory() []map[string]any
 ```
 
 <a name="AdvancedMockMemory.GetMessages"></a>
-### func \(\*AdvancedMockMemory\) [GetMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L224>)
+### func \(\*AdvancedMockMemory\) [GetMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L228>)
 
 ```go
 func (m *AdvancedMockMemory) GetMessages() []schema.Message
 ```
 
 <a name="AdvancedMockMemory.LoadMemoryVariables"></a>
-### func \(\*AdvancedMockMemory\) [LoadMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L121>)
+### func \(\*AdvancedMockMemory\) [LoadMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L115>)
 
 ```go
 func (m *AdvancedMockMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error)
 ```
 
 <a name="AdvancedMockMemory.MemoryVariables"></a>
-### func \(\*AdvancedMockMemory\) [MemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L115>)
+### func \(\*AdvancedMockMemory\) [MemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L109>)
 
 ```go
 func (m *AdvancedMockMemory) MemoryVariables() []string
 ```
 
-Mock implementation methods
+Mock implementation methods.
 
 <a name="AdvancedMockMemory.SaveContext"></a>
-### func \(\*AdvancedMockMemory\) [SaveContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L149>)
+### func \(\*AdvancedMockMemory\) [SaveContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L153>)
 
 ```go
-func (m *AdvancedMockMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error
+func (m *AdvancedMockMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error
 ```
 
+<a name="AdvancedMockcomponent"></a>
+## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/advanced_mock.go#L8-L10>)
+
+AdvancedMockcomponent is a mock implementation of Interface.
+
+```go
+type AdvancedMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewAdvancedMockcomponent"></a>
+### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/advanced_mock.go#L13>)
+
+```go
+func NewAdvancedMockcomponent() *AdvancedMockcomponent
+```
+
+NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+
 <a name="BufferConfig"></a>
-## type [BufferConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L76-L82>)
+## type [BufferConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L53-L56>)
 
 BufferConfig holds configuration specific to buffer memory implementations.
 
 ```go
 type BufferConfig struct {
-    // Base memory configuration
-    Config `mapstructure:",squash"`
-
-    // ChatHistory is the underlying message history storage
     ChatHistory ChatMessageHistory
+    Config      `mapstructure:",squash"`
 }
 ```
 
 <a name="ChatMessageHistory"></a>
-## type [ChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L40>)
+## type [ChatMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L42>)
+
+Ensure the main interfaces are imported for external use.
 
 ```go
 type ChatMessageHistory = iface.ChatMessageHistory
 ```
 
 <a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L484-L488>)
+## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L491-L495>)
 
-ConcurrentTestRunner runs memory tests concurrently for performance testing
+ConcurrentTestRunner runs memory tests concurrently for performance testing.
 
 ```go
 type ConcurrentTestRunner struct {
@@ -670,75 +695,52 @@ type ConcurrentTestRunner struct {
 ```
 
 <a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L490>)
+### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L497>)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
 <a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L498>)
+### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L505>)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L37-L73>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L37-L50>)
 
 Config holds the configuration for memory implementations. It uses struct tags for validation and mapping to configuration sources.
 
 ```go
 type Config struct {
-    // Type specifies which memory implementation to use
-    Type MemoryType `mapstructure:"type" yaml:"type" env:"MEMORY_TYPE" validate:"required,oneof=buffer buffer_window summary summary_buffer vector_store vector_store_retriever"`
-
-    // MemoryKey is the key used for storing memory variables in prompts
-    MemoryKey string `mapstructure:"memory_key" yaml:"memory_key" env:"MEMORY_KEY" default:"history"`
-
-    // InputKey is the key for input values in SaveContext operations
-    InputKey string `mapstructure:"input_key" yaml:"input_key" env:"INPUT_KEY" default:"input"`
-
-    // OutputKey is the key for output values in SaveContext operations
-    OutputKey string `mapstructure:"output_key" yaml:"output_key" env:"OUTPUT_KEY" default:"output"`
-
-    // ReturnMessages indicates whether to return messages directly or formatted strings
-    ReturnMessages bool `mapstructure:"return_messages" yaml:"return_messages" env:"RETURN_MESSAGES" default:"false"`
-
-    // WindowSize is the number of interactions to keep for window-based memories
-    WindowSize int `mapstructure:"window_size" yaml:"window_size" env:"WINDOW_SIZE" default:"5"`
-
-    // MaxTokenLimit is the maximum token count before triggering summarization
-    MaxTokenLimit int `mapstructure:"max_token_limit" yaml:"max_token_limit" env:"MAX_TOKEN_LIMIT" default:"2000"`
-
-    // TopK is the number of documents to retrieve for vector store memories
-    TopK int `mapstructure:"top_k" yaml:"top_k" env:"TOP_K" default:"4"`
-
-    // HumanPrefix is the prefix for human messages in formatted output
-    HumanPrefix string `mapstructure:"human_prefix" yaml:"human_prefix" env:"HUMAN_PREFIX" default:"Human"`
-
-    // AIPrefix is the prefix for AI messages in formatted output
-    AIPrefix string `mapstructure:"ai_prefix" yaml:"ai_prefix" env:"AI_PREFIX" default:"AI"`
-
-    // Enabled indicates whether memory is enabled
-    Enabled bool `mapstructure:"enabled" yaml:"enabled" env:"MEMORY_ENABLED" default:"true"`
-
-    // Timeout is the timeout for memory operations
-    Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" env:"MEMORY_TIMEOUT" default:"30s"`
+    Type           MemoryType    `mapstructure:"type" yaml:"type" env:"MEMORY_TYPE" validate:"required,oneof=buffer buffer_window summary summary_buffer vector_store vector_store_retriever"`
+    MemoryKey      string        `mapstructure:"memory_key" yaml:"memory_key" env:"MEMORY_KEY" default:"history"`
+    InputKey       string        `mapstructure:"input_key" yaml:"input_key" env:"INPUT_KEY" default:"input"`
+    OutputKey      string        `mapstructure:"output_key" yaml:"output_key" env:"OUTPUT_KEY" default:"output"`
+    HumanPrefix    string        `mapstructure:"human_prefix" yaml:"human_prefix" env:"HUMAN_PREFIX" default:"Human"`
+    AIPrefix       string        `mapstructure:"ai_prefix" yaml:"ai_prefix" env:"AI_PREFIX" default:"AI"`
+    WindowSize     int           `mapstructure:"window_size" yaml:"window_size" env:"WINDOW_SIZE" default:"5"`
+    MaxTokenLimit  int           `mapstructure:"max_token_limit" yaml:"max_token_limit" env:"MAX_TOKEN_LIMIT" default:"2000"`
+    TopK           int           `mapstructure:"top_k" yaml:"top_k" env:"TOP_K" default:"4"`
+    Timeout        time.Duration `mapstructure:"timeout" yaml:"timeout" env:"MEMORY_TIMEOUT" default:"30s"`
+    ReturnMessages bool          `mapstructure:"return_messages" yaml:"return_messages" env:"RETURN_MESSAGES" default:"false"`
+    Enabled        bool          `mapstructure:"enabled" yaml:"enabled" env:"MEMORY_ENABLED" default:"true"`
 }
 ```
 
 <a name="CreateTestMemoryConfig"></a>
-### func [CreateTestMemoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L408>)
+### func [CreateTestMemoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L410>)
 
 ```go
 func CreateTestMemoryConfig(memoryType MemoryType) Config
 ```
 
-CreateTestMemoryConfig creates a test memory configuration
+CreateTestMemoryConfig creates a test memory configuration.
 
 <a name="DefaultFactory"></a>
-## type [DefaultFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L48>)
+## type [DefaultFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L51>)
 
 DefaultFactory is the default implementation of the Factory interface.
 
@@ -747,7 +749,7 @@ type DefaultFactory struct{}
 ```
 
 <a name="DefaultFactory.CreateMemory"></a>
-### func \(\*DefaultFactory\) [CreateMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L57>)
+### func \(\*DefaultFactory\) [CreateMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L60>)
 
 ```go
 func (f *DefaultFactory) CreateMemory(ctx context.Context, config Config) (Memory, error)
@@ -756,7 +758,7 @@ func (f *DefaultFactory) CreateMemory(ctx context.Context, config Config) (Memor
 CreateMemory creates a memory instance based on the provided configuration. It validates the configuration and instantiates the appropriate memory implementation.
 
 <a name="Factory"></a>
-## type [Factory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L43-L45>)
+## type [Factory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L46-L48>)
 
 Factory defines the interface for creating Memory instances.
 
@@ -767,7 +769,7 @@ type Factory interface {
 ```
 
 <a name="NewFactory"></a>
-### func [NewFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L51>)
+### func [NewFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L54>)
 
 ```go
 func NewFactory() Factory
@@ -776,9 +778,9 @@ func NewFactory() Factory
 NewFactory creates a new memory factory.
 
 <a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L594-L597>)
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L602-L605>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -787,49 +789,49 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L599>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L607>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddHistory"></a>
-### func \(\*IntegrationTestHelper\) [AddHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L610>)
+### func \(\*IntegrationTestHelper\) [AddHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L618>)
 
 ```go
 func (h *IntegrationTestHelper) AddHistory(name string, history *AdvancedMockChatMessageHistory)
 ```
 
 <a name="IntegrationTestHelper.AddMemory"></a>
-### func \(\*IntegrationTestHelper\) [AddMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L606>)
+### func \(\*IntegrationTestHelper\) [AddMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L614>)
 
 ```go
 func (h *IntegrationTestHelper) AddMemory(name string, memory *AdvancedMockMemory)
 ```
 
 <a name="IntegrationTestHelper.GetHistory"></a>
-### func \(\*IntegrationTestHelper\) [GetHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L618>)
+### func \(\*IntegrationTestHelper\) [GetHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L626>)
 
 ```go
 func (h *IntegrationTestHelper) GetHistory(name string) *AdvancedMockChatMessageHistory
 ```
 
 <a name="IntegrationTestHelper.GetMemory"></a>
-### func \(\*IntegrationTestHelper\) [GetMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L614>)
+### func \(\*IntegrationTestHelper\) [GetMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L622>)
 
 ```go
 func (h *IntegrationTestHelper) GetMemory(name string) *AdvancedMockMemory
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L622>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L630>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
 <a name="Logger"></a>
-## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L198-L200>)
+## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L210-L212>)
 
 Logger provides structured logging for memory operations. It integrates with OpenTelemetry tracing for consistent log correlation.
 
@@ -840,7 +842,7 @@ type Logger struct {
 ```
 
 <a name="GetGlobalLogger"></a>
-### func [GetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L289>)
+### func [GetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L310>)
 
 ```go
 func GetGlobalLogger() *Logger
@@ -849,7 +851,7 @@ func GetGlobalLogger() *Logger
 GetGlobalLogger returns the global logger instance.
 
 <a name="NewLogger"></a>
-### func [NewLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L203>)
+### func [NewLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L215>)
 
 ```go
 func NewLogger(logger *slog.Logger) *Logger
@@ -858,7 +860,7 @@ func NewLogger(logger *slog.Logger) *Logger
 NewLogger creates a new structured logger for memory operations.
 
 <a name="Logger.LogError"></a>
-### func \(\*Logger\) [LogError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L259>)
+### func \(\*Logger\) [LogError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L277>)
 
 ```go
 func (l *Logger) LogError(ctx context.Context, err error, operation string, memoryType MemoryType, memoryKey string, additionalAttrs ...slog.Attr)
@@ -867,7 +869,7 @@ func (l *Logger) LogError(ctx context.Context, err error, operation string, memo
 LogError logs errors with context.
 
 <a name="Logger.LogMemoryLifecycle"></a>
-### func \(\*Logger\) [LogMemoryLifecycle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L238>)
+### func \(\*Logger\) [LogMemoryLifecycle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L253>)
 
 ```go
 func (l *Logger) LogMemoryLifecycle(ctx context.Context, event string, memoryType MemoryType, memoryKey string, additionalAttrs ...slog.Attr)
@@ -876,7 +878,7 @@ func (l *Logger) LogMemoryLifecycle(ctx context.Context, event string, memoryTyp
 LogMemoryLifecycle logs memory lifecycle events.
 
 <a name="Logger.LogMemoryOperation"></a>
-### func \(\*Logger\) [LogMemoryOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L213>)
+### func \(\*Logger\) [LogMemoryOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L225>)
 
 ```go
 func (l *Logger) LogMemoryOperation(ctx context.Context, level slog.Level, operation string, memoryType MemoryType, memoryKey string, messageCount int, duration time.Duration, err error)
@@ -885,16 +887,16 @@ func (l *Logger) LogMemoryOperation(ctx context.Context, level slog.Level, opera
 LogMemoryOperation logs memory operations with context.
 
 <a name="Memory"></a>
-## type [Memory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L39>)
+## type [Memory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L41>)
 
-Ensure the main interfaces are imported for external use
+Ensure the main interfaces are imported for external use.
 
 ```go
 type Memory = iface.Memory
 ```
 
 <a name="NewMemory"></a>
-### func [NewMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L197>)
+### func [NewMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L200>)
 
 ```go
 func NewMemory(memoryType MemoryType, options ...Option) (Memory, error)
@@ -903,31 +905,22 @@ func NewMemory(memoryType MemoryType, options ...Option) (Memory, error)
 NewMemory is a convenience function for creating memory instances with functional options.
 
 <a name="MemoryError"></a>
-## type [MemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L12-L27>)
+## type [MemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L12-L18>)
 
 MemoryError represents a memory\-specific error with additional context.
 
 ```go
 type MemoryError struct {
-    // Op is the operation that failed
-    Op  string
-
-    // Err is the underlying error
-    Err error
-
-    // Code is a machine-readable error code
-    Code string
-
-    // MemoryType indicates which memory implementation was involved
+    Err        error
+    Context    map[string]any
+    Op         string
+    Code       string
     MemoryType MemoryType
-
-    // Context provides additional context about the error
-    Context map[string]interface{}
 }
 ```
 
 <a name="ErrContextCanceled"></a>
-### func [ErrContextCanceled](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L162>)
+### func [ErrContextCanceled](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L153>)
 
 ```go
 func ErrContextCanceled(op string, memoryType MemoryType, err error) *MemoryError
@@ -936,7 +929,7 @@ func ErrContextCanceled(op string, memoryType MemoryType, err error) *MemoryErro
 ErrContextCanceled returns an error for context cancellation.
 
 <a name="ErrDeserialization"></a>
-### func [ErrDeserialization](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L147>)
+### func [ErrDeserialization](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L138>)
 
 ```go
 func ErrDeserialization(op string, memoryType MemoryType, err error) *MemoryError
@@ -945,7 +938,7 @@ func ErrDeserialization(op string, memoryType MemoryType, err error) *MemoryErro
 ErrDeserialization returns an error for deserialization failures.
 
 <a name="ErrInvalidConfig"></a>
-### func [ErrInvalidConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L107>)
+### func [ErrInvalidConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L98>)
 
 ```go
 func ErrInvalidConfig(memoryType MemoryType, err error) *MemoryError
@@ -954,7 +947,7 @@ func ErrInvalidConfig(memoryType MemoryType, err error) *MemoryError
 ErrInvalidConfig returns an error for invalid configuration.
 
 <a name="ErrInvalidInput"></a>
-### func [ErrInvalidInput](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L112>)
+### func [ErrInvalidInput](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L103>)
 
 ```go
 func ErrInvalidInput(op string, memoryType MemoryType, err error) *MemoryError
@@ -963,7 +956,7 @@ func ErrInvalidInput(op string, memoryType MemoryType, err error) *MemoryError
 ErrInvalidInput returns an error for invalid input parameters.
 
 <a name="ErrMemoryOverflow"></a>
-### func [ErrMemoryOverflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L157>)
+### func [ErrMemoryOverflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L148>)
 
 ```go
 func ErrMemoryOverflow(op string, memoryType MemoryType, err error) *MemoryError
@@ -972,7 +965,7 @@ func ErrMemoryOverflow(op string, memoryType MemoryType, err error) *MemoryError
 ErrMemoryOverflow returns an error for memory overflow conditions.
 
 <a name="ErrNotFound"></a>
-### func [ErrNotFound](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L132>)
+### func [ErrNotFound](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L123>)
 
 ```go
 func ErrNotFound(op string, memoryType MemoryType, err error) *MemoryError
@@ -981,7 +974,7 @@ func ErrNotFound(op string, memoryType MemoryType, err error) *MemoryError
 ErrNotFound returns an error for not found conditions.
 
 <a name="ErrRetrievalError"></a>
-### func [ErrRetrievalError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L122>)
+### func [ErrRetrievalError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L113>)
 
 ```go
 func ErrRetrievalError(op string, memoryType MemoryType, err error) *MemoryError
@@ -990,7 +983,7 @@ func ErrRetrievalError(op string, memoryType MemoryType, err error) *MemoryError
 ErrRetrievalError returns an error for retrieval operation failures.
 
 <a name="ErrSerialization"></a>
-### func [ErrSerialization](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L142>)
+### func [ErrSerialization](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L133>)
 
 ```go
 func ErrSerialization(op string, memoryType MemoryType, err error) *MemoryError
@@ -999,7 +992,7 @@ func ErrSerialization(op string, memoryType MemoryType, err error) *MemoryError
 ErrSerialization returns an error for serialization failures.
 
 <a name="ErrStorageError"></a>
-### func [ErrStorageError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L117>)
+### func [ErrStorageError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L108>)
 
 ```go
 func ErrStorageError(op string, memoryType MemoryType, err error) *MemoryError
@@ -1008,7 +1001,7 @@ func ErrStorageError(op string, memoryType MemoryType, err error) *MemoryError
 ErrStorageError returns an error for storage operation failures.
 
 <a name="ErrTimeout"></a>
-### func [ErrTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L127>)
+### func [ErrTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L118>)
 
 ```go
 func ErrTimeout(op string, memoryType MemoryType, err error) *MemoryError
@@ -1017,7 +1010,7 @@ func ErrTimeout(op string, memoryType MemoryType, err error) *MemoryError
 ErrTimeout returns an error for timeout conditions.
 
 <a name="ErrTypeMismatch"></a>
-### func [ErrTypeMismatch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L137>)
+### func [ErrTypeMismatch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L128>)
 
 ```go
 func ErrTypeMismatch(op string, memoryType MemoryType, err error) *MemoryError
@@ -1026,7 +1019,7 @@ func ErrTypeMismatch(op string, memoryType MemoryType, err error) *MemoryError
 ErrTypeMismatch returns an error for type mismatch conditions.
 
 <a name="ErrValidation"></a>
-### func [ErrValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L152>)
+### func [ErrValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L143>)
 
 ```go
 func ErrValidation(op string, memoryType MemoryType, err error) *MemoryError
@@ -1035,7 +1028,7 @@ func ErrValidation(op string, memoryType MemoryType, err error) *MemoryError
 ErrValidation returns an error for validation failures.
 
 <a name="NewMemoryError"></a>
-### func [NewMemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L68>)
+### func [NewMemoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L59>)
 
 ```go
 func NewMemoryError(op string, memoryType MemoryType, code string, err error) *MemoryError
@@ -1044,7 +1037,7 @@ func NewMemoryError(op string, memoryType MemoryType, code string, err error) *M
 NewMemoryError creates a new MemoryError with the given parameters.
 
 <a name="WrapError"></a>
-### func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L88>)
+### func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L79>)
 
 ```go
 func WrapError(err error, op string, memoryType MemoryType, code string) *MemoryError
@@ -1053,7 +1046,7 @@ func WrapError(err error, op string, memoryType MemoryType, code string) *Memory
 WrapError wraps an existing error with memory\-specific context.
 
 <a name="MemoryError.Error"></a>
-### func \(\*MemoryError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L30>)
+### func \(\*MemoryError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L21>)
 
 ```go
 func (e *MemoryError) Error() string
@@ -1062,7 +1055,7 @@ func (e *MemoryError) Error() string
 Error implements the error interface.
 
 <a name="MemoryError.Is"></a>
-### func \(\*MemoryError\) [Is](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L43>)
+### func \(\*MemoryError\) [Is](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L34>)
 
 ```go
 func (e *MemoryError) Is(target error) bool
@@ -1071,7 +1064,7 @@ func (e *MemoryError) Is(target error) bool
 Is implements error comparison for specific error codes.
 
 <a name="MemoryError.Unwrap"></a>
-### func \(\*MemoryError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L38>)
+### func \(\*MemoryError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L29>)
 
 ```go
 func (e *MemoryError) Unwrap() error
@@ -1080,16 +1073,16 @@ func (e *MemoryError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="MemoryError.WithContext"></a>
-### func \(\*MemoryError\) [WithContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L79>)
+### func \(\*MemoryError\) [WithContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/errors.go#L70>)
 
 ```go
-func (e *MemoryError) WithContext(key string, value interface{}) *MemoryError
+func (e *MemoryError) WithContext(key string, value any) *MemoryError
 ```
 
 WithContext adds context information to the error.
 
 <a name="MemoryFactory"></a>
-## type [MemoryFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L17-L21>)
+## type [MemoryFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L18-L22>)
 
 MemoryFactory defines the interface for creating Memory instances. This enables dependency injection and makes testing easier.
 
@@ -1101,8 +1094,28 @@ type MemoryFactory interface {
 }
 ```
 
+<a name="MemoryMockcomponent"></a>
+## type [MemoryMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory_mock.go#L8-L10>)
+
+MemoryMockcomponent is a mock implementation of Interface.
+
+```go
+type MemoryMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewMemoryMockcomponent"></a>
+### func [NewMemoryMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory_mock.go#L13>)
+
+```go
+func NewMemoryMockcomponent() *MemoryMockcomponent
+```
+
+NewMemoryMockcomponent creates a new MemoryMockcomponent.
+
 <a name="MemoryRegistry"></a>
-## type [MemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L25-L28>)
+## type [MemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L26-L29>)
 
 MemoryRegistry is the global registry for creating memory instances. It maintains a registry of available memory types and their creation functions.
 
@@ -1113,7 +1126,7 @@ type MemoryRegistry struct {
 ```
 
 <a name="GetGlobalMemoryRegistry"></a>
-### func [GetGlobalMemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L92>)
+### func [GetGlobalMemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L93>)
 
 ```go
 func GetGlobalMemoryRegistry() *MemoryRegistry
@@ -1122,7 +1135,7 @@ func GetGlobalMemoryRegistry() *MemoryRegistry
 GetGlobalMemoryRegistry returns the global registry instance for advanced usage.
 
 <a name="NewMemoryRegistry"></a>
-### func [NewMemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L31>)
+### func [NewMemoryRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L32>)
 
 ```go
 func NewMemoryRegistry() *MemoryRegistry
@@ -1131,7 +1144,7 @@ func NewMemoryRegistry() *MemoryRegistry
 NewMemoryRegistry creates a new MemoryRegistry instance.
 
 <a name="MemoryRegistry.Create"></a>
-### func \(\*MemoryRegistry\) [Create](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L45>)
+### func \(\*MemoryRegistry\) [Create](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L46>)
 
 ```go
 func (r *MemoryRegistry) Create(ctx context.Context, memoryType string, config Config) (iface.Memory, error)
@@ -1140,7 +1153,7 @@ func (r *MemoryRegistry) Create(ctx context.Context, memoryType string, config C
 Create creates a new memory instance using the registered memory type.
 
 <a name="MemoryRegistry.ListMemoryTypes"></a>
-### func \(\*MemoryRegistry\) [ListMemoryTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L62>)
+### func \(\*MemoryRegistry\) [ListMemoryTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L63>)
 
 ```go
 func (r *MemoryRegistry) ListMemoryTypes() []string
@@ -1149,7 +1162,7 @@ func (r *MemoryRegistry) ListMemoryTypes() []string
 ListMemoryTypes returns a list of all registered memory type names.
 
 <a name="MemoryRegistry.Register"></a>
-### func \(\*MemoryRegistry\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L38>)
+### func \(\*MemoryRegistry\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/registry.go#L39>)
 
 ```go
 func (r *MemoryRegistry) Register(memoryType string, creator func(ctx context.Context, config Config) (iface.Memory, error))
@@ -1158,9 +1171,9 @@ func (r *MemoryRegistry) Register(memoryType string, creator func(ctx context.Co
 Register registers a new memory type with the registry.
 
 <a name="MemoryScenarioRunner"></a>
-## type [MemoryScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L634-L636>)
+## type [MemoryScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L642-L644>)
 
-MemoryScenarioRunner runs common memory scenarios
+MemoryScenarioRunner runs common memory scenarios.
 
 ```go
 type MemoryScenarioRunner struct {
@@ -1169,21 +1182,21 @@ type MemoryScenarioRunner struct {
 ```
 
 <a name="NewMemoryScenarioRunner"></a>
-### func [NewMemoryScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L638>)
+### func [NewMemoryScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L646>)
 
 ```go
 func NewMemoryScenarioRunner(memory iface.Memory) *MemoryScenarioRunner
 ```
 
 <a name="MemoryScenarioRunner.RunConversationScenario"></a>
-### func \(\*MemoryScenarioRunner\) [RunConversationScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L642>)
+### func \(\*MemoryScenarioRunner\) [RunConversationScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L650>)
 
 ```go
 func (r *MemoryScenarioRunner) RunConversationScenario(ctx context.Context, exchanges int) error
 ```
 
 <a name="MemoryScenarioRunner.RunMemoryRetentionTest"></a>
-### func \(\*MemoryScenarioRunner\) [RunMemoryRetentionTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L665>)
+### func \(\*MemoryScenarioRunner\) [RunMemoryRetentionTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L673>)
 
 ```go
 func (r *MemoryScenarioRunner) RunMemoryRetentionTest(ctx context.Context, initialSize, targetSize int) error
@@ -1234,7 +1247,7 @@ type Metrics struct {
 ```
 
 <a name="GetGlobalMetrics"></a>
-### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L182>)
+### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L194>)
 
 ```go
 func GetGlobalMetrics() *Metrics
@@ -1252,7 +1265,7 @@ func NewMetrics(meter metric.Meter) *Metrics
 NewMetrics creates a new Metrics instance with proper OTEL integration.
 
 <a name="Metrics.RecordActiveMemory"></a>
-### func \(\*Metrics\) [RecordActiveMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L136>)
+### func \(\*Metrics\) [RecordActiveMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L139>)
 
 ```go
 func (m *Metrics) RecordActiveMemory(ctx context.Context, memoryType MemoryType, delta int64)
@@ -1261,7 +1274,7 @@ func (m *Metrics) RecordActiveMemory(ctx context.Context, memoryType MemoryType,
 RecordActiveMemory records the creation or deletion of a memory instance.
 
 <a name="Metrics.RecordError"></a>
-### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L112>)
+### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L115>)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, operation string, memoryType MemoryType, errorType string)
@@ -1270,7 +1283,7 @@ func (m *Metrics) RecordError(ctx context.Context, operation string, memoryType 
 RecordError records a memory error.
 
 <a name="Metrics.RecordMemorySize"></a>
-### func \(\*Metrics\) [RecordMemorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L125>)
+### func \(\*Metrics\) [RecordMemorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L128>)
 
 ```go
 func (m *Metrics) RecordMemorySize(ctx context.Context, memoryType MemoryType, size int)
@@ -1296,116 +1309,136 @@ func (m *Metrics) RecordOperationDuration(ctx context.Context, operation string,
 
 RecordOperationDuration records the duration of a memory operation.
 
-<a name="MockHistoryOption"></a>
-## type [MockHistoryOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L283>)
+<a name="MetricsMockcomponent"></a>
+## type [MetricsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics_mock.go#L8-L10>)
 
-MockHistoryOption defines functional options for mock history configuration
+MetricsMockcomponent is a mock implementation of Interface.
+
+```go
+type MetricsMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewMetricsMockcomponent"></a>
+### func [NewMetricsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics_mock.go#L13>)
+
+```go
+func NewMetricsMockcomponent() *MetricsMockcomponent
+```
+
+NewMetricsMockcomponent creates a new MetricsMockcomponent.
+
+<a name="MockHistoryOption"></a>
+## type [MockHistoryOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L285>)
+
+MockHistoryOption defines functional options for mock history configuration.
 
 ```go
 type MockHistoryOption func(*AdvancedMockChatMessageHistory)
 ```
 
 <a name="WithHistoryDelay"></a>
-### func [WithHistoryDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L301>)
+### func [WithHistoryDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L303>)
 
 ```go
 func WithHistoryDelay(delay time.Duration) MockHistoryOption
 ```
 
-WithHistoryDelay adds artificial delay to mock operations
+WithHistoryDelay adds artificial delay to mock operations.
 
 <a name="WithHistoryError"></a>
-### func [WithHistoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L293>)
+### func [WithHistoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L295>)
 
 ```go
 func WithHistoryError(shouldError bool, err error) MockHistoryOption
 ```
 
-WithHistoryError configures the mock to return errors
+WithHistoryError configures the mock to return errors.
 
 <a name="WithHistoryMaxSize"></a>
-### func [WithHistoryMaxSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L286>)
+### func [WithHistoryMaxSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L288>)
 
 ```go
 func WithHistoryMaxSize(size int) MockHistoryOption
 ```
 
-WithHistoryMaxSize sets the maximum history size
+WithHistoryMaxSize sets the maximum history size.
 
 <a name="WithPreloadedHistoryMessages"></a>
-### func [WithPreloadedHistoryMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L308>)
+### func [WithPreloadedHistoryMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L310>)
 
 ```go
 func WithPreloadedHistoryMessages(messages []schema.Message) MockHistoryOption
 ```
 
-WithPreloadedHistoryMessages preloads messages into the mock history
+WithPreloadedHistoryMessages preloads messages into the mock history.
 
 <a name="MockMemoryOption"></a>
-## type [MockMemoryOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L68>)
+## type [MockMemoryOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L62>)
 
-MockMemoryOption defines functional options for mock configuration
+MockMemoryOption defines functional options for mock configuration.
 
 ```go
 type MockMemoryOption func(*AdvancedMockMemory)
 ```
 
 <a name="WithMaxMemorySize"></a>
-### func [WithMaxMemorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L100>)
+### func [WithMaxMemorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L94>)
 
 ```go
 func WithMaxMemorySize(size int) MockMemoryOption
 ```
 
-WithMaxMemorySize sets the maximum memory size
+WithMaxMemorySize sets the maximum memory size.
 
 <a name="WithMemoryVariables"></a>
-### func [WithMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L79>)
+### func [WithMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L73>)
 
 ```go
 func WithMemoryVariables(variables []string) MockMemoryOption
 ```
 
-WithMemoryVariables sets the memory variables for the mock
+WithMemoryVariables sets the memory variables for the mock.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L71>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L65>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockMemoryOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithMockReturnMessages"></a>
-### func [WithMockReturnMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L86>)
+### func [WithMockReturnMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L80>)
 
 ```go
 func WithMockReturnMessages(returnMessages bool) MockMemoryOption
 ```
 
-WithMockReturnMessages sets whether to return messages directly
+WithMockReturnMessages sets whether to return messages directly.
 
 <a name="WithPreloadedMessages"></a>
-### func [WithPreloadedMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L107>)
+### func [WithPreloadedMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L101>)
 
 ```go
 func WithPreloadedMessages(messages []schema.Message) MockMemoryOption
 ```
 
-WithPreloadedMessages preloads messages into the mock
+WithPreloadedMessages preloads messages into the mock.
 
 <a name="WithSimulateDelay"></a>
-### func [WithSimulateDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L93>)
+### func [WithSimulateDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/test_utils.go#L87>)
 
 ```go
 func WithSimulateDelay(delay time.Duration) MockMemoryOption
 ```
 
-WithSimulateDelay adds artificial delay to mock operations
+WithSimulateDelay adds artificial delay to mock operations.
 
 <a name="NoOpMemory"></a>
-## type [NoOpMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L225>)
+## type [NoOpMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L228>)
 
 NoOpMemory is a no\-op implementation of the Memory interface. It can be used when memory is disabled or for testing purposes.
 
@@ -1414,7 +1447,7 @@ type NoOpMemory struct{}
 ```
 
 <a name="NoOpMemory.Clear"></a>
-### func \(\*NoOpMemory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L243>)
+### func \(\*NoOpMemory\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L246>)
 
 ```go
 func (m *NoOpMemory) Clear(ctx context.Context) error
@@ -1423,7 +1456,7 @@ func (m *NoOpMemory) Clear(ctx context.Context) error
 Clear does nothing for no\-op memory.
 
 <a name="NoOpMemory.LoadMemoryVariables"></a>
-### func \(\*NoOpMemory\) [LoadMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L233>)
+### func \(\*NoOpMemory\) [LoadMemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L236>)
 
 ```go
 func (m *NoOpMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]any) (map[string]any, error)
@@ -1432,7 +1465,7 @@ func (m *NoOpMemory) LoadMemoryVariables(ctx context.Context, inputs map[string]
 LoadMemoryVariables returns an empty map for no\-op memory.
 
 <a name="NoOpMemory.MemoryVariables"></a>
-### func \(\*NoOpMemory\) [MemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L228>)
+### func \(\*NoOpMemory\) [MemoryVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L231>)
 
 ```go
 func (m *NoOpMemory) MemoryVariables() []string
@@ -1441,16 +1474,16 @@ func (m *NoOpMemory) MemoryVariables() []string
 MemoryVariables returns an empty slice for no\-op memory.
 
 <a name="NoOpMemory.SaveContext"></a>
-### func \(\*NoOpMemory\) [SaveContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L238>)
+### func \(\*NoOpMemory\) [SaveContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/memory.go#L241>)
 
 ```go
-func (m *NoOpMemory) SaveContext(ctx context.Context, inputs map[string]any, outputs map[string]any) error
+func (m *NoOpMemory) SaveContext(ctx context.Context, inputs, outputs map[string]any) error
 ```
 
 SaveContext does nothing for no\-op memory.
 
 <a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L106>)
+## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L72>)
 
 Option is a functional option for configuring memory implementations.
 
@@ -1459,7 +1492,7 @@ type Option func(*Config)
 ```
 
 <a name="WithAIPrefix"></a>
-### func [WithAIPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L165>)
+### func [WithAIPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L131>)
 
 ```go
 func WithAIPrefix(prefix string) Option
@@ -1468,7 +1501,7 @@ func WithAIPrefix(prefix string) Option
 WithAIPrefix sets the AI message prefix.
 
 <a name="WithHumanPrefix"></a>
-### func [WithHumanPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L158>)
+### func [WithHumanPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L124>)
 
 ```go
 func WithHumanPrefix(prefix string) Option
@@ -1477,7 +1510,7 @@ func WithHumanPrefix(prefix string) Option
 WithHumanPrefix sets the human message prefix.
 
 <a name="WithInputKey"></a>
-### func [WithInputKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L116>)
+### func [WithInputKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L82>)
 
 ```go
 func WithInputKey(key string) Option
@@ -1486,7 +1519,7 @@ func WithInputKey(key string) Option
 WithInputKey sets the input key.
 
 <a name="WithMaxTokenLimit"></a>
-### func [WithMaxTokenLimit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L144>)
+### func [WithMaxTokenLimit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L110>)
 
 ```go
 func WithMaxTokenLimit(limit int) Option
@@ -1495,7 +1528,7 @@ func WithMaxTokenLimit(limit int) Option
 WithMaxTokenLimit sets the maximum token limit for summary memories.
 
 <a name="WithMemoryKey"></a>
-### func [WithMemoryKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L109>)
+### func [WithMemoryKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L75>)
 
 ```go
 func WithMemoryKey(key string) Option
@@ -1504,7 +1537,7 @@ func WithMemoryKey(key string) Option
 WithMemoryKey sets the memory key.
 
 <a name="WithOutputKey"></a>
-### func [WithOutputKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L123>)
+### func [WithOutputKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L89>)
 
 ```go
 func WithOutputKey(key string) Option
@@ -1513,7 +1546,7 @@ func WithOutputKey(key string) Option
 WithOutputKey sets the output key.
 
 <a name="WithReturnMessages"></a>
-### func [WithReturnMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L130>)
+### func [WithReturnMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L96>)
 
 ```go
 func WithReturnMessages(returnMessages bool) Option
@@ -1522,7 +1555,7 @@ func WithReturnMessages(returnMessages bool) Option
 WithReturnMessages sets whether to return messages directly.
 
 <a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L172>)
+### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L138>)
 
 ```go
 func WithTimeout(timeout time.Duration) Option
@@ -1531,7 +1564,7 @@ func WithTimeout(timeout time.Duration) Option
 WithTimeout sets the timeout for operations.
 
 <a name="WithTopK"></a>
-### func [WithTopK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L151>)
+### func [WithTopK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L117>)
 
 ```go
 func WithTopK(k int) Option
@@ -1540,7 +1573,7 @@ func WithTopK(k int) Option
 WithTopK sets the number of documents to retrieve.
 
 <a name="WithWindowSize"></a>
-### func [WithWindowSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L137>)
+### func [WithWindowSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L103>)
 
 ```go
 func WithWindowSize(size int) Option
@@ -1549,25 +1582,20 @@ func WithWindowSize(size int) Option
 WithWindowSize sets the window size for window\-based memories.
 
 <a name="SummaryConfig"></a>
-## type [SummaryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L85-L94>)
+## type [SummaryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L59-L63>)
 
 SummaryConfig holds configuration specific to summary memory implementations.
 
 ```go
 type SummaryConfig struct {
-    // Base memory configuration
-    Config `mapstructure:",squash"`
-
-    // ChatHistory is the underlying message history storage
     ChatHistory ChatMessageHistory
-
-    // LLM is the language model used for generating summaries
-    LLM core.Runnable
+    LLM         core.Runnable
+    Config      `mapstructure:",squash"`
 }
 ```
 
 <a name="Tracer"></a>
-## type [Tracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L147-L149>)
+## type [Tracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L150-L152>)
 
 Tracer provides tracing functionality for memory operations.
 
@@ -1578,7 +1606,7 @@ type Tracer struct {
 ```
 
 <a name="GetGlobalTracer"></a>
-### func [GetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L192>)
+### func [GetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L204>)
 
 ```go
 func GetGlobalTracer() *Tracer
@@ -1587,7 +1615,7 @@ func GetGlobalTracer() *Tracer
 GetGlobalTracer returns the global tracer instance.
 
 <a name="NewTracer"></a>
-### func [NewTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L152>)
+### func [NewTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L155>)
 
 ```go
 func NewTracer() *Tracer
@@ -1596,7 +1624,7 @@ func NewTracer() *Tracer
 NewTracer creates a new Tracer instance.
 
 <a name="Tracer.RecordSpanError"></a>
-### func \(\*Tracer\) [RecordSpanError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L164>)
+### func \(\*Tracer\) [RecordSpanError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L173>)
 
 ```go
 func (t *Tracer) RecordSpanError(span trace.Span, err error)
@@ -1605,7 +1633,7 @@ func (t *Tracer) RecordSpanError(span trace.Span, err error)
 RecordSpanError records an error on the span.
 
 <a name="Tracer.StartSpan"></a>
-### func \(\*Tracer\) [StartSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L159>)
+### func \(\*Tracer\) [StartSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/metrics.go#L164>)
 
 ```go
 func (t *Tracer) StartSpan(ctx context.Context, operation string, memoryType MemoryType, memoryKey string) (context.Context, trace.Span)
@@ -1614,17 +1642,14 @@ func (t *Tracer) StartSpan(ctx context.Context, operation string, memoryType Mem
 StartSpan starts a new span for a memory operation.
 
 <a name="VectorStoreConfig"></a>
-## type [VectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L97-L103>)
+## type [VectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/memory/config.go#L66-L69>)
 
 VectorStoreConfig holds configuration specific to vector store memory implementations.
 
 ```go
 type VectorStoreConfig struct {
-    // Base memory configuration
-    Config `mapstructure:",squash"`
-
-    // Retriever is the retriever interface for vector store operations
     Retriever core.Retriever
+    Config    `mapstructure:",squash"`
 }
 ```
 

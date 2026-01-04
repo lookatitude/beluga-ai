@@ -24,7 +24,7 @@ Beluga-AI is organized into several packages, each focusing on specific function
   - [Anthropic](/docs/api/packages/llms/anthropic) - Anthropic Claude models
   - [AWS Bedrock](/docs/api/packages/llms/bedrock) - AWS Bedrock models
   - [Ollama](/docs/api/packages/llms/ollama) - Local Ollama models
-  - [Cohere](/docs/api/packages/llms/cohere) - Cohere models
+  - [Mock](/docs/api/packages/llms/mock) - Mock LLM provider for testing
 
 ### Agent Packages
 - [Agents](/docs/api/packages/agents) - Agent framework and implementations
