@@ -52,10 +52,23 @@ jobs:
       - name: Check for documentation changes
         id: check-changes
         run: |
-          if [ -n "$(git status --porcelain website/docs/api/packages)" ]; then
-            echo "has_changes=true" >> $GITHUB_OUTPUT
+          # For PRs, compare against base branch; for pushes, compare against HEAD
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            # Fetch base branch and compare
+            git fetch origin ${{ github.base_ref }}:${{ github.base_ref }} || true
+            if [ -n "$(git diff ${{ github.base_ref }}...HEAD --name-only -- website/docs/api/packages/)" ] || \
+               [ -n "$(git diff HEAD --name-only -- website/docs/api/packages/)" ]; then
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "has_changes=false" >> $GITHUB_OUTPUT
+            # For push events, check against current HEAD
+            if [ -n "$(git status --porcelain website/docs/api/packages)" ]; then
+              echo "has_changes=true" >> $GITHUB_OUTPUT
+            else
+              echo "has_changes=false" >> $GITHUB_OUTPUT
+            fi
           fi
 
       - name: Commit and push changes (main branch only)
