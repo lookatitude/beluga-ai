@@ -1,84 +1,205 @@
-# Beluga AI Framework - README (Augmented for Extensibility)
+# Beluga AI Framework
 
 <div align="center">
-  <img src="./assets/beluga-logo.svg" alt="Beluga-AI Logo" width="300"/>
+  <img src="./assets/beluga-logo.svg" alt="Beluga AI Framework Logo" width="300"/>
+  
+  <p>
+    <strong>A comprehensive Go framework for building production-ready AI and agentic applications</strong>
+  </p>
+  
+  <p>
+    <a href="https://github.com/lookatitude/beluga-ai/actions/workflows/ci-cd.yml"><img src="https://github.com/lookatitude/beluga-ai/workflows/CI/CD/badge.svg" alt="CI/CD"></a>
+    <a href="https://goreportcard.com/report/github.com/lookatitude/beluga-ai"><img src="https://goreportcard.com/badge/github.com/lookatitude/beluga-ai" alt="Go Report Card"></a>
+    <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
+    <a href="https://golang.org"><img src="https://img.shields.io/badge/go-1.24+-00ADD8.svg" alt="Go Version"></a>
+    <a href="https://github.com/lookatitude/beluga-ai/releases"><img src="https://img.shields.io/github/v/release/lookatitude/beluga-ai" alt="Release"></a>
+    <a href="https://github.com/lookatitude/beluga-ai/graphs/contributors"><img src="https://img.shields.io/github/contributors/lookatitude/beluga-ai" alt="Contributors"></a>
+  </p>
+  
+  <p>
+    <a href="./docs/QUICKSTART.md">Quick Start</a> •
+    <a href="./docs/README.md">Documentation</a> •
+    <a href="./examples/README.md">Examples</a> •
+    <a href="#features">Features</a> •
+    <a href="#contributing">Contributing</a>
+  </p>
 </div>
 
-# Beluga-ai
+---
 
-[![CI/CD](https://github.com/lookatitude/beluga-ai/workflows/CI/CD/badge.svg)](https://github.com/lookatitude/beluga-ai/actions/workflows/ci-cd.yml)
-[![Go Report Card](https://goreportcard.com/badge/github.com/lookatitude/beluga-ai)](https://goreportcard.com/report/github.com/lookatitude/beluga-ai)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Go Version](https://img.shields.io/badge/go-1.24+-00ADD8.svg)](https://golang.org)
+## 🚀 Production Ready
 
-**🚀 PRODUCTION READY: Beluga-ai has completed comprehensive standardization and is now enterprise-grade with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.**
+**Beluga AI Framework** has completed comprehensive standardization and is now **enterprise-grade** with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.
 
-**Beluga-ai** is a comprehensive framework written in Go, designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga-ai provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
+## 📖 What is Beluga AI?
 
-This framework has recently undergone a significant refactoring to improve modularity, extendibility, and maintainability, adhering to Go best practices. For a detailed explanation of the new architecture, please see [Architecture Documentation](./docs/architecture.md).
+**Beluga AI Framework** is a comprehensive Go-native framework designed for building sophisticated AI and agentic applications. Inspired by frameworks like [LangChain](https://www.langchain.com/) and [CrewAI](https://www.crewai.com/), Beluga AI provides a robust set of tools and abstractions to streamline the development of applications leveraging Large Language Models (LLMs).
 
-## Overview
+### Why Beluga AI?
 
-The goal of Beluga-ai is to offer a Go-native alternative for creating complex AI workflows. The recent refactoring has focused on establishing a clear, layered architecture with well-defined interfaces to support:
+- **Go-Native**: Built specifically for Go developers, leveraging Go's strengths in concurrency and performance
+- **Production-Ready**: Enterprise-grade patterns, comprehensive testing, and full observability
+- **Extensible**: Interface-driven design makes it easy to add new providers and components
+- **Modular**: Clean architecture with well-defined interfaces and separation of concerns
+- **Well-Documented**: Comprehensive documentation, examples, and guides
 
-*   **Extensible LLM Integration:** Seamlessly connect to various LLM providers (e.g., OpenAI, Anthropic, Google Gemini) with a unified interface and provider-specific adapters.
-*   **Agent Creation:** Build autonomous agents capable of reasoning, planning, and executing tasks using a modular agent framework.
-*   **Extensible Tool Management:** Define, integrate, and manage diverse tools (e.g., Shell, Go Functions, API callers) for agents to use through a common interface.
-*   **Extensible Memory Management:** Equip agents with different types of memory, supporting various backends, including multiple vector database providers (e.g., InMemory, pgvector, Pinecone, Weaviate).
-*   **Retrieval-Augmented Generation (RAG):** Implement RAG pipelines with swappable components for data loading, splitting, embedding, and retrieval.
-*   **Extensible Orchestration:** Define and manage complex workflows with a flexible engine, potentially integrating with external orchestrators.
-*   **Voice Agents:** Build natural voice interactions with speech-to-text, text-to-speech, voice activity detection, turn detection, and complete session management.
-*   **Communication:** Establish protocols for inter-agent communication (future).
+## Features {#features}
 
-## Core Principle: Extensibility via Provider Interfaces
+### Core Features
 
-Beluga-ai is built with extensibility at its core. Key components are designed around Go interfaces, allowing developers to easily implement and integrate their own providers or third-party services. This is typically achieved through:
+- **🤖 LLM Integration**: Unified interface for multiple LLM providers (OpenAI, Anthropic, Bedrock, Ollama) with streaming support
+- **🧠 Agent Framework**: Build autonomous agents with reasoning, planning, and execution capabilities
+- **🛠️ Tool Management**: Extensible tool system supporting Shell, Go Functions, API callers, and custom tools
+- **💾 Memory Management**: Multiple memory types (Buffer, Summary, VectorStore) with various backends
+- **🔍 Retrieval-Augmented Generation (RAG)**: Complete RAG pipelines with swappable components for embeddings, vector stores, and retrieval
 
-1.  **Provider-Agnostic Interfaces:** Clear Go interfaces for LLMs, Tools, Memory, VectorStores, Workflow Engines, etc.
-2.  **Provider-Specific Implementations:** Concrete structs that implement these interfaces for specific services (e.g., `OpenAI_LLM`, `PgVectorStore`).
-3.  **Configuration-Driven Selection:** YAML configuration files allow users to specify which provider to use for each component.
-4.  **Factory Patterns:** Factories instantiate the correct provider implementation based on the configuration.
+### Advanced Capabilities
 
-See the [Architecture Documentation](./docs/architecture.md) for more details on how to extend specific components.
+- **🎯 Orchestration**: Complex workflow management with chains, graphs, and schedulers
+- **🎤 Voice Agents**: Complete voice interaction framework with STT, TTS, VAD, turn detection, and session management
+- **📊 Observability**: Full OpenTelemetry integration with metrics, tracing, and structured logging
+- **⚙️ Configuration**: Advanced configuration management with validation, environment variables, and YAML support
+- **🔌 Extensibility**: Easy provider addition through global registries and factory patterns
 
-## Key Architectural Features (Post-Refactoring)
+### Production Features
 
-The refactored Beluga-ai framework emphasizes a modular and interface-driven design with advanced features for production readiness. Key components are now organized within the `pkg` directory:
+- **✅ Enterprise-Grade Testing**: Comprehensive test coverage with mocks, integration tests, and benchmarks
+- **📈 Monitoring**: Built-in metrics, distributed tracing, and health checks
+- **🔒 Security**: Security scanning, vulnerability checks, and best practices
+- **📚 Documentation**: Extensive documentation with guides, examples, and API references
 
-*   **`pkg/schema`:** Centralized definitions for all core data structures.
-*   **`pkg/core`:** Foundational utilities, dependency injection container, and core model definitions.
-*   **`pkg/llms`:** `LLM` interface, provider implementations (e.g., `openai`, `anthropic`), and `LLMProviderFactory`.
-*   **`pkg/prompts`:** `PromptAdapter` interface and implementations for model-specific prompt formatting.
-*   **`pkg/agents`:** Comprehensive toolkit for agent development (`base`, `tools`, `executor`, `factory`).
-    *   `pkg/agents/tools/providers`: Contains implementations for various tool types (e.g., `shell_tool.go`, `gofunction_tool.go`).
-*   **`pkg/memory`:** `Memory` interface, basic implementations, and `VectorStoreMemory`.
-    *   `pkg/vectorstores`: `VectorStore` interface, provider implementations (e.g., `inmemory`, `pgvector`, `pinecone`), and `VectorStoreProviderFactory`.
-    *   `pkg/embeddings`: `Embedder` interface and implementations (e.g., `openai`).
-*   **`pkg/orchestration`:** Advanced components for managing complex task sequences.
-    *   Enhanced scheduler with worker pools, retry mechanisms, and circuit breakers.
-    *   `pkg/orchestration/workflow/factory`: `WorkflowProviderFactory` for different workflow engines.
-*   **`pkg/config`:** Advanced configuration management with validation, environment variable support, and defaults.
-*   **`pkg/monitoring`:** Comprehensive observability suite including:
-    *   Structured logging with context propagation.
-    *   Metrics collection and statistical analysis.
-    *   Distributed tracing with span support.
-    *   Health checking and alerting.
+## 🚀 Quick Start
 
-For a complete breakdown of the architecture, please refer to [Architecture Documentation](./docs/architecture.md).
-
-## Quick Start
-
-New to Beluga AI? Get started in minutes with our **[Quick Start Guide](./docs/QUICKSTART.md)**!
-
-## Installation
+### Installation
 
 ```bash
 go get github.com/lookatitude/beluga-ai
 ```
 
-## Development
+### Basic Usage
 
-### Quick Start
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "github.com/lookatitude/beluga-ai/pkg/llms"
+)
+
+func main() {
+    ctx := context.Background()
+    
+    // Create an LLM instance
+    llm, err := llms.NewLLM("openai", llms.WithAPIKey("your-api-key"))
+    if err != nil {
+        panic(err)
+    }
+    
+    // Generate a response
+    response, err := llm.Generate(ctx, "Hello, world!")
+    if err != nil {
+        panic(err)
+    }
+    
+    fmt.Println(response)
+}
+```
+
+**New to Beluga AI?** Check out our [Quick Start Guide](./docs/QUICKSTART.md) to get up and running in minutes!
+
+## 📚 Documentation
+
+### Getting Started
+
+- **[Installation Guide](./docs/INSTALLATION.md)** - Comprehensive installation instructions
+- **[Quick Start Guide](./docs/QUICKSTART.md)** - Get started in minutes
+- **[Getting Started Tutorial](./docs/getting-started/)** - Multi-part tutorial series
+
+### Core Documentation
+
+- **[Architecture Documentation](./docs/architecture.md)** - System architecture and design patterns
+- **[Package Design Patterns](./docs/package_design_patterns.md)** - Design principles and conventions
+- **[Concepts Guide](./docs/concepts/)** - Core concepts and architectural patterns
+- **[Best Practices](./docs/BEST_PRACTICES.md)** - Production best practices
+- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+
+### Reference
+
+- **[API Documentation](./docs/)** - Complete API reference
+- **[Provider Documentation](./docs/providers/)** - Provider-specific guides
+- **[Migration Guide](./docs/MIGRATION.md)** - Version upgrades and migrations
+- **[Framework Comparison](./docs/FRAMEWORK_COMPARISON.md)** - Comparison with LangChain and CrewAI
+
+### Additional Resources
+
+- **[Use Cases](./docs/use-cases/)** - Real-world application examples
+- **[Cookbook](./docs/cookbook/)** - Quick recipes and code snippets
+- **[Documentation Index](./docs/README.md)** - Complete documentation overview
+
+## 💡 Examples
+
+Comprehensive, runnable examples demonstrating Beluga AI Framework capabilities:
+
+### By Category
+
+- **[Agents](./examples/agents/)** - Agent creation, tools, ReAct, and memory integration
+- **[RAG](./examples/rag/)** - Simple and advanced RAG pipelines
+- **[Orchestration](./examples/orchestration/)** - Chains, workflows, and multi-agent coordination
+- **[Multi-Agent](./examples/multi-agent/)** - Agent collaboration and specialized roles
+- **[Integration](./examples/integration/)** - Full-stack applications and observability
+- **[Voice](./examples/voice/)** - Voice agents, streaming, and custom configurations
+
+### Learning Path
+
+- **Beginner**: Start with [basic agents](./examples/agents/basic/) and [simple RAG](./examples/rag/simple/)
+- **Intermediate**: Explore [ReAct agents](./examples/agents/react/) and [orchestration](./examples/orchestration/chain/)
+- **Advanced**: Study [multi-agent systems](./examples/multi-agent/collaboration/) and [full-stack integration](./examples/integration/full_stack/)
+
+See the [Examples README](./examples/README.md) for a complete guide and learning path.
+
+## 🏗️ Architecture
+
+Beluga AI Framework follows a modular, interface-driven architecture:
+
+- **Interface Segregation**: Small, focused interfaces for each component
+- **Dependency Inversion**: Depend on abstractions, not implementations
+- **Single Responsibility**: Clear separation of concerns
+- **Composition over Inheritance**: Flexible component composition
+
+### Package Structure
+
+```
+pkg/
+├── schema/          # Core data structures
+├── core/            # Foundational utilities
+├── llms/            # LLM providers and interfaces
+├── agents/          # Agent framework
+├── memory/          # Memory management
+├── vectorstores/    # Vector database providers
+├── embeddings/      # Embedding providers
+├── orchestration/   # Workflow orchestration
+├── monitoring/      # Observability (OTEL)
+├── config/          # Configuration management
+└── voice/           # Voice agent framework
+```
+
+For detailed architecture information, see the [Architecture Documentation](./docs/architecture.md).
+
+## 🔧 Installation & Setup
+
+### Prerequisites
+
+- Go 1.24 or later
+- (Optional) API keys for LLM providers (OpenAI, Anthropic, etc.)
+
+### Install
+
+```bash
+go get github.com/lookatitude/beluga-ai
+```
+
+### Development Setup
 
 ```bash
 # Clone the repository
@@ -93,369 +214,133 @@ make install-tools
 
 # Run tests
 make test
-
-# Run all quality checks
-make all
 ```
 
-### Development Workflow
+For detailed installation instructions, see the [Installation Guide](./docs/INSTALLATION.md).
 
-The framework includes comprehensive development tooling:
+## ⚙️ Configuration
 
-**Quality Assurance:**
-```bash
-make fmt          # Format code
-make lint         # Run linters
-make vet          # Run go vet
-make test         # Run tests
-make test-race    # Run tests with race detection
-make test-coverage # Generate coverage report
-```
+Beluga AI uses Viper for advanced configuration management. Configuration can be provided via:
 
-**Security:**
-```bash
-make security     # Run security scans (gosec, govulncheck)
-```
+1. **Environment Variables** (prefixed with `BELUGA_`)
+2. **YAML/JSON Files**
+3. **Programmatic Configuration**
 
-**Build:**
-```bash
-make build        # Build all packages
-make clean        # Clean build artifacts
-```
-
-**All Checks:**
-```bash
-make all          # Run format, vet, lint, and test
-make ci           # Run all CI checks including coverage and security
-```
-
-### Pre-commit Hooks
-
-The project uses pre-commit hooks to ensure code quality:
-
-```bash
-# Install pre-commit (requires Python)
-pip install pre-commit
-
-# Install hooks
-pre-commit install
-```
-
-Hooks automatically run on commit and verify:
-- Code formatting
-- Linting
-- Security checks
-- Tests
-
-See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines.
-
-## Examples
-
-Detailed usage examples, including how to configure and use different providers for LLMs, VectorStores, Tools, and Voice Agents, can be found in the `/examples` directory:
-
-*   **LLM Usage:** See `examples/llm-usage/` for LLM provider examples
-*   **Voice Agents:** See `examples/voice/` for voice interaction examples including:
-    *   Simple voice session setup
-    *   Multi-provider configurations
-    *   Streaming audio processing
-    *   Custom provider implementations
-    *   Interruption handling
-    *   Preemptive generation
-
-## Configuration
-
-Beluga-ai uses Viper for advanced configuration management with validation, environment variable support, and automatic defaults. Configuration can be provided via YAML files, environment variables, or programmatically.
-
-### Configuration Sources (in order of precedence):
-1. Environment variables (prefixed with `BELUGA_`)
-2. Configuration files (YAML/JSON)
-3. Default values
-
-### Example Configuration File (`config.yaml`):
+### Example Configuration
 
 ```yaml
-# Global settings
-app_name: "beluga-ai-app"
-log_level: "info"
-server_port: 8080
-
-# LLM Providers
+# config.yaml
 llm_providers:
   - name: "openai-gpt4"
     provider: "openai"
     model_name: "gpt-4"
-    api_key: "${OPENAI_API_KEY}"  # Environment variable reference
-    default_call_options:
-      temperature: 0.7
-      max_tokens: 1000
-
-# Embedding Providers
-embedding_providers:
-  - name: "openai-embeddings"
-    provider: "openai"
-    model_name: "text-embedding-ada-002"
     api_key: "${OPENAI_API_KEY}"
 
-# Vector Stores
 vector_stores:
   - name: "pinecone-store"
     provider: "pinecone"
     api_key: "${PINECONE_API_KEY}"
     index_name: "beluga-index"
-
-# Tools
-tools:
-  - name: "calculator"
-    provider: "calculator"
-    enabled: true
-
-# Agents
-agents:
-  - name: "data-analyzer"
-    type: "AnalyzerAgent"
-    max_retries: 3
 ```
 
-### Environment Variables:
+See the [Configuration Documentation](./docs/package_design_patterns.md#configuration-management) for details.
+
+## 🧪 Testing Infrastructure
+
+Beluga AI includes comprehensive testing infrastructure:
+
+- **Unit Tests**: Table-driven tests with advanced mocks
+- **Integration Tests**: Cross-package compatibility testing
+- **Performance Benchmarks**: Built-in benchmarking utilities
+- **Test Analyzer**: Tool for identifying and fixing test performance issues
+
 ```bash
-export BELUGA_APP_NAME="my-beluga-app"
-export BELUGA_LOG_LEVEL="debug"
-export BELUGA_OPENAI_API_KEY="your-api-key-here"
-export BELUGA_PINECONE_API_KEY="your-pinecone-key"
-```
+# Run all tests
+make test
 
-### Configuration Validation:
-The framework automatically validates configuration on load and provides detailed error messages for missing required fields or invalid values.
-
-## Advanced Features
-
-### Dependency Injection
-Beluga-ai includes a comprehensive dependency injection system with functional options patterns:
-
-```go
-// Create an agent factory with DI
-factory, err := agents.NewAgentFactoryWithOptions(
-    agents.WithConfigProvider(configProvider),
-    agents.WithContainer(diContainer),
-)
-
-// Create agents using fluent builders
-agent, err := agents.NewAgentBuilder(factory).
-    WithName("data-analyzer").
-    WithType("AnalyzerAgent").
-    WithAnalysisType("comprehensive").
-    Build()
-```
-
-### Asynchronous Processing
-Advanced orchestration with worker pools, retry mechanisms, and circuit breakers:
-
-```go
-// Create enhanced scheduler with worker pool
-scheduler := orchestration.NewEnhancedScheduler(10) // 10 workers
-scheduler.Start()
-defer scheduler.Stop()
-
-// Add tasks with retry configuration
-task := &orchestration.EnhancedTask{
-    Task: orchestration.Task{
-        ID: "data-processing",
-        Execute: processData,
-    },
-    MaxRetries: 3,
-    Timeout: 30 * time.Second,
-    RequiresCircuitBreaker: true,
-}
-
-scheduler.AddEnhancedTask(task)
-
-// Run asynchronously
-stats := scheduler.RunAsync()
-fmt.Printf("Processed %d tasks\n", stats.CompletedTasks)
-```
-
-### Observability & Monitoring
-Comprehensive observability suite with structured logging, metrics, and tracing:
-
-```go
-// Structured logging with context
-logger := monitoring.NewStructuredLogger("my-service",
-    monitoring.WithJSONOutput(),
-    monitoring.WithFileOutput("logs/app.log"))
-
-ctx, span := tracer.StartSpan(ctx, "process-request")
-defer tracer.FinishSpan(span)
-
-logger.Info(ctx, "Processing request", map[string]interface{}{
-    "user_id": 12345,
-    "request_type": "data_analysis",
-})
-
-// Metrics collection
-metrics := monitoring.NewMetricsCollector()
-timer := metrics.StartTimer(ctx, "request_duration", map[string]string{
-    "endpoint": "/api/process",
-})
-defer timer.Stop(ctx, "Request processing time")
-
-metrics.Counter(ctx, "requests_total", "Total requests", 1, map[string]string{
-    "method": "POST",
-    "status": "200",
-})
-```
-
-## Current Status ✅ **ENTERPRISE-GRADE FRAMEWORK COMPLETE**
-
-Beluga AI Framework has achieved **100% standardization** across all packages with enterprise-grade patterns and comprehensive testing infrastructure:
-
-🎉 **COMPLETED: Full Framework Standardization**
-- **✅ All 14 Packages Standardized:** Every package follows identical OTEL metrics, factory patterns, and testing standards
-- **✅ Comprehensive Testing Infrastructure:** Enterprise-grade testing with advanced mocks, integration tests, and performance benchmarks
-- **✅ Production-Ready Observability:** 100% OTEL metrics and tracing across all components
-- **✅ Consistent Factory Patterns:** Global registries for all multi-provider packages
-- **✅ Integration Testing Framework:** Complete cross-package testing infrastructure
-
-🏗️ **Architecture Achievements (100% Implemented):**
-- ✅ **Interface Segregation Principle (ISP)** enforced throughout all packages
-- ✅ **Dependency Inversion Principle (DIP)** with constructor injection standardized  
-- ✅ **Single Responsibility Principle (SRP)** with focused package responsibilities
-- ✅ **Composition over Inheritance** patterns implemented framework-wide
-- ✅ **Global Registry Factory Patterns** for all multi-provider packages
-- ✅ **Functional Options Pattern** standardized for configuration
-- ✅ **OpenTelemetry Integration** as the exclusive observability solution
-- ✅ **Structured Error Handling** with Op/Err/Code patterns across all packages
-- ✅ **Enterprise-Grade Test Coverage** with comprehensive mocking and integration tests
-- ✅ **Cross-Package Integration Testing** infrastructure for complex AI workflows
-
-🔥 **Production Quality Indicators:**
-- **132 files changed** in comprehensive standardization effort
-- **57,438 lines added** of enterprise-grade code and testing infrastructure
-- **~85 new files created** following standardized patterns
-- **28 integration test scenarios** designed and infrastructure implemented
-- **100% package compliance** with design patterns and best practices
-
-## Implemented Features ✅ **ALL PACKAGES ENTERPRISE-READY**
-
-*   **LLMs (`pkg/llms`):** ✅ Unified ChatModel/LLM interfaces with OpenAI, Anthropic, Bedrock providers + **comprehensive testing & OTEL metrics**
-*   **ChatModels (`pkg/chatmodels`):** ✅ ChatModel interface with OpenAI provider and Runnable implementation + **advanced mocks & integration tests**
-*   **Embeddings (`pkg/embeddings`):** ✅ Embedder interface with OpenAI, Ollama providers + **global registry pattern & performance testing**
-*   **Prompts (`pkg/prompts`):** ✅ Prompt template system with dynamic loading and rendering + **OTEL metrics wrapper & comprehensive testing**
-*   **Memory (`pkg/memory`):** ✅ Memory interface with BufferMemory, SummaryMemory, VectorStoreMemory + **global registry & integration testing**
-*   **Retrievers (`pkg/retrievers`):** ✅ Retriever interface with Runnable implementation and vectorstore integration + **relevance testing & benchmarks**
-*   **VectorStores (`pkg/vectorstores`):** ✅ VectorStore interface with InMemory, PgVector, Pinecone providers + **global factory & similarity testing**
-*   **Agents (`pkg/agents`):** ✅ Complete agent framework with ReAct agents, tool integration + **global registry & execution testing**
-*   **Tools (`pkg/agents/tools`):** ✅ Tool interface with Echo, Calculator, Shell, GoFunction implementations + **mock tools & validation**
-*   **Orchestration (`pkg/orchestration`):** ✅ Workflow engine with Chain, Graph, Workflow support + **OTEL metrics & concurrent testing**
-*   **Server (`pkg/server`):** ✅ REST and MCP server implementations with streaming support + **load testing & health monitoring**
-*   **Configuration Management (`pkg/config`):** ✅ Advanced configuration with validation, environment variables + **provider testing & validation**
-*   **Observability (`pkg/monitoring`):** ✅ Comprehensive monitoring with OTEL tracing, metrics, logging + **cross-package integration**
-*   **Schema (`pkg/schema`):** ✅ Centralized data structures with validation and type safety + **message/document testing utilities**
-*   **Voice Agents (`pkg/voice`):** ✅ Complete voice interaction framework with STT, TTS, VAD, Turn Detection, Transport, Noise Cancellation, and Session Management + **comprehensive testing & examples**
-
-### **🔥 Every Package Now Includes:**
-- ✅ **OTEL Metrics & Tracing:** Production-ready observability with standardized patterns
-- ✅ **Comprehensive Testing:** Advanced mocks, table-driven tests, concurrency testing, performance benchmarks  
-- ✅ **Integration Testing:** Cross-package compatibility testing and real-world scenario validation
-- ✅ **Global Registries:** Consistent factory patterns for easy provider extensibility
-- ✅ **Error Handling:** Structured error types with operation context and error codes
-- ✅ **Documentation:** Consistent README files and comprehensive package documentation
-
-## Testing Infrastructure ✅ **ENTERPRISE-GRADE TESTING COMPLETE**
-
-The framework now includes comprehensive testing infrastructure for development teams:
-
-### **Package-Level Testing** 
-Every package includes advanced testing utilities:
-```bash
-# Run comprehensive tests for any package
-go test ./pkg/llms/...           # LLMs package with all test suites
-go test ./pkg/memory/...         # Memory package with scenarios
-go test ./pkg/vectorstores/...   # Vector stores with performance tests
-```
-
-### **Integration Testing Framework**
-Complete cross-package integration testing:
-```bash
-# Run all integration tests
+# Run integration tests
 go test ./tests/integration/... -v
 
-# Run end-to-end workflow tests  
-go test ./tests/integration/end_to_end/... -v
-
-# Run specific package pair tests
-go test ./tests/integration/package_pairs/llms_memory_test.go -v
-go test ./tests/integration/package_pairs/embeddings_vectorstores_test.go -v
-
-# Run with race detection
-go test ./tests/integration/... -v -race
-```
-
-### **Performance & Load Testing**
-Built-in performance testing for all components:
-```bash
-# Run performance benchmarks
+# Run benchmarks
 go test ./pkg/llms/... -bench=.
-go test ./pkg/orchestration/... -bench=BenchmarkAdvanced
-
-# Run load tests (requires longer timeout)  
-go test ./tests/integration/... -v -timeout=5m
 ```
 
-### **Available Test Scenarios**
-The framework provides pre-built test scenarios for common use cases:
-- **RAG Pipeline Testing**: Complete retrieval-augmented generation workflows
-- **Multi-Agent Workflows**: Agent coordination and orchestration testing  
-- **Provider Switching**: Testing provider interoperability and configuration
-- **Conversation Flow Testing**: Memory and LLM integration validation
-- **Performance Benchmarking**: Cross-package performance validation
+## 📊 Project Status
 
-### **Test Analyzer Tool** 🔧
-The framework includes a comprehensive test analysis tool for identifying and fixing performance issues in test files:
+**✅ Enterprise-Grade Framework Complete**
 
-```bash
-# Analyze test files for performance issues
-go run ./cmd/test-analyzer --dry-run pkg/llms
+Beluga AI Framework has achieved **100% standardization** across all 14 packages:
 
-# Auto-fix detected issues
-go run ./cmd/test-analyzer --auto-fix pkg/llms
+- ✅ All packages follow identical OTEL metrics, factory patterns, and testing standards
+- ✅ Comprehensive testing infrastructure with mocks, integration tests, and benchmarks
+- ✅ Production-ready observability with 100% OTEL integration
+- ✅ Consistent factory patterns with global registries
+- ✅ Enterprise-grade test coverage and documentation
 
-# Generate detailed reports
-go run ./cmd/test-analyzer --output html --output-file report.html pkg/llms
-```
+### Implemented Packages
 
-**Features:**
-- 🔍 Detects 9+ performance issue types (infinite loops, missing timeouts, large iterations, etc.)
-- 🔧 Auto-fix with dual validation (interface compatibility + test execution)
-- 📊 Multiple report formats (JSON, HTML, Markdown, Plain text)
-- ✅ Safe fixes with automatic backups
+All 14 framework packages are production-ready:
 
-See [test-analyzer documentation](./cmd/test-analyzer/README.md) and [comprehensive guide](./docs/tools/test-analyzer.md) for details.
+- ✅ **LLMs** - Unified interfaces with multiple providers
+- ✅ **Agents** - Complete agent framework with tools and memory
+- ✅ **Memory** - Multiple memory types with various backends
+- ✅ **VectorStores** - InMemory, PgVector, Pinecone providers
+- ✅ **Embeddings** - OpenAI, Ollama providers
+- ✅ **Orchestration** - Workflow engine with chains and graphs
+- ✅ **Voice** - Complete voice interaction framework
+- ✅ **Monitoring** - Full OTEL integration
+- ✅ **Config** - Advanced configuration management
+- ✅ **And more...**
 
-## Future Development (v1.1 and Beyond) 
+See the [Architecture Documentation](./docs/architecture.md) for complete details.
 
-With the **enterprise-grade foundation now complete**, future development can focus on expanding capabilities:
+## Contributing {#contributing}
 
-*   **Additional Provider Implementations:** Add more providers for LLMs (Gemini, Cohere), VectorStores (Qdrant, ChromaDB), and Tools using the established registry patterns
-*   **Enhanced RAG Components:** Expand document loaders, text splitters, and specialized retrievers using existing interfaces
-*   **Advanced Agent Capabilities:** Implement planning agents, multi-agent collaboration patterns, and agent communication protocols  
-*   **Workflow Engine Extensions:** Add Temporal.io integration, complex workflow patterns, and distributed orchestration
-*   **Production Features:** Add caching layers, batch processing optimizations, and enterprise security features
-*   **Developer Experience:** Create CLI tools, code generation utilities, and development templates
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for:
 
-### **✅ COMPLETED INFRASTRUCTURE**
-The following foundational work is now **COMPLETE** and provides a solid base for all future development:
-- ✅ **Comprehensive Testing & Documentation:** High test coverage and detailed documentation achieved
-- ✅ **Observability & Monitoring:** Production-ready OTEL integration across all components  
-- ✅ **Extensibility Framework:** Global registries and factory patterns enable easy provider addition
-- ✅ **Integration Testing:** Cross-package testing infrastructure supports complex workflow validation
-- ✅ **Performance Validation:** Benchmarking and load testing utilities ensure scalability
+- Development setup and workflow
+- Code quality standards
+- How to add new providers
+- Pull request process
+- Release process
 
-## Contributing
+### Quick Contribution Guide
 
-Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for guidelines on how to contribute to Beluga-ai, including how to add new provider implementations.
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/amazing-feature`)
+3. Make your changes following our [design patterns](./docs/package_design_patterns.md)
+4. Run tests (`make test`)
+5. Commit using [Conventional Commits](./CONTRIBUTING.md#conventional-commits)
+6. Push and create a Pull Request
 
-## License
+## 📄 License
 
-Beluga-ai is licensed under the [MIT License](./LICENSE).
+Beluga AI Framework is licensed under the [MIT License](./LICENSE).
 
+## 🆘 Support & Community
 
+- **Documentation**: [docs/README.md](./docs/README.md)
+- **Issues**: [GitHub Issues](https://github.com/lookatitude/beluga-ai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/lookatitude/beluga-ai/discussions)
+- **Contributors**: [View Contributors](https://github.com/lookatitude/beluga-ai/graphs/contributors)
+- **Releases**: [View Releases](https://github.com/lookatitude/beluga-ai/releases)
+
+## 🌟 Star Us
+
+If you find Beluga AI Framework useful, please consider giving us a star on GitHub!
+
+---
+
+---
+
+<div align="center">
+  <p>
+    <strong>Built with ❤️ by the Beluga AI Team</strong>
+  </p>
+  <p>
+    <a href="./LICENSE">License</a> •
+    <a href="./CONTRIBUTING.md">Contributing</a> •
+    <a href="./docs/README.md">Documentation</a> •
+    <a href="https://github.com/lookatitude/beluga-ai/issues">Issues</a>
+  </p>
+</div>

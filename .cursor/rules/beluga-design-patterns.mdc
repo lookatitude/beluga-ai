@@ -1,0 +1,14 @@
+---
+description: Enforce standardized design patterns, OTEL, and error handling.
+globs: **/*.go
+---
+# Beluga AI Design Patterns
+
+ALWAYS adhere to these in ALL code:
+- Package Structure: iface/, internal/, providers/, config.go, metrics.go, errors.go, test_utils.go, advanced_test.go.
+- Interfaces: "er" suffix for single-method (e.g., Embedder); nouns for multi-method.
+- Config: Use struct tags (mapstructure, validate); functional options.
+- OTEL Metrics: Implement in metrics.go with NewMetrics(); record operations with attrs (e.g., operation, success).
+- Error Handling: Use LLMError with Op/Err/Code; respect context cancellation.
+- Global Registry: For multi-provider packages, use ProviderRegistry with Register/Create.
+- Reference: package_design_patterns.md for full enforcement.

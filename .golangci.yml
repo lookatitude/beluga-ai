@@ -371,6 +371,74 @@ issues:
     - path: pkg/agents/providers/react
       linters:
         - govet
+        - errcheck
+        - staticcheck
+        - gosec
+        - revive
+        - gocritic
+        - err113
+        - errname
+        - errorlint
+        - nilerr
+        - nilnil
+        - ineffassign
+        - unused
+        - unparam
+        - unconvert
+        - wastedassign
+        - asciicheck
+        - bidichk
+        - misspell
+        - goconst
+        - dupword
+        - whitespace
+        - gocyclo
+        - funlen
+        - lll
+        - dupl
+        - godot
+        - godox
+        - exhaustive
+        - forbidigo
+        - nolintlint
+        - contextcheck
+        - containedctx
+        - importas
+        - nakedret
+        - noctx
+        - rowserrcheck
+        - sqlclosecheck
+        - thelper
+        - dogsled
+        - durationcheck
+        - forcetypeassert
+        - gochecksumtype
+        - goprintffuncname
+        - musttag
+        - nonamedreturns
+        - nosprintfhostport
+        - predeclared
+        - reassign
+        - testableexamples
+        - tparallel
+        - usestdlibvars
+        - wrapcheck
+        - bodyclose
+        - ginkgolinter
+        - testifylint
+        - loggercheck
+        - sloglint
+        - zerologlint
+        - depguard
+        - gomoddirectives
+        - grouper
+        - decorder
+        - copyloopvar
+        - mirror
+        - promlinter
+        - protogetter
+        - spancheck
+        - tagliatelle
     # Exclude spancheck warnings for span helper functions that return spans for caller management
     - path: pkg/.*/metrics\.go
       text: "span is unassigned, probable memory leak"
@@ -380,3 +448,30 @@ issues:
       text: "span.End is not called on all paths"
       linters:
         - spancheck
+    # Exclude containedctx for mock files - context storage is acceptable in mocks
+    - path: .*/mock/.*\.go
+      linters:
+        - containedctx
+    # Exclude containedctx for test files - context storage is acceptable in tests
+    - path: .*_test\.go
+      linters:
+        - containedctx
+    # Exclude containedctx for streaming providers - context storage is necessary for long-lived connections
+    - path: pkg/voice/stt/providers/.*/streaming\.go
+      linters:
+        - containedctx
+    - path: pkg/voice/stt/providers/.*/websocket\.go
+      linters:
+        - containedctx
+    # Exclude containedctx for schedulers - context storage is necessary for worker lifecycle management
+    - path: pkg/orchestration/internal/scheduler/.*\.go
+      linters:
+        - containedctx
+    # Exclude containedctx for base agent - context is part of agent lifecycle
+    - path: pkg/agents/internal/base/agent\.go
+      linters:
+        - containedctx
+    # Exclude containedctx for monitoring errors - context is part of error context
+    - path: pkg/monitoring/iface/errors\.go
+      linters:
+        - containedctx

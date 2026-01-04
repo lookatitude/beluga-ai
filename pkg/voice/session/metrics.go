@@ -51,6 +51,11 @@ type Metrics struct {
 	errors           metric.Int64Counter
 	sessionDuration  metric.Float64Histogram
 	operationLatency metric.Float64Histogram
+
+	// Agent-specific metrics
+	agentLatency           metric.Float64Histogram
+	agentStreamingDuration metric.Float64Histogram
+	agentToolExecutionTime metric.Float64Histogram
 }
 
 // NewMetrics creates a new Metrics instance.
@@ -63,6 +68,11 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	m.errors, _ = meter.Int64Counter("session.errors.total", metric.WithDescription("Total Session errors"))
 	m.sessionDuration, _ = meter.Float64Histogram("session.duration", metric.WithDescription("Session duration"), metric.WithUnit("s"))
 	m.operationLatency, _ = meter.Float64Histogram("session.operation.latency", metric.WithDescription("Operation latency"), metric.WithUnit("s"))
+
+	// Initialize agent-specific metrics
+	m.agentLatency, _ = meter.Float64Histogram("voice.session.agent.latency", metric.WithDescription("Agent operation latency (input to first response)"), metric.WithUnit("s"))
+	m.agentStreamingDuration, _ = meter.Float64Histogram("voice.session.agent.streaming.duration", metric.WithDescription("Agent streaming duration"), metric.WithUnit("s"))
+	m.agentToolExecutionTime, _ = meter.Float64Histogram("voice.session.agent.tool.execution.time", metric.WithDescription("Agent tool execution time"), metric.WithUnit("s"))
 
 	return m
 }
@@ -105,4 +115,31 @@ func (m *Metrics) IncrementActiveSessions(ctx context.Context) {
 // DecrementActiveSessions decrements the active sessions counter.
 func (m *Metrics) DecrementActiveSessions(ctx context.Context) {
 	m.sessionsActive.Add(ctx, -1)
+}
+
+// Agent-specific metrics recording methods.
+
+// RecordAgentOperation records agent operation latency (from input to first response).
+func (m *Metrics) RecordAgentOperation(ctx context.Context, sessionID string, latency time.Duration) {
+	attrs := metric.WithAttributes(
+		attribute.String("session_id", sessionID),
+	)
+	m.agentLatency.Record(ctx, latency.Seconds(), attrs)
+}
+
+// RecordAgentStreamingChunk records agent streaming chunk metrics.
+func (m *Metrics) RecordAgentStreamingChunk(ctx context.Context, sessionID string, duration time.Duration) {
+	attrs := metric.WithAttributes(
+		attribute.String("session_id", sessionID),
+	)
+	m.agentStreamingDuration.Record(ctx, duration.Seconds(), attrs)
+}
+
+// RecordAgentToolExecution records agent tool execution time.
+func (m *Metrics) RecordAgentToolExecution(ctx context.Context, sessionID, toolName string, duration time.Duration) {
+	attrs := metric.WithAttributes(
+		attribute.String("session_id", sessionID),
+		attribute.String("tool_name", toolName),
+	)
+	m.agentToolExecutionTime.Record(ctx, duration.Seconds(), attrs)
 }

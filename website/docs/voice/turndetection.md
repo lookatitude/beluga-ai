@@ -25,7 +25,7 @@ The Turn Detection package follows the Beluga AI Framework design patterns, prov
 - **Features**: Rule-based using sentence endings, questions, and silence
 - **Model**: None (algorithm-based)
 - **Best for**: Simple use cases, low latency requirements
-- **Latency**: <10ms
+- **Latency**: &lt;10ms
 - **Accuracy**: 80-85%
 
 ### ONNX
@@ -33,7 +33,7 @@ The Turn Detection package follows the Beluga AI Framework design patterns, prov
 - **Features**: Machine learning-based turn detection
 - **Model**: ONNX model file required
 - **Best for**: High accuracy requirements
-- **Latency**: <50ms
+- **Latency**: &lt;50ms
 - **Accuracy**: 90-95%
 
 ## Quick Start
@@ -139,9 +139,9 @@ if err != nil {
 
 ## Performance
 
-- **Latency**: <50ms for most providers
+- **Latency**: &lt;50ms for most providers
 - **Accuracy**: 80-95% depending on provider
-- **CPU Usage**: Low (<5% on modern CPUs)
+- **CPU Usage**: Low (&lt;5% on modern CPUs)
 
 ## API Reference
 

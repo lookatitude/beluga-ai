@@ -2,10 +2,13 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
@@ -31,6 +34,9 @@ type VoiceOptions struct {
 	AgentCallback     func(ctx context.Context, transcript string) (string, error)
 	OnStateChanged    func(state sessioniface.SessionState)
 	Config            *Config
+	// Agent instance fields (passed from session package)
+	AgentInstance agentsiface.StreamingAgent
+	AgentConfig   *schema.AgentConfig
 }
 
 // VoiceSessionImpl implements the VoiceSession interface.
@@ -41,11 +47,13 @@ type VoiceSessionImpl struct {
 	vadProvider         iface.VADProvider
 	sttProvider         iface.STTProvider
 	transport           iface.Transport
-	opts                *VoiceOptions
-	config              *Config
 	agentCallback       func(ctx context.Context, transcript string) (string, error)
+	config              *Config
+	opts                *VoiceOptions
 	stateChangeCallback func(state sessioniface.SessionState)
 	stateMachine        *StateMachine
+	agentIntegration    *AgentIntegration
+	streamingAgent      *StreamingAgent
 	sessionID           string
 	state               sessioniface.SessionState
 	mu                  sync.RWMutex
@@ -89,6 +97,44 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 		agentCallback:       opts.AgentCallback,
 		stateChangeCallback: opts.OnStateChanged,
 		stateMachine:        stateMachine,
+	}
+
+	// Initialize agent integration
+	if opts.AgentCallback != nil || opts.AgentInstance != nil {
+		if opts.AgentInstance != nil {
+			// Validate that AgentInstance implements StreamingAgent interface
+			// This is a compile-time check, but we verify at runtime for safety
+			if opts.AgentInstance == nil {
+				return nil, errors.New("agent instance validation failed: AgentInstance cannot be nil")
+			}
+
+			// Create agent instance-based integration
+			var agentConfig schema.AgentConfig
+			if opts.AgentConfig != nil {
+				agentConfig = *opts.AgentConfig
+			} else {
+				// Set default agent config if not provided
+				agentConfig = schema.AgentConfig{
+					Name: "voice-agent",
+				}
+			}
+
+			// Create agent instance
+			agentInstance := NewAgentInstance(opts.AgentInstance, agentConfig)
+
+			// Create agent integration with instance
+			impl.agentIntegration = NewAgentIntegrationWithInstance(opts.AgentInstance, agentConfig)
+			impl.agentIntegration.SetAgentInstance(agentInstance)
+
+			// Create streaming agent if TTS provider is available
+			if opts.TTSProvider != nil {
+				streamingConfig := DefaultStreamingAgentConfig()
+				impl.streamingAgent = NewStreamingAgent(agentInstance, opts.TTSProvider, streamingConfig)
+			}
+		} else {
+			// Create callback-based integration (legacy)
+			impl.agentIntegration = NewAgentIntegration(opts.AgentCallback)
+		}
 	}
 
 	return impl, nil

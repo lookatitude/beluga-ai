@@ -8,16 +8,17 @@ Beluga-AI aims to be practical and easy to get started with. We provide a growin
 
 ## Finding the Examples
 
-All code examples are located within the main Beluga-AI GitHub repository in the [`docs/examples`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples) directory.
+All code examples are located within the main Beluga-AI GitHub repository in the [`examples/`](https://github.com/lookatitude/beluga-ai/tree/main/examples) directory.
 
 Each subdirectory there typically focuses on a specific package or concept:
 
-*   **[`docs/examples/config/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/config/main.go):** Demonstrates how to use the configuration management system.
-*   **[`docs/examples/llms/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/llms/main.go):** Shows how to interact with different LLM providers, including making simple calls, streaming responses, and accessing token usage information.
-*   **[`docs/examples/tools/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/tools/main.go):** Illustrates defining and using tools like Go functions and shell commands.
-*   **[`docs/examples/memory/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/memory/main.go):** Provides examples of using different memory types like Buffer and Window Buffer memory.
-*   **[`docs/examples/agents/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/agents/main.go):** Shows how to create and run a basic agent using an executor, LLM, tools, and memory.
-*   **[`docs/examples/rag/`](https://github.com/lookatitude/beluga-ai/tree/main/docs/examples/rag/main.go):** Demonstrates a simple Retrieval-Augmented Generation (RAG) pipeline, including loading documents, splitting text, generating embeddings (with Ollama), storing in an in-memory vector store, and retrieving relevant documents.
+*   **[`examples/llm-usage/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/llm-usage):** Shows how to interact with different LLM providers, including making simple calls, streaming responses, and accessing token usage information.
+*   **[`examples/agents/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/agents):** Shows how to create and run agents using executors, LLMs, tools, and memory.
+*   **[`examples/rag/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag):** Demonstrates Retrieval-Augmented Generation (RAG) pipelines, including loading documents, splitting text, generating embeddings, storing in vector stores, and retrieving relevant documents.
+*   **[`examples/orchestration/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/orchestration):** Examples of workflow orchestration, chains, and complex task management.
+*   **[`examples/multi-agent/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/multi-agent):** Demonstrates multi-agent systems and agent collaboration patterns.
+*   **[`examples/voice/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/voice):** Comprehensive voice agent examples including STT, TTS, VAD, turn detection, and session management.
+*   **[`examples/integration/`](https://github.com/lookatitude/beluga-ai/tree/main/examples/integration):** Integration examples showing how to combine multiple Beluga AI components.
 
 ## How to Run Examples
 
@@ -29,7 +30,7 @@ Each subdirectory there typically focuses on a specific package or concept:
 2.  **Navigate to an Example Directory:**
     For instance, to run the LLM examples:
     ```bash
-    cd docs/examples/llms
+    cd examples/llm-usage
     ```
 3.  **Set Up Configuration (if needed):**
     Many examples rely on API keys or specific model configurations. Ensure you have a `config.yaml` file set up in one of the expected locations (current directory, `$HOME/.beluga-ai/`, or `/etc/beluga-ai/`) or have the necessary environment variables exported (e.g., `BELUGA_LLMS_OPENAI_APIKEY`). Refer to the main [README.md](https://github.com/lookatitude/beluga-ai/blob/main/README) or the [Installation Guide](./getting-started/installation) documentation page for more details.

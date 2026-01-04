@@ -1,0 +1,12 @@
+---
+description: High-level overview from README for extensibility and production features.
+globs: 
+---
+# Beluga AI Overview & Extensibility
+
+When planning features:
+- Core: Extensible via interfaces/factories (e.g., add LLM providers to pkg/llms/providers/).
+- Config: Use YAML with validation; env vars prefixed BELUGA_.
+- Observability: Structured logging, metrics, tracing via pkg/monitoring.
+- Future: Add providers (e.g., Pinecone) using global registries.
+- Reference: README.md for installation, examples, and status.

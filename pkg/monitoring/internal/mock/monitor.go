@@ -73,31 +73,31 @@ type MockLogger struct {
 }
 
 type DebugCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Fields  map[string]any
 	Message string
 }
 
 type InfoCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Fields  map[string]any
 	Message string
 }
 
 type WarningCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Fields  map[string]any
 	Message string
 }
 
 type ErrorCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Fields  map[string]any
 	Message string
 }
 
 type FatalCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Fields  map[string]any
 	Message string
 }
@@ -188,7 +188,7 @@ type MockTracer struct {
 }
 
 type StartSpanCall struct {
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Return  iface.Span
 	Name    string
 	Options []iface.SpanOption
@@ -275,7 +275,7 @@ type MockMetricsCollector struct {
 }
 
 type CounterCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Labels      map[string]string
 	Name        string
 	Description string
@@ -283,7 +283,7 @@ type CounterCall struct {
 }
 
 type GaugeCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Labels      map[string]string
 	Name        string
 	Description string
@@ -291,7 +291,7 @@ type GaugeCall struct {
 }
 
 type HistogramCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Labels      map[string]string
 	Name        string
 	Description string
@@ -299,7 +299,7 @@ type HistogramCall struct {
 }
 
 type TimingCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Labels      map[string]string
 	Name        string
 	Description string
@@ -307,14 +307,14 @@ type TimingCall struct {
 }
 
 type IncrementCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Labels      map[string]string
 	Name        string
 	Description string
 }
 
 type StartTimerCall struct {
-	Ctx    context.Context
+	Ctx    context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Return iface.Timer
 	Labels map[string]string
 	Name   string
@@ -364,7 +364,7 @@ type MockTimer struct {
 }
 
 type StopCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Description string
 }
 
@@ -386,12 +386,12 @@ type RegisterCheckCall struct {
 }
 
 type RunChecksCall struct {
-	Ctx    context.Context
+	Ctx    context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Return map[string]iface.HealthCheckResult
 }
 
 type IsHealthyCall struct {
-	Ctx    context.Context
+	Ctx    context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Return bool
 }
 
@@ -420,7 +420,7 @@ type MockSafetyChecker struct {
 }
 
 type CheckContentCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Error       error
 	Content     string
 	ContextInfo string
@@ -428,7 +428,7 @@ type CheckContentCall struct {
 }
 
 type RequestHumanReviewCall struct {
-	Ctx         context.Context
+	Ctx         context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Error       error
 	Content     string
 	ContextInfo string
@@ -462,7 +462,7 @@ type MockEthicalChecker struct {
 }
 
 type EthicalCheckContentCall struct {
-	Ctx        context.Context
+	Ctx        context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Error      error
 	Content    string
 	EthicalCtx iface.EthicalContext
@@ -486,7 +486,7 @@ type MockBestPracticesChecker struct {
 }
 
 type ValidateCall struct {
-	Ctx       context.Context
+	Ctx       context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Data      any
 	Component string
 	Return    []iface.ValidationIssue

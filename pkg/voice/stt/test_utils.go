@@ -161,7 +161,7 @@ func (m *AdvancedMockSTTProvider) GetCallCount() int {
 
 // MockStreamingSession provides a mock implementation of StreamingSession.
 type MockStreamingSession struct {
-	ctx            context.Context
+	ctx            context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	resultCh       chan iface.TranscriptResult
 	transcriptions []string
 	index          int

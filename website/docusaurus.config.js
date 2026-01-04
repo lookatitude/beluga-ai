@@ -1,18 +1,29 @@
-const lightCodeTheme = require('prism-react-renderer/themes/github');
-const darkCodeTheme = require('prism-react-renderer/themes/dracula');
+const { themes } = require('prism-react-renderer');
+const lightCodeTheme = themes.github;
+const darkCodeTheme = themes.dracula;
 
 // With JSDoc @type annotations, IDEs can provide config autocompletion
 /** @type {import('@docusaurus/types').DocusaurusConfig} */
 module.exports = {
-  title: 'Beluga-AI',
-  tagline: 'A Go framework for building sophisticated AI and agentic applications.',
+  title: 'Beluga AI Framework',
+  tagline: 'A production-ready Go framework for building sophisticated AI and agentic applications.',
   url: 'https://lookatitude.github.io',
   baseUrl: '/beluga-ai/',
-  onBrokenLinks: 'warn', // Changed from 'throw' to 'warn'
-  onBrokenMarkdownLinks: 'warn',
-  favicon: 'img/favicon.ico', // We'll need to create this or use a default
-  organizationName: 'lookatitude', // Your GitHub org/user name.
-  projectName: 'beluga-ai', // Your repo name.
+  onBrokenLinks: 'warn',
+  markdown: {
+    hooks: {
+      onBrokenMarkdownLinks: 'warn',
+    },
+  },
+  favicon: 'img/favicon.ico',
+  organizationName: 'lookatitude',
+  projectName: 'beluga-ai',
+  
+  // i18n configuration
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en'],
+  },
 
   presets: [
     [
@@ -40,9 +51,9 @@ module.exports = {
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
     ({
       navbar: {
-        title: 'Beluga-AI',
+        title: 'Beluga AI',
         logo: {
-          alt: 'Beluga-AI Logo',
+          alt: 'Beluga AI Framework Logo',
           src: 'img/beluga-logo.svg',
         },
         items: [
@@ -52,8 +63,18 @@ module.exports = {
             position: 'left',
             label: 'Documentation',
           },
-          // {to: '/examples', label: 'Examples', position: 'left'}, // We will create this later
-          // {to: '/blog', label: 'Blog', position: 'left'}, // Hidden until we have proper content
+          {
+            type: 'doc',
+            docId: 'getting-started/quickstart',
+            position: 'left',
+            label: 'Get Started',
+          },
+          {
+            type: 'doc',
+            docId: 'cookbook/quick-solutions',
+            position: 'left',
+            label: 'Cookbook',
+          },
           {
             href: 'https://github.com/lookatitude/beluga-ai',
             label: 'GitHub',
@@ -65,15 +86,44 @@ module.exports = {
         style: 'dark',
         links: [
           {
-            title: 'Docs',
+            title: 'Documentation',
             items: [
               {
-                label: 'Introduction',
-                to: '/docs/intro',
+                label: 'Getting Started',
+                to: '/docs/getting-started/quickstart',
+              },
+              {
+                label: 'Concepts',
+                to: '/docs/concepts/core',
               },
               {
                 label: 'API Reference',
-                to: '/docs/api', // We will create this later
+                to: '/docs/api',
+              },
+              {
+                label: 'Use Cases',
+                to: '/docs/use-cases',
+              },
+            ],
+          },
+          {
+            title: 'Resources',
+            items: [
+              {
+                label: 'Examples',
+                href: 'https://github.com/lookatitude/beluga-ai/tree/main/examples',
+              },
+              {
+                label: 'Cookbook',
+                to: '/docs/cookbook/quick-solutions',
+              },
+              {
+                label: 'Best Practices',
+                to: '/docs/guides/best-practices',
+              },
+              {
+                label: 'Architecture',
+                to: '/docs/guides/architecture',
               },
             ],
           },
@@ -81,32 +131,43 @@ module.exports = {
             title: 'Community',
             items: [
               {
+                label: 'GitHub',
+                href: 'https://github.com/lookatitude/beluga-ai',
+              },
+              {
                 label: 'GitHub Discussions',
                 href: 'https://github.com/lookatitude/beluga-ai/discussions',
               },
-              // Add other community links if any
-            ],
-          },
-          {
-            title: 'More',
-            items: [
-              // {
-              //   label: 'Blog',
-              //   to: '/blog',
-              // }, // Hidden until we have proper content
               {
-                label: 'GitHub',
-                href: 'https://github.com/lookatitude/beluga-ai',
+                label: 'Issues',
+                href: 'https://github.com/lookatitude/beluga-ai/issues',
+              },
+              {
+                label: 'Contributing',
+                href: 'https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md',
               },
             ],
           },
         ],
-        copyright: `Copyright © ${new Date().getFullYear()} Beluga-AI Project. Built with Docusaurus.`,
+        copyright: `Copyright © ${new Date().getFullYear()} Beluga AI Framework. Built with Docusaurus.`,
       },
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
-        additionalLanguages: ['go'],
+        additionalLanguages: ['go', 'bash', 'yaml', 'json'],
+      },
+      colorMode: {
+        defaultMode: 'light',
+        disableSwitch: false,
+        respectPrefersColorScheme: true,
       },
     }),
+  
+  // Custom fields for metadata
+  customFields: {
+    metadata: [
+      {name: 'keywords', content: 'go, golang, ai, llm, langchain, agents, rag, vectorstore, embeddings, ai-framework'},
+      {name: 'description', content: 'Beluga AI Framework - A production-ready Go framework for building sophisticated AI and agentic applications with enterprise-grade observability.'},
+    ],
+  },
 };

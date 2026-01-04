@@ -18,7 +18,7 @@ type OpenAIClientMock struct {
 
 // CreateEmbeddingsCall records a call to CreateEmbeddings.
 type CreateEmbeddingsCall struct {
-	Ctx context.Context
+	Ctx context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Req openaiClient.EmbeddingRequestConverter
 }
 
@@ -63,6 +63,7 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openaiClien
 
 	// Fill with mock data
 	for j := 0; j < dimension; j++ {
+		// #nosec G602 - Mock file: embeddings[0] is guaranteed to exist as we just created it
 		embeddings[0].Embedding[j] = float32(j) / float32(dimension)
 	}
 

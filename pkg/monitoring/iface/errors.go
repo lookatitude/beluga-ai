@@ -38,7 +38,7 @@ func (s ErrorSeverity) String() string {
 type MonitoringError struct {
 	Timestamp time.Time       `json:"timestamp"`
 	Cause     error           `json:"-"`
-	Context   context.Context `json:"-"`
+	Context   context.Context `json:"-"` //nolint:containedctx // Context is part of error context for tracing
 	Metadata  map[string]any  `json:"metadata"`
 	Code      string          `json:"code"`
 	Message   string          `json:"message"`

@@ -36,6 +36,16 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
   - Design patterns and principles
   - How to extend the framework
   - Future considerations
+  - Visual architecture diagrams
+  - System architecture overview
+  - Data flow diagrams
+  - Component interaction diagrams
+  - Sequence diagrams
+
+- **[Architecture Visualizations](./architecture/)** - Detailed architecture diagrams
+  - [Component Diagrams](./architecture/component-diagrams.md) - Package structure and interface hierarchy
+  - [Data Flows](./architecture/data-flows.md) - Data flow through the system
+  - [Sequence Diagrams](./architecture/sequences.md) - Component interaction sequences
 
 - **[Package Design Patterns](./package_design_patterns.md)** - Design patterns and conventions for all packages
   - Core principles (ISP, DIP, SRP)
@@ -44,6 +54,11 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
   - Configuration management
   - Observability patterns
   - Testing patterns
+
+- **[Pattern Implementation Guides](./patterns/)** - Practical pattern examples
+  - [Pattern Examples](./patterns/pattern-examples.md) - Real-world pattern implementations
+  - [Cross-Package Patterns](./patterns/cross-package-patterns.md) - How patterns work together
+  - [Pattern Decision Guide](./patterns/pattern-decision-guide.md) - When to use which pattern
 
 - **[Concepts Guide](./concepts/)** - Core concepts and architectural patterns
   - [Core Concepts](./concepts/core.md) - Runnable interface, messages, context
@@ -189,10 +204,13 @@ docs/
   - Configuration options
 
 ### Examples
-- **[Examples Directory](../examples/)** - Code examples and tutorials
-  - LLM usage examples
-  - Configuration examples
-  - Integration patterns
+- **[Examples Directory](../examples/)** - Comprehensive runnable examples
+  - [Agent Examples](../examples/agents/) - Basic, tools, ReAct, memory integration
+  - [RAG Examples](../examples/rag/) - Simple, with memory, advanced patterns
+  - [Orchestration Examples](../examples/orchestration/) - Chains, workflows, multi-agent
+  - [Multi-Agent Examples](../examples/multi-agent/) - Collaboration, specialized roles
+  - [Integration Examples](../examples/integration/) - Full-stack, observability
+  - See [Examples README](../examples/README.md) for complete guide
 
 ## 🔍 Finding What You Need
 

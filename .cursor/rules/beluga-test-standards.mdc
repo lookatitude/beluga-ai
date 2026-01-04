@@ -1,0 +1,13 @@
+---
+description: Enforce enterprise-grade testing patterns.
+globs: **/*_test.go, tests/**
+alwaysApply: true
+---
+# Beluga AI Testing Guidelines
+
+For all tests:
+- Use test_utils.go: AdvancedMock{}, MockOption, ConcurrentTestRunner.
+- advanced_test.go: Table-driven tests, concurrency, load, error scenarios, benchmarks.
+- Integration: Add to tests/integration/ (e.g., end_to_end/, package_pairs/).
+- Aim for 100% coverage; test OTEL, registries, and cross-package (e.g., LLMs ↔ Memory).
+- Reference: package_design_patterns.md Testing Patterns section.

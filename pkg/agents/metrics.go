@@ -38,6 +38,11 @@ type Metrics struct {
 	planningErrors metric.Int64Counter
 	planningTime   metric.Float64Histogram
 
+	// Streaming metrics
+	streamingLatency  metric.Float64Histogram
+	streamingDuration metric.Float64Histogram
+	streamingChunks   metric.Int64Counter
+
 	// Tracer
 	tracer trace.Tracer
 }
@@ -168,6 +173,33 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 		panic(err)
 	}
 
+	// Initialize streaming metrics
+	m.streamingLatency, err = meter.Float64Histogram(
+		"agent.streaming.latency",
+		metric.WithDescription("Time from input to first streaming chunk"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	m.streamingDuration, err = meter.Float64Histogram(
+		"agent.streaming.duration",
+		metric.WithDescription("Total duration of streaming operations"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	m.streamingChunks, err = meter.Int64Counter(
+		"agent.streaming.chunks.count",
+		metric.WithDescription("Total number of streaming chunks produced"),
+	)
+	if err != nil {
+		panic(err)
+	}
+
 	return m
 }
 
@@ -240,6 +272,26 @@ func (m *Metrics) RecordPlanningCall(ctx context.Context, agentName string, dura
 	if !success {
 		m.planningErrors.Add(ctx, 1, attrs)
 	}
+}
+
+// Streaming metrics.
+// RecordStreamingOperation records streaming operation metrics (latency and duration).
+func (m *Metrics) RecordStreamingOperation(ctx context.Context, agentName string, latency, duration time.Duration) {
+	attrs := metric.WithAttributes(
+		attribute.String("agent_name", agentName),
+	)
+
+	m.streamingLatency.Record(ctx, latency.Seconds(), attrs)
+	m.streamingDuration.Record(ctx, duration.Seconds(), attrs)
+}
+
+// RecordStreamingChunk records that a streaming chunk was produced.
+func (m *Metrics) RecordStreamingChunk(ctx context.Context, agentName string) {
+	attrs := metric.WithAttributes(
+		attribute.String("agent_name", agentName),
+	)
+
+	m.streamingChunks.Add(ctx, 1, attrs)
 }
 
 // Tracing helpers.

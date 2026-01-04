@@ -22,7 +22,7 @@
 }
 
 .logo {
-  height: 120px;
+  height: 360px;
   width: auto;
   margin-bottom: 1rem;
 }
@@ -39,7 +39,7 @@
   }
   
   .logo {
-    height: 80px;
+    height: 240px;
   }
 }
 

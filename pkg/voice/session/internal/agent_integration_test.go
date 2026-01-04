@@ -21,11 +21,11 @@ func TestAgentIntegration_GenerateResponse(t *testing.T) {
 	ctx := context.Background()
 	transcript := "Hello, how are you?"
 
-	// Without callback, should return error
+	// Without callback or agent instance, should return error
 	response, err := ai.GenerateResponse(ctx, transcript)
 	require.Error(t, err)
 	assert.Empty(t, response)
-	assert.Contains(t, err.Error(), "agent callback not set")
+	assert.Contains(t, err.Error(), "neither agent instance nor callback is set")
 
 	// Set callback
 	called := false

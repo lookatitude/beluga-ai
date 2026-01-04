@@ -1,0 +1,169 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+
+	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
+	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
+	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+)
+
+func main() {
+	fmt.Println("🧠 Beluga AI - ReAct Agent Example")
+	fmt.Println("===================================")
+
+	ctx := context.Background()
+
+	// Step 1: Create a ChatModel (required for ReAct agents)
+	chatLLM, err := createChatModel(ctx)
+	if err != nil {
+		log.Fatalf("Failed to create chat model: %v", err)
+	}
+
+	// Step 2: Create tools for the ReAct agent
+	toolList, err := createTools()
+	if err != nil {
+		log.Fatalf("Failed to create tools: %v", err)
+	}
+
+	fmt.Printf("\n📋 Created %d tools for ReAct agent:\n", len(toolList))
+	for _, tool := range toolList {
+		fmt.Printf("  - %s: %s\n", tool.Name(), tool.Description())
+	}
+
+	// Step 3: Create a ReAct agent
+	// ReAct agents use a prompt template that guides the reasoning process
+	promptTemplate := `You are a helpful assistant that can use tools to answer questions.
+When you need to use a tool, think about what tool would be best, then use it.
+After using a tool, observe the result and continue reasoning.
+When you have enough information, provide a final answer.
+
+Available tools:
+{{.tools}}
+
+Question: {{.input}}
+
+Think step by step:`
+
+	reactAgent, err := agents.NewReActAgent(
+		"react-assistant",
+		chatLLM,
+		toolList,
+		promptTemplate,
+	)
+	if err != nil {
+		log.Fatalf("Failed to create ReAct agent: %v", err)
+	}
+
+	// Step 4: Initialize the agent
+	initConfig := map[string]interface{}{
+		"max_retries": 3,
+		"max_iterations": 10,
+	}
+	if err := reactAgent.Initialize(initConfig); err != nil {
+		log.Fatalf("Failed to initialize agent: %v", err)
+	}
+
+	// Step 5: Execute the agent with a complex task
+	fmt.Println("\n📝 Executing ReAct agent with complex task...")
+	input := map[string]interface{}{
+		"input": "What is 25 * 17? Then calculate the square root of that result.",
+	}
+
+	result, err := reactAgent.Invoke(ctx, input)
+	if err != nil {
+		log.Fatalf("Agent execution failed: %v", err)
+	}
+
+	// Step 6: Display the result
+	fmt.Printf("\n✅ ReAct Agent Response:\n%s\n", result)
+
+	// Step 7: Display agent information
+	fmt.Println("\n🤖 Agent Information:")
+	fmt.Printf("  Name: %s\n", reactAgent.GetConfig().Name)
+	fmt.Printf("  Tools: %d\n", len(reactAgent.GetTools()))
+	fmt.Printf("  Health: %v\n", reactAgent.CheckHealth())
+
+	fmt.Println("\n✨ Example completed successfully!")
+}
+
+// createChatModel creates a ChatModel instance.
+// Uses mock if API key is not set, otherwise uses OpenAI.
+func createChatModel(ctx context.Context) (llmsiface.ChatModel, error) {
+	apiKey := os.Getenv("OPENAI_API_KEY")
+	if apiKey == "" {
+		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock ChatModel")
+		return &mockChatModel{
+			modelName:    "mock-chat-model",
+			providerName: "mock-provider",
+		}, nil
+	}
+
+	config := llms.NewConfig(
+		llms.WithProvider("openai"),
+		llms.WithModelName("gpt-3.5-turbo"),
+		llms.WithAPIKey(apiKey),
+	)
+
+	factory := llms.NewFactory()
+	chatModel, err := factory.CreateChatModel("openai", config)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chat model: %w", err)
+	}
+
+	return chatModel, nil
+}
+
+// createTools creates a list of tools for the ReAct agent.
+func createTools() ([]tools.Tool, error) {
+	var toolList []tools.Tool
+
+	// Create calculator tool
+	calcConfig := iface.ToolConfig{
+		Name:        "calculator",
+		Description: "Performs basic arithmetic operations (add, subtract, multiply, divide)",
+	}
+	calcTool, err := providers.NewCalculatorTool(calcConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create calculator tool: %w", err)
+	}
+	toolList = append(toolList, calcTool)
+
+	return toolList, nil
+}
+
+// mockChatModel is a simple mock implementation for demonstration.
+type mockChatModel struct {
+	modelName    string
+	providerName string
+}
+
+func (m *mockChatModel) Generate(ctx context.Context, messages []interface{}) (interface{}, error) {
+	// Mock response simulating ReAct reasoning
+	return &mockMessage{
+		content: "Thought: I need to calculate 25 * 17 first.\nAction: calculator\nAction Input: {\"operation\": \"multiply\", \"a\": 25, \"b\": 17}\nObservation: 425\nThought: Now I need to find the square root of 425.\nAction: calculator\nAction Input: {\"operation\": \"sqrt\", \"value\": 425}\nObservation: 20.615528128088304\nFinal Answer: 25 * 17 = 425, and the square root of 425 is approximately 20.62.",
+	}, nil
+}
+
+func (m *mockChatModel) GetModelName() string {
+	return m.modelName
+}
+
+func (m *mockChatModel) GetProviderName() string {
+	return m.providerName
+}
+
+// mockMessage implements a simple message interface
+type mockMessage struct {
+	content string
+}
+
+func (m *mockMessage) GetContent() string {
+	return m.content
+}

@@ -187,7 +187,7 @@ func RunAnalysis(ctx context.Context, config *Config, analyzer Analyzer, fixer F
 
 	// Write output
 	if config.OutputFile != "" {
-		if err := os.WriteFile(config.OutputFile, reportData, 0644); err != nil {
+		if err := os.WriteFile(config.OutputFile, reportData, 0600); err != nil {
 			return 1, fmt.Errorf("writing output file: %w", err)
 		}
 	} else {

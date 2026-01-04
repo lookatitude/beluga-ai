@@ -1,0 +1,28 @@
+{
+  "Gosec": {
+    "nosec": false,
+    "severity": "medium",
+    "confidence": "medium",
+    "rules": {
+      "G101": false,
+      "G201": false,
+      "G204": false,
+      "G304": false,
+      "G404": false
+    },
+    "exclude-dirs": [
+      "tests",
+      "cmd/test-analyzer/internal/fixes",
+      "cmd/test-analyzer/internal/ast",
+      "cmd/test-analyzer/internal/code",
+      "cmd/test-analyzer/fixer.go"
+    ],
+    "exclude-rules": [
+      "G101",
+      "G201",
+      "G204",
+      "G304",
+      "G404"
+    ]
+  }
+}

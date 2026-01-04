@@ -10,7 +10,7 @@ import (
 
 // WorkerPool manages a pool of workers for concurrent task execution.
 type WorkerPool struct {
-	ctx       context.Context
+	ctx       context.Context //nolint:containedctx // Context is necessary for worker pool lifecycle management
 	taskQueue chan Task
 	results   chan TaskResult
 	cancel    context.CancelFunc

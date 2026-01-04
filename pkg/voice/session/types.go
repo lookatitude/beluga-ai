@@ -3,6 +3,8 @@ package session
 import (
 	"context"
 
+	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 )
 
@@ -43,8 +45,14 @@ type VoiceOptions struct {
 	// NoiseCancellation specifies the noise cancellation provider to use
 	NoiseCancellation iface.NoiseCancellation
 
-	// AgentCallback is called when user input is detected
+	// AgentCallback is called when user input is detected (deprecated: use AgentInstance)
 	AgentCallback func(ctx context.Context, transcript string) (string, error)
+
+	// AgentInstance is the streaming agent instance for the session
+	AgentInstance agentsiface.StreamingAgent
+
+	// AgentConfig is the configuration for the agent instance
+	AgentConfig *schema.AgentConfig
 
 	// OnStateChanged callback for state changes
 	OnStateChanged func(state SessionState)
@@ -116,5 +124,15 @@ func WithOnStateChanged(callback func(state SessionState)) VoiceOption {
 func WithConfig(config *Config) VoiceOption {
 	return func(opts *VoiceOptions) {
 		opts.Config = config
+	}
+}
+
+// WithAgentInstance sets the agent instance for the voice session.
+// When provided, the session will use streaming agent execution instead of callbacks.
+// The agent must implement the StreamingAgent interface.
+func WithAgentInstance(agent agentsiface.StreamingAgent, config *schema.AgentConfig) VoiceOption {
+	return func(opts *VoiceOptions) {
+		opts.AgentInstance = agent
+		opts.AgentConfig = config
 	}
 }
