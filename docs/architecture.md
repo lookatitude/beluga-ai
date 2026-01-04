@@ -6,6 +6,173 @@ This document outlines the refactored architecture of the Beluga AI Framework, d
 
 The refactoring process involved a significant restructuring of the Beluga AI framework to promote a cleaner separation of concerns and a more intuitive developer experience. The core philosophy was to create a layered architecture with well-defined interfaces, making the framework more robust and adaptable to future requirements.
 
+### 1.1 System Architecture Overview
+
+The following diagram shows the high-level architecture of the Beluga AI Framework:
+
+```mermaid
+graph TB
+    subgraph "Application Layer"
+        App[Application Code]
+    end
+    
+    subgraph "Agent Layer"
+        Agent[Agents]
+        Executor[Agent Executor]
+        Tools[Tools]
+    end
+    
+    subgraph "Orchestration Layer"
+        Chain[Chains]
+        Workflow[Workflows]
+        Scheduler[Scheduler]
+        MessageBus[Message Bus]
+    end
+    
+    subgraph "LLM Layer"
+        LLM[LLMs]
+        ChatModel[Chat Models]
+        Prompts[Prompts]
+    end
+    
+    subgraph "RAG Layer"
+        Embeddings[Embeddings]
+        VectorStore[Vector Stores]
+        Retriever[Retrievers]
+    end
+    
+    subgraph "Memory Layer"
+        Memory[Memory]
+        BufferMem[Buffer Memory]
+        VectorMem[Vector Memory]
+    end
+    
+    subgraph "Infrastructure Layer"
+        Config[Configuration]
+        Monitoring[Monitoring/OTEL]
+        Server[Server APIs]
+        Schema[Schema]
+    end
+    
+    App --> Agent
+    App --> Chain
+    App --> Workflow
+    
+    Agent --> Executor
+    Agent --> Tools
+    Agent --> LLM
+    Agent --> Memory
+    
+    Executor --> Tools
+    Executor --> LLM
+    
+    Chain --> Agent
+    Chain --> LLM
+    Workflow --> Agent
+    Workflow --> Scheduler
+    Workflow --> MessageBus
+    
+    LLM --> ChatModel
+    ChatModel --> Prompts
+    
+    Retriever --> VectorStore
+    Retriever --> Embeddings
+    VectorStore --> Embeddings
+    
+    Memory --> BufferMem
+    Memory --> VectorMem
+    VectorMem --> VectorStore
+    
+    Agent --> Config
+    LLM --> Config
+    Memory --> Config
+    
+    Agent --> Monitoring
+    LLM --> Monitoring
+    Memory --> Monitoring
+    
+    Server --> Agent
+    Server --> Workflow
+    
+    Agent --> Schema
+    LLM --> Schema
+    Memory --> Schema
+```
+
+### 1.2 Package Dependency Graph
+
+The following diagram shows how packages depend on each other:
+
+```mermaid
+graph LR
+    Schema[Schema]
+    Core[Core]
+    Config[Config]
+    Monitoring[Monitoring]
+    
+    LLMs[LLMs]
+    ChatModels[ChatModels]
+    Embeddings[Embeddings]
+    VectorStores[VectorStores]
+    Prompts[Prompts]
+    
+    Memory[Memory]
+    Retrievers[Retrievers]
+    Agents[Agents]
+    Orchestration[Orchestration]
+    Server[Server]
+    
+    Schema --> Core
+    Config --> Core
+    Monitoring --> Core
+    
+    LLMs --> Schema
+    LLMs --> Config
+    LLMs --> Monitoring
+    LLMs --> Core
+    
+    ChatModels --> LLMs
+    ChatModels --> Schema
+    ChatModels --> Prompts
+    
+    Embeddings --> Schema
+    Embeddings --> Config
+    Embeddings --> Monitoring
+    
+    VectorStores --> Schema
+    VectorStores --> Config
+    VectorStores --> Monitoring
+    VectorStores --> Embeddings
+    
+    Retrievers --> VectorStores
+    Retrievers --> Embeddings
+    Retrievers --> Schema
+    Retrievers --> Core
+    
+    Memory --> Schema
+    Memory --> Config
+    Memory --> Monitoring
+    Memory --> VectorStores
+    Memory --> Embeddings
+    
+    Agents --> LLMs
+    Agents --> Schema
+    Agents --> Config
+    Agents --> Monitoring
+    Agents --> Core
+    Agents --> Memory
+    
+    Orchestration --> Agents
+    Orchestration --> Schema
+    Orchestration --> Config
+    Orchestration --> Monitoring
+    Orchestration --> Core
+    
+    Server --> Agents
+    Server --> Orchestration
+    Server --> Schema
+```
+
 Key changes include:
 - **Modular Package Structure:** The `pkg` directory now houses clearly delineated modules for core functionalities, schema definitions, agents, orchestration, and utilities. This replaces a flatter or less organized structure, making it easier to locate and understand different parts of the framework.
 - **Interface-Driven Design:** Emphasis has been placed on defining clear interfaces for key components like `Agent`, `Tool`, `Scheduler`, `MessageBus`, and `Workflow`. This promotes loose coupling and allows for easier substitution of implementations.
@@ -152,7 +319,152 @@ The refactored `pkg` directory is organized as follows:
 2. Implement VectorStore interface.
 3. Add to factory in vectorstores.go.
 
-## 6. Future Considerations and Potential Improvements
+## 6. Data Flow Diagrams
+
+### 6.1 RAG Pipeline Data Flow
+
+The following diagram shows how data flows through a complete RAG pipeline:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Retriever
+    participant VectorStore
+    participant Embedder
+    participant LLM
+    participant Memory
+    
+    User->>App: Query
+    App->>Memory: Load Memory Variables
+    Memory-->>App: Context
+    
+    App->>Retriever: Get Relevant Documents
+    Retriever->>Embedder: Embed Query
+    Embedder-->>Retriever: Query Embedding
+    Retriever->>VectorStore: Similarity Search
+    VectorStore-->>Retriever: Relevant Documents
+    Retriever-->>App: Documents
+    
+    App->>App: Build Context (Memory + Documents)
+    App->>LLM: Generate with Context
+    LLM-->>App: Response
+    
+    App->>Memory: Save Context
+    App-->>User: Final Answer
+```
+
+### 6.2 Agent Execution Flow
+
+The following diagram shows how an agent executes a plan:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant Planner
+    participant Executor
+    participant Tools
+    participant LLM
+    participant Memory
+    
+    User->>Agent: Input
+    Agent->>Memory: Load Memory
+    Memory-->>Agent: Context
+    
+    Agent->>Planner: Plan
+    Planner->>LLM: Generate Plan
+    LLM-->>Planner: Plan Steps
+    Planner-->>Agent: Plan
+    
+    Agent->>Executor: Execute Plan
+    loop For each step
+        Executor->>Tools: Execute Tool
+        Tools-->>Executor: Result
+        Executor->>Memory: Update Context
+    end
+    Executor-->>Agent: Final Result
+    
+    Agent->>Memory: Save Context
+    Agent-->>User: Output
+```
+
+### 6.3 Multi-Agent Coordination Flow
+
+The following diagram shows how multiple agents coordinate:
+
+```mermaid
+sequenceDiagram
+    participant Coordinator
+    participant Agent1
+    participant Agent2
+    participant Agent3
+    participant MessageBus
+    participant Scheduler
+    
+    Coordinator->>Scheduler: Schedule Tasks
+    Scheduler->>Agent1: Task 1
+    Agent1->>MessageBus: Publish Result
+    MessageBus->>Agent2: Notify
+    Agent2->>Agent2: Process
+    Agent2->>MessageBus: Publish Result
+    MessageBus->>Agent3: Notify
+    Agent3->>Agent3: Process
+    Agent3-->>Coordinator: Final Result
+```
+
+## 7. Component Interaction Diagrams
+
+### 7.1 Agent with Tools and Memory
+
+```mermaid
+graph TB
+    Agent[Agent]
+    LLM[LLM]
+    Tools[Tools]
+    Memory[Memory]
+    Executor[Executor]
+    
+    Agent --> LLM
+    Agent --> Tools
+    Agent --> Memory
+    Agent --> Executor
+    
+    Executor --> Tools
+    Executor --> LLM
+    Executor --> Memory
+    
+    Tools --> Tool1[Tool 1]
+    Tools --> Tool2[Tool 2]
+    Tools --> Tool3[Tool 3]
+    
+    Memory --> Buffer[Buffer Memory]
+    Memory --> Vector[Vector Memory]
+```
+
+### 7.2 RAG System Components
+
+```mermaid
+graph TB
+    Query[User Query]
+    Retriever[Retriever]
+    VectorStore[Vector Store]
+    Embedder[Embedder]
+    LLM[LLM]
+    Response[Response]
+    
+    Query --> Retriever
+    Retriever --> Embedder
+    Retriever --> VectorStore
+    VectorStore --> Embedder
+    Retriever --> LLM
+    LLM --> Response
+    
+    Documents[Documents] --> VectorStore
+    VectorStore --> Embedder
+```
+
+## 8. Future Considerations and Potential Improvements
 
 - **Comprehensive Testing:** Add unit/integration tests for all.
 - **Error Handling:** Standardize further.

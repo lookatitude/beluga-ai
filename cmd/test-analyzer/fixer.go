@@ -343,7 +343,7 @@ func (f *fixer) rollbackFromBackup(ctx context.Context, backupPath, filePath str
 	}
 
 	// Write backup data to original file
-	if err := os.WriteFile(filePath, backupData, 0644); err != nil {
+	if err := os.WriteFile(filePath, backupData, 0600); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 

@@ -50,7 +50,7 @@ func (m *modifier) CreateBackup(ctx context.Context, filePath string) (string, e
 
 	// Create backup filename with timestamp
 	backupDir := filepath.Join(filepath.Dir(filePath), ".test-analyzer-backups")
-	if err := os.MkdirAll(backupDir, 0755); err != nil {
+	if err := os.MkdirAll(backupDir, 0750); err != nil {
 		return "", fmt.Errorf("creating backup directory: %w", err)
 	}
 
@@ -58,7 +58,7 @@ func (m *modifier) CreateBackup(ctx context.Context, filePath string) (string, e
 	backupPath := filepath.Join(backupDir, filepath.Base(filePath)+"."+timestamp+".bak")
 
 	// Write backup
-	if err := os.WriteFile(backupPath, content, 0644); err != nil {
+	if err := os.WriteFile(backupPath, content, 0600); err != nil {
 		return "", fmt.Errorf("writing backup: %w", err)
 	}
 
@@ -75,7 +75,7 @@ func (m *modifier) ApplyCodeChange(ctx context.Context, change *CodeChange) erro
 	if !fileExists && change.OldCode == "" {
 		// Create directory if it doesn't exist
 		dir := filepath.Dir(change.File)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("creating directory: %w", err)
 		}
 
@@ -93,7 +93,7 @@ func (m *modifier) ApplyCodeChange(ctx context.Context, change *CodeChange) erro
 			formatted = fmt.Sprintf("package %s\n\n%s", packageName, formatted)
 		}
 
-		if err := os.WriteFile(change.File, []byte(formatted), 0644); err != nil {
+		if err := os.WriteFile(change.File, []byte(formatted), 0600); err != nil {
 			return fmt.Errorf("writing file: %w", err)
 		}
 		return nil
@@ -138,7 +138,7 @@ func (m *modifier) ApplyCodeChange(ctx context.Context, change *CodeChange) erro
 	}
 
 	// Write file
-	if err := os.WriteFile(change.File, []byte(formatted), 0644); err != nil {
+	if err := os.WriteFile(change.File, []byte(formatted), 0600); err != nil {
 		return fmt.Errorf("writing file: %w", err)
 	}
 

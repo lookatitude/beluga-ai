@@ -703,6 +703,14 @@ func (l *LLM) Generate(ctx context.Context, prompt string) (string, error)
 - Provide replacement APIs before removing deprecated code
 - Give users sufficient time to migrate (typically one major version cycle)
 
+## Pattern Examples and Guides
+
+For practical examples of these patterns in action, see:
+
+- **[Pattern Examples](../docs/patterns/pattern-examples.md)** - Real-world code examples showing patterns in practice
+- **[Cross-Package Patterns](../docs/patterns/cross-package-patterns.md)** - How patterns work together across packages
+- **[Pattern Decision Guide](../docs/patterns/pattern-decision-guide.md)** - When to use which pattern
+
 ## Implementation Status ✅ **100% COMPLETE**
 
 ### **All 14 Framework Packages Now Compliant**

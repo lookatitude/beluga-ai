@@ -398,19 +398,19 @@ func TestCommonErrorVariables(t *testing.T) {
 		err  error
 		name string
 	}{
-		{"ErrAgentNotFound", ErrAgentNotFound},
-		{"ErrInvalidConfig", ErrInvalidConfig},
-		{"ErrToolNotAvailable", ErrToolNotAvailable},
-		{"ErrMaxIterationsExceeded", ErrMaxIterationsExceeded},
-		{"ErrContextCancelled", ErrContextCancelled},
-		{"ErrTimeout", ErrTimeout},
-		{"ErrAgentTimeout", ErrAgentTimeout},
-		{"ErrResourceExhausted", ErrResourceExhausted},
-		{"ErrInvalidAction", ErrInvalidAction},
-		{"ErrToolExecution", ErrToolExecution},
-		{"ErrEventHandler", ErrEventHandler},
-		{"ErrStateTransition", ErrStateTransition},
-		{"ErrShutdown", ErrShutdown},
+		{ErrAgentNotFound, "ErrAgentNotFound"},
+		{ErrInvalidConfig, "ErrInvalidConfig"},
+		{ErrToolNotAvailable, "ErrToolNotAvailable"},
+		{ErrMaxIterationsExceeded, "ErrMaxIterationsExceeded"},
+		{ErrContextCancelled, "ErrContextCancelled"},
+		{ErrTimeout, "ErrTimeout"},
+		{ErrAgentTimeout, "ErrAgentTimeout"},
+		{ErrResourceExhausted, "ErrResourceExhausted"},
+		{ErrInvalidAction, "ErrInvalidAction"},
+		{ErrToolExecution, "ErrToolExecution"},
+		{ErrEventHandler, "ErrEventHandler"},
+		{ErrStateTransition, "ErrStateTransition"},
+		{ErrShutdown, "ErrShutdown"},
 	}
 
 	for _, tt := range errorVars {

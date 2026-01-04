@@ -16,66 +16,68 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Extensible LLM Integration',
+    title: '🚀 Extensible LLM Integration',
     image: '/img/undraw_docusaurus_mountain.svg',
     description: (
       <>
         Seamlessly connect to various LLM providers (OpenAI, Anthropic, Google Gemini, 
-        AWS Bedrock, Ollama) with a unified interface. Switch providers without changing 
-        your code.
+        AWS Bedrock, Ollama, Cohere) with a unified interface. Switch providers without changing 
+        your code using our global registry pattern.
       </>
     ),
   },
   {
-    title: 'Agent Framework',
+    title: '🤖 Agent Framework',
     image: '/img/undraw_docusaurus_tree.svg',
     description: (
       <>
         Build autonomous agents capable of reasoning, planning, and executing tasks. 
         Includes ReAct agents, tool integration, and memory management for sophisticated 
-        AI applications.
+        AI applications with comprehensive testing infrastructure.
       </>
     ),
   },
   {
-    title: 'Production Ready',
+    title: '📊 Production Ready',
     image: '/img/undraw_docusaurus_react.svg',
     description: (
       <>
         Enterprise-grade observability with OpenTelemetry, comprehensive testing, 
         structured logging, metrics, and distributed tracing. Built for large-scale 
-        deployment.
+        deployment with 100% package standardization.
       </>
     ),
   },
   {
-    title: 'RAG Pipeline',
+    title: '🔍 RAG Pipeline',
     image: '/img/undraw_docusaurus_mountain.svg',
     description: (
       <>
         Implement Retrieval-Augmented Generation with swappable components for data loading, 
         splitting, embedding, and retrieval. Support for multiple vector stores including 
-        pgvector, Pinecone, and Weaviate.
+        pgvector, Pinecone, and Weaviate with global factory patterns.
       </>
     ),
   },
   {
-    title: 'Flexible Orchestration',
+    title: '⚙️ Flexible Orchestration',
     image: '/img/undraw_docusaurus_tree.svg',
     description: (
       <>
         Define and manage complex workflows with a flexible engine. Event-driven architecture 
-        with worker pools, retry mechanisms, and circuit breakers for reliable execution.
+        with worker pools, retry mechanisms, and circuit breakers for reliable execution 
+        with OTEL metrics.
       </>
     ),
   },
   {
-    title: 'Go-Native & Performant',
+    title: '🎤 Voice Agents',
     image: '/img/undraw_docusaurus_react.svg',
     description: (
       <>
-        Built with Go best practices, focusing on performance, type safety, and idiomatic 
-        Go patterns. Leverage Go&apos;s concurrency model for high-performance AI applications.
+        Build natural voice interactions with speech-to-text, text-to-speech, voice activity 
+        detection, turn detection, and complete session management. Support for multiple 
+        voice providers with streaming capabilities.
       </>
     ),
   },

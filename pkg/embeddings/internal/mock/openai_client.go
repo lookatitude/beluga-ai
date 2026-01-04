@@ -62,6 +62,7 @@ func (m *OpenAIClientMock) CreateEmbeddings(ctx context.Context, req openaiClien
 	}
 
 	// Fill with mock data
+	//nolint:gosec // Mock file - slice bounds are safe as embeddings[0] is guaranteed to exist
 	for j := 0; j < dimension; j++ {
 		embeddings[0].Embedding[j] = float32(j) / float32(dimension)
 	}
