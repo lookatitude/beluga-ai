@@ -235,8 +235,9 @@ jobs:
               continue
             fi
             
-            first_line=$(head -n 1 "$file" 2>/dev/null)
-            if [[ ! "$first_line" =~ ^package\  ]]; then
+            # Check if file has package declaration (may be after comments)
+            # Look for "package " in first 10 lines to handle files with package comments
+            if ! head -n 10 "$file" 2>/dev/null | grep -q "^package "; then
               echo "::error file=$file::Missing package declaration"
               missing_packages="${missing_packages}${file}\n"
               failed=1
