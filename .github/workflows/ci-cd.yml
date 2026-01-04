@@ -236,8 +236,8 @@ jobs:
             fi
             
             # Check if file has package declaration (may be after comments)
-            # Look for "package " in first 50 lines to handle files with long package comments
-            if ! head -n 50 "$file" 2>/dev/null | grep -q "^package "; then
+            # Look for "package " in first 100 lines to handle files with very long package comments
+            if ! head -n 100 "$file" 2>/dev/null | grep -q "^package "; then
               echo "::error file=$file::Missing package declaration"
               missing_packages="${missing_packages}${file}\n"
               failed=1
