@@ -1,138 +1,50 @@
-<!-- 
-Sync Impact Report:
-Version change: NEW → 1.0.0 (Initial constitution establishment)
-Modified principles: N/A (new constitution)
-Added sections: Core Principles (4), Implementation Standards, Testing & Quality Assurance, Governance
-Removed sections: N/A
-Templates requiring updates: ✅ plan-template.md updated, ✅ spec-template.md verified, ✅ tasks-template.md verified
-Follow-up TODOs: None - all placeholders filled
--->
-
-# Beluga AI Framework Constitution
+# [PROJECT_NAME] Constitution
+<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
 
 ## Core Principles
 
-### I. Interface Segregation Principle (ISP)
-ALL packages MUST define small, focused interfaces that serve specific purposes. NO "god interfaces" that force implementations to depend on unused methods. Use "er" suffix for single-method interfaces (Embedder, Retriever), noun-based names for multi-method interfaces (VectorStore, Agent). Every interface MUST have clear documentation explaining its purpose and usage.
+### [PRINCIPLE_1_NAME]
+<!-- Example: I. Library-First -->
+[PRINCIPLE_1_DESCRIPTION]
+<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
 
-**Rationale**: Focused interfaces enable easier testing, cleaner implementations, and better composition of functionality across the AI framework.
+### [PRINCIPLE_2_NAME]
+<!-- Example: II. CLI Interface -->
+[PRINCIPLE_2_DESCRIPTION]
+<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
 
-### II. Dependency Inversion Principle (DIP) 
-High-level modules MUST NOT depend on low-level modules. Both MUST depend on abstractions (interfaces). ALL dependencies MUST be injected via constructors. Use functional options pattern for flexible configuration. NO global state or singleton patterns except for global registries.
+### [PRINCIPLE_3_NAME]
+<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
+[PRINCIPLE_3_DESCRIPTION]
+<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
 
-**Rationale**: Dependency injection enables testing with mocks, supports multiple provider implementations, and makes the framework extensible without modification.
+### [PRINCIPLE_4_NAME]
+<!-- Example: IV. Integration Testing -->
+[PRINCIPLE_4_DESCRIPTION]
+<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
 
-### III. Single Responsibility Principle (SRP)
-Each package MUST have one primary responsibility. Each struct/function MUST have one reason to change. Packages MUST be focused and cohesive around a single AI/ML domain (embeddings, memory, agents, etc.). NO mixing of concerns across package boundaries.
+### [PRINCIPLE_5_NAME]
+<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
+[PRINCIPLE_5_DESCRIPTION]
+<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
 
-**Rationale**: Single responsibility ensures maintainable code, clear boundaries, and enables teams to work independently on different AI components.
+## [SECTION_2_NAME]
+<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
 
-### IV. Composition over Inheritance with Functional Options
-MUST prefer embedding interfaces/structs over type hierarchies. ALL configuration MUST use functional options pattern. NO complex inheritance structures. Enable flexible composition of AI behaviors through interface composition and functional options.
+[SECTION_2_CONTENT]
+<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
 
-**Rationale**: Composition provides flexibility for AI workflows where different combinations of capabilities are needed for different use cases.
+## [SECTION_3_NAME]
+<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
 
-## Implementation Standards
-
-### Package Structure (MANDATORY COMPLIANCE)
-ALL packages MUST follow this exact structure with NO deviations:
-
-```
-pkg/{package_name}/
-├── iface/                    # Interfaces and types (REQUIRED)
-├── internal/                 # Private implementation details
-├── providers/               # Provider implementations (for multi-provider packages)
-├── config.go                # Configuration structs and validation (REQUIRED)
-├── metrics.go               # OTEL metrics implementation (REQUIRED)
-├── errors.go                # Custom error types with Op/Err/Code pattern (REQUIRED)
-├── {package_name}.go        # Main interfaces and factory functions
-├── factory.go OR registry.go # Global factory/registry for multi-provider packages
-├── test_utils.go            # Advanced testing utilities and mocks (REQUIRED)
-├── advanced_test.go         # Comprehensive test suites (REQUIRED)
-└── README.md                # Package documentation (REQUIRED)
-```
-
-**Status**: 100% compliance achieved across all 14 packages. NO exceptions permitted.
-
-### Global Registry Pattern (MULTI-PROVIDER PACKAGES)
-ALL multi-provider packages MUST implement the global registry pattern for consistent provider management:
-
-```go
-type ProviderRegistry struct {
-    mu       sync.RWMutex
-    creators map[string]func(ctx context.Context, config Config) (Interface, error)
-}
-
-var globalRegistry = NewProviderRegistry()
-func RegisterGlobal(name string, creator func(...) (Interface, error))
-func NewProvider(ctx context.Context, name string, config Config) (Interface, error)
-```
-
-**Mandatory for**: embeddings, memory, agents, vectorstores, llms, chatmodels, retrievers, prompts, orchestration, monitoring, config, server.
-
-### OpenTelemetry Integration (MANDATORY)
-ALL packages MUST implement standardized OTEL metrics, tracing, and logging. NO custom metrics implementations. ALL packages MUST include metrics.go with:
-
-```go
-func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
-func (m *Metrics) RecordOperation(ctx context.Context, operation string, duration time.Duration, success bool)
-func NoOpMetrics() *Metrics
-```
-
-**Status**: 100% OTEL standardization complete across all packages.
-
-### Error Handling (ENFORCED STANDARD)
-ALL packages MUST implement structured error handling with Op/Err/Code pattern:
-
-```go
-type {Package}Error struct {
-    Op   string // operation that failed
-    Err  error  // underlying error  
-    Code string // error code for programmatic handling
-}
-```
-
-Standard error codes MUST be defined as constants. ALL errors MUST preserve error chains through Unwrap().
-
-## Testing & Quality Assurance
-
-### Testing Requirements (NON-NEGOTIABLE)
-ALL packages MUST implement enterprise-grade testing with 100% compliance:
-
-1. **test_utils.go (REQUIRED)**: Advanced mocking utilities with `AdvancedMock{Package}`, `Mock{Package}Option`, `ConcurrentTestRunner`, performance testing helpers
-2. **advanced_test.go (REQUIRED)**: Table-driven tests, concurrency testing, error handling scenarios, performance benchmarks
-3. **Integration testing**: Cross-package testing in `tests/integration/` directory
-4. **100% test coverage**: ALL public methods MUST have comprehensive test coverage
-5. **Performance benchmarks**: ALL critical operations MUST have benchmark tests
-6. **Concurrency validation**: ALL packages MUST test thread safety
-
-### Quality Gates (ENFORCED)
-- NO code may be merged without passing ALL tests
-- NO performance regressions permitted without explicit approval
-- ALL new providers MUST pass standardized interface compliance tests
-- ALL cross-package interactions MUST have integration tests
-
-**Status**: Complete testing infrastructure implemented across all packages.
+[SECTION_3_CONTENT]
+<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
 
 ## Governance
+<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-### Amendment Procedure
-Constitution amendments require:
-1. **Documentation**: Detailed rationale for changes in GitHub issue/PR
-2. **Impact Assessment**: Analysis of affected packages and breaking changes
-3. **Migration Plan**: Clear upgrade path for existing implementations
-4. **Review**: Approval from framework maintainers
-5. **Implementation**: Updates to all affected template files and documentation
+[GOVERNANCE_RULES]
+<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
 
-### Compliance Review
-- ALL pull requests MUST verify constitutional compliance
-- Quarterly audits of package compliance with principles
-- Automated linting rules MUST enforce structural compliance
-- Constitutional violations MUST be documented and justified
-
-### Versioning Policy
-- **MAJOR**: Backward incompatible principle changes or removals
-- **MINOR**: New principles added or material expansions
-- **PATCH**: Clarifications, wording improvements, typo fixes
-
-**Version**: 1.0.0 | **Ratified**: 2025-01-05 | **Last Amended**: 2025-01-05
+**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
+<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->

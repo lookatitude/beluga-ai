@@ -373,6 +373,14 @@ Congratulations! You've made your first LLM call. Next, learn how to:
 - **[Concepts: LLMs](../../concepts/llms)** - Deep dive into LLM concepts
 - **[Provider Documentation](../../providers/llms/)** - Detailed provider guides
 
+## API Reference
+
+For detailed API documentation on the packages used in this tutorial:
+
+- **[LLMs Package](../../api/packages/llms)** - LLM interfaces and implementations
+- **[LLM Providers](../../api/packages/llms/)** - Provider-specific implementations (OpenAI, Anthropic, Ollama, etc.)
+- **[Schema Package](../../api/packages/schema)** - Message types and data structures
+
 ---
 
 **Ready for the next step?** Continue to [Part 2: Building a Simple RAG Application](./simple-rag)!

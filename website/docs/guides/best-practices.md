@@ -473,6 +473,21 @@ provider, err := factory.CreateProvider("openai", config)
 - [Troubleshooting Guide](../guides/troubleshooting)
 - [Getting Started Tutorial](../../getting-started/)
 
+## API Reference
+
+For detailed API documentation on advanced patterns and extensibility:
+
+- **[Orchestration Package](../../api/packages/orchestration)** - Workflow orchestration, chains, and graphs
+- **[Monitoring Package](../../api/packages/monitoring)** - Observability, metrics, and tracing
+- **[Config Package](../../api/packages/config)** - Configuration management and providers
+- **[Agents Package](../../api/packages/agents)** - Agent interfaces and extensibility
+- **[Tools Package](../../api/packages/tools)** - Tool interfaces for custom tools
+- **[LLMs Package](../../api/packages/llms)** - LLM interfaces for custom providers
+- **[VectorStores Package](../../api/packages/vectorstores)** - Vector store interfaces for custom stores
+- **[Embeddings Package](../../api/packages/embeddings)** - Embedding interfaces for custom providers
+
+See the [complete API Reference](../../api/index) for all available packages and extensibility interfaces.
+
 ---
 
 **Last Updated:** Best practices guide is actively maintained. Check back for updates.

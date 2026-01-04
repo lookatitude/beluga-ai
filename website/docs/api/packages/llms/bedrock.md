@@ -23,7 +23,7 @@ Package bedrock provides an implementation of the llms.ChatModel interface using
   - [func NewBedrockProvider\(ctx context.Context, config \*llms.Config\) \(\*BedrockProvider, error\)](<#NewBedrockProvider>)
   - [func \(b \*BedrockProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#BedrockProvider.Batch>)
   - [func \(b \*BedrockProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#BedrockProvider.BindTools>)
-  - [func \(b \*BedrockProvider\) CheckHealth\(\) map\[string\]interface\{\}](<#BedrockProvider.CheckHealth>)
+  - [func \(b \*BedrockProvider\) CheckHealth\(\) map\[string\]any](<#BedrockProvider.CheckHealth>)
   - [func \(b \*BedrockProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#BedrockProvider.Generate>)
   - [func \(b \*BedrockProvider\) GetModelName\(\) string](<#BedrockProvider.GetModelName>)
   - [func \(b \*BedrockProvider\) GetProviderName\(\) string](<#BedrockProvider.GetProviderName>)
@@ -33,14 +33,14 @@ Package bedrock provides an implementation of the llms.ChatModel interface using
 
 ## Constants
 
-<a name="ProviderName"></a>Provider constants
+<a name="ProviderName"></a>Provider constants.
 
 ```go
 const (
     ProviderName = "bedrock"
     DefaultModel = "anthropic.claude-3-haiku-20240307-v1:0"
 
-    // Error codes specific to AWS Bedrock
+    // Error codes specific to AWS Bedrock.
     ErrCodeInvalidCredentials = "bedrock_invalid_credentials"
     ErrCodeRegionNotFound     = "bedrock_region_not_found"
     ErrCodeModelNotFound      = "bedrock_model_not_found"
@@ -50,27 +50,27 @@ const (
 ```
 
 <a name="NewBedrockLLM"></a>
-## func [NewBedrockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L95>)
+## func [NewBedrockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L96>)
 
 ```go
 func NewBedrockLLM(ctx context.Context, modelName string, opts ...llms.ConfigOption) (iface.ChatModel, error)
 ```
 
-NewBedrockLLM creates a new Bedrock provider \(legacy compatibility function\)
+NewBedrockLLM creates a new Bedrock provider \(legacy compatibility function\).
 
 <a name="NewBedrockProviderFactory"></a>
-## func [NewBedrockProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L571>)
+## func [NewBedrockProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L576>)
 
 ```go
 func NewBedrockProviderFactory() func(*llms.Config) (iface.ChatModel, error)
 ```
 
-Factory function for creating Bedrock providers
+Factory function for creating Bedrock providers.
 
 <a name="BedrockProvider"></a>
-## type [BedrockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L38-L47>)
+## type [BedrockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L39-L48>)
 
-BedrockProvider implements the ChatModel interface for AWS Bedrock models
+BedrockProvider implements the ChatModel interface for AWS Bedrock models.
 
 ```go
 type BedrockProvider struct {
@@ -79,91 +79,91 @@ type BedrockProvider struct {
 ```
 
 <a name="NewBedrockProvider"></a>
-### func [NewBedrockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L50>)
+### func [NewBedrockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L51>)
 
 ```go
 func NewBedrockProvider(ctx context.Context, config *llms.Config) (*BedrockProvider, error)
 ```
 
-NewBedrockProvider creates a new AWS Bedrock provider instance
+NewBedrockProvider creates a new AWS Bedrock provider instance.
 
 <a name="BedrockProvider.Batch"></a>
-### func \(\*BedrockProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L179>)
+### func \(\*BedrockProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L180>)
 
 ```go
 func (b *BedrockProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-Batch implements the Runnable interface
+Batch implements the Runnable interface.
 
 <a name="BedrockProvider.BindTools"></a>
-### func \(\*BedrockProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L153>)
+### func \(\*BedrockProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L154>)
 
 ```go
 func (b *BedrockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
 ```
 
-BindTools implements the ChatModel interface
+BindTools implements the ChatModel interface.
 
 <a name="BedrockProvider.CheckHealth"></a>
-### func \(\*BedrockProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L559>)
+### func \(\*BedrockProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L564>)
 
 ```go
-func (b *BedrockProvider) CheckHealth() map[string]interface{}
+func (b *BedrockProvider) CheckHealth() map[string]any
 ```
 
-CheckHealth implements the HealthChecker interface
+CheckHealth implements the HealthChecker interface.
 
 <a name="BedrockProvider.Generate"></a>
-### func \(\*BedrockProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L104>)
+### func \(\*BedrockProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L105>)
 
 ```go
 func (b *BedrockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
 ```
 
-Generate implements the ChatModel interface
+Generate implements the ChatModel interface.
 
 <a name="BedrockProvider.GetModelName"></a>
-### func \(\*BedrockProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L161>)
+### func \(\*BedrockProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L162>)
 
 ```go
 func (b *BedrockProvider) GetModelName() string
 ```
 
-GetModelName implements the ChatModel interface
+GetModelName implements the ChatModel interface.
 
 <a name="BedrockProvider.GetProviderName"></a>
-### func \(\*BedrockProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L165>)
+### func \(\*BedrockProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L166>)
 
 ```go
 func (b *BedrockProvider) GetProviderName() string
 ```
 
 <a name="BedrockProvider.Invoke"></a>
-### func \(\*BedrockProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L170>)
+### func \(\*BedrockProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L171>)
 
 ```go
 func (b *BedrockProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-Invoke implements the Runnable interface
+Invoke implements the Runnable interface.
 
 <a name="BedrockProvider.Stream"></a>
-### func \(\*BedrockProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L219>)
+### func \(\*BedrockProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L220>)
 
 ```go
 func (b *BedrockProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-Stream implements the Runnable interface
+Stream implements the Runnable interface.
 
 <a name="BedrockProvider.StreamChat"></a>
-### func \(\*BedrockProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L146>)
+### func \(\*BedrockProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/bedrock/provider.go#L147>)
 
 ```go
 func (b *BedrockProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
 ```
 
-StreamChat implements the ChatModel interface
+StreamChat implements the ChatModel interface.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

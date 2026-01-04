@@ -710,6 +710,14 @@ After installation, continue with:
 3. **[Architecture Documentation](../guides/architecture)** - Understand the framework
 4. **[Use Cases](../use-cases/)** - Real-world examples
 
+## API Reference
+
+As you work with Beluga AI, you'll interact with several core packages. Refer to the [API Reference](../api/index) for detailed documentation:
+
+- **[Core Package](../api/packages/core)** - Core components, error handling, and utilities
+- **[Config Package](../api/packages/config)** - Configuration management
+- **[Schema Package](../api/packages/schema)** - Data schemas and type definitions
+
 ---
 
 **Last Updated:** Installation guide is actively maintained. Check back for updates on new requirements or installation methods.

@@ -20,15 +20,15 @@ Package config provides advanced test utilities and comprehensive mocks for test
 
 ## Index
 
-- [func AssertConfigHealth\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertConfigHealth>)
+- [func AssertConfigHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertConfigHealth>)
 - [func AssertConfigValidation\(t \*testing.T, provider iface.Provider, shouldPass bool\)](<#AssertConfigValidation>)
-- [func AssertConfigValue\(t \*testing.T, provider iface.Provider, key string, expectedValue interface\{\}, valueType string\)](<#AssertConfigValue>)
+- [func AssertConfigValue\(t \*testing.T, provider iface.Provider, key string, expectedValue any, valueType string\)](<#AssertConfigValue>)
 - [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
 - [func AssertProviderStructs\(t \*testing.T, provider iface.Provider\)](<#AssertProviderStructs>)
 - [func ConfigKey\(prefix, envVar string\) string](<#ConfigKey>)
-- [func CreateTestConfig\(\) map\[string\]interface\{\}](<#CreateTestConfig>)
+- [func CreateTestConfig\(\) map\[string\]any](<#CreateTestConfig>)
 - [func CreateTestEnvironmentVars\(\) map\[string\]string](<#CreateTestEnvironmentVars>)
-- [func CreateTestProviderConfigs\(\) map\[string\]map\[string\]interface\{\}](<#CreateTestProviderConfigs>)
+- [func CreateTestProviderConfigs\(\) map\[string\]map\[string\]any](<#CreateTestProviderConfigs>)
 - [func DefaultLoaderOptions\(\) iface.LoaderOptions](<#DefaultLoaderOptions>)
 - [func EnvVarName\(prefix, key string\) string](<#EnvVarName>)
 - [func GetEnvConfigMap\(prefix string\) map\[string\]string](<#GetEnvConfigMap>)
@@ -40,23 +40,23 @@ Package config provides advanced test utilities and comprehensive mocks for test
 - [func NewCompositeProvider\(providers ...iface.Provider\) iface.Provider](<#NewCompositeProvider>)
 - [func NewJSONProvider\(configName string, configPaths \[\]string, envPrefix string\) \(iface.Provider, error\)](<#NewJSONProvider>)
 - [func NewLoader\(options iface.LoaderOptions\) \(iface.Loader, error\)](<#NewLoader>)
-- [func NewProvider\(configName string, configPaths \[\]string, envPrefix string, format string\) \(iface.Provider, error\)](<#NewProvider>)
+- [func NewProvider\(configName string, configPaths \[\]string, envPrefix, format string\) \(iface.Provider, error\)](<#NewProvider>)
 - [func NewTOMLProvider\(configName string, configPaths \[\]string, envPrefix string\) \(iface.Provider, error\)](<#NewTOMLProvider>)
 - [func NewYAMLProvider\(configName string, configPaths \[\]string, envPrefix string\) \(iface.Provider, error\)](<#NewYAMLProvider>)
-- [func RunLoadTest\(t \*testing.T, provider \*AdvancedMockConfigProvider, numOperations int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, provider \*AdvancedMockConfigProvider, numOperations, concurrency int\)](<#RunLoadTest>)
 - [func SetDefaults\(cfg \*iface.Config\)](<#SetDefaults>)
 - [func SetGlobalMetrics\(m \*Metrics\)](<#SetGlobalMetrics>)
 - [func ValidateConfig\(cfg \*iface.Config\) error](<#ValidateConfig>)
 - [type AdvancedMockConfigProvider](<#AdvancedMockConfigProvider>)
   - [func NewAdvancedMockConfigProvider\(name, providerType string, options ...MockConfigOption\) \*AdvancedMockConfigProvider](<#NewAdvancedMockConfigProvider>)
-  - [func \(c \*AdvancedMockConfigProvider\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockConfigProvider.CheckHealth>)
-  - [func \(c \*AdvancedMockConfigProvider\) Get\(key string\) interface\{\}](<#AdvancedMockConfigProvider.Get>)
+  - [func \(c \*AdvancedMockConfigProvider\) CheckHealth\(\) map\[string\]any](<#AdvancedMockConfigProvider.CheckHealth>)
+  - [func \(c \*AdvancedMockConfigProvider\) Get\(key string\) any](<#AdvancedMockConfigProvider.Get>)
   - [func \(c \*AdvancedMockConfigProvider\) GetAgentConfig\(name string\) \(schema.AgentConfig, error\)](<#AdvancedMockConfigProvider.GetAgentConfig>)
   - [func \(c \*AdvancedMockConfigProvider\) GetAgentsConfig\(\) \(\[\]schema.AgentConfig, error\)](<#AdvancedMockConfigProvider.GetAgentsConfig>)
   - [func \(c \*AdvancedMockConfigProvider\) GetBool\(key string\) bool](<#AdvancedMockConfigProvider.GetBool>)
   - [func \(c \*AdvancedMockConfigProvider\) GetCallCount\(\) int](<#AdvancedMockConfigProvider.GetCallCount>)
   - [func \(c \*AdvancedMockConfigProvider\) GetChangeHistory\(\) \[\]ConfigChange](<#AdvancedMockConfigProvider.GetChangeHistory>)
-  - [func \(c \*AdvancedMockConfigProvider\) GetConfigValues\(\) map\[string\]interface\{\}](<#AdvancedMockConfigProvider.GetConfigValues>)
+  - [func \(c \*AdvancedMockConfigProvider\) GetConfigValues\(\) map\[string\]any](<#AdvancedMockConfigProvider.GetConfigValues>)
   - [func \(c \*AdvancedMockConfigProvider\) GetDuration\(key string\) time.Duration](<#AdvancedMockConfigProvider.GetDuration>)
   - [func \(c \*AdvancedMockConfigProvider\) GetEmbeddingProvidersConfig\(\) \(\[\]schema.EmbeddingProviderConfig, error\)](<#AdvancedMockConfigProvider.GetEmbeddingProvidersConfig>)
   - [func \(c \*AdvancedMockConfigProvider\) GetFloat64\(key string\) float64](<#AdvancedMockConfigProvider.GetFloat64>)
@@ -70,13 +70,15 @@ Package config provides advanced test utilities and comprehensive mocks for test
   - [func \(c \*AdvancedMockConfigProvider\) GetToolsConfig\(\) \(\[\]iface.ToolConfig, error\)](<#AdvancedMockConfigProvider.GetToolsConfig>)
   - [func \(c \*AdvancedMockConfigProvider\) GetVectorStoresConfig\(\) \(\[\]schema.VectorStoreConfig, error\)](<#AdvancedMockConfigProvider.GetVectorStoresConfig>)
   - [func \(c \*AdvancedMockConfigProvider\) IsSet\(key string\) bool](<#AdvancedMockConfigProvider.IsSet>)
-  - [func \(c \*AdvancedMockConfigProvider\) Load\(configStruct interface\{\}\) error](<#AdvancedMockConfigProvider.Load>)
-  - [func \(c \*AdvancedMockConfigProvider\) Set\(key string, value interface\{\}\) error](<#AdvancedMockConfigProvider.Set>)
+  - [func \(c \*AdvancedMockConfigProvider\) Load\(configStruct any\) error](<#AdvancedMockConfigProvider.Load>)
+  - [func \(c \*AdvancedMockConfigProvider\) Set\(key string, value any\) error](<#AdvancedMockConfigProvider.Set>)
   - [func \(c \*AdvancedMockConfigProvider\) SetDefaults\(\) error](<#AdvancedMockConfigProvider.SetDefaults>)
-  - [func \(c \*AdvancedMockConfigProvider\) TriggerChange\(key string, newValue interface\{\}\)](<#AdvancedMockConfigProvider.TriggerChange>)
-  - [func \(c \*AdvancedMockConfigProvider\) UnmarshalKey\(key string, rawVal interface\{\}\) error](<#AdvancedMockConfigProvider.UnmarshalKey>)
+  - [func \(c \*AdvancedMockConfigProvider\) TriggerChange\(key string, newValue any\)](<#AdvancedMockConfigProvider.TriggerChange>)
+  - [func \(c \*AdvancedMockConfigProvider\) UnmarshalKey\(key string, rawVal any\) error](<#AdvancedMockConfigProvider.UnmarshalKey>)
   - [func \(c \*AdvancedMockConfigProvider\) Validate\(\) error](<#AdvancedMockConfigProvider.Validate>)
-  - [func \(c \*AdvancedMockConfigProvider\) Watch\(key string, callback func\(interface\{\}\)\) error](<#AdvancedMockConfigProvider.Watch>)
+  - [func \(c \*AdvancedMockConfigProvider\) Watch\(key string, callback func\(any\)\) error](<#AdvancedMockConfigProvider.Watch>)
+- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
 - [type BenchmarkHelper](<#BenchmarkHelper>)
   - [func NewBenchmarkHelper\(provider iface.Provider, keyCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
   - [func \(b \*BenchmarkHelper\) BenchmarkGetString\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkGetString>)
@@ -89,7 +91,7 @@ Package config provides advanced test utilities and comprehensive mocks for test
 - [type ConfigScenarioRunner](<#ConfigScenarioRunner>)
   - [func NewConfigScenarioRunner\(provider iface.Provider\) \*ConfigScenarioRunner](<#NewConfigScenarioRunner>)
   - [func \(r \*ConfigScenarioRunner\) RunConfigReloadScenario\(reloadCount int\) error](<#ConfigScenarioRunner.RunConfigReloadScenario>)
-  - [func \(r \*ConfigScenarioRunner\) RunProviderSwitchingScenario\(providerConfigs map\[string\]map\[string\]interface\{\}\) error](<#ConfigScenarioRunner.RunProviderSwitchingScenario>)
+  - [func \(r \*ConfigScenarioRunner\) RunProviderSwitchingScenario\(providerConfigs map\[string\]map\[string\]any\) error](<#ConfigScenarioRunner.RunProviderSwitchingScenario>)
 - [type IntegrationTestHelper](<#IntegrationTestHelper>)
   - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
   - [func \(h \*IntegrationTestHelper\) AddProvider\(name string, provider \*AdvancedMockConfigProvider\)](<#IntegrationTestHelper.AddProvider>)
@@ -102,7 +104,7 @@ Package config provides advanced test utilities and comprehensive mocks for test
   - [func \(m \*Metrics\) RecordConfigLoad\(ctx context.Context, duration time.Duration, success bool, source string\)](<#Metrics.RecordConfigLoad>)
   - [func \(m \*Metrics\) RecordValidation\(ctx context.Context, duration time.Duration, success bool\)](<#Metrics.RecordValidation>)
 - [type MockConfigOption](<#MockConfigOption>)
-  - [func WithMockConfigValues\(values map\[string\]interface\{\}\) MockConfigOption](<#WithMockConfigValues>)
+  - [func WithMockConfigValues\(values map\[string\]any\) MockConfigOption](<#WithMockConfigValues>)
   - [func WithMockDelay\(delay time.Duration\) MockConfigOption](<#WithMockDelay>)
   - [func WithMockError\(shouldError bool, err error\) MockConfigOption](<#WithMockError>)
   - [func WithStrictValidation\(strict bool\) MockConfigOption](<#WithStrictValidation>)
@@ -112,49 +114,49 @@ Package config provides advanced test utilities and comprehensive mocks for test
   - [func WithEnvPrefix\(prefix string\) Option](<#WithEnvPrefix>)
 
 <a name="AssertConfigHealth"></a>
-## func [AssertConfigHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L574>)
+## func [AssertConfigHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L569>)
 
 ```go
-func AssertConfigHealth(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertConfigHealth(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertConfigHealth validates configuration provider health check
+AssertConfigHealth validates configuration provider health check.
 
 <a name="AssertConfigValidation"></a>
-## func [AssertConfigValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L563>)
+## func [AssertConfigValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L557>)
 
 ```go
 func AssertConfigValidation(t *testing.T, provider iface.Provider, shouldPass bool)
 ```
 
-AssertConfigValidation validates configuration validation
+AssertConfigValidation validates configuration validation.
 
 <a name="AssertConfigValue"></a>
-## func [AssertConfigValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L517>)
+## func [AssertConfigValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L510>)
 
 ```go
-func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expectedValue interface{}, valueType string)
+func AssertConfigValue(t *testing.T, provider iface.Provider, key string, expectedValue any, valueType string)
 ```
 
-AssertConfigValue validates configuration value retrieval using Provider interface
+AssertConfigValue validates configuration value retrieval using Provider interface.
 
 <a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L583>)
+## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L579>)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
 ```
 
-AssertErrorType validates error types and codes
+AssertErrorType validates error types and codes.
 
 <a name="AssertProviderStructs"></a>
-## func [AssertProviderStructs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L540>)
+## func [AssertProviderStructs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L533>)
 
 ```go
 func AssertProviderStructs(t *testing.T, provider iface.Provider)
 ```
 
-AssertProviderStructs validates provider configuration structure loading
+AssertProviderStructs validates provider configuration structure loading.
 
 <a name="ConfigKey"></a>
 ## func [ConfigKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L199>)
@@ -163,34 +165,34 @@ AssertProviderStructs validates provider configuration structure loading
 func ConfigKey(prefix, envVar string) string
 ```
 
-ConfigKey converts an environment variable name to config key
+ConfigKey converts an environment variable name to config key.
 
 <a name="CreateTestConfig"></a>
-## func [CreateTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L445>)
+## func [CreateTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L438>)
 
 ```go
-func CreateTestConfig() map[string]interface{}
+func CreateTestConfig() map[string]any
 ```
 
-CreateTestConfig creates a comprehensive test configuration
+CreateTestConfig creates a comprehensive test configuration.
 
 <a name="CreateTestEnvironmentVars"></a>
-## func [CreateTestEnvironmentVars](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L503>)
+## func [CreateTestEnvironmentVars](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L496>)
 
 ```go
 func CreateTestEnvironmentVars() map[string]string
 ```
 
-CreateTestEnvironmentVars creates test environment variables
+CreateTestEnvironmentVars creates test environment variables.
 
 <a name="CreateTestProviderConfigs"></a>
-## func [CreateTestProviderConfigs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L477>)
+## func [CreateTestProviderConfigs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L470>)
 
 ```go
-func CreateTestProviderConfigs() map[string]map[string]interface{}
+func CreateTestProviderConfigs() map[string]map[string]any
 ```
 
-CreateTestProviderConfigs creates test configurations for different providers
+CreateTestProviderConfigs creates test configurations for different providers.
 
 <a name="DefaultLoaderOptions"></a>
 ## func [DefaultLoaderOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L25>)
@@ -199,7 +201,7 @@ CreateTestProviderConfigs creates test configurations for different providers
 func DefaultLoaderOptions() iface.LoaderOptions
 ```
 
-DefaultLoaderOptions returns default loader options for typical usage
+DefaultLoaderOptions returns default loader options for typical usage.
 
 <a name="EnvVarName"></a>
 ## func [EnvVarName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L194>)
@@ -208,7 +210,7 @@ DefaultLoaderOptions returns default loader options for typical usage
 func EnvVarName(prefix, key string) string
 ```
 
-EnvVarName converts a config key to environment variable name
+EnvVarName converts a config key to environment variable name.
 
 <a name="GetEnvConfigMap"></a>
 ## func [GetEnvConfigMap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L189>)
@@ -217,7 +219,7 @@ EnvVarName converts a config key to environment variable name
 func GetEnvConfigMap(prefix string) map[string]string
 ```
 
-GetEnvConfigMap returns a map of all environment variables with the given prefix
+GetEnvConfigMap returns a map of all environment variables with the given prefix.
 
 <a name="LoadConfig"></a>
 ## func [LoadConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L74>)
@@ -235,7 +237,7 @@ LoadConfig loads configuration using default settings. This is a convenience fun
 func LoadFromEnv(prefix string) (*iface.Config, error)
 ```
 
-LoadFromEnv loads configuration from environment variables only
+LoadFromEnv loads configuration from environment variables only.
 
 <a name="LoadFromFile"></a>
 ## func [LoadFromFile](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L131>)
@@ -244,7 +246,7 @@ LoadFromEnv loads configuration from environment variables only
 func LoadFromFile(filePath string) (*iface.Config, error)
 ```
 
-LoadFromFile loads configuration from a specific file
+LoadFromFile loads configuration from a specific file.
 
 <a name="MustLoadConfig"></a>
 ## func [MustLoadConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L158>)
@@ -289,13 +291,13 @@ NewJSONProvider creates a new JSON configuration provider.
 func NewLoader(options iface.LoaderOptions) (iface.Loader, error)
 ```
 
-NewLoader creates a new configuration loader with the given options
+NewLoader creates a new configuration loader with the given options.
 
 <a name="NewProvider"></a>
 ## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L42>)
 
 ```go
-func NewProvider(configName string, configPaths []string, envPrefix string, format string) (iface.Provider, error)
+func NewProvider(configName string, configPaths []string, envPrefix, format string) (iface.Provider, error)
 ```
 
 NewProvider creates a new configuration provider. Currently supports Viper\-based providers for YAML, JSON, TOML and environment variable configuration.
@@ -319,13 +321,13 @@ func NewYAMLProvider(configName string, configPaths []string, envPrefix string) 
 NewYAMLProvider creates a new YAML configuration provider.
 
 <a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L653>)
+## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L650>)
 
 ```go
-func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperations int, concurrency int)
+func RunLoadTest(t *testing.T, provider *AdvancedMockConfigProvider, numOperations, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on config provider
+RunLoadTest executes a load test scenario on config provider.
 
 <a name="SetDefaults"></a>
 ## func [SetDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L184>)
@@ -334,16 +336,16 @@ RunLoadTest executes a load test scenario on config provider
 func SetDefaults(cfg *iface.Config)
 ```
 
-SetDefaults sets default values for configuration fields
+SetDefaults sets default values for configuration fields.
 
 <a name="SetGlobalMetrics"></a>
-## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L142>)
+## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L150>)
 
 ```go
 func SetGlobalMetrics(m *Metrics)
 ```
 
-SetGlobalMetrics allows setting a custom metrics instance for testing
+SetGlobalMetrics allows setting a custom metrics instance for testing.
 
 <a name="ValidateConfig"></a>
 ## func [ValidateConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L167>)
@@ -352,12 +354,12 @@ SetGlobalMetrics allows setting a custom metrics instance for testing
 func ValidateConfig(cfg *iface.Config) error
 ```
 
-ValidateConfig validates the entire configuration structure
+ValidateConfig validates the entire configuration structure.
 
 <a name="AdvancedMockConfigProvider"></a>
-## type [AdvancedMockConfigProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L18-L41>)
+## type [AdvancedMockConfigProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L19-L34>)
 
-AdvancedMockConfigProvider provides a comprehensive mock implementation for testing
+AdvancedMockConfigProvider provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockConfigProvider struct {
@@ -367,220 +369,240 @@ type AdvancedMockConfigProvider struct {
 ```
 
 <a name="NewAdvancedMockConfigProvider"></a>
-### func [NewAdvancedMockConfigProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L52>)
+### func [NewAdvancedMockConfigProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L45>)
 
 ```go
 func NewAdvancedMockConfigProvider(name, providerType string, options ...MockConfigOption) *AdvancedMockConfigProvider
 ```
 
-NewAdvancedMockConfigProvider creates a new advanced mock with configurable behavior
+NewAdvancedMockConfigProvider creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockConfigProvider.CheckHealth"></a>
-### func \(\*AdvancedMockConfigProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L428>)
+### func \(\*AdvancedMockConfigProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L421>)
 
 ```go
-func (c *AdvancedMockConfigProvider) CheckHealth() map[string]interface{}
+func (c *AdvancedMockConfigProvider) CheckHealth() map[string]any
 ```
 
 <a name="AdvancedMockConfigProvider.Get"></a>
-### func \(\*AdvancedMockConfigProvider\) [Get](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L258>)
+### func \(\*AdvancedMockConfigProvider\) [Get](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L251>)
 
 ```go
-func (c *AdvancedMockConfigProvider) Get(key string) interface{}
+func (c *AdvancedMockConfigProvider) Get(key string) any
 ```
 
-Additional methods for extended functionality
+Additional methods for extended functionality.
 
 <a name="AdvancedMockConfigProvider.GetAgentConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetAgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L187>)
+### func \(\*AdvancedMockConfigProvider\) [GetAgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L180>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetAgentConfig(name string) (schema.AgentConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetAgentsConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetAgentsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L201>)
+### func \(\*AdvancedMockConfigProvider\) [GetAgentsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L194>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetAgentsConfig() ([]schema.AgentConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetBool"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetBool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L328>)
+### func \(\*AdvancedMockConfigProvider\) [GetBool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L321>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetBool(key string) bool
 ```
 
 <a name="AdvancedMockConfigProvider.GetCallCount"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L400>)
+### func \(\*AdvancedMockConfigProvider\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L393>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetCallCount() int
 ```
 
 <a name="AdvancedMockConfigProvider.GetChangeHistory"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetChangeHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L416>)
+### func \(\*AdvancedMockConfigProvider\) [GetChangeHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L409>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetChangeHistory() []ConfigChange
 ```
 
 <a name="AdvancedMockConfigProvider.GetConfigValues"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetConfigValues](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L406>)
+### func \(\*AdvancedMockConfigProvider\) [GetConfigValues](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L399>)
 
 ```go
-func (c *AdvancedMockConfigProvider) GetConfigValues() map[string]interface{}
+func (c *AdvancedMockConfigProvider) GetConfigValues() map[string]any
 ```
 
 <a name="AdvancedMockConfigProvider.GetDuration"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetDuration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L344>)
+### func \(\*AdvancedMockConfigProvider\) [GetDuration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L337>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetDuration(key string) time.Duration
 ```
 
 <a name="AdvancedMockConfigProvider.GetEmbeddingProvidersConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetEmbeddingProvidersConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L167>)
+### func \(\*AdvancedMockConfigProvider\) [GetEmbeddingProvidersConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L160>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetEmbeddingProvidersConfig() ([]schema.EmbeddingProviderConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetFloat64"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetFloat64](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L336>)
+### func \(\*AdvancedMockConfigProvider\) [GetFloat64](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L329>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetFloat64(key string) float64
 ```
 
 <a name="AdvancedMockConfigProvider.GetInt"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetInt](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L320>)
+### func \(\*AdvancedMockConfigProvider\) [GetInt](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L313>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetInt(key string) int
 ```
 
 <a name="AdvancedMockConfigProvider.GetLLMProviderConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetLLMProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L143>)
+### func \(\*AdvancedMockConfigProvider\) [GetLLMProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L136>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetLLMProviderConfig(name string) (schema.LLMProviderConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetLLMProvidersConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetLLMProvidersConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L156>)
+### func \(\*AdvancedMockConfigProvider\) [GetLLMProvidersConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L149>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetLLMProvidersConfig() ([]schema.LLMProviderConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetName"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L392>)
+### func \(\*AdvancedMockConfigProvider\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L385>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetName() string
 ```
 
-Additional helper methods for testing
+Additional helper methods for testing.
 
 <a name="AdvancedMockConfigProvider.GetProviderType"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetProviderType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L396>)
+### func \(\*AdvancedMockConfigProvider\) [GetProviderType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L389>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetProviderType() string
 ```
 
 <a name="AdvancedMockConfigProvider.GetString"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L312>)
+### func \(\*AdvancedMockConfigProvider\) [GetString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L305>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetString(key string) string
 ```
 
 <a name="AdvancedMockConfigProvider.GetToolConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetToolConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L212>)
+### func \(\*AdvancedMockConfigProvider\) [GetToolConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L205>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetToolConfig(name string) (iface.ToolConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetToolsConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetToolsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L225>)
+### func \(\*AdvancedMockConfigProvider\) [GetToolsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L218>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetToolsConfig() ([]iface.ToolConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.GetVectorStoresConfig"></a>
-### func \(\*AdvancedMockConfigProvider\) [GetVectorStoresConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L177>)
+### func \(\*AdvancedMockConfigProvider\) [GetVectorStoresConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L170>)
 
 ```go
 func (c *AdvancedMockConfigProvider) GetVectorStoresConfig() ([]schema.VectorStoreConfig, error)
 ```
 
 <a name="AdvancedMockConfigProvider.IsSet"></a>
-### func \(\*AdvancedMockConfigProvider\) [IsSet](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L136>)
+### func \(\*AdvancedMockConfigProvider\) [IsSet](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L129>)
 
 ```go
 func (c *AdvancedMockConfigProvider) IsSet(key string) bool
 ```
 
 <a name="AdvancedMockConfigProvider.Load"></a>
-### func \(\*AdvancedMockConfigProvider\) [Load](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L118>)
+### func \(\*AdvancedMockConfigProvider\) [Load](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L111>)
 
 ```go
-func (c *AdvancedMockConfigProvider) Load(configStruct interface{}) error
+func (c *AdvancedMockConfigProvider) Load(configStruct any) error
 ```
 
-Mock implementation methods for Provider interface
+Mock implementation methods for Provider interface.
 
 <a name="AdvancedMockConfigProvider.Set"></a>
-### func \(\*AdvancedMockConfigProvider\) [Set](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L276>)
+### func \(\*AdvancedMockConfigProvider\) [Set](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L269>)
 
 ```go
-func (c *AdvancedMockConfigProvider) Set(key string, value interface{}) error
+func (c *AdvancedMockConfigProvider) Set(key string, value any) error
 ```
 
 <a name="AdvancedMockConfigProvider.SetDefaults"></a>
-### func \(\*AdvancedMockConfigProvider\) [SetDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L236>)
+### func \(\*AdvancedMockConfigProvider\) [SetDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L229>)
 
 ```go
 func (c *AdvancedMockConfigProvider) SetDefaults() error
 ```
 
 <a name="AdvancedMockConfigProvider.TriggerChange"></a>
-### func \(\*AdvancedMockConfigProvider\) [TriggerChange](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L424>)
+### func \(\*AdvancedMockConfigProvider\) [TriggerChange](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L417>)
 
 ```go
-func (c *AdvancedMockConfigProvider) TriggerChange(key string, newValue interface{})
+func (c *AdvancedMockConfigProvider) TriggerChange(key string, newValue any)
 ```
 
 <a name="AdvancedMockConfigProvider.UnmarshalKey"></a>
-### func \(\*AdvancedMockConfigProvider\) [UnmarshalKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L127>)
+### func \(\*AdvancedMockConfigProvider\) [UnmarshalKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L120>)
 
 ```go
-func (c *AdvancedMockConfigProvider) UnmarshalKey(key string, rawVal interface{}) error
+func (c *AdvancedMockConfigProvider) UnmarshalKey(key string, rawVal any) error
 ```
 
 <a name="AdvancedMockConfigProvider.Validate"></a>
-### func \(\*AdvancedMockConfigProvider\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L373>)
+### func \(\*AdvancedMockConfigProvider\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L366>)
 
 ```go
 func (c *AdvancedMockConfigProvider) Validate() error
 ```
 
 <a name="AdvancedMockConfigProvider.Watch"></a>
-### func \(\*AdvancedMockConfigProvider\) [Watch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L357>)
+### func \(\*AdvancedMockConfigProvider\) [Watch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L350>)
 
 ```go
-func (c *AdvancedMockConfigProvider) Watch(key string, callback func(interface{})) error
+func (c *AdvancedMockConfigProvider) Watch(key string, callback func(any)) error
 ```
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L783-L787>)
+<a name="AdvancedMockcomponent"></a>
+## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/integration_mock.go#L8-L10>)
 
-BenchmarkHelper provides benchmarking utilities for configuration
+AdvancedMockcomponent is a mock implementation of Interface.
+
+```go
+type AdvancedMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewAdvancedMockcomponent"></a>
+### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/integration_mock.go#L13>)
+
+```go
+func NewAdvancedMockcomponent() *AdvancedMockcomponent
+```
+
+NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+
+<a name="BenchmarkHelper"></a>
+## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L782-L786>)
+
+BenchmarkHelper provides benchmarking utilities for configuration.
 
 ```go
 type BenchmarkHelper struct {
@@ -589,37 +611,37 @@ type BenchmarkHelper struct {
 ```
 
 <a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L789>)
+### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L788>)
 
 ```go
 func NewBenchmarkHelper(provider iface.Provider, keyCount int) *BenchmarkHelper
 ```
 
 <a name="BenchmarkHelper.BenchmarkGetString"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkGetString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L805>)
+### func \(\*BenchmarkHelper\) [BenchmarkGetString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L804>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkGetString(iterations int) (time.Duration, error)
 ```
 
 <a name="BenchmarkHelper.BenchmarkStructLoad"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkStructLoad](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L815>)
+### func \(\*BenchmarkHelper\) [BenchmarkStructLoad](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L814>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkStructLoad(iterations int) (time.Duration, error)
 ```
 
 <a name="BenchmarkHelper.BenchmarkValidation"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L832>)
+### func \(\*BenchmarkHelper\) [BenchmarkValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L831>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkValidation(iterations int) (time.Duration, error)
 ```
 
 <a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L594-L598>)
+## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L591-L595>)
 
-ConcurrentTestRunner runs config tests concurrently for performance testing
+ConcurrentTestRunner runs config tests concurrently for performance testing.
 
 ```go
 type ConcurrentTestRunner struct {
@@ -630,37 +652,37 @@ type ConcurrentTestRunner struct {
 ```
 
 <a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L600>)
+### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L597>)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
 <a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L608>)
+### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L605>)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
 <a name="ConfigChange"></a>
-## type [ConfigChange](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L44-L49>)
+## type [ConfigChange](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L37-L42>)
 
-ConfigChange represents a configuration change event
+ConfigChange represents a configuration change event.
 
 ```go
 type ConfigChange struct {
-    Key       string
-    OldValue  interface{}
-    NewValue  interface{}
     Timestamp time.Time
+    OldValue  any
+    NewValue  any
+    Key       string
 }
 ```
 
 <a name="ConfigScenarioRunner"></a>
-## type [ConfigScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L727-L729>)
+## type [ConfigScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L726-L728>)
 
-ConfigScenarioRunner runs common configuration scenarios
+ConfigScenarioRunner runs common configuration scenarios.
 
 ```go
 type ConfigScenarioRunner struct {
@@ -669,30 +691,30 @@ type ConfigScenarioRunner struct {
 ```
 
 <a name="NewConfigScenarioRunner"></a>
-### func [NewConfigScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L731>)
+### func [NewConfigScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L730>)
 
 ```go
 func NewConfigScenarioRunner(provider iface.Provider) *ConfigScenarioRunner
 ```
 
 <a name="ConfigScenarioRunner.RunConfigReloadScenario"></a>
-### func \(\*ConfigScenarioRunner\) [RunConfigReloadScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L763>)
+### func \(\*ConfigScenarioRunner\) [RunConfigReloadScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L762>)
 
 ```go
 func (r *ConfigScenarioRunner) RunConfigReloadScenario(reloadCount int) error
 ```
 
 <a name="ConfigScenarioRunner.RunProviderSwitchingScenario"></a>
-### func \(\*ConfigScenarioRunner\) [RunProviderSwitchingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L737>)
+### func \(\*ConfigScenarioRunner\) [RunProviderSwitchingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L736>)
 
 ```go
-func (r *ConfigScenarioRunner) RunProviderSwitchingScenario(providerConfigs map[string]map[string]interface{}) error
+func (r *ConfigScenarioRunner) RunProviderSwitchingScenario(providerConfigs map[string]map[string]any) error
 ```
 
 <a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L700-L702>)
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L699-L701>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -701,28 +723,28 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L704>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L703>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddProvider"></a>
-### func \(\*IntegrationTestHelper\) [AddProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L710>)
+### func \(\*IntegrationTestHelper\) [AddProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L709>)
 
 ```go
 func (h *IntegrationTestHelper) AddProvider(name string, provider *AdvancedMockConfigProvider)
 ```
 
 <a name="IntegrationTestHelper.GetProvider"></a>
-### func \(\*IntegrationTestHelper\) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L714>)
+### func \(\*IntegrationTestHelper\) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L713>)
 
 ```go
 func (h *IntegrationTestHelper) GetProvider(name string) *AdvancedMockConfigProvider
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L718>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L717>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
@@ -731,7 +753,7 @@ func (h *IntegrationTestHelper) Reset()
 <a name="Metrics"></a>
 ## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L13-L19>)
 
-Metrics holds the metrics for the config package
+Metrics holds the metrics for the config package.
 
 ```go
 type Metrics struct {
@@ -740,13 +762,13 @@ type Metrics struct {
 ```
 
 <a name="GetGlobalMetrics"></a>
-### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L129>)
+### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L132>)
 
 ```go
 func GetGlobalMetrics() *Metrics
 ```
 
-GetGlobalMetrics returns the global metrics instance, creating it if necessary
+GetGlobalMetrics returns the global metrics instance, creating it if necessary.
 
 <a name="NewMetrics"></a>
 ### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L22>)
@@ -755,7 +777,7 @@ GetGlobalMetrics returns the global metrics instance, creating it if necessary
 func NewMetrics(meter metric.Meter) (*Metrics, error)
 ```
 
-NewMetrics creates a new metrics instance for the config package
+NewMetrics creates a new metrics instance for the config package.
 
 <a name="NoOpMetrics"></a>
 ### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L79>)
@@ -773,7 +795,7 @@ NoOpMetrics returns a metrics instance that does nothing. Useful for testing or 
 func (m *Metrics) RecordConfigLoad(ctx context.Context, duration time.Duration, success bool, source string)
 ```
 
-RecordConfigLoad records a configuration load operation
+RecordConfigLoad records a configuration load operation.
 
 <a name="Metrics.RecordValidation"></a>
 ### func \(\*Metrics\) [RecordValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/metrics.go#L112>)
@@ -782,57 +804,57 @@ RecordConfigLoad records a configuration load operation
 func (m *Metrics) RecordValidation(ctx context.Context, duration time.Duration, success bool)
 ```
 
-RecordValidation records a configuration validation operation
+RecordValidation records a configuration validation operation.
 
 <a name="MockConfigOption"></a>
-## type [MockConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L83>)
+## type [MockConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L76>)
 
-MockConfigOption defines functional options for mock configuration
+MockConfigOption defines functional options for mock configuration.
 
 ```go
 type MockConfigOption func(*AdvancedMockConfigProvider)
 ```
 
 <a name="WithMockConfigValues"></a>
-### func [WithMockConfigValues](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L94>)
+### func [WithMockConfigValues](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L87>)
 
 ```go
-func WithMockConfigValues(values map[string]interface{}) MockConfigOption
+func WithMockConfigValues(values map[string]any) MockConfigOption
 ```
 
-WithMockConfigValues sets predefined configuration values
+WithMockConfigValues sets predefined configuration values.
 
 <a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L104>)
+### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L97>)
 
 ```go
 func WithMockDelay(delay time.Duration) MockConfigOption
 ```
 
-WithMockDelay adds artificial delay to mock operations
+WithMockDelay adds artificial delay to mock operations.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L86>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L79>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockConfigOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithStrictValidation"></a>
-### func [WithStrictValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L111>)
+### func [WithStrictValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/test_utils.go#L104>)
 
 ```go
 func WithStrictValidation(strict bool) MockConfigOption
 ```
 
-WithStrictValidation enables strict validation mode
+WithStrictValidation enables strict validation mode.
 
 <a name="Option"></a>
 ## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L204>)
 
-Option is a functional option for configuring components
+Option is a functional option for configuring components.
 
 ```go
 type Option func(*iface.Config)
@@ -845,7 +867,7 @@ type Option func(*iface.Config)
 func WithConfigName(name string) Option
 ```
 
-WithConfigName sets the configuration file name \(without extension\)
+WithConfigName sets the configuration file name \(without extension\).
 
 <a name="WithConfigPaths"></a>
 ### func [WithConfigPaths](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L216>)
@@ -854,7 +876,7 @@ WithConfigName sets the configuration file name \(without extension\)
 func WithConfigPaths(paths ...string) Option
 ```
 
-WithConfigPaths sets the paths to search for configuration files
+WithConfigPaths sets the paths to search for configuration files.
 
 <a name="WithEnvPrefix"></a>
 ### func [WithEnvPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/config/config.go#L225>)
@@ -863,6 +885,6 @@ WithConfigPaths sets the paths to search for configuration files
 func WithEnvPrefix(prefix string) Option
 ```
 
-WithEnvPrefix sets the environment variable prefix
+WithEnvPrefix sets the environment variable prefix.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

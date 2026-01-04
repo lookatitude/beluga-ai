@@ -25,25 +25,25 @@ Package prompts provides advanced test utilities and comprehensive mocks for tes
 - [Constants](<#constants>)
 - [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
 - [func AssertPromptValue\(t \*testing.T, value iface.PromptValue, expectedStringPattern string, expectedMessageCount int\)](<#AssertPromptValue>)
-- [func AssertTemplateFormat\(t \*testing.T, result interface\{\}, expectedPattern string\)](<#AssertTemplateFormat>)
-- [func AssertTemplateHealth\(t \*testing.T, health map\[string\]interface\{\}, expectedStatus string\)](<#AssertTemplateHealth>)
+- [func AssertTemplateFormat\(t \*testing.T, result any, expectedPattern string\)](<#AssertTemplateFormat>)
+- [func AssertTemplateHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertTemplateHealth>)
 - [func AssertTemplateVariables\(t \*testing.T, variables \[\]string, expectedCount int\)](<#AssertTemplateVariables>)
-- [func CreateTestInputs\(variableNames \[\]string\) map\[string\]interface\{\}](<#CreateTestInputs>)
+- [func CreateTestInputs\(variableNames \[\]string\) map\[string\]any](<#CreateTestInputs>)
 - [func CreateTestPromptConfig\(\) iface.Config](<#CreateTestPromptConfig>)
 - [func CreateTestPromptMessages\(count int\) \[\]schema.Message](<#CreateTestPromptMessages>)
 - [func CreateTestTemplate\(name string, variableCount int\) string](<#CreateTestTemplate>)
 - [func NewChatPromptAdapter\(name, systemTemplate, userTemplate string, variables \[\]string, opts ...Option\) \(iface.PromptFormatter, error\)](<#NewChatPromptAdapter>)
 - [func NewDefaultPromptAdapter\(name, template string, variables \[\]string, opts ...Option\) \(iface.PromptFormatter, error\)](<#NewDefaultPromptAdapter>)
 - [func NewStringPromptTemplate\(name, template string, opts ...Option\) \(iface.Template, error\)](<#NewStringPromptTemplate>)
-- [func RunLoadTest\(t \*testing.T, template \*AdvancedMockTemplate, numOperations int, concurrency int\)](<#RunLoadTest>)
+- [func RunLoadTest\(t \*testing.T, template \*AdvancedMockTemplate, numOperations, concurrency int\)](<#RunLoadTest>)
 - [type AdvancedMockPromptValue](<#AdvancedMockPromptValue>)
   - [func NewAdvancedMockPromptValue\(str string, messages \[\]schema.Message\) \*AdvancedMockPromptValue](<#NewAdvancedMockPromptValue>)
   - [func \(p \*AdvancedMockPromptValue\) ToMessages\(\) \[\]schema.Message](<#AdvancedMockPromptValue.ToMessages>)
   - [func \(p \*AdvancedMockPromptValue\) ToString\(\) string](<#AdvancedMockPromptValue.ToString>)
 - [type AdvancedMockTemplate](<#AdvancedMockTemplate>)
   - [func NewAdvancedMockTemplate\(name, templateStr string, options ...MockTemplateOption\) \*AdvancedMockTemplate](<#NewAdvancedMockTemplate>)
-  - [func \(t \*AdvancedMockTemplate\) CheckHealth\(\) map\[string\]interface\{\}](<#AdvancedMockTemplate.CheckHealth>)
-  - [func \(t \*AdvancedMockTemplate\) Format\(ctx context.Context, inputs map\[string\]interface\{\}\) \(interface\{\}, error\)](<#AdvancedMockTemplate.Format>)
+  - [func \(t \*AdvancedMockTemplate\) CheckHealth\(\) map\[string\]any](<#AdvancedMockTemplate.CheckHealth>)
+  - [func \(t \*AdvancedMockTemplate\) Format\(ctx context.Context, inputs map\[string\]any\) \(any, error\)](<#AdvancedMockTemplate.Format>)
   - [func \(t \*AdvancedMockTemplate\) GetCallCount\(\) int](<#AdvancedMockTemplate.GetCallCount>)
   - [func \(t \*AdvancedMockTemplate\) GetInputVariables\(\) \[\]string](<#AdvancedMockTemplate.GetInputVariables>)
   - [func \(t \*AdvancedMockTemplate\) GetTemplate\(\) string](<#AdvancedMockTemplate.GetTemplate>)
@@ -56,6 +56,8 @@ Package prompts provides advanced test utilities and comprehensive mocks for tes
   - [func \(m \*AdvancedMockTemplateManager\) GetTemplate\(name string\) \(iface.Template, bool\)](<#AdvancedMockTemplateManager.GetTemplate>)
   - [func \(m \*AdvancedMockTemplateManager\) GetTemplateCount\(\) int](<#AdvancedMockTemplateManager.GetTemplateCount>)
   - [func \(m \*AdvancedMockTemplateManager\) ListTemplates\(\) \[\]string](<#AdvancedMockTemplateManager.ListTemplates>)
+- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
 - [type BenchmarkHelper](<#BenchmarkHelper>)
   - [func NewBenchmarkHelper\(template iface.Template, inputCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
   - [func \(b \*BenchmarkHelper\) BenchmarkFormatting\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkFormatting>)
@@ -76,37 +78,37 @@ Package prompts provides advanced test utilities and comprehensive mocks for tes
 - [type Metrics](<#Metrics>)
   - [func NewMetrics\(meter metric.Meter, tracer trace.Tracer\) \(\*Metrics, error\)](<#NewMetrics>)
   - [func NoOpMetrics\(\) \*Metrics](<#NoOpMetrics>)
-  - [func \(m \*Metrics\) RecordAdapterError\(ctx context.Context, adapterType string, errorType string\)](<#Metrics.RecordAdapterError>)
+  - [func \(m \*Metrics\) RecordAdapterError\(ctx context.Context, adapterType, errorType string\)](<#Metrics.RecordAdapterError>)
   - [func \(m \*Metrics\) RecordAdapterRequest\(ctx context.Context, adapterType string, success bool\)](<#Metrics.RecordAdapterRequest>)
   - [func \(m \*Metrics\) RecordCacheHit\(ctx context.Context, cacheType string\)](<#Metrics.RecordCacheHit>)
   - [func \(m \*Metrics\) RecordCacheMiss\(ctx context.Context, cacheType string\)](<#Metrics.RecordCacheMiss>)
   - [func \(m \*Metrics\) RecordCacheSize\(ctx context.Context, size int64, cacheType string\)](<#Metrics.RecordCacheSize>)
-  - [func \(m \*Metrics\) RecordFormattingError\(ctx context.Context, adapterType string, errorType string\)](<#Metrics.RecordFormattingError>)
+  - [func \(m \*Metrics\) RecordFormattingError\(ctx context.Context, adapterType, errorType string\)](<#Metrics.RecordFormattingError>)
   - [func \(m \*Metrics\) RecordFormattingRequest\(ctx context.Context, adapterType string, duration time.Duration, success bool\)](<#Metrics.RecordFormattingRequest>)
   - [func \(m \*Metrics\) RecordTemplateCreated\(ctx context.Context, templateType string\)](<#Metrics.RecordTemplateCreated>)
-  - [func \(m \*Metrics\) RecordTemplateError\(ctx context.Context, templateName string, errorType string\)](<#Metrics.RecordTemplateError>)
+  - [func \(m \*Metrics\) RecordTemplateError\(ctx context.Context, templateName, errorType string\)](<#Metrics.RecordTemplateError>)
   - [func \(m \*Metrics\) RecordTemplateExecuted\(ctx context.Context, templateName string, duration time.Duration, success bool\)](<#Metrics.RecordTemplateExecuted>)
   - [func \(m \*Metrics\) RecordValidationError\(ctx context.Context, errorType string\)](<#Metrics.RecordValidationError>)
   - [func \(m \*Metrics\) RecordValidationRequest\(ctx context.Context, validationType string, success bool\)](<#Metrics.RecordValidationRequest>)
   - [func \(m \*Metrics\) StartFormattingSpan\(ctx context.Context, adapterType, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartFormattingSpan>)
   - [func \(m \*Metrics\) StartTemplateSpan\(ctx context.Context, templateName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartTemplateSpan>)
 - [type MetricsWrapper](<#MetricsWrapper>)
-  - [func \(m \*MetricsWrapper\) RecordAdapterError\(adapterType string, errorType string\)](<#MetricsWrapper.RecordAdapterError>)
+  - [func \(m \*MetricsWrapper\) RecordAdapterError\(adapterType, errorType string\)](<#MetricsWrapper.RecordAdapterError>)
   - [func \(m \*MetricsWrapper\) RecordAdapterRequest\(adapterType string\)](<#MetricsWrapper.RecordAdapterRequest>)
   - [func \(m \*MetricsWrapper\) RecordCacheHit\(\)](<#MetricsWrapper.RecordCacheHit>)
   - [func \(m \*MetricsWrapper\) RecordCacheMiss\(\)](<#MetricsWrapper.RecordCacheMiss>)
   - [func \(m \*MetricsWrapper\) RecordCacheSize\(size int64\)](<#MetricsWrapper.RecordCacheSize>)
-  - [func \(m \*MetricsWrapper\) RecordFormattingError\(adapterType string, errorType string\)](<#MetricsWrapper.RecordFormattingError>)
+  - [func \(m \*MetricsWrapper\) RecordFormattingError\(adapterType, errorType string\)](<#MetricsWrapper.RecordFormattingError>)
   - [func \(m \*MetricsWrapper\) RecordFormattingRequest\(adapterType string, duration float64\)](<#MetricsWrapper.RecordFormattingRequest>)
   - [func \(m \*MetricsWrapper\) RecordTemplateCreated\(templateType string\)](<#MetricsWrapper.RecordTemplateCreated>)
-  - [func \(m \*MetricsWrapper\) RecordTemplateError\(templateName string, errorType string\)](<#MetricsWrapper.RecordTemplateError>)
+  - [func \(m \*MetricsWrapper\) RecordTemplateError\(templateName, errorType string\)](<#MetricsWrapper.RecordTemplateError>)
   - [func \(m \*MetricsWrapper\) RecordTemplateExecuted\(templateName string, duration float64\)](<#MetricsWrapper.RecordTemplateExecuted>)
   - [func \(m \*MetricsWrapper\) RecordValidationError\(errorType string\)](<#MetricsWrapper.RecordValidationError>)
   - [func \(m \*MetricsWrapper\) RecordValidationRequest\(\)](<#MetricsWrapper.RecordValidationRequest>)
 - [type MockTemplateOption](<#MockTemplateOption>)
   - [func WithMockDelay\(delay time.Duration\) MockTemplateOption](<#WithMockDelay>)
   - [func WithMockError\(shouldError bool, err error\) MockTemplateOption](<#WithMockError>)
-  - [func WithMockResults\(results \[\]interface\{\}\) MockTemplateOption](<#WithMockResults>)
+  - [func WithMockResults\(results \[\]any\) MockTemplateOption](<#WithMockResults>)
   - [func WithMockVariables\(variables \[\]string\) MockTemplateOption](<#WithMockVariables>)
   - [func WithValidationRules\(rules map\[string\]string\) MockTemplateOption](<#WithValidationRules>)
 - [type Option](<#Option>)
@@ -118,15 +120,15 @@ Package prompts provides advanced test utilities and comprehensive mocks for tes
   - [func WithTracer\(tracer iface.Tracer\) Option](<#WithTracer>)
   - [func WithValidator\(validator iface.VariableValidator\) Option](<#WithValidator>)
 - [type PromptError](<#PromptError>)
-  - [func NewAdapterError\(op string, adapterType string, err error\) \*PromptError](<#NewAdapterError>)
-  - [func NewCacheError\(op string, details string, err error\) \*PromptError](<#NewCacheError>)
-  - [func NewConfigurationError\(op string, details string, err error\) \*PromptError](<#NewConfigurationError>)
-  - [func NewTemplateExecuteError\(op string, templateName string, err error\) \*PromptError](<#NewTemplateExecuteError>)
-  - [func NewTemplateParseError\(op string, templateName string, err error\) \*PromptError](<#NewTemplateParseError>)
-  - [func NewTimeoutError\(op string, timeout string\) \*PromptError](<#NewTimeoutError>)
-  - [func NewValidationError\(op string, details string, err error\) \*PromptError](<#NewValidationError>)
-  - [func NewVariableInvalidError\(op string, variableName string, expectedType string, actualType string\) \*PromptError](<#NewVariableInvalidError>)
-  - [func NewVariableMissingError\(op string, variableName string, templateName string\) \*PromptError](<#NewVariableMissingError>)
+  - [func NewAdapterError\(op, adapterType string, err error\) \*PromptError](<#NewAdapterError>)
+  - [func NewCacheError\(op, details string, err error\) \*PromptError](<#NewCacheError>)
+  - [func NewConfigurationError\(op, details string, err error\) \*PromptError](<#NewConfigurationError>)
+  - [func NewTemplateExecuteError\(op, templateName string, err error\) \*PromptError](<#NewTemplateExecuteError>)
+  - [func NewTemplateParseError\(op, templateName string, err error\) \*PromptError](<#NewTemplateParseError>)
+  - [func NewTimeoutError\(op, timeout string\) \*PromptError](<#NewTimeoutError>)
+  - [func NewValidationError\(op, details string, err error\) \*PromptError](<#NewValidationError>)
+  - [func NewVariableInvalidError\(op, variableName, expectedType, actualType string\) \*PromptError](<#NewVariableInvalidError>)
+  - [func NewVariableMissingError\(op, variableName, templateName string\) \*PromptError](<#NewVariableMissingError>)
 - [type PromptManager](<#PromptManager>)
   - [func NewPromptManager\(opts ...Option\) \(\*PromptManager, error\)](<#NewPromptManager>)
   - [func \(pm \*PromptManager\) Check\(ctx context.Context\) error](<#PromptManager.Check>)
@@ -138,17 +140,19 @@ Package prompts provides advanced test utilities and comprehensive mocks for tes
   - [func \(pm \*PromptManager\) NewStringTemplate\(name, template string\) \(iface.Template, error\)](<#PromptManager.NewStringTemplate>)
 - [type PromptScenarioRunner](<#PromptScenarioRunner>)
   - [func NewPromptScenarioRunner\(template iface.Template, manager iface.TemplateManager\) \*PromptScenarioRunner](<#NewPromptScenarioRunner>)
-  - [func \(r \*PromptScenarioRunner\) RunTemplateFormattingScenario\(ctx context.Context, inputSets \[\]map\[string\]interface\{\}\) \(\[\]interface\{\}, error\)](<#PromptScenarioRunner.RunTemplateFormattingScenario>)
-  - [func \(r \*PromptScenarioRunner\) RunTemplateManagementScenario\(ctx context.Context, templateNames \[\]string, templateStrings \[\]string\) error](<#PromptScenarioRunner.RunTemplateManagementScenario>)
+  - [func \(r \*PromptScenarioRunner\) RunTemplateFormattingScenario\(ctx context.Context, inputSets \[\]map\[string\]any\) \(\[\]any, error\)](<#PromptScenarioRunner.RunTemplateFormattingScenario>)
+  - [func \(r \*PromptScenarioRunner\) RunTemplateManagementScenario\(ctx context.Context, templateNames, templateStrings \[\]string\) error](<#PromptScenarioRunner.RunTemplateManagementScenario>)
+- [type PromptsMockcomponent](<#PromptsMockcomponent>)
+  - [func NewPromptsMockcomponent\(\) \*PromptsMockcomponent](<#NewPromptsMockcomponent>)
 - [type TemplateQualityTester](<#TemplateQualityTester>)
   - [func NewTemplateQualityTester\(template iface.Template\) \*TemplateQualityTester](<#NewTemplateQualityTester>)
-  - [func \(q \*TemplateQualityTester\) TestConsistency\(ctx context.Context, inputs map\[string\]interface\{\}, iterations int\) \(bool, error\)](<#TemplateQualityTester.TestConsistency>)
+  - [func \(q \*TemplateQualityTester\) TestConsistency\(ctx context.Context, inputs map\[string\]any, iterations int\) \(bool, error\)](<#TemplateQualityTester.TestConsistency>)
   - [func \(q \*TemplateQualityTester\) TestVariableHandling\(ctx context.Context, testCases \[\]VariableTestCase\) error](<#TemplateQualityTester.TestVariableHandling>)
 - [type VariableTestCase](<#VariableTestCase>)
 
 ## Constants
 
-<a name="ErrCodeTemplateParse"></a>Error codes for the prompts package
+<a name="ErrCodeTemplateParse"></a>Error codes for the prompts package.
 
 ```go
 const (
@@ -165,58 +169,58 @@ const (
 ```
 
 <a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L410>)
+## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L425>)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
 ```
 
-AssertErrorType validates error types and codes
+AssertErrorType validates error types and codes.
 
 <a name="AssertPromptValue"></a>
-## func [AssertPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L371>)
+## func [AssertPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L383>)
 
 ```go
 func AssertPromptValue(t *testing.T, value iface.PromptValue, expectedStringPattern string, expectedMessageCount int)
 ```
 
-AssertPromptValue validates prompt value results
+AssertPromptValue validates prompt value results.
 
 <a name="AssertTemplateFormat"></a>
-## func [AssertTemplateFormat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L363>)
+## func [AssertTemplateFormat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L375>)
 
 ```go
-func AssertTemplateFormat(t *testing.T, result interface{}, expectedPattern string)
+func AssertTemplateFormat(t *testing.T, result any, expectedPattern string)
 ```
 
-AssertTemplateFormat validates template formatting results
+AssertTemplateFormat validates template formatting results.
 
 <a name="AssertTemplateHealth"></a>
-## func [AssertTemplateHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L402>)
+## func [AssertTemplateHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L416>)
 
 ```go
-func AssertTemplateHealth(t *testing.T, health map[string]interface{}, expectedStatus string)
+func AssertTemplateHealth(t *testing.T, health map[string]any, expectedStatus string)
 ```
 
-AssertTemplateHealth validates template health check results
+AssertTemplateHealth validates template health check results.
 
 <a name="AssertTemplateVariables"></a>
-## func [AssertTemplateVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L393>)
+## func [AssertTemplateVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L406>)
 
 ```go
 func AssertTemplateVariables(t *testing.T, variables []string, expectedCount int)
 ```
 
-AssertTemplateVariables validates template input variables
+AssertTemplateVariables validates template input variables.
 
 <a name="CreateTestInputs"></a>
 ## func [CreateTestInputs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L300>)
 
 ```go
-func CreateTestInputs(variableNames []string) map[string]interface{}
+func CreateTestInputs(variableNames []string) map[string]any
 ```
 
-CreateTestInputs creates test input variables for templates
+CreateTestInputs creates test input variables for templates.
 
 <a name="CreateTestPromptConfig"></a>
 ## func [CreateTestPromptConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L316>)
@@ -225,7 +229,7 @@ CreateTestInputs creates test input variables for templates
 func CreateTestPromptConfig() iface.Config
 ```
 
-CreateTestPromptConfig creates a test prompt configuration
+CreateTestPromptConfig creates a test prompt configuration.
 
 <a name="CreateTestPromptMessages"></a>
 ## func [CreateTestPromptMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L332>)
@@ -234,16 +238,16 @@ CreateTestPromptConfig creates a test prompt configuration
 func CreateTestPromptMessages(count int) []schema.Message
 ```
 
-CreateTestMessages creates test chat messages for prompt value testing
+CreateTestMessages creates test chat messages for prompt value testing.
 
 <a name="CreateTestTemplate"></a>
-## func [CreateTestTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L288>)
+## func [CreateTestTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L286>)
 
 ```go
 func CreateTestTemplate(name string, variableCount int) string
 ```
 
-CreateTestTemplate creates a test template string
+CreateTestTemplate creates a test template string.
 
 <a name="NewChatPromptAdapter"></a>
 ## func [NewChatPromptAdapter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L191>)
@@ -273,18 +277,18 @@ func NewStringPromptTemplate(name, template string, opts ...Option) (iface.Templ
 NewStringPromptTemplate creates a string prompt template with default configuration. This is a convenience function for simple use cases.
 
 <a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L480>)
+## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L496>)
 
 ```go
-func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations int, concurrency int)
+func RunLoadTest(t *testing.T, template *AdvancedMockTemplate, numOperations, concurrency int)
 ```
 
-RunLoadTest executes a load test scenario on templates
+RunLoadTest executes a load test scenario on templates.
 
 <a name="AdvancedMockPromptValue"></a>
-## type [AdvancedMockPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L208-L211>)
+## type [AdvancedMockPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L206-L209>)
 
-AdvancedMockPromptValue provides a mock implementation of PromptValue
+AdvancedMockPromptValue provides a mock implementation of PromptValue.
 
 ```go
 type AdvancedMockPromptValue struct {
@@ -293,30 +297,30 @@ type AdvancedMockPromptValue struct {
 ```
 
 <a name="NewAdvancedMockPromptValue"></a>
-### func [NewAdvancedMockPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L213>)
+### func [NewAdvancedMockPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L211>)
 
 ```go
 func NewAdvancedMockPromptValue(str string, messages []schema.Message) *AdvancedMockPromptValue
 ```
 
 <a name="AdvancedMockPromptValue.ToMessages"></a>
-### func \(\*AdvancedMockPromptValue\) [ToMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L224>)
+### func \(\*AdvancedMockPromptValue\) [ToMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L222>)
 
 ```go
 func (p *AdvancedMockPromptValue) ToMessages() []schema.Message
 ```
 
 <a name="AdvancedMockPromptValue.ToString"></a>
-### func \(\*AdvancedMockPromptValue\) [ToString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L220>)
+### func \(\*AdvancedMockPromptValue\) [ToString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L218>)
 
 ```go
 func (p *AdvancedMockPromptValue) ToString() string
 ```
 
 <a name="AdvancedMockTemplate"></a>
-## type [AdvancedMockTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L19-L43>)
+## type [AdvancedMockTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L23-L39>)
 
-AdvancedMockTemplate provides a comprehensive mock implementation for testing
+AdvancedMockTemplate provides a comprehensive mock implementation for testing.
 
 ```go
 type AdvancedMockTemplate struct {
@@ -326,73 +330,73 @@ type AdvancedMockTemplate struct {
 ```
 
 <a name="NewAdvancedMockTemplate"></a>
-### func [NewAdvancedMockTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L46>)
+### func [NewAdvancedMockTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L42>)
 
 ```go
 func NewAdvancedMockTemplate(name, templateStr string, options ...MockTemplateOption) *AdvancedMockTemplate
 ```
 
-NewAdvancedMockTemplate creates a new advanced mock with configurable behavior
+NewAdvancedMockTemplate creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockTemplate.CheckHealth"></a>
-### func \(\*AdvancedMockTemplate\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L194>)
+### func \(\*AdvancedMockTemplate\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L192>)
 
 ```go
-func (t *AdvancedMockTemplate) CheckHealth() map[string]interface{}
+func (t *AdvancedMockTemplate) CheckHealth() map[string]any
 ```
 
 <a name="AdvancedMockTemplate.Format"></a>
-### func \(\*AdvancedMockTemplate\) [Format](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L115>)
+### func \(\*AdvancedMockTemplate\) [Format](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L111>)
 
 ```go
-func (t *AdvancedMockTemplate) Format(ctx context.Context, inputs map[string]interface{}) (interface{}, error)
+func (t *AdvancedMockTemplate) Format(ctx context.Context, inputs map[string]any) (any, error)
 ```
 
-Mock implementation methods for PromptFormatter interface
+Mock implementation methods for PromptFormatter interface.
 
 <a name="AdvancedMockTemplate.GetCallCount"></a>
-### func \(\*AdvancedMockTemplate\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L184>)
+### func \(\*AdvancedMockTemplate\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L182>)
 
 ```go
 func (t *AdvancedMockTemplate) GetCallCount() int
 ```
 
-Additional helper methods for testing
+Additional helper methods for testing.
 
 <a name="AdvancedMockTemplate.GetInputVariables"></a>
-### func \(\*AdvancedMockTemplate\) [GetInputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L151>)
+### func \(\*AdvancedMockTemplate\) [GetInputVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L149>)
 
 ```go
 func (t *AdvancedMockTemplate) GetInputVariables() []string
 ```
 
 <a name="AdvancedMockTemplate.GetTemplate"></a>
-### func \(\*AdvancedMockTemplate\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L190>)
+### func \(\*AdvancedMockTemplate\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L188>)
 
 ```go
 func (t *AdvancedMockTemplate) GetTemplate() string
 ```
 
 <a name="AdvancedMockTemplate.Name"></a>
-### func \(\*AdvancedMockTemplate\) [Name](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L160>)
+### func \(\*AdvancedMockTemplate\) [Name](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L158>)
 
 ```go
 func (t *AdvancedMockTemplate) Name() string
 ```
 
-Mock implementation methods for Template interface
+Mock implementation methods for Template interface.
 
 <a name="AdvancedMockTemplate.Validate"></a>
-### func \(\*AdvancedMockTemplate\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L164>)
+### func \(\*AdvancedMockTemplate\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L162>)
 
 ```go
 func (t *AdvancedMockTemplate) Validate() error
 ```
 
 <a name="AdvancedMockTemplateManager"></a>
-## type [AdvancedMockTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L231-L234>)
+## type [AdvancedMockTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L229-L232>)
 
-AdvancedMockTemplateManager provides a mock template manager
+AdvancedMockTemplateManager provides a mock template manager.
 
 ```go
 type AdvancedMockTemplateManager struct {
@@ -401,51 +405,71 @@ type AdvancedMockTemplateManager struct {
 ```
 
 <a name="NewAdvancedMockTemplateManager"></a>
-### func [NewAdvancedMockTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L236>)
+### func [NewAdvancedMockTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L234>)
 
 ```go
 func NewAdvancedMockTemplateManager() *AdvancedMockTemplateManager
 ```
 
 <a name="AdvancedMockTemplateManager.CreateTemplate"></a>
-### func \(\*AdvancedMockTemplateManager\) [CreateTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L242>)
+### func \(\*AdvancedMockTemplateManager\) [CreateTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L240>)
 
 ```go
 func (m *AdvancedMockTemplateManager) CreateTemplate(name, templateStr string) (iface.Template, error)
 ```
 
 <a name="AdvancedMockTemplateManager.DeleteTemplate"></a>
-### func \(\*AdvancedMockTemplateManager\) [DeleteTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L271>)
+### func \(\*AdvancedMockTemplateManager\) [DeleteTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L269>)
 
 ```go
 func (m *AdvancedMockTemplateManager) DeleteTemplate(name string) error
 ```
 
 <a name="AdvancedMockTemplateManager.GetTemplate"></a>
-### func \(\*AdvancedMockTemplateManager\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L252>)
+### func \(\*AdvancedMockTemplateManager\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L250>)
 
 ```go
 func (m *AdvancedMockTemplateManager) GetTemplate(name string) (iface.Template, bool)
 ```
 
 <a name="AdvancedMockTemplateManager.GetTemplateCount"></a>
-### func \(\*AdvancedMockTemplateManager\) [GetTemplateCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L279>)
+### func \(\*AdvancedMockTemplateManager\) [GetTemplateCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L277>)
 
 ```go
 func (m *AdvancedMockTemplateManager) GetTemplateCount() int
 ```
 
 <a name="AdvancedMockTemplateManager.ListTemplates"></a>
-### func \(\*AdvancedMockTemplateManager\) [ListTemplates](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L260>)
+### func \(\*AdvancedMockTemplateManager\) [ListTemplates](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L258>)
 
 ```go
 func (m *AdvancedMockTemplateManager) ListTemplates() []string
 ```
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L643-L646>)
+<a name="AdvancedMockcomponent"></a>
+## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/advanced_mock.go#L8-L10>)
 
-BenchmarkHelper provides benchmarking utilities for prompts
+AdvancedMockcomponent is a mock implementation of Interface.
+
+```go
+type AdvancedMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewAdvancedMockcomponent"></a>
+### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/advanced_mock.go#L13>)
+
+```go
+func NewAdvancedMockcomponent() *AdvancedMockcomponent
+```
+
+NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+
+<a name="BenchmarkHelper"></a>
+## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L660-L663>)
+
+BenchmarkHelper provides benchmarking utilities for prompts.
 
 ```go
 type BenchmarkHelper struct {
@@ -454,30 +478,30 @@ type BenchmarkHelper struct {
 ```
 
 <a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L648>)
+### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L665>)
 
 ```go
 func NewBenchmarkHelper(template iface.Template, inputCount int) *BenchmarkHelper
 ```
 
 <a name="BenchmarkHelper.BenchmarkFormatting"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkFormatting](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L664>)
+### func \(\*BenchmarkHelper\) [BenchmarkFormatting](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L681>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkFormatting(iterations int) (time.Duration, error)
 ```
 
 <a name="BenchmarkHelper.BenchmarkValidation"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L679>)
+### func \(\*BenchmarkHelper\) [BenchmarkValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L696>)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkValidation(iterations int) (time.Duration, error)
 ```
 
 <a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L421-L425>)
+## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L437-L441>)
 
-ConcurrentTestRunner runs prompt tests concurrently for performance testing
+ConcurrentTestRunner runs prompt tests concurrently for performance testing.
 
 ```go
 type ConcurrentTestRunner struct {
@@ -488,14 +512,14 @@ type ConcurrentTestRunner struct {
 ```
 
 <a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L427>)
+### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L443>)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
 <a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L435>)
+### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L451>)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
@@ -504,7 +528,7 @@ func (r *ConcurrentTestRunner) Run() error
 <a name="Config"></a>
 ## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L10>)
 
-Config is an alias for iface.Config
+Config is an alias for iface.Config.
 
 ```go
 type Config = iface.Config
@@ -517,12 +541,12 @@ type Config = iface.Config
 func DefaultConfig() *Config
 ```
 
-DefaultConfig returns a default configuration
+DefaultConfig returns a default configuration.
 
 <a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L525-L529>)
+## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L542-L546>)
 
-IntegrationTestHelper provides utilities for integration testing
+IntegrationTestHelper provides utilities for integration testing.
 
 ```go
 type IntegrationTestHelper struct {
@@ -531,49 +555,49 @@ type IntegrationTestHelper struct {
 ```
 
 <a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L531>)
+### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L548>)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
 <a name="IntegrationTestHelper.AddPromptValue"></a>
-### func \(\*IntegrationTestHelper\) [AddPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L543>)
+### func \(\*IntegrationTestHelper\) [AddPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L560>)
 
 ```go
 func (h *IntegrationTestHelper) AddPromptValue(name string, value *AdvancedMockPromptValue)
 ```
 
 <a name="IntegrationTestHelper.AddTemplate"></a>
-### func \(\*IntegrationTestHelper\) [AddTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L539>)
+### func \(\*IntegrationTestHelper\) [AddTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L556>)
 
 ```go
 func (h *IntegrationTestHelper) AddTemplate(name string, template *AdvancedMockTemplate)
 ```
 
 <a name="IntegrationTestHelper.GetPromptValue"></a>
-### func \(\*IntegrationTestHelper\) [GetPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L555>)
+### func \(\*IntegrationTestHelper\) [GetPromptValue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L572>)
 
 ```go
 func (h *IntegrationTestHelper) GetPromptValue(name string) *AdvancedMockPromptValue
 ```
 
 <a name="IntegrationTestHelper.GetTemplate"></a>
-### func \(\*IntegrationTestHelper\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L547>)
+### func \(\*IntegrationTestHelper\) [GetTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L564>)
 
 ```go
 func (h *IntegrationTestHelper) GetTemplate(name string) *AdvancedMockTemplate
 ```
 
 <a name="IntegrationTestHelper.GetTemplateManager"></a>
-### func \(\*IntegrationTestHelper\) [GetTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L551>)
+### func \(\*IntegrationTestHelper\) [GetTemplateManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L568>)
 
 ```go
 func (h *IntegrationTestHelper) GetTemplateManager() *AdvancedMockTemplateManager
 ```
 
 <a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L559>)
+### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L576>)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
@@ -582,7 +606,7 @@ func (h *IntegrationTestHelper) Reset()
 <a name="Metrics"></a>
 ## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L13-L40>)
 
-Metrics provides metrics collection for the prompts package
+Metrics provides metrics collection for the prompts package.
 
 ```go
 type Metrics struct {
@@ -597,10 +621,10 @@ type Metrics struct {
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
 ```
 
-NewMetrics creates a new metrics collector with OTEL instrumentation
+NewMetrics creates a new metrics collector with OTEL instrumentation.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L403>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L409>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -612,10 +636,10 @@ NoOpMetrics returns a metrics instance that does nothing. Useful for testing or 
 ### func \(\*Metrics\) [RecordAdapterError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L362>)
 
 ```go
-func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType string, errorType string)
+func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType, errorType string)
 ```
 
-RecordAdapterError records an adapter error
+RecordAdapterError records an adapter error.
 
 <a name="Metrics.RecordAdapterRequest"></a>
 ### func \(\*Metrics\) [RecordAdapterRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L342>)
@@ -624,7 +648,7 @@ RecordAdapterError records an adapter error
 func (m *Metrics) RecordAdapterRequest(ctx context.Context, adapterType string, success bool)
 ```
 
-RecordAdapterRequest records an adapter request
+RecordAdapterRequest records an adapter request.
 
 <a name="Metrics.RecordCacheHit"></a>
 ### func \(\*Metrics\) [RecordCacheHit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L303>)
@@ -633,7 +657,7 @@ RecordAdapterRequest records an adapter request
 func (m *Metrics) RecordCacheHit(ctx context.Context, cacheType string)
 ```
 
-RecordCacheHit records a cache hit
+RecordCacheHit records a cache hit.
 
 <a name="Metrics.RecordCacheMiss"></a>
 ### func \(\*Metrics\) [RecordCacheMiss](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L316>)
@@ -642,7 +666,7 @@ RecordCacheHit records a cache hit
 func (m *Metrics) RecordCacheMiss(ctx context.Context, cacheType string)
 ```
 
-RecordCacheMiss records a cache miss
+RecordCacheMiss records a cache miss.
 
 <a name="Metrics.RecordCacheSize"></a>
 ### func \(\*Metrics\) [RecordCacheSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L329>)
@@ -651,16 +675,16 @@ RecordCacheMiss records a cache miss
 func (m *Metrics) RecordCacheSize(ctx context.Context, size int64, cacheType string)
 ```
 
-RecordCacheSize records the current cache size
+RecordCacheSize records the current cache size.
 
 <a name="Metrics.RecordFormattingError"></a>
 ### func \(\*Metrics\) [RecordFormattingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L256>)
 
 ```go
-func (m *Metrics) RecordFormattingError(ctx context.Context, adapterType string, errorType string)
+func (m *Metrics) RecordFormattingError(ctx context.Context, adapterType, errorType string)
 ```
 
-RecordFormattingError records a formatting error
+RecordFormattingError records a formatting error.
 
 <a name="Metrics.RecordFormattingRequest"></a>
 ### func \(\*Metrics\) [RecordFormattingRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L233>)
@@ -669,7 +693,7 @@ RecordFormattingError records a formatting error
 func (m *Metrics) RecordFormattingRequest(ctx context.Context, adapterType string, duration time.Duration, success bool)
 ```
 
-RecordFormattingRequest records a formatting request
+RecordFormattingRequest records a formatting request.
 
 <a name="Metrics.RecordTemplateCreated"></a>
 ### func \(\*Metrics\) [RecordTemplateCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L183>)
@@ -678,16 +702,16 @@ RecordFormattingRequest records a formatting request
 func (m *Metrics) RecordTemplateCreated(ctx context.Context, templateType string)
 ```
 
-RecordTemplateCreated records a template creation
+RecordTemplateCreated records a template creation.
 
 <a name="Metrics.RecordTemplateError"></a>
 ### func \(\*Metrics\) [RecordTemplateError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L219>)
 
 ```go
-func (m *Metrics) RecordTemplateError(ctx context.Context, templateName string, errorType string)
+func (m *Metrics) RecordTemplateError(ctx context.Context, templateName, errorType string)
 ```
 
-RecordTemplateError records a template execution error
+RecordTemplateError records a template execution error.
 
 <a name="Metrics.RecordTemplateExecuted"></a>
 ### func \(\*Metrics\) [RecordTemplateExecuted](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L196>)
@@ -696,7 +720,7 @@ RecordTemplateError records a template execution error
 func (m *Metrics) RecordTemplateExecuted(ctx context.Context, templateName string, duration time.Duration, success bool)
 ```
 
-RecordTemplateExecuted records a template execution
+RecordTemplateExecuted records a template execution.
 
 <a name="Metrics.RecordValidationError"></a>
 ### func \(\*Metrics\) [RecordValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L290>)
@@ -705,7 +729,7 @@ RecordTemplateExecuted records a template execution
 func (m *Metrics) RecordValidationError(ctx context.Context, errorType string)
 ```
 
-RecordValidationError records a validation error
+RecordValidationError records a validation error.
 
 <a name="Metrics.RecordValidationRequest"></a>
 ### func \(\*Metrics\) [RecordValidationRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L270>)
@@ -714,30 +738,30 @@ RecordValidationError records a validation error
 func (m *Metrics) RecordValidationRequest(ctx context.Context, validationType string, success bool)
 ```
 
-RecordValidationRequest records a validation request
+RecordValidationRequest records a validation request.
 
 <a name="Metrics.StartFormattingSpan"></a>
-### func \(\*Metrics\) [StartFormattingSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L389>)
+### func \(\*Metrics\) [StartFormattingSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L394>)
 
 ```go
 func (m *Metrics) StartFormattingSpan(ctx context.Context, adapterType, operation string) (context.Context, trace.Span)
 ```
 
-StartFormattingSpan starts a new span for formatting operations
+StartFormattingSpan starts a new span for formatting operations.
 
 <a name="Metrics.StartTemplateSpan"></a>
-### func \(\*Metrics\) [StartTemplateSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L376>)
+### func \(\*Metrics\) [StartTemplateSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics.go#L378>)
 
 ```go
 func (m *Metrics) StartTemplateSpan(ctx context.Context, templateName, operation string) (context.Context, trace.Span)
 ```
 
-StartTemplateSpan starts a new span for template operations
+StartTemplateSpan starts a new span for template operations.
 
 <a name="MetricsWrapper"></a>
 ## type [MetricsWrapper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L12-L14>)
 
-MetricsWrapper wraps the OTEL Metrics to implement the iface.Metrics interface
+MetricsWrapper wraps the OTEL Metrics to implement the iface.Metrics interface.
 
 ```go
 type MetricsWrapper struct {
@@ -749,7 +773,7 @@ type MetricsWrapper struct {
 ### func \(\*MetricsWrapper\) [RecordAdapterError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L89>)
 
 ```go
-func (m *MetricsWrapper) RecordAdapterError(adapterType string, errorType string)
+func (m *MetricsWrapper) RecordAdapterError(adapterType, errorType string)
 ```
 
 <a name="MetricsWrapper.RecordAdapterRequest"></a>
@@ -759,7 +783,7 @@ func (m *MetricsWrapper) RecordAdapterError(adapterType string, errorType string
 func (m *MetricsWrapper) RecordAdapterRequest(adapterType string)
 ```
 
-Adapter metrics implementation
+Adapter metrics implementation.
 
 <a name="MetricsWrapper.RecordCacheHit"></a>
 ### func \(\*MetricsWrapper\) [RecordCacheHit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L64>)
@@ -768,7 +792,7 @@ Adapter metrics implementation
 func (m *MetricsWrapper) RecordCacheHit()
 ```
 
-Cache metrics implementation
+Cache metrics implementation.
 
 <a name="MetricsWrapper.RecordCacheMiss"></a>
 ### func \(\*MetricsWrapper\) [RecordCacheMiss](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L70>)
@@ -788,7 +812,7 @@ func (m *MetricsWrapper) RecordCacheSize(size int64)
 ### func \(\*MetricsWrapper\) [RecordFormattingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L44>)
 
 ```go
-func (m *MetricsWrapper) RecordFormattingError(adapterType string, errorType string)
+func (m *MetricsWrapper) RecordFormattingError(adapterType, errorType string)
 ```
 
 <a name="MetricsWrapper.RecordFormattingRequest"></a>
@@ -798,7 +822,7 @@ func (m *MetricsWrapper) RecordFormattingError(adapterType string, errorType str
 func (m *MetricsWrapper) RecordFormattingRequest(adapterType string, duration float64)
 ```
 
-Formatting metrics implementation
+Formatting metrics implementation.
 
 <a name="MetricsWrapper.RecordTemplateCreated"></a>
 ### func \(\*MetricsWrapper\) [RecordTemplateCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L17>)
@@ -807,13 +831,13 @@ Formatting metrics implementation
 func (m *MetricsWrapper) RecordTemplateCreated(templateType string)
 ```
 
-Template metrics implementation
+Template metrics implementation.
 
 <a name="MetricsWrapper.RecordTemplateError"></a>
 ### func \(\*MetricsWrapper\) [RecordTemplateError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/metrics_wrapper.go#L30>)
 
 ```go
-func (m *MetricsWrapper) RecordTemplateError(templateName string, errorType string)
+func (m *MetricsWrapper) RecordTemplateError(templateName, errorType string)
 ```
 
 <a name="MetricsWrapper.RecordTemplateExecuted"></a>
@@ -837,66 +861,66 @@ func (m *MetricsWrapper) RecordValidationError(errorType string)
 func (m *MetricsWrapper) RecordValidationRequest()
 ```
 
-Variable validation metrics implementation
+Variable validation metrics implementation.
 
 <a name="MockTemplateOption"></a>
-## type [MockTemplateOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L71>)
+## type [MockTemplateOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L67>)
 
-MockTemplateOption defines functional options for mock configuration
+MockTemplateOption defines functional options for mock configuration.
 
 ```go
 type MockTemplateOption func(*AdvancedMockTemplate)
 ```
 
 <a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L98>)
+### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L94>)
 
 ```go
 func WithMockDelay(delay time.Duration) MockTemplateOption
 ```
 
-WithMockDelay adds artificial delay to mock operations
+WithMockDelay adds artificial delay to mock operations.
 
 <a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L74>)
+### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L70>)
 
 ```go
 func WithMockError(shouldError bool, err error) MockTemplateOption
 ```
 
-WithMockError configures the mock to return errors
+WithMockError configures the mock to return errors.
 
 <a name="WithMockResults"></a>
-### func [WithMockResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L90>)
+### func [WithMockResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L86>)
 
 ```go
-func WithMockResults(results []interface{}) MockTemplateOption
+func WithMockResults(results []any) MockTemplateOption
 ```
 
-WithMockResults sets predefined format results
+WithMockResults sets predefined format results.
 
 <a name="WithMockVariables"></a>
-### func [WithMockVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L82>)
+### func [WithMockVariables](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L78>)
 
 ```go
 func WithMockVariables(variables []string) MockTemplateOption
 ```
 
-WithMockVariables sets the input variables for the template
+WithMockVariables sets the input variables for the template.
 
 <a name="WithValidationRules"></a>
-### func [WithValidationRules](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L105>)
+### func [WithValidationRules](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L101>)
 
 ```go
 func WithValidationRules(rules map[string]string) MockTemplateOption
 ```
 
-WithValidationRules sets validation rules for template variables
+WithValidationRules sets validation rules for template variables.
 
 <a name="Option"></a>
 ## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L13>)
 
-Option represents a functional option for configuring prompt components
+Option represents a functional option for configuring prompt components.
 
 ```go
 type Option = iface.Option
@@ -909,7 +933,7 @@ type Option = iface.Option
 func WithConfig(config *Config) Option
 ```
 
-WithConfig sets the configuration
+WithConfig sets the configuration.
 
 <a name="WithHealthChecker"></a>
 ### func [WithHealthChecker](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L61>)
@@ -918,7 +942,7 @@ WithConfig sets the configuration
 func WithHealthChecker(checker iface.HealthChecker) Option
 ```
 
-WithHealthChecker sets the health checker
+WithHealthChecker sets the health checker.
 
 <a name="WithLogger"></a>
 ### func [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L54>)
@@ -927,7 +951,7 @@ WithHealthChecker sets the health checker
 func WithLogger(logger iface.Logger) Option
 ```
 
-WithLogger sets the logger
+WithLogger sets the logger.
 
 <a name="WithMetrics"></a>
 ### func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L40>)
@@ -936,7 +960,7 @@ WithLogger sets the logger
 func WithMetrics(metrics iface.Metrics) Option
 ```
 
-WithMetrics sets the metrics collector
+WithMetrics sets the metrics collector.
 
 <a name="WithTemplateEngine"></a>
 ### func [WithTemplateEngine](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L33>)
@@ -945,7 +969,7 @@ WithMetrics sets the metrics collector
 func WithTemplateEngine(engine iface.TemplateEngine) Option
 ```
 
-WithTemplateEngine sets a custom template engine
+WithTemplateEngine sets a custom template engine.
 
 <a name="WithTracer"></a>
 ### func [WithTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L47>)
@@ -954,7 +978,7 @@ WithTemplateEngine sets a custom template engine
 func WithTracer(tracer iface.Tracer) Option
 ```
 
-WithTracer sets the tracer
+WithTracer sets the tracer.
 
 <a name="WithValidator"></a>
 ### func [WithValidator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/config.go#L26>)
@@ -963,12 +987,12 @@ WithTracer sets the tracer
 func WithValidator(validator iface.VariableValidator) Option
 ```
 
-WithValidator sets a custom variable validator
+WithValidator sets a custom variable validator.
 
 <a name="PromptError"></a>
 ## type [PromptError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L21>)
 
-PromptError represents a custom error type for the prompts package
+PromptError represents a custom error type for the prompts package.
 
 ```go
 type PromptError = iface.PromptError
@@ -978,82 +1002,82 @@ type PromptError = iface.PromptError
 ### func [NewAdapterError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L54>)
 
 ```go
-func NewAdapterError(op string, adapterType string, err error) *PromptError
+func NewAdapterError(op, adapterType string, err error) *PromptError
 ```
 
-NewAdapterError creates a new adapter error
+NewAdapterError creates a new adapter error.
 
 <a name="NewCacheError"></a>
 ### func [NewCacheError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L49>)
 
 ```go
-func NewCacheError(op string, details string, err error) *PromptError
+func NewCacheError(op, details string, err error) *PromptError
 ```
 
-NewCacheError creates a new cache error
+NewCacheError creates a new cache error.
 
 <a name="NewConfigurationError"></a>
 ### func [NewConfigurationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L59>)
 
 ```go
-func NewConfigurationError(op string, details string, err error) *PromptError
+func NewConfigurationError(op, details string, err error) *PromptError
 ```
 
-NewConfigurationError creates a new configuration error
+NewConfigurationError creates a new configuration error.
 
 <a name="NewTemplateExecuteError"></a>
 ### func [NewTemplateExecuteError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L29>)
 
 ```go
-func NewTemplateExecuteError(op string, templateName string, err error) *PromptError
+func NewTemplateExecuteError(op, templateName string, err error) *PromptError
 ```
 
-NewTemplateExecuteError creates a new template execution error
+NewTemplateExecuteError creates a new template execution error.
 
 <a name="NewTemplateParseError"></a>
 ### func [NewTemplateParseError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L24>)
 
 ```go
-func NewTemplateParseError(op string, templateName string, err error) *PromptError
+func NewTemplateParseError(op, templateName string, err error) *PromptError
 ```
 
-NewTemplateParseError creates a new template parse error
+NewTemplateParseError creates a new template parse error.
 
 <a name="NewTimeoutError"></a>
 ### func [NewTimeoutError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L64>)
 
 ```go
-func NewTimeoutError(op string, timeout string) *PromptError
+func NewTimeoutError(op, timeout string) *PromptError
 ```
 
-NewTimeoutError creates a new timeout error
+NewTimeoutError creates a new timeout error.
 
 <a name="NewValidationError"></a>
 ### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L44>)
 
 ```go
-func NewValidationError(op string, details string, err error) *PromptError
+func NewValidationError(op, details string, err error) *PromptError
 ```
 
-NewValidationError creates a new validation error
+NewValidationError creates a new validation error.
 
 <a name="NewVariableInvalidError"></a>
 ### func [NewVariableInvalidError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L39>)
 
 ```go
-func NewVariableInvalidError(op string, variableName string, expectedType string, actualType string) *PromptError
+func NewVariableInvalidError(op, variableName, expectedType, actualType string) *PromptError
 ```
 
-NewVariableInvalidError creates a new variable invalid error
+NewVariableInvalidError creates a new variable invalid error.
 
 <a name="NewVariableMissingError"></a>
 ### func [NewVariableMissingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/errors.go#L34>)
 
 ```go
-func NewVariableMissingError(op string, variableName string, templateName string) *PromptError
+func NewVariableMissingError(op, variableName, templateName string) *PromptError
 ```
 
-NewVariableMissingError creates a new variable missing error
+NewVariableMissingError creates a new variable missing error.
 
 <a name="PromptManager"></a>
 ## type [PromptManager](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L20-L26>)
@@ -1082,7 +1106,7 @@ NewPromptManager creates a new PromptManager with the given configuration and de
 func (pm *PromptManager) Check(ctx context.Context) error
 ```
 
-Check implements the HealthChecker interface
+Check implements the HealthChecker interface.
 
 <a name="PromptManager.GetConfig"></a>
 ### func \(\*PromptManager\) [GetConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L136>)
@@ -1091,7 +1115,7 @@ Check implements the HealthChecker interface
 func (pm *PromptManager) GetConfig() *Config
 ```
 
-GetConfig returns the current configuration
+GetConfig returns the current configuration.
 
 <a name="PromptManager.GetMetrics"></a>
 ### func \(\*PromptManager\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L141>)
@@ -1100,7 +1124,7 @@ GetConfig returns the current configuration
 func (pm *PromptManager) GetMetrics() iface.Metrics
 ```
 
-GetMetrics returns the metrics collector
+GetMetrics returns the metrics collector.
 
 <a name="PromptManager.HealthCheck"></a>
 ### func \(\*PromptManager\) [HealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L163>)
@@ -1109,7 +1133,7 @@ GetMetrics returns the metrics collector
 func (pm *PromptManager) HealthCheck(ctx context.Context) error
 ```
 
-HealthCheck performs a health check on the prompt manager
+HealthCheck performs a health check on the prompt manager.
 
 <a name="PromptManager.NewChatAdapter"></a>
 ### func \(\*PromptManager\) [NewChatAdapter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts.go#L122>)
@@ -1139,9 +1163,9 @@ func (pm *PromptManager) NewStringTemplate(name, template string) (iface.Templat
 NewStringTemplate creates a new string prompt template. This is a factory method that properly injects dependencies.
 
 <a name="PromptScenarioRunner"></a>
-## type [PromptScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L569-L572>)
+## type [PromptScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L586-L589>)
 
-PromptScenarioRunner runs common prompt scenarios
+PromptScenarioRunner runs common prompt scenarios.
 
 ```go
 type PromptScenarioRunner struct {
@@ -1150,30 +1174,50 @@ type PromptScenarioRunner struct {
 ```
 
 <a name="NewPromptScenarioRunner"></a>
-### func [NewPromptScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L574>)
+### func [NewPromptScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L591>)
 
 ```go
 func NewPromptScenarioRunner(template iface.Template, manager iface.TemplateManager) *PromptScenarioRunner
 ```
 
 <a name="PromptScenarioRunner.RunTemplateFormattingScenario"></a>
-### func \(\*PromptScenarioRunner\) [RunTemplateFormattingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L581>)
+### func \(\*PromptScenarioRunner\) [RunTemplateFormattingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L598>)
 
 ```go
-func (r *PromptScenarioRunner) RunTemplateFormattingScenario(ctx context.Context, inputSets []map[string]interface{}) ([]interface{}, error)
+func (r *PromptScenarioRunner) RunTemplateFormattingScenario(ctx context.Context, inputSets []map[string]any) ([]any, error)
 ```
 
 <a name="PromptScenarioRunner.RunTemplateManagementScenario"></a>
-### func \(\*PromptScenarioRunner\) [RunTemplateManagementScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L595>)
+### func \(\*PromptScenarioRunner\) [RunTemplateManagementScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L612>)
 
 ```go
-func (r *PromptScenarioRunner) RunTemplateManagementScenario(ctx context.Context, templateNames []string, templateStrings []string) error
+func (r *PromptScenarioRunner) RunTemplateManagementScenario(ctx context.Context, templateNames, templateStrings []string) error
 ```
 
-<a name="TemplateQualityTester"></a>
-## type [TemplateQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L692-L694>)
+<a name="PromptsMockcomponent"></a>
+## type [PromptsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts_mock.go#L8-L10>)
 
-TemplateQualityTester provides utilities for testing template quality
+PromptsMockcomponent is a mock implementation of Interface.
+
+```go
+type PromptsMockcomponent struct {
+    mock.Mock
+}
+```
+
+<a name="NewPromptsMockcomponent"></a>
+### func [NewPromptsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/prompts_mock.go#L13>)
+
+```go
+func NewPromptsMockcomponent() *PromptsMockcomponent
+```
+
+NewPromptsMockcomponent creates a new PromptsMockcomponent.
+
+<a name="TemplateQualityTester"></a>
+## type [TemplateQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L709-L711>)
+
+TemplateQualityTester provides utilities for testing template quality.
 
 ```go
 type TemplateQualityTester struct {
@@ -1182,37 +1226,37 @@ type TemplateQualityTester struct {
 ```
 
 <a name="NewTemplateQualityTester"></a>
-### func [NewTemplateQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L696>)
+### func [NewTemplateQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L713>)
 
 ```go
 func NewTemplateQualityTester(template iface.Template) *TemplateQualityTester
 ```
 
 <a name="TemplateQualityTester.TestConsistency"></a>
-### func \(\*TemplateQualityTester\) [TestConsistency](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L700>)
+### func \(\*TemplateQualityTester\) [TestConsistency](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L717>)
 
 ```go
-func (q *TemplateQualityTester) TestConsistency(ctx context.Context, inputs map[string]interface{}, iterations int) (bool, error)
+func (q *TemplateQualityTester) TestConsistency(ctx context.Context, inputs map[string]any, iterations int) (bool, error)
 ```
 
 <a name="TemplateQualityTester.TestVariableHandling"></a>
-### func \(\*TemplateQualityTester\) [TestVariableHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L726>)
+### func \(\*TemplateQualityTester\) [TestVariableHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L743>)
 
 ```go
 func (q *TemplateQualityTester) TestVariableHandling(ctx context.Context, testCases []VariableTestCase) error
 ```
 
 <a name="VariableTestCase"></a>
-## type [VariableTestCase](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L748-L753>)
+## type [VariableTestCase](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/prompts/test_utils.go#L765-L770>)
 
-VariableTestCase represents a test case for template variable handling
+VariableTestCase represents a test case for template variable handling.
 
 ```go
 type VariableTestCase struct {
+    Inputs      map[string]any
     Name        string
-    Inputs      map[string]interface{}
-    ShouldError bool
     Description string
+    ShouldError bool
 }
 ```
 

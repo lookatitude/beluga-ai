@@ -22,7 +22,7 @@ Package anthropic provides an implementation of the llms.ChatModel interface usi
   - [func NewAnthropicProvider\(config \*llms.Config\) \(\*AnthropicProvider, error\)](<#NewAnthropicProvider>)
   - [func \(a \*AnthropicProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#AnthropicProvider.Batch>)
   - [func \(a \*AnthropicProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#AnthropicProvider.BindTools>)
-  - [func \(a \*AnthropicProvider\) CheckHealth\(\) map\[string\]interface\{\}](<#AnthropicProvider.CheckHealth>)
+  - [func \(a \*AnthropicProvider\) CheckHealth\(\) map\[string\]any](<#AnthropicProvider.CheckHealth>)
   - [func \(a \*AnthropicProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#AnthropicProvider.Generate>)
   - [func \(a \*AnthropicProvider\) GetModelName\(\) string](<#AnthropicProvider.GetModelName>)
   - [func \(a \*AnthropicProvider\) GetProviderName\(\) string](<#AnthropicProvider.GetProviderName>)
@@ -32,14 +32,14 @@ Package anthropic provides an implementation of the llms.ChatModel interface usi
 
 ## Constants
 
-<a name="ProviderName"></a>Provider constants
+<a name="ProviderName"></a>Provider constants.
 
 ```go
 const (
     ProviderName = "anthropic"
     DefaultModel = "claude-3-haiku-20240307"
 
-    // Error codes specific to Anthropic
+    // Error codes specific to Anthropic.
     ErrCodeInvalidAPIKey  = "anthropic_invalid_api_key"
     ErrCodeRateLimit      = "anthropic_rate_limit"
     ErrCodeModelNotFound  = "anthropic_model_not_found"
@@ -48,18 +48,18 @@ const (
 ```
 
 <a name="NewAnthropicProviderFactory"></a>
-## func [NewAnthropicProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L622>)
+## func [NewAnthropicProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L623>)
 
 ```go
 func NewAnthropicProviderFactory() func(*llms.Config) (iface.ChatModel, error)
 ```
 
-Factory function for creating Anthropic providers
+Factory function for creating Anthropic providers.
 
 <a name="AnthropicProvider"></a>
-## type [AnthropicProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L39-L47>)
+## type [AnthropicProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L40-L48>)
 
-AnthropicProvider implements the ChatModel interface for Anthropic Claude models
+AnthropicProvider implements the ChatModel interface for Anthropic Claude models.
 
 ```go
 type AnthropicProvider struct {
@@ -68,91 +68,91 @@ type AnthropicProvider struct {
 ```
 
 <a name="NewAnthropicProvider"></a>
-### func [NewAnthropicProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L50>)
+### func [NewAnthropicProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L51>)
 
 ```go
 func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error)
 ```
 
-NewAnthropicProvider creates a new Anthropic provider instance
+NewAnthropicProvider creates a new Anthropic provider instance.
 
 <a name="AnthropicProvider.Batch"></a>
-### func \(\*AnthropicProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L209>)
+### func \(\*AnthropicProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L210>)
 
 ```go
 func (a *AnthropicProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-Batch implements the Runnable interface
+Batch implements the Runnable interface.
 
 <a name="AnthropicProvider.BindTools"></a>
-### func \(\*AnthropicProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L183>)
+### func \(\*AnthropicProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L184>)
 
 ```go
 func (a *AnthropicProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
 ```
 
-BindTools implements the ChatModel interface
+BindTools implements the ChatModel interface.
 
 <a name="AnthropicProvider.CheckHealth"></a>
-### func \(\*AnthropicProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L610>)
+### func \(\*AnthropicProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L611>)
 
 ```go
-func (a *AnthropicProvider) CheckHealth() map[string]interface{}
+func (a *AnthropicProvider) CheckHealth() map[string]any
 ```
 
-CheckHealth implements the HealthChecker interface
+CheckHealth implements the HealthChecker interface.
 
 <a name="AnthropicProvider.Generate"></a>
-### func \(\*AnthropicProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L95>)
+### func \(\*AnthropicProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L96>)
 
 ```go
 func (a *AnthropicProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
 ```
 
-Generate implements the ChatModel interface
+Generate implements the ChatModel interface.
 
 <a name="AnthropicProvider.GetModelName"></a>
-### func \(\*AnthropicProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L191>)
+### func \(\*AnthropicProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L192>)
 
 ```go
 func (a *AnthropicProvider) GetModelName() string
 ```
 
-GetModelName implements the ChatModel interface
+GetModelName implements the ChatModel interface.
 
 <a name="AnthropicProvider.GetProviderName"></a>
-### func \(\*AnthropicProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L195>)
+### func \(\*AnthropicProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L196>)
 
 ```go
 func (a *AnthropicProvider) GetProviderName() string
 ```
 
 <a name="AnthropicProvider.Invoke"></a>
-### func \(\*AnthropicProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L200>)
+### func \(\*AnthropicProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L201>)
 
 ```go
 func (a *AnthropicProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-Invoke implements the Runnable interface
+Invoke implements the Runnable interface.
 
 <a name="AnthropicProvider.Stream"></a>
-### func \(\*AnthropicProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L249>)
+### func \(\*AnthropicProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L250>)
 
 ```go
 func (a *AnthropicProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-Stream implements the Runnable interface
+Stream implements the Runnable interface.
 
 <a name="AnthropicProvider.StreamChat"></a>
-### func \(\*AnthropicProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L137>)
+### func \(\*AnthropicProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/anthropic/anthropic.go#L138>)
 
 ```go
 func (a *AnthropicProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
 ```
 
-StreamChat implements the ChatModel interface
+StreamChat implements the ChatModel interface.
 
 Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)

@@ -65,3 +65,6 @@ While inspired by these and other projects, Beluga-AI aims to carve its own nich
 
 Dive into the [Installation](./getting-started/installation) guide to set up Beluga-AI in your Go environment, or explore the [Examples Overview](./examples-overview) to see it in action.
 
+## API Reference
+
+For complete API documentation, see the [API Reference](./api/index) section, which provides detailed information about all packages, functions, types, and interfaces in the Beluga AI framework.
