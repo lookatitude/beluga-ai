@@ -138,7 +138,6 @@ jobs:
           golangci-lint --version
       
       - name: golangci-lint (with auto-fix)
-
         run: |
           # Workaround: Exclude react package to avoid printf linter panic bug in golangci-lint v2.6.2
           # Bug: interface conversion: types.Object is nil, not *types.Var in printf analyzer
@@ -148,7 +147,7 @@ jobs:
           
           # Get all packages and filter out react (using full import path)
           all_packages=$(go list ./pkg/... ./tests/... 2>/dev/null)
-          filtered_packages=$(echo "$all_packages" | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' ')
+          filtered_packages=$(echo "$all_packages" | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$" | sed 's|^github.com/lookatitude/beluga-ai/||' | tr '\n' ' ')
           
           if [ -z "$filtered_packages" ]; then
             echo "Error: Could not determine packages to lint after filtering"
@@ -167,6 +166,7 @@ jobs:
           fi
           
           # Run golangci-lint on filtered packages
+          # Note: This is an advisory check (continue-on-error: true), so failures don't block merge
           golangci-lint run --timeout=5m --fix $filtered_packages
       
       - name: go vet
