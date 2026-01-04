@@ -16,32 +16,32 @@ on:
       run_policy:
         description: 'Run policy checks'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_lint:
         description: 'Run lint and format checks'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_security:
         description: 'Run security scans'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_unit_tests:
         description: 'Run unit tests'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_integration_tests:
         description: 'Run integration tests'
         required: false
-        default: 'false'
+        default: false
         type: boolean
       run_build:
         description: 'Run build verification'
         required: false
-        default: 'false'
+        default: false
         type: boolean
 
 env:
@@ -174,6 +174,7 @@ jobs:
               total=$((total + 1))
               echo "Linting ./$pkg..."
               golangci-lint run --timeout=5m --fix "./$pkg" 2>&1 | tee /tmp/lint-$total.log
+              # Capture exit status of golangci-lint (first command in pipeline), not tee
               lint_status=${PIPESTATUS[0]}
               if [ "$lint_status" -ne 0 ]; then
                 failed=$((failed + 1))
