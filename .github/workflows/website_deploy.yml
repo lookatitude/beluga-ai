@@ -64,7 +64,7 @@ jobs:
           echo "✅ API documentation generated successfully"
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20' # Docusaurus v3.9.2 supports Node 18+, using Node 20 LTS for better performance
           cache: 'yarn'
