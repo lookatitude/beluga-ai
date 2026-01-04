@@ -1,4 +1,0 @@
-# Ignore generated test files used for analysis
-test_example_test.go
-test_package/
-*.backup
