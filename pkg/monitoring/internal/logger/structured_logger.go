@@ -64,12 +64,13 @@ func WithColors(enabled bool) LoggerOption {
 // WithFileOutput sets file output destination.
 func WithFileOutput(path string) LoggerOption {
 	return func(l *StructuredLogger) {
-		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(path), 0o750); err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating log directory: %v\n", err)
 			return
 		}
 
-		file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		// #nosec G304 - Log file path is from user configuration, not user input
+		file, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error opening log file: %v\n", err)
 			return

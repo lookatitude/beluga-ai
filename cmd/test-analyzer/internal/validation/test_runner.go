@@ -42,6 +42,7 @@ func (r *testRunner) RunTests(ctx context.Context, fix *Fix) (*TestResult, error
 	packagePath := filepath.Dir(filePath)
 
 	// Run go test on the package
+	// #nosec G204 - Subprocess launch is intentional for running go test
 	cmd := exec.CommandContext(ctx, "go", "test", "-v", packagePath)
 	output, err := cmd.CombinedOutput()
 	outputStr := string(output)

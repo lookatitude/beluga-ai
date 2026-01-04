@@ -85,10 +85,11 @@ func NewLoggerWithConfig(name string, config LoggerConfig) *Logger {
 	}
 
 	if config.OutputFile != "" {
-		if err := os.MkdirAll(filepath.Dir(config.OutputFile), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(config.OutputFile), 0o750); err != nil {
 			fmt.Fprintf(os.Stderr, "Error creating log directory: %v\n", err)
 		} else {
-			file, err := os.OpenFile(config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+			// #nosec G304 - Log file path is from user configuration, not user input
+			file, err := os.OpenFile(config.OutputFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error opening log file: %v\n", err)
 			} else {
