@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.5.0](https://github.com/lookatitude/beluga-ai/compare/v1.4.0...v1.5.0) (2026-01-04)
+
+
+### Features
+
+* implement real-time voice agent support with streaming capabilities ([8544223](https://github.com/lookatitude/beluga-ai/commit/8544223d0025fc8edbb08f12e7f9e166b42bb8a8))
+
+
+### Bug Fixes
+
+* **ci:** correct boolean input defaults and add PIPESTATUS comment ([a5a661e](https://github.com/lookatitude/beluga-ai/commit/a5a661eb7e80e1b85e32668340a3e9f258f89531))
+* correct golangci-lint exit status check in CI workflow ([fb00382](https://github.com/lookatitude/beluga-ai/commit/fb00382a59de0e762cb4b51c3a1fff291a1c8ce8))
+* correct syntax errors in test analyzer fixture files ([64167b1](https://github.com/lookatitude/beluga-ai/commit/64167b1ddfc312eb9d4504866923cacb730d6337))
+* exclude react package from all linters to prevent panic ([eb8bb05](https://github.com/lookatitude/beluga-ai/commit/eb8bb05b4edb93851cb9f80675d5774a742286f6))
+* improve workflow change detection logging ([a7ab186](https://github.com/lookatitude/beluga-ai/commit/a7ab186a897450c21cb48178ad5b68d3f74124d1))
+* increase package declaration check to 100 lines ([0f144e5](https://github.com/lookatitude/beluga-ai/commit/0f144e553b7100ba2aeb9ec91045c634a9f1498b))
+* increase package declaration check to 50 lines ([95be08a](https://github.com/lookatitude/beluga-ai/commit/95be08a3ea4d6b697cbc0e7ed0e3fc3ce17c5b28))
+* make commit step more resilient in lint workflow ([c6f7766](https://github.com/lookatitude/beluga-ai/commit/c6f7766d2825915f1e2400649b66ac21d24accac))
+* make doc check a warning for initial PR ([aa104b8](https://github.com/lookatitude/beluga-ai/commit/aa104b867e36e1d9fda915729a0e564478dbb709))
+* make workflow more lenient for formatting differences ([b2138ad](https://github.com/lookatitude/beluga-ai/commit/b2138adf6375c9d73c3fabaa3cb0264f619ea7ea))
+* resolve all CI/CD security and linting errors ([e317fdd](https://github.com/lookatitude/beluga-ai/commit/e317fddceaba535f79debc31e54dddb326412c9f))
+* resolve CI/CD linting and security issues ([ea0f3cf](https://github.com/lookatitude/beluga-ai/commit/ea0f3cf2c6d50edc166b040bb7722e4836e913a3))
+* resolve remaining CI/CD errors ([6ffb2a5](https://github.com/lookatitude/beluga-ai/commit/6ffb2a50b71b893c6edf2182236551b4169745f0))
+* update lint workflow to properly handle package filtering ([5869756](https://github.com/lookatitude/beluga-ai/commit/5869756b4ffc817273d92357e5da678246766de2))
+* update package declaration validation to handle files with comments ([b17092f](https://github.com/lookatitude/beluga-ai/commit/b17092fd8cd8a9f0ddd55c2421b2729f6b417074))
+* update workflow to properly detect doc changes in PRs ([9fdbcc5](https://github.com/lookatitude/beluga-ai/commit/9fdbcc5300535cfd6aa471a3f32ba9b08f2f8ede))
+* use loop-based approach for linting to handle package paths correctly ([1d6c39d](https://github.com/lookatitude/beluga-ai/commit/1d6c39d606b131b9f539ed4e01d8eb91ebc67b01))
+* use loop-based linting to properly exclude react package ([86e6038](https://github.com/lookatitude/beluga-ai/commit/86e60386e55495bd8deac9734fc9ba6a37337e8c))
+
 ## [2.0.0](https://github.com/lookatitude/beluga-ai/compare/v1.3.1...v2.0.0) (2025-11-26)
 
 
