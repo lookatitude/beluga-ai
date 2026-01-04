@@ -46,6 +46,11 @@ const (
 	ErrCodeEventHandler      = "event_handler_error"
 	ErrCodeStateTransition   = "state_transition_error"
 	ErrCodeShutdown          = "shutdown_failed"
+
+	// Streaming error codes
+	ErrCodeStreamingNotSupported = "streaming_not_supported"
+	ErrCodeStreamInterrupted     = "stream_interrupted"
+	ErrCodeStreamError           = "stream_error"
 )
 
 // NewAgentError creates a new AgentError.
@@ -240,4 +245,57 @@ func IsValidationError(err error) bool {
 func IsFactoryError(err error) bool {
 	var factErr *FactoryError
 	return errors.As(err, &factErr)
+}
+
+// StreamingError represents errors that occur during streaming operations.
+type StreamingError struct {
+	Err    error
+	Op     string
+	Agent  string
+	Code   string
+	Fields map[string]any
+}
+
+// Error implements the error interface.
+func (e *StreamingError) Error() string {
+	if e.Agent != "" {
+		return fmt.Sprintf("streaming error for agent %s %s: %v (code: %s)", e.Agent, e.Op, e.Err, e.Code)
+	}
+	return fmt.Sprintf("streaming error %s: %v (code: %s)", e.Op, e.Err, e.Code)
+}
+
+// Unwrap returns the underlying error.
+func (e *StreamingError) Unwrap() error {
+	return e.Err
+}
+
+// WithField adds a context field to the error.
+func (e *StreamingError) WithField(key string, value any) *StreamingError {
+	if e.Fields == nil {
+		e.Fields = make(map[string]any)
+	}
+	e.Fields[key] = value
+	return e
+}
+
+// NewStreamingError creates a new StreamingError following Op/Err/Code pattern.
+func NewStreamingError(op, agent, code string, err error) *StreamingError {
+	return &StreamingError{
+		Op:     op,
+		Agent:  agent,
+		Code:   code,
+		Err:    err,
+		Fields: make(map[string]any),
+	}
+}
+
+// WrapStreamingError wraps an existing error as a StreamingError.
+func WrapStreamingError(op, agent, code string, err error) *StreamingError {
+	return NewStreamingError(op, agent, code, err)
+}
+
+// IsStreamingError checks if an error is a streaming error.
+func IsStreamingError(err error) bool {
+	var streamErr *StreamingError
+	return errors.As(err, &streamErr)
 }

@@ -6,6 +6,7 @@ The `agents` package provides AI agent implementations following the Beluga AI F
 
 **✅ Production Ready:**
 - Base agent with lifecycle management (init, execute, shutdown)
+- **Streaming agent support** for real-time LLM responses with chunk processing
 - Event-driven architecture with custom event handlers
 - Comprehensive error handling with custom error types and wrapping
 - Configuration management with validation and functional options
@@ -19,6 +20,7 @@ The `agents` package provides AI agent implementations following the Beluga AI F
 ## Features
 
 - **Multiple Agent Types**: Support for different agent architectures (BaseAgent, ReActAgent framework)
+- **Streaming Support**: Real-time streaming agent execution with chunk-by-chunk LLM responses
 - **Tool Integration**: Seamless integration with the tools registry system
 - **Observability**: Full OpenTelemetry tracing and metrics integration
 - **Configurable Execution**: Retry logic and customizable behavior
@@ -175,6 +177,74 @@ func (m *MockTool) Batch(ctx context.Context, inputs []interface{}) ([]interface
 }
 ```
 
+### Creating a Streaming Agent
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/lookatitude/beluga-ai/pkg/agents"
+    "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+    "github.com/lookatitude/beluga-ai/pkg/llms"
+    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+)
+
+func main() {
+    ctx := context.Background()
+    
+    // Create a streaming-compatible LLM (must implement ChatModel interface)
+    llm := &StreamingChatLLM{} // Replace with actual streaming LLM implementation
+    
+    // Create agent with streaming enabled
+    agent, err := agents.NewBaseAgent("streaming-assistant", llm, nil,
+        agents.WithStreaming(true),
+        agents.WithStreamingConfig(iface.StreamingConfig{
+            EnableStreaming:      true,
+            ChunkBufferSize:      20,
+            SentenceBoundary:     true,
+            InterruptOnNewInput:  true,
+            MaxStreamDuration:    30 * time.Minute,
+        }),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Cast to StreamingAgent interface
+    streamingAgent, ok := agent.(iface.StreamingAgent)
+    if !ok {
+        log.Fatal("Agent does not implement StreamingAgent")
+    }
+
+    // Execute with streaming
+    inputs := map[string]any{"input": "Hello, how are you?"}
+    chunkChan, err := streamingAgent.StreamExecute(ctx, inputs)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Process streaming chunks
+    for chunk := range chunkChan {
+        if chunk.Err != nil {
+            log.Printf("Stream error: %v", chunk.Err)
+            break
+        }
+        if chunk.Content != "" {
+            fmt.Print(chunk.Content) // Print content as it arrives
+        }
+        if chunk.Finish != nil {
+            fmt.Println("\n[Stream complete]")
+            break
+        }
+    }
+}
+```
+
 ### Creating a ReAct Agent
 
 ```go
@@ -220,6 +290,37 @@ if err != nil {
 ```
 
 **Status**: The executor implementation is currently simplified and serves as a foundation for future enhancements.
+
+## Streaming Configuration
+
+Streaming agents support real-time chunk-by-chunk processing of LLM responses. Configure streaming behavior:
+
+```go
+// Enable streaming with default settings
+agent, err := agents.NewBaseAgent("agent", llm, tools,
+    agents.WithStreaming(true),
+)
+
+// Configure streaming with custom settings
+agent, err := agents.NewBaseAgent("agent", llm, tools,
+    agents.WithStreamingConfig(iface.StreamingConfig{
+        EnableStreaming:      true,
+        ChunkBufferSize:      20,        // Buffer size (1-100)
+        SentenceBoundary:     true,      // Wait for sentence boundaries
+        InterruptOnNewInput:  true,      // Allow interruption
+        MaxStreamDuration:    30 * time.Minute,
+    }),
+)
+```
+
+### Streaming Features
+
+- **Chunk Processing**: Process LLM responses incrementally as they arrive
+- **Sentence Boundary Detection**: Wait for complete sentences before processing
+- **Interruption Support**: Cancel ongoing streams when new input arrives
+- **Tool Call Streaming**: Handle tool calls that arrive during streaming
+- **Error Handling**: Graceful error handling with error chunks
+- **Metrics**: Built-in latency and duration metrics for streaming operations
 
 ## Configuration
 
@@ -425,6 +526,57 @@ func TestNewBaseAgent(t *testing.T) {
 ```
 
 **Status**: Basic unit tests are implemented for the base agent functionality. Test coverage will be expanded as more features are implemented.
+
+## Migration Guide: Standard to Streaming Agents
+
+### When to Use Streaming
+
+Use streaming agents when you need:
+- **Real-time responses**: Process LLM output as it arrives
+- **Low latency**: Start processing before the full response is ready
+- **Voice integration**: Integrate with voice sessions for natural conversations
+- **Interruption support**: Cancel ongoing operations when new input arrives
+- **Progressive output**: Display or process content incrementally
+
+### Migration Steps
+
+1. **Enable Streaming in Agent Creation**:
+```go
+// Before
+agent, err := agents.NewBaseAgent("agent", llm, tools)
+
+// After
+agent, err := agents.NewBaseAgent("agent", llm, tools,
+    agents.WithStreaming(true),
+)
+```
+
+2. **Update Execution Code**:
+```go
+// Before
+result, err := agent.Execute(ctx, inputs)
+
+// After
+streamingAgent := agent.(iface.StreamingAgent)
+chunkChan, err := streamingAgent.StreamExecute(ctx, inputs)
+for chunk := range chunkChan {
+    // Process chunks as they arrive
+}
+```
+
+3. **Handle Streaming-Specific Errors**:
+```go
+if agents.IsStreamingError(err) {
+    // Handle streaming-specific errors
+}
+```
+
+### Performance Considerations
+
+- **Buffer Size**: Larger buffers reduce backpressure but increase memory
+- **Sentence Boundaries**: Enable for better UX but may add slight delay
+- **Interruption**: Configure based on your use case (voice vs. text)
+- **Metrics**: Monitor latency and duration metrics for optimization
 
 ## Best Practices
 

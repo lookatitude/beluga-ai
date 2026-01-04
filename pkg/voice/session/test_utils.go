@@ -3,6 +3,7 @@ package session
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -262,4 +263,262 @@ func AssertSessionInterface(t *testing.T, s iface.VoiceSession) {
 	err := s.Start(ctx)
 	// We don't care about the result, just that the method exists and can be called
 	_ = err
+}
+
+// Agent Instance Test Utilities
+// These utilities support the AgentInstance integration that will be defined in Phase 3.4.
+
+// AgentState represents the state of an agent in a voice session.
+// This type matches the contract definition for agent state.
+type AgentState string
+
+const (
+	AgentStateIdle        AgentState = "idle"
+	AgentStateListening   AgentState = "listening"
+	AgentStateProcessing  AgentState = "processing"
+	AgentStateStreaming   AgentState = "streaming"
+	AgentStateExecuting   AgentState = "executing_tool"
+	AgentStateSpeaking    AgentState = "speaking"
+	AgentStateInterrupted AgentState = "interrupted"
+)
+
+// AgentStreamChunk represents a chunk of agent execution output.
+// This matches the definition from pkg/agents for consistency.
+type AgentStreamChunk struct {
+	Content   string
+	ToolCalls []interface{} // Will be schema.ToolCall when types are available
+	Action    interface{}   // Will be *iface.AgentAction when types are available
+	Finish    interface{}   // Will be *iface.AgentFinish when types are available
+	Err       error
+	Metadata  map[string]any
+}
+
+// AgentContext represents the agent-specific context within a voice session.
+// This type matches the contract definition from data-model.md.
+type AgentContext struct {
+	ConversationHistory []interface{} // Will be []schema.Message when types are available
+	ToolResults        []interface{} // Will be []ToolResult when types are available
+	CurrentPlan        []interface{} // Will be []schema.Step when types are available
+	StreamingActive    bool
+	LastInterruption   time.Time
+}
+
+// StreamingState represents the current streaming state.
+type StreamingState struct {
+	Active        bool
+	CurrentStream <-chan AgentStreamChunk
+	Buffer        []AgentStreamChunk
+	LastChunkTime time.Time
+	Interrupted   bool
+}
+
+// AdvancedMockAgentInstance provides a comprehensive mock implementation for agent instances.
+type AdvancedMockAgentInstance struct {
+	agent             interface{} // Will be iface.StreamingAgent when types are available
+	config            interface{} // Will be *agents.AgentConfig when types are available
+	context           *AgentContext
+	state             AgentState
+	mu                sync.RWMutex
+	streamingActive   bool
+	interruptionCount int
+	streamChunks      []AgentStreamChunk
+}
+
+// MockAgentInstanceOption defines functional options for configuring agent instance mocks.
+type MockAgentInstanceOption func(*AdvancedMockAgentInstance)
+
+// WithAgentState sets the initial agent state.
+func WithAgentState(state AgentState) MockAgentInstanceOption {
+	return func(a *AdvancedMockAgentInstance) {
+		a.state = state
+	}
+}
+
+// WithAgentContext sets the agent context.
+func WithAgentContext(ctx *AgentContext) MockAgentInstanceOption {
+	return func(a *AdvancedMockAgentInstance) {
+		a.context = ctx
+	}
+}
+
+// WithStreamingChunks sets predefined chunks to stream.
+func WithStreamingChunks(chunks []AgentStreamChunk) MockAgentInstanceOption {
+	return func(a *AdvancedMockAgentInstance) {
+		a.streamChunks = chunks
+	}
+}
+
+// NewAdvancedMockAgentInstance creates a new advanced agent instance mock.
+func NewAdvancedMockAgentInstance(agent interface{}, config interface{}, options ...MockAgentInstanceOption) *AdvancedMockAgentInstance {
+	mock := &AdvancedMockAgentInstance{
+		agent:   agent,
+		config:  config,
+		state:   AgentStateIdle,
+		context: &AgentContext{
+			ConversationHistory: make([]interface{}, 0),
+			ToolResults:        make([]interface{}, 0),
+			CurrentPlan:        make([]interface{}, 0),
+			StreamingActive:    false,
+		},
+		streamChunks: make([]AgentStreamChunk, 0),
+	}
+
+	// Apply options
+	for _, opt := range options {
+		opt(mock)
+	}
+
+	return mock
+}
+
+// GetState returns the current agent state.
+func (a *AdvancedMockAgentInstance) GetState() AgentState {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.state
+}
+
+// SetState sets the agent state.
+func (a *AdvancedMockAgentInstance) SetState(state AgentState) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.state = state
+}
+
+// GetContext returns the agent context.
+func (a *AdvancedMockAgentInstance) GetContext() *AgentContext {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.context
+}
+
+// IsStreamingActive returns whether streaming is currently active.
+func (a *AdvancedMockAgentInstance) IsStreamingActive() bool {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.streamingActive
+}
+
+// SetStreamingActive sets the streaming active flag.
+func (a *AdvancedMockAgentInstance) SetStreamingActive(active bool) {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.streamingActive = active
+}
+
+// IncrementInterruptionCount increments the interruption counter.
+func (a *AdvancedMockAgentInstance) IncrementInterruptionCount() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+	a.interruptionCount++
+}
+
+// GetInterruptionCount returns the number of interruptions.
+func (a *AdvancedMockAgentInstance) GetInterruptionCount() int {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.interruptionCount
+}
+
+// MockStreamingAgentIntegration provides a mock for testing agent integration in voice sessions.
+type MockStreamingAgentIntegration struct {
+	agentInstance *AdvancedMockAgentInstance
+	mu            sync.RWMutex
+	started       bool
+	stopped       bool
+}
+
+// NewMockStreamingAgentIntegration creates a new mock streaming agent integration.
+func NewMockStreamingAgentIntegration(agentInstance *AdvancedMockAgentInstance) *MockStreamingAgentIntegration {
+	return &MockStreamingAgentIntegration{
+		agentInstance: agentInstance,
+		started:       false,
+		stopped:       false,
+	}
+}
+
+// Start initializes the agent integration.
+func (m *MockStreamingAgentIntegration) Start(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.started {
+		return fmt.Errorf("agent integration already started")
+	}
+	m.started = true
+	if m.agentInstance != nil {
+		m.agentInstance.SetState(AgentStateIdle)
+	}
+	return nil
+}
+
+// Stop stops the agent integration.
+func (m *MockStreamingAgentIntegration) Stop(ctx context.Context) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if !m.started {
+		return fmt.Errorf("agent integration not started")
+	}
+	m.stopped = true
+	if m.agentInstance != nil {
+		m.agentInstance.SetState(AgentStateIdle)
+		m.agentInstance.SetStreamingActive(false)
+	}
+	return nil
+}
+
+// IsStarted returns whether the integration is started.
+func (m *MockStreamingAgentIntegration) IsStarted() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.started && !m.stopped
+}
+
+// GetAgentInstance returns the agent instance.
+func (m *MockStreamingAgentIntegration) GetAgentInstance() *AdvancedMockAgentInstance {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.agentInstance
+}
+
+// Voice-Agent Integration Test Helpers
+
+// CreateTestAgentContext creates a test agent context.
+func CreateTestAgentContext() *AgentContext {
+	return &AgentContext{
+		ConversationHistory: make([]interface{}, 0),
+		ToolResults:        make([]interface{}, 0),
+		CurrentPlan:        make([]interface{}, 0),
+		StreamingActive:    false,
+		LastInterruption:   time.Time{},
+	}
+}
+
+// CreateTestStreamingState creates a test streaming state.
+func CreateTestStreamingState() *StreamingState {
+	return &StreamingState{
+		Active:        false,
+		CurrentStream: nil,
+		Buffer:        make([]AgentStreamChunk, 0),
+		LastChunkTime: time.Time{},
+		Interrupted:   false,
+	}
+}
+
+// CreateTestSessionWithAgent creates a test session setup helper for agent integration.
+func CreateTestSessionWithAgent(sessionID string, agentInstance *AdvancedMockAgentInstance) (*AdvancedMockSession, *MockStreamingAgentIntegration) {
+	session := NewAdvancedMockSession(sessionID)
+	integration := NewMockStreamingAgentIntegration(agentInstance)
+	return session, integration
+}
+
+// AssertAgentState validates agent state transitions.
+func AssertAgentState(t *testing.T, instance *AdvancedMockAgentInstance, expectedState AgentState) {
+	t.Helper()
+	assert.Equal(t, expectedState, instance.GetState(), "Agent state should match expected state")
+}
+
+// AssertStreamingActive validates streaming active state.
+func AssertStreamingActive(t *testing.T, instance *AdvancedMockAgentInstance, expectedActive bool) {
+	t.Helper()
+	assert.Equal(t, expectedActive, instance.IsStreamingActive(), "Streaming active state should match expected value")
 }

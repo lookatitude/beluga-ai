@@ -22,6 +22,13 @@ const (
 	// Context errors.
 	ErrCodeContextCanceled = "context_canceled"
 	ErrCodeContextTimeout  = "context_timeout"
+
+	// Agent integration error codes.
+	ErrCodeAgentNotSet      = "agent_not_set"
+	ErrCodeAgentInvalid     = "agent_invalid"
+	ErrCodeStreamError      = "stream_error"
+	ErrCodeContextError     = "context_error"
+	ErrCodeInterruptionError = "interruption_error"
 )
 
 // SessionError represents an error that occurred during Session operations.
@@ -97,4 +104,18 @@ func IsRetryableError(err error) bool {
 	}
 
 	return false
+}
+
+// NewAgentIntegrationError creates a new SessionError for agent integration operations.
+// It follows the Op/Err/Code pattern for consistency.
+func NewAgentIntegrationError(op, code string, err error) *SessionError {
+	return NewSessionError(op, code, err)
+}
+
+// WrapAgentIntegrationError wraps an existing error as a SessionError for agent integration.
+func WrapAgentIntegrationError(op, code string, err error) *SessionError {
+	if err == nil {
+		return nil
+	}
+	return NewAgentIntegrationError(op, code, err)
 }

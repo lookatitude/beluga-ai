@@ -28,22 +28,23 @@ type options struct {
 // BaseAgent provides common functionality for all agents.
 // It implements the CompositeAgent interface through composition and embedding.
 type BaseAgent struct {
-	createdAt      time.Time
-	lastActiveTime time.Time
-	ctx            context.Context
-	llm            llmsiface.LLM
-	memory         any
-	metrics        iface.MetricsRecorder
-	eventHandlers  map[string][]iface.EventHandler
-	cancelFunc     context.CancelFunc
-	name           string
-	state          iface.AgentState
-	tools          []tools.Tool
-	config         schema.AgentConfig
-	retryDelay     time.Duration
-	errorCount     int
-	maxRetries     int
-	mutex          sync.RWMutex
+	createdAt       time.Time
+	lastActiveTime  time.Time
+	ctx             context.Context
+	llm             llmsiface.LLM
+	memory          any
+	metrics         iface.MetricsRecorder
+	eventHandlers   map[string][]iface.EventHandler
+	cancelFunc      context.CancelFunc
+	name            string
+	state           iface.AgentState
+	tools           []tools.Tool
+	config          schema.AgentConfig
+	retryDelay      time.Duration
+	errorCount      int
+	maxRetries      int
+	mutex           sync.RWMutex
+	streamingConfig iface.StreamingConfig
 }
 
 // NewBaseAgent creates a new BaseAgent with the provided configuration.
@@ -61,6 +62,13 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 		EnableMetrics: true,
 		EnableTracing: true,
 		EventHandlers: make(map[string][]iface.EventHandler),
+		StreamingConfig: iface.StreamingConfig{
+			EnableStreaming:     false,
+			ChunkBufferSize:     20,
+			SentenceBoundary:    false,
+			InterruptOnNewInput: true,
+			MaxStreamDuration:   30 * time.Minute,
+		},
 	}
 
 	// Apply user options
@@ -69,17 +77,18 @@ func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts 
 	}
 
 	agent := &BaseAgent{
-		name:          name,
-		llm:           llm,
-		tools:         agentTools,
-		config:        schema.AgentConfig{Name: name}, // Initialize config with agent name
-		state:         iface.StateInitializing,
-		createdAt:     time.Now(),
-		ctx:           ctx,
-		cancelFunc:    cancel,
-		maxRetries:    options.MaxRetries,
-		retryDelay:    options.RetryDelay,
-		eventHandlers: make(map[string][]iface.EventHandler),
+		name:            name,
+		llm:             llm,
+		tools:           agentTools,
+		config:          schema.AgentConfig{Name: name}, // Initialize config with agent name
+		state:           iface.StateInitializing,
+		createdAt:       time.Now(),
+		ctx:             ctx,
+		cancelFunc:      cancel,
+		maxRetries:      options.MaxRetries,
+		retryDelay:      options.RetryDelay,
+		eventHandlers:   make(map[string][]iface.EventHandler),
+		streamingConfig: options.StreamingConfig,
 	}
 
 	// Initialize metrics (use provided metrics or nil if not enabled)

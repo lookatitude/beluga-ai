@@ -150,3 +150,39 @@ func (c *Config) Validate() error {
 
 	return nil
 }
+
+// WithStreaming enables streaming mode for agents.
+// This is a convenience function that sets EnableStreaming to true in StreamingConfig.
+func WithStreaming(enabled bool) iface.Option {
+	return func(o *iface.Options) {
+		o.StreamingConfig.EnableStreaming = enabled
+		// Set defaults if enabling streaming
+		if enabled && o.StreamingConfig.ChunkBufferSize == 0 {
+			o.StreamingConfig.ChunkBufferSize = 20
+		}
+		if enabled && o.StreamingConfig.MaxStreamDuration == 0 {
+			o.StreamingConfig.MaxStreamDuration = 30 * time.Minute
+		}
+	}
+}
+
+// WithStreamingConfig sets the complete streaming configuration.
+func WithStreamingConfig(config iface.StreamingConfig) iface.Option {
+	return func(o *iface.Options) {
+		o.StreamingConfig = config
+	}
+}
+
+// ValidateStreamingConfig validates streaming configuration values.
+func ValidateStreamingConfig(config iface.StreamingConfig) error {
+	if config.ChunkBufferSize <= 0 {
+		return NewValidationError("streaming.chunk_buffer_size", "must be greater than 0")
+	}
+	if config.ChunkBufferSize > 100 {
+		return NewValidationError("streaming.chunk_buffer_size", "must be less than or equal to 100")
+	}
+	if config.MaxStreamDuration <= 0 {
+		return NewValidationError("streaming.max_stream_duration", "must be greater than 0")
+	}
+	return nil
+}

@@ -5,6 +5,7 @@ package agents
 import (
 	"context"
 	"fmt"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -877,4 +878,487 @@ func (b *AgentBenchmark) BenchmarkPlanning(iterations int) (time.Duration, error
 		}
 	}
 	return time.Since(start), nil
+}
+
+// Streaming Agent Test Utilities
+// These utilities support the StreamingAgent interface for testing.
+
+// Note: AgentStreamChunk is now defined in pkg/agents/iface/streaming_agent.go
+// We use iface.AgentStreamChunk in the mock implementations below.
+
+// AdvancedMockStreamingAgent provides a comprehensive mock implementation for streaming agents.
+// This struct extends AdvancedMockAgent with streaming capabilities.
+type AdvancedMockStreamingAgent struct {
+	*AdvancedMockAgent
+	streamingChunks     []iface.AgentStreamChunk      // Predefined chunks to stream
+	streamingDelay      time.Duration                 // Delay between chunks
+	streamingError      error                         // Error to return during streaming
+	shouldErrorOnStream bool                          // Whether to error on stream start
+	streamCount         int                           // Number of streams started
+	chunkGenerator      func() iface.AgentStreamChunk // Custom chunk generator
+	mu                  sync.RWMutex                  // Protect streaming state
+}
+
+// MockStreamingAgentOption defines functional options for configuring streaming agent mocks.
+type MockStreamingAgentOption func(*AdvancedMockStreamingAgent)
+
+// WithMockStreamingChunks sets predefined chunks to stream.
+func WithMockStreamingChunks(chunks []iface.AgentStreamChunk) MockStreamingAgentOption {
+	return func(a *AdvancedMockStreamingAgent) {
+		a.streamingChunks = chunks
+	}
+}
+
+// WithStreamingDelay adds artificial delay between streaming chunks.
+func WithStreamingDelay(delay time.Duration) MockStreamingAgentOption {
+	return func(a *AdvancedMockStreamingAgent) {
+		a.streamingDelay = delay
+	}
+}
+
+// WithStreamingError configures the mock to return an error during streaming.
+func WithStreamingError(shouldError bool, err error) MockStreamingAgentOption {
+	return func(a *AdvancedMockStreamingAgent) {
+		a.shouldErrorOnStream = shouldError
+		a.streamingError = err
+	}
+}
+
+// WithChunkGenerator sets a custom function to generate chunks dynamically.
+func WithChunkGenerator(generator func() iface.AgentStreamChunk) MockStreamingAgentOption {
+	return func(a *AdvancedMockStreamingAgent) {
+		a.chunkGenerator = generator
+	}
+}
+
+// NewAdvancedMockStreamingAgent creates a new advanced streaming agent mock.
+func NewAdvancedMockStreamingAgent(baseAgent *AdvancedMockAgent, options ...MockStreamingAgentOption) *AdvancedMockStreamingAgent {
+	mock := &AdvancedMockStreamingAgent{
+		AdvancedMockAgent: baseAgent,
+		streamingChunks:   []iface.AgentStreamChunk{},
+		streamingDelay:    10 * time.Millisecond,
+	}
+
+	// Apply options
+	for _, opt := range options {
+		opt(mock)
+	}
+
+	return mock
+}
+
+// StreamExecute implements the StreamingAgent interface.
+// This method simulates streaming execution by returning a channel of chunks.
+func (a *AdvancedMockStreamingAgent) StreamExecute(ctx context.Context, inputs map[string]any) (<-chan iface.AgentStreamChunk, error) {
+	a.mu.Lock()
+	a.streamCount++
+	a.mu.Unlock()
+
+	if a.shouldErrorOnStream {
+		if a.streamingError != nil {
+			return nil, a.streamingError
+		}
+		return nil, fmt.Errorf("mock streaming error")
+	}
+
+	ch := make(chan iface.AgentStreamChunk, 10)
+
+	go func() {
+		defer close(ch)
+
+		// Use predefined chunks if available
+		if len(a.streamingChunks) > 0 {
+			for _, chunk := range a.streamingChunks {
+				select {
+				case <-ctx.Done():
+					ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+					return
+				case ch <- chunk:
+				}
+
+				if chunk.Err != nil || chunk.Finish != nil {
+					return
+				}
+
+				if a.streamingDelay > 0 {
+					select {
+					case <-ctx.Done():
+						ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+						return
+					case <-time.After(a.streamingDelay):
+					}
+				}
+			}
+			return
+		}
+
+		// Default: generate simple response chunks
+		response := fmt.Sprintf("Agent %s executed with input: %v", a.AdvancedMockAgent.name, inputs)
+		words := strings.Fields(response)
+		for i, word := range words {
+			select {
+			case <-ctx.Done():
+				ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+				return
+			case ch <- iface.AgentStreamChunk{
+				Content: word + " ",
+				Metadata: map[string]any{
+					"chunk_index": i,
+					"timestamp":   time.Now(),
+				},
+			}:
+			}
+
+			if a.streamingDelay > 0 && i < len(words)-1 {
+				select {
+				case <-ctx.Done():
+					ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+					return
+				case <-time.After(a.streamingDelay):
+				}
+			}
+		}
+
+		// Send final chunk with finish
+		select {
+		case <-ctx.Done():
+			ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+			return
+		case ch <- iface.AgentStreamChunk{
+			Finish: &iface.AgentFinish{
+				ReturnValues: map[string]any{"output": response},
+				Log:          "Streaming execution completed",
+			},
+		}:
+		}
+	}()
+
+	return ch, nil
+}
+
+// StreamPlan implements the StreamingAgent interface.
+// This method simulates streaming planning by returning a channel of chunks.
+func (a *AdvancedMockStreamingAgent) StreamPlan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (<-chan iface.AgentStreamChunk, error) {
+	a.mu.Lock()
+	a.streamCount++
+	a.mu.Unlock()
+
+	if a.shouldErrorOnStream {
+		if a.streamingError != nil {
+			return nil, a.streamingError
+		}
+		return nil, fmt.Errorf("mock streaming error")
+	}
+
+	ch := make(chan iface.AgentStreamChunk, 10)
+
+	go func() {
+		defer close(ch)
+
+		// Simulate planning with streaming responses
+		planLog := fmt.Sprintf("Planning step %d", len(intermediateSteps)+1)
+		select {
+		case <-ctx.Done():
+			ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+			return
+		case ch <- iface.AgentStreamChunk{
+			Content: planLog + " ",
+			Metadata: map[string]any{
+				"step_index": len(intermediateSteps),
+				"timestamp":  time.Now(),
+			},
+		}:
+		}
+
+		if a.streamingDelay > 0 {
+			select {
+			case <-ctx.Done():
+				ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+				return
+			case <-time.After(a.streamingDelay):
+			}
+		}
+
+		// Send final chunk with action or finish
+		if len(a.planningSteps) > 0 && len(intermediateSteps) < len(a.planningSteps) {
+			stepIndex := len(intermediateSteps)
+			select {
+			case <-ctx.Done():
+				ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+				return
+			case ch <- iface.AgentStreamChunk{
+				Action: &iface.AgentAction{
+					Tool:      a.planningSteps[stepIndex],
+					ToolInput: fmt.Sprintf("input for step %d", stepIndex+1),
+					Log:       fmt.Sprintf("Planning step %d: %s", stepIndex+1, a.planningSteps[stepIndex]),
+				},
+			}:
+			}
+		} else {
+			select {
+			case <-ctx.Done():
+				ch <- iface.AgentStreamChunk{Err: ctx.Err()}
+				return
+			case ch <- iface.AgentStreamChunk{
+				Finish: &iface.AgentFinish{
+					ReturnValues: map[string]any{"result": fmt.Sprintf("Agent %s completed planning", a.AdvancedMockAgent.name)},
+					Log:          "Planning completed successfully",
+				},
+			}:
+			}
+		}
+	}()
+
+	return ch, nil
+}
+
+// GetStreamCount returns the number of streams started.
+func (a *AdvancedMockStreamingAgent) GetStreamCount() int {
+	a.mu.RLock()
+	defer a.mu.RUnlock()
+	return a.streamCount
+}
+
+// MockStreamingExecutor provides a mock executor with streaming capabilities.
+type MockStreamingExecutor struct {
+	*MockExecutor
+	streamingChunks     []ExecutionChunk
+	streamingDelay      time.Duration
+	streamingError      error
+	shouldErrorOnStream bool
+	mu                  sync.RWMutex
+}
+
+// ExecutionChunk represents a chunk of execution output.
+// This type matches the contract definition for streaming executor chunks.
+type ExecutionChunk struct {
+	Step        schema.Step          // Current step being executed
+	Content     string               // Text content from this step
+	ToolResult  *ToolExecutionResult // Tool result if step executed tool
+	FinalAnswer *schema.FinalAnswer  // Final answer if execution complete
+	Err         error                // Error if occurred (execution ends on error)
+	Timestamp   time.Time            // Chunk timestamp for latency measurement
+}
+
+// ToolExecutionResult represents the result of tool execution.
+type ToolExecutionResult struct {
+	ToolName string
+	Input    map[string]any
+	Output   map[string]any
+	Duration time.Duration
+	Err      error
+}
+
+// NewMockStreamingExecutor creates a new mock streaming executor.
+func NewMockStreamingExecutor(baseExecutor *MockExecutor) *MockStreamingExecutor {
+	return &MockStreamingExecutor{
+		MockExecutor:    baseExecutor,
+		streamingChunks: []ExecutionChunk{},
+		streamingDelay:  10 * time.Millisecond,
+	}
+}
+
+// ExecuteStreamingPlan implements the StreamingExecutor interface (to be defined in Phase 3.4).
+func (e *MockStreamingExecutor) ExecuteStreamingPlan(ctx context.Context, agent iface.Agent, plan []schema.Step) (<-chan ExecutionChunk, error) {
+	if len(plan) == 0 {
+		return nil, fmt.Errorf("plan cannot be empty")
+	}
+
+	ch := make(chan ExecutionChunk, 10)
+
+	go func() {
+		defer close(ch)
+
+		for i, step := range plan {
+			chunk := ExecutionChunk{
+				Step:      step,
+				Content:   fmt.Sprintf("Executing step %d: %s", i+1, step.Action),
+				Timestamp: time.Now(),
+			}
+
+			select {
+			case <-ctx.Done():
+				ch <- ExecutionChunk{Err: ctx.Err()}
+				return
+			case ch <- chunk:
+			}
+
+			if e.streamingDelay > 0 && i < len(plan)-1 {
+				select {
+				case <-ctx.Done():
+					ch <- ExecutionChunk{Err: ctx.Err()}
+					return
+				case <-time.After(e.streamingDelay):
+				}
+			}
+		}
+
+		// Send final chunk with answer
+		select {
+		case <-ctx.Done():
+			ch <- ExecutionChunk{Err: ctx.Err()}
+			return
+		case ch <- ExecutionChunk{
+			FinalAnswer: &schema.FinalAnswer{
+				Output: fmt.Sprintf("Completed plan with %d steps", len(plan)),
+			},
+			Timestamp: time.Now(),
+		}:
+		}
+	}()
+
+	return ch, nil
+}
+
+// ConcurrentStreamingTestRunner runs concurrent streaming operations for testing.
+type ConcurrentStreamingTestRunner struct {
+	testFunc      func() error
+	NumGoroutines int
+	TestDuration  time.Duration
+}
+
+// NewConcurrentStreamingTestRunner creates a new concurrent streaming test runner.
+func NewConcurrentStreamingTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentStreamingTestRunner {
+	return &ConcurrentStreamingTestRunner{
+		NumGoroutines: numGoroutines,
+		TestDuration:  duration,
+		testFunc:      testFunc,
+	}
+}
+
+// Run executes the concurrent streaming test.
+func (r *ConcurrentStreamingTestRunner) Run() error {
+	var wg sync.WaitGroup
+	errChan := make(chan error, r.NumGoroutines)
+	stopChan := make(chan struct{})
+	var stopOnce sync.Once
+
+	stopFunc := func() {
+		stopOnce.Do(func() {
+			close(stopChan)
+		})
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), r.TestDuration+time.Second)
+	defer cancel()
+
+	timer := time.AfterFunc(r.TestDuration, stopFunc)
+	defer func() {
+		timer.Stop()
+		stopFunc()
+	}()
+
+	for i := 0; i < r.NumGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stopChan:
+					return
+				case <-ctx.Done():
+					return
+				default:
+					if err := r.testFunc(); err != nil {
+						select {
+						case errChan <- err:
+						default:
+						}
+						stopFunc()
+						return
+					}
+				}
+			}
+		}()
+	}
+
+	done := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		stopFunc()
+		wg.Wait()
+	}
+
+	close(errChan)
+
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// Streaming test helpers
+
+// GenerateStreamChunks creates a slice of AgentStreamChunk from a string response.
+func GenerateStreamChunks(response string, chunkSize int) []iface.AgentStreamChunk {
+	if chunkSize <= 0 {
+		chunkSize = 5 // Default chunk size
+	}
+
+	words := strings.Fields(response)
+	chunks := make([]iface.AgentStreamChunk, 0)
+
+	for i := 0; i < len(words); i += chunkSize {
+		end := i + chunkSize
+		if end > len(words) {
+			end = len(words)
+		}
+
+		content := strings.Join(words[i:end], " ") + " "
+		chunks = append(chunks, iface.AgentStreamChunk{
+			Content: content,
+			Metadata: map[string]any{
+				"chunk_index": len(chunks),
+				"timestamp":   time.Now(),
+			},
+		})
+	}
+
+	// Add final chunk with finish
+	if len(chunks) > 0 {
+		lastChunk := chunks[len(chunks)-1]
+		chunks[len(chunks)-1] = iface.AgentStreamChunk{
+			Content: lastChunk.Content,
+			Finish: &iface.AgentFinish{
+				ReturnValues: map[string]any{"output": response},
+				Log:          "Streaming completed",
+			},
+			Metadata: lastChunk.Metadata,
+		}
+	}
+
+	return chunks
+}
+
+// ValidateStreamChunk validates that a stream chunk has valid structure.
+func ValidateStreamChunk(t *testing.T, chunk iface.AgentStreamChunk, allowEmpty bool) {
+	t.Helper()
+	if !allowEmpty {
+		assert.True(t, chunk.Content != "" || chunk.ToolCalls != nil || chunk.Action != nil || chunk.Finish != nil || chunk.Err != nil,
+			"Stream chunk should have at least one field set")
+	}
+	if chunk.Finish != nil && chunk.Err != nil {
+		t.Errorf("Stream chunk should not have both Finish and Err set")
+	}
+}
+
+// CollectStreamChunks collects all chunks from a stream channel.
+func CollectStreamChunks(ch <-chan iface.AgentStreamChunk) ([]iface.AgentStreamChunk, error) {
+	chunks := make([]iface.AgentStreamChunk, 0)
+	for chunk := range ch {
+		chunks = append(chunks, chunk)
+		if chunk.Err != nil {
+			return chunks, chunk.Err
+		}
+	}
+	return chunks, nil
 }

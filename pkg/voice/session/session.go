@@ -91,6 +91,8 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 		AgentCallback:     options.AgentCallback,
 		OnStateChanged:    options.OnStateChanged,
 		Config:            internalConfig,
+		AgentInstance:     options.AgentInstance,
+		AgentConfig:       options.AgentConfig,
 	}
 
 	// Create session implementation

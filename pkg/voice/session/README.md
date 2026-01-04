@@ -101,10 +101,63 @@ type VoiceOptions struct {
     TurnDetector         iface.TurnDetector
     Transport            iface.Transport
     NoiseCancellation    iface.NoiseCancellation
-    AgentCallback        func(ctx context.Context, transcript string) (string, error)
+    AgentCallback        func(ctx context.Context, transcript string) (string, error) // Deprecated: use AgentInstance
+    AgentInstance        agentsiface.StreamingAgent // Streaming agent instance
+    AgentConfig          *schema.AgentConfig        // Agent configuration
     OnStateChanged       func(state SessionState)
     Config               *Config
 }
+```
+
+### Using Streaming Agents with Voice Sessions
+
+The session package supports integration with streaming agents for real-time voice interactions:
+
+```go
+import (
+    "context"
+    "github.com/lookatitude/beluga-ai/pkg/agents"
+    "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+)
+
+// Create a streaming agent
+llm := // ... your streaming LLM
+agent, err := agents.NewBaseAgent("voice-assistant", llm, nil,
+    agents.WithStreaming(true),
+)
+
+// Cast to StreamingAgent
+streamingAgent, ok := agent.(iface.StreamingAgent)
+if !ok {
+    log.Fatal("Agent must implement StreamingAgent")
+}
+
+// Create agent config
+agentConfig := &schema.AgentConfig{
+    Name:            "voice-assistant",
+    LLMProviderName: "openai",
+}
+
+// Create voice session with agent instance
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithSTTProvider(sttProvider),
+    session.WithTTSProvider(ttsProvider),
+    session.WithAgentInstance(streamingAgent, agentConfig),
+    session.WithConfig(session.DefaultConfig()),
+)
+
+// Start session - agent will process transcripts with streaming
+err = voiceSession.Start(ctx)
+```
+
+**Benefits of Agent Instance Integration:**
+- **Ultra-low latency**: Streaming responses start immediately (< 500ms)
+- **Interruption support**: New user input automatically cancels ongoing agent streams
+- **Context preservation**: Conversation history maintained across interruptions
+- **Tool execution**: Agents can execute tools during voice calls
+- **Backward compatible**: Callback-based mode still works
 ```
 
 ## Session States
@@ -263,6 +316,52 @@ err := mockSession.Start(ctx)
 ## Examples
 
 See the [examples directory](../../../examples/voice/session/) for complete usage examples.
+
+## Agent Integration Performance
+
+When using streaming agents with voice sessions, the following performance optimizations are available:
+
+### Latency Optimization
+
+- **Streaming Execution**: Agent responses start streaming immediately (< 500ms first chunk)
+- **Sentence Boundary Detection**: Process complete sentences for better TTS quality
+- **Interruption Handling**: Cancel ongoing streams instantly when new input arrives
+- **Context Preservation**: Maintain conversation history without re-processing
+
+### Best Practices
+
+1. **Enable Streaming**: Always use `WithAgentInstance` with streaming-enabled agents
+2. **Configure Buffer Size**: Set `ChunkBufferSize` (1-100) based on your latency requirements
+3. **Use Sentence Boundaries**: Enable `SentenceBoundary` for natural speech flow
+4. **Handle Interruptions**: Configure `InterruptOnNewInput` for responsive interactions
+5. **Monitor Metrics**: Use built-in OTEL metrics to track latency and performance
+
+### Migration from Callback Mode
+
+To migrate from callback-based to agent instance-based sessions:
+
+```go
+// Old way (deprecated but still supported)
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithAgentCallback(func(ctx context.Context, transcript string) (string, error) {
+        // Process transcript
+        return "response", nil
+    }),
+)
+
+// New way (recommended)
+streamingAgent := // ... create streaming agent
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithAgentInstance(streamingAgent, agentConfig),
+)
+```
+
+**Benefits of Migration:**
+- Lower latency with streaming responses
+- Better interruption handling
+- Tool execution support
+- Conversation context management
+- Built-in metrics and observability
 
 ## Performance
 

@@ -128,14 +128,15 @@ type Option func(*Options)
 
 // Options holds the configuration options for an agent.
 type Options struct {
-	Metrics       MetricsRecorder
-	EventHandlers map[string][]EventHandler
-	MaxRetries    int
-	RetryDelay    time.Duration
-	Timeout       time.Duration
-	MaxIterations int
-	EnableMetrics bool
-	EnableTracing bool
+	Metrics        MetricsRecorder
+	EventHandlers  map[string][]EventHandler
+	MaxRetries     int
+	RetryDelay     time.Duration
+	Timeout        time.Duration
+	MaxIterations  int
+	EnableMetrics  bool
+	EnableTracing  bool
+	StreamingConfig StreamingConfig
 }
 
 // HealthChecker defines the interface for health checking components.
@@ -160,6 +161,12 @@ type MetricsRecorder interface {
 
 	// RecordToolCall records tool call metrics.
 	RecordToolCall(ctx context.Context, toolName string, duration time.Duration, success bool)
+
+	// RecordStreamingOperation records streaming operation metrics (latency and duration).
+	RecordStreamingOperation(ctx context.Context, agentName string, latency, duration time.Duration)
+
+	// RecordStreamingChunk records that a streaming chunk was produced.
+	RecordStreamingChunk(ctx context.Context, agentName string)
 }
 
 // SpanEnder defines an interface for span ending operations.

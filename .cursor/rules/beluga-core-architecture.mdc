@@ -1,0 +1,14 @@
+---
+description: Enforce Beluga AI Framework's refactored architecture and modularity.
+globs: pkg/**
+alwaysApply: true
+---
+# Beluga AI Architecture Guidelines
+
+When editing or generating code in pkg/:
+- Follow modular structure: pkg/schema for data, pkg/core for utils, pkg/agents with sub-packages (base/, tools/, executor/, factory/).
+- Use interface-driven design: Implement small interfaces (e.g., Agent, Tool) per ISP.
+- Favor composition: Embed BaseAgent/BaseTool instead of inheritance.
+- Integrate monitoring and config: Use pkg/monitoring for OTEL and pkg/config for validation.
+- For extensions: Add new agents/LLMs/vectorstores via factories (e.g., register in global registry).
+- Reference: Full details in Beluga_Refactored_Architecture.md.
