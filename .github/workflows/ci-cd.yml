@@ -165,12 +165,25 @@ jobs:
             exit 1
           fi
           
-          # Run golangci-lint on all packages
-          # The react package is excluded via .golangci.yml exclude-rules (all linters disabled)
-          golangci-lint run --timeout=5m --fix ./pkg/... ./tests/... || {
-            echo "::warning::golangci-lint found issues (advisory - does not block merge)"
-            exit 0
-          }
+          # Run golangci-lint on each package individually to avoid react package panic
+          # The react package causes a panic in golangci-lint v2.6.2, so we must exclude it
+          failed=0
+          total=0
+          while IFS= read -r pkg; do
+            if [ -n "$pkg" ] && [ "$pkg" != "pkg/agents/providers/react" ]; then
+              total=$((total + 1))
+              echo "Linting ./$pkg..."
+              if ! golangci-lint run --timeout=5m --fix "./$pkg" 2>&1 | tee /tmp/lint-$total.log; then
+                failed=$((failed + 1))
+                echo "::warning::Linting failed for ./$pkg (advisory - does not block merge)"
+              fi
+            fi
+          done <<< "$filtered_packages"
+          
+          echo ""
+          echo "Linting summary: $failed failed out of $total packages"
+          # Note: This is an advisory check (continue-on-error: true), so we always exit 0
+          exit 0
       
       - name: go vet
         run: |
