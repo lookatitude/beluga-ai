@@ -4,6 +4,7 @@ package agents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -889,14 +890,14 @@ func (b *AgentBenchmark) BenchmarkPlanning(iterations int) (time.Duration, error
 // AdvancedMockStreamingAgent provides a comprehensive mock implementation for streaming agents.
 // This struct extends AdvancedMockAgent with streaming capabilities.
 type AdvancedMockStreamingAgent struct {
+	streamingError error
 	*AdvancedMockAgent
-	streamingChunks     []iface.AgentStreamChunk      // Predefined chunks to stream
-	streamingDelay      time.Duration                 // Delay between chunks
-	streamingError      error                         // Error to return during streaming
-	shouldErrorOnStream bool                          // Whether to error on stream start
-	streamCount         int                           // Number of streams started
-	chunkGenerator      func() iface.AgentStreamChunk // Custom chunk generator
-	mu                  sync.RWMutex                  // Protect streaming state
+	chunkGenerator      func() iface.AgentStreamChunk
+	streamingChunks     []iface.AgentStreamChunk
+	streamingDelay      time.Duration
+	streamCount         int
+	mu                  sync.RWMutex
+	shouldErrorOnStream bool
 }
 
 // MockStreamingAgentOption defines functional options for configuring streaming agent mocks.
@@ -958,7 +959,7 @@ func (a *AdvancedMockStreamingAgent) StreamExecute(ctx context.Context, inputs m
 		if a.streamingError != nil {
 			return nil, a.streamingError
 		}
-		return nil, fmt.Errorf("mock streaming error")
+		return nil, errors.New("mock streaming error")
 	}
 
 	ch := make(chan iface.AgentStreamChunk, 10)
@@ -993,7 +994,7 @@ func (a *AdvancedMockStreamingAgent) StreamExecute(ctx context.Context, inputs m
 		}
 
 		// Default: generate simple response chunks
-		response := fmt.Sprintf("Agent %s executed with input: %v", a.AdvancedMockAgent.name, inputs)
+		response := fmt.Sprintf("Agent %s executed with input: %v", a.name, inputs)
 		words := strings.Fields(response)
 		for i, word := range words {
 			select {
@@ -1047,7 +1048,7 @@ func (a *AdvancedMockStreamingAgent) StreamPlan(ctx context.Context, intermediat
 		if a.streamingError != nil {
 			return nil, a.streamingError
 		}
-		return nil, fmt.Errorf("mock streaming error")
+		return nil, errors.New("mock streaming error")
 	}
 
 	ch := make(chan iface.AgentStreamChunk, 10)
@@ -1101,7 +1102,7 @@ func (a *AdvancedMockStreamingAgent) StreamPlan(ctx context.Context, intermediat
 				return
 			case ch <- iface.AgentStreamChunk{
 				Finish: &iface.AgentFinish{
-					ReturnValues: map[string]any{"result": fmt.Sprintf("Agent %s completed planning", a.AdvancedMockAgent.name)},
+					ReturnValues: map[string]any{"result": fmt.Sprintf("Agent %s completed planning", a.name)},
 					Log:          "Planning completed successfully",
 				},
 			}:
@@ -1121,32 +1122,32 @@ func (a *AdvancedMockStreamingAgent) GetStreamCount() int {
 
 // MockStreamingExecutor provides a mock executor with streaming capabilities.
 type MockStreamingExecutor struct {
+	streamingError error
 	*MockExecutor
 	streamingChunks     []ExecutionChunk
 	streamingDelay      time.Duration
-	streamingError      error
-	shouldErrorOnStream bool
 	mu                  sync.RWMutex
+	shouldErrorOnStream bool
 }
 
 // ExecutionChunk represents a chunk of execution output.
 // This type matches the contract definition for streaming executor chunks.
 type ExecutionChunk struct {
-	Step        schema.Step          // Current step being executed
-	Content     string               // Text content from this step
-	ToolResult  *ToolExecutionResult // Tool result if step executed tool
-	FinalAnswer *schema.FinalAnswer  // Final answer if execution complete
-	Err         error                // Error if occurred (execution ends on error)
-	Timestamp   time.Time            // Chunk timestamp for latency measurement
+	Timestamp   time.Time
+	Err         error
+	ToolResult  *ToolExecutionResult
+	FinalAnswer *schema.FinalAnswer
+	Step        schema.Step
+	Content     string
 }
 
 // ToolExecutionResult represents the result of tool execution.
 type ToolExecutionResult struct {
-	ToolName string
+	Err      error
 	Input    map[string]any
 	Output   map[string]any
+	ToolName string
 	Duration time.Duration
-	Err      error
 }
 
 // NewMockStreamingExecutor creates a new mock streaming executor.
@@ -1161,7 +1162,7 @@ func NewMockStreamingExecutor(baseExecutor *MockExecutor) *MockStreamingExecutor
 // ExecuteStreamingPlan implements the StreamingExecutor interface (to be defined in Phase 3.4).
 func (e *MockStreamingExecutor) ExecuteStreamingPlan(ctx context.Context, agent iface.Agent, plan []schema.Step) (<-chan ExecutionChunk, error) {
 	if len(plan) == 0 {
-		return nil, fmt.Errorf("plan cannot be empty")
+		return nil, errors.New("plan cannot be empty")
 	}
 
 	ch := make(chan ExecutionChunk, 10)

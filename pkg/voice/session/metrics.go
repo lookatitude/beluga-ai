@@ -53,7 +53,7 @@ type Metrics struct {
 	operationLatency metric.Float64Histogram
 
 	// Agent-specific metrics
-	agentLatency          metric.Float64Histogram
+	agentLatency           metric.Float64Histogram
 	agentStreamingDuration metric.Float64Histogram
 	agentToolExecutionTime metric.Float64Histogram
 }

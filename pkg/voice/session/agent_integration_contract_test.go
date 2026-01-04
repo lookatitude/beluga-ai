@@ -38,7 +38,6 @@ func TestVoiceSession_AcceptsAgentInstance(t *testing.T) {
 		// WithTransport(transport),
 		WithAgentInstance(agent, config),
 	)
-
 	if err != nil {
 		// Expected to fail until implementation is complete
 		t.Logf("Session creation failed (expected): %v", err)
@@ -74,7 +73,7 @@ func TestVoiceSession_UsesStreamingExecution(t *testing.T) {
 }
 
 // TestVoiceSession_HandlesInterruptions tests interruption handling.
-// Contract Requirement: Handle interruptions by cancelling agent stream.
+// Contract Requirement: Handle interruptions by canceling agent stream.
 func TestVoiceSession_HandlesInterruptions(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T035")
 
@@ -99,12 +98,12 @@ func TestVoiceSession_HandlesInterruptions(t *testing.T) {
 	// err = session.ProcessAudio(ctx, audio2)
 
 	// Verify interruption occurred
-	// Verify agent stream was cancelled
+	// Verify agent stream was canceled
 	t.Log("Test requires implementation to verify interruption handling")
 }
 
 // TestVoiceSession_PreservesConversationContext tests context preservation.
-// Contract Requirement: Preserve conversation context across interruptions
+// Contract Requirement: Preserve conversation context across interruptions.
 func TestVoiceSession_PreservesConversationContext(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T036")
 
@@ -134,7 +133,7 @@ func TestVoiceSession_PreservesConversationContext(t *testing.T) {
 }
 
 // TestVoiceSession_BackwardCompatibility tests backward compatibility.
-// Contract Requirement: Maintain backward compatibility with callbacks
+// Contract Requirement: Maintain backward compatibility with callbacks.
 func TestVoiceSession_BackwardCompatibility(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T037")
 
@@ -167,7 +166,7 @@ func TestVoiceSession_BackwardCompatibility(t *testing.T) {
 }
 
 // TestVoiceSession_HandlesAgentErrors tests error handling.
-// Contract Requirement: Handle agent errors gracefully
+// Contract Requirement: Handle agent errors gracefully.
 func TestVoiceSession_HandlesAgentErrors(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T038")
 
@@ -193,7 +192,7 @@ func TestVoiceSession_HandlesAgentErrors(t *testing.T) {
 }
 
 // TestVoiceSession_ConcurrentSessions tests multiple concurrent sessions.
-// Contract Requirement: Support multiple concurrent sessions independently
+// Contract Requirement: Support multiple concurrent sessions independently.
 func TestVoiceSession_ConcurrentSessions(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T039")
 
@@ -223,7 +222,7 @@ func TestVoiceSession_ConcurrentSessions(t *testing.T) {
 }
 
 // TestVoiceSession_Performance_Latency tests performance requirement.
-// Contract Requirement: Achieve < 500ms end-to-end latency
+// Contract Requirement: Achieve < 500ms end-to-end latency.
 func TestVoiceSession_Performance_Latency(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T040")
 

@@ -13,7 +13,7 @@ import (
 )
 
 // TestStreamingAgent_StreamExecute_ReturnsChannel tests that StreamExecute returns a channel.
-// Contract Requirement: Channel must be non-nil if error is nil
+// Contract Requirement: Channel must be non-nil if error is nil.
 func TestStreamingAgent_StreamExecute_ReturnsChannel(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T019")
 
@@ -34,7 +34,7 @@ func TestStreamingAgent_StreamExecute_ReturnsChannel(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamExecute_ChunksArrive tests that chunks arrive on the channel.
-// Contract Requirement: At least one chunk must be sent before closing
+// Contract Requirement: At least one chunk must be sent before closing.
 func TestStreamingAgent_StreamExecute_ChunksArrive(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T019")
 
@@ -55,7 +55,7 @@ func TestStreamingAgent_StreamExecute_ChunksArrive(t *testing.T) {
 		select {
 		case chunk, ok := <-chunkChan:
 			if !ok {
-				assert.Greater(t, chunkCount, 0, "At least one chunk should be sent")
+				assert.Positive(t, chunkCount, "At least one chunk should be sent")
 				return
 			}
 			chunkCount++
@@ -69,7 +69,7 @@ func TestStreamingAgent_StreamExecute_ChunksArrive(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamExecute_ContextCancellation tests context cancellation handling.
-// Contract Requirement: Context cancellation must be respected (stream must close on ctx.Done())
+// Contract Requirement: Context cancellation must be respected (stream must close on ctx.Done()).
 func TestStreamingAgent_StreamExecute_ContextCancellation(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T020")
 
@@ -105,7 +105,7 @@ func TestStreamingAgent_StreamExecute_ContextCancellation(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamExecute_ErrorAsFinalChunk tests that errors are sent as final chunk.
-// Contract Requirement: Errors are sent as final chunk with Err set
+// Contract Requirement: Errors are sent as final chunk with Err set.
 func TestStreamingAgent_StreamExecute_ErrorAsFinalChunk(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T021")
 
@@ -131,7 +131,7 @@ func TestStreamingAgent_StreamExecute_ErrorAsFinalChunk(t *testing.T) {
 				return
 			}
 			if chunk.Err != nil {
-				assert.NotNil(t, chunk.Err, "Final chunk should have Err set")
+				assert.Error(t, chunk.Err, "Final chunk should have Err set")
 				return
 			}
 		case <-timeout:
@@ -141,7 +141,7 @@ func TestStreamingAgent_StreamExecute_ErrorAsFinalChunk(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamExecute_ToolCallsInChunks tests that tool calls are included in chunks.
-// Contract Requirement: Tool calls must be sent as soon as detected
+// Contract Requirement: Tool calls must be sent as soon as detected.
 func TestStreamingAgent_StreamExecute_ToolCallsInChunks(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T022")
 
@@ -183,7 +183,7 @@ func TestStreamingAgent_StreamExecute_ToolCallsInChunks(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamExecute_FinalAnswer tests that final chunk has Finish set.
-// Contract Requirement: Final chunk must have either Finish set or Err set
+// Contract Requirement: Final chunk must have either Finish set or Err set.
 func TestStreamingAgent_StreamExecute_FinalAnswer(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T023")
 
@@ -221,7 +221,7 @@ func TestStreamingAgent_StreamExecute_FinalAnswer(t *testing.T) {
 }
 
 // TestStreamingAgent_StreamPlan_PlansWithStreaming tests that StreamPlan plans with streaming responses.
-// Contract Requirement: StreamPlan should return channel of chunks for planning
+// Contract Requirement: StreamPlan should return channel of chunks for planning.
 func TestStreamingAgent_StreamPlan_PlansWithStreaming(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T024")
 
@@ -255,7 +255,7 @@ func TestStreamingAgent_StreamPlan_PlansWithStreaming(t *testing.T) {
 }
 
 // TestStreamingAgent_InputValidation tests that invalid inputs return error.
-// Contract Requirement: Invalid inputs return error before streaming starts
+// Contract Requirement: Invalid inputs return error before streaming starts.
 func TestStreamingAgent_InputValidation(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T025")
 
@@ -278,12 +278,12 @@ func TestStreamingAgent_InputValidation(t *testing.T) {
 	// If no error, first chunk should contain error
 	if chunkChan != nil {
 		chunk := <-chunkChan
-		assert.NotNil(t, chunk.Err, "Should send error in chunk for invalid inputs")
+		assert.Error(t, chunk.Err, "Should send error in chunk for invalid inputs")
 	}
 }
 
 // TestStreamingAgent_Performance_FirstChunkWithin200ms tests performance requirement.
-// Contract Requirement: First chunk must arrive within 200ms of call
+// Contract Requirement: First chunk must arrive within 200ms of call.
 func TestStreamingAgent_Performance_FirstChunkWithin200ms(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T026")
 

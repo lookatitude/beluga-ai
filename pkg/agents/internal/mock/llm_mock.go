@@ -4,7 +4,7 @@ package mock
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"sync"
 	"time"
@@ -16,13 +16,13 @@ import (
 
 // MockLLMStreamChat provides a mock implementation of LLM StreamChat for agent testing.
 type MockLLMStreamChat struct {
-	responses      []string
-	streamingDelay time.Duration
-	shouldError    bool
 	errorToReturn  error
+	responses      []string
+	toolCallChunks []schema.ToolCallChunk
+	streamingDelay time.Duration
 	callCount      int
 	mu             sync.RWMutex
-	toolCallChunks []schema.ToolCallChunk
+	shouldError    bool
 	simulateDelay  bool
 }
 
@@ -85,7 +85,7 @@ func (m *MockLLMStreamChat) StreamChat(ctx context.Context, messages []schema.Me
 		if errorToReturn != nil {
 			return nil, errorToReturn
 		}
-		return nil, fmt.Errorf("mock LLM error")
+		return nil, errors.New("mock LLM error")
 	}
 
 	ch := make(chan iface.AIMessageChunk, 10)

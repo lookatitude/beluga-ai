@@ -4,6 +4,7 @@ package executor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -32,13 +33,13 @@ func NewStreamingAgentExecutor(opts ...ExecutorOption) *StreamingAgentExecutor {
 func (e *StreamingAgentExecutor) ExecuteStreamingPlan(ctx context.Context, agent iface.StreamingAgent, plan []schema.Step) (<-chan ExecutionChunk, error) {
 	// Validate inputs
 	if ctx == nil {
-		return nil, fmt.Errorf("context cannot be nil")
+		return nil, errors.New("context cannot be nil")
 	}
 	if agent == nil {
-		return nil, fmt.Errorf("agent cannot be nil")
+		return nil, errors.New("agent cannot be nil")
 	}
 	if len(plan) == 0 {
-		return nil, fmt.Errorf("plan cannot be empty")
+		return nil, errors.New("plan cannot be empty")
 	}
 
 	// Create output channel with buffer
@@ -63,7 +64,7 @@ func (e *StreamingAgentExecutor) ExecuteStreamingPlan(ctx context.Context, agent
 			select {
 			case <-ctx.Done():
 				outputChan <- ExecutionChunk{
-					Err:       fmt.Errorf("execution cancelled at step %d: %w", i+1, ctx.Err()),
+					Err:       fmt.Errorf("execution canceled at step %d: %w", i+1, ctx.Err()),
 					Timestamp: time.Now(),
 				}
 				return
@@ -89,7 +90,7 @@ func (e *StreamingAgentExecutor) ExecuteStreamingPlan(ctx context.Context, agent
 			case outputChan <- stepStartChunk:
 			case <-ctx.Done():
 				outputChan <- ExecutionChunk{
-					Err:       fmt.Errorf("execution cancelled: %w", ctx.Err()),
+					Err:       fmt.Errorf("execution canceled: %w", ctx.Err()),
 					Timestamp: time.Now(),
 				}
 				return
@@ -164,7 +165,7 @@ func (e *StreamingAgentExecutor) ExecuteStreamingPlan(ctx context.Context, agent
 			case outputChan <- stepChunk:
 			case <-ctx.Done():
 				outputChan <- ExecutionChunk{
-					Err:       fmt.Errorf("execution cancelled: %w", ctx.Err()),
+					Err:       fmt.Errorf("execution canceled: %w", ctx.Err()),
 					Timestamp: time.Now(),
 				}
 				return

@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	// maxLatency is the maximum acceptable latency for streaming operations (500ms)
+	// maxLatency is the maximum acceptable latency for streaming operations (500ms).
 	maxLatency = 500 * time.Millisecond
 )
 
@@ -143,8 +143,8 @@ func TestAgentsVoice_Performance_ConcurrentLatency(t *testing.T) {
 
 	// Run multiple streams concurrently and measure latency
 	type result struct {
-		latency time.Duration
 		err     error
+		latency time.Duration
 	}
 	results := make(chan result, numStreams)
 
@@ -200,4 +200,3 @@ func TestAgentsVoice_Performance_ConcurrentLatency(t *testing.T) {
 		"Maximum latency under concurrent load should be less than %v, got %v",
 		concurrentMaxLatency, maxLatencySeen)
 }
-

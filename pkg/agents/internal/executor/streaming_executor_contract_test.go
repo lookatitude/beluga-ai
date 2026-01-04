@@ -63,7 +63,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_ExecutesSequentially(t *testing.
 		select {
 		case chunk, ok := <-chunkChan:
 			if !ok {
-				assert.Equal(t, len(plan), len(steps), "All steps should be executed")
+				assert.Len(t, steps, len(plan), "All steps should be executed")
 				return
 			}
 			if chunk.Step.Action.Tool != "" {
@@ -159,7 +159,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_FinalAnswer(t *testing.T) {
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellation tests context cancellation handling.
-// Contract Requirement: Cancelling context closes channel gracefully
+// Contract Requirement: Canceling context closes channel gracefully
 func TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellation(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T031")
 
@@ -225,7 +225,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_HandlesStepErrors(t *testing.T) 
 				return
 			}
 			if chunk.Err != nil {
-				assert.NotNil(t, chunk.Err, "Error chunk should have Err set")
+				assert.Error(t, chunk.Err, "Error chunk should have Err set")
 				return
 			}
 		case <-timeout:

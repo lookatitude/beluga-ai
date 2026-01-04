@@ -142,8 +142,8 @@ func TestIntegrationEmbeddingsVectorstores(t *testing.T) {
 				t.Logf("Warning: Direct search returned %d results, query search returned %d results. This may be due to non-deterministic similarity search.", len(directSearchDocs), len(querySearchDocs))
 			}
 			// Both searches should return at least some results
-			assert.Greater(t, len(querySearchDocs), 0, "Query search should return at least one result")
-			assert.Greater(t, len(directSearchDocs), 0, "Direct search should return at least one result")
+			assert.NotEmpty(t, querySearchDocs, "Query search should return at least one result")
+			assert.NotEmpty(t, directSearchDocs, "Direct search should return at least one result")
 		})
 	}
 }

@@ -3,7 +3,7 @@ package session
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -285,43 +285,43 @@ const (
 // AgentStreamChunk represents a chunk of agent execution output.
 // This matches the definition from pkg/agents for consistency.
 type AgentStreamChunk struct {
-	Content   string
-	ToolCalls []interface{} // Will be schema.ToolCall when types are available
-	Action    interface{}   // Will be *iface.AgentAction when types are available
-	Finish    interface{}   // Will be *iface.AgentFinish when types are available
+	Action    any
+	Finish    any
 	Err       error
 	Metadata  map[string]any
+	Content   string
+	ToolCalls []any
 }
 
 // AgentContext represents the agent-specific context within a voice session.
 // This type matches the contract definition from data-model.md.
 type AgentContext struct {
-	ConversationHistory []interface{} // Will be []schema.Message when types are available
-	ToolResults        []interface{} // Will be []ToolResult when types are available
-	CurrentPlan        []interface{} // Will be []schema.Step when types are available
-	StreamingActive    bool
-	LastInterruption   time.Time
+	LastInterruption    time.Time
+	ConversationHistory []any
+	ToolResults         []any
+	CurrentPlan         []any
+	StreamingActive     bool
 }
 
 // StreamingState represents the current streaming state.
 type StreamingState struct {
-	Active        bool
+	LastChunkTime time.Time
 	CurrentStream <-chan AgentStreamChunk
 	Buffer        []AgentStreamChunk
-	LastChunkTime time.Time
+	Active        bool
 	Interrupted   bool
 }
 
 // AdvancedMockAgentInstance provides a comprehensive mock implementation for agent instances.
 type AdvancedMockAgentInstance struct {
-	agent             interface{} // Will be iface.StreamingAgent when types are available
-	config            interface{} // Will be *agents.AgentConfig when types are available
+	agent             any
+	config            any
 	context           *AgentContext
 	state             AgentState
+	streamChunks      []AgentStreamChunk
+	interruptionCount int
 	mu                sync.RWMutex
 	streamingActive   bool
-	interruptionCount int
-	streamChunks      []AgentStreamChunk
 }
 
 // MockAgentInstanceOption defines functional options for configuring agent instance mocks.
@@ -349,16 +349,16 @@ func WithStreamingChunks(chunks []AgentStreamChunk) MockAgentInstanceOption {
 }
 
 // NewAdvancedMockAgentInstance creates a new advanced agent instance mock.
-func NewAdvancedMockAgentInstance(agent interface{}, config interface{}, options ...MockAgentInstanceOption) *AdvancedMockAgentInstance {
+func NewAdvancedMockAgentInstance(agent, config any, options ...MockAgentInstanceOption) *AdvancedMockAgentInstance {
 	mock := &AdvancedMockAgentInstance{
-		agent:   agent,
-		config:  config,
-		state:   AgentStateIdle,
+		agent:  agent,
+		config: config,
+		state:  AgentStateIdle,
 		context: &AgentContext{
-			ConversationHistory: make([]interface{}, 0),
-			ToolResults:        make([]interface{}, 0),
-			CurrentPlan:        make([]interface{}, 0),
-			StreamingActive:    false,
+			ConversationHistory: make([]any, 0),
+			ToolResults:         make([]any, 0),
+			CurrentPlan:         make([]any, 0),
+			StreamingActive:     false,
 		},
 		streamChunks: make([]AgentStreamChunk, 0),
 	}
@@ -442,7 +442,7 @@ func (m *MockStreamingAgentIntegration) Start(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.started {
-		return fmt.Errorf("agent integration already started")
+		return errors.New("agent integration already started")
 	}
 	m.started = true
 	if m.agentInstance != nil {
@@ -456,7 +456,7 @@ func (m *MockStreamingAgentIntegration) Stop(ctx context.Context) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !m.started {
-		return fmt.Errorf("agent integration not started")
+		return errors.New("agent integration not started")
 	}
 	m.stopped = true
 	if m.agentInstance != nil {
@@ -485,11 +485,11 @@ func (m *MockStreamingAgentIntegration) GetAgentInstance() *AdvancedMockAgentIns
 // CreateTestAgentContext creates a test agent context.
 func CreateTestAgentContext() *AgentContext {
 	return &AgentContext{
-		ConversationHistory: make([]interface{}, 0),
-		ToolResults:        make([]interface{}, 0),
-		CurrentPlan:        make([]interface{}, 0),
-		StreamingActive:    false,
-		LastInterruption:   time.Time{},
+		ConversationHistory: make([]any, 0),
+		ToolResults:         make([]any, 0),
+		CurrentPlan:         make([]any, 0),
+		StreamingActive:     false,
+		LastInterruption:    time.Time{},
 	}
 }
 

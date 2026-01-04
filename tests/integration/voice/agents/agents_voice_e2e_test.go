@@ -4,7 +4,7 @@ package agents
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"strings"
 	"sync"
@@ -70,7 +70,7 @@ func TestAgentsVoice_E2E_StreamingAgent(t *testing.T) {
 	// For now, verify the session is set up correctly with agent instance
 	// Full transcript processing will be tested once ProcessAudio pipeline is complete
 	// The agent instance integration is verified by successful session creation
-	
+
 	// Verify session state
 	assert.Equal(t, "listening", string(voiceSession.GetState()))
 
@@ -84,12 +84,12 @@ func TestAgentsVoice_E2E_StreamingAgent(t *testing.T) {
 
 // mockStreamingChatModel implements ChatModel interface with streaming support.
 type mockStreamingChatModel struct {
+	errorToReturn  error
 	responses      []string
 	streamingDelay time.Duration
-	shouldError    bool
-	errorToReturn  error
 	callCount      int
 	mu             sync.RWMutex
+	shouldError    bool
 }
 
 func (m *mockStreamingChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error) {
@@ -103,7 +103,7 @@ func (m *mockStreamingChatModel) StreamChat(ctx context.Context, messages []sche
 		if errorToReturn != nil {
 			return nil, errorToReturn
 		}
-		return nil, fmt.Errorf("mock LLM error")
+		return nil, errors.New("mock LLM error")
 	}
 
 	ch := make(chan llmsiface.AIMessageChunk, 10)
@@ -249,4 +249,3 @@ func (m *mockStreamingTTSProvider) GetCallCount() int {
 	defer m.mu.Unlock()
 	return m.callCount
 }
-

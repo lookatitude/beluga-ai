@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -46,19 +47,17 @@ type VoiceSessionImpl struct {
 	vadProvider         iface.VADProvider
 	sttProvider         iface.STTProvider
 	transport           iface.Transport
-	opts                *VoiceOptions
-	config              *Config
 	agentCallback       func(ctx context.Context, transcript string) (string, error)
+	config              *Config
+	opts                *VoiceOptions
 	stateChangeCallback func(state sessioniface.SessionState)
 	stateMachine        *StateMachine
+	agentIntegration    *AgentIntegration
+	streamingAgent      *StreamingAgent
 	sessionID           string
 	state               sessioniface.SessionState
 	mu                  sync.RWMutex
 	active              bool
-
-	// Agent integration components
-	agentIntegration *AgentIntegration
-	streamingAgent   *StreamingAgent
 }
 
 // NewVoiceSessionImpl creates a new VoiceSessionImpl instance.
@@ -106,7 +105,7 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 			// Validate that AgentInstance implements StreamingAgent interface
 			// This is a compile-time check, but we verify at runtime for safety
 			if opts.AgentInstance == nil {
-				return nil, fmt.Errorf("agent instance validation failed: AgentInstance cannot be nil")
+				return nil, errors.New("agent instance validation failed: AgentInstance cannot be nil")
 			}
 
 			// Create agent instance-based integration

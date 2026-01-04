@@ -20,7 +20,7 @@ type AzureStreamingSession struct {
 	config   *AzureConfig
 	conn     *websocket.Conn
 	resultCh chan iface.TranscriptResult
-	ctx      context.Context
+	ctx      context.Context //nolint:containedctx // Context is necessary for long-lived streaming connection
 	cancel   context.CancelFunc
 	closed   bool
 	mu       sync.RWMutex

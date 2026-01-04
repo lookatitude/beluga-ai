@@ -4,7 +4,7 @@ package mock
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -13,15 +13,15 @@ import (
 
 // MockSTTStreaming provides a mock implementation of STT streaming for agent integration testing.
 type MockSTTStreaming struct {
-	transcripts      []string
-	transcriptIndex  int
-	streamingDelay   time.Duration
-	shouldError      bool
-	errorToReturn    error
-	callCount        int
-	mu               sync.RWMutex
-	simulateDelay    bool
-	interimResults   bool
+	errorToReturn   error
+	transcripts     []string
+	transcriptIndex int
+	streamingDelay  time.Duration
+	callCount       int
+	mu              sync.RWMutex
+	shouldError     bool
+	simulateDelay   bool
+	interimResults  bool
 }
 
 // NewMockSTTStreaming creates a new mock STT streaming provider.
@@ -72,7 +72,7 @@ func (m *MockSTTStreaming) Transcribe(ctx context.Context, audio []byte) (string
 		if errorToReturn != nil {
 			return "", errorToReturn
 		}
-		return "", fmt.Errorf("mock STT error")
+		return "", errors.New("mock STT error")
 	}
 
 	return transcript, nil
@@ -93,7 +93,7 @@ func (m *MockSTTStreaming) StartStreaming(ctx context.Context) (iface.StreamingS
 		if errorToReturn != nil {
 			return nil, errorToReturn
 		}
-		return nil, fmt.Errorf("mock STT streaming error")
+		return nil, errors.New("mock STT streaming error")
 	}
 
 	return NewMockStreamingSession(ctx, transcript, streamingDelay, interimResults), nil
@@ -119,13 +119,13 @@ func (m *MockSTTStreaming) GetCallCount() int {
 
 // MockStreamingSession provides a mock implementation of StreamingSession.
 type MockStreamingSession struct {
-	ctx             context.Context
-	transcript      string
-	streamingDelay  time.Duration
-	interimResults  bool
-	transcriptCh    chan iface.TranscriptResult
-	closed          bool
-	mu              sync.RWMutex
+	ctx            context.Context
+	transcriptCh   chan iface.TranscriptResult
+	transcript     string
+	streamingDelay time.Duration
+	mu             sync.RWMutex
+	interimResults bool
+	closed         bool
 }
 
 // NewMockStreamingSession creates a new mock streaming session.
@@ -190,7 +190,7 @@ func (m *MockStreamingSession) SendAudio(ctx context.Context, audio []byte) erro
 	m.mu.RUnlock()
 
 	if closed {
-		return fmt.Errorf("streaming session closed")
+		return errors.New("streaming session closed")
 	}
 
 	// Mock: just acknowledge audio received
@@ -229,4 +229,3 @@ func NewMockSTTProvider() iface.STTProvider {
 		MockSTTStreaming: NewMockSTTStreaming(),
 	}
 }
-

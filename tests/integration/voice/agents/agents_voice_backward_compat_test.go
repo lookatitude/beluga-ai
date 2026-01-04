@@ -98,4 +98,3 @@ func TestAgentsVoice_BackwardCompat_BothModes(t *testing.T) {
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)
 }
-

@@ -15,26 +15,16 @@ import (
 // StreamingAgent manages streaming agent response integration for voice sessions.
 // It integrates agent streaming with TTS conversion for real-time voice responses.
 type StreamingAgent struct {
-	// AgentInstance is the agent instance for streaming responses
-	agentInstance *AgentInstance
-
-	// TTSProvider is used to convert text chunks to audio
-	ttsProvider voiceiface.TTSProvider
-
-	// Streaming state
-	streaming     bool
-	currentStream <-chan agentsiface.AgentStreamChunk
-	cancelFunc    context.CancelFunc
-
-	// Chunk buffer for backpressure handling
+	ttsProvider      voiceiface.TTSProvider
+	agentInstance    *AgentInstance
+	currentStream    <-chan agentsiface.AgentStreamChunk
+	cancelFunc       context.CancelFunc
 	chunkBuffer      chan agentsiface.AgentStreamChunk
+	sentenceBuffer   strings.Builder
 	maxBufferSize    int
+	mu               sync.RWMutex
+	streaming        bool
 	dropOldestOnFull bool
-
-	// Sentence boundary detection
-	sentenceBuffer strings.Builder
-
-	mu sync.RWMutex
 }
 
 // StreamingAgentConfig configures a StreamingAgent instance.
@@ -151,7 +141,7 @@ func (sa *StreamingAgent) StartStreaming(ctx context.Context, transcript string)
 		for {
 			select {
 			case <-streamCtx.Done():
-				// Context cancelled - streaming interrupted
+				// Context canceled - streaming interrupted
 				return
 
 			case agentChunk, ok := <-agentChunkChan:

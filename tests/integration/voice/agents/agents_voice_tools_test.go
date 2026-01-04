@@ -128,7 +128,7 @@ func TestAgentsVoice_Tools_StreamingWithTools(t *testing.T) {
 	}
 done:
 
-	assert.Greater(t, chunkCount, 0, "Should receive chunks")
+	assert.Positive(t, chunkCount, "Should receive chunks")
 	// Note: Tool calls in chunks depend on LLM implementation
 	// This test verifies the infrastructure supports tool calls
 }
@@ -201,10 +201,10 @@ func (m *mockCalculatorTool) Batch(ctx context.Context, inputs []any) ([]any, er
 
 // mockStreamingChatModelWithTools extends mockStreamingChatModel to support tool calls.
 type mockStreamingChatModelWithTools struct {
+	toolName  string
+	toolCalls []schema.ToolCallChunk
 	mockStreamingChatModel
 	shouldCallTool bool
-	toolName       string
-	toolCalls      []schema.ToolCallChunk
 }
 
 func (m *mockStreamingChatModelWithTools) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error) {
@@ -259,4 +259,3 @@ func (m *mockStreamingChatModelWithTools) StreamChat(ctx context.Context, messag
 
 	return ch, nil
 }
-

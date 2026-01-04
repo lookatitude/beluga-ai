@@ -30,7 +30,7 @@ type options struct {
 type BaseAgent struct {
 	createdAt       time.Time
 	lastActiveTime  time.Time
-	ctx             context.Context
+	ctx             context.Context //nolint:containedctx // Context is part of agent lifecycle management
 	llm             llmsiface.LLM
 	memory          any
 	metrics         iface.MetricsRecorder

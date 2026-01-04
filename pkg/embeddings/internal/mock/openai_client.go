@@ -18,7 +18,7 @@ type OpenAIClientMock struct {
 
 // CreateEmbeddingsCall records a call to CreateEmbeddings.
 type CreateEmbeddingsCall struct {
-	Ctx context.Context
+	Ctx context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Req openaiClient.EmbeddingRequestConverter
 }
 

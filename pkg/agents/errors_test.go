@@ -20,7 +20,7 @@ func TestAgentError_Creation(t *testing.T) {
 	assert.Equal(t, "test_code", agentErr.Code)
 	assert.Equal(t, originalErr, agentErr.Err)
 	assert.NotNil(t, agentErr.Fields)
-	assert.True(t, errors.Is(agentErr, originalErr))
+	assert.ErrorIs(t, agentErr, originalErr)
 }
 
 // TestAgentError_ErrorString tests error string formatting.
@@ -154,7 +154,7 @@ func TestFactoryError(t *testing.T) {
 	assert.Equal(t, originalErr, factoryErr.Err)
 	assert.Contains(t, factoryErr.Error(), "failed to create agent")
 	assert.Contains(t, factoryErr.Error(), "custom_agent")
-	assert.True(t, errors.Is(factoryErr, originalErr))
+	assert.ErrorIs(t, factoryErr, originalErr)
 	assert.Equal(t, originalErr, factoryErr.Unwrap())
 }
 
@@ -182,7 +182,7 @@ func TestExecutionError(t *testing.T) {
 	assert.Contains(t, execErr.Error(), "execution error")
 	assert.Contains(t, execErr.Error(), "test_agent")
 	assert.Contains(t, execErr.Error(), "step 5")
-	assert.True(t, errors.Is(execErr, originalErr))
+	assert.ErrorIs(t, execErr, originalErr)
 	assert.Equal(t, originalErr, execErr.Unwrap())
 }
 
@@ -199,7 +199,7 @@ func TestPlanningError(t *testing.T) {
 	assert.Contains(t, planErr.Error(), "planning error")
 	assert.Contains(t, planErr.Error(), "test_agent")
 	assert.Contains(t, planErr.Error(), "input1")
-	assert.True(t, errors.Is(planErr, originalErr))
+	assert.ErrorIs(t, planErr, originalErr)
 	assert.Equal(t, originalErr, planErr.Unwrap())
 
 	// Test WithSuggestion
@@ -222,7 +222,7 @@ func TestStreamingError(t *testing.T) {
 	assert.Contains(t, streamErr.Error(), "test_agent")
 	assert.Contains(t, streamErr.Error(), "StreamExecute")
 	assert.Contains(t, streamErr.Error(), ErrCodeStreamError)
-	assert.True(t, errors.Is(streamErr, originalErr))
+	assert.ErrorIs(t, streamErr, originalErr)
 	assert.Equal(t, originalErr, streamErr.Unwrap())
 }
 
@@ -277,8 +277,8 @@ func TestStreamingErrorCodes(t *testing.T) {
 // TestIsRetryable tests retryable error detection for different error types.
 func TestIsRetryable(t *testing.T) {
 	tests := []struct {
-		name      string
 		err       error
+		name      string
 		retryable bool
 	}{
 		// ExecutionError with Retryable=true
@@ -395,8 +395,8 @@ func TestIsRetryable(t *testing.T) {
 // TestCommonErrorVariables tests all common error variables are defined.
 func TestCommonErrorVariables(t *testing.T) {
 	errorVars := []struct {
-		name string
 		err  error
+		name string
 	}{
 		{"ErrAgentNotFound", ErrAgentNotFound},
 		{"ErrInvalidConfig", ErrInvalidConfig},
@@ -415,7 +415,7 @@ func TestCommonErrorVariables(t *testing.T) {
 
 	for _, tt := range errorVars {
 		t.Run(tt.name, func(t *testing.T) {
-			require.NotNil(t, tt.err, "Error variable should not be nil")
+			require.Error(t, tt.err, "Error variable should not be nil")
 			assert.NotEmpty(t, tt.err.Error(), "Error should have a message")
 		})
 	}
@@ -427,27 +427,27 @@ func TestErrorWrapping(t *testing.T) {
 
 	// Test AgentError wrapping
 	agentErr := NewAgentError("op", "agent", "code", originalErr)
-	assert.True(t, errors.Is(agentErr, originalErr))
+	assert.ErrorIs(t, agentErr, originalErr)
 	assert.Equal(t, originalErr, agentErr.Unwrap())
 
 	// Test FactoryError wrapping
 	factoryErr := NewFactoryError("type", nil, originalErr)
-	assert.True(t, errors.Is(factoryErr, originalErr))
+	assert.ErrorIs(t, factoryErr, originalErr)
 	assert.Equal(t, originalErr, factoryErr.Unwrap())
 
 	// Test ExecutionError wrapping
 	execErr := NewExecutionError("agent", 1, "action", originalErr, false)
-	assert.True(t, errors.Is(execErr, originalErr))
+	assert.ErrorIs(t, execErr, originalErr)
 	assert.Equal(t, originalErr, execErr.Unwrap())
 
 	// Test PlanningError wrapping
 	planErr := NewPlanningError("agent", nil, originalErr)
-	assert.True(t, errors.Is(planErr, originalErr))
+	assert.ErrorIs(t, planErr, originalErr)
 	assert.Equal(t, originalErr, planErr.Unwrap())
 
 	// Test StreamingError wrapping
 	streamErr := NewStreamingError("op", "agent", "code", originalErr)
-	assert.True(t, errors.Is(streamErr, originalErr))
+	assert.ErrorIs(t, streamErr, originalErr)
 	assert.Equal(t, originalErr, streamErr.Unwrap())
 }
 

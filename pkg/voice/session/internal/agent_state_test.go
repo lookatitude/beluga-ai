@@ -10,13 +10,13 @@ import (
 
 // TestAgentState_Constants tests that all agent state constants are defined.
 func TestAgentState_Constants(t *testing.T) {
-	assert.Equal(t, AgentState("idle"), AgentStateIdle)
-	assert.Equal(t, AgentState("listening"), AgentStateListening)
-	assert.Equal(t, AgentState("processing"), AgentStateProcessing)
-	assert.Equal(t, AgentState("streaming"), AgentStateStreaming)
-	assert.Equal(t, AgentState("executing_tool"), AgentStateExecuting)
-	assert.Equal(t, AgentState("speaking"), AgentStateSpeaking)
-	assert.Equal(t, AgentState("interrupted"), AgentStateInterrupted)
+	assert.Equal(t, AgentStateIdle, AgentState("idle"))
+	assert.Equal(t, AgentStateListening, AgentState("listening"))
+	assert.Equal(t, AgentStateProcessing, AgentState("processing"))
+	assert.Equal(t, AgentStateStreaming, AgentState("streaming"))
+	assert.Equal(t, AgentStateExecuting, AgentState("executing_tool"))
+	assert.Equal(t, AgentStateSpeaking, AgentState("speaking"))
+	assert.Equal(t, AgentStateInterrupted, AgentState("interrupted"))
 }
 
 // TestIsValidTransition_ValidTransitions tests all valid state transitions.
@@ -288,4 +288,3 @@ func TestIsValidTransition_AllCombinations(t *testing.T) {
 		}
 	}
 }
-

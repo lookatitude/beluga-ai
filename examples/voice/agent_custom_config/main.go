@@ -45,11 +45,11 @@ func main() {
 	// Custom config: larger buffer, no sentence boundaries for faster response
 	agent, err := agents.NewBaseAgent("voice-assistant-custom", llm, nil,
 		agents.WithStreamingConfig(iface.StreamingConfig{
-			EnableStreaming:      true,
-			ChunkBufferSize:      50,        // Larger buffer for high-throughput scenarios
-			SentenceBoundary:     false,      // Disable for lower latency
-			InterruptOnNewInput:  true,       // Enable interruption
-			MaxStreamDuration:    15 * time.Minute, // Shorter max duration
+			EnableStreaming:     true,
+			ChunkBufferSize:     50,               // Larger buffer for high-throughput scenarios
+			SentenceBoundary:    false,            // Disable for lower latency
+			InterruptOnNewInput: true,             // Enable interruption
+			MaxStreamDuration:   15 * time.Minute, // Shorter max duration
 		}),
 	)
 	if err != nil {

@@ -12,20 +12,11 @@ import (
 // AgentInstance represents an agent instance integrated with a voice session.
 // It manages the agent's lifecycle, state, and context within the session.
 type AgentInstance struct {
-	// Agent is the streaming agent instance
-	Agent iface.StreamingAgent
-
-	// Config is the agent configuration
-	Config schema.AgentConfig
-
-	// Context is the conversation context for this agent
+	Agent   iface.StreamingAgent
 	Context *AgentContext
-
-	// State is the current state of the agent
-	State AgentState
-
-	// mu protects concurrent access to state and context
-	mu sync.RWMutex
+	State   AgentState
+	Config  schema.AgentConfig
+	mu      sync.RWMutex
 }
 
 // NewAgentInstance creates a new agent instance with the provided agent and config.
@@ -88,4 +79,3 @@ type AgentStateError struct {
 func (e *AgentStateError) Error() string {
 	return e.Msg + ": " + string(e.From) + " -> " + string(e.To)
 }
-

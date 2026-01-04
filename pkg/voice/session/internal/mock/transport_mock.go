@@ -4,23 +4,23 @@ package mock
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 )
 
 // MockTransport provides a mock implementation of Transport for agent integration testing.
 type MockTransport struct {
+	errorToReturn   error
 	audioCh         chan []byte
 	audioCallback   func([]byte)
-	shouldError     bool
-	errorToReturn   error
-	connected       bool
 	sendCount       int
 	receiveCount    int
-	mu              sync.RWMutex
-	simulateDelay   bool
 	processingDelay time.Duration
+	mu              sync.RWMutex
+	shouldError     bool
+	connected       bool
+	simulateDelay   bool
 }
 
 // NewMockTransport creates a new mock transport.
@@ -61,14 +61,14 @@ func (m *MockTransport) SendAudio(ctx context.Context, audio []byte) error {
 	m.mu.Unlock()
 
 	if !connected {
-		return fmt.Errorf("transport not connected")
+		return errors.New("transport not connected")
 	}
 
 	if shouldError {
 		if errorToReturn != nil {
 			return errorToReturn
 		}
-		return fmt.Errorf("mock transport error")
+		return errors.New("mock transport error")
 	}
 
 	if simulateDelay && processingDelay > 0 {
@@ -140,4 +140,3 @@ func (m *MockTransport) SimulateReceivedAudio(audio []byte) {
 		// Channel full, drop
 	}
 }
-

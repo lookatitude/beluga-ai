@@ -16,10 +16,10 @@ import (
 
 // streamingState tracks the current streaming operation state.
 type streamingState struct {
-	active      bool
 	currentChan <-chan iface.AgentStreamChunk
 	cancelFunc  context.CancelFunc
 	mu          sync.RWMutex
+	active      bool
 }
 
 // StreamExecute implements the StreamingAgent interface.
@@ -98,7 +98,7 @@ func (a *BaseAgent) StreamExecute(ctx context.Context, inputs map[string]any) (<
 		for {
 			select {
 			case <-streamCtx.Done():
-				// Context cancelled - record metrics and send error chunk
+				// Context canceled - record metrics and send error chunk
 				totalDuration := time.Since(startTime)
 				latency := time.Duration(0)
 				if !firstChunkTime.IsZero() {
@@ -110,7 +110,7 @@ func (a *BaseAgent) StreamExecute(ctx context.Context, inputs map[string]any) (<
 					a.metrics.RecordStreamingOperation(streamCtx, a.name, latency, totalDuration)
 				}
 
-				// Context cancelled - send error chunk and exit
+				// Context canceled - send error chunk and exit
 				outputChan <- iface.AgentStreamChunk{
 					Err: fmt.Errorf("streaming error for agent %s StreamExecute: stream interrupted (code: stream_interrupted): %w", a.name, streamCtx.Err()),
 					Metadata: map[string]any{

@@ -18,7 +18,7 @@ type OllamaClientMock struct {
 
 // EmbeddingsCall records a call to Embeddings.
 type EmbeddingsCall struct {
-	Ctx context.Context
+	Ctx context.Context //nolint:containedctx // Mock struct - context storage is acceptable
 	Req *api.EmbeddingRequest
 }
 

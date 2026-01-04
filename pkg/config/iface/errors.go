@@ -90,7 +90,8 @@ func IsConfigError(err error, code string) bool {
 func AsConfigError(err error, target **ConfigError) bool {
 	for err != nil {
 		// Check if err is directly a ConfigError (not wrapped)
-		if cfgErr, ok := err.(*ConfigError); ok {
+		cfgErr := &ConfigError{}
+		if errors.As(err, &cfgErr) {
 			// Set target to the first ConfigError found (outermost)
 			if *target == nil {
 				*target = cfgErr

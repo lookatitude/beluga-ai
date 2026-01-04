@@ -221,7 +221,7 @@ func TestToolResult_Fields(t *testing.T) {
 }
 
 // TestVoiceCallAgentContext_WithAgentInstance tests voice call context with agent instance.
-// This test is kept simple to avoid circular dependencies - full testing done in agent_instance_test.go
+// This test is kept simple to avoid circular dependencies - full testing done in agent_instance_test.go.
 func TestVoiceCallAgentContext_WithAgentInstance(t *testing.T) {
 	ctx := NewVoiceCallAgentContext("session-1", "user-1")
 
@@ -231,4 +231,3 @@ func TestVoiceCallAgentContext_WithAgentInstance(t *testing.T) {
 	// Note: AgentInstance assignment and testing is done in agent_instance_test.go
 	// to avoid circular dependencies between test files
 }
-

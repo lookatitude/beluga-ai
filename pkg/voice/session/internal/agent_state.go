@@ -6,25 +6,25 @@ package internal
 type AgentState string
 
 const (
-	// AgentStateIdle indicates the agent is idle and waiting for input
+	// AgentStateIdle indicates the agent is idle and waiting for input.
 	AgentStateIdle AgentState = "idle"
 
-	// AgentStateListening indicates the agent is listening for user input
+	// AgentStateListening indicates the agent is listening for user input.
 	AgentStateListening AgentState = "listening"
 
-	// AgentStateProcessing indicates the agent is processing user input
+	// AgentStateProcessing indicates the agent is processing user input.
 	AgentStateProcessing AgentState = "processing"
 
-	// AgentStateStreaming indicates the agent is streaming a response
+	// AgentStateStreaming indicates the agent is streaming a response.
 	AgentStateStreaming AgentState = "streaming"
 
-	// AgentStateExecuting indicates the agent is executing a tool
+	// AgentStateExecuting indicates the agent is executing a tool.
 	AgentStateExecuting AgentState = "executing_tool"
 
-	// AgentStateSpeaking indicates the agent is speaking (TTS output)
+	// AgentStateSpeaking indicates the agent is speaking (TTS output).
 	AgentStateSpeaking AgentState = "speaking"
 
-	// AgentStateInterrupted indicates the agent was interrupted by new user input
+	// AgentStateInterrupted indicates the agent was interrupted by new user input.
 	AgentStateInterrupted AgentState = "interrupted"
 )
 
@@ -53,4 +53,3 @@ func IsValidTransition(from, to AgentState) bool {
 	}
 	return false
 }
-

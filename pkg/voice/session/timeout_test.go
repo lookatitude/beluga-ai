@@ -55,7 +55,7 @@ func TestSessionTimeout_UpdateActivity(t *testing.T) {
 	timeout.UpdateActivity()
 	time.Sleep(30 * time.Millisecond)
 	timeout.UpdateActivity()
-	
+
 	// Wait a bit longer than the timeout duration to ensure
 	// the last reset timer would have fired if it wasn't reset
 	// The last UpdateActivity was at ~90ms, new timer set for 100ms from then

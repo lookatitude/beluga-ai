@@ -13,41 +13,21 @@ import (
 // ExecutionChunk represents a chunk of execution output during streaming plan execution.
 // It contains incremental results as each step of the plan is executed.
 type ExecutionChunk struct {
-	// Step is the current step being executed
-	Step schema.Step
-
-	// Content is the text content from this step's execution
-	Content string
-
-	// ToolResult is the tool execution result if this step executed a tool
-	ToolResult *ToolExecutionResult
-
-	// FinalAnswer is the final answer if execution is complete
+	Timestamp   time.Time
+	Err         error
+	ToolResult  *ToolExecutionResult
 	FinalAnswer *schema.FinalAnswer
-
-	// Err is an error if one occurred (execution ends on error)
-	Err error
-
-	// Timestamp is the chunk timestamp for latency measurement
-	Timestamp time.Time
+	Step        schema.Step
+	Content     string
 }
 
 // ToolExecutionResult represents the result of tool execution during streaming.
 type ToolExecutionResult struct {
-	// ToolName is the name of the tool executed
+	Err      error
+	Input    map[string]any
+	Output   map[string]any
 	ToolName string
-
-	// Input is the tool input that was used
-	Input map[string]any
-
-	// Output is the tool output result
-	Output map[string]any
-
-	// Duration is how long the tool execution took
 	Duration time.Duration
-
-	// Err is an error if tool execution failed
-	Err error
 }
 
 // StreamingExecutor extends Executor with streaming execution capabilities.

@@ -24,10 +24,10 @@ const (
 	ErrCodeContextTimeout  = "context_timeout"
 
 	// Agent integration error codes.
-	ErrCodeAgentNotSet      = "agent_not_set"
-	ErrCodeAgentInvalid     = "agent_invalid"
-	ErrCodeStreamError      = "stream_error"
-	ErrCodeContextError     = "context_error"
+	ErrCodeAgentNotSet       = "agent_not_set"
+	ErrCodeAgentInvalid      = "agent_invalid"
+	ErrCodeStreamError       = "stream_error"
+	ErrCodeContextError      = "context_error"
 	ErrCodeInterruptionError = "interruption_error"
 )
 

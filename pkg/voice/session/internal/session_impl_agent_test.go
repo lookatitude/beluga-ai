@@ -19,7 +19,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// T144: Add unit tests for agent integration in session lifecycle
+// T144: Add unit tests for agent integration in session lifecycle.
 func TestSessionImpl_AgentIntegration_Lifecycle(t *testing.T) {
 	ctx := context.Background()
 
@@ -58,7 +58,7 @@ func TestSessionImpl_AgentIntegration_Lifecycle(t *testing.T) {
 	assert.Equal(t, sessioniface.SessionState("ended"), session.GetState())
 }
 
-// T145: Add unit tests for interruption handling integration
+// T145: Add unit tests for interruption handling integration.
 func TestSessionImpl_AgentIntegration_Interruption(t *testing.T) {
 	ctx := context.Background()
 
@@ -90,7 +90,7 @@ func TestSessionImpl_AgentIntegration_Interruption(t *testing.T) {
 	assert.NotEqual(t, sessioniface.SessionState("ended"), session.GetState())
 }
 
-// T146: Add unit tests for context preservation
+// T146: Add unit tests for context preservation.
 func TestSessionImpl_AgentIntegration_ContextPreservation(t *testing.T) {
 	ctx := context.Background()
 
@@ -123,7 +123,7 @@ func TestSessionImpl_AgentIntegration_ContextPreservation(t *testing.T) {
 	assert.NotNil(t, agentInstance.GetContext())
 }
 
-// T147: Add unit tests for backward compatibility
+// T147: Add unit tests for backward compatibility.
 func TestSessionImpl_AgentIntegration_BackwardCompatibility(t *testing.T) {
 	ctx := context.Background()
 
@@ -155,14 +155,14 @@ func TestSessionImpl_AgentIntegration_BackwardCompatibility(t *testing.T) {
 	// Verify session was created with callback mode (no streaming agent)
 	assert.NotNil(t, session.agentIntegration)
 	assert.Nil(t, session.streamingAgent) // No streaming agent in callback mode
-	
+
 	// The callback will be called asynchronously when transcript is processed
 	// For this test, we just verify the setup is correct
 	time.Sleep(100 * time.Millisecond) // Give time for async processing
 	// Note: In a real scenario, the callback would be called when STT produces a transcript
 }
 
-// Mock implementations
+// Mock implementations.
 type mockStreamingAgentForSession struct{}
 
 func (m *mockStreamingAgentForSession) StreamExecute(ctx context.Context, inputs map[string]any) (<-chan agentsiface.AgentStreamChunk, error) {

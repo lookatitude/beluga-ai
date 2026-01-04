@@ -29,21 +29,21 @@ type MockRunnable struct {
 
 type InvokeCall struct {
 	Time    time.Time
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Input   any
 	Options []Option
 }
 
 type BatchCall struct {
 	Time    time.Time
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Inputs  []any
 	Options []Option
 }
 
 type StreamCall struct {
 	Time    time.Time
-	Ctx     context.Context
+	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Input   any
 	Options []Option
 }

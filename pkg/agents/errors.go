@@ -47,7 +47,7 @@ const (
 	ErrCodeStateTransition   = "state_transition_error"
 	ErrCodeShutdown          = "shutdown_failed"
 
-	// Streaming error codes
+	// Streaming error codes.
 	ErrCodeStreamingNotSupported = "streaming_not_supported"
 	ErrCodeStreamInterrupted     = "stream_interrupted"
 	ErrCodeStreamError           = "stream_error"
@@ -250,10 +250,10 @@ func IsFactoryError(err error) bool {
 // StreamingError represents errors that occur during streaming operations.
 type StreamingError struct {
 	Err    error
+	Fields map[string]any
 	Op     string
 	Agent  string
 	Code   string
-	Fields map[string]any
 }
 
 // Error implements the error interface.

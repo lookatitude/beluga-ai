@@ -4,6 +4,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
@@ -19,7 +20,7 @@ type mockStreamingAgentForInstance struct {
 	name string
 }
 
-// Agent interface methods
+// Agent interface methods.
 func (m *mockStreamingAgentForInstance) InputVariables() []string {
 	return []string{"input"}
 }
@@ -51,7 +52,7 @@ func (m *mockStreamingAgentForInstance) Plan(ctx context.Context, intermediateSt
 	return iface.AgentAction{}, iface.AgentFinish{}, nil
 }
 
-// StreamingAgent interface methods
+// StreamingAgent interface methods.
 func (m *mockStreamingAgentForInstance) StreamExecute(ctx context.Context, inputs map[string]any) (<-chan iface.AgentStreamChunk, error) {
 	ch := make(chan iface.AgentStreamChunk)
 	go func() {
@@ -277,7 +278,11 @@ func TestAgentInstance_InvalidStateTransition(t *testing.T) {
 	assert.Error(t, err)
 	assert.IsType(t, &AgentStateError{}, err)
 
-	stateErr := err.(*AgentStateError)
+	stateErr := func() *AgentStateError {
+		target := &AgentStateError{}
+		_ = errors.As(err, &target)
+		return target
+	}()
 	assert.Equal(t, AgentStateIdle, stateErr.From)
 	assert.Equal(t, AgentStateStreaming, stateErr.To)
 }
@@ -295,4 +300,3 @@ func TestAgentStateError(t *testing.T) {
 	assert.Contains(t, errorStr, "idle")
 	assert.Contains(t, errorStr, "streaming")
 }
-

@@ -41,7 +41,7 @@ func TestStreamingTTS_StartStop(t *testing.T) {
 // The deprecated callback-based approach is no longer tested here.
 func TestStreamingAgent_StartStop(t *testing.T) {
 	t.Skip("Skipping deprecated test - use agent instance-based tests in internal/streaming_agent_test.go instead")
-	
+
 	// This test previously used the deprecated NewStreamingAgentWithCallback API.
 	// New tests should use the agent instance-based approach.
 	// See: pkg/voice/session/internal/streaming_agent_test.go for current tests.

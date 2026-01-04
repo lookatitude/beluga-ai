@@ -182,4 +182,3 @@ func TestAgentsVoice_ErrorRecovery_RecoveryAfterError(t *testing.T) {
 	err = session2.Stop(ctx)
 	require.NoError(t, err)
 }
-

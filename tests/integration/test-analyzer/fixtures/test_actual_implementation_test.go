@@ -17,8 +17,13 @@ func TestActualImplementation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = client.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			t.Logf("Failed to close response body: %v", closeErr)
+		}
+	}()
 }

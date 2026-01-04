@@ -162,29 +162,29 @@ func TestConfig_Validate_DefaultTimeout(t *testing.T) {
 // TestConfig_Validate_DefaultMaxIterations tests DefaultMaxIterations validation.
 func TestConfig_Validate_DefaultMaxIterations(t *testing.T) {
 	tests := []struct {
-		name        string
-		iterations  int
-		wantError   bool
+		name       string
+		iterations int
+		wantError  bool
 	}{
 		{
-			name:        "zero iterations",
-			iterations:  0,
-			wantError:   true,
+			name:       "zero iterations",
+			iterations: 0,
+			wantError:  true,
 		},
 		{
-			name:        "positive iterations",
-			iterations:  15,
-			wantError:   false,
+			name:       "positive iterations",
+			iterations: 15,
+			wantError:  false,
 		},
 		{
-			name:        "negative iterations",
-			iterations:  -1,
-			wantError:   true,
+			name:       "negative iterations",
+			iterations: -1,
+			wantError:  true,
 		},
 		{
-			name:        "large iterations",
-			iterations:  1000,
-			wantError:   false,
+			name:       "large iterations",
+			iterations: 1000,
+			wantError:  false,
 		},
 	}
 
@@ -207,8 +207,8 @@ func TestConfig_Validate_DefaultMaxIterations(t *testing.T) {
 // TestConfig_Validate_ExecutorConfig tests ExecutorConfig validation.
 func TestConfig_Validate_ExecutorConfig(t *testing.T) {
 	tests := []struct {
-		name      string
 		setup     func(*Config)
+		name      string
 		wantError bool
 	}{
 		{
@@ -462,9 +462,9 @@ func TestValidateStreamingConfig_ChunkBufferSizeBoundaries(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			config := iface.StreamingConfig{
-				ChunkBufferSize:    tt.size,
-				MaxStreamDuration:  30 * time.Minute,
-				EnableStreaming:    true,
+				ChunkBufferSize:   tt.size,
+				MaxStreamDuration: 30 * time.Minute,
+				EnableStreaming:   true,
 			}
 			err := ValidateStreamingConfig(config)
 
@@ -521,9 +521,9 @@ func TestConfig_Validate_NilConfig(t *testing.T) {
 // TestWithStreaming tests the WithStreaming option function.
 func TestWithStreaming(t *testing.T) {
 	tests := []struct {
+		validate func(*iface.Options)
 		name     string
 		enabled  bool
-		validate func(*iface.Options)
 	}{
 		{
 			name:    "enable streaming",
@@ -573,9 +573,9 @@ func TestWithStreamingConfig(t *testing.T) {
 // TestConfigOptions tests all config option functions.
 func TestConfigOptions(t *testing.T) {
 	tests := []struct {
-		name     string
 		option   iface.Option
 		validate func(*iface.Options)
+		name     string
 	}{
 		{
 			name:   "WithMaxRetries",
@@ -635,9 +635,9 @@ func TestValidateStreamingConfig_OnlyWhenEnabled(t *testing.T) {
 	// Note: Current implementation validates regardless of EnableStreaming flag
 	// This test verifies the current behavior
 	config := iface.StreamingConfig{
-		EnableStreaming:     false,
-		ChunkBufferSize:     0, // Invalid but streaming disabled
-		MaxStreamDuration:   0, // Invalid but streaming disabled
+		EnableStreaming:   false,
+		ChunkBufferSize:   0, // Invalid but streaming disabled
+		MaxStreamDuration: 0, // Invalid but streaming disabled
 	}
 
 	// Current implementation validates regardless of EnableStreaming
@@ -648,8 +648,8 @@ func TestValidateStreamingConfig_OnlyWhenEnabled(t *testing.T) {
 // TestConfig_Validate_CombinedScenarios tests combined validation scenarios.
 func TestConfig_Validate_CombinedScenarios(t *testing.T) {
 	tests := []struct {
-		name      string
 		setup     func(*Config)
+		name      string
 		wantError bool
 	}{
 		{
@@ -692,4 +692,3 @@ func TestConfig_Validate_CombinedScenarios(t *testing.T) {
 		})
 	}
 }
-

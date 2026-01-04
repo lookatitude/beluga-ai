@@ -18,9 +18,9 @@ import (
 
 // mockStreamingAgentForExecutor is a mock streaming agent for executor tests.
 type mockStreamingAgentForExecutor struct {
+	executeError         error
 	tools                []tools.Tool
 	shouldErrorOnExecute bool
-	executeError         error
 }
 
 func (m *mockStreamingAgentForExecutor) InputVariables() []string {
@@ -133,7 +133,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellationError(t *test
 			}
 			if chunk.Err != nil {
 				gotError = true
-				assert.Contains(t, chunk.Err.Error(), "cancelled")
+				assert.Contains(t, chunk.Err.Error(), "canceled")
 				goto done
 			}
 		case <-timeout:

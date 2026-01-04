@@ -112,9 +112,11 @@ func BenchmarkStartStreaming_LargeTranscript(b *testing.B) {
 	ctx := context.Background()
 	// Create a large transcript
 	transcript := ""
+	var transcriptSb115 strings.Builder
 	for i := 0; i < 1000; i++ {
-		transcript += "word "
+		transcriptSb115.WriteString("word ")
 	}
+	transcript += transcriptSb115.String()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

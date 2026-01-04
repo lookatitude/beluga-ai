@@ -10,7 +10,7 @@ import (
 
 func TestNewStreamingAgent(t *testing.T) {
 	t.Skip("Skipping deprecated callback-based test - use agent instance-based API instead")
-	
+
 	// callback := func(ctx context.Context, transcript string) (string, error) {
 	// 	return "response", nil
 	// }
@@ -21,7 +21,7 @@ func TestNewStreamingAgent(t *testing.T) {
 
 func TestNewStreamingAgent_NilCallback(t *testing.T) {
 	t.Skip("Skipping deprecated callback-based test - use agent instance-based API instead")
-	
+
 	// sa := NewStreamingAgent(nil) // Deprecated API
 	// assert.NotNil(t, sa)
 	// assert.False(t, sa.IsStreaming())

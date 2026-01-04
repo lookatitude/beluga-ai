@@ -154,39 +154,39 @@ func TestConfig_Validate_Timeout(t *testing.T) {
 // TestConfig_Validate_KeepAliveInterval tests KeepAliveInterval validation boundaries.
 func TestConfig_Validate_KeepAliveInterval(t *testing.T) {
 	tests := []struct {
-		name            string
+		name              string
 		keepAliveInterval time.Duration
-		wantError       bool
+		wantError         bool
 	}{
 		{
-			name:            "minimum valid keep-alive interval (5 seconds)",
+			name:              "minimum valid keep-alive interval (5 seconds)",
 			keepAliveInterval: 5 * time.Second,
-			wantError:       false,
+			wantError:         false,
 		},
 		{
-			name:            "maximum valid keep-alive interval (5 minutes)",
+			name:              "maximum valid keep-alive interval (5 minutes)",
 			keepAliveInterval: 5 * time.Minute,
-			wantError:       false,
+			wantError:         false,
 		},
 		{
-			name:            "keep-alive interval below minimum",
+			name:              "keep-alive interval below minimum",
 			keepAliveInterval: 4 * time.Second,
-			wantError:       true,
+			wantError:         true,
 		},
 		{
-			name:            "keep-alive interval above maximum",
+			name:              "keep-alive interval above maximum",
 			keepAliveInterval: 6 * time.Minute,
-			wantError:       true,
+			wantError:         true,
 		},
 		{
-			name:            "zero keep-alive interval",
+			name:              "zero keep-alive interval",
 			keepAliveInterval: 0,
-			wantError:       true,
+			wantError:         true,
 		},
 		{
-			name:            "valid keep-alive interval in middle range",
+			name:              "valid keep-alive interval in middle range",
 			keepAliveInterval: 1 * time.Minute,
-			wantError:       false,
+			wantError:         false,
 		},
 	}
 
@@ -208,34 +208,34 @@ func TestConfig_Validate_KeepAliveInterval(t *testing.T) {
 // TestConfig_Validate_MaxRetries tests MaxRetries validation boundaries.
 func TestConfig_Validate_MaxRetries(t *testing.T) {
 	tests := []struct {
-		name      string
+		name       string
 		maxRetries int
-		wantError bool
+		wantError  bool
 	}{
 		{
-			name:      "minimum valid max retries (0)",
+			name:       "minimum valid max retries (0)",
 			maxRetries: 0,
-			wantError: false,
+			wantError:  false,
 		},
 		{
-			name:      "maximum valid max retries (10)",
+			name:       "maximum valid max retries (10)",
 			maxRetries: 10,
-			wantError: false,
+			wantError:  false,
 		},
 		{
-			name:      "max retries below minimum",
+			name:       "max retries below minimum",
 			maxRetries: -1,
-			wantError: true,
+			wantError:  true,
 		},
 		{
-			name:      "max retries above maximum",
+			name:       "max retries above maximum",
 			maxRetries: 11,
-			wantError: true,
+			wantError:  true,
 		},
 		{
-			name:      "valid max retries in middle range",
+			name:       "valid max retries in middle range",
 			maxRetries: 5,
-			wantError: false,
+			wantError:  false,
 		},
 	}
 
@@ -257,39 +257,39 @@ func TestConfig_Validate_MaxRetries(t *testing.T) {
 // TestConfig_Validate_RetryDelay tests RetryDelay validation boundaries.
 func TestConfig_Validate_RetryDelay(t *testing.T) {
 	tests := []struct {
-		name      string
+		name       string
 		retryDelay time.Duration
-		wantError bool
+		wantError  bool
 	}{
 		{
-			name:      "minimum valid retry delay (100ms)",
+			name:       "minimum valid retry delay (100ms)",
 			retryDelay: 100 * time.Millisecond,
-			wantError: false,
+			wantError:  false,
 		},
 		{
-			name:      "maximum valid retry delay (10 seconds)",
+			name:       "maximum valid retry delay (10 seconds)",
 			retryDelay: 10 * time.Second,
-			wantError: false,
+			wantError:  false,
 		},
 		{
-			name:      "retry delay below minimum",
+			name:       "retry delay below minimum",
 			retryDelay: 99 * time.Millisecond,
-			wantError: true,
+			wantError:  true,
 		},
 		{
-			name:      "retry delay above maximum",
+			name:       "retry delay above maximum",
 			retryDelay: 11 * time.Second,
-			wantError: true,
+			wantError:  true,
 		},
 		{
-			name:      "zero retry delay",
+			name:       "zero retry delay",
 			retryDelay: 0,
-			wantError: true,
+			wantError:  true,
 		},
 		{
-			name:      "valid retry delay in middle range",
+			name:       "valid retry delay in middle range",
 			retryDelay: 1 * time.Second,
-			wantError: false,
+			wantError:  false,
 		},
 	}
 
@@ -311,8 +311,8 @@ func TestConfig_Validate_RetryDelay(t *testing.T) {
 // TestConfig_Validate_CombinedScenarios tests multiple validation failures.
 func TestConfig_Validate_CombinedScenarios(t *testing.T) {
 	tests := []struct {
-		name      string
 		setup     func(*Config)
+		name      string
 		wantError bool
 	}{
 		{
@@ -372,7 +372,7 @@ func TestConfig_Validate_CombinedScenarios(t *testing.T) {
 func TestDefaultConfig_AllFields(t *testing.T) {
 	config := DefaultConfig()
 
-	assert.Equal(t, "", config.SessionID)
+	assert.Empty(t, config.SessionID)
 	assert.Equal(t, 30*time.Minute, config.Timeout)
 	assert.Equal(t, 30*time.Second, config.KeepAliveInterval)
 	assert.Equal(t, 3, config.MaxRetries)
@@ -474,7 +474,7 @@ func (m *mockStreamingAgentForConfig) StreamPlan(ctx context.Context, intermedia
 	return nil, nil
 }
 
-// Add other required methods to satisfy the interface
+// Add other required methods to satisfy the interface.
 func (m *mockStreamingAgentForConfig) GetConfig() schema.AgentConfig {
 	return schema.AgentConfig{Name: "mock"}
 }

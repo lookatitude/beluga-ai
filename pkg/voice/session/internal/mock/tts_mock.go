@@ -5,7 +5,7 @@ package mock
 import (
 	"bytes"
 	"context"
-	"fmt"
+	"errors"
 	"io"
 	"sync"
 	"time"
@@ -15,14 +15,14 @@ import (
 
 // MockTTSStreaming provides a mock implementation of TTS streaming for agent integration testing.
 type MockTTSStreaming struct {
-	audioResponses   [][]byte
-	audioIndex       int
-	streamingDelay   time.Duration
-	shouldError      bool
-	errorToReturn    error
-	callCount        int
-	mu               sync.RWMutex
-	simulateDelay    bool
+	errorToReturn  error
+	audioResponses [][]byte
+	audioIndex     int
+	streamingDelay time.Duration
+	callCount      int
+	mu             sync.RWMutex
+	shouldError    bool
+	simulateDelay  bool
 }
 
 // NewMockTTSStreaming creates a new mock TTS streaming provider.
@@ -72,7 +72,7 @@ func (m *MockTTSStreaming) StreamGenerate(ctx context.Context, text string) (io.
 		if errorToReturn != nil {
 			return nil, errorToReturn
 		}
-		return nil, fmt.Errorf("mock TTS error")
+		return nil, errors.New("mock TTS error")
 	}
 
 	// Return audio as a reader
@@ -92,7 +92,7 @@ func (m *MockTTSStreaming) GenerateSpeech(ctx context.Context, text string) ([]b
 		if errorToReturn != nil {
 			return nil, errorToReturn
 		}
-		return nil, fmt.Errorf("mock TTS error")
+		return nil, errors.New("mock TTS error")
 	}
 
 	return audio, nil
@@ -127,4 +127,3 @@ func NewMockTTSProvider() iface.TTSProvider {
 		MockTTSStreaming: NewMockTTSStreaming(),
 	}
 }
-

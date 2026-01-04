@@ -167,4 +167,3 @@ func TestAgentsVoice_Interruption_ConcurrentInterruption(t *testing.T) {
 	wg.Wait()
 	// Test passes if no deadlocks occur
 }
-

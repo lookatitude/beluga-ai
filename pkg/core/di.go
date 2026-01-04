@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
 	"sync"
@@ -12,16 +13,16 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Container represents a dependency injection container
+// Container represents a dependency injection container.
 type Container interface {
 	// Register registers a factory function for a type
-	Register(factoryFunc interface{}) error
+	Register(factoryFunc any) error
 
 	// Resolve resolves a dependency by type
-	Resolve(target interface{}) error
+	Resolve(target any) error
 
 	// MustResolve resolves a dependency or panics
-	MustResolve(target interface{})
+	MustResolve(target any)
 
 	// Has checks if a type is registered
 	Has(typ reflect.Type) bool
@@ -30,34 +31,32 @@ type Container interface {
 	Clear()
 
 	// Singleton registers a singleton instance
-	Singleton(instance interface{})
+	Singleton(instance any)
 
 	// HealthChecker provides health check functionality
 	HealthChecker
 }
 
-// containerImpl is the default implementation of Container
+// containerImpl is the default implementation of Container.
 type containerImpl struct {
-	mu        sync.RWMutex
-	factories map[reflect.Type]interface{}
-	instances map[reflect.Type]interface{}
-
-	// Monitoring components
 	logger         Logger
 	tracerProvider TracerProvider
+	factories      map[reflect.Type]any
+	instances      map[reflect.Type]any
+	mu             sync.RWMutex
 }
 
-// NewContainer creates a new dependency injection container with no-op monitoring
+// NewContainer creates a new dependency injection container with no-op monitoring.
 func NewContainer() Container {
 	return &containerImpl{
-		factories:      make(map[reflect.Type]interface{}),
-		instances:      make(map[reflect.Type]interface{}),
+		factories:      make(map[reflect.Type]any),
+		instances:      make(map[reflect.Type]any),
 		logger:         &noOpLogger{},
 		tracerProvider: trace.NewNoopTracerProvider(),
 	}
 }
 
-// NewContainerWithOptions creates a new dependency injection container with custom options
+// NewContainerWithOptions creates a new dependency injection container with custom options.
 func NewContainerWithOptions(opts ...DIOption) Container {
 	config := optionConfig{
 		container:      NewContainer(),
@@ -78,8 +77,8 @@ func NewContainerWithOptions(opts ...DIOption) Container {
 	return config.container
 }
 
-// Register registers a factory function for a type
-func (c *containerImpl) Register(factoryFunc interface{}) error {
+// Register registers a factory function for a type.
+func (c *containerImpl) Register(factoryFunc any) error {
 	ctx := context.Background()
 	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "register",
 		trace.WithAttributes(
@@ -100,7 +99,7 @@ func (c *containerImpl) Register(factoryFunc interface{}) error {
 	}
 
 	if factoryType.NumOut() == 0 {
-		err := fmt.Errorf("factory function must return at least one value")
+		err := errors.New("factory function must return at least one value")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		c.logger.Error("DI Register failed", "error", err)
@@ -119,8 +118,8 @@ func (c *containerImpl) Register(factoryFunc interface{}) error {
 	return nil
 }
 
-// Resolve resolves a dependency by type
-func (c *containerImpl) Resolve(target interface{}) error {
+// Resolve resolves a dependency by type.
+func (c *containerImpl) Resolve(target any) error {
 	ctx := context.Background()
 	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "resolve",
 		trace.WithAttributes(
@@ -244,11 +243,11 @@ func (c *containerImpl) Resolve(target interface{}) error {
 	return nil
 }
 
-// resolveRecursive is a helper method for recursive resolution
-func (c *containerImpl) resolveRecursive(target interface{}) error {
+// resolveRecursive is a helper method for recursive resolution.
+func (c *containerImpl) resolveRecursive(target any) error {
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr {
-		return fmt.Errorf("target must be a pointer")
+		return errors.New("target must be a pointer")
 	}
 
 	targetType := targetValue.Elem().Type()
@@ -285,14 +284,14 @@ func (c *containerImpl) resolveRecursive(target interface{}) error {
 	return nil
 }
 
-// MustResolve resolves a dependency or panics
-func (c *containerImpl) MustResolve(target interface{}) {
+// MustResolve resolves a dependency or panics.
+func (c *containerImpl) MustResolve(target any) {
 	if err := c.Resolve(target); err != nil {
 		panic(fmt.Sprintf("failed to resolve dependency: %v", err))
 	}
 }
 
-// Has checks if a type is registered
+// Has checks if a type is registered.
 func (c *containerImpl) Has(typ reflect.Type) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
@@ -302,16 +301,16 @@ func (c *containerImpl) Has(typ reflect.Type) bool {
 	return hasFactory || hasInstance
 }
 
-// Clear removes all registered dependencies
+// Clear removes all registered dependencies.
 func (c *containerImpl) Clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	c.factories = make(map[reflect.Type]interface{})
-	c.instances = make(map[reflect.Type]interface{})
+	c.factories = make(map[reflect.Type]any)
+	c.instances = make(map[reflect.Type]any)
 }
 
-// CheckHealth performs a health check on the DI container
+// CheckHealth performs a health check on the DI container.
 func (c *containerImpl) CheckHealth(ctx context.Context) error {
 	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "check_health",
 		trace.WithAttributes(
@@ -342,8 +341,8 @@ func (c *containerImpl) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Singleton registers a singleton instance
-func (c *containerImpl) Singleton(instance interface{}) {
+// Singleton registers a singleton instance.
+func (c *containerImpl) Singleton(instance any) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -351,7 +350,7 @@ func (c *containerImpl) Singleton(instance interface{}) {
 	c.instances[typ] = instance
 }
 
-// DIOption represents a functional option for DI configuration
+// DIOption represents a functional option for DI configuration.
 type DIOption func(*optionConfig)
 
 type optionConfig struct {
@@ -360,92 +359,92 @@ type optionConfig struct {
 	tracerProvider TracerProvider
 }
 
-// WithContainer sets the DI container
+// WithContainer sets the DI container.
 func WithContainer(container Container) DIOption {
 	return func(config *optionConfig) {
 		config.container = container
 	}
 }
 
-// WithLogger sets the logger for the DI container
+// WithLogger sets the logger for the DI container.
 func WithLogger(logger Logger) DIOption {
 	return func(config *optionConfig) {
 		config.logger = logger
 	}
 }
 
-// WithTracerProvider sets the tracer provider for the DI container
+// WithTracerProvider sets the tracer provider for the DI container.
 func WithTracerProvider(tracerProvider TracerProvider) DIOption {
 	return func(config *optionConfig) {
 		config.tracerProvider = tracerProvider
 	}
 }
 
-// DefaultContainer returns the default container option
+// DefaultContainer returns the default container option.
 func DefaultContainer() DIOption {
 	return WithContainer(NewContainer())
 }
 
-// Builder provides a fluent interface for building objects with DI
+// Builder provides a fluent interface for building objects with DI.
 type Builder struct {
 	container Container
 }
 
-// NewBuilder creates a new builder with the given container
+// NewBuilder creates a new builder with the given container.
 func NewBuilder(container Container) *Builder {
 	return &Builder{container: container}
 }
 
-// Build builds an object using the registered factory
-func (b *Builder) Build(target interface{}) error {
+// Build builds an object using the registered factory.
+func (b *Builder) Build(target any) error {
 	return b.container.Resolve(target)
 }
 
-// Register registers a factory function
-func (b *Builder) Register(factoryFunc interface{}) error {
+// Register registers a factory function.
+func (b *Builder) Register(factoryFunc any) error {
 	return b.container.Register(factoryFunc)
 }
 
-// Singleton registers a singleton instance
-func (b *Builder) Singleton(instance interface{}) {
+// Singleton registers a singleton instance.
+func (b *Builder) Singleton(instance any) {
 	if c, ok := b.container.(*containerImpl); ok {
 		c.Singleton(instance)
 	}
 }
 
-// Monitoring interfaces for dependency injection
+// Monitoring interfaces for dependency injection.
 type (
-	// Logger interface for structured logging
+	// Logger interface for structured logging.
 	Logger interface {
-		Debug(msg string, args ...interface{})
-		Info(msg string, args ...interface{})
-		Warn(msg string, args ...interface{})
-		Error(msg string, args ...interface{})
-		With(args ...interface{}) Logger
+		Debug(msg string, args ...any)
+		Info(msg string, args ...any)
+		Warn(msg string, args ...any)
+		Error(msg string, args ...any)
+		With(args ...any) Logger
 	}
 
-	// TracerProvider interface for distributed tracing
+	// TracerProvider interface for distributed tracing.
 	TracerProvider interface {
 		Tracer(name string, opts ...trace.TracerOption) trace.Tracer
 	}
 
-	// MeterProvider interface for metrics collection
+	// MeterProvider interface for metrics collection.
 	MeterProvider interface {
 		Meter(name string, opts ...metric.MeterOption) metric.Meter
 	}
 )
 
-// RegisterLogger registers a logger factory function
+// RegisterLogger registers a logger factory function.
 func (b *Builder) RegisterLogger(factory func() Logger) error {
 	return b.container.Register(factory)
 }
 
-// RegisterTracerProvider registers a tracer provider factory function
+// RegisterTracerProvider registers a tracer provider factory function.
 func (b *Builder) RegisterTracerProvider(factory func() TracerProvider) error {
 	return b.container.Register(factory)
 }
 
-// WithLogger sets the logger for the container (if supported)
+// WithLogger sets the logger for the container (if supported).
 func (b *Builder) WithLogger(logger Logger) *Builder {
 	if container, ok := b.container.(*containerImpl); ok {
 		container.logger = logger
@@ -453,7 +452,7 @@ func (b *Builder) WithLogger(logger Logger) *Builder {
 	return b
 }
 
-// WithTracerProvider sets the tracer provider for the container (if supported)
+// WithTracerProvider sets the tracer provider for the container (if supported).
 func (b *Builder) WithTracerProvider(tracerProvider TracerProvider) *Builder {
 	if container, ok := b.container.(*containerImpl); ok {
 		container.tracerProvider = tracerProvider
@@ -461,36 +460,36 @@ func (b *Builder) WithTracerProvider(tracerProvider TracerProvider) *Builder {
 	return b
 }
 
-// RegisterMeterProvider registers a meter provider factory function
+// RegisterMeterProvider registers a meter provider factory function.
 func (b *Builder) RegisterMeterProvider(factory func() MeterProvider) error {
 	return b.container.Register(factory)
 }
 
-// RegisterMetrics registers a metrics factory function
+// RegisterMetrics registers a metrics factory function.
 func (b *Builder) RegisterMetrics(factory func() (*Metrics, error)) error {
 	return b.container.Register(factory)
 }
 
-// RegisterNoOpLogger registers a no-op logger (useful for testing)
+// RegisterNoOpLogger registers a no-op logger (useful for testing).
 func (b *Builder) RegisterNoOpLogger() error {
 	return b.RegisterLogger(func() Logger { return &noOpLogger{} })
 }
 
-// RegisterNoOpTracerProvider registers a no-op tracer provider
+// RegisterNoOpTracerProvider registers a no-op tracer provider.
 func (b *Builder) RegisterNoOpTracerProvider() error {
 	return b.RegisterTracerProvider(func() TracerProvider { return trace.NewNoopTracerProvider() })
 }
 
-// RegisterNoOpMetrics registers no-op metrics
+// RegisterNoOpMetrics registers no-op metrics.
 func (b *Builder) RegisterNoOpMetrics() error {
 	return b.RegisterMetrics(func() (*Metrics, error) { return NoOpMetrics(), nil })
 }
 
-// noOpLogger implements Logger with no-op behavior
+// noOpLogger implements Logger with no-op behavior.
 type noOpLogger struct{}
 
-func (n *noOpLogger) Debug(msg string, args ...interface{}) {}
-func (n *noOpLogger) Info(msg string, args ...interface{})  {}
-func (n *noOpLogger) Warn(msg string, args ...interface{})  {}
-func (n *noOpLogger) Error(msg string, args ...interface{}) {}
-func (n *noOpLogger) With(args ...interface{}) Logger       { return n }
+func (n *noOpLogger) Debug(msg string, args ...any) {}
+func (n *noOpLogger) Info(msg string, args ...any)  {}
+func (n *noOpLogger) Warn(msg string, args ...any)  {}
+func (n *noOpLogger) Error(msg string, args ...any) {}
+func (n *noOpLogger) With(args ...any) Logger       { return n }

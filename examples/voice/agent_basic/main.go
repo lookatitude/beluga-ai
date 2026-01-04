@@ -45,11 +45,11 @@ func main() {
 	agent, err := agents.NewBaseAgent("voice-assistant", llm, nil,
 		agents.WithStreaming(true),
 		agents.WithStreamingConfig(iface.StreamingConfig{
-			EnableStreaming:      true,
-			ChunkBufferSize:      20,
-			SentenceBoundary:     true,
-			InterruptOnNewInput:  true,
-			MaxStreamDuration:    30 * time.Minute,
+			EnableStreaming:     true,
+			ChunkBufferSize:     20,
+			SentenceBoundary:    true,
+			InterruptOnNewInput: true,
+			MaxStreamDuration:   30 * time.Minute,
 		}),
 	)
 	if err != nil {

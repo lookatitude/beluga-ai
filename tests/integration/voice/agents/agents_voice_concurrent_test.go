@@ -170,4 +170,3 @@ func TestAgentsVoice_Concurrent_StreamingExecution(t *testing.T) {
 	defer mu.Unlock()
 	assert.Empty(t, errors, "No errors should occur during concurrent streaming")
 }
-

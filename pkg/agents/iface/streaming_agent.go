@@ -12,42 +12,22 @@ import (
 // AgentStreamChunk represents a chunk of agent execution output during streaming.
 // It contains incremental results as they become available from the LLM or agent processing.
 type AgentStreamChunk struct {
-	// Content is the text content from LLM (can be partial)
-	Content string
-
-	// ToolCalls contains tool calls if any (may be partial)
+	Err       error
+	Action    *AgentAction
+	Finish    *AgentFinish
+	Metadata  map[string]any
+	Content   string
 	ToolCalls []schema.ToolCall
-
-	// Action is the next action if determined during planning
-	Action *AgentAction
-
-	// Finish is the final result if execution is complete
-	Finish *AgentFinish
-
-	// Err is an error if one occurred (stream ends on error)
-	Err error
-
-	// Metadata contains additional metadata (latency, timestamps, etc.)
-	Metadata map[string]any
 }
 
 // StreamingConfig extends AgentConfig with streaming-specific settings.
 // It controls how streaming behavior works for agents.
 type StreamingConfig struct {
-	// EnableStreaming enables streaming mode for the agent
-	EnableStreaming bool
-
-	// ChunkBufferSize is the buffer size for chunks (must be > 0 and <= 100)
-	ChunkBufferSize int
-
-	// SentenceBoundary indicates whether to wait for sentence boundaries before processing
-	SentenceBoundary bool
-
-	// InterruptOnNewInput allows interruption on new input
+	ChunkBufferSize     int
+	MaxStreamDuration   time.Duration
+	EnableStreaming     bool
+	SentenceBoundary    bool
 	InterruptOnNewInput bool
-
-	// MaxStreamDuration is the maximum duration a stream can run
-	MaxStreamDuration time.Duration
 }
 
 // StreamingAgent extends Agent with streaming execution capabilities.

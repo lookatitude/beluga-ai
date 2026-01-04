@@ -176,4 +176,3 @@ func TestAgentsVoice_Context_Isolation(t *testing.T) {
 	err = session2.Stop(ctx)
 	require.NoError(t, err)
 }
-

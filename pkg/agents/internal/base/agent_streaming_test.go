@@ -27,12 +27,12 @@ func withStreamingConfig(config iface.StreamingConfig) iface.Option {
 
 // mockStreamingChatModel implements ChatModel interface with streaming support for testing.
 type mockStreamingChatModel struct {
-	responses      []string
-	streamingDelay time.Duration
-	shouldError    bool
 	errorToReturn  error
-	callCount      int
+	responses      []string
 	toolCallChunks []schema.ToolCallChunk
+	streamingDelay time.Duration
+	callCount      int
+	shouldError    bool
 }
 
 func (m *mockStreamingChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error) {
@@ -185,7 +185,7 @@ func TestStreamExecute_BasicStreaming(t *testing.T) {
 	}
 done:
 
-	assert.Greater(t, len(chunks), 0, "Should receive at least one chunk")
+	assert.NotEmpty(t, chunks, "Should receive at least one chunk")
 	// Last chunk should have Finish set
 	finalChunk := chunks[len(chunks)-1]
 	assert.NotNil(t, finalChunk.Finish, "Final chunk should have Finish set")

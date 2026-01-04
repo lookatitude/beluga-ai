@@ -18,10 +18,10 @@ import (
 
 // mockStreamingAgentForTranscript is a mock streaming agent for transcript processing tests.
 type mockStreamingAgentForTranscript struct {
+	invokeError error
 	mockStreamingAgentForInstance
-	invokeResponse   string
-	invokeError      error
-	invokeCallCount  int
+	invokeResponse  string
+	invokeCallCount int
 }
 
 func (m *mockStreamingAgentForTranscript) Invoke(ctx context.Context, input any, config map[string]any) (any, error) {
@@ -40,9 +40,9 @@ func (m *mockStreamingAgentForTranscript) Invoke(ctx context.Context, input any,
 
 // mockTTSProviderForTranscript is a mock TTS provider for transcript processing tests.
 type mockTTSProviderForTranscript struct {
-	generateSpeechCallCount int
-	audioResponse           []byte
 	generateSpeechError     error
+	audioResponse           []byte
+	generateSpeechCallCount int
 }
 
 func (m *mockTTSProviderForTranscript) GenerateSpeech(ctx context.Context, text string) ([]byte, error) {
@@ -62,8 +62,8 @@ func (m *mockTTSProviderForTranscript) StreamGenerate(ctx context.Context, text 
 
 // mockTransportForTranscript is a mock transport for transcript processing tests.
 type mockTransportForTranscript struct {
-	sendAudioCallCount int
 	sendAudioError     error
+	sendAudioCallCount int
 }
 
 func (m *mockTransportForTranscript) SendAudio(ctx context.Context, audio []byte) error {
@@ -82,7 +82,6 @@ func (m *mockTransportForTranscript) Close() error {
 	return nil
 }
 
-
 // TestProcessTranscript_SessionNotActive tests ProcessTranscript with inactive session.
 func TestProcessTranscript_SessionNotActive(t *testing.T) {
 	impl := createTestSessionImpl(t)
@@ -97,10 +96,10 @@ func TestProcessTranscript_SessionNotActive(t *testing.T) {
 // TestProcessTranscript_NonStreaming tests ProcessTranscript with non-streaming agent (callback).
 func TestProcessTranscript_NonStreaming(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	mockTransport := &mockTransportForTranscript{}
-	
+
 	impl.ttsProvider = mockTTS
 	impl.transport = mockTransport
 
@@ -132,7 +131,7 @@ func TestProcessTranscript_NonStreaming(t *testing.T) {
 // TestProcessTranscript_NonStreaming_AgentError tests ProcessTranscript with agent error.
 func TestProcessTranscript_NonStreaming_AgentError(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	expectedErr := errors.New("agent error")
 	impl.agentCallback = func(ctx context.Context, transcript string) (string, error) {
 		return "", expectedErr
@@ -151,10 +150,10 @@ func TestProcessTranscript_NonStreaming_AgentError(t *testing.T) {
 // TestProcessTranscript_Streaming tests ProcessTranscript with streaming agent.
 func TestProcessTranscript_Streaming(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	mockTransport := &mockTransportForTranscript{}
-	
+
 	impl.ttsProvider = mockTTS
 	impl.transport = mockTransport
 
@@ -162,7 +161,7 @@ func TestProcessTranscript_Streaming(t *testing.T) {
 	agent := &mockStreamingAgentForTranscript{}
 	agentConfig := schema.AgentConfig{Name: "test-agent"}
 	agentInstance := NewAgentInstance(agent, agentConfig)
-	
+
 	streamingAgent := NewStreamingAgent(agentInstance, mockTTS, DefaultStreamingAgentConfig())
 	impl.streamingAgent = streamingAgent
 	impl.agentIntegration = NewAgentIntegrationWithInstance(agent, agentConfig)
@@ -189,12 +188,12 @@ func TestProcessTranscript_Streaming(t *testing.T) {
 // TestPlayTextChunk tests playTextChunk function.
 func TestPlayTextChunk(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{
 		audioResponse: []byte("audio-data"),
 	}
 	mockTransport := &mockTransportForTranscript{}
-	
+
 	impl.ttsProvider = mockTTS
 	impl.transport = mockTransport
 
@@ -209,7 +208,7 @@ func TestPlayTextChunk(t *testing.T) {
 // TestPlayTextChunk_EmptyText tests playTextChunk with empty text.
 func TestPlayTextChunk_EmptyText(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	ctx := context.Background()
 	err := impl.playTextChunk(ctx, "")
 	require.NoError(t, err) // Should succeed with no-op
@@ -219,7 +218,7 @@ func TestPlayTextChunk_EmptyText(t *testing.T) {
 func TestPlayTextChunk_NoTTSProvider(t *testing.T) {
 	impl := createTestSessionImpl(t)
 	impl.ttsProvider = nil
-	
+
 	ctx := context.Background()
 	err := impl.playTextChunk(ctx, "test text")
 	require.Error(t, err)
@@ -229,14 +228,14 @@ func TestPlayTextChunk_NoTTSProvider(t *testing.T) {
 // TestPlayTextChunk_TTSError tests playTextChunk with TTS error.
 func TestPlayTextChunk_TTSError(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	expectedErr := errors.New("TTS error")
 	mockTTS := &mockTTSProviderForTranscript{
 		generateSpeechError: expectedErr,
 	}
-	
+
 	impl.ttsProvider = mockTTS
-	
+
 	ctx := context.Background()
 	err := impl.playTextChunk(ctx, "test text")
 	require.Error(t, err)
@@ -246,16 +245,16 @@ func TestPlayTextChunk_TTSError(t *testing.T) {
 // TestPlayTextChunk_TransportError tests playTextChunk with transport error.
 func TestPlayTextChunk_TransportError(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	expectedErr := errors.New("transport error")
 	mockTransport := &mockTransportForTranscript{
 		sendAudioError: expectedErr,
 	}
-	
+
 	impl.ttsProvider = mockTTS
 	impl.transport = mockTransport
-	
+
 	ctx := context.Background()
 	err := impl.playTextChunk(ctx, "test text")
 	require.Error(t, err)
@@ -265,11 +264,11 @@ func TestPlayTextChunk_TransportError(t *testing.T) {
 // TestPlayTextChunk_NoTransport tests playTextChunk without transport.
 func TestPlayTextChunk_NoTransport(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	impl.ttsProvider = mockTTS
 	impl.transport = nil // No transport
-	
+
 	ctx := context.Background()
 	err := impl.playTextChunk(ctx, "test text")
 	require.NoError(t, err) // Should succeed even without transport
@@ -279,7 +278,7 @@ func TestPlayTextChunk_NoTransport(t *testing.T) {
 // TestHandleInterruption tests HandleInterruption function.
 func TestHandleInterruption(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	agent := &mockStreamingAgentForTranscript{}
 	agentConfig := schema.AgentConfig{Name: "test-agent"}
@@ -314,7 +313,7 @@ func TestHandleInterruption_NoStreamingAgent(t *testing.T) {
 // TestProcessTranscript_InvalidState tests ProcessTranscript with invalid state transition.
 func TestProcessTranscript_InvalidState(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	ctx := context.Background()
 	err := impl.Start(ctx)
 	require.NoError(t, err)
@@ -334,7 +333,7 @@ func TestProcessTranscript_InvalidState(t *testing.T) {
 // TestProcessTranscript_UpdatesConversationContext tests that ProcessTranscript updates conversation context.
 func TestProcessTranscript_UpdatesConversationContext(t *testing.T) {
 	impl := createTestSessionImpl(t)
-	
+
 	mockTTS := &mockTTSProviderForTranscript{}
 	impl.ttsProvider = mockTTS
 
@@ -360,6 +359,5 @@ func TestProcessTranscript_UpdatesConversationContext(t *testing.T) {
 	agentCtx := agentInstance.GetContext()
 	require.NotNil(t, agentCtx)
 	// Should have user message in history (check via agent instance context)
-	assert.Greater(t, len(agentCtx.ConversationHistory), 0)
+	assert.NotEmpty(t, agentCtx.ConversationHistory)
 }
-

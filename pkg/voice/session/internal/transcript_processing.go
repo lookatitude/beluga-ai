@@ -259,4 +259,3 @@ func (s *VoiceSessionImpl) HandleInterruption(ctx context.Context) error {
 
 	return nil
 }
-

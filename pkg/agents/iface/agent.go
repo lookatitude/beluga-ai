@@ -128,14 +128,14 @@ type Option func(*Options)
 
 // Options holds the configuration options for an agent.
 type Options struct {
-	Metrics        MetricsRecorder
-	EventHandlers  map[string][]EventHandler
-	MaxRetries     int
-	RetryDelay     time.Duration
-	Timeout        time.Duration
-	MaxIterations  int
-	EnableMetrics  bool
-	EnableTracing  bool
+	Metrics         MetricsRecorder
+	EventHandlers   map[string][]EventHandler
+	MaxRetries      int
+	RetryDelay      time.Duration
+	Timeout         time.Duration
+	MaxIterations   int
+	EnableMetrics   bool
+	EnableTracing   bool
 	StreamingConfig StreamingConfig
 }
 

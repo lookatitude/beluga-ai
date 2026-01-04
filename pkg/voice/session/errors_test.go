@@ -125,9 +125,9 @@ func TestAllErrorCodes(t *testing.T) {
 // TestNewSessionErrorWithDetails tests error creation with details.
 func TestNewSessionErrorWithDetails(t *testing.T) {
 	details := map[string]any{
-		"session_id": "test-123",
+		"session_id":  "test-123",
 		"retry_count": 3,
-		"timestamp": "2024-01-01T00:00:00Z",
+		"timestamp":   "2024-01-01T00:00:00Z",
 	}
 
 	err := NewSessionErrorWithDetails("Start", ErrCodeInternalError, "test error", errors.New("underlying"), details)
@@ -136,7 +136,7 @@ func TestNewSessionErrorWithDetails(t *testing.T) {
 	assert.Equal(t, ErrCodeInternalError, err.Code)
 	assert.Equal(t, "test error", err.Message)
 	assert.Equal(t, details, err.Details)
-	assert.NotNil(t, err.Err)
+	assert.Error(t, err.Err)
 }
 
 // TestNewAgentIntegrationError tests agent integration error creation.
@@ -174,18 +174,18 @@ func TestSessionError_ErrorString(t *testing.T) {
 		contains []string
 	}{
 		{
-			name: "error with message",
-			err:  NewSessionErrorWithMessage("Start", ErrCodeTimeout, "operation timed out", nil),
+			name:     "error with message",
+			err:      NewSessionErrorWithMessage("Start", ErrCodeTimeout, "operation timed out", nil),
 			contains: []string{"session Start", "operation timed out", "timeout"},
 		},
 		{
-			name: "error with underlying error",
-			err:  NewSessionError("ProcessAudio", ErrCodeInternalError, errors.New("internal failure")),
+			name:     "error with underlying error",
+			err:      NewSessionError("ProcessAudio", ErrCodeInternalError, errors.New("internal failure")),
 			contains: []string{"session ProcessAudio", "internal failure", "internal_error"},
 		},
 		{
-			name: "error without message or underlying error",
-			err:  NewSessionError("Stop", ErrCodeInvalidState, nil),
+			name:     "error without message or underlying error",
+			err:      NewSessionError("Stop", ErrCodeInvalidState, nil),
 			contains: []string{"session Stop", "unknown error", "invalid_state"},
 		},
 		{
@@ -213,7 +213,7 @@ func TestSessionError_UnwrapAll(t *testing.T) {
 	sessionErr := NewSessionError("TestOp", ErrCodeInternalError, wrappedErr)
 
 	unwrapped := sessionErr.Unwrap()
-	assert.NotNil(t, unwrapped)
+	assert.Error(t, unwrapped)
 	assert.Equal(t, wrappedErr, unwrapped)
 }
 
@@ -283,8 +283,8 @@ func TestContextErrorCodes(t *testing.T) {
 // TestGeneralErrorCodes tests all general error codes.
 func TestGeneralErrorCodes(t *testing.T) {
 	generalErrorCodes := []struct {
-		code     string
-		name     string
+		code      string
+		name      string
 		retryable bool
 	}{
 		{ErrCodeInvalidConfig, "invalid_config", false},
