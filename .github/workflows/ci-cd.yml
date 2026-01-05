@@ -59,7 +59,7 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.event.inputs.run_policy == 'true')
     continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Install jq
         run: |
@@ -110,7 +110,7 @@ jobs:
       github.event.inputs.run_lint == 'true'
     continue-on-error: true  # Advisory check - warnings don't block merge
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
@@ -287,7 +287,7 @@ jobs:
       github.event.inputs.run_security == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       
@@ -444,7 +444,7 @@ jobs:
       github.event.inputs.run_unit_tests == 'true'
     # Critical check - failures block merge
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -639,7 +639,7 @@ jobs:
       github.event_name != 'workflow_dispatch' ||
       github.event.inputs.run_integration_tests == 'true'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -721,7 +721,7 @@ jobs:
     continue-on-error: true  # Advisory check - warnings don't block merge
     needs: [unit-tests, integration-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -817,7 +817,7 @@ jobs:
     # Depends on critical jobs (security, unit-tests) but not advisory jobs (policy, lint)
     needs: [security, unit-tests]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -877,7 +877,7 @@ jobs:
     needs: [build, integration-tests, coverage]
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       
       - name: Set up Go
         uses: actions/setup-go@v5
