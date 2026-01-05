@@ -64,6 +64,18 @@
 
 ### Features
 
+* **voice/s2s:** Add Speech-to-Speech (S2S) package with multi-provider support
+  * Support for Amazon Nova 2 Sonic, Grok Voice Agent, Gemini 2.5 Flash Native Audio, and OpenAI Realtime
+  * Built-in and external reasoning modes
+  * Automatic provider fallback with circuit breaker pattern
+  * Bidirectional streaming support
+  * Full observability with OTEL metrics, tracing, and structured logging
+  * Health checks for provider availability
+  * Integration with voice session package as alternative to STT+TTS pipeline
+  * Memory and orchestration integration for external reasoning mode
+
+### Features
+
 * **voice:** add comprehensive Voice Agents feature with STT, TTS, VAD, Turn Detection, Transport, Noise Cancellation, and Session Management packages
   * Speech-to-Text (STT) package with providers: Deepgram, Google Cloud, Azure Speech, OpenAI Whisper
   * Text-to-Speech (TTS) package with providers: OpenAI, Google Cloud, Azure Speech, ElevenLabs

@@ -20,6 +20,7 @@ pkg/voice/
 ├── iface/              # Shared interfaces and types
 ├── stt/                # Speech-to-Text package
 ├── tts/                # Text-to-Speech package
+├── s2s/                # Speech-to-Speech package (end-to-end speech)
 ├── vad/                # Voice Activity Detection package
 ├── turndetection/      # Turn Detection package
 ├── transport/          # Audio Transport package

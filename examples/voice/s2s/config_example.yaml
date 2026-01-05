@@ -1,0 +1,171 @@
+# S2S (Speech-to-Speech) Provider Configuration Examples
+# This file demonstrates various S2S provider configurations
+
+# Amazon Nova 2 Sonic Configuration
+amazon_nova:
+  provider: "amazon_nova"
+  api_key: "${AWS_ACCESS_KEY_ID}"  # Use environment variable
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "low"  # Options: low, medium, high
+  reasoning_mode: "built-in"  # Options: built-in, external
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 100
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+  provider_specific:
+    region: "us-east-1"
+    model: "nova-2-sonic"
+    voice_id: "Ruth"
+    language_code: "en-US"
+
+# Grok Voice Agent Configuration
+grok:
+  provider: "grok"
+  api_key: "${XAI_API_KEY}"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "medium"
+  reasoning_mode: "built-in"
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 50
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+  provider_specific:
+    model: "grok-voice-agent"
+    voice_id: "alloy"
+    language_code: "en-US"
+    temperature: 0.8
+
+# Gemini 2.5 Flash Native Audio Configuration
+gemini:
+  provider: "gemini"
+  api_key: "${GOOGLE_API_KEY}"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "low"
+  reasoning_mode: "built-in"
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 100
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+  provider_specific:
+    model: "gemini-2.5-flash-native-audio"
+    voice_id: "default"
+    language_code: "en-US"
+
+# OpenAI Realtime Configuration
+openai_realtime:
+  provider: "openai_realtime"
+  api_key: "${OPENAI_API_KEY}"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "low"
+  reasoning_mode: "built-in"
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 100
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+  provider_specific:
+    model: "gpt-4o-realtime-preview"
+    voice_id: "alloy"
+    language_code: "en-US"
+
+# Multi-Provider Configuration with Fallback
+multi_provider:
+  provider: "amazon_nova"
+  api_key: "${AWS_ACCESS_KEY_ID}"
+  fallback_providers:
+    - "grok"
+    - "gemini"
+    - "openai_realtime"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "low"
+  reasoning_mode: "built-in"
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 100
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+
+# External Reasoning Mode Configuration
+external_reasoning:
+  provider: "amazon_nova"
+  api_key: "${AWS_ACCESS_KEY_ID}"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "medium"
+  reasoning_mode: "external"  # Routes through Beluga AI agents
+  timeout: "30s"
+  max_retries: 3
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 50
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+
+# High Performance Configuration
+high_performance:
+  provider: "amazon_nova"
+  api_key: "${AWS_ACCESS_KEY_ID}"
+  sample_rate: 48000  # Higher sample rate
+  channels: 2  # Stereo
+  language: "en-US"
+  latency_target: "low"  # Optimize for low latency
+  reasoning_mode: "built-in"
+  timeout: "10s"  # Shorter timeout
+  max_retries: 2  # Fewer retries for speed
+  retry_delay: "500ms"  # Faster retry
+  retry_backoff: 1.5
+  max_concurrent_sessions: 200
+  enable_tracing: true
+  enable_metrics: true
+  enable_structured_logging: true
+
+# Production Configuration with Observability
+production:
+  provider: "amazon_nova"
+  api_key: "${AWS_ACCESS_KEY_ID}"
+  fallback_providers:
+    - "grok"
+    - "gemini"
+  sample_rate: 24000
+  channels: 1
+  language: "en-US"
+  latency_target: "medium"
+  reasoning_mode: "built-in"
+  timeout: "30s"
+  max_retries: 5  # More retries for reliability
+  retry_delay: "1s"
+  retry_backoff: 2.0
+  max_concurrent_sessions: 100
+  enable_tracing: true  # Full observability
+  enable_metrics: true
+  enable_structured_logging: true

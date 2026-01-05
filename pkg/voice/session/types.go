@@ -6,6 +6,7 @@ import (
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
 )
 
 // Re-export types from iface for convenience.
@@ -32,6 +33,9 @@ type VoiceOptions struct {
 
 	// TTSProvider specifies the TTS provider to use
 	TTSProvider iface.TTSProvider
+
+	// S2SProvider specifies the S2S provider to use (alternative to STT+TTS)
+	S2SProvider s2siface.S2SProvider
 
 	// VADProvider specifies the VAD provider to use
 	VADProvider iface.VADProvider
@@ -75,6 +79,13 @@ func WithSTTProvider(provider iface.STTProvider) VoiceOption {
 func WithTTSProvider(provider iface.TTSProvider) VoiceOption {
 	return func(opts *VoiceOptions) {
 		opts.TTSProvider = provider
+	}
+}
+
+// WithS2SProvider sets the S2S provider.
+func WithS2SProvider(provider s2siface.S2SProvider) VoiceOption {
+	return func(opts *VoiceOptions) {
+		opts.S2SProvider = provider
 	}
 }
 

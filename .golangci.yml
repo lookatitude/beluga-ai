@@ -463,6 +463,10 @@ issues:
     - path: pkg/voice/stt/providers/.*/websocket\.go
       linters:
         - containedctx
+    # Exclude containedctx for S2S streaming providers - context storage is necessary for long-lived connections
+    - path: pkg/voice/s2s/providers/.*/streaming\.go
+      linters:
+        - containedctx
     # Exclude containedctx for schedulers - context storage is necessary for worker lifecycle management
     - path: pkg/orchestration/internal/scheduler/.*\.go
       linters:

@@ -11,6 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
 )
 
 // Config and VoiceOptions are passed in, not imported to avoid cycle.
@@ -27,6 +28,7 @@ type Config struct {
 type VoiceOptions struct {
 	STTProvider       iface.STTProvider
 	TTSProvider       iface.TTSProvider
+	S2SProvider       s2siface.S2SProvider
 	VADProvider       iface.VADProvider
 	TurnDetector      iface.TurnDetector
 	Transport         iface.Transport
@@ -46,6 +48,8 @@ type VoiceSessionImpl struct {
 	noiseCancellation   iface.NoiseCancellation
 	vadProvider         iface.VADProvider
 	sttProvider         iface.STTProvider
+	s2sProvider         s2siface.S2SProvider
+	s2sIntegration      *S2SIntegration
 	transport           iface.Transport
 	agentCallback       func(ctx context.Context, transcript string) (string, error)
 	config              *Config
@@ -54,6 +58,7 @@ type VoiceSessionImpl struct {
 	stateMachine        *StateMachine
 	agentIntegration    *AgentIntegration
 	streamingAgent      *StreamingAgent
+	s2sAgentIntegration *S2SAgentIntegration // S2S integration with agent support
 	sessionID           string
 	state               sessioniface.SessionState
 	mu                  sync.RWMutex
@@ -90,6 +95,7 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 		active:              false,
 		sttProvider:         opts.STTProvider,
 		ttsProvider:         opts.TTSProvider,
+		s2sProvider:         opts.S2SProvider,
 		vadProvider:         opts.VADProvider,
 		turnDetector:        opts.TurnDetector,
 		transport:           opts.Transport,
@@ -99,7 +105,13 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 		stateMachine:        stateMachine,
 	}
 
+	// Initialize S2S integration if S2S provider is set
+	if opts.S2SProvider != nil {
+		impl.s2sIntegration = NewS2SIntegration(opts.S2SProvider)
+	}
+
 	// Initialize agent integration
+	var agentIntegration *AgentIntegration
 	if opts.AgentCallback != nil || opts.AgentInstance != nil {
 		if opts.AgentInstance != nil {
 			// Validate that AgentInstance implements StreamingAgent interface
@@ -123,8 +135,9 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 			agentInstance := NewAgentInstance(opts.AgentInstance, agentConfig)
 
 			// Create agent integration with instance
-			impl.agentIntegration = NewAgentIntegrationWithInstance(opts.AgentInstance, agentConfig)
-			impl.agentIntegration.SetAgentInstance(agentInstance)
+			agentIntegration = NewAgentIntegrationWithInstance(opts.AgentInstance, agentConfig)
+			agentIntegration.SetAgentInstance(agentInstance)
+			impl.agentIntegration = agentIntegration
 
 			// Create streaming agent if TTS provider is available
 			if opts.TTSProvider != nil {
@@ -133,8 +146,18 @@ func NewVoiceSessionImpl(config *Config, opts *VoiceOptions) (*VoiceSessionImpl,
 			}
 		} else {
 			// Create callback-based integration (legacy)
-			impl.agentIntegration = NewAgentIntegration(opts.AgentCallback)
+			agentIntegration = NewAgentIntegration(opts.AgentCallback)
+			impl.agentIntegration = agentIntegration
 		}
+	}
+
+	// Initialize S2S agent integration if both S2S provider and agent are present
+	// This enables external reasoning mode for S2S
+	if opts.S2SProvider != nil && agentIntegration != nil {
+		// Determine reasoning mode from S2S config (default to external when agent is present)
+		reasoningMode := "external" // Default to external when agent is provided
+		// TODO: Extract reasoning mode from S2S provider config if available
+		impl.s2sAgentIntegration = NewS2SAgentIntegration(opts.S2SProvider, agentIntegration, reasoningMode)
 	}
 
 	return impl, nil
