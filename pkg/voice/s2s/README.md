@@ -341,9 +341,30 @@ voiceSession, err := session.NewVoiceSession(ctx,
 
 ## Security
 
-- **Authentication**: Handled via provider SDKs (AWS credentials, API keys)
-- **Encryption**: All communication uses TLS (handled by provider SDKs)
-- **API Keys**: Store securely using environment variables or secret management
+### Authentication and Authorization
+
+All S2S providers handle authentication and authorization through their respective SDKs:
+
+- **Amazon Nova**: Uses AWS IAM credentials (access keys, IAM roles, or temporary credentials via STS)
+- **Grok Voice Agent**: Uses xAI API keys via `XAI_API_KEY` environment variable
+- **Gemini**: Uses Google Cloud API keys or service account credentials
+- **OpenAI Realtime**: Uses OpenAI API keys via `OPENAI_API_KEY` environment variable
+
+**Best Practices:**
+- Store API keys securely using environment variables or secret management systems
+- Use IAM roles for AWS deployments (preferred over access keys)
+- Rotate API keys regularly
+- Never commit API keys to version control
+
+### Encryption in Transit
+
+All communication with S2S providers uses TLS (Transport Layer Security) encryption:
+
+- **TLS 1.2+**: All provider SDKs enforce TLS encryption for API calls
+- **Certificate Validation**: Provider SDKs validate SSL certificates automatically
+- **No Configuration Required**: Encryption is handled transparently by provider SDKs
+
+**Note**: The S2S package does not implement custom encryption. All encryption is handled by the underlying provider SDKs, which use industry-standard TLS protocols.
 
 ## Examples
 

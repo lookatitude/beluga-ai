@@ -2,6 +2,7 @@ package s2s
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -91,10 +92,17 @@ func (pf *ProviderFallback) GetCurrentProviderName() string {
 }
 
 // ProcessWithFallback processes audio with automatic fallback on failure.
+// It includes retry logic with exponential backoff for transient errors.
 func (pf *ProviderFallback) ProcessWithFallback(ctx context.Context, input *internal.AudioInput, convCtx *internal.ConversationContext, opts ...internal.STSOption) (*internal.AudioOutput, error) {
 	var lastErr error
 	providers := []iface.S2SProvider{pf.primary}
 	providers = append(providers, pf.fallbacks...)
+
+	// Retry configuration for exponential backoff
+	maxRetries := 3
+	initialDelay := 100 * time.Millisecond
+	backoffFactor := 2.0
+	maxDelay := 5 * time.Second
 
 	// Try each provider in order
 	for i, provider := range providers {
@@ -102,41 +110,107 @@ func (pf *ProviderFallback) ProcessWithFallback(ctx context.Context, input *inte
 			continue
 		}
 
-		// Try primary first with circuit breaker
+		// Try primary first with circuit breaker and retry logic
 		if i == 0 {
 			var output *internal.AudioOutput
-			err := pf.breaker.Call(func() error {
-				var callErr error
-				output, callErr = provider.Process(ctx, input, convCtx, opts...)
-				return callErr
-			})
-
-			if err == nil && output != nil {
-				// Success - switch back to primary if we were using fallback
-				if pf.IsUsingFallback() {
-					pf.SwitchToPrimary()
+			var attemptErr error
+			
+			// Retry with exponential backoff
+			delay := initialDelay
+			for attempt := 0; attempt <= maxRetries; attempt++ {
+				if attempt > 0 {
+					// Wait before retry
+					select {
+					case <-ctx.Done():
+						return nil, fmt.Errorf("context cancelled during retry: %w", ctx.Err())
+					case <-time.After(delay):
+						// Exponential backoff
+						delay = time.Duration(float64(delay) * backoffFactor)
+						if delay > maxDelay {
+							delay = maxDelay
+						}
+					}
 				}
-				return output, nil
+
+				// Try with circuit breaker
+				attemptErr = pf.breaker.Call(func() error {
+					var callErr error
+					output, callErr = provider.Process(ctx, input, convCtx, opts...)
+					return callErr
+				})
+
+				if attemptErr == nil && output != nil {
+					// Success - switch back to primary if we were using fallback
+					if pf.IsUsingFallback() {
+						pf.SwitchToPrimary()
+					}
+					return output, nil
+				}
+
+				// Check if error is retryable
+				if !isRetryableError(attemptErr) {
+					break
+				}
 			}
-			lastErr = err
+
+			lastErr = attemptErr
 			continue
 		}
 
-		// Try fallback providers
-		output, err := provider.Process(ctx, input, convCtx, opts...)
-		if err == nil && output != nil {
-			// Success - switch to this fallback
-			pf.mu.Lock()
-			pf.currentIndex = i
-			pf.usingFallback = true
-			pf.mu.Unlock()
-			return output, nil
+		// Try fallback providers with retry logic
+		delay := initialDelay
+		for attempt := 0; attempt <= maxRetries; attempt++ {
+			if attempt > 0 {
+				select {
+				case <-ctx.Done():
+					return nil, fmt.Errorf("context cancelled during fallback retry: %w", ctx.Err())
+				case <-time.After(delay):
+					delay = time.Duration(float64(delay) * backoffFactor)
+					if delay > maxDelay {
+						delay = maxDelay
+					}
+				}
+			}
+
+			output, err := provider.Process(ctx, input, convCtx, opts...)
+			if err == nil && output != nil {
+				// Success - switch to this fallback
+				pf.mu.Lock()
+				pf.currentIndex = i
+				pf.usingFallback = true
+				pf.mu.Unlock()
+				return output, nil
+			}
+
+			lastErr = err
+			if !isRetryableError(err) {
+				break
+			}
 		}
-		lastErr = err
 	}
 
 	// All providers failed
 	return nil, fmt.Errorf("all S2S providers failed: %w", lastErr)
+}
+
+// isRetryableError checks if an error should be retried.
+// It uses the public IsRetryableError function but is more conservative
+// for unknown error types (retries them).
+func isRetryableError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Check if it's an S2SError
+	var s2sErr *S2SError
+	if errors.As(err, &s2sErr) {
+		// Use the public function for S2SError types
+		return IsRetryableError(err)
+	}
+
+	// For unknown error types, be conservative and retry
+	// This allows fallback to handle unexpected errors gracefully
+	return true
 }
 
 // CircuitBreaker implements a simple circuit breaker pattern for provider resilience.
@@ -163,9 +237,18 @@ const (
 
 // NewCircuitBreaker creates a new circuit breaker.
 func NewCircuitBreaker(failureThreshold int, resetTimeoutMs int, resetTimeout time.Duration) *CircuitBreaker {
+	// Use resetTimeout if provided, otherwise calculate from resetTimeoutMs
+	timeout := resetTimeout
+	if timeout == 0 && resetTimeoutMs > 0 {
+		timeout = time.Duration(resetTimeoutMs) * time.Millisecond
+	}
+	if timeout == 0 {
+		timeout = 5 * time.Second // Default timeout
+	}
+
 	return &CircuitBreaker{
 		failureThreshold: failureThreshold,
-		resetTimeout:     resetTimeout,
+		resetTimeout:     timeout,
 		failureCount:     0,
 		state:            CircuitBreakerStateClosed,
 	}
