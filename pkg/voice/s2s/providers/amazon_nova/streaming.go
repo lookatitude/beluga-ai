@@ -2,9 +2,15 @@ package amazon_nova
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime/types"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -13,12 +19,15 @@ import (
 
 // AmazonNovaStreamingSession implements StreamingSession for Amazon Nova 2 Sonic.
 type AmazonNovaStreamingSession struct {
-	ctx      context.Context //nolint:containedctx // Required for streaming
-	config   *AmazonNovaConfig
-	provider *AmazonNovaProvider
-	audioCh  chan iface.AudioOutputChunk
-	closed   bool
-	mu       sync.RWMutex
+	ctx            context.Context //nolint:containedctx // Required for streaming
+	config         *AmazonNovaConfig
+	provider       *AmazonNovaProvider
+	audioCh        chan iface.AudioOutputChunk
+	closed         bool
+	mu             sync.RWMutex
+	stream         *bedrockruntime.InvokeModelWithResponseStreamOutput
+	audioBuffer    []byte
+	conversationID string
 }
 
 // NewAmazonNovaStreamingSession creates a new streaming session.
@@ -30,13 +39,129 @@ func NewAmazonNovaStreamingSession(ctx context.Context, config *AmazonNovaConfig
 		audioCh:  make(chan iface.AudioOutputChunk, 10),
 	}
 
-	// TODO: Implement actual streaming connection
-	// This will involve:
-	// 1. Establishing a bidirectional streaming connection to Bedrock Runtime
-	// 2. Starting goroutines for sending audio and receiving responses
-	// 3. Handling connection lifecycle
+	// Initialize streaming connection to Bedrock Runtime
+	// For Nova 2 Sonic, we use InvokeModelWithResponseStream for streaming
+	modelID := fmt.Sprintf("amazon.%s-v1:0", config.Model)
+	
+	// Prepare initial request
+	requestBody, err := session.prepareStreamingRequest()
+	if err != nil {
+		return nil, fmt.Errorf("failed to prepare streaming request: %w", err)
+	}
+
+	invokeInput := &bedrockruntime.InvokeModelWithResponseStreamInput{
+		ModelId:     aws.String(modelID),
+		ContentType: aws.String("application/json"),
+		Body:        requestBody,
+	}
+
+	// Start streaming
+	stream, err := provider.client.InvokeModelWithResponseStream(ctx, invokeInput)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start streaming: %w", err)
+	}
+
+	session.stream = stream
+
+	// Start goroutine to receive streaming responses
+	go session.receiveStreamingResponses()
 
 	return session, nil
+}
+
+// prepareStreamingRequest prepares the initial request for streaming.
+func (s *AmazonNovaStreamingSession) prepareStreamingRequest() ([]byte, error) {
+	request := map[string]any{
+		"voice": map[string]any{
+			"voice_id": s.config.VoiceID,
+			"language": s.config.LanguageCode,
+		},
+		"output": map[string]any{
+			"format": map[string]any{
+				"sample_rate": s.config.SampleRate,
+				"channels":    1,
+				"encoding":    s.config.AudioFormat,
+			},
+		},
+		"streaming": true,
+		"enable_automatic_punctuation": s.config.EnableAutomaticPunctuation,
+	}
+
+	return json.Marshal(request)
+}
+
+// receiveStreamingResponses receives streaming responses from Bedrock.
+func (s *AmazonNovaStreamingSession) receiveStreamingResponses() {
+	defer close(s.audioCh)
+
+	if s.stream == nil {
+		return
+	}
+
+	for event := range s.stream.GetStream().Events() {
+		s.mu.RLock()
+		closed := s.closed
+		s.mu.RUnlock()
+
+		if closed {
+			return
+		}
+
+		switch v := event.(type) {
+		case *types.ResponseStreamMemberChunk:
+			// Process chunk
+			chunk, err := s.processStreamingChunk(v.Value)
+			if err != nil {
+				s.audioCh <- iface.AudioOutputChunk{
+					Error: err,
+				}
+				return
+			}
+			if chunk != nil {
+				s.audioCh <- *chunk
+			}
+		case *types.UnknownUnionMember:
+			// Unknown event type, log and continue
+			continue
+		}
+	}
+}
+
+// processStreamingChunk processes a streaming chunk from Bedrock.
+func (s *AmazonNovaStreamingSession) processStreamingChunk(chunk types.PayloadPart) (*iface.AudioOutputChunk, error) {
+	// Parse chunk data
+	var chunkData struct {
+		Audio  string `json:"audio,omitempty"`
+		Format struct {
+			SampleRate int    `json:"sample_rate,omitempty"`
+			Channels   int    `json:"channels,omitempty"`
+			Encoding   string `json:"encoding,omitempty"`
+		} `json:"format,omitempty"`
+	}
+
+	// Extract bytes from PayloadPart
+	chunkBytes := chunk.Bytes
+	if len(chunkBytes) == 0 {
+		return nil, nil
+	}
+
+	if err := json.Unmarshal(chunkBytes, &chunkData); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal chunk: %w", err)
+	}
+
+	if chunkData.Audio == "" {
+		return nil, nil
+	}
+
+	// Decode base64 audio
+	audioData, err := base64.StdEncoding.DecodeString(chunkData.Audio)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode audio: %w", err)
+	}
+
+	return &iface.AudioOutputChunk{
+		Audio: audioData,
+	}, nil
 }
 
 // SendAudio implements the StreamingSession interface.
@@ -49,8 +174,16 @@ func (s *AmazonNovaStreamingSession) SendAudio(ctx context.Context, audio []byte
 			errors.New("streaming session is closed"))
 	}
 
-	// TODO: Implement actual audio sending
-	// This will send audio chunks to the streaming API
+	// Buffer audio for sending
+	// In a full implementation, this would send audio chunks to Bedrock
+	// For Nova 2 Sonic, audio input is typically sent as part of the streaming request
+	s.audioBuffer = append(s.audioBuffer, audio...)
+
+	// TODO: Send audio chunk to Bedrock streaming API
+	// This would involve:
+	// 1. Encoding audio as base64
+	// 2. Sending as part of the streaming request
+	// 3. Handling acknowledgments
 
 	return nil
 }
@@ -72,7 +205,10 @@ func (s *AmazonNovaStreamingSession) Close() error {
 	s.closed = true
 	close(s.audioCh)
 
-	// TODO: Close the actual streaming connection
+	// Close the streaming connection
+	if s.stream != nil && s.stream.GetStream() != nil {
+		_ = s.stream.GetStream().Close()
+	}
 
 	return nil
 }

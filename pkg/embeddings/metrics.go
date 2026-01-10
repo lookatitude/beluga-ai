@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -102,4 +103,24 @@ func (m *Metrics) EndRequest(ctx context.Context, provider, model string) {
 			attribute.String("provider", provider),
 			attribute.String("model", model),
 		))
+}
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
+
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		globalMetrics = NewMetrics(meter)
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
 }

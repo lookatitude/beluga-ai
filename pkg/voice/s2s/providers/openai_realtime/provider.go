@@ -70,14 +70,19 @@ func NewOpenAIRealtimeProvider(config *s2s.Config) (iface.S2SProvider, error) {
 }
 
 // Process implements the S2SProvider interface using OpenAI Realtime API.
-// Note: This is a placeholder implementation. The actual API integration needs to be
-// implemented based on OpenAI Realtime API documentation when available.
+// Note: OpenAI Realtime API is primarily designed for streaming. For non-streaming
+// use cases, we create a temporary streaming session and collect the output.
 func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.AudioInput, convCtx *internal.ConversationContext, opts ...internal.STSOption) (*internal.AudioOutput, error) {
 	startTime := time.Now()
+
+	// Start tracing
+	ctx, span := s2s.StartProcessSpan(ctx, p.providerName, p.config.Model, input.Language)
+	defer span.End()
 
 	// Check context cancellation
 	select {
 	case <-ctx.Done():
+		s2s.RecordSpanError(span, ctx.Err())
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
 			fmt.Errorf("context cancelled: %w", ctx.Err()))
 	default:
@@ -85,6 +90,7 @@ func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.Au
 
 	// Validate input
 	if err := internal.ValidateAudioInput(input); err != nil {
+		s2s.RecordSpanError(span, err)
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidInput, err)
 	}
 
@@ -94,17 +100,54 @@ func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.Au
 		opt(stsOpts)
 	}
 
-	// TODO: Implement actual OpenAI Realtime API call
-	// This is a placeholder implementation
-	// The actual implementation will:
-	// 1. Prepare the API request with audio input
-	// 2. Call the OpenAI Realtime API
-	// 3. Process the response and extract audio output
-	// 4. Handle errors and retries
+	// For non-streaming, use a temporary streaming session
+	// OpenAI Realtime API is WebSocket-based and designed for streaming
+	session, err := p.StartStreaming(ctx, convCtx, opts...)
+	if err != nil {
+		s2s.RecordSpanError(span, err)
+		return nil, err
+	}
+	defer session.Close()
 
-	// Placeholder: Return mock output for now
+	// Send audio input
+	if err := session.SendAudio(ctx, input.Data); err != nil {
+		s2s.RecordSpanError(span, err)
+		return nil, s2s.NewS2SError("Process", s2s.ErrCodeStreamError,
+			fmt.Errorf("failed to send audio: %w", err))
+	}
+
+	// Collect audio output chunks
+	var audioData []byte
+	audioCh := session.ReceiveAudio()
+	timeout := time.NewTimer(p.config.Timeout)
+	defer timeout.Stop()
+
+	for {
+		select {
+		case chunk, ok := <-audioCh:
+			if !ok {
+				// Channel closed, done receiving
+				goto done
+			}
+			if chunk.Error != nil {
+				s2s.RecordSpanError(span, chunk.Error)
+				return nil, s2s.NewS2SError("Process", s2s.ErrCodeStreamError, chunk.Error)
+			}
+			audioData = append(audioData, chunk.Audio...)
+		case <-timeout.C:
+			s2s.RecordSpanError(span, fmt.Errorf("timeout waiting for audio"))
+			return nil, s2s.NewS2SError("Process", s2s.ErrCodeTimeout,
+				fmt.Errorf("timeout waiting for audio output"))
+		case <-ctx.Done():
+			s2s.RecordSpanError(span, ctx.Err())
+			return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
+				fmt.Errorf("context cancelled: %w", ctx.Err()))
+		}
+	}
+
+done:
 	output := &internal.AudioOutput{
-		Data: input.Data, // Placeholder - should be processed audio
+		Data: audioData,
 		Format: internal.AudioFormat{
 			SampleRate: p.config.SampleRate,
 			Channels:   input.Format.Channels,
@@ -119,6 +162,12 @@ func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.Au
 		},
 		Latency: time.Since(startTime),
 	}
+
+	s2s.RecordSpanLatency(span, output.Latency)
+	s2s.RecordSpanAttributes(span, map[string]string{
+		"output_size": fmt.Sprintf("%d", len(output.Data)),
+		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+	})
 
 	return output, nil
 }

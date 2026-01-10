@@ -131,7 +131,13 @@ func NewChatModel(model string, config *Config, opts ...iface.Option) (iface.Cha
 		return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeConfigInvalid, err)
 	}
 
-	// Create provider-specific implementation
+	// Try to get provider from registry first
+	registry := GetRegistry()
+	if registry.IsRegistered(config.DefaultProvider) {
+		return registry.CreateProvider(model, config, options)
+	}
+
+	// Fallback to switch statement for backward compatibility
 	switch config.DefaultProvider {
 	case "openai":
 		return openai.NewOpenAIChatModel(model, config, options)

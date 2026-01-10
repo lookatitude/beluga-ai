@@ -54,6 +54,7 @@ type Config struct {
 	OpenAI *OpenAIConfig `mapstructure:"openai" yaml:"openai"`
 	Ollama *OllamaConfig `mapstructure:"ollama" yaml:"ollama"`
 	Mock   *MockConfig   `mapstructure:"mock" yaml:"mock"`
+	Cohere *CohereConfig `mapstructure:"cohere" yaml:"cohere"`
 }
 
 // OpenAIConfig holds configuration for OpenAI embedding provider.
@@ -85,6 +86,16 @@ type MockConfig struct {
 	Enabled      bool  `mapstructure:"enabled" yaml:"enabled" env:"MOCK_EMBEDDING_ENABLED" default:"true"`
 }
 
+// CohereConfig holds configuration for Cohere embedding provider.
+type CohereConfig struct {
+	APIKey     string        `mapstructure:"api_key" yaml:"api_key" env:"COHERE_API_KEY" validate:"required"`
+	Model      string        `mapstructure:"model" yaml:"model" env:"COHERE_MODEL" default:"embed-english-v3.0"`
+	BaseURL    string        `mapstructure:"base_url" yaml:"base_url" env:"COHERE_BASE_URL"`
+	Timeout    time.Duration `mapstructure:"timeout" yaml:"timeout" env:"COHERE_TIMEOUT" default:"30s"`
+	MaxRetries int           `mapstructure:"max_retries" yaml:"max_retries" env:"COHERE_MAX_RETRIES" default:"3"`
+	Enabled    bool          `mapstructure:"enabled" yaml:"enabled" env:"COHERE_ENABLED" default:"true"`
+}
+
 // Validate validates the configuration.
 func (c *Config) Validate() error {
 	validate := validator.New()
@@ -105,6 +116,11 @@ func (c *Config) Validate() error {
 	}
 	if c.Mock != nil {
 		if err := c.Mock.Validate(); err != nil {
+			return err
+		}
+	}
+	if c.Cohere != nil {
+		if err := c.Cohere.Validate(); err != nil {
 			return err
 		}
 	}
@@ -152,6 +168,20 @@ func (c *Config) SetDefaults() {
 		c.Mock.Dimension = 128
 	}
 	c.Mock.Enabled = true
+
+	if c.Cohere == nil {
+		c.Cohere = &CohereConfig{}
+	}
+	if c.Cohere.Model == "" {
+		c.Cohere.Model = "embed-english-v3.0"
+	}
+	if c.Cohere.Timeout == 0 {
+		c.Cohere.Timeout = 30 * time.Second
+	}
+	if c.Cohere.MaxRetries == 0 {
+		c.Cohere.MaxRetries = 3
+	}
+	c.Cohere.Enabled = true
 }
 
 // ValidateOpenAI validates OpenAI configuration.
@@ -177,6 +207,17 @@ func (c *OllamaConfig) Validate() error {
 func (c *MockConfig) Validate() error {
 	if c.Dimension <= 0 {
 		return errors.New("mock dimension must be positive")
+	}
+	return nil
+}
+
+// ValidateCohere validates Cohere configuration.
+func (c *CohereConfig) Validate() error {
+	if c.APIKey == "" {
+		return errors.New("cohere API key is required")
+	}
+	if c.Model == "" {
+		return errors.New("cohere model is required")
 	}
 	return nil
 }

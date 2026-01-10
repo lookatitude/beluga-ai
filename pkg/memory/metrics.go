@@ -5,6 +5,7 @@ package memory
 import (
 	"context"
 	"log/slog"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -183,14 +184,31 @@ func (t *Tracer) RecordSpanError(span trace.Span, err error) {
 var (
 	globalMetrics *Metrics
 	globalTracer  *Tracer
+	metricsOnce   sync.Once
 )
 
-// SetGlobalMetrics sets the global metrics instance with proper OTEL meter.
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		globalMetrics = NewMetrics(meter)
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
+}
+
+// SetGlobalMetrics is deprecated. Use InitMetrics instead.
+// Deprecated: Use InitMetrics(meter) instead.
 func SetGlobalMetrics(meter metric.Meter) {
 	globalMetrics = NewMetrics(meter)
 }
 
-// GetGlobalMetrics returns the global metrics instance.
+// GetGlobalMetrics is deprecated. Use GetMetrics instead.
+// Deprecated: Use GetMetrics() instead.
 func GetGlobalMetrics() *Metrics {
 	return globalMetrics
 }

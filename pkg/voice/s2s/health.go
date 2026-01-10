@@ -3,18 +3,14 @@ package s2s
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/internal"
 )
-
-// HealthChecker defines the interface for health checks.
-type HealthChecker interface {
-	CheckHealth(ctx context.Context) HealthStatus
-	GetProviderHealth(ctx context.Context, providerName string) HealthStatus
-}
 
 // HealthStatus represents the health status of an S2S provider.
 type HealthStatus struct {
@@ -44,7 +40,32 @@ func NewHealthCheckManager(registry *Registry, timeout time.Duration) *HealthChe
 }
 
 // CheckHealth checks the health of all registered providers.
-func (h *HealthCheckManager) CheckHealth(ctx context.Context) HealthStatus {
+// This implements the core.HealthChecker interface.
+func (h *HealthCheckManager) CheckHealth(ctx context.Context) error {
+	// Check all providers and return overall health
+	providers := h.registry.ListProviders()
+	if len(providers) == 0 {
+		return fmt.Errorf("no providers registered")
+	}
+
+	var unhealthyProviders []string
+	for _, providerName := range providers {
+		status := h.GetProviderHealth(ctx, providerName)
+		if !status.Healthy {
+			unhealthyProviders = append(unhealthyProviders, providerName)
+		}
+	}
+
+	if len(unhealthyProviders) > 0 {
+		return fmt.Errorf("unhealthy providers: %v", unhealthyProviders)
+	}
+
+	return nil
+}
+
+// CheckHealthStatus checks the health of all registered providers and returns detailed status.
+// This is a convenience method that returns HealthStatus instead of error.
+func (h *HealthCheckManager) CheckHealthStatus(ctx context.Context) HealthStatus {
 	// Check all providers and return overall health
 	providers := h.registry.ListProviders()
 	if len(providers) == 0 {
@@ -192,3 +213,6 @@ func (h *HealthCheckManager) GetLastHealthStatus(providerName string) (HealthSta
 	status, exists := h.lastChecks[providerName]
 	return status, exists
 }
+
+// Ensure HealthCheckManager implements core.HealthChecker interface.
+var _ core.HealthChecker = (*HealthCheckManager)(nil)

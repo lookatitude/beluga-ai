@@ -2,6 +2,7 @@ package vectorstores
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -287,14 +288,40 @@ func (tp *TracerProvider) StartEmbeddingSpan(ctx context.Context, storeName stri
 var (
 	globalMetrics *MetricsCollector
 	globalTracer  *TracerProvider
+	metricsOnce   sync.Once
 )
 
-// SetGlobalMetrics sets the global metrics collector.
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		if meter == nil {
+			meter = noop.NewMeterProvider().Meter("vectorstores")
+		}
+		mc, err := NewMetricsCollector(meter)
+		if err != nil {
+			// If metrics creation fails, use noop meter
+			meter = noop.NewMeterProvider().Meter("vectorstores")
+			mc, _ = NewMetricsCollector(meter)
+		}
+		globalMetrics = mc
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *MetricsCollector {
+	return globalMetrics
+}
+
+// SetGlobalMetrics is deprecated. Use InitMetrics instead.
+// Deprecated: Use InitMetrics(meter) instead.
 func SetGlobalMetrics(mc *MetricsCollector) {
 	globalMetrics = mc
 }
 
-// GetGlobalMetrics returns the global metrics collector.
+// GetGlobalMetrics is deprecated. Use GetMetrics instead.
+// Deprecated: Use GetMetrics() instead.
 func GetGlobalMetrics() *MetricsCollector {
 	return globalMetrics
 }

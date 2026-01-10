@@ -938,12 +938,14 @@ func TestErrorHandling(t *testing.T) {
 		t.Errorf("Expected operation 'creation', got '%s'", chatErr.Op)
 	}
 
-	if chatErr.Model != "gpt-4" {
-		t.Errorf("Expected model 'gpt-4', got '%s'", chatErr.Model)
+	model, _ := chatErr.Fields["model"].(string)
+	if model != "gpt-4" {
+		t.Errorf("Expected model 'gpt-4', got '%s'", model)
 	}
 
-	if chatErr.Provider != "unsupported" {
-		t.Errorf("Expected provider 'unsupported', got '%s'", chatErr.Provider)
+	provider, _ := chatErr.Fields["provider"].(string)
+	if provider != "unsupported" {
+		t.Errorf("Expected provider 'unsupported', got '%s'", provider)
 	}
 }
 

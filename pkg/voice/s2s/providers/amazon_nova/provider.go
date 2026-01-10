@@ -2,6 +2,8 @@ package amazon_nova
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
@@ -10,6 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -86,13 +89,16 @@ func NewAmazonNovaProvider(config *s2s.Config) (iface.S2SProvider, error) {
 }
 
 // Process implements the S2SProvider interface using Amazon Nova 2 Sonic API.
-// Note: This is a placeholder implementation. The actual API integration needs to be
-// implemented based on AWS Bedrock Nova 2 Sonic API documentation when available.
 func (p *AmazonNovaProvider) Process(ctx context.Context, input *internal.AudioInput, convCtx *internal.ConversationContext, opts ...internal.STSOption) (*internal.AudioOutput, error) {
 	startTime := time.Now()
 
+	// Start tracing
+	ctx, span := s2s.StartProcessSpan(ctx, p.providerName, p.config.Model, input.Language)
+	defer span.End()
+
 	// Validate input
 	if err := internal.ValidateAudioInput(input); err != nil {
+		s2s.RecordSpanError(span, err)
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidInput, err)
 	}
 
@@ -102,33 +108,189 @@ func (p *AmazonNovaProvider) Process(ctx context.Context, input *internal.AudioI
 		opt(stsOpts)
 	}
 
-	// TODO: Implement actual Amazon Nova 2 Sonic API call
-	// This is a placeholder implementation
-	// The actual implementation will:
-	// 1. Prepare the API request with audio input
-	// 2. Call the Bedrock Runtime API for Nova 2 Sonic
-	// 3. Process the response and extract audio output
-	// 4. Handle errors and retries
+	// Prepare the request body for Bedrock Runtime API
+	// Nova 2 Sonic uses a specific request format
+	requestBody, err := p.prepareNovaRequest(input, convCtx, stsOpts)
+	if err != nil {
+		s2s.RecordSpanError(span, err)
+		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidRequest,
+			fmt.Errorf("failed to prepare request: %w", err))
+	}
 
-	// Placeholder: Return mock output for now
+	// Set timeout context
+	requestCtx, cancel := context.WithTimeout(ctx, p.config.Timeout)
+	defer cancel()
+
+	// Call Bedrock Runtime API
+	modelID := fmt.Sprintf("amazon.%s-v1:0", p.config.Model)
+	invokeInput := &bedrockruntime.InvokeModelInput{
+		ModelId:     aws.String(modelID),
+		ContentType: aws.String("application/json"),
+		Body:        requestBody,
+	}
+
+	invokeOutput, err := p.client.InvokeModel(requestCtx, invokeInput)
+	if err != nil {
+		s2s.RecordSpanError(span, err)
+		s2s.RecordSpanLatency(span, time.Since(startTime))
+		return nil, p.handleBedrockError("Process", err)
+	}
+
+	// Parse response
+	output, err := p.parseNovaResponse(invokeOutput.Body, input)
+	if err != nil {
+		s2s.RecordSpanError(span, err)
+		s2s.RecordSpanLatency(span, time.Since(startTime))
+		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidResponse,
+			fmt.Errorf("failed to parse response: %w", err))
+	}
+
+	output.Latency = time.Since(startTime)
+	s2s.RecordSpanLatency(span, output.Latency)
+	s2s.RecordSpanAttributes(span, map[string]string{
+		"output_size": fmt.Sprintf("%d", len(output.Data)),
+		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+	})
+
+	return output, nil
+}
+
+// prepareNovaRequest prepares the request body for Nova 2 Sonic API.
+func (p *AmazonNovaProvider) prepareNovaRequest(input *internal.AudioInput, convCtx *internal.ConversationContext, opts *internal.STSOptions) ([]byte, error) {
+	// Encode audio data as base64
+	audioBase64 := base64.StdEncoding.EncodeToString(input.Data)
+
+	// Build request payload
+	request := map[string]any{
+		"input": map[string]any{
+			"audio": audioBase64,
+			"format": map[string]any{
+				"sample_rate": input.Format.SampleRate,
+				"channels":      input.Format.Channels,
+				"encoding":    input.Format.Encoding,
+			},
+		},
+		"voice": map[string]any{
+			"voice_id": p.config.VoiceID,
+			"language": p.config.LanguageCode,
+		},
+		"output": map[string]any{
+			"format": map[string]any{
+				"sample_rate": p.config.SampleRate,
+				"channels":    input.Format.Channels,
+				"encoding":    p.config.AudioFormat,
+			},
+		},
+	}
+
+	// Add conversation context if provided
+	if convCtx != nil {
+		if convCtx.ConversationID != "" {
+			request["conversation_id"] = convCtx.ConversationID
+		}
+		if len(convCtx.History) > 0 {
+			history := make([]map[string]any, 0, len(convCtx.History))
+			for _, turn := range convCtx.History {
+				history = append(history, map[string]any{
+					"role":      turn.Role,
+					"content":   turn.Content,
+					"timestamp": turn.Timestamp.Unix(),
+				})
+			}
+			request["conversation_history"] = history
+		}
+	}
+
+	// Add options
+	if opts != nil {
+		if opts.Language != "" {
+			request["voice"].(map[string]any)["language"] = opts.Language
+		}
+		if opts.VoiceID != "" {
+			request["voice"].(map[string]any)["voice_id"] = opts.VoiceID
+		}
+	}
+
+	// Add automatic punctuation setting
+	request["enable_automatic_punctuation"] = p.config.EnableAutomaticPunctuation
+
+	return json.Marshal(request)
+}
+
+// parseNovaResponse parses the response from Nova 2 Sonic API.
+func (p *AmazonNovaProvider) parseNovaResponse(responseBody []byte, input *internal.AudioInput) (*internal.AudioOutput, error) {
+	var response struct {
+		Output struct {
+			Audio  string `json:"audio"`
+			Format struct {
+				SampleRate int    `json:"sample_rate"`
+				Channels   int    `json:"channels"`
+				Encoding   string `json:"encoding"`
+			} `json:"format"`
+		} `json:"output"`
+		Voice struct {
+			VoiceID  string `json:"voice_id"`
+			Language string `json:"language"`
+		} `json:"voice"`
+		Metadata struct {
+			LatencyMs float64 `json:"latency_ms"`
+		} `json:"metadata"`
+	}
+
+	if err := json.Unmarshal(responseBody, &response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+
+	// Decode base64 audio
+	audioData, err := base64.StdEncoding.DecodeString(response.Output.Audio)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode audio data: %w", err)
+	}
+
 	output := &internal.AudioOutput{
-		Data: input.Data, // Placeholder - should be processed audio
+		Data: audioData,
 		Format: internal.AudioFormat{
-			SampleRate: p.config.SampleRate,
-			Channels:   input.Format.Channels,
+			SampleRate: response.Output.Format.SampleRate,
+			Channels:   response.Output.Format.Channels,
 			BitDepth:   input.Format.BitDepth,
-			Encoding:   p.config.AudioFormat,
+			Encoding:   response.Output.Format.Encoding,
 		},
 		Timestamp: time.Now(),
 		Provider:  p.providerName,
 		VoiceCharacteristics: internal.VoiceCharacteristics{
-			VoiceID:  p.config.VoiceID,
-			Language: p.config.LanguageCode,
+			VoiceID:  response.Voice.VoiceID,
+			Language: response.Voice.Language,
 		},
-		Latency: time.Since(startTime),
 	}
 
 	return output, nil
+}
+
+// handleBedrockError handles errors from Bedrock Runtime API.
+func (p *AmazonNovaProvider) handleBedrockError(operation string, err error) error {
+	if err == nil {
+		return nil
+	}
+
+	var errorCode string
+	var message string
+
+	errStr := err.Error()
+	if strings.Contains(errStr, "ThrottlingException") || strings.Contains(errStr, "429") {
+		errorCode = s2s.ErrCodeRateLimit
+		message = "Amazon Nova API rate limit exceeded"
+	} else if strings.Contains(errStr, "ValidationException") {
+		errorCode = s2s.ErrCodeInvalidRequest
+		message = "Amazon Nova API validation failed"
+	} else if strings.Contains(errStr, "ModelNotReadyException") {
+		errorCode = s2s.ErrCodeModelNotAvailable
+		message = "Amazon Nova model not available"
+	} else {
+		errorCode = s2s.ErrCodeInvalidRequest
+		message = "Amazon Nova API request failed"
+	}
+
+	return s2s.NewS2SErrorWithMessage(operation, errorCode, message, err)
 }
 
 // Name implements the S2SProvider interface.

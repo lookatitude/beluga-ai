@@ -308,6 +308,29 @@ if err != nil {
 
 ## Observability
 
+### Metrics Initialization
+
+The package uses a standardized metrics initialization pattern with `InitMetrics()` and `GetMetrics()`:
+
+```go
+import (
+    "go.opentelemetry.io/otel/metric"
+    "github.com/lookatitude/beluga-ai/pkg/prompts"
+)
+
+// Initialize metrics once at application startup
+meter := otel.Meter("beluga.prompts")
+prompts.InitMetrics(meter)
+
+// Get the global metrics instance
+metrics := prompts.GetMetrics()
+if metrics != nil {
+    // Metrics are automatically collected when using PromptManager
+}
+```
+
+**Note**: `InitMetrics()` uses `sync.Once` to ensure thread-safe initialization. It should be called once at application startup.
+
 ### Metrics
 
 The package includes comprehensive metrics collection using OpenTelemetry:

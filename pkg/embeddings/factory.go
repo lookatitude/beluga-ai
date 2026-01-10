@@ -89,3 +89,9 @@ func ListAvailableProviders() []string {
 func GetGlobalRegistry() *ProviderRegistry {
 	return globalRegistry
 }
+
+// GetRegistry returns the global registry instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetRegistry() *ProviderRegistry {
+	return globalRegistry
+}
