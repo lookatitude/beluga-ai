@@ -7,8 +7,15 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
+	"github.com/lookatitude/beluga-ai/pkg/chatmodels"
+	chatmodelsiface "github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
-	"github.com/lookatitude/beluga-ai/pkg/llms"
+	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
@@ -26,7 +33,7 @@ func main() {
 		log.Fatalf("Failed to create embedder: %v", err)
 	}
 
-	vectorStore, err := vectorstores.NewVectorStore(ctx, "inmemory",
+	vectorStore, err := vectorstores.NewInMemoryStore(ctx,
 		vectorstores.WithEmbedder(embedder),
 	)
 	if err != nil {
@@ -72,9 +79,7 @@ func main() {
 		),
 	}
 
-	_, err = vectorStore.AddDocuments(ctx, documents,
-		vectorstores.WithEmbedder(embedder),
-	)
+	_, err = vectorStore.AddDocuments(ctx, documents)
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
@@ -132,12 +137,15 @@ func main() {
 			schema.NewHumanMessage(context + "\n\nQuestion: " + query),
 		}
 
-		response, err := llm.Generate(ctx, messages)
+		responses, err := llm.GenerateMessages(ctx, messages)
 		if err != nil {
 			log.Fatalf("Failed to generate response: %v", err)
 		}
 
-		responseText := response.GetContent()
+		var responseText string
+		if len(responses) > 0 {
+			responseText = responses[0].GetContent()
+		}
 		fmt.Printf("🤖 Assistant: %s\n", responseText)
 
 		// Step 9: Save to memory
@@ -151,21 +159,30 @@ func main() {
 }
 
 // createEmbedder creates an embedder instance.
-func createEmbedder(ctx context.Context) (interface{}, error) {
+func createEmbedder(ctx context.Context) (embeddingsiface.Embedder, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock embedder")
-		return &mockEmbedder{}, nil
+		config := &embeddings.Config{
+			Mock: &embeddings.MockConfig{
+				Dimension: 1536,
+				Enabled:   true,
+			},
+		}
+		config.SetDefaults()
+		return embeddings.NewEmbedder(ctx, "mock", *config)
 	}
 
-	config := embeddings.NewConfig(
-		embeddings.WithProvider("openai"),
-		embeddings.WithModel("text-embedding-ada-002"),
-		embeddings.WithAPIKey(apiKey),
-	)
+	config := &embeddings.Config{
+		OpenAI: &embeddings.OpenAIConfig{
+			APIKey: apiKey,
+			Model:  "text-embedding-ada-002",
+			Enabled: true,
+		},
+	}
+	config.SetDefaults()
 
-	factory := embeddings.NewFactory()
-	embedder, err := factory.NewEmbedder("openai", config)
+	embedder, err := embeddings.NewEmbedder(ctx, "openai", *config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create embedder: %w", err)
 	}
@@ -173,24 +190,28 @@ func createEmbedder(ctx context.Context) (interface{}, error) {
 	return embedder, nil
 }
 
-// createLLM creates an LLM instance.
-func createLLM(ctx context.Context) (interface{}, error) {
+// createLLM creates a ChatModel instance.
+func createLLM(ctx context.Context) (chatmodelsiface.ChatModel, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock LLM")
-		return &mockLLM{}, nil
+		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock ChatModel")
+		return &mockChatModel{}, nil
 	}
 
-	config := llms.NewConfig(
-		llms.WithProvider("openai"),
-		llms.WithModelName("gpt-3.5-turbo"),
-		llms.WithAPIKey(apiKey),
-	)
+	config := chatmodels.DefaultConfig()
+	config.DefaultProvider = "openai"
+	if config.Providers == nil {
+		config.Providers = make(map[string]any)
+	}
+	config.Providers["openai"] = map[string]any{
+		"api_key": apiKey,
+		"model":   "gpt-3.5-turbo",
+		"enabled": true,
+	}
 
-	factory := llms.NewFactory()
-	llm, err := factory.CreateChatModel("openai", config)
+	llm, err := chatmodels.NewChatModel("gpt-3.5-turbo", config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create LLM: %w", err)
+		return nil, fmt.Errorf("failed to create ChatModel: %w", err)
 	}
 
 	return llm, nil
@@ -211,20 +232,89 @@ func (m *mockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, 
 	return make([]float32, 1536), nil
 }
 
-// mockLLM is a simple mock implementation.
-type mockLLM struct{}
+// mockChatModel is a simple mock implementation.
+type mockChatModel struct{}
 
-func (m *mockLLM) Generate(ctx context.Context, messages []interface{}) (interface{}, error) {
-	return &mockMessage{
-		content: "Based on the context provided, here is a helpful answer to your question.",
-	}, nil
+func (m *mockChatModel) GenerateMessages(ctx context.Context, messages []schema.Message, options ...core.Option) ([]schema.Message, error) {
+	return []schema.Message{schema.NewAIMessage("Based on the context provided, here is a helpful answer to your question.")}, nil
 }
 
-// mockMessage implements a simple message interface
-type mockMessage struct {
-	content string
+func (m *mockChatModel) StreamMessages(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan schema.Message, error) {
+	ch := make(chan schema.Message, 1)
+	ch <- schema.NewAIMessage("Based on the context provided, here is a helpful answer to your question.")
+	close(ch)
+	return ch, nil
 }
 
-func (m *mockMessage) GetContent() string {
-	return m.content
+func (m *mockChatModel) GetModelInfo() chatmodelsiface.ModelInfo {
+	return chatmodelsiface.ModelInfo{
+		Name:     "mock-model",
+		Provider: "mock-provider",
+	}
+}
+
+func (m *mockChatModel) CheckHealth() map[string]any {
+	return map[string]any{"status": "healthy"}
+}
+
+func (m *mockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	responses, err := m.GenerateMessages(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	if len(responses) > 0 {
+		return responses[0], nil
+	}
+	return nil, fmt.Errorf("no messages generated")
+}
+
+func (m *mockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := m.Invoke(ctx, input, options...)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+func (m *mockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	msgChan, err := m.StreamMessages(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	anyChan := make(chan any)
+	go func() {
+		defer close(anyChan)
+		for msg := range msgChan {
+			anyChan <- msg
+		}
+	}()
+	return anyChan, nil
+}
+
+func ensureMessages(input any) ([]schema.Message, error) {
+	switch v := input.(type) {
+	case []schema.Message:
+		return v, nil
+	case map[string]interface{}:
+		if inputVal, ok := v["input"].(string); ok {
+			return []schema.Message{schema.NewHumanMessage(inputVal)}, nil
+		}
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", v))}, nil
+	case string:
+		return []schema.Message{schema.NewHumanMessage(v)}, nil
+	default:
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", input))}, nil
+	}
 }

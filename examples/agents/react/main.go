@@ -6,12 +6,15 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
-	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	configiface "github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 func main() {
@@ -105,14 +108,11 @@ func createChatModel(ctx context.Context) (llmsiface.ChatModel, error) {
 		}, nil
 	}
 
-	config := llms.NewConfig(
-		llms.WithProvider("openai"),
-		llms.WithModelName("gpt-3.5-turbo"),
-		llms.WithAPIKey(apiKey),
-	)
+	config := llms.DefaultConfig()
+	config.APIKey = apiKey
+	config.ModelName = "gpt-3.5-turbo"
 
-	factory := llms.NewFactory()
-	chatModel, err := factory.CreateChatModel("openai", config)
+	chatModel, err := llms.NewChatModel("gpt-3.5-turbo", config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create chat model: %w", err)
 	}
@@ -125,7 +125,7 @@ func createTools() ([]tools.Tool, error) {
 	var toolList []tools.Tool
 
 	// Create calculator tool
-	calcConfig := iface.ToolConfig{
+	calcConfig := configiface.ToolConfig{
 		Name:        "calculator",
 		Description: "Performs basic arithmetic operations (add, subtract, multiply, divide)",
 	}
@@ -144,11 +144,23 @@ type mockChatModel struct {
 	providerName string
 }
 
-func (m *mockChatModel) Generate(ctx context.Context, messages []interface{}) (interface{}, error) {
+func (m *mockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	// Mock response simulating ReAct reasoning
-	return &mockMessage{
-		content: "Thought: I need to calculate 25 * 17 first.\nAction: calculator\nAction Input: {\"operation\": \"multiply\", \"a\": 25, \"b\": 17}\nObservation: 425\nThought: Now I need to find the square root of 425.\nAction: calculator\nAction Input: {\"operation\": \"sqrt\", \"value\": 425}\nObservation: 20.615528128088304\nFinal Answer: 25 * 17 = 425, and the square root of 425 is approximately 20.62.",
-	}, nil
+	return schema.NewAIMessage("Thought: I need to calculate 25 * 17 first.\nAction: calculator\nAction Input: {\"operation\": \"multiply\", \"a\": 25, \"b\": 17}\nObservation: 425\nThought: Now I need to find the square root of 425.\nAction: calculator\nAction Input: {\"operation\": \"sqrt\", \"value\": 425}\nObservation: 20.615528128088304\nFinal Answer: 25 * 17 = 425, and the square root of 425 is approximately 20.62."), nil
+}
+
+func (m *mockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error) {
+	ch := make(chan llmsiface.AIMessageChunk, 1)
+	ch <- llmsiface.AIMessageChunk{
+		Content: "Thought: I need to calculate 25 * 17 first.\nAction: calculator\nAction Input: {\"operation\": \"multiply\", \"a\": 25, \"b\": 17}\nObservation: 425\nThought: Now I need to find the square root of 425.\nAction: calculator\nAction Input: {\"operation\": \"sqrt\", \"value\": 425}\nObservation: 20.615528128088304\nFinal Answer: 25 * 17 = 425, and the square root of 425 is approximately 20.62.",
+	}
+	close(ch)
+	return ch, nil
+}
+
+func (m *mockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel {
+	// Return self - mock doesn't actually bind tools
+	return m
 }
 
 func (m *mockChatModel) GetModelName() string {
@@ -159,11 +171,65 @@ func (m *mockChatModel) GetProviderName() string {
 	return m.providerName
 }
 
-// mockMessage implements a simple message interface
-type mockMessage struct {
-	content string
+func (m *mockChatModel) CheckHealth() map[string]any {
+	return map[string]any{"status": "healthy"}
 }
 
-func (m *mockMessage) GetContent() string {
-	return m.content
+func (m *mockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	response, err := m.Generate(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	return response, nil
+}
+
+func (m *mockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := m.Invoke(ctx, input, options...)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+func (m *mockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	chunkChan, err := m.StreamChat(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	anyChan := make(chan any)
+	go func() {
+		defer close(anyChan)
+		for chunk := range chunkChan {
+			anyChan <- chunk
+		}
+	}()
+	return anyChan, nil
+}
+
+func ensureMessages(input any) ([]schema.Message, error) {
+	switch v := input.(type) {
+	case []schema.Message:
+		return v, nil
+	case map[string]interface{}:
+		if inputVal, ok := v["input"].(string); ok {
+			return []schema.Message{schema.NewHumanMessage(inputVal)}, nil
+		}
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", v))}, nil
+	case string:
+		return []schema.Message{schema.NewHumanMessage(v)}, nil
+	default:
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", input))}, nil
+	}
 }

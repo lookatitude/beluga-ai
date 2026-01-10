@@ -42,12 +42,11 @@ package chatmodels
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
-	"github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
-	"github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
+	"github.com/lookatitude/beluga-ai/pkg/chatmodels/registry"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -131,22 +130,16 @@ func NewChatModel(model string, config *Config, opts ...iface.Option) (iface.Cha
 		return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeConfigInvalid, err)
 	}
 
-	// Try to get provider from registry first
-	registry := GetRegistry()
+	// Use registry to create provider to avoid import cycles
+	// Provider init() functions will register themselves when imported elsewhere
+	registry := registry.GetRegistry()
 	if registry.IsRegistered(config.DefaultProvider) {
 		return registry.CreateProvider(model, config, options)
 	}
 
-	// Fallback to switch statement for backward compatibility
-	switch config.DefaultProvider {
-	case "openai":
-		return openai.NewOpenAIChatModel(model, config, options)
-	case "mock":
-		return mock.NewMockChatModel(model, config, options)
-	default:
-		return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeProviderNotSupported,
-			errors.New("unsupported provider: "+config.DefaultProvider))
-	}
+	// Provider not registered - return error suggesting import
+	return nil, NewChatModelError("creation", model, config.DefaultProvider, ErrCodeProviderNotSupported,
+		fmt.Errorf("provider '%s' not registered (import the provider package to register it, e.g., _ \"github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai\")", config.DefaultProvider))
 }
 
 // NewOpenAIChatModel creates a new OpenAI chat model instance.
@@ -367,17 +360,6 @@ func StreamMessages(ctx context.Context, model iface.ChatModel, messages []schem
 	return model.StreamMessages(ctx, messages, coreOpts...)
 }
 
-// Compile-time checks to ensure implementations satisfy interfaces
-// These are checked at build time to ensure proper interface implementation.
-var (
-	_ iface.ChatModel            = (*openai.OpenAIChatModel)(nil)
-	_ iface.ChatModel            = (*mock.MockChatModel)(nil)
-	_ iface.MessageGenerator     = (*openai.OpenAIChatModel)(nil)
-	_ iface.MessageGenerator     = (*mock.MockChatModel)(nil)
-	_ iface.StreamMessageHandler = (*openai.OpenAIChatModel)(nil)
-	_ iface.StreamMessageHandler = (*mock.MockChatModel)(nil)
-	_ iface.ModelInfoProvider    = (*openai.OpenAIChatModel)(nil)
-	_ iface.ModelInfoProvider    = (*mock.MockChatModel)(nil)
-	_ iface.HealthChecker        = (*openai.OpenAIChatModel)(nil)
-	_ iface.HealthChecker        = (*mock.MockChatModel)(nil)
-)
+// Compile-time interface checks are removed to avoid import cycles.
+// Provider packages (openai, mock, etc.) should verify their own interface implementations.
+// These checks can be added to provider-specific test files if needed.

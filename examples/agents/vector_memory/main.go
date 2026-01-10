@@ -6,12 +6,16 @@ import (
 	"log"
 	"os"
 
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
-	"github.com/lookatitude/beluga-ai/pkg/retrievers"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 )
 
@@ -34,42 +38,19 @@ func main() {
 	}
 
 	// Step 3: Create a vector store
-	vectorStore, err := vectorstores.NewVectorStore(ctx, "inmemory",
+	vectorStore, err := vectorstores.NewInMemoryStore(ctx,
 		vectorstores.WithEmbedder(embedder),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create vector store: %v", err)
 	}
 
-	// Step 4: Create a retriever
-	retriever, err := retrievers.NewVectorStoreRetriever(
-		vectorStore,
-		retrievers.WithDefaultK(3),
-	)
-	if err != nil {
-		log.Fatalf("Failed to create retriever: %v", err)
-	}
-
-	// Step 5: Create vector store memory
+	// Step 4: Create vector store memory
 	// Vector store memory uses semantic search to retrieve relevant past conversations
-	memConfig := memory.Config{
-		Type:      memory.MemoryTypeVectorStoreRetriever,
-		MemoryKey: "history",
-		InputKey:  "input",
-		OutputKey: "output",
-		Enabled:   true,
-		VectorStoreMemoryConfig: memory.VectorStoreMemoryConfig{
-			VectorStore: vectorStore,
-			Embedder:    embedder,
-			TopK:        3,
-		},
-	}
-
-	memFactory := memory.NewFactory()
-	mem, err := memFactory.CreateMemory(ctx, memConfig)
-	if err != nil {
-		log.Fatalf("Failed to create vector store memory: %v", err)
-	}
+	mem := memory.NewVectorStoreRetrieverMemory(
+		embedder,
+		vectorStore,
+	)
 
 	fmt.Println("\n🔍 Created vector store memory with semantic retrieval")
 
@@ -165,21 +146,30 @@ func createLLM(ctx context.Context) (llmsiface.LLM, error) {
 }
 
 // createEmbedder creates an embedder instance.
-func createEmbedder(ctx context.Context) (interface{}, error) {
+func createEmbedder(ctx context.Context) (embeddingsiface.Embedder, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
 		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock embedder")
-		return &mockEmbedder{}, nil
+		config := &embeddings.Config{
+			Mock: &embeddings.MockConfig{
+				Dimension: 1536,
+				Enabled:   true,
+			},
+		}
+		config.SetDefaults()
+		return embeddings.NewEmbedder(ctx, "mock", *config)
 	}
 
-	config := embeddings.NewConfig(
-		embeddings.WithProvider("openai"),
-		embeddings.WithModel("text-embedding-ada-002"),
-		embeddings.WithAPIKey(apiKey),
-	)
+	config := &embeddings.Config{
+		OpenAI: &embeddings.OpenAIConfig{
+			APIKey: apiKey,
+			Model:  "text-embedding-ada-002",
+			Enabled: true,
+		},
+	}
+	config.SetDefaults()
 
-	factory := embeddings.NewFactory()
-	embedder, err := factory.NewEmbedder("openai", config)
+	embedder, err := embeddings.NewEmbedder(ctx, "openai", *config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create embedder: %w", err)
 	}
@@ -193,7 +183,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return "Mock response based on context", nil
 }
 

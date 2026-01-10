@@ -4,7 +4,6 @@ package groq
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,6 +15,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/llms/internal/common"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	schemaiface "github.com/lookatitude/beluga-ai/pkg/schema/iface"
 )
 
 // Provider constants.
@@ -156,17 +156,34 @@ func (g *GroqProvider) Generate(ctx context.Context, messages []schema.Message, 
 	groqMessages := g.convertMessagesToGroqMessages(messages)
 
 	// Prepare request
+	temperature := float32(0.7) // Default temperature
+	if g.config.Temperature != nil {
+		temperature = *g.config.Temperature
+	}
+	maxTokens := 1024 // Default max tokens
+	if g.config.MaxTokens != nil {
+		maxTokens = *g.config.MaxTokens
+	}
 	req := &GroqChatRequest{
 		Model:       g.modelName,
 		Messages:    groqMessages,
-		Temperature: g.config.Temperature,
-		MaxTokens:   g.config.MaxTokens,
+		Temperature: temperature,
+		MaxTokens:   maxTokens,
 	}
 
 	// Add tools if bound
 	if len(g.tools) > 0 {
 		req.Tools = g.convertToolsToGroqTools(g.tools)
 		req.ToolChoice = "auto"
+	}
+
+	// Check that client is initialized (not yet implemented)
+	if g.client == nil {
+		err := llms.NewLLMErrorWithMessage("Generate", llms.ErrCodeInternalError,
+			"groq provider is not yet implemented: client initialization is required", nil)
+		g.metrics.RecordError(ctx, ProviderName, g.modelName, llms.ErrCodeInternalError, time.Since(start))
+		g.tracing.RecordError(ctx, err)
+		return nil, err
 	}
 
 	// Execute with retry
@@ -181,7 +198,7 @@ func (g *GroqProvider) Generate(ctx context.Context, messages []schema.Message, 
 	duration := time.Since(start)
 
 	if retryErr != nil {
-		g.metrics.RecordError(ctx, ProviderName, g.modelName, llms.GetErrorCode(retryErr), duration)
+		g.metrics.RecordError(ctx, ProviderName, g.modelName, llms.GetLLMErrorCode(retryErr), duration)
 		g.tracing.RecordError(ctx, retryErr)
 		return nil, g.handleGroqError("Generate", retryErr)
 	}
@@ -197,7 +214,7 @@ func (g *GroqProvider) Generate(ctx context.Context, messages []schema.Message, 
 
 	// Record metrics
 	g.metrics.RecordRequest(ctx, ProviderName, g.modelName, duration)
-	g.metrics.RecordTokens(ctx, ProviderName, g.modelName, resp.Usage.PromptTokens, resp.Usage.CompletionTokens)
+	g.metrics.RecordTokenUsage(ctx, ProviderName, g.modelName, resp.Usage.PromptTokens, resp.Usage.CompletionTokens)
 
 	return aiMessage, nil
 }
@@ -213,17 +230,37 @@ func (g *GroqProvider) StreamChat(ctx context.Context, messages []schema.Message
 	groqMessages := g.convertMessagesToGroqMessages(messages)
 
 	// Prepare request
+	temperature := float32(0.7) // Default temperature
+	if g.config.Temperature != nil {
+		temperature = *g.config.Temperature
+	}
+	maxTokens := 1024 // Default max tokens
+	if g.config.MaxTokens != nil {
+		maxTokens = *g.config.MaxTokens
+	}
 	req := &GroqChatRequest{
 		Model:       g.modelName,
 		Messages:    groqMessages,
-		Temperature: g.config.Temperature,
-		MaxTokens:   g.config.MaxTokens,
+		Temperature: temperature,
+		MaxTokens:   maxTokens,
 	}
 
 	// Add tools if bound
 	if len(g.tools) > 0 {
 		req.Tools = g.convertToolsToGroqTools(g.tools)
 		req.ToolChoice = "auto"
+	}
+
+	// Check that client is initialized (not yet implemented)
+	if g.client == nil {
+		err := llms.NewLLMErrorWithMessage("StreamChat", llms.ErrCodeInternalError,
+			"groq provider is not yet implemented: client initialization is required", nil)
+		g.tracing.RecordError(ctx, err)
+		go func() {
+			defer close(ch)
+			ch <- iface.AIMessageChunk{Err: err}
+		}()
+		return ch, nil
 	}
 
 	// Start streaming in goroutine
@@ -347,12 +384,12 @@ func (g *GroqProvider) convertMessagesToGroqMessages(messages []schema.Message) 
 	groqMessages := make([]GroqMessage, 0, len(messages))
 	for _, msg := range messages {
 		role := "user"
-		switch msg.(type) {
-		case *schema.SystemMessage:
+		switch msg.GetType() {
+		case schemaiface.RoleSystem:
 			role = "system"
-		case *schema.AIMessage:
+		case schemaiface.RoleAssistant:
 			role = "assistant"
-		case *schema.HumanMessage:
+		case schemaiface.RoleHuman:
 			role = "user"
 		}
 
@@ -367,12 +404,24 @@ func (g *GroqProvider) convertMessagesToGroqMessages(messages []schema.Message) 
 func (g *GroqProvider) convertToolsToGroqTools(tools []tools.Tool) []GroqTool {
 	groqTools := make([]GroqTool, 0, len(tools))
 	for _, tool := range tools {
+		inputSchema := tool.Definition().InputSchema
+		var schemaMap map[string]any
+		if inputSchema != nil {
+			if m, ok := inputSchema.(map[string]any); ok {
+				schemaMap = m
+			} else {
+				// Convert to map if needed
+				schemaMap = make(map[string]any)
+			}
+		} else {
+			schemaMap = make(map[string]any)
+		}
 		groqTool := GroqTool{
 			Type: "function",
 			Function: GroqFunction{
 				Name:        tool.Name(),
 				Description: tool.Description(),
-				Parameters:  g.convertToolSchema(tool.Schema()),
+				Parameters:  g.convertToolSchema(schemaMap),
 			},
 		}
 		groqTools = append(groqTools, groqTool)

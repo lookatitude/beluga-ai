@@ -11,6 +11,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+
+	// Import providers to register them for tests
+	// This is now safe because providers use registry/iface instead of importing the main package
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 )
 
 // Test helper functions and utilities.
@@ -1268,7 +1273,7 @@ func TestErrorScenarios(t *testing.T) {
 				})
 			},
 			expectError:   true,
-			errorContains: "unsupported provider",
+			errorContains: "not registered",
 		},
 		{
 			name: "invalid config",

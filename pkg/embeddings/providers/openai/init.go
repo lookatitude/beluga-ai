@@ -4,31 +4,66 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
+	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/registry"
 	"go.opentelemetry.io/otel"
 )
 
 func init() {
 	// Register OpenAI provider with the global registry
-	embeddings.GetRegistry().Register("openai", func(ctx context.Context, config embeddings.Config) (embeddingsiface.Embedder, error) {
-		if config.OpenAI == nil || !config.OpenAI.Enabled {
+	// Use registry package directly to avoid import cycles in tests
+	// Use reflection to access config fields without importing embeddings package
+	registry.GetRegistry().Register("openai", func(ctx context.Context, config any) (embeddingsiface.Embedder, error) {
+		// Use reflection to access config.OpenAI without importing embeddings
+		configValue := reflect.ValueOf(config)
+		if configValue.Kind() == reflect.Ptr {
+			configValue = configValue.Elem()
+		}
+
+		// Get the OpenAI field using reflection
+		openaiField := configValue.FieldByName("OpenAI")
+		if !openaiField.IsValid() || openaiField.IsNil() {
 			return nil, errors.New("OpenAI provider is not configured or disabled")
 		}
 
-		if err := config.OpenAI.Validate(); err != nil {
-			return nil, fmt.Errorf("invalid OpenAI configuration: %w", err)
+		openaiValue := openaiField.Elem()
+
+		// Check Enabled field
+		enabledField := openaiValue.FieldByName("Enabled")
+		if !enabledField.IsValid() || !enabledField.Bool() {
+			return nil, errors.New("OpenAI provider is not configured or disabled")
 		}
 
+		// Extract config values using reflection
+		apiKeyField := openaiValue.FieldByName("APIKey")
+		modelField := openaiValue.FieldByName("Model")
+		baseURLField := openaiValue.FieldByName("BaseURL")
+		apiVersionField := openaiValue.FieldByName("APIVersion")
+		timeoutField := openaiValue.FieldByName("Timeout")
+		maxRetriesField := openaiValue.FieldByName("MaxRetries")
+
 		openaiConfig := &Config{
-			APIKey:     config.OpenAI.APIKey,
-			Model:      config.OpenAI.Model,
-			BaseURL:    config.OpenAI.BaseURL,
-			APIVersion: config.OpenAI.APIVersion,
-			Timeout:    config.OpenAI.Timeout,
-			MaxRetries: config.OpenAI.MaxRetries,
-			Enabled:    config.OpenAI.Enabled,
+			APIKey:     apiKeyField.String(),
+			Model:      modelField.String(),
+			BaseURL:    baseURLField.String(),
+			APIVersion: apiVersionField.String(),
+			Timeout:    timeoutField.Interface().(time.Duration),
+			MaxRetries: int(maxRetriesField.Int()),
+			Enabled:    enabledField.Bool(),
+		}
+
+		// Validate using reflection (call Validate method if it exists)
+		validateMethod := openaiValue.MethodByName("Validate")
+		if validateMethod.IsValid() {
+			results := validateMethod.Call(nil)
+			if len(results) > 0 && !results[0].IsNil() {
+				if err, ok := results[0].Interface().(error); ok && err != nil {
+					return nil, fmt.Errorf("invalid OpenAI configuration: %w", err)
+				}
+			}
 		}
 
 		tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")

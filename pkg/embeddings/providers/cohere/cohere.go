@@ -40,10 +40,10 @@ type Client interface {
 
 // CohereEmbedRequest represents a request to Cohere embed API.
 type CohereEmbedRequest struct {
-	Texts      []string `json:"texts"`
-	Model      string   `json:"model"`
-	InputType  string   `json:"input_type,omitempty"` // "search_document", "search_query", etc.
-	Truncate   string   `json:"truncate,omitempty"`   // "NONE", "START", "END"
+	Texts     []string `json:"texts"`
+	Model     string   `json:"model"`
+	InputType string   `json:"input_type,omitempty"` // "search_document", "search_query", etc.
+	Truncate  string   `json:"truncate,omitempty"`   // "NONE", "START", "END"
 }
 
 // CohereEmbedResponse represents a response from Cohere embed API.
@@ -124,16 +124,19 @@ func (e *CohereEmbedder) EmbedDocuments(ctx context.Context, documents []string)
 		return [][]float32{}, nil
 	}
 
+	// Check that client is initialized (not yet implemented)
+	if e.client == nil {
+		err := iface.NewEmbeddingError(iface.ErrCodeConnectionFailed,
+			"cohere provider is not yet implemented: client initialization is required")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+
 	// Prepare request
 	model := e.config.Model
 	if model == "" {
 		model = "embed-english-v3.0" // Default Cohere model
-	}
-
-	req := &CohereEmbedRequest{
-		Texts:     documents,
-		Model:     model,
-		InputType: "search_document",
 	}
 
 	// Call Cohere API
@@ -170,7 +173,16 @@ func (e *CohereEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32
 	defer span.End()
 
 	if text == "" {
-		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidInput, "text cannot be empty")
+		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidParameters, "text cannot be empty")
+	}
+
+	// Check that client is initialized (not yet implemented)
+	if e.client == nil {
+		err := iface.NewEmbeddingError(iface.ErrCodeConnectionFailed,
+			"cohere provider is not yet implemented: client initialization is required")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
 	}
 
 	// Prepare request
@@ -180,12 +192,6 @@ func (e *CohereEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32
 	}
 
 	// Call Cohere API with input_type="search_query"
-	req := &CohereEmbedRequest{
-		Texts:     []string{text},
-		Model:     model,
-		InputType: "search_query",
-	}
-
 	resp, err := e.client.Embed(ctx, []string{text}, model)
 	if err != nil {
 		span.RecordError(err)

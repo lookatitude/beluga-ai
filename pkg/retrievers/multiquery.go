@@ -159,7 +159,7 @@ func (m *MultiQueryRetriever) GetRelevantDocuments(ctx context.Context, query st
 			docID := doc.ID
 			if docID == "" {
 				// Use content hash as ID if no ID is present
-				docID = fmt.Sprintf("doc-%d", len(doc.Content))
+				docID = fmt.Sprintf("doc-%d", len(doc.GetContent()))
 			}
 
 			// If document already exists, keep the one with higher score

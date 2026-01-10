@@ -13,6 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -326,7 +327,17 @@ func (a *PlanExecuteAgent) executeStep(ctx context.Context, step PlanStep, previ
 		}
 
 		// Execute tool
-		result, err := tool.Invoke(ctx, toolInput)
+		// Check if tool implements core.Runnable (has Invoke method)
+		var result any
+		var err error
+		if runnable, ok := tool.(interface {
+			Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
+		}); ok {
+			result, err = runnable.Invoke(ctx, toolInput)
+		} else {
+			// Fallback to Execute method
+			result, err = tool.Execute(ctx, toolInput)
+		}
 		if err != nil {
 			return "", fmt.Errorf("tool execution failed: %w", err)
 		}

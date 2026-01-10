@@ -10,6 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
@@ -136,7 +137,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Mock response that simulates tool usage
 	return "I calculated 15 * 23 = 345, and echoed: 345", nil
 }

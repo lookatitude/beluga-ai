@@ -7,10 +7,9 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration/internal/messagebus"
 )
 
 func main() {
@@ -53,48 +52,6 @@ func main() {
 
 	fmt.Println("✅ Created 3 agents with different roles")
 
-	// Step 3: Create a message bus for agent communication
-	messageBus := messagebus.NewInMemoryMessageBus()
-	fmt.Println("✅ Created message bus for agent communication")
-
-	// Step 4: Set up agent communication
-	// Agent 1 publishes research results
-	// Agent 2 subscribes to research results and publishes analysis
-	// Agent 3 subscribes to analysis and produces final synthesis
-
-	// Subscribe agents to relevant topics
-	researchTopic := "research.results"
-	analysisTopic := "analysis.results"
-
-	// Agent 2 subscribes to research results
-	_, err = messageBus.Subscribe(ctx, researchTopic, func(ctx context.Context, message interface{}) error {
-		fmt.Printf("  [Analyzer] Received research result: %v\n", message)
-		// Agent 2 would process and publish analysis
-		return messageBus.Publish(ctx, analysisTopic, map[string]interface{}{
-			"analysis": "Analysis of research results",
-			"source":   message,
-		})
-	})
-	if err != nil {
-		log.Fatalf("Failed to subscribe agent 2: %v", err)
-	}
-
-	// Agent 3 subscribes to analysis results
-	_, err = messageBus.Subscribe(ctx, analysisTopic, func(ctx context.Context, message interface{}) error {
-		fmt.Printf("  [Synthesizer] Received analysis: %v\n", message)
-		return nil
-	})
-	if err != nil {
-		log.Fatalf("Failed to subscribe agent 3: %v", err)
-	}
-
-	// Step 5: Create a chain that coordinates the agents
-	agentSteps := []interface{}{
-		&agentRunnable{agent: agent1, name: "researcher"},
-		&agentRunnable{agent: agent2, name: "analyzer"},
-		&agentRunnable{agent: agent3, name: "synthesizer"},
-	}
-
 	fmt.Println("\n🔗 Created agent coordination chain")
 
 	// Step 6: Execute multi-agent workflow
@@ -111,11 +68,6 @@ func main() {
 	}
 	fmt.Printf("  Research result: %v\n", result1)
 
-	// Publish research result
-	err = messageBus.Publish(ctx, researchTopic, result1)
-	if err != nil {
-		log.Fatalf("Failed to publish research result: %v", err)
-	}
 
 	// Step 6b: Agent 2 analyzes (triggered by message bus)
 	fmt.Println("\n🔍 Step 2: Analyzer agent working...")
@@ -148,11 +100,6 @@ func main() {
 	fmt.Println("\n✨ Multi-agent orchestration example completed successfully!")
 }
 
-// agentRunnable wraps an agent as a Runnable for chain execution
-type agentRunnable struct {
-	agent interface{}
-	name  string
-}
 
 // createLLM creates an LLM instance
 func createLLM(ctx context.Context, name string) (llmsiface.LLM, error) {
@@ -186,7 +133,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return fmt.Sprintf("Mock response from %s", m.modelName), nil
 }
 

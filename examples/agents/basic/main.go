@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
-	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
 func main() {
@@ -81,7 +81,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Simple mock response
 	return "The capital of France is Paris.", nil
 }

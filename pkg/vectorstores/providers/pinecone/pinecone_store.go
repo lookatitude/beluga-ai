@@ -28,7 +28,6 @@ package pinecone
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -168,7 +167,7 @@ func (s *PineconeStore) AddDocuments(ctx context.Context, documents []schema.Doc
 	if config.Embedder != nil {
 		texts := make([]string, len(documents))
 		for i, doc := range documents {
-			texts[i] = doc.Content
+			texts[i] = doc.GetContent()
 		}
 		embeddings, err = config.Embedder.EmbedDocuments(ctx, texts)
 		if err != nil {
@@ -179,11 +178,12 @@ func (s *PineconeStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		// Check if documents already have embeddings
 		embeddings = make([][]float32, len(documents))
 		for i, doc := range documents {
-			if embedding, ok := doc.Metadata["embedding"].([]float32); ok {
-				embeddings[i] = embedding
+			// Check if document has embedding field set
+			if len(doc.Embedding) > 0 {
+				embeddings[i] = doc.Embedding
 			} else {
 				return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-					"no embedder provided and document %d has no embedding in metadata", i)
+					"no embedder provided and document %d has no embedding", i)
 			}
 		}
 	}
@@ -207,7 +207,7 @@ func (s *PineconeStore) AddDocuments(ctx context.Context, documents []schema.Doc
 				metadata[k] = v
 			}
 		}
-		metadata["content"] = doc.Content
+		metadata["content"] = doc.GetContent()
 
 		vectors[i] = PineconeVector{
 			ID:       id,
@@ -257,9 +257,9 @@ func (s *PineconeStore) SimilaritySearch(ctx context.Context, queryVector []floa
 	}
 
 	// Use k from options if provided, otherwise use parameter
-	searchK := k
+	_ = k // TODO: Use k when implementing query
 	if config.SearchK > 0 {
-		searchK = config.SearchK
+		_ = config.SearchK // TODO: Use config.SearchK when implementing query
 	}
 
 	// TODO: Call Pinecone query API
