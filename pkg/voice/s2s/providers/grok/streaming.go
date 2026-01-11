@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -19,16 +20,20 @@ import (
 
 // GrokVoiceStreamingSession implements StreamingSession for Grok Voice Agent.
 type GrokVoiceStreamingSession struct {
-	ctx         context.Context //nolint:containedctx // Required for streaming
-	config      *GrokVoiceConfig
-	provider    *GrokVoiceProvider
-	httpClient  HTTPClient
-	audioCh     chan iface.AudioOutputChunk
-	closed      bool
-	mu          sync.RWMutex
-	audioBuffer []byte
-	restartCh   chan struct{} // Channel to signal streaming restart
-	cancelFunc  context.CancelFunc // Cancel function for current streaming context
+	ctx            context.Context //nolint:containedctx // Required for streaming
+	config         *GrokVoiceConfig
+	provider       *GrokVoiceProvider
+	httpClient     HTTPClient
+	audioCh        chan iface.AudioOutputChunk
+	closed         bool
+	mu             sync.RWMutex
+	audioBuffer    []byte
+	restartCh      chan struct{} // Channel to signal streaming restart
+	cancelFunc     context.CancelFunc // Cancel function for current streaming context
+	restartTimer   *time.Timer // Timer for debouncing restarts
+	restartPending bool // Flag to indicate if restart is pending
+	maxRetries     int // Maximum retry attempts for stream restart
+	retryDelay     time.Duration // Initial retry delay
 }
 
 // GrokStreamResponse represents a streaming response from Grok API.
@@ -49,13 +54,15 @@ type GrokStreamResponse struct {
 func NewGrokVoiceStreamingSession(ctx context.Context, config *GrokVoiceConfig, provider *GrokVoiceProvider) (*GrokVoiceStreamingSession, error) {
 	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GrokVoiceStreamingSession{
-		ctx:        ctx,
-		config:     config,
-		provider:   provider,
-		audioCh:    make(chan iface.AudioOutputChunk, 10),
-		httpClient: provider.httpClient,
-		restartCh:  make(chan struct{}, 1),
-		cancelFunc: cancel,
+		ctx:         ctx,
+		config:      config,
+		provider:    provider,
+		audioCh:     make(chan iface.AudioOutputChunk, 10),
+		httpClient:  provider.httpClient,
+		restartCh:   make(chan struct{}, 1),
+		cancelFunc:  cancel,
+		maxRetries:  3, // Default max retries
+		retryDelay:  100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Grok uses Server-Sent Events (SSE) for streaming
@@ -232,8 +239,11 @@ func (s *GrokVoiceStreamingSession) SendAudio(ctx context.Context, audio []byte)
 	// Buffer audio for sending
 	s.mu.Lock()
 	s.audioBuffer = append(s.audioBuffer, audio...)
-	audioBuffer := make([]byte, len(s.audioBuffer))
-	copy(audioBuffer, s.audioBuffer)
+	bufferSize := len(s.audioBuffer)
+	shouldRestart := !s.restartPending
+	if shouldRestart {
+		s.restartPending = true
+	}
 	s.mu.Unlock()
 
 	// NOTE: Grok Voice Agent streaming API is a one-way streaming API
@@ -242,19 +252,82 @@ func (s *GrokVoiceStreamingSession) SendAudio(ctx context.Context, audio []byte)
 	//
 	// For true bidirectional streaming, use OpenAI Realtime provider.
 
-	// Cancel current streaming context to stop the current stream
-	s.cancelFunc()
-
-	// Create new streaming context
-	streamCtx, cancel := context.WithCancel(ctx)
-	s.mu.Lock()
-	s.cancelFunc = cancel
-	s.mu.Unlock()
-
-	// Start new streaming session with accumulated audio
-	go s.handleStreaming(streamCtx)
+	// Debounce restarts to reduce unnecessary stream restarts
+	if shouldRestart {
+		s.mu.Lock()
+		if s.restartTimer != nil {
+			s.restartTimer.Stop()
+		}
+		restartDelay := 50 * time.Millisecond
+		if bufferSize > 4096 {
+			restartDelay = 0
+		}
+		s.restartTimer = time.AfterFunc(restartDelay, func() {
+			s.restartStreamWithRetry(ctx)
+		})
+		s.mu.Unlock()
+	}
 
 	return nil
+}
+
+// restartStreamWithRetry restarts the streaming session with retry logic.
+func (s *GrokVoiceStreamingSession) restartStreamWithRetry(ctx context.Context) {
+	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
+	audioBuffer := make([]byte, len(s.audioBuffer))
+	copy(audioBuffer, s.audioBuffer)
+	s.audioBuffer = nil
+	restartPending := s.restartPending
+	s.restartPending = false
+	s.mu.Unlock()
+
+	if !restartPending {
+		return
+	}
+
+	s.cancelFunc()
+
+	backoff := s.retryDelay
+	for attempt := 0; attempt <= s.maxRetries; attempt++ {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.ctx.Done():
+				return
+			case <-time.After(backoff):
+				backoff = time.Duration(float64(backoff) * 1.5)
+			}
+		}
+
+		s.mu.RLock()
+		closed := s.closed
+		s.mu.RUnlock()
+		if closed {
+			return
+		}
+
+		streamCtx, cancel := context.WithCancel(ctx)
+		s.mu.Lock()
+		s.cancelFunc = cancel
+		s.audioBuffer = audioBuffer
+		s.mu.Unlock()
+
+		go func() {
+			s.handleStreaming(streamCtx)
+			s.mu.Lock()
+			if len(s.audioBuffer) == len(audioBuffer) {
+				s.audioBuffer = nil
+			}
+			s.mu.Unlock()
+		}()
+
+		return
+	}
 }
 
 // ReceiveAudio implements the StreamingSession interface.
@@ -272,6 +345,9 @@ func (s *GrokVoiceStreamingSession) Close() error {
 	}
 
 	s.closed = true
+	if s.restartTimer != nil {
+		s.restartTimer.Stop()
+	}
 	if s.cancelFunc != nil {
 		s.cancelFunc()
 	}

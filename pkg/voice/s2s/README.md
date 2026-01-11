@@ -373,6 +373,215 @@ See `examples/voice/s2s/` for complete examples:
 - `multi_provider.go`: Multi-provider configuration
 - `agent_integration.go`: Agent integration examples
 
+### Streaming Examples
+
+#### Basic Streaming Session
+
+```go
+import (
+    "context"
+    "time"
+    
+    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
+    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/internal"
+)
+
+func streamingExample(ctx context.Context, provider iface.S2SProvider) error {
+    // Check if provider supports streaming
+    streamingProvider, ok := provider.(iface.StreamingS2SProvider)
+    if !ok {
+        return fmt.Errorf("provider does not support streaming")
+    }
+    
+    // Create conversation context
+    convCtx := &internal.ConversationContext{
+        ConversationID: "conv-123",
+        SessionID:      "session-456",
+    }
+    
+    // Start streaming session
+    session, err := streamingProvider.StartStreaming(ctx, convCtx)
+    if err != nil {
+        return fmt.Errorf("failed to start streaming: %w", err)
+    }
+    defer session.Close()
+    
+    // Send audio chunks
+    audioChunks := [][]byte{
+        []byte{1, 2, 3, 4},
+        []byte{5, 6, 7, 8},
+    }
+    
+    for _, chunk := range audioChunks {
+        if err := session.SendAudio(ctx, chunk); err != nil {
+            return fmt.Errorf("failed to send audio: %w", err)
+        }
+        time.Sleep(100 * time.Millisecond) // Small delay between chunks
+    }
+    
+    // Receive audio output
+    for {
+        select {
+        case outputChunk := <-session.ReceiveAudio():
+            if outputChunk.Error != nil {
+                return fmt.Errorf("streaming error: %w", outputChunk.Error)
+            }
+            // Process audio output
+            processAudioOutput(outputChunk.Audio)
+            
+            if outputChunk.IsFinal {
+                return nil // Stream complete
+            }
+        case <-ctx.Done():
+            return ctx.Err()
+        case <-time.After(5 * time.Second):
+            return fmt.Errorf("timeout waiting for audio")
+        }
+    }
+}
+```
+
+#### Streaming with Error Handling and Retry
+
+```go
+func streamingWithRetry(ctx context.Context, provider iface.StreamingS2SProvider) error {
+    convCtx := &internal.ConversationContext{
+        ConversationID: "conv-123",
+        SessionID:      "session-456",
+    }
+    
+    maxRetries := 3
+    for attempt := 0; attempt < maxRetries; attempt++ {
+        session, err := streamingProvider.StartStreaming(ctx, convCtx)
+        if err != nil {
+            if attempt < maxRetries-1 {
+                time.Sleep(time.Duration(attempt+1) * 100 * time.Millisecond)
+                continue
+            }
+            return fmt.Errorf("failed to start streaming after %d attempts: %w", maxRetries, err)
+        }
+        
+        // Use session...
+        defer session.Close()
+        
+        // Send audio with retry logic
+        audio := []byte{1, 2, 3, 4}
+        for i := 0; i < 3; i++ {
+            err = session.SendAudio(ctx, audio)
+            if err == nil {
+                break
+            }
+            if i < 2 {
+                time.Sleep(time.Duration(i+1) * 50 * time.Millisecond)
+            }
+        }
+        
+        if err != nil {
+            return fmt.Errorf("failed to send audio: %w", err)
+        }
+        
+        return nil
+    }
+    
+    return fmt.Errorf("max retries exceeded")
+}
+```
+
+#### Bidirectional Streaming (OpenAI Realtime)
+
+```go
+func bidirectionalStreaming(ctx context.Context, provider iface.StreamingS2SProvider) error {
+    convCtx := &internal.ConversationContext{
+        ConversationID: "conv-123",
+        SessionID:      "session-456",
+    }
+    
+    session, err := provider.StartStreaming(ctx, convCtx)
+    if err != nil {
+        return err
+    }
+    defer session.Close()
+    
+    // Start goroutine to receive audio
+    audioOutput := make(chan []byte, 10)
+    go func() {
+        for chunk := range session.ReceiveAudio() {
+            if chunk.Error != nil {
+                log.Printf("Streaming error: %v", chunk.Error)
+                continue
+            }
+            audioOutput <- chunk.Audio
+            if chunk.IsFinal {
+                close(audioOutput)
+                return
+            }
+        }
+    }()
+    
+    // Send audio in a loop
+    for {
+        select {
+        case audio := <-getAudioInput():
+            if err := session.SendAudio(ctx, audio); err != nil {
+                return fmt.Errorf("failed to send audio: %w", err)
+            }
+        case output := <-audioOutput:
+            processAudioOutput(output)
+        case <-ctx.Done():
+            return ctx.Err()
+        }
+    }
+}
+```
+
+#### Streaming with Context Cancellation
+
+```go
+func streamingWithCancellation(ctx context.Context, provider iface.StreamingS2SProvider) error {
+    // Create context with timeout
+    streamCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+    defer cancel()
+    
+    convCtx := &internal.ConversationContext{
+        ConversationID: "conv-123",
+        SessionID:      "session-456",
+    }
+    
+    session, err := provider.StartStreaming(streamCtx, convCtx)
+    if err != nil {
+        return err
+    }
+    defer session.Close()
+    
+    // Send audio with context checking
+    audio := []byte{1, 2, 3, 4}
+    select {
+    case <-streamCtx.Done():
+        return streamCtx.Err()
+    default:
+        if err := session.SendAudio(streamCtx, audio); err != nil {
+            if errors.Is(err, context.Canceled) {
+                return fmt.Errorf("stream cancelled: %w", err)
+            }
+            return err
+        }
+    }
+    
+    return nil
+}
+```
+
+### Notes on Streaming Behavior
+
+1. **One-Way Streaming (Nova, Gemini, Grok)**: These providers use one-way streaming APIs. `SendAudio()` creates new streaming requests with accumulated audio, providing functional (though not truly bidirectional) streaming.
+
+2. **Bidirectional Streaming (OpenAI Realtime)**: Supports true bidirectional streaming where audio can be sent and received simultaneously.
+
+3. **Stream Restart Optimization**: The implementation includes debouncing and retry logic to optimize stream restarts when using one-way streaming providers.
+
+4. **Error Recovery**: Automatic retry with exponential backoff is built into the streaming implementation.
+
 ## Package Design
 
 The S2S package follows Beluga AI Framework design patterns:

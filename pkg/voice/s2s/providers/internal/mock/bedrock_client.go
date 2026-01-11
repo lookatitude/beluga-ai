@@ -13,15 +13,18 @@ import (
 // This allows us to mock Bedrock API calls in tests.
 type BedrockRuntimeClient interface {
 	InvokeModel(ctx context.Context, params *bedrockruntime.InvokeModelInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.InvokeModelOutput, error)
+	InvokeModelWithResponseStream(ctx context.Context, params *bedrockruntime.InvokeModelWithResponseStreamInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.InvokeModelWithResponseStreamOutput, error)
 }
 
 // MockBedrockClient is a mock implementation of BedrockRuntimeClient for testing.
 type MockBedrockClient struct {
-	mu            sync.RWMutex
-	responses     map[string]*MockBedrockResponse
-	defaultResp   *MockBedrockResponse
-	requestCount  map[string]int
-	invokeErrors  map[string]error
+	mu              sync.RWMutex
+	responses       map[string]*MockBedrockResponse
+	defaultResp     *MockBedrockResponse
+	requestCount    map[string]int
+	invokeErrors    map[string]error
+	streamResponses map[string]*MockBedrockStreamResponse
+	defaultStreamResp *MockBedrockStreamResponse
 }
 
 // MockBedrockResponse represents a mock Bedrock API response.
@@ -31,12 +34,19 @@ type MockBedrockResponse struct {
 	Error       error
 }
 
+// MockBedrockStreamResponse represents a mock Bedrock streaming API response.
+type MockBedrockStreamResponse struct {
+	Chunks []types.ResponseStream
+	Error  error
+}
+
 // NewMockBedrockClient creates a new mock Bedrock client.
 func NewMockBedrockClient() *MockBedrockClient {
 	return &MockBedrockClient{
-		responses:    make(map[string]*MockBedrockResponse),
-		requestCount: make(map[string]int),
-		invokeErrors: make(map[string]error),
+		responses:        make(map[string]*MockBedrockResponse),
+		requestCount:     make(map[string]int),
+		invokeErrors:     make(map[string]error),
+		streamResponses:  make(map[string]*MockBedrockStreamResponse),
 	}
 }
 
@@ -117,4 +127,58 @@ func (m *MockBedrockClient) InvokeModel(ctx context.Context, params *bedrockrunt
 	}
 
 	return output, nil
+}
+
+// SetInvokeModelWithResponseStream sets a mock response for InvokeModelWithResponseStream.
+func (m *MockBedrockClient) SetInvokeModelWithResponseStream(modelID string, resp *MockBedrockStreamResponse) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.streamResponses[modelID] = resp
+}
+
+// SetDefaultStreamResponse sets the default stream response.
+func (m *MockBedrockClient) SetDefaultStreamResponse(resp *MockBedrockStreamResponse) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.defaultStreamResp = resp
+}
+
+// InvokeModelWithResponseStream implements BedrockRuntimeClient interface.
+// NOTE: This mock returns a basic output. The GetStream() method is populated by the SDK internally.
+// For comprehensive streaming tests, use the actual Bedrock SDK client or implement a more complete mock.
+func (m *MockBedrockClient) InvokeModelWithResponseStream(ctx context.Context, params *bedrockruntime.InvokeModelWithResponseStreamInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.InvokeModelWithResponseStreamOutput, error) {
+	modelID := ""
+	if params.ModelId != nil {
+		modelID = *params.ModelId
+	}
+
+	m.mu.Lock()
+	m.requestCount[modelID]++
+	m.mu.Unlock()
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	// Check for explicit error
+	if err, ok := m.invokeErrors[modelID]; ok {
+		return nil, err
+	}
+
+	// Find matching stream response
+	var streamResp *MockBedrockStreamResponse
+	if r, ok := m.streamResponses[modelID]; ok {
+		streamResp = r
+	} else {
+		streamResp = m.defaultStreamResp
+	}
+
+	if streamResp != nil && streamResp.Error != nil {
+		return nil, streamResp.Error
+	}
+
+	// Return basic output - GetStream() is populated by SDK internally
+	// For testing, this will need to be handled differently or use real SDK
+	return &bedrockruntime.InvokeModelWithResponseStreamOutput{
+		ContentType: aws.String("application/json"),
+	}, nil
 }

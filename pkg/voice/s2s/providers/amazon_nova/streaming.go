@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
@@ -28,15 +29,21 @@ type AmazonNovaStreamingSession struct {
 	stream         *bedrockruntime.InvokeModelWithResponseStreamOutput
 	audioBuffer    []byte
 	conversationID string
+	restartTimer   *time.Timer // Timer for debouncing restarts
+	restartPending bool // Flag to indicate if restart is pending
+	maxRetries     int // Maximum retry attempts for stream restart
+	retryDelay     time.Duration // Initial retry delay
 }
 
 // NewAmazonNovaStreamingSession creates a new streaming session.
 func NewAmazonNovaStreamingSession(ctx context.Context, config *AmazonNovaConfig, provider *AmazonNovaProvider) (*AmazonNovaStreamingSession, error) {
 	session := &AmazonNovaStreamingSession{
-		ctx:      ctx,
-		config:   config,
-		provider: provider,
-		audioCh:  make(chan iface.AudioOutputChunk, 10),
+		ctx:         ctx,
+		config:      config,
+		provider:    provider,
+		audioCh:     make(chan iface.AudioOutputChunk, 10),
+		maxRetries:  3, // Default max retries
+		retryDelay:  100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Initialize streaming connection to Bedrock Runtime
@@ -252,6 +259,9 @@ func (s *AmazonNovaStreamingSession) Close() error {
 	}
 
 	s.closed = true
+	if s.restartTimer != nil {
+		s.restartTimer.Stop()
+	}
 	close(s.audioCh)
 
 	// Close the streaming connection

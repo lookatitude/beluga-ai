@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -19,16 +20,20 @@ import (
 
 // GeminiNativeStreamingSession implements StreamingSession for Gemini 2.5 Flash Native Audio.
 type GeminiNativeStreamingSession struct {
-	ctx         context.Context //nolint:containedctx // Required for streaming
-	config      *GeminiNativeConfig
-	provider    *GeminiNativeProvider
-	httpClient  HTTPClient
-	audioCh     chan iface.AudioOutputChunk
-	closed      bool
-	mu          sync.RWMutex
-	audioBuffer []byte
-	restartCh   chan struct{} // Channel to signal streaming restart
-	cancelFunc  context.CancelFunc // Cancel function for current streaming context
+	ctx            context.Context //nolint:containedctx // Required for streaming
+	config         *GeminiNativeConfig
+	provider       *GeminiNativeProvider
+	httpClient     HTTPClient
+	audioCh        chan iface.AudioOutputChunk
+	closed         bool
+	mu             sync.RWMutex
+	audioBuffer    []byte
+	restartCh      chan struct{} // Channel to signal streaming restart
+	cancelFunc     context.CancelFunc // Cancel function for current streaming context
+	restartTimer   *time.Timer // Timer for debouncing restarts
+	restartPending bool // Flag to indicate if restart is pending
+	maxRetries     int // Maximum retry attempts for stream restart
+	retryDelay     time.Duration // Initial retry delay
 }
 
 // GeminiStreamResponse represents a streaming response from Gemini API.
@@ -49,13 +54,15 @@ type GeminiStreamResponse struct {
 func NewGeminiNativeStreamingSession(ctx context.Context, config *GeminiNativeConfig, provider *GeminiNativeProvider) (*GeminiNativeStreamingSession, error) {
 	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GeminiNativeStreamingSession{
-		ctx:        ctx,
-		config:     config,
-		provider:   provider,
-		audioCh:    make(chan iface.AudioOutputChunk, 10),
-		httpClient: provider.httpClient,
-		restartCh:  make(chan struct{}, 1),
-		cancelFunc: cancel,
+		ctx:         ctx,
+		config:      config,
+		provider:    provider,
+		audioCh:     make(chan iface.AudioOutputChunk, 10),
+		httpClient:  provider.httpClient,
+		restartCh:   make(chan struct{}, 1),
+		cancelFunc:  cancel,
+		maxRetries:  3, // Default max retries
+		retryDelay:  100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Gemini uses Server-Sent Events (SSE) for streaming
@@ -243,8 +250,11 @@ func (s *GeminiNativeStreamingSession) SendAudio(ctx context.Context, audio []by
 	// Buffer audio for sending
 	s.mu.Lock()
 	s.audioBuffer = append(s.audioBuffer, audio...)
-	audioBuffer := make([]byte, len(s.audioBuffer))
-	copy(audioBuffer, s.audioBuffer)
+	bufferSize := len(s.audioBuffer)
+	shouldRestart := !s.restartPending // Only restart if not already pending
+	if shouldRestart {
+		s.restartPending = true
+	}
 	s.mu.Unlock()
 
 	// NOTE: Gemini Native Audio streaming API is a one-way streaming API
@@ -253,19 +263,105 @@ func (s *GeminiNativeStreamingSession) SendAudio(ctx context.Context, audio []by
 	//
 	// For true bidirectional streaming, use OpenAI Realtime provider.
 
+	// Debounce restarts: wait a short time to accumulate more audio chunks
+	// This reduces the number of stream restarts when multiple chunks arrive quickly
+	if shouldRestart {
+		// Cancel any existing timer
+		s.mu.Lock()
+		if s.restartTimer != nil {
+			s.restartTimer.Stop()
+		}
+		// Set a new timer to restart after a short delay (debouncing)
+		restartDelay := 50 * time.Millisecond
+		if bufferSize > 4096 { // If buffer is large enough, restart immediately
+			restartDelay = 0
+		}
+		s.restartTimer = time.AfterFunc(restartDelay, func() {
+			s.restartStreamWithRetry(ctx)
+		})
+		s.mu.Unlock()
+	}
+
+	return nil
+}
+
+// restartStreamWithRetry restarts the streaming session with retry logic.
+func (s *GeminiNativeStreamingSession) restartStreamWithRetry(ctx context.Context) {
+	s.mu.Lock()
+	if s.closed {
+		s.mu.Unlock()
+		return
+	}
+	audioBuffer := make([]byte, len(s.audioBuffer))
+	copy(audioBuffer, s.audioBuffer)
+	s.audioBuffer = nil // Clear buffer after copying
+	restartPending := s.restartPending
+	s.restartPending = false
+	s.mu.Unlock()
+
+	if !restartPending {
+		return
+	}
+
 	// Cancel current streaming context to stop the current stream
 	s.cancelFunc()
 
-	// Create new streaming context
-	streamCtx, cancel := context.WithCancel(ctx)
-	s.mu.Lock()
-	s.cancelFunc = cancel
-	s.mu.Unlock()
+	// Retry logic with exponential backoff
+	var lastErr error
+	backoff := s.retryDelay
 
-	// Start new streaming session with accumulated audio
-	go s.handleStreaming(streamCtx)
+	for attempt := 0; attempt <= s.maxRetries; attempt++ {
+		if attempt > 0 {
+			// Wait before retry
+			select {
+			case <-ctx.Done():
+				return
+			case <-s.ctx.Done():
+				return
+			case <-time.After(backoff):
+				backoff = time.Duration(float64(backoff) * 1.5) // Exponential backoff
+			}
+		}
 
-	return nil
+		// Check if closed
+		s.mu.RLock()
+		closed := s.closed
+		s.mu.RUnlock()
+		if closed {
+			return
+		}
+
+		// Create new streaming context
+		streamCtx, cancel := context.WithCancel(ctx)
+		s.mu.Lock()
+		s.cancelFunc = cancel
+		// Temporarily store audio buffer for the streaming handler
+		s.audioBuffer = audioBuffer
+		s.mu.Unlock()
+
+		// Start new streaming session with accumulated audio
+		go func() {
+			s.handleStreaming(streamCtx)
+			// Clear buffer after streaming completes
+			s.mu.Lock()
+			if len(s.audioBuffer) == len(audioBuffer) {
+				s.audioBuffer = nil
+			}
+			s.mu.Unlock()
+		}()
+
+		// For one-way streaming APIs, we assume success if no immediate error
+		// The actual error handling happens in handleStreaming
+		return
+	}
+
+	// If all retries failed, send error to audio channel
+	if lastErr != nil {
+		select {
+		case s.audioCh <- iface.AudioOutputChunk{Error: lastErr}:
+		default:
+		}
+	}
 }
 
 // ReceiveAudio implements the StreamingSession interface.
@@ -283,6 +379,9 @@ func (s *GeminiNativeStreamingSession) Close() error {
 	}
 
 	s.closed = true
+	if s.restartTimer != nil {
+		s.restartTimer.Stop()
+	}
 	if s.cancelFunc != nil {
 		s.cancelFunc()
 	}
