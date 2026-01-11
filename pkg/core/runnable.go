@@ -1,7 +1,9 @@
 // Package core defines fundamental interfaces and types used throughout the Beluga-ai framework.
 package core
 
-import "context"
+import (
+	"context"
+)
 
 // Option defines the interface for configuration options passed to Runnable methods.
 // Specific options (like Temperature, MaxTokens, Callbacks) will implement this interface
@@ -60,7 +62,4 @@ type Runnable interface {
 	// `input` is the data passed to the component.
 	// `options` provide configuration for the streaming execution.
 	Stream(ctx context.Context, input any, options ...Option) (<-chan any, error)
-
-	// TODO: Consider adding Async versions or event streaming (like LangChain_s astream_events)
-	//       for more fine-grained observability and control over asynchronous execution.
 }

@@ -821,60 +821,65 @@ func TestErrorHandling(t *testing.T) {
 		{
 			name: "NewVectorStoreError",
 			errorFunc: func() error {
-				return NewVectorStoreError(ErrCodeUnknownProvider, "provider %s not found", "test")
+				return NewVectorStoreErrorWithMessage("TestOp", ErrCodeProviderNotFound, "provider test not found", nil)
 			},
 			validateFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), "provider test not found")
 
-				var vsErr *VectorStoreError
-				assert.True(t, AsVectorStoreError(err, &vsErr))
-				assert.Equal(t, ErrCodeUnknownProvider, vsErr.Code)
+				vsErr, ok := AsVectorStoreError(err)
+				assert.True(t, ok)
+				assert.Equal(t, ErrCodeProviderNotFound, vsErr.Code)
 			},
 		},
 		{
 			name: "WrapError",
 			errorFunc: func() error {
 				cause := errors.New("connection failed")
-				return WrapError(cause, ErrCodeConnectionFailed, "failed to connect to database")
+				return WrapError(cause, "TestOp", ErrCodeConnectionFailed)
 			},
 			validateFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), "failed to connect to database")
+				assert.Contains(t, err.Error(), "connection failed")
 
-				var vsErr *VectorStoreError
-				assert.True(t, AsVectorStoreError(err, &vsErr))
+				vsErr, ok := AsVectorStoreError(err)
+				assert.True(t, ok)
 				assert.Equal(t, ErrCodeConnectionFailed, vsErr.Code)
-				assert.Error(t, vsErr.Cause)
+				assert.Error(t, vsErr.Err)
 			},
 		},
 		{
 			name: "IsVectorStoreError",
 			errorFunc: func() error {
-				return NewVectorStoreError(ErrCodeInvalidConfig, "invalid configuration")
+				return NewVectorStoreError("TestOp", ErrCodeInvalidConfig, nil)
 			},
 			validateFunc: func(t *testing.T, err error) {
 				t.Helper()
-				assert.True(t, IsVectorStoreError(err, ErrCodeInvalidConfig))
-				assert.False(t, IsVectorStoreError(err, ErrCodeUnknownProvider))
+				assert.True(t, IsVectorStoreError(err))
+				vsErr, ok := AsVectorStoreError(err)
+				assert.True(t, ok)
+				assert.Equal(t, ErrCodeInvalidConfig, vsErr.Code)
+				vsErr2, ok2 := AsVectorStoreError(err)
+				assert.True(t, ok2)
+				assert.NotEqual(t, ErrCodeProviderNotFound, vsErr2.Code)
 			},
 		},
 		{
 			name: "ErrorWrappingChain",
 			errorFunc: func() error {
 				cause := errors.New("underlying error")
-				wrapped1 := WrapError(cause, ErrCodeStorageFailed, "storage operation failed")
-				return WrapError(wrapped1, ErrCodeRetrievalFailed, "retrieval operation failed")
+				wrapped1 := WrapError(cause, "StorageOp", ErrCodeStorageFailed)
+				return WrapError(wrapped1, "RetrievalOp", ErrCodeRetrievalFailed)
 			},
 			validateFunc: func(t *testing.T, err error) {
 				t.Helper()
 				require.Error(t, err)
 
 				// Should find the most recent error in the chain
-				var vsErr *VectorStoreError
-				assert.True(t, AsVectorStoreError(err, &vsErr))
+				vsErr, ok := AsVectorStoreError(err)
+				assert.True(t, ok)
 				assert.Equal(t, ErrCodeRetrievalFailed, vsErr.Code)
 			},
 		},

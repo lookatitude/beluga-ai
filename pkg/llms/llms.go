@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
 	"sync"
 
@@ -14,7 +15,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Global metrics instance - initialized once.
@@ -234,23 +239,53 @@ func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, stri
 
 // GenerateText is a convenience function for generating text with a ChatModel.
 func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (string, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
+	ctx, span := tracer.Start(ctx, "llms.GenerateText",
+		trace.WithAttributes(
+			attribute.Int("prompt_length", len(prompt)),
+		))
+	defer span.End()
+
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to ensure messages", "error", err)
 		return "", err
 	}
 
 	response, err := model.Generate(ctx, messages, options...)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to generate text", "error", err)
 		return "", err
 	}
 
-	return response.GetContent(), nil
+	content := response.GetContent()
+	span.SetAttributes(attribute.Int("response_length", len(content)))
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Text generated successfully",
+		"prompt_length", len(prompt),
+		"response_length", len(content))
+	return content, nil
 }
 
 // GenerateTextWithTools is a convenience function for generating text with tool calling.
 func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt string, tools []tools.Tool, options ...core.Option) (string, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
+	ctx, span := tracer.Start(ctx, "llms.GenerateTextWithTools",
+		trace.WithAttributes(
+			attribute.Int("prompt_length", len(prompt)),
+			attribute.Int("tools_count", len(tools)),
+		))
+	defer span.End()
+
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to ensure messages", "error", err)
 		return "", err
 	}
 
@@ -259,28 +294,68 @@ func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt st
 
 	response, err := modelWithTools.Generate(ctx, messages, options...)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to generate text with tools", "error", err, "tools_count", len(tools))
 		return "", err
 	}
 
-	return response.GetContent(), nil
+	content := response.GetContent()
+	span.SetAttributes(attribute.Int("response_length", len(content)))
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Text generated with tools successfully",
+		"prompt_length", len(prompt),
+		"response_length", len(content),
+		"tools_count", len(tools))
+	return content, nil
 }
 
 // StreamText is a convenience function for streaming text generation.
 func StreamText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
+	ctx, span := tracer.Start(ctx, "llms.StreamText",
+		trace.WithAttributes(
+			attribute.Int("prompt_length", len(prompt)),
+		))
+	defer span.End()
+
 	messages, err := EnsureMessages(prompt)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to ensure messages", "error", err)
 		return nil, err
 	}
 
-	return model.StreamChat(ctx, messages, options...)
+	ch, err := model.StreamChat(ctx, messages, options...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to stream text", "error", err)
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Text streaming started", "prompt_length", len(prompt))
+	return ch, nil
 }
 
 // BatchGenerate is a convenience function for batch text generation.
 func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string, options ...core.Option) ([]string, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
+	ctx, span := tracer.Start(ctx, "llms.BatchGenerate",
+		trace.WithAttributes(
+			attribute.Int("batch_size", len(prompts)),
+		))
+	defer span.End()
+
 	inputs := make([]any, len(prompts))
 	for i, prompt := range prompts {
 		messages, err := EnsureMessages(prompt)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			logWithOTELContext(ctx, slog.LevelError, "Failed to convert prompt in batch", "error", err, "prompt_index", i)
 			return nil, fmt.Errorf("failed to convert prompt %d: %w", i, err)
 		}
 		inputs[i] = messages
@@ -288,6 +363,9 @@ func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string,
 
 	results, err := model.Batch(ctx, inputs, options...)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to batch generate", "error", err, "batch_size", len(prompts))
 		return nil, err
 	}
 
@@ -300,7 +378,29 @@ func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string,
 		}
 	}
 
+	span.SetAttributes(attribute.Int("responses_count", len(responses)))
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Batch generation completed",
+		"batch_size", len(prompts),
+		"responses_count", len(responses))
 	return responses, nil
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }
 
 // ValidateModelName validates that a model name is supported by a provider.

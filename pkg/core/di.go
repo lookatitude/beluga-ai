@@ -11,6 +11,15 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
+)
+
+// Static errors for DI container.
+var (
+	errFactoryMustBeFunction = errors.New("factory must be a function")
+	errFactoryMustReturn     = errors.New("factory function must return at least one value")
+	errTargetMustBePointer   = errors.New("target must be a pointer")
+	errNoFactoryRegistered   = errors.New("no factory registered for type")
 )
 
 // Container represents a dependency injection container.
@@ -52,7 +61,7 @@ func NewContainer() Container {
 		factories:      make(map[reflect.Type]any),
 		instances:      make(map[reflect.Type]any),
 		logger:         &noOpLogger{},
-		tracerProvider: trace.NewNoopTracerProvider(),
+		tracerProvider: noop.NewTracerProvider(),
 	}
 }
 
@@ -61,7 +70,7 @@ func NewContainerWithOptions(opts ...DIOption) Container {
 	config := optionConfig{
 		container:      NewContainer(),
 		logger:         &noOpLogger{},
-		tracerProvider: trace.NewNoopTracerProvider(),
+		tracerProvider: noop.NewTracerProvider(),
 	}
 
 	for _, opt := range opts {
@@ -75,6 +84,34 @@ func NewContainerWithOptions(opts ...DIOption) Container {
 	}
 
 	return config.container
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and adds them to log fields.
+func (c *containerImpl) logWithOTELContext(ctx context.Context, level, message string, fields ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelFields := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		fields = append(otelFields, fields...)
+	}
+
+	// Call appropriate logger method
+	switch level {
+	case "debug":
+		c.logger.Debug(message, fields...)
+	case "info":
+		c.logger.Info(message, fields...)
+	case "warn":
+		c.logger.Warn(message, fields...)
+	case "error":
+		c.logger.Error(message, fields...)
+	default:
+		// Unknown log level, default to debug
+		c.logger.Debug(message, fields...)
+	}
 }
 
 // Register registers a factory function for a type.
@@ -91,18 +128,18 @@ func (c *containerImpl) Register(factoryFunc any) error {
 
 	factoryType := reflect.TypeOf(factoryFunc)
 	if factoryType.Kind() != reflect.Func {
-		err := fmt.Errorf("factory must be a function, got %s", factoryType.Kind())
+		err := fmt.Errorf("%w, got %s", errFactoryMustBeFunction, factoryType.Kind())
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Register failed", "error", err)
+		c.logWithOTELContext(ctx, "error", "DI Register failed", "error", err)
 		return err
 	}
 
 	if factoryType.NumOut() == 0 {
-		err := errors.New("factory function must return at least one value")
+		err := errFactoryMustReturn
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Register failed", "error", err)
+		c.logWithOTELContext(ctx, "error", "DI Register failed", "error", err)
 		return err
 	}
 
@@ -113,73 +150,43 @@ func (c *containerImpl) Register(factoryFunc any) error {
 		attribute.String("type", returnType.String()),
 	)
 	span.SetStatus(codes.Ok, "")
-	c.logger.Info("DI Register succeeded", "type", returnType.String())
+	c.logWithOTELContext(ctx, "info", "DI Register succeeded", "type", returnType.String())
 
 	return nil
 }
 
-// Resolve resolves a dependency by type.
-func (c *containerImpl) Resolve(target any) error {
-	ctx := context.Background()
-	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "resolve",
-		trace.WithAttributes(
-			attribute.String("operation", "resolve"),
-		))
-	defer span.End()
-
-	targetValue := reflect.ValueOf(target)
-	if targetValue.Kind() != reflect.Ptr {
-		err := fmt.Errorf("target must be a pointer, got %s", targetValue.Kind())
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Resolve failed", "error", err)
-		return err
-	}
-
-	targetType := targetValue.Elem().Type()
-	span.SetAttributes(
-		attribute.String("type", targetType.String()),
-	)
-
-	// Check if we have a cached instance (read-only check)
+// resolveFromCache checks if an instance is cached and sets it if found.
+func (c *containerImpl) resolveFromCache(
+	ctx context.Context,
+	span trace.Span,
+	targetValue reflect.Value,
+	targetType reflect.Type,
+) bool {
 	c.mu.RLock()
 	instance, exists := c.instances[targetType]
 	c.mu.RUnlock()
 
 	if exists {
 		targetValue.Elem().Set(reflect.ValueOf(instance))
-		span.SetAttributes(
-			attribute.Bool("cached", true),
-		)
+		span.SetAttributes(attribute.Bool("cached", true))
 		span.SetStatus(codes.Ok, "")
-		c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", true)
-		return nil
+		c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", true)
+		return true
 	}
+	return false
+}
 
-	// Check if we have a factory (read-only check)
-	c.mu.RLock()
-	factory, factoryExists := c.factories[targetType]
-	c.mu.RUnlock()
-
-	if !factoryExists {
-		err := fmt.Errorf("no factory registered for type %s", targetType)
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
-		return err
-	}
-
-	factoryValue := reflect.ValueOf(factory)
-	factoryType := factoryValue.Type()
-
-	// Prepare arguments for the factory function
+// prepareFactoryArgs prepares arguments for a factory function by resolving dependencies.
+func (c *containerImpl) prepareFactoryArgs(
+	ctx context.Context,
+	span trace.Span,
+	factoryType, targetType reflect.Type,
+) ([]reflect.Value, error) {
 	numIn := factoryType.NumIn()
 	args := make([]reflect.Value, numIn)
 
 	for i := 0; i < numIn; i++ {
 		argType := factoryType.In(i)
-
-		// Try to resolve the argument from the container
 		c.mu.RLock()
 		argInstance, argExists := c.instances[argType]
 		c.mu.RUnlock()
@@ -187,67 +194,115 @@ func (c *containerImpl) Resolve(target any) error {
 		if argExists {
 			args[i] = reflect.ValueOf(argInstance)
 		} else {
-			// Try to recursively resolve the dependency
 			argValue := reflect.New(argType)
 			if err := c.resolveRecursive(argValue.Interface()); err != nil {
 				err = fmt.Errorf("failed to resolve dependency %s: %w", argType, err)
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
-				c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
-				return err
+				c.logWithOTELContext(
+					ctx, "error", "DI Resolve failed",
+					"error", err, "type", targetType.String())
+				return nil, err
 			}
 			args[i] = argValue.Elem()
 		}
 	}
+	return args, nil
+}
 
-	// Call the factory function (no lock needed for this)
+// callFactoryAndCache calls the factory function and caches the result.
+func (c *containerImpl) callFactoryAndCache(
+	ctx context.Context,
+	span trace.Span,
+	factoryValue reflect.Value,
+	args []reflect.Value,
+	targetValue reflect.Value,
+	targetType reflect.Type,
+) error {
 	results := factoryValue.Call(args)
 
-	// Check for errors in the results
 	if len(results) > 1 {
 		lastResult := results[len(results)-1]
 		if lastResult.Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) && !lastResult.IsNil() {
 			err := lastResult.Interface().(error)
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
-			return err
+			c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err, "type", targetType.String())
+			return fmt.Errorf("factory error: %w", err)
 		}
 	}
 
-	// Cache the instance for future use (need write lock)
-	instance = results[0].Interface()
+	instance := results[0].Interface()
 	c.mu.Lock()
-	// Double-check pattern: another goroutine might have created the instance
 	if existingInstance, exists := c.instances[targetType]; exists {
 		c.mu.Unlock()
 		targetValue.Elem().Set(reflect.ValueOf(existingInstance))
-		span.SetAttributes(
-			attribute.Bool("cached", true),
-		)
+		span.SetAttributes(attribute.Bool("cached", true))
 		span.SetStatus(codes.Ok, "")
-		c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", true)
+		c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", true)
 		return nil
 	}
 	c.instances[targetType] = instance
 	c.mu.Unlock()
 
 	targetValue.Elem().Set(results[0])
-
-	span.SetAttributes(
-		attribute.Bool("cached", false),
-	)
+	span.SetAttributes(attribute.Bool("cached", false))
 	span.SetStatus(codes.Ok, "")
-	c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", false)
-
+	c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", false)
 	return nil
+}
+
+// Resolve resolves a dependency by type.
+func (c *containerImpl) Resolve(target any) error {
+	ctx := context.Background()
+	ctx, span := c.tracerProvider.Tracer("di-container").Start(ctx, "resolve",
+		trace.WithAttributes(attribute.String("operation", "resolve")))
+	defer span.End()
+
+	targetValue := reflect.ValueOf(target)
+	if targetValue.Kind() != reflect.Ptr {
+		err := fmt.Errorf("%w, got %s", errTargetMustBePointer, targetValue.Kind())
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err)
+		return err
+	}
+
+	targetType := targetValue.Elem().Type()
+	span.SetAttributes(attribute.String("type", targetType.String()))
+
+	if c.resolveFromCache(ctx, span, targetValue, targetType) {
+		return nil
+	}
+
+	c.mu.RLock()
+	factory, factoryExists := c.factories[targetType]
+	c.mu.RUnlock()
+
+	if !factoryExists {
+		err := fmt.Errorf("%w %s", errNoFactoryRegistered, targetType)
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err, "type", targetType.String())
+		return err
+	}
+
+	factoryValue := reflect.ValueOf(factory)
+	factoryType := factoryValue.Type()
+
+	args, err := c.prepareFactoryArgs(ctx, span, factoryType, targetType)
+	if err != nil {
+		return err
+	}
+
+	return c.callFactoryAndCache(ctx, span, factoryValue, args, targetValue, targetType)
 }
 
 // resolveRecursive is a helper method for recursive resolution.
 func (c *containerImpl) resolveRecursive(target any) error {
 	targetValue := reflect.ValueOf(target)
 	if targetValue.Kind() != reflect.Ptr {
-		return errors.New("target must be a pointer")
+		return errTargetMustBePointer
 	}
 
 	targetType := targetValue.Elem().Type()
@@ -272,8 +327,13 @@ func (c *containerImpl) resolveRecursive(target any) error {
 		}
 
 		results := factoryValue.Call(args)
-		if len(results) > 1 && results[len(results)-1].Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) && !results[len(results)-1].IsNil() {
-			return results[len(results)-1].Interface().(error)
+		if len(results) > 1 {
+			lastResult := results[len(results)-1]
+			if lastResult.Type().Implements(reflect.TypeOf((*error)(nil)).Elem()) &&
+				!lastResult.IsNil() {
+				err := lastResult.Interface().(error)
+				return fmt.Errorf("recursive resolve error: %w", err)
+			}
 		}
 
 		instance := results[0].Interface()
@@ -337,7 +397,7 @@ func (c *containerImpl) CheckHealth(ctx context.Context) error {
 	_ = hasType // Acknowledge the check
 
 	span.SetStatus(codes.Ok, "")
-	c.logger.Debug("DI Health check passed")
+	c.logWithOTELContext(ctx, "debug", "DI Health check passed")
 	return nil
 }
 
@@ -477,7 +537,7 @@ func (b *Builder) RegisterNoOpLogger() error {
 
 // RegisterNoOpTracerProvider registers a no-op tracer provider.
 func (b *Builder) RegisterNoOpTracerProvider() error {
-	return b.RegisterTracerProvider(func() TracerProvider { return trace.NewNoopTracerProvider() })
+	return b.RegisterTracerProvider(func() TracerProvider { return noop.NewTracerProvider() })
 }
 
 // RegisterNoOpMetrics registers no-op metrics.
@@ -488,8 +548,8 @@ func (b *Builder) RegisterNoOpMetrics() error {
 // noOpLogger implements Logger with no-op behavior.
 type noOpLogger struct{}
 
-func (n *noOpLogger) Debug(msg string, args ...any) {}
-func (n *noOpLogger) Info(msg string, args ...any)  {}
-func (n *noOpLogger) Warn(msg string, args ...any)  {}
-func (n *noOpLogger) Error(msg string, args ...any) {}
-func (n *noOpLogger) With(args ...any) Logger       { return n }
+func (*noOpLogger) Debug(_ string, _ ...any) {}
+func (*noOpLogger) Info(_ string, _ ...any)  {}
+func (*noOpLogger) Warn(_ string, _ ...any)  {}
+func (*noOpLogger) Error(_ string, _ ...any) {}
+func (*noOpLogger) With(_ ...any) Logger     { return &noOpLogger{} }

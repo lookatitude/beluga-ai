@@ -9,11 +9,13 @@ package config
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 	"github.com/lookatitude/beluga-ai/pkg/config/internal/loader"
@@ -84,19 +86,24 @@ func LoadConfig() (*iface.Config, error) {
 
 	loader, err := NewLoader(DefaultLoaderOptions())
 	if err != nil {
+		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to create loader")
 		span.SetAttributes(attribute.String("error", err.Error()))
+		logWithOTELContext(ctx, slog.LevelError, "Failed to create config loader", "error", err)
 		return nil, fmt.Errorf("failed to create loader: %w", err)
 	}
 
 	cfg, err := loader.LoadConfig()
 	if err != nil {
+		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to load config")
 		span.SetAttributes(attribute.String("error", err.Error()))
+		logWithOTELContext(ctx, slog.LevelError, "Failed to load config", "error", err)
 		return nil, err
 	}
 
 	span.SetStatus(codes.Ok, "config loaded successfully")
+	logWithOTELContext(ctx, slog.LevelInfo, "Config loaded successfully", "source", "loader")
 	success = true
 	return cfg, nil
 }
@@ -117,12 +124,15 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 
 	cfg, err := loader.LoadFromEnv(prefix)
 	if err != nil {
+		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to load config from env")
 		span.SetAttributes(attribute.String("error", err.Error()))
+		logWithOTELContext(ctx, slog.LevelError, "Failed to load config from env", "error", err, "prefix", prefix)
 		return nil, err
 	}
 
 	span.SetStatus(codes.Ok, "config loaded from env successfully")
+	logWithOTELContext(ctx, slog.LevelInfo, "Config loaded from env successfully", "prefix", prefix)
 	success = true
 	return cfg, nil
 }
@@ -143,12 +153,15 @@ func LoadFromFile(filePath string) (*iface.Config, error) {
 
 	cfg, err := loader.LoadFromFile(filePath)
 	if err != nil {
+		span.RecordError(err)
 		span.SetStatus(codes.Error, "failed to load config from file")
 		span.SetAttributes(attribute.String("error", err.Error()))
+		logWithOTELContext(ctx, slog.LevelError, "Failed to load config from file", "error", err, "file_path", filePath)
 		return nil, err
 	}
 
 	span.SetStatus(codes.Ok, "config loaded from file successfully")
+	logWithOTELContext(ctx, slog.LevelInfo, "Config loaded from file successfully", "file_path", filePath)
 	success = true
 	return cfg, nil
 }
@@ -165,19 +178,47 @@ func MustLoadConfig() *iface.Config {
 
 // ValidateConfig validates the entire configuration structure.
 func ValidateConfig(cfg *iface.Config) error {
+	ctx := context.Background()
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
+	ctx, span := tracer.Start(ctx, "config.ValidateConfig")
+	defer span.End()
+
 	start := time.Now()
 	success := false
 	defer func() {
-		GetGlobalMetrics().RecordValidation(context.Background(), time.Since(start), success)
+		GetGlobalMetrics().RecordValidation(ctx, time.Since(start), success)
 	}()
 
 	err := iface.ValidateConfig(cfg)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "config validation failed")
+		span.SetAttributes(attribute.String("error", err.Error()))
+		logWithOTELContext(ctx, slog.LevelError, "Config validation failed", "error", err)
 		return err
 	}
 
+	span.SetStatus(codes.Ok, "config validation succeeded")
+	logWithOTELContext(ctx, slog.LevelInfo, "Config validation succeeded")
 	success = true
 	return nil
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }
 
 // SetDefaults sets default values for configuration fields.

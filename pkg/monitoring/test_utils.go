@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/monitoring/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -296,6 +297,116 @@ func (m *AdvancedMockMonitor) CheckHealth() map[string]any {
 		"last_checked":        m.lastHealthCheck,
 	}
 }
+
+// Monitor interface implementation methods
+func (m *AdvancedMockMonitor) Logger() iface.Logger {
+	return &MockLogger{}
+}
+
+func (m *AdvancedMockMonitor) Tracer() iface.Tracer {
+	return &MockTracer{}
+}
+
+func (m *AdvancedMockMonitor) Metrics() iface.MetricsCollector {
+	return &MockMetricsCollector{}
+}
+
+func (m *AdvancedMockMonitor) HealthChecker() iface.HealthChecker {
+	return &MockHealthChecker{}
+}
+
+func (m *AdvancedMockMonitor) SafetyChecker() iface.SafetyChecker {
+	return &MockSafetyChecker{}
+}
+
+func (m *AdvancedMockMonitor) EthicalChecker() iface.EthicalChecker {
+	return &MockEthicalChecker{}
+}
+
+func (m *AdvancedMockMonitor) BestPracticesChecker() iface.BestPracticesChecker {
+	return &MockBestPracticesChecker{}
+}
+
+func (m *AdvancedMockMonitor) Start(ctx context.Context) error {
+	return nil
+}
+
+func (m *AdvancedMockMonitor) Stop(ctx context.Context) error {
+	return nil
+}
+
+func (m *AdvancedMockMonitor) IsHealthy(ctx context.Context) bool {
+	return m.healthState == "healthy"
+}
+
+// Mock implementations for interface methods
+type MockLogger struct{}
+func (m *MockLogger) Debug(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockLogger) Info(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockLogger) Warning(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockLogger) Error(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockLogger) Fatal(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockLogger) WithFields(fields map[string]any) iface.ContextLogger {
+	return &MockContextLogger{}
+}
+
+type MockContextLogger struct{}
+func (m *MockContextLogger) Debug(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockContextLogger) Info(ctx context.Context, message string, fields ...map[string]any) {}
+func (m *MockContextLogger) Error(ctx context.Context, message string, fields ...map[string]any) {}
+
+type MockTracer struct{}
+func (m *MockTracer) StartSpan(ctx context.Context, name string, opts ...iface.SpanOption) (context.Context, iface.Span) {
+	return ctx, &MockSpan{}
+}
+func (m *MockTracer) FinishSpan(span iface.Span) {}
+func (m *MockTracer) GetSpan(spanID string) (iface.Span, bool) { return nil, false }
+func (m *MockTracer) GetTraceSpans(traceID string) []iface.Span { return nil }
+
+type MockSpan struct{}
+func (m *MockSpan) Log(message string, fields ...map[string]any) {}
+func (m *MockSpan) SetError(err error) {}
+func (m *MockSpan) SetStatus(status string) {}
+func (m *MockSpan) GetDuration() time.Duration { return 0 }
+func (m *MockSpan) IsFinished() bool { return false }
+func (m *MockSpan) SetTag(key string, value any) {}
+
+type MockMetricsCollector struct{}
+func (m *MockMetricsCollector) Counter(ctx context.Context, name, description string, value float64, labels map[string]string) {}
+func (m *MockMetricsCollector) Gauge(ctx context.Context, name, description string, value float64, labels map[string]string) {}
+func (m *MockMetricsCollector) Histogram(ctx context.Context, name, description string, value float64, labels map[string]string) {}
+func (m *MockMetricsCollector) Timing(ctx context.Context, name, description string, duration time.Duration, labels map[string]string) {}
+func (m *MockMetricsCollector) Increment(ctx context.Context, name, description string, labels map[string]string) {}
+func (m *MockMetricsCollector) StartTimer(ctx context.Context, name string, labels map[string]string) iface.Timer {
+	return &MockTimer{}
+}
+
+type MockTimer struct{}
+func (m *MockTimer) Stop(ctx context.Context, description string) {}
+
+type MockHealthChecker struct{}
+func (m *MockHealthChecker) RegisterCheck(name string, check iface.HealthCheckFunc) error { return nil }
+func (m *MockHealthChecker) RunChecks(ctx context.Context) map[string]iface.HealthCheckResult { return nil }
+func (m *MockHealthChecker) IsHealthy(ctx context.Context) bool { return true }
+
+type MockSafetyChecker struct{}
+func (m *MockSafetyChecker) CheckContent(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error) {
+	return iface.SafetyResult{Safe: true, Issues: []iface.SafetyIssue{}}, nil
+}
+func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
+	return iface.ReviewDecision{Approved: true}, nil
+}
+
+type MockEthicalChecker struct{}
+func (m *MockEthicalChecker) CheckContent(ctx context.Context, content string, ethicalCtx iface.EthicalContext) (iface.EthicalAnalysis, error) {
+	return iface.EthicalAnalysis{}, nil
+}
+
+type MockBestPracticesChecker struct{}
+func (m *MockBestPracticesChecker) Validate(ctx context.Context, data any, component string) []iface.ValidationIssue {
+	return nil
+}
+func (m *MockBestPracticesChecker) AddValidator(validator iface.Validator) {}
 
 // Test data creation helpers
 

@@ -15,9 +15,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -117,16 +120,60 @@ type HealthChecker interface {
 
 // CheckHealth performs a health check on the embedder.
 func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) error {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
+	ctx, span := tracer.Start(ctx, "embeddings.CheckHealth",
+		trace.WithAttributes(
+			attribute.String("provider_type", providerType),
+		))
+	defer span.End()
+
 	embedder, err := f.NewEmbedder(providerType)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to create embedder for health check", "error", err, "provider_type", providerType)
 		return fmt.Errorf("failed to create embedder for health check: %w", err)
 	}
 
 	if checker, ok := embedder.(HealthChecker); ok {
-		return checker.Check(ctx)
+		err = checker.Check(ctx)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			logWithOTELContext(ctx, slog.LevelError, "Health check failed", "error", err, "provider_type", providerType)
+			return err
+		}
+		span.SetStatus(codes.Ok, "")
+		logWithOTELContext(ctx, slog.LevelInfo, "Health check passed", "provider_type", providerType)
+		return nil
 	}
 
 	// Default health check: try to get dimension
 	_, err = embedder.GetDimension(ctx)
-	return err
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Health check failed (dimension check)", "error", err, "provider_type", providerType)
+		return err
+	}
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Health check passed (dimension check)", "provider_type", providerType)
+	return nil
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }

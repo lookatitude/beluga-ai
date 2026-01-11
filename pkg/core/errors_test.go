@@ -5,6 +5,23 @@ import (
 	"testing"
 )
 
+// Static errors for error tests.
+var (
+	errTimeout                = errors.New("timeout")
+	errUnderlyingError        = errors.New("underlying error")
+	errFieldRequired          = errors.New("field is required")
+	errConnectionRefused      = errors.New("connection refused")
+	errInvalidToken           = errors.New("invalid token")
+	errDatabaseConnectionLost = errors.New("database connection lost")
+	errMissingRequiredConfig  = errors.New("missing required config")
+	errRegularError           = errors.New("regular error")
+	errUnderlying             = errors.New("underlying")
+	errNoUnwrap               = errors.New("no unwrap")
+	errRegular                = errors.New("regular")
+	errErrorTestCause         = errors.New("test cause")
+	errCause                  = errors.New("cause")
+)
+
 func TestFrameworkError_Error(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -24,7 +41,7 @@ func TestFrameworkError_Error(t *testing.T) {
 			err: &FrameworkError{
 				Type:    ErrorTypeNetwork,
 				Message: "Connection failed",
-				Cause:   errors.New("timeout"),
+				Cause:   errTimeout,
 			},
 			expected: "[network] Connection failed: timeout",
 		},
@@ -50,7 +67,7 @@ func TestFrameworkError_Error(t *testing.T) {
 }
 
 func TestFrameworkError_Unwrap(t *testing.T) {
-	cause := errors.New("underlying error")
+	cause := errUnderlyingError
 	err := &FrameworkError{
 		Type:    ErrorTypeInternal,
 		Message: "Wrapped error",
@@ -63,7 +80,7 @@ func TestFrameworkError_Unwrap(t *testing.T) {
 }
 
 func TestNewValidationError(t *testing.T) {
-	cause := errors.New("field is required")
+	cause := errFieldRequired
 	err := NewValidationError("Input validation failed", cause)
 
 	if err.Type != ErrorTypeValidation {
@@ -78,7 +95,7 @@ func TestNewValidationError(t *testing.T) {
 }
 
 func TestNewNetworkError(t *testing.T) {
-	cause := errors.New("connection refused")
+	cause := errConnectionRefused
 	err := NewNetworkError("Network connection failed", cause)
 
 	if err.Type != ErrorTypeNetwork {
@@ -93,7 +110,7 @@ func TestNewNetworkError(t *testing.T) {
 }
 
 func TestNewAuthenticationError(t *testing.T) {
-	cause := errors.New("invalid token")
+	cause := errInvalidToken
 	err := NewAuthenticationError("Authentication failed", cause)
 
 	if err.Type != ErrorTypeAuthentication {
@@ -108,7 +125,7 @@ func TestNewAuthenticationError(t *testing.T) {
 }
 
 func TestNewInternalError(t *testing.T) {
-	cause := errors.New("database connection lost")
+	cause := errDatabaseConnectionLost
 	err := NewInternalError("Internal system error", cause)
 
 	if err.Type != ErrorTypeInternal {
@@ -123,7 +140,7 @@ func TestNewInternalError(t *testing.T) {
 }
 
 func TestNewConfigurationError(t *testing.T) {
-	cause := errors.New("missing required config")
+	cause := errMissingRequiredConfig
 	err := NewConfigurationError("Configuration error", cause)
 
 	if err.Type != ErrorTypeConfiguration {
@@ -162,7 +179,7 @@ func TestIsErrorType(t *testing.T) {
 		},
 		{
 			name:      "non-FrameworkError",
-			err:       errors.New("regular error"),
+			err:       errRegularError,
 			errorType: ErrorTypeValidation,
 			expected:  false,
 		},
@@ -201,7 +218,7 @@ func TestAsFrameworkError(t *testing.T) {
 		},
 		{
 			name:     "non-FrameworkError",
-			err:      errors.New("regular error"),
+			err:      errRegularError,
 			expected: false,
 		},
 	}
@@ -229,13 +246,13 @@ func TestUnwrapError(t *testing.T) {
 		{
 			name: "error with Unwrap method",
 			err: &FrameworkError{
-				Cause: errors.New("underlying"),
+				Cause: errUnderlying,
 			},
-			expected: errors.New("underlying"),
+			expected: errUnderlying,
 		},
 		{
 			name:     "error without Unwrap method",
-			err:      errors.New("no unwrap"),
+			err:      errNoUnwrap,
 			expected: nil,
 		},
 	}
@@ -265,7 +282,7 @@ func TestWrapError(t *testing.T) {
 	}{
 		{
 			name:     "wrap regular error",
-			err:      errors.New("underlying error"),
+			err:      errUnderlyingError,
 			message:  "wrapped message",
 			expected: true,
 		},
@@ -398,7 +415,7 @@ func TestFrameworkError_NilCause(t *testing.T) {
 	}
 
 	if err.Unwrap() != nil {
-		t.Errorf("FrameworkError.Unwrap() should return nil for nil cause")
+		t.Error("FrameworkError.Unwrap() should return nil for nil cause")
 	}
 }
 
@@ -426,7 +443,7 @@ func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
 	}
 
 	// Test with context
-	err = NewFrameworkErrorWithCode(ErrorTypeValidation, ErrorCodeInvalidInput, "message", errors.New("cause"))
+	err = NewFrameworkErrorWithCode(ErrorTypeValidation, ErrorCodeInvalidInput, "message", errCause)
 	if err.Context == nil {
 		t.Error("Context should be initialized")
 	}
@@ -447,7 +464,7 @@ func TestIsErrorType_EdgeCases(t *testing.T) {
 		},
 		{
 			name:      "non-FrameworkError",
-			err:       errors.New("regular error"),
+			err:       errRegularError,
 			errorType: ErrorTypeValidation,
 			expected:  false,
 		},
@@ -485,7 +502,7 @@ func TestAsFrameworkError_EdgeCases(t *testing.T) {
 		},
 		{
 			name:     "regular error",
-			err:      errors.New("regular error"),
+			err:      errRegularError,
 			expected: false,
 		},
 		{
@@ -522,7 +539,7 @@ func TestUnwrapError_EdgeCases(t *testing.T) {
 		},
 		{
 			name:     "error without Unwrap method",
-			err:      errors.New("no unwrap"),
+			err:      errNoUnwrap,
 			expected: nil,
 		},
 		{
@@ -536,8 +553,8 @@ func TestUnwrapError_EdgeCases(t *testing.T) {
 		},
 		{
 			name:     "FrameworkError with cause",
-			err:      &FrameworkError{Cause: errors.New("underlying")},
-			expected: errors.New("underlying"),
+			err:      &FrameworkError{Cause: errUnderlying},
+			expected: errUnderlying,
 		},
 	}
 
@@ -572,13 +589,13 @@ func TestWrapError_EdgeCases(t *testing.T) {
 		},
 		{
 			name:     "regular error",
-			err:      errors.New("regular"),
+			err:      errRegular,
 			message:  "wrapped",
 			expected: true,
 		},
 		{
 			name:     "empty message",
-			err:      errors.New("regular"),
+			err:      errRegular,
 			message:  "",
 			expected: true,
 		},
@@ -621,37 +638,37 @@ func TestFrameworkError_AddContext_EdgeCases(t *testing.T) {
 	}
 
 	// Test adding to nil context
-	_ = err.AddContext("key1", "value1")
+	err = err.AddContext("key1", "value1")
 	if err.Context == nil {
 		t.Error("Context should be initialized after AddContext")
 	}
 
 	// Test overwriting existing key
-	_ = err.AddContext("key1", "new_value")
+	err = err.AddContext("key1", "new_value")
 	if err.Context["key1"] != "new_value" {
 		t.Errorf("AddContext() should overwrite existing key, got %v", err.Context["key1"])
 	}
 
 	// Test adding nil value
-	_ = err.AddContext("nil_key", nil)
+	err = err.AddContext("nil_key", nil)
 	if err.Context["nil_key"] != nil {
 		t.Errorf("AddContext() should handle nil values, got %v", err.Context["nil_key"])
 	}
 }
 
 func TestErrorConstructors_EdgeCases(t *testing.T) {
-	cause := errors.New("test cause")
+	cause := errErrorTestCause
 
 	// Test with nil cause
 	err1 := NewValidationError("message", nil)
 	if err1.Cause != nil {
-		t.Errorf("NewValidationError() with nil cause should have nil Cause")
+		t.Error("NewValidationError() with nil cause should have nil Cause")
 	}
 
 	// Test with empty message
 	err2 := NewValidationError("", cause)
 	if err2.Message != "" {
-		t.Errorf("NewValidationError() should preserve empty message")
+		t.Error("NewValidationError() should preserve empty message")
 	}
 
 	// Test all constructor functions

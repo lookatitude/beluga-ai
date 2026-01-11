@@ -77,8 +77,8 @@ func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 		}
 	}
 	if apiKey == "" {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
-			"api_key is required in pinecone provider config")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPineconeStoreFromConfig", vectorstores.ErrCodeInvalidConfig,
+			"api_key is required in pinecone provider config", nil)
 	}
 
 	environment, _ := providerConfig.(map[string]any)["environment"].(string)
@@ -88,8 +88,8 @@ func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 		}
 	}
 	if environment == "" {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
-			"environment is required in pinecone provider config")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPineconeStoreFromConfig", vectorstores.ErrCodeInvalidConfig,
+			"environment is required in pinecone provider config", nil)
 	}
 
 	projectID, _ := providerConfig.(map[string]any)["project_id"].(string)
@@ -99,8 +99,8 @@ func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 		}
 	}
 	if projectID == "" {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
-			"project_id is required in pinecone provider config")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPineconeStoreFromConfig", vectorstores.ErrCodeInvalidConfig,
+			"project_id is required in pinecone provider config", nil)
 	}
 
 	indexName, _ := providerConfig.(map[string]any)["index_name"].(string)
@@ -110,8 +110,8 @@ func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 		}
 	}
 	if indexName == "" {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
-			"index_name is required in pinecone provider config")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPineconeStoreFromConfig", vectorstores.ErrCodeInvalidConfig,
+			"index_name is required in pinecone provider config", nil)
 	}
 
 	indexHost, _ := providerConfig.(map[string]any)["index_host"].(string)
@@ -171,8 +171,8 @@ func (s *PineconeStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		}
 		embeddings, err = config.Embedder.EmbedDocuments(ctx, texts)
 		if err != nil {
-			return nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-				"failed to generate embeddings for documents")
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+				"failed to generate embeddings for documents", err)
 		}
 	} else {
 		// Check if documents already have embeddings
@@ -182,8 +182,8 @@ func (s *PineconeStore) AddDocuments(ctx context.Context, documents []schema.Doc
 			if len(doc.Embedding) > 0 {
 				embeddings[i] = doc.Embedding
 			} else {
-				return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-					"no embedder provided and document %d has no embedding", i)
+				return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+					fmt.Sprintf("no embedder provided and document %d has no embedding", i), nil)
 			}
 		}
 	}
@@ -288,14 +288,14 @@ func (s *PineconeStore) SimilaritySearchByQuery(ctx context.Context, query strin
 	}
 
 	if embedder == nil {
-		return nil, nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-			"embedder is required for SimilaritySearchByQuery")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"embedder is required for SimilaritySearchByQuery", nil)
 	}
 
 	queryVector, err := embedder.EmbedQuery(ctx, query)
 	if err != nil {
-		return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-			"failed to generate embedding for query")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"failed to generate embedding for query", err)
 	}
 
 	return s.SimilaritySearch(ctx, queryVector, k, opts...)

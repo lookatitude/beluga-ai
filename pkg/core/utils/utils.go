@@ -1,4 +1,4 @@
-package utils
+package coreutil
 
 import (
 	"crypto/rand"

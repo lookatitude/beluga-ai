@@ -71,8 +71,8 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 	// Extract connection parameters with defaults
 	connStr, _ := providerConfig.(map[string]any)["connection_string"].(string)
 	if connStr == "" {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidConfig,
-			"connection_string is required in pgvector provider config")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPgVectorStoreFromConfig", vectorstores.ErrCodeInvalidConfig,
+			"connection_string is required in pgvector provider config", nil)
 	}
 
 	tableName, _ := providerConfig.(map[string]any)["table_name"].(string)
@@ -88,15 +88,15 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 	// Initialize database connection
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeConnectionFailed,
-			"failed to connect to PostgreSQL database")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPgVectorStoreFromConfig", vectorstores.ErrCodeConnectionFailed,
+			"failed to connect to PostgreSQL database", err)
 	}
 
 	// Test the connection
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeConnectionFailed,
-			"failed to ping PostgreSQL database")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPgVectorStoreFromConfig", vectorstores.ErrCodeConnectionFailed,
+			"failed to ping PostgreSQL database", err)
 	}
 
 	// Ensure table exists
@@ -110,8 +110,8 @@ func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 
 	if err := store.ensureTableExists(ctx); err != nil {
 		_ = db.Close()
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-			"failed to ensure table exists")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("NewPgVectorStoreFromConfig", vectorstores.ErrCodeStorageFailed,
+			"failed to ensure table exists", err)
 	}
 
 	// Log configuration
@@ -171,8 +171,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 	// Use embedder from options
 	embedder := config.Embedder
 	if embedder == nil {
-		return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-			"embedder is required to add documents")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+			"embedder is required to add documents", nil)
 	}
 
 	// Generate embeddings if needed
@@ -191,8 +191,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 	if len(docsToEmbed) > 0 {
 		embeds, err := embedder.EmbedDocuments(ctx, docsToEmbed)
 		if err != nil {
-			return nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-				"failed to embed documents")
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+				"failed to embed documents", err)
 		}
 		embeddings = embeds
 	}
@@ -200,8 +200,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 	// Begin transaction
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-			"failed to begin transaction")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+			"failed to begin transaction", err)
 	}
 	defer func() { _ = tx.Rollback() }()
 
@@ -210,8 +210,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		"INSERT INTO %s (content, metadata, embedding, collection_name) VALUES ($1, $2, $3, $4) RETURNING id",
 		s.tableName))
 	if err != nil {
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-			"failed to prepare insert statement")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+			"failed to prepare insert statement", err)
 	}
 	defer func() { _ = stmt.Close() }()
 
@@ -226,8 +226,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		}
 
 		if len(docEmbedding) != s.embeddingDim {
-			return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidParameters,
-				"document embedding dimension %d does not match store dimension %d", len(docEmbedding), s.embeddingDim)
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeInvalidInput,
+				fmt.Sprintf("document embedding dimension %d does not match store dimension %d", len(docEmbedding), s.embeddingDim), nil)
 		}
 
 		// Convert embedding to pgvector format
@@ -238,8 +238,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		if doc.Metadata != nil {
 			metadataBytes, err = json.Marshal(doc.Metadata)
 			if err != nil {
-				return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-					"failed to marshal document metadata")
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+				"failed to marshal document metadata", err)
 			}
 		} else {
 			metadataBytes = []byte("{}")
@@ -249,8 +249,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		var id string
 		err = stmt.QueryRowContext(ctx, doc.GetContent(), string(metadataBytes), embeddingStr, s.collectionName).Scan(&id)
 		if err != nil {
-			return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-				"failed to insert document")
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+				"failed to insert document", err)
 		}
 
 		ids[i] = id
@@ -258,8 +258,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 
 	// Commit transaction
 	if err := tx.Commit(); err != nil {
-		return nil, vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-			"failed to commit transaction")
+		return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+			"failed to commit transaction", err)
 	}
 
 	return ids, nil
@@ -268,13 +268,13 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 // SimilaritySearch performs a similarity search using a pre-computed query vector.
 func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []float32, k int, opts ...vectorstores.Option) ([]schema.Document, []float32, error) {
 	if len(queryVector) != s.embeddingDim {
-		return nil, nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidParameters,
-			"query vector dimension %d does not match store dimension %d", len(queryVector), s.embeddingDim)
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearch", vectorstores.ErrCodeInvalidInput,
+			fmt.Sprintf("query vector dimension %d does not match store dimension %d", len(queryVector), s.embeddingDim), nil)
 	}
 
 	if k <= 0 {
-		return nil, nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeInvalidParameters,
-			"k must be greater than 0")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearch", vectorstores.ErrCodeInvalidInput,
+			"k must be greater than 0", nil)
 	}
 
 	// Apply options
@@ -309,8 +309,8 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 	}
 
 	if err != nil {
-		return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeRetrievalFailed,
-			"failed to execute similarity search query")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearch", vectorstores.ErrCodeRetrievalFailed,
+			"failed to execute similarity search query", err)
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -323,8 +323,8 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		var metadataStr sql.NullString
 
 		if err := rows.Scan(&doc.ID, &doc.PageContent, &metadataStr, &distance); err != nil {
-			return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeRetrievalFailed,
-				"failed to scan row")
+			return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearch", vectorstores.ErrCodeRetrievalFailed,
+				"failed to scan row", err)
 		}
 		// Convert distance to similarity score (e.g., 1 - distance for cosine distance, or handle L2 appropriately)
 		// For L2 distance, smaller is better. If a score where higher is better is needed, transform it.
@@ -356,14 +356,14 @@ func (s *PgVectorStore) SimilaritySearch(ctx context.Context, queryVector []floa
 // SimilaritySearchByQuery generates an embedding for the query and then performs a similarity search.
 func (s *PgVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder vectorstores.Embedder, opts ...vectorstores.Option) ([]schema.Document, []float32, error) {
 	if embedder == nil {
-		return nil, nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-			"embedder is required for SimilaritySearchByQuery")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"embedder is required for SimilaritySearchByQuery", nil)
 	}
 
 	queryEmbedding, err := embedder.EmbedQuery(ctx, query)
 	if err != nil {
-		return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-			"failed to embed query")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"failed to embed query", err)
 	}
 
 	return s.SimilaritySearch(ctx, queryEmbedding, k, opts...)
@@ -421,8 +421,8 @@ func (s *PgVectorStore) DeleteDocuments(ctx context.Context, ids []string, opts 
 
 	_, err := s.db.ExecContext(ctx, query, args...)
 	if err != nil {
-		return vectorstores.WrapError(err, vectorstores.ErrCodeStorageFailed,
-			"failed to delete documents")
+		return vectorstores.NewVectorStoreErrorWithMessage("DeleteDocuments", vectorstores.ErrCodeStorageFailed,
+			"failed to delete documents", err)
 	}
 
 	return nil

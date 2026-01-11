@@ -25,6 +25,7 @@ package vectorstores
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -135,7 +136,7 @@ func (f *StoreFactory) Register(name string, creator func(ctx context.Context, c
 func (f *StoreFactory) Create(ctx context.Context, name string, config Config) (VectorStore, error) {
 	creator, exists := f.creators[name]
 	if !exists {
-		return nil, NewVectorStoreError("unknown_provider", "vector store provider '%s' not found", name)
+		return nil, fmt.Errorf("vector store provider '%s' not found", name)
 	}
 	return creator(ctx, config)
 }

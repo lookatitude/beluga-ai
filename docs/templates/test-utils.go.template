@@ -1,0 +1,301 @@
+// Package {package_name} provides advanced test utilities and comprehensive mocks for testing {package_name} implementations.
+// This file contains utilities designed to support both unit tests and integration tests.
+package {package_name}
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/lookatitude/beluga-ai/pkg/{package_name}/iface"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+)
+
+// AdvancedMock{PackageName} provides a comprehensive mock implementation for testing.
+type AdvancedMock{PackageName} struct {
+	mock.Mock
+	
+	// Configuration
+	name         string
+	callCount    int
+	mu           sync.RWMutex
+	
+	// Configurable behavior
+	shouldError      bool
+	errorToReturn    error
+	simulateDelay    time.Duration
+	
+	// Health check data
+	healthState     string
+	lastHealthCheck time.Time
+	
+	// TODO: Add package-specific mock fields
+}
+
+// NewAdvancedMock{PackageName} creates a new advanced mock with configurable behavior.
+func NewAdvancedMock{PackageName}(name string, opts ...Mock{PackageName}Option) *AdvancedMock{PackageName} {
+	m := &AdvancedMock{PackageName}{
+		name:           name,
+		healthState:    "healthy",
+		lastHealthCheck: time.Now(),
+	}
+	
+	// Apply options
+	for _, opt := range opts {
+		opt(m)
+	}
+	
+	return m
+}
+
+// Mock{PackageName}Option defines functional options for mock configuration.
+type Mock{PackageName}Option func(*AdvancedMock{PackageName})
+
+// WithMockError configures the mock to return errors.
+func WithMockError(shouldError bool, err error) Mock{PackageName}Option {
+	return func(m *AdvancedMock{PackageName}) {
+		m.shouldError = shouldError
+		m.errorToReturn = err
+	}
+}
+
+// WithMockDelay adds artificial delay to mock operations.
+func WithMockDelay(delay time.Duration) Mock{PackageName}Option {
+	return func(m *AdvancedMock{PackageName}) {
+		m.simulateDelay = delay
+	}
+}
+
+// TODO: Implement interface methods for AdvancedMock{PackageName}
+// Example:
+//
+// func (m *AdvancedMock{PackageName}) {Method}(ctx context.Context, input string) (string, error) {
+//     m.mu.Lock()
+//     m.callCount++
+//     m.mu.Unlock()
+//
+//     if m.simulateDelay > 0 {
+//         time.Sleep(m.simulateDelay)
+//     }
+//
+//     if m.shouldError {
+//         return "", m.errorToReturn
+//     }
+//
+//     args := m.Called(ctx, input)
+//     return args.String(0), args.Error(1)
+// }
+
+// Additional helper methods for testing.
+func (m *AdvancedMock{PackageName}) GetName() string {
+	return m.name
+}
+
+func (m *AdvancedMock{PackageName}) GetCallCount() int {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.callCount
+}
+
+func (m *AdvancedMock{PackageName}) CheckHealth() map[string]any {
+	m.lastHealthCheck = time.Now()
+	return map[string]any{
+		"status":        m.healthState,
+		"name":          m.name,
+		"call_count":    m.callCount,
+		"last_checked":  m.lastHealthCheck,
+	}
+}
+
+// Test data creation helpers
+
+// CreateTest{PackageName} creates a comprehensive test {package_name} instance.
+func CreateTest{PackageName}() *AdvancedMock{PackageName} {
+	return NewAdvancedMock{PackageName}("test-{package_name}")
+}
+
+// CreateTestConfig creates a comprehensive test configuration.
+func CreateTestConfig() map[string]any {
+	return map[string]any{
+		"name":     "test-{package_name}",
+		"timeout":  "30s",
+		"max_retries": 3,
+		"enable_metrics": true,
+		"enable_tracing": true,
+		// TODO: Add package-specific test config values
+	}
+}
+
+// Assertion helpers
+
+// Assert{PackageName}Operation validates {package_name} operations.
+func Assert{PackageName}Operation(t *testing.T, result string, err error, expectedResult string, shouldError bool) {
+	t.Helper()
+	if shouldError {
+		assert.Error(t, err, "Expected error")
+		assert.Empty(t, result, "Result should be empty on error")
+	} else {
+		assert.NoError(t, err, "No error expected")
+		assert.Equal(t, expectedResult, result, "Result should match expected")
+	}
+}
+
+// AssertErrorType validates error types and codes.
+func AssertErrorType(t *testing.T, err error, expectedCode string) {
+	t.Helper()
+	require.Error(t, err)
+	// TODO: Add package-specific error type assertion
+	// var pkgErr *iface.{PackageName}Error
+	// if assert.ErrorAs(t, err, &pkgErr) {
+	//     assert.Equal(t, expectedCode, pkgErr.Code)
+	// }
+}
+
+// Performance testing helpers
+
+// ConcurrentTestRunner runs {package_name} tests concurrently for performance testing.
+type ConcurrentTestRunner struct {
+	testFunc      func() error
+	NumGoroutines int
+	TestDuration  time.Duration
+}
+
+func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
+	return &ConcurrentTestRunner{
+		NumGoroutines: numGoroutines,
+		TestDuration:  duration,
+		testFunc:      testFunc,
+	}
+}
+
+func (r *ConcurrentTestRunner) Run() error {
+	var wg sync.WaitGroup
+	errChan := make(chan error, r.NumGoroutines)
+	stopChan := make(chan struct{})
+
+	// Start timer
+	timer := time.AfterFunc(r.TestDuration, func() {
+		close(stopChan)
+	})
+	defer timer.Stop()
+
+	// Start worker goroutines
+	for i := 0; i < r.NumGoroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				select {
+				case <-stopChan:
+					return
+				default:
+					if err := r.testFunc(); err != nil {
+						errChan <- err
+						return
+					}
+				}
+			}
+		}()
+	}
+
+	// Wait for completion
+	wg.Wait()
+	close(errChan)
+
+	// Check for errors
+	for err := range errChan {
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// RunLoadTest executes a load test scenario on {package_name}.
+func RunLoadTest(t *testing.T, component iface.{InterfaceName}, numOperations, concurrency int) {
+	t.Helper()
+	var wg sync.WaitGroup
+	errChan := make(chan error, numOperations)
+
+	semaphore := make(chan struct{}, concurrency)
+
+	for i := 0; i < numOperations; i++ {
+		wg.Add(1)
+		go func(opID int) {
+			defer wg.Done()
+
+			semaphore <- struct{}{}
+			defer func() { <-semaphore }()
+
+			// TODO: Implement load test operations
+			// Example:
+			// _, err := component.{Method}(context.Background(), fmt.Sprintf("input-%d", opID))
+			// if err != nil {
+			//     errChan <- err
+			// }
+		}(i)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	// Verify no errors occurred
+	for err := range errChan {
+		require.NoError(t, err)
+	}
+}
+
+// Integration test helpers
+
+// IntegrationTestHelper provides utilities for integration testing.
+type IntegrationTestHelper struct {
+	components map[string]iface.{InterfaceName}
+}
+
+func NewIntegrationTestHelper() *IntegrationTestHelper {
+	return &IntegrationTestHelper{
+		components: make(map[string]iface.{InterfaceName}),
+	}
+}
+
+func (h *IntegrationTestHelper) AddComponent(name string, component iface.{InterfaceName}) {
+	h.components[name] = component
+}
+
+func (h *IntegrationTestHelper) GetComponent(name string) iface.{InterfaceName} {
+	return h.components[name]
+}
+
+func (h *IntegrationTestHelper) Reset() {
+	// Reset all components if needed
+}
+
+// {PackageName}ScenarioRunner runs common {package_name} scenarios.
+type {PackageName}ScenarioRunner struct {
+	component iface.{InterfaceName}
+}
+
+func New{PackageName}ScenarioRunner(component iface.{InterfaceName}) *{PackageName}ScenarioRunner {
+	return &{PackageName}ScenarioRunner{
+		component: component,
+	}
+}
+
+func (r *{PackageName}ScenarioRunner) RunBasicScenario(ctx context.Context) error {
+	// TODO: Implement basic scenario
+	// Example:
+	// result, err := r.component.{Method}(ctx, "test input")
+	// if err != nil {
+	//     return fmt.Errorf("basic scenario failed: %w", err)
+	// }
+	// if result == "" {
+	//     return errors.New("expected non-empty result")
+	// }
+	return nil
+}

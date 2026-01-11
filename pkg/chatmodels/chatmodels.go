@@ -43,12 +43,17 @@ package chatmodels
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/registry"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // NewChatModel creates a new chat model instance with the specified model name and configuration.
@@ -321,12 +326,33 @@ func GetModelInfo(model iface.ChatModel) iface.ModelInfo {
 //	}
 //	response, err := chatmodels.GenerateMessages(ctx, model, messages)
 func GenerateMessages(ctx context.Context, model iface.ChatModel, messages []schema.Message, opts ...iface.Option) ([]schema.Message, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/chatmodels")
+	ctx, span := tracer.Start(ctx, "chatmodels.GenerateMessages",
+		trace.WithAttributes(
+			attribute.Int("messages_count", len(messages)),
+		))
+	defer span.End()
+
 	// Convert iface.Option to core.Option
 	coreOpts := make([]core.Option, len(opts))
 	for i, opt := range opts {
 		coreOpts[i] = opt
 	}
-	return model.GenerateMessages(ctx, messages, coreOpts...)
+
+	result, err := model.GenerateMessages(ctx, messages, coreOpts...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to generate messages", "error", err, "messages_count", len(messages))
+		return nil, err
+	}
+
+	span.SetAttributes(attribute.Int("response_count", len(result)))
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Messages generated successfully",
+		"messages_count", len(messages),
+		"response_count", len(result))
+	return result, nil
 }
 
 // StreamMessages is a convenience function for streaming messages with a chat model.
@@ -352,12 +378,47 @@ func GenerateMessages(ctx context.Context, model iface.ChatModel, messages []sch
 //		fmt.Println("Received:", msg.GetContent())
 //	}
 func StreamMessages(ctx context.Context, model iface.ChatModel, messages []schema.Message, opts ...iface.Option) (<-chan schema.Message, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/chatmodels")
+	ctx, span := tracer.Start(ctx, "chatmodels.StreamMessages",
+		trace.WithAttributes(
+			attribute.Int("messages_count", len(messages)),
+		))
+	defer span.End()
+
 	// Convert iface.Option to core.Option
 	coreOpts := make([]core.Option, len(opts))
 	for i, opt := range opts {
 		coreOpts[i] = opt
 	}
-	return model.StreamMessages(ctx, messages, coreOpts...)
+
+	ch, err := model.StreamMessages(ctx, messages, coreOpts...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Failed to stream messages", "error", err, "messages_count", len(messages))
+		return nil, err
+	}
+
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Message streaming started", "messages_count", len(messages))
+	return ch, nil
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }
 
 // Compile-time interface checks are removed to avoid import cycles.

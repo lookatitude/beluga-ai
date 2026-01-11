@@ -1,50 +1,98 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Beluga AI Framework Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Package Structure (MUST)
+All packages MUST follow the standard v2 structure:
+- `pkg/{package_name}/iface/` - Interfaces and types (REQUIRED)
+- `pkg/{package_name}/internal/` - Private implementation details
+- `pkg/{package_name}/providers/` - Provider implementations (for multi-provider packages)
+- `pkg/{package_name}/config.go` - Configuration structs and validation (REQUIRED)
+- `pkg/{package_name}/metrics.go` - OTEL metrics implementation (REQUIRED)
+- `pkg/{package_name}/errors.go` - Custom error types with Op/Err/Code pattern (REQUIRED)
+- `pkg/{package_name}/{package_name}.go` - Main interfaces and factory functions
+- `pkg/{package_name}/factory.go` OR `registry.go` - Global factory/registry for multi-provider packages
+- `pkg/{package_name}/test_utils.go` - Advanced testing utilities and mocks (REQUIRED)
+- `pkg/{package_name}/advanced_test.go` - Comprehensive test suites (REQUIRED)
+- `pkg/{package_name}/README.md` - Package documentation (REQUIRED)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Interface Design (MUST)
+All packages MUST follow Interface Segregation Principle (ISP):
+- Define small, focused interfaces that serve specific purposes
+- Avoid "god interfaces" that force implementations to depend on unused methods
+- Prefer multiple small interfaces over one large interface
+- Use "er" suffix pattern where appropriate (e.g., Embedder, Caller)
+- Follow Dependency Inversion Principle (DIP): depend on abstractions, use constructor injection
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Provider Registry Pattern (MUST)
+Multi-provider packages MUST use global registry pattern:
+- `GetRegistry()` function for global registry access
+- `Register()` method for provider registration
+- `Create()` method for provider instantiation
+- Provider registration in `providers/*/init.go` files
+- Match existing patterns from `pkg/llms/` and `pkg/embeddings/`
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. OTEL Observability (MUST)
+All packages MUST include comprehensive observability:
+- OTEL metrics in `metrics.go` (counters, histograms for latency, throughput)
+- OTEL tracing for all public methods with span attributes
+- Structured logging with OTEL context (trace IDs, span IDs)
+- Use `logWithOTELContext` helper function following framework patterns
+- Record errors with `span.RecordError()` and set status codes
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Error Handling (MUST)
+All packages MUST use custom error types:
+- Error struct with Op, Err, Code, Message fields
+- Error codes for common failures (provider_not_found, invalid_config, etc.)
+- Context cancellation support
+- Error helper functions: `NewError`, `WrapError`, `IsError`, `AsError`
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### VI. Configuration (MUST)
+All packages MUST use structured configuration:
+- Config struct with mapstructure, yaml, env, validate tags
+- Functional options for runtime configuration
+- Validation at creation time using validator library
+- Default values where appropriate
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### VII. Testing (MUST)
+All packages MUST include comprehensive tests:
+- Table-driven tests in `advanced_test.go`
+- Mocks in `internal/mock/` or `test_utils.go`
+- Benchmarks for performance-critical operations
+- Integration tests for cross-package compatibility
+- Test coverage >80% for all packages
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### VIII. Backward Compatibility (MUST)
+All new features MUST maintain backward compatibility:
+- No breaking changes to existing APIs
+- New functionality is opt-in where possible
+- Deprecation notices with migration guides for any planned breaking changes
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+## Framework Design Patterns
+
+### Core Principles
+- **Interface Segregation Principle (ISP)**: Small, focused interfaces
+- **Dependency Inversion Principle (DIP)**: Depend on abstractions; use constructor injection
+- **Single Responsibility Principle (SRP)**: One responsibility per package/struct
+- **Composition over Inheritance**: Embed interfaces; use functional options
+
+### Package Naming Conventions
+- Use lowercase, descriptive names: `llms`, `vectorstores`, `embeddings`
+- Avoid abbreviations unless widely understood (e.g., `llms` is acceptable)
+- Use singular forms: `agent` not `agents`, `tool` not `tools`
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+**Constitution Authority**: This constitution supersedes all other practices and guidelines. All feature specifications, implementation plans, and tasks MUST comply with these principles.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Compliance Verification**: 
+- All PRs/reviews must verify compliance with framework patterns
+- Complexity must be justified if deviating from standard patterns
+- Package design patterns are documented in `docs/package_design_patterns.md`
+
+**Amendments**: 
+- Constitution changes require documentation, approval, and migration plan
+- Feature-specific workarounds must be documented in feature specifications
+- See `specs/{feature}/plan.md` "Constitution Check" section for feature-specific compliance
+
+**Version**: 1.0.0 | **Ratified**: 2025-01-27 | **Last Amended**: 2025-01-27

@@ -122,8 +122,8 @@ func (s *ChromaStore) AddDocuments(ctx context.Context, documents []schema.Docum
 		}
 		embeddings, err = config.Embedder.EmbedDocuments(ctx, texts)
 		if err != nil {
-			return nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-				"failed to generate embeddings for documents")
+			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+				"failed to generate embeddings for documents", err)
 		}
 	} else {
 		// Check if documents already have embeddings
@@ -133,8 +133,8 @@ func (s *ChromaStore) AddDocuments(ctx context.Context, documents []schema.Docum
 			if len(doc.Embedding) > 0 {
 				embeddings[i] = doc.Embedding
 			} else {
-				return nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-					"no embedder provided and document %d has no embedding", i)
+				return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeEmbeddingFailed,
+					fmt.Sprintf("no embedder provided and document %d has no embedding", i), nil)
 			}
 		}
 	}
@@ -235,14 +235,14 @@ func (s *ChromaStore) SimilaritySearchByQuery(ctx context.Context, query string,
 	}
 
 	if embedder == nil {
-		return nil, nil, vectorstores.NewVectorStoreError(vectorstores.ErrCodeEmbeddingFailed,
-			"embedder is required for SimilaritySearchByQuery")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"embedder is required for SimilaritySearchByQuery", nil)
 	}
 
 	queryVector, err := embedder.EmbedQuery(ctx, query)
 	if err != nil {
-		return nil, nil, vectorstores.WrapError(err, vectorstores.ErrCodeEmbeddingFailed,
-			"failed to generate embedding for query")
+		return nil, nil, vectorstores.NewVectorStoreErrorWithMessage("SimilaritySearchByQuery", vectorstores.ErrCodeEmbeddingFailed,
+			"failed to generate embedding for query", err)
 	}
 
 	return s.SimilaritySearch(ctx, queryVector, k, opts...)

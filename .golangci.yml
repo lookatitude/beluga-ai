@@ -456,6 +456,12 @@ issues:
     - path: .*_test\.go
       linters:
         - containedctx
+    # Exclude fieldalignment for test files - test structs don't need optimal field alignment
+    - path: .*_test\.go
+      text: "fieldalignment:"
+    # Exclude goconst false positives for test files - test constants are already defined
+    - path: .*_test\.go
+      text: "but such constant.*already exists"
     # Exclude containedctx for streaming providers - context storage is necessary for long-lived connections
     - path: pkg/voice/stt/providers/.*/streaming\.go
       linters:

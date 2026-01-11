@@ -6,8 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
+
+// Static errors for benchmark tests.
+var errBenchmarkTestError = errors.New("test error")
 
 // Benchmark tests for performance measurement
 
@@ -42,13 +45,22 @@ func BenchmarkContainer_Resolve_WithDependencyChain(b *testing.B) {
 	if err := container.Register(func(d string) BenchmarkServiceD { return &benchmarkServiceDImpl{dep: d} }); err != nil {
 		b.Fatal(err)
 	}
-	if err := container.Register(func(d BenchmarkServiceD) BenchmarkServiceC { return &benchmarkServiceCImpl{dep: d} }); err != nil {
+	if err := container.Register(
+		func(d BenchmarkServiceD) BenchmarkServiceC {
+			return &benchmarkServiceCImpl{dep: d}
+		}); err != nil {
 		b.Fatal(err)
 	}
-	if err := container.Register(func(c BenchmarkServiceC) BenchmarkServiceB { return &benchmarkServiceBImpl{dep: c} }); err != nil {
+	if err := container.Register(
+		func(c BenchmarkServiceC) BenchmarkServiceB {
+			return &benchmarkServiceBImpl{dep: c}
+		}); err != nil {
 		b.Fatal(err)
 	}
-	if err := container.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} }); err != nil {
+	if err := container.Register(
+		func(b BenchmarkServiceB) BenchmarkServiceA {
+			return &benchmarkServiceAImpl{dep: b}
+		}); err != nil {
 		b.Fatal(err)
 	}
 
@@ -138,7 +150,7 @@ func BenchmarkRunnable_Batch(b *testing.B) {
 
 func BenchmarkTracedRunnable_Invoke(b *testing.B) {
 	mock := NewMockRunnable().WithInvokeResult("traced_result")
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "benchmark", "test")
 
@@ -160,7 +172,7 @@ func BenchmarkTracedRunnable_Invoke(b *testing.B) {
 
 func BenchmarkTracedRunnable_Stream(b *testing.B) {
 	mock := NewMockRunnable().WithStreamChunks("chunk1", "chunk2", "chunk3")
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "benchmark", "test")
 
@@ -205,7 +217,7 @@ func BenchmarkContainer_CheckHealth(b *testing.B) {
 }
 
 func BenchmarkErrorHandling(b *testing.B) {
-	testErr := errors.New("test error")
+	testErr := errBenchmarkTestError
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -284,7 +296,10 @@ func BenchmarkBuilder_ComplexDependencyChain(b *testing.B) {
 	}); err != nil {
 		b.Fatal(err)
 	}
-	if err := builder.Register(func(b BenchmarkServiceB) BenchmarkServiceA { return &benchmarkServiceAImpl{dep: b} }); err != nil {
+	if err := builder.Register(
+		func(b BenchmarkServiceB) BenchmarkServiceA {
+			return &benchmarkServiceAImpl{dep: b}
+		}); err != nil {
 		b.Fatal(err)
 	}
 

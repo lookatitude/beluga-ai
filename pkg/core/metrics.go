@@ -29,85 +29,93 @@ type Metrics struct {
 	streamChunks   metric.Int64Counter
 }
 
+// createCounter creates a counter instrument with consistent error handling.
+func createCounter(meter metric.Meter, name, desc, unit string) (metric.Int64Counter, error) {
+	return meter.Int64Counter(name, metric.WithDescription(desc), metric.WithUnit(unit))
+}
+
+// createFloat64Histogram creates a float64 histogram with consistent error handling.
+func createFloat64Histogram(meter metric.Meter, name, desc, unit string) (metric.Float64Histogram, error) {
+	return meter.Float64Histogram(name, metric.WithDescription(desc), metric.WithUnit(unit))
+}
+
+// createInt64Histogram creates an int64 histogram with consistent error handling.
+func createInt64Histogram(meter metric.Meter, name, desc, unit string) (metric.Int64Histogram, error) {
+	return meter.Int64Histogram(name, metric.WithDescription(desc), metric.WithUnit(unit))
+}
+
+// createCounters creates all counter instruments.
+func createCounters(meter metric.Meter) (metric.Int64Counter, metric.Int64Counter, metric.Int64Counter, metric.Int64Counter, error) {
+	runnableInvokes, err := createCounter(meter, "runnable_invokes_total",
+		"Total number of Runnable.Invoke calls", "1")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	runnableBatches, err := createCounter(meter, "runnable_batches_total",
+		"Total number of Runnable.Batch calls", "1")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	runnableStreams, err := createCounter(meter, "runnable_streams_total",
+		"Total number of Runnable.Stream calls", "1")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	runnableErrors, err := createCounter(meter, "runnable_errors_total",
+		"Total number of Runnable execution errors", "1")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return runnableInvokes, runnableBatches, runnableStreams, runnableErrors, nil
+}
+
+// createHistograms creates all histogram instruments.
+func createHistograms(meter metric.Meter) (metric.Float64Histogram, metric.Int64Histogram, metric.Float64Histogram, metric.Float64Histogram, error) {
+	runnableDuration, err := createFloat64Histogram(meter, "runnable_duration_seconds",
+		"Duration of Runnable operations", "s")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	batchSize, err := createInt64Histogram(meter, "runnable_batch_size",
+		"Size of Runnable batch operations", "1")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	batchDuration, err := createFloat64Histogram(meter, "runnable_batch_duration_seconds",
+		"Duration of Runnable batch operations", "s")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	streamDuration, err := createFloat64Histogram(meter, "runnable_stream_duration_seconds",
+		"Duration of Runnable stream operations", "s")
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+
+	return runnableDuration, batchSize, batchDuration, streamDuration, nil
+}
+
 // NewMetrics creates a new Metrics instance with registered instruments.
 func NewMetrics(meter metric.Meter) (*Metrics, error) {
-	runnableInvokes, err := meter.Int64Counter(
-		"runnable_invokes_total",
-		metric.WithDescription("Total number of Runnable.Invoke calls"),
-		metric.WithUnit("1"),
-	)
+	runnableInvokes, runnableBatches, runnableStreams, runnableErrors, err := createCounters(meter)
 	if err != nil {
 		return nil, err
 	}
 
-	runnableBatches, err := meter.Int64Counter(
-		"runnable_batches_total",
-		metric.WithDescription("Total number of Runnable.Batch calls"),
-		metric.WithUnit("1"),
-	)
+	runnableDuration, batchSize, batchDuration, streamDuration, err := createHistograms(meter)
 	if err != nil {
 		return nil, err
 	}
 
-	runnableStreams, err := meter.Int64Counter(
-		"runnable_streams_total",
-		metric.WithDescription("Total number of Runnable.Stream calls"),
-		metric.WithUnit("1"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	runnableErrors, err := meter.Int64Counter(
-		"runnable_errors_total",
-		metric.WithDescription("Total number of Runnable execution errors"),
-		metric.WithUnit("1"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	runnableDuration, err := meter.Float64Histogram(
-		"runnable_duration_seconds",
-		metric.WithDescription("Duration of Runnable operations"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	batchSize, err := meter.Int64Histogram(
-		"runnable_batch_size",
-		metric.WithDescription("Size of Runnable batch operations"),
-		metric.WithUnit("1"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	batchDuration, err := meter.Float64Histogram(
-		"runnable_batch_duration_seconds",
-		metric.WithDescription("Duration of Runnable batch operations"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	streamDuration, err := meter.Float64Histogram(
-		"runnable_stream_duration_seconds",
-		metric.WithDescription("Duration of Runnable stream operations"),
-		metric.WithUnit("s"),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	streamChunks, err := meter.Int64Counter(
-		"runnable_stream_chunks_total",
-		metric.WithDescription("Total number of chunks produced by Runnable.Stream"),
-		metric.WithUnit("1"),
-	)
+	streamChunks, err := meter.Int64Counter("runnable_stream_chunks_total",
+		metric.WithDescription("Total number of chunks produced by Runnable.Stream"), metric.WithUnit("1"))
 	if err != nil {
 		return nil, err
 	}
@@ -149,7 +157,13 @@ func (m *Metrics) RecordRunnableInvoke(ctx context.Context, componentType string
 }
 
 // RecordRunnableBatch records metrics for a Runnable.Batch operation.
-func (m *Metrics) RecordRunnableBatch(ctx context.Context, componentType string, batchSize int, duration time.Duration, err error) {
+func (m *Metrics) RecordRunnableBatch(
+	ctx context.Context,
+	componentType string,
+	batchSize int,
+	duration time.Duration,
+	err error,
+) {
 	if m == nil {
 		return
 	}
@@ -178,7 +192,13 @@ func (m *Metrics) RecordRunnableBatch(ctx context.Context, componentType string,
 }
 
 // RecordRunnableStream records metrics for a Runnable.Stream operation.
-func (m *Metrics) RecordRunnableStream(ctx context.Context, componentType string, duration time.Duration, chunkCount int, err error) {
+func (m *Metrics) RecordRunnableStream(
+	ctx context.Context,
+	componentType string,
+	duration time.Duration,
+	chunkCount int,
+	err error,
+) {
 	if m == nil {
 		return
 	}
