@@ -225,14 +225,17 @@ func (s *GrokVoiceStreamingSession) SendAudio(ctx context.Context, audio []byte)
 	}
 
 	// Buffer audio for sending
-	// In a full implementation, this would send audio chunks to Grok streaming API
+	// NOTE: Grok Voice Agent streaming API is a one-way streaming API
+	// (server-to-client only). It does not support sending additional audio input
+	// after the initial streaming request. Audio input must be included in the
+	// initial request body.
+	//
+	// For bidirectional streaming, use:
+	// 1. The non-streaming Process() method for each audio chunk
+	// 2. OpenAI Realtime provider which supports true bidirectional streaming
+	//
+	// This method buffers audio for potential future use or for documentation purposes.
 	s.audioBuffer = append(s.audioBuffer, audio...)
-
-	// TODO: Send audio chunk to Grok streaming API
-	// This would involve:
-	// 1. Encoding audio as base64
-	// 2. Sending as part of the streaming request
-	// 3. Handling acknowledgments
 
 	return nil
 }

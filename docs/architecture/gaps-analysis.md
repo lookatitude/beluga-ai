@@ -307,33 +307,31 @@ Each retriever should:
 
 ## Voice/S2S Providers
 
-### S2S Providers (ALL PLACEHOLDERS)
+### S2S Providers (MOSTLY COMPLETE)
 
-**Critical Issue:** All 4 S2S providers are placeholders with no actual API integration.
+**Status:** Core functionality is implemented. Streaming input needs completion for some providers.
 
 ```
 pkg/voice/s2s/providers/
-├── amazon_nova/      # PLACEHOLDER - API not implemented
-├── gemini/           # PLACEHOLDER - API not implemented
-├── grok/             # PLACEHOLDER - API not implemented
-└── openai_realtime/  # PLACEHOLDER - API not implemented
+├── amazon_nova/      # ✅ Process() complete, ⚠️ Streaming input partial
+├── gemini/           # ✅ Process() complete, ⚠️ Streaming input partial
+├── grok/             # ✅ Process() complete, ⚠️ Streaming input partial
+└── openai_realtime/  # ✅ Fully complete (bidirectional streaming)
 ```
 
 **Each provider has:**
 - ✅ Config structure - Complete
 - ✅ Provider structure - Complete
-- ❌ `Process()` method - PLACEHOLDER (returns input as output)
-- ❌ Streaming - PLACEHOLDER (not connected to real API)
+- ✅ `Process()` method - **COMPLETE** (makes real API calls)
+- ✅ Streaming output - **COMPLETE** (receives streaming responses)
+- ⚠️ Streaming input (`SendAudio()`) - **PARTIAL** for Nova/Gemini/Grok
 
-**Files Affected:**
-- `pkg/voice/s2s/providers/amazon_nova/provider.go` - Line 105: TODO
-- `pkg/voice/s2s/providers/amazon_nova/streaming.go` - Line 33: TODO
-- `pkg/voice/s2s/providers/gemini/provider.go` - Line 100: TODO
-- `pkg/voice/s2s/providers/gemini/streaming.go` - Line 32: TODO
-- `pkg/voice/s2s/providers/grok/provider.go` - Line 97: TODO
-- `pkg/voice/s2s/providers/grok/streaming.go` - Line 32: TODO
-- `pkg/voice/s2s/providers/openai_realtime/provider.go` - Line 97: TODO
-- `pkg/voice/s2s/providers/openai_realtime/streaming.go` - Line 32: TODO
+**Note**: Amazon Nova, Gemini, and Grok use one-way streaming APIs. Their `SendAudio()` methods buffer audio but don't send it during an active stream. For true bidirectional streaming, use OpenAI Realtime or the non-streaming `Process()` method.
+
+**Files with TODOs:**
+- `pkg/voice/s2s/providers/amazon_nova/streaming.go` - Line 182: TODO - SendAudio() implementation
+- `pkg/voice/s2s/providers/gemini/streaming.go` - Line 242: TODO - SendAudio() implementation
+- `pkg/voice/s2s/providers/grok/streaming.go` - Line 231: TODO - SendAudio() implementation
 
 ### VAD Providers
 

@@ -29,14 +29,26 @@ S2S (Speech-to-Speech) providers enable end-to-end speech conversations without 
 
 ## Current Status
 
-### All Providers: Placeholder Status
+### Implementation Status Summary
+
+| Provider | Process() | Streaming Output | Streaming Input (SendAudio) | Status |
+|----------|-----------|------------------|----------------------------|--------|
+| Amazon Nova | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
+| Gemini | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
+| Grok | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
+| OpenAI Realtime | ✅ Complete | ✅ Complete | ✅ Complete | Fully Functional |
+
+### Implementation Details
 
 All four providers have:
 - ✅ Configuration structures - Complete
 - ✅ Provider structures - Complete
 - ✅ Auto-registration - Complete
-- ❌ `Process()` method - PLACEHOLDER (returns input as output)
-- ❌ Streaming support - PLACEHOLDER (not connected to real API)
+- ✅ `Process()` method - **COMPLETE** (makes real API calls)
+- ✅ Streaming output - **COMPLETE** (receives streaming responses)
+- ⚠️ Streaming input (`SendAudio()`) - **PARTIAL** for Nova/Gemini/Grok
+
+**Note**: Amazon Nova, Gemini, and Grok use one-way streaming APIs (server-to-client only). Their `SendAudio()` methods currently buffer audio but don't send it to the API during an active stream. For bidirectional streaming, use OpenAI Realtime or the non-streaming `Process()` method.
 
 ### Files Requiring Implementation
 
