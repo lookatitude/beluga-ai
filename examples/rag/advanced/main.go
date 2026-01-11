@@ -15,10 +15,13 @@ import (
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	"github.com/lookatitude/beluga-ai/pkg/documentloaders"
 	"github.com/lookatitude/beluga-ai/pkg/retrievers"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/textsplitters"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
+	"testing/fstest"
 )
 
 func main() {
@@ -55,39 +58,100 @@ func main() {
 	}
 	fmt.Println("✅ Created advanced retriever with filtering")
 
-	// Step 3: Add diverse documents to knowledge base
-	documents := []schema.Document{
-		schema.NewDocument(
-			"REST APIs use HTTP methods like GET, POST, PUT, DELETE to perform operations on resources.",
-			map[string]string{"topic": "API", "type": "REST", "level": "beginner"},
-		),
-		schema.NewDocument(
-			"GraphQL is a query language that allows clients to request exactly the data they need from a single endpoint.",
-			map[string]string{"topic": "API", "type": "GraphQL", "level": "intermediate"},
-		),
-		schema.NewDocument(
-			"gRPC is a high-performance RPC framework that uses Protocol Buffers for serialization.",
-			map[string]string{"topic": "API", "type": "gRPC", "level": "advanced"},
-		),
-		schema.NewDocument(
-			"Microservices architecture breaks applications into small, independent services.",
-			map[string]string{"topic": "Architecture", "pattern": "microservices", "level": "intermediate"},
-		),
-		schema.NewDocument(
-			"Event-driven architecture uses events to trigger and communicate between decoupled services.",
-			map[string]string{"topic": "Architecture", "pattern": "events", "level": "advanced"},
-		),
-		schema.NewDocument(
-			"Monolithic architecture consists of a single unified application with all components tightly coupled.",
-			map[string]string{"topic": "Architecture", "pattern": "monolithic", "level": "beginner"},
-		),
+	// Step 3: Load and split documents using documentloaders and textsplitters
+	fmt.Println("\n📝 Loading and splitting documents for the knowledge base...")
+
+	// Create a mock filesystem with diverse documents
+	mockFS := fstest.MapFS{
+		"api/rest.txt": &fstest.MapFile{
+			Data: []byte("REST APIs use HTTP methods like GET, POST, PUT, DELETE to perform operations on resources."),
+		},
+		"api/graphql.txt": &fstest.MapFile{
+			Data: []byte("GraphQL is a query language that allows clients to request exactly the data they need from a single endpoint."),
+		},
+		"api/grpc.txt": &fstest.MapFile{
+			Data: []byte("gRPC is a high-performance RPC framework that uses Protocol Buffers for serialization."),
+		},
+		"architecture/microservices.txt": &fstest.MapFile{
+			Data: []byte("Microservices architecture breaks applications into small, independent services."),
+		},
+		"architecture/event-driven.txt": &fstest.MapFile{
+			Data: []byte("Event-driven architecture uses events to trigger and communicate between decoupled services."),
+		},
+		"architecture/monolithic.txt": &fstest.MapFile{
+			Data: []byte("Monolithic architecture consists of a single unified application with all components tightly coupled."),
+		},
 	}
 
-	_, err = vectorStore.AddDocuments(ctx, documents)
+	// Use directory loader with advanced options
+	loader, err := documentloaders.NewDirectoryLoader(mockFS,
+		documentloaders.WithMaxDepth(2),
+		documentloaders.WithExtensions(".txt"),
+		documentloaders.WithConcurrency(3), // Use 3 concurrent workers
+	)
+	if err != nil {
+		log.Fatalf("Failed to create directory loader: %v", err)
+	}
+
+	loadedDocs, err := loader.Load(ctx)
+	if err != nil {
+		log.Fatalf("Failed to load documents: %v", err)
+	}
+	fmt.Printf("✅ Loaded %d documents from directory\n", len(loadedDocs))
+
+	// Use recursive splitter with advanced options
+	splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
+		textsplitters.WithRecursiveChunkSize(200),
+		textsplitters.WithRecursiveChunkOverlap(40),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create text splitter: %v", err)
+	}
+
+	chunks, err := splitter.SplitDocuments(ctx, loadedDocs)
+	if err != nil {
+		log.Fatalf("Failed to split documents: %v", err)
+	}
+	fmt.Printf("✅ Split into %d chunks\n", len(chunks))
+
+	// Add metadata to chunks based on file path
+	for i := range chunks {
+		if chunks[i].Metadata == nil {
+			chunks[i].Metadata = make(map[string]string)
+		}
+		source := chunks[i].Metadata["source"]
+		if strings.Contains(source, "api/") {
+			chunks[i].Metadata["topic"] = "API"
+			if strings.Contains(source, "rest") {
+				chunks[i].Metadata["type"] = "REST"
+				chunks[i].Metadata["level"] = "beginner"
+			} else if strings.Contains(source, "graphql") {
+				chunks[i].Metadata["type"] = "GraphQL"
+				chunks[i].Metadata["level"] = "intermediate"
+			} else if strings.Contains(source, "grpc") {
+				chunks[i].Metadata["type"] = "gRPC"
+				chunks[i].Metadata["level"] = "advanced"
+			}
+		} else if strings.Contains(source, "architecture/") {
+			chunks[i].Metadata["topic"] = "Architecture"
+			if strings.Contains(source, "microservices") {
+				chunks[i].Metadata["pattern"] = "microservices"
+				chunks[i].Metadata["level"] = "intermediate"
+			} else if strings.Contains(source, "event") {
+				chunks[i].Metadata["pattern"] = "events"
+				chunks[i].Metadata["level"] = "advanced"
+			} else if strings.Contains(source, "monolithic") {
+				chunks[i].Metadata["pattern"] = "monolithic"
+				chunks[i].Metadata["level"] = "beginner"
+			}
+		}
+	}
+
+	_, err = vectorStore.AddDocuments(ctx, chunks)
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
-	fmt.Printf("✅ Added %d documents to knowledge base\n", len(documents))
+	fmt.Printf("✅ Added %d chunks to knowledge base\n", len(chunks))
 
 	// Step 4: Advanced query with multiple retrieval strategies
 	query := "What are the different API types and how do they compare?"

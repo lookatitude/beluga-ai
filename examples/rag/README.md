@@ -52,6 +52,28 @@ cd advanced
 go run main.go
 ```
 
+### [with_loaders](with_loaders/)
+
+RAG pipeline using document loaders and text splitters for real-world document ingestion.
+
+**What you'll learn:**
+- Loading documents from directories and files using `documentloaders`
+- Splitting documents into chunks using `textsplitters`
+- Integrating loaders and splitters into RAG pipeline
+- Chunk metadata preservation
+- Configuring loaders (depth, extensions, concurrency)
+- Configuring splitters (chunk size, overlap, separators)
+
+**Run:**
+```bash
+cd with_loaders
+go run main.go
+```
+
+**Related Examples:**
+- See `examples/documentloaders/` for more loader examples
+- See `examples/textsplitters/` for more splitter examples
+
 ## Prerequisites
 
 - Go 1.21 or later
@@ -62,10 +84,32 @@ go run main.go
 
 1. Start with `simple` to understand RAG fundamentals
 2. Add `with_memory` for conversation context
-3. Explore `advanced` for optimization techniques
+3. Use `with_loaders` to learn document ingestion patterns with loaders and splitters
+4. Explore `advanced` for optimization techniques
+
+## Document Ingestion
+
+For real-world RAG applications, use the `documentloaders` and `textsplitters` packages:
+
+- **Document Loaders**: Load documents from files, directories, and other sources
+  - `RecursiveDirectoryLoader`: Recursively load files from directories
+  - `TextLoader`: Load single text files
+  - See `examples/documentloaders/` for usage examples
+
+- **Text Splitters**: Split documents into chunks for embedding
+  - `RecursiveCharacterTextSplitter`: General-purpose text splitting
+  - `MarkdownTextSplitter`: Markdown-aware splitting
+  - See `examples/textsplitters/` for usage examples
+
+**Migration Guide**: If you're currently creating documents manually, consider migrating to loaders:
+- Replace manual document creation with `documentloaders.NewDirectoryLoader()`
+- Replace manual text splitting with `textsplitters.NewRecursiveCharacterTextSplitter()`
+- See `with_loaders` example for the complete pattern
 
 ## Related Documentation
 
 - [RAG Concepts](../../docs/concepts/rag.md)
 - [RAG Recipes](../../docs/cookbook/rag-recipes.md)
+- [Document Loading](../../docs/concepts/document-loading.md) (coming soon)
+- [Text Splitting](../../docs/concepts/text-splitting.md) (coming soon)
 - [Vector Stores](../../docs/providers/vectorstores/)

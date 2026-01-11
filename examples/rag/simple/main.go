@@ -8,15 +8,21 @@ import (
 	"strings"
 
 	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/directory"
+	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/text"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/markdown"
+	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/recursive"
 	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels"
 	chatmodelsiface "github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/documentloaders"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/textsplitters"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 )
 
@@ -50,23 +56,56 @@ func main() {
 	fmt.Println("✅ Created LLM")
 
 	// Step 4: Prepare documents for the knowledge base
-	documents := []schema.Document{
-		schema.NewDocument(
-			"Artificial Intelligence (AI) is the simulation of human intelligence in machines.",
-			map[string]string{"topic": "AI", "level": "intro"},
-		),
-		schema.NewDocument(
-			"Machine Learning is a subset of AI that enables machines to learn from data.",
-			map[string]string{"topic": "ML", "level": "intro"},
-		),
-		schema.NewDocument(
-			"Deep Learning uses neural networks with multiple layers to understand complex patterns.",
-			map[string]string{"topic": "DL", "level": "intermediate"},
-		),
-		schema.NewDocument(
-			"Natural Language Processing helps computers understand human language.",
-			map[string]string{"topic": "NLP", "level": "intermediate"},
-		),
+	// Option A: Use document loaders and text splitters (recommended for real-world use)
+	var documents []schema.Document
+	
+	// Try to load from a data directory if it exists, otherwise use manual documents
+	dataDir := "examples/rag/simple/data"
+	if _, err := os.Stat(dataDir); err == nil {
+		fmt.Println("📂 Loading documents from directory...")
+		loader, err := documentloaders.NewDirectoryLoader(os.DirFS(dataDir),
+			documentloaders.WithExtensions(".txt", ".md"),
+			documentloaders.WithMaxDepth(1),
+		)
+		if err == nil {
+			loadedDocs, err := loader.Load(ctx)
+			if err == nil && len(loadedDocs) > 0 {
+				// Split documents into chunks
+				splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
+					textsplitters.WithRecursiveChunkSize(500),
+					textsplitters.WithRecursiveChunkOverlap(50),
+				)
+				if err == nil {
+					documents, err = splitter.SplitDocuments(ctx, loadedDocs)
+					if err == nil {
+						fmt.Printf("✅ Loaded and split %d documents from directory\n", len(documents))
+					}
+				}
+			}
+		}
+	}
+	
+	// Option B: Fallback to manual documents if directory doesn't exist
+	if len(documents) == 0 {
+		fmt.Println("📝 Using manual documents (create examples/rag/simple/data/ for file-based loading)")
+		documents = []schema.Document{
+			schema.NewDocument(
+				"Artificial Intelligence (AI) is the simulation of human intelligence in machines.",
+				map[string]string{"topic": "AI", "level": "intro"},
+			),
+			schema.NewDocument(
+				"Machine Learning is a subset of AI that enables machines to learn from data.",
+				map[string]string{"topic": "ML", "level": "intro"},
+			),
+			schema.NewDocument(
+				"Deep Learning uses neural networks with multiple layers to understand complex patterns.",
+				map[string]string{"topic": "DL", "level": "intermediate"},
+			),
+			schema.NewDocument(
+				"Natural Language Processing helps computers understand human language.",
+				map[string]string{"topic": "NLP", "level": "intermediate"},
+			),
+		}
 	}
 
 	// Step 5: Add documents to the vector store
