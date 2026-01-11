@@ -260,20 +260,20 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 
 	// Write data to temp file
 	if _, err := tmpFile.Write(data); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpFile.Name())
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpFile.Name())
 		return nil, fmt.Errorf("toFilePath: failed to write data: %w", err)
 	}
 
 	if err := tmpFile.Close(); err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		return nil, fmt.Errorf("toFilePath: failed to close temp file: %w", err)
 	}
 
 	// Get absolute path
 	absPath, err := filepath.Abs(tmpFile.Name())
 	if err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		return nil, fmt.Errorf("toFilePath: failed to get absolute path: %w", err)
 	}
 

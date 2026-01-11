@@ -170,8 +170,15 @@ func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*Cont
 		return nil, fmt.Errorf("URL cannot be empty")
 	}
 
-	// Fetch the content from URL
-	resp, err := http.Get(url)
+	// Fetch the content from URL using a client with timeout
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch URL: %w", err)
 	}
