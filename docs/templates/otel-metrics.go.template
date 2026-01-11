@@ -1,0 +1,92 @@
+// Package {package_name} provides package-specific metrics definitions using OpenTelemetry.
+package {package_name}
+
+import (
+	"context"
+	"time"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/metric"
+)
+
+// PackageMetrics defines comprehensive metrics for the {package_name} package.
+type PackageMetrics struct {
+	// Operation metrics
+	operationCount    metric.Int64Counter
+	operationDuration metric.Float64Histogram
+	operationErrors   metric.Int64Counter
+
+	// Package-specific metrics
+	// TODO: Add package-specific metrics here
+	// Example:
+	// itemsProcessed metric.Int64Counter
+	// cacheHits      metric.Int64Counter
+
+	// Internal fields
+	meter metric.Meter
+}
+
+// NewPackageMetrics creates a new PackageMetrics instance with registered instruments.
+func NewPackageMetrics(meter metric.Meter) (*PackageMetrics, error) {
+	pm := &PackageMetrics{
+		meter: meter,
+	}
+
+	var err error
+
+	// Initialize operation metrics
+	pm.operationCount, err = meter.Int64Counter(
+		"{package_name}_operations_total",
+		metric.WithDescription("Total number of {package_name} operations"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pm.operationDuration, err = meter.Float64Histogram(
+		"{package_name}_operation_duration_seconds",
+		metric.WithDescription("Duration of {package_name} operations in seconds"),
+		metric.WithUnit("s"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	pm.operationErrors, err = meter.Int64Counter(
+		"{package_name}_operation_errors_total",
+		metric.WithDescription("Total number of {package_name} operation errors"),
+		metric.WithUnit("1"),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Initialize package-specific metrics here
+
+	return pm, nil
+}
+
+// RecordOperation records a {package_name} operation.
+func (pm *PackageMetrics) RecordOperation(ctx context.Context, operation string, duration time.Duration, err error) {
+	attrs := []attribute.KeyValue{
+		attribute.String("operation", operation),
+	}
+
+	pm.operationCount.Add(ctx, 1, metric.WithAttributes(attrs...))
+	pm.operationDuration.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+
+	if err != nil {
+		pm.operationErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+}
+
+// NoOpMetrics returns a no-op metrics instance for testing.
+func NoOpMetrics() *PackageMetrics {
+	return &PackageMetrics{}
+}
+
+// RecordOperation is a no-op for NoOpMetrics.
+func (pm *PackageMetrics) RecordOperation(ctx context.Context, operation string, duration time.Duration, err error) {
+	// No-op implementation
+}

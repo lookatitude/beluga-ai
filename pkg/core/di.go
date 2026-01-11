@@ -77,6 +77,33 @@ func NewContainerWithOptions(opts ...DIOption) Container {
 	return config.container
 }
 
+// logWithOTELContext extracts OTEL trace/span IDs from context and adds them to log fields.
+func (c *containerImpl) logWithOTELContext(ctx context.Context, level string, message string, fields ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelFields := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		fields = append(otelFields, fields...)
+	}
+
+	// Call appropriate logger method
+	switch level {
+	case "debug":
+		c.logger.Debug(message, fields...)
+	case "info":
+		c.logger.Info(message, fields...)
+	case "warn":
+		c.logger.Warn(message, fields...)
+	case "error":
+		c.logger.Error(message, fields...)
+	default:
+		c.logger.Info(message, fields...)
+	}
+}
+
 // Register registers a factory function for a type.
 func (c *containerImpl) Register(factoryFunc any) error {
 	ctx := context.Background()
@@ -94,7 +121,7 @@ func (c *containerImpl) Register(factoryFunc any) error {
 		err := fmt.Errorf("factory must be a function, got %s", factoryType.Kind())
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Register failed", "error", err)
+		c.logWithOTELContext(ctx, "error", "DI Register failed", "error", err)
 		return err
 	}
 
@@ -102,7 +129,7 @@ func (c *containerImpl) Register(factoryFunc any) error {
 		err := errors.New("factory function must return at least one value")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Register failed", "error", err)
+		c.logWithOTELContext(ctx, "error", "DI Register failed", "error", err)
 		return err
 	}
 
@@ -113,7 +140,7 @@ func (c *containerImpl) Register(factoryFunc any) error {
 		attribute.String("type", returnType.String()),
 	)
 	span.SetStatus(codes.Ok, "")
-	c.logger.Info("DI Register succeeded", "type", returnType.String())
+	c.logWithOTELContext(ctx, "info", "DI Register succeeded", "type", returnType.String())
 
 	return nil
 }
@@ -132,7 +159,7 @@ func (c *containerImpl) Resolve(target any) error {
 		err := fmt.Errorf("target must be a pointer, got %s", targetValue.Kind())
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Resolve failed", "error", err)
+		c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err)
 		return err
 	}
 
@@ -152,7 +179,7 @@ func (c *containerImpl) Resolve(target any) error {
 			attribute.Bool("cached", true),
 		)
 		span.SetStatus(codes.Ok, "")
-		c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", true)
+		c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", true)
 		return nil
 	}
 
@@ -165,7 +192,7 @@ func (c *containerImpl) Resolve(target any) error {
 		err := fmt.Errorf("no factory registered for type %s", targetType)
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
-		c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+		c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err, "type", targetType.String())
 		return err
 	}
 
@@ -193,7 +220,7 @@ func (c *containerImpl) Resolve(target any) error {
 				err = fmt.Errorf("failed to resolve dependency %s: %w", argType, err)
 				span.RecordError(err)
 				span.SetStatus(codes.Error, err.Error())
-				c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+				c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err, "type", targetType.String())
 				return err
 			}
 			args[i] = argValue.Elem()
@@ -210,7 +237,7 @@ func (c *containerImpl) Resolve(target any) error {
 			err := lastResult.Interface().(error)
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
-			c.logger.Error("DI Resolve failed", "error", err, "type", targetType.String())
+			c.logWithOTELContext(ctx, "error", "DI Resolve failed", "error", err, "type", targetType.String())
 			return err
 		}
 	}
@@ -226,7 +253,7 @@ func (c *containerImpl) Resolve(target any) error {
 			attribute.Bool("cached", true),
 		)
 		span.SetStatus(codes.Ok, "")
-		c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", true)
+		c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", true)
 		return nil
 	}
 	c.instances[targetType] = instance
@@ -238,7 +265,7 @@ func (c *containerImpl) Resolve(target any) error {
 		attribute.Bool("cached", false),
 	)
 	span.SetStatus(codes.Ok, "")
-	c.logger.Debug("DI Resolve succeeded", "type", targetType.String(), "cached", false)
+	c.logWithOTELContext(ctx, "debug", "DI Resolve succeeded", "type", targetType.String(), "cached", false)
 
 	return nil
 }
@@ -337,7 +364,7 @@ func (c *containerImpl) CheckHealth(ctx context.Context) error {
 	_ = hasType // Acknowledge the check
 
 	span.SetStatus(codes.Ok, "")
-	c.logger.Debug("DI Health check passed")
+	c.logWithOTELContext(ctx, "debug", "DI Health check passed")
 	return nil
 }
 

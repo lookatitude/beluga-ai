@@ -12,11 +12,14 @@ package schema
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema/internal"
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -405,28 +408,65 @@ func NewWorkflowEvent(workflowID string, eventType WorkflowEventType) WorkflowEv
 
 // NewHumanMessageWithContext creates a new human message with tracing context.
 func NewHumanMessageWithContext(ctx context.Context, content string) Message {
-	_, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("schema").Start(ctx, "NewHumanMessage")
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
+	ctx, span := tracer.Start(ctx, "schema.NewHumanMessage",
+		trace.WithAttributes(
+			attribute.String("message.type", "human"),
+			attribute.Int("content.length", len(content)),
+		))
 	defer span.End()
 
-	span.SetAttributes(
-		attribute.String("message.type", "human"),
-		attribute.Int("content.length", len(content)),
-	)
+	// Record metrics
+	RecordMessageCreated(ctx, RoleHuman)
 
-	return NewHumanMessage(content)
+	// Structured logging with OTEL context
+	logWithOTELContext(ctx, slog.LevelInfo, "Creating human message",
+		"message_type", "human",
+		"content_length", len(content))
+
+	msg := NewHumanMessage(content)
+	span.SetStatus(codes.Ok, "")
+	return msg
 }
 
 // NewAIMessageWithContext creates a new AI message with tracing context.
 func NewAIMessageWithContext(ctx context.Context, content string) Message {
-	_, span := trace.SpanFromContext(ctx).TracerProvider().Tracer("schema").Start(ctx, "NewAIMessage")
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
+	ctx, span := tracer.Start(ctx, "schema.NewAIMessage",
+		trace.WithAttributes(
+			attribute.String("message.type", "ai"),
+			attribute.Int("content.length", len(content)),
+		))
 	defer span.End()
 
-	span.SetAttributes(
-		attribute.String("message.type", "ai"),
-		attribute.Int("content.length", len(content)),
-	)
+	// Record metrics
+	RecordMessageCreated(ctx, RoleAssistant)
 
-	return NewAIMessage(content)
+	// Structured logging with OTEL context
+	logWithOTELContext(ctx, slog.LevelInfo, "Creating AI message",
+		"message_type", "ai",
+		"content_length", len(content))
+
+	msg := NewAIMessage(content)
+	span.SetStatus(codes.Ok, "")
+	return msg
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }
 
 // Validation helpers

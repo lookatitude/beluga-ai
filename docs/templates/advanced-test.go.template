@@ -1,0 +1,264 @@
+// Package {package_name} provides advanced test scenarios and comprehensive testing patterns.
+// This file demonstrates improved testing practices including table-driven tests,
+// concurrency testing, and integration test patterns.
+package {package_name}
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"sync"
+	"testing"
+	"time"
+
+	"github.com/lookatitude/beluga-ai/pkg/{package_name}/iface"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+// Test{PackageName}Advanced provides advanced table-driven tests for {package_name} operations.
+func Test{PackageName}Advanced(t *testing.T) {
+	tests := []struct {
+		name        string
+		description string
+		input       string
+		expected    string
+		wantErr     bool
+		errContains string
+		setup       func() iface.{InterfaceName}
+		validate    func(t *testing.T, result string, err error)
+	}{
+		{
+			name:        "basic_operation",
+			description: "Test basic {package_name} operation",
+			input:       "test input",
+			expected:    "expected output",
+			wantErr:     false,
+			setup: func() iface.{InterfaceName} {
+				return CreateTest{PackageName}()
+			},
+			validate: func(t *testing.T, result string, err error) {
+				assert.NoError(t, err)
+				assert.Equal(t, "expected output", result)
+			},
+		},
+		{
+			name:        "error_case",
+			description: "Test error handling",
+			input:       "error input",
+			wantErr:     true,
+			errContains: "expected error",
+			setup: func() iface.{InterfaceName} {
+				mock := CreateTest{PackageName}()
+				// TODO: Configure mock to return error
+				return mock
+			},
+			validate: func(t *testing.T, result string, err error) {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "expected error")
+			},
+		},
+		// TODO: Add more test cases
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Testing: %s", tt.description)
+
+			component := tt.setup()
+			ctx := context.Background()
+
+			// TODO: Call actual method
+			// result, err := component.{Method}(ctx, tt.input)
+
+			// Placeholder for now
+			var result string
+			var err error
+
+			if tt.wantErr {
+				assert.Error(t, err, "Expected error for %s", tt.description)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains, "Error should contain expected text")
+				}
+			} else {
+				assert.NoError(t, err, "No error expected for %s", tt.description)
+				if tt.expected != "" {
+					assert.Equal(t, tt.expected, result, "Result should match expected for %s", tt.description)
+				}
+			}
+
+			if tt.validate != nil {
+				tt.validate(t, result, err)
+			}
+		})
+	}
+}
+
+// Test{PackageName}Concurrency tests concurrent operations.
+func Test{PackageName}Concurrency(t *testing.T) {
+	component := CreateTest{PackageName}()
+	ctx := context.Background()
+
+	numGoroutines := 10
+	numOperations := 100
+	var wg sync.WaitGroup
+	errChan := make(chan error, numOperations)
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < numOperations/numGoroutines; j++ {
+				// TODO: Call actual method
+				// _, err := component.{Method}(ctx, fmt.Sprintf("input-%d-%d", id, j))
+				// if err != nil {
+				//     errChan <- err
+				// }
+			}
+		}(i)
+	}
+
+	wg.Wait()
+	close(errChan)
+
+	// Verify no errors occurred
+	for err := range errChan {
+		require.NoError(t, err, "Concurrent operation should not error")
+	}
+}
+
+// Test{PackageName}ErrorHandling tests error scenarios.
+func Test{PackageName}ErrorHandling(t *testing.T) {
+	tests := []struct {
+		name        string
+		description string
+		setup       func() iface.{InterfaceName}
+		operation   func(ctx context.Context, component iface.{InterfaceName}) error
+		wantErr     bool
+		errCode     string
+	}{
+		{
+			name:        "timeout_error",
+			description: "Test timeout error handling",
+			setup: func() iface.{InterfaceName} {
+				mock := CreateTest{PackageName}()
+				// TODO: Configure mock to simulate timeout
+				return mock
+			},
+			operation: func(ctx context.Context, component iface.{InterfaceName}) error {
+				// TODO: Call method that should timeout
+				// _, err := component.{Method}(ctx, "input")
+				// return err
+				return nil
+			},
+			wantErr: true,
+			errCode: "timeout",
+		},
+		// TODO: Add more error scenarios
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			component := tt.setup()
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			err := tt.operation(ctx, component)
+
+			if tt.wantErr {
+				assert.Error(t, err, "Expected error for %s", tt.description)
+				if tt.errCode != "" {
+					AssertErrorType(t, err, tt.errCode)
+				}
+			} else {
+				assert.NoError(t, err, "No error expected for %s", tt.description)
+			}
+		})
+	}
+}
+
+// Test{PackageName}Performance tests performance characteristics.
+func Test{PackageName}Performance(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping performance test in short mode")
+	}
+
+	component := CreateTest{PackageName}()
+	ctx := context.Background()
+
+	// Test single operation latency
+	t.Run("single_operation_latency", func(t *testing.T) {
+		start := time.Now()
+		// TODO: Call actual method
+		// _, err := component.{Method}(ctx, "test input")
+		// require.NoError(t, err)
+		duration := time.Since(start)
+		t.Logf("Single operation took: %v", duration)
+		assert.Less(t, duration, 1*time.Second, "Single operation should complete quickly")
+	})
+
+	// Test throughput
+	t.Run("throughput", func(t *testing.T) {
+		numOperations := 1000
+		start := time.Now()
+		
+		// TODO: Run multiple operations
+		// for i := 0; i < numOperations; i++ {
+		//     _, err := component.{Method}(ctx, fmt.Sprintf("input-%d", i))
+		//     require.NoError(t, err)
+		// }
+		
+		duration := time.Since(start)
+		throughput := float64(numOperations) / duration.Seconds()
+		t.Logf("Throughput: %.2f operations/second", throughput)
+		assert.Greater(t, throughput, 100.0, "Should handle at least 100 ops/sec")
+	})
+}
+
+// Test{PackageName}Integration tests integration scenarios.
+func Test{PackageName}Integration(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping integration test in short mode")
+	}
+
+	helper := NewIntegrationTestHelper()
+	component := CreateTest{PackageName}()
+	helper.AddComponent("test", component)
+
+	ctx := context.Background()
+
+	// Test end-to-end scenario
+	t.Run("end_to_end", func(t *testing.T) {
+		runner := New{PackageName}ScenarioRunner(component)
+		err := runner.RunBasicScenario(ctx)
+		require.NoError(t, err, "End-to-end scenario should succeed")
+	})
+}
+
+// Test{PackageName}LoadTest tests under load.
+func Test{PackageName}LoadTest(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Skipping load test in short mode")
+	}
+
+	component := CreateTest{PackageName}()
+	
+	// Run load test with 1000 operations and 10 concurrent workers
+	RunLoadTest(t, component, 1000, 10)
+}
+
+// Benchmark{PackageName}{Method} benchmarks {package_name} operations.
+func Benchmark{PackageName}{Method}(b *testing.B) {
+	component := CreateTest{PackageName}()
+	ctx := context.Background()
+	input := "benchmark input"
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		// TODO: Call actual method
+		// _, err := component.{Method}(ctx, input)
+		// if err != nil {
+		//     b.Fatal(err)
+		// }
+	}
+}

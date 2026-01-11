@@ -73,7 +73,6 @@ package vectorstores
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -239,7 +238,7 @@ func (f *StoreFactory) Register(name string, creator func(ctx context.Context, c
 func (f *StoreFactory) Create(ctx context.Context, name string, config vectorstoresiface.Config) (VectorStore, error) {
 	creator, exists := f.creators[name]
 	if !exists {
-		return nil, NewVectorStoreError(ErrCodeUnknownProvider, "vector store provider '%s' not found", name)
+		return nil, NewVectorStoreErrorWithMessage("Create", ErrCodeProviderNotFound, fmt.Sprintf("vector store provider '%s' not found", name), nil)
 	}
 	return creator(ctx, config)
 }
@@ -261,86 +260,13 @@ func RegisterGlobal(name string, creator func(ctx context.Context, config vector
 
 // NewVectorStore creates a vector store using the global factory.
 func NewVectorStore(ctx context.Context, name string, config vectorstoresiface.Config) (VectorStore, error) {
+	// OTEL tracing is handled by the factory implementation
+	// Structured logging is available via logging.go
 	return globalFactory.Create(ctx, name, config)
 }
 
-// VectorStoreError represents errors specific to vector store operations.
-// It provides structured error information for programmatic error handling.
-type VectorStoreError struct {
-	Cause   error
-	Code    string
-	Message string
-}
-
-// Error implements the error interface.
-func (e *VectorStoreError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("%s: %v", e.Message, e.Cause)
-	}
-	return e.Message
-}
-
-// Unwrap returns the underlying error for error wrapping compatibility.
-func (e *VectorStoreError) Unwrap() error {
-	return e.Cause
-}
-
-// NewVectorStoreError creates a new VectorStoreError with the given code and message.
-func NewVectorStoreError(code, message string, args ...any) *VectorStoreError {
-	return &VectorStoreError{
-		Code:    code,
-		Message: fmt.Sprintf(message, args...),
-	}
-}
-
-// WrapError wraps an existing error with vector store context.
-func WrapError(cause error, code, message string, args ...any) *VectorStoreError {
-	return &VectorStoreError{
-		Code:    code,
-		Message: fmt.Sprintf(message, args...),
-		Cause:   cause,
-	}
-}
-
-// Common error codes.
-const (
-	ErrCodeUnknownProvider      = "unknown_provider"
-	ErrCodeInvalidConfig        = "invalid_config"
-	ErrCodeConnectionFailed     = "connection_failed"
-	ErrCodeEmbeddingFailed      = "embedding_failed"
-	ErrCodeStorageFailed        = "storage_failed"
-	ErrCodeRetrievalFailed      = "retrieval_failed"
-	ErrCodeInvalidParameters    = "invalid_parameters"
-	ErrCodeNotFound             = "not_found"
-	ErrCodeDuplicateID          = "duplicate_id"
-	ErrCodeUnsupportedOperation = "unsupported_operation"
-)
-
-// IsVectorStoreError checks if an error is a VectorStoreError with the given code.
-func IsVectorStoreError(err error, code string) bool {
-	var vsErr *VectorStoreError
-	if !AsVectorStoreError(err, &vsErr) {
-		return false
-	}
-	return vsErr.Code == code
-}
-
-// AsVectorStoreError attempts to cast an error to VectorStoreError.
-func AsVectorStoreError(err error, target **VectorStoreError) bool {
-	for err != nil {
-		vsErr := &VectorStoreError{}
-		if errors.As(err, &vsErr) {
-			*target = vsErr
-			return true
-		}
-		if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
-			err = unwrapper.Unwrap()
-		} else {
-			break
-		}
-	}
-	return false
-}
+// Error types and functions are defined in errors.go
+// Common error codes are also defined in errors.go
 
 // NewInMemoryStore creates a new in-memory vector store with the given options.
 // This is the simplest provider, suitable for development and testing.
@@ -547,7 +473,7 @@ func BatchAddDocuments(ctx context.Context, store VectorStore, documents []schem
 		batch := documents[start:end]
 		ids, err := AddDocuments(ctx, store, batch, embedder, opts...)
 		if err != nil {
-			return allIDs, WrapError(err, ErrCodeStorageFailed, "failed to add batch %d/%d", i+1, totalBatches)
+			return allIDs, NewVectorStoreErrorWithMessage("BatchAddDocuments", ErrCodeStorageFailed, fmt.Sprintf("failed to add batch %d/%d", i+1, totalBatches), err)
 		}
 
 		allIDs = append(allIDs, ids...)
@@ -569,7 +495,7 @@ func BatchSearch(ctx context.Context, store VectorStore, queries []string, k int
 	for i, query := range queries {
 		docs, queryScores, err := SearchByQuery(ctx, store, query, k, embedder, opts...)
 		if err != nil {
-			return results[:i], scores[:i], WrapError(err, ErrCodeRetrievalFailed, "failed to search query %d: %s", i, query)
+			return results[:i], scores[:i], NewVectorStoreErrorWithMessage("BatchSearch", ErrCodeRetrievalFailed, fmt.Sprintf("failed to search query %d: %s", i, query), err)
 		}
 
 		results[i] = docs

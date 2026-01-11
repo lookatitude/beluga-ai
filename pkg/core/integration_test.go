@@ -65,7 +65,10 @@ func TestBuilderWithComplexDependencies_Integration(t *testing.T) {
 	builder := NewBuilder(container)
 
 	// Register a complex service hierarchy
-	err := builder.Register(func() *Config { return &Config{Timeout: 30} })
+	type TestConfig struct {
+		Timeout int
+	}
+	err := builder.Register(func() *TestConfig { return &TestConfig{Timeout: 30} })
 	if err != nil {
 		t.Fatalf("Register config failed: %v", err)
 	}
@@ -356,10 +359,6 @@ func TestContextCancellationPropagation_Integration(t *testing.T) {
 	}
 }
 
-// Config is a simple configuration struct for testing.
-type Config struct {
-	Timeout int
-}
 
 // Supporting types for integration tests
 
