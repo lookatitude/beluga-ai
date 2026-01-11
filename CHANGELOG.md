@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/lookatitude/beluga-ai/compare/v1.6.1...v1.7.0) (2026-01-11)
+
+
+### Features
+
+* Complete 010-data-ingestion feature implementation ([74d3238](https://github.com/lookatitude/beluga-ai/commit/74d32381c5d2d56371678af37ad7812d7c5e884c))
+
 ## [1.6.1](https://github.com/lookatitude/beluga-ai/compare/v1.6.0...v1.6.1) (2026-01-11)
 
 
