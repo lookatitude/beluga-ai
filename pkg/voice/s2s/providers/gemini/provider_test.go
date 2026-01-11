@@ -2,12 +2,14 @@ package gemini
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/internal"
+	mock "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/internal/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,12 +67,35 @@ func TestNewGeminiNativeProvider(t *testing.T) {
 }
 
 func TestGeminiNativeProvider_Process(t *testing.T) {
+	// Create mock HTTP server
+	mockAudioData := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	mockResponse := mock.CreateGeminiMockResponse(mockAudioData, internal.AudioFormat{
+		SampleRate: 24000,
+		Channels:   1,
+		BitDepth:   16,
+		Encoding:   "PCM",
+	})
+	server := mock.CreateHTTPServer(mockResponse, http.StatusOK)
+	defer server.Close()
+
+	// Create config with mock server endpoint
+	// We need to manually construct the provider with the mock endpoint
+	// Since the provider doesn't expose config modification, we'll use a workaround
 	config := &s2s.Config{
 		Provider: "gemini",
 		APIKey:   "test-key",
 	}
-	provider, err := NewGeminiNativeProvider(config)
+	
+	// Create provider normally, then we'll need to modify it
+	// For now, let's create a test that uses the actual provider but with a mock server
+	// by setting the endpoint via environment or config override
+	// Since we can't easily inject the endpoint, let's create a provider that uses NewGeminiNativeProvider
+	// and then modify the URL in the request
+	
+	// Use test helper to create provider with mock server endpoint
+	provider, err := NewGeminiNativeProviderWithEndpoint(config, server.URL)
 	require.NoError(t, err)
+	require.NotNil(t, provider)
 
 	input := &internal.AudioInput{
 		Data: []byte{1, 2, 3, 4, 5},
@@ -81,6 +106,7 @@ func TestGeminiNativeProvider_Process(t *testing.T) {
 			Encoding:   "PCM",
 		},
 		Timestamp: time.Now(),
+		Language:  "en-US",
 	}
 
 	convCtx := &internal.ConversationContext{
@@ -91,7 +117,6 @@ func TestGeminiNativeProvider_Process(t *testing.T) {
 	ctx := context.Background()
 	output, err := provider.Process(ctx, input, convCtx)
 
-	// Note: This is a placeholder implementation, so it should succeed with mock data
 	require.NoError(t, err)
 	assert.NotNil(t, output)
 	assert.NotEmpty(t, output.Data)

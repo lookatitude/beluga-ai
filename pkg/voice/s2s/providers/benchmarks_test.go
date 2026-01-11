@@ -147,10 +147,26 @@ func BenchmarkProviderComparison(b *testing.B) {
 		delay    time.Duration
 		provider *s2s.AdvancedMockS2SProvider
 	}{
-		{"amazon_nova", 50 * time.Millisecond, s2s.NewAdvancedMockS2SProvider("amazon_nova", s2s.WithMockDelay(50*time.Millisecond))},
-		{"grok", 60 * time.Millisecond, s2s.NewAdvancedMockS2SProvider("grok", s2s.WithMockDelay(60*time.Millisecond))},
-		{"gemini", 55 * time.Millisecond, s2s.NewAdvancedMockS2SProvider("gemini", s2s.WithMockDelay(55*time.Millisecond))},
-		{"openai_realtime", 45 * time.Millisecond, s2s.NewAdvancedMockS2SProvider("openai_realtime", s2s.WithMockDelay(45*time.Millisecond))},
+		{
+			name:     "amazon_nova",
+			delay:    50 * time.Millisecond,
+			provider: s2s.NewAdvancedMockS2SProvider("amazon_nova", s2s.WithMockDelay(50*time.Millisecond)),
+		},
+		{
+			name:     "grok",
+			delay:    60 * time.Millisecond,
+			provider: s2s.NewAdvancedMockS2SProvider("grok", s2s.WithMockDelay(60*time.Millisecond)),
+		},
+		{
+			name:     "gemini",
+			delay:    55 * time.Millisecond,
+			provider: s2s.NewAdvancedMockS2SProvider("gemini", s2s.WithMockDelay(55*time.Millisecond)),
+		},
+		{
+			name:     "openai_realtime",
+			delay:    45 * time.Millisecond,
+			provider: s2s.NewAdvancedMockS2SProvider("openai_realtime", s2s.WithMockDelay(45*time.Millisecond)),
+		},
 	}
 
 	ctx := context.Background()

@@ -2,12 +2,14 @@ package grok
 
 import (
 	"context"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/internal"
+	mock "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/internal/mock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,12 +67,26 @@ func TestNewGrokVoiceProvider(t *testing.T) {
 }
 
 func TestGrokVoiceProvider_Process(t *testing.T) {
+	// Create mock HTTP server
+	mockAudioData := []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	mockResponse := mock.CreateGrokMockResponse(mockAudioData, internal.AudioFormat{
+		SampleRate: 24000,
+		Channels:   1,
+		BitDepth:   16,
+		Encoding:   "PCM",
+	}, "alloy", "en-US")
+	server := mock.CreateHTTPServer(mockResponse, http.StatusOK)
+	defer server.Close()
+
 	config := &s2s.Config{
 		Provider: "grok",
 		APIKey:   "test-key",
 	}
-	provider, err := NewGrokVoiceProvider(config)
+	
+	// Use test helper to create provider with mock server endpoint
+	provider, err := NewGrokVoiceProviderWithEndpoint(config, server.URL)
 	require.NoError(t, err)
+	require.NotNil(t, provider)
 
 	input := &internal.AudioInput{
 		Data: []byte{1, 2, 3, 4, 5},
@@ -81,6 +97,7 @@ func TestGrokVoiceProvider_Process(t *testing.T) {
 			Encoding:   "PCM",
 		},
 		Timestamp: time.Now(),
+		Language:  "en-US",
 	}
 
 	convCtx := &internal.ConversationContext{
@@ -91,7 +108,6 @@ func TestGrokVoiceProvider_Process(t *testing.T) {
 	ctx := context.Background()
 	output, err := provider.Process(ctx, input, convCtx)
 
-	// Note: This is a placeholder implementation, so it should succeed with mock data
 	require.NoError(t, err)
 	assert.NotNil(t, output)
 	assert.NotEmpty(t, output.Data)
