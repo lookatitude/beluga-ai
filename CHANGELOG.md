@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/lookatitude/beluga-ai/compare/v1.6.0...v1.6.1) (2026-01-11)
+
+
+### Bug Fixes
+
+* Rename shadowed 'errors' variable to 'errs' in monitoring tests ([eb7bc1b](https://github.com/lookatitude/beluga-ai/commit/eb7bc1bab26ef9a0b1a1a5c163c583d2c2392817))
+
 ## [1.6.0](https://github.com/lookatitude/beluga-ai/compare/v1.5.0...v1.6.0) (2026-01-11)
 
 
