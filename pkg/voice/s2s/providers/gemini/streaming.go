@@ -27,6 +27,8 @@ type GeminiNativeStreamingSession struct {
 	closed      bool
 	mu          sync.RWMutex
 	audioBuffer []byte
+	restartCh   chan struct{} // Channel to signal streaming restart
+	cancelFunc  context.CancelFunc // Cancel function for current streaming context
 }
 
 // GeminiStreamResponse represents a streaming response from Gemini API.
@@ -45,17 +47,20 @@ type GeminiStreamResponse struct {
 
 // NewGeminiNativeStreamingSession creates a new streaming session.
 func NewGeminiNativeStreamingSession(ctx context.Context, config *GeminiNativeConfig, provider *GeminiNativeProvider) (*GeminiNativeStreamingSession, error) {
+	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GeminiNativeStreamingSession{
 		ctx:        ctx,
 		config:     config,
 		provider:   provider,
 		audioCh:    make(chan iface.AudioOutputChunk, 10),
 		httpClient: provider.httpClient,
+		restartCh:  make(chan struct{}, 1),
+		cancelFunc: cancel,
 	}
 
 	// Gemini uses Server-Sent Events (SSE) for streaming
 	// Start goroutine to handle streaming
-	go session.handleStreaming(ctx)
+	go session.handleStreaming(streamCtx)
 
 	return session, nil
 }
@@ -236,17 +241,29 @@ func (s *GeminiNativeStreamingSession) SendAudio(ctx context.Context, audio []by
 	}
 
 	// Buffer audio for sending
-	// NOTE: Gemini Native Audio streaming API is a one-way streaming API
-	// (server-to-client only). It does not support sending additional audio input
-	// after the initial streaming request. Audio input must be included in the
-	// initial request body.
-	//
-	// For bidirectional streaming, use:
-	// 1. The non-streaming Process() method for each audio chunk
-	// 2. OpenAI Realtime provider which supports true bidirectional streaming
-	//
-	// This method buffers audio for potential future use or for documentation purposes.
+	s.mu.Lock()
 	s.audioBuffer = append(s.audioBuffer, audio...)
+	audioBuffer := make([]byte, len(s.audioBuffer))
+	copy(audioBuffer, s.audioBuffer)
+	s.mu.Unlock()
+
+	// NOTE: Gemini Native Audio streaming API is a one-way streaming API
+	// (server-to-client only). To send audio, we restart the streaming session
+	// with the accumulated audio buffer.
+	//
+	// For true bidirectional streaming, use OpenAI Realtime provider.
+
+	// Cancel current streaming context to stop the current stream
+	s.cancelFunc()
+
+	// Create new streaming context
+	streamCtx, cancel := context.WithCancel(ctx)
+	s.mu.Lock()
+	s.cancelFunc = cancel
+	s.mu.Unlock()
+
+	// Start new streaming session with accumulated audio
+	go s.handleStreaming(streamCtx)
 
 	return nil
 }
@@ -266,6 +283,9 @@ func (s *GeminiNativeStreamingSession) Close() error {
 	}
 
 	s.closed = true
+	if s.cancelFunc != nil {
+		s.cancelFunc()
+	}
 	close(s.audioCh)
 
 	return nil

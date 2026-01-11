@@ -324,14 +324,9 @@ pkg/voice/s2s/providers/
 - ✅ Provider structure - Complete
 - ✅ `Process()` method - **COMPLETE** (makes real API calls)
 - ✅ Streaming output - **COMPLETE** (receives streaming responses)
-- ⚠️ Streaming input (`SendAudio()`) - **PARTIAL** for Nova/Gemini/Grok
+- ✅ Streaming input (`SendAudio()`) - **COMPLETE** (creates new streaming requests with accumulated audio)
 
-**Note**: Amazon Nova, Gemini, and Grok use one-way streaming APIs. Their `SendAudio()` methods buffer audio but don't send it during an active stream. For true bidirectional streaming, use OpenAI Realtime or the non-streaming `Process()` method.
-
-**Files with TODOs:**
-- `pkg/voice/s2s/providers/amazon_nova/streaming.go` - Line 182: TODO - SendAudio() implementation
-- `pkg/voice/s2s/providers/gemini/streaming.go` - Line 242: TODO - SendAudio() implementation
-- `pkg/voice/s2s/providers/grok/streaming.go` - Line 231: TODO - SendAudio() implementation
+**Note**: Amazon Nova, Gemini, and Grok use one-way streaming APIs. Their `SendAudio()` methods create new streaming requests with accumulated audio, providing functional (though not truly bidirectional) streaming. For true bidirectional streaming, use OpenAI Realtime.
 
 ### VAD Providers
 

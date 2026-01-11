@@ -33,10 +33,12 @@ S2S (Speech-to-Speech) providers enable end-to-end speech conversations without 
 
 | Provider | Process() | Streaming Output | Streaming Input (SendAudio) | Status |
 |----------|-----------|------------------|----------------------------|--------|
-| Amazon Nova | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
-| Gemini | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
-| Grok | ✅ Complete | ✅ Complete | ⚠️ Partial (buffered, not sent) | Functional |
+| Amazon Nova | ✅ Complete | ✅ Complete | ✅ Complete* | Functional |
+| Gemini | ✅ Complete | ✅ Complete | ✅ Complete* | Functional |
+| Grok | ✅ Complete | ✅ Complete | ✅ Complete* | Functional |
 | OpenAI Realtime | ✅ Complete | ✅ Complete | ✅ Complete | Fully Functional |
+
+\* *Note: Amazon Nova, Gemini, and Grok use one-way streaming APIs. `SendAudio()` creates new streaming requests with accumulated audio, providing functional (though not truly bidirectional) streaming. For true bidirectional streaming, use OpenAI Realtime.*
 
 ### Implementation Details
 

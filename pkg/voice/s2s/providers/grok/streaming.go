@@ -27,6 +27,8 @@ type GrokVoiceStreamingSession struct {
 	closed      bool
 	mu          sync.RWMutex
 	audioBuffer []byte
+	restartCh   chan struct{} // Channel to signal streaming restart
+	cancelFunc  context.CancelFunc // Cancel function for current streaming context
 }
 
 // GrokStreamResponse represents a streaming response from Grok API.
@@ -45,17 +47,20 @@ type GrokStreamResponse struct {
 
 // NewGrokVoiceStreamingSession creates a new streaming session.
 func NewGrokVoiceStreamingSession(ctx context.Context, config *GrokVoiceConfig, provider *GrokVoiceProvider) (*GrokVoiceStreamingSession, error) {
+	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GrokVoiceStreamingSession{
 		ctx:        ctx,
 		config:     config,
 		provider:   provider,
 		audioCh:    make(chan iface.AudioOutputChunk, 10),
 		httpClient: provider.httpClient,
+		restartCh:  make(chan struct{}, 1),
+		cancelFunc: cancel,
 	}
 
 	// Grok uses Server-Sent Events (SSE) for streaming
 	// Start goroutine to handle streaming
-	go session.handleStreaming(ctx)
+	go session.handleStreaming(streamCtx)
 
 	return session, nil
 }
@@ -225,17 +230,29 @@ func (s *GrokVoiceStreamingSession) SendAudio(ctx context.Context, audio []byte)
 	}
 
 	// Buffer audio for sending
-	// NOTE: Grok Voice Agent streaming API is a one-way streaming API
-	// (server-to-client only). It does not support sending additional audio input
-	// after the initial streaming request. Audio input must be included in the
-	// initial request body.
-	//
-	// For bidirectional streaming, use:
-	// 1. The non-streaming Process() method for each audio chunk
-	// 2. OpenAI Realtime provider which supports true bidirectional streaming
-	//
-	// This method buffers audio for potential future use or for documentation purposes.
+	s.mu.Lock()
 	s.audioBuffer = append(s.audioBuffer, audio...)
+	audioBuffer := make([]byte, len(s.audioBuffer))
+	copy(audioBuffer, s.audioBuffer)
+	s.mu.Unlock()
+
+	// NOTE: Grok Voice Agent streaming API is a one-way streaming API
+	// (server-to-client only). To send audio, we restart the streaming session
+	// with the accumulated audio buffer.
+	//
+	// For true bidirectional streaming, use OpenAI Realtime provider.
+
+	// Cancel current streaming context to stop the current stream
+	s.cancelFunc()
+
+	// Create new streaming context
+	streamCtx, cancel := context.WithCancel(ctx)
+	s.mu.Lock()
+	s.cancelFunc = cancel
+	s.mu.Unlock()
+
+	// Start new streaming session with accumulated audio
+	go s.handleStreaming(streamCtx)
 
 	return nil
 }
@@ -255,6 +272,9 @@ func (s *GrokVoiceStreamingSession) Close() error {
 	}
 
 	s.closed = true
+	if s.cancelFunc != nil {
+		s.cancelFunc()
+	}
 	close(s.audioCh)
 
 	return nil

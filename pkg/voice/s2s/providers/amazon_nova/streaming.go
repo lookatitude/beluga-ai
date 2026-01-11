@@ -43,8 +43,8 @@ func NewAmazonNovaStreamingSession(ctx context.Context, config *AmazonNovaConfig
 	// For Nova 2 Sonic, we use InvokeModelWithResponseStream for streaming
 	modelID := fmt.Sprintf("amazon.%s-v1:0", config.Model)
 	
-	// Prepare initial request
-	requestBody, err := session.prepareStreamingRequest()
+	// Prepare initial request (no audio yet - will be sent via SendAudio)
+	requestBody, err := session.prepareStreamingRequest(nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to prepare streaming request: %w", err)
 	}
@@ -70,7 +70,8 @@ func NewAmazonNovaStreamingSession(ctx context.Context, config *AmazonNovaConfig
 }
 
 // prepareStreamingRequest prepares the initial request for streaming.
-func (s *AmazonNovaStreamingSession) prepareStreamingRequest() ([]byte, error) {
+// If audioData is provided, it will be included in the request.
+func (s *AmazonNovaStreamingSession) prepareStreamingRequest(audioData []byte) ([]byte, error) {
 	request := map[string]any{
 		"voice": map[string]any{
 			"voice_id": s.config.VoiceID,
@@ -85,6 +86,19 @@ func (s *AmazonNovaStreamingSession) prepareStreamingRequest() ([]byte, error) {
 		},
 		"streaming": true,
 		"enable_automatic_punctuation": s.config.EnableAutomaticPunctuation,
+	}
+
+	// Include audio input if provided
+	if len(audioData) > 0 {
+		audioBase64 := base64.StdEncoding.EncodeToString(audioData)
+		request["input"] = map[string]any{
+			"audio": audioBase64,
+			"format": map[string]any{
+				"sample_rate": s.config.SampleRate,
+				"channels":    1,
+				"encoding":    "PCM", // Default encoding
+			},
+		}
 	}
 
 	return json.Marshal(request)
@@ -166,26 +180,59 @@ func (s *AmazonNovaStreamingSession) processStreamingChunk(chunk types.PayloadPa
 
 // SendAudio implements the StreamingSession interface.
 func (s *AmazonNovaStreamingSession) SendAudio(ctx context.Context, audio []byte) error {
-	s.mu.RLock()
-	defer s.mu.RUnlock()
-
+	s.mu.Lock()
 	if s.closed {
+		s.mu.Unlock()
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeStreamClosed,
 			errors.New("streaming session is closed"))
 	}
 
 	// Buffer audio for sending
-	// NOTE: AWS Bedrock InvokeModelWithResponseStream is a one-way streaming API
-	// (server-to-client only). It does not support sending additional audio input
-	// after the initial streaming request. Audio input must be included in the
-	// initial request body.
-	//
-	// For bidirectional streaming, use:
-	// 1. The non-streaming Process() method for each audio chunk
-	// 2. OpenAI Realtime provider which supports true bidirectional streaming
-	//
-	// This method buffers audio for potential future use or for documentation purposes.
 	s.audioBuffer = append(s.audioBuffer, audio...)
+	audioBuffer := make([]byte, len(s.audioBuffer))
+	copy(audioBuffer, s.audioBuffer)
+
+	// Close current stream if it exists
+	if s.stream != nil && s.stream.GetStream() != nil {
+		_ = s.stream.GetStream().Close()
+		s.stream = nil
+	}
+	s.mu.Unlock()
+
+	// NOTE: AWS Bedrock InvokeModelWithResponseStream is a one-way streaming API
+	// (server-to-client only). To send audio, we need to create a new streaming request.
+	// This implementation creates a new streaming session with accumulated audio.
+	//
+	// For true bidirectional streaming, use OpenAI Realtime provider.
+
+	// Create new streaming request with accumulated audio
+	modelID := fmt.Sprintf("amazon.%s-v1:0", s.config.Model)
+	requestBody, err := s.prepareStreamingRequest(audioBuffer)
+	if err != nil {
+		return s2s.NewS2SError("SendAudio", s2s.ErrCodeInvalidRequest,
+			fmt.Errorf("failed to prepare streaming request: %w", err))
+	}
+
+	invokeInput := &bedrockruntime.InvokeModelWithResponseStreamInput{
+		ModelId:     aws.String(modelID),
+		ContentType: aws.String("application/json"),
+		Body:        requestBody,
+	}
+
+	// Start new streaming session
+	stream, err := s.provider.client.InvokeModelWithResponseStream(ctx, invokeInput)
+	if err != nil {
+		return s2s.NewS2SError("SendAudio", s2s.ErrCodeStreamError,
+			fmt.Errorf("failed to start new streaming session: %w", err))
+	}
+
+	s.mu.Lock()
+	s.stream = stream
+	s.audioBuffer = nil // Clear buffer after sending
+	s.mu.Unlock()
+
+	// Restart receiver goroutine for new stream
+	go s.receiveStreamingResponses()
 
 	return nil
 }
