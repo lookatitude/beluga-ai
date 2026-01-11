@@ -1,5 +1,5 @@
-// Package openai provides tests for OpenAI multimodal provider.
-package openai
+// Package gemini provides tests for Google Gemini multimodal provider.
+package gemini
 
 import (
 	"context"
@@ -12,27 +12,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestNewOpenAIProvider(t *testing.T) {
-	openaiConfig := &Config{
+func TestNewGeminiProvider(t *testing.T) {
+	geminiConfig := &Config{
 		APIKey:  "test-api-key",
-		Model:   "gpt-4o",
-		BaseURL: "https://api.openai.com/v1",
+		Model:   "gemini-1.5-pro",
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta",
 		Timeout: 30 * time.Second,
 	}
 
-	provider, err := NewOpenAIProvider(openaiConfig)
+	provider, err := NewGeminiProvider(geminiConfig)
 	require.NoError(t, err)
 	assert.NotNil(t, provider)
 }
 
-func TestOpenAIProvider_GetCapabilities(t *testing.T) {
-	openaiConfig := &Config{
+func TestGeminiProvider_GetCapabilities(t *testing.T) {
+	geminiConfig := &Config{
 		APIKey:  "test-api-key",
-		Model:   "gpt-4o",
-		BaseURL: "https://api.openai.com/v1",
+		Model:   "gemini-1.5-pro",
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta",
 	}
 
-	provider, err := NewOpenAIProvider(openaiConfig)
+	provider, err := NewGeminiProvider(geminiConfig)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -45,17 +45,17 @@ func TestOpenAIProvider_GetCapabilities(t *testing.T) {
 	assert.True(t, capabilities.Video)
 }
 
-func TestOpenAIProvider_Process(t *testing.T) {
-	// Note: This test requires OpenAI API credentials or will be skipped.
+func TestGeminiProvider_Process(t *testing.T) {
+	// Note: This test requires Gemini API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
 	
-	openaiConfig := &Config{
+	geminiConfig := &Config{
 		APIKey:  "test-api-key",
-		Model:   "gpt-4o",
-		BaseURL: "https://api.openai.com/v1",
+		Model:   "gemini-1.5-pro",
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta",
 	}
 
-	provider, err := NewOpenAIProvider(openaiConfig)
+	provider, err := NewGeminiProvider(geminiConfig)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -75,7 +75,7 @@ func TestOpenAIProvider_Process(t *testing.T) {
 		ContentBlocks: []*types.ContentBlock{textBlock},
 		Metadata:      make(map[string]any),
 		Format:        "base64",
-		CreatedAt:    time.Now(),
+		CreatedAt:     time.Now(),
 	}
 
 	// Process - will make actual API call
@@ -85,10 +85,13 @@ func TestOpenAIProvider_Process(t *testing.T) {
 	if err != nil {
 		errStr := err.Error()
 		if strings.Contains(errStr, "401") ||
+			strings.Contains(errStr, "403") ||
 			strings.Contains(errStr, "Unauthorized") ||
-			strings.Contains(errStr, "Incorrect API key") ||
+			strings.Contains(errStr, "Forbidden") ||
+			strings.Contains(errStr, "API key") ||
 			strings.Contains(errStr, "authentication") ||
-			strings.Contains(errStr, "invalid_request") {
+			strings.Contains(errStr, "invalid_request") ||
+			strings.Contains(errStr, "API request failed") {
 			t.Skipf("Skipping test - API error (expected without valid credentials): %v", err)
 			return
 		}
@@ -102,14 +105,14 @@ func TestOpenAIProvider_Process(t *testing.T) {
 	}
 }
 
-func TestOpenAIProvider_SupportsModality(t *testing.T) {
-	openaiConfig := &Config{
+func TestGeminiProvider_SupportsModality(t *testing.T) {
+	geminiConfig := &Config{
 		APIKey:  "test-api-key",
-		Model:   "gpt-4o",
-		BaseURL: "https://api.openai.com/v1",
+		Model:   "gemini-1.5-pro",
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta",
 	}
 
-	provider, err := NewOpenAIProvider(openaiConfig)
+	provider, err := NewGeminiProvider(geminiConfig)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -134,18 +137,17 @@ func TestOpenAIProvider_SupportsModality(t *testing.T) {
 	}
 }
 
-
-func TestOpenAIProvider_ProcessStream(t *testing.T) {
-	// Note: This test requires OpenAI API credentials or will be skipped.
+func TestGeminiProvider_ProcessStream(t *testing.T) {
+	// Note: This test requires Gemini API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
 	
-	openaiConfig := &Config{
+	geminiConfig := &Config{
 		APIKey:  "test-api-key",
-		Model:   "gpt-4o",
-		BaseURL: "https://api.openai.com/v1",
+		Model:   "gemini-1.5-pro",
+		BaseURL: "https://generativelanguage.googleapis.com/v1beta",
 	}
 
-	provider, err := NewOpenAIProvider(openaiConfig)
+	provider, err := NewGeminiProvider(geminiConfig)
 	require.NoError(t, err)
 
 	ctx := context.Background()
@@ -175,11 +177,13 @@ func TestOpenAIProvider_ProcessStream(t *testing.T) {
 	if err != nil {
 		errStr := err.Error()
 		if strings.Contains(errStr, "401") ||
+			strings.Contains(errStr, "403") ||
 			strings.Contains(errStr, "Unauthorized") ||
-			strings.Contains(errStr, "Incorrect API key") ||
+			strings.Contains(errStr, "Forbidden") ||
+			strings.Contains(errStr, "API key") ||
 			strings.Contains(errStr, "authentication") ||
 			strings.Contains(errStr, "invalid_request") ||
-			strings.Contains(errStr, "failed to create streaming request") {
+			strings.Contains(errStr, "API request failed") {
 			t.Skipf("Skipping test - API error (expected without valid credentials): %v", err)
 			return
 		}
@@ -211,14 +215,14 @@ func TestConfig_Validate(t *testing.T) {
 			name: "valid config",
 			config: &Config{
 				APIKey: "test-key",
-				Model:  "gpt-4o",
+				Model:  "gemini-1.5-pro",
 			},
 			wantErr: false,
 		},
 		{
 			name: "missing API key",
 			config: &Config{
-				Model: "gpt-4o",
+				Model: "gemini-1.5-pro",
 			},
 			wantErr: true,
 		},
@@ -245,24 +249,22 @@ func TestConfig_Validate(t *testing.T) {
 
 func TestFromMultimodalConfig(t *testing.T) {
 	multimodalConfig := MultimodalConfig{
-		Provider:   "openai",
-		Model:      "gpt-4o",
+		Provider:   "gemini",
+		Model:      "gemini-1.5-pro",
 		APIKey:     "test-key",
-		BaseURL:    "https://api.openai.com/v1",
+		BaseURL:    "https://generativelanguage.googleapis.com/v1beta",
 		Timeout:    30 * time.Second,
 		MaxRetries: 3,
 		ProviderSpecific: map[string]any{
-			"api_version": "v1",
-			"enabled":      true,
+			"enabled": true,
 		},
 	}
 
 	config := FromMultimodalConfig(multimodalConfig)
 	assert.Equal(t, "test-key", config.APIKey)
-	assert.Equal(t, "gpt-4o", config.Model)
-	assert.Equal(t, "https://api.openai.com/v1", config.BaseURL)
+	assert.Equal(t, "gemini-1.5-pro", config.Model)
+	assert.Equal(t, "https://generativelanguage.googleapis.com/v1beta", config.BaseURL)
 	assert.Equal(t, 30*time.Second, config.Timeout)
 	assert.Equal(t, 3, config.MaxRetries)
-	assert.Equal(t, "v1", config.APIVersion)
 	assert.True(t, config.Enabled)
 }

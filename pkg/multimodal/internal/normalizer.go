@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/types"
 )
@@ -78,9 +80,15 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 
 	// Fetch from URL
 	if block.URL != "" {
-		resp, err := http.Get(block.URL)
+		// Use context-aware HTTP request
+		req, err := http.NewRequestWithContext(ctx, "GET", block.URL, nil)
 		if err != nil {
-			return nil, fmt.Errorf("toBase64: %w", err)
+			return nil, fmt.Errorf("toBase64: failed to create request: %w", err)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("toBase64: failed to fetch URL: %w", err)
 		}
 		defer resp.Body.Close()
 
@@ -90,14 +98,20 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 
 		data, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return nil, fmt.Errorf("toBase64: %w", err)
+			return nil, fmt.Errorf("toBase64: failed to read response: %w", err)
+		}
+
+		// Preserve MIME type from response if not already set
+		mimeType := block.MIMEType
+		if mimeType == "" {
+			mimeType = resp.Header.Get("Content-Type")
 		}
 
 		return &types.ContentBlock{
 			Type:     block.Type,
 			Data:     data,
 			Size:     int64(len(data)),
-			MIMEType: block.MIMEType,
+			MIMEType: mimeType,
 			Format:   block.Format,
 			Metadata: block.Metadata,
 		}, nil
@@ -141,13 +155,117 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 		return block, nil
 	}
 
-	// For base64 or URL, we would need to save to a temporary file
-	// This is a simplified implementation - in production, you'd want proper temp file handling
-	if len(block.Data) > 0 {
-		// In a real implementation, save to temp file
-		// For now, return error indicating this requires file system access
-		return nil, fmt.Errorf("toFilePath: file path conversion requires file system access (not fully implemented)")
+	// Check context cancellation
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	default:
 	}
 
-	return nil, fmt.Errorf("toFilePath: content block has no data source")
+	var data []byte
+	var err error
+
+	// Get data from URL if needed
+	if block.URL != "" {
+		req, err := http.NewRequestWithContext(ctx, "GET", block.URL, nil)
+		if err != nil {
+			return nil, fmt.Errorf("toFilePath: failed to create request: %w", err)
+		}
+
+		resp, err := http.DefaultClient.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("toFilePath: failed to fetch URL: %w", err)
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("toFilePath: failed to fetch URL: status %d", resp.StatusCode)
+		}
+
+		data, err = io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("toFilePath: failed to read response: %w", err)
+		}
+	} else if len(block.Data) > 0 {
+		data = block.Data
+	} else {
+		return nil, fmt.Errorf("toFilePath: content block has no data source")
+	}
+
+	// Determine file extension from MIME type or format
+	ext := block.Format
+	if ext == "" && block.MIMEType != "" {
+		// Try to extract extension from MIME type
+		parts := strings.Split(block.MIMEType, "/")
+		if len(parts) == 2 {
+			ext = parts[1]
+			// Normalize common extensions
+			switch ext {
+			case "jpeg":
+				ext = "jpg"
+			case "svg+xml":
+				ext = "svg"
+			}
+		}
+	}
+	if ext == "" {
+		// Default extension based on content type
+		switch block.Type {
+		case "image":
+			ext = "png"
+		case "audio":
+			ext = "mp3"
+		case "video":
+			ext = "mp4"
+		default:
+			ext = "bin"
+		}
+	}
+
+	// Create temporary file
+	tmpFile, err := os.CreateTemp("", fmt.Sprintf("multimodal_*.%s", ext))
+	if err != nil {
+		return nil, fmt.Errorf("toFilePath: failed to create temp file: %w", err)
+	}
+
+	// Write data to temp file
+	if _, err := tmpFile.Write(data); err != nil {
+		tmpFile.Close()
+		os.Remove(tmpFile.Name())
+		return nil, fmt.Errorf("toFilePath: failed to write data: %w", err)
+	}
+
+	if err := tmpFile.Close(); err != nil {
+		os.Remove(tmpFile.Name())
+		return nil, fmt.Errorf("toFilePath: failed to close temp file: %w", err)
+	}
+
+	// Get absolute path
+	absPath, err := filepath.Abs(tmpFile.Name())
+	if err != nil {
+		os.Remove(tmpFile.Name())
+		return nil, fmt.Errorf("toFilePath: failed to get absolute path: %w", err)
+	}
+
+	// Create new content block with file path
+	result := &types.ContentBlock{
+		Type:     block.Type,
+		FilePath: absPath,
+		Data:     data, // Keep data for compatibility
+		Size:     int64(len(data)),
+		MIMEType: block.MIMEType,
+		Format:   ext,
+		Metadata: make(map[string]any),
+	}
+
+	// Copy metadata and add temp file indicator
+	if block.Metadata != nil {
+		for k, v := range block.Metadata {
+			result.Metadata[k] = v
+		}
+	}
+	result.Metadata["temp_file"] = true
+	result.Metadata["auto_created"] = true
+
+	return result, nil
 }

@@ -1,11 +1,11 @@
-# OpenAI Multimodal Provider
+# Google Gemini Multimodal Provider
 
-This package provides OpenAI provider implementation for multimodal models using the OpenAI Chat Completions API with multimodal support.
+This package provides Google Gemini provider implementation for multimodal models.
 
 ## Features
 
 - **Text Processing**: Full support for text inputs and outputs
-- **Image Processing**: Support for image inputs via base64 or URLs (PNG, JPEG, GIF, WebP)
+- **Image Processing**: Support for image inputs (PNG, JPEG, WebP)
 - **Audio Processing**: Support for audio inputs (MP3, WAV, M4A, OGG)
 - **Video Processing**: Support for video inputs (MP4, WebM, MOV)
 - **Streaming**: Real-time streaming support for incremental responses
@@ -16,13 +16,14 @@ This package provides OpenAI provider implementation for multimodal models using
 ```go
 import (
     "github.com/lookatitude/beluga-ai/pkg/multimodal"
+    "github.com/lookatitude/beluga-ai/pkg/multimodal/providers/gemini"
 )
 
 config := multimodal.Config{
-    Provider: "openai",
-    Model:    "gpt-4o",
-    APIKey:   "your-openai-api-key",
-    BaseURL:  "https://api.openai.com/v1", // Optional, defaults to OpenAI API
+    Provider: "gemini",
+    Model:    "gemini-1.5-pro",
+    APIKey:   "your-gemini-api-key",
+    BaseURL:  "https://generativelanguage.googleapis.com/v1beta", // Optional
     Timeout:  30 * time.Second,
     MaxRetries: 3,
 }
@@ -35,12 +36,12 @@ config := multimodal.Config{
 ```go
 ctx := context.Background()
 
-model, err := multimodal.NewMultimodalModel(ctx, "openai", config)
+model, err := multimodal.NewMultimodalModel(ctx, "gemini", config)
 if err != nil {
     log.Fatal(err)
 }
 
-textBlock, _ := types.NewContentBlock("text", []byte("What is artificial intelligence?"))
+textBlock, _ := types.NewContentBlock("text", []byte("What is machine learning?"))
 input, _ := types.NewMultimodalInput([]*types.ContentBlock{textBlock})
 
 output, err := model.Process(ctx, input)
@@ -54,7 +55,7 @@ fmt.Println(string(output.ContentBlocks[0].Data))
 ### Text + Image Processing
 
 ```go
-textBlock, _ := types.NewContentBlock("text", []byte("What's in this image?"))
+textBlock, _ := types.NewContentBlock("text", []byte("Describe this image"))
 imageBlock, _ := types.NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
 
 input, _ := types.NewMultimodalInput([]*types.ContentBlock{textBlock, imageBlock})
@@ -78,10 +79,10 @@ for output := range outputChan {
 
 ## Capabilities
 
-The OpenAI provider supports:
+The Gemini provider supports:
 
 - **Text**: ✅ Full support
-- **Image**: ✅ PNG, JPEG, GIF, WebP (up to 20MB)
+- **Image**: ✅ PNG, JPEG, WebP (up to 20MB)
 - **Audio**: ✅ MP3, WAV, M4A, OGG (up to 25MB)
 - **Video**: ✅ MP4, WebM, MOV (up to 100MB)
 
