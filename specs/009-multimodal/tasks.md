@@ -244,8 +244,8 @@
 - [ ] T110 [P] Implement Qwen-specific config in pkg/multimodal/providers/qwen/config.go
 - [ ] T111 [P] Register Qwen provider in pkg/multimodal/providers/qwen/init.go using global registry
 - [ ] T111a [P] Add unit tests for Qwen provider in pkg/multimodal/providers/qwen/provider_test.go (Process, ProcessStream, GetCapabilities, SupportsModality, error handling)
-- [ ] T112 [P] Implement at least one additional open-source provider (Pixtral, Phi, DeepSeek, or Gemma) following the same pattern
-- [ ] T112a [P] Add unit tests for the additional open-source provider following the same test pattern
+- [X] T112 [P] Implement at least one additional open-source provider (Pixtral, Phi, DeepSeek, or Gemma) following the same pattern
+- [X] T112a [P] Add unit tests for the additional open-source provider following the same test pattern
 
 ---
 
@@ -253,19 +253,19 @@
 
 **Purpose**: Improvements that affect multiple user stories
 
-- [ ] T113 [P] Update package README.md in pkg/multimodal/README.md with comprehensive usage examples and provider documentation
-- [ ] T114 [P] Add godoc comments to all public interfaces and functions in pkg/multimodal/ following framework documentation standards
-- [ ] T115 [P] Code cleanup and refactoring across pkg/multimodal/ to ensure consistency with framework patterns
-- [ ] T116 [P] Performance optimization in pkg/multimodal/internal/model.go for content routing and processing
-- [ ] T117 [P] Performance optimization in pkg/multimodal/internal/normalizer.go for format conversion
-- [ ] T118 [P] Add comprehensive error handling edge cases in pkg/multimodal/errors.go for all error scenarios
-- [ ] T119 [P] Add benchmarks in pkg/multimodal/advanced_test.go for performance-critical operations (routing, normalization, processing)
-- [ ] T120 [P] Validate quickstart.md examples in specs/009-multimodal/quickstart.md work with implementation
-- [ ] T121 [P] Add integration tests in tests/integration/multimodal/ for cross-package compatibility (schema, embeddings, vectorstores, agents, orchestration)
-- [ ] T122 [P] Verify backward compatibility with text-only workflows in pkg/multimodal/ (ensure no breaking changes) - add explicit integration test in tests/integration/multimodal/backward_compatibility_test.go
-- [ ] T123 [P] Add health check support in pkg/multimodal/ if applicable following framework patterns
-- [ ] T124 [P] Add comprehensive examples in examples/multimodal/ directory demonstrating all user stories (US1: input processing, US2: reasoning/generation, US3: RAG, US4: streaming, US5: agent extensions)
-- [ ] T125 [P] Validate framework package design pattern compliance in pkg/multimodal/ - verify all required files exist (iface/, config.go, metrics.go, errors.go, test_utils.go, advanced_test.go) and follow framework standards
+- [X] T113 [P] Update package README.md in pkg/multimodal/README.md with comprehensive usage examples and provider documentation
+- [X] T114 [P] Add godoc comments to all public interfaces and functions in pkg/multimodal/ following framework documentation standards
+- [X] T115 [P] Code cleanup and refactoring across pkg/multimodal/ to ensure consistency with framework patterns
+- [X] T116 [P] Performance optimization in pkg/multimodal/internal/model.go for content routing and processing
+- [X] T117 [P] Performance optimization in pkg/multimodal/internal/normalizer.go for format conversion
+- [X] T118 [P] Add comprehensive error handling edge cases in pkg/multimodal/errors.go for all error scenarios
+- [X] T119 [P] Add benchmarks in pkg/multimodal/advanced_test.go for performance-critical operations (routing, normalization, processing)
+- [X] T120 [P] Validate quickstart.md examples in specs/009-multimodal/quickstart.md work with implementation
+- [X] T121 [P] Add integration tests in tests/integration/multimodal/ for cross-package compatibility (schema, embeddings, vectorstores, agents, orchestration)
+- [X] T122 [P] Verify backward compatibility with text-only workflows in pkg/multimodal/ (ensure no breaking changes) - add explicit integration test in tests/integration/multimodal/backward_compatibility_test.go
+- [X] T123 [P] Add health check support in pkg/multimodal/ if applicable following framework patterns
+- [X] T124 [P] Add comprehensive examples in examples/multimodal/ directory demonstrating all user stories (US1: input processing, US2: reasoning/generation, US3: RAG, US4: streaming, US5: agent extensions)
+- [X] T125 [P] Validate framework package design pattern compliance in pkg/multimodal/ - verify all required files exist (iface/, config.go, metrics.go, errors.go, test_utils.go, advanced_test.go) and follow framework standards
 
 ---
 

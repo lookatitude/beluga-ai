@@ -48,7 +48,7 @@ func TestGeminiProvider_GetCapabilities(t *testing.T) {
 func TestGeminiProvider_Process(t *testing.T) {
 	// Note: This test requires Gemini API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
-	
+
 	geminiConfig := &Config{
 		APIKey:  "test-api-key",
 		Model:   "gemini-1.5-pro",
@@ -80,7 +80,7 @@ func TestGeminiProvider_Process(t *testing.T) {
 
 	// Process - will make actual API call
 	output, err := provider.Process(ctx, input)
-	
+
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -98,7 +98,7 @@ func TestGeminiProvider_Process(t *testing.T) {
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	if output != nil {
 		assert.Equal(t, input.ID, output.InputID)
 		assert.NotEmpty(t, output.ContentBlocks)
@@ -140,7 +140,7 @@ func TestGeminiProvider_SupportsModality(t *testing.T) {
 func TestGeminiProvider_ProcessStream(t *testing.T) {
 	// Note: This test requires Gemini API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
-	
+
 	geminiConfig := &Config{
 		APIKey:  "test-api-key",
 		Model:   "gemini-1.5-pro",
@@ -172,7 +172,7 @@ func TestGeminiProvider_ProcessStream(t *testing.T) {
 
 	// Process stream - will make actual API call
 	outputChan, err := provider.ProcessStream(ctx, input)
-	
+
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -190,7 +190,7 @@ func TestGeminiProvider_ProcessStream(t *testing.T) {
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	require.NotNil(t, outputChan)
 
 	// Read from channel

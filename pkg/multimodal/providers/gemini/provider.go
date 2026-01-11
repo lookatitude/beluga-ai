@@ -43,8 +43,8 @@ func NewGeminiProvider(geminiConfig *Config) (iface.MultimodalModel, error) {
 		Audio: true,
 		Video: true,
 
-		MaxImageSize: 20 * 1024 * 1024, // 20MB
-		MaxAudioSize: 25 * 1024 * 1024, // 25MB
+		MaxImageSize: 20 * 1024 * 1024,  // 20MB
+		MaxAudioSize: 25 * 1024 * 1024,  // 25MB
 		MaxVideoSize: 100 * 1024 * 1024, // 100MB
 
 		SupportedImageFormats: []string{"png", "jpeg", "jpg", "webp"},
@@ -90,7 +90,7 @@ func (p *GeminiProvider) Process(ctx context.Context, input *types.MultimodalInp
 
 	// Build Gemini request
 	req := &geminiGenerateRequest{
-		Contents: contents,
+		Contents:         contents,
 		GenerationConfig: &geminiGenerationConfig{},
 	}
 
@@ -186,7 +186,7 @@ func (p *GeminiProvider) ProcessStream(ctx context.Context, input *types.Multimo
 
 	// Build Gemini request
 	req := &geminiGenerateRequest{
-		Contents: contents,
+		Contents:         contents,
 		GenerationConfig: &geminiGenerationConfig{},
 	}
 
@@ -378,10 +378,32 @@ func (p *GeminiProvider) SupportsModality(ctx context.Context, modality string) 
 	return supported, nil
 }
 
+// CheckHealth performs a health check and returns an error if the provider is unhealthy.
+func (p *GeminiProvider) CheckHealth(ctx context.Context) error {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/providers/gemini")
+	ctx, span := tracer.Start(ctx, "gemini.CheckHealth",
+		trace.WithAttributes(
+			attribute.String("provider", "gemini"),
+			attribute.String("model", p.config.Model),
+		))
+	defer span.End()
+
+	// Basic health check: verify capabilities can be retrieved
+	_, err := p.GetCapabilities(ctx)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	span.SetStatus(codes.Ok, "")
+	return nil
+}
+
 // Gemini API request/response structures
 type geminiGenerateRequest struct {
 	Contents         []geminiContent         `json:"contents"`
-	GenerationConfig *geminiGenerationConfig  `json:"generationConfig,omitempty"`
+	GenerationConfig *geminiGenerationConfig `json:"generationConfig,omitempty"`
 }
 
 type geminiContent struct {
@@ -390,9 +412,9 @@ type geminiContent struct {
 }
 
 type geminiPart struct {
-	Text      string                 `json:"text,omitempty"`
-	InlineData *geminiInlineData     `json:"inlineData,omitempty"`
-	FileData  *geminiFileData        `json:"fileData,omitempty"`
+	Text       string            `json:"text,omitempty"`
+	InlineData *geminiInlineData `json:"inlineData,omitempty"`
+	FileData   *geminiFileData   `json:"fileData,omitempty"`
 }
 
 type geminiInlineData struct {
@@ -414,7 +436,7 @@ type geminiGenerationConfig struct {
 }
 
 type geminiGenerateResponse struct {
-	Candidates   []geminiCandidate   `json:"candidates"`
+	Candidates    []geminiCandidate    `json:"candidates"`
 	UsageMetadata *geminiUsageMetadata `json:"usageMetadata,omitempty"`
 }
 

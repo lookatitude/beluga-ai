@@ -97,9 +97,10 @@ type RoutingConfig struct {
 }
 
 // Option is a functional option for configuring multimodal operations.
+// Options can be chained together to build a complete configuration.
 type Option func(*Config)
 
-// WithProvider sets the provider name.
+// WithProvider sets the provider name (e.g., "openai", "gemini", "anthropic").
 func WithProvider(provider string) Option {
 	return func(c *Config) {
 		c.Provider = provider
@@ -169,7 +170,8 @@ func WithProviderSpecific(settings map[string]any) Option {
 	}
 }
 
-// Validate validates the configuration.
+// Validate validates the configuration and returns an error if invalid.
+// Checks that required fields are set and that numeric values are within valid ranges.
 func (c *Config) Validate() error {
 	validate := validator.New()
 	if err := validate.Struct(c); err != nil {
@@ -201,7 +203,8 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// Validate validates the routing configuration.
+// Validate validates the routing configuration and returns an error if invalid.
+// For manual strategy, at least one provider must be specified.
 func (r *RoutingConfig) Validate(ctx context.Context) error {
 	validate := validator.New()
 	if err := validate.Struct(r); err != nil {

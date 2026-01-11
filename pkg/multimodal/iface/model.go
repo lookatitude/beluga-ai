@@ -26,4 +26,8 @@ type MultimodalModel interface {
 	// SupportsModality checks if this model supports a specific modality.
 	// Modality should be one of: "text", "image", "audio", "video".
 	SupportsModality(ctx context.Context, modality string) (bool, error)
+
+	// CheckHealth performs a health check and returns an error if the model is unhealthy.
+	// This allows monitoring systems to verify the model is operational.
+	CheckHealth(ctx context.Context) error
 }

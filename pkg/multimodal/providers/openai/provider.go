@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	openaiClient "github.com/sashabaranov/go-openai"
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/iface"
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/types"
+	openaiClient "github.com/sashabaranov/go-openai"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -41,8 +41,8 @@ func NewOpenAIProvider(openaiConfig *Config) (iface.MultimodalModel, error) {
 		Audio: true,
 		Video: true,
 
-		MaxImageSize: 20 * 1024 * 1024, // 20MB
-		MaxAudioSize: 25 * 1024 * 1024, // 25MB
+		MaxImageSize: 20 * 1024 * 1024,  // 20MB
+		MaxAudioSize: 25 * 1024 * 1024,  // 25MB
 		MaxVideoSize: 100 * 1024 * 1024, // 100MB
 
 		SupportedImageFormats: []string{"png", "jpeg", "jpg", "gif", "webp"},
@@ -238,8 +238,8 @@ func (p *OpenAIProvider) ProcessStream(ctx context.Context, input *types.Multimo
 
 					// Send incremental output
 					output := &types.MultimodalOutput{
-						ID:            outputID,
-						InputID:       input.ID,
+						ID:      outputID,
+						InputID: input.ID,
 						ContentBlocks: []*types.ContentBlock{
 							{
 								Type:     "text",
@@ -270,8 +270,8 @@ func (p *OpenAIProvider) ProcessStream(ctx context.Context, input *types.Multimo
 		finalText := accumulatedText.String()
 		if finalText != "" {
 			output := &types.MultimodalOutput{
-				ID:            outputID,
-				InputID:       input.ID,
+				ID:      outputID,
+				InputID: input.ID,
 				ContentBlocks: []*types.ContentBlock{
 					{
 						Type:     "text",
@@ -361,6 +361,28 @@ func (p *OpenAIProvider) SupportsModality(ctx context.Context, modality string) 
 	return supported, nil
 }
 
+// CheckHealth performs a health check and returns an error if the provider is unhealthy.
+func (p *OpenAIProvider) CheckHealth(ctx context.Context) error {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/providers/openai")
+	ctx, span := tracer.Start(ctx, "openai.CheckHealth",
+		trace.WithAttributes(
+			attribute.String("provider", "openai"),
+			attribute.String("model", p.config.Model),
+		))
+	defer span.End()
+
+	// Basic health check: verify capabilities can be retrieved
+	_, err := p.GetCapabilities(ctx)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+
+	span.SetStatus(codes.Ok, "")
+	return nil
+}
+
 // convertToOpenAIMessages converts multimodal content blocks to OpenAI message format.
 func (p *OpenAIProvider) convertToOpenAIMessages(ctx context.Context, blocks []*types.ContentBlock) ([]openaiClient.ChatCompletionMessage, error) {
 	if len(blocks) == 0 {
@@ -442,7 +464,7 @@ func (p *OpenAIProvider) convertOpenAIResponse(ctx context.Context, resp *openai
 	}
 
 	choice := resp.Choices[0]
-	
+
 	// Extract content - can be from Content (string) or MultiContent (parts)
 	var content string
 	if choice.Message.Content != "" {

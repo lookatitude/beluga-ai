@@ -144,9 +144,216 @@ The package integrates with:
 - **agents**: Extends agents with multimodal capabilities
 - **orchestration**: Supports multimodal processing in orchestration graphs
 
+## Available Providers
+
+The multimodal package supports the following providers:
+
+### Commercial Providers
+- **OpenAI** (`openai`): GPT-4o, GPT-4 Vision - Full multimodal support
+- **Google Gemini** (`gemini`): Gemini Pro, Gemini Ultra - Text, image, audio, video
+- **Google Vertex AI** (`google`): Enterprise Google AI Platform - Full multimodal support
+- **Anthropic** (`anthropic`): Claude 3 Opus, Sonnet - Text and image support
+- **xAI** (`xai`): Grok models - Text and image support
+
+### Open-Source Providers
+- **Qwen** (`qwen`): Alibaba's Qwen models - Full multimodal support
+- **Pixtral** (`pixtral`): Mistral AI's Pixtral models - Text, image, audio, video
+- **Phi** (`phi`): Microsoft's Phi models via Hugging Face - Full multimodal support
+- **DeepSeek** (`deepseek`): DeepSeek models - OpenAI-compatible API
+- **Gemma** (`gemma`): Google's Gemma models - Gemini-compatible API
+
+Each provider has its own README with detailed configuration and usage examples in `pkg/multimodal/providers/{provider}/README.md`.
+
+### Provider-Specific Configuration Examples
+
+#### OpenAI Configuration
+
+```go
+config := multimodal.Config{
+    Provider: "openai",
+    Model:    "gpt-4o",
+    APIKey:   os.Getenv("OPENAI_API_KEY"),
+    Timeout:  30 * time.Second,
+    MaxRetries: 3,
+    ProviderSpecific: map[string]any{
+        "temperature": 0.7,
+        "max_tokens": 4096,
+        "vision_detail": "high", // "low" or "high"
+    },
+}
+model, err := multimodal.NewMultimodalModel(ctx, "openai", config)
+```
+
+#### Google Gemini Configuration
+
+```go
+config := multimodal.Config{
+    Provider: "gemini",
+    Model:    "gemini-pro",
+    APIKey:   os.Getenv("GEMINI_API_KEY"),
+    ProviderSpecific: map[string]any{
+        "temperature": 0.9,
+        "top_p": 0.95,
+        "top_k": 40,
+    },
+}
+model, err := multimodal.NewMultimodalModel(ctx, "gemini", config)
+```
+
+#### Anthropic Configuration
+
+```go
+config := multimodal.Config{
+    Provider: "anthropic",
+    Model:    "claude-3-opus-20240229",
+    APIKey:   os.Getenv("ANTHROPIC_API_KEY"),
+    ProviderSpecific: map[string]any{
+        "max_tokens": 4096,
+        "temperature": 0.7,
+    },
+}
+model, err := multimodal.NewMultimodalModel(ctx, "anthropic", config)
+```
+
+#### Pixtral (Mistral AI) Configuration
+
+```go
+config := multimodal.Config{
+    Provider: "pixtral",
+    Model:    "pixtral-12b",
+    APIKey:   os.Getenv("PIXTRAL_API_KEY"),
+    BaseURL:  "https://api.mistral.ai/v1",
+    Timeout:  30 * time.Second,
+}
+model, err := multimodal.NewMultimodalModel(ctx, "pixtral", config)
+```
+
+For more provider-specific examples and configuration options, see the provider READMEs in `pkg/multimodal/providers/{provider}/README.md`.
+
+## Advanced Examples
+
+### Health Checks
+
+```go
+// Check if model is healthy
+err := model.CheckHealth(ctx)
+if err != nil {
+    log.Printf("Model health check failed: %v", err)
+}
+```
+
+### Error Handling with Retry Logic
+
+```go
+output, err := model.Process(ctx, input)
+if err != nil {
+    if multimodal.IsRetryableError(err) {
+        // Retry the operation
+        time.Sleep(1 * time.Second)
+        output, err = model.Process(ctx, input)
+    }
+    
+    if err != nil {
+        code := multimodal.GetErrorCode(err)
+        switch code {
+        case multimodal.ErrCodeRateLimit:
+            // Handle rate limit
+        case multimodal.ErrCodeQuotaExceeded:
+            // Handle quota exceeded
+        case multimodal.ErrCodeAuthenticationFailed:
+            // Handle authentication error
+        }
+    }
+}
+```
+
+### Streaming with Context Cancellation
+
+```go
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+outputChan, err := model.ProcessStream(ctx, input)
+if err != nil {
+    log.Fatal(err)
+}
+
+for output := range outputChan {
+    select {
+    case <-ctx.Done():
+        log.Println("Stream cancelled")
+        return
+    default:
+        // Process output chunk
+        for _, block := range output.ContentBlocks {
+            data, _ := block.GetData()
+            fmt.Printf("Chunk: %s\n", string(data))
+        }
+    }
+}
+```
+
+### Provider-Specific Configuration
+
+```go
+// OpenAI with custom settings
+openaiConfig := multimodal.Config{
+    Provider: "openai",
+    Model:    "gpt-4o",
+    APIKey:   os.Getenv("OPENAI_API_KEY"),
+    ProviderSpecific: map[string]any{
+        "temperature": 0.7,
+        "max_tokens":  4096,
+        "vision_detail": "high",
+    },
+}
+
+// Google Vertex AI with project settings
+googleConfig := multimodal.Config{
+    Provider: "google",
+    Model:    "gemini-pro",
+    ProviderSpecific: map[string]any{
+        "project_id": "my-gcp-project",
+        "location":   "us-central1",
+    },
+}
+```
+
+### Custom Routing Strategy
+
+```go
+input, _ := multimodal.NewMultimodalInput(blocks,
+    multimodal.WithRouting(&multimodal.RoutingConfig{
+        Strategy:      "manual",
+        TextProvider:  "openai",
+        ImageProvider: "google",
+        AudioProvider: "anthropic",
+        FallbackToText: true,
+    }),
+)
+```
+
+## Performance Considerations
+
+- **Streaming**: Use `ProcessStream` for large files or real-time processing
+- **Format Selection**: Use URLs for large files (>10MB), base64 for small files
+- **Concurrent Processing**: Models are safe for concurrent use
+- **Caching**: Cache provider capabilities to avoid repeated checks
+
+## Best Practices
+
+1. **Always check capabilities** before processing multimodal content
+2. **Use context cancellation** for long-running operations
+3. **Handle errors gracefully** with custom error types
+4. **Monitor performance** with OTEL metrics
+5. **Use appropriate formats** (base64 for small files, URLs for large files)
+6. **Implement retry logic** for retryable errors
+7. **Validate inputs** before processing
+
 ## Documentation
 
 For more details, see:
 - [Package Design Patterns](../../docs/package_design_patterns.md)
 - [Multimodal Concepts](../../docs/concepts/multimodal.md)
 - [Quickstart Guide](../../specs/009-multimodal/quickstart.md)
+- Provider-specific READMEs in `pkg/multimodal/providers/{provider}/README.md`

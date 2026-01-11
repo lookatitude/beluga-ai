@@ -23,23 +23,23 @@ import (
 
 // BaseMultimodalModel provides a base implementation of MultimodalModel.
 type BaseMultimodalModel struct {
-	providerName         string
-	modelName            string
-	config               map[string]any // Using map to avoid importing multimodal.Config
-	capabilities         *types.ModalityCapabilities
-	router               *Router
-	normalizer           *Normalizer
-	llmProvider          chatmodelsiface.ChatModel        // LLM for text processing
-	embedder             embeddingsiface.Embedder         // Embedder for vector generation
-	multimodalEmbedder   embeddingsiface.MultimodalEmbedder // Multimodal embedder for RAG
-	vectorStore          vectorstores.VectorStore         // Vector store for RAG
-	streamingState       *StreamingState                  // State for streaming operations
-	streamingStateMu     sync.Mutex                       // Mutex for streaming state
+	providerName       string
+	modelName          string
+	config             map[string]any // Using map to avoid importing multimodal.Config
+	capabilities       *types.ModalityCapabilities
+	router             *Router
+	normalizer         *Normalizer
+	llmProvider        chatmodelsiface.ChatModel          // LLM for text processing
+	embedder           embeddingsiface.Embedder           // Embedder for vector generation
+	multimodalEmbedder embeddingsiface.MultimodalEmbedder // Multimodal embedder for RAG
+	vectorStore        vectorstores.VectorStore           // Vector store for RAG
+	streamingState     *StreamingState                    // State for streaming operations
+	streamingStateMu   sync.Mutex                         // Mutex for streaming state
 }
 
 // StreamingState manages state for streaming operations.
 type StreamingState struct {
-	activeStreams map[string]context.CancelFunc // Map of input ID to cancel function
+	activeStreams map[string]context.CancelFunc    // Map of input ID to cancel function
 	chunkBuffers  map[string][]*types.ContentBlock // Map of input ID to chunk buffers
 	mu            sync.RWMutex
 }
@@ -58,13 +58,13 @@ func NewBaseMultimodalModel(providerName, modelName string, config map[string]an
 	normalizer := NewNormalizer()
 
 	return &BaseMultimodalModel{
-		providerName:     providerName,
-		modelName:        modelName,
-		config:           config,
-		capabilities:     capabilities,
-		router:           router,
-		normalizer:       normalizer,
-		streamingState:   NewStreamingState(),
+		providerName:   providerName,
+		modelName:      modelName,
+		config:         config,
+		capabilities:   capabilities,
+		router:         router,
+		normalizer:     normalizer,
+		streamingState: NewStreamingState(),
 	}
 }
 
@@ -81,8 +81,6 @@ func (m *BaseMultimodalModel) Process(ctx context.Context, input *types.Multimod
 
 	// Metrics recording would go here if metrics were available
 	// For now, we avoid importing multimodal package to prevent import cycles
-	startTime := time.Now()
-	_ = startTime // Suppress unused variable warning
 
 	// Validate input - basic validation
 	if len(input.ContentBlocks) == 0 {
@@ -107,14 +105,13 @@ func (m *BaseMultimodalModel) Process(ctx context.Context, input *types.Multimod
 		"routed_providers_count", len(routing))
 
 	// Normalize content blocks to provider-preferred format
-	normalizedBlocks := make([]*types.ContentBlock, 0, len(input.ContentBlocks))
+	// Pre-allocate slice with exact capacity to avoid reallocations
+	targetFormat := input.Format
+	if targetFormat == "" {
+		targetFormat = "base64"
+	}
+	normalizedBlocks := make([]*types.ContentBlock, len(input.ContentBlocks))
 	for i, block := range input.ContentBlocks {
-		// Determine target format (use input format or default to base64)
-		targetFormat := input.Format
-		if targetFormat == "" {
-			targetFormat = "base64"
-		}
-
 		normalized, err := m.normalizer.Normalize(ctx, block, targetFormat)
 		if err != nil {
 			span.RecordError(err)
@@ -123,7 +120,7 @@ func (m *BaseMultimodalModel) Process(ctx context.Context, input *types.Multimod
 				"error", err, "block_index", i)
 			return nil, err
 		}
-		normalizedBlocks = append(normalizedBlocks, normalized)
+		normalizedBlocks[i] = normalized
 	}
 
 	// Generate output using reasoning or generation pipeline
@@ -146,9 +143,10 @@ func (m *BaseMultimodalModel) Process(ctx context.Context, input *types.Multimod
 // generateOutput generates a multimodal output from normalized blocks.
 func (m *BaseMultimodalModel) generateOutput(ctx context.Context, input *types.MultimodalInput, normalizedBlocks []*types.ContentBlock, routing map[string]string) (*types.MultimodalOutput, error) {
 	// Determine if this is a reasoning task (input has multimodal content) or generation task (text-only input)
+	// Early exit optimization: check first non-text block
 	hasMultimodalContent := false
-	for _, block := range normalizedBlocks {
-		if block.Type != "text" {
+	for i := range normalizedBlocks {
+		if normalizedBlocks[i].Type != "text" {
 			hasMultimodalContent = true
 			break
 		}
@@ -185,8 +183,6 @@ func (m *BaseMultimodalModel) reasoningPipeline(ctx context.Context, input *type
 	defer span.End()
 
 	// Metrics not available to avoid import cycles
-	startTime := time.Now()
-	_ = startTime // Suppress unused variable warning
 
 	// Convert content blocks to schema messages for LLM processing
 	messages, err := m.contentBlocksToMessages(ctx, blocks)
@@ -206,13 +202,14 @@ func (m *BaseMultimodalModel) reasoningPipeline(ctx context.Context, input *type
 		}
 
 		// Convert response to output
-		outputBlocks := make([]*types.ContentBlock, 0, len(response))
-		for _, msg := range response {
+		// Pre-allocate with exact capacity
+		outputBlocks := make([]*types.ContentBlock, len(response))
+		for i, msg := range response {
 			block, err := types.NewContentBlock("text", []byte(msg.GetContent()))
 			if err != nil {
 				return nil, err
 			}
-			outputBlocks = append(outputBlocks, block)
+			outputBlocks[i] = block
 		}
 
 		return &types.MultimodalOutput{
@@ -251,8 +248,6 @@ func (m *BaseMultimodalModel) generationPipeline(ctx context.Context, input *typ
 	defer span.End()
 
 	// Metrics not available to avoid import cycles
-	startTime := time.Now()
-	_ = startTime // Suppress unused variable warning
 
 	// Extract text instruction
 	var textInstruction string
@@ -655,8 +650,6 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 	defer span.End()
 
 	// Metrics not available to avoid import cycles
-	startTime := time.Now()
-	// Metrics not available to avoid import cycles
 
 	// Validate input - basic validation
 	if len(input.ContentBlocks) == 0 {
@@ -682,8 +675,6 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 		defer func() {
 			close(ch)
 			// Metrics not available
-			duration := time.Since(startTime)
-			_ = duration
 
 			// Clean up streaming state
 			m.streamingState.mu.Lock()
@@ -691,14 +682,7 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 			delete(m.streamingState.chunkBuffers, input.ID)
 			m.streamingState.mu.Unlock()
 
-			// Record latency metrics
-			if duration < 500*time.Millisecond {
-				span.SetAttributes(attribute.String("latency_category", "low"))
-			} else if duration < 1*time.Second {
-				span.SetAttributes(attribute.String("latency_category", "medium"))
-			} else {
-				span.SetAttributes(attribute.String("latency_category", "high"))
-			}
+			// Latency metrics would be recorded here if metrics were available
 		}()
 
 		// Chunk content blocks for streaming
@@ -745,27 +729,18 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 				// Send incremental result
 				select {
 				case ch <- chunkOutput:
-					chunkLatency := time.Since(startTime)
-					span.SetAttributes(
-						attribute.Int("chunk_index", i),
-						attribute.Float64("chunk_latency_ms", float64(chunkLatency.Milliseconds())),
-					)
-					// Record latency metrics
+					span.SetAttributes(attribute.Int("chunk_index", i))
 					modality := chunkBlock.Type
 					if modality == "" {
 						modality = "unknown"
 					}
-					// Metrics not available
-					_ = chunkLatency
-					_ = modality
 					logWithOTELContext(ctx, slog.LevelInfo, "Streaming chunk sent",
 						"chunk_index", i,
-					"chunk_latency_ms", chunkLatency.Milliseconds(),
-					"modality", modality)
-			case <-streamCtx.Done():
-				logWithOTELContext(ctx, slog.LevelWarn, "Stream cancelled during send", "error", streamCtx.Err())
-				return
-			}
+						"modality", modality)
+				case <-streamCtx.Done():
+					logWithOTELContext(ctx, slog.LevelWarn, "Stream cancelled during send", "error", streamCtx.Err())
+					return
+				}
 			}
 		}
 
@@ -919,7 +894,7 @@ func (m *BaseMultimodalModel) GetCapabilities(ctx context.Context) (*types.Modal
 	if m.capabilities == nil {
 		// Return default capabilities
 		return &types.ModalityCapabilities{
-			Text: true,
+			Text:  true,
 			Image: false,
 			Audio: false,
 			Video: false,
@@ -963,10 +938,52 @@ func (m *BaseMultimodalModel) SupportsModality(ctx context.Context, modality str
 	}
 
 	// Metrics not available to avoid import cycles
-	// Metrics not available
 
 	span.SetStatus(codes.Ok, "")
 	return supported, nil
+}
+
+// CheckHealth performs a health check and returns an error if the model is unhealthy.
+func (m *BaseMultimodalModel) CheckHealth(ctx context.Context) error {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/internal")
+	ctx, span := tracer.Start(ctx, "multimodal.CheckHealth",
+		trace.WithAttributes(
+			attribute.String("provider", m.providerName),
+			attribute.String("model", m.modelName),
+		))
+	defer span.End()
+
+	// Basic health check: verify capabilities can be retrieved
+	_, err := m.GetCapabilities(ctx)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Health check failed: cannot get capabilities", "error", err)
+		return fmt.Errorf("health check failed: %w", err)
+	}
+
+	// Verify router is available
+	if m.router == nil {
+		err := fmt.Errorf("router not initialized")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Health check failed: router not initialized")
+		return err
+	}
+
+	// Verify normalizer is available
+	if m.normalizer == nil {
+		err := fmt.Errorf("normalizer not initialized")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		logWithOTELContext(ctx, slog.LevelError, "Health check failed: normalizer not initialized")
+		return err
+	}
+
+	span.SetStatus(codes.Ok, "")
+	logWithOTELContext(ctx, slog.LevelInfo, "Health check passed",
+		"provider", m.providerName, "model", m.modelName)
+	return nil
 }
 
 // logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.

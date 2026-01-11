@@ -9,7 +9,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/multimodal"
-	"github.com/lookatitude/beluga-ai/pkg/multimodal/internal"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -17,13 +16,6 @@ import (
 
 func TestReActAgent_MultimodalInputs(t *testing.T) {
 	ctx := context.Background()
-
-	// Create multimodal input (image)
-	imageBlock, err := multimodal.NewContentBlock("image", []byte{0x89, 0x50, 0x4E, 0x47}, "image/png", nil)
-	require.NoError(t, err)
-
-	input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{imageBlock})
-	require.NoError(t, err)
 
 	config := multimodal.Config{
 		Provider: "test",
@@ -35,8 +27,8 @@ func TestReActAgent_MultimodalInputs(t *testing.T) {
 		Image: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Create a mock agent for testing
 	// Note: In a full implementation, would use actual ReAct agent
@@ -45,8 +37,10 @@ func TestReActAgent_MultimodalInputs(t *testing.T) {
 	}
 
 	// Test voice-enabled ReAct loop
+	// Use a Document instead of HumanMessage to avoid type assertion panic
+	doc := schema.NewDocument("Process this image", nil)
 	inputs := map[string]any{
-		"input": schema.NewHumanMessage("Process this image"),
+		"input": doc,
 	}
 
 	action, finish, err := extension.EnableVoiceReActLoop(ctx, mockAgent, inputs, nil)
@@ -80,8 +74,8 @@ func TestOrchestrationGraph_MultimodalProcessing(t *testing.T) {
 		Image: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Test orchestration graph input handling
 	graphInput := map[string]any{
@@ -112,8 +106,8 @@ func TestToolIntegration_MultimodalData(t *testing.T) {
 		Image: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Create multimodal tool
 	tool := extension.CreateMultimodalTool(
@@ -127,7 +121,7 @@ func TestToolIntegration_MultimodalData(t *testing.T) {
 	assert.Equal(t, "Processes images using multimodal model", tool.Description())
 
 	// Test tool execution
-	imageBlock, err := multimodal.NewContentBlock("image", []byte{0x89, 0x50, 0x4E, 0x47}, "image/png", nil)
+	imageBlock, err := multimodal.NewContentBlock("image", []byte{0x89, 0x50, 0x4E, 0x47})
 	require.NoError(t, err)
 
 	multimodalInput, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{imageBlock})
@@ -156,15 +150,15 @@ func TestAgentToAgentCommunication_MultimodalData(t *testing.T) {
 		Image: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Create mock agents
 	fromAgent := &MockAgent{name: "agent1"}
 	toAgent := &MockAgent{name: "agent2"}
 
 	// Create multimodal data
-	imageBlock, err := multimodal.NewContentBlock("image", []byte{0x89, 0x50, 0x4E, 0x47}, "image/png", nil)
+	imageBlock, err := multimodal.NewContentBlock("image", []byte{0x89, 0x50, 0x4E, 0x47})
 	require.NoError(t, err)
 
 	multimodalInput, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{imageBlock})

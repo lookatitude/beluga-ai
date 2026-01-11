@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/multimodal"
-	"github.com/lookatitude/beluga-ai/pkg/multimodal/internal"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -33,8 +32,8 @@ func TestSchemaIntegration_ImageMessage(t *testing.T) {
 		Image: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Handle ImageMessage
 	input, err := extension.HandleMultimodalMessage(ctx, imgMsg)
@@ -69,8 +68,8 @@ func TestSchemaIntegration_VideoMessage(t *testing.T) {
 		Video: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Handle VideoMessage
 	input, err := extension.HandleMultimodalMessage(ctx, vidMsg)
@@ -106,8 +105,8 @@ func TestSchemaIntegration_VoiceDocument(t *testing.T) {
 		Audio: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	// Handle VoiceDocument (as Document)
 	doc := voiceDoc.AsDocument()
@@ -159,8 +158,8 @@ func TestSchemaIntegration_Compatibility(t *testing.T) {
 		Audio: true,
 	}
 
-	baseModel := internal.NewBaseMultimodalModel("test", "test-model", config, capabilities)
-	extension := internal.NewMultimodalAgentExtension(baseModel)
+	baseModel := multimodal.NewTestBaseMultimodalModel("test", "test-model", config, capabilities)
+	extension := multimodal.NewTestMultimodalAgentExtension(baseModel)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {

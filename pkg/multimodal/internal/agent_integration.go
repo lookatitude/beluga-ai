@@ -207,14 +207,14 @@ func (m *MultimodalAgentExtension) ProcessForAgent(ctx context.Context, inputOrO
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/internal")
 	ctx, span := tracer.Start(ctx, "multimodal.ProcessForAgent")
 	defer span.End()
-	
+
 	var output *types.MultimodalOutput
-	
+
 	// Handle both MultimodalInput and MultimodalOutput
 	switch v := inputOrOutput.(type) {
 	case *types.MultimodalInput:
 		span.SetAttributes(attribute.String("input_id", v.ID))
-		
+
 		// Process the multimodal input
 		var err error
 		output, err = m.model.Process(ctx, v)
@@ -357,11 +357,11 @@ func (t *multimodalTool) Execute(ctx context.Context, input any) (any, error) {
 
 	// Convert output to a format suitable for agent use
 	return map[string]any{
-		"output_id":       output.ID,
-		"content_blocks":  output.ContentBlocks,
-		"confidence":      output.Confidence,
-		"provider":        output.Provider,
-		"model":           output.Model,
+		"output_id":      output.ID,
+		"content_blocks": output.ContentBlocks,
+		"confidence":     output.Confidence,
+		"provider":       output.Provider,
+		"model":          output.Model,
 	}, nil
 }
 
@@ -403,9 +403,16 @@ func (m *MultimodalAgentExtension) EnableVoiceReActLoop(ctx context.Context, age
 	hasVoiceInput := false
 	for _, v := range inputs {
 		if msg, ok := v.(schema.Message); ok {
-			if schema.HasMultimodalContent(msg) || schema.IsVoiceDocument(*msg.(*schema.Document)) {
+			if schema.HasMultimodalContent(msg) {
 				hasVoiceInput = true
 				break
+			}
+			// Check if it's a Document and if it's a voice document
+			if doc, ok := msg.(schema.Document); ok {
+				if schema.IsVoiceDocument(doc) {
+					hasVoiceInput = true
+					break
+				}
 			}
 		}
 	}

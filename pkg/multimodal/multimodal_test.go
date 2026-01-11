@@ -201,7 +201,7 @@ func TestNewMultimodalInput(t *testing.T) {
 			},
 			opts: []MultimodalInputOption{
 				WithRouting(&RoutingConfig{
-					Strategy:      "auto",
+					Strategy:       "auto",
 					FallbackToText: true,
 				}),
 			},
@@ -441,7 +441,7 @@ func TestFunctionalOptions(t *testing.T) {
 
 	// Test WithRouting
 	input, err := NewMultimodalInput(blocks, WithRouting(&RoutingConfig{
-		Strategy:      "auto",
+		Strategy:       "auto",
 		FallbackToText: true,
 	}))
 	require.NoError(t, err)

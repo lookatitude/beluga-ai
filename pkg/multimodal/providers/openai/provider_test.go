@@ -48,7 +48,7 @@ func TestOpenAIProvider_GetCapabilities(t *testing.T) {
 func TestOpenAIProvider_Process(t *testing.T) {
 	// Note: This test requires OpenAI API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
-	
+
 	openaiConfig := &Config{
 		APIKey:  "test-api-key",
 		Model:   "gpt-4o",
@@ -75,12 +75,12 @@ func TestOpenAIProvider_Process(t *testing.T) {
 		ContentBlocks: []*types.ContentBlock{textBlock},
 		Metadata:      make(map[string]any),
 		Format:        "base64",
-		CreatedAt:    time.Now(),
+		CreatedAt:     time.Now(),
 	}
 
 	// Process - will make actual API call
 	output, err := provider.Process(ctx, input)
-	
+
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -95,7 +95,7 @@ func TestOpenAIProvider_Process(t *testing.T) {
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	if output != nil {
 		assert.Equal(t, input.ID, output.InputID)
 		assert.NotEmpty(t, output.ContentBlocks)
@@ -134,11 +134,10 @@ func TestOpenAIProvider_SupportsModality(t *testing.T) {
 	}
 }
 
-
 func TestOpenAIProvider_ProcessStream(t *testing.T) {
 	// Note: This test requires OpenAI API credentials or will be skipped.
 	// For proper mocking, the provider would need to be refactored to use an interface.
-	
+
 	openaiConfig := &Config{
 		APIKey:  "test-api-key",
 		Model:   "gpt-4o",
@@ -170,7 +169,7 @@ func TestOpenAIProvider_ProcessStream(t *testing.T) {
 
 	// Process stream - will make actual API call
 	outputChan, err := provider.ProcessStream(ctx, input)
-	
+
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -186,7 +185,7 @@ func TestOpenAIProvider_ProcessStream(t *testing.T) {
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	require.NotNil(t, outputChan)
 
 	// Read from channel
@@ -253,7 +252,7 @@ func TestFromMultimodalConfig(t *testing.T) {
 		MaxRetries: 3,
 		ProviderSpecific: map[string]any{
 			"api_version": "v1",
-			"enabled":      true,
+			"enabled":     true,
 		},
 	}
 

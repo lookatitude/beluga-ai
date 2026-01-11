@@ -25,7 +25,7 @@ func TestStoreMultimodalDocuments(t *testing.T) {
 		"image_type": "image/jpeg",
 	})
 
-	documents := []schema.Document{doc1, doc2}
+	_ = []schema.Document{doc1, doc2}
 
 	// Create a base model
 	config := multimodal.Config{
@@ -51,7 +51,7 @@ func TestMultimodalSearchQueries(t *testing.T) {
 	ctx := context.Background()
 
 	// Create a multimodal query document
-	queryDoc := schema.NewDocument("Find images similar to this sunset", map[string]string{
+	_ = schema.NewDocument("Find images similar to this sunset", map[string]string{
 		"image_url": "https://example.com/query-sunset.jpg",
 		"image_type": "image/jpeg",
 	})
@@ -77,7 +77,7 @@ func TestContentFusionAndContextPreservation(t *testing.T) {
 	ctx := context.Background()
 
 	// Create text content
-	textContent := "What can you tell me about these images?"
+	_ = "What can you tell me about these images?"
 
 	// Create multimodal documents
 	doc1 := schema.NewDocument("Sunset over the ocean", map[string]string{
@@ -88,7 +88,7 @@ func TestContentFusionAndContextPreservation(t *testing.T) {
 		"image_url": "https://example.com/mountain.jpg",
 	})
 
-	multimodalDocs := []schema.Document{doc1, doc2}
+	_ = []schema.Document{doc1, doc2}
 
 	config := multimodal.Config{
 		Provider: "test",

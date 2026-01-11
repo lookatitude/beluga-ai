@@ -31,22 +31,22 @@ func (c *Config) Validate() error {
 // MultimodalConfig represents the multimodal.Config type without importing the package.
 // This avoids import cycles.
 type MultimodalConfig struct {
-	Provider        string
-	Model           string
-	APIKey          string
-	BaseURL         string
-	Timeout         time.Duration
-	MaxRetries      int
+	Provider         string
+	Model            string
+	APIKey           string
+	BaseURL          string
+	Timeout          time.Duration
+	MaxRetries       int
 	ProviderSpecific map[string]any
 }
 
 // FromMultimodalConfig extracts OpenAI-specific config from multimodal.Config.
 func FromMultimodalConfig(multimodalConfig MultimodalConfig) *Config {
 	cfg := &Config{
-		APIKey:  multimodalConfig.APIKey,
-		Model:   multimodalConfig.Model,
-		BaseURL: multimodalConfig.BaseURL,
-		Timeout: multimodalConfig.Timeout,
+		APIKey:     multimodalConfig.APIKey,
+		Model:      multimodalConfig.Model,
+		BaseURL:    multimodalConfig.BaseURL,
+		Timeout:    multimodalConfig.Timeout,
 		MaxRetries: multimodalConfig.MaxRetries,
 	}
 

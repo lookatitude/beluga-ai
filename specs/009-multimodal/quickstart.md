@@ -28,8 +28,10 @@ import (
     "fmt"
     "log"
     "os"
+    "time"
     
     "github.com/lookatitude/beluga-ai/pkg/multimodal"
+    "github.com/lookatitude/beluga-ai/pkg/multimodal/types"
 )
 
 func main() {
@@ -68,15 +70,13 @@ if err != nil {
 }
 
 // Create image content block from URL
-imageBlock, err := multimodal.NewContentBlockFromURL("image", "https://example.com/image.png",
-    multimodal.WithMIMEType("image/png"),
-)
+imageBlock, err := multimodal.NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
 if err != nil {
     log.Fatal(err)
 }
 
 // Create multimodal input
-input, err := multimodal.NewMultimodalInput([]multimodal.ContentBlock{textBlock, imageBlock})
+input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{textBlock, imageBlock})
 if err != nil {
     log.Fatal(err)
 }
@@ -89,9 +89,8 @@ if err != nil {
 
 // Access results
 for _, block := range output.ContentBlocks {
-    data, _ := block.GetData()
-    fmt.Printf("Type: %s\n", block.GetType())
-    fmt.Printf("Content: %s\n", string(data))
+    fmt.Printf("Type: %s\n", block.Type)
+    fmt.Printf("Content: %s\n", string(block.Data))
 }
 ```
 
@@ -99,14 +98,12 @@ for _, block := range output.ContentBlocks {
 
 ```go
 // Create image content block from file
-imageBlock, err := multimodal.NewContentBlockFromFile("image", "/path/to/image.jpg",
-    multimodal.WithMIMEType("image/jpeg"),
-)
+imageBlock, err := multimodal.NewContentBlockFromFile(ctx, "image", "/path/to/image.jpg")
 if err != nil {
     log.Fatal(err)
 }
 
-input, _ := multimodal.NewMultimodalInput([]multimodal.ContentBlock{imageBlock})
+input, _ := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{imageBlock})
 output, err := model.Process(ctx, input)
 ```
 
@@ -124,8 +121,7 @@ if err != nil {
 // Receive incremental outputs
 for output := range outputChan {
     for _, block := range output.ContentBlocks {
-        data, _ := block.GetData()
-        fmt.Printf("Received chunk: %s\n", string(data))
+        fmt.Printf("Received chunk: %s\n", string(block.Data))
     }
 }
 
@@ -151,8 +147,8 @@ openaiModel, _ := multimodal.NewMultimodalModel(ctx, "openai", multimodal.Config
 })
 
 // Google Gemini
-geminiModel, _ := multimodal.NewMultimodalModel(ctx, "google", multimodal.Config{
-    Provider: "google",
+geminiModel, _ := multimodal.NewMultimodalModel(ctx, "gemini", multimodal.Config{
+    Provider: "gemini",
     Model:    "gemini-pro",
     APIKey:   os.Getenv("GOOGLE_API_KEY"),
 })
@@ -188,23 +184,26 @@ model, _ := multimodal.NewMultimodalModel(ctx, "openai", config)
 ```go
 import (
     "github.com/lookatitude/beluga-ai/pkg/embeddings"
+    embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
     "github.com/lookatitude/beluga-ai/pkg/schema"
     "github.com/lookatitude/beluga-ai/pkg/vectorstores"
+    vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
 )
 
 // Create multimodal embedder
 embedder, _ := embeddings.NewEmbedder(ctx, "openai", embeddings.Config{
-    Provider: "openai",
-    Model:    "text-embedding-3-large",
-    APIKey:   os.Getenv("OPENAI_API_KEY"),
+    OpenAI: &embeddings.OpenAIConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "text-embedding-3-large",
+    },
 })
 
 // Check if embedder supports multimodal
-if multiEmbedder, ok := embedder.(embeddings.MultimodalEmbedder); ok && multiEmbedder.SupportsMultimodal() {
+if multiEmbedder, ok := embedder.(embeddingsiface.MultimodalEmbedder); ok && multiEmbedder.SupportsMultimodal() {
     // Create document with image
     doc := schema.Document{
         PageContent: "A beautiful sunset over the ocean",
-        Metadata: map[string]any{
+        Metadata: map[string]string{
             "image_url": "https://example.com/sunset.jpg",
             "image_type": "image/jpeg",
         },
@@ -217,7 +216,7 @@ if multiEmbedder, ok := embedder.(embeddings.MultimodalEmbedder); ok && multiEmb
     }
     
     // Store in vector store
-    store, _ := vectorstores.NewVectorStore(ctx, "qdrant", vectorstores.Config{
+    store, _ := vectorstores.NewVectorStore(ctx, "qdrant", vectorstoresiface.Config{
         Embedder: embedder,
         // ... other config
     })
@@ -236,7 +235,7 @@ if multiEmbedder, ok := embedder.(embeddings.MultimodalEmbedder); ok && multiEmb
 // Create query document with image
 queryDoc := schema.Document{
     PageContent: "Find similar images",
-    Metadata: map[string]any{
+    Metadata: map[string]string{
         "image_url": "https://example.com/query.jpg",
         "image_type": "image/jpeg",
     },
@@ -254,7 +253,7 @@ if err != nil {
 // Access results
 for i, doc := range docs {
     fmt.Printf("Result %d (score: %.2f): %s\n", i+1, scores[i], doc.PageContent)
-    if imageURL, ok := doc.Metadata["image_url"].(string); ok {
+    if imageURL, ok := doc.Metadata["image_url"]; ok {
         fmt.Printf("  Image: %s\n", imageURL)
     }
 }
@@ -267,18 +266,23 @@ for i, doc := range docs {
 ```go
 import (
     "github.com/lookatitude/beluga-ai/pkg/agents"
+    "github.com/lookatitude/beluga-ai/pkg/llms"
     "github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
+// Create LLM that supports multimodal
+config := llms.NewConfig(
+    llms.WithProvider("openai"),
+    llms.WithModelName("gpt-4o"),
+    llms.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+)
+llm, _ := llms.GetRegistry().GetLLM("openai", config)
+
 // Create agent with multimodal support
-agent, _ := agents.NewBaseAgent(ctx, agents.Config{
-    LLM: llm, // LLM that supports multimodal
-    // ... other config
-})
+agent, _ := agents.NewBaseAgent("multimodal-agent", llm, nil)
 
 // Create multimodal message
-imageMsg := schema.NewImageMessage("What's in this image?")
-imageMsg.ImageURL = "https://example.com/image.png"
+imageMsg := schema.NewImageMessage("https://example.com/image.png", "What's in this image?")
 
 // Process with agent
 response, err := agent.Invoke(ctx, []schema.Message{imageMsg})
@@ -292,17 +296,28 @@ fmt.Printf("Agent response: %s\n", response)
 ### Multimodal ReAct Agent
 
 ```go
+import (
+    "github.com/lookatitude/beluga-ai/pkg/agents"
+    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/llms"
+    "github.com/lookatitude/beluga-ai/pkg/schema"
+)
+
+// Create ChatModel for ReAct agent
+config := llms.NewConfig(
+    llms.WithProvider("openai"),
+    llms.WithModelName("gpt-4o"),
+    llms.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
+)
+chatModel, _ := llms.GetRegistry().GetProvider("openai", config)
+
 // ReAct agent automatically handles multimodal inputs
-reactAgent, _ := agents.NewReActAgent(ctx, agents.Config{
-    LLM: llm,
-    Tools: []agents.Tool{
-        // ... tools
-    },
-})
+reactAgent, _ := agents.NewReActAgent("react-multimodal-agent", chatModel, []tools.Tool{
+    // ... tools
+}, nil)
 
 // Process multimodal input
-imageMsg := schema.NewImageMessage("Analyze this image and describe what you see")
-imageMsg.ImageURL = "https://example.com/image.png"
+imageMsg := schema.NewImageMessage("https://example.com/image.png", "Analyze this image and describe what you see")
 
 response, err := reactAgent.Invoke(ctx, []schema.Message{imageMsg})
 ```
@@ -336,15 +351,10 @@ if err != nil {
 ### Custom Routing
 
 ```go
-// Create input with custom routing
-input, _ := multimodal.NewMultimodalInput(blocks,
-    multimodal.WithRouting(multimodal.RoutingConfig{
-        Strategy:      "manual",
-        TextProvider:  "openai",
-        ImageProvider: "google",
-        AudioProvider: "anthropic",
-    }),
-)
+// Note: Routing configuration is typically handled at the model level
+// For manual routing, configure providers when creating the model
+// The types package focuses on data structures, routing is handled by the multimodal package
+input, _ := multimodal.NewMultimodalInput(blocks)
 ```
 
 ### Capability Detection

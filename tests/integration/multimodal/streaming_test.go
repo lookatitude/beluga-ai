@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/multimodal"
+	"github.com/lookatitude/beluga-ai/pkg/multimodal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +22,10 @@ func TestStreamingVideoInput(t *testing.T) {
 		videoData[i] = byte(i % 256)
 	}
 
-	videoBlock, err := multimodal.NewContentBlock("video", videoData, "video/mp4", nil)
+	videoBlock, err := types.NewContentBlock("video", videoData)
 	require.NoError(t, err)
 
-	input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{videoBlock})
+	input, err := types.NewMultimodalInput([]*types.ContentBlock{videoBlock})
 	require.NoError(t, err)
 
 	config := multimodal.Config{
@@ -49,7 +50,7 @@ func TestStreamingVideoInput(t *testing.T) {
 	assert.NotNil(t, outputChan)
 
 	// Collect outputs
-	outputs := make([]*multimodal.MultimodalOutput, 0)
+	outputs := make([]*types.MultimodalOutput, 0)
 	for output := range outputChan {
 		outputs = append(outputs, output)
 	}
@@ -69,10 +70,10 @@ func TestStreamingAudioInput(t *testing.T) {
 		audioData[i] = byte(i % 256)
 	}
 
-	audioBlock, err := multimodal.NewContentBlock("audio", audioData, "audio/mpeg", nil)
+	audioBlock, err := types.NewContentBlock("audio", audioData)
 	require.NoError(t, err)
 
-	input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{audioBlock})
+	input, err := types.NewMultimodalInput([]*types.ContentBlock{audioBlock})
 	require.NoError(t, err)
 
 	config := multimodal.Config{
@@ -97,7 +98,7 @@ func TestStreamingAudioInput(t *testing.T) {
 	assert.NotNil(t, outputChan)
 
 	// Collect outputs
-	outputs := make([]*multimodal.MultimodalOutput, 0)
+	outputs := make([]*types.MultimodalOutput, 0)
 	for output := range outputChan {
 		outputs = append(outputs, output)
 	}
@@ -111,14 +112,14 @@ func TestStreamingOutputAndIncrementalResults(t *testing.T) {
 	defer cancel()
 
 	// Create mixed content
-	textBlock, err := multimodal.NewContentBlock("text", []byte("Process this video"))
+	textBlock, err := types.NewContentBlock("text", []byte("Process this video"))
 	require.NoError(t, err)
 
 	videoData := make([]byte, 1*1024*1024) // 1MB
-	videoBlock, err := multimodal.NewContentBlock("video", videoData, "video/mp4", nil)
+	videoBlock, err := types.NewContentBlock("video", videoData)
 	require.NoError(t, err)
 
-	input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{textBlock, videoBlock})
+	input, err := types.NewMultimodalInput([]*types.ContentBlock{textBlock, videoBlock})
 	require.NoError(t, err)
 
 	config := multimodal.Config{
@@ -161,10 +162,10 @@ func TestStreamingInterruptionAndContextSwitching(t *testing.T) {
 
 	// Create input
 	videoData := make([]byte, 2*1024*1024) // 2MB
-	videoBlock, err := multimodal.NewContentBlock("video", videoData, "video/mp4", nil)
+	videoBlock, err := types.NewContentBlock("video", videoData)
 	require.NoError(t, err)
 
-	input1, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{videoBlock})
+	input1, err := types.NewMultimodalInput([]*types.ContentBlock{videoBlock})
 	require.NoError(t, err)
 
 	config := multimodal.Config{
@@ -188,7 +189,7 @@ func TestStreamingInterruptionAndContextSwitching(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create second input with same ID to trigger interruption
-	input2, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{videoBlock})
+	input2, err := types.NewMultimodalInput([]*types.ContentBlock{videoBlock})
 	require.NoError(t, err)
 	input2.ID = input1.ID // Same ID to trigger interruption
 
@@ -229,10 +230,10 @@ func TestStreamingLatency(t *testing.T) {
 
 	// Test audio latency (<500ms target)
 	audioData := make([]byte, 64*1024) // 64KB
-	audioBlock, err := multimodal.NewContentBlock("audio", audioData, "audio/mpeg", nil)
+	audioBlock, err := types.NewContentBlock("audio", audioData)
 	require.NoError(t, err)
 
-	input, err := multimodal.NewMultimodalInput([]*multimodal.ContentBlock{audioBlock})
+	input, err := types.NewMultimodalInput([]*types.ContentBlock{audioBlock})
 	require.NoError(t, err)
 
 	config := multimodal.Config{

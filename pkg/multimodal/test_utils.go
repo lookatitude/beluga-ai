@@ -8,29 +8,30 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/iface"
+	"github.com/lookatitude/beluga-ai/pkg/multimodal/internal"
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/types"
 )
 
 // MockMultimodalModel provides a mock implementation of MultimodalModel for testing.
 type MockMultimodalModel struct {
-	mu                sync.RWMutex
-	providerName      string
-	modelName         string
-	capabilities      *types.ModalityCapabilities
-	shouldError       bool
-	errorToReturn     error
-	simulateDelay     time.Duration
-	processCallCount  int
-	streamCallCount   int
-	lastInput         *types.MultimodalInput
-	lastOutput        *types.MultimodalOutput
+	mu               sync.RWMutex
+	providerName     string
+	modelName        string
+	capabilities     *types.ModalityCapabilities
+	shouldError      bool
+	errorToReturn    error
+	simulateDelay    time.Duration
+	processCallCount int
+	streamCallCount  int
+	lastInput        *types.MultimodalInput
+	lastOutput       *types.MultimodalOutput
 }
 
 // NewMockMultimodalModel creates a new mock multimodal model.
 func NewMockMultimodalModel(providerName, modelName string, capabilities *types.ModalityCapabilities) *MockMultimodalModel {
 	if capabilities == nil {
 		capabilities = &types.ModalityCapabilities{
-			Text: true,
+			Text:  true,
 			Image: true,
 			Audio: true,
 			Video: true,
@@ -68,9 +69,9 @@ func (m *MockMultimodalModel) Process(ctx context.Context, input *types.Multimod
 		ContentBlocks: input.ContentBlocks,
 		Metadata:      make(map[string]any),
 		Confidence:    0.95,
-		Provider:     m.providerName,
-		Model:        m.modelName,
-		CreatedAt:    time.Now(),
+		Provider:      m.providerName,
+		Model:         m.modelName,
+		CreatedAt:     time.Now(),
 	}
 
 	m.mu.Lock()
@@ -104,9 +105,9 @@ func (m *MockMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 			ContentBlocks: input.ContentBlocks,
 			Metadata:      make(map[string]any),
 			Confidence:    0.95,
-			Provider:     m.providerName,
-			Model:        m.modelName,
-			CreatedAt:    time.Now(),
+			Provider:      m.providerName,
+			Model:         m.modelName,
+			CreatedAt:     time.Now(),
 		}
 
 		select {
@@ -145,11 +146,24 @@ func (m *MockMultimodalModel) SupportsModality(ctx context.Context, modality str
 	}
 }
 
+// CheckHealth performs a health check and returns an error if the model is unhealthy.
+func (m *MockMultimodalModel) CheckHealth(ctx context.Context) error {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.shouldError {
+		return m.errorToReturn
+	}
+
+	// Mock health check always passes unless configured to error
+	return nil
+}
+
 // MockMultimodalProvider provides a mock implementation of MultimodalProvider for testing.
 type MockMultimodalProvider struct {
-	name         string
-	capabilities *types.ModalityCapabilities
-	shouldError  bool
+	name          string
+	capabilities  *types.ModalityCapabilities
+	shouldError   bool
 	errorToReturn error
 }
 
@@ -157,7 +171,7 @@ type MockMultimodalProvider struct {
 func NewMockMultimodalProvider(name string, capabilities *types.ModalityCapabilities) *MockMultimodalProvider {
 	if capabilities == nil {
 		capabilities = &types.ModalityCapabilities{
-			Text: true,
+			Text:  true,
 			Image: true,
 			Audio: true,
 			Video: true,
@@ -257,4 +271,74 @@ func (m *MockContentBlock) GetSize() int64 {
 // GetMetadata returns additional metadata.
 func (m *MockContentBlock) GetMetadata() map[string]any {
 	return m.metadata
+}
+
+// TestBaseMultimodalModel is a public wrapper for internal.BaseMultimodalModel for testing.
+// This allows integration tests to access base model functionality without importing internal.
+type TestBaseMultimodalModel struct {
+	*internal.BaseMultimodalModel
+}
+
+// NewTestBaseMultimodalModel creates a new test base multimodal model.
+// This is a public wrapper around internal.NewBaseMultimodalModel for use in integration tests.
+// Config can be either a Config struct or map[string]any.
+// Capabilities can be either *ModalityCapabilities or *types.ModalityCapabilities.
+func NewTestBaseMultimodalModel(providerName, modelName string, config any, capabilities any) *TestBaseMultimodalModel {
+	var configMap map[string]any
+	switch v := config.(type) {
+	case Config:
+		configMap = map[string]any{
+			"Provider": v.Provider,
+			"Model":    v.Model,
+			"APIKey":   v.APIKey,
+		}
+	case map[string]any:
+		configMap = v
+	default:
+		configMap = make(map[string]any)
+	}
+
+	// Convert capabilities to *types.ModalityCapabilities
+	var typeCapabilities *types.ModalityCapabilities
+	switch v := capabilities.(type) {
+	case *types.ModalityCapabilities:
+		typeCapabilities = v
+	case *ModalityCapabilities:
+		typeCapabilities = &types.ModalityCapabilities{
+			Text:                    v.Text,
+			Image:                   v.Image,
+			Audio:                   v.Audio,
+			Video:                   v.Video,
+			MaxImageSize:            v.MaxImageSize,
+			MaxAudioSize:            v.MaxAudioSize,
+			MaxVideoSize:            v.MaxVideoSize,
+			SupportedImageFormats:   v.SupportedImageFormats,
+			SupportedAudioFormats:   v.SupportedAudioFormats,
+			SupportedVideoFormats:   v.SupportedVideoFormats,
+		}
+	default:
+		// Default capabilities if nil or unknown type
+		typeCapabilities = &types.ModalityCapabilities{
+			Text:  true,
+			Image: true,
+			Audio: true,
+			Video: true,
+		}
+	}
+
+	baseModel := internal.NewBaseMultimodalModel(providerName, modelName, configMap, typeCapabilities)
+	return &TestBaseMultimodalModel{BaseMultimodalModel: baseModel}
+}
+
+// TestMultimodalAgentExtension is a public wrapper for internal.MultimodalAgentExtension for testing.
+// This allows integration tests to access agent extension functionality without importing internal.
+type TestMultimodalAgentExtension struct {
+	*internal.MultimodalAgentExtension
+}
+
+// NewTestMultimodalAgentExtension creates a new test multimodal agent extension.
+// This is a public wrapper around internal.NewMultimodalAgentExtension for use in integration tests.
+func NewTestMultimodalAgentExtension(model *TestBaseMultimodalModel) *TestMultimodalAgentExtension {
+	extension := internal.NewMultimodalAgentExtension(model.BaseMultimodalModel)
+	return &TestMultimodalAgentExtension{MultimodalAgentExtension: extension}
 }

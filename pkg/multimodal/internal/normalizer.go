@@ -27,15 +27,13 @@ func (n *Normalizer) Normalize(ctx context.Context, block *types.ContentBlock, t
 		return nil, fmt.Errorf("Normalize: content block cannot be nil")
 	}
 
-	validFormats := []string{"base64", "url", "file_path"}
-	isValid := false
-	for _, f := range validFormats {
-		if targetFormat == f {
-			isValid = true
-			break
-		}
+	// Use map for O(1) lookup instead of O(n) slice iteration
+	validFormats := map[string]bool{
+		"base64":    true,
+		"url":       true,
+		"file_path": true,
 	}
-	if !isValid {
+	if !validFormats[targetFormat] {
 		return nil, fmt.Errorf("Normalize: invalid target format: %s", targetFormat)
 	}
 
@@ -96,15 +94,28 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 			return nil, fmt.Errorf("toBase64: failed to fetch URL: status %d", resp.StatusCode)
 		}
 
-		data, err := io.ReadAll(resp.Body)
+		// Pre-allocate buffer if Content-Length header is available for better performance
+		var data []byte
+		if contentLength := resp.ContentLength; contentLength > 0 {
+			data = make([]byte, 0, contentLength)
+		}
+
+		bodyData, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("toBase64: failed to read response: %w", err)
 		}
+		data = append(data, bodyData...)
 
 		// Preserve MIME type from response if not already set
 		mimeType := block.MIMEType
 		if mimeType == "" {
 			mimeType = resp.Header.Get("Content-Type")
+		}
+
+		// Reuse metadata map if it exists to avoid allocation
+		metadata := block.Metadata
+		if metadata == nil {
+			metadata = make(map[string]any)
 		}
 
 		return &types.ContentBlock{
@@ -113,7 +124,7 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 			Size:     int64(len(data)),
 			MIMEType: mimeType,
 			Format:   block.Format,
-			Metadata: block.Metadata,
+			Metadata: metadata,
 		}, nil
 	}
 
@@ -124,13 +135,19 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 			return nil, fmt.Errorf("toBase64: %w", err)
 		}
 
+		// Reuse metadata map if it exists to avoid allocation
+		metadata := block.Metadata
+		if metadata == nil {
+			metadata = make(map[string]any)
+		}
+
 		return &types.ContentBlock{
 			Type:     block.Type,
 			Data:     data,
 			Size:     int64(len(data)),
 			MIMEType: block.MIMEType,
 			Format:   block.Format,
-			Metadata: block.Metadata,
+			Metadata: metadata,
 		}, nil
 	}
 
@@ -182,9 +199,20 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 			return nil, fmt.Errorf("toFilePath: failed to fetch URL: status %d", resp.StatusCode)
 		}
 
-		data, err = io.ReadAll(resp.Body)
+		// Pre-allocate buffer if Content-Length header is available
+		var bodyData []byte
+		if contentLength := resp.ContentLength; contentLength > 0 {
+			bodyData = make([]byte, 0, contentLength)
+		}
+
+		readData, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, fmt.Errorf("toFilePath: failed to read response: %w", err)
+		}
+		if bodyData != nil {
+			data = append(bodyData, readData...)
+		} else {
+			data = readData
 		}
 	} else if len(block.Data) > 0 {
 		data = block.Data
@@ -193,31 +221,33 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 	}
 
 	// Determine file extension from MIME type or format
+	// Use map lookup for better performance
 	ext := block.Format
 	if ext == "" && block.MIMEType != "" {
 		// Try to extract extension from MIME type
-		parts := strings.Split(block.MIMEType, "/")
+		parts := strings.SplitN(block.MIMEType, "/", 2)
 		if len(parts) == 2 {
 			ext = parts[1]
-			// Normalize common extensions
-			switch ext {
-			case "jpeg":
-				ext = "jpg"
-			case "svg+xml":
-				ext = "svg"
+			// Normalize common extensions using map for O(1) lookup
+			extMap := map[string]string{
+				"jpeg":    "jpg",
+				"svg+xml": "svg",
+			}
+			if normalized, ok := extMap[ext]; ok {
+				ext = normalized
 			}
 		}
 	}
 	if ext == "" {
-		// Default extension based on content type
-		switch block.Type {
-		case "image":
-			ext = "png"
-		case "audio":
-			ext = "mp3"
-		case "video":
-			ext = "mp4"
-		default:
+		// Default extension based on content type - use map for O(1) lookup
+		typeExtMap := map[string]string{
+			"image": "png",
+			"audio": "mp3",
+			"video": "mp4",
+		}
+		if defaultExt, ok := typeExtMap[block.Type]; ok {
+			ext = defaultExt
+		} else {
 			ext = "bin"
 		}
 	}
@@ -259,10 +289,14 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 	}
 
 	// Copy metadata and add temp file indicator
+	// Pre-allocate metadata map with known size to avoid reallocations
 	if block.Metadata != nil {
+		result.Metadata = make(map[string]any, len(block.Metadata)+2)
 		for k, v := range block.Metadata {
 			result.Metadata[k] = v
 		}
+	} else {
+		result.Metadata = make(map[string]any, 2)
 	}
 	result.Metadata["temp_file"] = true
 	result.Metadata["auto_created"] = true

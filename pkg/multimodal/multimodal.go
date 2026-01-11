@@ -93,6 +93,16 @@ type ContentBlock struct {
 // Content block factory functions
 
 // NewContentBlock creates a new content block from raw data.
+// contentType must be one of: "text", "image", "audio", "video".
+// The MIME type is automatically detected from the data if not provided.
+// Returns an error if the content type is invalid or empty.
+//
+// Example:
+//
+//	block, err := NewContentBlock("text", []byte("Hello, world!"))
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewContentBlock(contentType string, data []byte) (*ContentBlock, error) {
 	if contentType == "" {
 		return nil, NewMultimodalErrorWithMessage("NewContentBlock", ErrCodeInvalidInput,
@@ -132,6 +142,16 @@ func NewContentBlock(contentType string, data []byte) (*ContentBlock, error) {
 }
 
 // NewContentBlockFromURL creates a new content block from a URL.
+// The content is fetched from the URL and the MIME type is determined from the HTTP response headers.
+// contentType must be one of: "text", "image", "audio", "video".
+// Returns an error if the URL cannot be fetched or the content type is invalid.
+//
+// Example:
+//
+//	block, err := NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*ContentBlock, error) {
 	if contentType == "" {
 		return nil, NewMultimodalErrorWithMessage("NewContentBlockFromURL", ErrCodeInvalidInput,
@@ -180,6 +200,16 @@ func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*Cont
 }
 
 // NewContentBlockFromFile creates a new content block from a file path.
+// The file is read and the MIME type is determined from the file extension.
+// contentType must be one of: "text", "image", "audio", "video".
+// Returns an error if the file cannot be read or the content type is invalid.
+//
+// Example:
+//
+//	block, err := NewContentBlockFromFile(ctx, "image", "/path/to/image.jpg")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewContentBlockFromFile(ctx context.Context, contentType, filePath string) (*ContentBlock, error) {
 	if contentType == "" {
 		return nil, NewMultimodalErrorWithMessage("NewContentBlockFromFile", ErrCodeInvalidInput,
@@ -258,16 +288,38 @@ func (cb *ContentBlock) Validate() error {
 }
 
 // MultimodalInputOption defines a function type for MultimodalInput options.
+// Options can be used to configure routing, metadata, and format preferences.
 type MultimodalInputOption func(*MultimodalInput)
 
-// WithRouting sets the routing configuration.
+// WithRouting sets the routing configuration for the multimodal input.
+// This allows specifying which providers should handle different content types.
+//
+// Example:
+//
+//	input, _ := NewMultimodalInput(blocks,
+//	    WithRouting(&RoutingConfig{
+//	        Strategy:      "manual",
+//	        TextProvider:  "openai",
+//	        ImageProvider: "gemini",
+//	    }),
+//	)
 func WithRouting(routing *RoutingConfig) MultimodalInputOption {
 	return func(input *MultimodalInput) {
 		input.Routing = routing
 	}
 }
 
-// WithMetadata sets the metadata.
+// WithMetadata sets additional metadata for the multimodal input.
+// Metadata can be used to pass context, user information, or other custom data.
+//
+// Example:
+//
+//	input, _ := NewMultimodalInput(blocks,
+//	    WithMetadata(map[string]any{
+//	        "user_id": "user-123",
+//	        "session_id": "session-456",
+//	    }),
+//	)
 func WithMetadata(metadata map[string]any) MultimodalInputOption {
 	return func(input *MultimodalInput) {
 		if input.Metadata == nil {
@@ -279,7 +331,13 @@ func WithMetadata(metadata map[string]any) MultimodalInputOption {
 	}
 }
 
-// WithFormat sets the preferred format.
+// WithFormat sets the preferred format for content blocks.
+// Format must be one of: "base64", "url", "file_path".
+// The normalizer will attempt to convert content blocks to this format.
+//
+// Example:
+//
+//	input, _ := NewMultimodalInput(blocks, WithFormat("url"))
 func WithFormat(format string) MultimodalInputOption {
 	return func(input *MultimodalInput) {
 		input.Format = format
@@ -287,6 +345,17 @@ func WithFormat(format string) MultimodalInputOption {
 }
 
 // NewMultimodalInput creates a new multimodal input with the given content blocks and options.
+// At least one content block is required. All content blocks are validated before creating the input.
+// Options can be used to configure routing, metadata, and format preferences.
+//
+// Example:
+//
+//	textBlock, _ := NewContentBlock("text", []byte("Hello"))
+//	imageBlock, _ := NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
+//	input, err := NewMultimodalInput([]*ContentBlock{textBlock, imageBlock})
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
 func NewMultimodalInput(contentBlocks []*ContentBlock, opts ...MultimodalInputOption) (*MultimodalInput, error) {
 	if len(contentBlocks) == 0 {
 		return nil, NewMultimodalErrorWithMessage("NewMultimodalInput", ErrCodeInvalidInput,

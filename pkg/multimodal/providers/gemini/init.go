@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/multimodal/registry"
 	multimodaliface "github.com/lookatitude/beluga-ai/pkg/multimodal/iface"
+	"github.com/lookatitude/beluga-ai/pkg/multimodal/registry"
 	"go.opentelemetry.io/otel"
 )
 
