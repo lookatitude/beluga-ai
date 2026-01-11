@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.5.0](https://github.com/lookatitude/beluga-ai/compare/v1.4.3...v1.5.0) (2026-01-11)
+
+
+### Features
+
+* **s2s:** add mock infrastructure for S2S provider tests ([f5481c7](https://github.com/lookatitude/beluga-ai/commit/f5481c73fe6180f1ef15eeb45fd2f0e82201e4ea))
+* **s2s:** complete mock infrastructure and dependency injection refactoring ([efcfea0](https://github.com/lookatitude/beluga-ai/commit/efcfea01f604c0b0c8153e59464336d9646f335d))
+* **s2s:** complete SendAudio() implementation for all providers ([d1f818c](https://github.com/lookatitude/beluga-ai/commit/d1f818cefacae0cede883532d838f0e0ea348411))
+* **s2s:** complete SendAudio() implementation with optimizations and tests ([bf61b13](https://github.com/lookatitude/beluga-ai/commit/bf61b1372786bca43dca01c5ea8bb23a4b00bcbc))
+* **voice/s2s:** Add Speech-to-Speech (S2S) package with multi-provider support ([9416f38](https://github.com/lookatitude/beluga-ai/commit/9416f383a7e45a9450cdf1b1f3b334fbf6d23520))
+* **voice/s2s:** Add Speech-to-Speech package with multi-provider support ([dbab024](https://github.com/lookatitude/beluga-ai/commit/dbab024f3269e2d98f8c6d7514a33042453e7b15))
+
+
+### Bug Fixes
+
+* resolve import cycles in chatmodels and embeddings packages ([b3b1531](https://github.com/lookatitude/beluga-ai/commit/b3b1531829b6ab7ed3cb048bc21fcbe48a98a461))
+* **security:** handle error in test helper JSON encoding ([a8888a3](https://github.com/lookatitude/beluga-ai/commit/a8888a32cf0102b01f86fd2bdbade13921b52df7))
+* update integration helper to use concrete registry type ([c06b271](https://github.com/lookatitude/beluga-ai/commit/c06b2715f0adc74b84b53983bc7f477ed3a6f76a))
+* **voice/s2s:** Fix go vet errors and standardize package patterns ([c7f374c](https://github.com/lookatitude/beluga-ai/commit/c7f374c429cab79d6157f54d828cfbd118b47610))
+
 ## [1.5.0](https://github.com/lookatitude/beluga-ai/compare/v1.4.0...v1.5.0) (2026-01-04)
 
 
