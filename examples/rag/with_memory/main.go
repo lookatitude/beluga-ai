@@ -16,9 +16,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	"github.com/lookatitude/beluga-ai/pkg/documentloaders"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/textsplitters"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	"testing/fstest"
 )
 
 func main() {
@@ -63,27 +66,74 @@ func main() {
 
 	fmt.Println("✅ Created RAG pipeline with conversation memory")
 
-	// Step 3: Add documents to knowledge base
-	documents := []schema.Document{
-		schema.NewDocument(
-			"Python is a high-level programming language known for its simplicity and readability.",
-			map[string]string{"topic": "Python", "type": "language"},
-		),
-		schema.NewDocument(
-			"Go (Golang) is a statically typed language developed by Google, known for its performance and concurrency features.",
-			map[string]string{"topic": "Go", "type": "language"},
-		),
-		schema.NewDocument(
-			"JavaScript is a dynamic programming language primarily used for web development.",
-			map[string]string{"topic": "JavaScript", "type": "language"},
-		),
+	// Step 3: Load documents using documentloaders
+	fmt.Println("\n📝 Loading documents for the knowledge base using documentloaders...")
+
+	// Create a mock filesystem with programming language documents
+	mockFS := fstest.MapFS{
+		"languages/python.txt": &fstest.MapFile{
+			Data: []byte("Python is a high-level programming language known for its simplicity and readability."),
+		},
+		"languages/go.txt": &fstest.MapFile{
+			Data: []byte("Go (Golang) is a statically typed language developed by Google, known for its performance and concurrency features."),
+		},
+		"languages/javascript.txt": &fstest.MapFile{
+			Data: []byte("JavaScript is a dynamic programming language primarily used for web development."),
+		},
 	}
 
-	_, err = vectorStore.AddDocuments(ctx, documents)
+	// Use directory loader to load documents
+	loader, err := documentloaders.NewDirectoryLoader(mockFS,
+		documentloaders.WithMaxDepth(1),
+		documentloaders.WithExtensions(".txt"),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create directory loader: %v", err)
+	}
+
+	loadedDocs, err := loader.Load(ctx)
+	if err != nil {
+		log.Fatalf("Failed to load documents: %v", err)
+	}
+	fmt.Printf("✅ Loaded %d documents from directory\n", len(loadedDocs))
+
+	// Use text splitter to split documents into chunks
+	splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
+		textsplitters.WithRecursiveChunkSize(100),
+		textsplitters.WithRecursiveChunkOverlap(20),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create text splitter: %v", err)
+	}
+
+	chunks, err := splitter.SplitDocuments(ctx, loadedDocs)
+	if err != nil {
+		log.Fatalf("Failed to split documents: %v", err)
+	}
+
+	// Add metadata to chunks based on file path
+	for i := range chunks {
+		if chunks[i].Metadata == nil {
+			chunks[i].Metadata = make(map[string]string)
+		}
+		source := chunks[i].Metadata["source"]
+		if strings.Contains(source, "python") {
+			chunks[i].Metadata["topic"] = "Python"
+			chunks[i].Metadata["type"] = "language"
+		} else if strings.Contains(source, "go") {
+			chunks[i].Metadata["topic"] = "Go"
+			chunks[i].Metadata["type"] = "language"
+		} else if strings.Contains(source, "javascript") {
+			chunks[i].Metadata["topic"] = "JavaScript"
+			chunks[i].Metadata["type"] = "language"
+		}
+	}
+
+	_, err = vectorStore.AddDocuments(ctx, chunks)
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
-	fmt.Printf("✅ Added %d documents to knowledge base\n", len(documents))
+	fmt.Printf("✅ Added %d chunks to knowledge base\n", len(chunks))
 
 	// Step 4: Multi-turn conversation with RAG
 	queries := []string{

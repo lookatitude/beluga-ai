@@ -11,6 +11,7 @@
 | chatmodels | `pkg/chatmodels` | ✅ Documented | Chat model interfaces |
 | config | `pkg/config` | ✅ Documented | Configuration management |
 | core | `pkg/core` | ✅ Documented | Core utilities and error handling |
+| documentloaders | `pkg/documentloaders` | ✅ Documented | Document loading from files and directories |
 | embeddings | `pkg/embeddings` | ✅ Documented | Embedding interfaces |
 | llms | `pkg/llms` | ✅ Documented | LLM interfaces |
 | memory | `pkg/memory` | ✅ Documented | Memory management |
@@ -20,6 +21,7 @@
 | retrievers | `pkg/retrievers` | ✅ Documented | Document retrieval |
 | schema | `pkg/schema` | ✅ Documented | Data schemas |
 | server | `pkg/server` | ✅ Documented | HTTP server |
+| textsplitters | `pkg/textsplitters` | ✅ Documented | Text splitting for RAG pipelines |
 | vectorstores | `pkg/vectorstores` | ✅ Documented | Vector storage |
 
 ## LLM Provider Packages
@@ -100,11 +102,11 @@ These packages are internal implementation details and should not be documented 
 ## Summary
 
 ### Documented Packages
-- **Main packages**: 14/14 ✅
+- **Main packages**: 16/16 ✅ (added documentloaders, textsplitters)
 - **LLM providers**: 4/5 ✅ (cohere missing, mock not in script)
 - **Voice packages**: 7/7 ✅
 - **Tools**: 1/1 ✅
-- **Total documented**: 26 packages
+- **Total documented**: 28 packages
 
 ### Missing from Documentation
 - **Embedding providers**: 3 packages (mock, ollama, openai)

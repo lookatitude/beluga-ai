@@ -29,7 +29,7 @@
 
 ## 🚀 Production Ready
 
-**Beluga AI Framework** has completed comprehensive standardization and is now **enterprise-grade** with consistent patterns, extensive testing, and production-ready observability across all 14 packages. The framework is ready for large-scale deployment and development teams.
+**Beluga AI Framework** has completed comprehensive standardization and is now **enterprise-grade** with consistent patterns, extensive testing, and production-ready observability across all 16 packages. The framework is ready for large-scale deployment and development teams.
 
 ## 📖 What is Beluga AI?
 
@@ -51,7 +51,7 @@
 - **🧠 Agent Framework**: Build autonomous agents with reasoning, planning, and execution capabilities
 - **🛠️ Tool Management**: Extensible tool system supporting Shell, Go Functions, API callers, and custom tools
 - **💾 Memory Management**: Multiple memory types (Buffer, Summary, VectorStore) with various backends
-- **🔍 Retrieval-Augmented Generation (RAG)**: Complete RAG pipelines with swappable components for embeddings, vector stores, and retrieval
+- **🔍 Retrieval-Augmented Generation (RAG)**: Complete RAG pipelines with document loaders, text splitters, embeddings, vector stores, and retrieval
 
 ### Advanced Capabilities
 
@@ -144,7 +144,9 @@ Comprehensive, runnable examples demonstrating Beluga AI Framework capabilities:
 ### By Category
 
 - **[Agents](./examples/agents/)** - Agent creation, tools, ReAct, and memory integration
-- **[RAG](./examples/rag/)** - Simple and advanced RAG pipelines
+- **[RAG](./examples/rag/)** - Simple and advanced RAG pipelines with document loaders and text splitters
+- **[Document Loaders](./examples/documentloaders/)** - Loading documents from files and directories
+- **[Text Splitters](./examples/textsplitters/)** - Splitting documents into chunks
 - **[Orchestration](./examples/orchestration/)** - Chains, workflows, and multi-agent coordination
 - **[Multi-Agent](./examples/multi-agent/)** - Agent collaboration and specialized roles
 - **[Integration](./examples/integration/)** - Full-stack applications and observability
@@ -178,6 +180,8 @@ pkg/
 ├── memory/          # Memory management
 ├── vectorstores/    # Vector database providers
 ├── embeddings/      # Embedding providers
+├── documentloaders/ # Document loading from files and directories
+├── textsplitters/   # Text splitting for RAG pipelines
 ├── orchestration/   # Workflow orchestration
 ├── monitoring/      # Observability (OTEL)
 ├── config/          # Configuration management
@@ -269,7 +273,7 @@ go test ./pkg/llms/... -bench=.
 
 **✅ Enterprise-Grade Framework Complete**
 
-Beluga AI Framework has achieved **100% standardization** across all 14 packages:
+Beluga AI Framework has achieved **100% standardization** across all 16 packages:
 
 - ✅ All packages follow identical OTEL metrics, factory patterns, and testing standards
 - ✅ Comprehensive testing infrastructure with mocks, integration tests, and benchmarks
@@ -279,13 +283,15 @@ Beluga AI Framework has achieved **100% standardization** across all 14 packages
 
 ### Implemented Packages
 
-All 14 framework packages are production-ready:
+All 16 framework packages are production-ready:
 
 - ✅ **LLMs** - Unified interfaces with multiple providers
 - ✅ **Agents** - Complete agent framework with tools and memory
 - ✅ **Memory** - Multiple memory types with various backends
 - ✅ **VectorStores** - InMemory, PgVector, Pinecone providers
 - ✅ **Embeddings** - OpenAI, Ollama providers
+- ✅ **DocumentLoaders** - Load documents from files and directories
+- ✅ **TextSplitters** - Split documents into chunks for RAG
 - ✅ **Orchestration** - Workflow engine with chains and graphs
 - ✅ **Voice** - Complete voice interaction framework
 - ✅ **Monitoring** - Full OTEL integration

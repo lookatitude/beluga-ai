@@ -15,8 +15,18 @@ embedder := setupEmbedder(ctx)
 store := setupVectorStore(ctx, embedder)
 llm := setupLLM(ctx)
 
+// Load and split documents
+loader, _ := documentloaders.NewDirectoryLoader(os.DirFS("./data"))
+docs, _ := loader.Load(ctx)
+
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter(
+    textsplitters.WithRecursiveChunkSize(1000),
+    textsplitters.WithRecursiveChunkOverlap(200),
+)
+chunks, _ := splitter.SplitDocuments(ctx, docs)
+
 // Ingest documents
-store.AddDocuments(ctx, documents, vectorstores.WithEmbedder(embedder))
+store.AddDocuments(ctx, chunks, vectorstores.WithEmbedder(embedder))
 
 // Query
 docs, _ := store.SimilaritySearchByQuery(ctx, query, 5, embedder)
@@ -55,7 +65,30 @@ for _, query := range queries {
 }
 ```
 
+## RAG with Document Loaders
+
+Use document loaders for real-world document ingestion:
+
+```go
+// Load from directory
+loader, _ := documentloaders.NewDirectoryLoader(
+    os.DirFS("./docs"),
+    documentloaders.WithExtensions(".txt", ".md"),
+    documentloaders.WithMaxDepth(2),
+)
+docs, _ := loader.Load(ctx)
+
+// Split into chunks
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter()
+chunks, _ := splitter.SplitDocuments(ctx, docs)
+
+// Add to vector store
+store.AddDocuments(ctx, chunks, vectorstores.WithEmbedder(embedder))
+```
+
+**See:** [Document Ingestion Recipes](./document-ingestion-recipes.md) for more patterns.
+
 ---
 
-**More Recipes:** [Agent Recipes](./agent-recipes) | [Tool Recipes](./tool-recipes)
+**More Recipes:** [Document Ingestion Recipes](./document-ingestion-recipes.md) | [Agent Recipes](./agent-recipes) | [Tool Recipes](./tool-recipes)
 

@@ -93,17 +93,52 @@ retriever, err := retrievers.NewVectorStoreRetriever(
 
 ### 1. Document Loading
 
+Load documents from files, directories, or other sources using document loaders:
+
 ```go
-// Load documents from various sources
-documents := loadDocuments(source)
+import (
+    "os"
+    "github.com/lookatitude/beluga-ai/pkg/documentloaders"
+)
+
+// Load from directory
+fsys := os.DirFS("./data")
+loader, _ := documentloaders.NewDirectoryLoader(fsys,
+    documentloaders.WithExtensions(".txt", ".md"),
+    documentloaders.WithMaxDepth(2),
+)
+documents, _ := loader.Load(ctx)
+
+// Or load single file
+textLoader, _ := documentloaders.NewTextLoader("./document.txt")
+documents, _ := textLoader.Load(ctx)
 ```
+
+**See:** [Document Loading Concepts](./document-loading.md) for detailed information.
 
 ### 2. Text Splitting
 
+Split large documents into chunks that fit embedding model context windows:
+
 ```go
-// Split large documents into chunks
-chunks := splitText(documents, chunkSize, overlap)
+import "github.com/lookatitude/beluga-ai/pkg/textsplitters"
+
+// Recursive character splitting (general purpose)
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter(
+    textsplitters.WithRecursiveChunkSize(1000),
+    textsplitters.WithRecursiveChunkOverlap(200),
+)
+chunks, _ := splitter.SplitDocuments(ctx, documents)
+
+// Markdown-aware splitting
+markdownSplitter, _ := textsplitters.NewMarkdownTextSplitter(
+    textsplitters.WithMarkdownChunkSize(500),
+    textsplitters.WithHeadersToSplitOn("#", "##"),
+)
+chunks, _ := markdownSplitter.SplitDocuments(ctx, documents)
 ```
+
+**See:** [Text Splitting Concepts](./text-splitting.md) for detailed information.
 
 ### 3. Embedding Generation
 
@@ -132,22 +167,45 @@ response, _ := llm.Generate(ctx, messagesWithContext)
 
 ## Chunking Strategies
 
-### Fixed Size Chunking
+### Recursive Character Splitting
+
+Uses a hierarchy of separators (paragraphs → lines → words → characters):
 
 ```go
-chunks := fixedSizeChunk(text, chunkSize, overlap)
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter(
+    textsplitters.WithRecursiveChunkSize(1000),
+    textsplitters.WithRecursiveChunkOverlap(200),
+    textsplitters.WithSeparators("\n\n", "\n", " ", ""),
+)
+chunks, _ := splitter.SplitText(ctx, text)
 ```
 
-### Semantic Chunking
+### Markdown-Aware Splitting
+
+Respects markdown structure, splitting at headers and preserving code blocks:
 
 ```go
-chunks := semanticChunk(text, minSize, maxSize)
+splitter, _ := textsplitters.NewMarkdownTextSplitter(
+    textsplitters.WithMarkdownChunkSize(500),
+    textsplitters.WithHeadersToSplitOn("#", "##", "###"),
+)
+chunks, _ := splitter.SplitText(ctx, markdownText)
 ```
 
-### Recursive Chunking
+### Token-Based Splitting
+
+Use custom length functions for token-aware chunking:
 
 ```go
-chunks := recursiveChunk(text, separators)
+tokenizer := func(text string) int {
+    // Implement token counting
+    return len(strings.Fields(text))
+}
+
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter(
+    textsplitters.WithRecursiveLengthFunction(tokenizer),
+    textsplitters.WithRecursiveChunkSize(100), // 100 tokens
+)
 ```
 
 ## RAG Best Practices
@@ -166,17 +224,28 @@ embedder := setupEmbedder(ctx)
 store := setupVectorStore(ctx, embedder)
 llm := setupLLM(ctx)
 
-// 2. Add documents
-store.AddDocuments(ctx, documents, vectorstores.WithEmbedder(embedder))
+// 2. Load documents
+loader, _ := documentloaders.NewDirectoryLoader(os.DirFS("./data"))
+documents, _ := loader.Load(ctx)
 
-// 3. Query
+// 3. Split into chunks
+splitter, _ := textsplitters.NewRecursiveCharacterTextSplitter(
+    textsplitters.WithRecursiveChunkSize(1000),
+    textsplitters.WithRecursiveChunkOverlap(200),
+)
+chunks, _ := splitter.SplitDocuments(ctx, documents)
+
+// 4. Add to vector store
+store.AddDocuments(ctx, chunks, vectorstores.WithEmbedder(embedder))
+
+// 5. Query
 query := "user question"
 docs, _ := store.SimilaritySearchByQuery(ctx, query, 5, embedder)
 
-// 4. Build context
+// 6. Build context
 context := buildContext(docs)
 
-// 5. Generate
+// 7. Generate
 messages := []schema.Message{
     schema.NewSystemMessage("Answer using: " + context),
     schema.NewHumanMessage(query),
@@ -186,6 +255,8 @@ response, _ := llm.Generate(ctx, messages)
 
 ## Related Concepts
 
+- [Document Loading Concepts](./document-loading.md) - Loading documents from files and directories
+- [Text Splitting Concepts](./text-splitting.md) - Splitting documents into chunks
 - [LLM Concepts](./llms) - LLM integration
 - [Memory Concepts](./memory) - Vector store memory
 - [Provider Documentation](../../providers/) - Provider guides
