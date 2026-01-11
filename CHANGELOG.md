@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.0](https://github.com/lookatitude/beluga-ai/compare/v1.5.0...v1.6.0) (2026-01-11)
+
+
+### Features
+
+* Implement comprehensive multimodal framework ([015f0d6](https://github.com/lookatitude/beluga-ai/commit/015f0d600ee9421eec5367fa023a3160afa58f76))
+* **multimodal:** Complete OpenAI and Gemini provider implementations ([4d20dc8](https://github.com/lookatitude/beluga-ai/commit/4d20dc824b1051ec1b93d0852cf3358037bbf9ac))
+
+
+### Bug Fixes
+
+* resolve integration test failures in multimodal package ([c561579](https://github.com/lookatitude/beluga-ai/commit/c56157986c0ba51910f2866c39b3e33689a1118e))
+* resolve linter issues in core package ([1d570ca](https://github.com/lookatitude/beluga-ai/commit/1d570ca484da0aca0f03ad8c75f6010abd32e84a))
+* **security:** address gosec security warnings ([bed4a17](https://github.com/lookatitude/beluga-ai/commit/bed4a17528951aa7eeaf35c59b1111b5b7bb4440))
+
 ## [1.5.0](https://github.com/lookatitude/beluga-ai/compare/v1.4.3...v1.5.0) (2026-01-11)
 
 
