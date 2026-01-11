@@ -21,12 +21,30 @@ import (
 // GrokVoiceProvider implements the S2SProvider interface for Grok Voice Agent.
 type GrokVoiceProvider struct {
 	config       *GrokVoiceConfig
+	httpClient   HTTPClient
 	mu           sync.RWMutex
 	providerName string
 }
 
+// HTTPClient is an interface for HTTP client operations.
+// This allows dependency injection for testing.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// ProviderOption is a function type for configuring the provider.
+type ProviderOption func(*GrokVoiceProvider)
+
+// WithHTTPClient sets a custom HTTP client for the provider.
+// This is useful for testing with mock HTTP clients.
+func WithHTTPClient(client HTTPClient) ProviderOption {
+	return func(p *GrokVoiceProvider) {
+		p.httpClient = client
+	}
+}
+
 // NewGrokVoiceProvider creates a new Grok Voice Agent provider.
-func NewGrokVoiceProvider(config *s2s.Config) (iface.S2SProvider, error) {
+func NewGrokVoiceProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2SProvider, error) {
 	if config == nil {
 		return nil, s2s.NewS2SError("NewGrokVoiceProvider", s2s.ErrCodeInvalidConfig,
 			errors.New("config cannot be nil"))
@@ -69,10 +87,22 @@ func NewGrokVoiceProvider(config *s2s.Config) (iface.S2SProvider, error) {
 			errors.New("API key is required"))
 	}
 
-	return &GrokVoiceProvider{
+	provider := &GrokVoiceProvider{
 		config:       grokConfig,
 		providerName: "grok",
-	}, nil
+	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(provider)
+	}
+
+	// Set default HTTP client if not provided
+	if provider.httpClient == nil {
+		provider.httpClient = &http.Client{Timeout: grokConfig.Timeout}
+	}
+
+	return provider, nil
 }
 
 // Process implements the S2SProvider interface using Grok Voice Agent API.
@@ -126,9 +156,8 @@ func (p *GrokVoiceProvider) Process(ctx context.Context, input *internal.AudioIn
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
 
-	// Execute request
-	client := &http.Client{Timeout: p.config.Timeout}
-	resp, err := client.Do(req)
+	// Execute request using injected HTTP client
+	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		s2s.RecordSpanError(span, err)
 		s2s.RecordSpanLatency(span, time.Since(startTime))
@@ -318,6 +347,11 @@ func (p *GrokVoiceProvider) StartStreaming(ctx context.Context, convCtx *interna
 	if !p.config.EnableStreaming {
 		return nil, s2s.NewS2SError("StartStreaming", s2s.ErrCodeInvalidConfig,
 			errors.New("streaming is disabled in configuration"))
+	}
+
+	// Ensure HTTP client is set for streaming
+	if p.httpClient == nil {
+		p.httpClient = &http.Client{Timeout: p.config.Timeout}
 	}
 
 	session, err := NewGrokVoiceStreamingSession(ctx, p.config, p)

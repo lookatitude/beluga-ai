@@ -2,6 +2,7 @@ package gemini
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
@@ -54,8 +55,13 @@ func NewGeminiNativeProviderWithEndpoint(config *s2s.Config, endpoint string) (i
 			errors.New("API key is required"))
 	}
 
-	return &GeminiNativeProvider{
+	provider := &GeminiNativeProvider{
 		config:       geminiConfig,
 		providerName: "gemini",
-	}, nil
+	}
+
+	// Set default HTTP client
+	provider.httpClient = &http.Client{Timeout: geminiConfig.Timeout}
+
+	return provider, nil
 }

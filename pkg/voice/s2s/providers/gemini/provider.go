@@ -21,12 +21,30 @@ import (
 // GeminiNativeProvider implements the S2SProvider interface for Gemini 2.5 Flash Native Audio.
 type GeminiNativeProvider struct {
 	config       *GeminiNativeConfig
+	httpClient   HTTPClient
 	mu           sync.RWMutex
 	providerName string
 }
 
+// HTTPClient is an interface for HTTP client operations.
+// This allows dependency injection for testing.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// ProviderOption is a function type for configuring the provider.
+type ProviderOption func(*GeminiNativeProvider)
+
+// WithHTTPClient sets a custom HTTP client for the provider.
+// This is useful for testing with mock HTTP clients.
+func WithHTTPClient(client HTTPClient) ProviderOption {
+	return func(p *GeminiNativeProvider) {
+		p.httpClient = client
+	}
+}
+
 // NewGeminiNativeProvider creates a new Gemini 2.5 Flash Native Audio provider.
-func NewGeminiNativeProvider(config *s2s.Config) (iface.S2SProvider, error) {
+func NewGeminiNativeProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2SProvider, error) {
 	if config == nil {
 		return nil, s2s.NewS2SError("NewGeminiNativeProvider", s2s.ErrCodeInvalidConfig,
 			errors.New("config cannot be nil"))
@@ -72,10 +90,22 @@ func NewGeminiNativeProvider(config *s2s.Config) (iface.S2SProvider, error) {
 			errors.New("API key is required"))
 	}
 
-	return &GeminiNativeProvider{
+	provider := &GeminiNativeProvider{
 		config:       geminiConfig,
 		providerName: "gemini",
-	}, nil
+	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(provider)
+	}
+
+	// Set default HTTP client if not provided
+	if provider.httpClient == nil {
+		provider.httpClient = &http.Client{Timeout: geminiConfig.Timeout}
+	}
+
+	return provider, nil
 }
 
 // Process implements the S2SProvider interface using Gemini 2.5 Flash Native Audio API.
@@ -128,9 +158,8 @@ func (p *GeminiNativeProvider) Process(ctx context.Context, input *internal.Audi
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Execute request
-	client := &http.Client{Timeout: p.config.Timeout}
-	resp, err := client.Do(req)
+	// Execute request using injected HTTP client
+	resp, err := p.httpClient.Do(req)
 	if err != nil {
 		s2s.RecordSpanError(span, err)
 		s2s.RecordSpanLatency(span, time.Since(startTime))
@@ -319,6 +348,11 @@ func (p *GeminiNativeProvider) StartStreaming(ctx context.Context, convCtx *inte
 	if !p.config.EnableStreaming {
 		return nil, s2s.NewS2SError("StartStreaming", s2s.ErrCodeInvalidConfig,
 			errors.New("streaming is disabled in configuration"))
+	}
+
+	// Ensure HTTP client is set for streaming
+	if p.httpClient == nil {
+		p.httpClient = &http.Client{Timeout: p.config.Timeout}
 	}
 
 	session, err := NewGeminiNativeStreamingSession(ctx, p.config, p)

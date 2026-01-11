@@ -22,13 +22,31 @@ import (
 // AmazonNovaProvider implements the S2SProvider interface for Amazon Nova 2 Sonic.
 type AmazonNovaProvider struct {
 	config       *AmazonNovaConfig
-	client       *bedrockruntime.Client
+	client       BedrockRuntimeClient
 	mu           sync.RWMutex
 	providerName string
 }
 
+// BedrockRuntimeClient is an interface for AWS Bedrock Runtime operations.
+// This allows dependency injection for testing.
+type BedrockRuntimeClient interface {
+	InvokeModel(ctx context.Context, params *bedrockruntime.InvokeModelInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.InvokeModelOutput, error)
+	InvokeModelWithResponseStream(ctx context.Context, params *bedrockruntime.InvokeModelWithResponseStreamInput, optFns ...func(*bedrockruntime.Options)) (*bedrockruntime.InvokeModelWithResponseStreamOutput, error)
+}
+
+// ProviderOption is a function type for configuring the provider.
+type ProviderOption func(*AmazonNovaProvider)
+
+// WithBedrockClient sets a custom Bedrock client for the provider.
+// This is useful for testing with mock Bedrock clients.
+func WithBedrockClient(client BedrockRuntimeClient) ProviderOption {
+	return func(p *AmazonNovaProvider) {
+		p.client = client
+	}
+}
+
 // NewAmazonNovaProvider creates a new Amazon Nova 2 Sonic provider.
-func NewAmazonNovaProvider(config *s2s.Config) (iface.S2SProvider, error) {
+func NewAmazonNovaProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2SProvider, error) {
 	if config == nil {
 		return nil, s2s.NewS2SError("NewAmazonNovaProvider", s2s.ErrCodeInvalidConfig,
 			errors.New("config cannot be nil"))
@@ -62,30 +80,39 @@ func NewAmazonNovaProvider(config *s2s.Config) (iface.S2SProvider, error) {
 		novaConfig.AudioFormat = "pcm"
 	}
 
-	// Load AWS configuration
-	ctx := context.Background()
-	awsCfg, err := awsconfig.LoadDefaultConfig(ctx,
-		awsconfig.WithRegion(novaConfig.Region),
-	)
-	if err != nil {
-		return nil, s2s.NewS2SError("NewAmazonNovaProvider", s2s.ErrCodeInvalidConfig,
-			fmt.Errorf("failed to load AWS config: %w", err))
-	}
-
-	// Create Bedrock Runtime client
-	clientOptions := []func(*bedrockruntime.Options){}
-	if novaConfig.EndpointURL != "" {
-		clientOptions = append(clientOptions, func(o *bedrockruntime.Options) {
-			o.BaseEndpoint = aws.String(novaConfig.EndpointURL)
-		})
-	}
-	client := bedrockruntime.NewFromConfig(awsCfg, clientOptions...)
-
-	return &AmazonNovaProvider{
+	provider := &AmazonNovaProvider{
 		config:       novaConfig,
-		client:       client,
 		providerName: "amazon_nova",
-	}, nil
+	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(provider)
+	}
+
+	// Create Bedrock client if not provided
+	if provider.client == nil {
+		// Load AWS configuration
+		ctx := context.Background()
+		awsCfg, err := awsconfig.LoadDefaultConfig(ctx,
+			awsconfig.WithRegion(novaConfig.Region),
+		)
+		if err != nil {
+			return nil, s2s.NewS2SError("NewAmazonNovaProvider", s2s.ErrCodeInvalidConfig,
+				fmt.Errorf("failed to load AWS config: %w", err))
+		}
+
+		// Create Bedrock Runtime client
+		clientOptions := []func(*bedrockruntime.Options){}
+		if novaConfig.EndpointURL != "" {
+			clientOptions = append(clientOptions, func(o *bedrockruntime.Options) {
+				o.BaseEndpoint = aws.String(novaConfig.EndpointURL)
+			})
+		}
+		provider.client = bedrockruntime.NewFromConfig(awsCfg, clientOptions...)
+	}
+
+	return provider, nil
 }
 
 // Process implements the S2SProvider interface using Amazon Nova 2 Sonic API.

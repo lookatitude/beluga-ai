@@ -364,9 +364,19 @@ jobs:
           skip-dirs: 'specs,examples,docs,website'
         continue-on-error: true
       
+      - name: Check Trivy results file
+        id: trivy-check
+        if: always()
+        run: |
+          if [ -f coverage/trivy-results.sarif ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+      
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v4
-        if: always()
+        if: always() && steps.trivy-check.outputs.exists == 'true'
         with:
           sarif_file: coverage/trivy-results.sarif
           wait-for-processing: true
@@ -418,7 +428,13 @@ jobs:
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Trivy**: Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+          
+          # Trivy summary
+          if [ -f coverage/trivy-results.sarif ]; then
+            echo "✅ **Trivy**: Results uploaded to GitHub Security tab" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "⚠️ **Trivy**: Scan completed but no results file generated" >> $GITHUB_STEP_SUMMARY
+          fi
       
       - name: Upload security reports
         if: always()
@@ -431,6 +447,7 @@ jobs:
             coverage/govulncheck-report.txt
             coverage/gitleaks-report.json
             coverage/trivy-results.sarif
+          if-no-files-found: ignore
           retention-days: 30
 
   # ============================================================================

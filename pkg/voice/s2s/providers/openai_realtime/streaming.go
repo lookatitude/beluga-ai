@@ -19,7 +19,7 @@ type OpenAIRealtimeStreamingSession struct {
 	ctx      context.Context //nolint:containedctx // Required for streaming
 	config   *OpenAIRealtimeConfig
 	provider *OpenAIRealtimeProvider
-	conn     *websocket.Conn
+	conn     WebSocketConn
 	audioCh  chan iface.AudioOutputChunk
 	closed   bool
 	mu       sync.RWMutex
@@ -58,18 +58,25 @@ func NewOpenAIRealtimeStreamingSession(ctx context.Context, config *OpenAIRealti
 	// Build WebSocket URL
 	wsURL := fmt.Sprintf("wss://api.openai.com/v1/realtime?model=%s&voice=%s", config.Model, config.VoiceID)
 
-	// Create WebSocket dialer
-	dialer := websocket.Dialer{
-		HandshakeTimeout: config.Timeout,
-	}
-
 	// Set headers
 	headers := make(map[string][]string)
 	headers["Authorization"] = []string{fmt.Sprintf("Bearer %s", config.APIKey)}
 	headers["OpenAI-Beta"] = []string{"realtime=v1"}
 
+	// Use injected dialer or create default one
+	var dialer WebSocketDialer
+	if provider.wsDialer != nil {
+		dialer = provider.wsDialer
+	} else {
+		// Create default WebSocket dialer
+		wsDialer := &websocket.Dialer{
+			HandshakeTimeout: config.Timeout,
+		}
+		dialer = &defaultWebSocketDialer{dialer: wsDialer}
+	}
+
 	// Connect to WebSocket
-	conn, _, err := dialer.Dial(wsURL, headers)
+	conn, err := dialer.Dial(wsURL, headers)
 	if err != nil {
 		return nil, fmt.Errorf("failed to connect to OpenAI Realtime API: %w", err)
 	}

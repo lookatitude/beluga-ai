@@ -93,6 +93,7 @@ func TestGeminiNativeProvider_Process(t *testing.T) {
 	// and then modify the URL in the request
 	
 	// Use test helper to create provider with mock server endpoint
+	// The endpoint is set via config, so we need to update the config
 	provider, err := NewGeminiNativeProviderWithEndpoint(config, server.URL)
 	require.NoError(t, err)
 	require.NotNil(t, provider)

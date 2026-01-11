@@ -22,7 +22,7 @@ type GrokVoiceStreamingSession struct {
 	ctx         context.Context //nolint:containedctx // Required for streaming
 	config      *GrokVoiceConfig
 	provider    *GrokVoiceProvider
-	httpClient  *http.Client
+	httpClient  HTTPClient
 	audioCh     chan iface.AudioOutputChunk
 	closed      bool
 	mu          sync.RWMutex
@@ -50,7 +50,7 @@ func NewGrokVoiceStreamingSession(ctx context.Context, config *GrokVoiceConfig, 
 		config:     config,
 		provider:   provider,
 		audioCh:    make(chan iface.AudioOutputChunk, 10),
-		httpClient: &http.Client{Timeout: config.Timeout},
+		httpClient: provider.httpClient,
 	}
 
 	// Grok uses Server-Sent Events (SSE) for streaming

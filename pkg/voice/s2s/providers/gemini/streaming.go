@@ -22,7 +22,7 @@ type GeminiNativeStreamingSession struct {
 	ctx         context.Context //nolint:containedctx // Required for streaming
 	config      *GeminiNativeConfig
 	provider    *GeminiNativeProvider
-	httpClient  *http.Client
+	httpClient  HTTPClient
 	audioCh     chan iface.AudioOutputChunk
 	closed      bool
 	mu          sync.RWMutex
@@ -50,7 +50,7 @@ func NewGeminiNativeStreamingSession(ctx context.Context, config *GeminiNativeCo
 		config:     config,
 		provider:   provider,
 		audioCh:    make(chan iface.AudioOutputChunk, 10),
-		httpClient: &http.Client{Timeout: config.Timeout},
+		httpClient: provider.httpClient,
 	}
 
 	// Gemini uses Server-Sent Events (SSE) for streaming

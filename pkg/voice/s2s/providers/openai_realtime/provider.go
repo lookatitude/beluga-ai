@@ -15,12 +15,37 @@ import (
 // OpenAIRealtimeProvider implements the S2SProvider interface for OpenAI Realtime API.
 type OpenAIRealtimeProvider struct {
 	config       *OpenAIRealtimeConfig
+	wsDialer     WebSocketDialer
 	mu           sync.RWMutex
 	providerName string
 }
 
+// WebSocketDialer is an interface for WebSocket dialing operations.
+// This allows dependency injection for testing.
+type WebSocketDialer interface {
+	Dial(url string, headers map[string][]string) (WebSocketConn, error)
+}
+
+// WebSocketConn is an interface for WebSocket connection operations.
+type WebSocketConn interface {
+	ReadJSON(v interface{}) error
+	WriteJSON(v interface{}) error
+	Close() error
+}
+
+// ProviderOption is a function type for configuring the provider.
+type ProviderOption func(*OpenAIRealtimeProvider)
+
+// WithWebSocketDialer sets a custom WebSocket dialer for the provider.
+// This is useful for testing with mock WebSocket dialers.
+func WithWebSocketDialer(dialer WebSocketDialer) ProviderOption {
+	return func(p *OpenAIRealtimeProvider) {
+		p.wsDialer = dialer
+	}
+}
+
 // NewOpenAIRealtimeProvider creates a new OpenAI Realtime API provider.
-func NewOpenAIRealtimeProvider(config *s2s.Config) (iface.S2SProvider, error) {
+func NewOpenAIRealtimeProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2SProvider, error) {
 	if config == nil {
 		return nil, s2s.NewS2SError("NewOpenAIRealtimeProvider", s2s.ErrCodeInvalidConfig,
 			errors.New("config cannot be nil"))
@@ -63,10 +88,17 @@ func NewOpenAIRealtimeProvider(config *s2s.Config) (iface.S2SProvider, error) {
 			errors.New("API key is required"))
 	}
 
-	return &OpenAIRealtimeProvider{
+	provider := &OpenAIRealtimeProvider{
 		config:       openaiConfig,
 		providerName: "openai_realtime",
-	}, nil
+	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(provider)
+	}
+
+	return provider, nil
 }
 
 // Process implements the S2SProvider interface using OpenAI Realtime API.
