@@ -63,6 +63,21 @@ type RetrieverOptions struct {
 }
 
 // WithDefaultK sets the default number of documents to retrieve.
+// This is used when GetRelevantDocuments is called without specifying k.
+//
+// Parameters:
+//   - k: Number of documents to retrieve by default
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithDefaultK(10),
+//	)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func WithDefaultK(k int) Option {
 	return func(opts *RetrieverOptions) {
 		opts.DefaultK = k
@@ -70,6 +85,21 @@ func WithDefaultK(k int) Option {
 }
 
 // WithMaxRetries sets the maximum number of retries for failed operations.
+// Retries are attempted with exponential backoff.
+//
+// Parameters:
+//   - retries: Maximum number of retry attempts
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithMaxRetries(3),
+//	)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func WithMaxRetries(retries int) Option {
 	return func(opts *RetrieverOptions) {
 		opts.MaxRetries = retries
@@ -77,6 +107,21 @@ func WithMaxRetries(retries int) Option {
 }
 
 // WithTimeout sets the timeout for operations.
+// Operations that exceed this timeout will be cancelled.
+//
+// Parameters:
+//   - timeout: Maximum duration for operations
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithTimeout(30*time.Second),
+//	)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func WithTimeout(timeout time.Duration) Option {
 	return func(opts *RetrieverOptions) {
 		opts.Timeout = timeout
@@ -84,6 +129,21 @@ func WithTimeout(timeout time.Duration) Option {
 }
 
 // WithTracing enables or disables tracing.
+// When enabled, operations are traced using OpenTelemetry.
+//
+// Parameters:
+//   - enabled: Whether to enable tracing
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithTracing(true),
+//	)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func WithTracing(enabled bool) Option {
 	return func(opts *RetrieverOptions) {
 		opts.EnableTracing = enabled
@@ -91,6 +151,21 @@ func WithTracing(enabled bool) Option {
 }
 
 // WithMetrics enables or disables metrics collection.
+// When enabled, operation metrics are recorded using OpenTelemetry.
+//
+// Parameters:
+//   - enabled: Whether to enable metrics
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithMetrics(true),
+//	)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func WithMetrics(enabled bool) Option {
 	return func(opts *RetrieverOptions) {
 		opts.EnableMetrics = enabled
@@ -119,14 +194,30 @@ func WithMeter(meter metric.Meter) Option {
 }
 
 // NewVectorStoreRetriever creates a new VectorStoreRetriever with the given vector store and options.
+// The retriever uses the vector store to perform similarity search and retrieve relevant documents.
+//
+// Parameters:
+//   - vectorStore: Vector store instance to use for retrieval
+//   - options: Optional configuration functions (WithDefaultK, WithScoreThreshold, etc.)
+//
+// Returns:
+//   - *VectorStoreRetriever: A new retriever instance
+//   - error: Configuration validation errors
 //
 // Example:
 //
-//	retriever := retrievers.NewVectorStoreRetriever(vectorStore,
+//	store, _ := vectorstores.NewInMemoryStore(ctx)
+//	retriever, err := retrievers.NewVectorStoreRetriever(store,
 //	    retrievers.WithDefaultK(5),
 //	    retrievers.WithScoreThreshold(0.7),
 //	    retrievers.WithTimeout(30*time.Second),
 //	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	docs, err := retriever.GetRelevantDocuments(ctx, "What is AI?")
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Option) (*VectorStoreRetriever, error) {
 	opts := &RetrieverOptions{
 		DefaultK:       4,

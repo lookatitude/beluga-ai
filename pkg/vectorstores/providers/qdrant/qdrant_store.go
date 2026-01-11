@@ -123,6 +123,32 @@ type qdrantVectorsConfig struct {
 }
 
 // NewQdrantStoreFromConfig creates a new QdrantStore from configuration.
+// NewQdrantStoreFromConfig creates a new QdrantStore from configuration.
+// This is used by the factory pattern for creating stores via the registry.
+// Qdrant is an open-source vector database with high-performance similarity search.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder, URL, collection name, API key (optional), and embedding dimension
+//
+// Returns:
+//   - VectorStore: A new Qdrant vector store instance
+//   - error: Configuration errors or connection failures
+//
+// Example:
+//
+//	config := vectorstoresiface.Config{
+//	    Embedder: embedder,
+//	    ProviderConfig: map[string]any{
+//	        "url":                "http://localhost:6333",
+//	        "collection_name":    "my-collection",
+//	        "api_key":            "your-api-key", // Optional for Qdrant Cloud
+//	        "embedding_dimension": 768,
+//	    },
+//	}
+//	store, err := qdrant.NewQdrantStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewQdrantStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract qdrant-specific configuration
 	url, _ := config.ProviderConfig["url"].(string)

@@ -46,6 +46,32 @@ type OllamaProvider struct {
 }
 
 // NewOllamaProvider creates a new Ollama provider instance.
+// This provider implements the ChatModel interface for local Ollama models (Llama 2, Mistral, etc.).
+// Ollama allows running LLMs locally without API keys.
+//
+// Parameters:
+//   - config: LLM configuration containing model name and optional base URL
+//
+// Returns:
+//   - *OllamaProvider: A new Ollama provider instance ready to use
+//   - error: Configuration validation errors or connection errors
+//
+// Example:
+//
+//	config := &llms.Config{
+//	    ModelName: "llama2",
+//	}
+//	// Optional: Set custom base URL
+//	config.ProviderSpecific = map[string]any{
+//	    "base_url": "http://localhost:11434",
+//	}
+//	provider, err := ollama.NewOllamaProvider(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	response, err := provider.Generate(ctx, messages)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -618,7 +644,19 @@ func (o *OllamaProvider) CheckHealth() map[string]any {
 	}
 }
 
-// Factory function for creating Ollama providers.
+// NewOllamaProviderFactory returns a factory function for creating Ollama providers.
+// This is used for registering the provider with the LLM factory pattern.
+//
+// Returns:
+//   - func(*llms.Config) (iface.ChatModel, error): Factory function that creates Ollama providers
+//
+// Example:
+//
+//	factory := llms.NewFactory()
+//	factory.RegisterProviderFactory("ollama", ollama.NewOllamaProviderFactory())
+//	provider, err := factory.CreateProvider("ollama", config)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewOllamaProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOllamaProvider(config)

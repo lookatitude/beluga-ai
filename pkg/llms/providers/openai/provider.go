@@ -45,6 +45,28 @@ type OpenAIProvider struct {
 }
 
 // NewOpenAIProvider creates a new OpenAI provider instance.
+// This provider implements the ChatModel interface for OpenAI GPT models (GPT-3.5, GPT-4, etc.).
+//
+// Parameters:
+//   - config: LLM configuration containing API key, model name, and other settings
+//
+// Returns:
+//   - *OpenAIProvider: A new OpenAI provider instance ready to use
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &llms.Config{
+//	    APIKey:    "your-api-key",
+//	    ModelName: "gpt-4",
+//	}
+//	provider, err := openai.NewOpenAIProvider(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	response, err := provider.Generate(ctx, messages)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -589,7 +611,19 @@ func (o *OpenAIProvider) CheckHealth() map[string]any {
 	}
 }
 
-// Factory function for creating OpenAI providers.
+// NewOpenAIProviderFactory returns a factory function for creating OpenAI providers.
+// This is used for registering the provider with the LLM factory pattern.
+//
+// Returns:
+//   - func(*llms.Config) (iface.ChatModel, error): Factory function that creates OpenAI providers
+//
+// Example:
+//
+//	factory := llms.NewFactory()
+//	factory.RegisterProviderFactory("openai", openai.NewOpenAIProviderFactory())
+//	provider, err := factory.CreateProvider("openai", config)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewOpenAIProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOpenAIProvider(config)

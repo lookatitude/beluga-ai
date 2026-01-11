@@ -55,6 +55,20 @@ func (e *FrameworkError) Unwrap() error {
 }
 
 // NewValidationError creates a new validation error.
+// Use this for errors related to invalid input, configuration, or data validation.
+//
+// Parameters:
+//   - message: Human-readable error message
+//   - cause: Underlying error that caused the validation failure (can be nil)
+//
+// Returns:
+//   - *FrameworkError: A new validation error instance
+//
+// Example:
+//
+//	err := core.NewValidationError("invalid API key format", nil)
+//
+// Example usage can be found in examples/core/basic/main.go
 func NewValidationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeValidation,
@@ -64,6 +78,20 @@ func NewValidationError(message string, cause error) *FrameworkError {
 }
 
 // NewNetworkError creates a new network error.
+// Use this for errors related to network operations (connection failures, timeouts, etc.).
+//
+// Parameters:
+//   - message: Human-readable error message
+//   - cause: Underlying network error (can be nil)
+//
+// Returns:
+//   - *FrameworkError: A new network error instance
+//
+// Example:
+//
+//	err := core.NewNetworkError("connection timeout", timeoutErr)
+//
+// Example usage can be found in examples/core/basic/main.go
 func NewNetworkError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeNetwork,
@@ -73,6 +101,20 @@ func NewNetworkError(message string, cause error) *FrameworkError {
 }
 
 // NewAuthenticationError creates a new authentication error.
+// Use this for errors related to authentication or authorization failures.
+//
+// Parameters:
+//   - message: Human-readable error message
+//   - cause: Underlying authentication error (can be nil)
+//
+// Returns:
+//   - *FrameworkError: A new authentication error instance
+//
+// Example:
+//
+//	err := core.NewAuthenticationError("invalid API key", authErr)
+//
+// Example usage can be found in examples/core/basic/main.go
 func NewAuthenticationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeAuthentication,
@@ -82,6 +124,20 @@ func NewAuthenticationError(message string, cause error) *FrameworkError {
 }
 
 // NewInternalError creates a new internal error.
+// Use this for unexpected internal system errors that should be logged and investigated.
+//
+// Parameters:
+//   - message: Human-readable error message
+//   - cause: Underlying internal error (can be nil)
+//
+// Returns:
+//   - *FrameworkError: A new internal error instance
+//
+// Example:
+//
+//	err := core.NewInternalError("unexpected state", stateErr)
+//
+// Example usage can be found in examples/core/basic/main.go
 func NewInternalError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeInternal,
@@ -91,6 +147,20 @@ func NewInternalError(message string, cause error) *FrameworkError {
 }
 
 // NewConfigurationError creates a new configuration error.
+// Use this for errors related to configuration loading, validation, or parsing.
+//
+// Parameters:
+//   - message: Human-readable error message
+//   - cause: Underlying configuration error (can be nil)
+//
+// Returns:
+//   - *FrameworkError: A new configuration error instance
+//
+// Example:
+//
+//	err := core.NewConfigurationError("missing required config key", nil)
+//
+// Example usage can be found in examples/core/basic/main.go
 func NewConfigurationError(message string, cause error) *FrameworkError {
 	return &FrameworkError{
 		Type:    ErrorTypeConfiguration,

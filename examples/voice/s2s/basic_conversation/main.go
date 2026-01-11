@@ -13,6 +13,9 @@ import (
 
 // This example demonstrates basic S2S (Speech-to-Speech) usage with a voice session.
 // S2S providers enable end-to-end speech conversations without explicit intermediate text steps.
+//
+// S2S providers convert speech directly to speech without intermediate text representation,
+// enabling more natural and faster conversations.
 func main() {
 	ctx := context.Background()
 

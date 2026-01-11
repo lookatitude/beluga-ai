@@ -203,15 +203,19 @@ func NewMockChatModel(model string, opts ...iface.Option) (iface.ChatModel, erro
 
 // NewDefaultConfig creates a new configuration instance with default values.
 // This provides sensible defaults for most use cases while allowing customization.
+// Defaults include: temperature 0.7, max tokens 2000, timeout 30s, retries 3.
 //
 // Returns:
-//   - Configuration instance with defaults
+//   - *Config: Configuration instance with defaults
 //
 // Example:
 //
 //	config := chatmodels.NewDefaultConfig()
 //	config.DefaultTemperature = 0.8
+//	config.DefaultMaxTokens = 1000
 //	model, err := chatmodels.NewChatModel("gpt-4", config)
+//
+// Example usage can be found in examples/chatmodels/basic/main.go
 func NewDefaultConfig() *Config {
 	return DefaultConfig()
 }

@@ -60,6 +60,31 @@ type googleEmbeddingValue struct {
 }
 
 // NewGoogleMultimodalEmbedder creates a new multimodal embedder.
+// This embedder supports both text and image embeddings using Google's Gemini API
+// and multimodal embedding models.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//
+// Returns:
+//   - *GoogleMultimodalEmbedder: A new multimodal embedder instance
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &google_multimodal.Config{
+//	    APIKey:  "your-api-key",
+//	    Model:   "text-embedding-004",
+//	    Timeout: 30 * time.Second,
+//	}
+//	embedder, err := google_multimodal.NewGoogleMultimodalEmbedder(config, tracer)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	embeddings, err := embedder.EmbedDocumentsMultimodal(ctx, documents)
+//
+// Example usage can be found in examples/multimodal/basic/main.go
 func NewGoogleMultimodalEmbedder(config *Config, tracer trace.Tracer) (*GoogleMultimodalEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

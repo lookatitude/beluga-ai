@@ -101,6 +101,29 @@ type monitorConfig struct {
 }
 
 // NewMonitor creates a new comprehensive monitoring system.
+// The monitor provides logging, tracing, metrics, health checks, safety validation,
+// and ethical AI monitoring capabilities.
+//
+// Parameters:
+//   - opts: Optional configuration functions (WithServiceName, WithOpenTelemetry, etc.)
+//
+// Returns:
+//   - Monitor: A new monitoring system instance
+//   - error: Configuration or initialization errors
+//
+// Example:
+//
+//	monitor, err := monitoring.NewMonitor(
+//	    monitoring.WithServiceName("my-ai-service"),
+//	    monitoring.WithOpenTelemetry("localhost:4317"),
+//	    monitoring.WithSafetyChecks(true),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	ctx, span := monitor.Tracer().StartSpan(ctx, "operation")
+//
+// Example usage can be found in examples/monitoring/basic/main.go
 func NewMonitor(opts ...Option) (Monitor, error) {
 	config := &monitorConfig{
 		serviceName:         "beluga-ai-service",

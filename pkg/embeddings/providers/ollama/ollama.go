@@ -34,7 +34,31 @@ type OllamaEmbedder struct {
 }
 
 // NewOllamaEmbedder creates a new OllamaEmbedder with the given configuration.
-// It creates an Ollama client from environment variables.
+// It creates an Ollama client from environment variables for generating embeddings
+// using local Ollama models (e.g., nomic-embed-text, all-minilm).
+//
+// Parameters:
+//   - config: Configuration containing model name, server URL, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//
+// Returns:
+//   - *OllamaEmbedder: A new Ollama embedder instance
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &ollama.Config{
+//	    Model:     "nomic-embed-text",
+//	    ServerURL: "http://localhost:11434",
+//	    Timeout:   30 * time.Second,
+//	}
+//	embedder, err := ollama.NewOllamaEmbedder(config, tracer)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	embeddings, err := embedder.EmbedDocuments(ctx, texts)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewOllamaEmbedder(config *Config, tracer trace.Tracer) (*OllamaEmbedder, error) {
 	client, err := api.ClientFromEnvironment()
 	if err != nil {
@@ -45,7 +69,24 @@ func NewOllamaEmbedder(config *Config, tracer trace.Tracer) (*OllamaEmbedder, er
 }
 
 // NewOllamaEmbedderWithClient creates a new OllamaEmbedder with a provided client.
-// This is primarily used for testing with mocked clients.
+// This is primarily used for testing with mocked clients or when you need
+// to inject a custom client implementation.
+//
+// Parameters:
+//   - config: Configuration containing model name and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//   - client: Ollama client implementation (must not be nil)
+//
+// Returns:
+//   - *OllamaEmbedder: A new Ollama embedder instance
+//   - error: Configuration validation errors or if client is nil
+//
+// Example:
+//
+//	mockClient := &MockOllamaClient{}
+//	embedder, err := ollama.NewOllamaEmbedderWithClient(config, tracer, mockClient)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewOllamaEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*OllamaEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

@@ -40,6 +40,31 @@ type OpenAIChatModel struct {
 }
 
 // NewOpenAIChatModel creates a new OpenAI chat model instance.
+// This provider implements the ChatModel interface for OpenAI GPT models.
+// Note: This is currently a stub implementation; full OpenAI API integration is pending.
+//
+// Parameters:
+//   - model: Model name (e.g., "gpt-4", "gpt-3.5-turbo")
+//   - config: Configuration object (API key, base URL, etc.)
+//   - options: Optional configuration options (tracing, metrics, etc.)
+//
+// Returns:
+//   - *OpenAIChatModel: A new OpenAI chat model instance
+//   - error: Configuration or initialization errors
+//
+// Example:
+//
+//	config := map[string]any{
+//	    "api_key": "your-api-key",
+//	    "base_url": "https://api.openai.com/v1",
+//	}
+//	model, err := openai.NewOpenAIChatModel("gpt-4", config, nil)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	messages, err := model.GenerateMessages(ctx, inputMessages)
+//
+// Example usage can be found in examples/chatmodels/basic/main.go
 func NewOpenAIChatModel(model string, config any, options *iface.Options) (*OpenAIChatModel, error) {
 	// Simple stub to avoid import cycle - in real implementation would extract API key from config
 

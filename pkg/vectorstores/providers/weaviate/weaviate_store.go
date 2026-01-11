@@ -104,6 +104,32 @@ type weaviateSearchData struct {
 }
 
 // NewWeaviateStoreFromConfig creates a new WeaviateStore from configuration.
+// NewWeaviateStoreFromConfig creates a new WeaviateStore from configuration.
+// This is used by the factory pattern for creating stores via the registry.
+// Weaviate is an open-source vector database with semantic search and knowledge graph capabilities.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder, URL, class name, API key (optional), and embedding dimension
+//
+// Returns:
+//   - VectorStore: A new Weaviate vector store instance
+//   - error: Configuration errors or connection failures
+//
+// Example:
+//
+//	config := vectorstoresiface.Config{
+//	    Embedder: embedder,
+//	    ProviderConfig: map[string]any{
+//	        "url":                "http://localhost:8080",
+//	        "class_name":         "Document",
+//	        "api_key":            "your-api-key", // Optional for Weaviate Cloud
+//	        "embedding_dimension": 768,
+//	    },
+//	}
+//	store, err := weaviate.NewWeaviateStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewWeaviateStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract weaviate-specific configuration
 	url, _ := config.ProviderConfig["url"].(string)
