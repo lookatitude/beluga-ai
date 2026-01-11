@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -16,14 +17,14 @@ type AdvancedMockRunnable struct {
 	mock.Mock
 
 	// Configuration
-	name         string
-	callCount    int
-	mu           sync.RWMutex
+	name      string
+	callCount int
+	mu        sync.RWMutex
 
 	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	simulateDelay    time.Duration
+	errorToReturn error
+	simulateDelay time.Duration
+	shouldError   bool
 
 	// Health check data
 	healthState     string
@@ -33,8 +34,8 @@ type AdvancedMockRunnable struct {
 // NewAdvancedMockRunnable creates a new advanced mock runnable with configurable behavior.
 func NewAdvancedMockRunnable(name string, opts ...MockRunnableOption) *AdvancedMockRunnable {
 	m := &AdvancedMockRunnable{
-		name:           name,
-		healthState:    "healthy",
+		name:            name,
+		healthState:     "healthy",
 		lastHealthCheck: time.Now(),
 	}
 
@@ -81,9 +82,16 @@ func (m *AdvancedMockRunnable) Invoke(ctx context.Context, input any, options ..
 	}
 
 	if args.Get(0) == nil {
-		return args.Get(0), args.Error(1)
+		if err := args.Error(1); err != nil {
+			return nil, fmt.Errorf("mock invoke error: %w", err)
+		}
+		// Return empty result when no error and no value
+		return "", nil
 	}
-	return args.Get(0), args.Error(1)
+	if err := args.Error(1); err != nil {
+		return args.Get(0), fmt.Errorf("mock invoke error: %w", err)
+	}
+	return args.Get(0), nil
 }
 
 // Batch implements the Runnable interface.
@@ -103,9 +111,26 @@ func (m *AdvancedMockRunnable) Batch(ctx context.Context, inputs []any, options 
 	}
 
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		if err := args.Error(1); err != nil {
+			return nil, fmt.Errorf("mock batch error: %w", err)
+		}
+		// Return empty slice when no error and no value
+		return []any{}, nil
 	}
-	return args.Get(0).([]any), args.Error(1)
+	if err := args.Error(1); err != nil {
+		if val := args.Get(0); val != nil {
+			if result, ok := val.([]any); ok {
+				return result, fmt.Errorf("mock batch error: %w", err)
+			}
+		}
+		return []any{}, fmt.Errorf("mock batch error: %w", err)
+	}
+	if val := args.Get(0); val != nil {
+		if result, ok := val.([]any); ok {
+			return result, nil
+		}
+	}
+	return []any{}, nil
 }
 
 // Stream implements the Runnable interface.
@@ -125,9 +150,32 @@ func (m *AdvancedMockRunnable) Stream(ctx context.Context, input any, options ..
 	}
 
 	if args.Get(0) == nil {
-		return nil, args.Error(1)
+		if err := args.Error(1); err != nil {
+			return nil, fmt.Errorf("mock stream error: %w", err)
+		}
+		// Return empty channel when no error and no value
+		emptyChan := make(chan any)
+		close(emptyChan)
+		return emptyChan, nil
 	}
-	return args.Get(0).(<-chan any), args.Error(1)
+	if err := args.Error(1); err != nil {
+		if val := args.Get(0); val != nil {
+			if result, ok := val.(<-chan any); ok {
+				return result, fmt.Errorf("mock stream error: %w", err)
+			}
+		}
+		emptyChan := make(chan any)
+		close(emptyChan)
+		return emptyChan, fmt.Errorf("mock stream error: %w", err)
+	}
+	if val := args.Get(0); val != nil {
+		if result, ok := val.(<-chan any); ok {
+			return result, nil
+		}
+	}
+	emptyChan := make(chan any)
+	close(emptyChan)
+	return emptyChan, nil
 }
 
 // GetCallCount returns the number of times the mock was called.
@@ -142,14 +190,13 @@ type AdvancedMockContainer struct {
 	mock.Mock
 
 	// Configuration
-	name         string
-	callCount    int
-	mu           sync.RWMutex
+	name      string
+	callCount int
+	mu        sync.RWMutex
 
 	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	simulateDelay    time.Duration
+	errorToReturn error
+	shouldError   bool
 }
 
 // NewAdvancedMockContainer creates a new advanced mock container with configurable behavior.
@@ -189,7 +236,10 @@ func (m *AdvancedMockContainer) Register(factoryFunc any) error {
 		return m.errorToReturn
 	}
 
-	return args.Error(0)
+	if err := args.Error(0); err != nil {
+		return fmt.Errorf("mock resolve error: %w", err)
+	}
+	return nil
 }
 
 // Resolve implements the Container interface.
@@ -204,7 +254,10 @@ func (m *AdvancedMockContainer) Resolve(target any) error {
 		return m.errorToReturn
 	}
 
-	return args.Error(0)
+	if err := args.Error(0); err != nil {
+		return fmt.Errorf("mock resolve error: %w", err)
+	}
+	return nil
 }
 
 // MustResolve implements the Container interface.
@@ -241,18 +294,25 @@ func (m *AdvancedMockContainer) Singleton(instance any) {
 // CheckHealth implements the HealthChecker interface.
 func (m *AdvancedMockContainer) CheckHealth(ctx context.Context) error {
 	args := m.Called(ctx)
-	return args.Error(0)
+	if err := args.Error(0); err != nil {
+		return fmt.Errorf("mock check health error: %w", err)
+	}
+	return nil
 }
 
 // ConcurrentTestRunner provides utilities for concurrent testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 // NewConcurrentTestRunner creates a new concurrent test runner.
-func NewConcurrentTestRunner(numGoroutines int, testDuration time.Duration, testFunc func() error) *ConcurrentTestRunner {
+func NewConcurrentTestRunner(
+	numGoroutines int,
+	testDuration time.Duration,
+	testFunc func() error,
+) *ConcurrentTestRunner {
 	return &ConcurrentTestRunner{
 		NumGoroutines: numGoroutines,
 		TestDuration:  testDuration,
@@ -262,6 +322,7 @@ func NewConcurrentTestRunner(numGoroutines int, testDuration time.Duration, test
 
 // Run executes the concurrent test.
 func (r *ConcurrentTestRunner) Run(t *testing.T) {
+	t.Helper()
 	var wg sync.WaitGroup
 	wg.Add(r.NumGoroutines)
 

@@ -6,7 +6,20 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
+)
+
+const (
+	mockResult = "mock_result"
+	testValue  = "test"
+)
+
+// Static errors for runnable tests.
+var (
+	errTestError   = errors.New("test error")
+	errBatchError  = errors.New("batch error")
+	errStreamError = errors.New("stream error")
+	errTestCause   = errors.New("test cause")
 )
 
 // MockRunnable is an enhanced test implementation of the Runnable interface
@@ -29,23 +42,23 @@ type MockRunnable struct {
 
 type InvokeCall struct {
 	Time    time.Time
-	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Input   any
 	Options []Option
+	Ctx     context.Context
 }
 
 type BatchCall struct {
 	Time    time.Time
-	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Inputs  []any
 	Options []Option
+	Ctx     context.Context
 }
 
 type StreamCall struct {
 	Time    time.Time
-	Ctx     context.Context //nolint:containedctx // Test struct - context storage is acceptable
 	Input   any
 	Options []Option
+	Ctx     context.Context
 }
 
 func NewMockRunnable() *MockRunnable {
@@ -58,7 +71,7 @@ func NewMockRunnable() *MockRunnable {
 }
 
 func (m *MockRunnable) WithInvokeResult(result any) *MockRunnable {
-	m.invokeFunc = func(ctx context.Context, input any, options ...Option) (any, error) {
+	m.invokeFunc = func(_ context.Context, _ any, _ ...Option) (any, error) {
 		return result, nil
 	}
 	return m
@@ -141,7 +154,7 @@ func (m *MockRunnable) Invoke(ctx context.Context, input any, options ...Option)
 	if m.invokeFunc != nil {
 		return m.invokeFunc(ctx, input, options...)
 	}
-	return "mock_result", nil
+	return mockResult, nil
 }
 
 func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...Option) ([]any, error) {
@@ -171,7 +184,7 @@ func (m *MockRunnable) Batch(ctx context.Context, inputs []any, options ...Optio
 
 	results := make([]any, len(inputs))
 	for i := range inputs {
-		results[i] = "mock_result"
+		results[i] = mockResult
 	}
 	return results, nil
 }
@@ -321,7 +334,7 @@ func TestMockRunnable_Invoke(t *testing.T) {
 }
 
 func TestMockRunnable_InvokeWithError(t *testing.T) {
-	expectedErr := errors.New("test error")
+	expectedErr := errTestError
 	mock := NewMockRunnable().WithInvokeError(expectedErr)
 
 	_, err := mock.Invoke(context.Background(), "test_input")
@@ -366,7 +379,7 @@ func TestMockRunnable_Batch(t *testing.T) {
 	}
 
 	for i, result := range results {
-		if result != "mock_result" {
+		if result != mockResult {
 			t.Errorf("MockRunnable.Batch() result[%d] = %v, expected mock_result", i, result)
 		}
 	}
@@ -382,7 +395,7 @@ func TestMockRunnable_Batch(t *testing.T) {
 }
 
 func TestMockRunnable_BatchWithError(t *testing.T) {
-	expectedErr := errors.New("batch error")
+	expectedErr := errBatchError
 	mock := NewMockRunnable().WithBatchError(expectedErr)
 
 	inputs := []any{"input1", "input2"}
@@ -417,7 +430,7 @@ func TestMockRunnable_BatchWithDelay(t *testing.T) {
 func TestTracedRunnable_Invoke(t *testing.T) {
 	mock := NewMockRunnable().WithInvokeResult("traced_result")
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
@@ -439,10 +452,10 @@ func TestTracedRunnable_Invoke(t *testing.T) {
 }
 
 func TestTracedRunnable_InvokeWithError(t *testing.T) {
-	expectedErr := errors.New("test error")
+	expectedErr := errTestError
 	mock := NewMockRunnable().WithInvokeError(expectedErr)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
@@ -461,7 +474,7 @@ func TestTracedRunnable_InvokeWithError(t *testing.T) {
 func TestTracedRunnable_Batch(t *testing.T) {
 	mock := NewMockRunnable()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
@@ -477,7 +490,7 @@ func TestTracedRunnable_Batch(t *testing.T) {
 	}
 
 	for i, result := range results {
-		if result != "mock_result" {
+		if result != mockResult {
 			t.Errorf("TracedRunnable.Batch() result[%d] = %v, expected mock_result", i, result)
 		}
 	}
@@ -492,7 +505,7 @@ func TestTracedRunnable_Batch(t *testing.T) {
 func TestTracedRunnable_Stream(t *testing.T) {
 	mock := NewMockRunnable().WithStreamChunks("chunk1", "chunk2")
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
@@ -502,7 +515,7 @@ func TestTracedRunnable_Stream(t *testing.T) {
 		return
 	}
 
-	var chunks []any
+	chunks := make([]any, 0, 2)
 	for chunk := range streamChan {
 		chunks = append(chunks, chunk)
 	}
@@ -523,10 +536,10 @@ func TestTracedRunnable_Stream(t *testing.T) {
 }
 
 func TestTracedRunnable_StreamWithError(t *testing.T) {
-	expectedErr := errors.New("stream error")
+	expectedErr := errStreamError
 	mock := NewMockRunnable().WithStreamError(expectedErr)
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
 
@@ -545,7 +558,7 @@ func TestTracedRunnable_StreamWithError(t *testing.T) {
 func TestRunnableWithTracing(t *testing.T) {
 	mock := NewMockRunnable()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := RunnableWithTracing(mock, tracer, metrics, "test_component")
 
@@ -564,7 +577,7 @@ func TestRunnableWithTracing(t *testing.T) {
 func TestRunnableWithTracingAndName(t *testing.T) {
 	mock := NewMockRunnable()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 	traced := RunnableWithTracingAndName(mock, tracer, metrics, "test_component", "test_name")
 
@@ -572,7 +585,8 @@ func TestRunnableWithTracingAndName(t *testing.T) {
 		t.Errorf("RunnableWithTracingAndName() returned %T, expected *TracedRunnable", traced)
 	} else {
 		if tracedRunnable.componentType != "test_component" {
-			t.Errorf("RunnableWithTracingAndName() componentType = %q, expected %q", tracedRunnable.componentType, "test_component")
+			t.Errorf("RunnableWithTracingAndName() componentType = %q, expected %q",
+				tracedRunnable.componentType, "test_component")
 		}
 		if tracedRunnable.componentName != "test_name" {
 			t.Errorf("RunnableWithTracingAndName() componentName = %q, expected %q", tracedRunnable.componentName, "test_name")
@@ -602,7 +616,7 @@ func TestMetrics_Recording(t *testing.T) {
 	// This test verifies that metrics are properly recorded during Runnable operations
 	mock := NewMockRunnable()
 
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 
 	if metrics == nil {
@@ -653,9 +667,9 @@ func TestMetrics_NoOpMetrics(t *testing.T) {
 
 	// No-op metrics should not panic when called
 	ctx := context.Background()
-	metrics.RecordRunnableInvoke(ctx, "test", time.Millisecond, nil)
-	metrics.RecordRunnableBatch(ctx, "test", 5, time.Millisecond, nil)
-	metrics.RecordRunnableStream(ctx, "test", time.Millisecond, 3, nil)
+	metrics.RecordRunnableInvoke(ctx, testValue, time.Millisecond, nil)
+	metrics.RecordRunnableBatch(ctx, testValue, 5, time.Millisecond, nil)
+	metrics.RecordRunnableStream(ctx, testValue, time.Millisecond, 3, nil)
 
 	// Verify that all fields are nil (no-op behavior)
 	if metrics.runnableInvokes != nil ||
@@ -674,7 +688,7 @@ func TestMetrics_NoOpMetrics(t *testing.T) {
 // Simple tracing test using NoOp tracer.
 func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
 	mock := NewMockRunnable()
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	metrics := NoOpMetrics()
 
 	traced := NewTracedRunnable(mock, tracer, metrics, "test_component", "test_name")
@@ -705,7 +719,7 @@ func TestFrameworkErrorTypes(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			cause := errors.New("test cause")
+			cause := errTestCause
 			err := tt.constructor("test message", cause)
 
 			if err.Type != tt.errorType {
@@ -740,7 +754,7 @@ func TestContainerHealthChecker(t *testing.T) {
 
 func TestContainerWithMonitoring(t *testing.T) {
 	logger := &testLogger{}
-	tracerProvider := trace.NewNoopTracerProvider()
+	tracerProvider := noop.NewTracerProvider()
 
 	container := NewContainerWithOptions(
 		WithLogger(logger),
@@ -748,7 +762,7 @@ func TestContainerWithMonitoring(t *testing.T) {
 	)
 
 	// Test registration with monitoring
-	err := container.Register(func() string { return "test" })
+	err := container.Register(func() string { return testValue })
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}
@@ -760,7 +774,7 @@ func TestContainerWithMonitoring(t *testing.T) {
 		t.Errorf("Resolve() error = %v", err)
 	}
 
-	if result != "test" {
-		t.Errorf("Resolve() = %q, expected %q", result, "test")
+	if result != testValue {
+		t.Errorf("Resolve() = %q, expected %q", result, testValue)
 	}
 }

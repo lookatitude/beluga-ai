@@ -8,7 +8,15 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
+)
+
+// Static errors for integration tests.
+var (
+	errConfigNotResolved  = errors.New("config dependency not resolved")
+	errLoggerNotResolved  = errors.New("logger dependency not resolved")
+	errTracerNotResolved  = errors.New("tracer dependency not resolved")
+	errMetricsNotResolved = errors.New("metrics dependency not resolved")
 )
 
 // Integration tests that combine multiple components
@@ -17,20 +25,24 @@ func TestContainerWithTracedRunnable_Integration(t *testing.T) {
 	// Create a container with monitoring components
 	container := NewContainerWithOptions(
 		WithLogger(&testLogger{}),
-		WithTracerProvider(trace.NewNoopTracerProvider()),
+		WithTracerProvider(noop.NewTracerProvider()),
 	)
 
 	// Register metrics
 	metrics := NoOpMetrics()
-	_ = container.Register(func() *Metrics { return metrics })
+	if err := container.Register(func() *Metrics { return metrics }); err != nil {
+		t.Fatalf("Register metrics failed: %v", err)
+	}
 
 	// Create a traced runnable
 	mock := NewMockRunnable().WithInvokeResult("integration_test")
-	tracer := trace.NewNoopTracerProvider().Tracer("")
+	tracer := noop.NewTracerProvider().Tracer("")
 	traced := NewTracedRunnable(mock, tracer, metrics, "integration_test", "test_instance")
 
 	// Register the traced runnable
-	_ = container.Register(func() Runnable { return traced })
+	if err := container.Register(func() Runnable { return traced }); err != nil {
+		t.Fatalf("Register runnable failed: %v", err)
+	}
 
 	// Resolve and use the runnable
 	var runnable Runnable
@@ -64,35 +76,40 @@ func TestBuilderWithComplexDependencies_Integration(t *testing.T) {
 	container := NewContainer()
 	builder := NewBuilder(container)
 
-	// Register a complex service hierarchy
-	type TestConfig struct {
-		Timeout int
-	}
-	err := builder.Register(func() *TestConfig { return &TestConfig{Timeout: 30} })
-	if err != nil {
-		t.Fatalf("Register config failed: %v", err)
+	// Register dependencies
+	if err := registerComplexDependencies(builder); err != nil {
+		t.Fatalf("Register dependencies failed: %v", err)
 	}
 
-	err = builder.Register(func() Logger { return &testLogger{} })
+	// Build and verify the complex service
+	service, err := buildAndVerifyComplexService(builder)
 	if err != nil {
-		t.Fatalf("Register logger failed: %v", err)
+		t.Fatalf("Build complex service failed: %v", err)
 	}
 
-	err = builder.Register(func() TracerProvider { return trace.NewNoopTracerProvider() })
-	if err != nil {
-		t.Fatalf("Register tracer failed: %v", err)
+	// Test service functionality
+	if err := service.Execute(context.Background()); err != nil {
+		t.Errorf("ComplexService.Execute() error = %v", err)
 	}
+}
 
-	err = builder.Register(func() *Metrics {
+func registerComplexDependencies(builder *Builder) error {
+	if err := builder.Register(DefaultConfig); err != nil {
+		return err
+	}
+	if err := builder.Register(func() Logger { return &testLogger{} }); err != nil {
+		return err
+	}
+	if err := builder.Register(func() TracerProvider { return noop.NewTracerProvider() }); err != nil {
+		return err
+	}
+	if err := builder.Register(func() *Metrics {
 		metrics := NoOpMetrics()
 		return metrics
-	})
-	if err != nil {
-		t.Fatalf("Register metrics failed: %v", err)
+	}); err != nil {
+		return err
 	}
-
-	// Register a service that depends on all the above
-	err = builder.Register(func(cfg *Config, logger Logger, tracer TracerProvider, metrics *Metrics) *ComplexService {
+	return builder.Register(func(cfg *Config, logger Logger, tracer TracerProvider, metrics *Metrics) *ComplexService {
 		return &ComplexService{
 			Config:  cfg,
 			Logger:  logger,
@@ -100,36 +117,29 @@ func TestBuilderWithComplexDependencies_Integration(t *testing.T) {
 			Metrics: metrics,
 		}
 	})
-	if err != nil {
-		t.Fatalf("Register complex service failed: %v", err)
-	}
+}
 
-	// Build the complex service
+func buildAndVerifyComplexService(builder *Builder) (*ComplexService, error) {
 	var service *ComplexService
-	err = builder.Build(&service)
-	if err != nil {
-		t.Fatalf("Build complex service failed: %v", err)
+	if err := builder.Build(&service); err != nil {
+		return nil, err
 	}
 
 	// Verify the service has all dependencies
 	if service.Config == nil {
-		t.Error("Config dependency not resolved")
+		return nil, errConfigNotResolved
 	}
 	if service.Logger == nil {
-		t.Error("Logger dependency not resolved")
+		return nil, errLoggerNotResolved
 	}
 	if service.Tracer == nil {
-		t.Error("Tracer dependency not resolved")
+		return nil, errTracerNotResolved
 	}
 	if service.Metrics == nil {
-		t.Error("Metrics dependency not resolved")
+		return nil, errMetricsNotResolved
 	}
 
-	// Test service functionality
-	err = service.Execute(context.Background())
-	if err != nil {
-		t.Errorf("ComplexService.Execute() error = %v", err)
-	}
+	return service, nil
 }
 
 func TestConcurrentContainerOperations_Integration(t *testing.T) {
@@ -147,12 +157,29 @@ func TestConcurrentContainerOperations_Integration(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 3 {
 				case 0: // Register
-					_ = container.Register(func() int { return goroutineID*1000 + j })
+					// Errors are expected in concurrent scenarios and are intentionally ignored
+					// to test container resilience under concurrent load
+					if err := container.Register(func() int { return goroutineID*1000 + j }); err != nil {
+						// Error expected in concurrent scenarios
+						_ = err
+					}
 				case 1: // Resolve
+					// Errors are expected in concurrent scenarios and are intentionally ignored
+					// to test container resilience under concurrent load
 					var result int
-					_ = container.Resolve(&result)
+					if err := container.Resolve(&result); err != nil {
+						// Error expected in concurrent scenarios
+						_ = err
+					}
 				case 2: // Health check
-					_ = container.CheckHealth(context.Background())
+					// Errors are expected in concurrent scenarios and are intentionally ignored
+					// to test container resilience under concurrent load
+					if err := container.CheckHealth(context.Background()); err != nil {
+						// Error expected in concurrent scenarios
+						_ = err
+					}
+				default:
+					// No-op for other cases
 				}
 			}
 		}(i)
@@ -213,7 +240,7 @@ func TestRunnableChainWithTracing_Integration(t *testing.T) {
 
 	// Set up monitoring
 	logger := &testLogger{}
-	tracerProvider := trace.NewNoopTracerProvider()
+	tracerProvider := noop.NewTracerProvider()
 	metrics := NoOpMetrics()
 
 	builder.WithLogger(logger).WithTracerProvider(tracerProvider)
@@ -264,7 +291,7 @@ func TestContainerLifecycle_Integration(t *testing.T) {
 	// Test complete container lifecycle: setup, use, cleanup
 	container := NewContainerWithOptions(
 		WithLogger(&testLogger{}),
-		WithTracerProvider(trace.NewNoopTracerProvider()),
+		WithTracerProvider(noop.NewTracerProvider()),
 	)
 
 	builder := NewBuilder(container)
@@ -359,7 +386,6 @@ func TestContextCancellationPropagation_Integration(t *testing.T) {
 	}
 }
 
-
 // Supporting types for integration tests
 
 type ComplexService struct {
@@ -385,7 +411,7 @@ type FailableService struct {
 	shouldFail bool
 }
 
-func (s *FailableService) Execute(ctx context.Context) error {
+func (s *FailableService) Execute(_ context.Context) error {
 	if s.shouldFail {
 		return NewInternalError("FailableService configured to fail", nil)
 	}

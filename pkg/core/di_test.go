@@ -9,8 +9,11 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 )
+
+// Static errors for DI tests.
+var errFactoryError = errors.New("factory error")
 
 func TestNewContainer(t *testing.T) {
 	container := NewContainer()
@@ -36,7 +39,7 @@ func TestNewContainer(t *testing.T) {
 
 func TestNewContainerWithOptions(t *testing.T) {
 	logger := &testLogger{}
-	tracerProvider := trace.NewNoopTracerProvider()
+	tracerProvider := noop.NewTracerProvider()
 
 	container := NewContainerWithOptions(
 		WithLogger(logger),
@@ -108,7 +111,9 @@ func TestContainer_Resolve(t *testing.T) {
 		{
 			name: "resolve simple type",
 			setup: func(c Container) {
-				_ = c.Register(func() string { return "test" })
+				if err := c.Register(func() string { return "test" }); err != nil {
+					panic(err)
+				}
 			},
 			target:  func() *string { var s string; return &s }(),
 			wantErr: false,
@@ -116,15 +121,19 @@ func TestContainer_Resolve(t *testing.T) {
 		{
 			name: "resolve with dependency",
 			setup: func(c Container) {
-				_ = c.Register(func() string { return "test" })
-				_ = c.Register(func(s string) int { return len(s) })
+				if err := c.Register(func() string { return "test" }); err != nil {
+					panic(err)
+				}
+				if err := c.Register(func(s string) int { return len(s) }); err != nil {
+					panic(err)
+				}
 			},
 			target:  func() *int { var i int; return &i }(),
 			wantErr: false,
 		},
 		{
 			name: "resolve unregistered type",
-			setup: func(c Container) {
+			setup: func(_ Container) {
 				// No registration
 			},
 			target:  func() *string { var s string; return &s }(),
@@ -133,7 +142,9 @@ func TestContainer_Resolve(t *testing.T) {
 		{
 			name: "resolve non-pointer",
 			setup: func(c Container) {
-				_ = c.Register(func() string { return "test" })
+				if err := c.Register(func() string { return "test" }); err != nil {
+					panic(err)
+				}
 			},
 			target:  "",
 			wantErr: true,
@@ -173,7 +184,9 @@ func TestContainer_Has(t *testing.T) {
 	container := NewContainer()
 
 	// Test with registered factory
-	_ = container.Register(func() string { return "test" })
+	if err := container.Register(func() string { return "test" }); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
 	if !container.Has(stringType()) {
 		t.Error("Has() should return true for registered type")
 	}
@@ -193,7 +206,9 @@ func TestContainer_Has(t *testing.T) {
 func TestContainer_Clear(t *testing.T) {
 	container := NewContainer()
 
-	_ = container.Register(func() string { return "test" })
+	if err := container.Register(func() string { return "test" }); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
 	container.Singleton(42)
 
 	if !container.Has(stringType()) || !container.Has(intType()) {
@@ -215,13 +230,15 @@ func TestContainer_CheckHealth(t *testing.T) {
 	}{
 		{
 			name:    "healthy container",
-			setup:   func(c Container) {},
+			setup:   func(_ Container) {},
 			wantErr: false,
 		},
 		{
 			name: "container with existing registrations",
 			setup: func(c Container) {
-				_ = c.Register(func() string { return "existing" })
+				if err := c.Register(func() string { return "existing" }); err != nil {
+					panic(err)
+				}
 			},
 			wantErr: false,
 		},
@@ -252,7 +269,7 @@ func TestBuilder_WithLogger(t *testing.T) {
 }
 
 func TestBuilder_WithTracerProvider(t *testing.T) {
-	tracerProvider := trace.NewNoopTracerProvider()
+	tracerProvider := noop.NewTracerProvider()
 	builder := NewBuilder(NewContainer()).WithTracerProvider(tracerProvider)
 
 	if impl, ok := builder.container.(*containerImpl); ok {
@@ -272,23 +289,23 @@ type testLogger struct {
 	logs []string
 }
 
-func (t *testLogger) Debug(msg string, args ...any) {
+func (t *testLogger) Debug(msg string, _ ...any) {
 	t.logs = append(t.logs, "DEBUG: "+msg)
 }
 
-func (t *testLogger) Info(msg string, args ...any) {
+func (t *testLogger) Info(msg string, _ ...any) {
 	t.logs = append(t.logs, "INFO: "+msg)
 }
 
-func (t *testLogger) Warn(msg string, args ...any) {
+func (t *testLogger) Warn(msg string, _ ...any) {
 	t.logs = append(t.logs, "WARN: "+msg)
 }
 
-func (t *testLogger) Error(msg string, args ...any) {
+func (t *testLogger) Error(msg string, _ ...any) {
 	t.logs = append(t.logs, "ERROR: "+msg)
 }
 
-func (t *testLogger) With(args ...any) Logger {
+func (t *testLogger) With(_ ...any) Logger {
 	return t
 }
 
@@ -340,7 +357,9 @@ func TestContainer_ConcurrentResolution(t *testing.T) {
 	container := NewContainer()
 
 	// Register a single service that returns a constant value
-	_ = container.Register(func() int { return 42 })
+	if err := container.Register(func() int { return 42 }); err != nil {
+		t.Fatalf("Register failed: %v", err)
+	}
 
 	numGoroutines := 10
 	numResolutions := 100
@@ -396,16 +415,24 @@ func TestContainer_ConcurrentMixedOperations(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 4 {
 				case 0: // Register
-					_ = container.Register(func() testService {
+					if err := container.Register(func() testService {
 						return testService{ID: goroutineID*operationsPerGoroutine + j}
-					})
+					}); err != nil {
+						// Errors expected in concurrent scenarios
+						_ = err
+					}
 				case 1: // Resolve
 					var result testService
-					_ = container.Resolve(&result)
+					if err := container.Resolve(&result); err != nil {
+						// Errors expected in concurrent scenarios
+						_ = err
+					}
 				case 2: // Has
 					_ = container.Has(reflect.TypeOf(testService{}))
 				case 3: // Singleton
 					container.Singleton(testService{ID: j})
+				default:
+					// No-op for other cases
 				}
 			}
 		}(i)
@@ -428,7 +455,7 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
 	var mu sync.Mutex
-	var errors []error
+	var errs []error
 
 	for i := 0; i < numGoroutines; i++ {
 		go func() {
@@ -437,7 +464,7 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 				err := container.CheckHealth(context.Background())
 				if err != nil {
 					mu.Lock()
-					errors = append(errors, err)
+					errs = append(errs, err)
 					mu.Unlock()
 				}
 				time.Sleep(time.Millisecond) // Small delay to increase chance of race conditions
@@ -447,8 +474,8 @@ func TestContainer_ConcurrentHealthChecks(t *testing.T) {
 
 	wg.Wait()
 
-	if len(errors) > 0 {
-		t.Errorf("Concurrent health checks failed: %v", errors)
+	if len(errs) > 0 {
+		t.Errorf("Concurrent health checks failed: %v", errs)
 	}
 }
 
@@ -468,12 +495,20 @@ func TestContainer_ConcurrentBuilderOperations(t *testing.T) {
 			for j := 0; j < operationsPerGoroutine; j++ {
 				switch j % 3 {
 				case 0: // Register
-					_ = builder.Register(func() int { return id*operationsPerGoroutine + j })
+					if err := builder.Register(func() int { return id*operationsPerGoroutine + j }); err != nil {
+						// Errors expected in concurrent scenarios
+						_ = err
+					}
 				case 1: // Singleton
 					builder.Singleton(fmt.Sprintf("singleton_%d_%d", id, j))
 				case 2: // Build
 					var result int
-					_ = builder.Build(&result)
+					if err := builder.Build(&result); err != nil {
+						// Errors expected in concurrent scenarios
+						_ = err
+					}
+				default:
+					// No-op for other cases
 				}
 			}
 		}(i)
@@ -498,7 +533,7 @@ func TestBuilder_FluentInterface(t *testing.T) {
 	// Test fluent interface chaining
 	result := builder.
 		WithLogger(&testLogger{}).
-		WithTracerProvider(trace.NewNoopTracerProvider())
+		WithTracerProvider(noop.NewTracerProvider())
 
 	if result != builder {
 		t.Error("Fluent interface methods should return the builder instance")
@@ -617,7 +652,7 @@ func TestBuilder_RegisterMonitoringComponents(t *testing.T) {
 		t.Errorf("RegisterLogger() error = %v", err)
 	}
 
-	err = builder.RegisterTracerProvider(func() TracerProvider { return trace.NewNoopTracerProvider() })
+	err = builder.RegisterTracerProvider(func() TracerProvider { return noop.NewTracerProvider() })
 	if err != nil {
 		t.Errorf("RegisterTracerProvider() error = %v", err)
 	}
@@ -713,7 +748,7 @@ func TestBuilder_ErrorHandling(t *testing.T) {
 	}
 
 	// Test registering function with error
-	err = builder.Register(func() (string, error) { return "", errors.New("factory error") })
+	err = builder.Register(func() (string, error) { return "", errFactoryError })
 	if err != nil {
 		t.Errorf("Register() error = %v", err)
 	}

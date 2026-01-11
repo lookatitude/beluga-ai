@@ -22,7 +22,7 @@ func NewExampleModel() *ExampleModel {
 }
 
 // Process implements the Process method for ExampleModel.
-func (m *ExampleModel) Process(data string) (string, error) {
+func (*ExampleModel) Process(data string) (string, error) {
 	// Implementation logic here
 	return "processed: " + data, nil
 }

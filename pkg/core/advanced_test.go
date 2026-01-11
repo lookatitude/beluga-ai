@@ -1,6 +1,8 @@
 // Package core provides advanced test scenarios and comprehensive testing patterns.
 // This file demonstrates improved testing practices including table-driven tests,
 // concurrency testing, and integration test patterns.
+//
+//nolint:fieldalignment,goconst // test structs don't need optimal field alignment; goconst false positive on testValue usage
 package core
 
 import (
@@ -10,43 +12,52 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
 // TestRunnableInvokeAdvanced provides advanced table-driven tests for Runnable.Invoke.
 func TestRunnableInvokeAdvanced(t *testing.T) {
+	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
-		setup       func(t *testing.T) Runnable
 		input       any
-		validate    func(t *testing.T, result any, err error)
+		setup       func() Runnable
+		validate    func(*testing.T, any, error)
 		wantErr     bool
 	}{
 		{
 			name:        "basic_invoke",
 			description: "Invoke runnable with simple input",
-			setup: func(t *testing.T) Runnable {
-				mock := NewAdvancedMockRunnable("test-runnable")
-				mock.On("Invoke", context.Background(), "test", []Option{}).Return("result", nil)
-				return mock
+			setup: func() Runnable {
+				m := NewAdvancedMockRunnable("test-runnable")
+				m.On("Invoke", mock.Anything, testValue,
+					mock.MatchedBy(func([]Option) bool { return true })).
+					Return("result", nil)
+				return m
 			},
-			input: "test",
+			input: testValue,
 			validate: func(t *testing.T, result any, err error) {
-				assert.NoError(t, err)
+				t.Helper()
+				require.NoError(t, err)
 				assert.Equal(t, "result", result)
 			},
 		},
 		{
 			name:        "invoke_with_error",
 			description: "Invoke runnable that returns error",
-			setup: func(t *testing.T) Runnable {
-				mock := NewAdvancedMockRunnable("test-runnable", WithMockError(true, assert.AnError))
-				return mock
+			setup: func() Runnable {
+				m := NewAdvancedMockRunnable("test-runnable", WithMockError(true, assert.AnError))
+				m.On("Invoke", mock.Anything, testValue,
+					mock.MatchedBy(func([]Option) bool { return true })).
+					Return(nil, assert.AnError)
+				return m
 			},
-			input: "test",
-			validate: func(t *testing.T, result any, err error) {
-				assert.Error(t, err)
+			input: testValue,
+			validate: func(t *testing.T, _ any, err error) {
+				t.Helper()
+				require.Error(t, err)
 			},
 			wantErr: true,
 		},
@@ -55,7 +66,7 @@ func TestRunnableInvokeAdvanced(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Logf("Testing: %s", tt.description)
-			runnable := tt.setup(t)
+			runnable := tt.setup()
 			ctx := context.Background()
 			result, err := runnable.Invoke(ctx, tt.input)
 			tt.validate(t, result, err)
@@ -65,25 +76,30 @@ func TestRunnableInvokeAdvanced(t *testing.T) {
 
 // TestRunnableBatchAdvanced provides advanced table-driven tests for Runnable.Batch.
 func TestRunnableBatchAdvanced(t *testing.T) {
+	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
-		setup       func(t *testing.T) Runnable
 		inputs      []any
-		validate    func(t *testing.T, results []any, err error)
+		setup       func() Runnable
+		validate    func(*testing.T, []any, error)
 		wantErr     bool
 	}{
 		{
 			name:        "basic_batch",
 			description: "Batch invoke with multiple inputs",
-			setup: func(t *testing.T) Runnable {
-				mock := NewAdvancedMockRunnable("test-runnable")
-				mock.On("Batch", context.Background(), []any{"input1", "input2"}, []Option{}).Return([]any{"result1", "result2"}, nil)
-				return mock
+			setup: func() Runnable {
+				m := NewAdvancedMockRunnable("test-runnable")
+				m.On("Batch", mock.Anything,
+					[]any{"input1", "input2"},
+					mock.MatchedBy(func([]Option) bool { return true })).
+					Return([]any{"result1", "result2"}, nil)
+				return m
 			},
 			inputs: []any{"input1", "input2"},
 			validate: func(t *testing.T, results []any, err error) {
-				assert.NoError(t, err)
+				t.Helper()
+				require.NoError(t, err)
 				assert.Len(t, results, 2)
 			},
 		},
@@ -92,7 +108,7 @@ func TestRunnableBatchAdvanced(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Logf("Testing: %s", tt.description)
-			runnable := tt.setup(t)
+			runnable := tt.setup()
 			ctx := context.Background()
 			results, err := runnable.Batch(ctx, tt.inputs)
 			tt.validate(t, results, err)
@@ -102,36 +118,35 @@ func TestRunnableBatchAdvanced(t *testing.T) {
 
 // TestContainerRegisterAdvanced provides advanced table-driven tests for Container.Register.
 func TestContainerRegisterAdvanced(t *testing.T) {
+	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
-		setup       func(t *testing.T) Container
 		factory     any
-		validate    func(t *testing.T, err error)
+		setup       func() Container
+		validate    func(*testing.T, error)
 		wantErr     bool
 	}{
 		{
 			name:        "register_valid_factory",
 			description: "Register a valid factory function",
-			setup: func(t *testing.T) Container {
-				return NewContainer()
-			},
+			setup:       NewContainer,
 			factory: func() string {
-				return "test"
+				return testValue
 			},
 			validate: func(t *testing.T, err error) {
-				assert.NoError(t, err)
+				t.Helper()
+				require.NoError(t, err)
 			},
 		},
 		{
 			name:        "register_invalid_factory",
 			description: "Register an invalid factory (not a function)",
-			setup: func(t *testing.T) Container {
-				return NewContainer()
-			},
-			factory: "not a function",
+			setup:       NewContainer,
+			factory:     "not a function",
 			validate: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				t.Helper()
+				require.Error(t, err)
 			},
 			wantErr: true,
 		},
@@ -140,7 +155,7 @@ func TestContainerRegisterAdvanced(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Logf("Testing: %s", tt.description)
-			container := tt.setup(t)
+			container := tt.setup()
 			err := container.Register(tt.factory)
 			tt.validate(t, err)
 		})
@@ -149,39 +164,44 @@ func TestContainerRegisterAdvanced(t *testing.T) {
 
 // TestContainerResolveAdvanced provides advanced table-driven tests for Container.Resolve.
 func TestContainerResolveAdvanced(t *testing.T) {
+	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
-		setup       func(t *testing.T) Container
 		target      any
-		validate    func(t *testing.T, err error)
+		setup       func(*testing.T) Container
+		validate    func(*testing.T, error)
 		wantErr     bool
 	}{
 		{
 			name:        "resolve_registered_type",
 			description: "Resolve a registered type",
 			setup: func(t *testing.T) Container {
+				t.Helper()
 				container := NewContainer()
 				err := container.Register(func() string {
-					return "test"
+					return testValue
 				})
 				require.NoError(t, err)
 				return container
 			},
 			target: new(string),
 			validate: func(t *testing.T, err error) {
-				assert.NoError(t, err)
+				t.Helper()
+				require.NoError(t, err)
 			},
 		},
 		{
 			name:        "resolve_unregistered_type",
 			description: "Resolve an unregistered type",
 			setup: func(t *testing.T) Container {
+				t.Helper()
 				return NewContainer()
 			},
 			target: new(string),
 			validate: func(t *testing.T, err error) {
-				assert.Error(t, err)
+				t.Helper()
+				require.Error(t, err)
 			},
 			wantErr: true,
 		},
@@ -202,8 +222,11 @@ func TestConcurrentRunnableInvoke(t *testing.T) {
 	const numGoroutines = 50
 	const numInvocationsPerGoroutine = 10
 
-	mock := NewAdvancedMockRunnable("test-runnable")
-	mock.On("Invoke", context.Background(), "test", []Option{}).Return("result", nil).Times(numGoroutines * numInvocationsPerGoroutine)
+	m := NewAdvancedMockRunnable("test-runnable")
+	m.On("Invoke", mock.Anything, testValue,
+		mock.MatchedBy(func([]Option) bool { return true })).
+		Return("result", nil).
+		Times(numGoroutines * numInvocationsPerGoroutine)
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
@@ -211,11 +234,11 @@ func TestConcurrentRunnableInvoke(t *testing.T) {
 	errors := make(chan error, numGoroutines*numInvocationsPerGoroutine)
 
 	for i := 0; i < numGoroutines; i++ {
-		go func(id int) {
+		go func(_ int) {
 			defer wg.Done()
 			ctx := context.Background()
 			for j := 0; j < numInvocationsPerGoroutine; j++ {
-				_, err := mock.Invoke(ctx, "test")
+				_, err := m.Invoke(ctx, testValue)
 				if err != nil {
 					errors <- err
 				}
@@ -268,35 +291,42 @@ func TestRunnableWithContext(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	mock := NewAdvancedMockRunnable("test-runnable")
-	mock.On("Invoke", ctx, "test", []Option{}).Return("result", nil)
+	m := NewAdvancedMockRunnable("test-runnable")
+	m.On("Invoke", mock.Anything, testValue,
+		mock.MatchedBy(func([]Option) bool { return true })).Return("result", nil)
 
 	t.Run("invoke_with_timeout", func(t *testing.T) {
-		result, err := mock.Invoke(ctx, "test")
-		assert.NoError(t, err)
+		result, err := m.Invoke(ctx, testValue)
+		require.NoError(t, err)
 		assert.Equal(t, "result", result)
 	})
 }
 
 // BenchmarkRunnableInvoke benchmarks runnable invocation performance.
 func BenchmarkRunnableInvoke(b *testing.B) {
-	mock := NewAdvancedMockRunnable("benchmark-runnable")
-	mock.On("Invoke", context.Background(), "test", []Option{}).Return("result", nil)
+	m := NewAdvancedMockRunnable("benchmark-runnable")
+	m.On("Invoke", mock.Anything, testValue,
+		mock.MatchedBy(func([]Option) bool { return true })).Return("result", nil)
 
 	ctx := context.Background()
-	input := "test"
+	input := testValue
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = mock.Invoke(ctx, input)
+		result, err := m.Invoke(ctx, input)
+		if err != nil {
+			b.Fatal(err)
+		}
+		_ = result
 	}
 }
 
 // BenchmarkContainerResolve benchmarks container resolution performance.
 func BenchmarkContainerResolve(b *testing.B) {
 	container := NewContainer()
+	//nolint:goconst // testValue is already a constant, this is a false positive
 	err := container.Register(func() string {
-		return "test"
+		return testValue
 	})
 	require.NoError(b, err)
 
@@ -304,6 +334,9 @@ func BenchmarkContainerResolve(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = container.Resolve(target)
+		err := container.Resolve(target)
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
