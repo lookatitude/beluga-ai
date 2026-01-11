@@ -93,7 +93,10 @@ func CreateHTTPServer(response map[string]interface{}, statusCode int) *httptest
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)
 		if response != nil {
-			json.NewEncoder(w).Encode(response)
+			if err := json.NewEncoder(w).Encode(response); err != nil {
+				// In test helper, log but don't fail - this is a mock server
+				http.Error(w, "failed to encode response", http.StatusInternalServerError)
+			}
 		}
 	}))
 }
