@@ -28,14 +28,27 @@ var (
 	metricsOnce   sync.Once
 )
 
-// InitMetrics initializes the global metrics instance.
+// InitMetrics initializes the global metrics instance for LLM operations.
+// This should be called once during application startup to enable metrics collection.
+// Subsequent calls are ignored due to sync.Once protection.
+//
+// Parameters:
+//   - meter: OpenTelemetry meter for recording metrics
+//
+// Example usage can be found in examples/llm-usage/main.go
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter)
 	})
 }
 
-// GetMetrics returns the global metrics instance.
+// GetMetrics returns the global metrics instance for LLM operations.
+// Returns nil if InitMetrics has not been called.
+//
+// Returns:
+//   - *Metrics: The global metrics instance, or nil if not initialized
+//
+// Example usage can be found in examples/llm-usage/main.go
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -50,7 +63,20 @@ type Factory struct {
 	mu                sync.RWMutex
 }
 
-// NewFactory creates a new LLM factory.
+// NewFactory creates a new LLM factory instance for managing LLM providers.
+// The factory supports registration of both ChatModel and LLM providers,
+// enabling flexible provider management and creation.
+//
+// Returns:
+//   - *Factory: A new factory instance ready for provider registration
+//
+// Example:
+//
+//	factory := llms.NewFactory()
+//	factory.RegisterProviderFactory("openai", openai.NewProvider)
+//	provider, err := factory.CreateProvider("openai", config)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewFactory() *Factory {
 	return &Factory{
 		providers:         make(map[string]iface.ChatModel),
@@ -60,21 +86,62 @@ func NewFactory() *Factory {
 	}
 }
 
-// RegisterProvider registers a ChatModel provider with the factory.
+// RegisterProvider registers a ChatModel provider instance with the factory.
+// The provider can be retrieved later using GetProvider. This method is thread-safe.
+//
+// Parameters:
+//   - name: Unique identifier for the provider (e.g., "openai", "anthropic")
+//   - provider: ChatModel implementation to register
+//
+// Example:
+//
+//	openaiProvider, _ := openai.NewProvider(config)
+//	factory.RegisterProvider("openai", openaiProvider)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) RegisterProvider(name string, provider iface.ChatModel) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.providers[name] = provider
 }
 
-// RegisterLLM registers an LLM provider with the factory.
+// RegisterLLM registers an LLM provider instance with the factory.
+// The LLM can be retrieved later using GetLLM. This method is thread-safe.
+//
+// Parameters:
+//   - name: Unique identifier for the LLM (e.g., "openai", "anthropic")
+//   - llm: LLM implementation to register
+//
+// Example:
+//
+//	openaiLLM, _ := openai.NewLLM(config)
+//	factory.RegisterLLM("openai", openaiLLM)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) RegisterLLM(name string, llm iface.LLM) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.llms[name] = llm
 }
 
-// GetProvider returns a registered ChatModel provider.
+// GetProvider returns a registered ChatModel provider by name.
+// This method is thread-safe and returns an error if the provider is not found.
+//
+// Parameters:
+//   - name: The name of the provider to retrieve
+//
+// Returns:
+//   - iface.ChatModel: The registered ChatModel provider
+//   - error: ErrCodeUnsupportedProvider if the provider is not registered
+//
+// Example:
+//
+//	provider, err := factory.GetProvider("openai")
+//	if err != nil {
+//	    log.Fatal("Provider not found:", err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -87,7 +154,24 @@ func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 	return provider, nil
 }
 
-// GetLLM returns a registered LLM provider.
+// GetLLM returns a registered LLM provider by name.
+// This method is thread-safe and returns an error if the LLM is not found.
+//
+// Parameters:
+//   - name: The name of the LLM to retrieve
+//
+// Returns:
+//   - iface.LLM: The registered LLM provider
+//   - error: ErrCodeUnsupportedProvider if the LLM is not registered
+//
+// Example:
+//
+//	llm, err := factory.GetLLM("openai")
+//	if err != nil {
+//	    log.Fatal("LLM not found:", err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -100,7 +184,18 @@ func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 	return llm, nil
 }
 
-// ListProviders returns a list of all registered provider names.
+// ListProviders returns a list of all registered ChatModel provider names.
+// This method is thread-safe and returns an empty slice if no providers are registered.
+//
+// Returns:
+//   - []string: Slice of provider names (e.g., ["openai", "anthropic"])
+//
+// Example:
+//
+//	providers := factory.ListProviders()
+//	fmt.Printf("Available providers: %v\n", providers)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) ListProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -112,7 +207,18 @@ func (f *Factory) ListProviders() []string {
 	return names
 }
 
-// ListLLMs returns a list of all registered LLM names.
+// ListLLMs returns a list of all registered LLM provider names.
+// This method is thread-safe and returns an empty slice if no LLMs are registered.
+//
+// Returns:
+//   - []string: Slice of LLM names (e.g., ["openai", "anthropic"])
+//
+// Example:
+//
+//	llms := factory.ListLLMs()
+//	fmt.Printf("Available LLMs: %v\n", llms)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) ListLLMs() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -124,7 +230,26 @@ func (f *Factory) ListLLMs() []string {
 	return names
 }
 
-// CreateProvider creates a provider instance using the registered factory.
+// CreateProvider creates a ChatModel provider instance using the registered factory function.
+// The provider must be registered using RegisterProviderFactory before calling this method.
+//
+// Parameters:
+//   - providerName: Name of the provider to create (e.g., "openai", "anthropic")
+//   - config: Configuration for the provider (API key, model name, etc.)
+//
+// Returns:
+//   - iface.ChatModel: The created ChatModel provider instance
+//   - error: ErrCodeUnsupportedProvider if the factory is not registered, or provider-specific errors
+//
+// Example:
+//
+//	config := llms.NewConfig(llms.WithAPIKey("key"), llms.WithModelName("gpt-4"))
+//	provider, err := factory.CreateProvider("openai", config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) CreateProvider(providerName string, config *Config) (iface.ChatModel, error) {
 	f.mu.RLock()
 	factory, exists := f.providerFactories[providerName]
@@ -143,7 +268,26 @@ func (f *Factory) CreateProvider(providerName string, config *Config) (iface.Cha
 	return factory(config)
 }
 
-// CreateLLM creates an LLM instance using the registered factory.
+// CreateLLM creates an LLM provider instance using the registered factory function.
+// The LLM must be registered using RegisterLLMFactory before calling this method.
+//
+// Parameters:
+//   - providerName: Name of the LLM provider to create (e.g., "openai", "anthropic")
+//   - config: Configuration for the LLM (API key, model name, etc.)
+//
+// Returns:
+//   - iface.LLM: The created LLM provider instance
+//   - error: ErrCodeUnsupportedProvider if the factory is not registered, or provider-specific errors
+//
+// Example:
+//
+//	config := llms.NewConfig(llms.WithAPIKey("key"), llms.WithModelName("gpt-4"))
+//	llm, err := factory.CreateLLM("openai", config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, error) {
 	f.mu.RLock()
 	factory, exists := f.llmFactories[providerName]
@@ -162,7 +306,19 @@ func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, err
 	return factory(config)
 }
 
-// ListAvailableProviders returns a list of all available provider names.
+// ListAvailableProviders returns a list of all available provider factory names.
+// This includes providers registered via RegisterProviderFactory, not direct instances.
+// This method is thread-safe.
+//
+// Returns:
+//   - []string: Slice of provider factory names that can be used with CreateProvider
+//
+// Example:
+//
+//	available := factory.ListAvailableProviders()
+//	fmt.Printf("Available provider factories: %v\n", available)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) ListAvailableProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -174,13 +330,42 @@ func (f *Factory) ListAvailableProviders() []string {
 	return names
 }
 
-// RegisterProviderFactory registers a provider factory function.
+// RegisterProviderFactory registers a factory function for creating ChatModel providers.
+// The factory function will be called when CreateProvider is invoked with the given name.
+// This method is thread-safe.
+//
+// Parameters:
+//   - name: Unique identifier for the provider factory (e.g., "openai", "anthropic")
+//   - factory: Function that creates a ChatModel provider from a Config
+//
+// Example:
+//
+//	factory.RegisterProviderFactory("openai", func(config *llms.Config) (iface.ChatModel, error) {
+//	    return openai.NewProvider(config)
+//	})
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (iface.ChatModel, error)) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.providerFactories[name] = factory
 }
 
+// RegisterLLMFactory registers a factory function for creating LLM providers.
+// The factory function will be called when CreateLLM is invoked with the given name.
+// This method is thread-safe.
+//
+// Parameters:
+//   - name: Unique identifier for the LLM factory (e.g., "openai", "anthropic")
+//   - factory: Function that creates an LLM provider from a Config
+//
+// Example:
+//
+//	factory.RegisterLLMFactory("openai", func(config *llms.Config) (iface.LLM, error) {
+//	    return openai.NewLLM(config)
+//	})
+//
+// Example usage can be found in examples/llm-usage/main.go
 func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.LLM, error)) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -189,6 +374,24 @@ func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.L
 
 // EnsureMessages ensures the input is a slice of schema.Message.
 // It attempts to convert common input types (like a single string or Message) into the required format.
+// This is a convenience function for handling flexible input types in LLM operations.
+//
+// Parameters:
+//   - input: Can be a string, single schema.Message, or []schema.Message
+//
+// Returns:
+//   - []schema.Message: Normalized slice of messages
+//   - error: ErrCodeInvalidRequest if the input type is not supported
+//
+// Example:
+//
+//	messages, err := llms.EnsureMessages("Hello, world!")
+//	// Returns: []schema.Message{schema.NewHumanMessage("Hello, world!")}
+//
+//	messages, err := llms.EnsureMessages([]schema.Message{msg1, msg2})
+//	// Returns: []schema.Message{msg1, msg2}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func EnsureMessages(input any) ([]schema.Message, error) {
 	switch v := input.(type) {
 	case string:
@@ -212,7 +415,28 @@ func EnsureMessagesFromSchema(input any) ([]schema.Message, error) {
 
 // GetSystemAndHumanPromptsFromSchema extracts the system prompt and concatenates human messages.
 // This is a utility function that might be useful for models that don't support distinct system messages
-// or require a single prompt string.
+// or require a single prompt string. It separates system messages from human messages and concatenates
+// all human messages into a single string.
+//
+// Parameters:
+//   - messages: Slice of messages to process
+//
+// Returns:
+//   - string: The system prompt (empty if no system message found)
+//   - string: Concatenated human messages separated by newlines
+//
+// Example:
+//
+//	messages := []schema.Message{
+//	    schema.NewSystemMessage("You are a helpful assistant."),
+//	    schema.NewHumanMessage("Hello"),
+//	    schema.NewHumanMessage("How are you?"),
+//	}
+//	system, human := llms.GetSystemAndHumanPromptsFromSchema(messages)
+//	// system: "You are a helpful assistant."
+//	// human: "Hello\nHow are you?"
+//
+// Example usage can be found in examples/llm-usage/main.go
 func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, string) {
 	var systemPrompt string
 	var humanPrompts []string
@@ -238,6 +462,28 @@ func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, stri
 // Utility functions for common LLM operations
 
 // GenerateText is a convenience function for generating text with a ChatModel.
+// It handles message conversion, OTEL tracing, and error handling automatically.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - model: ChatModel instance to use for generation
+//   - prompt: Text prompt to send to the model
+//   - options: Optional core.Option parameters (temperature, max_tokens, etc.)
+//
+// Returns:
+//   - string: The generated text response
+//   - error: Any error that occurred during generation (network errors, API errors, etc.)
+//
+// Example:
+//
+//	model, _ := llms.NewOpenAIChat(llms.WithAPIKey("key"))
+//	response, err := llms.GenerateText(ctx, model, "What is the capital of France?")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(response)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.GenerateText",
@@ -271,7 +517,31 @@ func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, opt
 	return content, nil
 }
 
-// GenerateTextWithTools is a convenience function for generating text with tool calling.
+// GenerateTextWithTools is a convenience function for generating text with tool calling support.
+// It automatically binds tools to the model and handles tool execution if the model requests it.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - model: ChatModel instance that supports tool calling
+//   - prompt: Text prompt to send to the model
+//   - tools: Slice of tools available to the model
+//   - options: Optional core.Option parameters (temperature, max_tokens, etc.)
+//
+// Returns:
+//   - string: The generated text response (may include tool call results)
+//   - error: Any error that occurred during generation or tool execution
+//
+// Example:
+//
+//	model, _ := llms.NewOpenAIChat(llms.WithAPIKey("key"))
+//	tools := []tools.Tool{calculator, webSearch}
+//	response, err := llms.GenerateTextWithTools(ctx, model, "What is 2+2?", tools)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	fmt.Println(response)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt string, tools []tools.Tool, options ...core.Option) (string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.GenerateTextWithTools",
@@ -311,6 +581,31 @@ func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt st
 }
 
 // StreamText is a convenience function for streaming text generation.
+// It returns a channel that receives message chunks as they are generated, enabling
+// real-time display of responses as they are produced.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - model: ChatModel instance that supports streaming
+//   - prompt: Text prompt to send to the model
+//   - options: Optional core.Option parameters (temperature, max_tokens, etc.)
+//
+// Returns:
+//   - <-chan iface.AIMessageChunk: Channel receiving message chunks as they are generated
+//   - error: Any error that occurred during stream initialization
+//
+// Example:
+//
+//	model, _ := llms.NewOpenAIChat(llms.WithAPIKey("key"))
+//	ch, err := llms.StreamText(ctx, model, "Tell me a story")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	for chunk := range ch {
+//	    fmt.Print(chunk.GetContent())
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func StreamText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.StreamText",
@@ -341,6 +636,33 @@ func StreamText(ctx context.Context, model iface.ChatModel, prompt string, optio
 }
 
 // BatchGenerate is a convenience function for batch text generation.
+// It processes multiple prompts efficiently, handling errors per-prompt and returning
+// all successful results. If any prompt fails, the error is returned but partial results
+// may still be available.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - model: ChatModel instance to use for generation
+//   - prompts: Slice of text prompts to process
+//   - options: Optional core.Option parameters (temperature, max_tokens, etc.)
+//
+// Returns:
+//   - []string: Slice of generated text responses, one per input prompt
+//   - error: Any error that occurred during batch processing (may include partial results)
+//
+// Example:
+//
+//	model, _ := llms.NewOpenAIChat(llms.WithAPIKey("key"))
+//	prompts := []string{"What is AI?", "What is ML?", "What is NLP?"}
+//	responses, err := llms.BatchGenerate(ctx, model, prompts)
+//	if err != nil {
+//	    log.Printf("Batch generation had errors: %v", err)
+//	}
+//	for i, response := range responses {
+//	    fmt.Printf("Prompt %d: %s\n", i, response)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string, options ...core.Option) ([]string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.BatchGenerate",
@@ -404,6 +726,23 @@ func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs
 }
 
 // ValidateModelName validates that a model name is supported by a provider.
+// This helps catch configuration errors early before making API calls.
+//
+// Parameters:
+//   - provider: Provider name (e.g., "openai", "anthropic")
+//   - modelName: Model name to validate (e.g., "gpt-4", "claude-3-opus")
+//
+// Returns:
+//   - error: ErrCodeInvalidModel if the model is not supported, or if modelName is empty
+//
+// Example:
+//
+//	err := llms.ValidateModelName("openai", "gpt-4")
+//	if err != nil {
+//	    log.Fatal("Invalid model:", err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func ValidateModelName(provider, modelName string) error {
 	if modelName == "" {
 		return NewLLMError("ValidateModelName", ErrCodeInvalidModel,
@@ -437,6 +776,23 @@ func ValidateModelName(provider, modelName string) error {
 }
 
 // DefaultConfig returns a default configuration for LLM operations.
+// The returned config has sensible defaults for most use cases:
+// - 30 second timeout
+// - 3 retries with exponential backoff
+// - Streaming enabled
+// - Observability enabled (tracing, metrics, logging)
+//
+// Returns:
+//   - *Config: Configuration instance with default values
+//
+// Example:
+//
+//	config := llms.DefaultConfig()
+//	config.APIKey = "your-api-key"
+//	config.ModelName = "gpt-4"
+//	provider, err := llms.NewOpenAIChat(llms.WithConfig(config))
+//
+// Example usage can be found in examples/llm-usage/main.go
 func DefaultConfig() *Config {
 	return &Config{
 		Provider:                "",
@@ -502,6 +858,27 @@ func WithToolChoiceLegacy(choice string) core.Option {
 
 // NewAnthropicChat creates a new Anthropic chat model provider with the given options.
 // This is a convenience function that internally uses the factory pattern.
+// It sets default model to "claude-3-haiku-20240307" if not specified.
+//
+// Parameters:
+//   - opts: Configuration options (API key, model name, temperature, etc.)
+//
+// Returns:
+//   - iface.ChatModel: Anthropic ChatModel provider instance
+//   - error: Configuration validation errors or provider creation errors
+//
+// Example:
+//
+//	model, err := llms.NewAnthropicChat(
+//	    llms.WithAPIKey("your-api-key"),
+//	    llms.WithModelName("claude-3-opus-20240229"),
+//	    llms.WithTemperature(0.7),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	config := NewConfig(opts...)
 	config.Provider = "anthropic"
@@ -523,6 +900,27 @@ func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 
 // NewOpenAIChat creates a new OpenAI chat model provider with the given options.
 // This is a convenience function that internally uses the factory pattern.
+// It sets default model to "gpt-3.5-turbo" if not specified.
+//
+// Parameters:
+//   - opts: Configuration options (API key, model name, temperature, etc.)
+//
+// Returns:
+//   - iface.ChatModel: OpenAI ChatModel provider instance
+//   - error: Configuration validation errors or provider creation errors
+//
+// Example:
+//
+//	model, err := llms.NewOpenAIChat(
+//	    llms.WithAPIKey("your-api-key"),
+//	    llms.WithModelName("gpt-4"),
+//	    llms.WithTemperature(0.7),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	config := NewConfig(opts...)
 	config.Provider = "openai"
@@ -650,6 +1048,20 @@ func NewMockLLM(opts ...ConfigOption) (iface.LLM, error) {
 }
 
 // InitializeDefaultFactory creates and returns a factory with all built-in providers registered.
+// Note: Provider factories must be registered explicitly to avoid circular dependencies.
+// This function returns an empty factory that should be populated with provider factories.
+//
+// Returns:
+//   - *Factory: A new factory instance (empty, requires explicit provider registration)
+//
+// Example:
+//
+//	factory := llms.InitializeDefaultFactory()
+//	// Register providers explicitly
+//	factory.RegisterProviderFactory("openai", openai.NewProviderFactory())
+//	factory.RegisterProviderFactory("anthropic", anthropic.NewProviderFactory())
+//
+// Example usage can be found in examples/llm-usage/main.go
 func InitializeDefaultFactory() *Factory {
 	factory := NewFactory()
 

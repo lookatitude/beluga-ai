@@ -23,6 +23,17 @@ type AgentRegistry struct {
 }
 
 // NewAgentRegistry creates a new AgentRegistry instance.
+// The registry manages agent type registration and creation following the factory pattern.
+//
+// Returns:
+//   - *AgentRegistry: A new agent registry instance
+//
+// Example:
+//
+//	registry := agents.NewAgentRegistry()
+//	registry.Register("base", baseAgentCreator)
+//
+// Example usage can be found in examples/agents/basic/main.go
 func NewAgentRegistry() *AgentRegistry {
 	return &AgentRegistry{
 		creators: make(map[string]AgentCreatorFunc),
@@ -30,6 +41,19 @@ func NewAgentRegistry() *AgentRegistry {
 }
 
 // Register registers a new agent type with the registry.
+// This method is thread-safe and allows extending the framework with custom agent types.
+//
+// Parameters:
+//   - agentType: Unique identifier for the agent type (e.g., "base", "react")
+//   - creator: Function that creates agent instances of this type
+//
+// Example:
+//
+//	registry.Register("custom", func(ctx context.Context, name string, llm any, tools []tools.Tool, config agents.Config) (iface.CompositeAgent, error) {
+//	    return NewCustomAgent(name, llm, tools, config)
+//	})
+//
+// Example usage can be found in examples/agents/basic/main.go
 func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -37,6 +61,28 @@ func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 }
 
 // Create creates a new agent instance using the registered agent type.
+// This method is thread-safe and returns an error if the agent type is not registered.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - agentType: Type of agent to create (must be registered)
+//   - name: Unique name for the agent instance
+//   - llm: Language model instance (LLM or ChatModel)
+//   - agentTools: Slice of tools available to the agent
+//   - config: Agent configuration
+//
+// Returns:
+//   - iface.CompositeAgent: A new agent instance
+//   - error: ErrCodeInitialization if agent type is not registered, or agent creation errors
+//
+// Example:
+//
+//	agent, err := registry.Create(ctx, "base", "my-agent", llm, tools, config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/agents/basic/main.go
 func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	r.mu.RLock()
 	creator, exists := r.creators[agentType]
@@ -54,6 +100,17 @@ func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm 
 }
 
 // ListAgentTypes returns a list of all registered agent type names.
+// This method is thread-safe and returns an empty slice if no types are registered.
+//
+// Returns:
+//   - []string: Slice of registered agent type names
+//
+// Example:
+//
+//	types := registry.ListAgentTypes()
+//	fmt.Printf("Available agent types: %v\n", types)
+//
+// Example usage can be found in examples/agents/basic/main.go
 func (r *AgentRegistry) ListAgentTypes() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -69,16 +126,57 @@ func (r *AgentRegistry) ListAgentTypes() []string {
 var globalAgentRegistry = NewAgentRegistry()
 
 // RegisterAgentType registers an agent type with the global registry.
+// This is a convenience function for registering with the global registry.
+//
+// Parameters:
+//   - agentType: Unique identifier for the agent type
+//   - creator: Function that creates agent instances of this type
+//
+// Example:
+//
+//	agents.RegisterAgentType("custom", customAgentCreator)
+//
+// Example usage can be found in examples/agents/basic/main.go
 func RegisterAgentType(agentType string, creator AgentCreatorFunc) {
 	globalAgentRegistry.Register(agentType, creator)
 }
 
 // CreateAgent creates an agent using the global registry.
+// This is a convenience function for creating agents with the global registry.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - agentType: Type of agent to create (must be registered)
+//   - name: Unique name for the agent instance
+//   - llm: Language model instance
+//   - agentTools: Slice of tools available to the agent
+//   - config: Agent configuration
+//
+// Returns:
+//   - iface.CompositeAgent: A new agent instance
+//   - error: Agent type not found or creation errors
+//
+// Example:
+//
+//	agent, err := agents.CreateAgent(ctx, "base", "my-agent", llm, tools, config)
+//
+// Example usage can be found in examples/agents/basic/main.go
 func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	return globalAgentRegistry.Create(ctx, agentType, name, llm, agentTools, config)
 }
 
 // ListAvailableAgentTypes returns all available agent types from the global registry.
+// This is a convenience function for listing types from the global registry.
+//
+// Returns:
+//   - []string: Slice of available agent type names
+//
+// Example:
+//
+//	types := agents.ListAvailableAgentTypes()
+//	fmt.Printf("Available types: %v\n", types)
+//
+// Example usage can be found in examples/agents/basic/main.go
 func ListAvailableAgentTypes() []string {
 	return globalAgentRegistry.ListAgentTypes()
 }

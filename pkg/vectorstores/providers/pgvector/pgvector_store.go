@@ -60,7 +60,30 @@ type PgVectorStoreConfig struct {
 }
 
 // NewPgVectorStoreFromConfig creates a new PgVectorStore from configuration.
-// This is used by the factory pattern.
+// This is used by the factory pattern for creating stores via the registry.
+// This provider uses PostgreSQL with the pgvector extension for persistent vector storage.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder, connection string, table name, and embedding dimension
+//
+// Returns:
+//   - VectorStore: A new PostgreSQL vector store instance
+//   - error: Configuration errors, connection failures, or database initialization errors
+//
+// Example:
+//
+//	config := vectorstoresiface.Config{
+//	    Embedder: embedder,
+//	    ProviderConfig: map[string]any{
+//	        "connection_string":   "postgres://user:pass@localhost/db",
+//	        "table_name":          "documents",
+//	        "embedding_dimension": 768,
+//	    },
+//	}
+//	store, err := pgvector.NewPgVectorStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract pgvector-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pgvector"]

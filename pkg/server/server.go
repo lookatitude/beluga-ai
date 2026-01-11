@@ -67,16 +67,54 @@ import (
 
 // NewRESTServer creates a new REST server instance with the provided options.
 // It implements the RESTServer interface and provides HTTP endpoints with streaming support.
-//
 // This factory function creates the REST server implementation directly.
+//
+// Parameters:
+//   - opts: Optional configuration functions (WithRESTConfig, WithLogger, WithTracer, etc.)
+//
+// Returns:
+//   - RESTServer: A new REST server instance
+//   - error: Server creation errors
+//
+// Example:
+//
+//	server, err := server.NewRESTServer(
+//	    server.WithRESTConfig(server.DefaultRESTConfig()),
+//	    server.WithLogger(logger),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	err = server.Start(ctx)
+//
+// Example usage can be found in examples/server/basic/main.go
 func NewRESTServer(opts ...iface.Option) (RESTServer, error) {
 	return rest.NewServer(opts...)
 }
 
 // NewMCPServer creates a new MCP server instance with the provided options.
 // It implements the MCPServer interface and provides MCP protocol support for tools and resources.
-//
 // This factory function creates the MCP server implementation directly.
+//
+// Parameters:
+//   - opts: Optional configuration functions (WithMCPConfig, WithLogger, etc.)
+//
+// Returns:
+//   - MCPServer: A new MCP server instance
+//   - error: Server creation errors
+//
+// Example:
+//
+//	server, err := server.NewMCPServer(
+//	    server.WithMCPConfig(server.DefaultMCPConfig()),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	server.RegisterTool(calculatorTool)
+//	err = server.Start(ctx)
+//
+// Example usage can be found in examples/server/basic/main.go
 func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
 	return mcp.NewServer(opts...)
 }
@@ -84,6 +122,22 @@ func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
 // Default configurations
 
 // DefaultRESTConfig returns a default REST server configuration.
+// The configuration includes sensible defaults for most use cases:
+// - Host: localhost, Port: 8080
+// - Timeouts: 30s read/write, 120s idle
+// - CORS enabled with wildcard origins
+// - Metrics and tracing enabled
+//
+// Returns:
+//   - RESTConfig: Default REST server configuration
+//
+// Example:
+//
+//	config := server.DefaultRESTConfig()
+//	config.Port = 9090
+//	server, _ := server.NewRESTServer(server.WithRESTConfig(config))
+//
+// Example usage can be found in examples/server/basic/main.go
 func DefaultRESTConfig() RESTConfig {
 	return RESTConfig{
 		Config: Config{
@@ -109,6 +163,22 @@ func DefaultRESTConfig() RESTConfig {
 }
 
 // DefaultMCPConfig returns a default MCP server configuration.
+// The configuration includes sensible defaults for MCP protocol:
+// - Host: localhost, Port: 8081
+// - Server name: "beluga-mcp-server"
+// - Protocol version: "2024-11-05"
+// - Max concurrent requests: 10
+//
+// Returns:
+//   - MCPConfig: Default MCP server configuration
+//
+// Example:
+//
+//	config := server.DefaultMCPConfig()
+//	config.ServerName = "my-mcp-server"
+//	server, _ := server.NewMCPServer(server.WithMCPConfig(config))
+//
+// Example usage can be found in examples/server/basic/main.go
 func DefaultMCPConfig() MCPConfig {
 	return MCPConfig{
 		Config: Config{

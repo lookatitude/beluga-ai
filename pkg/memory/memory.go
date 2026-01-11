@@ -197,6 +197,27 @@ func (f *DefaultFactory) createVectorStoreRetrieverMemory(ctx context.Context, c
 }
 
 // NewMemory is a convenience function for creating memory instances with functional options.
+// It provides a simple way to create different types of memory with sensible defaults.
+//
+// Parameters:
+//   - memoryType: Type of memory to create (MemoryTypeBuffer, MemoryTypeBufferWindow, etc.)
+//   - options: Optional configuration functions to customize the memory instance
+//
+// Returns:
+//   - Memory: The created memory instance
+//   - error: Configuration or creation errors
+//
+// Example:
+//
+//	memory, err := memory.NewMemory(memory.MemoryTypeBuffer,
+//	    memory.WithMemoryKey("conversation"),
+//	    memory.WithReturnMessages(true),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/agents/with_memory/main.go
 func NewMemory(memoryType MemoryType, options ...Option) (Memory, error) {
 	config := Config{
 		Type:           memoryType,
@@ -249,6 +270,26 @@ func (m *NoOpMemory) Clear(ctx context.Context) error {
 
 // GetInputOutputKeys determines the input and output keys from the given maps.
 // This utility function is exposed for use by memory implementations.
+// It attempts to find common key names (input, query, output, result, etc.)
+// and falls back to the first key in each map if no common keys are found.
+//
+// Parameters:
+//   - inputs: Map containing input data
+//   - outputs: Map containing output data
+//
+// Returns:
+//   - string: The identified input key
+//   - string: The identified output key
+//   - error: Error if either map is empty
+//
+// Example:
+//
+//	inputs := map[string]any{"input": "Hello"}
+//	outputs := map[string]any{"output": "Hi there"}
+//	inputKey, outputKey, err := memory.GetInputOutputKeys(inputs, outputs)
+//	// inputKey: "input", outputKey: "output"
+//
+// Example usage can be found in examples/agents/with_memory/main.go
 func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error) {
 	if len(inputs) == 0 {
 		return "", "", errors.New("inputs map is empty")
@@ -300,6 +341,27 @@ func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error) 
 
 // GetBufferString formats messages into a text buffer with human/AI prefixes.
 // This utility function is exposed for use by memory implementations.
+// It converts a slice of messages into a formatted string representation
+// suitable for display or storage.
+//
+// Parameters:
+//   - messages: Slice of messages to format
+//   - humanPrefix: Prefix to use for human messages (e.g., "Human")
+//   - aiPrefix: Prefix to use for AI messages (e.g., "AI")
+//
+// Returns:
+//   - string: Formatted buffer string with all messages
+//
+// Example:
+//
+//	messages := []schema.Message{
+//	    schema.NewHumanMessage("Hello"),
+//	    schema.NewAIMessage("Hi there"),
+//	}
+//	buffer := memory.GetBufferString(messages, "Human", "AI")
+//	// Returns: "Human: Hello\nAI: Hi there\n"
+//
+// Example usage can be found in examples/agents/with_memory/main.go
 func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) string {
 	var buffer strings.Builder
 

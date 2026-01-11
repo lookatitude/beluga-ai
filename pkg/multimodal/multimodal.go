@@ -95,7 +95,14 @@ type ContentBlock struct {
 // NewContentBlock creates a new content block from raw data.
 // contentType must be one of: "text", "image", "audio", "video".
 // The MIME type is automatically detected from the data if not provided.
-// Returns an error if the content type is invalid or empty.
+//
+// Parameters:
+//   - contentType: Type of content ("text", "image", "audio", "video")
+//   - data: Raw content data (bytes)
+//
+// Returns:
+//   - *ContentBlock: A new content block instance
+//   - error: Invalid content type or empty data errors
 //
 // Example:
 //
@@ -144,14 +151,24 @@ func NewContentBlock(contentType string, data []byte) (*ContentBlock, error) {
 // NewContentBlockFromURL creates a new content block from a URL.
 // The content is fetched from the URL and the MIME type is determined from the HTTP response headers.
 // contentType must be one of: "text", "image", "audio", "video".
-// Returns an error if the URL cannot be fetched or the content type is invalid.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - contentType: Type of content ("text", "image", "audio", "video")
+//   - url: URL to fetch content from
+//
+// Returns:
+//   - *ContentBlock: A new content block instance with fetched data
+//   - error: Invalid URL, content type, or fetch errors
 //
 // Example:
 //
-//	block, err := NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
+//	block, err := multimodal.NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+//
+// Example usage can be found in examples/multimodal/basic/main.go
 func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*ContentBlock, error) {
 	if contentType == "" {
 		return nil, NewMultimodalErrorWithMessage("NewContentBlockFromURL", ErrCodeInvalidInput,
@@ -209,14 +226,24 @@ func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*Cont
 // NewContentBlockFromFile creates a new content block from a file path.
 // The file is read and the MIME type is determined from the file extension.
 // contentType must be one of: "text", "image", "audio", "video".
-// Returns an error if the file cannot be read or the content type is invalid.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - contentType: Type of content ("text", "image", "audio", "video")
+//   - filePath: Path to the file to load
+//
+// Returns:
+//   - *ContentBlock: A new content block instance with file data
+//   - error: Invalid file path, content type, or file read errors
 //
 // Example:
 //
-//	block, err := NewContentBlockFromFile(ctx, "image", "/path/to/image.jpg")
+//	block, err := multimodal.NewContentBlockFromFile(ctx, "image", "/path/to/image.jpg")
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+//
+// Example usage can be found in examples/multimodal/basic/main.go
 func NewContentBlockFromFile(ctx context.Context, contentType, filePath string) (*ContentBlock, error) {
 	if contentType == "" {
 		return nil, NewMultimodalErrorWithMessage("NewContentBlockFromFile", ErrCodeInvalidInput,
@@ -355,14 +382,24 @@ func WithFormat(format string) MultimodalInputOption {
 // At least one content block is required. All content blocks are validated before creating the input.
 // Options can be used to configure routing, metadata, and format preferences.
 //
+// Parameters:
+//   - contentBlocks: Slice of content blocks (text, images, audio, video)
+//   - opts: Optional configuration functions (WithRouting, WithMetadata, WithFormat)
+//
+// Returns:
+//   - *MultimodalInput: A new multimodal input instance
+//   - error: Validation errors if content blocks are empty or invalid
+//
 // Example:
 //
-//	textBlock, _ := NewContentBlock("text", []byte("Hello"))
-//	imageBlock, _ := NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
-//	input, err := NewMultimodalInput([]*ContentBlock{textBlock, imageBlock})
+//	textBlock, _ := multimodal.NewContentBlock("text", []byte("Hello"))
+//	imageBlock, _ := multimodal.NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")
+//	input, err := multimodal.NewMultimodalInput([]*ContentBlock{textBlock, imageBlock})
 //	if err != nil {
 //	    log.Fatal(err)
 //	}
+//
+// Example usage can be found in examples/multimodal/basic/main.go
 func NewMultimodalInput(contentBlocks []*ContentBlock, opts ...MultimodalInputOption) (*MultimodalInput, error) {
 	if len(contentBlocks) == 0 {
 		return nil, NewMultimodalErrorWithMessage("NewMultimodalInput", ErrCodeInvalidInput,

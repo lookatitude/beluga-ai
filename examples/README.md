@@ -17,6 +17,50 @@ This directory contains comprehensive, runnable examples demonstrating how to us
 
 ## Example Categories
 
+### Core Packages
+
+Examples demonstrating core framework packages:
+
+- **[config](config/basic/)** - Configuration management and loading
+- **[core](core/basic/)** - Core utilities (errors, context, runnable)
+- **[schema](schema/basic/)** - Message and document schemas
+- **[embeddings](embeddings/basic/)** - Text embedding generation
+- **[memory](memory/basic/)** - Conversation memory management
+- **[chatmodels](chatmodels/basic/)** - Chat-based language models
+- **[monitoring](monitoring/basic/)** - Observability and monitoring
+- **[prompts](prompts/basic/)** - Prompt template management
+- **[retrievers](retrievers/basic/)** - Document retrieval for RAG
+- **[server](server/basic/)** - REST and MCP server creation
+
+### Provider Examples
+
+Examples demonstrating specific provider implementations:
+
+#### LLM Providers
+- **[OpenAI](llms/providers/openai/)** - Using OpenAI GPT models
+- **[Anthropic](llms/providers/anthropic/)** - Using Anthropic Claude models
+- **[Ollama](llms/providers/ollama/)** - Using local Ollama models
+
+#### Embedding Providers
+- **[OpenAI Embeddings](embeddings/providers/openai/)** - Using OpenAI embedding models
+
+#### Vector Store Providers
+- **[In-Memory](vectorstores/providers/inmemory/)** - Using in-memory vector storage
+
+### Voice Packages
+
+Examples demonstrating voice processing components:
+
+- **[STT](voice/stt/)** - Speech-to-Text transcription
+- **[TTS](voice/tts/)** - Text-to-Speech synthesis
+- **[VAD](voice/vad/)** - Voice Activity Detection
+- **[Turn Detection](voice/turndetection/)** - Detecting when speakers finish
+- **[Transport](voice/transport/)** - Audio data transmission
+- **[Noise Cancellation](voice/noise/)** - Removing background noise
+- **[Backend](voice/backend/)** - Voice infrastructure (WebRTC, LiveKit)
+- **[S2S](voice/s2s/basic_conversation/)** - Speech-to-Speech conversations
+- **[Session](voice/simple/)** - Complete voice session management
+
 ### Agents
 
 Examples demonstrating agent creation and usage:

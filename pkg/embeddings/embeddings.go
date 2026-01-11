@@ -33,6 +33,27 @@ type EmbedderFactory struct {
 }
 
 // NewEmbedderFactory creates a new embedder factory with the given configuration.
+// The factory manages embedder creation and provides a centralized way to create
+// embedder instances for different providers.
+//
+// Parameters:
+//   - config: Configuration for the embedder factory (provider settings, API keys, etc.)
+//   - opts: Optional functional options for additional configuration
+//
+// Returns:
+//   - *EmbedderFactory: A new factory instance ready to create embedders
+//   - error: Configuration validation errors
+//
+// Example:
+//
+//	config := embeddings.NewConfig()
+//	config.OpenAI.APIKey = "your-api-key"
+//	factory, err := embeddings.NewEmbedderFactory(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
@@ -70,7 +91,25 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 }
 
 // NewEmbedder creates an embedder instance based on the provider type.
-// Uses the registry to avoid import cycles.
+// Uses the registry to avoid import cycles. The provider must be registered
+// via the registry before calling this method.
+//
+// Parameters:
+//   - providerType: Type of embedder to create (e.g., "openai", "ollama", "mock")
+//
+// Returns:
+//   - iface.Embedder: The created embedder instance
+//   - error: Provider not found errors or configuration errors
+//
+// Example:
+//
+//	factory, _ := embeddings.NewEmbedderFactory(config)
+//	embedder, err := factory.NewEmbedder("openai")
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/rag/simple/main.go
 func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, error) {
 	// Use registry to create embedder to avoid import cycles
 	// Provider init() functions will register themselves when imported elsewhere
@@ -94,7 +133,20 @@ func (f *EmbedderFactory) newMockEmbedder() (iface.Embedder, error) {
 	return GetRegistry().Create(ctx, "mock", *f.config)
 }
 
-// GetAvailableProviders returns a list of available provider types.
+// GetAvailableProviders returns a list of available provider types based on
+// the factory's configuration. Only providers that are enabled in the config
+// are returned.
+//
+// Returns:
+//   - []string: Slice of available provider names (e.g., ["openai", "ollama"])
+//
+// Example:
+//
+//	factory, _ := embeddings.NewEmbedderFactory(config)
+//	providers := factory.GetAvailableProviders()
+//	fmt.Printf("Available providers: %v\n", providers)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func (f *EmbedderFactory) GetAvailableProviders() []string {
 	providers := []string{}
 
@@ -118,7 +170,27 @@ type HealthChecker interface {
 	Check(ctx context.Context) error
 }
 
-// CheckHealth performs a health check on the embedder.
+// CheckHealth performs a health check on the embedder for the specified provider.
+// It creates an embedder instance and verifies it can perform basic operations.
+// If the embedder implements HealthChecker, it uses that; otherwise, it checks
+// if GetDimension works.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - providerType: Type of embedder to check (e.g., "openai", "ollama")
+//
+// Returns:
+//   - error: Any error that occurred during health check (nil if healthy)
+//
+// Example:
+//
+//	factory, _ := embeddings.NewEmbedderFactory(config)
+//	err := factory.CheckHealth(ctx, "openai")
+//	if err != nil {
+//	    log.Printf("Health check failed: %v", err)
+//	}
+//
+// Example usage can be found in examples/rag/simple/main.go
 func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) error {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
 	ctx, span := tracer.Start(ctx, "embeddings.CheckHealth",

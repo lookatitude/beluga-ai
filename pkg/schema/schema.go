@@ -115,6 +115,19 @@ const (
 // Factory functions for creating messages
 
 // NewHumanMessage creates a new human message.
+// Human messages represent user input in a conversation.
+//
+// Parameters:
+//   - content: The text content of the human message
+//
+// Returns:
+//   - Message: A new human message instance
+//
+// Example:
+//
+//	msg := schema.NewHumanMessage("What is machine learning?")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewHumanMessage(content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -123,6 +136,19 @@ func NewHumanMessage(content string) Message {
 }
 
 // NewAIMessage creates a new AI message.
+// AI messages represent assistant responses in a conversation.
+//
+// Parameters:
+//   - content: The text content of the AI message
+//
+// Returns:
+//   - Message: A new AI message instance
+//
+// Example:
+//
+//	msg := schema.NewAIMessage("Machine learning is a subset of AI.")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewAIMessage(content string) Message {
 	return &internal.AIMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -130,6 +156,19 @@ func NewAIMessage(content string) Message {
 }
 
 // NewSystemMessage creates a new system message.
+// System messages provide instructions or context to the AI model.
+//
+// Parameters:
+//   - content: The text content of the system message
+//
+// Returns:
+//   - Message: A new system message instance
+//
+// Example:
+//
+//	msg := schema.NewSystemMessage("You are a helpful assistant.")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewSystemMessage(content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -138,6 +177,20 @@ func NewSystemMessage(content string) Message {
 }
 
 // NewToolMessage creates a new tool message.
+// Tool messages contain the results of tool execution for the AI model.
+//
+// Parameters:
+//   - content: The text content of the tool message (tool execution result)
+//   - toolCallID: The ID of the tool call this message corresponds to
+//
+// Returns:
+//   - Message: A new tool message instance
+//
+// Example:
+//
+//	msg := schema.NewToolMessage("42", "call_123")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewToolMessage(content, toolCallID string) Message {
 	return &internal.ToolMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -146,6 +199,20 @@ func NewToolMessage(content, toolCallID string) Message {
 }
 
 // NewFunctionMessage creates a new function message.
+// Function messages represent function call results in function calling workflows.
+//
+// Parameters:
+//   - name: The name of the function that was called
+//   - content: The result content from the function execution
+//
+// Returns:
+//   - Message: A new function message instance
+//
+// Example:
+//
+//	msg := schema.NewFunctionMessage("calculate", "42")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewFunctionMessage(name, content string) Message {
 	return &internal.FunctionMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -154,6 +221,20 @@ func NewFunctionMessage(name, content string) Message {
 }
 
 // NewChatMessage creates a new chat message with specified role.
+// This is a generic factory function that can create messages of any role type.
+//
+// Parameters:
+//   - role: The message role (RoleHuman, RoleAssistant, RoleSystem, etc.)
+//   - content: The text content of the message
+//
+// Returns:
+//   - Message: A new chat message instance with the specified role
+//
+// Example:
+//
+//	msg := schema.NewChatMessage(schema.RoleHuman, "Hello")
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewChatMessage(role MessageType, content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -164,16 +245,72 @@ func NewChatMessage(role MessageType, content string) Message {
 // Factory functions for creating documents
 
 // NewDocument creates a new Document.
+// Documents are used for storing text content with metadata in RAG pipelines.
+//
+// Parameters:
+//   - pageContent: The main text content of the document
+//   - metadata: Optional metadata map (source, author, topic, etc.)
+//
+// Returns:
+//   - Document: A new document instance
+//
+// Example:
+//
+//	doc := schema.NewDocument(
+//	    "Machine learning is a subset of AI.",
+//	    map[string]string{"source": "textbook", "topic": "AI"},
+//	)
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewDocument(pageContent string, metadata map[string]string) Document {
 	return internal.NewDocument(pageContent, metadata)
 }
 
 // NewDocumentWithID creates a new Document with an ID.
+// This is useful when you need to track documents by a specific identifier.
+//
+// Parameters:
+//   - id: Unique identifier for the document
+//   - pageContent: The main text content of the document
+//   - metadata: Optional metadata map
+//
+// Returns:
+//   - Document: A new document instance with the specified ID
+//
+// Example:
+//
+//	doc := schema.NewDocumentWithID(
+//	    "doc_123",
+//	    "Machine learning is a subset of AI.",
+//	    map[string]string{"source": "textbook"},
+//	)
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewDocumentWithID(id, pageContent string, metadata map[string]string) Document {
 	return internal.NewDocumentWithID(id, pageContent, metadata)
 }
 
 // NewDocumentWithEmbedding creates a new Document with an embedding.
+// This is useful when you have pre-computed embeddings for the document.
+//
+// Parameters:
+//   - pageContent: The main text content of the document
+//   - metadata: Optional metadata map
+//   - embedding: Pre-computed embedding vector for the document
+//
+// Returns:
+//   - Document: A new document instance with the embedding
+//
+// Example:
+//
+//	embedding := []float32{0.1, 0.2, 0.3, ...} // 768-dimensional vector
+//	doc := schema.NewDocumentWithEmbedding(
+//	    "Machine learning is a subset of AI.",
+//	    map[string]string{"source": "textbook"},
+//	    embedding,
+//	)
+//
+// Example usage can be found in examples/schema/basic/main.go
 func NewDocumentWithEmbedding(pageContent string, metadata map[string]string, embedding []float32) Document {
 	doc := internal.NewDocument(pageContent, metadata)
 	doc.Embedding = embedding

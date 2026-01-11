@@ -116,7 +116,23 @@ type docWithScore struct {
 }
 
 // NewInMemoryVectorStore creates a new in-memory vector store.
-// The embedder parameter is optional but required for text-based operations.
+// The embedder parameter is optional but required for text-based operations like
+// SimilaritySearchByQuery. If you only use SimilaritySearch with pre-computed vectors,
+// embedder can be nil.
+//
+// Parameters:
+//   - embedder: Embedder instance for generating embeddings from text (can be nil)
+//
+// Returns:
+//   - *InMemoryVectorStore: A new in-memory vector store instance
+//
+// Example:
+//
+//	embedder, _ := embeddings.NewEmbedderFactory(config)
+//	store := inmemory.NewInMemoryVectorStore(embedder)
+//	ids, err := store.AddDocuments(ctx, documents)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewInMemoryVectorStore(embedder Embedder) *InMemoryVectorStore {
 	store := &InMemoryVectorStore{
 		documents:  make([]schema.Document, 0),
@@ -130,7 +146,25 @@ func NewInMemoryVectorStore(embedder Embedder) *InMemoryVectorStore {
 }
 
 // NewInMemoryVectorStoreFromConfig creates a new in-memory store from configuration.
-// This is used by the factory pattern.
+// This is used by the factory pattern for creating stores via the registry.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder and other options
+//
+// Returns:
+//   - VectorStore: A new in-memory vector store instance
+//   - error: Configuration or creation errors
+//
+// Example:
+//
+//	config := inmemory.Config{
+//	    Embedder: embedder,
+//	    SearchK:  10,
+//	}
+//	store, err := inmemory.NewInMemoryVectorStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewInMemoryVectorStoreFromConfig(ctx context.Context, config Config) (VectorStore, error) {
 	store := NewInMemoryVectorStore(config.Embedder)
 	return store, nil

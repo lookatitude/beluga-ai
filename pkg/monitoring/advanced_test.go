@@ -87,7 +87,7 @@ func TestConcurrentMonitorOperations(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
 
-	errors := make(chan error, numGoroutines*numOperationsPerGoroutine)
+	errs := make(chan error, numGoroutines*numOperationsPerGoroutine)
 
 	for i := 0; i < numGoroutines; i++ {
 		go func(id int) {
@@ -96,17 +96,17 @@ func TestConcurrentMonitorOperations(t *testing.T) {
 			for j := 0; j < numOperationsPerGoroutine; j++ {
 				healthy := monitor.IsHealthy(ctx)
 				if !healthy {
-					errors <- fmt.Errorf("monitor unhealthy")
+					errs <- fmt.Errorf("monitor unhealthy")
 				}
 			}
 		}(i)
 	}
 
 	wg.Wait()
-	close(errors)
+	close(errs)
 
 	// Log any errors
-	for err := range errors {
+	for err := range errs {
 		t.Logf("Concurrent monitor operation error: %v", err)
 	}
 }

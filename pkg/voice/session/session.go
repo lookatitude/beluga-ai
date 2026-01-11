@@ -21,7 +21,18 @@ var (
 	metricsOnce   sync.Once
 )
 
-// InitMetrics initializes the global metrics instance.
+// InitMetrics initializes the global metrics instance for Voice Session operations.
+// This should be called once during application startup to enable metrics collection.
+//
+// Parameters:
+//   - meter: OpenTelemetry meter for creating metrics instruments
+//
+// Example:
+//
+//	meter := otel.Meter("beluga.voice.session")
+//	session.InitMetrics(meter)
+//
+// Example usage can be found in examples/voice/session/main.go
 func InitMetrics(meter metric.Meter) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter)
@@ -29,12 +40,55 @@ func InitMetrics(meter metric.Meter) {
 }
 
 // GetMetrics returns the global metrics instance.
+// Returns nil if InitMetrics has not been called.
+//
+// Returns:
+//   - *Metrics: The global metrics instance, or nil if not initialized
+//
+// Example:
+//
+//	metrics := session.GetMetrics()
+//	if metrics != nil {
+//	    // Use metrics
+//	}
+//
+// Example usage can be found in examples/voice/session/main.go
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
 
 // NewVoiceSession creates a new VoiceSession instance based on the provided options.
 // It validates the configuration and initializes all required components.
+// A voice session manages the complete lifecycle of a voice interaction, including
+// audio input/output, transcription, synthesis, and agent communication.
+//
+// The session can operate in two modes:
+//   - Traditional mode: Requires STT and TTS providers
+//   - S2S mode: Uses a single Speech-to-Speech provider
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - opts: Optional configuration functions (WithSTTProvider, WithTTSProvider, WithS2SProvider, etc.)
+//
+// Returns:
+//   - iface.VoiceSession: A new voice session instance ready to use
+//   - error: Configuration validation errors or initialization errors
+//
+// Example:
+//
+//	session, err := session.NewVoiceSession(ctx,
+//	    session.WithSTTProvider(sttProvider),
+//	    session.WithTTSProvider(ttsProvider),
+//	    session.WithVADProvider(vadProvider),
+//	    session.WithAgent(agent),
+//	    session.WithConfig(session.DefaultConfig()),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	err = session.Start(ctx)
+//
+// Example usage can be found in examples/voice/session/main.go
 func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSession, error) {
 	// Initialize options with defaults
 	options := &VoiceOptions{

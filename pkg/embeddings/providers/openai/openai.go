@@ -35,7 +35,30 @@ type OpenAIEmbedder struct {
 }
 
 // NewOpenAIEmbedder creates a new OpenAIEmbedder with the given configuration.
-// It creates an OpenAI client from the configuration.
+// It creates an OpenAI client from the configuration for generating text embeddings.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, base URL, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//
+// Returns:
+//   - *OpenAIEmbedder: A new OpenAI embedder instance
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &openai.Config{
+//	    APIKey:  "your-api-key",
+//	    Model:   "text-embedding-3-small",
+//	    Timeout: 30 * time.Second,
+//	}
+//	embedder, err := openai.NewOpenAIEmbedder(config, tracer)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	embeddings, err := embedder.EmbedDocuments(ctx, texts)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, error) {
 	clientConfig := openaiClient.DefaultConfig(config.APIKey)
 	if config.BaseURL != "" {
@@ -51,7 +74,24 @@ func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, er
 }
 
 // NewOpenAIEmbedderWithClient creates a new OpenAIEmbedder with a provided client.
-// This is primarily used for testing with mocked clients.
+// This is primarily used for testing with mocked clients or when you need
+// to inject a custom client implementation.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//   - client: OpenAI client implementation (must not be nil)
+//
+// Returns:
+//   - *OpenAIEmbedder: A new OpenAI embedder instance
+//   - error: Configuration validation errors or if client is nil
+//
+// Example:
+//
+//	mockClient := &MockOpenAIClient{}
+//	embedder, err := openai.NewOpenAIEmbedderWithClient(config, tracer, mockClient)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewOpenAIEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*OpenAIEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

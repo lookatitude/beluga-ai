@@ -64,6 +64,30 @@ type CohereAPIVersion struct {
 }
 
 // NewCohereEmbedder creates a new CohereEmbedder with the given configuration.
+// This embedder uses the Cohere API for generating text embeddings.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, base URL, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//
+// Returns:
+//   - *CohereEmbedder: A new Cohere embedder instance
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &cohere.Config{
+//	    APIKey:  "your-api-key",
+//	    Model:   "embed-english-v3.0",
+//	    Timeout: 30 * time.Second,
+//	}
+//	embedder, err := cohere.NewCohereEmbedder(config, tracer)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	embeddings, err := embedder.EmbedDocuments(ctx, texts)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewCohereEmbedder(config *Config, tracer trace.Tracer) (*CohereEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
@@ -89,7 +113,24 @@ func NewCohereEmbedder(config *Config, tracer trace.Tracer) (*CohereEmbedder, er
 }
 
 // NewCohereEmbedderWithClient creates a new CohereEmbedder with a provided client.
-// This is primarily used for testing with mocked clients.
+// This is primarily used for testing with mocked clients or when you need
+// to inject a custom client implementation.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//   - client: Cohere client implementation (must not be nil)
+//
+// Returns:
+//   - *CohereEmbedder: A new Cohere embedder instance
+//   - error: Configuration validation errors or if client is nil
+//
+// Example:
+//
+//	mockClient := &MockCohereClient{}
+//	embedder, err := cohere.NewCohereEmbedderWithClient(config, tracer, mockClient)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewCohereEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*CohereEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

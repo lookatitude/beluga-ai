@@ -60,7 +60,32 @@ type PineconeConfig struct {
 }
 
 // NewPineconeStoreFromConfig creates a new PineconeStore from configuration.
-// This is used by the factory pattern.
+// This is used by the factory pattern for creating stores via the registry.
+// Pinecone is a managed vector database service with serverless, scalable storage.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder, API key, environment, project ID, index name, and embedding dimension
+//
+// Returns:
+//   - VectorStore: A new Pinecone vector store instance
+//   - error: Configuration errors or connection failures
+//
+// Example:
+//
+//	config := vectorstoresiface.Config{
+//	    Embedder: embedder,
+//	    ProviderConfig: map[string]any{
+//	        "api_key":            "your-api-key",
+//	        "environment":        "us-west1-gcp",
+//	        "project_id":         "your-project",
+//	        "index_name":         "my-index",
+//	        "embedding_dimension": 768,
+//	    },
+//	}
+//	store, err := pinecone.NewPineconeStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract pinecone-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pinecone"]

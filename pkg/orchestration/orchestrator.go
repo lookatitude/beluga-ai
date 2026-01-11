@@ -77,6 +77,25 @@ type Orchestrator struct {
 }
 
 // NewOrchestrator creates a new orchestrator with the given configuration.
+// The orchestrator manages chains, graphs, and workflows with full observability.
+//
+// Parameters:
+//   - config: Orchestration configuration (timeouts, retries, observability settings)
+//
+// Returns:
+//   - *Orchestrator: A new orchestrator instance
+//   - error: Configuration validation errors or initialization errors
+//
+// Example:
+//
+//	config := orchestration.DefaultConfig()
+//	orchestrator, err := orchestration.NewOrchestrator(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	chain, err := orchestrator.CreateChain(steps)
+//
+// Example usage can be found in examples/orchestration/chain/main.go
 func NewOrchestrator(config *Config) (*Orchestrator, error) {
 	if config == nil {
 		return nil, iface.ErrInvalidConfig("orchestrator_creation", errors.New("config cannot be nil"))
@@ -110,6 +129,23 @@ func NewOrchestrator(config *Config) (*Orchestrator, error) {
 }
 
 // NewOrchestratorWithOptions creates a new orchestrator with functional options.
+// This is a convenience function that builds configuration from options.
+//
+// Parameters:
+//   - opts: Optional configuration functions (WithTimeout, WithRetries, etc.)
+//
+// Returns:
+//   - *Orchestrator: A new orchestrator instance
+//   - error: Configuration or initialization errors
+//
+// Example:
+//
+//	orchestrator, err := orchestration.NewOrchestratorWithOptions(
+//	    orchestration.WithTimeout(30*time.Second),
+//	    orchestration.WithRetries(3),
+//	)
+//
+// Example usage can be found in examples/orchestration/chain/main.go
 func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 	config, err := NewConfig(opts...)
 	if err != nil {
@@ -120,6 +156,20 @@ func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 }
 
 // NewDefaultOrchestrator creates a new orchestrator with default configuration.
+// This provides sensible defaults for most use cases while allowing customization.
+//
+// Returns:
+//   - *Orchestrator: A new orchestrator instance with default settings
+//   - error: Initialization errors
+//
+// Example:
+//
+//	orchestrator, err := orchestration.NewDefaultOrchestrator()
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/orchestration/chain/main.go
 func NewDefaultOrchestrator() (*Orchestrator, error) {
 	config := DefaultConfig()
 	return NewOrchestrator(config)
@@ -171,6 +221,27 @@ func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOpt
 }
 
 // CreateGraph creates a new graph orchestration.
+// Graphs execute runnable components in a directed acyclic graph (DAG) structure,
+// allowing for parallel execution and complex workflows.
+//
+// Parameters:
+//   - opts: Graph configuration options (WithGraphName, WithGraphNode, WithGraphEdge, etc.)
+//
+// Returns:
+//   - iface.Graph: A new graph instance ready to execute
+//   - error: Configuration errors or if graphs are disabled
+//
+// Example:
+//
+//	graph, err := orchestrator.CreateGraph(
+//	    orchestration.WithGraphName("my-graph"),
+//	    orchestration.WithGraphNode("node1", runnable1),
+//	    orchestration.WithGraphNode("node2", runnable2),
+//	    orchestration.WithGraphEdge("node1", "node2"),
+//	)
+//	result, err := graph.Invoke(ctx, input)
+//
+// Example usage can be found in examples/orchestration/workflow/main.go
 func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	if !o.config.Enabled.Graphs {
 		return nil, iface.ErrInvalidState("create_graph", "graphs_disabled", "graphs_enabled")
@@ -336,6 +407,26 @@ func (m *orchestratorMetrics) GetErrorCount() int64 {
 // Factory functions for backward compatibility and convenience
 
 // NewChain creates a new chain with default orchestrator.
+// This is a convenience function for simple use cases where you don't need
+// full orchestrator capabilities.
+//
+// Parameters:
+//   - steps: Slice of runnable components to execute in sequence
+//   - opts: Optional chain configuration (WithChainName, WithChainTimeout, etc.)
+//
+// Returns:
+//   - iface.Chain: A new chain instance ready to execute
+//   - error: Configuration errors
+//
+// Example:
+//
+//	steps := []core.Runnable{retriever, llm}
+//	chain, err := orchestration.NewChain(steps,
+//	    orchestration.WithChainName("simple-chain"),
+//	)
+//	result, err := chain.Invoke(ctx, input)
+//
+// Example usage can be found in examples/orchestration/chain/main.go
 func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -345,6 +436,25 @@ func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, er
 }
 
 // NewGraph creates a new graph with default orchestrator.
+// This is a convenience function for simple use cases where you don't need
+// full orchestrator capabilities.
+//
+// Parameters:
+//   - opts: Graph configuration options (WithGraphName, WithGraphNode, WithGraphEdge, etc.)
+//
+// Returns:
+//   - iface.Graph: A new graph instance ready to execute
+//   - error: Configuration errors
+//
+// Example:
+//
+//	graph, err := orchestration.NewGraph(
+//	    orchestration.WithGraphName("simple-graph"),
+//	    orchestration.WithGraphNode("node1", runnable1),
+//	)
+//	result, err := graph.Invoke(ctx, input)
+//
+// Example usage can be found in examples/orchestration/workflow/main.go
 func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -354,6 +464,27 @@ func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 }
 
 // NewWorkflow creates a new workflow with default orchestrator.
+// This is a convenience function for simple use cases where you don't need
+// full orchestrator capabilities. Note: Temporal client must be configured.
+//
+// Parameters:
+//   - workflowFn: Workflow function that defines the workflow logic
+//   - opts: Workflow configuration options (WithWorkflowName, WithWorkflowID, etc.)
+//
+// Returns:
+//   - iface.Workflow: A new workflow instance
+//   - error: Configuration errors or if Temporal client is not configured
+//
+// Example:
+//
+//	workflowFn := func(ctx context.Context, input string) (string, error) {
+//	    return "result", nil
+//	}
+//	workflow, err := orchestration.NewWorkflow(workflowFn,
+//	    orchestration.WithWorkflowName("simple-workflow"),
+//	)
+//
+// Example usage can be found in examples/orchestration/workflow/main.go
 func NewWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {

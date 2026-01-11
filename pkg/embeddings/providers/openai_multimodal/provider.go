@@ -39,6 +39,29 @@ type OpenAIMultimodalEmbedder struct {
 }
 
 // NewOpenAIMultimodalEmbedder creates a new multimodal embedder.
+// This embedder supports both text and image embeddings using OpenAI's vision-capable models.
+//
+// Parameters:
+//   - config: Configuration containing API key, model name, and other settings
+//   - tracer: OpenTelemetry tracer for observability (can be nil)
+//
+// Returns:
+//   - *OpenAIMultimodalEmbedder: A new multimodal embedder instance
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &openai_multimodal.Config{
+//	    APIKey:  "your-api-key",
+//	    Model:   "gpt-4-vision-preview",
+//	    Timeout: 30 * time.Second,
+//	}
+//	embedder, err := openai_multimodal.NewOpenAIMultimodalEmbedder(config, tracer)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/multimodal/basic/main.go
 func NewOpenAIMultimodalEmbedder(config *Config, tracer trace.Tracer) (*OpenAIMultimodalEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

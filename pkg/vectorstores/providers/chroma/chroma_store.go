@@ -46,7 +46,30 @@ type ChromaStore struct {
 }
 
 // NewChromaStoreFromConfig creates a new ChromaStore from configuration.
-// This is used by the factory pattern.
+// This is used by the factory pattern for creating stores via the registry.
+// Chroma is an open-source embedding database with a simple REST API.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout control
+//   - config: Configuration containing embedder, URL, collection name, and embedding dimension
+//
+// Returns:
+//   - VectorStore: A new Chroma vector store instance
+//   - error: Configuration errors or connection failures
+//
+// Example:
+//
+//	config := vectorstoresiface.Config{
+//	    Embedder: embedder,
+//	    ProviderConfig: map[string]any{
+//	        "url":                "http://localhost:8000",
+//	        "collection_name":    "documents",
+//	        "embedding_dimension": 768,
+//	    },
+//	}
+//	store, err := chroma.NewChromaStoreFromConfig(ctx, config)
+//
+// Example usage can be found in examples/rag/simple/main.go
 func NewChromaStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract chroma-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["chroma"]

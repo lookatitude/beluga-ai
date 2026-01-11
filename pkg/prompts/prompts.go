@@ -27,6 +27,26 @@ type PromptManager struct {
 
 // NewPromptManager creates a new PromptManager with the given configuration and dependencies.
 // This follows the factory pattern and dependency injection principles.
+// The manager provides factory methods for creating templates and adapters.
+//
+// Parameters:
+//   - opts: Optional configuration functions (WithConfig, WithMetrics, WithTracer, etc.)
+//
+// Returns:
+//   - *PromptManager: A new prompt manager instance
+//   - error: Configuration or initialization errors
+//
+// Example:
+//
+//	manager, err := prompts.NewPromptManager(
+//	    prompts.WithConfig(prompts.DefaultConfig()),
+//	    prompts.WithMetrics(metrics),
+//	)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//
+// Example usage can be found in examples/prompts/basic/main.go
 func NewPromptManager(opts ...Option) (*PromptManager, error) {
 	// Apply options
 	options := &iface.Options{
@@ -89,6 +109,25 @@ func NewPromptManager(opts ...Option) (*PromptManager, error) {
 
 // NewStringTemplate creates a new string prompt template.
 // This is a factory method that properly injects dependencies.
+// String templates support variable substitution using {{variable}} syntax.
+//
+// Parameters:
+//   - name: Unique name for the template (used for caching and metrics)
+//   - template: Template string with {{variable}} placeholders
+//
+// Returns:
+//   - iface.Template: A new template instance
+//   - error: Validation errors if name is empty or template is invalid
+//
+// Example:
+//
+//	template, err := manager.NewStringTemplate(
+//	    "greeting",
+//	    "Hello, {{name}}! Welcome to {{company}}.",
+//	)
+//	result, err := template.Format(map[string]any{"name": "Alice", "company": "Beluga"})
+//
+// Example usage can be found in examples/prompts/basic/main.go
 func (pm *PromptManager) NewStringTemplate(name, template string) (iface.Template, error) {
 	if name == "" {
 		return nil, NewValidationError("new_string_template", "template name cannot be empty", nil)

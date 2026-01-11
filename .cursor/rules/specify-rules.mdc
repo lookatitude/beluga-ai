@@ -43,6 +43,7 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - Markdown files in `website/docs/api/packages/` directory, Go source code with godoc comments in `pkg/` directory (001-complete-documentation)
 - Go 1.21+ (matches existing framework) (009-multimodal)
 - N/A (stateless package, integrates with existing vectorstores for multimodal RAG) (009-multimodal)
+- Go 1.24.1+ (matches go.mod) (001-voice-backends)
 
 ## Project Structure
 ```
@@ -57,9 +58,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 001-voice-backends: Added Go 1.24.1+ (matches go.mod)
 - 009-multimodal: Added Go 1.21+ (matches existing framework)
 - 001-complete-documentation: Added Go 1.21+, JavaScript/TypeScript (Node.js), Docusaurus 3.9.2, React 18.3.1 + gomarkdoc (godoc extraction tool), @docusaurus/core, @docusaurus/preset-classic, @mdx-js/react, prism-react-renderer
-- 001-complete-documentation: Added JavaScript/TypeScript (Node.js), Docusaurus 3.9.2, React 18.3.1 + @docusaurus/core, @docusaurus/preset-classic, @mdx-js/react, prism-react-renderer
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

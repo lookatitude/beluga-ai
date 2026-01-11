@@ -9,6 +9,9 @@ BIN_DIR := bin
 COVERAGE_DIR := coverage
 COVERAGE_FILE := $(COVERAGE_DIR)/coverage.out
 COVERAGE_HTML := $(COVERAGE_DIR)/coverage.html
+CACHE_DIR := .cache
+TEST_BIN_DIR := $(CACHE_DIR)/test-binaries
+GO_CACHE_DIR := $(CACHE_DIR)/go-build
 
 # Default target
 .DEFAULT_GOAL := help
@@ -24,24 +27,24 @@ build: ## Build all packages
 
 test: ## Run all tests
 	@echo "Running tests..."
-	@go test -v ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v ./pkg/... ./cmd/... ./tests/...
 
 test-unit: ## Run unit tests only (pkg packages, excluding integration tests)
 	@echo "Running unit tests..."
-	@go test -v -race ./pkg/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v -race ./pkg/...
 
 test-integration: ## Run integration tests
 	@echo "Running integration tests..."
-	@go test -v -race -timeout=15m ./tests/integration/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v -race -timeout=15m ./tests/integration/...
 
 test-race: ## Run tests with race detection
 	@echo "Running tests with race detection..."
-	@go test -race -v ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -race -v ./pkg/... ./cmd/... ./tests/...
 
 test-coverage: ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@mkdir -p $(COVERAGE_DIR)
-	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
 	@go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 	@go tool cover -func=$(COVERAGE_FILE)
 	@echo ""
@@ -50,13 +53,13 @@ test-coverage: ## Generate test coverage report
 test-coverage-ci: ## Generate test coverage for CI (JSON output)
 	@echo "Generating test coverage for CI..."
 	@mkdir -p $(COVERAGE_DIR)
-	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
 	@go tool cover -func=$(COVERAGE_FILE)
 
 test-coverage-threshold: ## Check if coverage meets 80% threshold (advisory - matches CI behavior)
 	@echo "Checking coverage threshold (80%)..."
 	@mkdir -p $(COVERAGE_DIR)
-	@go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... > /dev/null 2>&1
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... > /dev/null 2>&1
 	@pct=$$(go tool cover -func=$(COVERAGE_FILE) | tail -n1 | awk '{print $$3}' | sed 's/%//'); \
 	if [ -z "$$pct" ]; then \
 		echo "❌ Failed to calculate coverage"; \
@@ -220,7 +223,8 @@ ci-local: ## Run all CI checks locally (matches CI workflow)
 
 bench: ## Run benchmarks
 	@echo "Running benchmarks..."
-	@go test -bench=. -benchmem ./...
+	@mkdir -p $(CACHE_DIR)/benchmarks
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -bench=. -benchmem -benchtime=1s ./pkg/... | tee $(CACHE_DIR)/benchmarks/bench.txt
 
 bench-cmp: ## Compare benchmarks (requires benchstat)
 	@echo "Running benchmark comparison..."

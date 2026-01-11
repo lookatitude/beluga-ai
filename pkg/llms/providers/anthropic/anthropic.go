@@ -48,6 +48,28 @@ type AnthropicProvider struct {
 }
 
 // NewAnthropicProvider creates a new Anthropic provider instance.
+// This provider implements the ChatModel interface for Anthropic Claude models (Claude 3 Opus, Sonnet, Haiku).
+//
+// Parameters:
+//   - config: LLM configuration containing API key, model name, and other settings
+//
+// Returns:
+//   - *AnthropicProvider: A new Anthropic provider instance ready to use
+//   - error: Configuration validation errors or client creation errors
+//
+// Example:
+//
+//	config := &llms.Config{
+//	    APIKey:    "your-api-key",
+//	    ModelName: "claude-3-opus-20240229",
+//	}
+//	provider, err := anthropic.NewAnthropicProvider(config)
+//	if err != nil {
+//	    log.Fatal(err)
+//	}
+//	response, err := provider.Generate(ctx, messages)
+//
+// Example usage can be found in examples/llm-usage/main.go
 func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -607,6 +629,25 @@ func (a *AnthropicProvider) handleAnthropicError(operation string, err error) er
 	return llms.NewLLMErrorWithMessage(operation, errorCode, message, err)
 }
 
+// NewAnthropicProviderFactory returns a factory function for creating Anthropic providers.
+// This is used for registering the provider with the LLM factory pattern.
+//
+// Returns:
+//   - func(*llms.Config) (iface.ChatModel, error): Factory function that creates Anthropic providers
+//
+// Example:
+//
+//	factory := llms.NewFactory()
+//	factory.RegisterProviderFactory("anthropic", anthropic.NewAnthropicProviderFactory())
+//	provider, err := factory.CreateProvider("anthropic", config)
+//
+// Example usage can be found in examples/llm-usage/main.go
+func NewAnthropicProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
+	return func(config *llms.Config) (iface.ChatModel, error) {
+		return NewAnthropicProvider(config)
+	}
+}
+
 // CheckHealth implements the HealthChecker interface.
 func (a *AnthropicProvider) CheckHealth() map[string]any {
 	return map[string]any{
@@ -616,12 +657,5 @@ func (a *AnthropicProvider) CheckHealth() map[string]any {
 		"timestamp":   time.Now().Unix(),
 		"api_key_set": a.config.APIKey != "",
 		"tools_count": len(a.tools),
-	}
-}
-
-// Factory function for creating Anthropic providers.
-func NewAnthropicProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
-	return func(config *llms.Config) (iface.ChatModel, error) {
-		return NewAnthropicProvider(config)
 	}
 }
