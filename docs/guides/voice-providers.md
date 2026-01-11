@@ -190,6 +190,98 @@ vadProvider, err := energy.NewEnergyVAD(ctx, energy.Config{
 - TTS: OpenAI TTS
 - VAD: Energy-based
 
+## S2S Providers
+
+Speech-to-Speech (S2S) providers enable end-to-end speech conversations without explicit intermediate text steps.
+
+### Amazon Nova 2 Sonic
+
+```go
+import "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+
+config := s2s.DefaultConfig()
+config.Provider = "amazon_nova"
+config.APIKey = os.Getenv("AWS_ACCESS_KEY_ID")
+
+provider, err := s2s.NewProvider(ctx, "amazon_nova", config)
+```
+
+**Features:**
+- Bidirectional streaming
+- Built-in reasoning
+- Low latency
+- Multiple voices
+
+### Grok Voice Agent
+
+```go
+config := s2s.DefaultConfig()
+config.Provider = "grok"
+config.APIKey = os.Getenv("XAI_API_KEY")
+
+provider, err := s2s.NewProvider(ctx, "grok", config)
+```
+
+**Features:**
+- Real-time streaming
+- Natural conversations
+- Multiple languages
+
+### Gemini 2.5 Flash Native Audio
+
+```go
+config := s2s.DefaultConfig()
+config.Provider = "gemini"
+config.APIKey = os.Getenv("GOOGLE_API_KEY")
+
+provider, err := s2s.NewProvider(ctx, "gemini", config)
+```
+
+**Features:**
+- Native audio support
+- High quality
+- Low latency
+
+### OpenAI Realtime
+
+```go
+config := s2s.DefaultConfig()
+config.Provider = "openai_realtime"
+config.APIKey = os.Getenv("OPENAI_API_KEY")
+
+provider, err := s2s.NewProvider(ctx, "openai_realtime", config)
+```
+
+**Features:**
+- GPT Realtime API
+- Streaming support
+- Natural conversations
+
+### Using S2S with Voice Sessions
+
+S2S providers can be used as an alternative to the traditional STT+TTS pipeline:
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+)
+
+// Option 1: Use S2S provider (end-to-end speech)
+s2sProvider, _ := s2s.NewProvider(ctx, "amazon_nova", config)
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithS2SProvider(s2sProvider),
+)
+
+// Option 2: Use traditional STT+TTS pipeline
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithSTTProvider(sttProvider),
+    session.WithTTSProvider(ttsProvider),
+)
+
+// Note: Cannot specify both S2S and STT+TTS
+```
+
 ## Fallback Configuration
 
 Configure fallback providers for reliability:

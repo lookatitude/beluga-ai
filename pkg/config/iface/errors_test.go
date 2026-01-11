@@ -210,9 +210,10 @@ func TestAsConfigError_EdgeCases(t *testing.T) {
 		}(), "deeply wrapped config error", true},
 		{func() error {
 			// Actually wrap a ConfigError in a regular error using fmt.Errorf
+			// errors.As will find the ConfigError even when wrapped in a regular error
 			configErr := NewConfigError("inner", "inner msg")
 			return fmt.Errorf("regular error: %w", configErr)
-		}(), "config error wrapped in regular error", false},
+		}(), "config error wrapped in regular error", true},
 	}
 
 	for _, tt := range tests {

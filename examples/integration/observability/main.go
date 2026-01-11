@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"go.opentelemetry.io/otel"
@@ -26,10 +27,11 @@ func main() {
 
 	// Step 1: Initialize OpenTelemetry
 	fmt.Println("\n🔧 Initializing OpenTelemetry...")
-	tracer, err := initTracing()
+	tp, err := initTracing()
 	if err != nil {
 		log.Fatalf("Failed to initialize tracing: %v", err)
 	}
+	defer tp.Shutdown(ctx)
 	fmt.Println("  ✅ Tracing initialized")
 
 	// Step 2: Create LLM with observability
@@ -53,9 +55,8 @@ func main() {
 	fmt.Println("\n🚀 Executing operations with observability...")
 
 	// Step 4a: Create a span for the operation
-	ctx, span := tracer.Start(ctx, "observability.example",
-		// Add attributes
-	)
+	tracerInst := otel.Tracer("beluga-ai-example")
+	ctx, span := tracerInst.Start(ctx, "observability.example")
 	defer span.End()
 
 	// Step 4b: Execute agent with context propagation
@@ -94,7 +95,7 @@ func main() {
 
 	// Step 7: Display observability information
 	fmt.Printf("\n✅ Observability Information:\n")
-	fmt.Printf("  Tracer: %v\n", tracer)
+	fmt.Printf("  Tracer Provider: initialized\n")
 	fmt.Printf("  Agent Metrics: enabled\n")
 	fmt.Printf("  Tracing: enabled\n")
 
@@ -178,7 +179,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Simulate processing time
 	time.Sleep(50 * time.Millisecond)
 	return "Mock response with observability", nil

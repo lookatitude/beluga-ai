@@ -7,6 +7,8 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
@@ -18,8 +20,8 @@ func main() {
 	ctx := context.Background()
 
 	// Step 1: Create specialized agents with different roles
-	agents := createSpecializedAgents(ctx)
-	fmt.Printf("✅ Created %d specialized agents\n", len(agents))
+	agentMap := createSpecializedAgents(ctx)
+	fmt.Printf("✅ Created %d specialized agents\n", len(agentMap))
 
 	// Step 2: Demonstrate hierarchical agent structure
 	fmt.Println("\n📊 Agent Hierarchy:")
@@ -37,7 +39,7 @@ func main() {
 	researchTask := map[string]interface{}{
 		"input": fmt.Sprintf("Research: %s", task),
 	}
-	researchResult, err := agents["research"].Invoke(ctx, researchTask)
+	researchResult, err := agentMap["research"].Invoke(ctx, researchTask)
 	if err != nil {
 		log.Fatalf("Research agent failed: %v", err)
 	}
@@ -48,7 +50,7 @@ func main() {
 	analysisTask := map[string]interface{}{
 		"input": fmt.Sprintf("Analyze research findings: %v", researchResult),
 	}
-	analysisResult, err := agents["analysis"].Invoke(ctx, analysisTask)
+	analysisResult, err := agentMap["analysis"].Invoke(ctx, analysisTask)
 	if err != nil {
 		log.Fatalf("Analysis agent failed: %v", err)
 	}
@@ -59,7 +61,7 @@ func main() {
 	reportTask := map[string]interface{}{
 		"input": fmt.Sprintf("Create report from research and analysis: Research=%v, Analysis=%v", researchResult, analysisResult),
 	}
-	reportResult, err := agents["report"].Invoke(ctx, reportTask)
+	reportResult, err := agentMap["report"].Invoke(ctx, reportTask)
 	if err != nil {
 		log.Fatalf("Report agent failed: %v", err)
 	}
@@ -86,14 +88,14 @@ func main() {
 
 	// Step 6: Demonstrate agent delegation patterns
 	fmt.Println("\n🔄 Demonstrating delegation patterns...")
-	demonstrateDelegation(ctx, agents)
+	demonstrateDelegation(ctx, agentMap)
 
 	fmt.Println("\n✨ Specialized multi-agent system example completed successfully!")
 }
 
 // createSpecializedAgents creates agents with specialized roles
-func createSpecializedAgents(ctx context.Context) map[string]interface{} {
-	agents := make(map[string]interface{})
+func createSpecializedAgents(ctx context.Context) map[string]agentsiface.CompositeAgent {
+	agentMap := make(map[string]agentsiface.CompositeAgent)
 
 	// Research agent - specializes in gathering information
 	researchLLM, _ := createLLM(ctx, "research")
@@ -102,7 +104,7 @@ func createSpecializedAgents(ctx context.Context) map[string]interface{} {
 		"specialization": "research",
 		"expertise":       "information-gathering",
 	})
-	agents["research"] = research
+	agentMap["research"] = research
 
 	// Analysis agent - specializes in data analysis
 	analysisLLM, _ := createLLM(ctx, "analysis")
@@ -111,7 +113,7 @@ func createSpecializedAgents(ctx context.Context) map[string]interface{} {
 		"specialization": "analysis",
 		"expertise":       "data-analysis",
 	})
-	agents["analysis"] = analysis
+	agentMap["analysis"] = analysis
 
 	// Report agent - specializes in report generation
 	reportLLM, _ := createLLM(ctx, "report")
@@ -120,13 +122,13 @@ func createSpecializedAgents(ctx context.Context) map[string]interface{} {
 		"specialization": "reporting",
 		"expertise":       "document-generation",
 	})
-	agents["report"] = report
+	agentMap["report"] = report
 
-	return agents
+	return agentMap
 }
 
 // demonstrateDelegation shows different delegation patterns
-func demonstrateDelegation(ctx context.Context, agents map[string]interface{}) {
+func demonstrateDelegation(ctx context.Context, agentMap map[string]agentsiface.CompositeAgent) {
 	// Pattern 1: Sequential delegation
 	fmt.Println("\n  Pattern 1: Sequential Delegation")
 	fmt.Println("    Agent A -> Agent B -> Agent C")
@@ -173,7 +175,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return fmt.Sprintf("Mock response from %s", m.modelName), nil
 }
 

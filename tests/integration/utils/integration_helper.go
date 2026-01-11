@@ -15,6 +15,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/registry"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -58,7 +59,7 @@ func NewIntegrationTestHelper() *IntegrationTestHelper {
 	return &IntegrationTestHelper{
 		llmFactory:         llms.NewFactory(),
 		memoryRegistry:     memory.GetGlobalMemoryRegistry(),
-		embeddingRegistry:  embeddings.GetGlobalRegistry(),
+		embeddingRegistry:  registry.GetRegistry(), // Use registry.GetRegistry() to get concrete type
 		vectorstoreFactory: vectorstoresiface.NewStoreFactory(),
 		agentRegistry:      agents.GetGlobalAgentRegistry(),
 

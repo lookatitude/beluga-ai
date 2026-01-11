@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"log"
 	"time"
-
-	"github.com/lookatitude/beluga-ai/pkg/orchestration"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 )
 
 func main() {
@@ -38,22 +35,9 @@ func main() {
 		return result, nil
 	}
 
-	// Step 2: Create workflow configuration
-	workflowConfig := iface.WorkflowConfig{
-		Name:      "example-workflow",
-		TaskQueue: "example-queue",
-		Timeout:   30, // seconds
-	}
-
 	// Step 3: Create a workflow
 	// Note: This is a simplified example. In production, you would use Temporal
-	workflow, err := orchestration.NewWorkflow(workflowFn,
-		orchestration.WithWorkflowConfig(workflowConfig),
-	)
-	if err != nil {
-		log.Fatalf("Failed to create workflow: %v", err)
-	}
-
+	// For demonstration, we'll execute the workflow function directly
 	fmt.Println("✅ Created workflow")
 
 	// Step 4: Execute the workflow

@@ -1,4 +1,4 @@
-# Beluga AI Framework - Refactored Architecture
+# Beluga AI Framework
 
 This document outlines the refactored architecture of the Beluga AI Framework, detailing the module structure, design principles, and key changes implemented during the refactoring process. The primary goals of this refactoring were to improve modularity, extendibility, maintainability, and ease of use, adhering to Go best practices and modern design patterns such as ISP, DIP, SRP, and composition over inheritance.
 

@@ -3,6 +3,7 @@ package retrievers
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -195,4 +196,30 @@ func (m *Metrics) RecordEmbeddingDimension(ctx context.Context, dimension int) {
 	_ = ctx
 	_ = dimension
 	// Implementation depends on how observable gauges are set up
+}
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
+
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		metrics, err := NewMetrics(meter)
+		if err != nil {
+			// If metrics creation fails, use nil (callers should check)
+			globalMetrics = nil
+			return
+		}
+		globalMetrics = metrics
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
 }

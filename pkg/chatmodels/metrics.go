@@ -3,6 +3,7 @@ package chatmodels
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -14,6 +15,12 @@ import (
 
 // OpenTelemetry metric instruments
 // These will be properly initialized when creating the Metrics instance
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
 
 // Metrics holds the metrics for the chatmodels package.
 type Metrics struct {
@@ -417,7 +424,29 @@ func (m *Metrics) StartProviderSpan(ctx context.Context, provider, operation str
 	return ctx, span
 }
 
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		tracer := otel.Tracer("beluga-chatmodels")
+		metrics, err := NewMetrics(meter, tracer)
+		if err != nil {
+			// Fallback to no-op metrics if initialization fails
+			globalMetrics = NoOpMetrics()
+			return
+		}
+		globalMetrics = metrics
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
+}
+
 // DefaultMetrics creates a metrics instance with default meter and tracer.
+// Deprecated: Use InitMetrics(meter) and GetMetrics() instead for consistency.
 func DefaultMetrics() *Metrics {
 	meter := otel.Meter("beluga-chatmodels")
 	tracer := otel.Tracer("beluga-chatmodels")

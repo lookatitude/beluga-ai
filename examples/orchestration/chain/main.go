@@ -7,10 +7,11 @@ import (
 	"os"
 	"strings"
 
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
+	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/orchestration"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
@@ -141,12 +142,6 @@ func (s *llmStep) Invoke(ctx context.Context, input interface{}, options ...core
 		processed, _ = inputMap["input"].(string)
 	}
 
-	// Create messages for LLM
-	messages := []schema.Message{
-		schema.NewSystemMessage("You are a helpful assistant."),
-		schema.NewHumanMessage(processed),
-	}
-
 	// Call LLM (using mock for demonstration)
 	response := fmt.Sprintf("LLM Response to: %s", processed)
 
@@ -240,10 +235,9 @@ func createLLM(ctx context.Context) (interface{}, error) {
 		llms.WithAPIKey(apiKey),
 	)
 
-	factory := llms.NewFactory()
-	llm, err := factory.CreateChatModel("openai", config)
+	llm, err := llms.NewChatModel("gpt-3.5-turbo", config)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create LLM: %w", err)
+		return nil, fmt.Errorf("failed to create ChatModel: %w", err)
 	}
 
 	return llm, nil
@@ -252,14 +246,84 @@ func createLLM(ctx context.Context) (interface{}, error) {
 // mockLLM is a simple mock implementation
 type mockLLM struct{}
 
-func (m *mockLLM) Generate(ctx context.Context, messages []interface{}) (interface{}, error) {
-	return &mockMessage{content: "Mock LLM response"}, nil
+func (m *mockLLM) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
+	return schema.NewAIMessage("Mock LLM response"), nil
 }
 
-type mockMessage struct {
-	content string
+func (m *mockLLM) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan llmsiface.AIMessageChunk, error) {
+	ch := make(chan llmsiface.AIMessageChunk, 1)
+	ch <- llmsiface.AIMessageChunk{Content: "Mock LLM response"}
+	close(ch)
+	return ch, nil
 }
 
-func (m *mockMessage) GetContent() string {
-	return m.content
+func (m *mockLLM) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel {
+	return m
+}
+
+func (m *mockLLM) GetModelName() string {
+	return "mock-model"
+}
+
+func (m *mockLLM) GetProviderName() string {
+	return "mock-provider"
+}
+
+func (m *mockLLM) CheckHealth() map[string]any {
+	return map[string]any{"status": "healthy"}
+}
+
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	return m.Generate(ctx, messages, options...)
+}
+
+func (m *mockLLM) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := m.Invoke(ctx, input, options...)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+func (m *mockLLM) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	messages, err := ensureMessages(input)
+	if err != nil {
+		return nil, err
+	}
+	chunkChan, err := m.StreamChat(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	anyChan := make(chan any)
+	go func() {
+		defer close(anyChan)
+		for chunk := range chunkChan {
+			anyChan <- chunk
+		}
+	}()
+	return anyChan, nil
+}
+
+func ensureMessages(input any) ([]schema.Message, error) {
+	switch v := input.(type) {
+	case []schema.Message:
+		return v, nil
+	case map[string]interface{}:
+		if inputVal, ok := v["input"].(string); ok {
+			return []schema.Message{schema.NewHumanMessage(inputVal)}, nil
+		}
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", v))}, nil
+	case string:
+		return []schema.Message{schema.NewHumanMessage(v)}, nil
+	default:
+		return []schema.Message{schema.NewHumanMessage(fmt.Sprintf("%v", input))}, nil
+	}
 }

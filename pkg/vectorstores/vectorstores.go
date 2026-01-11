@@ -247,7 +247,14 @@ func (f *StoreFactory) Create(ctx context.Context, name string, config vectorsto
 // Global factory instance for easy access.
 var globalFactory = NewStoreFactory()
 
+// GetRegistry returns the global factory instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetRegistry() *StoreFactory {
+	return globalFactory
+}
+
 // RegisterGlobal registers a provider with the global factory.
+// Deprecated: Use GetRegistry().Register() instead for consistency.
 func RegisterGlobal(name string, creator func(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error)) {
 	globalFactory.Register(name, creator)
 }
@@ -375,7 +382,6 @@ func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 	return globalFactory.Create(ctx, "pgvector", *config)
 }
 
-// TODO: Implement Pinecone provider
 // NewPineconeStore creates a new Pinecone vector store with the given options.
 // Requires Pinecone API credentials and configuration.
 //
@@ -388,8 +394,14 @@ func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error) 
 //		vectorstores.WithProviderConfig("project_id", "your-project"),
 //		vectorstores.WithProviderConfig("index_name", "my-index"),
 //	)
+//
+// Note: This function requires the pinecone provider to be imported for registration.
+// Import it with: import _ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/pinecone".
 func NewPineconeStore(ctx context.Context, opts ...Option) (VectorStore, error) {
-	return nil, NewVectorStoreError(ErrCodeUnknownProvider, "Pinecone provider not yet implemented")
+	config := NewDefaultConfig()
+	ApplyOptions(config, opts...)
+
+	return globalFactory.Create(ctx, "pinecone", *config)
 }
 
 // NewVectorStore creates a vector store using the specified provider name.

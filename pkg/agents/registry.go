@@ -84,7 +84,20 @@ func ListAvailableAgentTypes() []string {
 }
 
 // GetGlobalAgentRegistry returns the global registry instance for advanced usage.
+// Deprecated: Use GetRegistry() instead for consistency.
 func GetGlobalAgentRegistry() *AgentRegistry {
+	return globalAgentRegistry
+}
+
+// GetRegistry returns the global registry instance.
+// This follows the standard pattern used across all Beluga AI packages.
+//
+// Example:
+//
+//	registry := agents.GetRegistry()
+//	agentTypes := registry.ListAgentTypes()
+//	agent, err := registry.CreateAgent(ctx, "my-agent", "base", llm, tools, config)
+func GetRegistry() *AgentRegistry {
 	return globalAgentRegistry
 }
 

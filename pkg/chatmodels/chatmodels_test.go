@@ -11,6 +11,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+
+	// Import providers to register them for tests
+	// This is now safe because providers use registry/iface instead of importing the main package
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 )
 
 // Test helper functions and utilities.
@@ -938,12 +943,14 @@ func TestErrorHandling(t *testing.T) {
 		t.Errorf("Expected operation 'creation', got '%s'", chatErr.Op)
 	}
 
-	if chatErr.Model != "gpt-4" {
-		t.Errorf("Expected model 'gpt-4', got '%s'", chatErr.Model)
+	model, _ := chatErr.Fields["model"].(string)
+	if model != "gpt-4" {
+		t.Errorf("Expected model 'gpt-4', got '%s'", model)
 	}
 
-	if chatErr.Provider != "unsupported" {
-		t.Errorf("Expected provider 'unsupported', got '%s'", chatErr.Provider)
+	provider, _ := chatErr.Fields["provider"].(string)
+	if provider != "unsupported" {
+		t.Errorf("Expected provider 'unsupported', got '%s'", provider)
 	}
 }
 
@@ -1266,7 +1273,7 @@ func TestErrorScenarios(t *testing.T) {
 				})
 			},
 			expectError:   true,
-			errorContains: "unsupported provider",
+			errorContains: "not registered",
 		},
 		{
 			name: "invalid config",

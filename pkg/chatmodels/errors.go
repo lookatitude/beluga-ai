@@ -7,24 +7,27 @@ import (
 
 // ChatModelError represents a custom error type for chat model operations.
 // It includes context about the operation that failed and wraps the underlying error.
+// This follows the standard Beluga AI error pattern with Op/Err/Code.
 type ChatModelError struct {
-	Err      error
-	Fields   map[string]any
-	Op       string
-	Model    string
-	Provider string
-	Code     string
+	Op     string
+	Err    error
+	Code   string
+	Fields map[string]any
 }
 
 // Error implements the error interface.
 func (e *ChatModelError) Error() string {
-	if e.Provider != "" && e.Model != "" {
-		return fmt.Sprintf("chatmodel %s %s (provider: %s): %v", e.Model, e.Op, e.Provider, e.Err)
+	// Extract model and provider from Fields if present for error message
+	model, _ := e.Fields["model"].(string)
+	provider, _ := e.Fields["provider"].(string)
+	
+	if provider != "" && model != "" {
+		return fmt.Sprintf("chatmodel %s %s (provider: %s): %s: %v", model, e.Op, provider, e.Code, e.Err)
 	}
-	if e.Model != "" {
-		return fmt.Sprintf("chatmodel %s %s: %v", e.Model, e.Op, e.Err)
+	if model != "" {
+		return fmt.Sprintf("chatmodel %s %s: %s: %v", model, e.Op, e.Code, e.Err)
 	}
-	return fmt.Sprintf("chatmodel %s: %v", e.Op, e.Err)
+	return fmt.Sprintf("chatmodel %s: %s: %v", e.Op, e.Code, e.Err)
 }
 
 // Unwrap returns the underlying error for error wrapping.
@@ -52,14 +55,21 @@ const (
 )
 
 // NewChatModelError creates a new ChatModelError.
+// This follows the standard Beluga AI error pattern with Op/Err/Code.
+// Model and provider are stored in Fields for error message formatting.
 func NewChatModelError(op, model, provider, code string, err error) *ChatModelError {
+	fields := make(map[string]any)
+	if model != "" {
+		fields["model"] = model
+	}
+	if provider != "" {
+		fields["provider"] = provider
+	}
 	return &ChatModelError{
-		Op:       op,
-		Model:    model,
-		Provider: provider,
-		Code:     code,
-		Err:      err,
-		Fields:   make(map[string]any),
+		Op:     op,
+		Code:   code,
+		Err:    err,
+		Fields: fields,
 	}
 }
 

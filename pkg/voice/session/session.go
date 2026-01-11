@@ -53,14 +53,23 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 		}
 	}
 
-	// Validate required providers
-	if options.STTProvider == nil {
-		return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
-			errors.New("STT provider is required"))
-	}
-	if options.TTSProvider == nil {
-		return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
-			errors.New("TTS provider is required"))
+	// Validate required providers - either STT+TTS or S2S
+	if options.S2SProvider != nil {
+		// S2S mode: S2S provider is sufficient
+		if options.STTProvider != nil || options.TTSProvider != nil {
+			return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
+				errors.New("cannot specify both S2S provider and STT/TTS providers"))
+		}
+	} else {
+		// Traditional mode: STT and TTS providers are required
+		if options.STTProvider == nil {
+			return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
+				errors.New("STT provider is required (or use S2S provider)"))
+		}
+		if options.TTSProvider == nil {
+			return nil, NewSessionError("NewVoiceSession", ErrCodeInvalidConfig,
+				errors.New("TTS provider is required (or use S2S provider)"))
+		}
 	}
 
 	// Generate session ID if not provided
@@ -84,6 +93,7 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 	internalOpts := &internal.VoiceOptions{
 		STTProvider:       options.STTProvider,
 		TTSProvider:       options.TTSProvider,
+		S2SProvider:       options.S2SProvider,
 		VADProvider:       options.VADProvider,
 		TurnDetector:      options.TurnDetector,
 		Transport:         options.Transport,

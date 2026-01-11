@@ -2,8 +2,10 @@ package prompts
 
 import (
 	"context"
+	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
@@ -402,6 +404,33 @@ func (m *Metrics) StartFormattingSpan(ctx context.Context, adapterType, operatio
 		),
 	)
 	return ctx, span
+}
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
+
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		tracer := otel.Tracer("beluga.prompts")
+		metrics, err := NewMetrics(meter, tracer)
+		if err != nil {
+			// Fallback to no-op metrics if initialization fails
+			globalMetrics = NoOpMetrics()
+			return
+		}
+		globalMetrics = metrics
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
 }
 
 // NoOpMetrics returns a metrics instance that does nothing.

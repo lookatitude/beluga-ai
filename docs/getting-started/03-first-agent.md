@@ -348,6 +348,29 @@ Congratulations! You've created your first agent. Next, learn how to:
 - **[Part 4: Working with Tools](./04-working-with-tools.md)** - Deep dive into tool integration
 - **[Part 5: Memory Management](./05-memory-management.md)** - Add conversation memory
 - **[Concepts: Agents](../concepts/agents.md)** - Deep dive into agent concepts
+- **[Voice Agents with S2S](../../../pkg/voice/s2s/README.md)** - Use Speech-to-Speech models for voice conversations
+
+### Voice Agents with S2S
+
+You can also use agents with Speech-to-Speech (S2S) models for natural voice conversations:
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+)
+
+// Create S2S provider
+s2sProvider, _ := s2s.NewProvider(ctx, "amazon_nova", config)
+
+// Create voice session with S2S and agent
+voiceSession, err := session.NewVoiceSession(ctx,
+    session.WithS2SProvider(s2sProvider),
+    session.WithAgentInstance(agent, agentConfig),
+)
+```
+
+See the [S2S Package documentation](../../../pkg/voice/s2s/README.md) for more details.
 
 ---
 

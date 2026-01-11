@@ -448,17 +448,31 @@ if err != nil {
 
 The package integrates with OpenTelemetry for observability:
 
-### Metrics
+### Metrics Initialization
+
+The package uses a standardized metrics initialization pattern with `InitMetrics()` and `GetMetrics()`:
 
 ```go
-// Get global metrics instance
-metrics := config.GetGlobalMetrics()
+import (
+    "go.opentelemetry.io/otel/metric"
+    "github.com/lookatitude/beluga-ai/pkg/config"
+)
 
-// Metrics are automatically recorded for:
-// - Configuration load operations
-// - Validation operations
-// - Error counts
+// Initialize metrics once at application startup
+meter := otel.Meter("beluga-config")
+config.InitMetrics(meter)
+
+// Get the global metrics instance
+metrics := config.GetMetrics()
+if metrics != nil {
+    // Metrics are automatically recorded for:
+    // - Configuration load operations
+    // - Validation operations
+    // - Error counts
+}
 ```
+
+**Note**: `InitMetrics()` uses `sync.Once` to ensure thread-safe initialization. The deprecated `GetGlobalMetrics()` and `SetGlobalMetrics()` functions are still available for backward compatibility but should be replaced with `InitMetrics()` and `GetMetrics()`.
 
 ### Tracing
 

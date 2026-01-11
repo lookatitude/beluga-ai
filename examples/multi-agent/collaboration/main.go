@@ -7,9 +7,10 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration/internal/messagebus"
 )
 
 func main() {
@@ -19,15 +20,11 @@ func main() {
 	ctx := context.Background()
 
 	// Step 1: Create multiple specialized agents
-	agents := createCollaborativeAgents(ctx)
-	fmt.Printf("✅ Created %d collaborative agents\n", len(agents))
+	agentMap := createCollaborativeAgents(ctx)
+	fmt.Printf("✅ Created %d collaborative agents\n", len(agentMap))
 
-	// Step 2: Create a message bus for agent communication
-	messageBus := messagebus.NewInMemoryMessageBus()
-	fmt.Println("✅ Created message bus")
-
-	// Step 3: Set up agent collaboration patterns
-	setupCollaboration(ctx, agents, messageBus)
+	// Step 2: Set up agent collaboration patterns
+	setupCollaboration(ctx, agentMap)
 
 	// Step 4: Execute collaborative task
 	fmt.Println("\n🚀 Executing collaborative task...")
@@ -35,7 +32,7 @@ func main() {
 
 	// Step 4a: Architect agent starts
 	fmt.Println("\n🏗️  Architect agent working...")
-	architectResult, err := agents["architect"].Invoke(ctx, map[string]interface{}{
+	architectResult, err := agentMap["architect"].Invoke(ctx, map[string]interface{}{
 		"input": fmt.Sprintf("Design architecture for: %s", task),
 	})
 	if err != nil {
@@ -43,15 +40,9 @@ func main() {
 	}
 	fmt.Printf("  Architect output: %v\n", architectResult)
 
-	// Publish architect's design
-	err = messageBus.Publish(ctx, "design.architecture", architectResult)
-	if err != nil {
-		log.Printf("Warning: Failed to publish architecture: %v", err)
-	}
-
 	// Step 4b: Developer agent reviews and provides implementation details
 	fmt.Println("\n💻 Developer agent working...")
-	developerResult, err := agents["developer"].Invoke(ctx, map[string]interface{}{
+	developerResult, err := agentMap["developer"].Invoke(ctx, map[string]interface{}{
 		"input": fmt.Sprintf("Review architecture and provide implementation details: %v", architectResult),
 	})
 	if err != nil {
@@ -61,7 +52,7 @@ func main() {
 
 	// Step 4c: Tester agent creates test strategy
 	fmt.Println("\n🧪 Tester agent working...")
-	testerResult, err := agents["tester"].Invoke(ctx, map[string]interface{}{
+	testerResult, err := agentMap["tester"].Invoke(ctx, map[string]interface{}{
 		"input": fmt.Sprintf("Create test strategy for: %v", developerResult),
 	})
 	if err != nil {
@@ -79,43 +70,33 @@ func main() {
 }
 
 // createCollaborativeAgents creates multiple agents with different specializations
-func createCollaborativeAgents(ctx context.Context) map[string]interface{} {
-	agents := make(map[string]interface{})
+func createCollaborativeAgents(ctx context.Context) map[string]agentsiface.CompositeAgent {
+	agentMap := make(map[string]agentsiface.CompositeAgent)
 
 	// Architect agent
 	architectLLM, _ := createLLM(ctx, "architect")
 	architect, _ := agents.NewBaseAgent("architect", architectLLM, nil)
 	architect.Initialize(map[string]interface{}{"role": "architecture-design"})
-	agents["architect"] = architect
+	agentMap["architect"] = architect
 
 	// Developer agent
 	developerLLM, _ := createLLM(ctx, "developer")
 	developer, _ := agents.NewBaseAgent("developer", developerLLM, nil)
 	developer.Initialize(map[string]interface{}{"role": "implementation"})
-	agents["developer"] = developer
+	agentMap["developer"] = developer
 
 	// Tester agent
 	testerLLM, _ := createLLM(ctx, "tester")
 	tester, _ := agents.NewBaseAgent("tester", testerLLM, nil)
 	tester.Initialize(map[string]interface{}{"role": "testing"})
-	agents["tester"] = tester
+	agentMap["tester"] = tester
 
-	return agents
+	return agentMap
 }
 
-// setupCollaboration sets up message passing between agents
-func setupCollaboration(ctx context.Context, agents map[string]interface{}, messageBus *messagebus.InMemoryMessageBus) {
-	// Developer subscribes to architecture designs
-	_, _ = messageBus.Subscribe(ctx, "design.architecture", func(ctx context.Context, message interface{}) error {
-		fmt.Println("  [Developer] Received architecture design")
-		return nil
-	})
-
-	// Tester subscribes to implementation details
-	_, _ = messageBus.Subscribe(ctx, "implementation.details", func(ctx context.Context, message interface{}) error {
-		fmt.Println("  [Tester] Received implementation details")
-		return nil
-	})
+// setupCollaboration sets up agent collaboration patterns
+func setupCollaboration(ctx context.Context, agentMap map[string]agentsiface.CompositeAgent) {
+	fmt.Println("✅ Set up agent collaboration patterns")
 }
 
 // createLLM creates an LLM instance
@@ -149,7 +130,20 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	var prompt string
+	switch v := input.(type) {
+	case string:
+		prompt = v
+	case map[string]interface{}:
+		if inputVal, ok := v["input"].(string); ok {
+			prompt = inputVal
+		} else {
+			prompt = fmt.Sprintf("%v", v)
+		}
+	default:
+		prompt = fmt.Sprintf("%v", input)
+	}
 	return fmt.Sprintf("Mock response from %s: %s", m.modelName, prompt), nil
 }
 

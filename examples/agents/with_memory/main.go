@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
@@ -141,15 +143,30 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	// Convert input to string if needed
+	var prompt string
+	switch v := input.(type) {
+	case string:
+		prompt = v
+	case map[string]interface{}:
+		if inputVal, ok := v["input"].(string); ok {
+			prompt = inputVal
+		} else {
+			prompt = fmt.Sprintf("%v", v)
+		}
+	default:
+		prompt = fmt.Sprintf("%v", input)
+	}
+
 	// Simple mock responses based on context
-	if contains(prompt, "name is Alice") {
+	if strings.Contains(prompt, "name is Alice") {
 		return "Nice to meet you, Alice! I'll remember that.", nil
 	}
-	if contains(prompt, "What is my name") {
+	if strings.Contains(prompt, "What is my name") {
 		return "Your name is Alice.", nil
 	}
-	if contains(prompt, "What did I tell you") {
+	if strings.Contains(prompt, "What did I tell you") {
 		return "You told me your name is Alice.", nil
 	}
 	return "I understand.", nil
@@ -161,19 +178,4 @@ func (m *mockLLM) GetModelName() string {
 
 func (m *mockLLM) GetProviderName() string {
 	return m.providerName
-}
-
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && 
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-		 containsHelper(s, substr)))
-}
-
-func containsHelper(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
 }

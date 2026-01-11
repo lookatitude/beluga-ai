@@ -341,6 +341,29 @@ func (f *EmbedderFactory) newYourProviderEmbedder() (iface.Embedder, error) {
 
 The package includes comprehensive observability features:
 
+### Metrics Initialization
+
+The package uses a standardized metrics initialization pattern with `InitMetrics()` and `GetMetrics()`:
+
+```go
+import (
+    "go.opentelemetry.io/otel/metric"
+    "github.com/lookatitude/beluga-ai/pkg/embeddings"
+)
+
+// Initialize metrics once at application startup
+meter := otel.Meter("beluga-embeddings")
+embeddings.InitMetrics(meter)
+
+// Get the global metrics instance
+metrics := embeddings.GetMetrics()
+if metrics != nil {
+    // Metrics are automatically collected for embedding operations
+}
+```
+
+**Note**: `InitMetrics()` uses `sync.Once` to ensure thread-safe initialization. It should be called once at application startup.
+
 ### Metrics
 
 All implementations automatically collect metrics:

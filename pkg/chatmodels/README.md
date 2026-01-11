@@ -232,6 +232,36 @@ model, err := chatmodels.NewChatModel("gpt-4", config)
 
 **Note**: Provider-specific configurations allow for fine-tuned control over different chat model providers.
 
+### Provider Registry
+
+The `chatmodels` package uses a global registry pattern for managing providers. Providers register themselves automatically via `init()` functions:
+
+```go
+// Providers register themselves automatically
+import _ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
+import _ "github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
+
+// Access the registry
+registry := chatmodels.GetRegistry()
+
+// Check if a provider is registered
+if registry.IsRegistered("openai") {
+    // Provider is available
+}
+
+// List all registered providers
+providers := registry.ListProviders()
+fmt.Printf("Available providers: %v\n", providers)
+
+// Create a provider using the registry
+config := chatmodels.DefaultConfig()
+config.DefaultProvider = "openai"
+options := &chatmodels.iface.Options{...}
+model, err := registry.CreateProvider("gpt-4", config, options)
+```
+
+**Note**: The `NewChatModel` function automatically uses the registry when creating providers. The registry pattern allows for easy extension with new providers without modifying core code.
+
 ## Error Handling
 
 The package provides comprehensive error handling with custom error types:
@@ -320,24 +350,50 @@ fmt.Printf("Model: %s, Provider: %s, Max Tokens: %d\n",
 
 ## Observability
 
+### Metrics Initialization
+
+The package uses a standardized metrics initialization pattern with `InitMetrics()` and `GetMetrics()`:
+
+```go
+import (
+    "go.opentelemetry.io/otel/metric"
+    "github.com/lookatitude/beluga-ai/pkg/chatmodels"
+)
+
+// Initialize metrics once at application startup
+meter := otel.Meter("beluga-chatmodels")
+chatmodels.InitMetrics(meter)
+
+// Get the global metrics instance
+metrics := chatmodels.GetMetrics()
+if metrics != nil {
+    // Use metrics for observability
+}
+```
+
 ### Metrics
 The package includes a metrics framework using OpenTelemetry interfaces:
 
-- **Current Status**: Metrics collection framework is implemented with placeholder methods
-- **Planned**: Message generation metrics, streaming performance, token usage, error rates
-- **Implementation**: OpenTelemetry-compatible interfaces ready for integration
+- **Message Generation Metrics**: Track generation requests, tokens, latency
+- **Streaming Performance**: Monitor streaming operations and throughput
+- **Error Rates**: Track error rates by provider and error type
+- **Token Usage**: Monitor token consumption across providers
 
 ### Tracing
-Distributed tracing support is planned for end-to-end observability:
+Distributed tracing support for end-to-end observability:
 
 ```go
-// Tracing framework is implemented with placeholder methods
-// Future implementation will support:
-// ctx, span := metrics.StartGenerationSpan(ctx, modelName, provider, "generate")
-// defer span.End()
+// Tracing is automatically integrated when metrics are initialized
+ctx, span := metrics.StartProviderSpan(ctx, "openai", "generate")
+defer span.End()
+
+// Spans are automatically created for:
+// - Message generation operations
+// - Streaming operations
+// - Provider interactions
 ```
 
-**Status**: Observability framework is implemented with interfaces and placeholders. Full OpenTelemetry integration planned for future updates.
+**Status**: Observability framework is fully implemented with OpenTelemetry integration.
 
 ## Testing
 

@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -122,13 +123,36 @@ func (m *Metrics) RecordValidation(ctx context.Context, duration time.Duration, 
 	}
 }
 
-// Global metrics instance - initialized lazily.
+// Global metrics instance - initialized once.
 var (
 	globalMetrics              *Metrics
 	globalMetricsExplicitlySet bool
+	metricsOnce                sync.Once
 )
 
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		metrics, err := NewMetrics(meter)
+		if err != nil {
+			// If metrics creation fails, use no-op metrics
+			globalMetrics = NoOpMetrics()
+			return
+		}
+		globalMetrics = metrics
+		globalMetricsExplicitlySet = true
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
+}
+
 // GetGlobalMetrics returns the global metrics instance, creating it if necessary.
+// Deprecated: Use InitMetrics(meter) and GetMetrics() instead for consistency.
 func GetGlobalMetrics() *Metrics {
 	if globalMetrics == nil && !globalMetricsExplicitlySet {
 		if metrics, err := NewMetrics(otel.Meter("github.com/lookatitude/beluga-ai/pkg/config")); err == nil {
@@ -147,6 +171,7 @@ func GetGlobalMetrics() *Metrics {
 }
 
 // SetGlobalMetrics allows setting a custom metrics instance for testing.
+// Deprecated: Use InitMetrics(meter) instead for consistency.
 func SetGlobalMetrics(m *Metrics) {
 	globalMetrics = m
 	globalMetricsExplicitlySet = true // Always mark as explicitly set, even if nil

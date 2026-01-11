@@ -311,6 +311,29 @@ The package uses a provider pattern for extensibility:
 
 ## Observability
 
+### Metrics Initialization
+
+The package uses a standardized metrics initialization pattern with `InitMetrics()` and `GetMetrics()`:
+
+```go
+import (
+    "go.opentelemetry.io/otel/metric"
+    "github.com/lookatitude/beluga-ai/pkg/retrievers"
+)
+
+// Initialize metrics once at application startup
+meter := otel.Meter("beluga-retrievers")
+retrievers.InitMetrics(meter)
+
+// Get the global metrics instance
+metrics := retrievers.GetMetrics()
+if metrics != nil {
+    // Metrics are automatically recorded for retrieval operations
+}
+```
+
+**Note**: `InitMetrics()` uses `sync.Once` to ensure thread-safe initialization. It should be called once at application startup.
+
 ### Metrics
 
 The package provides comprehensive metrics using OpenTelemetry:

@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -203,6 +204,50 @@ func (m *Metrics) RecordRunnableStream(ctx context.Context, componentType string
 	if err != nil && m.runnableErrors != nil {
 		m.runnableErrors.Add(ctx, 1, metric.WithAttributes(attrs...))
 	}
+}
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
+
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+// It uses sync.Once to ensure thread-safe initialization.
+//
+// Example:
+//
+//	meter := otel.Meter("beluga-core")
+//	core.InitMetrics(meter)
+//	metrics := core.GetMetrics()
+//	if metrics != nil {
+//	    metrics.RecordRunnableInvoke(ctx, "component_type", duration, err)
+//	}
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		metrics, err := NewMetrics(meter)
+		if err != nil {
+			// If metrics creation fails, use nil (callers should check)
+			globalMetrics = nil
+			return
+		}
+		globalMetrics = metrics
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+// Returns nil if InitMetrics has not been called or if initialization failed.
+//
+// Example:
+//
+//	metrics := core.GetMetrics()
+//	if metrics != nil {
+//	    metrics.RecordRunnableInvoke(ctx, "component_type", duration, err)
+//	}
+func GetMetrics() *Metrics {
+	return globalMetrics
 }
 
 // NoOpMetrics returns a metrics instance that does nothing.

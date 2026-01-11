@@ -335,8 +335,12 @@ wrapped := core.WrapError(err, "additional context")
 The package provides comprehensive metrics for Runnable operations:
 
 ```go
-// Create metrics instance
+// Initialize metrics (recommended approach)
 meter := otel.Meter("beluga-ai-core")
+core.InitMetrics(meter)
+metrics := core.GetMetrics()
+
+// Or create metrics instance directly (alternative)
 metrics, err := core.NewMetrics(meter)
 
 // Metrics collected:
@@ -673,7 +677,13 @@ func WrapError(err error, message string) error
 ### Metrics Functions
 
 ```go
-// NewMetrics creates a new Metrics instance
+// InitMetrics initializes the global metrics instance (thread-safe, uses sync.Once)
+func InitMetrics(meter metric.Meter)
+
+// GetMetrics returns the global metrics instance
+func GetMetrics() *Metrics
+
+// NewMetrics creates a new Metrics instance (alternative to InitMetrics/GetMetrics)
 func NewMetrics(meter metric.Meter) (*Metrics, error)
 
 // NoOpMetrics returns a no-op metrics instance

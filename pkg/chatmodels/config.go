@@ -6,6 +6,12 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 )
 
+// ConfigProvider is an interface for getting the default provider name.
+// This interface is used by the registry to avoid import cycles.
+type ConfigProvider interface {
+	GetDefaultProvider() string
+}
+
 // Config represents the configuration for the chatmodels package.
 // It includes settings for model behavior, generation parameters, and observability.
 type Config struct {
@@ -33,6 +39,12 @@ type Config struct {
 	EnableTracing           bool           `mapstructure:"enable_tracing" yaml:"enable_tracing" env:"CHATMODEL_ENABLE_TRACING" default:"true"`
 	DefaultFunctionCalling  bool           `mapstructure:"default_function_calling" yaml:"default_function_calling" env:"CHATMODEL_DEFAULT_FUNCTION_CALLING" default:"false"`
 	EnableMetrics           bool           `mapstructure:"enable_metrics" yaml:"enable_metrics" env:"CHATMODEL_ENABLE_METRICS" default:"true"`
+}
+
+// GetDefaultProvider returns the default provider name.
+// This method implements ConfigProvider interface to avoid import cycles.
+func (c *Config) GetDefaultProvider() string {
+	return c.DefaultProvider
 }
 
 // ProviderConfig represents configuration for a specific provider.

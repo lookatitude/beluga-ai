@@ -6,6 +6,12 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+
+	// Import providers to register them for tests
+	// This is now safe because providers use registry/iface instead of importing the main package
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/ollama"
 )
 
 func TestNewEmbedderFactory(t *testing.T) {

@@ -2,6 +2,7 @@ package agents
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
@@ -13,6 +14,12 @@ import (
 )
 
 // Package metrics provides metrics collection for the agents package.
+
+// Global metrics instance - initialized once.
+var (
+	globalMetrics *Metrics
+	metricsOnce   sync.Once
+)
 
 // Metrics holds the metrics for the agents package.
 type Metrics struct {
@@ -327,7 +334,23 @@ func (m *Metrics) StartToolSpan(ctx context.Context, toolName, operation string)
 	return ctx, span
 }
 
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter) {
+	metricsOnce.Do(func() {
+		tracer := otel.Tracer("beluga-agents")
+		globalMetrics = NewMetrics(meter, tracer)
+	})
+}
+
+// GetMetrics returns the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func GetMetrics() *Metrics {
+	return globalMetrics
+}
+
 // DefaultMetrics creates a metrics instance with default meter and tracer.
+// Deprecated: Use InitMetrics(meter) and GetMetrics() instead for consistency.
 func DefaultMetrics() *Metrics {
 	meter := otel.Meter("beluga-agents")
 	tracer := otel.Tracer("beluga-agents")

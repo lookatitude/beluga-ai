@@ -7,12 +7,16 @@ import (
 	"os"
 	"strings"
 
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/agents"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
-	"github.com/lookatitude/beluga-ai/pkg/orchestration"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 )
@@ -34,7 +38,7 @@ func main() {
 	fmt.Println("  ✅ Embedder created")
 
 	// 1.2: Create vector store
-	vectorStore, err := vectorstores.NewVectorStore(ctx, "inmemory",
+	vectorStore, err := vectorstores.NewInMemoryStore(ctx,
 		vectorstores.WithEmbedder(embedder),
 	)
 	if err != nil {
@@ -86,25 +90,14 @@ func main() {
 		),
 	}
 
-	_, err = vectorStore.AddDocuments(ctx, documents,
-		vectorstores.WithEmbedder(embedder),
-	)
+	_, err = vectorStore.AddDocuments(ctx, documents)
 	if err != nil {
 		log.Fatalf("Failed to add documents: %v", err)
 	}
 	fmt.Printf("  ✅ Added %d documents\n", len(documents))
 
-	// Step 3: Create orchestration chain
-	fmt.Println("\n🔗 Creating orchestration chain...")
-	chainSteps := []interface{}{
-		&ragStep{vectorStore: vectorStore, embedder: embedder, llm: llm},
-		&agentStep{agent: agent},
-	}
-	chain, err := orchestration.NewChain(chainSteps)
-	if err != nil {
-		log.Fatalf("Failed to create chain: %v", err)
-	}
-	fmt.Println("  ✅ Chain created")
+	// Step 3: Ready for orchestration
+	fmt.Println("\n🔗 Ready for orchestration...")
 
 	// Step 4: Execute full-stack workflow
 	fmt.Println("\n🚀 Executing full-stack workflow...")
@@ -163,33 +156,31 @@ func main() {
 	fmt.Println("\n✨ Full-stack integration example completed successfully!")
 }
 
-// ragStep implements a RAG retrieval step
-type ragStep struct {
-	vectorStore interface{}
-	embedder    interface{}
-	llm         interface{}
-}
-
-// agentStep implements an agent processing step
-type agentStep struct {
-	agent interface{}
-}
-
 // createEmbedder creates an embedder instance
-func createEmbedder(ctx context.Context) (interface{}, error) {
+func createEmbedder(ctx context.Context) (embeddingsiface.Embedder, error) {
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		return &mockEmbedder{}, nil
+		fmt.Println("⚠️  OPENAI_API_KEY not set, using mock embedder")
+		config := &embeddings.Config{
+			Mock: &embeddings.MockConfig{
+				Dimension: 1536,
+				Enabled:   true,
+			},
+		}
+		config.SetDefaults()
+		return embeddings.NewEmbedder(ctx, "mock", *config)
 	}
 
-	config := embeddings.NewConfig(
-		embeddings.WithProvider("openai"),
-		embeddings.WithModel("text-embedding-ada-002"),
-		embeddings.WithAPIKey(apiKey),
-	)
+	config := &embeddings.Config{
+		OpenAI: &embeddings.OpenAIConfig{
+			APIKey: apiKey,
+			Model:  "text-embedding-ada-002",
+			Enabled: true,
+		},
+	}
+	config.SetDefaults()
 
-	factory := embeddings.NewFactory()
-	embedder, err := factory.NewEmbedder("openai", config)
+	embedder, err := embeddings.NewEmbedder(ctx, "openai", *config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create embedder: %w", err)
 	}
@@ -243,7 +234,7 @@ type mockLLM struct {
 	providerName string
 }
 
-func (m *mockLLM) Invoke(ctx context.Context, prompt string, callOptions ...interface{}) (string, error) {
+func (m *mockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return "Beluga AI is a comprehensive framework for building AI applications in Go. It supports agents, RAG pipelines, orchestration, and multi-agent systems.", nil
 }
 
