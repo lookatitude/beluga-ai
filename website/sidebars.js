@@ -57,11 +57,43 @@ module.exports = {
       type: 'category',
       label: 'Guides',
       items: [
+        // Core Architecture & Patterns
         'guides/architecture',
         'guides/best-practices',
-        'guides/troubleshooting',
-        'guides/migration',
         'guides/package-design-patterns',
+        // Advanced Features (User Story 1)
+        {
+          type: 'category',
+          label: 'Advanced Features',
+          items: [
+            'guides/llm-streaming-tool-calls',
+            'guides/agent-types',
+            'guides/rag-multimodal',
+          ],
+        },
+        // Provider Integration (User Story 2)
+        {
+          type: 'category',
+          label: 'Provider Integration',
+          items: [
+            'guides/llm-providers',
+            'guides/voice-providers',
+            'guides/extensibility',
+          ],
+        },
+        // Production Deployment (User Story 3)
+        {
+          type: 'category',
+          label: 'Production Deployment',
+          items: [
+            'guides/observability-tracing',
+            'guides/concurrency',
+            'guides/config-providers',
+          ],
+        },
+        // Migration & Troubleshooting
+        'guides/migration',
+        'guides/troubleshooting',
       ],
     },
     {
@@ -107,6 +139,16 @@ module.exports = {
         'cookbook/memory-recipes',
         'cookbook/tool-recipes',
         'cookbook/integration-recipes',
+        // Advanced Recipes (added in docs gap analysis)
+        {
+          type: 'category',
+          label: 'Advanced Recipes',
+          items: [
+            'cookbook/llm-error-handling',
+            'cookbook/custom-agent',
+            'cookbook/voice-backends',
+          ],
+        },
       ],
     },
     {
@@ -114,6 +156,7 @@ module.exports = {
       label: 'Use Cases',
       items: [
         'use-cases/index',
+        // Core Use Cases
         'use-cases/enterprise-rag-knowledge-base',
         'use-cases/multi-agent-customer-support',
         'use-cases/intelligent-document-processing',
@@ -124,6 +167,17 @@ module.exports = {
         'use-cases/semantic-search-recommendation',
         'use-cases/multi-model-llm-gateway',
         'use-cases/production-agent-platform',
+        // Advanced Use Cases (added in docs gap analysis)
+        {
+          type: 'category',
+          label: 'Advanced Scenarios',
+          items: [
+            'use-cases/11-batch-processing',
+            'use-cases/monitoring-dashboards',
+            'use-cases/voice-sessions',
+            'use-cases/rag-strategies',
+          ],
+        },
       ],
     },
     {

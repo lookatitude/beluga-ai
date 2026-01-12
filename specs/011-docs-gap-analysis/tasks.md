@@ -50,49 +50,49 @@ Setup (Phase 1)
 
 ### Setup Tasks
 
-- [ ] T001 Configure Docusaurus to read from root docs/ directory in `website/docusaurus.config.js`
+- [X] T001 Configure Docusaurus to read from root docs/ directory in `website/docusaurus.config.js`
 
   **Details**: Update the `docs` configuration in `docusaurus.config.js` to set `path: '../docs'` (relative to website directory). This ensures Docusaurus reads markdown files directly from the root `docs/` directory, making it the single source of truth. Add a comment explaining this configuration choice for future maintainers.
 
   **Tone Guidance**: Write configuration comments as if explaining to a colleague why this approach was chosen. Be conversational but precise.
 
-- [ ] T002 Create directory structure for new guides in `docs/guides/`
+- [X] T002 Create directory structure for new guides in `docs/guides/`
 
   **Details**: Verify that `docs/guides/` exists and can accommodate new guide files. The directory should already exist based on existing structure, but ensure it's ready for the following guides: `llm-providers.md`, `agent-types.md`, `multimodal-embeddings.md`, `voice-providers.md`, `orchestration-graphs.md`, `tools-mcp.md`, `rag-multimodal.md`, `config-providers.md`, `observability-tracing.md`, `concurrency.md`, `extensibility.md`, `memory-entity.md`.
 
   **Tone Guidance**: This is a structural task - no user-facing content needed.
 
-- [ ] T003 Create directory structure for new cookbook recipes in `docs/cookbook/`
+- [X] T003 Create directory structure for new cookbook recipes in `docs/cookbook/`
 
   **Details**: Verify `docs/cookbook/` exists and is ready for new recipes. Ensure the directory structure supports the following files: `llm-error-handling.md`, `custom-agent.md`, `memory-window.md`, `rag-prep.md`, `multimodal-streaming.md`, `voice-backends.md`, `orchestration-concurrency.md`, `custom-tools.md`, `text-splitters.md`, `benchmarking.md`.
 
   **Tone Guidance**: Structural task - no content needed.
 
-- [ ] T004 Create directory structure for new use cases in `docs/use-cases/`
+- [X] T004 Create directory structure for new use cases in `docs/use-cases/`
 
   **Details**: Verify `docs/use-cases/` exists and can accommodate: `batch-processing.md`, `event-driven-agents.md`, `memory-backends.md`, `custom-vectorstore.md`, `multimodal-providers.md`, `voice-sessions.md`, `distributed-orchestration.md`, `tool-monitoring.md`, `rag-strategies.md`, `config-overrides.md`, `performance-optimization.md`.
 
   **Tone Guidance**: Structural task.
 
-- [ ] T005 [P] Create example directory structure for streaming LLM examples in `examples/llms/streaming/`
+- [X] T005 [P] Create example directory structure for streaming LLM examples in `examples/llms/streaming/`
 
   **Details**: Create the directory `examples/llms/streaming/` with proper structure. This will contain: `README.md`, `streaming_tool_call.go`, `streaming_tool_call_test.go`. Ensure the directory follows existing example patterns in `examples/llms/`.
 
   **Tone Guidance**: Structural task.
 
-- [ ] T006 [P] Create example directory structure for PlanExecute agent examples in `examples/agents/planexecute/`
+- [X] T006 [P] Create example directory structure for PlanExecute agent examples in `examples/agents/planexecute/`
 
   **Details**: Create `examples/agents/planexecute/` directory structure with: `README.md`, `planexecute_agent.go`, `planexecute_agent_test.go`. Follow patterns from existing `examples/agents/` examples.
 
   **Tone Guidance**: Structural task.
 
-- [ ] T007 [P] Create example directory structures for memory examples in `examples/memory/summary/` and `examples/memory/vector_store/`
+- [X] T007 [P] Create example directory structures for memory examples in `examples/memory/summary/` and `examples/memory/vector_store/`
 
   **Details**: Create both directories with standard example structure (README.md, main.go, *_test.go files). Follow existing patterns from `examples/memory/`.
 
   **Tone Guidance**: Structural task.
 
-- [ ] T008 [P] Create remaining example directory structures: `examples/vectorstores/advanced_retrieval/`, `examples/rag/multimodal/`, `examples/rag/evaluation/`, `examples/orchestration/resilient/`, `examples/tools/custom_chains/`, `examples/config/formats/`, `examples/monitoring/metrics/`, `examples/deployment/single_binary/`
+- [X] T008 [P] Create remaining example directory structures: `examples/vectorstores/advanced_retrieval/`, `examples/rag/multimodal/`, `examples/rag/evaluation/`, `examples/orchestration/resilient/`, `examples/tools/custom_chains/`, `examples/config/formats/`, `examples/monitoring/metrics/`, `examples/deployment/single_binary/`
 
   **Details**: Create all remaining example directories following the same pattern: each directory should be ready to contain README.md, main.go (or feature-specific .go file), and *_test.go files. Follow existing patterns from respective parent directories.
 
@@ -108,7 +108,7 @@ Setup (Phase 1)
 
 ### Template Creation
 
-- [ ] T009 Create comprehensive guide template document in `docs/guides/_template.md`
+- [X] T009 Create comprehensive guide template document in `docs/guides/_template.md`
 
   **Details**: Create a detailed template file that serves as a reference for all guide authors. The template should include:
   - **Introduction section**: Explain what the guide teaches and why it matters. Use a welcoming, teacher-like tone: "In this guide, you'll learn how to..." rather than "This guide covers...". Make the reader feel like they're being personally guided.
@@ -123,7 +123,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: The template itself should demonstrate the desired tone - conversational, encouraging, thorough, and technically precise. Write it as if you're teaching a colleague who is smart but new to the framework.
 
-- [ ] T010 Create cookbook recipe template document in `docs/cookbook/_template.md`
+- [X] T010 Create cookbook recipe template document in `docs/cookbook/_template.md`
 
   **Details**: Create a template for cookbook recipes that emphasizes quick, focused solutions. Include:
   - **Problem Statement**: One clear sentence describing the problem. Be specific: "You need to handle rate limit errors from the OpenAI API" not "Error handling".
@@ -135,7 +135,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Be concise but thorough. Assume the reader understands Go basics but needs guidance on Beluga AI patterns. Write like a helpful colleague sharing a quick tip.
 
-- [ ] T011 Create use case template document in `docs/use-cases/_template.md`
+- [X] T011 Create use case template document in `docs/use-cases/_template.md`
 
   **Details**: Create a template for use cases that tells a story. Include:
   - **Overview**: Set the scene. Describe the business problem in relatable terms. Use concrete examples: "A customer support team needs to..." rather than "An organization requires...".
@@ -149,7 +149,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're telling a story to a peer. Be honest about challenges and celebrate successes. Make it feel like a real-world case study, not a theoretical exercise.
 
-- [ ] T012 Create code example template document in `examples/_template/README.md`
+- [X] T012 Create code example template document in `examples/_template/README.md`
 
   **Details**: Create a README template for code examples. Include:
   - **Description**: Clear explanation of what the example demonstrates. Start with "This example shows you how to..." Use active voice.
@@ -163,7 +163,7 @@ Setup (Phase 1)
 
 ### Cross-Referencing Infrastructure
 
-- [ ] T013 Create cross-referencing style guide in `docs/_cross-reference-guide.md`
+- [X] T013 Create cross-referencing style guide in `docs/_cross-reference-guide.md`
 
   **Details**: Document the cross-referencing strategy for all documentation. Include:
   - **Link Format**: Use relative paths, include descriptive link text, add brief context in parentheses when helpful.
@@ -173,7 +173,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write as technical documentation for documentation authors. Be precise and prescriptive.
 
-- [ ] T014 Update website sidebar configuration in `website/sidebars.js` to include new guide categories
+- [X] T014 Update website sidebar configuration in `website/sidebars.js` to include new guide categories
 
   **Details**: Review existing sidebar structure and plan additions for new guides. Add placeholder entries or categories for: Advanced Features, Provider Integration, Production Deployment, Voice Agents, RAG Optimization. Ensure logical grouping and discoverability. Add comments explaining the organization.
 
@@ -189,7 +189,7 @@ Setup (Phase 1)
 
 ### Streaming LLM with Tool Calls
 
-- [ ] T015 [US1] Create guide for streaming LLM calls with tool calling in `docs/guides/llm-streaming-tool-calls.md`
+- [X] T015 [US1] Create guide for streaming LLM calls with tool calling in `docs/guides/llm-streaming-tool-calls.md`
 
   **Details**: Write a comprehensive guide that teaches developers how to implement streaming LLM calls with tool/function calling. Structure:
   - **Introduction**: Explain what streaming with tool calls enables and why it's powerful. Use a teacher's voice: "Imagine you're building a chatbot that needs to look up weather data while responding. Streaming lets you show the response as it's generated, while tool calls let you fetch data mid-conversation. Together, they create a responsive, interactive experience."
@@ -211,7 +211,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're pair programming with the reader. Explain your thought process. Use "we" and "you" to create a collaborative feel. Be thorough but not overwhelming - break complex topics into digestible chunks.
 
-- [ ] T016 [US1] Create streaming LLM with tool calls example in `examples/llms/streaming/streaming_tool_call.go`
+- [X] T016 [US1] Create streaming LLM with tool calls example in `examples/llms/streaming/streaming_tool_call.go`
 
   **Details**: Implement a production-ready example demonstrating streaming LLM calls with tool calling. The code must:
   - Use proper error handling with context (errors.Wrap)
@@ -225,7 +225,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Code comments should read like a teacher explaining code during a code review. Be conversational but precise.
 
-- [ ] T017 [US1] Create complete test suite for streaming example in `examples/llms/streaming/streaming_tool_call_test.go`
+- [X] T017 [US1] Create complete test suite for streaming example in `examples/llms/streaming/streaming_tool_call_test.go`
 
   **Details**: Write comprehensive tests using test_utils.go patterns:
   - Unit tests with AdvancedMock for LLM client
@@ -239,7 +239,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Test code should be self-documenting, but add comments explaining test strategy and what scenarios are covered.
 
-- [ ] T018 [US1] Create README for streaming example in `examples/llms/streaming/README.md`
+- [X] T018 [US1] Create README for streaming example in `examples/llms/streaming/README.md`
 
   **Details**: Write a clear README following the template. Include:
   - Description of what the example demonstrates
@@ -253,7 +253,7 @@ Setup (Phase 1)
 
 ### PlanExecute Agents
 
-- [ ] T019 [US1] Create guide for PlanExecute agent type in `docs/guides/agent-types.md`
+- [X] T019 [US1] Create guide for PlanExecute agent type in `docs/guides/agent-types.md`
 
   **Details**: Write a comprehensive guide covering PlanExecute agents. Structure:
   - **Introduction**: Explain what PlanExecute agents are and when to use them. Compare to ReAct agents. Use a teacher's voice: "While ReAct agents think and act in a single step, PlanExecute agents separate planning from execution. This gives you more control and makes complex, multi-step tasks easier to manage."
@@ -275,7 +275,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're teaching a design pattern. Explain the philosophy behind PlanExecute, not just the mechanics. Use examples to illustrate concepts.
 
-- [ ] T020 [US1] Create PlanExecute agent example in `examples/agents/planexecute/planexecute_agent.go`
+- [X] T020 [US1] Create PlanExecute agent example in `examples/agents/planexecute/planexecute_agent.go`
 
   **Details**: Implement a production-ready PlanExecute agent example with:
   - Proper error handling and context
@@ -287,7 +287,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Code comments should explain the agent's decision-making process and design choices.
 
-- [ ] T021 [US1] Create test suite for PlanExecute example in `examples/agents/planexecute/planexecute_agent_test.go`
+- [X] T021 [US1] Create test suite for PlanExecute example in `examples/agents/planexecute/planexecute_agent_test.go`
 
   **Details**: Comprehensive tests including:
   - Unit tests for plan executor
@@ -298,7 +298,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Test names and comments should clearly describe what behavior is being verified.
 
-- [ ] T022 [US1] Create README for PlanExecute example in `examples/agents/planexecute/README.md`
+- [X] T022 [US1] Create README for PlanExecute example in `examples/agents/planexecute/README.md`
 
   **Details**: Clear README following template with usage instructions and explanations.
 
@@ -306,7 +306,7 @@ Setup (Phase 1)
 
 ### Multimodal RAG
 
-- [ ] T023 [US1] Create guide for multimodal RAG in `docs/guides/rag-multimodal.md`
+- [X] T023 [US1] Create guide for multimodal RAG in `docs/guides/rag-multimodal.md`
 
   **Details**: Comprehensive guide covering multimodal RAG. Structure:
   - **Introduction**: Explain multimodal RAG and its advantages. Use concrete examples: "Imagine a system that can answer questions about images, videos, and text documents together. That's multimodal RAG - it combines the power of multimodal embeddings with retrieval-augmented generation."
@@ -328,7 +328,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're explaining a powerful new capability. Be enthusiastic but thorough. Use examples to make abstract concepts concrete.
 
-- [ ] T024 [US1] Create multimodal RAG example in `examples/rag/multimodal/multimodal_rag.go`
+- [X] T024 [US1] Create multimodal RAG example in `examples/rag/multimodal/multimodal_rag.go`
 
   **Details**: Production-ready example demonstrating:
   - Multimodal embedding creation
@@ -341,7 +341,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Comments should explain the multimodal workflow and design decisions.
 
-- [ ] T025 [US1] Create test suite for multimodal RAG example in `examples/rag/multimodal/multimodal_rag_test.go`
+- [X] T025 [US1] Create test suite for multimodal RAG example in `examples/rag/multimodal/multimodal_rag_test.go`
 
   **Details**: Comprehensive tests including:
   - Embedding creation tests
@@ -352,7 +352,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Tests should verify multimodal capabilities clearly.
 
-- [ ] T026 [US1] Create README for multimodal RAG example in `examples/rag/multimodal/README.md`
+- [X] T026 [US1] Create README for multimodal RAG example in `examples/rag/multimodal/README.md`
 
   **Details**: Clear README with usage instructions, prerequisites, and explanations.
 
@@ -360,7 +360,7 @@ Setup (Phase 1)
 
 ### Supporting Cookbooks for Advanced Features
 
-- [ ] T027 [US1] Create cookbook recipe for LLM error handling in `docs/cookbook/llm-error-handling.md`
+- [X] T027 [US1] Create cookbook recipe for LLM error handling in `docs/cookbook/llm-error-handling.md`
 
   **Details**: Quick-reference recipe showing how to handle LLM errors properly. Include:
   - Problem: "You're calling an LLM API and need to handle rate limits, timeouts, and API errors gracefully."
@@ -372,7 +372,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like a helpful tip from an experienced developer. Be practical and solution-focused.
 
-- [ ] T028 [US1] Create cookbook recipe for custom agent extension in `docs/cookbook/custom-agent.md`
+- [X] T028 [US1] Create cookbook recipe for custom agent extension in `docs/cookbook/custom-agent.md`
 
   **Details**: Recipe for extending agents with custom behavior. Include:
   - Problem: "You need to add custom logic to an agent without modifying framework code."
@@ -386,7 +386,7 @@ Setup (Phase 1)
 
 ### Supporting Use Cases for Advanced Features
 
-- [ ] T029 [US1] Create use case for batch processing in `docs/use-cases/batch-processing.md`
+- [X] T029 [US1] Create use case for batch processing in `docs/use-cases/batch-processing.md`
 
   **Details**: Real-world use case showing how to process multiple queries with concurrency control. Include:
   - Overview: "A customer service team needs to process 1000 support tickets, generating responses for each."
@@ -410,7 +410,7 @@ Setup (Phase 1)
 
 ### LLM Provider Integration
 
-- [ ] T030 [US2] Create guide for LLM provider integration in `docs/guides/llm-providers.md`
+- [X] T030 [US2] Create guide for LLM provider integration in `docs/guides/llm-providers.md`
 
   **Details**: Comprehensive guide teaching how to add custom LLM providers. Structure:
   - **Introduction**: Explain why you might want to add a custom provider and what the registry pattern enables. Use a teacher's voice: "Beluga AI's provider system lets you add support for any LLM API. Whether you're integrating a new service or creating a mock for testing, the process is the same - implement the interface, register it, and you're done."
@@ -433,7 +433,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're teaching a design pattern. Explain the "why" behind each step, not just the "what". Use examples to illustrate concepts.
 
-- [ ] T031 [US2] Create example demonstrating custom LLM provider in `examples/llms/custom_provider/custom_llm_provider.go`
+- [X] T031 [US2] Create example demonstrating custom LLM provider in `examples/llms/custom_provider/custom_llm_provider.go`
 
   **Details**: Production-ready example showing:
   - LLMCaller interface implementation
@@ -445,7 +445,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Comments should explain the registry pattern and design decisions.
 
-- [ ] T032 [US2] Create test suite for custom LLM provider example in `examples/llms/custom_provider/custom_llm_provider_test.go`
+- [X] T032 [US2] Create test suite for custom LLM provider example in `examples/llms/custom_provider/custom_llm_provider_test.go`
 
   **Details**: Comprehensive tests including:
   - Interface compliance tests
@@ -456,7 +456,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Tests should verify registry integration clearly.
 
-- [ ] T033 [US2] Create README for custom LLM provider example in `examples/llms/custom_provider/README.md`
+- [X] T033 [US2] Create README for custom LLM provider example in `examples/llms/custom_provider/README.md`
 
   **Details**: Clear README with usage instructions.
 
@@ -464,7 +464,7 @@ Setup (Phase 1)
 
 ### Vector Store Integration
 
-- [ ] T034 [US2] Create guide for vector store integration in `docs/guides/extensibility.md` (vector store section)
+- [X] T034 [US2] Create guide for vector store integration in `docs/guides/extensibility.md` (vector store section)
 
   **Details**: Add a section to the extensibility guide covering vector store integration. Follow the same structure as LLM provider guide but adapted for vector stores. Explain the VectorStore interface, similarity search patterns, and integration with embeddings.
 
@@ -472,7 +472,7 @@ Setup (Phase 1)
 
 ### Voice Backend Integration
 
-- [ ] T035 [US2] Create guide for voice provider integration in `docs/guides/voice-providers.md`
+- [X] T035 [US2] Create guide for voice provider integration in `docs/guides/voice-providers.md`
 
   **Details**: Comprehensive guide covering STT, TTS, and S2S provider integration. Structure similar to LLM provider guide but adapted for voice backends. Include sections on:
   - STT provider interface and registration
@@ -486,7 +486,7 @@ Setup (Phase 1)
 
 ### Supporting Cookbooks
 
-- [ ] T036 [US2] Create cookbook recipe for voice backends in `docs/cookbook/voice-backends.md`
+- [X] T036 [US2] Create cookbook recipe for voice backends in `docs/cookbook/voice-backends.md`
 
   **Details**: Quick recipe for switching between voice backends. Show configuration patterns and provider selection.
 
@@ -502,7 +502,7 @@ Setup (Phase 1)
 
 ### Distributed Tracing
 
-- [ ] T037 [US3] Create guide for observability tracing in `docs/guides/observability-tracing.md`
+- [X] T037 [US3] Create guide for observability tracing in `docs/guides/observability-tracing.md`
 
   **Details**: Comprehensive guide on distributed tracing. Structure:
   - **Introduction**: Explain distributed tracing and why it matters in production. Use a teacher's voice: "When a request flows through multiple services, understanding what happened becomes challenging. Distributed tracing gives you a complete picture - you can see exactly where time was spent and where errors occurred."
@@ -527,7 +527,7 @@ Setup (Phase 1)
 
 ### Metrics and Monitoring
 
-- [ ] T038 [US3] Create guide for monitoring dashboards in `docs/use-cases/monitoring-dashboards.md`
+- [X] T038 [US3] Create guide for monitoring dashboards in `docs/use-cases/monitoring-dashboards.md`
 
   **Details**: Use case showing how to set up Prometheus and Grafana for Beluga AI applications. Include:
   - Overview: "You need to monitor your Beluga AI application in production."
@@ -542,7 +542,7 @@ Setup (Phase 1)
 
 ### Production Deployment
 
-- [ ] T039 [US3] Create guide for single binary deployment in `examples/deployment/single_binary/deployment_guide.md`
+- [X] T039 [US3] Create guide for single binary deployment in `examples/deployment/single_binary/deployment_guide.md`
 
   **Details**: Guide covering:
   - Building single binary
@@ -553,7 +553,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Practical and operations-focused.
 
-- [ ] T040 [US3] Create single binary deployment example in `examples/deployment/single_binary/main.go`
+- [X] T040 [US3] Create single binary deployment example in `examples/deployment/single_binary/main.go`
 
   **Details**: Production-ready example showing:
   - Binary build configuration
@@ -564,7 +564,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Code comments should explain deployment considerations.
 
-- [ ] T041 [US3] Create test suite for deployment example in `examples/deployment/single_binary/main_test.go`
+- [X] T041 [US3] Create test suite for deployment example in `examples/deployment/single_binary/main_test.go`
 
   **Details**: Tests for health checks, configuration loading, and graceful shutdown.
 
@@ -580,7 +580,7 @@ Setup (Phase 1)
 
 ### Voice Providers Guide
 
-- [ ] T042 [US4] Expand voice providers guide in `docs/guides/voice-providers.md` with comprehensive STT/TTS/S2S configuration
+- [X] T042 [US4] Expand voice providers guide in `docs/guides/voice-providers.md` with comprehensive STT/TTS/S2S configuration
 
   **Details**: Add detailed sections on:
   - STT provider configuration and registration
@@ -594,7 +594,7 @@ Setup (Phase 1)
 
 ### Advanced Voice Features
 
-- [ ] T043 [US4] Create guide for advanced voice detection in `docs/examples/voice/advanced_detection/advanced_detection_guide.md`
+- [X] T043 [US4] Create guide for advanced voice detection in `docs/examples/voice/advanced_detection/advanced_detection_guide.md`
 
   **Details**: Guide covering VAD, turn detection, and noise cancellation. Include:
   - Introduction explaining each component
@@ -606,7 +606,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're teaching signal processing concepts. Use analogies where helpful.
 
-- [ ] T044 [US4] Create advanced detection example in `docs/examples/voice/advanced_detection/advanced_detection.go`
+- [X] T044 [US4] Create advanced detection example in `docs/examples/voice/advanced_detection/advanced_detection.go`
 
   **Details**: Production-ready example demonstrating VAD, turn detection, and noise cancellation with proper concurrency.
 
@@ -614,7 +614,7 @@ Setup (Phase 1)
 
 ### Voice Sessions
 
-- [ ] T045 [US4] Create use case for voice sessions in `docs/use-cases/voice-sessions.md`
+- [X] T045 [US4] Create use case for voice sessions in `docs/use-cases/voice-sessions.md`
 
   **Details**: Use case covering real-time audio transport (WebRTC/WebSocket) and session management. Include:
   - Overview: "You're building a voice assistant that handles real-time conversations."
@@ -636,7 +636,7 @@ Setup (Phase 1)
 
 ### Advanced Retrieval
 
-- [ ] T046 [US5] Create guide for advanced retrieval strategies in `examples/vectorstores/advanced_retrieval/advanced_retrieval_guide.md`
+- [X] T046 [US5] Create guide for advanced retrieval strategies in `examples/vectorstores/advanced_retrieval/advanced_retrieval_guide.md`
 
   **Details**: Guide covering:
   - Similarity search
@@ -647,7 +647,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're teaching information retrieval concepts.
 
-- [ ] T047 [US5] Create advanced retrieval example in `examples/vectorstores/advanced_retrieval/advanced_retrieval.go`
+- [X] T047 [US5] Create advanced retrieval example in `examples/vectorstores/advanced_retrieval/advanced_retrieval.go`
 
   **Details**: Production-ready example demonstrating multiple retrieval strategies.
 
@@ -655,7 +655,7 @@ Setup (Phase 1)
 
 ### RAG Evaluation
 
-- [ ] T048 [US5] Create guide for RAG evaluation in `examples/rag/evaluation/rag_evaluation_guide.md`
+- [X] T048 [US5] Create guide for RAG evaluation in `examples/rag/evaluation/rag_evaluation_guide.md`
 
   **Details**: Guide covering:
   - Precision and recall metrics
@@ -666,7 +666,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write like you're teaching evaluation methodology.
 
-- [ ] T049 [US5] Create RAG evaluation example in `examples/rag/evaluation/rag_evaluation.go`
+- [X] T049 [US5] Create RAG evaluation example in `examples/rag/evaluation/rag_evaluation.go`
 
   **Details**: Production-ready example showing evaluation with benchmarks.
 
@@ -674,7 +674,7 @@ Setup (Phase 1)
 
 ### Supporting Resources
 
-- [ ] T050 [US5] Create use case for RAG strategies in `docs/use-cases/rag-strategies.md`
+- [X] T050 [US5] Create use case for RAG strategies in `docs/use-cases/rag-strategies.md`
 
   **Details**: Use case comparing different RAG strategies and when to use each.
 
@@ -690,7 +690,7 @@ Setup (Phase 1)
 
 ### Cross-Referencing
 
-- [ ] T051 Add "Related Resources" sections to all guides created in previous phases
+- [X] T051 Add "Related Resources" sections to all guides created in previous phases
 
   **Details**: Review each guide and add comprehensive "Related Resources" sections linking to:
   - Related guides (with brief descriptions)
@@ -702,19 +702,19 @@ Setup (Phase 1)
 
   **Tone Guidance**: Write link descriptions like you're recommending resources to a colleague. Be helpful and contextual.
 
-- [ ] T052 Add "Related Recipes" sections to all cookbook entries created in previous phases
+- [X] T052 Add "Related Recipes" sections to all cookbook entries created in previous phases
 
   **Details**: Add cross-references to related cookbook recipes, guides, and examples. Keep descriptions brief but helpful.
 
   **Tone Guidance**: Concise and practical.
 
-- [ ] T053 Add "Related Use Cases" sections to all use cases created in previous phases
+- [X] T053 Add "Related Use Cases" sections to all use cases created in previous phases
 
   **Details**: Link to related use cases, guides, and examples. Explain relationships clearly.
 
   **Tone Guidance**: Write like you're connecting related scenarios.
 
-- [ ] T054 Add "Related Examples" sections to all example READMEs created in previous phases
+- [X] T054 Add "Related Examples" sections to all example READMEs created in previous phases
 
   **Details**: Link to related examples with context about when to use each.
 
@@ -722,7 +722,7 @@ Setup (Phase 1)
 
 ### Validation
 
-- [ ] T055 [P] Verify all code examples compile and run successfully
+- [X] T055 [P] Verify all code examples compile and run successfully
 
   **Details**: Test each example:
   - Compile without errors
@@ -735,7 +735,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Technical validation task.
 
-- [ ] T056 [P] Verify all test suites pass for all examples
+- [X] T056 [P] Verify all test suites pass for all examples
 
   **Details**: Run `go test` for each example directory and verify:
   - All tests pass
@@ -745,7 +745,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Technical validation task.
 
-- [ ] T057 [P] Verify OTEL instrumentation in all examples
+- [X] T057 [P] Verify OTEL instrumentation in all examples
 
   **Details**: For each example, verify:
   - Metrics use standardized naming (`beluga.{package}.operation_duration_seconds`)
@@ -755,7 +755,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Technical validation task.
 
-- [ ] T058 [P] Check all documentation links are valid
+- [X] T058 [P] Check all documentation links are valid
 
   **Details**: Verify all internal links (relative paths) work correctly. Check for broken links, incorrect paths, and missing targets.
 
@@ -763,7 +763,7 @@ Setup (Phase 1)
 
 ### Website Integration
 
-- [ ] T059 Update website sidebar in `website/sidebars.js` with all new guides, cookbooks, and use cases
+- [X] T059 Update website sidebar in `website/sidebars.js` with all new guides, cookbooks, and use cases
 
   **Details**: Add all new documentation resources to the sidebar in logical groupings. Ensure:
   - Logical organization
@@ -775,7 +775,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Technical task with clear organization.
 
-- [ ] T060 Verify Docusaurus builds successfully with all new documentation
+- [X] T060 Verify Docusaurus builds successfully with all new documentation
 
   **Details**: Run `npm run build` (or `yarn build`) in the website directory and verify:
   - Build completes without errors
@@ -786,7 +786,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Technical validation task.
 
-- [ ] T061 Test website navigation and cross-references
+- [X] T061 Test website navigation and cross-references
 
   **Details**: Manually test the website to verify:
   - Navigation is intuitive
@@ -799,7 +799,7 @@ Setup (Phase 1)
 
 ### Documentation Quality Review
 
-- [ ] T062 Review all guides for tone consistency and technical accuracy
+- [X] T062 Review all guides for tone consistency and technical accuracy
 
   **Details**: Read through each guide and verify:
   - Tone is teacher-like and conversational
@@ -812,7 +812,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Editorial review focusing on human readability.
 
-- [ ] T063 Review all cookbook recipes for clarity and usefulness
+- [X] T063 Review all cookbook recipes for clarity and usefulness
 
   **Details**: Verify each recipe:
   - Solves a clear problem
@@ -822,7 +822,7 @@ Setup (Phase 1)
 
   **Tone Guidance**: Editorial review.
 
-- [ ] T064 Review all use cases for completeness and realism
+- [X] T064 Review all use cases for completeness and realism
 
   **Details**: Verify each use case:
   - Tells a coherent story
@@ -834,13 +834,13 @@ Setup (Phase 1)
 
 ### Final Polish
 
-- [ ] T065 Create documentation index/landing page updates if needed
+- [X] T065 Create documentation index/landing page updates if needed
 
   **Details**: Review `docs/README.md` and update if needed to include new guides, cookbooks, and use cases. Ensure the index helps users discover new resources.
 
   **Tone Guidance**: Write like a helpful guide to the documentation.
 
-- [ ] T066 Verify all success criteria from spec are met
+- [X] T066 Verify all success criteria from spec are met
 
   **Details**: Review success criteria from spec.md and verify:
   - 100% of gaps addressed
