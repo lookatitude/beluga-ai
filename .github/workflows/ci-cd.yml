@@ -122,7 +122,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -298,7 +298,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -470,7 +470,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -665,7 +665,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -747,7 +747,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -843,7 +843,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
@@ -903,7 +903,7 @@ jobs:
           cache-dependency-path: go.sum
       
       - name: Cache Go modules
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cache/go-build
