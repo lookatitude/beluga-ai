@@ -5,24 +5,25 @@
 
 module.exports = {
   docs: [
-    'intro',
+    'README',
     {
       type: 'category',
       label: 'Getting Started',
       items: [
-        'getting-started/installation',
-        'getting-started/quickstart',
+        'INSTALLATION',
+        'QUICKSTART',
         {
           type: 'category',
           label: 'Tutorials',
           items: [
-            'getting-started/tutorials/first-llm-call',
-            'getting-started/tutorials/simple-rag',
-            'getting-started/tutorials/first-agent',
-            'getting-started/tutorials/working-with-tools',
-            'getting-started/tutorials/memory-management',
-            'getting-started/tutorials/orchestration-basics',
-            'getting-started/tutorials/production-deployment',
+            'getting-started/01-first-llm-call',
+            'getting-started/02-simple-rag',
+            'getting-started/03-first-agent',
+            'getting-started/04-working-with-tools',
+            'getting-started/05-memory-management',
+            'getting-started/06-orchestration-basics',
+            'getting-started/07-production-deployment',
+            'getting-started/03-document-ingestion',
           ],
         },
       ],
@@ -37,20 +38,8 @@ module.exports = {
         'concepts/memory',
         'concepts/orchestration',
         'concepts/rag',
-      ],
-    },
-    {
-      type: 'category',
-      label: 'Voice Agents',
-      items: [
-        'voice/index',
-        'voice/stt',
-        'voice/tts',
-        'voice/vad',
-        'voice/turndetection',
-        'voice/transport',
-        'voice/noise',
-        'voice/session',
+        'concepts/document-loading',
+        'concepts/text-splitting',
       ],
     },
     {
@@ -58,9 +47,9 @@ module.exports = {
       label: 'Guides',
       items: [
         // Core Architecture & Patterns
-        'guides/architecture',
-        'guides/best-practices',
-        'guides/package-design-patterns',
+        'architecture',
+        'BEST_PRACTICES',
+        'package_design_patterns',
         // Advanced Features (User Story 1)
         {
           type: 'category',
@@ -79,6 +68,7 @@ module.exports = {
             'guides/llm-providers',
             'guides/voice-providers',
             'guides/extensibility',
+            'guides/implementing-providers',
           ],
         },
         // Production Deployment (User Story 3)
@@ -87,13 +77,22 @@ module.exports = {
           label: 'Production Deployment',
           items: [
             'guides/observability-tracing',
-            'guides/concurrency',
-            'guides/config-providers',
+            'guides/voice-performance',
+            'guides/voice-troubleshooting',
+          ],
+        },
+        // Voice & S2S
+        {
+          type: 'category',
+          label: 'Voice',
+          items: [
+            'guides/voice-agents',
+            'guides/s2s-implementation',
           ],
         },
         // Migration & Troubleshooting
-        'guides/migration',
-        'guides/troubleshooting',
+        'MIGRATION',
+        'TROUBLESHOOTING',
       ],
     },
     {
@@ -139,6 +138,7 @@ module.exports = {
         'cookbook/memory-recipes',
         'cookbook/tool-recipes',
         'cookbook/integration-recipes',
+        'cookbook/document-ingestion-recipes',
         // Advanced Recipes (added in docs gap analysis)
         {
           type: 'category',
@@ -155,18 +155,18 @@ module.exports = {
       type: 'category',
       label: 'Use Cases',
       items: [
-        'use-cases/index',
+        'use-cases/README',
         // Core Use Cases
-        'use-cases/enterprise-rag-knowledge-base',
-        'use-cases/multi-agent-customer-support',
-        'use-cases/intelligent-document-processing',
-        'use-cases/real-time-data-analysis-agent',
-        'use-cases/conversational-ai-assistant',
-        'use-cases/automated-code-review-system',
-        'use-cases/distributed-workflow-orchestration',
-        'use-cases/semantic-search-recommendation',
-        'use-cases/multi-model-llm-gateway',
-        'use-cases/production-agent-platform',
+        'use-cases/01-enterprise-rag-knowledge-base',
+        'use-cases/02-multi-agent-customer-support',
+        'use-cases/03-intelligent-document-processing',
+        'use-cases/04-real-time-data-analysis-agent',
+        'use-cases/05-conversational-ai-assistant',
+        'use-cases/06-automated-code-review-system',
+        'use-cases/07-distributed-workflow-orchestration',
+        'use-cases/08-semantic-search-recommendation',
+        'use-cases/09-multi-model-llm-gateway',
+        'use-cases/10-production-agent-platform',
         // Advanced Use Cases (added in docs gap analysis)
         {
           type: 'category',
@@ -182,63 +182,12 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'API Reference',
-      items: [
-        'api/index',
-        {
-          type: 'category',
-          label: 'Packages',
-          items: [
-            'api/packages/core',
-            'api/packages/config',
-            'api/packages/schema',
-            'api/packages/llms_base',
-            {
-              type: 'category',
-              label: 'LLM Providers',
-              items: [
-                'api/packages/llms/anthropic',
-                'api/packages/llms/bedrock',
-                'api/packages/llms/mock',
-                'api/packages/llms/ollama',
-                'api/packages/llms/openai',
-              ],
-            },
-            'api/packages/agents',
-            'api/packages/chatmodels',
-            'api/packages/tools',
-            'api/packages/memory',
-            'api/packages/embeddings',
-            'api/packages/vectorstores',
-            'api/packages/retrievers',
-            'api/packages/rag',
-            'api/packages/prompts',
-            'api/packages/orchestration',
-            'api/packages/monitoring',
-            'api/packages/server',
-            {
-              type: 'category',
-              label: 'Voice Packages',
-              items: [
-                'api/packages/voice/stt',
-                'api/packages/voice/tts',
-                'api/packages/voice/vad',
-                'api/packages/voice/turndetection',
-                'api/packages/voice/transport',
-                'api/packages/voice/noise',
-                'api/packages/voice/session',
-              ],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      type: 'category',
       label: 'Reference',
       items: [
-        'reference/framework-comparison',
-        'reference/documentation-roadmap',
+        'FRAMEWORK_COMPARISON',
+        'DOCUMENTATION_ROADMAP',
+        'API_PACKAGE_INVENTORY',
+        'GODOC_COVERAGE_REPORT',
       ],
     },
   ],

@@ -42,6 +42,7 @@ module.exports = {
           showReadingTime: true,
           editUrl:
             'https://github.com/lookatitude/beluga-ai/tree/main/website/blog/',
+          onUntruncatedBlogPosts: 'ignore',
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -62,7 +63,7 @@ module.exports = {
         items: [
           {
             type: 'doc',
-            docId: 'intro',
+            docId: 'README',
             position: 'left',
             label: 'Documentation',
           },
