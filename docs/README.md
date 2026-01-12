@@ -77,10 +77,22 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
   - Use case recommendations
   - Competitive positioning
 
+### Advanced Guides
+
+- **[Guides](./guides/)** - In-depth guides for advanced features
+  - [Streaming LLM with Tool Calls](./guides/llm-streaming-tool-calls.md) - Real-time streaming with function calling
+  - [Agent Types (PlanExecute/ReAct)](./guides/agent-types.md) - Choosing and implementing agent patterns
+  - [Multimodal RAG](./guides/rag-multimodal.md) - RAG with images and video
+  - [LLM Provider Integration](./guides/llm-providers.md) - Adding custom LLM providers
+  - [Voice Provider Integration](./guides/voice-providers.md) - STT, TTS, and S2S integration
+  - [Extensibility Guide](./guides/extensibility.md) - Extending the framework
+  - [Observability & Tracing](./guides/observability-tracing.md) - Distributed tracing setup
+
 ### Use Cases
 
 The [use-cases](./use-cases/) directory contains detailed examples of real-world applications:
 
+**Core Use Cases:**
 1. **[Enterprise RAG Knowledge Base](./use-cases/01-enterprise-rag-knowledge-base.md)** - Building a knowledge base with RAG
 2. **[Multi-Agent Customer Support](./use-cases/02-multi-agent-customer-support.md)** - Customer support system with multiple agents
 3. **[Intelligent Document Processing](./use-cases/03-intelligent-document-processing.md)** - Automated document analysis
@@ -91,6 +103,12 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
 8. **[Semantic Search Recommendation](./use-cases/08-semantic-search-recommendation.md)** - Recommendation systems with semantic search
 9. **[Multi-Model LLM Gateway](./use-cases/09-multi-model-llm-gateway.md)** - Unified LLM gateway
 10. **[Production Agent Platform](./use-cases/10-production-agent-platform.md)** - Enterprise agent platform
+
+**Advanced Scenarios:**
+11. **[Batch Processing](./use-cases/11-batch-processing.md)** - Processing multiple queries with concurrency control
+12. **[Monitoring Dashboards](./use-cases/monitoring-dashboards.md)** - Prometheus and Grafana setup
+13. **[Voice Sessions](./use-cases/voice-sessions.md)** - Real-time voice agent implementation
+14. **[RAG Strategies](./use-cases/rag-strategies.md)** - Choosing the right retrieval approach
 
 ### Provider Documentation
 
@@ -130,6 +148,9 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
   - [Memory Recipes](./cookbook/memory-recipes.md)
   - [Integration Recipes](./cookbook/integration-recipes.md)
   - [Quick Solutions](./cookbook/quick-solutions.md)
+  - [LLM Error Handling](./cookbook/llm-error-handling.md) - Retry logic and error recovery
+  - [Custom Agent Extensions](./cookbook/custom-agent.md) - Extending agents with custom behavior
+  - [Voice Backends](./cookbook/voice-backends.md) - Switching between voice providers
 
 ### Documentation Roadmap
 

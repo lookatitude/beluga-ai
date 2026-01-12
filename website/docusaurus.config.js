@@ -31,8 +31,11 @@ module.exports = {
       /** @type {import('@docusaurus/preset-classic').Options} */
       ({
         docs: {
+          // Read documentation from root docs/ directory (single source of truth)
+          // This eliminates sync complexity between docs/ and website/docs/
+          path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
-          editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/website/',
+          editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/',
         },
         blog: {
           path: 'blog',
