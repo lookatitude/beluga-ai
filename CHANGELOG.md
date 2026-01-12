@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/lookatitude/beluga-ai/compare/v1.7.0...v1.8.0) (2026-01-12)
+
+
+### Features
+
+* Add documentation gap analysis specification and implementation plan ([b58fce5](https://github.com/lookatitude/beluga-ai/commit/b58fce5f5623e5869109d509cbc67d1f211e1c57))
+
 ## [1.7.0](https://github.com/lookatitude/beluga-ai/compare/v1.6.1...v1.7.0) (2026-01-11)
 
 
