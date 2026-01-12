@@ -46,6 +46,8 @@ Auto-generated from all feature plans. Last updated: 2025-10-05
 - Go 1.24.1+ (matches go.mod) (001-voice-backends)
 - Go 1.22+ (010-data-ingestion)
 - N/A (file system operations via `io/fs` abstraction) (010-data-ingestion)
+- Markdown (CommonMark), Go 1.24+ (for code examples), Node.js 18+ (for Docusaurus) + Docusaurus 3.9.2, Go testing frameworks (test_utils.go patterns), OpenTelemetry (for example instrumentation) (011-docs-gap-analysis)
+- Git repository (markdown files), Docusaurus static site generation (011-docs-gap-analysis)
 
 ## Project Structure
 ```
@@ -60,9 +62,9 @@ tests/
 Go 1.21+: Follow standard conventions
 
 ## Recent Changes
+- 011-docs-gap-analysis: Added Markdown (CommonMark), Go 1.24+ (for code examples), Node.js 18+ (for Docusaurus) + Docusaurus 3.9.2, Go testing frameworks (test_utils.go patterns), OpenTelemetry (for example instrumentation)
 - 010-data-ingestion: Added Go 1.22+
 - 001-voice-backends: Added Go 1.24.1+ (matches go.mod)
-- 009-multimodal: Added Go 1.21+ (matches existing framework)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->
