@@ -227,12 +227,12 @@ func TestErrorTracking(t *testing.T) {
 	testError := NewInternalError("test.operation", errors.New("simulated error"))
 
 	// Test that error is properly structured
-	if testError.Code != ErrCodeInternalError {
+	if testError.Code != string(ErrCodeInternalError) {
 		t.Errorf("Expected error code %s, got %s", ErrCodeInternalError, testError.Code)
 	}
 
-	if testError.Operation != "test.operation" {
-		t.Errorf("Expected operation 'test.operation', got '%s'", testError.Operation)
+	if testError.Op != "test.operation" {
+		t.Errorf("Expected operation 'test.operation', got '%s'", testError.Op)
 	}
 
 	if testError.HTTPStatus() != 500 {

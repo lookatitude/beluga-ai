@@ -20,7 +20,7 @@ type VideoMessage struct {
 	VideoURL    string            `json:"video_url,omitempty"`    // URL to the video
 	VideoData   []byte            `json:"video_data,omitempty"`   // Base64-encoded video data
 	VideoFormat string            `json:"video_format,omitempty"` // Format: "mp4", "webm", "mov", etc.
-	Duration    float64            `json:"duration,omitempty"`   // Duration in seconds
+	Duration    float64           `json:"duration,omitempty"`     // Duration in seconds
 	Metadata    map[string]string `json:"metadata,omitempty"`     // Additional video metadata
 }
 

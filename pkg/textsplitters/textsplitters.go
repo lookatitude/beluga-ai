@@ -76,9 +76,9 @@ func NewMarkdownTextSplitter(opts ...MarkdownOption) (iface.TextSplitter, error)
 
 	// Convert to markdown package's config type
 	markdownCfg := &markdown.MarkdownConfig{
-		ChunkSize:       cfg.ChunkSize,
-		ChunkOverlap:    cfg.ChunkOverlap,
-		LengthFunction:  cfg.LengthFunction,
+		ChunkSize:        cfg.ChunkSize,
+		ChunkOverlap:     cfg.ChunkOverlap,
+		LengthFunction:   cfg.LengthFunction,
 		HeadersToSplitOn: cfg.HeadersToSplitOn,
 		ReturnEachLine:   cfg.ReturnEachLine,
 	}

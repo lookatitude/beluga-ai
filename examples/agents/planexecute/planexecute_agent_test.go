@@ -15,15 +15,15 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
-// MockChatModel implements iface.ChatModel for testing
+// MockChatModel implements iface.ChatModel for testing.
 type MockChatModel struct {
+	errorToReturn error
 	responses     []string
 	currentIndex  int
 	shouldError   bool
-	errorToReturn error
 }
 
-func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
+func (m *MockChatModel) Generate(_ context.Context, _ []schema.Message, _ ...core.Option) (schema.Message, error) {
 	if m.shouldError {
 		return nil, m.errorToReturn
 	}
@@ -35,32 +35,43 @@ func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message,
 	return schema.NewAIMessage("default response"), nil
 }
 
-func (m *MockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
-	return nil, errors.New("streaming not implemented in mock")
+var errStreamingNotImplemented = errors.New("streaming not implemented in mock")
+
+func (*MockChatModel) StreamChat(
+	_ context.Context,
+	_ []schema.Message,
+	_ ...core.Option,
+) (<-chan iface.AIMessageChunk, error) {
+	return nil, errStreamingNotImplemented
 }
 
-func (m *MockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatModel {
-	return m
+func (*MockChatModel) BindTools(_ []tools.Tool) iface.ChatModel {
+	return &MockChatModel{}
 }
 
-func (m *MockChatModel) GetModelName() string {
+func (*MockChatModel) GetModelName() string {
 	return "mock-model"
 }
 
-func (m *MockChatModel) GetProviderName() string {
+func (*MockChatModel) GetProviderName() string {
 	return "mock"
 }
+
+var (
+	errInvalidInputType  = errors.New("input must be []schema.Message or string")
+	errInvalidBatchInput = errors.New("input must be []schema.Message")
+)
 
 func (m *MockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	// Convert input to messages if needed
 	messages, ok := input.([]schema.Message)
 	if !ok {
 		// Try to convert string to message
-		if str, ok := input.(string); ok {
-			messages = []schema.Message{schema.NewHumanMessage(str)}
-		} else {
-			return nil, errors.New("input must be []schema.Message or string")
+		str, ok := input.(string)
+		if !ok {
+			return nil, errInvalidInputType
 		}
+		messages = []schema.Message{schema.NewHumanMessage(str)}
 	}
 	return m.Generate(ctx, messages, options...)
 }
@@ -79,7 +90,7 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 	return ch, nil
 }
 
-func (m *MockChatModel) CheckHealth() map[string]any {
+func (*MockChatModel) CheckHealth() map[string]any {
 	return map[string]any{
 		"state":    "healthy",
 		"model":    "mock-model",
@@ -92,7 +103,7 @@ func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core
 	for i, input := range inputs {
 		messages, ok := input.([]schema.Message)
 		if !ok {
-			return nil, errors.New("input must be []schema.Message")
+			return nil, errInvalidBatchInput
 		}
 		result, err := m.Generate(ctx, messages, options...)
 		if err != nil {
@@ -103,7 +114,7 @@ func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core
 	return results, nil
 }
 
-// TestNewPlanExecuteExample tests example creation
+// TestNewPlanExecuteExample tests example creation.
 func TestNewPlanExecuteExample(t *testing.T) {
 	tests := []struct {
 		name      string
@@ -162,7 +173,7 @@ func TestNewPlanExecuteExample(t *testing.T) {
 	}
 }
 
-// TestPlanExecuteExample_Run tests the main Run method
+// TestPlanExecuteExample_Run tests the main Run method.
 func TestPlanExecuteExample_Run(t *testing.T) {
 	// Create a mock that returns a valid plan
 	planResponse := `{
@@ -201,7 +212,7 @@ func TestPlanExecuteExample_Run(t *testing.T) {
 	}
 }
 
-// TestPlanExecuteExample_ContextCancellation tests context handling
+// TestPlanExecuteExample_ContextCancellation tests context handling.
 func TestPlanExecuteExample_ContextCancellation(t *testing.T) {
 	mockLLM := llms.NewAdvancedMockChatModel(
 		"test-model",
@@ -226,10 +237,13 @@ func TestPlanExecuteExample_ContextCancellation(t *testing.T) {
 	t.Logf("Context cancellation result: %v", err)
 }
 
-// TestDisplayPlan tests plan display formatting
-func TestDisplayPlan(t *testing.T) {
+// TestDisplayPlan tests plan display formatting.
+func TestDisplayPlan(_ *testing.T) {
 	mockLLM := llms.NewAdvancedMockChatModel("test-model")
-	example, _ := NewPlanExecuteExample("test", mockLLM, nil)
+	example, err := NewPlanExecuteExample("test", mockLLM, nil)
+	if err != nil {
+		return
+	}
 
 	plan := &planexecute.ExecutionPlan{
 		Goal:       "Test goal",
@@ -244,7 +258,7 @@ func TestDisplayPlan(t *testing.T) {
 	example.DisplayPlan(plan)
 }
 
-// TestCreateResearchTools tests tool creation
+// TestCreateResearchTools tests tool creation.
 func TestCreateResearchTools(t *testing.T) {
 	researchTools := createResearchTools()
 
@@ -266,7 +280,7 @@ func TestCreateResearchTools(t *testing.T) {
 	}
 }
 
-// TestToolExecution tests that tools work correctly
+// TestToolExecution tests that tools work correctly.
 func TestToolExecution(t *testing.T) {
 	researchTools := createResearchTools()
 	ctx := context.Background()
@@ -277,24 +291,24 @@ func TestToolExecution(t *testing.T) {
 		wantErr  bool
 	}{
 		{
-			toolName: "web_search",
+			wantErr:  false,
 			args:     map[string]any{"query": "test query"},
-			wantErr:  false,
+			toolName: "web_search",
 		},
 		{
-			toolName: "calculator",
+			wantErr:  false,
 			args:     map[string]any{"expression": "2 + 2"},
-			wantErr:  false,
+			toolName: "calculator",
 		},
 		{
-			toolName: "take_notes",
+			wantErr:  false,
 			args:     map[string]any{"note": "important finding"},
-			wantErr:  false,
+			toolName: "take_notes",
 		},
 		{
-			toolName: "summarize",
-			args:     map[string]any{"text": "long text to summarize"},
 			wantErr:  false,
+			args:     map[string]any{"text": "long text to summarize"},
+			toolName: "summarize",
 		},
 	}
 
@@ -323,7 +337,7 @@ func TestToolExecution(t *testing.T) {
 	}
 }
 
-// TestPlanExecuteOptions tests configuration options
+// TestPlanExecuteOptions tests configuration options.
 func TestPlanExecuteOptions(t *testing.T) {
 	config := &planExecuteConfig{}
 
@@ -354,7 +368,7 @@ func TestPlanExecuteOptions(t *testing.T) {
 	}
 }
 
-// BenchmarkPlanGeneration benchmarks plan generation performance
+// BenchmarkPlanGeneration benchmarks plan generation performance.
 func BenchmarkPlanGeneration(b *testing.B) {
 	planResponse := `{
 		"goal": "Benchmark goal",
@@ -367,23 +381,32 @@ func BenchmarkPlanGeneration(b *testing.B) {
 		llms.WithResponses(planResponse),
 	)
 
-	example, _ := NewPlanExecuteExample("benchmark", mockLLM, createTestTools())
+	example, err := NewPlanExecuteExample("benchmark", mockLLM, createTestTools())
+	if err != nil {
+		b.Fatalf("Failed to create example: %v", err)
+	}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, _ = example.generatePlan(context.Background(), "benchmark task")
+		_, err := example.generatePlan(context.Background(), "benchmark task")
+		if err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-// Helper function to create test tools
+// Helper function to create test tools.
 func createTestTools() []tools.Tool {
-	tool, _ := gofunc.NewGoFunctionTool(
+	tool, err := gofunc.NewGoFunctionTool(
 		"test_tool",
 		"A test tool",
 		`{"type": "object", "properties": {}, "required": []}`,
-		func(ctx context.Context, args map[string]any) (any, error) {
+		func(_ context.Context, _ map[string]any) (any, error) {
 			return `{"result": "test"}`, nil
 		},
 	)
+	if err != nil {
+		return nil
+	}
 	return []tools.Tool{tool}
 }

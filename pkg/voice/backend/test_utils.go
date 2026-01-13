@@ -15,26 +15,26 @@ type MockOption func(*MockConfig)
 // MockConfig holds configuration for advanced mock behavior.
 type MockConfig struct {
 	// Error behavior
-	ShouldError      bool
-	ErrorCode        string
-	ErrorDelay       time.Duration
+	ShouldError bool
+	ErrorCode   string
+	ErrorDelay  time.Duration
 
 	// Delay behavior
 	OperationDelay  time.Duration
 	ProcessingDelay time.Duration
 
 	// Audio data
-	AudioData []byte
+	AudioData      []byte
 	AudioResponses [][]byte
 
 	// Session behavior
-	MaxSessions      int
-	SessionDelay     time.Duration
+	MaxSessions       int
+	SessionDelay      time.Duration
 	AutoStartSessions bool
 
 	// State tracking
-	CallCounts      map[string]int
-	CallCountsMu     sync.RWMutex
+	CallCounts   map[string]int
+	CallCountsMu sync.RWMutex
 }
 
 // WithMockError configures the mock to return an error (T249).
@@ -118,7 +118,7 @@ func NewAdvancedMockVoiceBackend(opts ...MockOption) *AdvancedMockVoiceBackend {
 	return &AdvancedMockVoiceBackend{
 		config:          mockConfig,
 		sessions:        make(map[string]iface.VoiceSession),
-		connectionState:  iface.ConnectionStateDisconnected,
+		connectionState: iface.ConnectionStateDisconnected,
 		healthStatus: &iface.HealthStatus{
 			Status:    "healthy",
 			Details:   make(map[string]any),

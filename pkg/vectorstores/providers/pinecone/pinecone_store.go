@@ -39,24 +39,24 @@ import (
 
 // PineconeStore implements the VectorStore interface using Pinecone API.
 type PineconeStore struct {
-	apiKey      string
-	environment string
-	projectID   string
-	indexName   string
-	indexHost   string
+	apiKey       string
+	environment  string
+	projectID    string
+	indexName    string
+	indexHost    string
 	embeddingDim int
-	name        string
-	mu          sync.RWMutex
+	name         string
+	mu           sync.RWMutex
 }
 
 // PineconeConfig holds configuration specific to PineconeStore.
 type PineconeConfig struct {
-	APIKey        string
-	Environment   string
-	ProjectID     string
-	IndexName     string
-	IndexHost     string
-	EmbeddingDim  int
+	APIKey       string
+	Environment  string
+	ProjectID    string
+	IndexName    string
+	IndexHost    string
+	EmbeddingDim int
 }
 
 // NewPineconeStoreFromConfig creates a new PineconeStore from configuration.
@@ -342,18 +342,18 @@ func (s *PineconeStore) GetName() string {
 // PineconeVector represents a vector in Pinecone format.
 type PineconeVector struct {
 	ID       string         `json:"id"`
-	Values  []float32      `json:"values"`
+	Values   []float32      `json:"values"`
 	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // PineconeQueryRequest represents a query request to Pinecone.
 type PineconeQueryRequest struct {
-	Vector          []float32           `json:"vector"`
-	TopK            int                  `json:"topK"`
-	IncludeMetadata bool                 `json:"includeMetadata"`
-	IncludeValues   bool                 `json:"includeValues"`
-	Filter          map[string]any       `json:"filter,omitempty"`
-	Namespace       string               `json:"namespace,omitempty"`
+	Vector          []float32      `json:"vector"`
+	TopK            int            `json:"topK"`
+	IncludeMetadata bool           `json:"includeMetadata"`
+	IncludeValues   bool           `json:"includeValues"`
+	Filter          map[string]any `json:"filter,omitempty"`
+	Namespace       string         `json:"namespace,omitempty"`
 }
 
 // PineconeQueryResponse represents a query response from Pinecone.

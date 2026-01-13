@@ -23,7 +23,7 @@ import (
 
 // Static error variables for testing (err113 compliance)
 var (
-	errMockStreamingError = errors.New("mock streaming error")
+	errMockStreamingError    = errors.New("mock streaming error")
 	errTaskReturnedNilResult = errors.New("task returned nil result")
 )
 

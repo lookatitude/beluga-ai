@@ -18,11 +18,11 @@ import (
 
 // MarkdownConfig is duplicated here to avoid import cycle.
 type MarkdownConfig struct {
-	ChunkSize       int
-	ChunkOverlap    int
-	LengthFunction  func(string) int
+	ChunkSize        int
+	ChunkOverlap     int
+	LengthFunction   func(string) int
 	HeadersToSplitOn []string
-	ReturnEachLine  bool
+	ReturnEachLine   bool
 }
 
 // MarkdownTextSplitter splits markdown text respecting header boundaries and code blocks.
@@ -127,13 +127,13 @@ func (s *MarkdownTextSplitter) splitByHeaders(text string, lengthFn func(string)
 			// Add overlap if configured
 			if s.config.ChunkOverlap > 0 && len(chunks) > 0 {
 				overlapText := s.getOverlapText(chunks[len(chunks)-1], s.config.ChunkOverlap, lengthFn)
-				_, _ = currentChunk.WriteString(overlapText) //nolint:errcheck // strings.Builder.WriteString never fails
+				currentChunk.WriteString(overlapText)
 			}
 		}
 
-		_, _ = currentChunk.WriteString(line) //nolint:errcheck // strings.Builder.WriteString never fails
+		currentChunk.WriteString(line)
 		if i < len(lines)-1 {
-			_, _ = currentChunk.WriteString("\n") //nolint:errcheck // strings.Builder.WriteString never fails
+			currentChunk.WriteString("\n")
 		}
 
 		// If chunk exceeds size limit, force split (preserving code blocks if possible)
@@ -147,9 +147,9 @@ func (s *MarkdownTextSplitter) splitByHeaders(text string, lengthFn func(string)
 				currentChunk.Reset()
 				if s.config.ChunkOverlap > 0 {
 					overlapText := s.getOverlapText(chunks[len(chunks)-1], s.config.ChunkOverlap, lengthFn)
-					_, _ = currentChunk.WriteString(overlapText) //nolint:errcheck // strings.Builder.WriteString never fails
+					currentChunk.WriteString(overlapText)
 				}
-				_, _ = currentChunk.WriteString(remaining) //nolint:errcheck // strings.Builder.WriteString never fails
+				currentChunk.WriteString(remaining)
 			}
 		}
 	}

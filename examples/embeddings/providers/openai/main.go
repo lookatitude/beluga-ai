@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 )
 
 func main() {

@@ -29,30 +29,32 @@ func TestFrameworkError_Error(t *testing.T) {
 		expected string
 	}{
 		{
-			name: "error without cause",
+			name: "error without err",
 			err: &FrameworkError{
-				Type:    ErrorTypeValidation,
+				Op:      "validate",
 				Message: "Invalid input",
+				Code:    string(ErrorCodeInvalidInput),
 			},
-			expected: "[validation] Invalid input",
+			expected: "core validate: Invalid input (code: invalid_input)",
 		},
 		{
-			name: "error with cause",
+			name: "error with err",
 			err: &FrameworkError{
-				Type:    ErrorTypeNetwork,
+				Op:      "connect",
 				Message: "Connection failed",
-				Cause:   errTimeout,
+				Err:     errTimeout,
+				Code:    string(ErrorCodeTimeout),
 			},
-			expected: "[network] Connection failed: timeout",
+			expected: "core connect: Connection failed (code: timeout)",
 		},
 		{
-			name: "error with code",
+			name: "error with code only",
 			err: &FrameworkError{
-				Type:    ErrorTypeInternal,
+				Op:      "process",
 				Message: "System error",
-				Code:    "INTERNAL_ERROR",
+				Code:    string(ErrorCodeInternalError),
 			},
-			expected: "[internal] System error",
+			expected: "core process: System error (code: internal_error)",
 		},
 	}
 
@@ -69,9 +71,10 @@ func TestFrameworkError_Error(t *testing.T) {
 func TestFrameworkError_Unwrap(t *testing.T) {
 	cause := errUnderlyingError
 	err := &FrameworkError{
-		Type:    ErrorTypeInternal,
+		Op:      "process",
 		Message: "Wrapped error",
-		Cause:   cause,
+		Err:     cause,
+		Code:    string(ErrorCodeInternalError),
 	}
 
 	if !errors.Is(err.Unwrap(), cause) {
@@ -81,76 +84,91 @@ func TestFrameworkError_Unwrap(t *testing.T) {
 
 func TestNewValidationError(t *testing.T) {
 	cause := errFieldRequired
-	err := NewValidationError("Input validation failed", cause)
+	err := NewValidationError("validate", "Input validation failed", cause)
 
-	if err.Type != ErrorTypeValidation {
-		t.Errorf("NewValidationError() Type = %v, expected %v", err.Type, ErrorTypeValidation)
+	if err.Op != "validate" {
+		t.Errorf("NewValidationError() Op = %q, expected %q", err.Op, "validate")
 	}
 	if err.Message != "Input validation failed" {
 		t.Errorf("NewValidationError() Message = %q, expected %q", err.Message, "Input validation failed")
 	}
-	if !errors.Is(err.Cause, cause) {
-		t.Errorf("NewValidationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Code != string(ErrorCodeInvalidInput) {
+		t.Errorf("NewValidationError() Code = %q, expected %q", err.Code, ErrorCodeInvalidInput)
+	}
+	if !errors.Is(err.Err, cause) {
+		t.Errorf("NewValidationError() Err = %v, expected %v", err.Err, cause)
 	}
 }
 
 func TestNewNetworkError(t *testing.T) {
 	cause := errConnectionRefused
-	err := NewNetworkError("Network connection failed", cause)
+	err := NewNetworkError("connect", "Network connection failed", cause)
 
-	if err.Type != ErrorTypeNetwork {
-		t.Errorf("NewNetworkError() Type = %v, expected %v", err.Type, ErrorTypeNetwork)
+	if err.Op != "connect" {
+		t.Errorf("NewNetworkError() Op = %q, expected %q", err.Op, "connect")
 	}
 	if err.Message != "Network connection failed" {
 		t.Errorf("NewNetworkError() Message = %q, expected %q", err.Message, "Network connection failed")
 	}
-	if !errors.Is(err.Cause, cause) {
-		t.Errorf("NewNetworkError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Code != string(ErrorCodeTimeout) {
+		t.Errorf("NewNetworkError() Code = %q, expected %q", err.Code, ErrorCodeTimeout)
+	}
+	if !errors.Is(err.Err, cause) {
+		t.Errorf("NewNetworkError() Err = %v, expected %v", err.Err, cause)
 	}
 }
 
 func TestNewAuthenticationError(t *testing.T) {
 	cause := errInvalidToken
-	err := NewAuthenticationError("Authentication failed", cause)
+	err := NewAuthenticationError("authenticate", "Authentication failed", cause)
 
-	if err.Type != ErrorTypeAuthentication {
-		t.Errorf("NewAuthenticationError() Type = %v, expected %v", err.Type, ErrorTypeAuthentication)
+	if err.Op != "authenticate" {
+		t.Errorf("NewAuthenticationError() Op = %q, expected %q", err.Op, "authenticate")
 	}
 	if err.Message != "Authentication failed" {
 		t.Errorf("NewAuthenticationError() Message = %q, expected %q", err.Message, "Authentication failed")
 	}
-	if !errors.Is(err.Cause, cause) {
-		t.Errorf("NewAuthenticationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Code != string(ErrorCodeUnauthorized) {
+		t.Errorf("NewAuthenticationError() Code = %q, expected %q", err.Code, ErrorCodeUnauthorized)
+	}
+	if !errors.Is(err.Err, cause) {
+		t.Errorf("NewAuthenticationError() Err = %v, expected %v", err.Err, cause)
 	}
 }
 
 func TestNewInternalError(t *testing.T) {
 	cause := errDatabaseConnectionLost
-	err := NewInternalError("Internal system error", cause)
+	err := NewInternalError("process", "Internal system error", cause)
 
-	if err.Type != ErrorTypeInternal {
-		t.Errorf("NewInternalError() Type = %v, expected %v", err.Type, ErrorTypeInternal)
+	if err.Op != "process" {
+		t.Errorf("NewInternalError() Op = %q, expected %q", err.Op, "process")
 	}
 	if err.Message != "Internal system error" {
 		t.Errorf("NewInternalError() Message = %q, expected %q", err.Message, "Internal system error")
 	}
-	if !errors.Is(err.Cause, cause) {
-		t.Errorf("NewInternalError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Code != string(ErrorCodeInternalError) {
+		t.Errorf("NewInternalError() Code = %q, expected %q", err.Code, ErrorCodeInternalError)
+	}
+	if !errors.Is(err.Err, cause) {
+		t.Errorf("NewInternalError() Err = %v, expected %v", err.Err, cause)
 	}
 }
 
 func TestNewConfigurationError(t *testing.T) {
 	cause := errMissingRequiredConfig
-	err := NewConfigurationError("Configuration error", cause)
+	err := NewConfigurationError("load_config", "Configuration error", cause)
 
-	if err.Type != ErrorTypeConfiguration {
-		t.Errorf("NewConfigurationError() Type = %v, expected %v", err.Type, ErrorTypeConfiguration)
+	if err.Op != "load_config" {
+		t.Errorf("NewConfigurationError() Op = %q, expected %q", err.Op, "load_config")
 	}
 	if err.Message != "Configuration error" {
 		t.Errorf("NewConfigurationError() Message = %q, expected %q", err.Message, "Configuration error")
 	}
-	if !errors.Is(err.Cause, cause) {
-		t.Errorf("NewConfigurationError() Cause = %v, expected %v", err.Cause, cause)
+	if err.Code != string(ErrorCodeInvalidInput) {
+		t.Errorf("NewConfigurationError() Code = %q, expected %q", err.Code, ErrorCodeInvalidInput)
+	}
+	if !errors.Is(err.Err, cause) {
+		t.Errorf("NewConfigurationError() Err = %v, expected %v", err.Err, cause)
 	}
 }
 
@@ -164,7 +182,8 @@ func TestIsErrorType(t *testing.T) {
 		{
 			name: "direct FrameworkError match",
 			err: &FrameworkError{
-				Type: ErrorTypeValidation,
+				Op:   "validate",
+				Code: string(ErrorCodeInvalidInput),
 			},
 			errorType: ErrorTypeValidation,
 			expected:  true,
@@ -172,7 +191,8 @@ func TestIsErrorType(t *testing.T) {
 		{
 			name: "direct FrameworkError no match",
 			err: &FrameworkError{
-				Type: ErrorTypeNetwork,
+				Op:   "connect",
+				Code: string(ErrorCodeTimeout),
 			},
 			errorType: ErrorTypeValidation,
 			expected:  false,
@@ -197,8 +217,9 @@ func TestIsErrorType(t *testing.T) {
 
 func TestAsFrameworkError(t *testing.T) {
 	fwErr := &FrameworkError{
-		Type:    ErrorTypeInternal,
+		Op:      "process",
 		Message: "test error",
+		Code:    string(ErrorCodeInternalError),
 	}
 
 	tests := []struct {
@@ -213,7 +234,7 @@ func TestAsFrameworkError(t *testing.T) {
 		},
 		{
 			name:     "wrapped FrameworkError",
-			err:      WrapError(fwErr, "wrapped"),
+			err:      WrapError(fwErr, "wrap", "wrapped"),
 			expected: true,
 		},
 		{
@@ -246,7 +267,8 @@ func TestUnwrapError(t *testing.T) {
 		{
 			name: "error with Unwrap method",
 			err: &FrameworkError{
-				Cause: errUnderlying,
+				Op:  "process",
+				Err: errUnderlying,
 			},
 			expected: errUnderlying,
 		},
@@ -277,18 +299,21 @@ func TestWrapError(t *testing.T) {
 	tests := []struct {
 		name     string
 		err      error
+		op       string
 		message  string
 		expected bool
 	}{
 		{
 			name:     "wrap regular error",
 			err:      errUnderlyingError,
+			op:       "wrap",
 			message:  "wrapped message",
 			expected: true,
 		},
 		{
 			name:     "wrap nil error",
 			err:      nil,
+			op:       "wrap",
 			message:  "should not wrap",
 			expected: false,
 		},
@@ -296,7 +321,7 @@ func TestWrapError(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := WrapError(tt.err, tt.message)
+			result := WrapError(tt.err, tt.op, tt.message)
 			if tt.expected && result == nil {
 				t.Error("WrapError() returned nil, expected FrameworkError")
 			}
@@ -312,8 +337,11 @@ func TestWrapError(t *testing.T) {
 				if fwErr.Message != tt.message {
 					t.Errorf("WrapError() message = %q, expected %q", fwErr.Message, tt.message)
 				}
-				if fwErr.Type != ErrorTypeInternal {
-					t.Errorf("WrapError() type = %v, expected %v", fwErr.Type, ErrorTypeInternal)
+				if fwErr.Op != tt.op {
+					t.Errorf("WrapError() op = %q, expected %q", fwErr.Op, tt.op)
+				}
+				if fwErr.Code != string(ErrorCodeInternalError) {
+					t.Errorf("WrapError() code = %q, expected %q", fwErr.Code, ErrorCodeInternalError)
 				}
 			}
 		})
@@ -321,25 +349,26 @@ func TestWrapError(t *testing.T) {
 }
 
 func TestNewFrameworkErrorWithCode(t *testing.T) {
-	err := NewFrameworkErrorWithCode(ErrorTypeRateLimit, ErrorCodeRateLimited, "Rate limit exceeded", nil)
+	err := NewFrameworkError("rate_limit", ErrorCodeRateLimited, "Rate limit exceeded", nil)
 
-	if err.Type != ErrorTypeRateLimit {
-		t.Errorf("NewFrameworkErrorWithCode() Type = %v, expected %v", err.Type, ErrorTypeRateLimit)
+	if err.Op != "rate_limit" {
+		t.Errorf("NewFrameworkError() Op = %q, expected %q", err.Op, "rate_limit")
 	}
 	if err.Code != string(ErrorCodeRateLimited) {
-		t.Errorf("NewFrameworkErrorWithCode() Code = %q, expected %q", err.Code, ErrorCodeRateLimited)
+		t.Errorf("NewFrameworkError() Code = %q, expected %q", err.Code, ErrorCodeRateLimited)
 	}
 	if err.Message != "Rate limit exceeded" {
-		t.Errorf("NewFrameworkErrorWithCode() Message = %q, expected %q", err.Message, "Rate limit exceeded")
+		t.Errorf("NewFrameworkError() Message = %q, expected %q", err.Message, "Rate limit exceeded")
 	}
 	if err.Context == nil {
-		t.Error("NewFrameworkErrorWithCode() Context should not be nil")
+		t.Error("NewFrameworkError() Context should not be nil")
 	}
 }
 
 func TestFrameworkError_AddContext(t *testing.T) {
 	err := &FrameworkError{
-		Type: ErrorTypeInternal,
+		Op:   "process",
+		Code: string(ErrorCodeInternalError),
 	}
 
 	result := err.AddContext("key1", "value1").AddContext("key2", 42)
@@ -378,44 +407,45 @@ func TestErrorConstants(t *testing.T) {
 }
 
 func TestErrorCodes(t *testing.T) {
-	// Test that error codes are properly defined
-	if ErrorCodeInvalidInput != "INVALID_INPUT" {
-		t.Errorf("ErrorCodeInvalidInput = %q, expected %q", ErrorCodeInvalidInput, "INVALID_INPUT")
+	// Test that error codes are properly defined (now using snake_case)
+	if ErrorCodeInvalidInput != "invalid_input" {
+		t.Errorf("ErrorCodeInvalidInput = %q, expected %q", ErrorCodeInvalidInput, "invalid_input")
 	}
-	if ErrorCodeNotFound != "NOT_FOUND" {
-		t.Errorf("ErrorCodeNotFound = %q, expected %q", ErrorCodeNotFound, "NOT_FOUND")
+	if ErrorCodeNotFound != "not_found" {
+		t.Errorf("ErrorCodeNotFound = %q, expected %q", ErrorCodeNotFound, "not_found")
 	}
-	if ErrorCodeUnauthorized != "UNAUTHORIZED" {
-		t.Errorf("ErrorCodeUnauthorized = %q, expected %q", ErrorCodeUnauthorized, "UNAUTHORIZED")
+	if ErrorCodeUnauthorized != "unauthorized" {
+		t.Errorf("ErrorCodeUnauthorized = %q, expected %q", ErrorCodeUnauthorized, "unauthorized")
 	}
-	if ErrorCodeTimeout != "TIMEOUT" {
-		t.Errorf("ErrorCodeTimeout = %q, expected %q", ErrorCodeTimeout, "TIMEOUT")
+	if ErrorCodeTimeout != "timeout" {
+		t.Errorf("ErrorCodeTimeout = %q, expected %q", ErrorCodeTimeout, "timeout")
 	}
-	if ErrorCodeRateLimited != "RATE_LIMITED" {
-		t.Errorf("ErrorCodeRateLimited = %q, expected %q", ErrorCodeRateLimited, "RATE_LIMITED")
+	if ErrorCodeRateLimited != "rate_limited" {
+		t.Errorf("ErrorCodeRateLimited = %q, expected %q", ErrorCodeRateLimited, "rate_limited")
 	}
-	if ErrorCodeInternalError != "INTERNAL_ERROR" {
-		t.Errorf("ErrorCodeInternalError = %q, expected %q", ErrorCodeInternalError, "INTERNAL_ERROR")
+	if ErrorCodeInternalError != "internal_error" {
+		t.Errorf("ErrorCodeInternalError = %q, expected %q", ErrorCodeInternalError, "internal_error")
 	}
 }
 
 // Edge case and error scenario tests
 
-func TestFrameworkError_NilCause(t *testing.T) {
+func TestFrameworkError_NilErr(t *testing.T) {
 	err := &FrameworkError{
-		Type:    ErrorTypeValidation,
+		Op:      "validate",
 		Message: "test message",
-		Cause:   nil,
+		Code:    string(ErrorCodeInvalidInput),
+		Err:     nil,
 	}
 
 	errorMsg := err.Error()
-	expected := "[validation] test message"
+	expected := "core validate: test message (code: invalid_input)"
 	if errorMsg != expected {
 		t.Errorf("FrameworkError.Error() = %q, expected %q", errorMsg, expected)
 	}
 
 	if err.Unwrap() != nil {
-		t.Error("FrameworkError.Unwrap() should return nil for nil cause")
+		t.Error("FrameworkError.Unwrap() should return nil for nil err")
 	}
 }
 
@@ -423,27 +453,27 @@ func TestFrameworkError_EmptyFields(t *testing.T) {
 	err := &FrameworkError{}
 
 	errorMsg := err.Error()
-	expected := "[] "
+	expected := "core : unknown error (code: )"
 	if errorMsg != expected {
 		t.Errorf("FrameworkError.Error() = %q, expected %q", errorMsg, expected)
 	}
 }
 
-func TestNewFrameworkErrorWithCode_EdgeCases(t *testing.T) {
+func TestNewFrameworkError_EdgeCases(t *testing.T) {
 	// Test with empty code
-	err := NewFrameworkErrorWithCode(ErrorTypeInternal, "", "message", nil)
+	err := NewFrameworkError("process", "", "message", nil)
 	if err.Code != "" {
 		t.Errorf("Expected empty code, got %q", err.Code)
 	}
 
-	// Test with nil cause
-	err = NewFrameworkErrorWithCode(ErrorTypeNetwork, ErrorCodeTimeout, "message", nil)
-	if err.Cause != nil {
-		t.Errorf("Expected nil cause, got %v", err.Cause)
+	// Test with nil err
+	err = NewFrameworkError("connect", ErrorCodeTimeout, "message", nil)
+	if err.Err != nil {
+		t.Errorf("Expected nil err, got %v", err.Err)
 	}
 
 	// Test with context
-	err = NewFrameworkErrorWithCode(ErrorTypeValidation, ErrorCodeInvalidInput, "message", errCause)
+	err = NewFrameworkError("validate", ErrorCodeInvalidInput, "message", errCause)
 	if err.Context == nil {
 		t.Error("Context should be initialized")
 	}
@@ -469,9 +499,10 @@ func TestIsErrorType_EdgeCases(t *testing.T) {
 			expected:  false,
 		},
 		{
-			name: "FrameworkError with nil Type",
+			name: "FrameworkError with empty Code",
 			err: &FrameworkError{
-				Type:    "",
+				Op:      "validate",
+				Code:    "",
 				Message: "test",
 			},
 			errorType: ErrorTypeValidation,
@@ -508,7 +539,8 @@ func TestAsFrameworkError_EdgeCases(t *testing.T) {
 		{
 			name: "FrameworkError",
 			err: &FrameworkError{
-				Type:    ErrorTypeInternal,
+				Op:      "process",
+				Code:    string(ErrorCodeInternalError),
 				Message: "test",
 			},
 			expected: true,
@@ -543,17 +575,18 @@ func TestUnwrapError_EdgeCases(t *testing.T) {
 			expected: nil,
 		},
 		{
-			name: "FrameworkError with nil cause",
+			name: "FrameworkError with nil err",
 			err: &FrameworkError{
-				Type:    ErrorTypeInternal,
+				Op:      "process",
 				Message: "test",
-				Cause:   nil,
+				Code:    string(ErrorCodeInternalError),
+				Err:     nil,
 			},
 			expected: nil,
 		},
 		{
-			name:     "FrameworkError with cause",
-			err:      &FrameworkError{Cause: errUnderlying},
+			name:     "FrameworkError with err",
+			err:      &FrameworkError{Op: "process", Err: errUnderlying},
 			expected: errUnderlying,
 		},
 	}
@@ -578,24 +611,28 @@ func TestWrapError_EdgeCases(t *testing.T) {
 	tests := []struct {
 		name     string
 		err      error
+		op       string
 		message  string
 		expected bool // true if FrameworkError expected
 	}{
 		{
 			name:     "nil error",
 			err:      nil,
+			op:       "wrap",
 			message:  "should not wrap",
 			expected: false,
 		},
 		{
 			name:     "regular error",
 			err:      errRegular,
+			op:       "wrap",
 			message:  "wrapped",
 			expected: true,
 		},
 		{
 			name:     "empty message",
 			err:      errRegular,
+			op:       "wrap",
 			message:  "",
 			expected: true,
 		},
@@ -603,7 +640,7 @@ func TestWrapError_EdgeCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := WrapError(tt.err, tt.message)
+			result := WrapError(tt.err, tt.op, tt.message)
 			if tt.expected && result == nil {
 				t.Error("WrapError() returned nil, expected FrameworkError")
 			}
@@ -619,11 +656,14 @@ func TestWrapError_EdgeCases(t *testing.T) {
 					if fwErr.Message != tt.message {
 						t.Errorf("WrapError() message = %q, expected %q", fwErr.Message, tt.message)
 					}
-					if fwErr.Type != ErrorTypeInternal {
-						t.Errorf("WrapError() type = %v, expected %v", fwErr.Type, ErrorTypeInternal)
+					if fwErr.Op != tt.op {
+						t.Errorf("WrapError() op = %q, expected %q", fwErr.Op, tt.op)
 					}
-					if !errors.Is(fwErr.Cause, tt.err) {
-						t.Errorf("WrapError() cause = %v, expected %v", fwErr.Cause, tt.err)
+					if fwErr.Code != string(ErrorCodeInternalError) {
+						t.Errorf("WrapError() code = %q, expected %q", fwErr.Code, ErrorCodeInternalError)
+					}
+					if !errors.Is(fwErr.Err, tt.err) {
+						t.Errorf("WrapError() err = %v, expected %v", fwErr.Err, tt.err)
 					}
 				}
 			}
@@ -633,7 +673,8 @@ func TestWrapError_EdgeCases(t *testing.T) {
 
 func TestFrameworkError_AddContext_EdgeCases(t *testing.T) {
 	err := &FrameworkError{
-		Type:    ErrorTypeInternal,
+		Op:      "process",
+		Code:    string(ErrorCodeInternalError),
 		Message: "test",
 	}
 
@@ -659,20 +700,20 @@ func TestFrameworkError_AddContext_EdgeCases(t *testing.T) {
 func TestErrorConstructors_EdgeCases(t *testing.T) {
 	cause := errErrorTestCause
 
-	// Test with nil cause
-	err1 := NewValidationError("message", nil)
-	if err1.Cause != nil {
-		t.Error("NewValidationError() with nil cause should have nil Cause")
+	// Test with nil err
+	err1 := NewValidationError("validate", "message", nil)
+	if err1.Err != nil {
+		t.Error("NewValidationError() with nil err should have nil Err")
 	}
 
 	// Test with empty message
-	err2 := NewValidationError("", cause)
+	err2 := NewValidationError("validate", "", cause)
 	if err2.Message != "" {
 		t.Error("NewValidationError() should preserve empty message")
 	}
 
 	// Test all constructor functions
-	constructors := []func(string, error) *FrameworkError{
+	constructors := []func(string, string, error) *FrameworkError{
 		NewValidationError,
 		NewNetworkError,
 		NewAuthenticationError,
@@ -680,24 +721,35 @@ func TestErrorConstructors_EdgeCases(t *testing.T) {
 		NewConfigurationError,
 	}
 
-	expectedTypes := []ErrorType{
-		ErrorTypeValidation,
-		ErrorTypeNetwork,
-		ErrorTypeAuthentication,
-		ErrorTypeInternal,
-		ErrorTypeConfiguration,
+	expectedOps := []string{
+		"validate",
+		"connect",
+		"authenticate",
+		"process",
+		"load_config",
+	}
+
+	expectedCodes := []ErrorCode{
+		ErrorCodeInvalidInput,
+		ErrorCodeTimeout,
+		ErrorCodeUnauthorized,
+		ErrorCodeInternalError,
+		ErrorCodeInvalidInput,
 	}
 
 	for i, constructor := range constructors {
-		err := constructor("test message", cause)
-		if err.Type != expectedTypes[i] {
-			t.Errorf("Constructor %d: Type = %v, expected %v", i, err.Type, expectedTypes[i])
+		err := constructor(expectedOps[i], "test message", cause)
+		if err.Op != expectedOps[i] {
+			t.Errorf("Constructor %d: Op = %q, expected %q", i, err.Op, expectedOps[i])
 		}
 		if err.Message != "test message" {
 			t.Errorf("Constructor %d: Message = %q, expected %q", i, err.Message, "test message")
 		}
-		if !errors.Is(err.Cause, cause) {
-			t.Errorf("Constructor %d: Cause = %v, expected %v", i, err.Cause, cause)
+		if err.Code != string(expectedCodes[i]) {
+			t.Errorf("Constructor %d: Code = %q, expected %q", i, err.Code, expectedCodes[i])
+		}
+		if !errors.Is(err.Err, cause) {
+			t.Errorf("Constructor %d: Err = %v, expected %v", i, err.Err, cause)
 		}
 	}
 }
@@ -725,17 +777,17 @@ func TestErrorTypeStringValues(t *testing.T) {
 }
 
 func TestErrorCodeStringValues(t *testing.T) {
-	// Test that error code constants have expected string values
+	// Test that error code constants have expected string values (now snake_case)
 	tests := []struct {
 		errorCode ErrorCode
 		expected  string
 	}{
-		{ErrorCodeInvalidInput, "INVALID_INPUT"},
-		{ErrorCodeNotFound, "NOT_FOUND"},
-		{ErrorCodeUnauthorized, "UNAUTHORIZED"},
-		{ErrorCodeTimeout, "TIMEOUT"},
-		{ErrorCodeRateLimited, "RATE_LIMITED"},
-		{ErrorCodeInternalError, "INTERNAL_ERROR"},
+		{ErrorCodeInvalidInput, "invalid_input"},
+		{ErrorCodeNotFound, "not_found"},
+		{ErrorCodeUnauthorized, "unauthorized"},
+		{ErrorCodeTimeout, "timeout"},
+		{ErrorCodeRateLimited, "rate_limited"},
+		{ErrorCodeInternalError, "internal_error"},
 	}
 
 	for _, tt := range tests {

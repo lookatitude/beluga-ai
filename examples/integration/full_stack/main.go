@@ -7,18 +7,18 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 )
 
 func main() {
@@ -55,11 +55,11 @@ func main() {
 
 	// 1.4: Create memory
 	memConfig := memory.Config{
-		Type:        memory.MemoryTypeBuffer,
-		MemoryKey:   "history",
-		InputKey:    "input",
-		OutputKey:   "output",
-		Enabled:     true,
+		Type:           memory.MemoryTypeBuffer,
+		MemoryKey:      "history",
+		InputKey:       "input",
+		OutputKey:      "output",
+		Enabled:        true,
 		ReturnMessages: false,
 	}
 	memFactory := memory.NewFactory()
@@ -173,8 +173,8 @@ func createEmbedder(ctx context.Context) (embeddingsiface.Embedder, error) {
 
 	config := &embeddings.Config{
 		OpenAI: &embeddings.OpenAIConfig{
-			APIKey: apiKey,
-			Model:  "text-embedding-ada-002",
+			APIKey:  apiKey,
+			Model:   "text-embedding-ada-002",
 			Enabled: true,
 		},
 	}

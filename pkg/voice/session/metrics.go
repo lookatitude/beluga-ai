@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MetricsRecorder defines the interface for recording metrics.
@@ -17,31 +19,13 @@ type MetricsRecorder interface {
 	DecrementActiveSessions(ctx context.Context)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
-type NoOpMetrics struct{}
-
-// NewNoOpMetrics creates a new no-operation metrics recorder.
-func NewNoOpMetrics() *NoOpMetrics {
-	return &NoOpMetrics{}
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("voice/session"),
+	}
 }
-
-// RecordSessionStart is a no-op implementation.
-func (n *NoOpMetrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration) {
-}
-
-// RecordSessionStop is a no-op implementation.
-func (n *NoOpMetrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration) {
-}
-
-// RecordSessionError is a no-op implementation.
-func (n *NoOpMetrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration) {
-}
-
-// IncrementActiveSessions is a no-op implementation.
-func (n *NoOpMetrics) IncrementActiveSessions(ctx context.Context) {}
-
-// DecrementActiveSessions is a no-op implementation.
-func (n *NoOpMetrics) DecrementActiveSessions(ctx context.Context) {}
 
 // Metrics contains all the metrics for Session operations.
 type Metrics struct {
@@ -56,10 +40,11 @@ type Metrics struct {
 	agentLatency           metric.Float64Histogram
 	agentStreamingDuration metric.Float64Histogram
 	agentToolExecutionTime metric.Float64Histogram
+	tracer                 trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance.
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 	m := &Metrics{}
 
 	m.sessionsStarted, _ = meter.Int64Counter("session.started.total", metric.WithDescription("Total sessions started"))
@@ -74,46 +59,82 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	m.agentStreamingDuration, _ = meter.Float64Histogram("voice.session.agent.streaming.duration", metric.WithDescription("Agent streaming duration"), metric.WithUnit("s"))
 	m.agentToolExecutionTime, _ = meter.Float64Histogram("voice.session.agent.tool.execution.time", metric.WithDescription("Agent tool execution time"), metric.WithUnit("s"))
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/voice/session")
+	}
+	m.tracer = tracer
+
 	return m
 }
 
 // RecordSessionStart records a session start operation.
 func (m *Metrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
 	}
-	m.sessionsStarted.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.sessionsActive.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.sessionsStarted != nil {
+		m.sessionsStarted.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.sessionsActive != nil {
+		m.sessionsActive.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.operationLatency != nil {
+		m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordSessionStop records a session stop operation.
 func (m *Metrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
 	}
-	m.sessionsStopped.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.sessionsActive.Add(ctx, -1, metric.WithAttributes(attrs...))
-	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.sessionsStopped != nil {
+		m.sessionsStopped.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.sessionsActive != nil {
+		m.sessionsActive.Add(ctx, -1, metric.WithAttributes(attrs...))
+	}
+	if m.operationLatency != nil {
+		m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordSessionError records an error.
 func (m *Metrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("session_id", sessionID),
 		attribute.String("error_code", errorCode),
 	}
-	m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.errors != nil {
+		m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.operationLatency != nil {
+		m.operationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // IncrementActiveSessions increments the active sessions counter.
 func (m *Metrics) IncrementActiveSessions(ctx context.Context) {
+	if m == nil || m.sessionsActive == nil {
+		return
+	}
 	m.sessionsActive.Add(ctx, 1)
 }
 
 // DecrementActiveSessions decrements the active sessions counter.
 func (m *Metrics) DecrementActiveSessions(ctx context.Context) {
+	if m == nil || m.sessionsActive == nil {
+		return
+	}
 	m.sessionsActive.Add(ctx, -1)
 }
 
@@ -121,6 +142,9 @@ func (m *Metrics) DecrementActiveSessions(ctx context.Context) {
 
 // RecordAgentOperation records agent operation latency (from input to first response).
 func (m *Metrics) RecordAgentOperation(ctx context.Context, sessionID string, latency time.Duration) {
+	if m == nil || m.agentLatency == nil {
+		return
+	}
 	attrs := metric.WithAttributes(
 		attribute.String("session_id", sessionID),
 	)
@@ -129,6 +153,9 @@ func (m *Metrics) RecordAgentOperation(ctx context.Context, sessionID string, la
 
 // RecordAgentStreamingChunk records agent streaming chunk metrics.
 func (m *Metrics) RecordAgentStreamingChunk(ctx context.Context, sessionID string, duration time.Duration) {
+	if m == nil || m.agentStreamingDuration == nil {
+		return
+	}
 	attrs := metric.WithAttributes(
 		attribute.String("session_id", sessionID),
 	)
@@ -137,6 +164,9 @@ func (m *Metrics) RecordAgentStreamingChunk(ctx context.Context, sessionID strin
 
 // RecordAgentToolExecution records agent tool execution time.
 func (m *Metrics) RecordAgentToolExecution(ctx context.Context, sessionID, toolName string, duration time.Duration) {
+	if m == nil || m.agentToolExecutionTime == nil {
+		return
+	}
 	attrs := metric.WithAttributes(
 		attribute.String("session_id", sessionID),
 		attribute.String("tool_name", toolName),

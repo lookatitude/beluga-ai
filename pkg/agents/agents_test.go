@@ -20,10 +20,10 @@ import (
 // Static error variables for testing (err113 compliance)
 var (
 	errTestOriginal = errors.New("original error")
-	errTestTimeout = errors.New("timeout")
-	errTestInvalid = errors.New("invalid")
-	errTestErr = errors.New("err")
-	errTestHandler = errors.New("handler error")
+	errTestTimeout  = errors.New("timeout")
+	errTestInvalid  = errors.New("invalid")
+	errTestErr      = errors.New("err")
+	errTestHandler  = errors.New("handler error")
 )
 
 // mockLLM is a simple mock implementation of the LLM interface for testing.
@@ -916,13 +916,10 @@ func TestToolRegistry(t *testing.T) {
 func TestErrorHandling(t *testing.T) {
 	t.Run("AgentErrorCreation", func(t *testing.T) {
 		originalErr := errTestOriginal
-		agentErr := agents.NewAgentError("test_operation", "test_agent", "test_code", originalErr)
+		agentErr := agents.NewAgentError("test_operation", "test_code", originalErr)
 
 		if agentErr.Op != "test_operation" {
 			t.Errorf("Expected operation 'test_operation', got '%s'", agentErr.Op)
-		}
-		if agentErr.Agent != "test_agent" {
-			t.Errorf("Expected agent 'test_agent', got '%s'", agentErr.Agent)
 		}
 		if agentErr.Code != "test_code" {
 			t.Errorf("Expected code 'test_code', got '%s'", agentErr.Code)
@@ -943,12 +940,12 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("IsRetryable", func(t *testing.T) {
-		retryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeTimeout, errTestTimeout)
+		retryableErr := agents.NewAgentError("test", agents.ErrCodeTimeout, errTestTimeout)
 		if !agents.IsRetryable(retryableErr) {
 			t.Error("Timeout error should be retryable")
 		}
 
-		nonRetryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeInvalidInput, errTestInvalid)
+		nonRetryableErr := agents.NewAgentError("test", agents.ErrCodeInvalidInput, errTestInvalid)
 		if agents.IsRetryable(nonRetryableErr) {
 			t.Error("Invalid input error should not be retryable")
 		}
@@ -960,7 +957,7 @@ func TestErrorHandling(t *testing.T) {
 			t.Error("Should identify validation error")
 		}
 
-		agentErr := agents.NewAgentError("op", "agent", "code", errTestErr)
+		agentErr := agents.NewAgentError("op", "code", errTestErr)
 		if agents.IsValidationError(agentErr) {
 			t.Error("Should not identify agent error as validation error")
 		}

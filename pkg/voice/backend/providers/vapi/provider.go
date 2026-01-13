@@ -31,7 +31,7 @@ func (p *VapiProvider) GetCapabilities(ctx context.Context) (*iface.ProviderCapa
 		SessionPersistence:    true,
 		CustomAuth:            true,
 		CustomRateLimiting:    true,
-		MaxConcurrentSessions: 0, // Vapi supports unlimited sessions
+		MaxConcurrentSessions: 0,                      // Vapi supports unlimited sessions
 		MinLatency:            150 * time.Millisecond, // Vapi can achieve <200ms latency
 		SupportedCodecs:       []string{"opus", "pcm", "g722"},
 	}, nil

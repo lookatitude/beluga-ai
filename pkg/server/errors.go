@@ -18,19 +18,19 @@ const (
 	ErrCodeInvalidRequest   = iface.ErrCodeInvalidRequest
 	ErrCodeMethodNotAllowed = iface.ErrCodeMethodNotAllowed
 	ErrCodeNotFound         = iface.ErrCodeNotFound
-	ErrCodeInternalError   = iface.ErrCodeInternalError
-	ErrCodeTimeout         = iface.ErrCodeTimeout
-	ErrCodeRateLimited     = iface.ErrCodeRateLimited
-	ErrCodeUnauthorized    = iface.ErrCodeUnauthorized
-	ErrCodeForbidden       = iface.ErrCodeForbidden
+	ErrCodeInternalError    = iface.ErrCodeInternalError
+	ErrCodeTimeout          = iface.ErrCodeTimeout
+	ErrCodeRateLimited      = iface.ErrCodeRateLimited
+	ErrCodeUnauthorized     = iface.ErrCodeUnauthorized
+	ErrCodeForbidden        = iface.ErrCodeForbidden
 
 	// MCP error codes.
 	ErrCodeToolNotFound     = iface.ErrCodeToolNotFound
 	ErrCodeResourceNotFound = iface.ErrCodeResourceNotFound
-	ErrCodeToolExecution   = iface.ErrCodeToolExecution
-	ErrCodeResourceRead    = iface.ErrCodeResourceRead
+	ErrCodeToolExecution    = iface.ErrCodeToolExecution
+	ErrCodeResourceRead     = iface.ErrCodeResourceRead
 	ErrCodeInvalidToolInput = iface.ErrCodeInvalidToolInput
-	ErrCodeMCPProtocol     = iface.ErrCodeMCPProtocol
+	ErrCodeMCPProtocol      = iface.ErrCodeMCPProtocol
 
 	// Server error codes.
 	ErrCodeServerStartup    = iface.ErrCodeServerStartup

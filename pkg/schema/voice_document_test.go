@@ -10,17 +10,17 @@ import (
 
 func TestNewVoiceDocument(t *testing.T) {
 	tests := []struct {
-		name      string
-		audioURL  string
+		name       string
+		audioURL   string
 		transcript string
-		metadata  map[string]string
-		validate  func(t *testing.T, doc *VoiceDocument)
+		metadata   map[string]string
+		validate   func(t *testing.T, doc *VoiceDocument)
 	}{
 		{
-			name:      "basic_voice_document",
-			audioURL:  "https://example.com/audio.wav",
+			name:       "basic_voice_document",
+			audioURL:   "https://example.com/audio.wav",
 			transcript: "This is a test transcript",
-			metadata:  map[string]string{"speaker": "Alice"},
+			metadata:   map[string]string{"speaker": "Alice"},
 			validate: func(t *testing.T, doc *VoiceDocument) {
 				assert.Equal(t, "https://example.com/audio.wav", doc.AudioURL)
 				assert.Equal(t, "This is a test transcript", doc.Transcript)
@@ -30,10 +30,10 @@ func TestNewVoiceDocument(t *testing.T) {
 			},
 		},
 		{
-			name:      "voice_document_no_metadata",
-			audioURL:  "https://example.com/audio.mp3",
+			name:       "voice_document_no_metadata",
+			audioURL:   "https://example.com/audio.mp3",
 			transcript: "Test transcript",
-			metadata:  nil,
+			metadata:   nil,
 			validate: func(t *testing.T, doc *VoiceDocument) {
 				assert.Equal(t, "https://example.com/audio.mp3", doc.AudioURL)
 				assert.Equal(t, "Test transcript", doc.Transcript)
@@ -57,7 +57,7 @@ func TestNewVoiceDocumentWithData(t *testing.T) {
 	metadata := map[string]string{"format": "wav"}
 
 	doc := NewVoiceDocumentWithData(audioData, format, transcript, metadata)
-	
+
 	assert.Equal(t, audioData, doc.AudioData)
 	assert.Equal(t, format, doc.AudioFormat)
 	assert.Equal(t, transcript, doc.Transcript)
@@ -72,7 +72,7 @@ func TestNewVoiceDocumentWithContext(t *testing.T) {
 	metadata := map[string]string{"test": "value"}
 
 	doc := NewVoiceDocumentWithContext(ctx, audioURL, transcript, metadata)
-	
+
 	assert.Equal(t, audioURL, doc.AudioURL)
 	assert.Equal(t, transcript, doc.Transcript)
 	assert.Equal(t, "value", doc.Metadata["test"])
@@ -85,7 +85,7 @@ func TestVoiceDocumentAsDocument(t *testing.T) {
 
 	voiceDoc := NewVoiceDocument(audioURL, transcript, metadata)
 	doc := voiceDoc.AsDocument()
-	
+
 	assert.Equal(t, transcript, doc.PageContent)
 	assert.Equal(t, metadata, doc.Metadata)
 	assert.Equal(t, transcript, doc.GetContent())
@@ -103,7 +103,7 @@ func TestVoiceDocumentMethods(t *testing.T) {
 	doc.Duration = duration
 	doc.SampleRate = sampleRate
 	doc.Channels = channels
-	
+
 	assert.Equal(t, audioURL, doc.GetAudioURL())
 	assert.Equal(t, "auto", doc.GetAudioFormat())
 	assert.Equal(t, duration, doc.GetDuration())
@@ -115,7 +115,7 @@ func TestVoiceDocumentMethods(t *testing.T) {
 
 func TestVoiceDocumentImplementsMessage(t *testing.T) {
 	doc := NewVoiceDocument("https://example.com/audio.wav", "Test", nil)
-	
+
 	// VoiceDocument should implement Message interface
 	var msg Message = doc
 	assert.Equal(t, RoleSystem, msg.GetType())

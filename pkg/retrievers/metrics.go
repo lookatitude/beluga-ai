@@ -6,8 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics holds the metrics for retriever operations.
@@ -29,10 +31,13 @@ type Metrics struct {
 	// Performance metrics
 	batchSizeAvg       metric.Float64Histogram
 	embeddingDimension metric.Int64ObservableGauge
+
+	// Tracer for span creation
+	tracer trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance with registered metrics.
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	m := &Metrics{}
 
 	var err error
@@ -138,6 +143,11 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		return nil, err
 	}
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/retrievers")
+	}
+	m.tracer = tracer
+
 	return m, nil
 }
 
@@ -206,9 +216,12 @@ var (
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		metrics, err := NewMetrics(meter)
+		if tracer == nil {
+			tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/retrievers")
+		}
+		metrics, err := NewMetrics(meter, tracer)
 		if err != nil {
 			// If metrics creation fails, use nil (callers should check)
 			globalMetrics = nil

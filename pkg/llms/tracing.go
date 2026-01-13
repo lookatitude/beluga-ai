@@ -32,8 +32,6 @@ func NewOpenTelemetryTracer(name string) *OpenTelemetryTracer {
 
 // StartSpan starts a new trace span for an LLM operation.
 // The returned span must be ended by the caller using span.End().
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation, provider, model string) (context.Context, trace.Span) {
 	ctx, span := t.tracer.Start(ctx, operation,
 		trace.WithAttributes(
@@ -124,8 +122,6 @@ func (th *TracingHelper) EndSpan(ctx context.Context) {
 
 // StartSpan is a convenience function for starting spans.
 // The returned span must be ended by the caller using span.End().
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func StartSpan(ctx context.Context, tracer trace.Tracer, operation, provider, model string) (context.Context, trace.Span) {
 	ctx, span := tracer.Start(ctx, operation,
 		trace.WithAttributes(

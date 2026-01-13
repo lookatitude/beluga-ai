@@ -8,19 +8,19 @@ import (
 
 // Error codes for embedding operations.
 const (
-	ErrCodeInvalidConfig      = "invalid_config"
-	ErrCodeInvalidInput       = "invalid_input"
-	ErrCodeEmbeddingFailed    = "embedding_failed"
-	ErrCodeProviderNotFound   = "provider_not_found"
-	ErrCodeProviderError      = "provider_error"
-	ErrCodeNetworkError       = "network_error"
-	ErrCodeTimeout            = "timeout"
-	ErrCodeRateLimit          = "rate_limit"
-	ErrCodeAuthentication     = "authentication_error"
-	ErrCodeInvalidDimension   = "invalid_dimension"
-	ErrCodeBatchSizeExceeded  = "batch_size_exceeded"
-	ErrCodeContextCanceled    = "context_canceled"
-	ErrCodeContextTimeout     = "context_timeout"
+	ErrCodeInvalidConfig     = "invalid_config"
+	ErrCodeInvalidInput      = "invalid_input"
+	ErrCodeEmbeddingFailed   = "embedding_failed"
+	ErrCodeProviderNotFound  = "provider_not_found"
+	ErrCodeProviderError     = "provider_error"
+	ErrCodeNetworkError      = "network_error"
+	ErrCodeTimeout           = "timeout"
+	ErrCodeRateLimit         = "rate_limit"
+	ErrCodeAuthentication    = "authentication_error"
+	ErrCodeInvalidDimension  = "invalid_dimension"
+	ErrCodeBatchSizeExceeded = "batch_size_exceeded"
+	ErrCodeContextCanceled   = "context_canceled"
+	ErrCodeContextTimeout    = "context_timeout"
 )
 
 // EmbeddingError represents an error that occurred during embedding operations.

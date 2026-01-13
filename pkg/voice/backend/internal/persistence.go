@@ -12,14 +12,14 @@ import (
 
 // SessionState represents the serializable state of a voice session (T305, T306).
 type SessionState struct {
-	ID               string                 `json:"id"`
-	UserID           string                 `json:"user_id"`
-	State            vbiface.PipelineState  `json:"state"`
+	ID                string                    `json:"id"`
+	UserID            string                    `json:"user_id"`
+	State             vbiface.PipelineState     `json:"state"`
 	PersistenceStatus vbiface.PersistenceStatus `json:"persistence_status"`
-	Metadata         map[string]any         `json:"metadata"`
-	Config           *SessionConfigState    `json:"config"`
-	CreatedAt        time.Time              `json:"created_at"`
-	LastActivity     time.Time              `json:"last_activity"`
+	Metadata          map[string]any            `json:"metadata"`
+	Config            *SessionConfigState       `json:"config"`
+	CreatedAt         time.Time                 `json:"created_at"`
+	LastActivity      time.Time                 `json:"last_activity"`
 }
 
 // SessionConfigState represents the serializable session configuration.
@@ -121,12 +121,12 @@ func serializeSessionState(session vbiface.VoiceSession) (*SessionState, error) 
 
 	// Create session state
 	sessionState := &SessionState{
-		ID:               sessionID,
-		State:            state,
+		ID:                sessionID,
+		State:             state,
 		PersistenceStatus: persistenceStatus,
-		Metadata:         metadata,
-		CreatedAt:        time.Now(), // In a full implementation, this would be stored
-		LastActivity:     time.Now(),
+		Metadata:          metadata,
+		CreatedAt:         time.Now(), // In a full implementation, this would be stored
+		LastActivity:      time.Now(),
 	}
 
 	return sessionState, nil

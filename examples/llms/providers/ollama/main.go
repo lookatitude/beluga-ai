@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/ollama"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/ollama"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 

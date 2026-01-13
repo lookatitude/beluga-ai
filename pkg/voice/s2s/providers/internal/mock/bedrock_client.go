@@ -18,12 +18,12 @@ type BedrockRuntimeClient interface {
 
 // MockBedrockClient is a mock implementation of BedrockRuntimeClient for testing.
 type MockBedrockClient struct {
-	mu              sync.RWMutex
-	responses       map[string]*MockBedrockResponse
-	defaultResp     *MockBedrockResponse
-	requestCount    map[string]int
-	invokeErrors    map[string]error
-	streamResponses map[string]*MockBedrockStreamResponse
+	mu                sync.RWMutex
+	responses         map[string]*MockBedrockResponse
+	defaultResp       *MockBedrockResponse
+	requestCount      map[string]int
+	invokeErrors      map[string]error
+	streamResponses   map[string]*MockBedrockStreamResponse
 	defaultStreamResp *MockBedrockStreamResponse
 }
 
@@ -43,10 +43,10 @@ type MockBedrockStreamResponse struct {
 // NewMockBedrockClient creates a new mock Bedrock client.
 func NewMockBedrockClient() *MockBedrockClient {
 	return &MockBedrockClient{
-		responses:        make(map[string]*MockBedrockResponse),
-		requestCount:     make(map[string]int),
-		invokeErrors:     make(map[string]error),
-		streamResponses:  make(map[string]*MockBedrockStreamResponse),
+		responses:       make(map[string]*MockBedrockResponse),
+		requestCount:    make(map[string]int),
+		invokeErrors:    make(map[string]error),
+		streamResponses: make(map[string]*MockBedrockStreamResponse),
 	}
 }
 

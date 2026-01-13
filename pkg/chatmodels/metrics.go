@@ -391,8 +391,6 @@ func (m *Metrics) RecordModelError(model, provider, errorType string) {
 
 // Tracing helpers.
 // Spans returned by these methods must be ended by the caller using span.End().
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartGenerationSpan(ctx context.Context, model, provider, operation string) (context.Context, trace.Span) {
 	ctx, span := m.tracer.Start(ctx, "chatmodel."+operation,
 		trace.WithAttributes(
@@ -403,7 +401,6 @@ func (m *Metrics) StartGenerationSpan(ctx context.Context, model, provider, oper
 	return ctx, span
 }
 
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartStreamingSpan(ctx context.Context, model, provider string) (context.Context, trace.Span) {
 	ctx, span := m.tracer.Start(ctx, "chatmodel.stream",
 		trace.WithAttributes(
@@ -414,7 +411,6 @@ func (m *Metrics) StartStreamingSpan(ctx context.Context, model, provider string
 	return ctx, span
 }
 
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartProviderSpan(ctx context.Context, provider, operation string) (context.Context, trace.Span) {
 	ctx, span := m.tracer.Start(ctx, "chatmodel.provider."+operation,
 		trace.WithAttributes(
@@ -426,9 +422,11 @@ func (m *Metrics) StartProviderSpan(ctx context.Context, provider, operation str
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		tracer := otel.Tracer("beluga-chatmodels")
+		if tracer == nil {
+			tracer = otel.Tracer("beluga-chatmodels")
+		}
 		metrics, err := NewMetrics(meter, tracer)
 		if err != nil {
 			// Fallback to no-op metrics if initialization fails

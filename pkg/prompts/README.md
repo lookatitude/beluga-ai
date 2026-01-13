@@ -320,7 +320,7 @@ import (
 
 // Initialize metrics once at application startup
 meter := otel.Meter("beluga.prompts")
-prompts.InitMetrics(meter)
+prompts.InitMetrics(meter, tracer)
 
 // Get the global metrics instance
 metrics := prompts.GetMetrics()

@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewMetrics(t *testing.T) {
 	// Test with noop meter (doesn't require actual OTEL setup)
 	meter := noop.Meter{}
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
 
-	metrics, err := NewMetrics(meter)
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("NewMetrics() error = %v", err)
 	}
@@ -69,7 +71,8 @@ func TestMetrics_RecordConfigLoad(t *testing.T) {
 	// Use noop meter for testing
 	meter := noop.Meter{}
 	ctx := context.Background()
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
@@ -104,7 +107,8 @@ func TestMetrics_RecordValidation(t *testing.T) {
 	// Use noop meter for testing
 	meter := noop.Meter{}
 	ctx := context.Background()
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
@@ -208,7 +212,8 @@ func TestMetrics_WithNoOpMeter(t *testing.T) {
 	// Use noop meter which implements the full interface
 	meter := noop.Meter{}
 
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("NewMetrics() with noop meter error = %v", err)
 	}
@@ -227,7 +232,8 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 	// In a real implementation, you'd use a spy/mock to verify the attributes
 
 	meter := noop.Meter{}
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}
@@ -255,7 +261,8 @@ func TestMetrics_RecordConfigLoad_Attributes(t *testing.T) {
 
 func BenchmarkMetrics_RecordConfigLoad(b *testing.B) {
 	meter := noop.Meter{}
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		b.Fatalf("failed to create metrics: %v", err)
 	}
@@ -271,7 +278,8 @@ func BenchmarkMetrics_RecordConfigLoad(b *testing.B) {
 
 func BenchmarkMetrics_RecordValidation(b *testing.B) {
 	meter := noop.Meter{}
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		b.Fatalf("failed to create metrics: %v", err)
 	}
@@ -291,7 +299,8 @@ func TestMetrics_Concurrency(t *testing.T) {
 	defer cancel()
 
 	meter := noop.Meter{}
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("failed to create metrics: %v", err)
 	}

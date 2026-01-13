@@ -5,8 +5,10 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics contains all metrics for the server package.
@@ -29,10 +31,13 @@ type Metrics struct {
 	// Server metrics
 	serverUptime       metric.Float64Histogram
 	serverHealthChecks metric.Int64Counter
+
+	// Tracer for span creation
+	tracer trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance with the given meter.
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	m := &Metrics{}
 
 	var err error
@@ -156,6 +161,11 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/server")
+	}
+	m.tracer = tracer
 
 	return m, nil
 }

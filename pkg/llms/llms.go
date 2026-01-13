@@ -34,11 +34,21 @@ var (
 //
 // Parameters:
 //   - meter: OpenTelemetry meter for recording metrics
+//   - tracer: OpenTelemetry tracer for recording traces (can be nil for no-op)
 //
 // Example usage can be found in examples/llm-usage/main.go
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		globalMetrics = NewMetrics(meter)
+		if tracer == nil {
+			tracer = trace.NewNoopTracerProvider().Tracer("llms")
+		}
+		metrics, err := NewMetrics(meter, tracer)
+		if err != nil {
+			// If metrics creation fails, use no-op metrics
+			globalMetrics = NoOpMetrics()
+			return
+		}
+		globalMetrics = metrics
 	})
 }
 

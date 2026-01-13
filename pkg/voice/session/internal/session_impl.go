@@ -10,8 +10,8 @@ import (
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
+	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
 )
 
 // Config and VoiceOptions are passed in, not imported to avoid cycle.

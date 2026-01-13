@@ -20,7 +20,7 @@ import (
 
 // GrokVoiceStreamingSession implements StreamingSession for Grok Voice Agent.
 type GrokVoiceStreamingSession struct {
-	ctx            context.Context //nolint:containedctx // Required for streaming
+	ctx            context.Context
 	config         *GrokVoiceConfig
 	provider       *GrokVoiceProvider
 	httpClient     HTTPClient
@@ -28,12 +28,12 @@ type GrokVoiceStreamingSession struct {
 	closed         bool
 	mu             sync.RWMutex
 	audioBuffer    []byte
-	restartCh      chan struct{} // Channel to signal streaming restart
+	restartCh      chan struct{}      // Channel to signal streaming restart
 	cancelFunc     context.CancelFunc // Cancel function for current streaming context
-	restartTimer   *time.Timer // Timer for debouncing restarts
-	restartPending bool // Flag to indicate if restart is pending
-	maxRetries     int // Maximum retry attempts for stream restart
-	retryDelay     time.Duration // Initial retry delay
+	restartTimer   *time.Timer        // Timer for debouncing restarts
+	restartPending bool               // Flag to indicate if restart is pending
+	maxRetries     int                // Maximum retry attempts for stream restart
+	retryDelay     time.Duration      // Initial retry delay
 }
 
 // GrokStreamResponse represents a streaming response from Grok API.
@@ -54,15 +54,15 @@ type GrokStreamResponse struct {
 func NewGrokVoiceStreamingSession(ctx context.Context, config *GrokVoiceConfig, provider *GrokVoiceProvider) (*GrokVoiceStreamingSession, error) {
 	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GrokVoiceStreamingSession{
-		ctx:         ctx,
-		config:      config,
-		provider:    provider,
-		audioCh:     make(chan iface.AudioOutputChunk, 10),
-		httpClient:  provider.httpClient,
-		restartCh:   make(chan struct{}, 1),
-		cancelFunc:  cancel,
-		maxRetries:  3, // Default max retries
-		retryDelay:  100 * time.Millisecond, // Initial retry delay
+		ctx:        ctx,
+		config:     config,
+		provider:   provider,
+		audioCh:    make(chan iface.AudioOutputChunk, 10),
+		httpClient: provider.httpClient,
+		restartCh:  make(chan struct{}, 1),
+		cancelFunc: cancel,
+		maxRetries: 3,                      // Default max retries
+		retryDelay: 100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Grok uses Server-Sent Events (SSE) for streaming
@@ -173,7 +173,7 @@ func (s *GrokVoiceStreamingSession) prepareStreamingRequest() ([]byte, error) {
 			"audio": audioBase64,
 			"format": map[string]any{
 				"sample_rate": 24000,
-				"channels":     1,
+				"channels":    1,
 				"encoding":    "pcm",
 			},
 		},

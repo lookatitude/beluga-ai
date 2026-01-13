@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/codes"
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // PipecatSession implements the VoiceSession interface for Pipecat (via Daily.co).

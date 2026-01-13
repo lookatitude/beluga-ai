@@ -50,7 +50,8 @@ func (m *MockTracerProvider) Tracer() trace.Tracer {
 // TestNewMetrics tests the Metrics constructor.
 func TestNewMetrics(t *testing.T) {
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	assert.NotNil(t, metrics)
 	assert.Equal(t, mockMeter, metrics.meter)
@@ -67,7 +68,8 @@ func TestNewMetrics(t *testing.T) {
 func TestMetrics_RecordOperation(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	// Test successful operation
 	metrics.RecordOperation(ctx, "load", MemoryTypeBuffer, true)
@@ -84,7 +86,8 @@ func TestMetrics_RecordOperation(t *testing.T) {
 func TestMetrics_RecordOperationDuration(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	duration := 150 * time.Millisecond
 
@@ -105,7 +108,8 @@ func TestMetrics_RecordOperationDuration(t *testing.T) {
 func TestMetrics_RecordError(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	// Test recording different error types
 	metrics.RecordError(ctx, "load", MemoryTypeBuffer, "timeout")
@@ -121,7 +125,8 @@ func TestMetrics_RecordError(t *testing.T) {
 func TestMetrics_RecordMemorySize(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	// Test recording different sizes
 	metrics.RecordMemorySize(ctx, MemoryTypeBuffer, 100)
@@ -137,7 +142,8 @@ func TestMetrics_RecordMemorySize(t *testing.T) {
 func TestMetrics_RecordActiveMemory(t *testing.T) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	// Test recording creation and deletion
 	metrics.RecordActiveMemory(ctx, MemoryTypeBuffer, 1)       // Created
@@ -521,7 +527,8 @@ func TestGlobalFunctionsNilHandling(t *testing.T) {
 func BenchmarkMetricsRecording(b *testing.B) {
 	ctx := context.Background()
 	mockMeter := NewMockMeterProvider().Meter()
-	metrics := NewMetrics(mockMeter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(mockMeter, tracer)
 
 	b.Run("RecordOperation", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

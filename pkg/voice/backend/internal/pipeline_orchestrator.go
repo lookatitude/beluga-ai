@@ -8,19 +8,19 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/codes"
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	chatmodelsiface "github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 	memoryiface "github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	multimodaliface "github.com/lookatitude/beluga-ai/pkg/multimodal/iface"
 	orchestrationiface "github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
+	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // PipelineOrchestrator orchestrates audio processing pipelines (STT/TTS and S2S).
@@ -29,22 +29,22 @@ type PipelineOrchestrator struct {
 	config *vbiface.Config
 
 	// Voice providers
-	sttProvider              voiceiface.STTProvider
-	ttsProvider              voiceiface.TTSProvider
-	s2sProvider              s2siface.S2SProvider
-	vadProvider              voiceiface.VADProvider
-	turnDetector             voiceiface.TurnDetector
-	noiseCancellation        voiceiface.NoiseCancellation
+	sttProvider       voiceiface.STTProvider
+	ttsProvider       voiceiface.TTSProvider
+	s2sProvider       s2siface.S2SProvider
+	vadProvider       voiceiface.VADProvider
+	turnDetector      voiceiface.TurnDetector
+	noiseCancellation voiceiface.NoiseCancellation
 
 	// Package integrations (optional)
-	memory         memoryiface.Memory
-	orchestrator   orchestrationiface.Orchestrator
-	retriever      interface{} // retrieversiface.Retriever
-	vectorStore    vectorstoresiface.VectorStore
-	embedder       embeddingsiface.Embedder
+	memory          memoryiface.Memory
+	orchestrator    orchestrationiface.Orchestrator
+	retriever       interface{} // retrieversiface.Retriever
+	vectorStore     vectorstoresiface.VectorStore
+	embedder        embeddingsiface.Embedder
 	multimodalModel multimodaliface.MultimodalModel
-	promptTemplate interface{} // promptsiface.PromptTemplate
-	chatModel      chatmodelsiface.ChatModel
+	promptTemplate  interface{} // promptsiface.PromptTemplate
+	chatModel       chatmodelsiface.ChatModel
 
 	// Custom processors
 	customProcessors []vbiface.CustomProcessor
@@ -56,7 +56,7 @@ type PipelineOrchestrator struct {
 // NewPipelineOrchestrator creates a new pipeline orchestrator.
 func NewPipelineOrchestrator(config *vbiface.Config) *PipelineOrchestrator {
 	return &PipelineOrchestrator{
-		config:          config,
+		config:           config,
 		customProcessors: config.CustomProcessors,
 	}
 }
@@ -392,9 +392,9 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	s2sTargetLatency := 300 * time.Millisecond
 
 	backend.AddSpanAttributes(span, map[string]any{
-		"pipeline_type":      "s2s",
-		"target_latency_ms":  s2sTargetLatency.Milliseconds(),
-		"audio_size":         len(audio),
+		"pipeline_type":     "s2s",
+		"target_latency_ms": s2sTargetLatency.Milliseconds(),
+		"audio_size":        len(audio),
 	})
 
 	// Apply custom processors (before S2S)
@@ -496,7 +496,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 
 	// Process through S2S provider with network latency spike handling (T292)
 	s2sStartTime := time.Now()
-	
+
 	// Create context with timeout for S2S processing to handle network latency spikes
 	s2sTimeout := po.config.Timeout
 	if s2sTimeout == 0 {
@@ -596,9 +596,9 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	// Check latency target (S2S should be <300ms per SC-005)
 	totalLatency := time.Since(startTime)
 	backend.AddSpanAttributes(span, map[string]any{
-		"total_latency_ms":    totalLatency.Milliseconds(),
-		"output_audio_size":   len(outputAudio),
-		"latency_target_met":  totalLatency <= s2sTargetLatency,
+		"total_latency_ms":   totalLatency.Milliseconds(),
+		"output_audio_size":  len(outputAudio),
+		"latency_target_met": totalLatency <= s2sTargetLatency,
 	})
 
 	if totalLatency > s2sTargetLatency {

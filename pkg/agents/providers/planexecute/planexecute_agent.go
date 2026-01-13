@@ -42,9 +42,9 @@ type PlanStep struct {
 
 // ExecutionPlan represents a complete execution plan.
 type ExecutionPlan struct {
-	Goal        string     `json:"goal"`
-	Steps       []PlanStep `json:"steps"`
-	TotalSteps  int        `json:"total_steps"`
+	Goal       string     `json:"goal"`
+	Steps      []PlanStep `json:"steps"`
+	TotalSteps int        `json:"total_steps"`
 }
 
 // NewPlanExecuteAgent creates a new Plan-and-Execute agent.

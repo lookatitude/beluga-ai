@@ -20,7 +20,7 @@ import (
 
 // GeminiNativeStreamingSession implements StreamingSession for Gemini 2.5 Flash Native Audio.
 type GeminiNativeStreamingSession struct {
-	ctx            context.Context //nolint:containedctx // Required for streaming
+	ctx            context.Context
 	config         *GeminiNativeConfig
 	provider       *GeminiNativeProvider
 	httpClient     HTTPClient
@@ -28,12 +28,12 @@ type GeminiNativeStreamingSession struct {
 	closed         bool
 	mu             sync.RWMutex
 	audioBuffer    []byte
-	restartCh      chan struct{} // Channel to signal streaming restart
+	restartCh      chan struct{}      // Channel to signal streaming restart
 	cancelFunc     context.CancelFunc // Cancel function for current streaming context
-	restartTimer   *time.Timer // Timer for debouncing restarts
-	restartPending bool // Flag to indicate if restart is pending
-	maxRetries     int // Maximum retry attempts for stream restart
-	retryDelay     time.Duration // Initial retry delay
+	restartTimer   *time.Timer        // Timer for debouncing restarts
+	restartPending bool               // Flag to indicate if restart is pending
+	maxRetries     int                // Maximum retry attempts for stream restart
+	retryDelay     time.Duration      // Initial retry delay
 }
 
 // GeminiStreamResponse represents a streaming response from Gemini API.
@@ -54,15 +54,15 @@ type GeminiStreamResponse struct {
 func NewGeminiNativeStreamingSession(ctx context.Context, config *GeminiNativeConfig, provider *GeminiNativeProvider) (*GeminiNativeStreamingSession, error) {
 	streamCtx, cancel := context.WithCancel(ctx)
 	session := &GeminiNativeStreamingSession{
-		ctx:         ctx,
-		config:      config,
-		provider:    provider,
-		audioCh:     make(chan iface.AudioOutputChunk, 10),
-		httpClient:  provider.httpClient,
-		restartCh:   make(chan struct{}, 1),
-		cancelFunc:  cancel,
-		maxRetries:  3, // Default max retries
-		retryDelay:  100 * time.Millisecond, // Initial retry delay
+		ctx:        ctx,
+		config:     config,
+		provider:   provider,
+		audioCh:    make(chan iface.AudioOutputChunk, 10),
+		httpClient: provider.httpClient,
+		restartCh:  make(chan struct{}, 1),
+		cancelFunc: cancel,
+		maxRetries: 3,                      // Default max retries
+		retryDelay: 100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Gemini uses Server-Sent Events (SSE) for streaming

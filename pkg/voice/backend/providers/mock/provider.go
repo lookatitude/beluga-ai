@@ -25,13 +25,13 @@ func (p *MockProvider) GetName() string {
 func (p *MockProvider) GetCapabilities(ctx context.Context) (*vbiface.ProviderCapabilities, error) {
 	return &vbiface.ProviderCapabilities{
 		S2SSupport:            true,
-		MultiUserSupport:     true,
-		SessionPersistence:   true,
-		CustomAuth:           true,
-		CustomRateLimiting:   true,
+		MultiUserSupport:      true,
+		SessionPersistence:    true,
+		CustomAuth:            true,
+		CustomRateLimiting:    true,
 		MaxConcurrentSessions: 0, // unlimited
-		MinLatency:           100 * time.Millisecond,
-		SupportedCodecs:      []string{"opus", "pcm"},
+		MinLatency:            100 * time.Millisecond,
+		SupportedCodecs:       []string{"opus", "pcm"},
 	}, nil
 }
 

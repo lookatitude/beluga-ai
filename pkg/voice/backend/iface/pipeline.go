@@ -59,9 +59,9 @@ const (
 
 // HealthStatus represents the health status of a voice backend.
 type HealthStatus struct {
-	Status    string            `json:"status"`    // "healthy", "degraded", "unhealthy"
-	Details   map[string]any    `json:"details"`    // Additional health details
-	LastCheck time.Time         `json:"last_check"` // Last health check timestamp
+	Status    string         `json:"status"`     // "healthy", "degraded", "unhealthy"
+	Details   map[string]any `json:"details"`    // Additional health details
+	LastCheck time.Time      `json:"last_check"` // Last health check timestamp
 }
 
 // ProviderCapabilities represents the capabilities of a voice backend provider.

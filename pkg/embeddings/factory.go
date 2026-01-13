@@ -41,11 +41,11 @@ func RegisterGlobal(name string, creator func(ctx context.Context, config Config
 	registry.GetRegistry().Register(name, func(ctx context.Context, config any) (iface.Embedder, error) {
 		embConfig, ok := config.(Config)
 		if !ok {
-		return nil, iface.WrapError(
-			fmt.Errorf("invalid config type"),
-			iface.ErrCodeInvalidConfig,
-			"invalid config type",
-		)
+			return nil, iface.WrapError(
+				fmt.Errorf("invalid config type"),
+				iface.ErrCodeInvalidConfig,
+				"invalid config type",
+			)
 		}
 		return creator(ctx, embConfig)
 	})

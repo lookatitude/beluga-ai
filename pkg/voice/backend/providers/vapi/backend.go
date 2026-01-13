@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/codes"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // VapiBackend implements the VoiceBackend interface for Vapi.
@@ -20,9 +20,9 @@ type VapiBackend struct {
 	sessionManager  *internal.SessionManager
 	httpClient      *http.Client
 	connectionState iface.ConnectionState
-	healthStatus     *iface.HealthStatus
-	metrics          *backend.Metrics
-	mu               sync.RWMutex
+	healthStatus    *iface.HealthStatus
+	metrics         *backend.Metrics
+	mu              sync.RWMutex
 }
 
 // NewVapiBackend creates a new Vapi backend.
@@ -63,7 +63,7 @@ func (b *VapiBackend) Start(ctx context.Context) error {
 	b.connectionState = iface.ConnectionStateConnecting
 	backend.AddSpanAttributes(span, map[string]any{
 		"connection_state": string(b.connectionState),
-		"api_url":            b.config.APIURL,
+		"api_url":          b.config.APIURL,
 	})
 
 	// Test Vapi API connection

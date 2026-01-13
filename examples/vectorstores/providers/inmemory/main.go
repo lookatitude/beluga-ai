@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 )
 
 func main() {

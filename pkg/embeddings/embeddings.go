@@ -74,9 +74,11 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 
 	// Initialize metrics (assuming global meter is available)
 	meter := otel.Meter("github.com/lookatitude/beluga-ai/pkg/embeddings")
-	metrics := NewMetrics(meter)
-
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		metrics = NoOpMetrics()
+	}
 
 	factory := &EmbedderFactory{
 		config:  config,
@@ -111,9 +113,22 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 //
 // Example usage can be found in examples/rag/simple/main.go
 func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, error) {
-	// Use registry to create embedder to avoid import cycles
-	// Provider init() functions will register themselves when imported elsewhere
 	ctx := context.Background()
+	if f.tracer != nil {
+		ctx, span := f.tracer.Start(ctx, "embeddings.NewEmbedder",
+			trace.WithAttributes(
+				attribute.String("provider_type", providerType),
+			))
+		defer span.End()
+
+		embedder, err := GetRegistry().Create(ctx, providerType, *f.config)
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+			return nil, err
+		}
+		return embedder, nil
+	}
 	return GetRegistry().Create(ctx, providerType, *f.config)
 }
 

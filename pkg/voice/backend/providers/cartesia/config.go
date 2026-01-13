@@ -34,10 +34,10 @@ type CartesiaConfig struct {
 func NewCartesiaConfig(config *iface.Config) *CartesiaConfig {
 	cartesiaConfig := &CartesiaConfig{
 		Config:              config,
-		APIURL:               "https://api.cartesia.ai",
-		EnableStreaming:      true,
-		SampleRate:           24000,
-		LatencyOptimization:  true,
+		APIURL:              "https://api.cartesia.ai",
+		EnableStreaming:     true,
+		SampleRate:          24000,
+		LatencyOptimization: true,
 	}
 
 	// Extract Cartesia-specific config from ProviderConfig

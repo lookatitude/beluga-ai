@@ -28,13 +28,13 @@ type (
 
 // Re-export functions from iface.
 var (
-	WithConfig               = iface.WithConfig
-	WithRESTConfig           = iface.WithRESTConfig
-	WithMCPConfig            = iface.WithMCPConfig
-	WithLogger               = iface.WithLogger
-	WithTracer               = iface.WithTracer
-	WithMeter                = iface.WithMeter
-	WithMiddleware           = iface.WithMiddleware
+	WithConfig      = iface.WithConfig
+	WithRESTConfig  = iface.WithRESTConfig
+	WithMCPConfig   = iface.WithMCPConfig
+	WithLogger      = iface.WithLogger
+	WithTracer      = iface.WithTracer
+	WithMeter       = iface.WithMeter
+	WithMiddleware  = iface.WithMiddleware
 	WithMCPTool     = iface.WithMCPTool
 	WithMCPResource = iface.WithMCPResource
 )

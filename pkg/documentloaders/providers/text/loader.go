@@ -97,9 +97,9 @@ func (l *TextLoader) Load(ctx context.Context) ([]schema.Document, error) {
 		PageContent: string(content),
 		Metadata: map[string]string{
 			"source":      l.path,
-			"file_size":    fmt.Sprintf("%d", info.Size()),
-			"modified_at":  info.ModTime().Format(time.RFC3339),
-			"loader_type":  "text",
+			"file_size":   fmt.Sprintf("%d", info.Size()),
+			"modified_at": info.ModTime().Format(time.RFC3339),
+			"loader_type": "text",
 		},
 	}
 

@@ -60,12 +60,12 @@ const (
 // - Metrics and tracing are injected for observability
 // - Tools are stored separately to allow immutable BindTools behavior
 type CustomProvider struct {
-	config      *llms.Config
-	metrics     *CustomMetrics
+	config  *llms.Config
+	metrics *CustomMetrics
 	// Note: In a real implementation, you would use public tracing and retry utilities
 	// For this example, we've simplified to avoid internal package dependencies
-	modelName   string
-	tools       []tools.Tool
+	modelName string
+	tools     []tools.Tool
 
 	// In a real implementation, you'd have your API client here:
 	// client *customapi.Client

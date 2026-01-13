@@ -49,14 +49,14 @@ type GeminiProvider struct {
 
 // Gemini API request/response structures.
 type geminiGenerateRequest struct {
-	Contents         []geminiContent `json:"contents"`
+	Contents         []geminiContent         `json:"contents"`
 	GenerationConfig *geminiGenerationConfig `json:"generationConfig,omitempty"`
-	Tools            []geminiTool    `json:"tools,omitempty"`
+	Tools            []geminiTool            `json:"tools,omitempty"`
 }
 
 type geminiContent struct {
-	Role  string         `json:"role"`
-	Parts []geminiPart   `json:"parts"`
+	Role  string       `json:"role"`
+	Parts []geminiPart `json:"parts"`
 }
 
 type geminiPart struct {
@@ -82,7 +82,7 @@ type geminiFunctionDeclaration struct {
 }
 
 type geminiGenerateResponse struct {
-	Candidates []geminiCandidate `json:"candidates"`
+	Candidates    []geminiCandidate    `json:"candidates"`
 	UsageMetadata *geminiUsageMetadata `json:"usageMetadata,omitempty"`
 }
 
@@ -122,13 +122,13 @@ func NewGeminiProvider(config *llms.Config) (*GeminiProvider, error) {
 	}
 
 	provider := &GeminiProvider{
-		config:    config,
+		config:     config,
 		httpClient: httpClient,
-		modelName: modelName,
-		baseURL:   baseURL,
-		apiKey:    config.APIKey,
-		metrics:   llms.GetMetrics(),
-		tracing:   common.NewTracingHelper(),
+		modelName:  modelName,
+		baseURL:    baseURL,
+		apiKey:     config.APIKey,
+		metrics:    llms.GetMetrics(),
+		tracing:    common.NewTracingHelper(),
 		retryConfig: &common.RetryConfig{
 			MaxRetries: config.MaxRetries,
 			Delay:      config.RetryDelay,
@@ -304,7 +304,7 @@ func (g *GeminiProvider) generateInternal(ctx context.Context, messages []schema
 
 	// Build request
 	req := &geminiGenerateRequest{
-		Contents: contents,
+		Contents:         contents,
 		GenerationConfig: &geminiGenerationConfig{},
 	}
 
@@ -347,7 +347,7 @@ func (g *GeminiProvider) streamInternal(ctx context.Context, messages []schema.M
 
 	// Build request
 	req := &geminiGenerateRequest{
-		Contents: contents,
+		Contents:         contents,
 		GenerationConfig: &geminiGenerationConfig{},
 	}
 
@@ -377,7 +377,7 @@ func (g *GeminiProvider) streamInternal(ctx context.Context, messages []schema.M
 
 		// Make streaming API request
 		url := fmt.Sprintf("%s/models/%s:streamGenerateContent?key=%s", g.baseURL, g.modelName, g.apiKey)
-		
+
 		reqBody, err := json.Marshal(req)
 		if err != nil {
 			outputChan <- iface.AIMessageChunk{

@@ -214,23 +214,24 @@ const (
 )
 
 // ServerError represents a structured server error.
+// It follows the standard Op/Err/Code pattern used across all Beluga AI packages.
 type ServerError struct {
-	Details   any       `json:"details,omitempty"`
-	Err       error     `json:"-"`
-	Code      ErrorCode `json:"code"`
-	Message   string    `json:"message"`
-	Operation string    `json:"operation,omitempty"`
+	Op      string // operation that failed (renamed from Operation)
+	Err     error  // underlying error
+	Code    string // error code for programmatic handling
+	Message string // human-readable message
+	Details any    `json:"details,omitempty"` // additional context (optional)
 }
 
 // Error implements the error interface.
 func (e *ServerError) Error() string {
+	if e.Message != "" {
+		return fmt.Sprintf("server %s: %s (code: %s)", e.Op, e.Message, e.Code)
+	}
 	if e.Err != nil {
-		return fmt.Sprintf("%s: %s (%s)", e.Operation, e.Message, e.Err.Error())
+		return fmt.Sprintf("server %s: %v (code: %s)", e.Op, e.Err, e.Code)
 	}
-	if e.Operation != "" {
-		return fmt.Sprintf("%s: %s", e.Operation, e.Message)
-	}
-	return e.Message
+	return fmt.Sprintf("server %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
 // Unwrap returns the underlying error.
@@ -241,23 +242,23 @@ func (e *ServerError) Unwrap() error {
 // HTTPStatus returns the appropriate HTTP status code for this error.
 func (e *ServerError) HTTPStatus() int {
 	switch e.Code {
-	case ErrCodeInvalidRequest, ErrCodeInvalidToolInput:
+	case string(ErrCodeInvalidRequest), string(ErrCodeInvalidToolInput):
 		return http.StatusBadRequest
-	case ErrCodeUnauthorized:
+	case string(ErrCodeUnauthorized):
 		return http.StatusUnauthorized
-	case ErrCodeForbidden:
+	case string(ErrCodeForbidden):
 		return http.StatusForbidden
-	case ErrCodeNotFound, ErrCodeToolNotFound, ErrCodeResourceNotFound:
+	case string(ErrCodeNotFound), string(ErrCodeToolNotFound), string(ErrCodeResourceNotFound):
 		return http.StatusNotFound
-	case ErrCodeMethodNotAllowed:
+	case string(ErrCodeMethodNotAllowed):
 		return http.StatusMethodNotAllowed
-	case ErrCodeRateLimited:
+	case string(ErrCodeRateLimited):
 		return http.StatusTooManyRequests
-	case ErrCodeTimeout:
+	case string(ErrCodeTimeout):
 		return http.StatusRequestTimeout
-	case ErrCodeInternalError, ErrCodeToolExecution, ErrCodeResourceRead,
-		ErrCodeServerStartup, ErrCodeServerShutdown, ErrCodeConfigValidation,
-		ErrCodeMCPProtocol:
+	case string(ErrCodeInternalError), string(ErrCodeToolExecution), string(ErrCodeResourceRead),
+		string(ErrCodeServerStartup), string(ErrCodeServerShutdown), string(ErrCodeConfigValidation),
+		string(ErrCodeMCPProtocol):
 		return http.StatusInternalServerError
 	default:
 		return http.StatusInternalServerError
@@ -267,105 +268,105 @@ func (e *ServerError) HTTPStatus() int {
 // NewInvalidRequestError creates a new invalid request error.
 func NewInvalidRequestError(operation, message string, details any) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeInvalidRequest,
-		Message:   message,
-		Details:   details,
-		Operation: operation,
+		Op:      operation,
+		Code:    string(ErrCodeInvalidRequest),
+		Message: message,
+		Details: details,
 	}
 }
 
 // NewNotFoundError creates a new not found error.
 func NewNotFoundError(operation, resource string) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeNotFound,
-		Message:   resource + " not found",
-		Operation: operation,
+		Op:      operation,
+		Code:    string(ErrCodeNotFound),
+		Message: resource + " not found",
 	}
 }
 
 // NewInternalError creates a new internal server error.
 func NewInternalError(operation string, err error) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeInternalError,
-		Message:   "internal server error",
-		Operation: operation,
-		Err:       err,
+		Op:      operation,
+		Code:    string(ErrCodeInternalError),
+		Message: "internal server error",
+		Err:     err,
 	}
 }
 
 // NewTimeoutError creates a new timeout error.
 func NewTimeoutError(operation string) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeTimeout,
-		Message:   "request timeout",
-		Operation: operation,
+		Op:      operation,
+		Code:    string(ErrCodeTimeout),
+		Message: "request timeout",
 	}
 }
 
 // NewToolNotFoundError creates a new tool not found error.
 func NewToolNotFoundError(toolName string) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeToolNotFound,
-		Message:   fmt.Sprintf("tool '%s' not found", toolName),
-		Operation: "tool_execution",
+		Op:      "tool_execution",
+		Code:    string(ErrCodeToolNotFound),
+		Message: fmt.Sprintf("tool '%s' not found", toolName),
 	}
 }
 
 // NewResourceNotFoundError creates a new resource not found error.
 func NewResourceNotFoundError(resourceURI string) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeResourceNotFound,
-		Message:   fmt.Sprintf("resource '%s' not found", resourceURI),
-		Operation: "resource_read",
+		Op:      "resource_read",
+		Code:    string(ErrCodeResourceNotFound),
+		Message: fmt.Sprintf("resource '%s' not found", resourceURI),
 	}
 }
 
 // NewToolExecutionError creates a new tool execution error.
 func NewToolExecutionError(toolName string, err error) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeToolExecution,
-		Message:   fmt.Sprintf("failed to execute tool '%s'", toolName),
-		Operation: "tool_execution",
-		Err:       err,
+		Op:      "tool_execution",
+		Code:    string(ErrCodeToolExecution),
+		Message: fmt.Sprintf("failed to execute tool '%s'", toolName),
+		Err:     err,
 	}
 }
 
 // NewResourceReadError creates a new resource read error.
 func NewResourceReadError(resourceURI string, err error) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeResourceRead,
-		Message:   fmt.Sprintf("failed to read resource '%s'", resourceURI),
-		Operation: "resource_read",
-		Err:       err,
+		Op:      "resource_read",
+		Code:    string(ErrCodeResourceRead),
+		Message: fmt.Sprintf("failed to read resource '%s'", resourceURI),
+		Err:     err,
 	}
 }
 
 // NewInvalidToolInputError creates a new invalid tool input error.
 func NewInvalidToolInputError(toolName string, details any) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeInvalidToolInput,
-		Message:   fmt.Sprintf("invalid input for tool '%s'", toolName),
-		Details:   details,
-		Operation: "tool_execution",
+		Op:      "tool_execution",
+		Code:    string(ErrCodeInvalidToolInput),
+		Message: fmt.Sprintf("invalid input for tool '%s'", toolName),
+		Details: details,
 	}
 }
 
 // NewConfigValidationError creates a new configuration validation error.
 func NewConfigValidationError(field, reason string) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeConfigValidation,
-		Message:   fmt.Sprintf("configuration validation failed for field '%s': %s", field, reason),
-		Details:   map[string]string{"field": field, "reason": reason},
-		Operation: "config_validation",
+		Op:      "config_validation",
+		Code:    string(ErrCodeConfigValidation),
+		Message: fmt.Sprintf("configuration validation failed for field '%s': %s", field, reason),
+		Details: map[string]string{"field": field, "reason": reason},
 	}
 }
 
 // NewMCPProtocolError creates a new MCP protocol error.
 func NewMCPProtocolError(operation string, err error) *ServerError {
 	return &ServerError{
-		Code:      ErrCodeMCPProtocol,
-		Message:   "MCP protocol error",
-		Operation: operation,
-		Err:       err,
+		Op:      operation,
+		Code:    string(ErrCodeMCPProtocol),
+		Message: "MCP protocol error",
+		Err:     err,
 	}
 }

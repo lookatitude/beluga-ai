@@ -74,7 +74,7 @@ type GoogleContent struct {
 
 // GooglePart represents a part of content (text or function call).
 type GooglePart struct {
-	Text       string
+	Text         string
 	FunctionCall *GoogleFunctionCall
 }
 

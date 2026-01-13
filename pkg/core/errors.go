@@ -33,47 +33,53 @@ const (
 )
 
 // FrameworkError represents a standardized error in the Beluga AI framework.
+// It follows the Op/Err/Code pattern used across all Beluga AI packages.
 type FrameworkError struct {
-	Cause   error
-	Context map[string]any
-	Type    ErrorType
-	Message string
-	Code    string
+	Op      string         // operation that failed
+	Err     error          // underlying error
+	Code    string         // error code for programmatic handling
+	Message string         // human-readable message (optional)
+	Context map[string]any // additional context (optional)
 }
 
 // Error implements the error interface.
 func (e *FrameworkError) Error() string {
-	if e.Cause != nil {
-		return fmt.Sprintf("[%s] %s: %v", e.Type, e.Message, e.Cause)
+	if e.Message != "" {
+		return fmt.Sprintf("core %s: %s (code: %s)", e.Op, e.Message, e.Code)
 	}
-	return fmt.Sprintf("[%s] %s", e.Type, e.Message)
+	if e.Err != nil {
+		return fmt.Sprintf("core %s: %v (code: %s)", e.Op, e.Err, e.Code)
+	}
+	return fmt.Sprintf("core %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
-// Unwrap returns the underlying cause of the error.
+// Unwrap returns the underlying error.
 func (e *FrameworkError) Unwrap() error {
-	return e.Cause
+	return e.Err
 }
 
 // NewValidationError creates a new validation error.
 // Use this for errors related to invalid input, configuration, or data validation.
 //
 // Parameters:
+//   - op: Operation that failed
 //   - message: Human-readable error message
-//   - cause: Underlying error that caused the validation failure (can be nil)
+//   - err: Underlying error that caused the validation failure (can be nil)
 //
 // Returns:
 //   - *FrameworkError: A new validation error instance
 //
 // Example:
 //
-//	err := core.NewValidationError("invalid API key format", nil)
+//	err := core.NewValidationError("validate_config", "invalid API key format", nil)
 //
 // Example usage can be found in examples/core/basic/main.go
-func NewValidationError(message string, cause error) *FrameworkError {
+func NewValidationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    ErrorTypeValidation,
+		Op:      op,
+		Code:    string(ErrorCodeInvalidInput),
 		Message: message,
-		Cause:   cause,
+		Err:     err,
 	}
 }
 
@@ -81,22 +87,24 @@ func NewValidationError(message string, cause error) *FrameworkError {
 // Use this for errors related to network operations (connection failures, timeouts, etc.).
 //
 // Parameters:
+//   - op: Operation that failed
 //   - message: Human-readable error message
-//   - cause: Underlying network error (can be nil)
+//   - err: Underlying network error (can be nil)
 //
 // Returns:
 //   - *FrameworkError: A new network error instance
 //
 // Example:
 //
-//	err := core.NewNetworkError("connection timeout", timeoutErr)
+//	err := core.NewNetworkError("connect", "connection timeout", timeoutErr)
 //
 // Example usage can be found in examples/core/basic/main.go
-func NewNetworkError(message string, cause error) *FrameworkError {
+func NewNetworkError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    ErrorTypeNetwork,
+		Op:      op,
+		Code:    string(ErrorCodeTimeout),
 		Message: message,
-		Cause:   cause,
+		Err:     err,
 	}
 }
 
@@ -104,22 +112,24 @@ func NewNetworkError(message string, cause error) *FrameworkError {
 // Use this for errors related to authentication or authorization failures.
 //
 // Parameters:
+//   - op: Operation that failed
 //   - message: Human-readable error message
-//   - cause: Underlying authentication error (can be nil)
+//   - err: Underlying authentication error (can be nil)
 //
 // Returns:
 //   - *FrameworkError: A new authentication error instance
 //
 // Example:
 //
-//	err := core.NewAuthenticationError("invalid API key", authErr)
+//	err := core.NewAuthenticationError("authenticate", "invalid API key", authErr)
 //
 // Example usage can be found in examples/core/basic/main.go
-func NewAuthenticationError(message string, cause error) *FrameworkError {
+func NewAuthenticationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    ErrorTypeAuthentication,
+		Op:      op,
+		Code:    string(ErrorCodeUnauthorized),
 		Message: message,
-		Cause:   cause,
+		Err:     err,
 	}
 }
 
@@ -127,22 +137,24 @@ func NewAuthenticationError(message string, cause error) *FrameworkError {
 // Use this for unexpected internal system errors that should be logged and investigated.
 //
 // Parameters:
+//   - op: Operation that failed
 //   - message: Human-readable error message
-//   - cause: Underlying internal error (can be nil)
+//   - err: Underlying internal error (can be nil)
 //
 // Returns:
 //   - *FrameworkError: A new internal error instance
 //
 // Example:
 //
-//	err := core.NewInternalError("unexpected state", stateErr)
+//	err := core.NewInternalError("process", "unexpected state", stateErr)
 //
 // Example usage can be found in examples/core/basic/main.go
-func NewInternalError(message string, cause error) *FrameworkError {
+func NewInternalError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    ErrorTypeInternal,
+		Op:      op,
+		Code:    string(ErrorCodeInternalError),
 		Message: message,
-		Cause:   cause,
+		Err:     err,
 	}
 }
 
@@ -150,30 +162,45 @@ func NewInternalError(message string, cause error) *FrameworkError {
 // Use this for errors related to configuration loading, validation, or parsing.
 //
 // Parameters:
+//   - op: Operation that failed
 //   - message: Human-readable error message
-//   - cause: Underlying configuration error (can be nil)
+//   - err: Underlying configuration error (can be nil)
 //
 // Returns:
 //   - *FrameworkError: A new configuration error instance
 //
 // Example:
 //
-//	err := core.NewConfigurationError("missing required config key", nil)
+//	err := core.NewConfigurationError("load_config", "missing required config key", nil)
 //
 // Example usage can be found in examples/core/basic/main.go
-func NewConfigurationError(message string, cause error) *FrameworkError {
+func NewConfigurationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    ErrorTypeConfiguration,
+		Op:      op,
+		Code:    string(ErrorCodeInvalidInput),
 		Message: message,
-		Cause:   cause,
+		Err:     err,
 	}
 }
 
 // IsErrorType checks if an error is of a specific FrameworkError type.
+// Deprecated: Use error codes instead. This function is kept for backward compatibility.
 func IsErrorType(err error, errorType ErrorType) bool {
 	var fwErr *FrameworkError
 	if AsFrameworkError(err, &fwErr) {
-		return fwErr.Type == errorType
+		// Map ErrorType to error codes for backward compatibility
+		switch errorType {
+		case ErrorTypeValidation:
+			return fwErr.Code == string(ErrorCodeInvalidInput)
+		case ErrorTypeNetwork:
+			return fwErr.Code == string(ErrorCodeTimeout)
+		case ErrorTypeAuthentication:
+			return fwErr.Code == string(ErrorCodeUnauthorized)
+		case ErrorTypeInternal:
+			return fwErr.Code == string(ErrorCodeInternalError)
+		case ErrorTypeConfiguration:
+			return fwErr.Code == string(ErrorCodeInvalidInput)
+		}
 	}
 	return false
 }
@@ -208,14 +235,15 @@ func UnwrapError(err error) error {
 }
 
 // WrapError wraps an error with additional context.
-func WrapError(err error, message string) error {
+func WrapError(err error, op, message string) error {
 	if err == nil {
 		return nil
 	}
 	return &FrameworkError{
-		Type:    ErrorTypeInternal,
+		Op:      op,
+		Code:    string(ErrorCodeInternalError),
 		Message: message,
-		Cause:   err,
+		Err:     err,
 	}
 }
 
@@ -224,33 +252,39 @@ type ErrorCode string
 
 const (
 	// ErrorCodeInvalidInput indicates invalid input parameters.
-	ErrorCodeInvalidInput ErrorCode = "INVALID_INPUT"
+	ErrorCodeInvalidInput ErrorCode = "invalid_input"
 
 	// ErrorCodeNotFound indicates a resource was not found.
-	ErrorCodeNotFound ErrorCode = "NOT_FOUND"
+	ErrorCodeNotFound ErrorCode = "not_found"
 
 	// ErrorCodeUnauthorized indicates unauthorized access.
-	ErrorCodeUnauthorized ErrorCode = "UNAUTHORIZED"
+	ErrorCodeUnauthorized ErrorCode = "unauthorized"
 
 	// ErrorCodeTimeout indicates a timeout occurred.
-	ErrorCodeTimeout ErrorCode = "TIMEOUT"
+	ErrorCodeTimeout ErrorCode = "timeout"
 
 	// ErrorCodeRateLimited indicates rate limiting was applied.
-	ErrorCodeRateLimited ErrorCode = "RATE_LIMITED"
+	ErrorCodeRateLimited ErrorCode = "rate_limited"
 
 	// ErrorCodeInternalError indicates an internal system error.
-	ErrorCodeInternalError ErrorCode = "INTERNAL_ERROR"
+	ErrorCodeInternalError ErrorCode = "internal_error"
 )
 
-// NewFrameworkErrorWithCode creates a FrameworkError with a specific error code.
-func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message string, cause error) *FrameworkError {
+// NewFrameworkError creates a FrameworkError following the Op/Err/Code pattern.
+func NewFrameworkError(op string, code ErrorCode, message string, err error) *FrameworkError {
 	return &FrameworkError{
-		Type:    errorType,
-		Message: message,
-		Cause:   cause,
+		Op:      op,
 		Code:    string(code),
+		Message: message,
+		Err:     err,
 		Context: make(map[string]any),
 	}
+}
+
+// NewFrameworkErrorWithCode creates a FrameworkError with a specific error code.
+// Deprecated: Use NewFrameworkError instead.
+func NewFrameworkErrorWithCode(errorType ErrorType, code ErrorCode, message string, cause error) *FrameworkError {
+	return NewFrameworkError("operation", code, message, cause)
 }
 
 // AddContext adds context information to a FrameworkError.

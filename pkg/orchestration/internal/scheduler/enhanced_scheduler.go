@@ -9,7 +9,7 @@ import (
 
 // EnhancedScheduler provides advanced scheduling with worker pools and retry mechanisms.
 type EnhancedScheduler struct {
-	ctx            context.Context //nolint:containedctx // Context is necessary for scheduler lifecycle management
+	ctx            context.Context
 	tasks          map[string]*Task
 	completed      map[string]bool
 	workerPool     *WorkerPool

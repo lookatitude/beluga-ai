@@ -135,8 +135,7 @@ func (s *RecursiveCharacterTextSplitter) splitTextRecursive(text string, separat
 				// Add overlap from previous chunk
 				overlapText := s.getOverlapText(chunk, s.config.ChunkOverlap, lengthFn)
 				currentChunk.Reset()
-				//nolint:errcheck // strings.Builder.WriteString never fails
-				_, _ = currentChunk.WriteString(overlapText)
+				currentChunk.WriteString(overlapText)
 			} else {
 				currentChunk.Reset()
 			}
@@ -155,12 +154,10 @@ func (s *RecursiveCharacterTextSplitter) splitTextRecursive(text string, separat
 			}
 			// Last sub-chunk becomes the start of next chunk
 			if len(subChunks) > 0 {
-				//nolint:errcheck // strings.Builder.WriteString never fails
-				_, _ = currentChunk.WriteString(subChunks[len(subChunks)-1])
+				currentChunk.WriteString(subChunks[len(subChunks)-1])
 			}
 		} else {
-			//nolint:errcheck // strings.Builder.WriteString never fails
-			_, _ = currentChunk.WriteString(part)
+			currentChunk.WriteString(part)
 		}
 	}
 
@@ -191,11 +188,10 @@ func (s *RecursiveCharacterTextSplitter) splitByCharacters(text string, lengthFn
 			// Add overlap
 			if s.config.ChunkOverlap > 0 && len(chunks) > 0 {
 				overlapText := s.getOverlapText(chunks[len(chunks)-1], s.config.ChunkOverlap, lengthFn)
-				//nolint:errcheck // strings.Builder.WriteString never fails
-				_, _ = currentChunk.WriteString(overlapText)
+				currentChunk.WriteString(overlapText)
 			}
 		}
-		_, _ = currentChunk.WriteRune(char) //nolint:errcheck // strings.Builder.WriteRune never fails
+		currentChunk.WriteRune(char)
 	}
 
 	if currentChunk.Len() > 0 {

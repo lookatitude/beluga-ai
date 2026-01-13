@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -21,7 +22,8 @@ func TestS2S_Observability_Metrics(t *testing.T) {
 
 	// Initialize metrics (required for GetMetrics to return non-nil)
 	meter := noop.NewMeterProvider().Meter("test")
-	s2s.InitMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	s2s.InitMetrics(meter, tracer)
 
 	// Create S2S provider
 	s2sProvider := s2s.NewAdvancedMockS2SProvider("test-provider",
@@ -125,7 +127,8 @@ func TestS2S_Observability_EndToEnd(t *testing.T) {
 
 	// Initialize metrics (required for GetMetrics to return non-nil)
 	meter := noop.NewMeterProvider().Meter("test")
-	s2s.InitMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	s2s.InitMetrics(meter, tracer)
 
 	// Create S2S provider
 	s2sProvider := s2s.NewAdvancedMockS2SProvider("test-provider",
@@ -171,7 +174,8 @@ func TestS2S_Observability_ProviderMetrics(t *testing.T) {
 
 	// Initialize metrics (required for GetMetrics to return non-nil)
 	meter := noop.NewMeterProvider().Meter("test")
-	s2s.InitMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	s2s.InitMetrics(meter, tracer)
 
 	// Create multiple S2S providers to test provider-specific metrics
 	providers := []s2siface.S2SProvider{
@@ -212,7 +216,8 @@ func TestS2S_Observability_ErrorTracking(t *testing.T) {
 	// Initialize metrics (required for GetMetrics to return non-nil)
 	// In production, this would be done at application startup
 	meter := noop.NewMeterProvider().Meter("test")
-	s2s.InitMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	s2s.InitMetrics(meter, tracer)
 
 	// Create S2S provider that will error
 	s2sProvider := s2s.NewAdvancedMockS2SProvider("error-provider",

@@ -7,8 +7,10 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics holds the metric instruments for core operations.
@@ -27,6 +29,9 @@ type Metrics struct {
 	// Stream operation metrics
 	streamDuration metric.Float64Histogram
 	streamChunks   metric.Int64Counter
+
+	// Tracer for span creation
+	tracer trace.Tracer
 }
 
 // createCounter creates a counter instrument with consistent error handling.
@@ -103,7 +108,7 @@ func createHistograms(meter metric.Meter) (metric.Float64Histogram, metric.Int64
 }
 
 // NewMetrics creates a new Metrics instance with registered instruments.
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	runnableInvokes, runnableBatches, runnableStreams, runnableErrors, err := createCounters(meter)
 	if err != nil {
 		return nil, err
@@ -120,6 +125,10 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		return nil, err
 	}
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/core")
+	}
+
 	return &Metrics{
 		runnableInvokes:  runnableInvokes,
 		runnableBatches:  runnableBatches,
@@ -130,6 +139,7 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		batchDuration:    batchDuration,
 		streamDuration:   streamDuration,
 		streamChunks:     streamChunks,
+		tracer:           tracer,
 	}, nil
 }
 
@@ -239,14 +249,18 @@ var (
 // Example:
 //
 //	meter := otel.Meter("beluga-core")
-//	core.InitMetrics(meter)
+//	tracer := otel.Tracer("beluga-core")
+//	core.InitMetrics(meter, tracer)
 //	metrics := core.GetMetrics()
 //	if metrics != nil {
 //	    metrics.RecordRunnableInvoke(ctx, "component_type", duration, err)
 //	}
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		metrics, err := NewMetrics(meter)
+		if tracer == nil {
+			tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/core")
+		}
+		metrics, err := NewMetrics(meter, tracer)
 		if err != nil {
 			// If metrics creation fails, use nil (callers should check)
 			globalMetrics = nil
@@ -273,5 +287,7 @@ func GetMetrics() *Metrics {
 // NoOpMetrics returns a metrics instance that does nothing.
 // Useful for testing or when metrics are disabled.
 func NoOpMetrics() *Metrics {
-	return &Metrics{}
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("core"),
+	}
 }

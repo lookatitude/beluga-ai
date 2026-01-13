@@ -60,17 +60,17 @@ func multimodalRAGExample(ctx context.Context) {
 		{
 			PageContent: "A beautiful sunset over the ocean with orange and pink hues",
 			Metadata: map[string]string{
-				"image_url": "https://example.com/sunset.jpg",
+				"image_url":  "https://example.com/sunset.jpg",
 				"image_type": "image/jpeg",
-				"category": "nature",
+				"category":   "nature",
 			},
 		},
 		{
 			PageContent: "A modern city skyline at night with bright lights",
 			Metadata: map[string]string{
-				"image_url": "https://example.com/city.jpg",
+				"image_url":  "https://example.com/city.jpg",
 				"image_type": "image/jpeg",
-				"category": "urban",
+				"category":   "urban",
 			},
 		},
 	}
@@ -97,7 +97,7 @@ func multimodalRAGExample(ctx context.Context) {
 	queryDoc := schema.Document{
 		PageContent: "Find images similar to this ocean scene",
 		Metadata: map[string]string{
-			"image_url": "https://example.com/query-ocean.jpg",
+			"image_url":  "https://example.com/query-ocean.jpg",
 			"image_type": "image/jpeg",
 		},
 	}

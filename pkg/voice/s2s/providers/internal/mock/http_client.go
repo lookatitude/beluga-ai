@@ -15,7 +15,7 @@ type HTTPClient interface {
 
 // MockHTTPClient is a mock implementation of HTTPClient for testing.
 type MockHTTPClient struct {
-	mu            sync.RWMutex
+	mu           sync.RWMutex
 	responses    map[string]*MockResponse
 	defaultResp  *MockResponse
 	requestCount map[string]int
@@ -104,7 +104,7 @@ func (m *MockHTTPClient) Do(req *http.Request) (*http.Response, error) {
 	response := &http.Response{
 		StatusCode: resp.StatusCode,
 		Body:       body,
-		Header:      resp.Header,
+		Header:     resp.Header,
 	}
 
 	if response.Header == nil {

@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/anthropic"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/anthropic"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 

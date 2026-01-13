@@ -146,7 +146,7 @@ func (s *llmStep) Invoke(ctx context.Context, input interface{}, options ...core
 	response := fmt.Sprintf("LLM Response to: %s", processed)
 
 	return map[string]interface{}{
-		"input":    inputMap["input"],
+		"input":     inputMap["input"],
 		"processed": processed,
 		"response":  response,
 	}, nil

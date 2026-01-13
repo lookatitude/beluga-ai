@@ -20,7 +20,7 @@ import (
 
 // AmazonNovaStreamingSession implements StreamingSession for Amazon Nova 2 Sonic.
 type AmazonNovaStreamingSession struct {
-	ctx            context.Context //nolint:containedctx // Required for streaming
+	ctx            context.Context
 	config         *AmazonNovaConfig
 	provider       *AmazonNovaProvider
 	audioCh        chan iface.AudioOutputChunk
@@ -29,27 +29,27 @@ type AmazonNovaStreamingSession struct {
 	stream         *bedrockruntime.InvokeModelWithResponseStreamOutput
 	audioBuffer    []byte
 	conversationID string
-	restartTimer   *time.Timer // Timer for debouncing restarts
-	restartPending bool // Flag to indicate if restart is pending
-	maxRetries     int // Maximum retry attempts for stream restart
+	restartTimer   *time.Timer   // Timer for debouncing restarts
+	restartPending bool          // Flag to indicate if restart is pending
+	maxRetries     int           // Maximum retry attempts for stream restart
 	retryDelay     time.Duration // Initial retry delay
 }
 
 // NewAmazonNovaStreamingSession creates a new streaming session.
 func NewAmazonNovaStreamingSession(ctx context.Context, config *AmazonNovaConfig, provider *AmazonNovaProvider) (*AmazonNovaStreamingSession, error) {
 	session := &AmazonNovaStreamingSession{
-		ctx:         ctx,
-		config:      config,
-		provider:    provider,
-		audioCh:     make(chan iface.AudioOutputChunk, 10),
-		maxRetries:  3, // Default max retries
-		retryDelay:  100 * time.Millisecond, // Initial retry delay
+		ctx:        ctx,
+		config:     config,
+		provider:   provider,
+		audioCh:    make(chan iface.AudioOutputChunk, 10),
+		maxRetries: 3,                      // Default max retries
+		retryDelay: 100 * time.Millisecond, // Initial retry delay
 	}
 
 	// Initialize streaming connection to Bedrock Runtime
 	// For Nova 2 Sonic, we use InvokeModelWithResponseStream for streaming
 	modelID := fmt.Sprintf("amazon.%s-v1:0", config.Model)
-	
+
 	// Prepare initial request (no audio yet - will be sent via SendAudio)
 	requestBody, err := session.prepareStreamingRequest(nil)
 	if err != nil {
@@ -91,7 +91,7 @@ func (s *AmazonNovaStreamingSession) prepareStreamingRequest(audioData []byte) (
 				"encoding":    s.config.AudioFormat,
 			},
 		},
-		"streaming": true,
+		"streaming":                    true,
 		"enable_automatic_punctuation": s.config.EnableAutomaticPunctuation,
 	}
 

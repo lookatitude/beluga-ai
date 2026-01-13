@@ -16,12 +16,12 @@ func TestStoreMultimodalDocuments(t *testing.T) {
 
 	// Create multimodal documents with images
 	doc1 := schema.NewDocument("This is a picture of a sunset", map[string]string{
-		"image_url": "https://example.com/sunset.jpg",
+		"image_url":  "https://example.com/sunset.jpg",
 		"image_type": "image/jpeg",
 	})
 
 	doc2 := schema.NewDocument("This is a picture of a mountain", map[string]string{
-		"image_url": "https://example.com/mountain.jpg",
+		"image_url":  "https://example.com/mountain.jpg",
 		"image_type": "image/jpeg",
 	})
 
@@ -52,7 +52,7 @@ func TestMultimodalSearchQueries(t *testing.T) {
 
 	// Create a multimodal query document
 	_ = schema.NewDocument("Find images similar to this sunset", map[string]string{
-		"image_url": "https://example.com/query-sunset.jpg",
+		"image_url":  "https://example.com/query-sunset.jpg",
 		"image_type": "image/jpeg",
 	})
 
@@ -112,12 +112,12 @@ func TestMultimodalRAG_EndToEnd(t *testing.T) {
 
 	// Create multimodal documents
 	doc1 := schema.NewDocument("A beautiful sunset", map[string]string{
-		"image_url": "https://example.com/sunset.jpg",
+		"image_url":  "https://example.com/sunset.jpg",
 		"image_type": "image/jpeg",
 	})
 
 	doc2 := schema.NewDocument("A majestic mountain", map[string]string{
-		"image_url": "https://example.com/mountain.jpg",
+		"image_url":  "https://example.com/mountain.jpg",
 		"image_type": "image/jpeg",
 	})
 

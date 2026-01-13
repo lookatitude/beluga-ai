@@ -82,7 +82,7 @@ func TestGrokVoiceProvider_Process(t *testing.T) {
 		Provider: "grok",
 		APIKey:   "test-key",
 	}
-	
+
 	// Use test helper to create provider with mock server endpoint
 	provider, err := NewGrokVoiceProviderWithEndpoint(config, server.URL)
 	require.NoError(t, err)

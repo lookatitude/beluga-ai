@@ -49,10 +49,10 @@ func (r *MemoryRegistry) Create(ctx context.Context, memoryType string, config C
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, NewMemoryError(
+		return nil, NewMemoryErrorWithMessage(
 			"create_memory",
-			MemoryType(memoryType),
 			ErrCodeTypeMismatch,
+			fmt.Sprintf("memory type '%s' not registered", memoryType),
 			fmt.Errorf("memory type '%s' not registered", memoryType),
 		)
 	}

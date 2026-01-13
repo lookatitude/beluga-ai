@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
 )
 
 // TestStreamingToolCallExample_Run tests the main Run method with various scenarios.
@@ -172,12 +172,12 @@ func TestExecuteToolCalls(t *testing.T) {
 	)
 
 	tests := []struct {
-		name       string
-		toolCalls  []schema.ToolCallChunk
-		tools      []tools.Tool
-		wantCount  int
-		wantErr    bool
-		wantNames  []string
+		name      string
+		toolCalls []schema.ToolCallChunk
+		tools     []tools.Tool
+		wantCount int
+		wantErr   bool
+		wantNames []string
 	}{
 		{
 			name: "successful tool call",

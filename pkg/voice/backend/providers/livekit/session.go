@@ -9,12 +9,12 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/livekit/protocol/livekit"
-	"go.opentelemetry.io/otel/codes"
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
 	lksdkwrapper "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // LiveKitSession implements the VoiceSession interface for LiveKit.
@@ -37,9 +37,9 @@ type LiveKitSession struct {
 	// - Resources (pipelineOrchestrator, audioOutput channel)
 	// - Configuration (sessionConfig, metadata)
 	// No shared mutable state between sessions (T171, T173)
-	
+
 	// Connection state tracking for WebRTC connection loss handling (T289)
-	connectionState iface.ConnectionState
+	connectionState   iface.ConnectionState
 	reconnectAttempts int
 	lastReconnectTime time.Time
 }
@@ -62,8 +62,8 @@ func NewLiveKitSession(config *LiveKitConfig, sessionConfig *iface.SessionConfig
 		metadata:             make(map[string]any),
 		audioOutput:          make(chan []byte, 100),
 		active:               false,
-		connectionState:       iface.ConnectionStateDisconnected,
-		reconnectAttempts:     0,
+		connectionState:      iface.ConnectionStateDisconnected,
+		reconnectAttempts:    0,
 	}, nil
 }
 
@@ -132,7 +132,7 @@ func (s *LiveKitSession) reconnect(ctx context.Context) {
 			// 1. Re-establish WebRTC connection
 			// 2. Re-subscribe to user audio track
 			// 3. Re-publish agent audio track
-			
+
 			// For now, simulate successful reconnection
 			s.mu.Lock()
 			if s.active {
@@ -204,9 +204,9 @@ func (s *LiveKitSession) ProcessAudio(ctx context.Context, audio []byte) error {
 	defer span.End()
 
 	backend.AddSpanAttributes(span, map[string]any{
-		"session_id":  s.id,
-		"audio_size":  len(audio),
-		"room_name":   s.roomName,
+		"session_id": s.id,
+		"audio_size": len(audio),
+		"room_name":  s.roomName,
 	})
 
 	s.mu.RLock()
@@ -252,7 +252,7 @@ func (s *LiveKitSession) ProcessAudio(ctx context.Context, audio []byte) error {
 		if backend.IsRetryableError(err) {
 			// Try to recover from transient errors
 			backend.LogWithOTELContext(ctx, slog.LevelWarn, "Retryable error in audio processing, attempting recovery", "error", err)
-			
+
 			// Retry once with a short delay
 			select {
 			case <-ctx.Done():

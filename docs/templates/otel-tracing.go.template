@@ -24,7 +24,6 @@ func NewTracer() *Tracer {
 
 // StartSpan starts a new span for a {package_name} operation.
 //
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (t *Tracer) StartSpan(ctx context.Context, operation string, attrs ...attribute.KeyValue) (context.Context, trace.Span) {
 	if t == nil || t.tracer == nil {
 		return ctx, nil

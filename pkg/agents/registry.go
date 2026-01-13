@@ -97,10 +97,10 @@ func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm 
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_agent",
-			name,
 			ErrCodeInitialization,
+			fmt.Sprintf("agent type '%s' not registered for agent '%s'", agentType, name),
 			fmt.Errorf("%w: %s", errAgentTypeNotRegistered, agentType),
 		)
 	}
@@ -224,10 +224,10 @@ func init() {
 func createBaseAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	baseLLM, ok := llm.(llmsiface.LLM)
 	if !ok {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_base_agent",
-			name,
 			ErrCodeInitialization,
+			fmt.Sprintf("LLM does not implement LLM interface for agent '%s', got %T", name, llm),
 			fmt.Errorf("%w, got %T", errBaseAgentRequiresLLM, llm),
 		)
 	}
@@ -239,10 +239,10 @@ func createBaseAgent(ctx context.Context, name string, llm any, agentTools []too
 func createReActAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	chatModel, ok := llm.(llmsiface.ChatModel)
 	if !ok {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_react_agent",
-			name,
 			ErrCodeInitialization,
+			fmt.Sprintf("LLM does not implement ChatModel interface for agent '%s', got %T", name, llm),
 			fmt.Errorf("%w, got %T", errReActAgentRequiresChatModel, llm),
 		)
 	}

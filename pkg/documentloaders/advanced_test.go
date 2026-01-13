@@ -216,7 +216,7 @@ func TestTextLoader(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, tmpfile.Close())
 				return tmpfile.Name(), func() {
-					_ = os.Remove(tmpfile.Name()) //nolint:errcheck // Best effort cleanup
+					os.Remove(tmpfile.Name())
 				}
 			},
 			wantErr: false,
@@ -250,7 +250,7 @@ func TestTextLoader(t *testing.T) {
 				require.NoError(t, err)
 				require.NoError(t, tmpfile.Close())
 				return tmpfile.Name(), func() {
-					_ = os.Remove(tmpfile.Name()) //nolint:errcheck // Best effort cleanup
+					os.Remove(tmpfile.Name())
 				}
 			},
 			wantErr: false,

@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestScalability100ConcurrentSessions tests that the backend can handle 100+ concurrent sessions (T181, T182).
@@ -20,15 +20,15 @@ func TestScalability100ConcurrentSessions(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	
+
 	// Create backend with mock provider for testing
 	config := &iface.Config{
 		Provider:              "mock",
 		MaxConcurrentSessions: 200, // Allow up to 200 sessions for this test
 		LatencyTarget:         500 * time.Millisecond,
-		Timeout:                30 * time.Second,
-		EnableTracing:          false, // Disable tracing for performance
-		EnableMetrics:          false, // Disable metrics for performance
+		Timeout:               30 * time.Second,
+		EnableTracing:         false, // Disable tracing for performance
+		EnableMetrics:         false, // Disable metrics for performance
 	}
 
 	backendInstance, err := backend.NewBackend(ctx, "mock", config)
@@ -54,13 +54,13 @@ func TestScalability100ConcurrentSessions(t *testing.T) {
 		wg.Add(1)
 		go func(index int) {
 			defer wg.Done()
-			
+
 			sessionConfig := &iface.SessionConfig{
 				UserID:        "user-" + string(rune(index)),
 				Transport:     "webrtc",
 				ConnectionURL: "ws://localhost:8080",
-				PipelineType:   iface.PipelineTypeSTTTTS,
-				Metadata:       map[string]any{"test_index": index},
+				PipelineType:  iface.PipelineTypeSTTTTS,
+				Metadata:      map[string]any{"test_index": index},
 			}
 
 			session, err := backendInstance.CreateSession(ctx, sessionConfig)
@@ -112,7 +112,7 @@ func TestScalability100ConcurrentSessions(t *testing.T) {
 			sess := sessions[i]
 			go func() {
 				defer processingWg.Done()
-				
+
 				// Start session
 				err := sess.Start(ctx)
 				if err != nil {
@@ -147,7 +147,7 @@ func TestScalability100ConcurrentSessions(t *testing.T) {
 	// Verify no latency degradation (SC-002)
 	avgProcessingTime := processingTime / time.Duration(processingSuccessCount)
 	t.Logf("Average processing time with %d concurrent sessions: %v", processingSuccessCount, avgProcessingTime)
-	
+
 	// Latency should not degrade significantly with concurrent load
 	// Target: <500ms per session even with 100 concurrent sessions
 	assert.Less(t, avgProcessingTime, 1*time.Second,
@@ -169,7 +169,7 @@ func TestSessionIsolation(t *testing.T) {
 		Provider:              "mock",
 		MaxConcurrentSessions: 10,
 		LatencyTarget:         500 * time.Millisecond,
-		Timeout:                30 * time.Second,
+		Timeout:               30 * time.Second,
 	}
 
 	backendInstance, err := backend.NewBackend(ctx, "mock", config)

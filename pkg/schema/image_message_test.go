@@ -11,10 +11,10 @@ import (
 
 func TestNewImageMessage(t *testing.T) {
 	tests := []struct {
-		name       string
-		imageURL   string
+		name        string
+		imageURL    string
 		textContent string
-		validate   func(t *testing.T, msg Message)
+		validate    func(t *testing.T, msg Message)
 	}{
 		{
 			name:        "basic_image_message",
@@ -23,7 +23,7 @@ func TestNewImageMessage(t *testing.T) {
 			validate: func(t *testing.T, msg Message) {
 				assert.Equal(t, RoleHuman, msg.GetType())
 				assert.Contains(t, msg.GetContent(), "Look at this image")
-				
+
 				imgMsg, ok := AsImageMessage(msg)
 				require.True(t, ok, "Message should be ImageMessage")
 				assert.Equal(t, "https://example.com/image.jpg", imgMsg.ImageURL)
@@ -57,7 +57,7 @@ func TestNewImageMessageWithData(t *testing.T) {
 	textContent := "JPEG image"
 
 	msg := NewImageMessageWithData(imageData, format, textContent)
-	
+
 	imgMsg, ok := AsImageMessage(msg)
 	require.True(t, ok)
 	assert.Equal(t, imageData, imgMsg.ImageData)
@@ -72,7 +72,7 @@ func TestNewImageMessageWithContext(t *testing.T) {
 	textContent := "Test image"
 
 	msg := NewImageMessageWithContext(ctx, imageURL, textContent)
-	
+
 	imgMsg, ok := AsImageMessage(msg)
 	require.True(t, ok)
 	assert.Equal(t, imageURL, imgMsg.ImageURL)
@@ -82,7 +82,7 @@ func TestNewImageMessageWithContext(t *testing.T) {
 func TestImageMessageAdditionalArgs(t *testing.T) {
 	imageURL := "https://example.com/image.jpg"
 	msg := NewImageMessage(imageURL, "Test")
-	
+
 	args := msg.AdditionalArgs()
 	assert.Equal(t, imageURL, args["image_url"])
 }
@@ -120,10 +120,10 @@ func TestIsImageMessage(t *testing.T) {
 func TestImageMessageMethods(t *testing.T) {
 	imageURL := "https://example.com/image.jpg"
 	msg := NewImageMessage(imageURL, "Test content")
-	
+
 	imgMsg, ok := AsImageMessage(msg)
 	require.True(t, ok)
-	
+
 	assert.Equal(t, imageURL, imgMsg.GetImageURL())
 	assert.Equal(t, "auto", imgMsg.GetImageFormat())
 	assert.True(t, imgMsg.HasImageData())

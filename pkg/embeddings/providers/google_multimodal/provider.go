@@ -39,15 +39,15 @@ type GoogleMultimodalEmbedder struct {
 
 // Google embedding API request/response structures.
 type googleEmbedRequest struct {
-	Model  string              `json:"model,omitempty"`
-	Task   string              `json:"task,omitempty"` // "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "SEMANTIC_SIMILARITY", etc.
-	Title  string              `json:"title,omitempty"`
-	Text   string              `json:"text,omitempty"`
-	Images []googleImageInput  `json:"images,omitempty"`
+	Model  string             `json:"model,omitempty"`
+	Task   string             `json:"task,omitempty"` // "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY", "SEMANTIC_SIMILARITY", etc.
+	Title  string             `json:"title,omitempty"`
+	Text   string             `json:"text,omitempty"`
+	Images []googleImageInput `json:"images,omitempty"`
 }
 
 type googleImageInput struct {
-	Data     string `json:"data,omitempty"`     // Base64 encoded image
+	Data     string `json:"data,omitempty"` // Base64 encoded image
 	MimeType string `json:"mime_type,omitempty"`
 }
 
@@ -326,6 +326,6 @@ func (e *GoogleMultimodalEmbedder) fetchImageFromURL(ctx context.Context, url st
 
 // Ensure GoogleMultimodalEmbedder implements the interfaces.
 var (
-	_ iface.Embedder            = (*GoogleMultimodalEmbedder)(nil)
-	_ iface.MultimodalEmbedder  = (*GoogleMultimodalEmbedder)(nil)
+	_ iface.Embedder           = (*GoogleMultimodalEmbedder)(nil)
+	_ iface.MultimodalEmbedder = (*GoogleMultimodalEmbedder)(nil)
 )

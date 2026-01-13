@@ -14,7 +14,7 @@ func TestTextLoader_Load(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "test*.txt")
 	require.NoError(t, err)
 	defer func() {
-		_ = os.Remove(tmpfile.Name()) //nolint:errcheck // Best effort cleanup
+		os.Remove(tmpfile.Name())
 	}()
 
 	_, err = tmpfile.WriteString("Test content")
@@ -39,7 +39,7 @@ func TestTextLoader_LazyLoad(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "test*.txt")
 	require.NoError(t, err)
 	defer func() {
-		_ = os.Remove(tmpfile.Name()) //nolint:errcheck // Best effort cleanup
+		os.Remove(tmpfile.Name())
 	}()
 
 	_, err = tmpfile.WriteString("Test content")
@@ -86,7 +86,7 @@ func TestTextLoader_FileTooLarge(t *testing.T) {
 	tmpfile, err := os.CreateTemp("", "test*.txt")
 	require.NoError(t, err)
 	defer func() {
-		_ = os.Remove(tmpfile.Name()) //nolint:errcheck // Best effort cleanup
+		os.Remove(tmpfile.Name())
 	}()
 
 	// Write content larger than limit

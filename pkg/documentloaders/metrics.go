@@ -5,21 +5,24 @@ import (
 	"fmt"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics contains all the metrics for document loading operations.
 type Metrics struct {
-	operationsTotal   metric.Int64Counter
-	documentsLoaded   metric.Int64Counter
-	filesSkipped      metric.Int64Counter
-	loadDuration      metric.Float64Histogram
-	fileSize          metric.Int64Histogram
+	operationsTotal metric.Int64Counter
+	documentsLoaded metric.Int64Counter
+	filesSkipped    metric.Int64Counter
+	loadDuration    metric.Float64Histogram
+	fileSize        metric.Int64Histogram
+	tracer          trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance.
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	m := &Metrics{}
 
 	var err error
@@ -64,6 +67,11 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create file_size histogram: %w", err)
 	}
+
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/documentloaders")
+	}
+	m.tracer = tracer
 
 	return m, nil
 }

@@ -469,7 +469,7 @@ import (
 
 // Initialize metrics once at application startup
 meter := otel.Meter("beluga.orchestration")
-orchestration.InitMetrics(meter)
+orchestration.InitMetrics(meter, tracer)
 
 // Get the global metrics instance
 metrics := orchestration.GetMetrics()

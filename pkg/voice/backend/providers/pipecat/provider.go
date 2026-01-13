@@ -31,7 +31,7 @@ func (p *PipecatProvider) GetCapabilities(ctx context.Context) (*iface.ProviderC
 		SessionPersistence:    true,
 		CustomAuth:            true,
 		CustomRateLimiting:    true,
-		MaxConcurrentSessions: 0, // Daily.co supports unlimited sessions
+		MaxConcurrentSessions: 0,                      // Daily.co supports unlimited sessions
 		MinLatency:            100 * time.Millisecond, // Daily.co can achieve <200ms latency
 		SupportedCodecs:       []string{"opus", "pcm", "g722"},
 	}, nil

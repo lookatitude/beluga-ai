@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
 )
 
 func main() {

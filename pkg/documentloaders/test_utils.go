@@ -11,12 +11,12 @@ import (
 
 // AdvancedMockLoader provides a comprehensive mock implementation for testing.
 type AdvancedMockLoader struct {
-	documents      []schema.Document
-	errorToReturn  error
-	shouldError    bool
-	callCount      int
-	lazyLoadCount  int
-	mu             sync.RWMutex
+	documents     []schema.Document
+	errorToReturn error
+	shouldError   bool
+	callCount     int
+	lazyLoadCount int
+	mu            sync.RWMutex
 }
 
 // NewAdvancedMockLoader creates a new advanced mock with configurable behavior.

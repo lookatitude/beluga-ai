@@ -69,7 +69,7 @@ func TestAmazonNovaProvider_Process(t *testing.T) {
 	// For proper mocking, the provider would need to be refactored to use
 	// the BedrockRuntimeClient interface instead of the concrete type.
 	// See pkg/voice/s2s/providers/internal/mock/bedrock_client.go for the mock interface.
-	
+
 	config := &s2s.Config{
 		Provider: "amazon_nova",
 		APIKey:   "test-key",
@@ -104,16 +104,16 @@ func TestAmazonNovaProvider_Process(t *testing.T) {
 	// In a properly mocked setup, this would succeed
 	if err != nil {
 		// Check if it's an API error (expected without valid credentials)
-		if strings.Contains(err.Error(), "invalid_request") || 
-		   strings.Contains(err.Error(), "ValidationException") ||
-		   strings.Contains(err.Error(), "credentials") {
+		if strings.Contains(err.Error(), "invalid_request") ||
+			strings.Contains(err.Error(), "ValidationException") ||
+			strings.Contains(err.Error(), "credentials") {
 			t.Skipf("Skipping test - API error (expected without valid credentials): %v", err)
 			return
 		}
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	if output != nil {
 		assert.NotEmpty(t, output.Data)
 	}
@@ -191,7 +191,7 @@ func TestAmazonNovaProvider_StartStreaming_ContextCancellation(t *testing.T) {
 	// Should respect context cancellation or return config error if streaming disabled
 	if err != nil {
 		// Either context was canceled or streaming is disabled (both are acceptable)
-		assert.True(t, errors.Is(err, context.Canceled) || 
+		assert.True(t, errors.Is(err, context.Canceled) ||
 			strings.Contains(err.Error(), "streaming is disabled") ||
 			strings.Contains(err.Error(), "invalid_config"))
 	}

@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/livekit/protocol/livekit"
-	"go.opentelemetry.io/otel/codes"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
 	lksdkwrapper "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // LiveKitBackend implements the VoiceBackend interface for LiveKit.
@@ -70,7 +70,7 @@ func (b *LiveKitBackend) Start(ctx context.Context) error {
 	})
 
 	// Initialize LiveKit room service client with retry logic
-		var roomService *lksdkwrapper.RoomServiceClient
+	var roomService *lksdkwrapper.RoomServiceClient
 	retryConfig := &internal.RetryConfig{
 		MaxRetries: b.config.MaxRetries,
 		Delay:      b.config.RetryDelay,
@@ -172,8 +172,8 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 	}
 
 	backend.AddSpanAttributes(span, map[string]any{
-		"user_id":      config.UserID,
-		"transport":    config.Transport,
+		"user_id":       config.UserID,
+		"transport":     config.Transport,
 		"pipeline_type": string(config.PipelineType),
 	})
 
@@ -236,7 +236,7 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 		backend.AddSpanAttributes(span, map[string]any{
 			"authenticated": true,
-			"auth_user_id":   authResult.UserID,
+			"auth_user_id":  authResult.UserID,
 		})
 	}
 
@@ -346,7 +346,7 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 		b.metrics.RecordSessionCreationTime(ctx, "livekit", creationTime)
 	}
 	backend.AddSpanAttributes(span, map[string]any{
-		"session_id":      session.GetID(),
+		"session_id":       session.GetID(),
 		"room_name":        roomName,
 		"creation_time_ms": creationTime.Milliseconds(),
 	})
@@ -448,28 +448,28 @@ func (b *LiveKitBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus, 
 	// Comprehensive health status tracking (T299, T301)
 	activeSessions := b.sessionManager.GetActiveSessionCount()
 	maxSessions := b.config.MaxConcurrentSessions
-	
+
 	// Determine health status: healthy, degraded, or unhealthy
 	status := "healthy"
-	
+
 	// Check if we're approaching session limits (degraded state)
 	if maxSessions > 0 && activeSessions >= int(float64(maxSessions)*0.9) {
 		status = "degraded"
 		b.healthStatus.Details["reason"] = "approaching session limit"
 	}
-	
+
 	// Check connection quality
 	if b.connectionState != iface.ConnectionStateConnected {
 		status = "unhealthy"
 		b.healthStatus.Details["reason"] = "connection not established"
 	}
-	
+
 	b.healthStatus.Status = status
 	b.healthStatus.Details["active_sessions"] = activeSessions
 	b.healthStatus.Details["max_sessions"] = maxSessions
 	b.healthStatus.Details["connection_state"] = string(b.connectionState)
 	b.healthStatus.Details["session_utilization"] = float64(activeSessions) / float64(maxSessions) * 100
-	
+
 	return b.healthStatus, nil
 }
 

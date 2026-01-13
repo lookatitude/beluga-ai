@@ -69,8 +69,8 @@ func TestProviderSwapping(t *testing.T) {
 
 			// Create a session
 			sessionConfig := &vbiface.SessionConfig{
-				UserID:      "test-user",
-				Transport:   "websocket",
+				UserID:       "test-user",
+				Transport:    "websocket",
 				PipelineType: vbiface.PipelineTypeSTTTTS,
 				AgentCallback: func(ctx context.Context, transcript string) (string, error) {
 					return "Hello from " + providerName, nil
@@ -263,9 +263,9 @@ func TestProviderSwappingConcurrentSessions(t *testing.T) {
 	sessions := make([]vbiface.VoiceSession, numSessions)
 	errors := make([]error, numSessions)
 
-		for i := 0; i < numSessions; i++ {
-			sessionConfig := &vbiface.SessionConfig{
-				UserID:       "test-user-" + string(rune('0'+i)),
+	for i := 0; i < numSessions; i++ {
+		sessionConfig := &vbiface.SessionConfig{
+			UserID:       "test-user-" + string(rune('0'+i)),
 			Transport:    "websocket",
 			PipelineType: vbiface.PipelineTypeSTTTTS,
 			AgentCallback: func(ctx context.Context, transcript string) (string, error) {

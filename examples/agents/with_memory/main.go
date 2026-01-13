@@ -29,11 +29,11 @@ func main() {
 	// Step 2: Create buffer memory
 	// Buffer memory stores all conversation history
 	memConfig := memory.Config{
-		Type:        memory.MemoryTypeBuffer,
-		MemoryKey:   "history",
-		InputKey:    "input",
-		OutputKey:   "output",
-		Enabled:     true,
+		Type:           memory.MemoryTypeBuffer,
+		MemoryKey:      "history",
+		InputKey:       "input",
+		OutputKey:      "output",
+		Enabled:        true,
 		ReturnMessages: false,
 	}
 

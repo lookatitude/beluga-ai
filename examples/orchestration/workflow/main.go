@@ -26,10 +26,10 @@ func main() {
 		time.Sleep(100 * time.Millisecond)
 
 		result := map[string]interface{}{
-			"status":  "completed",
-			"input":   input,
-			"output":  "Workflow completed successfully",
-			"steps":   3,
+			"status": "completed",
+			"input":  input,
+			"output": "Workflow completed successfully",
+			"steps":  3,
 		}
 
 		return result, nil

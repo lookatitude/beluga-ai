@@ -79,11 +79,11 @@ func TestS2SIntegration_StartStreaming_NotStreamingProvider(t *testing.T) {
 	type nonStreamingProvider struct {
 		s2siface.S2SProvider
 	}
-	
+
 	mockProvider := s2s.NewAdvancedMockS2SProvider("test-provider")
 	// Wrap it to hide the StreamingS2SProvider interface
 	nonStreaming := &nonStreamingProvider{S2SProvider: mockProvider}
-	
+
 	integration := NewS2SIntegration(nonStreaming)
 
 	ctx := context.Background()

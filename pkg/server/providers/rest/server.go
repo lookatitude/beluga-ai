@@ -439,8 +439,8 @@ func (s *Server) handleError(w http.ResponseWriter, r *http.Request, err *iface.
 		response["error"].(map[string]any)["details"] = err.Details
 	}
 
-	if err.Operation != "" {
-		response["error"].(map[string]any)["operation"] = err.Operation
+	if err.Op != "" {
+		response["error"].(map[string]any)["operation"] = err.Op
 	}
 
 	_ = json.NewEncoder(w).Encode(response)

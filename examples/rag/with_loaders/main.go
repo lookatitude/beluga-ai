@@ -12,19 +12,19 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels"
 	chatmodelsiface "github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/documentloaders"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/textsplitters"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 )
 
 func main() {

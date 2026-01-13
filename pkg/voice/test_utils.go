@@ -16,14 +16,14 @@ type AdvancedMockVoiceComponent struct {
 	mock.Mock
 
 	// Configuration
-	name         string
-	callCount    int
-	mu           sync.RWMutex
+	name      string
+	callCount int
+	mu        sync.RWMutex
 
 	// Configurable behavior
-	shouldError      bool
-	errorToReturn    error
-	simulateDelay    time.Duration
+	shouldError   bool
+	errorToReturn error
+	simulateDelay time.Duration
 
 	// Health check data
 	healthState     string
@@ -33,8 +33,8 @@ type AdvancedMockVoiceComponent struct {
 // NewAdvancedMockVoiceComponent creates a new advanced mock voice component with configurable behavior.
 func NewAdvancedMockVoiceComponent(name string, opts ...MockVoiceComponentOption) *AdvancedMockVoiceComponent {
 	m := &AdvancedMockVoiceComponent{
-		name:           name,
-		healthState:    "healthy",
+		name:            name,
+		healthState:     "healthy",
 		lastHealthCheck: time.Now(),
 	}
 

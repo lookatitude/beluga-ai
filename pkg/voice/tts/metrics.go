@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MetricsRecorder defines the interface for recording metrics.
@@ -17,31 +19,13 @@ type MetricsRecorder interface {
 	DecrementActiveStreams(ctx context.Context, provider, model, voice string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
-type NoOpMetrics struct{}
-
-// NewNoOpMetrics creates a new no-operation metrics recorder.
-func NewNoOpMetrics() *NoOpMetrics {
-	return &NoOpMetrics{}
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("voice/tts"),
+	}
 }
-
-// RecordGeneration is a no-op implementation.
-func (n *NoOpMetrics) RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration) {
-}
-
-// RecordError is a no-op implementation.
-func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration) {
-}
-
-// RecordStreaming is a no-op implementation.
-func (n *NoOpMetrics) RecordStreaming(ctx context.Context, provider, model, voice string, duration time.Duration) {
-}
-
-// IncrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, model, voice string) {}
-
-// DecrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, model, voice string) {}
 
 // Metrics contains all the metrics for TTS operations.
 type Metrics struct {
@@ -53,10 +37,11 @@ type Metrics struct {
 	generationLatency metric.Float64Histogram
 	streamLatency     metric.Float64Histogram
 	activeStreams     metric.Int64UpDownCounter
+	tracer            trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance.
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 	m := &Metrics{}
 
 	m.generations, _ = meter.Int64Counter("tts.generations.total", metric.WithDescription("Total TTS generations"))
@@ -68,47 +53,80 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	m.streamLatency, _ = meter.Float64Histogram("tts.stream.latency", metric.WithDescription("Stream latency"), metric.WithUnit("s"))
 	m.activeStreams, _ = meter.Int64UpDownCounter("tts.streams.active", metric.WithDescription("Active TTS streams"))
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/voice/tts")
+	}
+	m.tracer = tracer
+
 	return m
 }
 
 // RecordGeneration records a generation operation.
 func (m *Metrics) RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 		attribute.String("voice", voice),
 	}
-	m.generations.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.generations != nil {
+		m.generations.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.successful != nil {
+		m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.generationLatency != nil {
+		m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 		attribute.String("voice", voice),
 		attribute.String("error_code", errorCode),
 	}
-	m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.errors != nil {
+		m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.failed != nil {
+		m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.generationLatency != nil {
+		m.generationLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordStreaming records a streaming operation.
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model, voice string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 		attribute.String("voice", voice),
 	}
-	m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.streams != nil {
+		m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.streamLatency != nil {
+		m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // IncrementActiveStreams increments the active streams counter.
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, voice string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
@@ -119,6 +137,9 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, v
 
 // DecrementActiveStreams decrements the active streams counter.
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model, voice string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),

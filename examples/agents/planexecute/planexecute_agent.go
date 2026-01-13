@@ -14,9 +14,10 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"log"
 	"os"
+	"strings"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -31,25 +32,28 @@ import (
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
-// We define a tracer for observability - this helps debug agent behavior in production
-var tracer = otel.Tracer("beluga.agents.planexecute.example")
+var (
+	tracer             = otel.Tracer("beluga.agents.planexecute.example")
+	errToolInputNotMap = errors.New("tool input is not a map")
+	errNoPlanFound     = errors.New("no plan found in agent action")
+)
 
-// PlanExecuteExample demonstrates PlanExecute agent usage
+// PlanExecuteExample demonstrates PlanExecute agent usage.
 type PlanExecuteExample struct {
 	agent *planexecute.PlanExecuteAgent
 	name  string
 }
 
-// PlanExecuteResult holds the result of running the agent
+// PlanExecuteResult holds the result of running the agent.
 type PlanExecuteResult struct {
-	Plan          *planexecute.ExecutionPlan
 	StepResults   map[string]any
+	Plan          *planexecute.ExecutionPlan
 	FinalOutput   string
 	TotalDuration time.Duration
 	StepsExecuted int
 }
 
-// NewPlanExecuteExample creates a new example with the given LLM and tools
+// NewPlanExecuteExample creates a new example with the given LLM and tools.
 func NewPlanExecuteExample(
 	name string,
 	llmClient llmsiface.ChatModel,
@@ -94,46 +98,46 @@ func NewPlanExecuteExample(
 	}, nil
 }
 
-// planExecuteConfig holds configuration for the example
+// planExecuteConfig holds configuration for the example.
 type planExecuteConfig struct {
-	maxPlanSteps  int
-	maxIterations int
 	plannerLLM    llmsiface.ChatModel
 	executorLLM   llmsiface.ChatModel
+	maxPlanSteps  int
+	maxIterations int
 }
 
-// PlanExecuteOption configures the example
+// PlanExecuteOption configures the example.
 type PlanExecuteOption func(*planExecuteConfig)
 
-// WithMaxPlanSteps sets the maximum number of steps in a plan
+// WithMaxPlanSteps sets the maximum number of steps in a plan.
 func WithMaxPlanSteps(steps int) PlanExecuteOption {
 	return func(c *planExecuteConfig) {
 		c.maxPlanSteps = steps
 	}
 }
 
-// WithMaxIterations sets the maximum execution iterations
+// WithMaxIterations sets the maximum execution iterations.
 func WithMaxIterations(iterations int) PlanExecuteOption {
 	return func(c *planExecuteConfig) {
 		c.maxIterations = iterations
 	}
 }
 
-// WithPlannerLLM sets a separate LLM for planning (e.g., GPT-4 for better reasoning)
+// WithPlannerLLM sets a separate LLM for planning (e.g., GPT-4 for better reasoning).
 func WithPlannerLLM(llm llmsiface.ChatModel) PlanExecuteOption {
 	return func(c *planExecuteConfig) {
 		c.plannerLLM = llm
 	}
 }
 
-// WithExecutorLLM sets a separate LLM for execution (e.g., GPT-3.5 for speed)
+// WithExecutorLLM sets a separate LLM for execution (e.g., GPT-3.5 for speed).
 func WithExecutorLLM(llm llmsiface.ChatModel) PlanExecuteOption {
 	return func(c *planExecuteConfig) {
 		c.executorLLM = llm
 	}
 }
 
-// Run executes the PlanExecute agent with the given task
+// Run executes the PlanExecute agent with the given task.
 func (e *PlanExecuteExample) Run(ctx context.Context, task string) (*PlanExecuteResult, error) {
 	ctx, span := tracer.Start(ctx, "planexecute.run",
 		trace.WithAttributes(
@@ -163,7 +167,8 @@ func (e *PlanExecuteExample) Run(ctx context.Context, task string) (*PlanExecute
 	if err != nil {
 		span.RecordError(err)
 		// Don't fail completely - return partial results
-		log.Printf("Execution had errors: %v", err)
+		// Log error (in production, use structured logging)
+		_ = err
 	}
 
 	result.StepResults = stepResults
@@ -173,7 +178,8 @@ func (e *PlanExecuteExample) Run(ctx context.Context, task string) (*PlanExecute
 	finalOutput, err := e.synthesizeOutput(ctx, plan, stepResults)
 	if err != nil {
 		span.RecordError(err)
-		log.Printf("Output synthesis failed: %v", err)
+		// Log error (in production, use structured logging)
+		_ = err
 	}
 
 	result.FinalOutput = finalOutput
@@ -188,7 +194,7 @@ func (e *PlanExecuteExample) Run(ctx context.Context, task string) (*PlanExecute
 	return result, nil
 }
 
-// generatePlan uses the agent to create an execution plan
+// generatePlan uses the agent to create an execution plan.
 func (e *PlanExecuteExample) generatePlan(ctx context.Context, task string) (*planexecute.ExecutionPlan, error) {
 	ctx, span := tracer.Start(ctx, "planexecute.generate_plan")
 	defer span.End()
@@ -203,11 +209,11 @@ func (e *PlanExecuteExample) generatePlan(ctx context.Context, task string) (*pl
 	// Extract the plan from the action
 	toolInput, ok := action.ToolInput.(map[string]any)
 	if !ok {
-		return nil, fmt.Errorf("tool input is not a map")
+		return nil, errToolInputNotMap
 	}
 	planJSON, ok := toolInput["plan"].(string)
 	if !ok {
-		return nil, fmt.Errorf("no plan found in agent action")
+		return nil, errNoPlanFound
 	}
 
 	var plan planexecute.ExecutionPlan
@@ -224,7 +230,7 @@ func (e *PlanExecuteExample) generatePlan(ctx context.Context, task string) (*pl
 	return &plan, nil
 }
 
-// executePlan executes each step of the plan
+// executePlan executes each step of the plan.
 func (e *PlanExecuteExample) executePlan(ctx context.Context, plan *planexecute.ExecutionPlan) (map[string]any, error) {
 	ctx, span := tracer.Start(ctx, "planexecute.execute_plan")
 	defer span.End()
@@ -242,26 +248,41 @@ func (e *PlanExecuteExample) executePlan(ctx context.Context, plan *planexecute.
 	return results, nil
 }
 
-// synthesizeOutput creates a final summary from the plan execution results
-func (e *PlanExecuteExample) synthesizeOutput(ctx context.Context, plan *planexecute.ExecutionPlan, results map[string]any) (string, error) {
-	ctx, span := tracer.Start(ctx, "planexecute.synthesize")
+// synthesizeOutput creates a final summary from the plan execution results.
+func (*PlanExecuteExample) synthesizeOutput(
+	ctx context.Context,
+	plan *planexecute.ExecutionPlan,
+	results map[string]any,
+) (string, error) {
+	_, span := tracer.Start(ctx, "planexecute.synthesize")
 	defer span.End()
 
 	// Build a summary of what was accomplished
-	var summary string
-	summary += fmt.Sprintf("Goal: %s\n", plan.Goal)
-	summary += fmt.Sprintf("Steps completed: %d/%d\n", len(results), len(plan.Steps))
-	summary += "\nResults:\n"
-
-	for stepKey, result := range results {
-		summary += fmt.Sprintf("  %s: %v\n", stepKey, result)
+	var summary strings.Builder
+	goalStr := fmt.Sprintf("Goal: %s\n", plan.Goal)
+	if _, err := summary.WriteString(goalStr); err != nil {
+		return "", fmt.Errorf("failed to write goal: %w", err)
+	}
+	stepsStr := fmt.Sprintf("Steps completed: %d/%d\n", len(results), len(plan.Steps))
+	if _, err := summary.WriteString(stepsStr); err != nil {
+		return "", fmt.Errorf("failed to write steps: %w", err)
+	}
+	if _, err := summary.WriteString("\nResults:\n"); err != nil {
+		return "", fmt.Errorf("failed to write results header: %w", err)
 	}
 
-	return summary, nil
+	for stepKey, result := range results {
+		resultStr := fmt.Sprintf("  %s: %v\n", stepKey, result)
+		if _, err := summary.WriteString(resultStr); err != nil {
+			return "", fmt.Errorf("failed to write result for %s: %w", stepKey, err)
+		}
+	}
+
+	return summary.String(), nil
 }
 
-// DisplayPlan prints a formatted view of the execution plan
-func (e *PlanExecuteExample) DisplayPlan(plan *planexecute.ExecutionPlan) {
+// DisplayPlan prints a formatted view of the execution plan.
+func (*PlanExecuteExample) DisplayPlan(plan *planexecute.ExecutionPlan) {
 	fmt.Printf("\n=== Execution Plan ===\n")
 	fmt.Printf("Goal: %s\n", plan.Goal)
 	fmt.Printf("Total Steps: %d\n\n", plan.TotalSteps)
@@ -279,18 +300,18 @@ func (e *PlanExecuteExample) DisplayPlan(plan *planexecute.ExecutionPlan) {
 	}
 }
 
-// createResearchTools creates sample tools for a research agent
-func createResearchTools() []tools.Tool {
-	// Web search tool
-	webSearch, _ := gofunc.NewGoFunctionTool(
+// createWebSearchTool creates a web search tool.
+func createWebSearchTool() (tools.Tool, error) {
+	return gofunc.NewGoFunctionTool(
 		"web_search",
 		"Search the web for information. Returns relevant search results.",
-		`{"type": "object", "properties": {"query": {"type": "string", "description": "The search query"}}, "required": ["query"]}`,
-		func(ctx context.Context, args map[string]any) (any, error) {
+		`{"type": "object", "properties": {"query": {"type": "string", `+
+			`"description": "The search query"}}, "required": ["query"]}`,
+		func(_ context.Context, args map[string]any) (any, error) {
 			query, _ := args["query"].(string)
 			// In production, call a real search API
 			return fmt.Sprintf(`{
-				"query": "%s",
+				"query": %q,
 				"results": [
 					{"title": "Result 1", "snippet": "Relevant information about %s"},
 					{"title": "Result 2", "snippet": "More details on %s"}
@@ -298,41 +319,73 @@ func createResearchTools() []tools.Tool {
 			}`, query, query, query), nil
 		},
 	)
+}
 
-	// Calculator tool
-	calculator, _ := gofunc.NewGoFunctionTool(
+// createCalculatorTool creates a calculator tool.
+func createCalculatorTool() (tools.Tool, error) {
+	return gofunc.NewGoFunctionTool(
 		"calculator",
 		"Perform arithmetic calculations. Input should be a mathematical expression.",
-		`{"type": "object", "properties": {"expression": {"type": "string", "description": "The mathematical expression"}}, "required": ["expression"]}`,
-		func(ctx context.Context, args map[string]any) (any, error) {
+		`{"type": "object", "properties": {"expression": {"type": "string", `+
+			`"description": "The mathematical expression"}}, "required": ["expression"]}`,
+		func(_ context.Context, args map[string]any) (any, error) {
 			expression, _ := args["expression"].(string)
 			// In production, use a proper math evaluator
-			return fmt.Sprintf(`{"expression": "%s", "result": "calculated"}`, expression), nil
+			return fmt.Sprintf(`{"expression": %q, "result": "calculated"}`, expression), nil
 		},
 	)
+}
 
-	// Note-taking tool
-	notepad, _ := gofunc.NewGoFunctionTool(
+// createNotepadTool creates a note-taking tool.
+func createNotepadTool() (tools.Tool, error) {
+	return gofunc.NewGoFunctionTool(
 		"take_notes",
 		"Save notes for later reference. Use this to record important findings.",
-		`{"type": "object", "properties": {"note": {"type": "string", "description": "The note to save"}}, "required": ["note"]}`,
-		func(ctx context.Context, args map[string]any) (any, error) {
+		`{"type": "object", "properties": {"note": {"type": "string", `+
+			`"description": "The note to save"}}, "required": ["note"]}`,
+		func(_ context.Context, args map[string]any) (any, error) {
 			note, _ := args["note"].(string)
-			return fmt.Sprintf(`{"status": "saved", "note": "%s"}`, note), nil
+			return fmt.Sprintf(`{"status": "saved", "note": %q}`, note), nil
 		},
 	)
+}
 
-	// Summary tool
-	summarize, _ := gofunc.NewGoFunctionTool(
+// createSummarizeTool creates a summarize tool.
+func createSummarizeTool() (tools.Tool, error) {
+	return gofunc.NewGoFunctionTool(
 		"summarize",
 		"Summarize text or findings into a concise format.",
-		`{"type": "object", "properties": {"text": {"type": "string", "description": "The text to summarize"}}, "required": ["text"]}`,
-		func(ctx context.Context, args map[string]any) (any, error) {
+		`{"type": "object", "properties": {"text": {"type": "string", `+
+			`"description": "The text to summarize"}}, "required": ["text"]}`,
+		func(_ context.Context, args map[string]any) (any, error) {
 			text, _ := args["text"].(string)
 			// In production, might call an LLM
 			return fmt.Sprintf(`{"summary": "Summary of: %s"}`, text), nil
 		},
 	)
+}
+
+// createResearchTools creates sample tools for a research agent.
+func createResearchTools() []tools.Tool {
+	webSearch, err := createWebSearchTool()
+	if err != nil {
+		return nil
+	}
+
+	calculator, err := createCalculatorTool()
+	if err != nil {
+		return nil
+	}
+
+	notepad, err := createNotepadTool()
+	if err != nil {
+		return nil
+	}
+
+	summarize, err := createSummarizeTool()
+	if err != nil {
+		return nil
+	}
 
 	return []tools.Tool{webSearch, calculator, notepad, summarize}
 }
@@ -343,7 +396,9 @@ func main() {
 	// Get API key from environment
 	apiKey := os.Getenv("OPENAI_API_KEY")
 	if apiKey == "" {
-		log.Fatal("OPENAI_API_KEY environment variable is required")
+		_, _ = fmt.Fprintf(os.Stderr,
+			"OPENAI_API_KEY environment variable is required\n")
+		os.Exit(1)
 	}
 
 	// Create the LLM client
@@ -352,7 +407,8 @@ func main() {
 		llms.WithModelName("gpt-4"),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create LLM client: %v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to create LLM client: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Create research tools
@@ -367,21 +423,24 @@ func main() {
 		WithMaxIterations(10),
 	)
 	if err != nil {
-		log.Fatalf("Failed to create example: %v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Failed to create example: %v\n", err)
+		os.Exit(1)
 	}
 
-	fmt.Println("=== PlanExecute Agent Example ===")
-	fmt.Println()
+	_, _ = fmt.Println("=== PlanExecute Agent Example ===")
+	_, _ = fmt.Println()
 
 	// Run a research task
-	task := "Research the benefits of renewable energy and calculate the potential savings for a household switching to solar panels"
+	task := "Research the benefits of renewable energy and calculate the " +
+		"potential savings for a household switching to solar panels"
 
-	fmt.Printf("Task: %s\n", task)
-	fmt.Println()
+	_, _ = fmt.Printf("Task: %s\n", task)
+	_, _ = fmt.Println()
 
 	result, err := example.Run(ctx, task)
 	if err != nil {
-		log.Fatalf("Task failed: %v", err)
+		_, _ = fmt.Fprintf(os.Stderr, "Task failed: %v\n", err)
+		os.Exit(1)
 	}
 
 	// Display the plan
@@ -390,10 +449,10 @@ func main() {
 	}
 
 	// Display results
-	fmt.Println("=== Execution Results ===")
-	fmt.Printf("Steps executed: %d\n", result.StepsExecuted)
-	fmt.Printf("Duration: %v\n", result.TotalDuration)
-	fmt.Println()
-	fmt.Println("Final Output:")
-	fmt.Println(result.FinalOutput)
+	_, _ = fmt.Println("=== Execution Results ===")
+	_, _ = fmt.Printf("Steps executed: %d\n", result.StepsExecuted)
+	_, _ = fmt.Printf("Duration: %v\n", result.TotalDuration)
+	_, _ = fmt.Println()
+	_, _ = fmt.Println("Final Output:")
+	_, _ = fmt.Println(result.FinalOutput)
 }

@@ -71,7 +71,7 @@ func TestBasicConversation(t *testing.T) {
 
 		// Should be in listening state (may transition through processing)
 		state := string(voiceSession.GetState())
-		assert.True(t, state == "listening" || state == "processing", 
+		assert.True(t, state == "listening" || state == "processing",
 			"Expected listening or processing state, got: %s", state)
 
 		err = voiceSession.Stop(ctx)

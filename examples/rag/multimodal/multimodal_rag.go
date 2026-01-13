@@ -46,8 +46,8 @@ const (
 type Document struct {
 	ID       string
 	Type     DocumentType
-	Content  string  // Text content or caption
-	ImageURL string  // URL for images
+	Content  string // Text content or caption
+	ImageURL string // URL for images
 	Metadata map[string]any
 }
 
@@ -251,7 +251,7 @@ func (r *MultimodalRAGExample) generateAnswer(ctx context.Context, question stri
 
 	for i, result := range results {
 		contextBuilder += fmt.Sprintf("[Document %d - %s]\n", i+1, result.Type)
-		
+
 		switch result.Type {
 		case TypeText:
 			contextBuilder += fmt.Sprintf("Content: %s\n", result.Content)

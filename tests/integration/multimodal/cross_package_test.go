@@ -24,12 +24,12 @@ func TestMultimodalEmbeddingsIntegration(t *testing.T) {
 
 	// Create multimodal documents
 	doc1 := schema.NewDocument("A beautiful sunset over the ocean", map[string]string{
-		"image_url": "https://example.com/sunset.jpg",
+		"image_url":  "https://example.com/sunset.jpg",
 		"image_type": "image/jpeg",
 	})
 
 	doc2 := schema.NewDocument("A majestic mountain range", map[string]string{
-		"image_url": "https://example.com/mountain.jpg",
+		"image_url":  "https://example.com/mountain.jpg",
 		"image_type": "image/jpeg",
 	})
 
@@ -214,13 +214,13 @@ func TestMultimodalOrchestrationIntegration(t *testing.T) {
 	// Test processing chain (orchestration pattern)
 	inputs := []*types.MultimodalInput{
 		{
-			ID:            "input-1",
+			ID: "input-1",
 			ContentBlocks: []*types.ContentBlock{
 				{Type: "text", Data: []byte("First step")},
 			},
 		},
 		{
-			ID:            "input-2",
+			ID: "input-2",
 			ContentBlocks: []*types.ContentBlock{
 				{Type: "text", Data: []byte("Second step")},
 			},
@@ -397,7 +397,7 @@ func TestMultimodalEndToEndWorkflow(t *testing.T) {
 	require.NoError(t, err)
 
 	preservedContext := baseModel.PreserveContext(ctx, previousContext, &types.MultimodalInput{
-		ID:            newInput.ID,
+		ID: newInput.ID,
 		ContentBlocks: []*types.ContentBlock{
 			{Type: "text", Data: []byte("New query")},
 		},

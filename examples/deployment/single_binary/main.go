@@ -263,7 +263,7 @@ func (a *App) initObservability() error {
 	}
 
 	// Initialize Beluga LLM metrics
-	llms.InitMetrics(a.meter)
+	llms.InitMetrics(a.meter, a.tracer)
 
 	return nil
 }
@@ -356,13 +356,16 @@ func (a *App) handleChat(w http.ResponseWriter, r *http.Request) {
 	defer a.activeRequests.Add(-1)
 
 	// Start tracing span
-	ctx, span := a.tracer.Start(ctx, "handleChat",
-		trace.WithAttributes(
-			attribute.String("http.method", r.Method),
-			attribute.String("http.url", r.URL.Path),
-		),
-	)
-	defer span.End()
+	var span trace.Span
+	if a.tracer != nil {
+		ctx, span = a.tracer.Start(ctx, "handleChat",
+			trace.WithAttributes(
+				attribute.String("http.method", r.Method),
+				attribute.String("http.url", r.URL.Path),
+			),
+		)
+		defer span.End()
+	}
 
 	// Check readiness
 	if !a.ready.Load() {
@@ -379,7 +382,9 @@ func (a *App) handleChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	span.SetAttributes(attribute.String("query", query))
+	if span != nil {
+		span.SetAttributes(attribute.String("query", query))
+	}
 
 	// Check for LLM provider
 	if a.llmProvider == nil {
@@ -444,18 +449,22 @@ func (a *App) handleStartup(w http.ResponseWriter, r *http.Request) {
 func (a *App) recordRequest(ctx context.Context, status, source string, start time.Time) {
 	duration := time.Since(start)
 
-	a.requestCounter.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("status", status),
-			attribute.String("source", source),
-		),
-	)
+	if a.requestCounter != nil {
+		a.requestCounter.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("status", status),
+				attribute.String("source", source),
+			),
+		)
+	}
 
-	a.latencyHist.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("status", status),
-		),
-	)
+	if a.latencyHist != nil {
+		a.latencyHist.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("status", status),
+			),
+		)
+	}
 }
 
 // =============================================================================

@@ -94,7 +94,7 @@ func TestBackendCreationAndLifecycle(t *testing.T) {
 			name:     "create mock backend",
 			provider: "mock",
 			config: &iface.Config{
-				Provider:    "mock",
+				Provider:     "mock",
 				PipelineType: iface.PipelineTypeSTTTTS,
 			},
 			shouldError: false,
@@ -503,8 +503,8 @@ func TestErrorHandlingScenarios(t *testing.T) {
 // TestTurnDetectionAndInterruption tests turn detection and interruption handling (T258).
 func TestTurnDetectionAndInterruption(t *testing.T) {
 	tests := []struct {
-		name        string
-		audioChunks [][]byte
+		name            string
+		audioChunks     [][]byte
 		shouldInterrupt bool
 	}{
 		{
@@ -569,28 +569,28 @@ func TestTurnDetectionAndInterruption(t *testing.T) {
 // TestConcurrentMultiUserScenarios tests concurrent multi-user scenarios (T259).
 func TestConcurrentMultiUserScenarios(t *testing.T) {
 	tests := []struct {
-		name            string
-		numUsers        int
+		name              string
+		numUsers          int
 		operationsPerUser int
-		shouldError     bool
+		shouldError       bool
 	}{
 		{
-			name:            "10 concurrent users",
-			numUsers:        10,
+			name:              "10 concurrent users",
+			numUsers:          10,
 			operationsPerUser: 5,
-			shouldError:     false,
+			shouldError:       false,
 		},
 		{
-			name:            "50 concurrent users",
-			numUsers:        50,
+			name:              "50 concurrent users",
+			numUsers:          50,
 			operationsPerUser: 3,
-			shouldError:     false,
+			shouldError:       false,
 		},
 		{
-			name:            "100 concurrent users",
-			numUsers:        100,
+			name:              "100 concurrent users",
+			numUsers:          100,
 			operationsPerUser: 2,
-			shouldError:     false,
+			shouldError:       false,
 		},
 	}
 
@@ -711,8 +711,8 @@ func TestEdgeCases(t *testing.T) {
 
 				// Process audio with different formats (empty, large, invalid)
 				testCases := [][]byte{
-					{},                    // Empty audio
-					make([]byte, 10000),   // Large audio
+					{},                  // Empty audio
+					make([]byte, 10000), // Large audio
 					{0xFF, 0xFF, 0xFF},  // Invalid format
 				}
 
@@ -818,26 +818,26 @@ func TestEdgeCases(t *testing.T) {
 					iface.PipelineStateProcessing,
 				}, state, "State should be listening or processing")
 
-			// Stop session
-			err = session.Stop(ctx)
-			require.NoError(t, err)
-			assert.Equal(t, iface.PipelineStateIdle, session.GetState(), "State should be idle after stop")
+				// Stop session
+				err = session.Stop(ctx)
+				require.NoError(t, err)
+				assert.Equal(t, iface.PipelineStateIdle, session.GetState(), "State should be idle after stop")
+			},
+			description: "Session state transitions",
 		},
-		description: "Session state transitions",
-	},
-}
+	}
 
-for _, tt := range tests {
-	t.Run(tt.name, func(t *testing.T) {
-		ctx := context.Background()
-		backend := tt.setup()
-		defer func() {
-			_ = backend.Stop(ctx)
-		}()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx := context.Background()
+			backend := tt.setup()
+			defer func() {
+				_ = backend.Stop(ctx)
+			}()
 
-		tt.operation(t, backend, ctx)
-	})
-}
+			tt.operation(t, backend, ctx)
+		})
+	}
 }
 
 // BenchmarkBackendCreationTime benchmarks backend creation time (T279, SC-007).

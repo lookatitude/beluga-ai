@@ -3,6 +3,7 @@ package multimodal
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -30,6 +31,7 @@ type Metrics struct {
 	chainDuration         metric.Float64Histogram
 	streamLatency         metric.Float64Histogram
 	streamChunksTotal     metric.Int64Counter
+	tracer                trace.Tracer
 }
 
 var (
@@ -44,128 +46,219 @@ func init() {
 }
 
 // NewMetrics creates a new metrics instance.
-func NewMetrics(m metric.Meter) *Metrics {
-	// OpenTelemetry metric initialization errors are ignored as they're rare
-	// and the metrics will just be nil, causing no-op behavior
-	processTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+func NewMetrics(m metric.Meter, tracer trace.Tracer) (*Metrics, error) {
+	var err error
+	metrics := &Metrics{}
+
+	metrics.processTotal, err = m.Int64Counter(
 		"multimodal_process_total",
 		metric.WithDescription("Total number of multimodal process requests"),
 	)
-	processDuration, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create processTotal metric: %w", err)
+	}
+
+	metrics.processDuration, err = m.Float64Histogram(
 		"multimodal_process_duration_seconds",
 		metric.WithDescription("Duration of multimodal process requests in seconds"),
 	)
-	processStreamTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create processDuration metric: %w", err)
+	}
+
+	metrics.processStreamTotal, err = m.Int64Counter(
 		"multimodal_process_stream_total",
 		metric.WithDescription("Total number of multimodal stream process requests"),
 	)
-	processStreamDuration, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create processStreamTotal metric: %w", err)
+	}
+
+	metrics.processStreamDuration, err = m.Float64Histogram(
 		"multimodal_process_stream_duration_seconds",
 		metric.WithDescription("Duration of multimodal stream process requests in seconds"),
 	)
-	capabilityCheckTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create processStreamDuration metric: %w", err)
+	}
+
+	metrics.capabilityCheckTotal, err = m.Int64Counter(
 		"multimodal_capability_check_total",
 		metric.WithDescription("Total number of capability checks"),
 	)
-	errorsTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create capabilityCheckTotal metric: %w", err)
+	}
+
+	metrics.errorsTotal, err = m.Int64Counter(
 		"multimodal_errors_total",
 		metric.WithDescription("Total number of multimodal errors"),
 	)
-	requestsInFlight, _ := m.Int64UpDownCounter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create errorsTotal metric: %w", err)
+	}
+
+	metrics.requestsInFlight, err = m.Int64UpDownCounter(
 		"multimodal_requests_in_flight",
 		metric.WithDescription("Number of multimodal requests currently in flight"),
 	)
-	reasoningTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create requestsInFlight metric: %w", err)
+	}
+
+	metrics.reasoningTotal, err = m.Int64Counter(
 		"multimodal_reasoning_total",
 		metric.WithDescription("Total number of reasoning operations"),
 	)
-	reasoningDuration, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create reasoningTotal metric: %w", err)
+	}
+
+	metrics.reasoningDuration, err = m.Float64Histogram(
 		"multimodal_reasoning_duration_seconds",
 		metric.WithDescription("Duration of reasoning operations in seconds"),
 	)
-	generationTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create reasoningDuration metric: %w", err)
+	}
+
+	metrics.generationTotal, err = m.Int64Counter(
 		"multimodal_generation_total",
 		metric.WithDescription("Total number of generation operations"),
 	)
-	generationDuration, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create generationTotal metric: %w", err)
+	}
+
+	metrics.generationDuration, err = m.Float64Histogram(
 		"multimodal_generation_duration_seconds",
 		metric.WithDescription("Duration of generation operations in seconds"),
 	)
-	chainTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create generationDuration metric: %w", err)
+	}
+
+	metrics.chainTotal, err = m.Int64Counter(
 		"multimodal_chain_total",
 		metric.WithDescription("Total number of multimodal chain operations"),
 	)
-	chainDuration, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chainTotal metric: %w", err)
+	}
+
+	metrics.chainDuration, err = m.Float64Histogram(
 		"multimodal_chain_duration_seconds",
 		metric.WithDescription("Duration of multimodal chain operations in seconds"),
 	)
-	streamLatency, _ := m.Float64Histogram( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create chainDuration metric: %w", err)
+	}
+
+	metrics.streamLatency, err = m.Float64Histogram(
 		"multimodal_stream_latency_seconds",
 		metric.WithDescription("Latency of streaming operations in seconds (voice <500ms, video <1s)"),
 		metric.WithUnit("s"),
 	)
-	streamChunksTotal, _ := m.Int64Counter( //nolint:errcheck // Metric initialization errors are rare and handled gracefully
+	if err != nil {
+		return nil, fmt.Errorf("failed to create streamLatency metric: %w", err)
+	}
+
+	metrics.streamChunksTotal, err = m.Int64Counter(
 		"multimodal_stream_chunks_total",
 		metric.WithDescription("Total number of chunks processed in streaming operations"),
 	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create streamChunksTotal metric: %w", err)
+	}
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal")
+	}
+	metrics.tracer = tracer
+
+	return metrics, nil
+}
+
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
 	return &Metrics{
-		processTotal:          processTotal,
-		processDuration:       processDuration,
-		processStreamTotal:    processStreamTotal,
-		processStreamDuration: processStreamDuration,
-		capabilityCheckTotal:  capabilityCheckTotal,
-		errorsTotal:           errorsTotal,
-		requestsInFlight:      requestsInFlight,
-		reasoningTotal:        reasoningTotal,
-		reasoningDuration:     reasoningDuration,
-		generationTotal:       generationTotal,
-		generationDuration:    generationDuration,
-		chainTotal:            chainTotal,
-		chainDuration:         chainDuration,
-		streamLatency:         streamLatency,
-		streamChunksTotal:     streamChunksTotal,
+		tracer: trace.NewNoopTracerProvider().Tracer("multimodal"),
 	}
 }
 
 // GetMetrics returns the global metrics instance.
 func GetMetrics() *Metrics {
-	metricsOnce.Do(func() {
-		globalMetrics = NewMetrics(meter)
-	})
 	return globalMetrics
+}
+
+// InitMetrics initializes the global metrics instance.
+// This follows the standard pattern used across all Beluga AI packages.
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
+	metricsOnce.Do(func() {
+		if meter == nil {
+			meter = otel.Meter("github.com/lookatitude/beluga-ai/pkg/multimodal")
+		}
+		if tracer == nil {
+			tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal")
+		}
+		metrics, err := NewMetrics(meter, tracer)
+		if err != nil {
+			// If metrics creation fails, use no-op metrics
+			globalMetrics = NoOpMetrics()
+			return
+		}
+		globalMetrics = metrics
+	})
 }
 
 // RecordProcess records a successful process request.
 func (m *Metrics) RecordProcess(ctx context.Context, provider, model string, duration time.Duration) {
-	m.processTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
-	m.processDuration.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
+	if m == nil {
+		return
+	}
+	if m.processTotal != nil {
+		m.processTotal.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
+	if m.processDuration != nil {
+		m.processDuration.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
 }
 
 // RecordProcessStream records a successful stream process request.
 func (m *Metrics) RecordProcessStream(ctx context.Context, provider, model string, duration time.Duration) {
-	m.processStreamTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
-	m.processStreamDuration.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
+	if m == nil {
+		return
+	}
+	if m.processStreamTotal != nil {
+		m.processStreamTotal.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
+	if m.processStreamDuration != nil {
+		m.processStreamDuration.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
 }
 
 // RecordCapabilityCheck records a capability check.
 func (m *Metrics) RecordCapabilityCheck(ctx context.Context, provider, model, modality string, supported bool) {
+	if m == nil || m.capabilityCheckTotal == nil {
+		return
+	}
 	m.capabilityCheckTotal.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("provider", provider),
@@ -177,6 +270,9 @@ func (m *Metrics) RecordCapabilityCheck(ctx context.Context, provider, model, mo
 
 // RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType string) {
+	if m == nil || m.errorsTotal == nil {
+		return
+	}
 	m.errorsTotal.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("provider", provider),
@@ -187,6 +283,9 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType st
 
 // StartRequest increments the in-flight counter.
 func (m *Metrics) StartRequest(ctx context.Context, provider, model string) {
+	if m == nil || m.requestsInFlight == nil {
+		return
+	}
 	m.requestsInFlight.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("provider", provider),
@@ -196,6 +295,9 @@ func (m *Metrics) StartRequest(ctx context.Context, provider, model string) {
 
 // EndRequest decrements the in-flight counter.
 func (m *Metrics) EndRequest(ctx context.Context, provider, model string) {
+	if m == nil || m.requestsInFlight == nil {
+		return
+	}
 	m.requestsInFlight.Add(ctx, -1,
 		metric.WithAttributes(
 			attribute.String("provider", provider),
@@ -205,50 +307,74 @@ func (m *Metrics) EndRequest(ctx context.Context, provider, model string) {
 
 // RecordReasoning records a reasoning operation.
 func (m *Metrics) RecordReasoning(ctx context.Context, provider, model string, duration time.Duration) {
-	m.reasoningTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
-	m.reasoningDuration.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
+	if m == nil {
+		return
+	}
+	if m.reasoningTotal != nil {
+		m.reasoningTotal.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
+	if m.reasoningDuration != nil {
+		m.reasoningDuration.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
 }
 
 // RecordGeneration records a generation operation.
 func (m *Metrics) RecordGeneration(ctx context.Context, provider, model string, duration time.Duration) {
-	m.generationTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
-	m.generationDuration.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-		))
+	if m == nil {
+		return
+	}
+	if m.generationTotal != nil {
+		m.generationTotal.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
+	if m.generationDuration != nil {
+		m.generationDuration.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+			))
+	}
 }
 
 // RecordChain records a multimodal chain operation.
 func (m *Metrics) RecordChain(ctx context.Context, provider, model string, duration time.Duration, chainLength int) {
-	m.chainTotal.Add(ctx, 1,
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-			attribute.Int("chain_length", chainLength),
-		))
-	m.chainDuration.Record(ctx, duration.Seconds(),
-		metric.WithAttributes(
-			attribute.String("provider", provider),
-			attribute.String("model", model),
-			attribute.Int("chain_length", chainLength),
-		))
+	if m == nil {
+		return
+	}
+	if m.chainTotal != nil {
+		m.chainTotal.Add(ctx, 1,
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+				attribute.Int("chain_length", chainLength),
+			))
+	}
+	if m.chainDuration != nil {
+		m.chainDuration.Record(ctx, duration.Seconds(),
+			metric.WithAttributes(
+				attribute.String("provider", provider),
+				attribute.String("model", model),
+				attribute.Int("chain_length", chainLength),
+			))
+	}
 }
 
 // RecordStreamLatency records latency for streaming operations (voice <500ms, video <1s).
 func (m *Metrics) RecordStreamLatency(ctx context.Context, provider, model, modality string, latency time.Duration) {
+	if m == nil || m.streamLatency == nil {
+		return
+	}
 	m.streamLatency.Record(ctx, latency.Seconds(),
 		metric.WithAttributes(
 			attribute.String("provider", provider),
@@ -259,6 +385,9 @@ func (m *Metrics) RecordStreamLatency(ctx context.Context, provider, model, moda
 
 // RecordStreamChunk records a processed chunk in streaming operations.
 func (m *Metrics) RecordStreamChunk(ctx context.Context, provider, model, modality string) {
+	if m == nil || m.streamChunksTotal == nil {
+		return
+	}
 	m.streamChunksTotal.Add(ctx, 1,
 		metric.WithAttributes(
 			attribute.String("provider", provider),

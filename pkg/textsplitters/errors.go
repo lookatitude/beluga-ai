@@ -9,8 +9,8 @@ import (
 const (
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeEmptyInput    = "empty_input"
-	ErrCodeNotFound       = "not_found"
-	ErrCodeCancelled      = "cancelled"
+	ErrCodeNotFound      = "not_found"
+	ErrCodeCancelled     = "cancelled"
 )
 
 // SplitterError represents an error during text splitting.

@@ -7,23 +7,23 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/directory"
-	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/text"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
-	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/markdown"
-	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/recursive"
-	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels"
 	chatmodelsiface "github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/documentloaders"
+	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/directory"
+	_ "github.com/lookatitude/beluga-ai/pkg/documentloaders/providers/text"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/textsplitters"
+	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/markdown"
+	_ "github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/recursive"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
+	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/inmemory"
 )
 
 func main() {
@@ -58,7 +58,7 @@ func main() {
 	// Step 4: Prepare documents for the knowledge base
 	// Option A: Use document loaders and text splitters (recommended for real-world use)
 	var documents []schema.Document
-	
+
 	// Try to load from a data directory if it exists, otherwise use manual documents
 	dataDir := "examples/rag/simple/data"
 	if _, err := os.Stat(dataDir); err == nil {
@@ -84,7 +84,7 @@ func main() {
 			}
 		}
 	}
-	
+
 	// Option B: Fallback to manual documents if directory doesn't exist
 	if len(documents) == 0 {
 		fmt.Println("📝 Using manual documents (create examples/rag/simple/data/ for file-based loading)")
@@ -179,8 +179,8 @@ func createEmbedder(ctx context.Context) (embeddingsiface.Embedder, error) {
 
 	config := &embeddings.Config{
 		OpenAI: &embeddings.OpenAIConfig{
-			APIKey: apiKey,
-			Model:  "text-embedding-ada-002",
+			APIKey:  apiKey,
+			Model:   "text-embedding-ada-002",
 			Enabled: true,
 		},
 	}
@@ -242,7 +242,6 @@ func (m *mockChatModel) GetModelInfo() chatmodelsiface.ModelInfo {
 		Provider: "mock-provider",
 	}
 }
-
 
 func (m *mockChatModel) CheckHealth() map[string]any {
 	return map[string]any{"status": "healthy"}

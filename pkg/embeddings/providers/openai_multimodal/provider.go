@@ -262,6 +262,6 @@ func encodeImageToBase64(imageData []byte, mimeType string) string {
 
 // Ensure OpenAIMultimodalEmbedder implements the interfaces.
 var (
-	_ iface.Embedder            = (*OpenAIMultimodalEmbedder)(nil)
-	_ iface.MultimodalEmbedder  = (*OpenAIMultimodalEmbedder)(nil)
+	_ iface.Embedder           = (*OpenAIMultimodalEmbedder)(nil)
+	_ iface.MultimodalEmbedder = (*OpenAIMultimodalEmbedder)(nil)
 )

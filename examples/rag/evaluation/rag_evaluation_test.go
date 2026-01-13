@@ -55,8 +55,8 @@ func TestPrecisionAtK(t *testing.T) {
 			expected: 1.0,
 		},
 		{
-			name: "empty results",
-			results: []RetrievalResult{},
+			name:     "empty results",
+			results:  []RetrievalResult{},
 			k:        5,
 			expected: 0.0,
 		},

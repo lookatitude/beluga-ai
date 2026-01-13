@@ -8,19 +8,19 @@ import (
 
 // Error codes for monitoring operations.
 const (
-	ErrCodeInvalidConfig      = "invalid_config"
-	ErrCodeProviderNotFound   = "provider_not_found"
-	ErrCodeProviderError      = "provider_error"
+	ErrCodeInvalidConfig        = "invalid_config"
+	ErrCodeProviderNotFound     = "provider_not_found"
+	ErrCodeProviderError        = "provider_error"
 	ErrCodeInitializationFailed = "initialization_failed"
-	ErrCodeShutdownFailed     = "shutdown_failed"
-	ErrCodeMetricError         = "metric_error"
-	ErrCodeTraceError          = "trace_error"
-	ErrCodeLogError            = "log_error"
-	ErrCodeExportError         = "export_error"
-	ErrCodeInvalidMetric       = "invalid_metric"
-	ErrCodeInvalidTrace        = "invalid_trace"
-	ErrCodeContextCanceled     = "context_canceled"
-	ErrCodeContextTimeout      = "context_timeout"
+	ErrCodeShutdownFailed       = "shutdown_failed"
+	ErrCodeMetricError          = "metric_error"
+	ErrCodeTraceError           = "trace_error"
+	ErrCodeLogError             = "log_error"
+	ErrCodeExportError          = "export_error"
+	ErrCodeInvalidMetric        = "invalid_metric"
+	ErrCodeInvalidTrace         = "invalid_trace"
+	ErrCodeContextCanceled      = "context_canceled"
+	ErrCodeContextTimeout       = "context_timeout"
 )
 
 // MonitoringError represents an error that occurred during monitoring operations.

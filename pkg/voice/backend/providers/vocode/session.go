@@ -8,11 +8,11 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"go.opentelemetry.io/otel/codes"
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // VocodeSession implements the VoiceSession interface for Vocode.
@@ -26,9 +26,9 @@ type VocodeSession struct {
 	state                vbiface.PipelineState
 	persistenceStatus    vbiface.PersistenceStatus
 	metadata             map[string]any
-	audioOutput            chan []byte
-	mu                     sync.RWMutex // Per-session mutex for state isolation
-	active                 bool
+	audioOutput          chan []byte
+	mu                   sync.RWMutex // Per-session mutex for state isolation
+	active               bool
 	// Session isolation: Each session has independent:
 	// - State (state, persistenceStatus, active)
 	// - Resources (pipelineOrchestrator, audioOutput channel, httpClient)

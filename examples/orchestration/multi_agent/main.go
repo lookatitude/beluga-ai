@@ -68,7 +68,6 @@ func main() {
 	}
 	fmt.Printf("  Research result: %v\n", result1)
 
-
 	// Step 6b: Agent 2 analyzes (triggered by message bus)
 	fmt.Println("\n🔍 Step 2: Analyzer agent working...")
 	input2 := map[string]interface{}{
@@ -99,7 +98,6 @@ func main() {
 
 	fmt.Println("\n✨ Multi-agent orchestration example completed successfully!")
 }
-
 
 // createLLM creates an LLM instance
 func createLLM(ctx context.Context, name string) (llmsiface.LLM, error) {

@@ -23,10 +23,9 @@ var (
 // TestAgentError_Creation tests AgentError creation and basic functionality.
 func TestAgentError_Creation(t *testing.T) {
 	originalErr := errOriginalError
-	agentErr := NewAgentError("test_operation", "test_agent", "test_code", originalErr)
+	agentErr := NewAgentError("test_operation", "test_code", originalErr)
 
 	assert.Equal(t, "test_operation", agentErr.Op)
-	assert.Equal(t, "test_agent", agentErr.Agent)
 	assert.Equal(t, "test_code", agentErr.Code)
 	assert.Equal(t, originalErr, agentErr.Err)
 	assert.NotNil(t, agentErr.Fields)
@@ -38,32 +37,37 @@ func TestAgentError_ErrorString(t *testing.T) {
 	tests := []struct {
 		name     string
 		op       string
-		agent    string
 		code     string
 		err      error
+		message  string
 		contains []string
 	}{
 		{
-			name:     "with agent name",
+			name:     "with message",
 			op:       "execute",
-			agent:    "test_agent",
 			code:     ErrCodeExecution,
 			err:      errExecutionFailed,
-			contains: []string{"agent", "test_agent", "execute"},
+			message:  "execution failed for test_agent",
+			contains: []string{"agents", "execute", "execution failed", "execution_failed"},
 		},
 		{
-			name:     "without agent name",
+			name:     "without message",
 			op:       "plan",
-			agent:    "",
 			code:     ErrCodePlanning,
 			err:      errPlanningFailed,
-			contains: []string{"agent", "plan"},
+			message:  "",
+			contains: []string{"agents", "plan", "planning_failed"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			agentErr := NewAgentError(tt.op, tt.agent, tt.code, tt.err)
+			var agentErr *AgentError
+			if tt.message != "" {
+				agentErr = NewAgentErrorWithMessage(tt.op, tt.code, tt.message, tt.err)
+			} else {
+				agentErr = NewAgentError(tt.op, tt.code, tt.err)
+			}
 			errStr := agentErr.Error()
 			for _, substr := range tt.contains {
 				assert.Contains(t, errStr, substr)
@@ -74,7 +78,7 @@ func TestAgentError_ErrorString(t *testing.T) {
 
 // TestAgentError_WithField tests adding fields to errors.
 func TestAgentError_WithField(t *testing.T) {
-	agentErr := NewAgentError("test", "agent", "code", errOriginalError)
+	agentErr := NewAgentError("test", "code", errOriginalError)
 
 	agentErr.WithField("key1", "value1")
 	agentErr.WithField("key2", 42)
@@ -88,7 +92,7 @@ func TestAgentError_WithField(t *testing.T) {
 // TestAgentError_Unwrap tests error unwrapping.
 func TestAgentError_Unwrap(t *testing.T) {
 	originalErr := errOriginalError
-	agentErr := NewAgentError("test", "agent", "code", originalErr)
+	agentErr := NewAgentError("test", "code", originalErr)
 
 	unwrapped := agentErr.Unwrap()
 	assert.Equal(t, originalErr, unwrapped)
@@ -125,7 +129,7 @@ func TestAllErrorCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotEmpty(t, tt.code, "Error code should not be empty")
 			// Create an error with this code to verify it works
-			agentErr := NewAgentError("test", "agent", tt.code, errOriginalError)
+			agentErr := NewAgentError("test", tt.code, errOriginalError)
 			assert.Equal(t, tt.code, agentErr.Code)
 		})
 	}
@@ -147,7 +151,7 @@ func TestIsValidationError(t *testing.T) {
 	valErr := NewValidationError("field", "message")
 	assert.True(t, IsValidationError(valErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsValidationError(agentErr))
 
 	assert.False(t, IsValidationError(errRegularError))
@@ -173,7 +177,7 @@ func TestIsFactoryError(t *testing.T) {
 	factoryErr := NewFactoryError("type", nil, errOriginalError)
 	assert.True(t, IsFactoryError(factoryErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsFactoryError(agentErr))
 
 	assert.False(t, IsFactoryError(errRegularError))
@@ -262,7 +266,7 @@ func TestIsStreamingError(t *testing.T) {
 	streamErr := NewStreamingError("test", "agent", ErrCodeStreamError, errOriginalError)
 	assert.True(t, IsStreamingError(streamErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsStreamingError(agentErr))
 
 	assert.False(t, IsStreamingError(errRegularError))
@@ -306,58 +310,58 @@ func TestIsRetryable(t *testing.T) {
 		// AgentError with retryable codes
 		{
 			name:      "timeout error",
-			err:       NewAgentError("op", "agent", ErrCodeTimeout, errOriginalError),
+			err:       NewAgentError("op", ErrCodeTimeout, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "agent timeout error",
-			err:       NewAgentError("op", "agent", ErrCodeAgentTimeout, errOriginalError),
+			err:       NewAgentError("op", ErrCodeAgentTimeout, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "resource exhausted error",
-			err:       NewAgentError("op", "agent", ErrCodeResourceExhausted, errOriginalError),
+			err:       NewAgentError("op", ErrCodeResourceExhausted, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "tool execution error",
-			err:       NewAgentError("op", "agent", ErrCodeToolExecution, errOriginalError),
+			err:       NewAgentError("op", ErrCodeToolExecution, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "LLM error",
-			err:       NewAgentError("op", "agent", ErrCodeLLMError, errOriginalError),
+			err:       NewAgentError("op", ErrCodeLLMError, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "execution error code",
-			err:       NewAgentError("op", "agent", ErrCodeExecution, errOriginalError),
+			err:       NewAgentError("op", ErrCodeExecution, errOriginalError),
 			retryable: true,
 		},
 		// AgentError with non-retryable codes
 		{
 			name:      "invalid input error",
-			err:       NewAgentError("op", "agent", ErrCodeInvalidInput, errOriginalError),
+			err:       NewAgentError("op", ErrCodeInvalidInput, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "config invalid error",
-			err:       NewAgentError("op", "agent", ErrCodeConfigInvalid, errOriginalError),
+			err:       NewAgentError("op", ErrCodeConfigInvalid, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "invalid action error",
-			err:       NewAgentError("op", "agent", ErrCodeInvalidAction, errOriginalError),
+			err:       NewAgentError("op", ErrCodeInvalidAction, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "state transition error",
-			err:       NewAgentError("op", "agent", ErrCodeStateTransition, errOriginalError),
+			err:       NewAgentError("op", ErrCodeStateTransition, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "shutdown error",
-			err:       NewAgentError("op", "agent", ErrCodeShutdown, errOriginalError),
+			err:       NewAgentError("op", ErrCodeShutdown, errOriginalError),
 			retryable: false,
 		},
 		// Common error variables
@@ -436,7 +440,7 @@ func TestErrorWrapping(t *testing.T) {
 	originalErr := errOriginalError
 
 	// Test AgentError wrapping
-	agentErr := NewAgentError("op", "agent", "code", originalErr)
+	agentErr := NewAgentError("op", "code", originalErr)
 	assert.ErrorIs(t, agentErr, originalErr)
 	assert.Equal(t, originalErr, agentErr.Unwrap())
 

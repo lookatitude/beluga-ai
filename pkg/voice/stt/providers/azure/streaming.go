@@ -20,7 +20,7 @@ type AzureStreamingSession struct {
 	config   *AzureConfig
 	conn     *websocket.Conn
 	resultCh chan iface.TranscriptResult
-	ctx      context.Context //nolint:containedctx // Context is necessary for long-lived streaming connection
+	ctx      context.Context
 	cancel   context.CancelFunc
 	closed   bool
 	mu       sync.RWMutex
@@ -62,13 +62,13 @@ func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.S
 	conn, resp, err := dialer.Dial(url, headers)
 	if err != nil {
 		if resp != nil {
-			_ = resp.Body.Close() //nolint:errcheck // Best effort to close response body on error
+			resp.Body.Close()
 			return nil, stt.ErrorFromHTTPStatus("StartStreaming", resp.StatusCode, err)
 		}
 		return nil, stt.NewSTTError("StartStreaming", stt.ErrCodeNetworkError, err)
 	}
 	if resp != nil {
-		_ = resp.Body.Close() //nolint:errcheck // Close response body after successful WebSocket handshake
+		resp.Body.Close()
 	}
 
 	// Create context with cancel

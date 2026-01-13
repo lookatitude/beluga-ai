@@ -16,7 +16,7 @@ const (
 	ErrCodeSessionLimitExceeded = "session_limit_exceeded"
 	ErrCodeRateLimitExceeded    = "rate_limit_exceeded"
 	ErrCodeAuthenticationFailed = "authentication_failed"
-	ErrCodeAuthorizationFailed   = "authorization_failed"
+	ErrCodeAuthorizationFailed  = "authorization_failed"
 	ErrCodePipelineError        = "pipeline_error"
 	ErrCodeAgentError           = "agent_error"
 	ErrCodeTimeout              = "timeout"

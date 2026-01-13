@@ -582,14 +582,13 @@ func TestMemoryLifecycle(t *testing.T) {
 // TestMemoryErrorTypes tests custom error types.
 func TestMemoryErrorTypes(t *testing.T) {
 	// Test creating different error types
-	err1 := NewMemoryError("test_op", MemoryTypeBuffer, ErrCodeInvalidConfig, errors.New("config error"))
-	assert.Equal(t, "memory test_op (buffer): config error", err1.Error())
+	err1 := NewMemoryError("test_op", ErrCodeInvalidConfig, errors.New("config error"))
+	assert.Equal(t, "memory test_op: config error (code: invalid_config)", err1.Error())
 	assert.Equal(t, "test_op", err1.Op)
-	assert.Equal(t, MemoryTypeBuffer, err1.MemoryType)
 	assert.Equal(t, ErrCodeInvalidConfig, err1.Code)
 
 	// Test error wrapping
-	wrappedErr := WrapError(err1, "save", MemoryTypeBufferWindow, ErrCodeStorageError)
+	wrappedErr := WrapError(err1, "save", ErrCodeStorageError)
 	assert.NotNil(t, wrappedErr)
 	assert.Equal(t, ErrCodeStorageError, wrappedErr.Code)
 
@@ -598,11 +597,10 @@ func TestMemoryErrorTypes(t *testing.T) {
 	assert.False(t, IsMemoryError(err1, ErrCodeStorageError))
 
 	// Test error constructors
-	err2 := ErrInvalidConfig(MemoryTypeSummary, errors.New("summary config error"))
+	err2 := ErrInvalidConfig(errors.New("summary config error"))
 	assert.Equal(t, ErrCodeInvalidConfig, err2.Code)
-	assert.Equal(t, MemoryTypeSummary, err2.MemoryType)
 
-	err3 := ErrStorageError("save_context", MemoryTypeVectorStore, errors.New("storage failed"))
+	err3 := ErrStorageError("save_context", errors.New("storage failed"))
 	assert.Equal(t, ErrCodeStorageError, err3.Code)
 
 	// Test WithContext

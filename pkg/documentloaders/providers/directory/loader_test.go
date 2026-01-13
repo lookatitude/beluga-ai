@@ -116,8 +116,8 @@ func TestRecursiveDirectoryLoader_GetDepth(t *testing.T) {
 	// Test getDepth method (via reflection or by testing behavior)
 	// Since getDepth is private, we test it indirectly through MaxDepth behavior
 	fsysWithNested := fstest.MapFS{
-		"file.txt":        &fstest.MapFile{Data: []byte("content")},
-		"dir/file.txt":    &fstest.MapFile{Data: []byte("content")},
+		"file.txt":         &fstest.MapFile{Data: []byte("content")},
+		"dir/file.txt":     &fstest.MapFile{Data: []byte("content")},
 		"dir/sub/file.txt": &fstest.MapFile{Data: []byte("content")},
 	}
 

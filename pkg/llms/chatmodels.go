@@ -407,30 +407,30 @@ func (c *ChatModelAdapter) messagesToPrompt(messages []schema.Message) string {
 
 	for i, msg := range messages {
 		if i > 0 {
-			_, _ = prompt.WriteString("\n\n") //nolint:errcheck // strings.Builder.WriteString rarely fails
+			prompt.WriteString("\n\n")
 		}
 
 		switch m := msg.(type) {
 		case *schema.ChatMessage:
 			if m.GetType() == schema.RoleSystem {
-				_, _ = prompt.WriteString("System: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
+				prompt.WriteString("System: ")
 			} else if m.GetType() == schema.RoleHuman {
-				_, _ = prompt.WriteString("Human: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
+				prompt.WriteString("Human: ")
 			} else if m.GetType() == schema.RoleAssistant {
-				_, _ = prompt.WriteString("Assistant: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
+				prompt.WriteString("Assistant: ")
 			}
-			_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
+			prompt.WriteString(m.GetContent())
 		case *schema.AIMessage:
-			_, _ = prompt.WriteString("Assistant: ")  //nolint:errcheck // strings.Builder.WriteString rarely fails
-			_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
+			prompt.WriteString("Assistant: ")
+			prompt.WriteString(m.GetContent())
 		default:
-			_, _ = prompt.WriteString(msg.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
+			prompt.WriteString(msg.GetContent())
 		}
 	}
 
 	// Add final assistant prompt if not already there
 	if !strings.HasSuffix(prompt.String(), "\n\nAssistant: ") {
-		_, _ = prompt.WriteString("\n\nAssistant: ") //nolint:errcheck // strings.Builder.WriteString rarely fails
+		prompt.WriteString("\n\nAssistant: ")
 	}
 
 	return prompt.String()

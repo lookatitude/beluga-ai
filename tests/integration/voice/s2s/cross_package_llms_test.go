@@ -83,7 +83,7 @@ func TestS2S_LLMsStreaming(t *testing.T) {
 		agents.WithStreaming(true),
 		agents.WithStreamingConfig(iface.StreamingConfig{
 			EnableStreaming:     true,
-			ChunkBufferSize:      10,
+			ChunkBufferSize:     10,
 			SentenceBoundary:    true,
 			InterruptOnNewInput: true,
 		}),

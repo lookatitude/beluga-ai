@@ -128,7 +128,7 @@ func multimodalReasoningExample(ctx context.Context) {
 
 	// Create complex reasoning prompt with image
 	textBlock, _ := types.NewContentBlock("text", []byte(
-		"Analyze this image and explain: What is the main subject? " +
+		"Analyze this image and explain: What is the main subject? "+
 			"What is the context? What emotions or themes does it convey?",
 	))
 	imageBlock, err := types.NewContentBlockFromURL(ctx, "image", "https://example.com/image.png")

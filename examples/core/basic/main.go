@@ -17,9 +17,9 @@ func main() {
 
 	// Example 1: Error Handling
 	fmt.Println("\n📋 Example 1: Error Handling")
-	validationErr := core.NewValidationError("something went wrong", fmt.Errorf("underlying error"))
+	validationErr := core.NewValidationError("example_operation", "something went wrong", fmt.Errorf("underlying error"))
 	fmt.Printf("✅ Created error: %v\n", validationErr)
-	fmt.Printf("   Type: %s\n", validationErr.Type)
+	fmt.Printf("   Code: %s\n", validationErr.Code)
 	fmt.Printf("   Message: %s\n", validationErr.Message)
 
 	// Example 2: Context with Timeout
@@ -59,7 +59,7 @@ func main() {
 	// Example 5: Error Wrapping
 	fmt.Println("\n📋 Example 5: Error Wrapping")
 	originalErr := fmt.Errorf("original error")
-	wrappedErr := core.WrapError(originalErr, "wrapper message")
+	wrappedErr := core.WrapError(originalErr, "example_operation", "wrapper message")
 	fmt.Printf("✅ Wrapped error: %v\n", wrappedErr)
 
 	fmt.Println("\n✨ All examples completed successfully!")

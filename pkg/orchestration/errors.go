@@ -8,21 +8,21 @@ import (
 
 // Error codes for orchestration operations.
 const (
-	ErrCodeInvalidConfig      = "invalid_config"
-	ErrCodeInvalidInput       = "invalid_input"
-	ErrCodeSchedulingFailed   = "scheduling_failed"
-	ErrCodeExecutionFailed    = "execution_failed"
-	ErrCodeWorkflowNotFound   = "workflow_not_found"
-	ErrCodeWorkflowError      = "workflow_error"
-	ErrCodeTaskNotFound       = "task_not_found"
-	ErrCodeTaskError          = "task_error"
-	ErrCodeDependencyError     = "dependency_error"
-	ErrCodeTimeout            = "timeout"
-	ErrCodeContextCanceled    = "context_canceled"
-	ErrCodeContextTimeout     = "context_timeout"
-	ErrCodeResourceExhausted  = "resource_exhausted"
-	ErrCodeInvalidState       = "invalid_state"
-	ErrCodeStateTransition    = "state_transition_error"
+	ErrCodeInvalidConfig     = "invalid_config"
+	ErrCodeInvalidInput      = "invalid_input"
+	ErrCodeSchedulingFailed  = "scheduling_failed"
+	ErrCodeExecutionFailed   = "execution_failed"
+	ErrCodeWorkflowNotFound  = "workflow_not_found"
+	ErrCodeWorkflowError     = "workflow_error"
+	ErrCodeTaskNotFound      = "task_not_found"
+	ErrCodeTaskError         = "task_error"
+	ErrCodeDependencyError   = "dependency_error"
+	ErrCodeTimeout           = "timeout"
+	ErrCodeContextCanceled   = "context_canceled"
+	ErrCodeContextTimeout    = "context_timeout"
+	ErrCodeResourceExhausted = "resource_exhausted"
+	ErrCodeInvalidState      = "invalid_state"
+	ErrCodeStateTransition   = "state_transition_error"
 )
 
 // OrchestrationError represents an error that occurred during orchestration operations.
