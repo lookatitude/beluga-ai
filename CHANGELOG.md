@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.1](https://github.com/lookatitude/beluga-ai/compare/v1.8.0...v1.8.1) (2026-01-13)
+
+
+### Bug Fixes
+
+* complete compliance audit gaps and enhance test suites ([b5671e5](https://github.com/lookatitude/beluga-ai/commit/b5671e55f5e379feb2962c3a31a618f9f01d55ce))
+* complete compliance audit gaps and enhance test suites ([9d3463c](https://github.com/lookatitude/beluga-ai/commit/9d3463c04523b0c673cba5e7de5e6863acfed1c7))
+* resolve all remaining linting and build issues ([5cf3c52](https://github.com/lookatitude/beluga-ai/commit/5cf3c52c77170e8e462763ea551f2058f75984c7))
+* resolve linting issues in pkg/agents ([78caf0b](https://github.com/lookatitude/beluga-ai/commit/78caf0b1919ae5ce93db1dc00a204a767282391c))
+* **security:** handle errors from resp.Body.Close() and fs.WalkDir ([be9fc62](https://github.com/lookatitude/beluga-ai/commit/be9fc62c5764f14e06a3fa5d5b684f8971bf6f52))
+* update examples to match current API signatures ([9a6e427](https://github.com/lookatitude/beluga-ai/commit/9a6e427524d48f5389497b3a7922dbcb161ab48f))
+
 ## [1.8.0](https://github.com/lookatitude/beluga-ai/compare/v1.7.0...v1.8.0) (2026-01-12)
 
 
