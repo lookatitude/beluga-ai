@@ -1,6 +1,11 @@
 package textsplitters
 
 import (
+	"context"
+	"log/slog"
+
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/lookatitude/beluga-ai/pkg/textsplitters/iface"
 	"github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/markdown"
 	"github.com/lookatitude/beluga-ai/pkg/textsplitters/providers/recursive"
@@ -79,4 +84,21 @@ func NewMarkdownTextSplitter(opts ...MarkdownOption) (iface.TextSplitter, error)
 	}
 
 	return markdown.NewMarkdownTextSplitter(markdownCfg)
+}
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
 }

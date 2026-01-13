@@ -39,6 +39,9 @@ package agents
 
 import (
 	"context"
+	"log/slog"
+
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
@@ -324,6 +327,23 @@ func GetAgentStateString(state iface.AgentState) string {
 }
 
 // Option functions for configuring agents are defined in config.go
+
+// logWithOTELContext extracts OTEL trace/span IDs from context and logs with structured logging.
+func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs ...any) {
+	// Extract OTEL context
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if spanCtx.IsValid() {
+		otelAttrs := []any{
+			"trace_id", spanCtx.TraceID().String(),
+			"span_id", spanCtx.SpanID().String(),
+		}
+		attrs = append(otelAttrs, attrs...)
+	}
+
+	// Use slog for structured logging
+	logger := slog.Default()
+	logger.Log(ctx, level, msg, attrs...)
+}
 
 // Compile-time checks to ensure implementations satisfy interfaces.
 var (

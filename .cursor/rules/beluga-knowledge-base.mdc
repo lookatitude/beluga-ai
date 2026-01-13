@@ -1,0 +1,167 @@
+---
+description: Use knowledge base for context and update it when making changes.
+globs: **/*
+alwaysApply: true
+---
+# Beluga AI Knowledge Base Integration
+
+**MANDATORY**: When a `.project-kb` file exists in the project root, consistently use the knowledge base for context and keep it updated.
+
+## Knowledge Base Usage
+
+### Before Working on Files or Features
+
+1. **Check for `.project-kb` file**: If present, the knowledge base is available
+2. **Query for context**: Use `kb_auto_context` or `kb_search` to get relevant information before:
+   - Editing existing files
+   - Creating new features
+   - Understanding package relationships
+   - Reviewing architecture patterns
+   - Working on cross-package integrations
+
+### Query Patterns
+
+```javascript
+// Get context for a specific feature or package
+kb_auto_context({
+  query: "package design patterns for pkg/llms",
+  project: "beluga-ai"
+})
+
+// Search for related information
+kb_search({
+  project: "beluga-ai",
+  query: "OTEL metrics implementation",
+  limit: 5
+})
+```
+
+### When to Query Knowledge Base
+
+- **Before editing files**: Get context about the file's purpose, related components, and dependencies
+- **Before creating features**: Understand existing patterns, similar implementations, and integration points
+- **When debugging**: Find related code, error patterns, and solutions
+- **When refactoring**: Understand dependencies and relationships before making changes
+- **When adding tests**: Find existing test patterns and mock implementations
+
+## Knowledge Base Updates
+
+### After Making Changes
+
+**MANDATORY**: Update the knowledge base after any significant changes:
+
+1. **After creating new files**: Add file content to knowledge base
+2. **After modifying existing files**: Update relevant entries
+3. **After adding features**: Document the feature and its relationships
+4. **After refactoring**: Update affected entries and relationships
+
+### Update Patterns
+
+```javascript
+// Add new content to knowledge base
+kb_add({
+  project: "beluga-ai",
+  content: "File content or feature description",
+  file_path: "pkg/llms/config.go",
+  doc_type: "code",
+  metadata: {
+    package: "llms",
+    type: "config",
+    related_packages: ["config", "monitoring"]
+  }
+})
+
+// Update existing entries (delete old, add new)
+kb_delete({
+  project: "beluga-ai",
+  metadata_filter: { file_path: "pkg/llms/config.go" }
+})
+kb_add({
+  project: "beluga-ai",
+  content: "Updated content",
+  file_path: "pkg/llms/config.go"
+})
+```
+
+### What to Update
+
+- **Code files**: When structure, interfaces, or patterns change
+- **Documentation**: When docs are added or updated
+- **Configuration**: When config patterns or options change
+- **Tests**: When test patterns or utilities are added
+- **Architecture**: When package relationships or dependencies change
+
+### Metadata for Relations
+
+Always include metadata to establish relationships:
+
+```javascript
+{
+  package: "llms",
+  type: "config" | "metrics" | "errors" | "interface" | "implementation",
+  related_packages: ["config", "monitoring", "schema"],
+  feature: "llm-provider-factory",
+  version: "v2.0"
+}
+```
+
+## Workflow
+
+### Standard Workflow
+
+1. **Check for `.project-kb`**: `glob_file_search(".project-kb")`
+2. **Get context**: Query knowledge base for relevant information
+3. **Make changes**: Edit files, create features, refactor code
+4. **Update knowledge base**: Add/update entries with new content
+5. **Update relations**: Ensure metadata reflects current relationships
+
+### Example Workflow
+
+```javascript
+// 1. Check for knowledge base
+if (exists(".project-kb")) {
+  // 2. Get context before editing
+  const context = await kb_auto_context({
+    query: "LLM provider factory pattern",
+    project: "beluga-ai"
+  });
+  
+  // 3. Make changes to pkg/llms/factory.go
+  editFile("pkg/llms/factory.go", changes);
+  
+  // 4. Update knowledge base
+  await kb_add({
+    project: "beluga-ai",
+    content: readFile("pkg/llms/factory.go"),
+    file_path: "pkg/llms/factory.go",
+    doc_type: "code",
+    metadata: {
+      package: "llms",
+      type: "factory",
+      related_packages: ["config", "monitoring"]
+    }
+  });
+}
+```
+
+## Best Practices
+
+1. **Always query first**: Get context before making changes
+2. **Update immediately**: Don't defer knowledge base updates
+3. **Include metadata**: Always add metadata for relationships
+4. **Update relations**: When dependencies change, update related entries
+5. **Use appropriate doc_type**: "code", "doc", "config", "test", etc.
+6. **Keep file_path accurate**: Use actual file paths for traceability
+
+## Integration with Other Rules
+
+- **Design Patterns**: Knowledge base should reflect current design patterns
+- **Architecture**: Update when architecture changes
+- **Testing**: Document test patterns and utilities
+- **Quality Standards**: Track quality metrics and improvements
+
+## References
+
+- **Knowledge Base MCP**: Use `mcp_Project-KB_*` functions
+- **Project Config**: `.project-kb` file in project root
+- **Documentation**: See `docs/package_design_patterns.md` for patterns to document
