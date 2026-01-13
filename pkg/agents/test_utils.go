@@ -21,6 +21,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Static error variables for testing (err113 compliance)
+var (
+	errMockStreamingError = errors.New("mock streaming error")
+	errTaskReturnedNilResult = errors.New("task returned nil result")
+)
+
 // AdvancedMockAgent provides a comprehensive mock implementation for testing.
 type AdvancedMockAgent struct {
 	lastHealthCheck time.Time
@@ -739,7 +745,7 @@ func (r *AgentScenarioRunner) RunTaskExecutionScenario(ctx context.Context, task
 		}
 
 		if result == nil {
-			return fmt.Errorf("task %d returned nil result", i+1)
+			return fmt.Errorf("task %d: %w", i+1, errTaskReturnedNilResult)
 		}
 	}
 
@@ -959,7 +965,7 @@ func (a *AdvancedMockStreamingAgent) StreamExecute(ctx context.Context, inputs m
 		if a.streamingError != nil {
 			return nil, a.streamingError
 		}
-		return nil, errors.New("mock streaming error")
+		return nil, errMockStreamingError
 	}
 
 	ch := make(chan iface.AgentStreamChunk, 10)
@@ -1048,7 +1054,7 @@ func (a *AdvancedMockStreamingAgent) StreamPlan(ctx context.Context, intermediat
 		if a.streamingError != nil {
 			return nil, a.streamingError
 		}
-		return nil, errors.New("mock streaming error")
+		return nil, errMockStreamingError
 	}
 
 	ch := make(chan iface.AgentStreamChunk, 10)

@@ -12,11 +12,12 @@ import (
 
 // Static error variables for testing (err113 compliance)
 var (
-	errOriginalError = errors.New("original error")
+	errOriginalError   = errors.New("original error")
 	errExecutionFailed = errors.New("execution failed")
-	errPlanningFailed = errors.New("planning failed")
+	errPlanningFailed  = errors.New("planning failed")
 	errStreamingFailed = errors.New("streaming failed")
-	errCreationFailed = errors.New("creation failed")
+	errCreationFailed  = errors.New("creation failed")
+	errRegularError    = errors.New("regular error")
 )
 
 // TestAgentError_Creation tests AgentError creation and basic functionality.
@@ -149,8 +150,7 @@ func TestIsValidationError(t *testing.T) {
 	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
 	assert.False(t, IsValidationError(agentErr))
 
-	regularErr := errors.New("regular error")
-	assert.False(t, IsValidationError(regularErr))
+	assert.False(t, IsValidationError(errRegularError))
 }
 
 // TestFactoryError tests FactoryError creation and functionality.
@@ -176,8 +176,7 @@ func TestIsFactoryError(t *testing.T) {
 	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
 	assert.False(t, IsFactoryError(agentErr))
 
-	regularErr := errors.New("regular error")
-	assert.False(t, IsFactoryError(regularErr))
+	assert.False(t, IsFactoryError(errRegularError))
 }
 
 // TestExecutionError tests ExecutionError creation and functionality.
@@ -266,8 +265,7 @@ func TestIsStreamingError(t *testing.T) {
 	agentErr := NewAgentError("op", "agent", "code", errOriginalError)
 	assert.False(t, IsStreamingError(agentErr))
 
-	regularErr := errors.New("regular error")
-	assert.False(t, IsStreamingError(regularErr))
+	assert.False(t, IsStreamingError(errRegularError))
 }
 
 // TestStreamingErrorCodes tests all streaming error codes.
@@ -386,7 +384,7 @@ func TestIsRetryable(t *testing.T) {
 		// Non-retryable cases
 		{
 			name:      "regular error",
-			err:       errors.New("regular error"),
+			err:       errRegularError,
 			retryable: false,
 		},
 		{

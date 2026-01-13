@@ -24,28 +24,6 @@ type (
 	Server           = iface.Server
 	RESTServer       = iface.RESTServer
 	MCPServer        = iface.MCPServer
-	ErrorCode        = iface.ErrorCode
-	ServerError      = iface.ServerError
-)
-
-const (
-	ErrCodeInvalidRequest   = iface.ErrCodeInvalidRequest
-	ErrCodeMethodNotAllowed = iface.ErrCodeMethodNotAllowed
-	ErrCodeNotFound         = iface.ErrCodeNotFound
-	ErrCodeInternalError    = iface.ErrCodeInternalError
-	ErrCodeTimeout          = iface.ErrCodeTimeout
-	ErrCodeRateLimited      = iface.ErrCodeRateLimited
-	ErrCodeUnauthorized     = iface.ErrCodeUnauthorized
-	ErrCodeForbidden        = iface.ErrCodeForbidden
-	ErrCodeToolNotFound     = iface.ErrCodeToolNotFound
-	ErrCodeResourceNotFound = iface.ErrCodeResourceNotFound
-	ErrCodeToolExecution    = iface.ErrCodeToolExecution
-	ErrCodeResourceRead     = iface.ErrCodeResourceRead
-	ErrCodeInvalidToolInput = iface.ErrCodeInvalidToolInput
-	ErrCodeMCPProtocol      = iface.ErrCodeMCPProtocol
-	ErrCodeServerStartup    = iface.ErrCodeServerStartup
-	ErrCodeServerShutdown   = iface.ErrCodeServerShutdown
-	ErrCodeConfigValidation = iface.ErrCodeConfigValidation
 )
 
 // Re-export functions from iface.
@@ -57,17 +35,6 @@ var (
 	WithTracer               = iface.WithTracer
 	WithMeter                = iface.WithMeter
 	WithMiddleware           = iface.WithMiddleware
-	WithMCPTool              = iface.WithMCPTool
-	WithMCPResource          = iface.WithMCPResource
-	NewInvalidRequestError   = iface.NewInvalidRequestError
-	NewNotFoundError         = iface.NewNotFoundError
-	NewInternalError         = iface.NewInternalError
-	NewTimeoutError          = iface.NewTimeoutError
-	NewToolNotFoundError     = iface.NewToolNotFoundError
-	NewResourceNotFoundError = iface.NewResourceNotFoundError
-	NewToolExecutionError    = iface.NewToolExecutionError
-	NewResourceReadError     = iface.NewResourceReadError
-	NewInvalidToolInputError = iface.NewInvalidToolInputError
-	NewConfigValidationError = iface.NewConfigValidationError
-	NewMCPProtocolError      = iface.NewMCPProtocolError
+	WithMCPTool     = iface.WithMCPTool
+	WithMCPResource = iface.WithMCPResource
 )

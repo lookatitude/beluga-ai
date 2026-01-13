@@ -4,12 +4,20 @@ package agents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+)
+
+// Static base errors for dynamic error wrapping (err113 compliance)
+var (
+	errAgentTypeNotRegistered      = errors.New("agent type not registered")
+	errBaseAgentRequiresLLM        = errors.New("base agent requires LLM interface")
+	errReActAgentRequiresChatModel = errors.New("ReAct agent requires ChatModel interface")
 )
 
 // AgentCreatorFunc defines the function signature for creating agents.
@@ -93,7 +101,7 @@ func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm 
 			"create_agent",
 			name,
 			ErrCodeInitialization,
-			fmt.Errorf("agent type '%s' not registered", agentType),
+			fmt.Errorf("%w: %s", errAgentTypeNotRegistered, agentType),
 		)
 	}
 	return creator(ctx, name, llm, agentTools, config)
@@ -220,7 +228,7 @@ func createBaseAgent(ctx context.Context, name string, llm any, agentTools []too
 			"create_base_agent",
 			name,
 			ErrCodeInitialization,
-			fmt.Errorf("base agent requires LLM interface, got %T", llm),
+			fmt.Errorf("%w, got %T", errBaseAgentRequiresLLM, llm),
 		)
 	}
 
@@ -235,7 +243,7 @@ func createReActAgent(ctx context.Context, name string, llm any, agentTools []to
 			"create_react_agent",
 			name,
 			ErrCodeInitialization,
-			fmt.Errorf("ReAct agent requires ChatModel interface, got %T", llm),
+			fmt.Errorf("%w, got %T", errReActAgentRequiresChatModel, llm),
 		)
 	}
 
