@@ -25,6 +25,25 @@ build: ## Build all packages
 	@echo "Building all packages..."
 	@go build -v ./pkg/... ./cmd/... ./tests/...
 
+build-examples: ## Build all example binaries to .cache/bin
+	@echo "Building example binaries to $(CACHE_DIR)/bin..."
+	@mkdir -p $(CACHE_DIR)/bin
+	@for dir in examples/*/*/; do \
+		if [ -f "$$dir/main.go" ]; then \
+			name=$$(basename $$(dirname $$dir))_$$(basename $$dir); \
+			echo "Building $$dir -> $(CACHE_DIR)/bin/$$name"; \
+			go build -o $(CACHE_DIR)/bin/$$name $$dir || true; \
+		fi; \
+	done
+	@for dir in examples/*/; do \
+		if [ -f "$$dir/main.go" ]; then \
+			name=$$(basename $$dir); \
+			echo "Building $$dir -> $(CACHE_DIR)/bin/$$name"; \
+			go build -o $(CACHE_DIR)/bin/$$name $$dir || true; \
+		fi; \
+	done
+	@echo "✅ Example binaries built in $(CACHE_DIR)/bin/"
+
 test: ## Run all tests
 	@echo "Running tests..."
 	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v ./pkg/... ./cmd/... ./tests/...
@@ -183,6 +202,8 @@ security-full: security ## Run all security scans including Trivy (requires Dock
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BIN_DIR)
+	@rm -rf $(CACHE_DIR)/bin
+	@rm -f basic openai planexecute single_binary stt agents.test base.test executor.test iface.test multimodal.test react.test streaming.test
 	@rm -rf $(COVERAGE_DIR)
 	@go clean -cache
 	@go clean -testcache
