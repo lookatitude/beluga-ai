@@ -24,9 +24,9 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/providers/planexecute"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
@@ -201,7 +201,11 @@ func (e *PlanExecuteExample) generatePlan(ctx context.Context, task string) (*pl
 	}
 
 	// Extract the plan from the action
-	planJSON, ok := action.ToolInput["plan"].(string)
+	toolInput, ok := action.ToolInput.(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("tool input is not a map")
+	}
+	planJSON, ok := toolInput["plan"].(string)
 	if !ok {
 		return nil, fmt.Errorf("no plan found in agent action")
 	}
@@ -278,10 +282,11 @@ func (e *PlanExecuteExample) DisplayPlan(plan *planexecute.ExecutionPlan) {
 // createResearchTools creates sample tools for a research agent
 func createResearchTools() []tools.Tool {
 	// Web search tool
-	webSearch := tools.NewSimpleTool(
+	webSearch, _ := gofunc.NewGoFunctionTool(
 		"web_search",
 		"Search the web for information. Returns relevant search results.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"query": {"type": "string", "description": "The search query"}}, "required": ["query"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			query, _ := args["query"].(string)
 			// In production, call a real search API
 			return fmt.Sprintf(`{
@@ -292,42 +297,41 @@ func createResearchTools() []tools.Tool {
 				]
 			}`, query, query, query), nil
 		},
-		tools.WithParameter("query", "string", "The search query", true),
 	)
 
 	// Calculator tool
-	calculator := tools.NewSimpleTool(
+	calculator, _ := gofunc.NewGoFunctionTool(
 		"calculator",
 		"Perform arithmetic calculations. Input should be a mathematical expression.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"expression": {"type": "string", "description": "The mathematical expression"}}, "required": ["expression"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			expression, _ := args["expression"].(string)
 			// In production, use a proper math evaluator
 			return fmt.Sprintf(`{"expression": "%s", "result": "calculated"}`, expression), nil
 		},
-		tools.WithParameter("expression", "string", "The mathematical expression", true),
 	)
 
 	// Note-taking tool
-	notepad := tools.NewSimpleTool(
+	notepad, _ := gofunc.NewGoFunctionTool(
 		"take_notes",
 		"Save notes for later reference. Use this to record important findings.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"note": {"type": "string", "description": "The note to save"}}, "required": ["note"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			note, _ := args["note"].(string)
 			return fmt.Sprintf(`{"status": "saved", "note": "%s"}`, note), nil
 		},
-		tools.WithParameter("note", "string", "The note to save", true),
 	)
 
 	// Summary tool
-	summarize := tools.NewSimpleTool(
+	summarize, _ := gofunc.NewGoFunctionTool(
 		"summarize",
 		"Summarize text or findings into a concise format.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"text": {"type": "string", "description": "The text to summarize"}}, "required": ["text"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			text, _ := args["text"].(string)
 			// In production, might call an LLM
 			return fmt.Sprintf(`{"summary": "Summary of: %s"}`, text), nil
 		},
-		tools.WithParameter("text", "string", "The text to summarize", true),
 	)
 
 	return []tools.Tool{webSearch, calculator, notepad, summarize}
@@ -345,7 +349,7 @@ func main() {
 	// Create the LLM client
 	llmClient, err := llms.NewOpenAIChat(
 		llms.WithAPIKey(apiKey),
-		llms.WithModel("gpt-4"),
+		llms.WithModelName("gpt-4"),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create LLM client: %v", err)

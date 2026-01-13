@@ -19,17 +19,26 @@ func main() {
 
 	// Step 1: Create backend configuration
 	fmt.Println("\n📋 Step 1: Creating backend configuration...")
-	config := &vbiface.Config{
-		APIKey:    os.Getenv("LIVEKIT_API_KEY"),
-		APISecret: os.Getenv("LIVEKIT_API_SECRET"),
-		URL:       os.Getenv("LIVEKIT_URL"), // e.g., "wss://your-livekit-server.com"
-	}
-	if config.APIKey == "" || config.APISecret == "" || config.URL == "" {
+	apiKey := os.Getenv("LIVEKIT_API_KEY")
+	apiSecret := os.Getenv("LIVEKIT_API_SECRET")
+	url := os.Getenv("LIVEKIT_URL") // e.g., "wss://your-livekit-server.com"
+	if apiKey == "" || apiSecret == "" || url == "" {
 		log.Println("⚠️  Note: LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and LIVEKIT_URL environment variables are required for real usage")
 		log.Println("Using placeholder values for demonstration...")
-		config.APIKey = "placeholder-key"
-		config.APISecret = "placeholder-secret"
-		config.URL = "wss://localhost:7880"
+		apiKey = "placeholder-key"
+		apiSecret = "placeholder-secret"
+		url = "wss://localhost:7880"
+	}
+	config := &vbiface.Config{
+		Provider:     "livekit",
+		PipelineType: vbiface.PipelineTypeSTTTTS,
+		STTProvider:  "mock",
+		TTSProvider:  "mock",
+		ProviderConfig: map[string]any{
+			"api_key":    apiKey,
+			"api_secret": apiSecret,
+			"url":        url,
+		},
 	}
 	fmt.Println("✅ Configuration created")
 
@@ -39,27 +48,36 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create backend: %v", err)
 	}
-	fmt.Printf("✅ Backend created: %s\n", backendInstance.Name())
+	fmt.Printf("✅ Backend created\n")
 
 	// Step 3: Create a session
 	fmt.Println("\n📋 Step 3: Creating session...")
-	roomName := "example-room"
 	sessionConfig := &vbiface.SessionConfig{
-		RoomName: roomName,
+		UserID:        "example-user",
+		Transport:     "webrtc",
+		ConnectionURL: url,
+		PipelineType:  vbiface.PipelineTypeSTTTTS,
 	}
 	session, err := backendInstance.CreateSession(ctx, sessionConfig)
 	if err != nil {
 		log.Printf("Note: Session creation may require a running LiveKit server: %v", err)
 	} else {
-		fmt.Printf("✅ Session created: %s\n", session.ID())
-		defer session.Close()
+		fmt.Println("✅ Session created")
+		defer func() {
+			if err := session.Stop(ctx); err != nil {
+				log.Printf("Error stopping session: %v", err)
+			}
+		}()
 	}
 
-	// Step 4: Get session info
-	fmt.Println("\n📋 Step 4: Getting session information...")
+	// Step 4: Start session (optional)
+	fmt.Println("\n📋 Step 4: Starting session...")
 	if session != nil {
-		info := session.Info()
-		fmt.Printf("✅ Session info: %+v\n", info)
+		if err := session.Start(ctx); err != nil {
+			log.Printf("Note: Session start may require a running LiveKit server: %v", err)
+		} else {
+			fmt.Println("✅ Session started")
+		}
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

@@ -8,6 +8,8 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/providers/planexecute"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -21,7 +23,7 @@ type MockChatModel struct {
 	errorToReturn error
 }
 
-func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...interface{}) (schema.Message, error) {
+func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error) {
 	if m.shouldError {
 		return nil, m.errorToReturn
 	}
@@ -33,7 +35,7 @@ func (m *MockChatModel) Generate(ctx context.Context, messages []schema.Message,
 	return schema.NewAIMessage("default response"), nil
 }
 
-func (m *MockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...interface{}) (<-chan iface.AIMessageChunk, error) {
+func (m *MockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	return nil, errors.New("streaming not implemented in mock")
 }
 
@@ -47,6 +49,58 @@ func (m *MockChatModel) GetModelName() string {
 
 func (m *MockChatModel) GetProviderName() string {
 	return "mock"
+}
+
+func (m *MockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
+	// Convert input to messages if needed
+	messages, ok := input.([]schema.Message)
+	if !ok {
+		// Try to convert string to message
+		if str, ok := input.(string); ok {
+			messages = []schema.Message{schema.NewHumanMessage(str)}
+		} else {
+			return nil, errors.New("input must be []schema.Message or string")
+		}
+	}
+	return m.Generate(ctx, messages, options...)
+}
+
+func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	ch := make(chan any, 1)
+	go func() {
+		defer close(ch)
+		result, err := m.Invoke(ctx, input, options...)
+		if err != nil {
+			ch <- err
+			return
+		}
+		ch <- result
+	}()
+	return ch, nil
+}
+
+func (m *MockChatModel) CheckHealth() map[string]any {
+	return map[string]any{
+		"state":    "healthy",
+		"model":    "mock-model",
+		"provider": "mock",
+	}
+}
+
+func (m *MockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		messages, ok := input.([]schema.Message)
+		if !ok {
+			return nil, errors.New("input must be []schema.Message")
+		}
+		result, err := m.Generate(ctx, messages, options...)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
 }
 
 // TestNewPlanExecuteExample tests example creation
@@ -86,6 +140,7 @@ func TestNewPlanExecuteExample(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockLLM := llms.NewAdvancedMockChatModel(
+				"test-model",
 				llms.WithResponses("Test response"),
 			)
 
@@ -119,6 +174,7 @@ func TestPlanExecuteExample_Run(t *testing.T) {
 	}`
 
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses(planResponse, "Step 1 result", "Final summary"),
 	)
 
@@ -148,9 +204,10 @@ func TestPlanExecuteExample_Run(t *testing.T) {
 // TestPlanExecuteExample_ContextCancellation tests context handling
 func TestPlanExecuteExample_ContextCancellation(t *testing.T) {
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("slow response"),
 		llms.WithStreamingDelay(100*time.Millisecond),
-		llms.WithSimulateNetworkDelay(true),
+		llms.WithNetworkDelay(true),
 	)
 
 	example, err := NewPlanExecuteExample("test", mockLLM, createTestTools())
@@ -171,7 +228,7 @@ func TestPlanExecuteExample_ContextCancellation(t *testing.T) {
 
 // TestDisplayPlan tests plan display formatting
 func TestDisplayPlan(t *testing.T) {
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 	example, _ := NewPlanExecuteExample("test", mockLLM, nil)
 
 	plan := &planexecute.ExecutionPlan{
@@ -283,14 +340,14 @@ func TestPlanExecuteOptions(t *testing.T) {
 	}
 
 	// Test WithPlannerLLM
-	mockPlanner := llms.NewAdvancedMockChatModel()
+	mockPlanner := llms.NewAdvancedMockChatModel("test-model")
 	WithPlannerLLM(mockPlanner)(config)
 	if config.plannerLLM == nil {
 		t.Error("plannerLLM should not be nil")
 	}
 
 	// Test WithExecutorLLM
-	mockExecutor := llms.NewAdvancedMockChatModel()
+	mockExecutor := llms.NewAdvancedMockChatModel("test-model")
 	WithExecutorLLM(mockExecutor)(config)
 	if config.executorLLM == nil {
 		t.Error("executorLLM should not be nil")
@@ -306,6 +363,7 @@ func BenchmarkPlanGeneration(b *testing.B) {
 	}`
 
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses(planResponse),
 	)
 
@@ -319,13 +377,13 @@ func BenchmarkPlanGeneration(b *testing.B) {
 
 // Helper function to create test tools
 func createTestTools() []tools.Tool {
-	return []tools.Tool{
-		tools.NewSimpleTool(
-			"test_tool",
-			"A test tool",
-			func(ctx context.Context, args map[string]any) (string, error) {
-				return `{"result": "test"}`, nil
-			},
-		),
-	}
+	tool, _ := gofunc.NewGoFunctionTool(
+		"test_tool",
+		"A test tool",
+		`{"type": "object", "properties": {}, "required": []}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
+			return `{"result": "test"}`, nil
+		},
+	)
+	return []tools.Tool{tool}
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 )
 

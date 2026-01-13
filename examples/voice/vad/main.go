@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 )
 
@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("\n📋 Step 3: Detecting voice activity...")
 	// In a real application, this would be actual audio frame data
 	audioFrame := []byte{1, 2, 3, 4, 5} // Placeholder audio frame
-	isSpeech, err := provider.Detect(ctx, audioFrame)
+	isSpeech, err := provider.Process(ctx, audioFrame)
 	if err != nil {
 		log.Fatalf("Failed to detect voice activity: %v", err)
 	}
@@ -46,12 +46,17 @@ func main() {
 
 	// Step 4: Process streaming audio (optional)
 	fmt.Println("\n📋 Step 4: Processing streaming audio...")
-	streamingSession, err := provider.StartStreaming(ctx)
+	audioCh := make(chan []byte, 1)
+	audioCh <- audioFrame
+	close(audioCh)
+	resultsCh, err := provider.ProcessStream(ctx, audioCh)
 	if err != nil {
 		log.Printf("Note: Streaming not available with mock provider: %v", err)
 	} else {
 		fmt.Println("✅ Streaming session started")
-		defer streamingSession.Close()
+		for result := range resultsCh {
+			fmt.Printf("   VAD result: HasVoice=%v, Confidence=%.2f\n", result.HasVoice, result.Confidence)
+		}
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

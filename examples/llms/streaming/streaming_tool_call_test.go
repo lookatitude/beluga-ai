@@ -9,7 +9,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
 )
 
 // TestStreamingToolCallExample_Run tests the main Run method with various scenarios.
@@ -26,7 +27,9 @@ func TestStreamingToolCallExample_Run(t *testing.T) {
 			name:   "simple response without tool calls",
 			prompt: "Hello there!",
 			setupMock: func() iface.ChatModel {
+				// Don't pass tools to avoid automatic tool call generation
 				return llms.NewAdvancedMockChatModel(
+					"test-model",
 					llms.WithResponses("Hello! How can I help you today?"),
 				)
 			},
@@ -38,7 +41,9 @@ func TestStreamingToolCallExample_Run(t *testing.T) {
 			name:   "handles empty response gracefully",
 			prompt: "Test empty",
 			setupMock: func() iface.ChatModel {
+				// Don't pass tools to avoid automatic tool call generation
 				return llms.NewAdvancedMockChatModel(
+					"test-model",
 					llms.WithResponses(""),
 				)
 			},
@@ -49,19 +54,24 @@ func TestStreamingToolCallExample_Run(t *testing.T) {
 	}
 
 	// Create a simple test tool
-	testTool := tools.NewSimpleTool(
+	testTool, _ := gofunc.NewGoFunctionTool(
 		"test_tool",
 		"A test tool",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"input": {"type": "string", "description": "Test input"}}, "required": []}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			return `{"result": "test"}`, nil
 		},
-		tools.WithParameter("input", "string", "Test input", false),
 	)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mockClient := tt.setupMock()
-			example := NewStreamingToolCallExample(mockClient, []tools.Tool{testTool})
+			// Only pass tools if we expect tool calls, otherwise pass nil to avoid mock auto-generating tool calls
+			var toolsToPass []tools.Tool
+			if tt.wantToolsCalled > 0 {
+				toolsToPass = []tools.Tool{testTool}
+			}
+			example := NewStreamingToolCallExample(mockClient, toolsToPass)
 
 			result, err := example.Run(context.Background(), tt.prompt)
 
@@ -85,9 +95,10 @@ func TestStreamingToolCallExample_Run(t *testing.T) {
 // TestStreamingToolCallExample_ContextCancellation verifies proper context handling.
 func TestStreamingToolCallExample_ContextCancellation(t *testing.T) {
 	mockClient := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("This is a response that takes a while"),
 		llms.WithStreamingDelay(100*time.Millisecond),
-		llms.WithSimulateNetworkDelay(true),
+		llms.WithNetworkDelay(true),
 	)
 
 	example := NewStreamingToolCallExample(mockClient, nil)
@@ -115,10 +126,10 @@ func TestStreamingToolCallExample_ErrorHandling(t *testing.T) {
 		{
 			name: "stream start failure",
 			setupMock: func() iface.ChatModel {
-				mock := llms.NewAdvancedMockChatModel()
-				mock.SetShouldError(true)
-				mock.SetErrorToReturn(errors.New("connection refused"))
-				return mock
+				return llms.NewAdvancedMockChatModel(
+					"test-model",
+					llms.WithError(errors.New("connection refused")),
+				)
 			},
 			wantErr: true,
 			errMsg:  "failed to start stream",
@@ -142,18 +153,20 @@ func TestStreamingToolCallExample_ErrorHandling(t *testing.T) {
 // TestExecuteToolCalls tests the tool execution logic.
 func TestExecuteToolCalls(t *testing.T) {
 	// Create test tools
-	successTool := tools.NewSimpleTool(
+	successTool, _ := gofunc.NewGoFunctionTool(
 		"success_tool",
 		"A tool that succeeds",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {}, "required": []}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			return `{"status": "ok"}`, nil
 		},
 	)
 
-	failTool := tools.NewSimpleTool(
+	failTool, _ := gofunc.NewGoFunctionTool(
 		"fail_tool",
 		"A tool that fails",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {}, "required": []}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			return "", errors.New("tool failure")
 		},
 	)
@@ -221,7 +234,7 @@ func TestExecuteToolCalls(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockClient := llms.NewAdvancedMockChatModel()
+			mockClient := llms.NewAdvancedMockChatModel("test-model")
 			example := NewStreamingToolCallExample(mockClient, tt.tools)
 
 			results, names, err := example.executeToolCalls(context.Background(), tt.toolCalls)
@@ -260,6 +273,7 @@ func TestProcessStream(t *testing.T) {
 			name: "processes multi-word response",
 			setupMock: func() iface.ChatModel {
 				return llms.NewAdvancedMockChatModel(
+					"test-model",
 					llms.WithResponses("Hello world from Beluga"),
 				)
 			},
@@ -271,6 +285,7 @@ func TestProcessStream(t *testing.T) {
 			name: "handles single word response",
 			setupMock: func() iface.ChatModel {
 				return llms.NewAdvancedMockChatModel(
+					"test-model",
 					llms.WithResponses("OK"),
 				)
 			},
@@ -364,6 +379,7 @@ func TestCreateCalculatorTool(t *testing.T) {
 // BenchmarkStreamProcessing benchmarks the stream processing performance.
 func BenchmarkStreamProcessing(b *testing.B) {
 	mockClient := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("This is a longer response with multiple words to simulate real streaming behavior"),
 	)
 
@@ -380,7 +396,7 @@ func BenchmarkStreamProcessing(b *testing.B) {
 // BenchmarkToolExecution benchmarks tool execution performance.
 func BenchmarkToolExecution(b *testing.B) {
 	tool := createWeatherTool()
-	mockClient := llms.NewAdvancedMockChatModel()
+	mockClient := llms.NewAdvancedMockChatModel("test-model")
 	example := NewStreamingToolCallExample(mockClient, []tools.Tool{tool})
 
 	toolCalls := []schema.ToolCallChunk{

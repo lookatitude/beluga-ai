@@ -19,7 +19,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
-	"github.com/lookatitude/beluga-ai/pkg/llms/internal/common"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -63,8 +62,8 @@ const (
 type CustomProvider struct {
 	config      *llms.Config
 	metrics     *CustomMetrics
-	tracing     *common.TracingHelper
-	retryConfig *common.RetryConfig
+	// Note: In a real implementation, you would use public tracing and retry utilities
+	// For this example, we've simplified to avoid internal package dependencies
 	modelName   string
 	tools       []tools.Tool
 
@@ -196,12 +195,7 @@ func NewCustomProvider(config *llms.Config, opts ...ProviderOption) (*CustomProv
 		config:    config,
 		modelName: modelName,
 		metrics:   metrics,
-		tracing:   common.NewTracingHelper(),
-		retryConfig: &common.RetryConfig{
-			MaxRetries: config.MaxRetries,
-			Delay:      config.RetryDelay,
-			Backoff:    config.RetryBackoff,
-		},
+		// Retry logic simplified for example - use public retry utilities in production
 		// Default simulated responses
 		responses: []string{
 			"This is a response from the custom LLM provider.",
@@ -260,10 +254,18 @@ func (c *CustomProvider) Generate(ctx context.Context, messages []schema.Message
 	var result schema.Message
 	var genErr error
 
-	retryErr := common.RetryWithBackoff(ctx, c.retryConfig, "custom.generate", func() error {
-		result, genErr = c.generateInternal(ctx, messages, callOpts)
-		return genErr
-	})
+	// Simplified retry logic for example
+	// In production, use a proper retry utility with exponential backoff
+	var retryErr error
+	result, genErr = c.generateInternal(ctx, messages, callOpts)
+	if genErr != nil {
+		// Simple retry - in production, implement proper exponential backoff
+		for i := 0; i < c.config.MaxRetries && genErr != nil; i++ {
+			time.Sleep(c.config.RetryDelay)
+			result, genErr = c.generateInternal(ctx, messages, callOpts)
+		}
+		retryErr = genErr
+	}
 
 	duration := time.Since(start)
 
@@ -735,14 +737,34 @@ type ExampleTool struct {
 	description string
 }
 
-func (t *ExampleTool) Definition() tools.Definition {
-	return tools.Definition{
+func (t *ExampleTool) Name() string {
+	return t.name
+}
+
+func (t *ExampleTool) Description() string {
+	return t.description
+}
+
+func (t *ExampleTool) Definition() tools.ToolDefinition {
+	return tools.ToolDefinition{
 		Name:        t.name,
 		Description: t.description,
 		InputSchema: `{"type": "object", "properties": {"expression": {"type": "string"}}}`,
 	}
 }
 
-func (t *ExampleTool) Execute(ctx context.Context, input string) (string, error) {
-	return fmt.Sprintf("Executed %s with input: %s", t.name, input), nil
+func (t *ExampleTool) Execute(ctx context.Context, input any) (any, error) {
+	return fmt.Sprintf("Executed %s with input: %v", t.name, input), nil
+}
+
+func (t *ExampleTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := t.Execute(ctx, input)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
 }

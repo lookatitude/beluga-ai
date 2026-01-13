@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -39,33 +38,27 @@ func main() {
 		},
 	)
 	fmt.Printf("✅ Created document: %s\n", doc.GetContent())
-	fmt.Printf("   Metadata: %v\n", doc.GetMetadata())
+	fmt.Printf("   Metadata: %v\n", doc.Metadata)
 
 	// Example 5: Create Image Message
 	fmt.Println("\n📋 Example 5: Creating Image Message")
-	imageMsg, err := schema.NewImageMessage("https://example.com/image.jpg", "image/jpeg")
-	if err != nil {
-		log.Printf("⚠️  Failed to create image message: %v", err)
-	} else {
-		fmt.Printf("✅ Created image message\n")
-		fmt.Printf("   URL: %s\n", imageMsg.GetURL())
-		fmt.Printf("   MIME Type: %s\n", imageMsg.GetMIMEType())
+	imageMsg := schema.NewImageMessage("https://example.com/image.jpg", "An example image")
+	fmt.Printf("✅ Created image message\n")
+	if imgMsg, ok := imageMsg.(*schema.ImageMessage); ok {
+		fmt.Printf("   URL: %s\n", imgMsg.ImageURL)
+		fmt.Printf("   Content: %s\n", imgMsg.GetContent())
 	}
 
 	// Example 6: Create Voice Document
 	fmt.Println("\n📋 Example 6: Creating Voice Document")
-	voiceDoc, err := schema.NewVoiceDocument(
+	voiceDoc := schema.NewVoiceDocument(
 		"https://example.com/audio.wav",
-		"audio/wav",
+		"This is a transcript of the audio",
 		map[string]string{"duration": "10s"},
 	)
-	if err != nil {
-		log.Printf("⚠️  Failed to create voice document: %v", err)
-	} else {
-		fmt.Printf("✅ Created voice document\n")
-		fmt.Printf("   URL: %s\n", voiceDoc.GetURL())
-		fmt.Printf("   MIME Type: %s\n", voiceDoc.GetMIMEType())
-	}
+	fmt.Printf("✅ Created voice document\n")
+	fmt.Printf("   URL: %s\n", voiceDoc.GetAudioURL())
+	fmt.Printf("   Transcript: %s\n", voiceDoc.GetTranscript())
 
 	// Example 7: Message Collection
 	fmt.Println("\n📋 Example 7: Working with Message Collections")

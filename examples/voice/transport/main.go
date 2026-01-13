@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/transport"
 )
 
@@ -33,7 +33,7 @@ func main() {
 	// Step 3: Send audio data
 	fmt.Println("\n📋 Step 3: Sending audio data...")
 	audioData := []byte{1, 2, 3, 4, 5} // Placeholder audio data
-	err = provider.Send(ctx, audioData)
+	err = provider.SendAudio(ctx, audioData)
 	if err != nil {
 		log.Fatalf("Failed to send audio: %v", err)
 	}
@@ -41,11 +41,17 @@ func main() {
 
 	// Step 4: Receive audio data (optional)
 	fmt.Println("\n📋 Step 4: Receiving audio data...")
-	receivedAudio, err := provider.Receive(ctx)
-	if err != nil {
-		log.Printf("Note: Receive not available with mock provider: %v", err)
-	} else {
-		fmt.Printf("✅ Received audio data: %d bytes\n", len(receivedAudio))
+	// Set up callback for received audio
+	provider.OnAudioReceived(func(audio []byte) {
+		fmt.Printf("✅ Received audio data via callback: %d bytes\n", len(audio))
+	})
+	// Also get the receive channel
+	audioCh := provider.ReceiveAudio()
+	select {
+	case receivedAudio := <-audioCh:
+		fmt.Printf("✅ Received audio data via channel: %d bytes\n", len(receivedAudio))
+	default:
+		fmt.Println("✅ Receive channel set up (no data available yet)")
 	}
 
 	// Step 5: Close connection

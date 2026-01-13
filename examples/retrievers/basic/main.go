@@ -21,8 +21,13 @@ func main() {
 
 	// Step 1: Create embedder
 	fmt.Println("\n📋 Step 1: Creating embedder...")
-	embedderConfig := embeddings.NewConfig()
-	embedderConfig.Mock.Enabled = true
+	embedderConfig := &embeddings.Config{
+		Mock: &embeddings.MockConfig{
+			Enabled:   true,
+			Dimension: 128,
+		},
+	}
+	embedderConfig.SetDefaults()
 	embedderFactory, err := embeddings.NewEmbedderFactory(embedderConfig)
 	if err != nil {
 		log.Fatalf("Failed to create embedder factory: %v", err)
@@ -46,10 +51,10 @@ func main() {
 	// Step 3: Add documents to store
 	fmt.Println("\n📋 Step 3: Adding documents...")
 	documents := []schema.Document{
-		schema.NewDocument("Machine learning is a subset of artificial intelligence"),
-		schema.NewDocument("Deep learning uses neural networks with multiple layers"),
-		schema.NewDocument("Natural language processing enables computers to understand text"),
-		schema.NewDocument("Computer vision allows machines to interpret visual information"),
+		schema.NewDocument("Machine learning is a subset of artificial intelligence", map[string]string{}),
+		schema.NewDocument("Deep learning uses neural networks with multiple layers", map[string]string{}),
+		schema.NewDocument("Natural language processing enables computers to understand text", map[string]string{}),
+		schema.NewDocument("Computer vision allows machines to interpret visual information", map[string]string{}),
 	}
 	ids, err := store.AddDocuments(ctx, documents)
 	if err != nil {
@@ -59,10 +64,12 @@ func main() {
 
 	// Step 4: Create retriever
 	fmt.Println("\n📋 Step 4: Creating retriever...")
-	retriever := retrievers.NewVectorStoreRetriever(store,
+	retriever, err := retrievers.NewVectorStoreRetriever(store,
 		retrievers.WithDefaultK(3),
-		retrievers.WithScoreThreshold(0.5),
 	)
+	if err != nil {
+		log.Fatalf("Failed to create retriever: %v", err)
+	}
 	fmt.Println("✅ Retriever created")
 
 	// Step 5: Retrieve relevant documents
@@ -74,7 +81,7 @@ func main() {
 	}
 	fmt.Printf("✅ Retrieved %d relevant documents:\n", len(relevantDocs))
 	for i, doc := range relevantDocs {
-		fmt.Printf("  %d. %s (score: %.4f)\n", i+1, doc.GetContent(), doc.GetScore())
+		fmt.Printf("  %d. %s (score: %.4f)\n", i+1, doc.GetContent(), doc.Score)
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

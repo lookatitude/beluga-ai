@@ -16,8 +16,13 @@ func main() {
 
 	// Example 1: Create Embedder Factory
 	fmt.Println("\n📋 Example 1: Creating Embedder Factory")
-	config := embeddings.NewConfig()
-	config.Mock.Enabled = true // Use mock for this example
+	config := &embeddings.Config{
+		Mock: &embeddings.MockConfig{
+			Enabled:   true,
+			Dimension: 128,
+		},
+	}
+	config.SetDefaults()
 
 	factory, err := embeddings.NewEmbedderFactory(config)
 	if err != nil {

@@ -23,6 +23,8 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -63,14 +65,14 @@ type SearchResult struct {
 
 // MultimodalRAGExample demonstrates multimodal RAG functionality
 type MultimodalRAGExample struct {
-	textEmbedder embeddings.Embedder
+	textEmbedder embeddingsiface.Embedder
 	llm          llmsiface.ChatModel
 	documents    []EmbeddedDocument // In-memory store for demo
 	topK         int
 }
 
 // NewMultimodalRAGExample creates a new multimodal RAG example
-func NewMultimodalRAGExample(textEmbedder embeddings.Embedder, llm llmsiface.ChatModel, topK int) *MultimodalRAGExample {
+func NewMultimodalRAGExample(textEmbedder embeddingsiface.Embedder, llm llmsiface.ChatModel, topK int) *MultimodalRAGExample {
 	return &MultimodalRAGExample{
 		textEmbedder: textEmbedder,
 		llm:          llm,
@@ -343,10 +345,15 @@ func main() {
 	}
 
 	// Create embedding provider
-	embeddingProvider, err := embeddings.NewOpenAIEmbeddings(
-		embeddings.WithAPIKey(apiKey),
-		embeddings.WithModel("text-embedding-3-small"),
-	)
+	embeddingConfig := &embeddings.Config{
+		OpenAI: &embeddings.OpenAIConfig{
+			APIKey:  apiKey,
+			Model:   "text-embedding-3-small",
+			Enabled: true,
+		},
+	}
+	embeddingConfig.SetDefaults()
+	embeddingProvider, err := embeddings.NewEmbedder(ctx, "openai", *embeddingConfig)
 	if err != nil {
 		log.Fatalf("Failed to create embedding provider: %v", err)
 	}
@@ -354,7 +361,7 @@ func main() {
 	// Create LLM client (use a model that can understand multimodal context descriptions)
 	llmClient, err := llms.NewOpenAIChat(
 		llms.WithAPIKey(apiKey),
-		llms.WithModel("gpt-4"),
+		llms.WithModelName("gpt-4"),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create LLM client: %v", err)

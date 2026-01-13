@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
 )
 
@@ -34,20 +34,25 @@ func main() {
 	fmt.Println("\n📋 Step 3: Canceling noise from audio...")
 	// In a real application, this would be actual audio data with background noise
 	audioData := []byte{1, 2, 3, 4, 5} // Placeholder audio data
-	cleanedAudio, err := provider.CancelNoise(ctx, audioData)
+	cleanedAudio, err := provider.Process(ctx, audioData)
 	if err != nil {
-		log.Fatalf("Failed to cancel noise: %v", err)
+		log.Fatalf("Failed to process noise: %v", err)
 	}
-	fmt.Printf("✅ Noise canceled: %d bytes input, %d bytes output\n", len(audioData), len(cleanedAudio))
+	fmt.Printf("✅ Noise processed: %d bytes input, %d bytes output\n", len(audioData), len(cleanedAudio))
 
 	// Step 4: Process streaming audio (optional)
 	fmt.Println("\n📋 Step 4: Processing streaming audio...")
-	streamingSession, err := provider.StartStreaming(ctx)
+	audioCh := make(chan []byte, 1)
+	audioCh <- audioData
+	close(audioCh)
+	cleanedCh, err := provider.ProcessStream(ctx, audioCh)
 	if err != nil {
 		log.Printf("Note: Streaming not available with mock provider: %v", err)
 	} else {
 		fmt.Println("✅ Streaming session started")
-		defer streamingSession.Close()
+		for cleaned := range cleanedCh {
+			fmt.Printf("   Processed chunk: %d bytes\n", len(cleaned))
+		}
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

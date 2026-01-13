@@ -54,7 +54,7 @@ func main() {
 	// Example 4: Create Window Memory
 	fmt.Println("\n📋 Example 4: Creating Window Memory")
 	history := memory.NewBaseChatMessageHistory()
-	windowMemory := memory.NewConversationBufferWindowMemory(history, 3, "history", true)
+	_ = memory.NewConversationBufferWindowMemory(history, 3, "history", true)
 	fmt.Println("✅ Window memory created (keeps last 3 messages)")
 
 	// Example 5: Add Messages to History

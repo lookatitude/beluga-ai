@@ -37,10 +37,14 @@ func (m *MockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, 
 	return results[0], nil
 }
 
+func (m *MockEmbedder) GetDimension(ctx context.Context) (int, error) {
+	return m.embedDimension, nil
+}
+
 // TestNewMultimodalRAGExample tests RAG example creation
 func TestNewMultimodalRAGExample(t *testing.T) {
 	mockEmbedder := NewMockEmbedder(384)
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 3)
 
@@ -60,7 +64,7 @@ func TestNewMultimodalRAGExample(t *testing.T) {
 // TestIndexDocuments tests document indexing
 func TestIndexDocuments(t *testing.T) {
 	mockEmbedder := NewMockEmbedder(384)
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 3)
 
 	docs := []Document{
@@ -83,6 +87,7 @@ func TestIndexDocuments(t *testing.T) {
 func TestQuery(t *testing.T) {
 	mockEmbedder := NewMockEmbedder(384)
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("This is the answer based on the context."),
 	)
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 2)
@@ -117,7 +122,7 @@ func TestQuery(t *testing.T) {
 // TestSimilaritySearch tests the similarity search function
 func TestSimilaritySearch(t *testing.T) {
 	mockEmbedder := NewMockEmbedder(384)
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 2)
 
 	// Manually add documents with known embeddings
@@ -275,6 +280,7 @@ func TestTruncate(t *testing.T) {
 func TestContextCancellation(t *testing.T) {
 	mockEmbedder := NewMockEmbedder(384)
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("answer"),
 	)
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 2)
@@ -297,7 +303,7 @@ func TestContextCancellation(t *testing.T) {
 // BenchmarkIndexing benchmarks document indexing performance
 func BenchmarkIndexing(b *testing.B) {
 	mockEmbedder := NewMockEmbedder(384)
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 
 	docs := createSampleDocuments()
 
@@ -312,6 +318,7 @@ func BenchmarkIndexing(b *testing.B) {
 func BenchmarkQuery(b *testing.B) {
 	mockEmbedder := NewMockEmbedder(384)
 	mockLLM := llms.NewAdvancedMockChatModel(
+		"test-model",
 		llms.WithResponses("answer"),
 	)
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 3)
@@ -328,7 +335,7 @@ func BenchmarkQuery(b *testing.B) {
 // BenchmarkSimilaritySearch benchmarks similarity search performance
 func BenchmarkSimilaritySearch(b *testing.B) {
 	mockEmbedder := NewMockEmbedder(384)
-	mockLLM := llms.NewAdvancedMockChatModel()
+	mockLLM := llms.NewAdvancedMockChatModel("test-model")
 	rag := NewMultimodalRAGExample(mockEmbedder, mockLLM, 3)
 
 	// Add many documents

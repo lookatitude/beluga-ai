@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
 )
 
@@ -41,12 +41,12 @@ func main() {
 
 	// Step 4: Start streaming session (optional)
 	fmt.Println("\n📋 Step 4: Starting streaming session...")
-	streamingSession, err := provider.StartStreaming(ctx)
+	streamReader, err := provider.StreamGenerate(ctx, "This is a streaming test.")
 	if err != nil {
 		log.Printf("Note: Streaming not available with mock provider: %v", err)
 	} else {
 		fmt.Println("✅ Streaming session started")
-		defer streamingSession.Close()
+		_ = streamReader
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/mock"
+	// Mock provider not available - remove blank import
 	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
 )
 
@@ -44,14 +45,18 @@ func main() {
 		fmt.Println("✅ Turn not complete - speaker is still speaking")
 	}
 
-	// Step 4: Process streaming audio (optional)
-	fmt.Println("\n📋 Step 4: Processing streaming audio...")
-	streamingSession, err := provider.StartStreaming(ctx)
+	// Step 4: Additional turn detection with silence duration (optional)
+	fmt.Println("\n📋 Step 4: Detecting turn with silence duration...")
+	// Note: TurnDetector doesn't have streaming, but has DetectTurnWithSilence
+	isTurnCompleteWithSilence, err := provider.DetectTurnWithSilence(ctx, audioStream, 2*time.Second)
 	if err != nil {
-		log.Printf("Note: Streaming not available with mock provider: %v", err)
+		log.Printf("Note: DetectTurnWithSilence not available with mock provider: %v", err)
 	} else {
-		fmt.Println("✅ Streaming session started")
-		defer streamingSession.Close()
+		if isTurnCompleteWithSilence {
+			fmt.Println("✅ Turn detected with silence duration")
+		} else {
+			fmt.Println("✅ Turn not complete (silence threshold not met)")
+		}
 	}
 
 	fmt.Println("\n✨ Example completed successfully!")

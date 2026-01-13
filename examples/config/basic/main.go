@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"os"
@@ -13,29 +12,27 @@ func main() {
 	fmt.Println("🔄 Beluga AI Config Package Usage Example")
 	fmt.Println("==========================================")
 
-	ctx := context.Background()
-
-	// Example 1: Create Config Manager
-	fmt.Println("\n📋 Example 1: Creating Config Manager")
-	manager, err := config.NewManager(ctx)
+	// Example 1: Create Config Loader
+	fmt.Println("\n📋 Example 1: Creating Config Loader")
+	options := config.DefaultLoaderOptions()
+	loader, err := config.NewLoader(options)
 	if err != nil {
-		log.Fatalf("Failed to create config manager: %v", err)
+		log.Fatalf("Failed to create config loader: %v", err)
 	}
-	fmt.Println("✅ Config manager created successfully")
+	fmt.Println("✅ Config loader created successfully")
 
 	// Example 2: Load from Environment Variables
 	fmt.Println("\n📋 Example 2: Loading from Environment Variables")
-	os.Setenv("APP_NAME", "beluga-example")
-	os.Setenv("APP_PORT", "8080")
-	os.Setenv("APP_DEBUG", "true")
+	os.Setenv("BELUGA_APP_NAME", "beluga-example")
+	os.Setenv("BELUGA_APP_PORT", "8080")
+	os.Setenv("BELUGA_APP_DEBUG", "true")
 
-	envConfig, err := manager.LoadFromEnv()
+	_, err = config.LoadFromEnv("BELUGA")
 	if err != nil {
 		log.Printf("⚠️  Failed to load from env: %v", err)
 	} else {
 		fmt.Println("✅ Configuration loaded from environment")
-		fmt.Printf("   App Name: %s\n", envConfig.GetString("app_name"))
-		fmt.Printf("   Port: %s\n", envConfig.GetString("app_port"))
+		fmt.Printf("   Config loaded successfully\n")
 	}
 
 	// Example 3: Load from YAML File
@@ -56,40 +53,30 @@ database:
 		log.Printf("⚠️  Failed to create temp file: %v", err)
 	} else {
 		defer os.Remove(tmpFile)
-		yamlConfig, err := manager.LoadFromFile(tmpFile)
+		yamlConfig, err := config.LoadFromFile(tmpFile)
 		if err != nil {
 			log.Printf("⚠️  Failed to load from YAML: %v", err)
 		} else {
 			fmt.Println("✅ Configuration loaded from YAML file")
-			fmt.Printf("   App Name: %s\n", yamlConfig.GetString("app.name"))
-			fmt.Printf("   Database Host: %s\n", yamlConfig.GetString("database.host"))
+			fmt.Printf("   Config loaded successfully\n")
 		}
+		_ = yamlConfig
 	}
 
-	// Example 4: Get Configuration Value
-	fmt.Println("\n📋 Example 4: Getting Configuration Values")
-	if envConfig != nil {
-		appName := envConfig.GetString("app_name")
-		port := envConfig.GetString("app_port")
-		debug := envConfig.GetBool("app_debug", false)
-		fmt.Printf("✅ Retrieved values:\n")
-		fmt.Printf("   App Name: %s\n", appName)
-		fmt.Printf("   Port: %s\n", port)
-		fmt.Printf("   Debug: %t\n", debug)
+	// Example 4: Load Default Config
+	fmt.Println("\n📋 Example 4: Loading Default Config")
+	cfg, err := loader.LoadConfig()
+	if err != nil {
+		log.Printf("⚠️  Failed to load config: %v", err)
+	} else {
+		fmt.Println("✅ Configuration loaded successfully")
+		_ = cfg
 	}
 
-	// Example 5: Set Configuration Value
-	fmt.Println("\n📋 Example 5: Setting Configuration Values")
-	if envConfig != nil {
-		envConfig.Set("app_version", "1.0.0")
-		version := envConfig.GetString("app_version")
-		fmt.Printf("✅ Set and retrieved version: %s\n", version)
-	}
-
-	// Example 6: Validate Configuration
-	fmt.Println("\n📋 Example 6: Validating Configuration")
-	if envConfig != nil {
-		err := manager.Validate(envConfig)
+	// Example 5: Validate Configuration
+	fmt.Println("\n📋 Example 5: Validating Configuration")
+	if cfg != nil {
+		err := config.ValidateConfig(cfg)
 		if err != nil {
 			log.Printf("⚠️  Validation failed: %v", err)
 		} else {

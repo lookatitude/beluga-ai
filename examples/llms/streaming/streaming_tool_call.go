@@ -27,7 +27,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
 )
 
 // We define a tracer for observability - this helps debug in production
@@ -229,8 +230,8 @@ func (e *StreamingToolCallExample) executeToolCalls(
 		if !ok {
 			lastErr = fmt.Errorf("unknown tool: %s", tc.Name)
 			results = append(results, schema.NewToolMessage(
-				tc.ID, tc.Name,
 				fmt.Sprintf("Error: unknown tool %s", tc.Name),
+				tc.ID,
 			))
 			continue
 		}
@@ -240,8 +241,8 @@ func (e *StreamingToolCallExample) executeToolCalls(
 		if err := json.Unmarshal([]byte(tc.Arguments), &args); err != nil {
 			lastErr = fmt.Errorf("failed to parse args for %s: %w", tc.Name, err)
 			results = append(results, schema.NewToolMessage(
-				tc.ID, tc.Name,
 				fmt.Sprintf("Error: invalid arguments - %v", err),
+				tc.ID,
 			))
 			continue
 		}
@@ -251,14 +252,15 @@ func (e *StreamingToolCallExample) executeToolCalls(
 		if err != nil {
 			lastErr = fmt.Errorf("tool %s failed: %w", tc.Name, err)
 			results = append(results, schema.NewToolMessage(
-				tc.ID, tc.Name,
 				fmt.Sprintf("Error: tool execution failed - %v", err),
+				tc.ID,
 			))
 			continue
 		}
 
 		// Success - add the result
-		results = append(results, schema.NewToolMessage(tc.ID, tc.Name, toolResult))
+		resultStr := fmt.Sprintf("%v", toolResult)
+		results = append(results, schema.NewToolMessage(resultStr, tc.ID))
 	}
 
 	span.SetAttributes(
@@ -273,10 +275,11 @@ func (e *StreamingToolCallExample) executeToolCalls(
 // createWeatherTool creates a sample weather tool for demonstration.
 // In production, this would call a real weather API.
 func createWeatherTool() tools.Tool {
-	return tools.NewSimpleTool(
+	tool, _ := gofunc.NewGoFunctionTool(
 		"get_weather",
 		"Get the current weather for a location. Returns temperature and conditions.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"location": {"type": "string", "description": "The city and state, e.g. 'San Francisco, CA'"}}, "required": ["location"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			location, ok := args["location"].(string)
 			if !ok || location == "" {
 				return "", fmt.Errorf("location is required")
@@ -299,16 +302,17 @@ func createWeatherTool() tools.Tool {
 
 			return string(data), nil
 		},
-		tools.WithParameter("location", "string", "The city and state, e.g. 'San Francisco, CA'", true),
 	)
+	return tool
 }
 
 // createCalculatorTool creates a sample calculator tool for demonstration.
 func createCalculatorTool() tools.Tool {
-	return tools.NewSimpleTool(
+	tool, _ := gofunc.NewGoFunctionTool(
 		"calculator",
 		"Perform basic arithmetic calculations. Supports +, -, *, / operations.",
-		func(ctx context.Context, args map[string]any) (string, error) {
+		`{"type": "object", "properties": {"expression": {"type": "string", "description": "The arithmetic expression to evaluate, e.g. '2 + 2'"}}, "required": ["expression"]}`,
+		func(ctx context.Context, args map[string]any) (any, error) {
 			expression, ok := args["expression"].(string)
 			if !ok || expression == "" {
 				return "", fmt.Errorf("expression is required")
@@ -318,8 +322,8 @@ func createCalculatorTool() tools.Tool {
 			// This is a simplified example
 			return fmt.Sprintf(`{"expression": "%s", "result": "calculated result here"}`, expression), nil
 		},
-		tools.WithParameter("expression", "string", "The arithmetic expression to evaluate, e.g. '2 + 2'", true),
 	)
+	return tool
 }
 
 func main() {
@@ -335,7 +339,7 @@ func main() {
 	// You can swap this for Anthropic, Ollama, etc. - the streaming pattern is the same
 	client, err := llms.NewOpenAIChat(
 		llms.WithAPIKey(apiKey),
-		llms.WithModel("gpt-4"),
+		llms.WithModelName("gpt-4"),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create LLM client: %v", err)
