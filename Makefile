@@ -1,7 +1,7 @@
 # Makefile for Beluga AI Framework
 # Standard build, test, and quality assurance targets
 
-.PHONY: help build test test-unit test-integration test-race test-coverage test-coverage-threshold lint lint-fix fmt vet security security-full clean all install-tools install-system-tools bench ci-local
+.PHONY: help build build-examples test-build test test-unit test-integration test-race test-coverage test-coverage-threshold lint lint-fix fmt vet security security-full clean all install-tools install-system-tools bench ci-local
 
 # Variables
 GO_VERSION := 1.24
