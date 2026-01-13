@@ -44,6 +44,18 @@ build-examples: ## Build all example binaries to .cache/bin
 	done
 	@echo "✅ Example binaries built in $(CACHE_DIR)/bin/"
 
+test-build: ## Build test binaries to .cache/test-binaries
+	@echo "Building test binaries to $(TEST_BIN_DIR)..."
+	@mkdir -p $(TEST_BIN_DIR)
+	@for pkg in $$(go list ./pkg/... ./cmd/... ./tests/...); do \
+		name=$$(basename $$pkg); \
+		if [ -n "$$name" ]; then \
+			echo "Building test binary for $$pkg -> $(TEST_BIN_DIR)/$$name.test"; \
+			go test -c -o $(TEST_BIN_DIR)/$$name.test $$pkg || true; \
+		fi; \
+	done
+	@echo "✅ Test binaries built in $(TEST_BIN_DIR)/"
+
 test: ## Run all tests
 	@echo "Running tests..."
 	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v ./pkg/... ./cmd/... ./tests/...
@@ -203,7 +215,9 @@ clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BIN_DIR)
 	@rm -rf $(CACHE_DIR)/bin
-	@rm -f basic openai planexecute single_binary stt agents.test base.test executor.test iface.test multimodal.test react.test streaming.test
+	@rm -rf $(CACHE_DIR)/test-binaries
+	@rm -f basic openai planexecute single_binary stt
+	@find . -maxdepth 1 -name "*.test" -type f -delete 2>/dev/null || true
 	@rm -rf $(COVERAGE_DIR)
 	@go clean -cache
 	@go clean -testcache

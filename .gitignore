@@ -263,13 +263,9 @@ cache/
 /planexecute
 /single_binary
 /stt
-/agents.test
-/base.test
-/executor.test
-/iface.test
-/multimodal.test
-/react.test
-/streaming.test
+
+# Test binaries in root (should be in .cache/test-binaries/)
+/*.test
 
 # Local database files
 *.db
