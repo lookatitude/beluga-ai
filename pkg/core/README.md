@@ -684,7 +684,7 @@ func InitMetrics(meter metric.Meter)
 func GetMetrics() *Metrics
 
 // NewMetrics creates a new Metrics instance (alternative to InitMetrics/GetMetrics)
-func NewMetrics(meter metric.Meter) (*Metrics, error)
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
 
 // NoOpMetrics returns a no-op metrics instance
 func NoOpMetrics() *Metrics

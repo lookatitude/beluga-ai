@@ -282,8 +282,7 @@ func (l *RecursiveDirectoryLoader) LazyLoad(ctx context.Context) (<-chan any, er
 		// Walk directory
 		go func() {
 			defer close(fileChan)
-			//nolint:errcheck // fs.WalkDir errors are handled in the callback
-			_ = fs.WalkDir(l.fsys, ".", func(path string, d fs.DirEntry, err error) error {
+			if err := fs.WalkDir(l.fsys, ".", func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					ch <- err
 					return nil
@@ -324,7 +323,13 @@ func (l *RecursiveDirectoryLoader) LazyLoad(ctx context.Context) (<-chan any, er
 				}
 
 				return nil
-			})
+			}); err != nil {
+				// Send walk error to error channel
+				select {
+				case ch <- err:
+				case <-ctx.Done():
+				}
+			}
 		}()
 
 		wg.Wait()
@@ -380,9 +385,9 @@ func (l *RecursiveDirectoryLoader) loadFile(ctx context.Context, filePath string
 		PageContent: string(content),
 		Metadata: map[string]string{
 			"source":      filePath,
-			"file_size":    fmt.Sprintf("%d", info.Size()),
-			"modified_at":  info.ModTime().Format(time.RFC3339),
-			"loader_type":  "directory",
+			"file_size":   fmt.Sprintf("%d", info.Size()),
+			"modified_at": info.ModTime().Format(time.RFC3339),
+			"loader_type": "directory",
 		},
 	}
 
@@ -431,12 +436,12 @@ func (l *RecursiveDirectoryLoader) isBinary(content []byte) bool {
 	}
 
 	contentType := http.DetectContentType(sample)
-	
+
 	// Accept anything that starts with "text/"
 	if strings.HasPrefix(contentType, "text/") {
 		return false
 	}
-	
+
 	// Accept common text-like application types
 	if contentType == "application/json" ||
 		contentType == "application/xml" ||
@@ -445,7 +450,7 @@ func (l *RecursiveDirectoryLoader) isBinary(content []byte) bool {
 		strings.HasPrefix(contentType, "application/xml") {
 		return false
 	}
-	
+
 	// Reject clearly binary types
 	if strings.HasPrefix(contentType, "image/") ||
 		strings.HasPrefix(contentType, "video/") ||
@@ -453,7 +458,7 @@ func (l *RecursiveDirectoryLoader) isBinary(content []byte) bool {
 		contentType == "application/octet-stream" {
 		return true
 	}
-	
+
 	// For unknown types, check if content is mostly printable
 	// If >80% of bytes are printable ASCII/UTF-8, assume it's text
 	printableCount := 0
@@ -467,12 +472,12 @@ func (l *RecursiveDirectoryLoader) isBinary(content []byte) bool {
 			printableCount++
 		}
 	}
-	
+
 	// If less than 80% printable, likely binary
 	if checkLen > 0 && float64(printableCount)/float64(checkLen) < 0.8 {
 		return true
 	}
-	
+
 	// Default: assume text if we can't determine
 	return false
 }
@@ -483,7 +488,7 @@ func (l *RecursiveDirectoryLoader) resolveSymlink(path string, visitedInodes map
 	// Try to get the actual OS path if fs.FS is backed by os.DirFS
 	// For in-memory filesystems (fstest.MapFS), we can't resolve symlinks
 	// In that case, we'll use path-based tracking as a fallback
-	
+
 	// Attempt to resolve using filepath.EvalSymlinks (requires actual OS path)
 	// This will only work if the fs.FS is backed by a real filesystem
 	resolvedPath, err := filepath.EvalSymlinks(path)
@@ -492,13 +497,13 @@ func (l *RecursiveDirectoryLoader) resolveSymlink(path string, visitedInodes map
 		// For now, just track the path itself as a fallback
 		mu.Lock()
 		defer mu.Unlock()
-		
+
 		// Use path as key for in-memory filesystems
 		// This is less robust but works for test scenarios
 		if visitedInodes == nil {
 			visitedInodes = make(map[uint64]bool)
 		}
-		
+
 		// Hash the path to use as a pseudo-inode
 		pathHash := l.hashPath(path)
 		if visitedInodes[pathHash] {
@@ -527,15 +532,15 @@ func (l *RecursiveDirectoryLoader) resolveSymlink(path string, visitedInodes map
 	// Check for cycles
 	mu.Lock()
 	defer mu.Unlock()
-	
+
 	if visitedInodes == nil {
 		visitedInodes = make(map[uint64]bool)
 	}
-	
+
 	if visitedInodes[inode] {
 		return resolvedPath, inode, true, nil // Cycle detected
 	}
-	
+
 	visitedInodes[inode] = true
 	return resolvedPath, inode, false, nil
 }

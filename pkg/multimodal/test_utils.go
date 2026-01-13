@@ -305,16 +305,16 @@ func NewTestBaseMultimodalModel(providerName, modelName string, config any, capa
 		typeCapabilities = v
 	case *ModalityCapabilities:
 		typeCapabilities = &types.ModalityCapabilities{
-			Text:                    v.Text,
-			Image:                   v.Image,
-			Audio:                   v.Audio,
-			Video:                   v.Video,
-			MaxImageSize:            v.MaxImageSize,
-			MaxAudioSize:            v.MaxAudioSize,
-			MaxVideoSize:            v.MaxVideoSize,
-			SupportedImageFormats:   v.SupportedImageFormats,
-			SupportedAudioFormats:   v.SupportedAudioFormats,
-			SupportedVideoFormats:   v.SupportedVideoFormats,
+			Text:                  v.Text,
+			Image:                 v.Image,
+			Audio:                 v.Audio,
+			Video:                 v.Video,
+			MaxImageSize:          v.MaxImageSize,
+			MaxAudioSize:          v.MaxAudioSize,
+			MaxVideoSize:          v.MaxVideoSize,
+			SupportedImageFormats: v.SupportedImageFormats,
+			SupportedAudioFormats: v.SupportedAudioFormats,
+			SupportedVideoFormats: v.SupportedVideoFormats,
 		}
 	default:
 		// Default capabilities if nil or unknown type

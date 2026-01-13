@@ -12,10 +12,10 @@ import (
 
 // TrackHandler manages WebRTC audio tracks for LiveKit sessions.
 type TrackHandler struct {
-	session            *LiveKitSession
+	session              *LiveKitSession
 	pipelineOrchestrator *internal.PipelineOrchestrator
-	userAudioTrack     *livekit.TrackInfo
-	agentAudioTrack    *livekit.TrackInfo
+	userAudioTrack       *livekit.TrackInfo
+	agentAudioTrack      *livekit.TrackInfo
 }
 
 // NewTrackHandler creates a new track handler.

@@ -24,10 +24,11 @@ type Metrics struct {
 	errorCounter      metric.Int64Counter
 	memorySizeGauge   metric.Int64UpDownCounter
 	activeMemoryGauge metric.Int64UpDownCounter
+	tracer            trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance with proper OTEL integration.
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 	loadDuration, _ := meter.Float64Histogram(
 		"memory_load_duration_seconds",
 		metric.WithDescription("Duration of memory load operations"),
@@ -60,6 +61,10 @@ func NewMetrics(meter metric.Meter) *Metrics {
 		metric.WithDescription("Number of active memory instances"),
 	)
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/memory")
+	}
+
 	return &Metrics{
 		meter:             meter,
 		loadDuration:      loadDuration,
@@ -69,6 +74,7 @@ func NewMetrics(meter metric.Meter) *Metrics {
 		errorCounter:      errorCounter,
 		memorySizeGauge:   memorySizeGauge,
 		activeMemoryGauge: activeMemoryGauge,
+		tracer:            tracer,
 	}
 }
 
@@ -160,8 +166,6 @@ func NewTracer() *Tracer {
 }
 
 // StartSpan starts a new span for a memory operation.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (t *Tracer) StartSpan(ctx context.Context, operation string, memoryType MemoryType, memoryKey string) (context.Context, trace.Span) {
 	if t == nil || t.tracer == nil {
 		return ctx, nil
@@ -189,9 +193,12 @@ var (
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		globalMetrics = NewMetrics(meter)
+		if tracer == nil {
+			tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/memory")
+		}
+		globalMetrics = NewMetrics(meter, tracer)
 	})
 }
 
@@ -202,9 +209,10 @@ func GetMetrics() *Metrics {
 }
 
 // SetGlobalMetrics is deprecated. Use InitMetrics instead.
-// Deprecated: Use InitMetrics(meter) instead.
+// Deprecated: Use InitMetrics(meter, tracer) instead.
 func SetGlobalMetrics(meter metric.Meter) {
-	globalMetrics = NewMetrics(meter)
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/memory")
+	globalMetrics = NewMetrics(meter, tracer)
 }
 
 // GetGlobalMetrics is deprecated. Use GetMetrics instead.

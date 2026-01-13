@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MetricsRecorder defines the interface for recording metrics.
@@ -17,31 +19,13 @@ type MetricsRecorder interface {
 	DecrementActiveStreams(ctx context.Context, provider, model string)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
-type NoOpMetrics struct{}
-
-// NewNoOpMetrics creates a new no-operation metrics recorder.
-func NewNoOpMetrics() *NoOpMetrics {
-	return &NoOpMetrics{}
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("voice/stt"),
+	}
 }
-
-// RecordTranscription is a no-op implementation.
-func (n *NoOpMetrics) RecordTranscription(ctx context.Context, provider, model string, duration time.Duration) {
-}
-
-// RecordError is a no-op implementation.
-func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
-}
-
-// RecordStreaming is a no-op implementation.
-func (n *NoOpMetrics) RecordStreaming(ctx context.Context, provider, model string, duration time.Duration) {
-}
-
-// IncrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, model string) {}
-
-// DecrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, model string) {}
 
 // Metrics contains all the metrics for STT operations.
 type Metrics struct {
@@ -53,10 +37,11 @@ type Metrics struct {
 	transcriptionLatency metric.Float64Histogram
 	streamLatency        metric.Float64Histogram
 	activeStreams        metric.Int64UpDownCounter
+	tracer               trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance.
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 	m := &Metrics{}
 
 	m.transcriptions, _ = meter.Int64Counter("stt.transcriptions.total", metric.WithDescription("Total STT transcriptions"))
@@ -68,44 +53,77 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	m.streamLatency, _ = meter.Float64Histogram("stt.stream.latency", metric.WithDescription("Stream latency"), metric.WithUnit("s"))
 	m.activeStreams, _ = meter.Int64UpDownCounter("stt.streams.active", metric.WithDescription("Active STT streams"))
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/voice/stt")
+	}
+	m.tracer = tracer
+
 	return m
 }
 
 // RecordTranscription records a transcription operation.
 func (m *Metrics) RecordTranscription(ctx context.Context, provider, model string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 	}
-	m.transcriptions.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.transcriptionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.transcriptions != nil {
+		m.transcriptions.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.successful != nil {
+		m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.transcriptionLatency != nil {
+		m.transcriptionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 		attribute.String("error_code", errorCode),
 	}
-	m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.transcriptionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.errors != nil {
+		m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.failed != nil {
+		m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.transcriptionLatency != nil {
+		m.transcriptionLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordStreaming records a streaming operation.
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 	}
-	m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.streams != nil {
+		m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.streamLatency != nil {
+		m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // IncrementActiveStreams increments the active streams counter.
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
@@ -115,6 +133,9 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model st
 
 // DecrementActiveStreams decrements the active streams counter.
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),

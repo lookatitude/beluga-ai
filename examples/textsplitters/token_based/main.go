@@ -39,7 +39,7 @@ A simple character-based split might create chunks that exceed token limits when
 	}
 
 	splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
-		textsplitters.WithRecursiveChunkSize(50), // 50 tokens
+		textsplitters.WithRecursiveChunkSize(50),    // 50 tokens
 		textsplitters.WithRecursiveChunkOverlap(10), // 10 tokens overlap
 		textsplitters.WithRecursiveLengthFunction(tokenLengthFn),
 	)
@@ -63,7 +63,7 @@ A simple character-based split might create chunks that exceed token limits when
 	fmt.Println("-----------------------------------------------------")
 
 	charSplitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
-		textsplitters.WithRecursiveChunkSize(200), // 200 characters
+		textsplitters.WithRecursiveChunkSize(200),   // 200 characters
 		textsplitters.WithRecursiveChunkOverlap(40), // 40 characters overlap
 		// No custom length function = uses character count
 	)

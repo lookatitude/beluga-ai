@@ -440,9 +440,9 @@ func TestNormalizeScore(t *testing.T) {
 		input    float64
 		expected float64
 	}{
-		{0, 0.5},           // Sigmoid of 0 is 0.5
-		{100, 0.99995},     // High score → close to 1
-		{-100, 0.00005},    // Low score → close to 0
+		{0, 0.5},        // Sigmoid of 0 is 0.5
+		{100, 0.99995},  // High score → close to 1
+		{-100, 0.00005}, // Low score → close to 0
 	}
 
 	for _, tt := range tests {

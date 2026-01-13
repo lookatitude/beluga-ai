@@ -31,7 +31,7 @@ func (p *VocodeProvider) GetCapabilities(ctx context.Context) (*iface.ProviderCa
 		SessionPersistence:    true,
 		CustomAuth:            true,
 		CustomRateLimiting:    true,
-		MaxConcurrentSessions: 0, // Vocode supports unlimited sessions
+		MaxConcurrentSessions: 0,                      // Vocode supports unlimited sessions
 		MinLatency:            150 * time.Millisecond, // Vocode can achieve <200ms latency
 		SupportedCodecs:       []string{"opus", "pcm", "g722"},
 	}, nil

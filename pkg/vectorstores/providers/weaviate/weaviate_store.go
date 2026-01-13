@@ -54,10 +54,10 @@ type WeaviateStore struct {
 
 // Weaviate API request/response structures.
 type weaviateObject struct {
-	ID          string                 `json:"id,omitempty"`
-	Class       string                 `json:"class,omitempty"`
-	Properties  map[string]interface{} `json:"properties,omitempty"`
-	Vector      []float32              `json:"vector,omitempty"`
+	ID         string                 `json:"id,omitempty"`
+	Class      string                 `json:"class,omitempty"`
+	Properties map[string]interface{} `json:"properties,omitempty"`
+	Vector     []float32              `json:"vector,omitempty"`
 }
 
 type weaviateBatchRequest struct {
@@ -69,8 +69,8 @@ type weaviateGraphQLQuery struct {
 }
 
 type weaviateGraphQLResponse struct {
-	Data map[string]interface{} `json:"data"`
-	Errors []weaviateError       `json:"errors,omitempty"`
+	Data   map[string]interface{} `json:"data"`
+	Errors []weaviateError        `json:"errors,omitempty"`
 }
 
 type weaviateError struct {
@@ -83,16 +83,16 @@ type weaviateGetResponse struct {
 
 type weaviateSearchRequest struct {
 	Query      string                 `json:"query,omitempty"`
-	NearVector *weaviateNearVector   `json:"nearVector,omitempty"`
+	NearVector *weaviateNearVector    `json:"nearVector,omitempty"`
 	Limit      int                    `json:"limit"`
 	Where      map[string]interface{} `json:"where,omitempty"`
 	Fields     string                 `json:"fields,omitempty"`
 }
 
 type weaviateNearVector struct {
-	Vector     []float32 `json:"vector"`
-	Certainty  float32   `json:"certainty,omitempty"`
-	Distance   float32   `json:"distance,omitempty"`
+	Vector    []float32 `json:"vector"`
+	Certainty float32   `json:"certainty,omitempty"`
+	Distance  float32   `json:"distance,omitempty"`
 }
 
 type weaviateSearchResponse struct {
@@ -207,7 +207,7 @@ func (s *WeaviateStore) ensureClass(ctx context.Context) error {
 // createClass creates a new Weaviate class.
 func (s *WeaviateStore) createClass(ctx context.Context) error {
 	classDef := map[string]interface{}{
-		"class": s.className,
+		"class":      s.className,
 		"vectorizer": "none", // We provide vectors ourselves
 		"properties": []map[string]interface{}{
 			{
@@ -524,9 +524,9 @@ func (s *WeaviateStore) SimilaritySearch(ctx context.Context, queryVector []floa
 
 		documents = append(documents, schema.Document{
 			ID:          id,
-			PageContent:   content,
-			Metadata:      metadata,
-			Score:         score,
+			PageContent: content,
+			Metadata:    metadata,
+			Score:       score,
 		})
 		scores = append(scores, score)
 	}

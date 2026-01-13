@@ -60,7 +60,7 @@ func NewGrokProvider(config *llms.Config) (*GrokProvider, error) {
 	// Build client configuration
 	// Grok uses OpenAI-compatible API, so we can use the same client
 	grokConfig := openaiClient.DefaultConfig(config.APIKey)
-	
+
 	// Set base URL (default to xAI API endpoint)
 	if config.BaseURL != "" {
 		grokConfig.BaseURL = config.BaseURL

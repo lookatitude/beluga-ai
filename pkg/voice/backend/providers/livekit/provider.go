@@ -28,12 +28,12 @@ func (p *LiveKitProvider) GetCapabilities(ctx context.Context) (*iface.ProviderC
 	return &iface.ProviderCapabilities{
 		S2SSupport:            true,
 		MultiUserSupport:      true,
-		SessionPersistence:   true,
-		CustomAuth:           true,
-		CustomRateLimiting:   true,
-		MaxConcurrentSessions: 0, // LiveKit supports unlimited sessions
-		MinLatency:           50 * time.Millisecond, // LiveKit can achieve <100ms latency
-		SupportedCodecs:      []string{"opus", "pcm", "g722"},
+		SessionPersistence:    true,
+		CustomAuth:            true,
+		CustomRateLimiting:    true,
+		MaxConcurrentSessions: 0,                     // LiveKit supports unlimited sessions
+		MinLatency:            50 * time.Millisecond, // LiveKit can achieve <100ms latency
+		SupportedCodecs:       []string{"opus", "pcm", "g722"},
 	}, nil
 }
 

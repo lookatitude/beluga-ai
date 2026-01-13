@@ -257,6 +257,16 @@ docs/site/
 .cache/
 cache/
 
+# Binary executables in root (should be in .cache/)
+/basic
+/openai
+/planexecute
+/single_binary
+/stt
+
+# Test binaries in root (should be in .cache/test-binaries/)
+/*.test
+
 # Local database files
 *.db
 *.sqlite

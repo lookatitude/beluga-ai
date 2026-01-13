@@ -9,12 +9,14 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MetricsCollector provides metrics collection for vector store operations.
 // It follows OpenTelemetry conventions for consistent observability.
 type MetricsCollector struct {
-	meter metric.Meter
+	meter  metric.Meter
+	tracer trace.Tracer
 
 	// Document operations
 	documentsAdded   metric.Int64Counter
@@ -39,13 +41,18 @@ type MetricsCollector struct {
 }
 
 // NewMetricsCollector creates a new metrics collector with OpenTelemetry.
-func NewMetricsCollector(meter metric.Meter) (*MetricsCollector, error) {
+func NewMetricsCollector(meter metric.Meter, tracer trace.Tracer) (*MetricsCollector, error) {
 	if meter == nil {
 		meter = noop.NewMeterProvider().Meter("vectorstores")
 	}
 
+	if tracer == nil {
+		tracer = trace.NewNoopTracerProvider().Tracer("vectorstores")
+	}
+
 	mc := &MetricsCollector{
-		meter: meter,
+		meter:  meter,
+		tracer: tracer,
 	}
 
 	var err error
@@ -293,16 +300,20 @@ var (
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
 		if meter == nil {
 			meter = noop.NewMeterProvider().Meter("vectorstores")
 		}
-		mc, err := NewMetricsCollector(meter)
+		if tracer == nil {
+			tracer = trace.NewNoopTracerProvider().Tracer("vectorstores")
+		}
+		mc, err := NewMetricsCollector(meter, tracer)
 		if err != nil {
 			// If metrics creation fails, use noop meter
 			meter = noop.NewMeterProvider().Meter("vectorstores")
-			mc, _ = NewMetricsCollector(meter)
+			tracer = trace.NewNoopTracerProvider().Tracer("vectorstores")
+			mc, _ = NewMetricsCollector(meter, tracer)
 		}
 		globalMetrics = mc
 	})

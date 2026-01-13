@@ -83,6 +83,8 @@ func NewGeminiNativeProvider(config *s2s.Config, opts ...ProviderOption) (iface.
 	if geminiConfig.Temperature == 0 {
 		geminiConfig.Temperature = 0.8
 	}
+	// Enable streaming by default (bool defaults to false, so we set it to true)
+	geminiConfig.EnableStreaming = true
 
 	// Validate API key
 	if geminiConfig.APIKey == "" {
@@ -230,7 +232,7 @@ func (p *GeminiNativeProvider) prepareGeminiRequest(input *internal.AudioInput, 
 		history := make([]map[string]any, 0, len(convCtx.History))
 		for _, turn := range convCtx.History {
 			history = append(history, map[string]any{
-				"role":    turn.Role,
+				"role": turn.Role,
 				"parts": []map[string]any{
 					{"text": turn.Content},
 				},

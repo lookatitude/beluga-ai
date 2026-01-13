@@ -8,15 +8,15 @@ import (
 
 // Error codes for schema operations.
 const (
-	ErrCodeInvalidInput      = "invalid_input"
-	ErrCodeValidationFailed  = "validation_failed"
-	ErrCodeInvalidMessage    = "invalid_message"
-	ErrCodeInvalidDocument   = "invalid_document"
-	ErrCodeInvalidRole        = "invalid_role"
-	ErrCodeInvalidContent     = "invalid_content"
-	ErrCodeSerializationError = "serialization_error"
+	ErrCodeInvalidInput         = "invalid_input"
+	ErrCodeValidationFailed     = "validation_failed"
+	ErrCodeInvalidMessage       = "invalid_message"
+	ErrCodeInvalidDocument      = "invalid_document"
+	ErrCodeInvalidRole          = "invalid_role"
+	ErrCodeInvalidContent       = "invalid_content"
+	ErrCodeSerializationError   = "serialization_error"
 	ErrCodeDeserializationError = "deserialization_error"
-	ErrCodeContextRequired    = "context_required"
+	ErrCodeContextRequired      = "context_required"
 )
 
 // SchemaError represents an error that occurred during schema operations.

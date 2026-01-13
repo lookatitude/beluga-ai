@@ -16,13 +16,13 @@ import (
 
 // OpenAIRealtimeStreamingSession implements StreamingSession for OpenAI Realtime API.
 type OpenAIRealtimeStreamingSession struct {
-	ctx      context.Context //nolint:containedctx // Required for streaming
-	config   *OpenAIRealtimeConfig
-	provider *OpenAIRealtimeProvider
-	conn     WebSocketConn
-	audioCh  chan iface.AudioOutputChunk
-	closed   bool
-	mu       sync.RWMutex
+	ctx       context.Context
+	config    *OpenAIRealtimeConfig
+	provider  *OpenAIRealtimeProvider
+	conn      WebSocketConn
+	audioCh   chan iface.AudioOutputChunk
+	closed    bool
+	mu        sync.RWMutex
 	sessionID string
 }
 
@@ -40,10 +40,10 @@ type RealtimeAudioEvent struct {
 
 // RealtimeResponseEvent represents a response event.
 type RealtimeResponseEvent struct {
-	Type      string `json:"type"`
-	Audio     string `json:"audio,omitempty"`     // base64 encoded audio
+	Type       string `json:"type"`
+	Audio      string `json:"audio,omitempty"` // base64 encoded audio
 	Transcript string `json:"transcript,omitempty"`
-	Delta     string `json:"delta,omitempty"`
+	Delta      string `json:"delta,omitempty"`
 }
 
 // NewOpenAIRealtimeStreamingSession creates a new streaming session.

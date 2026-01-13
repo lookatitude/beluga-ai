@@ -27,16 +27,16 @@ func TestIntegrationDocumentLoadersTextSplitters(t *testing.T) {
 	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
-		name            string
-		description     string
-		fsys            fs.FS
-		loaderOpts      []documentloaders.DirectoryOption
-		splitterOpts    []textsplitters.RecursiveOption
-		expectedDocs    int
-		expectedChunks  int
-		wantErr         bool
-		errContains     string
-		validateFn      func(t *testing.T, chunks []schema.Document, err error)
+		name           string
+		description    string
+		fsys           fs.FS
+		loaderOpts     []documentloaders.DirectoryOption
+		splitterOpts   []textsplitters.RecursiveOption
+		expectedDocs   int
+		expectedChunks int
+		wantErr        bool
+		errContains    string
+		validateFn     func(t *testing.T, chunks []schema.Document, err error)
 	}{
 		{
 			name:        "basic_load_and_split",
@@ -106,7 +106,7 @@ func TestIntegrationDocumentLoadersTextSplitters(t *testing.T) {
 			loaderOpts: []documentloaders.DirectoryOption{
 				documentloaders.WithExtensions(".md"),
 			},
-			splitterOpts: nil, // Will use markdown splitter
+			splitterOpts:   nil, // Will use markdown splitter
 			expectedDocs:   1,
 			expectedChunks: 2, // Should split at headers
 			wantErr:        false,

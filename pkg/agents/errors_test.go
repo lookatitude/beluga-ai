@@ -10,13 +10,22 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Static error variables for testing (err113 compliance)
+var (
+	errOriginalError   = errors.New("original error")
+	errExecutionFailed = errors.New("execution failed")
+	errPlanningFailed  = errors.New("planning failed")
+	errStreamingFailed = errors.New("streaming failed")
+	errCreationFailed  = errors.New("creation failed")
+	errRegularError    = errors.New("regular error")
+)
+
 // TestAgentError_Creation tests AgentError creation and basic functionality.
 func TestAgentError_Creation(t *testing.T) {
-	originalErr := errors.New("original error")
-	agentErr := NewAgentError("test_operation", "test_agent", "test_code", originalErr)
+	originalErr := errOriginalError
+	agentErr := NewAgentError("test_operation", "test_code", originalErr)
 
 	assert.Equal(t, "test_operation", agentErr.Op)
-	assert.Equal(t, "test_agent", agentErr.Agent)
 	assert.Equal(t, "test_code", agentErr.Code)
 	assert.Equal(t, originalErr, agentErr.Err)
 	assert.NotNil(t, agentErr.Fields)
@@ -28,32 +37,37 @@ func TestAgentError_ErrorString(t *testing.T) {
 	tests := []struct {
 		name     string
 		op       string
-		agent    string
 		code     string
 		err      error
+		message  string
 		contains []string
 	}{
 		{
-			name:     "with agent name",
+			name:     "with message",
 			op:       "execute",
-			agent:    "test_agent",
 			code:     ErrCodeExecution,
-			err:      errors.New("execution failed"),
-			contains: []string{"agent", "test_agent", "execute"},
+			err:      errExecutionFailed,
+			message:  "execution failed for test_agent",
+			contains: []string{"agents", "execute", "execution failed", "execution_failed"},
 		},
 		{
-			name:     "without agent name",
+			name:     "without message",
 			op:       "plan",
-			agent:    "",
 			code:     ErrCodePlanning,
-			err:      errors.New("planning failed"),
-			contains: []string{"agent", "plan"},
+			err:      errPlanningFailed,
+			message:  "",
+			contains: []string{"agents", "plan", "planning_failed"},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			agentErr := NewAgentError(tt.op, tt.agent, tt.code, tt.err)
+			var agentErr *AgentError
+			if tt.message != "" {
+				agentErr = NewAgentErrorWithMessage(tt.op, tt.code, tt.message, tt.err)
+			} else {
+				agentErr = NewAgentError(tt.op, tt.code, tt.err)
+			}
 			errStr := agentErr.Error()
 			for _, substr := range tt.contains {
 				assert.Contains(t, errStr, substr)
@@ -64,7 +78,7 @@ func TestAgentError_ErrorString(t *testing.T) {
 
 // TestAgentError_WithField tests adding fields to errors.
 func TestAgentError_WithField(t *testing.T) {
-	agentErr := NewAgentError("test", "agent", "code", errors.New("error"))
+	agentErr := NewAgentError("test", "code", errOriginalError)
 
 	agentErr.WithField("key1", "value1")
 	agentErr.WithField("key2", 42)
@@ -77,8 +91,8 @@ func TestAgentError_WithField(t *testing.T) {
 
 // TestAgentError_Unwrap tests error unwrapping.
 func TestAgentError_Unwrap(t *testing.T) {
-	originalErr := errors.New("original error")
-	agentErr := NewAgentError("test", "agent", "code", originalErr)
+	originalErr := errOriginalError
+	agentErr := NewAgentError("test", "code", originalErr)
 
 	unwrapped := agentErr.Unwrap()
 	assert.Equal(t, originalErr, unwrapped)
@@ -115,7 +129,7 @@ func TestAllErrorCodes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			assert.NotEmpty(t, tt.code, "Error code should not be empty")
 			// Create an error with this code to verify it works
-			agentErr := NewAgentError("test", "agent", tt.code, errors.New("test error"))
+			agentErr := NewAgentError("test", tt.code, errOriginalError)
 			assert.Equal(t, tt.code, agentErr.Code)
 		})
 	}
@@ -137,15 +151,15 @@ func TestIsValidationError(t *testing.T) {
 	valErr := NewValidationError("field", "message")
 	assert.True(t, IsValidationError(valErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errors.New("err"))
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsValidationError(agentErr))
 
-	assert.False(t, IsValidationError(errors.New("regular error")))
+	assert.False(t, IsValidationError(errRegularError))
 }
 
 // TestFactoryError tests FactoryError creation and functionality.
 func TestFactoryError(t *testing.T) {
-	originalErr := errors.New("creation failed")
+	originalErr := errCreationFailed
 	config := map[string]any{"key": "value"}
 	factoryErr := NewFactoryError("custom_agent", config, originalErr)
 
@@ -160,18 +174,18 @@ func TestFactoryError(t *testing.T) {
 
 // TestIsFactoryError tests factory error detection.
 func TestIsFactoryError(t *testing.T) {
-	factoryErr := NewFactoryError("type", nil, errors.New("err"))
+	factoryErr := NewFactoryError("type", nil, errOriginalError)
 	assert.True(t, IsFactoryError(factoryErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errors.New("err"))
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsFactoryError(agentErr))
 
-	assert.False(t, IsFactoryError(errors.New("regular error")))
+	assert.False(t, IsFactoryError(errRegularError))
 }
 
 // TestExecutionError tests ExecutionError creation and functionality.
 func TestExecutionError(t *testing.T) {
-	originalErr := errors.New("execution failed")
+	originalErr := errExecutionFailed
 	execErr := NewExecutionError("test_agent", 5, "test_action", originalErr, true)
 
 	assert.Equal(t, "test_agent", execErr.Agent)
@@ -188,7 +202,7 @@ func TestExecutionError(t *testing.T) {
 
 // TestPlanningError tests PlanningError creation and functionality.
 func TestPlanningError(t *testing.T) {
-	originalErr := errors.New("planning failed")
+	originalErr := errPlanningFailed
 	inputKeys := []string{"input1", "input2"}
 	planErr := NewPlanningError("test_agent", inputKeys, originalErr)
 
@@ -210,7 +224,7 @@ func TestPlanningError(t *testing.T) {
 
 // TestStreamingError tests StreamingError creation and functionality.
 func TestStreamingError(t *testing.T) {
-	originalErr := errors.New("streaming failed")
+	originalErr := errStreamingFailed
 	streamErr := NewStreamingError("StreamExecute", "test_agent", ErrCodeStreamError, originalErr)
 
 	assert.Equal(t, "StreamExecute", streamErr.Op)
@@ -228,7 +242,7 @@ func TestStreamingError(t *testing.T) {
 
 // TestStreamingError_WithField tests adding fields to streaming errors.
 func TestStreamingError_WithField(t *testing.T) {
-	streamErr := NewStreamingError("test", "agent", ErrCodeStreamError, errors.New("error"))
+	streamErr := NewStreamingError("test", "agent", ErrCodeStreamError, errOriginalError)
 
 	streamErr.WithField("chunk_count", 10)
 	streamErr.WithField("duration_ms", 500)
@@ -239,7 +253,7 @@ func TestStreamingError_WithField(t *testing.T) {
 
 // TestWrapStreamingError tests wrapping errors as StreamingError.
 func TestWrapStreamingError(t *testing.T) {
-	originalErr := errors.New("original error")
+	originalErr := errOriginalError
 	wrappedErr := WrapStreamingError("test", "agent", ErrCodeStreamInterrupted, originalErr)
 
 	assert.IsType(t, &StreamingError{}, wrappedErr)
@@ -249,13 +263,13 @@ func TestWrapStreamingError(t *testing.T) {
 
 // TestIsStreamingError tests streaming error detection.
 func TestIsStreamingError(t *testing.T) {
-	streamErr := NewStreamingError("test", "agent", ErrCodeStreamError, errors.New("err"))
+	streamErr := NewStreamingError("test", "agent", ErrCodeStreamError, errOriginalError)
 	assert.True(t, IsStreamingError(streamErr))
 
-	agentErr := NewAgentError("op", "agent", "code", errors.New("err"))
+	agentErr := NewAgentError("op", "code", errOriginalError)
 	assert.False(t, IsStreamingError(agentErr))
 
-	assert.False(t, IsStreamingError(errors.New("regular error")))
+	assert.False(t, IsStreamingError(errRegularError))
 }
 
 // TestStreamingErrorCodes tests all streaming error codes.
@@ -268,7 +282,7 @@ func TestStreamingErrorCodes(t *testing.T) {
 
 	for _, code := range codes {
 		t.Run(code, func(t *testing.T) {
-			streamErr := NewStreamingError("test", "agent", code, errors.New("error"))
+			streamErr := NewStreamingError("test", "agent", code, errOriginalError)
 			assert.Equal(t, code, streamErr.Code)
 		})
 	}
@@ -284,70 +298,70 @@ func TestIsRetryable(t *testing.T) {
 		// ExecutionError with Retryable=true
 		{
 			name:      "execution error retryable",
-			err:       NewExecutionError("agent", 1, "action", errors.New("err"), true),
+			err:       NewExecutionError("agent", 1, "action", errOriginalError, true),
 			retryable: true,
 		},
 		// ExecutionError with Retryable=false
 		{
 			name:      "execution error non-retryable",
-			err:       NewExecutionError("agent", 1, "action", errors.New("err"), false),
+			err:       NewExecutionError("agent", 1, "action", errOriginalError, false),
 			retryable: false,
 		},
 		// AgentError with retryable codes
 		{
 			name:      "timeout error",
-			err:       NewAgentError("op", "agent", ErrCodeTimeout, errors.New("timeout")),
+			err:       NewAgentError("op", ErrCodeTimeout, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "agent timeout error",
-			err:       NewAgentError("op", "agent", ErrCodeAgentTimeout, errors.New("timeout")),
+			err:       NewAgentError("op", ErrCodeAgentTimeout, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "resource exhausted error",
-			err:       NewAgentError("op", "agent", ErrCodeResourceExhausted, errors.New("exhausted")),
+			err:       NewAgentError("op", ErrCodeResourceExhausted, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "tool execution error",
-			err:       NewAgentError("op", "agent", ErrCodeToolExecution, errors.New("tool err")),
+			err:       NewAgentError("op", ErrCodeToolExecution, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "LLM error",
-			err:       NewAgentError("op", "agent", ErrCodeLLMError, errors.New("llm err")),
+			err:       NewAgentError("op", ErrCodeLLMError, errOriginalError),
 			retryable: true,
 		},
 		{
 			name:      "execution error code",
-			err:       NewAgentError("op", "agent", ErrCodeExecution, errors.New("exec err")),
+			err:       NewAgentError("op", ErrCodeExecution, errOriginalError),
 			retryable: true,
 		},
 		// AgentError with non-retryable codes
 		{
 			name:      "invalid input error",
-			err:       NewAgentError("op", "agent", ErrCodeInvalidInput, errors.New("invalid")),
+			err:       NewAgentError("op", ErrCodeInvalidInput, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "config invalid error",
-			err:       NewAgentError("op", "agent", ErrCodeConfigInvalid, errors.New("invalid")),
+			err:       NewAgentError("op", ErrCodeConfigInvalid, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "invalid action error",
-			err:       NewAgentError("op", "agent", ErrCodeInvalidAction, errors.New("invalid")),
+			err:       NewAgentError("op", ErrCodeInvalidAction, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "state transition error",
-			err:       NewAgentError("op", "agent", ErrCodeStateTransition, errors.New("transition")),
+			err:       NewAgentError("op", ErrCodeStateTransition, errOriginalError),
 			retryable: false,
 		},
 		{
 			name:      "shutdown error",
-			err:       NewAgentError("op", "agent", ErrCodeShutdown, errors.New("shutdown")),
+			err:       NewAgentError("op", ErrCodeShutdown, errOriginalError),
 			retryable: false,
 		},
 		// Common error variables
@@ -374,7 +388,7 @@ func TestIsRetryable(t *testing.T) {
 		// Non-retryable cases
 		{
 			name:      "regular error",
-			err:       errors.New("regular error"),
+			err:       errRegularError,
 			retryable: false,
 		},
 		{
@@ -423,10 +437,10 @@ func TestCommonErrorVariables(t *testing.T) {
 
 // TestErrorWrapping tests that errors properly wrap underlying errors.
 func TestErrorWrapping(t *testing.T) {
-	originalErr := errors.New("original error")
+	originalErr := errOriginalError
 
 	// Test AgentError wrapping
-	agentErr := NewAgentError("op", "agent", "code", originalErr)
+	agentErr := NewAgentError("op", "code", originalErr)
 	assert.ErrorIs(t, agentErr, originalErr)
 	assert.Equal(t, originalErr, agentErr.Unwrap())
 
@@ -453,7 +467,7 @@ func TestErrorWrapping(t *testing.T) {
 
 // TestStreamingError_ErrorStringVariations tests error string formatting with and without agent.
 func TestStreamingError_ErrorStringVariations(t *testing.T) {
-	err := errors.New("test error")
+	err := errOriginalError
 
 	t.Run("with agent", func(t *testing.T) {
 		streamErr := NewStreamingError("test_op", "test_agent", ErrCodeStreamError, err)

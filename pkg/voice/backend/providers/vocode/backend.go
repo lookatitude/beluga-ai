@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/codes"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // VocodeBackend implements the VoiceBackend interface for Vocode.
@@ -63,7 +63,7 @@ func (b *VocodeBackend) Start(ctx context.Context) error {
 	b.connectionState = iface.ConnectionStateConnecting
 	backend.AddSpanAttributes(span, map[string]any{
 		"connection_state": string(b.connectionState),
-		"api_url":            b.config.APIURL,
+		"api_url":          b.config.APIURL,
 	})
 
 	// Test Vocode API connection

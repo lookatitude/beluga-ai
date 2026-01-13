@@ -375,8 +375,6 @@ func (m *Metrics) RecordAdapterError(ctx context.Context, adapterType, errorType
 }
 
 // StartTemplateSpan starts a new span for template operations.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartTemplateSpan(ctx context.Context, templateName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
@@ -391,8 +389,6 @@ func (m *Metrics) StartTemplateSpan(ctx context.Context, templateName, operation
 }
 
 // StartFormattingSpan starts a new span for formatting operations.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartFormattingSpan(ctx context.Context, adapterType, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
@@ -414,9 +410,11 @@ var (
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		tracer := otel.Tracer("beluga.prompts")
+		if tracer == nil {
+			tracer = otel.Tracer("beluga.prompts")
+		}
 		metrics, err := NewMetrics(meter, tracer)
 		if err != nil {
 			// Fallback to no-op metrics if initialization fails

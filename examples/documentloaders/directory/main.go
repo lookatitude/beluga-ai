@@ -133,7 +133,7 @@ func main() {
 		documentloaders.WithExtensions(".go", ".md", ".txt"),
 		documentloaders.WithConcurrency(8),
 		documentloaders.WithDirectoryMaxFileSize(500*1024), // 500KB limit
-		documentloaders.WithFollowSymlinks(false), // Don't follow symlinks
+		documentloaders.WithFollowSymlinks(false),          // Don't follow symlinks
 	)
 	if err != nil {
 		log.Fatalf("Failed to create loader: %v", err)

@@ -69,7 +69,7 @@ func TestOpenAIRealtimeProvider_Process(t *testing.T) {
 	// Note: This test requires OpenAI API credentials or will fail.
 	// OpenAI Realtime uses WebSocket connections, which are more complex to mock.
 	// For proper mocking, the provider would need to be refactored to use a WebSocket interface.
-	
+
 	config := &s2s.Config{
 		Provider: "openai_realtime",
 		APIKey:   "test-key",
@@ -102,16 +102,16 @@ func TestOpenAIRealtimeProvider_Process(t *testing.T) {
 	if err != nil {
 		// Check if it's a config error (streaming disabled) or API error
 		if strings.Contains(err.Error(), "streaming is disabled") ||
-		   strings.Contains(err.Error(), "invalid_config") ||
-		   strings.Contains(err.Error(), "invalid_request") ||
-		   strings.Contains(err.Error(), "authentication") {
+			strings.Contains(err.Error(), "invalid_config") ||
+			strings.Contains(err.Error(), "invalid_request") ||
+			strings.Contains(err.Error(), "authentication") {
 			t.Skipf("Skipping test - Configuration or API error (expected without valid setup): %v", err)
 			return
 		}
 		// Other errors should fail the test
 		require.NoError(t, err)
 	}
-	
+
 	if output != nil {
 		assert.NotEmpty(t, output.Data)
 	}

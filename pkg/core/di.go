@@ -552,4 +552,4 @@ func (*noOpLogger) Debug(_ string, _ ...any) {}
 func (*noOpLogger) Info(_ string, _ ...any)  {}
 func (*noOpLogger) Warn(_ string, _ ...any)  {}
 func (*noOpLogger) Error(_ string, _ ...any) {}
-func (*noOpLogger) With(_ ...any) Logger     { return &noOpLogger{} }
+func (n *noOpLogger) With(_ ...any) Logger   { return n }

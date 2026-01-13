@@ -7,17 +7,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewMetrics(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	assert.NotNil(t, metrics)
 }
 
 func TestMetrics_RecordConnection(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -27,7 +30,8 @@ func TestMetrics_RecordConnection(t *testing.T) {
 
 func TestMetrics_RecordDisconnection(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -36,7 +40,8 @@ func TestMetrics_RecordDisconnection(t *testing.T) {
 
 func TestMetrics_RecordAudio(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -46,7 +51,8 @@ func TestMetrics_RecordAudio(t *testing.T) {
 
 func TestMetrics_RecordError(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -55,7 +61,8 @@ func TestMetrics_RecordError(t *testing.T) {
 
 func TestMetrics_Connections(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -64,7 +71,7 @@ func TestMetrics_Connections(t *testing.T) {
 }
 
 func TestNoOpMetrics(t *testing.T) {
-	noOp := NewNoOpMetrics()
+	noOp := NoOpMetrics()
 	ctx := context.Background()
 
 	// Should not panic

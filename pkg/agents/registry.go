@@ -4,12 +4,20 @@ package agents
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+)
+
+// Static base errors for dynamic error wrapping (err113 compliance)
+var (
+	errAgentTypeNotRegistered      = errors.New("agent type not registered")
+	errBaseAgentRequiresLLM        = errors.New("base agent requires LLM interface")
+	errReActAgentRequiresChatModel = errors.New("ReAct agent requires ChatModel interface")
 )
 
 // AgentCreatorFunc defines the function signature for creating agents.
@@ -89,11 +97,11 @@ func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm 
 	r.mu.RUnlock()
 
 	if !exists {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_agent",
-			name,
 			ErrCodeInitialization,
-			fmt.Errorf("agent type '%s' not registered", agentType),
+			fmt.Sprintf("agent type '%s' not registered for agent '%s'", agentType, name),
+			fmt.Errorf("%w: %s", errAgentTypeNotRegistered, agentType),
 		)
 	}
 	return creator(ctx, name, llm, agentTools, config)
@@ -216,11 +224,11 @@ func init() {
 func createBaseAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	baseLLM, ok := llm.(llmsiface.LLM)
 	if !ok {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_base_agent",
-			name,
 			ErrCodeInitialization,
-			fmt.Errorf("base agent requires LLM interface, got %T", llm),
+			fmt.Sprintf("LLM does not implement LLM interface for agent '%s', got %T", name, llm),
+			fmt.Errorf("%w, got %T", errBaseAgentRequiresLLM, llm),
 		)
 	}
 
@@ -231,11 +239,11 @@ func createBaseAgent(ctx context.Context, name string, llm any, agentTools []too
 func createReActAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
 	chatModel, ok := llm.(llmsiface.ChatModel)
 	if !ok {
-		return nil, NewAgentError(
+		return nil, NewAgentErrorWithMessage(
 			"create_react_agent",
-			name,
 			ErrCodeInitialization,
-			fmt.Errorf("ReAct agent requires ChatModel interface, got %T", llm),
+			fmt.Sprintf("LLM does not implement ChatModel interface for agent '%s', got %T", name, llm),
+			fmt.Errorf("%w, got %T", errReActAgentRequiresChatModel, llm),
 		)
 	}
 

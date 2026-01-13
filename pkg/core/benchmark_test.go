@@ -223,18 +223,18 @@ func BenchmarkErrorHandling(b *testing.B) {
 	b.ReportAllocs()
 
 	for i := 0; i < b.N; i++ {
-		err := NewInternalError("benchmark error", testErr)
+		err := NewInternalError("benchmark_error", "benchmark error", testErr)
 		if err == nil {
 			b.Fatal("Expected error")
 		}
-		if err.Type != ErrorTypeInternal {
-			b.Fatal("Expected Internal error type")
+		if err.Code != string(ErrorCodeInternalError) {
+			b.Fatal("Expected Internal error code")
 		}
 	}
 }
 
 func BenchmarkErrorTypeChecking(b *testing.B) {
-	err := NewValidationError("test", nil)
+	err := NewValidationError("test", "test", nil)
 
 	b.ResetTimer()
 	b.ReportAllocs()

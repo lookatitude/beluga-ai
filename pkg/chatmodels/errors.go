@@ -20,7 +20,7 @@ func (e *ChatModelError) Error() string {
 	// Extract model and provider from Fields if present for error message
 	model, _ := e.Fields["model"].(string)
 	provider, _ := e.Fields["provider"].(string)
-	
+
 	if provider != "" && model != "" {
 		return fmt.Sprintf("chatmodel %s %s (provider: %s): %s: %v", model, e.Op, provider, e.Code, e.Err)
 	}

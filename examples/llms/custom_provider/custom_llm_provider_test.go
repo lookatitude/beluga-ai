@@ -52,16 +52,32 @@ type mockTool struct {
 	description string
 }
 
-func (t *mockTool) Definition() tools.Definition {
-	return tools.Definition{
+func (t *mockTool) Name() string {
+	return t.name
+}
+
+func (t *mockTool) Description() string {
+	return t.description
+}
+
+func (t *mockTool) Definition() tools.ToolDefinition {
+	return tools.ToolDefinition{
 		Name:        t.name,
 		Description: t.description,
-		InputSchema: `{"type": "object"}`,
+		InputSchema: map[string]any{"type": "object"},
 	}
 }
 
-func (t *mockTool) Execute(ctx context.Context, input string) (string, error) {
+func (t *mockTool) Execute(ctx context.Context, input any) (any, error) {
 	return "mock result", nil
+}
+
+func (t *mockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i := range inputs {
+		results[i] = "mock result"
+	}
+	return results, nil
 }
 
 // =============================================================================

@@ -30,7 +30,7 @@ type options struct {
 type BaseAgent struct {
 	createdAt       time.Time
 	lastActiveTime  time.Time
-	ctx             context.Context //nolint:containedctx // Context is part of agent lifecycle management
+	ctx             context.Context
 	llm             llmsiface.LLM
 	memory          any
 	metrics         iface.MetricsRecorder
@@ -523,7 +523,7 @@ func (a *BaseAgent) emitEvent(eventType string, payload any) {
 		if err := handler(payload); err != nil {
 			// Log error but don't fail the operation
 			// In a real implementation, you'd use structured logging here
-			_, _ = fmt.Printf("Event handler error for %s: %v\n", eventType, err) //nolint:errcheck // Log only, error intentionally ignored
+			fmt.Printf("Event handler error for %s: %v\n", eventType, err)
 		}
 	}
 }

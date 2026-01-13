@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/server"
 )
@@ -16,7 +15,7 @@ func main() {
 	fmt.Println("🌐 Beluga AI - Server Package Example")
 	fmt.Println("=====================================")
 
-	ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	// Handle graceful shutdown
@@ -37,7 +36,7 @@ func main() {
 
 	// Step 2: Create REST server
 	fmt.Println("\n📋 Step 2: Creating REST server...")
-	restServer, err := server.NewRESTServer(
+	_, err := server.NewRESTServer(
 		server.WithRESTConfig(restConfig),
 	)
 	if err != nil {
@@ -54,7 +53,7 @@ func main() {
 
 	// Step 4: Create MCP server
 	fmt.Println("\n📋 Step 4: Creating MCP server...")
-	mcpServer, err := server.NewMCPServer(
+	_, err = server.NewMCPServer(
 		server.WithMCPConfig(mcpConfig),
 	)
 	if err != nil {

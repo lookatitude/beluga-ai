@@ -79,7 +79,7 @@ func HasMultimodalDocument(doc Document) bool {
 // Returns a map with keys: "image_url", "image_data", "video_url", "video_data", etc.
 func ExtractMultimodalData(msg Message) map[string]any {
 	result := make(map[string]any)
-	
+
 	if imgMsg, ok := AsImageMessage(msg); ok {
 		if imgMsg.ImageURL != "" {
 			result["image_url"] = imgMsg.ImageURL
@@ -90,7 +90,7 @@ func ExtractMultimodalData(msg Message) map[string]any {
 		}
 		result["type"] = "image"
 	}
-	
+
 	if vidMsg, ok := AsVideoMessage(msg); ok {
 		if vidMsg.VideoURL != "" {
 			result["video_url"] = vidMsg.VideoURL
@@ -104,7 +104,7 @@ func ExtractMultimodalData(msg Message) map[string]any {
 		}
 		result["type"] = "video"
 	}
-	
+
 	return result
 }
 
@@ -113,7 +113,7 @@ func ExtractMultimodalData(msg Message) map[string]any {
 // Returns a map with keys: "audio_url", "audio_data", "transcript", etc.
 func ExtractMultimodalDocumentData(doc Document) map[string]any {
 	result := make(map[string]any)
-	
+
 	// Check metadata for voice-specific data
 	if doc.Metadata != nil {
 		if audioURL, ok := doc.Metadata["audio_url"]; ok {
@@ -141,7 +141,7 @@ func ExtractMultimodalDocumentData(doc Document) map[string]any {
 			result["type"] = "voice"
 		}
 	}
-	
+
 	return result
 }
 
@@ -149,7 +149,7 @@ func ExtractMultimodalDocumentData(doc Document) map[string]any {
 // This is the preferred method when you have a VoiceDocument instance.
 func ExtractMultimodalDocumentDataFromVoiceDocument(voiceDoc *VoiceDocument) map[string]any {
 	result := make(map[string]any)
-	
+
 	if voiceDoc.AudioURL != "" {
 		result["audio_url"] = voiceDoc.AudioURL
 	}
@@ -170,7 +170,7 @@ func ExtractMultimodalDocumentDataFromVoiceDocument(voiceDoc *VoiceDocument) map
 		result["channels"] = voiceDoc.Channels
 	}
 	result["type"] = "voice"
-	
+
 	return result
 }
 

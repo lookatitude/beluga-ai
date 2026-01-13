@@ -14,16 +14,16 @@ import (
 
 // MockSession implements the VoiceSession interface for testing.
 type MockSession struct {
-	id                string
-	config            *MockConfig
-	sessionConfig     *vbiface.SessionConfig
+	id                   string
+	config               *MockConfig
+	sessionConfig        *vbiface.SessionConfig
 	pipelineOrchestrator *internal.PipelineOrchestrator
-	state             vbiface.PipelineState
-	persistenceStatus vbiface.PersistenceStatus
-	metadata          map[string]any
-	audioOutput       chan []byte
-	mu                sync.RWMutex
-	active            bool
+	state                vbiface.PipelineState
+	persistenceStatus    vbiface.PersistenceStatus
+	metadata             map[string]any
+	audioOutput          chan []byte
+	mu                   sync.RWMutex
+	active               bool
 }
 
 // NewMockSession creates a new mock session.

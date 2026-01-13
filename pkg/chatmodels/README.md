@@ -362,7 +362,7 @@ import (
 
 // Initialize metrics once at application startup
 meter := otel.Meter("beluga-chatmodels")
-chatmodels.InitMetrics(meter)
+chatmodels.InitMetrics(meter, tracer)
 
 // Get the global metrics instance
 metrics := chatmodels.GetMetrics()

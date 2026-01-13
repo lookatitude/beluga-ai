@@ -1,3 +1,4 @@
+//go:build ignore
 // +build ignore
 
 // This script verifies that all new providers are properly registered.
@@ -11,15 +12,15 @@ import (
 	"strings"
 
 	// Import providers to trigger their init() functions
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/grok"
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/gemini"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai_multimodal"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/google_multimodal"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai_multimodal"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/gemini"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/grok"
 	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/qdrant"
 	_ "github.com/lookatitude/beluga-ai/pkg/vectorstores/providers/weaviate"
 
-	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 )
 
@@ -82,7 +83,7 @@ func main() {
 	fmt.Println("Vector Store Providers:")
 	// Note: vectorstores uses a factory pattern
 	vsRegistry := vectorstores.GetRegistry()
-	
+
 	// Check for new providers by attempting to create (will fail on config, but proves registration)
 	newVSProviders := []string{"qdrant", "weaviate"}
 	for _, name := range newVSProviders {

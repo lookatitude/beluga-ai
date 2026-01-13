@@ -536,12 +536,12 @@ type PipelineMetrics struct {
 	tracer trace.Tracer
 	meter  metric.Meter
 
-	vadLatency       metric.Float64Histogram
-	denoiseLatency   metric.Float64Histogram
-	turnDuration     metric.Float64Histogram
-	speechSegments   metric.Int64Counter
-	vadDecisions     metric.Int64Counter
-	errors           metric.Int64Counter
+	vadLatency     metric.Float64Histogram
+	denoiseLatency metric.Float64Histogram
+	turnDuration   metric.Float64Histogram
+	speechSegments metric.Int64Counter
+	vadDecisions   metric.Int64Counter
+	errors         metric.Int64Counter
 }
 
 func newPipelineMetrics() (*PipelineMetrics, error) {

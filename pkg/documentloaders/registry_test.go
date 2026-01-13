@@ -40,9 +40,9 @@ func TestRegistryCreate(t *testing.T) {
 	// Factory should succeed even if the directory doesn't have files
 	require.NoError(t, err, "Factory should create loader successfully")
 	if loader != nil {
-			// Only test loading if loader was created
-			_, err = loader.Load(ctx) // Ignore errors as directory may be empty
-			_ = err // Explicitly ignore - directory may be empty
+		// Only test loading if loader was created
+		_, err = loader.Load(ctx) // Ignore errors as directory may be empty
+		_ = err                   // Explicitly ignore - directory may be empty
 	}
 
 	// Test creating text loader

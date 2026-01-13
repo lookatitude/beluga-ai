@@ -1,70 +1,297 @@
-# beluga-ai Development Guidelines
+---
+description: Speckit rules for feature specification, planning, and task creation in Beluga AI Framework.
+globs: specs/**/*.md
+alwaysApply: true
+---
+# Beluga AI - Speckit Feature Specification Rules
 
-Auto-generated from all feature plans. Last updated: 2025-10-05
+**MANDATORY**: All feature specifications, plans, and tasks MUST follow these rules. This file is used by Speckit (GitHub tool) to create and break down features into sections.
 
-## Constitutional Requirements (MANDATORY)
-**ALL development MUST comply with Constitution v1.0.0**
+## Core Principle
 
-### Package Structure (ENFORCED)
-- REQUIRED: iface/, config.go, metrics.go, errors.go, test_utils.go, advanced_test.go
-- MUST: Follow ISP (small interfaces), DIP (dependency injection), SRP (single responsibility)
-- MUST: Use global registry pattern for multi-provider packages
-- MUST: Implement OTEL metrics (NO custom metrics)
-- MUST: Op/Err/Code error handling pattern
+**ALL feature work MUST comply with Beluga AI Framework standards**. Reference the following rule files for complete requirements:
+- `beluga-design-patterns.mdc` - Design patterns and package structure
+- `beluga-test-standards.mdc` - Testing requirements
+- `beluga-core-architecture.mdc` - Architecture guidelines
+- `beluga-quality-standards.mdc` - Quality and linting requirements
+- `beluga-knowledge-base.mdc` - Knowledge base usage
 
-### Testing Standards (NON-NEGOTIABLE)  
-- MUST: 100% test coverage with advanced mocks
-- MUST: Table-driven tests, concurrency tests, benchmarks
-- MUST: Integration tests for cross-package interactions
+## Research and Information Gathering
+
+### Knowledge Base Usage (MANDATORY)
+
+**Before creating specifications or plans**:
+
+1. **Check for `.project-kb` file**: If present, use knowledge base for context
+2. **Query knowledge base** for:
+   - Existing similar features or patterns
+   - Package relationships and dependencies
+   - Architecture patterns and conventions
+   - Test patterns and utilities
+   - Integration points with other packages
+
+```javascript
+// Example: Query before specifying a new LLM provider
+kb_auto_context({
+  query: "LLM provider implementation patterns and factory registration",
+  project: "beluga-ai"
+})
+
+// Example: Query for package dependencies
+kb_search({
+  project: "beluga-ai",
+  query: "package dependencies for pkg/agents",
+  limit: 10
+})
+```
+
+3. **Deep research**: For each feature:
+   - Research existing implementations in the codebase
+   - Understand package dependencies and relationships
+   - Review similar features for patterns
+   - Check integration points with other packages
+   - Review test patterns for similar features
+
+4. **Ask questions**: During research, if information is unclear:
+   - Ask about package boundaries
+   - Clarify integration requirements
+   - Understand dependency relationships
+   - Confirm testing requirements
+   - Verify architecture alignment
+
+### Research Workflow
+
+1. **Initial Research**:
+   - Query knowledge base for related features
+   - Search codebase for similar implementations
+   - Review package design patterns
+   - Check architecture documentation
+
+2. **Deep Dive**:
+   - Understand all affected packages
+   - Map dependencies and relationships
+   - Identify integration points
+   - Review test patterns
+
+3. **Clarification**:
+   - Document any unclear requirements
+   - Ask specific questions about implementation
+   - Verify alignment with framework standards
+   - Confirm testing approach
+
+## Technical Details Requirements
+
+### Package Structure (MANDATORY)
+
+All new packages MUST follow the standard structure (see `beluga-design-patterns.mdc`):
+
+```
+pkg/{package_name}/
+├── iface/                    # Interfaces and types (REQUIRED)
+├── internal/                 # Private implementation details
+├── providers/               # Provider implementations (for multi-provider packages)
+├── config.go                # Configuration structs and validation (REQUIRED)
+├── metrics.go               # OTEL metrics implementation (REQUIRED)
+├── errors.go                # Custom error types with Op/Err/Code pattern (REQUIRED)
+├── {package_name}.go        # Main interfaces and factory functions
+├── factory.go OR registry.go # Global factory/registry for multi-provider packages
+├── test_utils.go            # Advanced testing utilities and mocks (REQUIRED)
+├── advanced_test.go         # Comprehensive test suites (REQUIRED)
+└── README.md                # Package documentation (REQUIRED)
+```
+
+### Design Principles (MANDATORY)
+
+- **ISP**: Small, focused interfaces
+- **DIP**: Depend on abstractions, use constructor injection
+- **SRP**: One responsibility per package/struct/function
+- **Composition over Inheritance**: Embed interfaces/structs, use functional options
+
+### Observability (MANDATORY)
+
+- **OTEL ONLY**: All packages MUST use OpenTelemetry (OTEL) as the ONLY observability solution
+- **Metrics**: Implement in `metrics.go` with standardized patterns
+- **Tracing**: Add spans to all public methods
+- **Logging**: Structured logging with trace/span IDs
+
+### Error Handling (MANDATORY)
+
+- **Pattern**: Op/Err/Code error structure
+- **Error Codes**: Constants for programmatic handling
+- **Context**: Always respect context cancellation
+
+### Testing Requirements (MANDATORY)
+
+- **Files**: `test_utils.go` and `advanced_test.go` (REQUIRED)
+- **Mocks**: AdvancedMock pattern with options
+- **Test Types**: Table-driven, concurrency, load, benchmarks
+- **Coverage**: Aim for 100%, minimum 80% (advisory)
+- **Integration**: Add to `tests/integration/` for cross-package tests
+
+### Quality Standards (MANDATORY)
+
+- **Linting**: `golangci-lint` v2.6.2 - MUST pass
+- **Formatting**: `gofmt`/`gofumpt` - MUST pass
+- **Static Analysis**: `go vet` - MUST pass
+- **Security**: `gosec`, `govulncheck`, `gitleaks` - MUST pass
+- **Tests**: All tests MUST pass with race detection
+- **Build**: All packages MUST build successfully
+
+## Task Creation Rules
+
+### Full Implementation Tasks (MANDATORY)
+
+**ALWAYS create tasks for complete implementation**:
+
+1. **Package Structure Tasks**:
+   - Create `iface/` directory
+   - Create `config.go` with validation
+   - Create `metrics.go` with OTEL metrics
+   - Create `errors.go` with error types
+   - Create `test_utils.go` with mocks
+   - Create `advanced_test.go` with comprehensive tests
+   - Create `README.md` with documentation
+
+2. **Implementation Tasks**:
+   - Interface definitions
+   - Core implementation
+   - Provider implementations (if multi-provider)
+   - Factory/registry setup
+   - Integration with other packages
+
+3. **Testing Tasks**:
+   - Unit tests (table-driven)
+   - Concurrency tests
+   - Load tests
+   - Benchmarks
+   - Integration tests
+   - OTEL testing
+
+4. **Quality Tasks**:
+   - Linting fixes
+   - Formatting
+   - Security scanning
+   - Documentation updates
+
+5. **Knowledge Base Tasks**:
+   - Add new files to knowledge base
+   - Update relationships
+   - Document patterns
+
+### Task Organization
+
+Tasks MUST be organized by:
+- **Phase 1**: Setup and foundation
+- **Phase 2**: Core implementation
+- **Phase 3**: Providers/extensions
+- **Phase 4**: Testing
+- **Phase 5**: Integration
+- **Phase 6**: Documentation and polish
+
+Each task MUST include:
+- Clear file paths
+- Dependencies
+- Acceptance criteria
+- Related packages/files
+
+## Planning Requirements
+
+### Plan Structure
+
+When creating plans (`plan.md`), MUST include:
+
+1. **Technical Context**:
+   - Package dependencies (use knowledge base to verify)
+   - Integration points
+   - Architecture alignment
+   - Design pattern compliance
+
+2. **Constitution Check**:
+   - ISP compliance
+   - DIP compliance
+   - SRP compliance
+   - Composition over inheritance
+
+3. **Implementation Phases**:
+   - Phase 0: Research (use knowledge base)
+   - Phase 1: Foundation (package structure)
+   - Phase 2: Core implementation
+   - Phase 3: Extensions/providers
+   - Phase 4: Testing
+   - Phase 5: Integration
+   - Phase 6: Documentation
+
+4. **Quality Gates**:
+   - All linting passes
+   - All tests pass
+   - Security scans pass
+   - Documentation complete
+   - Knowledge base updated
+
+## Specification Requirements
+
+When creating specifications (`spec.md`), MUST ensure:
+
+1. **Technical Alignment**:
+   - Follows package design patterns
+   - Aligns with architecture
+   - Uses existing patterns (query knowledge base)
+   - Integrates properly with other packages
+
+2. **Completeness**:
+   - All required files specified
+   - All tests specified
+   - All integrations specified
+   - All documentation specified
+
+3. **Research Documentation**:
+   - Document research findings
+   - Note similar implementations
+   - Reference patterns used
+   - Document decisions made
+
+## Knowledge Base Updates
+
+**MANDATORY**: After creating specifications, plans, or tasks:
+
+1. **Add to knowledge base**:
+   - Feature specification
+   - Implementation plan
+   - Task breakdown
+   - Research findings
+
+2. **Update relationships**:
+   - Link to related packages
+   - Document dependencies
+   - Note integration points
+   - Reference patterns used
+
+3. **Metadata**:
+   ```javascript
+   {
+     type: "spec" | "plan" | "tasks",
+     feature: "feature-name",
+     related_packages: ["package1", "package2"],
+     status: "specified" | "planned" | "in-progress"
+   }
+   ```
 
 ## Active Technologies
-- Go 1.21+ + OpenTelemetry (go.opentelemetry.io/otel), testify (github.com/stretchr/testify), validator (github.com/go-playground/validator) (001-for-the-core)
-- Go 1.24.0 + go-playground/validator/v10, go.opentelemetry.io/otel (metric/trace), github.com/stretchr/testify (mock/assert) (002-for-the-schema)
-- N/A (schema/data structures package) (002-for-the-schema)
-- Go 1.21+ + Viper, OpenTelemetry, testify, validator, mapstructure (003-for-the-config)
-- Configuration files (YAML/JSON/TOML), environment variables (003-for-the-config)
-- Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry, testify/mock, providers (OpenAI SDK, Anthropic SDK, AWS Bedrock SDK, Ollama client) (004-for-the-llms)
-- N/A (LLM provider APIs - no persistent storage required) (004-for-the-llms)
-- Go 1.21+ (existing Beluga AI Framework requirement) + OpenTelemetry (metrics, tracing, logging), testify/mock (testing), existing ChatModel providers (OpenAI) (005-for-the-chatmodels)
-- N/A (chat model provider APIs - no persistent storage required) (005-for-the-chatmodels)
-- Go 1.24.0 (toolchain go1.24.2) + go/ast, go/parser, go/token (for AST analysis), testify/mock (for mock pattern detection), go/format (for code generation) (001-go-package-by)
-- N/A (analysis tool, no persistent storage required) (001-go-package-by)
-- Go 1.24.0 + github.com/stretchr/testify/mock (for mock.Mock type) (002-beluga-ai-dependency)
-- N/A (file system only) (002-beluga-ai-dependency)
-- Go 1.24.0 + GitHub Actions, gomarkdoc (for API docs), GoReleaser (for releases), release-please (for semantic versioning) (003-the-github-workflows)
-- N/A (workflow configuration files only) (003-the-github-workflows)
-- N/A (ephemeral audio streams, conversation history via pkg/memory) (004-feature-voice-agents)
-- Go 1.24, YAML (GitHub Actions workflows), Bash (validation scripts) (005-adjust-the-workflows)
-- Go 1.24.1 (toolchain go1.24.2) (006-lets-make-sure)
-- N/A (in-memory conversation context, no persistent storage required) (006-lets-make-sure)
-- JavaScript/TypeScript (Node.js), Docusaurus 3.9.2, React 18.3.1 + @docusaurus/core, @docusaurus/preset-classic, @mdx-js/react, prism-react-renderer (001-complete-documentation)
-- Markdown files in `docs/` directory, static assets in `static/` directory (001-complete-documentation)
-- Go 1.21+, JavaScript/TypeScript (Node.js), Docusaurus 3.9.2, React 18.3.1 + gomarkdoc (godoc extraction tool), @docusaurus/core, @docusaurus/preset-classic, @mdx-js/react, prism-react-renderer (001-complete-documentation)
-- Markdown files in `website/docs/api/packages/` directory, Go source code with godoc comments in `pkg/` directory (001-complete-documentation)
-- Go 1.21+ (matches existing framework) (009-multimodal)
-- N/A (stateless package, integrates with existing vectorstores for multimodal RAG) (009-multimodal)
-- Go 1.24.1+ (matches go.mod) (001-voice-backends)
-- Go 1.22+ (010-data-ingestion)
-- N/A (file system operations via `io/fs` abstraction) (010-data-ingestion)
-- Markdown (CommonMark), Go 1.24+ (for code examples), Node.js 18+ (for Docusaurus) + Docusaurus 3.9.2, Go testing frameworks (test_utils.go patterns), OpenTelemetry (for example instrumentation) (011-docs-gap-analysis)
-- Git repository (markdown files), Docusaurus static site generation (011-docs-gap-analysis)
 
-## Project Structure
-```
-src/
-tests/
-```
+- **Go Version**: 1.24+ (matches `go.mod`)
+- **OpenTelemetry**: go.opentelemetry.io/otel (metrics, tracing, logging)
+- **Testing**: github.com/stretchr/testify (mock, assert)
+- **Validation**: github.com/go-playground/validator/v10
+- **Configuration**: Viper, mapstructure
+- **Documentation**: Docusaurus 3.9.2 (for website/docs)
 
-## Commands
-# Add commands for Go 1.21+
+## References
 
-## Code Style
-Go 1.21+: Follow standard conventions
-
-## Recent Changes
-- 011-docs-gap-analysis: Added Markdown (CommonMark), Go 1.24+ (for code examples), Node.js 18+ (for Docusaurus) + Docusaurus 3.9.2, Go testing frameworks (test_utils.go patterns), OpenTelemetry (for example instrumentation)
-- 010-data-ingestion: Added Go 1.22+
-- 001-voice-backends: Added Go 1.24.1+ (matches go.mod)
-
-<!-- MANUAL ADDITIONS START -->
-<!-- MANUAL ADDITIONS END -->
+- **Design Patterns**: See `beluga-design-patterns.mdc` for complete design patterns
+- **Testing Standards**: See `beluga-test-standards.mdc` for testing requirements
+- **Architecture**: See `beluga-core-architecture.mdc` for architecture guidelines
+- **Quality Standards**: See `beluga-quality-standards.mdc` for quality requirements
+- **Knowledge Base**: See `beluga-knowledge-base.mdc` for KB usage
+- **Package Design Patterns**: `docs/package_design_patterns.md`
+- **Architecture Documentation**: `docs/architecture.md`
+- **Makefile**: `Makefile` for all command definitions

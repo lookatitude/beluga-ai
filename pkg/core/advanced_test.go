@@ -2,7 +2,7 @@
 // This file demonstrates improved testing practices including table-driven tests,
 // concurrency testing, and integration test patterns.
 //
-//nolint:fieldalignment,goconst // test structs don't need optimal field alignment; goconst false positive on testValue usage
+//nolint:goconst // goconst false positive on testValue usage
 package core
 
 import (
@@ -18,7 +18,6 @@ import (
 
 // TestRunnableInvokeAdvanced provides advanced table-driven tests for Runnable.Invoke.
 func TestRunnableInvokeAdvanced(t *testing.T) {
-	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
@@ -76,7 +75,6 @@ func TestRunnableInvokeAdvanced(t *testing.T) {
 
 // TestRunnableBatchAdvanced provides advanced table-driven tests for Runnable.Batch.
 func TestRunnableBatchAdvanced(t *testing.T) {
-	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
@@ -118,7 +116,6 @@ func TestRunnableBatchAdvanced(t *testing.T) {
 
 // TestContainerRegisterAdvanced provides advanced table-driven tests for Container.Register.
 func TestContainerRegisterAdvanced(t *testing.T) {
-	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string
@@ -164,7 +161,6 @@ func TestContainerRegisterAdvanced(t *testing.T) {
 
 // TestContainerResolveAdvanced provides advanced table-driven tests for Container.Resolve.
 func TestContainerResolveAdvanced(t *testing.T) {
-	//nolint:fieldalignment // test struct, performance not critical
 	tests := []struct {
 		name        string
 		description string

@@ -39,7 +39,7 @@ func agentMultimodalExample(ctx context.Context) {
 		llms.WithModelName("gpt-4o"),
 		llms.WithAPIKey(apiKey),
 	)
-	
+
 	llm, err := llms.GetRegistry().GetLLM("openai", config)
 	if err != nil {
 		log.Printf("Failed to create LLM: %v", err)
@@ -79,7 +79,7 @@ func reactAgentMultimodalExample(ctx context.Context) {
 		llms.WithModelName("gpt-4o"),
 		llms.WithAPIKey(apiKey),
 	)
-	
+
 	chatModel, err := llms.GetRegistry().GetProvider("openai", config)
 	if err != nil {
 		log.Printf("Failed to create ChatModel: %v", err)

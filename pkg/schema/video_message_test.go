@@ -11,10 +11,10 @@ import (
 
 func TestNewVideoMessage(t *testing.T) {
 	tests := []struct {
-		name       string
-		videoURL   string
+		name        string
+		videoURL    string
 		textContent string
-		validate   func(t *testing.T, msg Message)
+		validate    func(t *testing.T, msg Message)
 	}{
 		{
 			name:        "basic_video_message",
@@ -23,7 +23,7 @@ func TestNewVideoMessage(t *testing.T) {
 			validate: func(t *testing.T, msg Message) {
 				assert.Equal(t, RoleHuman, msg.GetType())
 				assert.Contains(t, msg.GetContent(), "Watch this video")
-				
+
 				vidMsg, ok := AsVideoMessage(msg)
 				require.True(t, ok, "Message should be VideoMessage")
 				assert.Equal(t, "https://example.com/video.mp4", vidMsg.VideoURL)
@@ -57,7 +57,7 @@ func TestNewVideoMessageWithData(t *testing.T) {
 	textContent := "MP4 video"
 
 	msg := NewVideoMessageWithData(videoData, format, textContent)
-	
+
 	vidMsg, ok := AsVideoMessage(msg)
 	require.True(t, ok)
 	assert.Equal(t, videoData, vidMsg.VideoData)
@@ -72,7 +72,7 @@ func TestNewVideoMessageWithContext(t *testing.T) {
 	textContent := "Test video"
 
 	msg := NewVideoMessageWithContext(ctx, videoURL, textContent)
-	
+
 	vidMsg, ok := AsVideoMessage(msg)
 	require.True(t, ok)
 	assert.Equal(t, videoURL, vidMsg.VideoURL)
@@ -83,11 +83,11 @@ func TestVideoMessageAdditionalArgs(t *testing.T) {
 	videoURL := "https://example.com/video.mp4"
 	duration := 120.5
 	msg := NewVideoMessage(videoURL, "Test")
-	
+
 	vidMsg, ok := AsVideoMessage(msg)
 	require.True(t, ok)
 	vidMsg.Duration = duration
-	
+
 	args := msg.AdditionalArgs()
 	assert.Equal(t, videoURL, args["video_url"])
 	assert.Equal(t, duration, args["duration"])
@@ -127,11 +127,11 @@ func TestVideoMessageMethods(t *testing.T) {
 	videoURL := "https://example.com/video.mp4"
 	duration := 60.0
 	msg := NewVideoMessage(videoURL, "Test content")
-	
+
 	vidMsg, ok := AsVideoMessage(msg)
 	require.True(t, ok)
 	vidMsg.Duration = duration
-	
+
 	assert.Equal(t, videoURL, vidMsg.GetVideoURL())
 	assert.Equal(t, "auto", vidMsg.GetVideoFormat())
 	assert.Equal(t, duration, vidMsg.GetDuration())

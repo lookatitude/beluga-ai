@@ -330,14 +330,16 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 	}
 
 	// Make streaming API call
-	//nolint:bodyclose // Response body is closed by goroutine that reads from it (streaming pattern)
+	// Response body is closed by goroutine that reads from it (streaming pattern)
 	resp, err := o.makeRequest(ctx, "POST", "/api/generate", ollamaRequest)
 	if err != nil {
 		return nil, o.handleOllamaError("streamInternal", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		_ = resp.Body.Close() //nolint:errcheck // Best effort to close body on error
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Error closing response body during error handling - non-critical
+		}
 		return nil, o.handleHTTPError("streamInternal", resp)
 	}
 
@@ -347,7 +349,9 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 		defer close(outputChan)
 		defer func() {
 			if resp != nil && resp.Body != nil {
-				_ = resp.Body.Close() //nolint:errcheck // Close body when goroutine completes
+				if closeErr := resp.Body.Close(); closeErr != nil {
+					// Error closing response body - non-critical in cleanup context
+				}
 			}
 		}()
 

@@ -546,7 +546,8 @@ func TestMetrics(t *testing.T) {
 	// Create a no-op meter for testing
 	meter := noop.NewMeterProvider().Meter("test")
 
-	metrics, err := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics, err := NewMetrics(meter, tracer)
 	if err != nil {
 		t.Fatalf("NewMetrics() error = %v", err)
 	}

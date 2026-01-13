@@ -261,8 +261,8 @@ func (s *PgVectorStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		if doc.Metadata != nil {
 			metadataBytes, err = json.Marshal(doc.Metadata)
 			if err != nil {
-			return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
-				"failed to marshal document metadata", err)
+				return nil, vectorstores.NewVectorStoreErrorWithMessage("AddDocuments", vectorstores.ErrCodeStorageFailed,
+					"failed to marshal document metadata", err)
 			}
 		} else {
 			metadataBytes = []byte("{}")

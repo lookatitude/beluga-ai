@@ -6,7 +6,6 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
@@ -14,6 +13,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
@@ -66,7 +66,7 @@ Think step by step:`
 
 	// Step 4: Initialize the agent
 	initConfig := map[string]interface{}{
-		"max_retries": 3,
+		"max_retries":    3,
 		"max_iterations": 10,
 	}
 	if err := reactAgent.Initialize(initConfig); err != nil {

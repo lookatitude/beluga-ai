@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels"
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 

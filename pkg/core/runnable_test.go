@@ -707,29 +707,29 @@ func TestTracedRunnable_WithNoOpTracer(t *testing.T) {
 func TestFrameworkErrorTypes(t *testing.T) {
 	tests := []struct {
 		name        string
-		constructor func(string, error) *FrameworkError
-		errorType   ErrorType
+		constructor func(string, string, error) *FrameworkError
+		errorCode   ErrorCode
 	}{
-		{"ValidationError", NewValidationError, ErrorTypeValidation},
-		{"NetworkError", NewNetworkError, ErrorTypeNetwork},
-		{"AuthenticationError", NewAuthenticationError, ErrorTypeAuthentication},
-		{"InternalError", NewInternalError, ErrorTypeInternal},
-		{"ConfigurationError", NewConfigurationError, ErrorTypeConfiguration},
+		{"ValidationError", NewValidationError, ErrorCodeInvalidInput},
+		{"NetworkError", NewNetworkError, ErrorCodeTimeout},
+		{"AuthenticationError", NewAuthenticationError, ErrorCodeUnauthorized},
+		{"InternalError", NewInternalError, ErrorCodeInternalError},
+		{"ConfigurationError", NewConfigurationError, ErrorCodeInvalidInput},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cause := errTestCause
-			err := tt.constructor("test message", cause)
+			err := tt.constructor("test_op", "test message", cause)
 
-			if err.Type != tt.errorType {
-				t.Errorf("Error type = %v, expected %v", err.Type, tt.errorType)
+			if err.Code != string(tt.errorCode) {
+				t.Errorf("Error code = %v, expected %v", err.Code, tt.errorCode)
 			}
 			if err.Message != "test message" {
 				t.Errorf("Error message = %q, expected %q", err.Message, "test message")
 			}
-			if !errors.Is(err.Cause, cause) {
-				t.Errorf("Error cause = %v, expected %v", err.Cause, cause)
+			if !errors.Is(err.Err, cause) {
+				t.Errorf("Error cause = %v, expected %v", err.Err, cause)
 			}
 		})
 	}

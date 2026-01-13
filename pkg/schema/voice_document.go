@@ -17,13 +17,13 @@ import (
 // It extends Document with audio-specific fields while maintaining compatibility.
 type VoiceDocument struct {
 	internal.Document
-	AudioURL    string            `json:"audio_url,omitempty"`    // URL to the audio file
-	AudioData   []byte            `json:"audio_data,omitempty"`   // Base64-encoded audio data
-	AudioFormat string            `json:"audio_format,omitempty"` // Format: "wav", "mp3", "ogg", etc.
-	Duration    float64           `json:"duration,omitempty"`      // Duration in seconds
-	Transcript  string            `json:"transcript,omitempty"`    // Optional transcript of the audio
-	SampleRate  int               `json:"sample_rate,omitempty"`  // Audio sample rate in Hz
-	Channels    int               `json:"channels,omitempty"`      // Number of audio channels
+	AudioURL    string  `json:"audio_url,omitempty"`    // URL to the audio file
+	AudioData   []byte  `json:"audio_data,omitempty"`   // Base64-encoded audio data
+	AudioFormat string  `json:"audio_format,omitempty"` // Format: "wav", "mp3", "ogg", etc.
+	Duration    float64 `json:"duration,omitempty"`     // Duration in seconds
+	Transcript  string  `json:"transcript,omitempty"`   // Optional transcript of the audio
+	SampleRate  int     `json:"sample_rate,omitempty"`  // Audio sample rate in Hz
+	Channels    int     `json:"channels,omitempty"`     // Number of audio channels
 }
 
 // GetContent returns the transcript if available, otherwise the page content.

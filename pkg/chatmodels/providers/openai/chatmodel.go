@@ -93,7 +93,7 @@ func (o *OpenAIChatModel) GenerateMessages(ctx context.Context, messages []schem
 
 	// Start tracing (stub implementation)
 	// Note: span return value intentionally ignored in stub implementation
-	ctx, _ = o.metrics.(*openaiMetrics).StartGenerationSpan(ctx, o.model, "openai", "generate_messages") //nolint:errcheck // Span creation does not return an error here
+	ctx, _ = o.metrics.(*openaiMetrics).StartGenerationSpan(ctx, o.model, "openai", "generate_messages")
 
 	// TODO: Implement actual OpenAI API call
 	// For now, return a placeholder response
@@ -129,7 +129,7 @@ func (o *OpenAIChatModel) StreamMessages(ctx context.Context, messages []schema.
 
 		// Start tracing (stub implementation)
 		// Note: span return value intentionally ignored in stub implementation
-		ctx, _ = o.metrics.(*openaiMetrics).StartStreamingSpan(ctx, o.model, "openai") //nolint:errcheck // Span creation does not return an error here
+		ctx, _ = o.metrics.(*openaiMetrics).StartStreamingSpan(ctx, o.model, "openai")
 
 		// TODO: Implement actual OpenAI streaming API call
 		// For now, simulate streaming with chunks

@@ -31,7 +31,7 @@ func (p *CartesiaProvider) GetCapabilities(ctx context.Context) (*iface.Provider
 		SessionPersistence:    true,
 		CustomAuth:            true,
 		CustomRateLimiting:    true,
-		MaxConcurrentSessions: 0, // Cartesia supports unlimited sessions
+		MaxConcurrentSessions: 0,                      // Cartesia supports unlimited sessions
 		MinLatency:            100 * time.Millisecond, // Cartesia can achieve <150ms latency
 		SupportedCodecs:       []string{"opus", "pcm", "g722"},
 	}, nil

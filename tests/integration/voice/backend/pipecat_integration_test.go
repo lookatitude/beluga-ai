@@ -11,8 +11,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/pipecat"
 	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/pipecat"
 )
 
 // TestPipecatIntegration tests basic Pipecat provider integration (T262).

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/codes"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/backend/internal"
+	"go.opentelemetry.io/otel/codes"
 )
 
 // PipecatBackend implements the VoiceBackend interface for Pipecat (via Daily.co).
@@ -63,7 +63,7 @@ func (b *PipecatBackend) Start(ctx context.Context) error {
 	b.connectionState = iface.ConnectionStateConnecting
 	backend.AddSpanAttributes(span, map[string]any{
 		"connection_state": string(b.connectionState),
-		"daily_api_url":     b.config.DailyAPIURL,
+		"daily_api_url":    b.config.DailyAPIURL,
 	})
 
 	// Test Daily.co API connection
@@ -205,31 +205,31 @@ func (b *PipecatBackend) CreateSession(ctx context.Context, config *iface.Sessio
 		Backoff:    2.0,
 	}
 
-		err := internal.RetryWithBackoff(ctx, retryConfig, "PipecatBackend.CreateSession", func() error {
-			// Create Daily.co room
-			roomURL := fmt.Sprintf("%s/rooms", b.config.DailyAPIURL)
-			req, err := http.NewRequestWithContext(ctx, "POST", roomURL, nil)
-			if err != nil {
-				return err
-			}
-			req.Header.Set("Authorization", "Bearer "+b.config.DailyAPIKey)
-			req.Header.Set("Content-Type", "application/json")
+	err := internal.RetryWithBackoff(ctx, retryConfig, "PipecatBackend.CreateSession", func() error {
+		// Create Daily.co room
+		roomURL := fmt.Sprintf("%s/rooms", b.config.DailyAPIURL)
+		req, err := http.NewRequestWithContext(ctx, "POST", roomURL, nil)
+		if err != nil {
+			return err
+		}
+		req.Header.Set("Authorization", "Bearer "+b.config.DailyAPIKey)
+		req.Header.Set("Content-Type", "application/json")
 
-			// TODO: Add room configuration (name, max_participants, etc.)
-			// For now, create a basic room
+		// TODO: Add room configuration (name, max_participants, etc.)
+		// For now, create a basic room
 
-			resp, err := b.httpClient.Do(req)
-			if err != nil {
-				return err
-			}
-			defer resp.Body.Close()
+		resp, err := b.httpClient.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
 
-			if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-				return fmt.Errorf("failed to create room: status %d", resp.StatusCode)
-			}
+		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+			return fmt.Errorf("failed to create room: status %d", resp.StatusCode)
+		}
 
-			return nil
-		})
+		return nil
+	})
 
 	if err != nil {
 		backend.RecordSpanError(span, err)
@@ -256,8 +256,8 @@ func (b *PipecatBackend) CreateSession(ctx context.Context, config *iface.Sessio
 		b.metrics.RecordSessionCreationTime(ctx, "pipecat", creationTime)
 	}
 	backend.AddSpanAttributes(span, map[string]any{
-		"session_id":      session.GetID(),
-		"room_name":       roomName,
+		"session_id":       session.GetID(),
+		"room_name":        roomName,
 		"creation_time_ms": creationTime.Milliseconds(),
 	})
 

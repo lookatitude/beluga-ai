@@ -155,6 +155,11 @@ linters:
         - (*github.com/valyala/bytebufferpool.ByteBuffer).Write
         - (*github.com/valyala/bytebufferpool.ByteBuffer).WriteByte
         - (*github.com/valyala/bytebufferpool.ByteBuffer).WriteString
+        - (*strings.Builder).WriteString
+        - (*strings.Builder).WriteRune
+        - (*strings.Builder).Write
+        - os.Remove
+        - os.RemoveAll
     
     errchkjson:
       report-no-exported: true
@@ -485,3 +490,18 @@ issues:
     - path: pkg/monitoring/iface/errors\.go
       linters:
         - containedctx
+    # Exclude forbidigo, errcheck, and wrapcheck for examples directory - example code patterns are acceptable
+    - path: examples/.*
+      linters:
+        - forbidigo
+        - errcheck
+        - wrapcheck
+    # Exclude spancheck for pkg/llms/tracing.go - spans are intentionally returned for caller management
+    - path: pkg/llms/tracing\.go
+      linters:
+        - spancheck
+    # Exclude bodyclose for streaming patterns - response body is closed by goroutine
+    - path: pkg/llms/providers/ollama/provider\.go
+      text: "response body must be closed"
+      linters:
+        - bodyclose

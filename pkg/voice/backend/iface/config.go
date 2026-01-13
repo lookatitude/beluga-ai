@@ -67,15 +67,15 @@ type Config struct {
 	EnableStructuredLogging bool `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
 
 	// Integration fields for deep package integration (all optional)
-	Memory          memoryiface.Memory           `mapstructure:"-" yaml:"-"`
+	Memory          memoryiface.Memory              `mapstructure:"-" yaml:"-"`
 	Orchestrator    orchestrationiface.Orchestrator `mapstructure:"-" yaml:"-"`
-	Retriever       interface{} `mapstructure:"-" yaml:"-"` // Retriever interface from pkg/retrievers/iface
-	VectorStore     vectorstoresiface.VectorStore `mapstructure:"-" yaml:"-"`
-	Embedder        embeddingsiface.Embedder     `mapstructure:"-" yaml:"-"`
+	Retriever       interface{}                     `mapstructure:"-" yaml:"-"` // Retriever interface from pkg/retrievers/iface
+	VectorStore     vectorstoresiface.VectorStore   `mapstructure:"-" yaml:"-"`
+	Embedder        embeddingsiface.Embedder        `mapstructure:"-" yaml:"-"`
 	MultimodalModel multimodaliface.MultimodalModel `mapstructure:"-" yaml:"-"`
-	PromptTemplate  interface{} `mapstructure:"-" yaml:"-"` // PromptTemplate interface from pkg/prompts/iface
-	ChatModel       chatmodelsiface.ChatModel    `mapstructure:"-" yaml:"-"`
-	ServerConfig    serveriface.Config           `mapstructure:"-" yaml:"-"`
+	PromptTemplate  interface{}                     `mapstructure:"-" yaml:"-"` // PromptTemplate interface from pkg/prompts/iface
+	ChatModel       chatmodelsiface.ChatModel       `mapstructure:"-" yaml:"-"`
+	ServerConfig    serveriface.Config              `mapstructure:"-" yaml:"-"`
 
 	// Extensibility hooks (optional)
 	AuthHook          AuthHook          `mapstructure:"-" yaml:"-"`

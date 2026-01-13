@@ -7,17 +7,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewMetrics(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	assert.NotNil(t, metrics)
 }
 
 func TestMetrics_RecordProcess(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -26,7 +29,8 @@ func TestMetrics_RecordProcess(t *testing.T) {
 
 func TestMetrics_RecordError(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -35,7 +39,8 @@ func TestMetrics_RecordError(t *testing.T) {
 
 func TestMetrics_RecordStreaming(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -44,7 +49,8 @@ func TestMetrics_RecordStreaming(t *testing.T) {
 
 func TestMetrics_ActiveStreams(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -54,7 +60,8 @@ func TestMetrics_ActiveStreams(t *testing.T) {
 
 func TestMetrics_ProviderUsage(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -63,7 +70,8 @@ func TestMetrics_ProviderUsage(t *testing.T) {
 
 func TestMetrics_Fallback(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -72,7 +80,8 @@ func TestMetrics_Fallback(t *testing.T) {
 
 func TestMetrics_ConcurrentSessions(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -81,7 +90,8 @@ func TestMetrics_ConcurrentSessions(t *testing.T) {
 
 func TestMetrics_ReasoningMode(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -91,7 +101,8 @@ func TestMetrics_ReasoningMode(t *testing.T) {
 
 func TestMetrics_LatencyTarget(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -102,7 +113,8 @@ func TestMetrics_LatencyTarget(t *testing.T) {
 
 func TestMetrics_AudioQuality(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -112,7 +124,7 @@ func TestMetrics_AudioQuality(t *testing.T) {
 }
 
 func TestNoOpMetrics(t *testing.T) {
-	noOp := NewNoOpMetrics()
+	noOp := NoOpMetrics()
 	ctx := context.Background()
 
 	// Should not panic

@@ -21,7 +21,10 @@ func TestNewMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
 
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 	if metrics == nil {
 		t.Error("NewMetrics() returned nil")
 	}
@@ -79,7 +82,10 @@ func TestNoOpMetrics(t *testing.T) {
 func TestMetrics_RecordAgentCreation(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -95,7 +101,10 @@ func TestMetrics_RecordAgentCreation(t *testing.T) {
 func TestMetrics_RecordAgentExecution(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 100 * time.Millisecond
@@ -137,7 +146,10 @@ func TestMetrics_RecordAgentExecution(t *testing.T) {
 func TestMetrics_RecordExecutorRun(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 50 * time.Millisecond
@@ -179,7 +191,10 @@ func TestMetrics_RecordExecutorRun(t *testing.T) {
 func TestMetrics_RecordToolCall(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 25 * time.Millisecond
@@ -217,7 +232,10 @@ func TestMetrics_RecordToolCall(t *testing.T) {
 func TestMetrics_RecordPlanningCall(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 75 * time.Millisecond
@@ -255,7 +273,10 @@ func TestMetrics_RecordPlanningCall(t *testing.T) {
 func TestMetrics_Tracing(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -296,7 +317,10 @@ func TestMetrics_Tracing(t *testing.T) {
 func TestMetrics_EdgeCases(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -340,7 +364,10 @@ func TestMetrics_EdgeCases(t *testing.T) {
 func TestMetrics_RecordStreamingOperation(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -423,7 +450,10 @@ func TestMetrics_RecordStreamingOperation(t *testing.T) {
 func TestMetrics_RecordStreamingChunk(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -469,7 +499,10 @@ func TestMetrics_RecordStreamingChunk(t *testing.T) {
 func TestMetrics_RecordAgentExecution_ErrorMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 100 * time.Millisecond
@@ -490,7 +523,10 @@ func TestMetrics_RecordAgentExecution_ErrorMetrics(t *testing.T) {
 func TestMetrics_RecordExecutorRun_ErrorMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 50 * time.Millisecond
@@ -510,7 +546,10 @@ func TestMetrics_RecordExecutorRun_ErrorMetrics(t *testing.T) {
 func TestMetrics_RecordToolCall_ErrorMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 25 * time.Millisecond
@@ -530,7 +569,10 @@ func TestMetrics_RecordToolCall_ErrorMetrics(t *testing.T) {
 func TestMetrics_RecordPlanningCall_ErrorMetrics(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 75 * time.Millisecond
@@ -550,7 +592,10 @@ func TestMetrics_RecordPlanningCall_ErrorMetrics(t *testing.T) {
 func TestMetrics_StreamingEdgeCases(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -588,7 +633,10 @@ func TestMetrics_StreamingEdgeCases(t *testing.T) {
 func TestMetrics_ComprehensiveScenarios(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -643,7 +691,10 @@ func TestMetrics_ComprehensiveScenarios(t *testing.T) {
 func TestMetrics_InterfaceCompliance(t *testing.T) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		t.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	// This should compile without issues
 	var _ iface.MetricsRecorder = metrics
@@ -656,14 +707,17 @@ func BenchmarkNewMetrics(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = NewMetrics(meter, tracer)
+		_, _ = NewMetrics(meter, tracer)
 	}
 }
 
 func BenchmarkRecordAgentExecution(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		b.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 100 * time.Millisecond
@@ -677,7 +731,10 @@ func BenchmarkRecordAgentExecution(b *testing.B) {
 func BenchmarkRecordToolCall(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		b.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	duration := 25 * time.Millisecond
@@ -691,7 +748,10 @@ func BenchmarkRecordToolCall(b *testing.B) {
 func BenchmarkStartAgentSpan(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		b.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 
@@ -705,7 +765,10 @@ func BenchmarkStartAgentSpan(b *testing.B) {
 func BenchmarkRecordStreamingOperation(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		b.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 	latency := 10 * time.Millisecond
@@ -720,7 +783,10 @@ func BenchmarkRecordStreamingOperation(b *testing.B) {
 func BenchmarkRecordStreamingChunk(b *testing.B) {
 	tracer := trace.NewNoopTracerProvider().Tracer("test")
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter, tracer)
+	metrics, err := NewMetrics(meter, tracer)
+	if err != nil {
+		b.Fatalf("NewMetrics() returned error: %v", err)
+	}
 
 	ctx := context.Background()
 

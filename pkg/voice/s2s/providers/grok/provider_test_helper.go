@@ -2,6 +2,7 @@ package grok
 
 import (
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
@@ -51,8 +52,15 @@ func NewGrokVoiceProviderWithEndpoint(config *s2s.Config, endpoint string) (ifac
 			errors.New("API key is required"))
 	}
 
-	return &GrokVoiceProvider{
+	provider := &GrokVoiceProvider{
 		config:       grokConfig,
 		providerName: "grok",
-	}, nil
+	}
+
+	// Set default HTTP client if not provided
+	if provider.httpClient == nil {
+		provider.httpClient = &http.Client{Timeout: grokConfig.Timeout}
+	}
+
+	return provider, nil
 }

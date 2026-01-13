@@ -1,7 +1,7 @@
 # Makefile for Beluga AI Framework
 # Standard build, test, and quality assurance targets
 
-.PHONY: help build test test-unit test-integration test-race test-coverage test-coverage-threshold lint lint-fix fmt vet security security-full clean all install-tools install-system-tools bench ci-local
+.PHONY: help build build-examples test-build test test-unit test-integration test-race test-coverage test-coverage-threshold lint lint-fix fmt vet security security-full clean all install-tools install-system-tools bench ci-local
 
 # Variables
 GO_VERSION := 1.24
@@ -24,6 +24,37 @@ help: ## Show this help message
 build: ## Build all packages
 	@echo "Building all packages..."
 	@go build -v ./pkg/... ./cmd/... ./tests/...
+
+build-examples: ## Build all example binaries to .cache/bin
+	@echo "Building example binaries to $(CACHE_DIR)/bin..."
+	@mkdir -p $(CACHE_DIR)/bin
+	@for dir in examples/*/*/; do \
+		if [ -f "$$dir/main.go" ]; then \
+			name=$$(basename $$(dirname $$dir))_$$(basename $$dir); \
+			echo "Building $$dir -> $(CACHE_DIR)/bin/$$name"; \
+			go build -o $(CACHE_DIR)/bin/$$name $$dir || true; \
+		fi; \
+	done
+	@for dir in examples/*/; do \
+		if [ -f "$$dir/main.go" ]; then \
+			name=$$(basename $$dir); \
+			echo "Building $$dir -> $(CACHE_DIR)/bin/$$name"; \
+			go build -o $(CACHE_DIR)/bin/$$name $$dir || true; \
+		fi; \
+	done
+	@echo "✅ Example binaries built in $(CACHE_DIR)/bin/"
+
+test-build: ## Build test binaries to .cache/test-binaries
+	@echo "Building test binaries to $(TEST_BIN_DIR)..."
+	@mkdir -p $(TEST_BIN_DIR)
+	@for pkg in $$(go list ./pkg/... ./cmd/... ./tests/...); do \
+		name=$$(basename $$pkg); \
+		if [ -n "$$name" ]; then \
+			echo "Building test binary for $$pkg -> $(TEST_BIN_DIR)/$$name.test"; \
+			go test -c -o $(TEST_BIN_DIR)/$$name.test $$pkg || true; \
+		fi; \
+	done
+	@echo "✅ Test binaries built in $(TEST_BIN_DIR)/"
 
 test: ## Run all tests
 	@echo "Running tests..."
@@ -183,6 +214,10 @@ security-full: security ## Run all security scans including Trivy (requires Dock
 clean: ## Clean build artifacts
 	@echo "Cleaning build artifacts..."
 	@rm -rf $(BIN_DIR)
+	@rm -rf $(CACHE_DIR)/bin
+	@rm -rf $(CACHE_DIR)/test-binaries
+	@rm -f basic openai planexecute single_binary stt
+	@find . -maxdepth 1 -name "*.test" -type f -delete 2>/dev/null || true
 	@rm -rf $(COVERAGE_DIR)
 	@go clean -cache
 	@go clean -testcache

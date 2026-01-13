@@ -5,10 +5,225 @@ alwaysApply: true
 ---
 # Beluga AI Architecture Guidelines
 
-When editing or generating code in pkg/:
-- Follow modular structure: pkg/schema for data, pkg/core for utils, pkg/agents with sub-packages (base/, tools/, executor/, factory/).
-- Use interface-driven design: Implement small interfaces (e.g., Agent, Tool) per ISP.
-- Favor composition: Embed BaseAgent/BaseTool instead of inheritance.
-- Integrate monitoring and config: Use pkg/monitoring for OTEL and pkg/config for validation.
-- For extensions: Add new agents/LLMs/vectorstores via factories (e.g., register in global registry).
-- Reference: Full details in Beluga_Refactored_Architecture.md.
+**MANDATORY**: All code in `pkg/` MUST follow this architecture. Reference: `docs/architecture.md` for complete details and diagrams.
+
+## System Architecture Overview
+
+The Beluga AI Framework follows a layered architecture:
+
+```
+Application Layer
+    ↓
+Agent Layer (Agents, Executor, Tools)
+    ↓
+Orchestration Layer (Chains, Workflows, Scheduler, MessageBus)
+    ↓
+LLM Layer (LLMs, ChatModels, Prompts)
+    ↓
+RAG Layer (Embeddings, VectorStores, Retrievers)
+    ↓
+Memory Layer (Memory, Buffer, Vector)
+    ↓
+Infrastructure Layer (Config, Monitoring/OTEL, Server, Schema, Core)
+```
+
+## Package Dependency Structure
+
+### Foundation Packages (No Dependencies)
+- `pkg/schema` - Core data structures and message types
+- `pkg/core` - Utilities and core models
+- `pkg/config` - Configuration management
+- `pkg/monitoring` - OTEL observability
+
+### Provider Packages (Depend on Foundation)
+- `pkg/llms` → schema, config, monitoring, core
+- `pkg/embeddings` → schema, config, monitoring
+- `pkg/vectorstores` → schema, config, monitoring, embeddings
+- `pkg/prompts` → schema, config
+
+### Higher-Level Packages (Depend on Providers)
+- `pkg/chatmodels` → llms, schema, prompts
+- `pkg/memory` → schema, config, monitoring, vectorstores, embeddings
+- `pkg/retrievers` → vectorstores, embeddings, schema, core
+- `pkg/agents` → llms, schema, config, monitoring, core, memory
+- `pkg/orchestration` → agents, schema, config, monitoring, core
+- `pkg/server` → agents, orchestration, schema
+
+## Package Structure and Responsibilities
+
+### Foundation Packages
+
+#### `pkg/schema`
+- **Purpose**: Centralized data structures and message types
+- **Key Files**: `message.go`, `document.go`, `history.go`
+- **Design**: Single source of truth for data exchange
+
+#### `pkg/core`
+- **Purpose**: Fundamental utilities and core models
+- **Sub-packages**: `utils/`, `model/`
+- **Design**: Reusable foundational components
+
+#### `pkg/config`
+- **Purpose**: Framework-wide configuration loading/validation
+- **Features**: Viper provider, env support, validation
+- **Design**: Centralized config management
+
+#### `pkg/monitoring`
+- **Purpose**: OTEL integration for observability
+- **Features**: Metrics, tracing, structured logging, health checks
+- **Design**: Injectable into all packages (OTEL ONLY - no custom metrics)
+
+### Provider Packages
+
+#### `pkg/llms`
+- **Purpose**: Large Language Model interactions
+- **Features**: Multi-provider support (OpenAI, Anthropic, Bedrock, Ollama), streaming, factory pattern
+- **Design**: Provider-agnostic with global registry
+
+#### `pkg/embeddings`
+- **Purpose**: Text embeddings for vector stores
+- **Features**: Multi-provider support, factory pattern
+- **Design**: Interface-driven for easy provider swaps
+
+#### `pkg/vectorstores`
+- **Purpose**: Vector database interfaces
+- **Features**: Multi-store support (PGVector, InMemory, etc.), factory pattern
+- **Design**: Abstraction over backends
+
+#### `pkg/prompts`
+- **Purpose**: Prompt templating and management
+- **Features**: Template rendering, config for loading prompts
+- **Design**: Flexible for dynamic prompts
+
+### Higher-Level Packages
+
+#### `pkg/chatmodels`
+- **Purpose**: Chat-based LLM interactions
+- **Features**: Message generation/streaming, tool binding, health checks
+- **Design**: Compositional, adapters for llms
+
+#### `pkg/memory`
+- **Purpose**: Conversation memory for agents/llms
+- **Features**: Buffer, summary, vectorstore memory types
+- **Design**: Compositional histories
+
+#### `pkg/retrievers`
+- **Purpose**: Information retrieval from data sources
+- **Features**: Composes with vectorstores/embeddings, metrics
+- **Design**: Runnable for orchestration integration
+
+#### `pkg/agents`
+- **Purpose**: AI agent framework
+- **Sub-packages**: `base/`, `tools/`, `executor/`, `factory/`
+- **Design**: Interface-driven, composition over inheritance
+
+#### `pkg/orchestration`
+- **Purpose**: Complex workflow management
+- **Sub-packages**: `scheduler/`, `messagebus/`, `workflow/`
+- **Design**: Enables complex process management and inter-component communication
+
+#### `pkg/server`
+- **Purpose**: Expose framework components as APIs
+- **Features**: REST, MCP, streaming support
+- **Design**: Modular servers
+
+## Design Principles
+
+### 1. Modular Package Structure
+- Clear separation of concerns
+- Each package has one primary responsibility (SRP)
+- Logical grouping of related functionality
+
+### 2. Interface-Driven Design
+- Small, focused interfaces (ISP)
+- Depend on abstractions, not implementations (DIP)
+- Easy substitution of implementations
+
+### 3. Composition over Inheritance
+- Embed `BaseAgent`, `BaseTool`, `BaseWorkflow` instead of inheritance
+- Use functional options for configuration
+- Flexible composition of behaviors
+
+### 4. Observability Integration
+- **MANDATORY**: All packages use OTEL (OpenTelemetry) ONLY
+- No custom metrics - use OTEL metrics API
+- Structured logging with trace/span IDs
+- Distributed tracing for all public methods
+
+### 5. Configuration Management
+- All packages integrate with `pkg/config`
+- Dynamic configuration loading/validation
+- Environment variable support
+- YAML/JSON/TOML support
+
+## Extension Patterns
+
+### Adding a New LLM Provider
+1. Create implementation in `pkg/llms/providers/{provider_name}/`
+2. Implement `LLMCaller` interface
+3. Add config options in `pkg/llms/config.go`
+4. Register in global registry: `llms.RegisterGlobal("provider_name", NewProviderCreator)`
+5. Add tests in `pkg/llms/advanced_test.go`
+
+### Adding a New Agent Type
+1. Define struct in `pkg/agents/providers/{agent_name}/`
+2. Embed `BaseAgent` from `pkg/agents/base/`
+3. Implement `Agent` interface
+4. Register in `pkg/agents/factory/`
+5. Add tests following testing standards
+
+### Adding a New Vector Store
+1. Create in `pkg/vectorstores/providers/{store_name}/`
+2. Implement `VectorStore` interface
+3. Add to factory in `pkg/vectorstores/vectorstores.go`
+4. Register in global registry
+5. Add integration tests in `tests/integration/package_pairs/`
+
+### Adding a New Tool
+1. Define in `pkg/agents/tools/`
+2. Implement `Tool` interface
+3. Embed `BaseTool` for common functionality
+4. Add to agent tool registry
+5. Add tests
+
+## Package Interaction Patterns
+
+### RAG Pipeline Flow
+```
+User Query → Retriever → Embedder → VectorStore → Documents → LLM → Response
+```
+
+### Agent Execution Flow
+```
+User Input → Agent → Planner → Executor → Tools → LLM → Memory → Output
+```
+
+### Multi-Agent Coordination
+```
+Coordinator → Scheduler → Agents → MessageBus → Agents → Result
+```
+
+## Integration Points
+
+### All Packages MUST:
+- Use `pkg/schema` for data structures
+- Use `pkg/config` for configuration
+- Use `pkg/monitoring` for OTEL observability
+- Follow standardized package structure
+- Implement comprehensive testing
+- Use global registry pattern (if multi-provider)
+
+### Cross-Package Integration Tests
+- `tests/integration/package_pairs/` - Two-package integration
+- `tests/integration/end_to_end/` - Complete workflows
+- `tests/integration/provider_compat/` - Provider interoperability
+- `tests/integration/observability/` - Cross-package monitoring
+
+## References
+
+- **Complete Architecture**: `docs/architecture.md` (includes diagrams)
+- **Package Design Patterns**: `docs/package_design_patterns.md`
+- **Design Patterns**: See `beluga-design-patterns.mdc`
+- **Testing Standards**: See `beluga-test-standards.mdc`
+- **Quality Standards**: See `beluga-quality-standards.mdc`
+- **Knowledge Base**: See `beluga-knowledge-base.mdc` for KB integration

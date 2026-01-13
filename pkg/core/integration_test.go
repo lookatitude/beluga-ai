@@ -413,7 +413,7 @@ type FailableService struct {
 
 func (s *FailableService) Execute(_ context.Context) error {
 	if s.shouldFail {
-		return NewInternalError("FailableService configured to fail", nil)
+		return NewInternalError("execute", "FailableService configured to fail", nil)
 	}
 	return nil
 }

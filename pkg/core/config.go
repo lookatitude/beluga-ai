@@ -35,7 +35,7 @@ func (c *Config) Validate() error {
 			"error": true,
 		}
 		if !validLevels[c.LogLevel] {
-			return NewValidationError("invalid log level", nil)
+			return NewValidationError("validate", "invalid log level", nil)
 		}
 	}
 	return nil

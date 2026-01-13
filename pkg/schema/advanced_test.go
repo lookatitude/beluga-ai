@@ -106,7 +106,7 @@ func TestMessageCreationAdvanced(t *testing.T) {
 // TestMessageWithContextAdvanced tests message creation with OTEL context.
 func TestMessageWithContextAdvanced(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("human_message_with_context", func(t *testing.T) {
 		msg := NewHumanMessageWithContext(ctx, "Test message")
 		assert.Equal(t, iface.RoleHuman, msg.GetType())

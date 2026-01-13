@@ -21,7 +21,7 @@ func main() {
 
 	// Step 1: Create S2S provider configuration
 	config := s2s.DefaultConfig()
-	config.Provider = "amazon_nova" // or "grok", "gemini", "openai_realtime"
+	config.Provider = "amazon_nova"                // or "grok", "gemini", "openai_realtime"
 	config.APIKey = os.Getenv("AWS_ACCESS_KEY_ID") // Set your API key
 
 	// Configure audio settings

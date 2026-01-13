@@ -254,7 +254,7 @@ func WithYourAPIOption(value string) llms.ConfigOption {
 
 **Solution**: 
 1. Verify OTEL is initialized: `otel.SetMeterProvider(yourProvider)`
-2. Check that `llms.InitMetrics(meter)` is called at startup
+2. Check that `llms.InitMetrics(meter, tracer)` is called at startup
 3. Confirm your exporter is configured correctly
 
 ### Streaming stops unexpectedly

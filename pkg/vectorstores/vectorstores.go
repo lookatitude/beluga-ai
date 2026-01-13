@@ -77,6 +77,10 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	vectorstoresiface "github.com/lookatitude/beluga-ai/pkg/vectorstores/iface"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Embedder defines the interface for generating vector embeddings from text.
@@ -391,6 +395,13 @@ func ValidateProvider(name string) bool {
 //
 //	ids, err := vectorstores.AddDocuments(ctx, store, docs, embedder)
 func AddDocuments(ctx context.Context, store VectorStore, documents []schema.Document, embedder Embedder, opts ...Option) ([]string, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.AddDocuments",
+		trace.WithAttributes(
+			attribute.Int("document_count", len(documents)),
+		))
+	defer span.End()
+
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)
 
@@ -398,7 +409,15 @@ func AddDocuments(ctx context.Context, store VectorStore, documents []schema.Doc
 		config.Embedder = embedder
 	}
 
-	return store.AddDocuments(ctx, documents, WithEmbedder(config.Embedder))
+	ids, err := store.AddDocuments(ctx, documents, WithEmbedder(config.Embedder))
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, err
+	}
+
+	span.SetAttributes(attribute.Int("result_count", len(ids)))
+	return ids, nil
 }
 
 // SearchByQuery is a convenience function for text-based search.
@@ -408,6 +427,14 @@ func AddDocuments(ctx context.Context, store VectorStore, documents []schema.Doc
 //
 //	results, scores, err := vectorstores.SearchByQuery(ctx, store, "machine learning", 5, embedder)
 func SearchByQuery(ctx context.Context, store VectorStore, query string, k int, embedder Embedder, opts ...Option) ([]schema.Document, []float32, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.SearchByQuery",
+		trace.WithAttributes(
+			attribute.Int("query_length", len(query)),
+			attribute.Int("k", k),
+		))
+	defer span.End()
+
 	config := NewDefaultConfig()
 	ApplyOptions(config, opts...)
 
@@ -415,7 +442,17 @@ func SearchByQuery(ctx context.Context, store VectorStore, query string, k int, 
 		config.Embedder = embedder
 	}
 
-	return store.SimilaritySearchByQuery(ctx, query, k, config.Embedder, opts...)
+	docs, scores, err := store.SimilaritySearchByQuery(ctx, query, k, config.Embedder, opts...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, nil, err
+	}
+
+	span.SetAttributes(
+		attribute.Int("result_count", len(docs)),
+	)
+	return docs, scores, nil
 }
 
 // SearchByVector is a convenience function for vector-based search.
@@ -425,7 +462,23 @@ func SearchByQuery(ctx context.Context, store VectorStore, query string, k int, 
 //
 //	results, scores, err := vectorstores.SearchByVector(ctx, store, queryVector, 5)
 func SearchByVector(ctx context.Context, store VectorStore, queryVector []float32, k int, opts ...Option) ([]schema.Document, []float32, error) {
-	return store.SimilaritySearch(ctx, queryVector, k, opts...)
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.SearchByVector",
+		trace.WithAttributes(
+			attribute.Int("vector_dimension", len(queryVector)),
+			attribute.Int("k", k),
+		))
+	defer span.End()
+
+	docs, scores, err := store.SimilaritySearch(ctx, queryVector, k, opts...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return nil, nil, err
+	}
+
+	span.SetAttributes(attribute.Int("result_count", len(docs)))
+	return docs, scores, nil
 }
 
 // DeleteDocuments is a convenience function for document deletion.
@@ -434,7 +487,20 @@ func SearchByVector(ctx context.Context, store VectorStore, queryVector []float3
 //
 //	err := vectorstores.DeleteDocuments(ctx, store, []string{"doc1", "doc2"})
 func DeleteDocuments(ctx context.Context, store VectorStore, ids []string, opts ...Option) error {
-	return store.DeleteDocuments(ctx, ids, opts...)
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.DeleteDocuments",
+		trace.WithAttributes(
+			attribute.Int("document_count", len(ids)),
+		))
+	defer span.End()
+
+	err := store.DeleteDocuments(ctx, ids, opts...)
+	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+		return err
+	}
+	return nil
 }
 
 // AsRetriever is a convenience function to get a retriever from a store.
@@ -456,6 +522,14 @@ func AsRetriever(store VectorStore, opts ...Option) Retriever {
 //
 //	results, err := vectorstores.BatchAddDocuments(ctx, store, allDocs, 100, embedder)
 func BatchAddDocuments(ctx context.Context, store VectorStore, documents []schema.Document, batchSize int, embedder Embedder, opts ...Option) ([]string, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.BatchAddDocuments",
+		trace.WithAttributes(
+			attribute.Int("document_count", len(documents)),
+			attribute.Int("batch_size", batchSize),
+		))
+	defer span.End()
+
 	if batchSize <= 0 {
 		batchSize = 100
 	}
@@ -473,12 +547,18 @@ func BatchAddDocuments(ctx context.Context, store VectorStore, documents []schem
 		batch := documents[start:end]
 		ids, err := AddDocuments(ctx, store, batch, embedder, opts...)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return allIDs, NewVectorStoreErrorWithMessage("BatchAddDocuments", ErrCodeStorageFailed, fmt.Sprintf("failed to add batch %d/%d", i+1, totalBatches), err)
 		}
 
 		allIDs = append(allIDs, ids...)
 	}
 
+	span.SetAttributes(
+		attribute.Int("total_batches", totalBatches),
+		attribute.Int("result_count", len(allIDs)),
+	)
 	return allIDs, nil
 }
 
@@ -489,12 +569,22 @@ func BatchAddDocuments(ctx context.Context, store VectorStore, documents []schem
 //
 //	results, err := vectorstores.BatchSearch(ctx, store, queries, 5, embedder)
 func BatchSearch(ctx context.Context, store VectorStore, queries []string, k int, embedder Embedder, opts ...Option) ([][]schema.Document, [][]float32, error) {
+	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/vectorstores")
+	ctx, span := tracer.Start(ctx, "vectorstores.BatchSearch",
+		trace.WithAttributes(
+			attribute.Int("query_count", len(queries)),
+			attribute.Int("k", k),
+		))
+	defer span.End()
+
 	results := make([][]schema.Document, len(queries))
 	scores := make([][]float32, len(queries))
 
 	for i, query := range queries {
 		docs, queryScores, err := SearchByQuery(ctx, store, query, k, embedder, opts...)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
 			return results[:i], scores[:i], NewVectorStoreErrorWithMessage("BatchSearch", ErrCodeRetrievalFailed, fmt.Sprintf("failed to search query %d: %s", i, query), err)
 		}
 
@@ -502,5 +592,6 @@ func BatchSearch(ctx context.Context, store VectorStore, queries []string, k int
 		scores[i] = queryScores
 	}
 
+	span.SetAttributes(attribute.Int("result_count", len(results)))
 	return results, scores, nil
 }

@@ -3,8 +3,10 @@ package schema
 import (
 	"context"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Metrics holds all the metrics for the schema package.
@@ -62,10 +64,13 @@ type Metrics struct {
 	// Factory metrics
 	factoryCreations metric.Int64Counter
 	factoryErrors    metric.Int64Counter
+
+	// Tracer for span creation
+	tracer trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance with OpenTelemetry instruments.
-func NewMetrics(meter metric.Meter) (*Metrics, error) {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
 	messagesCreated, err := meter.Int64Counter(
 		"schema_messages_created_total",
 		metric.WithDescription("Total number of messages created"),
@@ -376,6 +381,10 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		return nil, err
 	}
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
+	}
+
 	return &Metrics{
 		messagesCreated:          messagesCreated,
 		messageErrors:            messageErrors,
@@ -411,13 +420,16 @@ func NewMetrics(meter metric.Meter) (*Metrics, error) {
 		documentValidationErrors: documentValidationErrors,
 		factoryCreations:         factoryCreations,
 		factoryErrors:            factoryErrors,
+		tracer:                   tracer,
 	}, nil
 }
 
 // NoOpMetrics returns a metrics instance that does nothing.
 // Useful for testing or when metrics are disabled.
 func NoOpMetrics() *Metrics {
-	return &Metrics{}
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("schema"),
+	}
 }
 
 // RecordMessageCreated records a message creation event.

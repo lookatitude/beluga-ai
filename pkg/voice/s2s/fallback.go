@@ -114,7 +114,7 @@ func (pf *ProviderFallback) ProcessWithFallback(ctx context.Context, input *inte
 		if i == 0 {
 			var output *internal.AudioOutput
 			var attemptErr error
-			
+
 			// Retry with exponential backoff
 			delay := initialDelay
 			for attempt := 0; attempt <= maxRetries; attempt++ {

@@ -70,12 +70,12 @@ func main() {
 	// Step 4: Manager synthesizes final result
 	fmt.Println("\n👔 Manager synthesizing final result...")
 	finalResult := map[string]interface{}{
-		"task":           task,
-		"research":       researchResult,
-		"analysis":       analysisResult,
-		"report":         reportResult,
-		"status":         "completed",
-		"agents_used":    []string{"research", "analysis", "report"},
+		"task":        task,
+		"research":    researchResult,
+		"analysis":    analysisResult,
+		"report":      reportResult,
+		"status":      "completed",
+		"agents_used": []string{"research", "analysis", "report"},
 	}
 
 	// Step 5: Display final result
@@ -102,7 +102,7 @@ func createSpecializedAgents(ctx context.Context) map[string]agentsiface.Composi
 	research, _ := agents.NewBaseAgent("research-specialist", researchLLM, nil)
 	research.Initialize(map[string]interface{}{
 		"specialization": "research",
-		"expertise":       "information-gathering",
+		"expertise":      "information-gathering",
 	})
 	agentMap["research"] = research
 
@@ -111,7 +111,7 @@ func createSpecializedAgents(ctx context.Context) map[string]agentsiface.Composi
 	analysis, _ := agents.NewBaseAgent("analysis-specialist", analysisLLM, nil)
 	analysis.Initialize(map[string]interface{}{
 		"specialization": "analysis",
-		"expertise":       "data-analysis",
+		"expertise":      "data-analysis",
 	})
 	agentMap["analysis"] = analysis
 
@@ -120,7 +120,7 @@ func createSpecializedAgents(ctx context.Context) map[string]agentsiface.Composi
 	report, _ := agents.NewBaseAgent("report-specialist", reportLLM, nil)
 	report.Initialize(map[string]interface{}{
 		"specialization": "reporting",
-		"expertise":       "document-generation",
+		"expertise":      "document-generation",
 	})
 	agentMap["report"] = report
 

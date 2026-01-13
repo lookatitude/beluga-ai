@@ -324,8 +324,6 @@ func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflo
 }
 
 // StartChainSpan starts a new span for chain execution.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
@@ -340,8 +338,6 @@ func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation strin
 }
 
 // StartGraphSpan starts a new span for graph execution.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
@@ -356,8 +352,6 @@ func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation strin
 }
 
 // StartWorkflowSpan starts a new span for workflow execution.
-//
-//nolint:spancheck // Spans are intentionally returned for caller to manage lifecycle
 func (m *Metrics) StartWorkflowSpan(ctx context.Context, workflowName, operation string) (context.Context, trace.Span) {
 	if m.tracer == nil {
 		return ctx, trace.SpanFromContext(ctx)
@@ -379,9 +373,11 @@ var (
 
 // InitMetrics initializes the global metrics instance.
 // This follows the standard pattern used across all Beluga AI packages.
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		tracer := otel.Tracer("beluga.orchestration")
+		if tracer == nil {
+			tracer = otel.Tracer("beluga.orchestration")
+		}
 		metrics, err := NewMetrics(meter, tracer)
 		if err != nil {
 			// Fallback to no-op metrics if initialization fails

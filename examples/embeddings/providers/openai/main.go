@@ -6,8 +6,8 @@ import (
 	"log"
 	"os"
 
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings"
+	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 )
 
 func main() {
@@ -23,10 +23,14 @@ func main() {
 	}
 
 	// Create embedding configuration
-	config := embeddings.NewConfig()
-	config.OpenAI.APIKey = apiKey
-	config.OpenAI.Model = "text-embedding-3-small"
-	config.OpenAI.Enabled = true
+	config := &embeddings.Config{
+		OpenAI: &embeddings.OpenAIConfig{
+			APIKey:  apiKey,
+			Model:   "text-embedding-3-small",
+			Enabled: true,
+		},
+	}
+	config.SetDefaults()
 
 	// Create embedder factory
 	factory, err := embeddings.NewEmbedderFactory(config)

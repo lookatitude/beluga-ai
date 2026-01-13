@@ -85,13 +85,13 @@ func TestGeminiNativeProvider_Process(t *testing.T) {
 		Provider: "gemini",
 		APIKey:   "test-key",
 	}
-	
+
 	// Create provider normally, then we'll need to modify it
 	// For now, let's create a test that uses the actual provider but with a mock server
 	// by setting the endpoint via environment or config override
 	// Since we can't easily inject the endpoint, let's create a provider that uses NewGeminiNativeProvider
 	// and then modify the URL in the request
-	
+
 	// Use test helper to create provider with mock server endpoint
 	// The endpoint is set via config, so we need to update the config
 	provider, err := NewGeminiNativeProviderWithEndpoint(config, server.URL)

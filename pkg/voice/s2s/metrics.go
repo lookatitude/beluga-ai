@@ -4,8 +4,10 @@ import (
 	"context"
 	"time"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // MetricsRecorder defines the interface for recording metrics.
@@ -23,50 +25,13 @@ type MetricsRecorder interface {
 	RecordAudioQuality(ctx context.Context, provider string, quality float64)
 }
 
-// NoOpMetrics provides a no-operation implementation for when metrics are disabled.
-type NoOpMetrics struct{}
-
-// NewNoOpMetrics creates a new no-operation metrics recorder.
-func NewNoOpMetrics() *NoOpMetrics {
-	return &NoOpMetrics{}
+// NoOpMetrics returns a metrics instance that does nothing.
+// Useful for testing or when metrics are disabled.
+func NoOpMetrics() *Metrics {
+	return &Metrics{
+		tracer: trace.NewNoopTracerProvider().Tracer("voice/s2s"),
+	}
 }
-
-// RecordProcess is a no-op implementation.
-func (n *NoOpMetrics) RecordProcess(ctx context.Context, provider, model string, duration time.Duration) {
-}
-
-// RecordError is a no-op implementation.
-func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
-}
-
-// RecordStreaming is a no-op implementation.
-func (n *NoOpMetrics) RecordStreaming(ctx context.Context, provider, model string, duration time.Duration) {
-}
-
-// IncrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, model string) {}
-
-// DecrementActiveStreams is a no-op implementation.
-func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, model string) {}
-
-// RecordProviderUsage is a no-op implementation.
-func (n *NoOpMetrics) RecordProviderUsage(ctx context.Context, provider string) {}
-
-// RecordFallback is a no-op implementation.
-func (n *NoOpMetrics) RecordFallback(ctx context.Context, fromProvider, toProvider string) {}
-
-// RecordConcurrentSessions is a no-op implementation.
-func (n *NoOpMetrics) RecordConcurrentSessions(ctx context.Context, provider string, count int64) {}
-
-// RecordReasoningMode is a no-op implementation.
-func (n *NoOpMetrics) RecordReasoningMode(ctx context.Context, provider, reasoningMode string) {}
-
-// RecordLatencyTarget is a no-op implementation.
-func (n *NoOpMetrics) RecordLatencyTarget(ctx context.Context, provider, latencyTarget string, actualLatency time.Duration) {
-}
-
-// RecordAudioQuality is a no-op implementation.
-func (n *NoOpMetrics) RecordAudioQuality(ctx context.Context, provider string, quality float64) {}
 
 // Metrics contains all the metrics for S2S operations.
 type Metrics struct {
@@ -84,10 +49,11 @@ type Metrics struct {
 	reasoningMode      metric.Int64Counter
 	latencyTarget      metric.Float64Histogram
 	audioQuality       metric.Float64Histogram
+	tracer             trace.Tracer
 }
 
 // NewMetrics creates a new Metrics instance.
-func NewMetrics(meter metric.Meter) *Metrics {
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics {
 	m := &Metrics{}
 
 	m.processes, _ = meter.Int64Counter("s2s.processes.total", metric.WithDescription("Total S2S processes"))
@@ -105,44 +71,77 @@ func NewMetrics(meter metric.Meter) *Metrics {
 	m.latencyTarget, _ = meter.Float64Histogram("s2s.latency.target", metric.WithDescription("Latency target vs actual"), metric.WithUnit("s"))
 	m.audioQuality, _ = meter.Float64Histogram("s2s.audio.quality", metric.WithDescription("Audio quality score (0.0-1.0)"))
 
+	if tracer == nil {
+		tracer = otel.Tracer("github.com/lookatitude/beluga-ai/pkg/voice/s2s")
+	}
+	m.tracer = tracer
+
 	return m
 }
 
 // RecordProcess records a process operation.
 func (m *Metrics) RecordProcess(ctx context.Context, provider, model string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 	}
-	m.processes.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.processLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.processes != nil {
+		m.processes.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.successful != nil {
+		m.successful.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.processLatency != nil {
+		m.processLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordError records an error.
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 		attribute.String("error_code", errorCode),
 	}
-	m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.processLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.errors != nil {
+		m.errors.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.failed != nil {
+		m.failed.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.processLatency != nil {
+		m.processLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // RecordStreaming records a streaming operation.
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model string, duration time.Duration) {
+	if m == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
 	}
-	m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
-	m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	if m.streams != nil {
+		m.streams.Add(ctx, 1, metric.WithAttributes(attrs...))
+	}
+	if m.streamLatency != nil {
+		m.streamLatency.Record(ctx, duration.Seconds(), metric.WithAttributes(attrs...))
+	}
 }
 
 // IncrementActiveStreams increments the active streams counter.
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
@@ -152,6 +151,9 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model st
 
 // DecrementActiveStreams decrements the active streams counter.
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model string) {
+	if m == nil || m.activeStreams == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("model", model),
@@ -161,6 +163,9 @@ func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model st
 
 // RecordProviderUsage records provider usage.
 func (m *Metrics) RecordProviderUsage(ctx context.Context, provider string) {
+	if m == nil || m.providerUsage == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 	}
@@ -169,6 +174,9 @@ func (m *Metrics) RecordProviderUsage(ctx context.Context, provider string) {
 
 // RecordFallback records a fallback event.
 func (m *Metrics) RecordFallback(ctx context.Context, fromProvider, toProvider string) {
+	if m == nil || m.fallbackEvents == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("from_provider", fromProvider),
 		attribute.String("to_provider", toProvider),
@@ -178,6 +186,9 @@ func (m *Metrics) RecordFallback(ctx context.Context, fromProvider, toProvider s
 
 // RecordConcurrentSessions records concurrent session count.
 func (m *Metrics) RecordConcurrentSessions(ctx context.Context, provider string, count int64) {
+	if m == nil || m.concurrentSessions == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 	}
@@ -186,6 +197,9 @@ func (m *Metrics) RecordConcurrentSessions(ctx context.Context, provider string,
 
 // RecordReasoningMode records reasoning mode usage.
 func (m *Metrics) RecordReasoningMode(ctx context.Context, provider, reasoningMode string) {
+	if m == nil || m.reasoningMode == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("reasoning_mode", reasoningMode),
@@ -195,6 +209,9 @@ func (m *Metrics) RecordReasoningMode(ctx context.Context, provider, reasoningMo
 
 // RecordLatencyTarget records latency target vs actual latency.
 func (m *Metrics) RecordLatencyTarget(ctx context.Context, provider, latencyTarget string, actualLatency time.Duration) {
+	if m == nil || m.latencyTarget == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 		attribute.String("latency_target", latencyTarget),
@@ -204,6 +221,9 @@ func (m *Metrics) RecordLatencyTarget(ctx context.Context, provider, latencyTarg
 
 // RecordAudioQuality records audio quality score.
 func (m *Metrics) RecordAudioQuality(ctx context.Context, provider string, quality float64) {
+	if m == nil || m.audioQuality == nil {
+		return
+	}
 	attrs := []attribute.KeyValue{
 		attribute.String("provider", provider),
 	}

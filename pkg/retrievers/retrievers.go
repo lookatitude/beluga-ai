@@ -241,7 +241,7 @@ func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Op
 	// Create metrics if enabled
 	if opts.EnableMetrics && opts.Meter != nil {
 		var err error
-		opts.Metrics, err = NewMetrics(opts.Meter)
+		opts.Metrics, err = NewMetrics(opts.Meter, opts.Tracer)
 		if err != nil {
 			return nil, NewRetrieverError("NewVectorStoreRetriever", err, ErrCodeInvalidConfig)
 		}

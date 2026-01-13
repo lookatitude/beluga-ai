@@ -13,17 +13,17 @@ import (
 // VoiceMetrics defines comprehensive metrics for the voice package.
 type VoiceMetrics struct {
 	// Operation metrics
-	totalOperations     metric.Int64Counter
-	operationDuration   metric.Float64Histogram
-	activeOperations     metric.Int64UpDownCounter
+	totalOperations   metric.Int64Counter
+	operationDuration metric.Float64Histogram
+	activeOperations  metric.Int64UpDownCounter
 
 	// Error metrics
-	totalErrors         metric.Int64Counter
-	errorByType         metric.Int64Counter
+	totalErrors metric.Int64Counter
+	errorByType metric.Int64Counter
 
 	// Provider metrics
-	providerUsage       metric.Int64Counter
-	providerErrors      metric.Int64Counter
+	providerUsage  metric.Int64Counter
+	providerErrors metric.Int64Counter
 
 	// Audio processing metrics
 	audioProcessed      metric.Int64Counter

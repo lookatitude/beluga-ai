@@ -40,13 +40,13 @@ type PipecatConfig struct {
 // NewPipecatConfig creates a new PipecatConfig from base Config.
 func NewPipecatConfig(config *iface.Config) *PipecatConfig {
 	pipecatConfig := &PipecatConfig{
-		Config:           config,
-		DailyAPIURL:      "https://api.daily.co/v1",
-		RoomNamePrefix:   "beluga-",
-		EnableRecording:   false,
-		RecordingType:    "cloud",
-		MaxParticipants:  0, // unlimited
-		RoomExpiration:   24 * time.Hour,
+		Config:          config,
+		DailyAPIURL:     "https://api.daily.co/v1",
+		RoomNamePrefix:  "beluga-",
+		EnableRecording: false,
+		RecordingType:   "cloud",
+		MaxParticipants: 0, // unlimited
+		RoomExpiration:  24 * time.Hour,
 	}
 
 	// Extract Pipecat-specific config from ProviderConfig

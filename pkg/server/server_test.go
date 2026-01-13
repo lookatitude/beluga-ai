@@ -577,11 +577,11 @@ func TestErrorHandling(t *testing.T) {
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				err := tt.createError()
-				if err.Code != tt.expectedCode {
+				if err.Code != string(tt.expectedCode) {
 					t.Errorf("Expected error code %s, got %s", tt.expectedCode, err.Code)
 				}
-				if err.Operation != tt.expectedOp {
-					t.Errorf("Expected operation '%s', got '%s'", tt.expectedOp, err.Operation)
+				if err.Op != tt.expectedOp {
+					t.Errorf("Expected operation '%s', got '%s'", tt.expectedOp, err.Op)
 				}
 				if err.Message == "" {
 					t.Error("Expected non-empty error message")
@@ -613,14 +613,14 @@ func TestErrorHandling(t *testing.T) {
 			{
 				name: "unauthorized_401",
 				createError: func() *ServerError {
-					return &ServerError{Code: ErrCodeUnauthorized}
+					return &ServerError{Code: string(ErrCodeUnauthorized)}
 				},
 				expectedCode: http.StatusUnauthorized,
 			},
 			{
 				name: "forbidden_403",
 				createError: func() *ServerError {
-					return &ServerError{Code: ErrCodeForbidden}
+					return &ServerError{Code: string(ErrCodeForbidden)}
 				},
 				expectedCode: http.StatusForbidden,
 			},
@@ -647,8 +647,8 @@ func TestErrorHandling(t *testing.T) {
 		originalErr := NewToolNotFoundError("test_tool")
 		wrappedErr := NewInternalError("test_operation", originalErr)
 
-		if wrappedErr.Operation != "test_operation" {
-			t.Errorf("Expected operation 'test_operation', got '%s'", wrappedErr.Operation)
+		if wrappedErr.Op != "test_operation" {
+			t.Errorf("Expected operation 'test_operation', got '%s'", wrappedErr.Op)
 		}
 		if !errors.Is(wrappedErr.Err, originalErr) {
 			t.Error("Expected wrapped error to contain original error")

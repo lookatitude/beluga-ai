@@ -10,6 +10,7 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise/iface"
 	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Global metrics instance - initialized once.
@@ -30,9 +31,9 @@ var (
 //	noise.InitMetrics(meter)
 //
 // Example usage can be found in examples/voice/noise/main.go
-func InitMetrics(meter metric.Meter) {
+func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
-		globalMetrics = NewMetrics(meter)
+		globalMetrics = NewMetrics(meter, tracer)
 	})
 }
 

@@ -188,9 +188,9 @@ func (pb *PromptBuilder) BuildChatPrompt(messages []schema.Message, systemPrompt
 
 	// Add system prompt if provided
 	if systemPrompt != nil && *systemPrompt != "" {
-		_, _ = prompt.WriteString("System: ")    //nolint:errcheck // strings.Builder.WriteString rarely fails
-		_, _ = prompt.WriteString(*systemPrompt) //nolint:errcheck // strings.Builder.WriteString rarely fails
-		_, _ = prompt.WriteString("\n\n")        //nolint:errcheck // strings.Builder.WriteString rarely fails
+		prompt.WriteString("System: ")
+		prompt.WriteString(*systemPrompt)
+		prompt.WriteString("\n\n")
 	}
 
 	// Add conversation messages
@@ -200,17 +200,17 @@ func (pb *PromptBuilder) BuildChatPrompt(messages []schema.Message, systemPrompt
 			switch m.GetType() {
 			case schema.RoleSystem:
 				if systemPrompt == nil || *systemPrompt == "" {
-					_, _ = prompt.WriteString("System: ")     //nolint:errcheck // strings.Builder.WriteString rarely fails
-					_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
-					_, _ = prompt.WriteString("\n\n")         //nolint:errcheck // strings.Builder.WriteString rarely fails
+					prompt.WriteString("System: ")
+					prompt.WriteString(m.GetContent())
+					prompt.WriteString("\n\n")
 				}
 			case schema.RoleHuman:
-				_, _ = prompt.WriteString("Human: ")      //nolint:errcheck // strings.Builder.WriteString rarely fails
-				_, _ = prompt.WriteString(m.GetContent()) //nolint:errcheck // strings.Builder.WriteString rarely fails
-				_, _ = prompt.WriteString("\n\nAssistant: ")
+				prompt.WriteString("Human: ")
+				prompt.WriteString(m.GetContent())
+				prompt.WriteString("\n\nAssistant: ")
 			case schema.RoleAssistant:
-				_, _ = prompt.WriteString(m.GetContent())
-				_, _ = prompt.WriteString("\n\n")
+				prompt.WriteString(m.GetContent())
+				prompt.WriteString("\n\n")
 			}
 		case *schema.AIMessage:
 			_, _ = prompt.WriteString(m.GetContent())

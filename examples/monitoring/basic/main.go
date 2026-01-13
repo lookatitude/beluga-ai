@@ -17,11 +17,8 @@ func main() {
 
 	// Step 1: Create monitoring system
 	fmt.Println("\n📋 Step 1: Creating monitoring system...")
-	monitor, err := monitoring.NewMonitor(
-		monitoring.WithServiceName("beluga-example"),
-		monitoring.WithSafetyChecks(true),
-		monitoring.WithEthicalValidation(true),
-	)
+	// Use defaults - safety and ethical checks are enabled by default
+	monitor, err := monitoring.NewMonitor()
 	if err != nil {
 		log.Fatalf("Failed to create monitor: %v", err)
 	}
@@ -38,7 +35,7 @@ func main() {
 	// Step 3: Create a trace span
 	fmt.Println("\n📋 Step 3: Creating trace span...")
 	ctx, span := monitor.Tracer().StartSpan(ctx, "example_operation")
-	defer span.End()
+	defer monitor.Tracer().FinishSpan(span)
 	fmt.Println("✅ Trace span created")
 
 	// Step 4: Perform safety check
@@ -58,8 +55,10 @@ func main() {
 
 	// Step 6: Perform health check
 	fmt.Println("\n📋 Step 6: Performing health check...")
-	healthStatus := monitor.HealthChecker().Check(ctx)
-	fmt.Printf("✅ Health status: %+v\n", healthStatus)
+	healthChecks := monitor.HealthChecker().RunChecks(ctx)
+	isHealthy := monitor.HealthChecker().IsHealthy(ctx)
+	fmt.Printf("✅ Health checks: %+v\n", healthChecks)
+	fmt.Printf("✅ Is healthy: %v\n", isHealthy)
 
 	fmt.Println("\n✨ Example completed successfully!")
 	fmt.Println("\nNext steps:")

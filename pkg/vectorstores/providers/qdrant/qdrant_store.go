@@ -66,23 +66,23 @@ type qdrantUpsertRequest struct {
 }
 
 type qdrantPoint struct {
-	ID      interface{}          `json:"id"`      // Can be string or int
-	Vector  []float32             `json:"vector"`
+	ID      interface{}            `json:"id"` // Can be string or int
+	Vector  []float32              `json:"vector"`
 	Payload map[string]interface{} `json:"payload,omitempty"`
 }
 
 type qdrantSearchRequest struct {
-	Vector      []float32           `json:"vector"`
-	Limit       int                 `json:"limit"`
-	WithPayload bool                `json:"with_payload"`
-	WithVector  bool                `json:"with_vector"`
-	Filter      *qdrantFilter       `json:"filter,omitempty"`
-	ScoreThreshold float32          `json:"score_threshold,omitempty"`
+	Vector         []float32     `json:"vector"`
+	Limit          int           `json:"limit"`
+	WithPayload    bool          `json:"with_payload"`
+	WithVector     bool          `json:"with_vector"`
+	Filter         *qdrantFilter `json:"filter,omitempty"`
+	ScoreThreshold float32       `json:"score_threshold,omitempty"`
 }
 
 type qdrantFilter struct {
-	Must   []qdrantCondition `json:"must,omitempty"`
-	Should []qdrantCondition `json:"should,omitempty"`
+	Must    []qdrantCondition `json:"must,omitempty"`
+	Should  []qdrantCondition `json:"should,omitempty"`
 	MustNot []qdrantCondition `json:"must_not,omitempty"`
 }
 
@@ -96,10 +96,10 @@ type qdrantSearchResponse struct {
 }
 
 type qdrantScoredPoint struct {
-	ID      interface{}          `json:"id"`
-	Score   float32              `json:"score"`
+	ID      interface{}            `json:"id"`
+	Score   float32                `json:"score"`
 	Payload map[string]interface{} `json:"payload,omitempty"`
-	Vector  []float32            `json:"vector,omitempty"`
+	Vector  []float32              `json:"vector,omitempty"`
 }
 
 type qdrantDeleteRequest struct {

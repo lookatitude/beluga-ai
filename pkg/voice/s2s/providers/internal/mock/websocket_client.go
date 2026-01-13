@@ -162,10 +162,10 @@ func (m *MockWebSocketConn) IsClosed() bool {
 
 // MockWebSocketDialer is a mock implementation of WebSocketDialer for testing.
 type MockWebSocketDialer struct {
-	mu            sync.RWMutex
-	connections   map[string]*MockWebSocketConn
-	defaultConn   *MockWebSocketConn
-	dialError     map[string]error
+	mu               sync.RWMutex
+	connections      map[string]*MockWebSocketConn
+	defaultConn      *MockWebSocketConn
+	dialError        map[string]error
 	defaultDialError error
 }
 

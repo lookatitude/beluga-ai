@@ -198,23 +198,23 @@ func TestVAD_ProcessFrame(t *testing.T) {
 	defer pipeline.Close()
 
 	tests := []struct {
-		name       string
-		frame      []byte
+		name         string
+		frame        []byte
 		expectSpeech bool
 	}{
 		{
-			name:       "empty frame",
-			frame:      []byte{},
+			name:         "empty frame",
+			frame:        []byte{},
 			expectSpeech: false,
 		},
 		{
-			name:       "silence frame",
-			frame:      generateSilenceFrame(512),
+			name:         "silence frame",
+			frame:        generateSilenceFrame(512),
 			expectSpeech: false,
 		},
 		{
-			name:       "loud frame",
-			frame:      generateLoudFrame(512),
+			name:         "loud frame",
+			frame:        generateLoudFrame(512),
 			expectSpeech: true,
 		},
 	}

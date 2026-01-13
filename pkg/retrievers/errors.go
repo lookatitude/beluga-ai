@@ -8,14 +8,14 @@ import (
 
 // Error codes for programmatic error handling.
 const (
-	ErrCodeInvalidConfig       = "invalid_config"
-	ErrCodeInvalidInput        = "invalid_input"
-	ErrCodeRetrievalFailed     = "retrieval_failed"
-	ErrCodeEmbeddingFailed     = "embedding_failed"
-	ErrCodeVectorStoreError    = "vector_store_error"
-	ErrCodeTimeout             = "timeout"
-	ErrCodeRateLimit           = "rate_limit"
-	ErrCodeNetworkError        = "network_error"
+	ErrCodeInvalidConfig         = "invalid_config"
+	ErrCodeInvalidInput          = "invalid_input"
+	ErrCodeRetrievalFailed       = "retrieval_failed"
+	ErrCodeEmbeddingFailed       = "embedding_failed"
+	ErrCodeVectorStoreError      = "vector_store_error"
+	ErrCodeTimeout               = "timeout"
+	ErrCodeRateLimit             = "rate_limit"
+	ErrCodeNetworkError          = "network_error"
 	ErrCodeQueryGenerationFailed = "query_generation_failed"
 )
 

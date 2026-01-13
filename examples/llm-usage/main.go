@@ -17,7 +17,8 @@ func main() {
 	ctx := context.Background()
 
 	// Initialize metrics (optional - would use OpenTelemetry in production)
-	llms.InitMetrics(nil)
+	// In production, you would use actual meter and tracer from OpenTelemetry
+	llms.InitMetrics(nil, nil)
 
 	// Example 1: Basic Factory Usage
 	fmt.Println("\n📋 Example 1: Basic Factory Usage")

@@ -17,10 +17,10 @@ func main() {
 
 	// Example 1: Error Handling
 	fmt.Println("\n📋 Example 1: Error Handling")
-	err := core.NewError("ExampleOperation", "example_code", fmt.Errorf("something went wrong"))
-	fmt.Printf("✅ Created error: %v\n", err)
-	fmt.Printf("   Operation: %s\n", err.Op())
-	fmt.Printf("   Code: %s\n", err.Code())
+	validationErr := core.NewValidationError("example_operation", "something went wrong", fmt.Errorf("underlying error"))
+	fmt.Printf("✅ Created error: %v\n", validationErr)
+	fmt.Printf("   Code: %s\n", validationErr.Code)
+	fmt.Printf("   Message: %s\n", validationErr.Message)
 
 	// Example 2: Context with Timeout
 	fmt.Println("\n📋 Example 2: Context with Timeout")
@@ -37,11 +37,11 @@ func main() {
 	// Example 3: Runnable Interface
 	fmt.Println("\n📋 Example 3: Runnable Interface")
 	runnable := &ExampleRunnable{name: "test-runnable"}
-	result, err := runnable.Run(ctx, "test input")
+	result, err := runnable.Invoke(ctx, "test input")
 	if err != nil {
 		log.Printf("⚠️  Runnable error: %v", err)
 	} else {
-		fmt.Printf("✅ Runnable executed: %s\n", result)
+		fmt.Printf("✅ Runnable executed: %v\n", result)
 	}
 
 	// Example 4: Options Pattern
@@ -52,14 +52,14 @@ func main() {
 		core.WithOption("key3", true),
 	}
 	fmt.Println("✅ Created options:")
-	for _, opt := range opts {
+	for range opts {
 		fmt.Printf("   Option applied\n")
 	}
 
 	// Example 5: Error Wrapping
 	fmt.Println("\n📋 Example 5: Error Wrapping")
 	originalErr := fmt.Errorf("original error")
-	wrappedErr := core.WrapError("WrapperOperation", originalErr)
+	wrappedErr := core.WrapError(originalErr, "example_operation", "wrapper message")
 	fmt.Printf("✅ Wrapped error: %v\n", wrappedErr)
 
 	fmt.Println("\n✨ All examples completed successfully!")
@@ -73,6 +73,32 @@ type ExampleRunnable struct {
 	name string
 }
 
-func (r *ExampleRunnable) Run(ctx context.Context, input any) (any, error) {
+func (r *ExampleRunnable) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return fmt.Sprintf("Processed by %s: %v", r.name, input), nil
+}
+
+func (r *ExampleRunnable) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
+	results := make([]any, len(inputs))
+	for i, input := range inputs {
+		result, err := r.Invoke(ctx, input, options...)
+		if err != nil {
+			return nil, err
+		}
+		results[i] = result
+	}
+	return results, nil
+}
+
+func (r *ExampleRunnable) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
+	ch := make(chan any, 1)
+	go func() {
+		defer close(ch)
+		result, err := r.Invoke(ctx, input, options...)
+		if err != nil {
+			ch <- err
+			return
+		}
+		ch <- result
+	}()
+	return ch, nil
 }

@@ -211,13 +211,13 @@ func (p *GrokVoiceProvider) prepareGrokRequest(input *internal.AudioInput, convC
 			"audio": audioBase64,
 			"format": map[string]any{
 				"sample_rate": input.Format.SampleRate,
-				"channels":      input.Format.Channels,
+				"channels":    input.Format.Channels,
 				"encoding":    input.Format.Encoding,
 			},
 		},
-		"voice": p.config.VoiceID,
+		"voice":           p.config.VoiceID,
 		"response_format": p.config.AudioFormat,
-		"temperature": p.config.Temperature,
+		"temperature":     p.config.Temperature,
 	}
 
 	// Add conversation context if provided

@@ -8,16 +8,16 @@ import (
 
 // Error codes for configuration operations.
 const (
-	ErrCodeInvalidConfig      = "invalid_config"
-	ErrCodeLoadFailed         = "load_failed"
-	ErrCodeValidationFailed   = "validation_failed"
-	ErrCodeFileNotFound        = "file_not_found"
-	ErrCodeFileReadError       = "file_read_error"
-	ErrCodeUnmarshalError      = "unmarshal_error"
-	ErrCodeProviderNotFound    = "provider_not_found"
-	ErrCodeProviderError       = "provider_error"
+	ErrCodeInvalidConfig        = "invalid_config"
+	ErrCodeLoadFailed           = "load_failed"
+	ErrCodeValidationFailed     = "validation_failed"
+	ErrCodeFileNotFound         = "file_not_found"
+	ErrCodeFileReadError        = "file_read_error"
+	ErrCodeUnmarshalError       = "unmarshal_error"
+	ErrCodeProviderNotFound     = "provider_not_found"
+	ErrCodeProviderError        = "provider_error"
 	ErrCodeRequiredFieldMissing = "required_field_missing"
-	ErrCodeInvalidValue        = "invalid_value"
+	ErrCodeInvalidValue         = "invalid_value"
 )
 
 // ConfigError represents an error that occurred during configuration operations.

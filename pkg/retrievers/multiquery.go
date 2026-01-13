@@ -20,14 +20,14 @@ import (
 // multiple query variations using an LLM and then retrieving documents for each.
 // This approach helps improve retrieval by considering different phrasings and perspectives.
 type MultiQueryRetriever struct {
-	retriever      core.Retriever
-	llm            iface.ChatModel
-	numQueries     int
-	tracer         trace.Tracer
-	logger         *slog.Logger
-	metrics        *Metrics
-	enableTracing  bool
-	enableMetrics  bool
+	retriever     core.Retriever
+	llm           iface.ChatModel
+	numQueries    int
+	tracer        trace.Tracer
+	logger        *slog.Logger
+	metrics       *Metrics
+	enableTracing bool
+	enableMetrics bool
 }
 
 // MultiQueryRetrieverOptions holds configuration for MultiQueryRetriever.

@@ -193,7 +193,7 @@ func (p *AmazonNovaProvider) prepareNovaRequest(input *internal.AudioInput, conv
 			"audio": audioBase64,
 			"format": map[string]any{
 				"sample_rate": input.Format.SampleRate,
-				"channels":      input.Format.Channels,
+				"channels":    input.Format.Channels,
 				"encoding":    input.Format.Encoding,
 			},
 		},

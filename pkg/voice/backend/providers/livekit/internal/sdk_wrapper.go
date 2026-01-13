@@ -26,10 +26,10 @@ type RoomServiceClient struct {
 func NewRoomServiceClient(url, apiKey, apiSecret string) (*RoomServiceClient, error) {
 	// Convert URL to HTTP URL (same as SDK does)
 	url = toHTTPURL(url)
-	
+
 	// Create protobuf client directly from protocol package
 	client := livekit.NewRoomServiceProtobufClient(url, &http.Client{})
-	
+
 	return &RoomServiceClient{
 		roomService: client,
 		apiKey:      apiKey,

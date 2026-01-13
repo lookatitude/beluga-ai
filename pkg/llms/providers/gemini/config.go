@@ -68,7 +68,7 @@ func (c *GeminiConfig) ToLLMConfig() *llms.Config {
 // FromLLMConfig creates a GeminiConfig from llms.Config.
 func FromLLMConfig(config *llms.Config) *GeminiConfig {
 	geminiConfig := &GeminiConfig{
-		APIKey: config.APIKey,
+		APIKey:  config.APIKey,
 		BaseURL: config.BaseURL,
 	}
 

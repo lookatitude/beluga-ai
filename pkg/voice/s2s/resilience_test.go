@@ -40,7 +40,7 @@ func TestProviderFallback_ProcessWithFallback_RetryLogic(t *testing.T) {
 	}
 	convCtx := &internal.ConversationContext{
 		ConversationID: "test",
-		SessionID:         "test",
+		SessionID:      "test",
 	}
 
 	// Should eventually succeed with fallback2 after retries

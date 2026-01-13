@@ -8,17 +8,20 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestNewMetrics(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	assert.NotNil(t, metrics)
 }
 
 func TestMetrics_RecordSessionStart(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -27,7 +30,8 @@ func TestMetrics_RecordSessionStart(t *testing.T) {
 
 func TestMetrics_RecordSessionStop(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -36,7 +40,8 @@ func TestMetrics_RecordSessionStop(t *testing.T) {
 
 func TestMetrics_RecordSessionError(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Should not panic
@@ -44,7 +49,7 @@ func TestMetrics_RecordSessionError(t *testing.T) {
 }
 
 func TestNoOpMetrics(t *testing.T) {
-	noOp := NewNoOpMetrics()
+	noOp := NoOpMetrics()
 	ctx := context.Background()
 
 	// Should not panic
@@ -58,7 +63,8 @@ func TestNoOpMetrics(t *testing.T) {
 // TestMetrics_RecordAgentOperation tests agent operation latency recording.
 func TestMetrics_RecordAgentOperation(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -104,7 +110,8 @@ func TestMetrics_RecordAgentOperation(t *testing.T) {
 // TestMetrics_RecordAgentStreamingChunk tests agent streaming chunk duration recording.
 func TestMetrics_RecordAgentStreamingChunk(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -145,7 +152,8 @@ func TestMetrics_RecordAgentStreamingChunk(t *testing.T) {
 // TestMetrics_RecordAgentToolExecution tests agent tool execution time recording.
 func TestMetrics_RecordAgentToolExecution(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -197,7 +205,8 @@ func TestMetrics_RecordAgentToolExecution(t *testing.T) {
 // TestMetrics_RecordSessionStart_AllScenarios tests session start recording with various scenarios.
 func TestMetrics_RecordSessionStart_AllScenarios(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -238,7 +247,8 @@ func TestMetrics_RecordSessionStart_AllScenarios(t *testing.T) {
 // TestMetrics_RecordSessionStop_AllScenarios tests session stop recording with various scenarios.
 func TestMetrics_RecordSessionStop_AllScenarios(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	tests := []struct {
@@ -274,7 +284,8 @@ func TestMetrics_RecordSessionStop_AllScenarios(t *testing.T) {
 // TestMetrics_RecordSessionError_AllErrorCodes tests error recording with all error codes.
 func TestMetrics_RecordSessionError_AllErrorCodes(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	errorCodes := []string{
@@ -306,7 +317,8 @@ func TestMetrics_RecordSessionError_AllErrorCodes(t *testing.T) {
 // TestMetrics_ActiveSessionsCounter tests active sessions counter operations.
 func TestMetrics_ActiveSessionsCounter(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	// Test increment
@@ -329,7 +341,8 @@ func TestMetrics_ActiveSessionsCounter(t *testing.T) {
 // TestMetrics_EdgeCases tests edge cases for all metrics recording.
 func TestMetrics_EdgeCases(t *testing.T) {
 	meter := noop.NewMeterProvider().Meter("test")
-	metrics := NewMetrics(meter)
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+	metrics := NewMetrics(meter, tracer)
 	ctx := context.Background()
 
 	t.Run("very large durations", func(t *testing.T) {

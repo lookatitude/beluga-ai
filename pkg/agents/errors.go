@@ -7,20 +7,24 @@ import (
 
 // AgentError represents a custom error type for agent-related operations.
 // It includes context about the operation that failed and wraps the underlying error.
+// It follows the standard Op/Err/Code pattern used across all Beluga AI packages.
 type AgentError struct {
-	Err    error
-	Fields map[string]any
-	Op     string
-	Agent  string
-	Code   string
+	Op      string         // operation that failed
+	Err     error          // underlying error
+	Code    string         // error code for programmatic handling
+	Message string         // human-readable message (optional)
+	Fields  map[string]any // additional context (optional)
 }
 
 // Error implements the error interface.
 func (e *AgentError) Error() string {
-	if e.Agent != "" {
-		return fmt.Sprintf("agent %s %s: %v", e.Agent, e.Op, e.Err)
+	if e.Message != "" {
+		return fmt.Sprintf("agents %s: %s (code: %s)", e.Op, e.Message, e.Code)
 	}
-	return fmt.Sprintf("agent %s: %v", e.Op, e.Err)
+	if e.Err != nil {
+		return fmt.Sprintf("agents %s: %v (code: %s)", e.Op, e.Err, e.Code)
+	}
+	return fmt.Sprintf("agents %s: unknown error (code: %s)", e.Op, e.Code)
 }
 
 // Unwrap returns the underlying error for error wrapping.
@@ -53,14 +57,24 @@ const (
 	ErrCodeStreamError           = "stream_error"
 )
 
-// NewAgentError creates a new AgentError.
-func NewAgentError(op, agent, code string, err error) *AgentError {
+// NewAgentError creates a new AgentError following the Op/Err/Code pattern.
+func NewAgentError(op, code string, err error) *AgentError {
 	return &AgentError{
 		Op:     op,
-		Agent:  agent,
 		Code:   code,
 		Err:    err,
 		Fields: make(map[string]any),
+	}
+}
+
+// NewAgentErrorWithMessage creates a new AgentError with a custom message.
+func NewAgentErrorWithMessage(op, code, message string, err error) *AgentError {
+	return &AgentError{
+		Op:      op,
+		Code:    code,
+		Message: message,
+		Err:     err,
+		Fields:  make(map[string]any),
 	}
 }
 
