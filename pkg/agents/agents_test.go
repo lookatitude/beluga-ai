@@ -17,6 +17,15 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
+// Static error variables for testing (err113 compliance)
+var (
+	errTestOriginal = errors.New("original error")
+	errTestTimeout = errors.New("timeout")
+	errTestInvalid = errors.New("invalid")
+	errTestErr = errors.New("err")
+	errTestHandler = errors.New("handler error")
+)
+
 // mockLLM is a simple mock implementation of the LLM interface for testing.
 type mockLLM struct{}
 
@@ -605,7 +614,8 @@ func TestAgentCreationErrors(t *testing.T) {
 					t.Errorf("Expected error containing '%s', got nil", tt.errString)
 					return
 				}
-				if !errors.Is(err, errors.New(tt.errString)) && !strings.Contains(err.Error(), tt.errString) {
+				// Use string comparison instead of errors.Is with dynamic errors (err113 compliance)
+				if !strings.Contains(err.Error(), tt.errString) {
 					t.Errorf("Expected error containing '%s', got: %v", tt.errString, err)
 				}
 				return
@@ -905,7 +915,7 @@ func TestToolRegistry(t *testing.T) {
 // Test error handling and custom error types.
 func TestErrorHandling(t *testing.T) {
 	t.Run("AgentErrorCreation", func(t *testing.T) {
-		originalErr := errors.New("original error")
+		originalErr := errTestOriginal
 		agentErr := agents.NewAgentError("test_operation", "test_agent", "test_code", originalErr)
 
 		if agentErr.Op != "test_operation" {
@@ -933,12 +943,12 @@ func TestErrorHandling(t *testing.T) {
 	})
 
 	t.Run("IsRetryable", func(t *testing.T) {
-		retryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeTimeout, errors.New("timeout"))
+		retryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeTimeout, errTestTimeout)
 		if !agents.IsRetryable(retryableErr) {
 			t.Error("Timeout error should be retryable")
 		}
 
-		nonRetryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeInvalidInput, errors.New("invalid"))
+		nonRetryableErr := agents.NewAgentError("test", "agent", agents.ErrCodeInvalidInput, errTestInvalid)
 		if agents.IsRetryable(nonRetryableErr) {
 			t.Error("Invalid input error should not be retryable")
 		}
@@ -950,7 +960,7 @@ func TestErrorHandling(t *testing.T) {
 			t.Error("Should identify validation error")
 		}
 
-		agentErr := agents.NewAgentError("op", "agent", "code", errors.New("err"))
+		agentErr := agents.NewAgentError("op", "agent", "code", errTestErr)
 		if agents.IsValidationError(agentErr) {
 			t.Error("Should not identify agent error as validation error")
 		}
@@ -1010,7 +1020,7 @@ func TestEventHandling(t *testing.T) {
 	})
 
 	t.Run("EventHandlerError", func(t *testing.T) {
-		handlerErr := errors.New("handler error")
+		handlerErr := errTestHandler
 		handler := func(payload any) error {
 			return handlerErr
 		}
