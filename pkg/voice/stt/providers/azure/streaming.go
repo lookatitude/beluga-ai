@@ -62,13 +62,17 @@ func NewAzureStreamingSession(ctx context.Context, config *AzureConfig) (iface.S
 	conn, resp, err := dialer.Dial(url, headers)
 	if err != nil {
 		if resp != nil {
-			resp.Body.Close()
+			if closeErr := resp.Body.Close(); closeErr != nil {
+				// Error closing response body during error handling - non-critical
+			}
 			return nil, stt.ErrorFromHTTPStatus("StartStreaming", resp.StatusCode, err)
 		}
 		return nil, stt.NewSTTError("StartStreaming", stt.ErrCodeNetworkError, err)
 	}
 	if resp != nil {
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Error closing response body - non-critical in cleanup context
+		}
 	}
 
 	// Create context with cancel

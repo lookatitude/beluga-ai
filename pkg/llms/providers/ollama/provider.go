@@ -337,7 +337,9 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
+		if closeErr := resp.Body.Close(); closeErr != nil {
+			// Error closing response body during error handling - non-critical
+		}
 		return nil, o.handleHTTPError("streamInternal", resp)
 	}
 
@@ -347,7 +349,9 @@ func (o *OllamaProvider) streamInternal(ctx context.Context, messages []schema.M
 		defer close(outputChan)
 		defer func() {
 			if resp != nil && resp.Body != nil {
-				resp.Body.Close()
+				if closeErr := resp.Body.Close(); closeErr != nil {
+					// Error closing response body - non-critical in cleanup context
+				}
 			}
 		}()
 

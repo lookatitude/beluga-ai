@@ -282,7 +282,7 @@ func (l *RecursiveDirectoryLoader) LazyLoad(ctx context.Context) (<-chan any, er
 		// Walk directory
 		go func() {
 			defer close(fileChan)
-			fs.WalkDir(l.fsys, ".", func(path string, d fs.DirEntry, err error) error {
+			if err := fs.WalkDir(l.fsys, ".", func(path string, d fs.DirEntry, err error) error {
 				if err != nil {
 					ch <- err
 					return nil
@@ -323,7 +323,13 @@ func (l *RecursiveDirectoryLoader) LazyLoad(ctx context.Context) (<-chan any, er
 				}
 
 				return nil
-			})
+			}); err != nil {
+				// Send walk error to error channel
+				select {
+				case ch <- err:
+				case <-ctx.Done():
+				}
+			}
 		}()
 
 		wg.Wait()
