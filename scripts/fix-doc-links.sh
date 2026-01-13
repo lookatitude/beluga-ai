@@ -23,11 +23,11 @@ find "$DOCS_DIR" -name "*.md" -type f | while read file; do
     # Fix links to package design patterns
     sed -i 's|\.\/package_design_patterns\.md|../guides/package-design-patterns|g' "$file"
     
-    # Fix links to QUICKSTART.md
+    # Fix links to quickstart.md
     sed -i 's|\.\/QUICKSTART\.md|./quickstart|g' "$file"
     sed -i 's|\.\.\/QUICKSTART\.md|../getting-started/quickstart|g' "$file"
     
-    # Fix links to INSTALLATION.md
+    # Fix links to installation.md
     sed -i 's|\.\/INSTALLATION\.md|./installation|g' "$file"
     sed -i 's|\.\.\/INSTALLATION\.md|../getting-started/installation|g' "$file"
     
@@ -47,7 +47,7 @@ find "$DOCS_DIR" -name "*.md" -type f | while read file; do
     # Fix links to cookbook
     sed -i 's|\.\/cookbook\/|../cookbook/|g' "$file"
     
-    # Fix links to FRAMEWORK_COMPARISON.md
+    # Fix links to framework-comparison.md
     sed -i 's|\.\/FRAMEWORK_COMPARISON\.md|../reference/framework-comparison|g' "$file"
     
     # Fix links to API docs (remove .md extension for Docusaurus)

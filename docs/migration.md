@@ -116,7 +116,7 @@ None currently. Check [CHANGELOG.md](../CHANGELOG.md) for updates.
 
 If you encounter migration issues:
 
-1. Check [Troubleshooting Guide](./TROUBLESHOOTING.md)
+1. Check [Troubleshooting Guide](./troubleshooting.md)
 2. Review [CHANGELOG.md](../CHANGELOG.md)
 3. Search GitHub Issues
 4. Create a new issue with details

@@ -357,7 +357,7 @@ Congratulations! You've learned orchestration basics. Next, learn how to:
 
 - **[Part 7: Production Deployment](./07-production-deployment.md)** - Deploy your applications
 - **[Concepts: Orchestration](../concepts/orchestration.md)** - Deep dive into orchestration
-- **[Best Practices](../BEST_PRACTICES.md)** - Production best practices
+- **[Best Practices](../best-practices.md)** - Production best practices
 
 ---
 

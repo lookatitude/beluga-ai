@@ -6,14 +6,14 @@ This document tracks the documentation status for the Beluga AI Framework and id
 
 ### ✅ Complete Documentation
 
-- **Quick Start Guide** (`docs/QUICKSTART.md`) - ✅ Complete - Basic getting started guide
-- **Installation Guide** (`docs/INSTALLATION.md`) - ✅ Complete - Comprehensive installation instructions
+- **Quick Start Guide** (`docs/quickstart.md`) - ✅ Complete - Basic getting started guide
+- **Installation Guide** (`docs/installation.md`) - ✅ Complete - Comprehensive installation instructions
 - **Architecture Documentation** (`docs/architecture.md`) - ✅ Complete - Framework architecture overview
 - **Package Design Patterns** (`docs/package_design_patterns.md`) - ✅ Complete - Design principles and patterns
-- **Framework Comparison** (`docs/FRAMEWORK_COMPARISON.md`) - ✅ Complete - Comparison with LangChain/CrewAI
-- **Best Practices Guide** (`docs/BEST_PRACTICES.md`) - ✅ Complete - Production best practices
-- **Troubleshooting Guide** (`docs/TROUBLESHOOTING.md`) - ✅ Complete - Common issues and solutions
-- **Migration Guide** (`docs/MIGRATION.md`) - ✅ Complete - Version upgrades and framework migrations
+- **Framework Comparison** (`docs/framework-comparison.md`) - ✅ Complete - Comparison with LangChain/CrewAI
+- **Best Practices Guide** (`docs/best-practices.md`) - ✅ Complete - Production best practices
+- **Troubleshooting Guide** (`docs/troubleshooting.md`) - ✅ Complete - Common issues and solutions
+- **Migration Guide** (`docs/migration.md`) - ✅ Complete - Version upgrades and framework migrations
 - **Getting Started Tutorial** (`docs/getting-started/`) - ✅ Complete - 7-part tutorial series
 - **Concepts Guide** (`docs/concepts/`) - ✅ Complete - Core concepts documentation (6 guides)
 - **Provider Documentation** (`docs/providers/`) - ✅ Complete - LLM, VectorStore, and Embedding provider guides
@@ -30,7 +30,7 @@ All essential documentation is complete. The framework has comprehensive documen
 ## Completed Documentation Items
 
 ### 1. Installation Guide
-**File:** `docs/INSTALLATION.md`  
+**File:** `docs/installation.md`  
 **Priority:** ✅ Complete  
 **Status:** ✅ Complete
 
@@ -150,7 +150,7 @@ All essential documentation is complete. The framework has comprehensive documen
 ## Advanced Documentation
 
 ### 6. Best Practices Guide
-**File:** `docs/BEST_PRACTICES.md`  
+**File:** `docs/best-practices.md`  
 **Priority:** ✅ Complete  
 **Status:** ✅ Complete
 
@@ -168,7 +168,7 @@ All essential documentation is complete. The framework has comprehensive documen
 **Status:** Comprehensive best practices guide is complete with detailed examples and recommendations.
 
 ### 7. Migration Guide
-**File:** `docs/MIGRATION.md`  
+**File:** `docs/migration.md`  
 **Priority:** ✅ Complete  
 **Status:** ✅ Complete
 
@@ -182,7 +182,7 @@ All essential documentation is complete. The framework has comprehensive documen
 **Status:** Migration guide is complete with framework migration examples and version upgrade information.
 
 ### 8. Troubleshooting Guide
-**File:** `docs/TROUBLESHOOTING.md`  
+**File:** `docs/troubleshooting.md`  
 **Priority:** ✅ Complete  
 **Status:** ✅ Complete
 

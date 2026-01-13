@@ -202,7 +202,7 @@ Examples are designed to be extended:
 - [Getting Started Guide](../docs/getting-started/) - Step-by-step tutorials
 - [Concepts Guide](../docs/concepts/) - Core concepts and patterns
 - [API Reference](../docs/) - Complete API documentation
-- [Best Practices](../docs/BEST_PRACTICES.md) - Production patterns
+- [Best Practices](../docs/best-practices.md) - Production patterns
 
 ## Contributing
 
@@ -218,6 +218,6 @@ When adding new examples:
 
 For questions or issues:
 
-- Check the [Troubleshooting Guide](../docs/TROUBLESHOOTING.md)
+- Check the [Troubleshooting Guide](../docs/troubleshooting.md)
 - Review the [Documentation](../docs/)
 - Open an issue on GitHub

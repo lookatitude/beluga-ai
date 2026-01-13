@@ -376,7 +376,7 @@ go run main.go
 
 - **Documentation**: [Full Documentation](../README.md)
 - **Issues**: [GitHub Issues](https://github.com/lookatitude/beluga-ai/issues)
-- **Framework Comparison**: [Comparison with LangChain/CrewAI](./FRAMEWORK_COMPARISON.md)
+- **Framework Comparison**: [Comparison with LangChain/CrewAI](./framework-comparison.md)
 
 ## Summary
 

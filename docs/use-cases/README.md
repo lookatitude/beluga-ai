@@ -140,7 +140,7 @@ When creating new use cases:
 
 ## Additional Resources
 
-- [Framework Comparison](../FRAMEWORK_COMPARISON.md) - Comparison with LangChain and CrewAI
+- [Framework Comparison](../framework-comparison.md) - Comparison with LangChain and CrewAI
 - [Package Design Patterns](../package_design_patterns.md) - Framework design principles
 - [Main README](../../README.md) - Framework overview and installation
 

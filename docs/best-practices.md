@@ -465,7 +465,7 @@ provider, err := factory.CreateProvider("openai", config)
 
 - [Package Design Patterns](./package_design_patterns.md)
 - [Architecture Documentation](./architecture.md)
-- [Troubleshooting Guide](./TROUBLESHOOTING.md)
+- [Troubleshooting Guide](./troubleshooting.md)
 - [Getting Started Tutorial](./getting-started/)
 
 ---
