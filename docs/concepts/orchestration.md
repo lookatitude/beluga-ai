@@ -176,5 +176,5 @@ Graphs handle errors by:
 
 ---
 
-**Next:** Review [Best Practices](../BEST_PRACTICES.md) or explore [Use Cases](../use-cases/)
+**Next:** Review [Best Practices](../best-practices.md) or explore [Use Cases](../use-cases/)
 

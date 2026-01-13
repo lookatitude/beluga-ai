@@ -55,10 +55,10 @@ This directory contains detailed documentation for all Beluga AI Framework provi
 
 ## Related Documentation
 
-- [Installation Guide](../INSTALLATION.md) - Setup instructions
+- [Installation Guide](../installation.md) - Setup instructions
 - [Getting Started Tutorial](../getting-started/) - Step-by-step guides
-- [Best Practices](../BEST_PRACTICES.md) - Production patterns
-- [Troubleshooting](../TROUBLESHOOTING.md) - Common issues
+- [Best Practices](../best-practices.md) - Production patterns
+- [Troubleshooting](../troubleshooting.md) - Common issues
 
 ---
 

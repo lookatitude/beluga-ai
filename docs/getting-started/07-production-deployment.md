@@ -478,8 +478,8 @@ func main() {
 
 Congratulations! You've completed the Getting Started Tutorial series. Next, explore:
 
-- **[Best Practices](../BEST_PRACTICES.md)** - Production best practices
-- **[Troubleshooting](../TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Best Practices](../best-practices.md)** - Production best practices
+- **[Troubleshooting](../troubleshooting.md)** - Common issues and solutions
 - **[Use Cases](../use-cases/)** - Real-world examples
 - **[API Reference](../../website/docs/api/)** - Detailed API documentation
 

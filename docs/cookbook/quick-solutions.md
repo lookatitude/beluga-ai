@@ -41,5 +41,5 @@ llms.WithRetryConfig(5, 2*time.Second, 2.0)
 
 ---
 
-**More Help:** [Troubleshooting Guide](../TROUBLESHOOTING.md)
+**More Help:** [Troubleshooting Guide](../troubleshooting.md)
 

@@ -17,7 +17,7 @@
   </p>
   
   <p>
-    <a href="./docs/QUICKSTART.md">Quick Start</a> •
+    <a href="./docs/quickstart.md">Quick Start</a> •
     <a href="./docs/README.md">Documentation</a> •
     <a href="./examples/README.md">Examples</a> •
     <a href="#features">Features</a> •
@@ -106,14 +106,14 @@ func main() {
 }
 ```
 
-**New to Beluga AI?** Check out our [Quick Start Guide](./docs/QUICKSTART.md) to get up and running in minutes!
+**New to Beluga AI?** Check out our [Quick Start Guide](./docs/quickstart.md) to get up and running in minutes!
 
 ## 📚 Documentation
 
 ### Getting Started
 
-- **[Installation Guide](./docs/INSTALLATION.md)** - Comprehensive installation instructions
-- **[Quick Start Guide](./docs/QUICKSTART.md)** - Get started in minutes
+- **[Installation Guide](./docs/installation.md)** - Comprehensive installation instructions
+- **[Quick Start Guide](./docs/quickstart.md)** - Get started in minutes
 - **[Getting Started Tutorial](./docs/getting-started/)** - Multi-part tutorial series
 
 ### Core Documentation
@@ -121,15 +121,15 @@ func main() {
 - **[Architecture Documentation](./docs/architecture.md)** - System architecture and design patterns
 - **[Package Design Patterns](./docs/package_design_patterns.md)** - Design principles and conventions
 - **[Concepts Guide](./docs/concepts/)** - Core concepts and architectural patterns
-- **[Best Practices](./docs/BEST_PRACTICES.md)** - Production best practices
-- **[Troubleshooting Guide](./docs/TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Best Practices](./docs/best-practices.md)** - Production best practices
+- **[Troubleshooting Guide](./docs/troubleshooting.md)** - Common issues and solutions
 
 ### Reference
 
 - **[API Documentation](./docs/)** - Complete API reference
 - **[Provider Documentation](./docs/providers/)** - Provider-specific guides
-- **[Migration Guide](./docs/MIGRATION.md)** - Version upgrades and migrations
-- **[Framework Comparison](./docs/FRAMEWORK_COMPARISON.md)** - Comparison with LangChain and CrewAI
+- **[Migration Guide](./docs/migration.md)** - Version upgrades and migrations
+- **[Framework Comparison](./docs/framework-comparison.md)** - Comparison with LangChain and CrewAI
 
 ### Additional Resources
 
@@ -220,7 +220,7 @@ make install-tools
 make test
 ```
 
-For detailed installation instructions, see the [Installation Guide](./docs/INSTALLATION.md).
+For detailed installation instructions, see the [Installation Guide](./docs/installation.md).
 
 ## ⚙️ Configuration
 

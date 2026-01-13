@@ -507,7 +507,7 @@ config := llms.NewConfig(
 
 ## Troubleshooting
 
-See [Troubleshooting Guide](../../TROUBLESHOOTING.md) for common issues.
+See [Troubleshooting Guide](../../troubleshooting.md) for common issues.
 
 ---
 

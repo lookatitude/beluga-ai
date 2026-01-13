@@ -45,6 +45,6 @@ go run main.go
 
 ## Related Documentation
 
-- [Best Practices](../../docs/BEST_PRACTICES.md)
+- [Best Practices](../../docs/best-practices.md)
 - [Production Deployment](../../docs/getting-started/07-production-deployment.md)
 - [Monitoring](../../pkg/monitoring/README.md)

@@ -60,7 +60,7 @@ CREATE INDEX ON documents USING ivfflat (embedding vector_cosine_ops);
 
 ## Troubleshooting
 
-See [Troubleshooting Guide](../../TROUBLESHOOTING.md) for common issues.
+See [Troubleshooting Guide](../../troubleshooting.md) for common issues.
 
 ---
 

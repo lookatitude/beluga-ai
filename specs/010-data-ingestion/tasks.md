@@ -239,8 +239,8 @@
 - [x] T090 [P] Update docs/concepts/rag.md to include document loading and text splitting sections
 - [x] T091 [P] Create docs/getting-started/03-document-ingestion.md tutorial for document loading and splitting
 - [x] T092 [P] Create docs/cookbook/document-ingestion-recipes.md with common patterns and recipes
-- [x] T093 [P] Update docs/API_PACKAGE_INVENTORY.md to include pkg/documentloaders and pkg/textsplitters
-- [x] T094 [P] Update docs/FRAMEWORK_COMPARISON.md to reflect new document loading and splitting capabilities
+- [x] T093 [P] Update docs/api-package-inventory.md to include pkg/documentloaders and pkg/textsplitters
+- [x] T094 [P] Update docs/framework-comparison.md to reflect new document loading and splitting capabilities
 
 ### Website Documentation (if applicable)
 

@@ -18,7 +18,7 @@ This series consists of 7 progressive tutorials that build upon each other:
 
 Before starting, ensure you have:
 
-- ✅ **Go 1.24 or later** installed ([Installation Guide](../INSTALLATION.md))
+- ✅ **Go 1.24 or later** installed ([Installation Guide](../installation.md))
 - ✅ **API Keys** for at least one LLM provider:
   - OpenAI: [Get API Key](https://platform.openai.com/api-keys)
   - Anthropic: [Get API Key](https://console.anthropic.com/)
@@ -46,7 +46,7 @@ If you have experience with LLMs:
 If you're building production systems:
 1. Skip to [Part 6: Orchestration](./06-orchestration-basics.md)
 2. Review [Part 7: Production Deployment](./07-production-deployment.md)
-3. Reference [Best Practices](../BEST_PRACTICES.md) for production patterns
+3. Reference [Best Practices](../best-practices.md) for production patterns
 
 ## Tutorial Structure
 
@@ -63,8 +63,8 @@ Each tutorial includes:
 
 If you encounter issues:
 
-1. Check the [Troubleshooting Guide](../TROUBLESHOOTING.md)
-2. Review the [Quick Start Guide](../QUICKSTART.md)
+1. Check the [Troubleshooting Guide](../troubleshooting.md)
+2. Review the [Quick Start Guide](../quickstart.md)
 3. Search [GitHub Issues](https://github.com/lookatitude/beluga-ai/issues)
 4. Ask questions in discussions
 

@@ -684,8 +684,8 @@ curl https://api.openai.com/v1/models \
 If you encounter issues not covered here:
 
 1. **Check existing documentation:**
-   - [Quick Start Guide](./QUICKSTART.md)
-   - [Troubleshooting Guide](./TROUBLESHOOTING.md)
+   - [Quick Start Guide](./quickstart.md)
+   - [Troubleshooting Guide](./troubleshooting.md)
 
 2. **Search GitHub Issues:**
    - https://github.com/lookatitude/beluga-ai/issues
@@ -700,7 +700,7 @@ If you encounter issues not covered here:
 
 After installation, continue with:
 
-1. **[Quick Start Guide](./QUICKSTART.md)** - Get started in minutes
+1. **[Quick Start Guide](./quickstart.md)** - Get started in minutes
 2. **[Getting Started Tutorial](./getting-started/)** - Step-by-step tutorials
 3. **[Architecture Documentation](./architecture.md)** - Understand the framework
 4. **[Use Cases](./use-cases/)** - Real-world examples

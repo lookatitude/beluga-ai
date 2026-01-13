@@ -2,7 +2,7 @@
 
 ## Beluga AI vs CrewAI vs LangChain vs LangChainGo vs AutoGen vs LlamaIndex vs Semantic Kernel vs LangGraph vs Haystack vs OpenAI Swarm vs DB-GPT vs Agent-Zero
 
-**Last Updated**: January 2026
+**Last Updated**: 2026-01-12
 
 ## Executive Summary
 

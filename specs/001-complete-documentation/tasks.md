@@ -83,7 +83,7 @@
 - [X] T029 [US3] Research vectorstore provider packages by listing `pkg/vectorstores/providers/` directory (if exists) and identifying provider sub-packages that should be documented
 - [X] T030 [US3] Research config provider packages by listing `pkg/config/providers/` directory and identifying provider sub-packages that should be documented
 - [X] T031 [US3] Research chatmodel provider packages by listing `pkg/chatmodels/providers/` directory and identifying provider sub-packages that should be documented
-- [X] T032 [US3] Create comprehensive package inventory document `docs/API_PACKAGE_INVENTORY.md` listing all packages, sub-packages, and their documentation status (documented/not documented)
+- [X] T032 [US3] Create comprehensive package inventory document `docs/api-package-inventory.md` listing all packages, sub-packages, and their documentation status (documented/not documented)
 
 ### Script Improvements
 
@@ -102,7 +102,7 @@
 - [X] T042 [US3] Research godoc comment coverage for core package by running `go doc pkg/core` and checking which exported functions/types have godoc comments
 - [X] T043 [P] [US3] Research godoc comment coverage for each main package: run `go doc` for agents, chatmodels, config, embeddings, llms, memory, monitoring, orchestration, prompts, retrievers, schema, server, vectorstores and identify functions/types missing godoc comments
 - [X] T044 [P] [US3] Research godoc comment coverage for voice packages: run `go doc` for stt, tts, vad, turndetection, transport, noise, session and identify missing godoc comments
-- [X] T045 [US3] Create godoc completeness report `docs/GODOC_COVERAGE_REPORT.md` listing all packages, exported functions/types, and their godoc comment status (has comment/missing comment)
+- [X] T045 [US3] Create godoc completeness report `docs/godoc-coverage-report.md` listing all packages, exported functions/types, and their godoc comment status (has comment/missing comment)
 - [X] T046 [US3] Identify critical missing godoc comments by reviewing coverage report and prioritizing public API functions that are most commonly used (e.g., New* functions, main interface methods)
 
 ### Website API Reference Updates

@@ -546,9 +546,9 @@ A:
 If you can't resolve an issue:
 
 1. **Check documentation:**
-   - [Quick Start Guide](./QUICKSTART.md)
+   - [Quick Start Guide](./quickstart.md)
    - [Getting Started Tutorial](./getting-started/)
-   - [Best Practices](./BEST_PRACTICES.md)
+   - [Best Practices](./best-practices.md)
 
 2. **Search GitHub Issues:**
    - https://github.com/lookatitude/beluga-ai/issues

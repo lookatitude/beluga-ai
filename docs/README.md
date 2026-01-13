@@ -6,14 +6,14 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
 
 ### Getting Started
 
-- **[Installation Guide](./INSTALLATION.md)** - Comprehensive installation instructions
+- **[Installation Guide](./installation.md)** - Comprehensive installation instructions
   - System requirements
   - Platform-specific installation (Linux, macOS, Windows)
   - Docker installation
   - Development environment setup
   - Troubleshooting
 
-- **[Quick Start Guide](./QUICKSTART.md)** - Get up and running in minutes with step-by-step instructions
+- **[Quick Start Guide](./quickstart.md)** - Get up and running in minutes with step-by-step instructions
   - Installation
   - First LLM call
   - Configuration setup
@@ -70,7 +70,7 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
 
 ### Framework Comparison
 
-- **[Framework Comparison](./FRAMEWORK_COMPARISON.md)** - Detailed comparison with LangChain and CrewAI
+- **[Framework Comparison](./framework-comparison.md)** - Detailed comparison with LangChain and CrewAI
   - Feature parity analysis
   - Flexibility and ease of use
   - Pros and cons
@@ -120,7 +120,7 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
 
 ### Best Practices & Guides
 
-- **[Best Practices Guide](./BEST_PRACTICES.md)** - Production best practices
+- **[Best Practices Guide](./best-practices.md)** - Production best practices
   - Configuration management
   - Error handling patterns
   - Performance optimization
@@ -128,7 +128,7 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
   - Testing strategies
   - Deployment patterns
 
-- **[Troubleshooting Guide](./TROUBLESHOOTING.md)** - Common issues and solutions
+- **[Troubleshooting Guide](./troubleshooting.md)** - Common issues and solutions
   - Common errors and fixes
   - Performance issues
   - Configuration problems
@@ -136,7 +136,7 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
   - Debugging tips
   - FAQ
 
-- **[Migration Guide](./MIGRATION.md)** - Version upgrades and framework migrations
+- **[Migration Guide](./migration.md)** - Version upgrades and framework migrations
   - Version upgrade guides
   - Migration from LangChain/CrewAI
   - Deprecation notices
@@ -154,7 +154,7 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
 
 ### Documentation Roadmap
 
-- **[Documentation Roadmap](./DOCUMENTATION_ROADMAP.md)** - Planned documentation improvements
+- **[Documentation Roadmap](./documentation-roadmap.md)** - Planned documentation improvements
   - Missing documentation identified
   - Planned additions for parity with LangChain/CrewAI
   - Priority items
@@ -164,15 +164,15 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
 ```
 docs/
 ├── README.md                    # This file - documentation index
-├── INSTALLATION.md             # Installation guide
-├── QUICKSTART.md               # Quick start guide
+├── installation.md             # Installation guide
+├── quickstart.md               # Quick start guide
 ├── architecture.md             # Architecture documentation
 ├── package_design_patterns.md  # Design patterns guide
-├── FRAMEWORK_COMPARISON.md     # Comparison with other frameworks
-├── BEST_PRACTICES.md           # Best practices guide
-├── TROUBLESHOOTING.md          # Troubleshooting guide
-├── MIGRATION.md                # Migration guide
-├── DOCUMENTATION_ROADMAP.md    # Documentation roadmap
+├── framework-comparison.md     # Comparison with other frameworks
+├── best-practices.md           # Best practices guide
+├── troubleshooting.md          # Troubleshooting guide
+├── migration.md                # Migration guide
+├── documentation-roadmap.md    # Documentation roadmap
 ├── getting-started/            # Multi-part tutorial series
 │   ├── README.md
 │   └── 01-*.md through 07-*.md
@@ -195,7 +195,7 @@ docs/
 ## 🚀 Quick Navigation
 
 ### For New Users
-1. Start with the **[Installation Guide](./INSTALLATION.md)**
+1. Start with the **[Installation Guide](./installation.md)**
 2. Follow the **[Getting Started Tutorial](./getting-started/)** series
 3. Review the **[Architecture Documentation](./architecture.md)** to understand the framework
 4. Explore **[Use Cases](./use-cases/)** for inspiration
@@ -203,8 +203,8 @@ docs/
 ### For Developers
 1. Read **[Package Design Patterns](./package_design_patterns.md)** for coding standards
 2. Study **[Concepts Guide](./concepts/)** for core concepts
-3. Review **[Best Practices](./BEST_PRACTICES.md)** for production patterns
-4. Check **[Framework Comparison](./FRAMEWORK_COMPARISON.md)** for competitive context
+3. Review **[Best Practices](./best-practices.md)** for production patterns
+4. Check **[Framework Comparison](./framework-comparison.md)** for competitive context
 
 ### For Architects
 1. Review **[Architecture Documentation](./architecture.md)** for system design
@@ -238,8 +238,8 @@ docs/
 ### By Topic
 
 **Installation & Setup**
-- [Installation Guide](./INSTALLATION.md) - Comprehensive installation
-- [Quick Start Guide](./QUICKSTART.md) - Quick setup and first steps
+- [Installation Guide](./installation.md) - Comprehensive installation
+- [Quick Start Guide](./quickstart.md) - Quick setup and first steps
 - [Getting Started Tutorial](./getting-started/) - Step-by-step tutorials
 
 **Architecture & Design**
@@ -249,20 +249,20 @@ docs/
 
 **Usage & Examples**
 - [Getting Started Tutorial](./getting-started/) - Step-by-step tutorials
-- [Quick Start Guide](./QUICKSTART.md) - Basic usage
+- [Quick Start Guide](./quickstart.md) - Basic usage
 - [Use Cases](./use-cases/) - Real-world examples
 - [Cookbook](./cookbook/) - Quick recipes and snippets
 - [Examples Directory](../examples/) - Code examples
 - [Provider Documentation](./providers/) - Provider-specific guides
 
 **Comparison & Context**
-- [Framework Comparison](./FRAMEWORK_COMPARISON.md) - vs LangChain/CrewAI
+- [Framework Comparison](./framework-comparison.md) - vs LangChain/CrewAI
 
 **Development**
 - [Package Design Patterns](./package_design_patterns.md) - Development guidelines
-- [Best Practices](./BEST_PRACTICES.md) - Production best practices
-- [Troubleshooting Guide](./TROUBLESHOOTING.md) - Common issues and solutions
-- [Migration Guide](./MIGRATION.md) - Version upgrades and migrations
+- [Best Practices](./best-practices.md) - Production best practices
+- [Troubleshooting Guide](./troubleshooting.md) - Common issues and solutions
+- [Migration Guide](./migration.md) - Version upgrades and migrations
 - [Contributing Guide](../CONTRIBUTING.md) - Contribution process
 
 ## 📝 Documentation Status
@@ -282,7 +282,7 @@ docs/
 - Cookbook (6 recipe collections)
 - Use Cases (10 examples)
 
-See [Documentation Roadmap](./DOCUMENTATION_ROADMAP.md) for details on documentation status.
+See [Documentation Roadmap](./documentation-roadmap.md) for details on documentation status.
 
 ## 🤝 Contributing to Documentation
 
@@ -299,7 +299,7 @@ We welcome contributions to improve our documentation! Please see the [Contribut
 
 - **Documentation Issues**: Open an issue on GitHub
 - **Questions**: Check existing documentation first, then open a discussion
-- **Feature Requests**: See the [Documentation Roadmap](./DOCUMENTATION_ROADMAP.md)
+- **Feature Requests**: See the [Documentation Roadmap](./documentation-roadmap.md)
 
 ---
 

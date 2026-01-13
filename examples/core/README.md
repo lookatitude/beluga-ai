@@ -29,4 +29,4 @@ go run main.go
 ## Related Documentation
 
 - [Core Package Documentation](../../pkg/core/README.md)
-- [Error Handling Guide](../../docs/BEST_PRACTICES.md)
+- [Error Handling Guide](../../docs/best-practices.md)
