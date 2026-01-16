@@ -18,6 +18,7 @@ paths = [
     '''.*/examples/.*''',
     '''.*docs/.*''',
     '''.*website/.*''',
+    '''.*specs/.*''',
 ]
 
 # Allow specific patterns in test files

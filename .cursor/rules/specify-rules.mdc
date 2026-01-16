@@ -277,6 +277,7 @@ When creating specifications (`spec.md`), MUST ensure:
    ```
 
 ## Active Technologies
+- Go 1.24+ (001-twilio-integration)
 
 - **Go Version**: 1.24+ (matches `go.mod`)
 - **OpenTelemetry**: go.opentelemetry.io/otel (metrics, tracing, logging)
@@ -295,3 +296,6 @@ When creating specifications (`spec.md`), MUST ensure:
 - **Package Design Patterns**: `docs/package_design_patterns.md`
 - **Architecture Documentation**: `docs/architecture.md`
 - **Makefile**: `Makefile` for all command definitions
+
+## Recent Changes
+- 001-twilio-integration: Added Go 1.24+
