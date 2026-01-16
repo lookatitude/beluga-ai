@@ -388,6 +388,9 @@ func convertLinearToMuLaw(linear []byte) []byte {
 	result := make([]byte, len(linear)/2)
 	for i := 0; i < len(linear); i += 2 {
 		// Read 16-bit signed PCM sample (little-endian)
+		// Note: Converting uint16 bytes to int16 is safe here as we're interpreting
+		// the raw bytes as a signed 16-bit integer (standard PCM format)
+		// #nosec G115 -- Safe conversion: interpreting bytes as signed PCM sample
 		sample := int16(binary.LittleEndian.Uint16(linear[i : i+2]))
 		result[i/2] = encodeMuLawSample(sample)
 	}
@@ -402,6 +405,9 @@ func convertMuLawToLinear(mulaw []byte) []byte {
 	for i, u := range mulaw {
 		sample := parseMuLawSample(u)
 		// Write 16-bit signed PCM sample (little-endian)
+		// Note: Converting int16 to uint16 for binary encoding is safe here as we're
+		// writing the raw bytes of a signed integer (standard PCM format)
+		// #nosec G115 -- Safe conversion: writing signed PCM sample as raw bytes
 		binary.LittleEndian.PutUint16(result[i*2:i*2+2], uint16(sample))
 	}
 	return result
@@ -440,10 +446,19 @@ func parseMuLawSample(sample byte) int16 {
 	magnitude := ((uint16(mantissa) << 3) + ulawBias) << exponent
 	magnitude -= ulawBias
 
+	// Clamp magnitude to int16 range to prevent overflow
+	// Mu-law encoding limits output to ulawClip (32635), which fits in int16
+	const maxInt16 = 32767
+	if magnitude > maxInt16 {
+		magnitude = maxInt16
+	}
+
 	var linear int16
 	if sign != 0 {
+		// #nosec G115 -- Safe conversion: magnitude clamped to int16 range
 		linear = -int16(magnitude)
 	} else {
+		// #nosec G115 -- Safe conversion: magnitude clamped to int16 range
 		linear = int16(magnitude)
 	}
 	return linear

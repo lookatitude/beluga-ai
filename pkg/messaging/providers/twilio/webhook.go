@@ -3,7 +3,7 @@ package twilio
 import (
 	"context"
 	"crypto/hmac"
-	"crypto/sha1"
+	"crypto/sha1" // #nosec G505 -- SHA1 required by Twilio API for webhook signature validation
 	"encoding/base64"
 	"errors"
 	"fmt"
@@ -152,6 +152,8 @@ func (p *TwilioProvider) validateWebhookSignature(webhookData map[string]string)
 	signatureString := url + paramString
 
 	// Compute expected signature
+	// Note: Twilio requires SHA1 for webhook signature validation (Twilio API requirement)
+	// #nosec G505 -- SHA1 required by Twilio API for webhook signature validation
 	mac := hmac.New(sha1.New, []byte(p.config.AuthToken))
 	mac.Write([]byte(signatureString))
 	expectedSignature := base64.StdEncoding.EncodeToString(mac.Sum(nil))
