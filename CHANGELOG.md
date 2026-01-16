@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.9.0](https://github.com/lookatitude/beluga-ai/compare/v1.8.1...v1.9.0) (2026-01-16)
+
+
+### Features
+
+* **twilio:** complete integration with Beluga AI session package and advanced features ([62adb26](https://github.com/lookatitude/beluga-ai/commit/62adb26309c9871839e4baa26d266b8f7322ad68))
+
+
+### Bug Fixes
+
+* add specs directory to gitleaks allowlist ([5ce1246](https://github.com/lookatitude/beluga-ai/commit/5ce1246f39cd13bfc20801350d6946821b6d1bf1))
+* data race in Twilio messaging orchestration session map access ([90daa76](https://github.com/lookatitude/beluga-ai/commit/90daa7669e08d58ecbe52279c3090de2ad947c4c))
+* resolve gosec security warnings for Twilio integration ([1ad93b0](https://github.com/lookatitude/beluga-ai/commit/1ad93b0796b9340b1fc443858621f6ad22d5e4e5))
+
 ## [1.8.1](https://github.com/lookatitude/beluga-ai/compare/v1.8.0...v1.8.1) (2026-01-13)
 
 
