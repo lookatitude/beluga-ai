@@ -576,3 +576,13 @@ func SkipIfShortMode(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 }
+
+// GetEnvOrSkip gets an environment variable or skips the test if not set.
+func GetEnvOrSkip(t *testing.T, key string) string {
+	t.Helper()
+	value := os.Getenv(key)
+	if value == "" {
+		t.Skipf("Skipping test: %s environment variable not set", key)
+	}
+	return value
+}
