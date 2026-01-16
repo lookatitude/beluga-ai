@@ -8,21 +8,21 @@ import (
 	"time"
 
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
+	"github.com/lookatitude/beluga-ai/pkg/memory"
+	memoryiface "github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
-	"github.com/lookatitude/beluga-ai/pkg/memory"
-	memoryiface "github.com/lookatitude/beluga-ai/pkg/memory/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
 	transportiface "github.com/lookatitude/beluga-ai/pkg/voice/transport/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -103,19 +103,19 @@ func (t *TwilioTransportAdapter) Close() error {
 // TwilioSessionAdapter wraps pkg/voice/session with Twilio-specific audio handling.
 // It bridges the session package's VoiceSession interface with Twilio's backend VoiceSession interface.
 type TwilioSessionAdapter struct {
-	session     sessioniface.VoiceSession
-	audioStream *AudioStream
-	transport   transportiface.Transport
-	backend     *TwilioBackend
-	callSID     string
-	id          string
-	mu          sync.RWMutex
-	active      bool
-	startTime   time.Time
+	session      sessioniface.VoiceSession
+	audioStream  *AudioStream
+	transport    transportiface.Transport
+	backend      *TwilioBackend
+	callSID      string
+	id           string
+	mu           sync.RWMutex
+	active       bool
+	startTime    time.Time
 	lastActivity time.Time
-	metadata    map[string]any
-	audioInput  chan []byte
-	audioOutput chan []byte
+	metadata     map[string]any
+	audioInput   chan []byte
+	audioOutput  chan []byte
 }
 
 // NewTwilioSessionAdapter creates a new Twilio session adapter.

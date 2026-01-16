@@ -32,8 +32,8 @@ type TwilioConfig struct {
 	MaxConnsPerHost int `mapstructure:"max_conns_per_host" yaml:"max_conns_per_host" env:"TWILIO_MAX_CONNS_PER_HOST" default:"10"`
 
 	// S2S (Speech-to-Speech) configuration
-	S2SProvider string                 `mapstructure:"s2s_provider" yaml:"s2s_provider" env:"TWILIO_S2S_PROVIDER"`
-	S2SConfig   map[string]any         `mapstructure:"s2s_config" yaml:"s2s_config" env:"TWILIO_S2S_CONFIG"`
+	S2SProvider string         `mapstructure:"s2s_provider" yaml:"s2s_provider" env:"TWILIO_S2S_PROVIDER"`
+	S2SConfig   map[string]any `mapstructure:"s2s_config" yaml:"s2s_config" env:"TWILIO_S2S_CONFIG"`
 
 	// VAD (Voice Activity Detection) configuration
 	VADProvider string         `mapstructure:"vad_provider" yaml:"vad_provider" env:"TWILIO_VAD_PROVIDER"`

@@ -16,10 +16,10 @@ import (
 // MockVoiceSession implements sessioniface.VoiceSession for testing.
 type MockVoiceSession struct {
 	mock.Mock
-	id      string
-	active  bool
-	state   string
-	mu      sync.RWMutex
+	id     string
+	active bool
+	state  string
+	mu     sync.RWMutex
 }
 
 func (m *MockVoiceSession) Start(ctx context.Context) error {
@@ -145,8 +145,8 @@ func TestTwilioSessionAdapter_Creation(t *testing.T) {
 			name: "create adapter with STT+TTS",
 			config: &TwilioConfig{
 				Config: &vbiface.Config{
-					STTProvider:  "openai",
-					TTSProvider:  "openai",
+					STTProvider: "openai",
+					TTSProvider: "openai",
 					ProviderConfig: map[string]any{
 						"stt": map[string]any{
 							"api_key": "test-key",
@@ -212,8 +212,8 @@ func TestTwilioSessionAdapter_StartStop(t *testing.T) {
 
 	config := &TwilioConfig{
 		Config: &vbiface.Config{
-			STTProvider:  "openai",
-			TTSProvider:  "openai",
+			STTProvider:    "openai",
+			TTSProvider:    "openai",
 			ProviderConfig: map[string]any{},
 		},
 	}
@@ -240,7 +240,7 @@ func TestTwilioSessionAdapter_StartStop(t *testing.T) {
 
 func TestTwilioSessionAdapter_ProcessAudio(t *testing.T) {
 	ctx := context.Background()
-	
+
 	// This test will fail because we need proper session setup, but demonstrates the test pattern
 	t.Skip("Requires proper session package setup")
 
@@ -250,8 +250,8 @@ func TestTwilioSessionAdapter_ProcessAudio(t *testing.T) {
 
 	config := &TwilioConfig{
 		Config: &vbiface.Config{
-			STTProvider:  "openai",
-			TTSProvider:  "openai",
+			STTProvider:    "openai",
+			TTSProvider:    "openai",
 			ProviderConfig: map[string]any{},
 		},
 	}
@@ -268,7 +268,7 @@ func TestTwilioSessionAdapter_ProcessAudio(t *testing.T) {
 	// For now, just verify adapter was created
 	assert.NotNil(t, adapter)
 	assert.Equal(t, "CA123", adapter.GetID())
-	
+
 	// Note: ProcessAudio testing requires proper backend.StreamAudio setup
 	// which is tested in integration tests
 }
@@ -277,7 +277,7 @@ func TestTwilioTransportAdapter_SendAudio(t *testing.T) {
 	// Note: TwilioTransportAdapter needs *AudioStream, not MockAudioStream
 	// For now, test the codec conversion functions directly
 	pcmAudio := make([]byte, 320) // 160 samples * 2 bytes = 320 bytes
-	
+
 	// Test mu-law conversion (independent of AudioStream)
 	mulawAudio := convertPCMToMuLaw(pcmAudio)
 	assert.NotNil(t, mulawAudio)
@@ -303,39 +303,39 @@ func TestTwilioTransportAdapter_Close(t *testing.T) {
 
 func TestMapSessionStateToBackendState(t *testing.T) {
 	tests := []struct {
-		name        string
+		name         string
 		sessionState sessioniface.SessionState
-		expected    vbiface.PipelineState
+		expected     vbiface.PipelineState
 	}{
 		{
-			name:        "initial state",
+			name:         "initial state",
 			sessionState: "initial",
-			expected:    vbiface.PipelineStateIdle,
+			expected:     vbiface.PipelineStateIdle,
 		},
 		{
-			name:        "listening state",
+			name:         "listening state",
 			sessionState: "listening",
-			expected:    vbiface.PipelineStateListening,
+			expected:     vbiface.PipelineStateListening,
 		},
 		{
-			name:        "processing state",
+			name:         "processing state",
 			sessionState: "processing",
-			expected:    vbiface.PipelineStateProcessing,
+			expected:     vbiface.PipelineStateProcessing,
 		},
 		{
-			name:        "speaking state",
+			name:         "speaking state",
 			sessionState: "speaking",
-			expected:    vbiface.PipelineStateSpeaking,
+			expected:     vbiface.PipelineStateSpeaking,
 		},
 		{
-			name:        "away state",
+			name:         "away state",
 			sessionState: "away",
-			expected:    vbiface.PipelineStateIdle,
+			expected:     vbiface.PipelineStateIdle,
 		},
 		{
-			name:        "ended state",
+			name:         "ended state",
 			sessionState: "ended",
-			expected:    vbiface.PipelineStateIdle,
+			expected:     vbiface.PipelineStateIdle,
 		},
 	}
 
@@ -477,7 +477,7 @@ func TestExtractCallSID(t *testing.T) {
 		{
 			name: "ResourceSID as fallback",
 			event: &WebhookEvent{
-				EventData:     map[string]any{},
+				EventData:   map[string]any{},
 				ResourceSID: "CA1234567890",
 			},
 			expected: "CA1234567890",

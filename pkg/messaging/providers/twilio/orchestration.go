@@ -50,22 +50,35 @@ func (m *OrchestrationManager) createDefaultMessageFlowWorkflow() error {
 				return nil, fmt.Errorf("invalid input type")
 			}
 
-			// Get or create session
+			// Get or create session (thread-safe)
+			// First, check with read lock
+			m.provider.mu.RLock()
 			session, exists := m.provider.sessions[message.ConversationSID]
+			m.provider.mu.RUnlock()
+
 			if !exists {
-				// Create new session
-				var err error
-				session, err = NewMessagingSession(message.ConversationSID, m.provider.config, m.provider)
-				if err != nil {
-					return nil, err
-				}
-
+				// Create new session - use write lock with double-check pattern
+				// to avoid race condition where multiple goroutines create sessions
 				m.provider.mu.Lock()
-				m.provider.sessions[message.ConversationSID] = session
-				m.provider.mu.Unlock()
+				// Double-check: another goroutine might have created it while we waited for lock
+				session, exists = m.provider.sessions[message.ConversationSID]
+				if !exists {
+					var err error
+					session, err = NewMessagingSession(message.ConversationSID, m.provider.config, m.provider)
+					if err != nil {
+						m.provider.mu.Unlock()
+						return nil, err
+					}
 
-				if err := session.Start(ctx); err != nil {
-					return nil, err
+					m.provider.sessions[message.ConversationSID] = session
+					m.provider.mu.Unlock()
+
+					if err := session.Start(ctx); err != nil {
+						return nil, err
+					}
+				} else {
+					// Session was created by another goroutine, just use it
+					m.provider.mu.Unlock()
 				}
 			}
 
