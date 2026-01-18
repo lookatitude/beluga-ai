@@ -583,3 +583,304 @@ func BenchmarkHelperFunctions(b *testing.B) {
 		}
 	})
 }
+
+// TestRetrieversFactoryFunctions tests factory functions in retrievers.go.
+func TestRetrieversFactoryFunctions(t *testing.T) {
+	ctx := context.Background()
+	mockVectorStore := NewMockVectorStore()
+
+	tests := []struct {
+		name        string
+		setupFn     func() (*VectorStoreRetriever, error)
+		validateFn  func(t *testing.T, retriever *VectorStoreRetriever, err error)
+		description string
+		wantErr     bool
+	}{
+		{
+			name:        "new_vector_store_retriever_with_defaults",
+			description: "Test creating retriever with default options",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				return NewVectorStoreRetriever(mockVectorStore)
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.NoError(t, err)
+				assert.NotNil(t, retriever)
+				assert.Equal(t, 4, retriever.defaultK)
+				assert.Equal(t, float32(0.0), retriever.scoreThreshold)
+				assert.Equal(t, 3, retriever.maxRetries)
+				assert.Equal(t, 30*time.Second, retriever.timeout)
+			},
+			wantErr: false,
+		},
+		{
+			name:        "new_vector_store_retriever_with_custom_options",
+			description: "Test creating retriever with custom options",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				return NewVectorStoreRetriever(mockVectorStore,
+					WithDefaultK(10),
+					WithMaxRetries(5),
+					WithTimeout(60*time.Second),
+				)
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.NoError(t, err)
+				assert.NotNil(t, retriever)
+				assert.Equal(t, 10, retriever.defaultK)
+				assert.Equal(t, float32(0.0), retriever.scoreThreshold) // Default value
+				assert.Equal(t, 5, retriever.maxRetries)
+				assert.Equal(t, 60*time.Second, retriever.timeout)
+			},
+			wantErr: false,
+		},
+		{
+			name:        "new_vector_store_retriever_invalid_k_too_low",
+			description: "Test creating retriever with invalid k (too low)",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				return NewVectorStoreRetriever(mockVectorStore, WithDefaultK(0))
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.Error(t, err)
+				assert.Nil(t, retriever)
+				AssertErrorType(t, err, ErrCodeInvalidConfig)
+			},
+			wantErr: true,
+		},
+		{
+			name:        "new_vector_store_retriever_invalid_k_too_high",
+			description: "Test creating retriever with invalid k (too high)",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				return NewVectorStoreRetriever(mockVectorStore, WithDefaultK(101))
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.Error(t, err)
+				assert.Nil(t, retriever)
+				AssertErrorType(t, err, ErrCodeInvalidConfig)
+			},
+			wantErr: true,
+		},
+		{
+			name:        "new_vector_store_retriever_from_config",
+			description: "Test creating retriever from config struct",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				config := VectorStoreRetrieverConfig{
+					K:              5,
+					ScoreThreshold: 0.6,
+					Timeout:        45 * time.Second,
+				}
+				config.ApplyDefaults()
+				return NewVectorStoreRetrieverFromConfig(mockVectorStore, config)
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.NoError(t, err)
+				assert.NotNil(t, retriever)
+				assert.Equal(t, 5, retriever.defaultK)
+				assert.Equal(t, float32(0.6), retriever.scoreThreshold)
+				assert.Equal(t, 45*time.Second, retriever.timeout)
+			},
+			wantErr: false,
+		},
+		{
+			name:        "new_vector_store_retriever_from_config_invalid",
+			description: "Test creating retriever from invalid config",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				config := VectorStoreRetrieverConfig{
+					K:              101, // Invalid - exceeds max
+					ScoreThreshold: 0.6,
+				}
+				// Apply defaults first (which won't fix K=101)
+				config.ApplyDefaults()
+				// Validate should catch the error
+				if err := config.Validate(); err != nil {
+					return nil, err
+				}
+				return NewVectorStoreRetrieverFromConfig(mockVectorStore, config)
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.Error(t, err)
+				assert.Nil(t, retriever)
+			},
+			wantErr: true,
+		},
+		{
+			name:        "get_retriever_types",
+			description: "Test getting available retriever types",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				types := GetRetrieverTypes()
+				assert.Contains(t, types, "vector_store")
+				return nil, nil
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				// Function returns void, validation done in setupFn
+			},
+			wantErr: false,
+		},
+		{
+			name:        "validate_retriever_config",
+			description: "Test validating retriever configuration",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				config := DefaultConfig()
+				err := ValidateRetrieverConfig(config)
+				if err != nil {
+					return nil, err
+				}
+				return nil, nil
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.NoError(t, err)
+			},
+			wantErr: false,
+		},
+		{
+			name:        "validate_retriever_config_invalid",
+			description: "Test validating invalid retriever configuration",
+			setupFn: func() (*VectorStoreRetriever, error) {
+				config := Config{
+					DefaultK: 0, // Invalid
+				}
+				err := ValidateRetrieverConfig(config)
+				return nil, err
+			},
+			validateFn: func(t *testing.T, retriever *VectorStoreRetriever, err error) {
+				require.Error(t, err)
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Testing: %s", tt.description)
+			retriever, err := tt.setupFn()
+			tt.validateFn(t, retriever, err)
+
+			// Test retriever functionality if created successfully
+			if retriever != nil && !tt.wantErr {
+				// Test health check
+				healthErr := retriever.CheckHealth(ctx)
+				assert.NoError(t, healthErr)
+
+				// Test retrieval with mock vector store
+				docs, err := retriever.GetRelevantDocuments(ctx, "test query")
+				// May succeed or fail depending on mock implementation
+				t.Logf("Retrieval test: docs=%d, err=%v", len(docs), err)
+			}
+		})
+	}
+}
+
+// TestErrorHandlingAdvanced provides comprehensive error handling tests.
+func TestErrorHandlingAdvanced(t *testing.T) {
+	tests := []struct {
+		name        string
+		err         error
+		checkFn     func(t *testing.T, err error)
+		description string
+	}{
+		{
+			name:        "retriever_error_with_code",
+			description: "Test RetrieverError with specific code",
+			err:         NewRetrieverError("test_op", errors.New("underlying error"), ErrCodeRetrievalFailed),
+			checkFn: func(t *testing.T, err error) {
+				require.Error(t, err)
+				var retErr *RetrieverError
+				require.ErrorAs(t, err, &retErr)
+				assert.Equal(t, "test_op", retErr.Op)
+				assert.Equal(t, ErrCodeRetrievalFailed, retErr.Code)
+				assert.NotNil(t, retErr.Err)
+				assert.Contains(t, err.Error(), "retriever test_op")
+			},
+		},
+		{
+			name:        "retriever_error_with_message",
+			description: "Test RetrieverError with custom message",
+			err:         NewRetrieverErrorWithMessage("test_op", errors.New("underlying"), ErrCodeInvalidConfig, "custom message"),
+			checkFn: func(t *testing.T, err error) {
+				require.Error(t, err)
+				var retErr *RetrieverError
+				require.ErrorAs(t, err, &retErr)
+				assert.Equal(t, "test_op", retErr.Op)
+				assert.Equal(t, ErrCodeInvalidConfig, retErr.Code)
+				assert.Equal(t, "custom message", retErr.Message)
+				assert.Contains(t, err.Error(), "custom message")
+			},
+		},
+		{
+			name:        "retriever_error_unwrap",
+			description: "Test RetrieverError unwrapping",
+			err:         NewRetrieverError("test_op", errors.New("wrapped error"), ErrCodeNetworkError),
+			checkFn: func(t *testing.T, err error) {
+				require.Error(t, err)
+				var retErr *RetrieverError
+				require.ErrorAs(t, err, &retErr)
+				unwrapped := retErr.Unwrap()
+				assert.NotNil(t, unwrapped)
+				assert.Contains(t, unwrapped.Error(), "wrapped error")
+			},
+		},
+		{
+			name:        "validation_error",
+			description: "Test ValidationError",
+			err: &ValidationError{
+				Field: "DefaultK",
+				Value: 0,
+				Msg:   "must be between 1 and 100",
+			},
+			checkFn: func(t *testing.T, err error) {
+				require.Error(t, err)
+				var valErr *ValidationError
+				require.ErrorAs(t, err, &valErr)
+				assert.Equal(t, "DefaultK", valErr.Field)
+				assert.Equal(t, 0, valErr.Value)
+				assert.Contains(t, err.Error(), "validation failed")
+				assert.Contains(t, err.Error(), "DefaultK")
+			},
+		},
+		{
+			name:        "timeout_error",
+			description: "Test TimeoutError",
+			err:         NewTimeoutError("test_op", 30*time.Second, errors.New("operation timed out")),
+			checkFn: func(t *testing.T, err error) {
+				require.Error(t, err)
+				var timeoutErr *TimeoutError
+				require.ErrorAs(t, err, &timeoutErr)
+				assert.Equal(t, "test_op", timeoutErr.Op)
+				assert.Equal(t, 30*time.Second, timeoutErr.Timeout)
+				assert.Contains(t, err.Error(), "timed out")
+				assert.Contains(t, err.Error(), "30s")
+				unwrapped := timeoutErr.Unwrap()
+				assert.NotNil(t, unwrapped)
+			},
+		},
+		{
+			name:        "all_error_codes",
+			description: "Test all error code constants",
+			err:         nil,
+			checkFn: func(t *testing.T, err error) {
+				// Verify all error codes are defined
+				errorCodes := []string{
+					ErrCodeInvalidConfig,
+					ErrCodeInvalidInput,
+					ErrCodeRetrievalFailed,
+					ErrCodeEmbeddingFailed,
+					ErrCodeVectorStoreError,
+					ErrCodeTimeout,
+					ErrCodeRateLimit,
+					ErrCodeNetworkError,
+					ErrCodeQueryGenerationFailed,
+				}
+				for _, code := range errorCodes {
+					assert.NotEmpty(t, code, "Error code should not be empty")
+					err := NewRetrieverError("test", nil, code)
+					assert.Equal(t, code, err.Code)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Logf("Testing: %s", tt.description)
+			tt.checkFn(t, tt.err)
+		})
+	}
+}

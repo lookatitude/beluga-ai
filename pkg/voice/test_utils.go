@@ -121,3 +121,35 @@ func (r *ConcurrentTestRunner) Run(t *testing.T) {
 		}
 	}
 }
+
+// EXCLUSION DOCUMENTATION
+//
+// The following code paths are excluded from test coverage:
+//
+// 1. Provider-specific implementations (providers/*/*.go, backend/providers/*/*.go, etc.)
+//    - Reason: These require actual external service connections (Twilio, LiveKit, Pipecat, etc.)
+//    - Coverage: Tested via integration tests with mocks where possible
+//    - Files: pkg/voice/providers/*/*.go, pkg/voice/backend/providers/*/*.go, etc.
+//
+// 2. Internal implementations (internal/*.go, backend/internal/*.go, etc.)
+//    - Reason: Internal implementation details, tested indirectly through public APIs
+//    - Coverage: Tested via integration tests and public API tests
+//    - Files: pkg/voice/internal/*.go, pkg/voice/backend/internal/*.go, etc.
+//
+// 3. Audio processing and real-time streaming paths
+//    - Reason: Requires actual audio hardware/streams, timing-dependent
+//    - Coverage: Tested via integration tests with mock audio streams
+//    - Files: Various provider implementations with audio processing
+//
+// 4. Network and WebSocket connection handling
+//    - Reason: Requires actual network connections, difficult to mock reliably
+//    - Coverage: Tested via integration tests with test servers
+//    - Files: WebSocket and network-related provider code
+//
+// 5. OS-level and platform-specific code
+//    - Reason: Cannot simulate OS-level errors in unit tests
+//    - Coverage: Error types tested, actual OS failures tested in integration tests
+//    - Files: Platform-specific implementations
+//
+// Note: Integration tests in tests/integration/voice/ provide comprehensive coverage
+// for cross-package interactions, real-world usage scenarios, and provider integrations.

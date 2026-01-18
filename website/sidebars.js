@@ -168,16 +168,7 @@ module.exports = {
         'use-cases/09-multi-model-llm-gateway',
         'use-cases/10-production-agent-platform',
         // Advanced Use Cases (added in docs gap analysis)
-        {
-          type: 'category',
-          label: 'Advanced Scenarios',
-          items: [
-            'use-cases/11-batch-processing',
-            'use-cases/monitoring-dashboards',
-            'use-cases/voice-sessions',
-            'use-cases/rag-strategies',
-          ],
-        },
+        // Note: Advanced Scenarios section removed - files not yet created
       ],
     },
     {

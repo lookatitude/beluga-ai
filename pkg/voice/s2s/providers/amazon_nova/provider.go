@@ -53,8 +53,10 @@ func NewAmazonNovaProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2
 	}
 
 	// Convert base config to Amazon Nova config
+	// EnableStreaming defaults to true (per config definition)
 	novaConfig := &AmazonNovaConfig{
-		Config: config,
+		Config:          config,
+		EnableStreaming: true, // Default to true (zero value is false)
 	}
 
 	// Set defaults if not provided

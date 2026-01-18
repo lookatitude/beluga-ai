@@ -609,6 +609,314 @@ func TestMemoryErrorHandling(t *testing.T) {
 	}
 }
 
+// TestMemoryErrorFunctions tests all error helper functions.
+func TestMemoryErrorFunctions(t *testing.T) {
+	tests := []struct {
+		name     string
+		testFunc func(t *testing.T)
+	}{
+		{
+			name: "error_unwrap",
+			testFunc: func(t *testing.T) {
+				underlyingErr := errors.New("underlying error")
+				memErr := NewMemoryError("test_op", ErrCodeStorageError, underlyingErr)
+				
+				unwrapped := memErr.Unwrap()
+				assert.Equal(t, underlyingErr, unwrapped)
+			},
+		},
+		{
+			name: "error_is",
+			testFunc: func(t *testing.T) {
+				err1 := NewMemoryError("op1", ErrCodeStorageError, errors.New("error"))
+				err2 := NewMemoryError("op2", ErrCodeStorageError, errors.New("error"))
+				err3 := NewMemoryError("op3", ErrCodeRetrievalError, errors.New("error"))
+				
+				// Same code should match
+				assert.True(t, err1.Is(err2))
+				// Different code should not match
+				assert.False(t, err1.Is(err3))
+			},
+		},
+		{
+			name: "error_with_context",
+			testFunc: func(t *testing.T) {
+				err := NewMemoryError("test_op", ErrCodeStorageError, errors.New("error"))
+				err = err.WithContext("key1", "value1")
+				err = err.WithContext("key2", 42)
+				
+				assert.Equal(t, "value1", err.Context["key1"])
+				assert.Equal(t, 42, err.Context["key2"])
+			},
+		},
+		{
+			name: "wrap_error",
+			testFunc: func(t *testing.T) {
+				underlyingErr := errors.New("underlying")
+				wrapped := WrapError(underlyingErr, "test_op", ErrCodeTimeout)
+				
+				assert.NotNil(t, wrapped)
+				assert.Equal(t, ErrCodeTimeout, wrapped.Code)
+				assert.Equal(t, underlyingErr, wrapped.Unwrap())
+				
+				// Test nil error
+				nilWrapped := WrapError(nil, "op", ErrCodeTimeout)
+				assert.Nil(t, nilWrapped)
+			},
+		},
+		{
+			name: "is_memory_error",
+			testFunc: func(t *testing.T) {
+				err := NewMemoryError("test_op", ErrCodeStorageError, errors.New("error"))
+				
+				assert.True(t, IsMemoryError(err, ErrCodeStorageError))
+				assert.False(t, IsMemoryError(err, ErrCodeRetrievalError))
+				
+				// Test with non-MemoryError
+				regularErr := errors.New("regular error")
+				assert.False(t, IsMemoryError(regularErr, ErrCodeStorageError))
+			},
+		},
+		{
+			name: "error_constructors",
+			testFunc: func(t *testing.T) {
+				baseErr := errors.New("base error")
+				
+				// Test all error constructors
+				errs := []*MemoryError{
+					ErrInvalidConfig(baseErr),
+					ErrInvalidInput("op", baseErr),
+					ErrStorageError("op", baseErr),
+					ErrRetrievalError("op", baseErr),
+					ErrTimeout("op", baseErr),
+					ErrNotFound("op", baseErr),
+					ErrTypeMismatch("op", baseErr),
+					ErrSerialization("op", baseErr),
+					ErrDeserialization("op", baseErr),
+					ErrValidation("op", baseErr),
+					ErrMemoryOverflow("op", baseErr),
+					ErrContextCanceled("op", baseErr),
+				}
+				
+				for _, err := range errs {
+					assert.NotNil(t, err)
+					assert.NotEmpty(t, err.Code)
+					assert.Equal(t, baseErr, err.Unwrap())
+				}
+			},
+		},
+		{
+			name: "error_with_message",
+			testFunc: func(t *testing.T) {
+				err := NewMemoryErrorWithMessage("test_op", ErrCodeStorageError, "Custom message", errors.New("underlying"))
+				
+				assert.Equal(t, "test_op", err.Op)
+				assert.Equal(t, ErrCodeStorageError, err.Code)
+				assert.Equal(t, "Custom message", err.Message)
+				assert.Contains(t, err.Error(), "Custom message")
+			},
+		},
+		{
+			name: "error_string_formats",
+			testFunc: func(t *testing.T) {
+				// Test error with message
+				err1 := NewMemoryErrorWithMessage("op1", ErrCodeStorageError, "Custom message", nil)
+				assert.Contains(t, err1.Error(), "Custom message")
+				
+				// Test error with underlying error
+				err2 := NewMemoryError("op2", ErrCodeStorageError, errors.New("underlying"))
+				assert.Contains(t, err2.Error(), "underlying")
+				
+				// Test error without message or underlying error
+				err3 := NewMemoryError("op3", ErrCodeStorageError, nil)
+				assert.Contains(t, err3.Error(), "unknown error")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.testFunc(t)
+		})
+	}
+}
+
+// TestGetInputOutputKeysEdgeCases tests edge cases for GetInputOutputKeys.
+func TestGetInputOutputKeysEdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		inputs      map[string]any
+		outputs     map[string]any
+		expectError bool
+		validate    func(t *testing.T, inputKey, outputKey string)
+	}{
+		{
+			name:        "empty_inputs",
+			inputs:      map[string]any{},
+			outputs:     map[string]any{"output": "test"},
+			expectError: true,
+		},
+		{
+			name:        "empty_outputs",
+			inputs:      map[string]any{"input": "test"},
+			outputs:     map[string]any{},
+			expectError: true,
+		},
+		{
+			name:        "both_empty",
+			inputs:      map[string]any{},
+			outputs:     map[string]any{},
+			expectError: true,
+		},
+		{
+			name:    "human_input_key",
+			inputs:  map[string]any{"human_input": "test"},
+			outputs: map[string]any{"ai_output": "test"},
+			validate: func(t *testing.T, inputKey, outputKey string) {
+				assert.Equal(t, "human_input", inputKey)
+				assert.Equal(t, "ai_output", outputKey)
+			},
+		},
+		{
+			name:    "user_input_key",
+			inputs:  map[string]any{"user_input": "test"},
+			outputs: map[string]any{"response": "test"},
+			validate: func(t *testing.T, inputKey, outputKey string) {
+				assert.Equal(t, "user_input", inputKey)
+				assert.Equal(t, "response", outputKey)
+			},
+		},
+		{
+			name:    "question_key",
+			inputs:  map[string]any{"question": "test"},
+			outputs: map[string]any{"answer": "test"},
+			validate: func(t *testing.T, inputKey, outputKey string) {
+				assert.Equal(t, "question", inputKey)
+				assert.Equal(t, "answer", outputKey)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			inputKey, outputKey, err := GetInputOutputKeys(tt.inputs, tt.outputs)
+			if tt.expectError {
+				assert.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				if tt.validate != nil {
+					tt.validate(t, inputKey, outputKey)
+				}
+			}
+		})
+	}
+}
+
+// TestAdvancedMockMemoryErrorCodes tests that AdvancedMockMemory supports all error types.
+func TestAdvancedMockMemoryErrorCodes(t *testing.T) {
+	ctx := context.Background()
+	inputs, outputs := CreateTestInputOutput("test", "test")
+
+	errorCodes := []string{
+		ErrCodeInvalidConfig,
+		ErrCodeInvalidInput,
+		ErrCodeStorageError,
+		ErrCodeRetrievalError,
+		ErrCodeTimeout,
+		ErrCodeNotFound,
+		ErrCodeTypeMismatch,
+		ErrCodeSerialization,
+		ErrCodeDeserialization,
+		ErrCodeValidation,
+		ErrCodeMemoryOverflow,
+		ErrCodeContextCanceled,
+	}
+
+	for _, code := range errorCodes {
+		t.Run(code, func(t *testing.T) {
+			mock := NewAdvancedMockMemory("test", MemoryTypeBuffer, WithErrorCode(code))
+			
+			// Test SaveContext with error
+			err := mock.SaveContext(ctx, inputs, outputs)
+			assert.Error(t, err)
+			assert.True(t, IsMemoryError(err, code))
+			
+			// Test LoadMemoryVariables with error
+			_, err = mock.LoadMemoryVariables(ctx, inputs)
+			assert.Error(t, err)
+			assert.True(t, IsMemoryError(err, code))
+		})
+	}
+}
+
+// TestGetBufferStringAdvanced tests GetBufferString with various message types.
+func TestGetBufferStringAdvanced(t *testing.T) {
+	tests := []struct {
+		name        string
+		messages    []schema.Message
+		humanPrefix string
+		aiPrefix    string
+		validate    func(t *testing.T, result string)
+	}{
+		{
+			name:        "system_message",
+			messages:    []schema.Message{schema.NewSystemMessage("System prompt")},
+			humanPrefix: "Human",
+			aiPrefix:    "AI",
+			validate: func(t *testing.T, result string) {
+				assert.Contains(t, result, "System: System prompt")
+			},
+		},
+		{
+			name: "tool_message",
+			messages: []schema.Message{
+				schema.NewToolMessage("tool-result", "call-123"),
+			},
+			humanPrefix: "Human",
+			aiPrefix:    "AI",
+			validate: func(t *testing.T, result string) {
+				assert.Contains(t, result, "Tool (call-123): tool-result")
+			},
+		},
+		{
+			name: "mixed_message_types",
+			messages: []schema.Message{
+				schema.NewSystemMessage("You are helpful"),
+				schema.NewHumanMessage("Hello"),
+				schema.NewAIMessage("Hi"),
+				schema.NewToolMessage("result", "call-1"),
+			},
+			humanPrefix: "User",
+			aiPrefix:    "Assistant",
+			validate: func(t *testing.T, result string) {
+				assert.Contains(t, result, "System: You are helpful")
+				assert.Contains(t, result, "User: Hello")
+				assert.Contains(t, result, "Assistant: Hi")
+				assert.Contains(t, result, "Tool (call-1): result")
+			},
+		},
+		{
+			name:        "custom_prefixes",
+			messages:    []schema.Message{schema.NewHumanMessage("Test"), schema.NewAIMessage("Response")},
+			humanPrefix: "Customer",
+			aiPrefix:    "Support",
+			validate: func(t *testing.T, result string) {
+				assert.Contains(t, result, "Customer: Test")
+				assert.Contains(t, result, "Support: Response")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := GetBufferString(tt.messages, tt.humanPrefix, tt.aiPrefix)
+			if tt.validate != nil {
+				tt.validate(t, result)
+			}
+		})
+	}
+}
+
 // BenchmarkAdvancedMemoryOperations benchmarks memory operation performance.
 func BenchmarkAdvancedMemoryOperations(b *testing.B) {
 	ctx := context.Background()

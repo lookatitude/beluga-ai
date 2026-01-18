@@ -1,4 +1,41 @@
 // Package documentloaders provides advanced test utilities and comprehensive mocks for testing document loader implementations.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//    - Panic handlers in concurrent test runners
+//    - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//    - Some context cancellation paths in LazyLoad operations are difficult to reliably test
+//    - Race conditions between context cancellation and channel operations
+//
+// 3. Error Paths Requiring System Conditions:
+//    - File system errors that require specific OS conditions
+//    - Permission errors that require specific file system states
+//    - Network errors for remote file loading (if implemented)
+//
+// 4. Provider-Specific Untestable Paths:
+//    - Provider implementations in pkg/documentloaders/providers/* require external file systems
+//    - These are tested through integration tests rather than unit tests
+//    - File system operations that require actual file system state
+//
+// 5. Test Utility Functions:
+//    - Helper functions in test_utils.go that are used by tests but not directly tested
+//    - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//    - Package init() functions and global variable initialization
+//    - Registry registration code that executes automatically
+//
+// 7. OTEL Context Logging:
+//    - logWithOTELContext function has paths that require valid OTEL context
+//    - Some edge cases in trace/span ID extraction are difficult to test in isolation
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package documentloaders
 
 import (
@@ -42,6 +79,49 @@ func WithError(err error) MockOption {
 		m.shouldError = true
 		m.errorToReturn = err
 	}
+}
+
+// WithErrorCode configures the mock to return a specific error code.
+func WithErrorCode(code string) MockOption {
+	return func(m *AdvancedMockLoader) {
+		m.shouldError = true
+		m.errorToReturn = NewLoaderError("Load", code, "", "mock error", nil)
+	}
+}
+
+// WithIOError configures the mock to return an IO error.
+func WithIOError() MockOption {
+	return WithErrorCode(ErrCodeIOError)
+}
+
+// WithNotFoundError configures the mock to return a not found error.
+func WithNotFoundError() MockOption {
+	return WithErrorCode(ErrCodeNotFound)
+}
+
+// WithInvalidConfigError configures the mock to return an invalid config error.
+func WithInvalidConfigError() MockOption {
+	return WithErrorCode(ErrCodeInvalidConfig)
+}
+
+// WithFileTooLargeError configures the mock to return a file too large error.
+func WithFileTooLargeError() MockOption {
+	return WithErrorCode(ErrCodeFileTooLarge)
+}
+
+// WithCancelledError configures the mock to return a cancelled error.
+func WithCancelledError() MockOption {
+	return WithErrorCode(ErrCodeCancelled)
+}
+
+// WithCycleDetectedError configures the mock to return a cycle detected error.
+func WithCycleDetectedError() MockOption {
+	return WithErrorCode(ErrCodeCycleDetected)
+}
+
+// WithBinaryFileError configures the mock to return a binary file error.
+func WithBinaryFileError() MockOption {
+	return WithErrorCode(ErrCodeBinaryFile)
 }
 
 // WithDocuments sets the documents to return.

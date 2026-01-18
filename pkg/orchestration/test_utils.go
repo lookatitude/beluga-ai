@@ -1,5 +1,48 @@
 // Package orchestration provides advanced test utilities and comprehensive mocks for testing orchestration implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//    - Panic handlers in concurrent test runners (ConcurrentTestRunner)
+//    - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//    - Some context cancellation paths in workflow operations are difficult to reliably test
+//    - Race conditions between context cancellation and graph/chain execution
+//    - logWithOTELContext function paths that require valid OTEL context
+//
+// 3. Error Paths Requiring System Conditions:
+//    - Network errors that require actual network failures (provider implementations)
+//    - Memory exhaustion scenarios during large batch operations
+//    - Workflow implementation errors requiring Temporal client (createWorkflowImplementation)
+//
+// 4. Provider-Specific Untestable Paths:
+//    - Provider implementations in pkg/orchestration/providers/* require external service failures
+//    - Temporal workflow creation requires actual Temporal client (currently returns error)
+//    - These are tested through integration tests rather than unit tests
+//
+// 5. Test Utility Functions:
+//    - Helper functions in test_utils.go that are used by tests but not directly tested
+//    - CreateTestChain, CreateTestGraph, CreateTestWorkflow helpers
+//    - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//    - Package init() functions and global variable initialization
+//    - Registry registration code that executes automatically
+//
+// 7. OTEL Context Logging:
+//    - logWithOTELContext function has paths that require valid OTEL context
+//    - Some edge cases in trace/span ID extraction are difficult to test in isolation
+//
+// 8. Factory Functions:
+//    - NewChain, NewGraph, NewWorkflow convenience functions that delegate to orchestrator
+//    - These are tested through orchestrator tests, not in isolation
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package orchestration
 
 import (
@@ -96,6 +139,84 @@ func WithEdges(edges map[string][]string) MockOrchestratorOption {
 	return func(m *AdvancedMockOrchestrator) {
 		m.edges = edges
 	}
+}
+
+// WithMockErrorCode configures the mock to return an OrchestrationError with a specific error code.
+// This is a convenience function for creating common error scenarios.
+func WithMockErrorCode(op, code string) MockOrchestratorOption {
+	return func(m *AdvancedMockOrchestrator) {
+		m.shouldError = true
+		m.errorToReturn = NewOrchestrationError(op, code, fmt.Errorf("mock error: %s", code))
+	}
+}
+
+// WithMockOrchestratorError configures the mock to return an iface.OrchestratorError with a specific error code.
+// This supports both orchestration package errors and iface errors.
+func WithMockOrchestratorError(op, code string, underlyingErr error) MockOrchestratorOption {
+	return func(m *AdvancedMockOrchestrator) {
+		m.shouldError = true
+		m.errorToReturn = iface.NewOrchestratorError(op, underlyingErr, code)
+	}
+}
+
+// WithMockInvalidConfigError configures the mock to return an invalid config error.
+func WithMockInvalidConfigError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeInvalidConfig)
+}
+
+// WithMockInvalidInputError configures the mock to return an invalid input error.
+func WithMockInvalidInputError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeInvalidInput)
+}
+
+// WithMockSchedulingFailedError configures the mock to return a scheduling failed error.
+func WithMockSchedulingFailedError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeSchedulingFailed)
+}
+
+// WithMockExecutionFailedError configures the mock to return an execution failed error.
+func WithMockExecutionFailedError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeExecutionFailed)
+}
+
+// WithMockTimeoutError configures the mock to return a timeout error.
+func WithMockTimeoutError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeTimeout)
+}
+
+// WithMockContextCanceledError configures the mock to return a context canceled error.
+func WithMockContextCanceledError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeContextCanceled)
+}
+
+// WithMockContextTimeoutError configures the mock to return a context timeout error.
+func WithMockContextTimeoutError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeContextTimeout)
+}
+
+// WithMockDependencyError configures the mock to return a dependency error.
+func WithMockDependencyError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeDependencyError)
+}
+
+// WithMockResourceExhaustedError configures the mock to return a resource exhausted error.
+func WithMockResourceExhaustedError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeResourceExhausted)
+}
+
+// WithMockInvalidStateError configures the mock to return an invalid state error.
+func WithMockInvalidStateError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeInvalidState)
+}
+
+// WithMockWorkflowNotFoundError configures the mock to return a workflow not found error.
+func WithMockWorkflowNotFoundError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeWorkflowNotFound)
+}
+
+// WithMockTaskNotFoundError configures the mock to return a task not found error.
+func WithMockTaskNotFoundError(op string) MockOrchestratorOption {
+	return WithMockErrorCode(op, ErrCodeTaskNotFound)
 }
 
 // Mock implementation methods.

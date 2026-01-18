@@ -5,6 +5,7 @@ package multimodal
 
 import (
 	"context"
+	"errors"
 	"os"
 	"sync"
 	"testing"
@@ -555,6 +556,383 @@ func BenchmarkContentNormalizationURL(b *testing.B) {
 		// Note: This will fail without network access, but benchmarks the code path
 		_, _ = normalizer.Normalize(ctx, block, "base64")
 	}
+}
+
+// T099: Test coverage for pkg/multimodal/config.go
+func TestConfigOptions(t *testing.T) {
+	t.Run("WithProvider", func(t *testing.T) {
+		config := &Config{}
+		WithProvider("openai")(config)
+		assert.Equal(t, "openai", config.Provider)
+	})
+
+	t.Run("WithModel", func(t *testing.T) {
+		config := &Config{}
+		WithModel("gpt-4o")(config)
+		assert.Equal(t, "gpt-4o", config.Model)
+	})
+
+	t.Run("WithAPIKey", func(t *testing.T) {
+		config := &Config{}
+		WithAPIKey("test-key")(config)
+		assert.Equal(t, "test-key", config.APIKey)
+	})
+
+	t.Run("WithTimeout", func(t *testing.T) {
+		config := &Config{}
+		WithTimeout(60 * time.Second)(config)
+		assert.Equal(t, 60*time.Second, config.Timeout)
+	})
+
+	t.Run("WithStreaming", func(t *testing.T) {
+		config := &Config{}
+		WithStreaming(true)(config)
+		assert.True(t, config.EnableStreaming)
+	})
+
+	t.Run("WithMaxRetries", func(t *testing.T) {
+		config := &Config{}
+		WithMaxRetries(5)(config)
+		assert.Equal(t, 5, config.MaxRetries)
+	})
+
+	t.Run("WithRetryDelay", func(t *testing.T) {
+		config := &Config{}
+		WithRetryDelay(2 * time.Second)(config)
+		assert.Equal(t, 2*time.Second, config.RetryDelay)
+	})
+
+	t.Run("WithStreamChunkSize", func(t *testing.T) {
+		config := &Config{}
+		WithStreamChunkSize(2048)(config)
+		assert.Equal(t, int64(2048), config.StreamChunkSize)
+	})
+
+	t.Run("WithBaseURL", func(t *testing.T) {
+		config := &Config{}
+		WithBaseURL("https://api.example.com")(config)
+		assert.Equal(t, "https://api.example.com", config.BaseURL)
+	})
+
+	t.Run("WithProviderSpecific", func(t *testing.T) {
+		config := &Config{}
+		WithProviderSpecific(map[string]any{"key": "value"})(config)
+		assert.Equal(t, "value", config.ProviderSpecific["key"])
+	})
+}
+
+func TestConfig_Validate(t *testing.T) {
+	tests := []struct {
+		name        string
+		config      *Config
+		shouldError bool
+	}{
+		{
+			name: "valid config",
+			config: &Config{
+				Provider:  "openai",
+				Model:     "gpt-4o",
+				Timeout:   30 * time.Second,
+				MaxRetries: 3,
+			},
+			shouldError: false,
+		},
+		{
+			name: "missing provider",
+			config: &Config{
+				Model:     "gpt-4o",
+				Timeout:   30 * time.Second,
+			},
+			shouldError: true,
+		},
+		{
+			name: "missing model",
+			config: &Config{
+				Provider:  "openai",
+				Timeout:   30 * time.Second,
+			},
+			shouldError: true,
+		},
+		{
+			name: "zero timeout",
+			config: &Config{
+				Provider:  "openai",
+				Model:     "gpt-4o",
+				Timeout:   0,
+			},
+			shouldError: true,
+		},
+		{
+			name: "negative max retries",
+			config: &Config{
+				Provider:   "openai",
+				Model:      "gpt-4o",
+				Timeout:    30 * time.Second,
+				MaxRetries: -1,
+			},
+			shouldError: true,
+		},
+		{
+			name: "negative retry delay",
+			config: &Config{
+				Provider:   "openai",
+				Model:      "gpt-4o",
+				Timeout:    30 * time.Second,
+				RetryDelay: -1 * time.Second,
+			},
+			shouldError: true,
+		},
+		{
+			name: "streaming enabled but zero chunk size",
+			config: &Config{
+				Provider:        "openai",
+				Model:           "gpt-4o",
+				Timeout:         30 * time.Second,
+				EnableStreaming: true,
+				StreamChunkSize: 0,
+			},
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+func TestRoutingConfig_Validate(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		name        string
+		routing     *RoutingConfig
+		shouldError bool
+	}{
+		{
+			name: "valid auto strategy",
+			routing: &RoutingConfig{
+				Strategy: "auto",
+			},
+			shouldError: false,
+		},
+		{
+			name: "valid manual strategy with providers",
+			routing: &RoutingConfig{
+				Strategy:      "manual",
+				TextProvider:  "openai",
+				ImageProvider: "gemini",
+			},
+			shouldError: false,
+		},
+		{
+			name: "manual strategy without providers",
+			routing: &RoutingConfig{
+				Strategy: "manual",
+			},
+			shouldError: true,
+		},
+		{
+			name: "invalid strategy",
+			routing: &RoutingConfig{
+				Strategy: "invalid",
+			},
+			shouldError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.routing.Validate(ctx)
+			if tt.shouldError {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// T100: Test coverage for pkg/multimodal/errors.go
+func TestMultimodalErrors(t *testing.T) {
+	t.Run("NewMultimodalError", func(t *testing.T) {
+		err := NewMultimodalError("test_op", ErrCodeTimeout, errors.New("timeout occurred"))
+		assert.NotNil(t, err)
+		assert.Equal(t, "test_op", err.Op)
+		assert.Equal(t, ErrCodeTimeout, err.Code)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test_op")
+		assert.Contains(t, err.Error(), ErrCodeTimeout)
+	})
+
+	t.Run("MultimodalError_Unwrap", func(t *testing.T) {
+		underlying := errors.New("underlying error")
+		err := NewMultimodalError("test_op", ErrCodeTimeout, underlying)
+		assert.Equal(t, underlying, err.Unwrap())
+	})
+
+	t.Run("WrapError", func(t *testing.T) {
+		underlying := errors.New("underlying error")
+		err := WrapError(underlying, "test_op", ErrCodeProviderError)
+		assert.NotNil(t, err)
+		assert.Equal(t, "test_op", err.Op)
+		assert.Equal(t, ErrCodeProviderError, err.Code)
+
+		assert.Nil(t, WrapError(nil, "op", "code"))
+	})
+
+	t.Run("IsMultimodalError", func(t *testing.T) {
+		err := NewMultimodalError("test_op", ErrCodeTimeout, errors.New("timeout"))
+		assert.True(t, IsMultimodalError(err))
+
+		regularErr := errors.New("regular error")
+		assert.False(t, IsMultimodalError(regularErr))
+	})
+
+	t.Run("AsMultimodalError", func(t *testing.T) {
+		err := NewMultimodalError("test_op", ErrCodeTimeout, errors.New("timeout"))
+		mmErr, ok := AsMultimodalError(err)
+		assert.True(t, ok)
+		assert.NotNil(t, mmErr)
+		assert.Equal(t, "test_op", mmErr.Op)
+
+		regularErr := errors.New("regular error")
+		_, ok = AsMultimodalError(regularErr)
+		assert.False(t, ok)
+	})
+
+	t.Run("IsRetryableError", func(t *testing.T) {
+		tests := []struct {
+			name      string
+			err       error
+			retryable bool
+		}{
+			{
+				name:      "nil error",
+				err:       nil,
+				retryable: false,
+			},
+			{
+				name:      "rate limit error",
+				err:       NewMultimodalError("op", ErrCodeRateLimit, errors.New("rate limit")),
+				retryable: true,
+			},
+			{
+				name:      "timeout error",
+				err:       NewMultimodalError("op", ErrCodeTimeout, errors.New("timeout")),
+				retryable: true,
+			},
+			{
+				name:      "network error",
+				err:       NewMultimodalError("op", ErrCodeNetworkError, errors.New("network")),
+				retryable: true,
+			},
+			{
+				name:      "provider error",
+				err:       NewMultimodalError("op", ErrCodeProviderError, errors.New("provider")),
+				retryable: true,
+			},
+			{
+				name:      "invalid input error",
+				err:       NewMultimodalError("op", ErrCodeInvalidInput, errors.New("invalid")),
+				retryable: false,
+			},
+			{
+				name:      "authentication failed",
+				err:       NewMultimodalError("op", ErrCodeAuthenticationFailed, errors.New("auth")),
+				retryable: false,
+			},
+			{
+				name:      "context canceled",
+				err:       context.Canceled,
+				retryable: false,
+			},
+			{
+				name:      "context deadline exceeded",
+				err:       context.DeadlineExceeded,
+				retryable: false,
+			},
+			{
+				name:      "unknown error",
+				err:       errors.New("unknown error"),
+				retryable: true, // Default to retryable for unknown errors
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				assert.Equal(t, tt.retryable, IsRetryableError(tt.err))
+			})
+		}
+	})
+
+	t.Run("GetErrorCode", func(t *testing.T) {
+		err := NewMultimodalError("op", ErrCodeRateLimit, errors.New("rate limit"))
+		assert.Equal(t, ErrCodeRateLimit, GetErrorCode(err))
+
+		regularErr := errors.New("regular error")
+		assert.Equal(t, ErrCodeProviderError, GetErrorCode(regularErr))
+
+		assert.Equal(t, "", GetErrorCode(nil))
+	})
+
+	t.Run("IsErrorCode", func(t *testing.T) {
+		err := NewMultimodalError("op", ErrCodeTimeout, errors.New("timeout"))
+		assert.True(t, IsErrorCode(err, ErrCodeTimeout))
+		assert.False(t, IsErrorCode(err, ErrCodeRateLimit))
+	})
+
+	t.Run("WrapContextError", func(t *testing.T) {
+		err := WrapContextError(context.Canceled, "test_op")
+		assert.NotNil(t, err)
+		assert.Equal(t, ErrCodeCancelled, err.Code)
+
+		err = WrapContextError(context.DeadlineExceeded, "test_op")
+		assert.NotNil(t, err)
+		assert.Equal(t, ErrCodeTimeout, err.Code)
+
+		otherErr := errors.New("other error")
+		err = WrapContextError(otherErr, "test_op")
+		assert.NotNil(t, err)
+		assert.Equal(t, ErrCodeProviderError, err.Code)
+
+		assert.Nil(t, WrapContextError(nil, "op"))
+	})
+
+	t.Run("IsContextError", func(t *testing.T) {
+		assert.True(t, IsContextError(context.Canceled))
+		assert.True(t, IsContextError(context.DeadlineExceeded))
+		assert.False(t, IsContextError(errors.New("other error")))
+		assert.False(t, IsContextError(nil))
+	})
+
+	t.Run("IsNetworkError", func(t *testing.T) {
+		err := NewMultimodalError("op", ErrCodeNetworkError, errors.New("network"))
+		assert.True(t, IsNetworkError(err))
+
+		networkErr := errors.New("connection refused")
+		assert.True(t, IsNetworkError(networkErr))
+
+		regularErr := errors.New("other error")
+		assert.False(t, IsNetworkError(regularErr))
+	})
+
+	t.Run("IsFileError", func(t *testing.T) {
+		err := NewMultimodalError("op", ErrCodeFileNotFound, errors.New("file not found"))
+		assert.True(t, IsFileError(err))
+
+		fileErr := errors.New("file not found")
+		assert.True(t, IsFileError(fileErr))
+
+		regularErr := errors.New("other error")
+		assert.False(t, IsFileError(regularErr))
+	})
 }
 
 // BenchmarkContentNormalizationFilePath benchmarks normalization from file path format.

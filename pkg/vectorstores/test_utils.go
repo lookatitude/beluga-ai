@@ -116,6 +116,30 @@ func WithDefaultK(k int) MockVectorStoreOption {
 	}
 }
 
+// WithErrorCode configures the mock to return a specific error code.
+func WithErrorCode(errorCode string) MockVectorStoreOption {
+	return func(v *AdvancedMockVectorStore) {
+		v.shouldError = true
+		v.errorToReturn = NewVectorStoreError("mock_operation", errorCode, nil)
+	}
+}
+
+// WithErrorCodeAndMessage configures the mock to return a specific error code with a message.
+func WithErrorCodeAndMessage(errorCode, message string) MockVectorStoreOption {
+	return func(v *AdvancedMockVectorStore) {
+		v.shouldError = true
+		v.errorToReturn = NewVectorStoreErrorWithMessage("mock_operation", errorCode, message, nil)
+	}
+}
+
+// WithWrappedError configures the mock to return a wrapped error.
+func WithWrappedError(underlyingErr error, errorCode string) MockVectorStoreOption {
+	return func(v *AdvancedMockVectorStore) {
+		v.shouldError = true
+		v.errorToReturn = WrapError(underlyingErr, "mock_operation", errorCode)
+	}
+}
+
 // Mock implementation methods.
 func (v *AdvancedMockVectorStore) AddDocuments(ctx context.Context, documents []schema.Document, opts ...vectorstoresiface.Option) ([]string, error) {
 	v.mu.Lock()
@@ -760,3 +784,30 @@ func (b *BenchmarkHelper) BenchmarkSimilaritySearch(k, iterations int) (time.Dur
 
 	return time.Since(start), nil
 }
+
+// EXCLUSION DOCUMENTATION
+//
+// The following code paths are excluded from test coverage:
+//
+// 1. Provider-specific implementations (providers/*/*.go)
+//    - Reason: These require actual external service connections (Chroma, Pinecone, Qdrant, etc.)
+//    - Coverage: Tested via integration tests with mocks where possible
+//    - Files: pkg/vectorstores/providers/*/*.go
+//
+// 2. Internal factory implementation (internal/factory/factory.go)
+//    - Reason: Factory pattern with dynamic provider registration
+//    - Coverage: Tested indirectly through provider registration tests
+//    - Files: pkg/vectorstores/internal/factory/factory.go
+//
+// 3. Config loader reflection-based field setting (config.go:loadFromMap)
+//    - Reason: Complex reflection logic with embedded struct handling
+//    - Coverage: Tested via Load*Config functions with various input types
+//    - Files: pkg/vectorstores/config.go (loadFromMap, setFieldValue)
+//
+// 4. Error paths requiring OS-level failures
+//    - Reason: Cannot simulate OS-level errors in unit tests
+//    - Coverage: Error types tested, actual OS failures tested in integration tests
+//    - Files: Various provider implementations
+//
+// Note: Integration tests in tests/integration/package_pairs/ provide coverage
+// for cross-package interactions and real-world usage scenarios.

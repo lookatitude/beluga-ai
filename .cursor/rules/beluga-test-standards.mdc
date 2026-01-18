@@ -5,327 +5,60 @@ alwaysApply: true
 ---
 # Beluga AI Testing Standards
 
-**MANDATORY**: All packages MUST implement comprehensive testing following these patterns. Reference: `docs/package_design_patterns.md` Testing Patterns section.
+**MANDATORY**: Comprehensive testing required. Ref: `docs/package_design_patterns.md`.
 
-## Required Test Files
-
-Every package MUST include:
-
+## Required Files
 ```
-pkg/{package_name}/
-├── test_utils.go           # Advanced mocking and testing utilities (REQUIRED)
-├── advanced_test.go        # Comprehensive test suites (REQUIRED)
-├── {package_name}_test.go  # Basic unit tests (existing)
-└── integration_test.go     # Package-specific integration tests (optional)
+pkg/{package}/
+├── test_utils.go           # Advanced mocks/utils (REQUIRED)
+├── advanced_test.go        # Comprehensive suites (REQUIRED)
+├── {package}_test.go       # Basic unit tests
+└── integration_test.go     # Optional package integration
 ```
 
-## test_utils.go (REQUIRED)
+## `test_utils.go` (REQUIRED)
+-   **Advanced Mock**: `AdvancedMock{Name}` struct with `mock.Mock`, config, health state.
+-   **Options**: `WithMockError`, `WithMockDelay`, `NewAdvancedMock...`.
+-   **Helpers**: `ConcurrentTestRunner`, `RunLoadTest`, `IntegrationTestHelper`, `ScenarioRunner`.
 
-Every package MUST provide comprehensive mocking utilities following this pattern:
+## `advanced_test.go` Suites (REQUIRED)
 
+### 1. Table-Driven Tests
 ```go
-// REQUIRED: Advanced Mock Implementation
-type AdvancedMock{PackageName} struct {
-    mock.Mock
-    
-    // Configuration
-    name         string
-    callCount    int
-    mu           sync.RWMutex
-    
-    // Configurable behavior
-    shouldError      bool
-    errorToReturn    error
-    simulateDelay    time.Duration
-    
-    // Health check data
-    healthState     string
-    lastHealthCheck time.Time
-}
-
-// REQUIRED: Mock Options Pattern
-type Mock{PackageName}Option func(*AdvancedMock{PackageName})
-
-func WithMockError(shouldError bool, err error) Mock{PackageName}Option {
-    return func(m *AdvancedMock{PackageName}) {
-        m.shouldError = shouldError
-        m.errorToReturn = err
-    }
-}
-
-func WithMockDelay(delay time.Duration) Mock{PackageName}Option {
-    return func(m *AdvancedMock{PackageName}) {
-        m.simulateDelay = delay
-    }
-}
-
-func NewAdvancedMock{PackageName}(opts ...Mock{PackageName}Option) *AdvancedMock{PackageName} {
-    m := &AdvancedMock{PackageName}{}
-    for _, opt := range opts {
-        opt(m)
-    }
-    return m
-}
-
-// REQUIRED: Performance Testing Utilities
-type ConcurrentTestRunner struct {
-    NumGoroutines int
-    TestDuration  time.Duration
-    testFunc      func() error
-}
-
-func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner {
-    return &ConcurrentTestRunner{
-        NumGoroutines: numGoroutines,
-        TestDuration:  duration,
-        testFunc:      testFunc,
-    }
-}
-
-func RunLoadTest(t *testing.T, component interface{}, numOperations, concurrency int) {
-    // Implementation for load testing
-}
-
-// REQUIRED: Integration Test Helpers
-type IntegrationTestHelper struct {
-    components map[string]interface{}
-}
-
-// REQUIRED: Scenario Runners for Real-World Testing
-type {PackageName}ScenarioRunner struct {
-    component Interface
-}
-```
-
-## advanced_test.go (REQUIRED)
-
-Every package MUST implement comprehensive test suites with:
-
-### 1. Table-Driven Tests (REQUIRED)
-
-```go
-func TestAdvanced{PackageName}(t *testing.T) {
+func TestAdvanced{Pkg}(t *testing.T) {
     tests := []struct {
-        name              string
-        component         *AdvancedMock{PackageName}
-        operations        func(ctx context.Context, comp *AdvancedMock{PackageName}) error
-        expectedError     bool
-        expectedCallCount int
-        validateResult    func(t *testing.T, result interface{})
-    }{
-        {
-            name: "successful operation",
-            component: NewAdvancedMock{PackageName}(),
-            operations: func(ctx context.Context, comp *AdvancedMock{PackageName}) error {
-                return comp.DoOperation(ctx, "input")
-            },
-            expectedError:     false,
-            expectedCallCount: 1,
-        },
-        {
-            name: "error handling",
-            component: NewAdvancedMock{PackageName}(
-                WithMockError(true, errors.New("test error")),
-            ),
-            operations: func(ctx context.Context, comp *AdvancedMock{PackageName}) error {
-                return comp.DoOperation(ctx, "input")
-            },
-            expectedError:     true,
-            expectedCallCount: 1,
-        },
-        // Add comprehensive test cases covering all scenarios
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            ctx := context.Background()
-            err := tt.operations(ctx, tt.component)
-            
-            if tt.expectedError {
-                assert.Error(t, err)
-            } else {
-                assert.NoError(t, err)
-            }
-            
-            assert.Equal(t, tt.expectedCallCount, tt.component.callCount)
-            
-            if tt.validateResult != nil {
-                // Validate result if provided
-            }
-        })
-    }
+        name, expectedErr bool
+        ops func(...) error
+    }{...}
+    // Loop and assert
 }
 ```
 
-### 2. Concurrency Testing (REQUIRED)
+### 2. Concurrency
+Use `ConcurrentTestRunner` with high goroutine count.
 
-```go
-func TestConcurrencyAdvanced(t *testing.T) {
-    component := NewComponent()
-    numGoroutines := 100
-    duration := 5 * time.Second
-    
-    runner := NewConcurrentTestRunner(numGoroutines, duration, func() error {
-        ctx := context.Background()
-        _, err := component.DoOperation(ctx, "test")
-        return err
-    })
-    
-    err := runner.Run()
-    assert.NoError(t, err)
-}
-```
+### 3. Load Testing
+Use `RunLoadTest` with operations/concurrency.
 
-### 3. Load Testing (REQUIRED)
+### 4. Error Scenarios
+Test Rate Limits, Timeouts, Config errors using error codes.
 
-```go
-func TestLoadTesting(t *testing.T) {
-    component := NewComponent()
-    numOperations := 1000
-    concurrency := 10
-    
-    RunLoadTest(t, component, numOperations, concurrency)
-}
-```
+### 5. Benchmarks
+`Benchmark{Pkg}Operations` and `Benchmark{Pkg}Concurrent`.
 
-### 4. Error Handling Scenarios (REQUIRED)
+### 6. OTEL & Registry
+Verify metrics/traces recorded. Test provider registration/creation.
 
-```go
-func Test{PackageName}ErrorHandling(t *testing.T) {
-    tests := []struct {
-        name        string
-        setupError  error
-        operation   func() error
-        expectError bool
-        errorCode   string
-    }{
-        {
-            name:        "rate limit error",
-            setupError:  NewError("operation", errors.New("rate limit"), ErrCodeRateLimit),
-            expectError: true,
-            errorCode:   ErrCodeRateLimit,
-        },
-        {
-            name:        "timeout error",
-            setupError:  NewError("operation", context.DeadlineExceeded, ErrCodeTimeout),
-            expectError: true,
-            errorCode:   ErrCodeTimeout,
-        },
-        // Test all error scenarios
-    }
-    
-    for _, tt := range tests {
-        t.Run(tt.name, func(t *testing.T) {
-            // Test error handling
-        })
-    }
-}
-```
+## Integration Tests (`tests/integration/`)
+-   **Suites**: LLMs↔Memory, Embeddings↔Vectorstores, Agents↔Orchestration, End-to-End RAG.
+-   **Location**: `package_pairs/`, `end_to_end/`, `provider_compat/`, `observability/`.
 
-### 5. Performance Benchmarks (REQUIRED)
+## Coverage & Execution
+-   **Target**: 100% (Critical paths MUST be 100%). Min: 80%.
+-   **Run**: `make test`, `make test-unit`, `make test-integration`, `make test-race`.
 
-```go
-func Benchmark{PackageName}Operations(b *testing.B) {
-    component := NewComponent()
-    ctx := context.Background()
-    
-    b.ResetTimer()
-    for i := 0; i < b.N; i++ {
-        _, err := component.DoOperation(ctx, "benchmark input")
-        if err != nil {
-            b.Fatal(err)
-        }
-    }
-}
-
-func Benchmark{PackageName}Concurrent(b *testing.B) {
-    component := NewComponent()
-    ctx := context.Background()
-    
-    b.RunParallel(func(pb *testing.PB) {
-        for pb.Next() {
-            _, err := component.DoOperation(ctx, "concurrent input")
-            if err != nil {
-                b.Fatal(err)
-            }
-        }
-    })
-}
-```
-
-### 6. OTEL Testing (REQUIRED)
-
-```go
-func TestOTELIntegration(t *testing.T) {
-    // Test that metrics are recorded
-    // Test that traces are created
-    // Test that structured logging includes trace IDs
-}
-```
-
-### 7. Registry/Factory Testing (REQUIRED for Multi-Provider Packages)
-
-```go
-func TestProviderRegistry(t *testing.T) {
-    // Test provider registration
-    // Test provider creation
-    // Test error handling for unknown providers
-}
-```
-
-## Integration Tests (REQUIRED for Cross-Package Interactions)
-
-Integration tests MUST be placed in `tests/integration/`:
-
-```
-tests/
-├── integration/
-│   ├── end_to_end/         # Complete workflow tests (RAG pipeline, etc.)
-│   ├── package_pairs/      # Two-package integration tests
-│   ├── provider_compat/    # Provider interoperability tests
-│   ├── observability/      # Cross-package monitoring tests
-│   └── utils/             # Shared integration test utilities
-├── fixtures/              # Test data and configurations
-└── README.md             # Integration testing guide
-```
-
-### Required Integration Test Suites
-
-- ✅ **LLMs ↔ Memory**: Conversation history and context management
-- ✅ **Embeddings ↔ Vectorstores**: Document storage and similarity search
-- ✅ **Agents ↔ Orchestration**: Multi-agent workflows and coordination
-- ✅ **End-to-End RAG Pipeline**: Complete retrieval-augmented generation workflows
-
-## Test Coverage Requirements
-
-- **Target**: Aim for 100% coverage
-- **Minimum**: 80% threshold (advisory, not blocking in CI)
-- **Critical Paths**: Must have 100% coverage (error handling, OTEL, registries)
-- **Cross-Package**: Test interactions between packages
-
-## Test Execution
-
-All tests MUST pass:
-- `make test` - All tests
-- `make test-unit` - Unit tests only
-- `make test-integration` - Integration tests
-- `make test-race` - Race detection
-- `make test-coverage` - Coverage report
-
-## Quality Standards (ENFORCED)
-
-- ✅ **100% consistent mocking patterns** across all packages
-- ✅ **Performance benchmarking** for all critical operations
-- ✅ **Concurrency testing** for thread safety validation
-- ✅ **Error scenario coverage** for comprehensive reliability testing
-- ✅ **Real-world scenario testing** using ScenarioRunner utilities
-- ✅ **OTEL integration testing** for observability validation
-- ✅ **Registry testing** for multi-provider packages
-
-## References
-
-- **Complete Details**: `docs/package_design_patterns.md` Testing Patterns section
-- **Integration Test Guide**: `tests/README.md`
-- **Quality Requirements**: See `beluga-quality-standards.mdc`
-- **Knowledge Base**: See `beluga-knowledge-base.mdc` for KB integration
-- **Makefile Targets**: See `Makefile` for test commands
+## Quality Gates
+-   ✅ Consistent Mocking
+-   ✅ Performance/Concurrency/Load Tests
+-   ✅ Error/Scenario Coverage
+-   ✅ OTEL/Registry Validation

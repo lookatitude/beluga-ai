@@ -657,15 +657,20 @@ func TestErrorHandling(t *testing.T) {
 
 	t.Run("error_string", func(t *testing.T) {
 		err := NewInvalidRequestError("test_op", "test message", nil)
-		expected := "test_op: test message"
+		expected := "server test_op: test message (code: invalid_request)"
 		if err.Error() != expected {
 			t.Errorf("Expected error string '%s', got '%s'", expected, err.Error())
 		}
 
-		// Test with underlying error
-		wrappedErr := NewInternalError("test_op", errors.New("underlying"))
-		if !strings.Contains(wrappedErr.Error(), "underlying") {
-			t.Error("Expected error string to contain underlying error")
+		// Test with underlying error - check that Unwrap() returns the underlying error
+		underlyingErr := errors.New("underlying")
+		wrappedErr := NewInternalError("test_op", underlyingErr)
+		if wrappedErr.Unwrap() != underlyingErr {
+			t.Error("Expected Unwrap() to return underlying error")
+		}
+		// Error() string uses Message when set, not underlying error
+		if !strings.Contains(wrappedErr.Error(), "internal server error") {
+			t.Error("Expected error string to contain 'internal server error'")
 		}
 	})
 }

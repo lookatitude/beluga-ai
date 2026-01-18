@@ -1,4 +1,37 @@
 // Package multimodal provides test utilities and mock implementations for testing.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//    - Panic handlers in concurrent test runners
+//    - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//    - Some context cancellation paths in streaming operations are difficult to reliably test
+//    - Race conditions between context cancellation and channel operations
+//
+// 3. Error Paths Requiring System Conditions:
+//    - Network errors that require actual network failures (NewContentBlockFromURL)
+//    - File system errors that require specific OS conditions (NewContentBlockFromFile)
+//    - Memory exhaustion scenarios
+//
+// 4. Provider-Specific Untestable Paths:
+//    - Provider implementations in pkg/multimodal/providers/* require external service failures
+//    - These are tested through integration tests rather than unit tests
+//    - Provider registry initialization code (init() functions)
+//
+// 5. Test Utility Functions:
+//    - Helper functions in test_utils.go that are used by tests but not directly tested
+//    - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//    - Package init() functions and global variable initialization
+//    - Registry registration code that executes automatically
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package multimodal
 
 import (
@@ -27,8 +60,59 @@ type MockMultimodalModel struct {
 	lastOutput       *types.MultimodalOutput
 }
 
+// MockOption configures the behavior of MockMultimodalModel.
+type MockOption func(*MockMultimodalModel)
+
+// WithMockError configures the mock to return an error.
+func WithMockError(shouldError bool, err error) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.shouldError = shouldError
+		m.errorToReturn = err
+	}
+}
+
+// WithErrorCode configures the mock to return a MultimodalError with a specific error code.
+func WithErrorCode(op, code string) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.shouldError = true
+		m.errorToReturn = NewMultimodalError(op, code, fmt.Errorf("mock error"))
+	}
+}
+
+// WithTimeoutError configures the mock to return a timeout error.
+func WithTimeoutError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeTimeout)
+}
+
+// WithRateLimitError configures the mock to return a rate limit error.
+func WithRateLimitError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeRateLimit)
+}
+
+// WithNetworkError configures the mock to return a network error.
+func WithNetworkError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeNetworkError)
+}
+
+// WithInvalidInputError configures the mock to return an invalid input error.
+func WithInvalidInputError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeInvalidInput)
+}
+
+// WithProviderError configures the mock to return a provider error.
+func WithProviderError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeProviderError)
+}
+
+// WithMockDelay sets the delay for operations.
+func WithMockDelay(delay time.Duration) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.simulateDelay = delay
+	}
+}
+
 // NewMockMultimodalModel creates a new mock multimodal model.
-func NewMockMultimodalModel(providerName, modelName string, capabilities *types.ModalityCapabilities) *MockMultimodalModel {
+func NewMockMultimodalModel(providerName, modelName string, capabilities *types.ModalityCapabilities, opts ...MockOption) *MockMultimodalModel {
 	if capabilities == nil {
 		capabilities = &types.ModalityCapabilities{
 			Text:  true,
@@ -37,11 +121,18 @@ func NewMockMultimodalModel(providerName, modelName string, capabilities *types.
 			Video: true,
 		}
 	}
-	return &MockMultimodalModel{
+	m := &MockMultimodalModel{
 		providerName: providerName,
 		modelName:    modelName,
 		capabilities: capabilities,
 	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	return m
 }
 
 // Process processes a multimodal input and returns a multimodal output.

@@ -113,13 +113,28 @@ func (s *AmazonNovaStreamingSession) prepareStreamingRequest(audioData []byte) (
 
 // receiveStreamingResponses receives streaming responses from Bedrock.
 func (s *AmazonNovaStreamingSession) receiveStreamingResponses() {
-	defer close(s.audioCh)
+	defer func() {
+		// Only close channel if not already closed by Close() method
+		s.mu.Lock()
+		wasClosed := s.closed
+		if !wasClosed {
+			s.closed = true
+			close(s.audioCh)
+		}
+		s.mu.Unlock()
+	}()
 
 	if s.stream == nil {
 		return
 	}
 
-	for event := range s.stream.GetStream().Events() {
+	// Check if stream is valid (mock clients may return nil stream)
+	stream := s.stream.GetStream()
+	if stream == nil {
+		return
+	}
+
+	for event := range stream.Events() {
 		s.mu.RLock()
 		closed := s.closed
 		s.mu.RUnlock()

@@ -1,9 +1,47 @@
 // Package chatmodels provides advanced test utilities and comprehensive mocks for testing chat model implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//    - Panic handlers in concurrent test runners (ConcurrentTestRunner)
+//    - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//    - Some context cancellation paths in streaming operations are difficult to reliably test
+//    - Race conditions between context cancellation and channel operations in StreamMessages
+//
+// 3. Error Paths Requiring System Conditions:
+//    - Network errors that require actual network failures (provider implementations)
+//    - File system errors that require specific OS conditions
+//    - Memory exhaustion scenarios
+//
+// 4. Provider-Specific Untestable Paths:
+//    - Provider implementations in pkg/chatmodels/providers/* require external service failures
+//    - These are tested through integration tests rather than unit tests
+//    - Provider registry initialization code (init() functions)
+//
+// 5. Test Utility Functions:
+//    - Helper functions in test_utils.go that are used by tests but not directly tested
+//    - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//    - Package init() functions and global variable initialization
+//    - Registry registration code that executes automatically
+//
+// 7. OTEL Context Logging:
+//    - logWithOTELContext function has paths that require valid OTEL context
+//    - Some edge cases in trace/span ID extraction are difficult to test in isolation
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package chatmodels
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,6 +49,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -74,6 +113,79 @@ func WithMockError(shouldError bool, err error) MockChatModelOption {
 		m.shouldError = shouldError
 		m.errorToReturn = err
 	}
+}
+
+// WithMockErrorCode configures the mock to return a specific error code.
+func WithMockErrorCode(code string) MockChatModelOption {
+	return func(m *AdvancedMockChatModel) {
+		m.shouldError = true
+		m.errorToReturn = NewChatModelError("mock_operation", m.modelName, m.providerName, code, errors.New("mock error"))
+	}
+}
+
+// WithMockRateLimitError configures the mock to return a rate limit error.
+func WithMockRateLimitError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeRateLimit)
+}
+
+// WithMockTimeoutError configures the mock to return a timeout error.
+func WithMockTimeoutError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeTimeout)
+}
+
+// WithMockNetworkError configures the mock to return a network error.
+func WithMockNetworkError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeNetworkError)
+}
+
+// WithMockAuthenticationError configures the mock to return an authentication error.
+func WithMockAuthenticationError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeAuthentication)
+}
+
+// WithMockQuotaError configures the mock to return a quota error.
+func WithMockQuotaError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeQuotaExceeded)
+}
+
+// WithMockGenerationError configures the mock to return a generation error.
+func WithMockGenerationError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeGeneration)
+}
+
+// WithMockStreamingError configures the mock to return a streaming error.
+func WithMockStreamingError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeStreaming)
+}
+
+// WithMockInvalidInputError configures the mock to return an invalid input error.
+func WithMockInvalidInputError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeInvalidInput)
+}
+
+// WithMockMaxRetriesError configures the mock to return a max retries error.
+func WithMockMaxRetriesError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeMaxRetries)
+}
+
+// WithMockInvalidResponseError configures the mock to return an invalid response error.
+func WithMockInvalidResponseError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeInvalidResponse)
+}
+
+// WithMockModelNotFoundError configures the mock to return a model not found error.
+func WithMockModelNotFoundError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeModelNotFound)
+}
+
+// WithMockProviderNotSupportedError configures the mock to return a provider not supported error.
+func WithMockProviderNotSupportedError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeProviderNotSupported)
+}
+
+// WithMockResourceExhaustedError configures the mock to return a resource exhausted error.
+func WithMockResourceExhaustedError() MockChatModelOption {
+	return WithMockErrorCode(ErrCodeResourceExhausted)
 }
 
 // WithMockResponses sets predefined responses for the mock.
@@ -282,6 +394,52 @@ func (m *AdvancedMockChatModel) CheckHealth() map[string]any {
 		"conversation_length": len(m.conversationHistory),
 		"tools_supported":     m.toolsSupported,
 		"last_checked":        m.lastHealthCheck,
+	}
+}
+
+// GenerateMessages implements iface.ChatModel interface.
+func (m *AdvancedMockChatModel) GenerateMessages(ctx context.Context, messages []schema.Message, options ...core.Option) ([]schema.Message, error) {
+	msg, err := m.Generate(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+	return []schema.Message{msg}, nil
+}
+
+// StreamMessages implements iface.ChatModel interface.
+func (m *AdvancedMockChatModel) StreamMessages(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan schema.Message, error) {
+	chunkCh, err := m.StreamChat(ctx, messages, options...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert AIMessageChunk channel to Message channel
+	msgCh := make(chan schema.Message, 1)
+	go func() {
+		defer close(msgCh)
+		var fullContent strings.Builder
+		for chunk := range chunkCh {
+			if chunk.Err != nil {
+				return
+			}
+			fullContent.WriteString(chunk.Content)
+		}
+		if fullContent.Len() > 0 {
+			msgCh <- schema.NewAIMessage(fullContent.String())
+		}
+	}()
+
+	return msgCh, nil
+}
+
+// GetModelInfo implements iface.ChatModel interface.
+func (m *AdvancedMockChatModel) GetModelInfo() iface.ModelInfo {
+	return iface.ModelInfo{
+		Name:         m.modelName,
+		Provider:     m.providerName,
+		Version:      "mock-1.0",
+		Capabilities: []string{"generate", "stream"},
+		MaxTokens:    4096,
 	}
 }
 

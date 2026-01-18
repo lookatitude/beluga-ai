@@ -1,5 +1,37 @@
 // Package agents provides advanced test utilities and comprehensive mocks for testing agent implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//    - Panic handlers in concurrent test runners (ConcurrentTestRunner, ConcurrentStreamingTestRunner)
+//    - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//    - Some context cancellation paths in streaming operations are difficult to reliably test
+//    - Race conditions between context cancellation and channel operations
+//
+// 3. Error Paths Requiring System Conditions:
+//    - Network errors that require actual network failures
+//    - File system errors that require specific OS conditions
+//    - Memory exhaustion scenarios
+//
+// 4. Provider-Specific Untestable Paths:
+//    - Some provider implementations have paths that require external service failures
+//    - These are tested through integration tests rather than unit tests
+//
+// 5. Test Utility Functions:
+//    - Helper functions in test_utils.go that are used by tests but not directly tested
+//    - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//    - Package init() functions and global variable initialization
+//    - These are executed automatically and difficult to test in isolation
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package agents
 
 import (
@@ -86,6 +118,63 @@ func WithMockError(shouldError bool, err error) MockAgentOption {
 	return func(a *AdvancedMockAgent) {
 		a.shouldError = shouldError
 		a.errorToReturn = err
+	}
+}
+
+// WithMockAgentError configures the mock to return an AgentError with the specified code.
+func WithMockAgentError(op, code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewAgentError(op, code, underlyingErr)
+	}
+}
+
+// WithMockExecutionError configures the mock to return an ExecutionError.
+func WithMockExecutionError(agent string, step int, action string, underlyingErr error, retryable bool) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewExecutionError(agent, step, action, underlyingErr, retryable)
+	}
+}
+
+// WithMockPlanningError configures the mock to return a PlanningError.
+func WithMockPlanningError(agent string, inputKeys []string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewPlanningError(agent, inputKeys, underlyingErr)
+	}
+}
+
+// WithMockStreamingError configures the mock to return a StreamingError.
+func WithMockStreamingError(op, agent, code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewStreamingError(op, agent, code, underlyingErr)
+	}
+}
+
+// WithMockValidationError configures the mock to return a ValidationError.
+func WithMockValidationError(field, message string) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewValidationError(field, message)
+	}
+}
+
+// WithMockFactoryError configures the mock to return a FactoryError.
+func WithMockFactoryError(agentType string, config any, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewFactoryError(agentType, config, underlyingErr)
+	}
+}
+
+// WithMockErrorCode configures the mock to return an AgentError with a specific error code.
+// This is a convenience function for common error codes.
+func WithMockErrorCode(code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewAgentError("mock_operation", code, underlyingErr)
 	}
 }
 
