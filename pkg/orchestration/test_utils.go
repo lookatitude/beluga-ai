@@ -6,40 +6,40 @@
 // The following code paths are intentionally excluded from 100% coverage requirements:
 //
 // 1. Panic Recovery Paths:
-//    - Panic handlers in concurrent test runners (ConcurrentTestRunner)
-//    - These paths are difficult to test without causing actual panics in test code
+//   - Panic handlers in concurrent test runners (ConcurrentTestRunner)
+//   - These paths are difficult to test without causing actual panics in test code
 //
 // 2. Context Cancellation Edge Cases:
-//    - Some context cancellation paths in workflow operations are difficult to reliably test
-//    - Race conditions between context cancellation and graph/chain execution
-//    - logWithOTELContext function paths that require valid OTEL context
+//   - Some context cancellation paths in workflow operations are difficult to reliably test
+//   - Race conditions between context cancellation and graph/chain execution
+//   - logWithOTELContext function paths that require valid OTEL context
 //
 // 3. Error Paths Requiring System Conditions:
-//    - Network errors that require actual network failures (provider implementations)
-//    - Memory exhaustion scenarios during large batch operations
-//    - Workflow implementation errors requiring Temporal client (createWorkflowImplementation)
+//   - Network errors that require actual network failures (provider implementations)
+//   - Memory exhaustion scenarios during large batch operations
+//   - Workflow implementation errors requiring Temporal client (createWorkflowImplementation)
 //
 // 4. Provider-Specific Untestable Paths:
-//    - Provider implementations in pkg/orchestration/providers/* require external service failures
-//    - Temporal workflow creation requires actual Temporal client (currently returns error)
-//    - These are tested through integration tests rather than unit tests
+//   - Provider implementations in pkg/orchestration/providers/* require external service failures
+//   - Temporal workflow creation requires actual Temporal client (currently returns error)
+//   - These are tested through integration tests rather than unit tests
 //
 // 5. Test Utility Functions:
-//    - Helper functions in test_utils.go that are used by tests but not directly tested
-//    - CreateTestChain, CreateTestGraph, CreateTestWorkflow helpers
-//    - These are validated through their usage in actual test cases
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - CreateTestChain, CreateTestGraph, CreateTestWorkflow helpers
+//   - These are validated through their usage in actual test cases
 //
 // 6. Initialization Code:
-//    - Package init() functions and global variable initialization
-//    - Registry registration code that executes automatically
+//   - Package init() functions and global variable initialization
+//   - Registry registration code that executes automatically
 //
 // 7. OTEL Context Logging:
-//    - logWithOTELContext function has paths that require valid OTEL context
-//    - Some edge cases in trace/span ID extraction are difficult to test in isolation
+//   - logWithOTELContext function has paths that require valid OTEL context
+//   - Some edge cases in trace/span ID extraction are difficult to test in isolation
 //
 // 8. Factory Functions:
-//    - NewChain, NewGraph, NewWorkflow convenience functions that delegate to orchestrator
-//    - These are tested through orchestrator tests, not in isolation
+//   - NewChain, NewGraph, NewWorkflow convenience functions that delegate to orchestrator
+//   - These are tested through orchestrator tests, not in isolation
 //
 // All exclusions are documented here to maintain transparency about coverage goals.
 // The target is 100% coverage of testable code paths, excluding the above categories.

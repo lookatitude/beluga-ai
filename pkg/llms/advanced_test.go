@@ -1181,17 +1181,17 @@ func TestConfigTopK(t *testing.T) {
 	}{
 		{
 			name:     "valid_top_k",
-			topK:      10,
+			topK:     10,
 			expected: intPtr(10),
 		},
 		{
 			name:     "zero_top_k",
-			topK:      0,
+			topK:     0,
 			expected: intPtr(0),
 		},
 		{
 			name:     "max_top_k",
-			topK:      100,
+			topK:     100,
 			expected: intPtr(100),
 		},
 	}
@@ -1333,13 +1333,13 @@ func TestValidateProviderConfig(t *testing.T) {
 		{
 			name: "openai_missing_model",
 			config: &Config{
-				Provider: "openai",
-				APIKey:   "test-key",
-				ModelName: "",
-				Timeout:  30 * time.Second,
-				RetryDelay: time.Second,
+				Provider:             "openai",
+				APIKey:               "test-key",
+				ModelName:            "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
 				MaxConcurrentBatches: 5,
-				RetryBackoff: 2.0,
+				RetryBackoff:         2.0,
 			},
 			expectError: true,
 			errContains: "ModelName", // Struct validation fails first
@@ -1347,13 +1347,13 @@ func TestValidateProviderConfig(t *testing.T) {
 		{
 			name: "openai_missing_api_key",
 			config: &Config{
-				Provider: "openai",
-				ModelName: "gpt-4",
-				APIKey:   "",
-				Timeout:  30 * time.Second,
-				RetryDelay: time.Second,
+				Provider:             "openai",
+				ModelName:            "gpt-4",
+				APIKey:               "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
 				MaxConcurrentBatches: 5,
-				RetryBackoff: 2.0,
+				RetryBackoff:         2.0,
 			},
 			expectError: true,
 			errContains: "APIKey", // Struct validation fails first
@@ -1370,13 +1370,13 @@ func TestValidateProviderConfig(t *testing.T) {
 		{
 			name: "anthropic_missing_model",
 			config: &Config{
-				Provider: "anthropic",
-				APIKey:   "test-key",
-				ModelName: "",
-				Timeout:  30 * time.Second,
-				RetryDelay: time.Second,
+				Provider:             "anthropic",
+				APIKey:               "test-key",
+				ModelName:            "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
 				MaxConcurrentBatches: 5,
-				RetryBackoff: 2.0,
+				RetryBackoff:         2.0,
 			},
 			expectError: true,
 			errContains: "ModelName", // Struct validation fails first
@@ -1384,24 +1384,24 @@ func TestValidateProviderConfig(t *testing.T) {
 		{
 			name: "mock_provider_auto_model",
 			config: &Config{
-				Provider: "mock",
-				ModelName: "test-model", // Set to pass struct validation, auto-set logic still tested
-				Timeout:  30 * time.Second,
-				RetryDelay: time.Second,
+				Provider:             "mock",
+				ModelName:            "test-model", // Set to pass struct validation, auto-set logic still tested
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
 				MaxConcurrentBatches: 5,
-				RetryBackoff: 2.0,
+				RetryBackoff:         2.0,
 			},
 			expectError: false,
 		},
 		{
 			name: "timeout_too_short",
 			config: &Config{
-				Provider: "mock",
-				ModelName: "test-model",
-				Timeout: 500 * time.Millisecond,
-				RetryDelay: time.Second,
+				Provider:             "mock",
+				ModelName:            "test-model",
+				Timeout:              500 * time.Millisecond,
+				RetryDelay:           time.Second,
 				MaxConcurrentBatches: 5,
-				RetryBackoff: 2.0,
+				RetryBackoff:         2.0,
 			},
 			expectError: true,
 			errContains: "Timeout", // Struct validation fails first on min tag
@@ -1444,10 +1444,10 @@ func TestErrorWithMessage(t *testing.T) {
 	}{
 		{
 			name:    "with_message_and_error",
-			op:       "test_operation",
-			code:     ErrCodeInvalidInput,
-			message:  "Custom error message",
-			err:      errors.New("underlying error"),
+			op:      "test_operation",
+			code:    ErrCodeInvalidInput,
+			message: "Custom error message",
+			err:     errors.New("underlying error"),
 			check: func(t *testing.T, e *LLMError) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeInvalidInput, e.Code)
@@ -1458,10 +1458,10 @@ func TestErrorWithMessage(t *testing.T) {
 		},
 		{
 			name:    "with_message_no_error",
-			op:       "test_operation",
-			code:     ErrCodeNetworkError,
-			message:  "Network failed",
-			err:      nil,
+			op:      "test_operation",
+			code:    ErrCodeNetworkError,
+			message: "Network failed",
+			err:     nil,
 			check: func(t *testing.T, e *LLMError) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeNetworkError, e.Code)
@@ -1494,10 +1494,10 @@ func TestErrorWithDetails(t *testing.T) {
 	}{
 		{
 			name:    "with_details",
-			op:       "test_operation",
-			code:     ErrCodeRateLimit,
-			message:  "Rate limit exceeded",
-			err:      errors.New("429 Too Many Requests"),
+			op:      "test_operation",
+			code:    ErrCodeRateLimit,
+			message: "Rate limit exceeded",
+			err:     errors.New("429 Too Many Requests"),
 			details: map[string]any{
 				"retry_after": 60,
 				"limit":       100,
@@ -1513,11 +1513,11 @@ func TestErrorWithDetails(t *testing.T) {
 		},
 		{
 			name:    "with_empty_details",
-			op:       "test_operation",
-			code:     ErrCodeTimeout,
-			message:  "Request timeout",
-			err:      nil,
-			details:  map[string]any{},
+			op:      "test_operation",
+			code:    ErrCodeTimeout,
+			message: "Request timeout",
+			err:     nil,
+			details: map[string]any{},
 			check: func(t *testing.T, e *LLMError) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeTimeout, e.Code)

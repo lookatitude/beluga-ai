@@ -143,7 +143,7 @@ func (m *AdvancedMockChromaStore) SimilaritySearch(ctx context.Context, queryVec
 	// Simple mock implementation - return first k documents
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

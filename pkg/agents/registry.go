@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
@@ -21,7 +20,7 @@ var (
 )
 
 // AgentCreatorFunc defines the function signature for creating agents.
-type AgentCreatorFunc func(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error)
+type AgentCreatorFunc func(ctx context.Context, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error)
 
 // AgentRegistry is the global registry for creating agent instances.
 // It maintains a registry of available agent types and their creation functions.
@@ -91,7 +90,7 @@ func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 //	}
 //
 // Example usage can be found in examples/agents/basic/main.go
-func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	r.mu.RLock()
 	creator, exists := r.creators[agentType]
 	r.mu.RUnlock()
@@ -169,7 +168,7 @@ func RegisterAgentType(agentType string, creator AgentCreatorFunc) {
 //	agent, err := agents.CreateAgent(ctx, "base", "my-agent", llm, tools, config)
 //
 // Example usage can be found in examples/agents/basic/main.go
-func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	return globalAgentRegistry.Create(ctx, agentType, name, llm, agentTools, config)
 }
 
@@ -221,7 +220,7 @@ func init() {
 }
 
 // Built-in agent creators.
-func createBaseAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func createBaseAgent(ctx context.Context, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	baseLLM, ok := llm.(llmsiface.LLM)
 	if !ok {
 		return nil, NewAgentErrorWithMessage(
@@ -236,7 +235,7 @@ func createBaseAgent(ctx context.Context, name string, llm any, agentTools []too
 	return factory.CreateBaseAgent(ctx, name, baseLLM, agentTools)
 }
 
-func createReActAgent(ctx context.Context, name string, llm any, agentTools []tools.Tool, config Config) (iface.CompositeAgent, error) {
+func createReActAgent(ctx context.Context, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	chatModel, ok := llm.(llmsiface.ChatModel)
 	if !ok {
 		return nil, NewAgentErrorWithMessage(

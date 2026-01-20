@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
@@ -151,7 +150,7 @@ func (e *AgentExecutor) executeStep(ctx context.Context, agent iface.Agent, step
 
 // executeTool executes a tool with the given action.
 func (e *AgentExecutor) executeTool(ctx context.Context, agent iface.Agent, action schema.AgentAction) (string, error) {
-	var selectedTool tools.Tool
+	var selectedTool iface.Tool
 
 	// Find the tool by name
 	for _, tool := range agent.GetTools() {

@@ -33,15 +33,15 @@ func TestIntegrationMemoryVectorstores(t *testing.T) {
 		// but helper returns vectorstoresiface.VectorStore. In real usage,
 		// you would use an actual vector store implementation.
 		// This test documents the expected integration pattern.
-		
+
 		// For now, we test that the components can be created
 		require.NotNil(t, embedder)
 		require.NotNil(t, vectorStore)
-		
+
 		// In a real scenario, you would do:
 		// mem := memory.NewVectorStoreRetrieverMemory(embedder, actualVectorStore)
 		// This requires an actual vector store implementation, not a mock
-		
+
 		t.Skip("Skipping due to interface type mismatch - requires actual vector store implementation")
 	})
 }

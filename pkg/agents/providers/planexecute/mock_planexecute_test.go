@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llms "github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,7 +14,7 @@ import (
 
 func TestMockPlanExecuteAgent(t *testing.T) {
 	mockLLM := llms.NewAdvancedMockChatModel("test-model")
-	tools := []tools.Tool{} // Empty tools for testing
+	tools := []iface.Tool{} // Empty tools for testing
 
 	t.Run("default_behavior", func(t *testing.T) {
 		mock, err := NewMockPlanExecuteAgent("test-agent", mockLLM, tools)

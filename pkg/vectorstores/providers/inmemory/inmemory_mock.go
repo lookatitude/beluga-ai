@@ -31,9 +31,9 @@ type AdvancedMockInMemoryStore struct {
 // NewAdvancedMockInMemoryStore creates a new advanced mock with configurable behavior.
 func NewAdvancedMockInMemoryStore() *AdvancedMockInMemoryStore {
 	mock := &AdvancedMockInMemoryStore{
-		name:       "inmemory-mock",
-		documents:  make([]schema.Document, 0),
-		embeddings: make([][]float32, 0),
+		name:        "inmemory-mock",
+		documents:   make([]schema.Document, 0),
+		embeddings:  make([][]float32, 0),
 		documentIDs: make([]string, 0),
 	}
 	return mock
@@ -137,7 +137,7 @@ func (m *AdvancedMockInMemoryStore) SimilaritySearch(ctx context.Context, queryV
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

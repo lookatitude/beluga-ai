@@ -53,7 +53,7 @@ func TestIntegrationMessagingOrchestration(t *testing.T) {
 
 			// Create mock messaging backend
 			mockBackend := messaging.NewAdvancedMockMessaging()
-			
+
 			// Register mock backend in registry
 			registry := messaging.GetRegistry()
 			registry.Register("test-messaging", func(ctx context.Context, config *messaging.Config) (iface.ConversationalBackend, error) {
@@ -70,7 +70,7 @@ func TestIntegrationMessagingOrchestration(t *testing.T) {
 					"messaging-chain-"+tt.name,
 					[]string{"process_message", "generate_response", "send_response"},
 				)
-				
+
 				// Simulate webhook event processing
 				event := &iface.WebhookEvent{
 					EventType: tt.eventType,
@@ -81,7 +81,7 @@ func TestIntegrationMessagingOrchestration(t *testing.T) {
 						"Author":          "+1234567890",
 					},
 				}
-				
+
 				// Process event through chain
 				orchestrationResult, err = chain.Invoke(ctx, event)
 
@@ -90,7 +90,7 @@ func TestIntegrationMessagingOrchestration(t *testing.T) {
 					"messaging-workflow-"+tt.name,
 					[]string{"receive", "process", "respond"},
 				)
-				
+
 				// Simulate workflow execution from webhook
 				workflowID, runID, workflowErr := workflow.Execute(ctx, tt.eventType)
 				err = workflowErr
@@ -110,7 +110,7 @@ func TestIntegrationMessagingOrchestration(t *testing.T) {
 						"message_processor": {"response_sender"},
 					},
 				)
-				
+
 				// Simulate event processing through graph
 				orchestrationResult, err = graph.Invoke(ctx, tt.eventType)
 			}
@@ -141,7 +141,7 @@ func TestMessagingOrchestrationWebhookFlow(t *testing.T) {
 
 	// Create mock messaging backend
 	mockBackend := messaging.NewAdvancedMockMessaging()
-	
+
 	// Register in registry
 	registry := messaging.GetRegistry()
 	registry.Register("test-webhook", func(ctx context.Context, config *messaging.Config) (iface.ConversationalBackend, error) {
@@ -266,7 +266,7 @@ func TestMessagingOrchestrationErrorHandling(t *testing.T) {
 func BenchmarkMessagingOrchestration(b *testing.B) {
 	ctx := context.Background()
 	mockBackend := messaging.NewAdvancedMockMessaging()
-	
+
 	chain := orchestration.CreateTestChain(
 		"benchmark-chain",
 		[]string{"step1", "step2", "step3"},

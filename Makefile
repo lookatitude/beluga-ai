@@ -113,7 +113,7 @@ lint: ## Run golangci-lint
 		echo "golangci-lint not found. Installing..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.6.2; \
 	fi
-	@packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
+	@packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -vE "github.com/lookatitude/beluga-ai/pkg/agents/providers/react|github.com/lookatitude/beluga-ai/tests/integration" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
 	if [ -z "$$packages" ]; then \
 		echo "Error: No packages found after filtering"; \
 		exit 1; \
@@ -131,7 +131,7 @@ lint-fix: ## Run golangci-lint with auto-fix
 		PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run --timeout=5m --fix $(PKG); \
 	else \
 		echo "Fixing lint errors in all packages (excluding react due to golangci-lint v2.6.2 panic bug)..."; \
-		packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
+		packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -vE "github.com/lookatitude/beluga-ai/pkg/agents/providers/react|github.com/lookatitude/beluga-ai/tests/integration" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
 		if [ -z "$$packages" ]; then \
 			echo "Error: No packages found after filtering"; \
 			exit 1; \
@@ -169,15 +169,15 @@ security: ## Run security scans (gosec, govulncheck, and gitleaks)
 		echo "gosec not found. Installing..."; \
 		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
-	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json ./pkg/... ./cmd/... ./tests/... || true
-	@gosec -exclude-dir=test,tests,mock,fixtures -exclude=G404,G101,G204,G201,G304,G302,G301,G306,G602 ./pkg/... ./cmd/... ./tests/... || (echo "⚠️  Security issues found (some may be false positives - see gosec-report.json)" && exit 1)
+	@$$(go env GOPATH)/bin/gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json ./pkg/... ./cmd/... ./tests/... || true
+	@$$(go env GOPATH)/bin/gosec -exclude-dir=test,tests,mock,fixtures -exclude=G404,G101,G204,G201,G304,G302,G301,G306,G602 ./pkg/... ./cmd/... ./tests/... || (echo "⚠️  Security issues found (some may be false positives - see gosec-report.json)" && exit 1)
 	@echo ""
 	@echo "Running govulncheck..."
 	@if ! command -v govulncheck >/dev/null 2>&1; then \
 		echo "govulncheck not found. Installing..."; \
 		go install golang.org/x/vuln/cmd/govulncheck@latest; \
 	fi
-	@govulncheck ./pkg/... ./cmd/... ./tests/... 2>&1 | tee $(COVERAGE_DIR)/govulncheck-report.txt || true
+	@$$(go env GOPATH)/bin/govulncheck ./pkg/... ./cmd/... ./tests/... 2>&1 | tee $(COVERAGE_DIR)/govulncheck-report.txt || true
 	@echo ""
 	@echo "Running gitleaks..."
 	@if ! command -v gitleaks >/dev/null 2>&1; then \

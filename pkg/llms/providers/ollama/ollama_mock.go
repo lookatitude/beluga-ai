@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockOllamaProvider provides a comprehensive mock implementation for testing Ollama provider.
 type AdvancedMockOllamaProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockOllamaProvider struct {
 // NewAdvancedMockOllamaProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOllamaProvider(modelName string) *AdvancedMockOllamaProvider {
 	mock := &AdvancedMockOllamaProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from Ollama.",

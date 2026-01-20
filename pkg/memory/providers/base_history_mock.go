@@ -28,8 +28,8 @@ type AdvancedMockBaseChatMessageHistory struct {
 // NewAdvancedMockBaseChatMessageHistory creates a new advanced mock with configurable behavior.
 func NewAdvancedMockBaseChatMessageHistory() *AdvancedMockBaseChatMessageHistory {
 	mock := &AdvancedMockBaseChatMessageHistory{
-		messages:  make([]schema.Message, 0),
-		maxSize:   -1, // Unlimited by default
+		messages: make([]schema.Message, 0),
+		maxSize:  -1, // Unlimited by default
 	}
 	return mock
 }

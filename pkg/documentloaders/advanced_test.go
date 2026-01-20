@@ -368,28 +368,28 @@ func TestDocumentLoadersErrorHandling(t *testing.T) {
 		expectedMsg string
 	}{
 		{
-			name: "error_with_message_and_path",
-			err: NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "file read failed", nil),
+			name:        "error_with_message_and_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "file read failed", nil),
 			expectedMsg: "documentloaders Load [/path/to/file.txt]: file read failed (code: io_error)",
 		},
 		{
-			name: "error_with_message_no_path",
-			err: NewLoaderError("Load", ErrCodeIOError, "", "file read failed", nil),
+			name:        "error_with_message_no_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "file read failed", nil),
 			expectedMsg: "documentloaders Load: file read failed (code: io_error)",
 		},
 		{
-			name: "error_with_underlying_error_and_path",
-			err: NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "", fmt.Errorf("permission denied")),
+			name:        "error_with_underlying_error_and_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "", fmt.Errorf("permission denied")),
 			expectedMsg: "documentloaders Load [/path/to/file.txt]: permission denied (code: io_error)",
 		},
 		{
-			name: "error_with_underlying_error_no_path",
-			err: NewLoaderError("Load", ErrCodeIOError, "", "", fmt.Errorf("permission denied")),
+			name:        "error_with_underlying_error_no_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "", fmt.Errorf("permission denied")),
 			expectedMsg: "documentloaders Load: permission denied (code: io_error)",
 		},
 		{
-			name: "error_no_message_no_underlying",
-			err: NewLoaderError("Load", ErrCodeIOError, "", "", nil),
+			name:        "error_no_message_no_underlying",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "", nil),
 			expectedMsg: "documentloaders Load: unknown error (code: io_error)",
 		},
 	}

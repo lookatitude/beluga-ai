@@ -4,34 +4,34 @@
 // Test Coverage Exclusions:
 //
 // 1. Internal Package Implementation:
-//    - File: internal/*.go (all internal implementation files)
-//    - Reason: Internal packages are tested indirectly through public API
-//    - Coverage Impact: Internal code is covered via integration tests
-//    - Workaround: Test public interfaces (PromptManager, Template, PromptFormatter)
+//   - File: internal/*.go (all internal implementation files)
+//   - Reason: Internal packages are tested indirectly through public API
+//   - Coverage Impact: Internal code is covered via integration tests
+//   - Workaround: Test public interfaces (PromptManager, Template, PromptFormatter)
 //
 // 2. Interface Package:
-//    - File: iface/*.go (interface definitions and error constructors)
-//    - Reason: Interface definitions and error constructors are tested through implementations
-//    - Coverage Impact: ~5% of code (interface definitions)
-//    - Workaround: Test error creation functions in errors.go (which re-export iface functions)
+//   - File: iface/*.go (interface definitions and error constructors)
+//   - Reason: Interface definitions and error constructors are tested through implementations
+//   - Coverage Impact: ~5% of code (interface definitions)
+//   - Workaround: Test error creation functions in errors.go (which re-export iface functions)
 //
 // 3. Provider Implementations:
-//    - File: providers/*/provider.go (all provider implementations)
-//    - Reason: Provider implementations require actual API credentials and network access
-//    - Coverage Impact: Provider-specific code is tested via integration tests with mocks
-//    - Workaround: Use AdvancedMockTemplate for unit tests, integration tests for real providers
+//   - File: providers/*/provider.go (all provider implementations)
+//   - Reason: Provider implementations require actual API credentials and network access
+//   - Coverage Impact: Provider-specific code is tested via integration tests with mocks
+//   - Workaround: Use AdvancedMockTemplate for unit tests, integration tests for real providers
 //
 // 4. Error Recovery Paths in Check Method:
-//    - File: prompts.go:185-199 (Check method error paths)
-//    - Reason: Difficult to simulate template/adapter creation failures without modifying internal code
-//    - Coverage Impact: ~2% of Check method (error paths)
-//    - Workaround: Test Check success path, error paths tested via integration tests
+//   - File: prompts.go:185-199 (Check method error paths)
+//   - Reason: Difficult to simulate template/adapter creation failures without modifying internal code
+//   - Coverage Impact: ~2% of Check method (error paths)
+//   - Workaround: Test Check success path, error paths tested via integration tests
 //
 // 5. Convenience Function Error Paths:
-//    - File: prompts.go:210-236 (NewStringPromptTemplate, NewDefaultPromptAdapter, NewChatPromptAdapter error paths)
-//    - Reason: Error paths occur when manager creation fails, which is hard to simulate
-//    - Coverage Impact: ~1% of convenience functions (error paths)
-//    - Workaround: Test success paths, error paths are edge cases
+//   - File: prompts.go:210-236 (NewStringPromptTemplate, NewDefaultPromptAdapter, NewChatPromptAdapter error paths)
+//   - Reason: Error paths occur when manager creation fails, which is hard to simulate
+//   - Coverage Impact: ~1% of convenience functions (error paths)
+//   - Workaround: Test success paths, error paths are edge cases
 //
 // All exclusions are documented here to maintain transparency about coverage goals.
 // Target: 100% coverage of testable code paths (excluding the above).

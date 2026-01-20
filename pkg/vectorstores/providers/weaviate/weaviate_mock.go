@@ -33,11 +33,11 @@ type AdvancedMockWeaviateStore struct {
 // NewAdvancedMockWeaviateStore creates a new advanced mock with configurable behavior.
 func NewAdvancedMockWeaviateStore(url, className string) *AdvancedMockWeaviateStore {
 	mock := &AdvancedMockWeaviateStore{
-		url:       url,
-		className: className,
-		name:      "weaviate-mock",
-		documents: make([]schema.Document, 0),
-		embeddings: make([][]float32, 0),
+		url:         url,
+		className:   className,
+		name:        "weaviate-mock",
+		documents:   make([]schema.Document, 0),
+		embeddings:  make([][]float32, 0),
 		documentIDs: make([]string, 0),
 	}
 	return mock
@@ -141,7 +141,7 @@ func (m *AdvancedMockWeaviateStore) SimilaritySearch(ctx context.Context, queryV
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

@@ -731,18 +731,18 @@ func BenchmarkBenchmarkHelper(b *testing.B) {
 // Mock implementations for testing
 type mockMetrics struct{}
 
-func (m *mockMetrics) RecordTemplateCreated(templateType string)              {}
+func (m *mockMetrics) RecordTemplateCreated(templateType string)                    {}
 func (m *mockMetrics) RecordTemplateExecuted(templateName string, duration float64) {}
-func (m *mockMetrics) RecordTemplateError(templateName, errorType string)     {}
+func (m *mockMetrics) RecordTemplateError(templateName, errorType string)           {}
 func (m *mockMetrics) RecordFormattingRequest(adapterType string, duration float64) {}
-func (m *mockMetrics) RecordFormattingError(adapterType, errorType string)     {}
-func (m *mockMetrics) RecordValidationRequest()                               {}
-func (m *mockMetrics) RecordValidationError(errorType string)                 {}
-func (m *mockMetrics) RecordCacheHit()                                         {}
-func (m *mockMetrics) RecordCacheMiss()                                        {}
-func (m *mockMetrics) RecordCacheSize(size int64)                              {}
-func (m *mockMetrics) RecordAdapterRequest(adapterType string)                 {}
-func (m *mockMetrics) RecordAdapterError(adapterType, errorType string)        {}
+func (m *mockMetrics) RecordFormattingError(adapterType, errorType string)          {}
+func (m *mockMetrics) RecordValidationRequest()                                     {}
+func (m *mockMetrics) RecordValidationError(errorType string)                       {}
+func (m *mockMetrics) RecordCacheHit()                                              {}
+func (m *mockMetrics) RecordCacheMiss()                                             {}
+func (m *mockMetrics) RecordCacheSize(size int64)                                   {}
+func (m *mockMetrics) RecordAdapterRequest(adapterType string)                      {}
+func (m *mockMetrics) RecordAdapterError(adapterType, errorType string)             {}
 
 type mockValidator struct{}
 

@@ -1,3 +1,5 @@
+//go:build experimental
+
 package ollama
 
 import (
@@ -13,9 +15,10 @@ import (
 )
 
 func init() {
-	// Register Ollama provider with the global registry
-	// Use registry package directly to avoid import cycles in tests
-	// Use reflection to access config fields without importing embeddings package
+	// Register Ollama provider with the global registry (experimental build only)
+	// Ollama contains high-severity CVEs (GO-2025-3824, GO-2025-3695) that allow
+	// cross-domain token exposure and DoS. This provider is only available when
+	// building with the 'experimental' tag: go build -tags experimental
 	registry.GetRegistry().Register("ollama", func(ctx context.Context, config any) (embeddingsiface.Embedder, error) {
 		// Use reflection to access config.Ollama without importing embeddings
 		configValue := reflect.ValueOf(config)

@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockBedrockProvider provides a comprehensive mock implementation for testing Bedrock provider.
 type AdvancedMockBedrockProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockBedrockProvider struct {
 // NewAdvancedMockBedrockProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockBedrockProvider(modelName string) *AdvancedMockBedrockProvider {
 	mock := &AdvancedMockBedrockProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from Bedrock.",

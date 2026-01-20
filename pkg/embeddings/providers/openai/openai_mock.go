@@ -27,7 +27,7 @@ type AdvancedMockOpenAIEmbedder struct {
 // NewAdvancedMockOpenAIEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOpenAIEmbedder(dimension int) *AdvancedMockOpenAIEmbedder {
 	mock := &AdvancedMockOpenAIEmbedder{
-		dimension: dimension,
+		dimension:  dimension,
 		embeddings: make([][]float32, 0),
 	}
 	mock.generateDefaultEmbeddings(10)

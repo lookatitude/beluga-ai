@@ -14,7 +14,7 @@ import (
 
 // mockStreamingAgentForBenchmark implements StreamingAgent for benchmarking.
 type mockStreamingAgentForBenchmark struct {
-	tools []tools.Tool
+	tools []iface.Tool
 }
 
 func (m *mockStreamingAgentForBenchmark) StreamExecute(ctx context.Context, inputs map[string]any) (<-chan iface.AgentStreamChunk, error) {
@@ -34,7 +34,7 @@ func (m *mockStreamingAgentForBenchmark) GetConfig() schema.AgentConfig {
 	return schema.AgentConfig{Name: "bench-agent"}
 }
 
-func (m *mockStreamingAgentForBenchmark) GetTools() []tools.Tool {
+func (m *mockStreamingAgentForBenchmark) GetTools() []iface.Tool {
 	return m.tools
 }
 
@@ -75,7 +75,7 @@ func (m *mockToolForBenchmark) Description() string {
 	return "mock tool"
 }
 
-func (m *mockToolForBenchmark) Definition() tools.ToolDefinition {
+func (m *mockToolForBenchmark) Definition() iface.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: "mock tool",
@@ -125,7 +125,7 @@ func BenchmarkExecuteStreamingPlan_Basic(b *testing.B) {
 // BenchmarkExecuteStreamingPlan_MultipleSteps benchmarks ExecuteStreamingPlan with multiple steps.
 func BenchmarkExecuteStreamingPlan_MultipleSteps(b *testing.B) {
 	agent := &mockStreamingAgentForBenchmark{
-		tools: []tools.Tool{&mockToolForBenchmark{name: "test_tool"}},
+		tools: []iface.Tool{&mockToolForBenchmark{name: "test_tool"}},
 	}
 	executor := NewStreamingAgentExecutor()
 
@@ -156,7 +156,7 @@ func BenchmarkExecuteStreamingPlan_MultipleSteps(b *testing.B) {
 // BenchmarkExecuteStreamingPlan_Concurrent benchmarks concurrent ExecuteStreamingPlan operations.
 func BenchmarkExecuteStreamingPlan_Concurrent(b *testing.B) {
 	agent := &mockStreamingAgentForBenchmark{
-		tools: []tools.Tool{&mockToolForBenchmark{name: "test_tool"}},
+		tools: []iface.Tool{&mockToolForBenchmark{name: "test_tool"}},
 	}
 	executor := NewStreamingAgentExecutor()
 
@@ -183,7 +183,7 @@ func BenchmarkExecuteStreamingPlan_Concurrent(b *testing.B) {
 // BenchmarkExecuteStreamingPlan_LargePlan benchmarks ExecuteStreamingPlan with a large plan.
 func BenchmarkExecuteStreamingPlan_LargePlan(b *testing.B) {
 	agent := &mockStreamingAgentForBenchmark{
-		tools: []tools.Tool{&mockToolForBenchmark{name: "test_tool"}},
+		tools: []iface.Tool{&mockToolForBenchmark{name: "test_tool"}},
 	}
 	executor := NewStreamingAgentExecutor()
 

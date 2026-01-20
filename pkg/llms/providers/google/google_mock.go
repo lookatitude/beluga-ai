@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockGoogleProvider provides a comprehensive mock implementation for testing Google provider.
 type AdvancedMockGoogleProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockGoogleProvider struct {
 // NewAdvancedMockGoogleProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockGoogleProvider(modelName string) *AdvancedMockGoogleProvider {
 	mock := &AdvancedMockGoogleProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from Google.",

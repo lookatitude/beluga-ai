@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockOpenAIProvider provides a comprehensive mock implementation for testing OpenAI provider.
 type AdvancedMockOpenAIProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockOpenAIProvider struct {
 // NewAdvancedMockOpenAIProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOpenAIProvider(modelName string) *AdvancedMockOpenAIProvider {
 	mock := &AdvancedMockOpenAIProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from OpenAI.",

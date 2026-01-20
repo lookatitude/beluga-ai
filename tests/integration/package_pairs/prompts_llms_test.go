@@ -124,43 +124,43 @@ func TestIntegrationPromptsLLMsAdapterTypes(t *testing.T) {
 
 	llm := llms.NewAdvancedMockChatModel("adapter-type-test")
 
-		tests := []struct {
-			name     string
-			setup    func() (iface.PromptFormatter, error)
-			variables map[string]any
-			testFunc func(t *testing.T, rendered any, response schema.Message)
-		}{
-			{
-				name: "default_adapter",
-				setup: func() (iface.PromptFormatter, error) {
-					return manager.NewDefaultAdapter("default-adapter", "Process: {{.input}}", []string{"input"})
-				},
-				variables: map[string]any{"input": "test input"},
-				testFunc: func(t *testing.T, rendered any, response schema.Message) {
-					assert.NotNil(t, rendered)
-					assert.NotEmpty(t, response.GetContent())
-				},
+	tests := []struct {
+		name      string
+		setup     func() (iface.PromptFormatter, error)
+		variables map[string]any
+		testFunc  func(t *testing.T, rendered any, response schema.Message)
+	}{
+		{
+			name: "default_adapter",
+			setup: func() (iface.PromptFormatter, error) {
+				return manager.NewDefaultAdapter("default-adapter", "Process: {{.input}}", []string{"input"})
 			},
-			{
-				name: "chat_adapter",
-				setup: func() (iface.PromptFormatter, error) {
-					return manager.NewChatAdapter(
-						"chat-adapter",
-						"System: {{.system}}",
-						"User: {{.user}}",
-						[]string{"system", "user"},
-					)
-				},
-				variables: map[string]any{
-					"system": "You are a helpful assistant",
-					"user":   "Hello",
-				},
-				testFunc: func(t *testing.T, rendered any, response schema.Message) {
-					assert.NotNil(t, rendered)
-					assert.NotEmpty(t, response.GetContent())
-				},
+			variables: map[string]any{"input": "test input"},
+			testFunc: func(t *testing.T, rendered any, response schema.Message) {
+				assert.NotNil(t, rendered)
+				assert.NotEmpty(t, response.GetContent())
 			},
-		}
+		},
+		{
+			name: "chat_adapter",
+			setup: func() (iface.PromptFormatter, error) {
+				return manager.NewChatAdapter(
+					"chat-adapter",
+					"System: {{.system}}",
+					"User: {{.user}}",
+					[]string{"system", "user"},
+				)
+			},
+			variables: map[string]any{
+				"system": "You are a helpful assistant",
+				"user":   "Hello",
+			},
+			testFunc: func(t *testing.T, rendered any, response schema.Message) {
+				assert.NotNil(t, rendered)
+				assert.NotEmpty(t, response.GetContent())
+			},
+		},
+	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -229,9 +229,9 @@ func TestIntegrationPromptsLLMsErrorHandling(t *testing.T) {
 			expectError: true, // Template rendering may fail
 		},
 		{
-			name:        "llm_generation_error",
-			template:    "Hello {{.name}}",
-			variables:   map[string]any{"name": "Alice"},
+			name:      "llm_generation_error",
+			template:  "Hello {{.name}}",
+			variables: map[string]any{"name": "Alice"},
 			setupLLM: func() *llms.AdvancedMockChatModel {
 				return llms.NewAdvancedMockChatModel("error-test",
 					llms.WithErrorCode(llms.ErrCodeNetworkError))

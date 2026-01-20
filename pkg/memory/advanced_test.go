@@ -620,7 +620,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				underlyingErr := errors.New("underlying error")
 				memErr := NewMemoryError("test_op", ErrCodeStorageError, underlyingErr)
-				
+
 				unwrapped := memErr.Unwrap()
 				assert.Equal(t, underlyingErr, unwrapped)
 			},
@@ -631,7 +631,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 				err1 := NewMemoryError("op1", ErrCodeStorageError, errors.New("error"))
 				err2 := NewMemoryError("op2", ErrCodeStorageError, errors.New("error"))
 				err3 := NewMemoryError("op3", ErrCodeRetrievalError, errors.New("error"))
-				
+
 				// Same code should match
 				assert.True(t, err1.Is(err2))
 				// Different code should not match
@@ -644,7 +644,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 				err := NewMemoryError("test_op", ErrCodeStorageError, errors.New("error"))
 				err = err.WithContext("key1", "value1")
 				err = err.WithContext("key2", 42)
-				
+
 				assert.Equal(t, "value1", err.Context["key1"])
 				assert.Equal(t, 42, err.Context["key2"])
 			},
@@ -654,11 +654,11 @@ func TestMemoryErrorFunctions(t *testing.T) {
 			testFunc: func(t *testing.T) {
 				underlyingErr := errors.New("underlying")
 				wrapped := WrapError(underlyingErr, "test_op", ErrCodeTimeout)
-				
+
 				assert.NotNil(t, wrapped)
 				assert.Equal(t, ErrCodeTimeout, wrapped.Code)
 				assert.Equal(t, underlyingErr, wrapped.Unwrap())
-				
+
 				// Test nil error
 				nilWrapped := WrapError(nil, "op", ErrCodeTimeout)
 				assert.Nil(t, nilWrapped)
@@ -668,10 +668,10 @@ func TestMemoryErrorFunctions(t *testing.T) {
 			name: "is_memory_error",
 			testFunc: func(t *testing.T) {
 				err := NewMemoryError("test_op", ErrCodeStorageError, errors.New("error"))
-				
+
 				assert.True(t, IsMemoryError(err, ErrCodeStorageError))
 				assert.False(t, IsMemoryError(err, ErrCodeRetrievalError))
-				
+
 				// Test with non-MemoryError
 				regularErr := errors.New("regular error")
 				assert.False(t, IsMemoryError(regularErr, ErrCodeStorageError))
@@ -681,7 +681,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 			name: "error_constructors",
 			testFunc: func(t *testing.T) {
 				baseErr := errors.New("base error")
-				
+
 				// Test all error constructors
 				errs := []*MemoryError{
 					ErrInvalidConfig(baseErr),
@@ -697,7 +697,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 					ErrMemoryOverflow("op", baseErr),
 					ErrContextCanceled("op", baseErr),
 				}
-				
+
 				for _, err := range errs {
 					assert.NotNil(t, err)
 					assert.NotEmpty(t, err.Code)
@@ -709,7 +709,7 @@ func TestMemoryErrorFunctions(t *testing.T) {
 			name: "error_with_message",
 			testFunc: func(t *testing.T) {
 				err := NewMemoryErrorWithMessage("test_op", ErrCodeStorageError, "Custom message", errors.New("underlying"))
-				
+
 				assert.Equal(t, "test_op", err.Op)
 				assert.Equal(t, ErrCodeStorageError, err.Code)
 				assert.Equal(t, "Custom message", err.Message)
@@ -722,11 +722,11 @@ func TestMemoryErrorFunctions(t *testing.T) {
 				// Test error with message
 				err1 := NewMemoryErrorWithMessage("op1", ErrCodeStorageError, "Custom message", nil)
 				assert.Contains(t, err1.Error(), "Custom message")
-				
+
 				// Test error with underlying error
 				err2 := NewMemoryError("op2", ErrCodeStorageError, errors.New("underlying"))
 				assert.Contains(t, err2.Error(), "underlying")
-				
+
 				// Test error without message or underlying error
 				err3 := NewMemoryError("op3", ErrCodeStorageError, nil)
 				assert.Contains(t, err3.Error(), "unknown error")
@@ -835,12 +835,12 @@ func TestAdvancedMockMemoryErrorCodes(t *testing.T) {
 	for _, code := range errorCodes {
 		t.Run(code, func(t *testing.T) {
 			mock := NewAdvancedMockMemory("test", MemoryTypeBuffer, WithErrorCode(code))
-			
+
 			// Test SaveContext with error
 			err := mock.SaveContext(ctx, inputs, outputs)
 			assert.Error(t, err)
 			assert.True(t, IsMemoryError(err, code))
-			
+
 			// Test LoadMemoryVariables with error
 			_, err = mock.LoadMemoryVariables(ctx, inputs)
 			assert.Error(t, err)

@@ -301,10 +301,10 @@ func TestSchemaErrorHandling(t *testing.T) {
 	}{
 		{
 			name:    "error_with_message",
-			op:       "test_operation",
-			code:     ErrCodeInvalidInput,
-			err:      nil,
-			message:  "Test error message",
+			op:      "test_operation",
+			code:    ErrCodeInvalidInput,
+			err:     nil,
+			message: "Test error message",
 			validateError: func(t *testing.T, err *SchemaError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeInvalidInput, err.Code)
@@ -315,10 +315,10 @@ func TestSchemaErrorHandling(t *testing.T) {
 		},
 		{
 			name:    "error_with_underlying_error",
-			op:       "test_operation",
-			code:     ErrCodeValidationFailed,
-			err:      assert.AnError,
-			message:  "",
+			op:      "test_operation",
+			code:    ErrCodeValidationFailed,
+			err:     assert.AnError,
+			message: "",
 			validateError: func(t *testing.T, err *SchemaError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeValidationFailed, err.Code)
@@ -328,10 +328,10 @@ func TestSchemaErrorHandling(t *testing.T) {
 		},
 		{
 			name:    "error_without_message_or_err",
-			op:       "test_operation",
-			code:     ErrCodeInvalidMessage,
-			err:      nil,
-			message:  "",
+			op:      "test_operation",
+			code:    ErrCodeInvalidMessage,
+			err:     nil,
+			message: "",
 			validateError: func(t *testing.T, err *SchemaError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeInvalidMessage, err.Code)

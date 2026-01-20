@@ -123,24 +123,24 @@ func TestIntegrationRetrieversVectorstores(t *testing.T) {
 		{
 			name:        "basic_retrieval",
 			description: "Test basic document retrieval from vector store",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			// Use MockVectorStore from retrievers package which implements vectorstores.VectorStore
-			// Note: We can't use helper.CreateMockVectorStore() as it returns vectorstoresiface.VectorStore
-			// which doesn't match the interface expected by retrievers.NewVectorStoreRetriever
-			docs := []schema.Document{
-				schema.NewDocument("Artificial intelligence is the simulation of human intelligence.", map[string]string{"topic": "AI"}),
-				schema.NewDocument("Machine learning uses algorithms to learn from data.", map[string]string{"topic": "ML"}),
-				schema.NewDocument("Deep learning uses neural networks.", map[string]string{"topic": "DL"}),
-			}
-			scores := []float32{0.9, 0.8, 0.7}
-			vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				// Use MockVectorStore from retrievers package which implements vectorstores.VectorStore
+				// Note: We can't use helper.CreateMockVectorStore() as it returns vectorstoresiface.VectorStore
+				// which doesn't match the interface expected by retrievers.NewVectorStoreRetriever
+				docs := []schema.Document{
+					schema.NewDocument("Artificial intelligence is the simulation of human intelligence.", map[string]string{"topic": "AI"}),
+					schema.NewDocument("Machine learning uses algorithms to learn from data.", map[string]string{"topic": "ML"}),
+					schema.NewDocument("Deep learning uses neural networks.", map[string]string{"topic": "DL"}),
+				}
+				scores := []float32{0.9, 0.8, 0.7}
+				vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
 
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
-				retrievers.WithDefaultK(3),
-			)
-			require.NoError(t, err)
-			return retriever, vectorStore
-		},
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
+					retrievers.WithDefaultK(3),
+				)
+				require.NoError(t, err)
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx := context.Background()
 				query := "What is artificial intelligence?"
@@ -155,18 +155,18 @@ func TestIntegrationRetrieversVectorstores(t *testing.T) {
 		{
 			name:        "retrieval_with_score_threshold",
 			description: "Test retrieval with score threshold filtering",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			docs := utils.CreateTestDocuments(10, "ML")
-			scores := []float32{0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05}
-			vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				docs := utils.CreateTestDocuments(10, "ML")
+				scores := []float32{0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.05}
+				vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
 
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
-				retrievers.WithDefaultK(5),
-			)
-			require.NoError(t, err)
-			// Note: WithScoreThreshold is not available as an option, score filtering happens internally
-			return retriever, vectorStore
-		},
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
+					retrievers.WithDefaultK(5),
+				)
+				require.NoError(t, err)
+				// Note: WithScoreThreshold is not available as an option, score filtering happens internally
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx := context.Background()
 				query := "machine learning algorithms"
@@ -182,20 +182,20 @@ func TestIntegrationRetrieversVectorstores(t *testing.T) {
 		{
 			name:        "retrieval_with_custom_k",
 			description: "Test retrieval with custom k parameter",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			docs := utils.CreateTestDocuments(20, "NLP")
-			scores := make([]float32, len(docs))
-			for i := range scores {
-				scores[i] = 0.9 - float32(i)*0.05
-			}
-			vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				docs := utils.CreateTestDocuments(20, "NLP")
+				scores := make([]float32, len(docs))
+				for i := range scores {
+					scores[i] = 0.9 - float32(i)*0.05
+				}
+				vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
 
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
-				retrievers.WithDefaultK(10),
-			)
-			require.NoError(t, err)
-			return retriever, vectorStore
-		},
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
+					retrievers.WithDefaultK(10),
+				)
+				require.NoError(t, err)
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx := context.Background()
 				query := "natural language processing"
@@ -210,18 +210,18 @@ func TestIntegrationRetrieversVectorstores(t *testing.T) {
 		{
 			name:        "batch_retrieval",
 			description: "Test batch retrieval operations",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			docs := utils.CreateTestDocuments(15, "CV")
-			scores := make([]float32, len(docs))
-			for i := range scores {
-				scores[i] = 0.9 - float32(i)*0.05
-			}
-			vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				docs := utils.CreateTestDocuments(15, "CV")
+				scores := make([]float32, len(docs))
+				for i := range scores {
+					scores[i] = 0.9 - float32(i)*0.05
+				}
+				vectorStore := newIntegrationMockVectorStore().WithSimilarityResults(docs, scores)
 
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore)
-			require.NoError(t, err)
-			return retriever, vectorStore
-		},
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore)
+				require.NoError(t, err)
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx := context.Background()
 				queries := []any{"computer vision", "image recognition", "deep learning"}
@@ -243,12 +243,12 @@ func TestIntegrationRetrieversVectorstores(t *testing.T) {
 		{
 			name:        "health_check",
 			description: "Test retriever health check with vector store",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			vectorStore := newIntegrationMockVectorStore()
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore)
-			require.NoError(t, err)
-			return retriever, vectorStore
-		},
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				vectorStore := newIntegrationMockVectorStore()
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore)
+				require.NoError(t, err)
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx := context.Background()
 				err := retriever.CheckHealth(ctx)
@@ -301,14 +301,14 @@ func TestIntegrationRetrieversVectorstoresErrorHandling(t *testing.T) {
 		{
 			name:        "timeout_handling",
 			description: "Test timeout handling in retrieval",
-		setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
-			vectorStore := newIntegrationMockVectorStore()
-			retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
-				retrievers.WithTimeout(100*time.Millisecond),
-			)
-			require.NoError(t, err)
-			return retriever, vectorStore
-		},
+			setupFn: func(t *testing.T) (*retrievers.VectorStoreRetriever, vectorstores.VectorStore) {
+				vectorStore := newIntegrationMockVectorStore()
+				retriever, err := retrievers.NewVectorStoreRetriever(vectorStore,
+					retrievers.WithTimeout(100*time.Millisecond),
+				)
+				require.NoError(t, err)
+				return retriever, vectorStore
+			},
 			testFn: func(t *testing.T, retriever *retrievers.VectorStoreRetriever, vectorStore vectorstores.VectorStore) {
 				ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 				defer cancel()

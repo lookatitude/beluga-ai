@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockGeminiProvider provides a comprehensive mock implementation for testing Gemini provider.
 type AdvancedMockGeminiProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockGeminiProvider struct {
 // NewAdvancedMockGeminiProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockGeminiProvider(modelName string) *AdvancedMockGeminiProvider {
 	mock := &AdvancedMockGeminiProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from Gemini.",

@@ -72,7 +72,7 @@ func TestIntegrationLLMsPrompts(t *testing.T) {
 			}
 			require.NoError(t, err)
 			assert.NotNil(t, renderedAny)
-			
+
 			// Convert PromptValue to string
 			var rendered string
 			if promptValue, ok := renderedAny.(iface.PromptValue); ok {
@@ -111,14 +111,14 @@ func TestIntegrationLLMsPromptsTemplateTypes(t *testing.T) {
 	llm := llms.NewAdvancedMockChatModel("template-type-test")
 
 	tests := []struct {
-		name     string
-		template string
+		name      string
+		template  string
 		variables map[string]any
-		testFunc func(t *testing.T, rendered string, response schema.Message)
+		testFunc  func(t *testing.T, rendered string, response schema.Message)
 	}{
 		{
-			name:     "question_answer_template",
-			template: "Question: {{.question}}\nAnswer:",
+			name:      "question_answer_template",
+			template:  "Question: {{.question}}\nAnswer:",
 			variables: map[string]any{"question": "What is 2+2?"},
 			testFunc: func(t *testing.T, rendered string, response schema.Message) {
 				assert.Contains(t, rendered, "Question:")
@@ -162,7 +162,7 @@ func TestIntegrationLLMsPromptsTemplateTypes(t *testing.T) {
 
 			renderedAny, err := template.Format(ctx, tt.variables)
 			require.NoError(t, err)
-			
+
 			rendered := promptValueToString(renderedAny)
 			require.NotEmpty(t, rendered, "Rendered template should not be empty")
 
@@ -237,9 +237,9 @@ func TestIntegrationLLMsPromptsErrorHandling(t *testing.T) {
 			expectError: true, // Template rendering may fail
 		},
 		{
-			name:        "llm_generation_error",
-			template:    "Hello {{.name}}",
-			variables:   map[string]any{"name": "Alice"},
+			name:      "llm_generation_error",
+			template:  "Hello {{.name}}",
+			variables: map[string]any{"name": "Alice"},
 			setupLLM: func() *llms.AdvancedMockChatModel {
 				return llms.NewAdvancedMockChatModel("error-test",
 					llms.WithErrorCode(llms.ErrCodeNetworkError))
@@ -268,7 +268,7 @@ func TestIntegrationLLMsPromptsErrorHandling(t *testing.T) {
 				}
 				require.NoError(t, err)
 			}
-			
+
 			rendered := promptValueToString(renderedAny)
 			if rendered == "" && renderedAny != nil {
 				t.Fatalf("Rendered template should be convertible to string, got %T", renderedAny)

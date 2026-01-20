@@ -13,24 +13,24 @@ import (
 // AdvancedMockOpenAIMultimodalEmbedder provides a comprehensive mock implementation for testing OpenAI multimodal embedder.
 type AdvancedMockOpenAIMultimodalEmbedder struct {
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
-	embeddings        [][]float32
-	embeddingIndex    int
-	dimension         int
-	simulateDelay     time.Duration
-	simulateRateLimit bool
-	rateLimitCount    int
+	mu                 sync.RWMutex
+	callCount          int
+	shouldError        bool
+	errorToReturn      error
+	embeddings         [][]float32
+	embeddingIndex     int
+	dimension          int
+	simulateDelay      time.Duration
+	simulateRateLimit  bool
+	rateLimitCount     int
 	supportsMultimodal bool
 }
 
 // NewAdvancedMockOpenAIMultimodalEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOpenAIMultimodalEmbedder(dimension int) *AdvancedMockOpenAIMultimodalEmbedder {
 	mock := &AdvancedMockOpenAIMultimodalEmbedder{
-		dimension: dimension,
-		embeddings: make([][]float32, 0),
+		dimension:          dimension,
+		embeddings:         make([][]float32, 0),
 		supportsMultimodal: true,
 	}
 	mock.generateDefaultEmbeddings(10)
@@ -326,5 +326,5 @@ func (m *AdvancedMockOpenAIMultimodalEmbedder) Reset() {
 // Ensure AdvancedMockOpenAIMultimodalEmbedder implements the interfaces.
 var (
 	_ iface.Embedder           = (*AdvancedMockOpenAIMultimodalEmbedder)(nil)
-	_ iface.MultimodalEmbedder   = (*AdvancedMockOpenAIMultimodalEmbedder)(nil)
+	_ iface.MultimodalEmbedder = (*AdvancedMockOpenAIMultimodalEmbedder)(nil)
 )

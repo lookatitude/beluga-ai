@@ -860,7 +860,7 @@ func TestPgVectorConfigHelpers(t *testing.T) {
 	t.Run("GetFullTableName with schema", func(t *testing.T) {
 		config := &PgVectorConfig{
 			SchemaName: "public",
-			TableName: "documents",
+			TableName:  "documents",
 		}
 		fullName := config.GetFullTableName()
 		if fullName != "public.documents" {
@@ -925,7 +925,7 @@ func TestConfigLoader(t *testing.T) {
 	t.Run("LoadPineconeConfig", func(t *testing.T) {
 		data := map[string]any{
 			"api_key":       "test-key",
-			"environment":  "us-west-1",
+			"environment":   "us-west-1",
 			"project_id":    "test-project",
 			"index_name":    "test-index",
 			"embedding_dim": 128,

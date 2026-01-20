@@ -184,18 +184,18 @@ func TestNewBackend(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
+		name         string
 		providerName string
-		config      *Config
-		shouldError bool
-		setup       func()
-		teardown    func()
+		config       *Config
+		shouldError  bool
+		setup        func()
+		teardown     func()
 	}{
 		{
-			name:        "create backend with nil config uses default",
+			name:         "create backend with nil config uses default",
 			providerName: "test",
-			config:      nil,
-			shouldError: false,
+			config:       nil,
+			shouldError:  false,
 			setup: func() {
 				registry := GetRegistry()
 				registry.Register("test", func(ctx context.Context, config *Config) (iface.ConversationalBackend, error) {
@@ -204,10 +204,10 @@ func TestNewBackend(t *testing.T) {
 			},
 		},
 		{
-			name:        "create backend with config",
+			name:         "create backend with config",
 			providerName: "test",
-			config:      DefaultConfig(),
-			shouldError: false,
+			config:       DefaultConfig(),
+			shouldError:  false,
 			setup: func() {
 				registry := GetRegistry()
 				registry.Register("test", func(ctx context.Context, config *Config) (iface.ConversationalBackend, error) {
@@ -216,7 +216,7 @@ func TestNewBackend(t *testing.T) {
 			},
 		},
 		{
-			name:        "create backend with provider name override",
+			name:         "create backend with provider name override",
 			providerName: "test",
 			config: func() *Config {
 				c := DefaultConfig()
@@ -232,7 +232,7 @@ func TestNewBackend(t *testing.T) {
 			},
 		},
 		{
-			name:        "create backend with empty provider name uses config",
+			name:         "create backend with empty provider name uses config",
 			providerName: "",
 			config: func() *Config {
 				c := DefaultConfig()
@@ -248,10 +248,10 @@ func TestNewBackend(t *testing.T) {
 			},
 		},
 		{
-			name:        "create backend with unknown provider",
+			name:         "create backend with unknown provider",
 			providerName: "unknown",
-			config:      DefaultConfig(),
-			shouldError: true,
+			config:       DefaultConfig(),
+			shouldError:  true,
 		},
 	}
 
@@ -394,7 +394,7 @@ func TestConfig(t *testing.T) {
 		config := DefaultConfig()
 		WithProviderSpecific("key1", "value1")(config)
 		assert.Equal(t, "value1", config.ProviderSpecific["key1"])
-		
+
 		WithProviderSpecific("key2", 42)(config)
 		assert.Equal(t, 42, config.ProviderSpecific["key2"])
 	})
@@ -514,7 +514,7 @@ func TestMessagingErrors(t *testing.T) {
 	t.Run("IsMessagingError", func(t *testing.T) {
 		err := NewMessagingError("test_op", ErrCodeTimeout, errors.New("timeout"))
 		assert.True(t, IsMessagingError(err))
-		
+
 		regularErr := errors.New("regular error")
 		assert.False(t, IsMessagingError(regularErr))
 	})
@@ -524,7 +524,7 @@ func TestMessagingErrors(t *testing.T) {
 		msgErr := GetMessagingError(err)
 		assert.NotNil(t, msgErr)
 		assert.Equal(t, "test_op", msgErr.Op)
-		
+
 		regularErr := errors.New("regular error")
 		assert.Nil(t, GetMessagingError(regularErr))
 	})
@@ -532,7 +532,7 @@ func TestMessagingErrors(t *testing.T) {
 	t.Run("GetMessagingErrorCode", func(t *testing.T) {
 		err := NewMessagingError("test_op", ErrCodeRateLimit, errors.New("rate limit"))
 		assert.Equal(t, ErrCodeRateLimit, GetMessagingErrorCode(err))
-		
+
 		regularErr := errors.New("regular error")
 		assert.Equal(t, "", GetMessagingErrorCode(regularErr))
 	})
@@ -601,12 +601,12 @@ func TestMessagingErrors(t *testing.T) {
 		err := WrapError("test_op", errors.New("original error"))
 		assert.Error(t, err)
 		assert.True(t, IsMessagingError(err))
-		
+
 		messagingErr := NewMessagingError("old_op", ErrCodeTimeout, errors.New("timeout"))
 		wrapped := WrapError("new_op", messagingErr)
 		msgErr := GetMessagingError(wrapped)
 		assert.Equal(t, "new_op", msgErr.Op)
-		
+
 		assert.Nil(t, WrapError("op", nil))
 	})
 

@@ -78,7 +78,7 @@ func TestNewBaseAgent(t *testing.T) {
 		name        string
 		agentName   string
 		llm         llmsiface.LLM
-		tools       []tools.Tool
+		tools       []iface.Tool
 		opts        []iface.Option
 		expectError bool
 	}{
@@ -86,7 +86,7 @@ func TestNewBaseAgent(t *testing.T) {
 			name:        "valid agent creation",
 			agentName:   "test-agent",
 			llm:         &MockLLM{response: "test response"},
-			tools:       []tools.Tool{&MockTool{name: "test-tool", description: "test tool"}},
+			tools:       []iface.Tool{&MockTool{name: "test-tool", description: "test tool"}},
 			opts:        []iface.Option{},
 			expectError: false,
 		},
@@ -127,7 +127,7 @@ func TestNewBaseAgent(t *testing.T) {
 
 func TestBaseAgent_Initialize(t *testing.T) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{&MockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&MockTool{name: "test-tool", description: "test tool"}}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
@@ -151,7 +151,7 @@ func TestBaseAgent_Initialize(t *testing.T) {
 
 func TestBaseAgent_GetConfig(t *testing.T) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{}
+	tools := []iface.Tool{}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
@@ -186,7 +186,7 @@ func TestBaseAgent_GetTools(t *testing.T) {
 
 func TestBaseAgent_CheckHealth(t *testing.T) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{&MockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&MockTool{name: "test-tool", description: "test tool"}}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
@@ -209,7 +209,7 @@ func TestBaseAgent_CheckHealth(t *testing.T) {
 
 func TestBaseAgent_EventHandling(t *testing.T) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{}
+	tools := []iface.Tool{}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
@@ -238,7 +238,7 @@ func TestBaseAgent_EventHandling(t *testing.T) {
 
 func TestBaseAgent_Plan(t *testing.T) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{}
+	tools := []iface.Tool{}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		t.Fatalf("Failed to create agent: %v", err)
@@ -258,7 +258,7 @@ func TestBaseAgent_Plan(t *testing.T) {
 
 func BenchmarkBaseAgent_CheckHealth(b *testing.B) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{&MockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&MockTool{name: "test-tool", description: "test tool"}}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		b.Fatalf("Failed to create agent: %v", err)
@@ -272,7 +272,7 @@ func BenchmarkBaseAgent_CheckHealth(b *testing.B) {
 
 func BenchmarkBaseAgent_EventEmission(b *testing.B) {
 	llm := &MockLLM{response: "test"}
-	tools := []tools.Tool{}
+	tools := []iface.Tool{}
 	agent, err := NewBaseAgent("test-agent", llm, tools)
 	if err != nil {
 		b.Fatalf("Failed to create agent: %v", err)

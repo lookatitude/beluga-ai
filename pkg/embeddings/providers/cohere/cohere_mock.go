@@ -27,7 +27,7 @@ type AdvancedMockCohereEmbedder struct {
 // NewAdvancedMockCohereEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockCohereEmbedder(dimension int) *AdvancedMockCohereEmbedder {
 	mock := &AdvancedMockCohereEmbedder{
-		dimension: dimension,
+		dimension:  dimension,
 		embeddings: make([][]float32, 0),
 	}
 	mock.generateDefaultEmbeddings(10)
@@ -216,6 +216,6 @@ func (m *AdvancedMockCohereEmbedder) Reset() {
 
 // Ensure AdvancedMockCohereEmbedder implements the interfaces.
 var (
-	_ iface.Embedder   = (*AdvancedMockCohereEmbedder)(nil)
-	_ HealthChecker    = (*AdvancedMockCohereEmbedder)(nil)
+	_ iface.Embedder = (*AdvancedMockCohereEmbedder)(nil)
+	_ HealthChecker  = (*AdvancedMockCohereEmbedder)(nil)
 )

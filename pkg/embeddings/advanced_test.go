@@ -12,9 +12,9 @@ import (
 	"testing"
 	"time"
 
-	"go.opentelemetry.io/otel"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 )
 
 // ============================================================================
@@ -273,7 +273,7 @@ func TestEmbedderFactoryNewMockEmbedder(t *testing.T) {
 // TestEmbedderFactoryCheckHealthAdvanced tests additional health check paths.
 func TestEmbedderFactoryCheckHealthAdvanced(t *testing.T) {
 	ctx := context.Background()
-	
+
 	t.Run("health_check_with_healthchecker_interface", func(t *testing.T) {
 		// Test health check when embedder implements HealthChecker
 		config := &Config{

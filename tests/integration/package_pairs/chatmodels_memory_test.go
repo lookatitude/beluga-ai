@@ -21,9 +21,9 @@ func TestIntegrationChatModelsMemory(t *testing.T) {
 	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
-		name        string
-		memoryType  string
-		wantErr     bool
+		name       string
+		memoryType string
+		wantErr    bool
 	}{
 		{
 			name:       "chatmodel_with_buffer_memory",
@@ -148,7 +148,7 @@ func TestChatModelsMemoryConversationFlow(t *testing.T) {
 	}{
 		{"Hello, I'm Bob", false},
 		{"What's my name?", true}, // Should remember from previous turn
-		{"Tell me a joke", true}, // Should maintain context
+		{"Tell me a joke", true},  // Should maintain context
 	}
 
 	for i, turn := range conversationTurns {
@@ -166,14 +166,14 @@ func TestChatModelsMemoryConversationFlow(t *testing.T) {
 
 			// Add memory context if available
 			if memVars != nil {
-					if history, ok := memVars["history"].(string); ok && history != "" {
-						// Memory context would be added to messages in real usage
-						historyLen := len(history)
-						if historyLen > 50 {
-							historyLen = 50
-						}
-						t.Logf("Turn %d: Memory context available: %s", i, history[:historyLen])
+				if history, ok := memVars["history"].(string); ok && history != "" {
+					// Memory context would be added to messages in real usage
+					historyLen := len(history)
+					if historyLen > 50 {
+						historyLen = 50
 					}
+					t.Logf("Turn %d: Memory context available: %s", i, history[:historyLen])
+				}
 			}
 
 			// Generate response

@@ -13,24 +13,24 @@ import (
 // AdvancedMockGoogleMultimodalEmbedder provides a comprehensive mock implementation for testing Google multimodal embedder.
 type AdvancedMockGoogleMultimodalEmbedder struct {
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
-	embeddings        [][]float32
-	embeddingIndex    int
-	dimension         int
-	simulateDelay     time.Duration
-	simulateRateLimit bool
-	rateLimitCount    int
+	mu                 sync.RWMutex
+	callCount          int
+	shouldError        bool
+	errorToReturn      error
+	embeddings         [][]float32
+	embeddingIndex     int
+	dimension          int
+	simulateDelay      time.Duration
+	simulateRateLimit  bool
+	rateLimitCount     int
 	supportsMultimodal bool
 }
 
 // NewAdvancedMockGoogleMultimodalEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockGoogleMultimodalEmbedder(dimension int) *AdvancedMockGoogleMultimodalEmbedder {
 	mock := &AdvancedMockGoogleMultimodalEmbedder{
-		dimension: dimension,
-		embeddings: make([][]float32, 0),
+		dimension:          dimension,
+		embeddings:         make([][]float32, 0),
 		supportsMultimodal: true,
 	}
 	mock.generateDefaultEmbeddings(10)

@@ -33,10 +33,10 @@ func NewAdvancedMockAnthropicProvider(modelName string) *AdvancedMockAnthropicPr
 	mock := &AdvancedMockAnthropicProvider{
 		modelName: modelName,
 		capabilities: &types.ModalityCapabilities{
-			Text:  true,
-			Image: true,
-			Audio: false, // Anthropic supports text and image, not audio/video
-			Video: false,
+			Text:                  true,
+			Image:                 true,
+			Audio:                 false, // Anthropic supports text and image, not audio/video
+			Video:                 false,
 			MaxImageSize:          20 * 1024 * 1024, // 20MB
 			SupportedImageFormats: []string{"png", "jpeg", "jpg", "gif", "webp"},
 		},

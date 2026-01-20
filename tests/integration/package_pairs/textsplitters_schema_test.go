@@ -21,14 +21,14 @@ func TestIntegrationTextSplittersSchema(t *testing.T) {
 	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
-		name        string
-		splitterType string
+		name          string
+		splitterType  string
 		setupSplitter func(t *testing.T) (textsplittersiface.TextSplitter, error)
-		documents    []schema.Document
-		wantErr      bool
+		documents     []schema.Document
+		wantErr       bool
 	}{
 		{
-			name:        "recursive_splitter_with_documents",
+			name:         "recursive_splitter_with_documents",
 			splitterType: "recursive",
 			setupSplitter: func(t *testing.T) (textsplittersiface.TextSplitter, error) {
 				return textsplitters.NewRecursiveCharacterTextSplitter(
@@ -54,7 +54,7 @@ func TestIntegrationTextSplittersSchema(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:        "markdown_splitter_with_documents",
+			name:         "markdown_splitter_with_documents",
 			splitterType: "markdown",
 			setupSplitter: func(t *testing.T) (textsplittersiface.TextSplitter, error) {
 				return textsplitters.NewMarkdownTextSplitter(

@@ -6,35 +6,35 @@
 // The following code paths are intentionally excluded from 100% coverage requirements:
 //
 // 1. Panic Recovery Paths:
-//    - Panic handlers in concurrent test runners (ConcurrentTestRunner)
-//    - These paths are difficult to test without causing actual panics in test code
+//   - Panic handlers in concurrent test runners (ConcurrentTestRunner)
+//   - These paths are difficult to test without causing actual panics in test code
 //
 // 2. Context Cancellation Edge Cases:
-//    - Some context cancellation paths in embedding operations are difficult to reliably test
-//    - Race conditions between context cancellation and embedding generation
+//   - Some context cancellation paths in embedding operations are difficult to reliably test
+//   - Race conditions between context cancellation and embedding generation
 //
 // 3. Error Paths Requiring System Conditions:
-//    - Network errors that require actual network failures (provider API calls)
-//    - File system errors that require specific OS conditions
-//    - Memory exhaustion scenarios during large batch operations
+//   - Network errors that require actual network failures (provider API calls)
+//   - File system errors that require specific OS conditions
+//   - Memory exhaustion scenarios during large batch operations
 //
 // 4. Provider-Specific Untestable Paths:
-//    - Provider implementations have paths that require external service failures
-//    - These are tested through integration tests rather than unit tests
-//    - Cohere provider client initialization (not yet fully implemented)
+//   - Provider implementations have paths that require external service failures
+//   - These are tested through integration tests rather than unit tests
+//   - Cohere provider client initialization (not yet fully implemented)
 //
 // 5. Test Utility Functions:
-//    - Helper functions in test_utils.go that are used by tests but not directly tested
-//    - These are validated through their usage in actual test cases
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - These are validated through their usage in actual test cases
 //
 // 6. Initialization Code:
-//    - Package init() functions and global variable initialization
-//    - These are executed automatically and difficult to test in isolation
+//   - Package init() functions and global variable initialization
+//   - These are executed automatically and difficult to test in isolation
 //
 // 7. Provider Mock Limitations:
-//    - Some provider-specific error scenarios require actual API responses
-//    - Rate limiting behavior that depends on actual API responses
-//    - Authentication failures that require actual API validation
+//   - Some provider-specific error scenarios require actual API responses
+//   - Rate limiting behavior that depends on actual API responses
+//   - Authentication failures that require actual API validation
 //
 // All exclusions are documented here to maintain transparency about coverage goals.
 // The target is 100% coverage of testable code paths, excluding the above categories.

@@ -33,11 +33,11 @@ type AdvancedMockPineconeStore struct {
 // NewAdvancedMockPineconeStore creates a new advanced mock with configurable behavior.
 func NewAdvancedMockPineconeStore(apiKey, indexName string) *AdvancedMockPineconeStore {
 	mock := &AdvancedMockPineconeStore{
-		apiKey:     apiKey,
-		indexName:  indexName,
-		name:       "pinecone-mock",
-		documents:  make([]schema.Document, 0),
-		embeddings: make([][]float32, 0),
+		apiKey:      apiKey,
+		indexName:   indexName,
+		name:        "pinecone-mock",
+		documents:   make([]schema.Document, 0),
+		embeddings:  make([][]float32, 0),
 		documentIDs: make([]string, 0),
 	}
 	return mock
@@ -141,7 +141,7 @@ func (m *AdvancedMockPineconeStore) SimilaritySearch(ctx context.Context, queryV
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

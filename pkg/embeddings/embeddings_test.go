@@ -10,7 +10,6 @@ import (
 	// Import providers to register them for tests
 	// This is now safe because providers use registry/iface instead of importing the main package
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/ollama"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 )
 
@@ -92,11 +91,6 @@ func TestEmbedderFactory_NewEmbedder(t *testing.T) {
 		{
 			name:         "openai provider",
 			providerType: "openai",
-			wantErr:      false,
-		},
-		{
-			name:         "ollama provider",
-			providerType: "ollama",
 			wantErr:      false,
 		},
 		{
@@ -315,8 +309,7 @@ func TestEmbedderFactory_GetAvailableProviders_EnabledDisabled(t *testing.T) {
 
 	// Should only include enabled providers
 	expectedProviders := map[string]bool{
-		"ollama": true,
-		"mock":   true,
+		"mock": true,
 	}
 
 	if len(providers) != len(expectedProviders) {

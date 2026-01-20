@@ -33,10 +33,10 @@ func NewAdvancedMockXAIProvider(modelName string) *AdvancedMockXAIProvider {
 	mock := &AdvancedMockXAIProvider{
 		modelName: modelName,
 		capabilities: &types.ModalityCapabilities{
-			Text:  true,
-			Image: true,
-			Audio: false, // xAI supports text and image
-			Video: false,
+			Text:                  true,
+			Image:                 true,
+			Audio:                 false, // xAI supports text and image
+			Video:                 false,
 			MaxImageSize:          20 * 1024 * 1024, // 20MB
 			SupportedImageFormats: []string{"png", "jpeg", "jpg", "gif", "webp"},
 		},

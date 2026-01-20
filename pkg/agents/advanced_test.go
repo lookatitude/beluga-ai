@@ -202,8 +202,8 @@ func (m *mockChatModel) GetProviderName() string {
 // TestNewAgentFactory tests the NewAgentFactory function.
 func TestNewAgentFactory(t *testing.T) {
 	tests := []struct {
-		name   string
-		config *Config
+		name     string
+		config   *Config
 		validate func(t *testing.T, factory *AgentFactory)
 	}{
 		{
@@ -216,7 +216,7 @@ func TestNewAgentFactory(t *testing.T) {
 			},
 		},
 		{
-			name:   "create_factory_with_custom_config",
+			name: "create_factory_with_custom_config",
 			config: &Config{
 				DefaultMaxRetries:    5,
 				DefaultRetryDelay:    3 * time.Second,
@@ -290,7 +290,7 @@ func TestAgentFactoryCreateBaseAgent(t *testing.T) {
 				return factory, mockLLM
 			},
 			agentName: "test-agent",
-			wantErr:  false,
+			wantErr:   false,
 			validate: func(t *testing.T, agent iface.CompositeAgent) {
 				assert.NotNil(t, agent)
 			},
@@ -304,7 +304,7 @@ func TestAgentFactoryCreateBaseAgent(t *testing.T) {
 				return factory, mockLLM
 			},
 			agentName: "test-agent-with-tools",
-			wantErr:  false,
+			wantErr:   false,
 			validate: func(t *testing.T, agent iface.CompositeAgent) {
 				assert.NotNil(t, agent)
 				tools := agent.GetTools()
@@ -505,7 +505,6 @@ func TestWithEventHandler(t *testing.T) {
 	})
 }
 
-
 // ============================================================================
 // Tests for errors.go functions
 // ============================================================================
@@ -589,8 +588,6 @@ func TestStreamingErrorWithField(t *testing.T) {
 		assert.Equal(t, "value1", err.Fields["key1"])
 	})
 }
-
-
 
 // ============================================================================
 // Tests for AdvancedMockAgent error type support (T011)

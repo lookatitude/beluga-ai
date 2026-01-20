@@ -12,13 +12,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/stretchr/testify/mock"
 )
 
 // AdvancedMockGroqProvider provides a comprehensive mock implementation for testing Groq provider.
 type AdvancedMockGroqProvider struct {
-	mock.Mock
-	mu                sync.RWMutex
+	mu                *sync.RWMutex
 	callCount         int
 	shouldError       bool
 	errorToReturn     error
@@ -34,6 +32,7 @@ type AdvancedMockGroqProvider struct {
 // NewAdvancedMockGroqProvider creates a new advanced mock with configurable behavior.
 func NewAdvancedMockGroqProvider(modelName string) *AdvancedMockGroqProvider {
 	mock := &AdvancedMockGroqProvider{
+		mu:        &sync.RWMutex{},
 		modelName: modelName,
 		responses: []string{
 			"This is a mock response from Groq.",

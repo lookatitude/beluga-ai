@@ -141,7 +141,7 @@ func (m *AdvancedMockPgVectorStore) SimilaritySearch(ctx context.Context, queryV
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

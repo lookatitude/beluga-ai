@@ -12,7 +12,6 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -23,8 +22,8 @@ import (
 type PlanExecuteAgent struct {
 	*base.BaseAgent
 	llm           llmsiface.ChatModel
-	tools         []tools.Tool
-	toolMap       map[string]tools.Tool
+	tools         []iface.Tool
+	toolMap       map[string]iface.Tool
 	plannerLLM    llmsiface.ChatModel // Optional separate LLM for planning
 	executorLLM   llmsiface.ChatModel // Optional separate LLM for execution
 	maxPlanSteps  int
@@ -58,7 +57,7 @@ type ExecutionPlan struct {
 // Returns:
 //   - New Plan-and-Execute agent instance
 //   - Error if initialization fails
-func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.Tool, opts ...iface.Option) (*PlanExecuteAgent, error) {
+func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []iface.Tool, opts ...iface.Option) (*PlanExecuteAgent, error) {
 	// Validate required parameters
 	if chatLLM == nil {
 		return nil, fmt.Errorf("chatLLM cannot be nil")
@@ -71,7 +70,7 @@ func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []
 	}
 
 	// Build tool map for efficient lookup
-	toolMap := make(map[string]tools.Tool)
+	toolMap := make(map[string]iface.Tool)
 	for _, tool := range agentTools {
 		toolName := tool.Name()
 		if _, exists := toolMap[toolName]; exists {
@@ -392,7 +391,7 @@ func (a *PlanExecuteAgent) OutputVariables() []string {
 }
 
 // GetTools returns the tools available to the agent.
-func (a *PlanExecuteAgent) GetTools() []tools.Tool {
+func (a *PlanExecuteAgent) GetTools() []iface.Tool {
 	return a.tools
 }
 

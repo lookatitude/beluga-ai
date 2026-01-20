@@ -887,10 +887,10 @@ func TestMonitoringErrorHandling(t *testing.T) {
 	}{
 		{
 			name:    "error_with_message",
-			op:       "test_operation",
-			code:     ErrCodeInvalidConfig,
-			err:      nil,
-			message:  "Test error message",
+			op:      "test_operation",
+			code:    ErrCodeInvalidConfig,
+			err:     nil,
+			message: "Test error message",
 			validateError: func(t *testing.T, err *MonitoringError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeInvalidConfig, err.Code)
@@ -901,10 +901,10 @@ func TestMonitoringErrorHandling(t *testing.T) {
 		},
 		{
 			name:    "error_with_underlying_error",
-			op:       "test_operation",
-			code:     ErrCodeProviderError,
-			err:      errors.New("underlying error"),
-			message:  "",
+			op:      "test_operation",
+			code:    ErrCodeProviderError,
+			err:     errors.New("underlying error"),
+			message: "",
 			validateError: func(t *testing.T, err *MonitoringError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeProviderError, err.Code)
@@ -914,10 +914,10 @@ func TestMonitoringErrorHandling(t *testing.T) {
 		},
 		{
 			name:    "error_without_message_or_err",
-			op:       "test_operation",
-			code:     ErrCodeInitializationFailed,
-			err:      nil,
-			message:  "",
+			op:      "test_operation",
+			code:    ErrCodeInitializationFailed,
+			err:     nil,
+			message: "",
 			validateError: func(t *testing.T, err *MonitoringError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeInitializationFailed, err.Code)

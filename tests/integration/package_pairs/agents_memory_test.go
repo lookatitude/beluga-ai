@@ -24,11 +24,11 @@ func TestIntegrationAgentsMemory(t *testing.T) {
 	defer func() { _ = helper.Cleanup(context.Background()) }()
 
 	tests := []struct {
-		name        string
-		memoryType  memory.MemoryType
-		agentCount  int
-		exchanges   int
-		wantErr     bool
+		name       string
+		memoryType memory.MemoryType
+		agentCount int
+		exchanges  int
+		wantErr    bool
 	}{
 		{
 			name:       "single_agent_buffer_memory",

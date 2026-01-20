@@ -630,9 +630,9 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "valid config",
 			config: &Config{
-				Provider:  "openai",
-				Model:     "gpt-4o",
-				Timeout:   30 * time.Second,
+				Provider:   "openai",
+				Model:      "gpt-4o",
+				Timeout:    30 * time.Second,
 				MaxRetries: 3,
 			},
 			shouldError: false,
@@ -640,25 +640,25 @@ func TestConfig_Validate(t *testing.T) {
 		{
 			name: "missing provider",
 			config: &Config{
-				Model:     "gpt-4o",
-				Timeout:   30 * time.Second,
+				Model:   "gpt-4o",
+				Timeout: 30 * time.Second,
 			},
 			shouldError: true,
 		},
 		{
 			name: "missing model",
 			config: &Config{
-				Provider:  "openai",
-				Timeout:   30 * time.Second,
+				Provider: "openai",
+				Timeout:  30 * time.Second,
 			},
 			shouldError: true,
 		},
 		{
 			name: "zero timeout",
 			config: &Config{
-				Provider:  "openai",
-				Model:     "gpt-4o",
-				Timeout:   0,
+				Provider: "openai",
+				Model:    "gpt-4o",
+				Timeout:  0,
 			},
 			shouldError: true,
 		},

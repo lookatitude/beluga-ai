@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +18,7 @@ import (
 // mockStreamingAgentForExecutor is a mock streaming agent for executor tests.
 type mockStreamingAgentForExecutor struct {
 	executeError         error
-	tools                []tools.Tool
+	tools                []iface.Tool
 	shouldErrorOnExecute bool
 }
 
@@ -31,7 +30,7 @@ func (m *mockStreamingAgentForExecutor) OutputVariables() []string {
 	return []string{"output"}
 }
 
-func (m *mockStreamingAgentForExecutor) GetTools() []tools.Tool {
+func (m *mockStreamingAgentForExecutor) GetTools() []iface.Tool {
 	return m.tools
 }
 
@@ -161,7 +160,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_MaxIterations(t *testing.T) {
 	}
 
 	agent := &mockStreamingAgentForExecutor{
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	// Create plan with more steps than max iterations (but all use same tool)

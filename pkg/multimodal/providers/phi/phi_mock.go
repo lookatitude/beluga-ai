@@ -33,13 +33,13 @@ func NewAdvancedMockPhiProvider(modelName string) *AdvancedMockPhiProvider {
 	mock := &AdvancedMockPhiProvider{
 		modelName: modelName,
 		capabilities: &types.ModalityCapabilities{
-			Text:  true,
-			Image: true,
-			Audio: true,
-			Video: true,
+			Text:                  true,
+			Image:                 true,
+			Audio:                 true,
+			Video:                 true,
 			MaxImageSize:          20 * 1024 * 1024,  // 20MB
 			MaxAudioSize:          25 * 1024 * 1024,  // 25MB
-			MaxVideoSize:           100 * 1024 * 1024, // 100MB
+			MaxVideoSize:          100 * 1024 * 1024, // 100MB
 			SupportedImageFormats: []string{"png", "jpeg", "jpg", "gif", "webp"},
 			SupportedAudioFormats: []string{"mp3", "wav", "m4a", "ogg"},
 			SupportedVideoFormats: []string{"mp4", "webm", "mov"},

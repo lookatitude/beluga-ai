@@ -6,35 +6,35 @@
 // The following code paths are intentionally excluded from 100% coverage requirements:
 //
 // 1. Panic Recovery Paths:
-//    - Panic handlers in RecoveryMiddleware
-//    - These paths are difficult to test without causing actual panics in test code
-//    - Panic recovery is tested through integration tests
+//   - Panic handlers in RecoveryMiddleware
+//   - These paths are difficult to test without causing actual panics in test code
+//   - Panic recovery is tested through integration tests
 //
 // 2. Context Cancellation Edge Cases:
-//    - Some context cancellation paths in server lifecycle operations are difficult to reliably test
-//    - Race conditions between context cancellation and server shutdown
+//   - Some context cancellation paths in server lifecycle operations are difficult to reliably test
+//   - Race conditions between context cancellation and server shutdown
 //
 // 3. Error Paths Requiring System Conditions:
-//    - Network errors that require actual network failures
-//    - Port binding errors that require specific OS conditions
-//    - File system errors that require specific OS conditions
+//   - Network errors that require actual network failures
+//   - Port binding errors that require specific OS conditions
+//   - File system errors that require specific OS conditions
 //
 // 4. Provider-Specific Untestable Paths:
-//    - Provider implementations in pkg/server/providers/* require external service failures
-//    - These are tested through integration tests rather than unit tests
-//    - Provider registry initialization code (init() functions)
+//   - Provider implementations in pkg/server/providers/* require external service failures
+//   - These are tested through integration tests rather than unit tests
+//   - Provider registry initialization code (init() functions)
 //
 // 5. Test Utility Functions:
-//    - Helper functions in test_utils.go that are used by tests but not directly tested
-//    - These are validated through their usage in actual test cases
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - These are validated through their usage in actual test cases
 //
 // 6. Initialization Code:
-//    - Package init() functions and global variable initialization
-//    - Registry registration code that executes automatically
+//   - Package init() functions and global variable initialization
+//   - Registry registration code that executes automatically
 //
 // 7. Re-exported Types:
-//    - Types re-exported from iface package (config.go, errors.go)
-//    - These are tested in the iface package, not re-tested here
+//   - Types re-exported from iface package (config.go, errors.go)
+//   - These are tested in the iface package, not re-tested here
 //
 // All exclusions are documented here to maintain transparency about coverage goals.
 // The target is 100% coverage of testable code paths, excluding the above categories.

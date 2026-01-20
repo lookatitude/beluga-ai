@@ -1,3 +1,5 @@
+//go:build experimental
+
 package ollama
 
 import (
@@ -27,7 +29,7 @@ type AdvancedMockOllamaEmbedder struct {
 // NewAdvancedMockOllamaEmbedder creates a new advanced mock with configurable behavior.
 func NewAdvancedMockOllamaEmbedder(dimension int) *AdvancedMockOllamaEmbedder {
 	mock := &AdvancedMockOllamaEmbedder{
-		dimension: dimension,
+		dimension:  dimension,
 		embeddings: make([][]float32, 0),
 	}
 	mock.generateDefaultEmbeddings(10)

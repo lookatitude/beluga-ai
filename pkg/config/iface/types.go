@@ -56,3 +56,9 @@ func (e ValidationErrors) Error() string {
 	}
 	return "configuration validation failed: " + strings.Join(msgs, "; ")
 }
+
+// String returns a redacted string representation of the config.
+// Sensitive fields like API keys and connection strings are redacted.
+func (c Config) String() string {
+	return "<redacted configuration - sensitive fields not displayed for security>"
+}

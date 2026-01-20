@@ -755,12 +755,12 @@ func TestOrchestratorGraphCreationAdvanced(t *testing.T) {
 // TestOrchestratorWorkflowCreationAdvanced tests workflow creation with various scenarios.
 func TestOrchestratorWorkflowCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name            string
-		description     string
-		setup           func(t *testing.T) *Orchestrator
-		workflowFn      any
-		validate        func(t *testing.T, workflow iface.Workflow, err error)
-		wantErr         bool
+		name             string
+		description      string
+		setup            func(t *testing.T) *Orchestrator
+		workflowFn       any
+		validate         func(t *testing.T, workflow iface.Workflow, err error)
+		wantErr          bool
 		workflowsEnabled bool
 	}{
 		{

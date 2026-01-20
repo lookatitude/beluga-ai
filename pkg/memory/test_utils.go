@@ -4,34 +4,34 @@
 // Test Coverage Exclusions:
 //
 // 1. Redis Memory Implementation:
-//    - File: internal/redis/redis_memory.go
-//    - Reason: Requires actual Redis instance or complex mocking setup
-//    - Coverage Impact: ~2% of code
-//    - Workaround: Test Redis memory via integration tests with test containers
+//   - File: internal/redis/redis_memory.go
+//   - Reason: Requires actual Redis instance or complex mocking setup
+//   - Coverage Impact: ~2% of code
+//   - Workaround: Test Redis memory via integration tests with test containers
 //
 // 2. Internal Mock Package:
-//    - File: internal/mock/memory.go
-//    - Reason: Internal testing utilities, not part of public API
-//    - Coverage Impact: ~0.5% of code
-//    - Workaround: Covered indirectly through tests that use these mocks
+//   - File: internal/mock/memory.go
+//   - Reason: Internal testing utilities, not part of public API
+//   - Coverage Impact: ~0.5% of code
+//   - Workaround: Covered indirectly through tests that use these mocks
 //
 // 3. Factory Error Paths:
-//    - File: memory.go:70-81 (validation error handling)
-//    - Reason: Some validation error paths are difficult to trigger without invalid struct tags
-//    - Coverage Impact: ~0.3% of code
-//    - Workaround: Test validation separately with invalid configs
+//   - File: memory.go:70-81 (validation error handling)
+//   - Reason: Some validation error paths are difficult to trigger without invalid struct tags
+//   - Coverage Impact: ~0.3% of code
+//   - Workaround: Test validation separately with invalid configs
 //
 // 4. Vector Store Memory Edge Cases:
-//    - File: internal/vectorstore/vectorstore_memory.go
-//    - Reason: Some edge cases require complex vector store state
-//    - Coverage Impact: ~1% of code
-//    - Workaround: Test with mock vector stores in integration tests
+//   - File: internal/vectorstore/vectorstore_memory.go
+//   - Reason: Some edge cases require complex vector store state
+//   - Coverage Impact: ~1% of code
+//   - Workaround: Test with mock vector stores in integration tests
 //
 // 5. Summary Memory LLM Integration:
-//    - File: internal/summary/summary_memory.go
-//    - Reason: Some LLM error scenarios are difficult to simulate
-//    - Coverage Impact: ~0.5% of code
-//    - Workaround: Test with mock LLMs that simulate specific error conditions
+//   - File: internal/summary/summary_memory.go
+//   - Reason: Some LLM error scenarios are difficult to simulate
+//   - Coverage Impact: ~0.5% of code
+//   - Workaround: Test with mock LLMs that simulate specific error conditions
 //
 // All exclusions are documented here to maintain transparency about coverage goals.
 // Target: 100% coverage of testable code paths (excluding the above).

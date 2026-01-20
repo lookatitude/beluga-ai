@@ -1,0 +1,41 @@
+# Beluga AI Project Rules
+
+You are working on the Beluga AI Framework, a comprehensive Go-native framework for agentic applications.
+These rules supplement the detailed rules found in `.cursor/rules/*.mdc`.
+
+## Core Principles
+
+1.  **Architecture**: Follow the layered architecture: `App` -> `Agent` -> `Orchestration` -> `LLM` -> `RAG` -> `Memory` -> `Infrastructure`.
+2.  **Interface-Driven**: Always define small, focused interfaces. Depend on abstractions, not implementations.
+3.  **Observability (MANDATORY)**: Use OpenTelemetry (OTEL) for ALL metrics, tracing, and logging. NO custom metric libraries.
+4.  **Testing**: Achieve high test coverage (Target: 100%, Min: 80%). Use table-driven tests, advanced mocks, and integration tests.
+
+## Package Structure Requirements
+
+Every package in `pkg/` MUST follow this structure:
+-   `iface/`: Interfaces and types.
+-   `internal/`: Private implementation.
+-   `providers/`: Provider implementations (e.g., `pkg/llms/providers/openai`).
+-   `config.go`: Configuration structs with `mapstructure`, `yaml`, `env` tags and validation.
+-   `metrics.go`: OTEL metrics initialization.
+-   `errors.go`: Custom error types (`Op`, `Err`, `Code`).
+-   `test_utils.go`: Advanced mocks and test helpers.
+
+## Development Workflow
+
+1.  **Work in Feature Branches**: `feat/` or `fix/`.
+2.  **Commit Messages**: Follow Conventional Commits (e.g., `feat(llm): add streaming support`, `fix: handle timeout`).
+3.  **Quality Checks**: Run `make all` before committing. This runs format, vet, lint, and test.
+4.  **Security**: Run `make security` to check for vulnerabilities and secrets.
+
+## Common Commands
+
+-   `make test`: Run all tests.
+-   `make lint`: Run golangci-lint.
+-   `make fmt`: Format code.
+-   `make security`: Run security scans.
+
+## References
+
+-   See `.cursor/rules/` for specific patterns (Architecture, Design, Testing).
+-   See `CONTRIBUTING.md` for detailed contribution guidelines.

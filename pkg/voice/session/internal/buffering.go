@@ -2,6 +2,8 @@ package internal
 
 import (
 	"sync"
+
+	"github.com/lookatitude/beluga-ai/pkg/voice"
 )
 
 // BufferingStrategy defines buffering strategies for long utterances.
@@ -18,15 +20,20 @@ type Buffering struct {
 	buffer   []byte
 	strategy BufferingStrategy
 	maxSize  int
+	pool     *voice.BufferPool
 	mu       sync.RWMutex
 }
 
 // NewBuffering creates a new buffering manager.
 func NewBuffering(strategy BufferingStrategy, maxSize int) *Buffering {
+	pool := voice.GetGlobalBufferPool()
+	buffer := pool.Get(maxSize)
+
 	return &Buffering{
 		strategy: strategy,
-		buffer:   make([]byte, 0, maxSize),
+		buffer:   buffer,
 		maxSize:  maxSize,
+		pool:     pool,
 	}
 }
 
@@ -88,4 +95,15 @@ func (b *Buffering) Clear() {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	b.buffer = b.buffer[:0]
+}
+
+// Close releases the buffer back to the pool.
+func (b *Buffering) Close() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if b.pool != nil && b.buffer != nil {
+		b.pool.Put(b.buffer)
+		b.buffer = nil
+	}
 }

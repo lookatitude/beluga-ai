@@ -141,7 +141,7 @@ func (m *AdvancedMockQdrantStore) SimilaritySearch(ctx context.Context, queryVec
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	if k > len(m.documents) {
 		k = len(m.documents)
 	}

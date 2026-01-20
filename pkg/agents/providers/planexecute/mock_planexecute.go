@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -60,7 +59,7 @@ func WithMockPlanExecuteDelay(delay time.Duration) MockPlanExecuteOption {
 
 // NewMockPlanExecuteAgent creates a new mock PlanExecuteAgent.
 // This is a convenience function for testing that creates a mock with a mock ChatModel.
-func NewMockPlanExecuteAgent(name string, mockLLM llmsiface.ChatModel, agentTools []tools.Tool, opts ...MockPlanExecuteOption) (*MockPlanExecuteAgent, error) {
+func NewMockPlanExecuteAgent(name string, mockLLM llmsiface.ChatModel, agentTools []iface.Tool, opts ...MockPlanExecuteOption) (*MockPlanExecuteAgent, error) {
 	agent, err := NewPlanExecuteAgent(name, mockLLM, agentTools)
 	if err != nil {
 		return nil, err
@@ -197,7 +196,7 @@ func (m *MockPlanExecuteAgent) ExecutePlan(ctx context.Context, plan *ExecutionP
 }
 
 // CreateTestPlanExecuteAgent creates a test PlanExecuteAgent with default configuration.
-func CreateTestPlanExecuteAgent(name string, mockLLM llmsiface.ChatModel, tools []tools.Tool) (*PlanExecuteAgent, error) {
+func CreateTestPlanExecuteAgent(name string, mockLLM llmsiface.ChatModel, tools []iface.Tool) (*PlanExecuteAgent, error) {
 	return NewPlanExecuteAgent(name, mockLLM, tools)
 }
 

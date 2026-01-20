@@ -17,7 +17,7 @@ import (
 type mockAgent struct {
 	name        string
 	llm         llmsiface.LLM
-	tools       []tools.Tool
+	tools       []iface.Tool
 	shouldError bool
 	planCount   int
 }
@@ -52,7 +52,7 @@ func (m *mockAgent) OutputVariables() []string {
 	return []string{"output"}
 }
 
-func (m *mockAgent) GetTools() []tools.Tool {
+func (m *mockAgent) GetTools() []iface.Tool {
 	return m.tools
 }
 
@@ -84,7 +84,7 @@ func (m *mockTool) Description() string {
 	return "Mock tool for testing"
 }
 
-func (m *mockTool) Definition() tools.ToolDefinition {
+func (m *mockTool) Definition() iface.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: "Mock tool for testing",
@@ -192,7 +192,7 @@ func TestExecutePlan_Success(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor(WithMaxIterations(5))
@@ -227,7 +227,7 @@ func TestExecutePlan_EmptyPlan(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{},
+		tools: []iface.Tool{},
 	}
 
 	executor := NewAgentExecutor()
@@ -249,7 +249,7 @@ func TestExecutePlan_MaxIterationsExceeded(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{},
+		tools: []iface.Tool{},
 	}
 
 	executor := NewAgentExecutor(WithMaxIterations(2))
@@ -280,7 +280,7 @@ func TestExecutePlan_ToolNotFound(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{},
+		tools: []iface.Tool{},
 	}
 
 	executor := NewAgentExecutor()
@@ -311,7 +311,7 @@ func TestExecutePlan_ToolExecutionError(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
@@ -342,7 +342,7 @@ func TestExecutePlan_WithIntermediateSteps(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor(WithReturnIntermediateSteps(true))
@@ -381,7 +381,7 @@ func TestExecuteStep_ToolExecution(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
@@ -409,7 +409,7 @@ func TestExecuteStep_NonToolAction(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{},
+		tools: []iface.Tool{},
 	}
 
 	executor := NewAgentExecutor()
@@ -440,7 +440,7 @@ func TestExecuteTool_Success(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
@@ -466,7 +466,7 @@ func TestExecuteTool_ToolNotFound(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{},
+		tools: []iface.Tool{},
 	}
 
 	executor := NewAgentExecutor()
@@ -494,7 +494,7 @@ func TestExecuteTool_ExecutionError(t *testing.T) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
@@ -572,7 +572,7 @@ func BenchmarkExecutePlan(b *testing.B) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
@@ -600,7 +600,7 @@ func BenchmarkExecuteTool(b *testing.B) {
 	agent := &mockAgent{
 		name:  "test_agent",
 		llm:   mockLLM,
-		tools: []tools.Tool{mockTool},
+		tools: []iface.Tool{mockTool},
 	}
 
 	executor := NewAgentExecutor()
