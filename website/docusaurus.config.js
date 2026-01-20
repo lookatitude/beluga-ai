@@ -8,7 +8,7 @@ module.exports = {
   title: 'Beluga AI Framework',
   tagline: 'A production-ready Go framework for building sophisticated AI and agentic applications.',
   url: 'https://lookatitude.github.io',
-  baseUrl: '/beluga-ai/',
+  baseUrl: '/',
   onBrokenLinks: 'warn',
   markdown: {
     hooks: {
@@ -69,7 +69,7 @@ module.exports = {
           },
           {
             type: 'doc',
-            docId: 'getting-started/quickstart',
+            docId: 'quickstart',
             position: 'left',
             label: 'Get Started',
           },
@@ -94,7 +94,7 @@ module.exports = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/docs/getting-started/quickstart',
+                to: '/docs/quickstart',
               },
               {
                 label: 'Concepts',

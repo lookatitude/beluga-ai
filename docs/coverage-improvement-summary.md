@@ -150,7 +150,7 @@ This document summarizes the comprehensive test coverage improvements implemente
 ### Package-Specific Coverage
 - **High Coverage (80%+)**: agents, chatmodels, config, core, documentloaders, embeddings, llms, memory, messaging, monitoring, multimodal, orchestration, prompts, retrievers, schema
 - **Medium Coverage (40-80%)**: server, textsplitters
-- **Lower Coverage (<40%)**: vectorstores, voice (due to provider implementations requiring external services)
+- **Lower Coverage (&lt;40%)**: vectorstores, voice (due to provider implementations requiring external services)
 
 ## Exclusions Documented
 

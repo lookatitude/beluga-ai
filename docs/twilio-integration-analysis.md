@@ -880,7 +880,7 @@ if memory != nil {
 - **Code Duplication**: Eliminate duplicate audio processing logic
 
 ### Performance
-- **Latency**: Maintain or improve latency (<2s target)
+- **Latency**: Maintain or improve latency (&lt;2s target)
 - **Error Rate**: Reduce error rate with automatic recovery
 - **Throughput**: Maintain 100 concurrent calls support
 

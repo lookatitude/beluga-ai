@@ -4,9 +4,11 @@ package planexecute
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 
+	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -102,6 +104,98 @@ func (m *MockPlanExecuteAgent) GetExecutionResults() []map[string]any {
 	return result
 }
 
+// Plan overrides the embedded PlanExecuteAgent.Plan method to provide mock behavior.
+// This method increments call count, simulates delays, and returns configured errors.
+func (m *MockPlanExecuteAgent) Plan(ctx context.Context, intermediateSteps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error) {
+	m.mu.Lock()
+	m.callCount++
+	m.mu.Unlock()
+
+	// Simulate delay if configured
+	if m.simulateDelay > 0 {
+		select {
+		case <-time.After(m.simulateDelay):
+		case <-ctx.Done():
+			return iface.AgentAction{}, iface.AgentFinish{}, ctx.Err()
+		}
+	}
+
+	// Return error if configured
+	if m.shouldError {
+		return iface.AgentAction{}, iface.AgentFinish{}, m.errorToReturn
+	}
+
+	// If we have predefined plan steps, create an execution plan and return action to execute it
+	if len(m.planSteps) > 0 {
+		plan := &ExecutionPlan{
+			Goal:       "mock goal",
+			Steps:      m.planSteps,
+			TotalSteps: len(m.planSteps),
+		}
+
+		// Return an action to execute the plan
+		action := iface.AgentAction{
+			Tool:      "ExecutePlan",
+			ToolInput: map[string]any{"plan": plan},
+			Log:       "Mock planning completed",
+		}
+		return action, iface.AgentFinish{}, nil
+	}
+
+	// Default behavior: return a finish with mock results (no planning needed)
+	finish := iface.AgentFinish{
+		ReturnValues: map[string]any{
+			"output": "Mock plan execution completed",
+		},
+		Log: "Mock planning and execution completed",
+	}
+	return iface.AgentAction{}, finish, nil
+}
+
+// ExecutePlan overrides the embedded PlanExecuteAgent.ExecutePlan method to provide mock behavior.
+// This method increments call count, simulates delays, returns configured errors, and uses mock execution results.
+func (m *MockPlanExecuteAgent) ExecutePlan(ctx context.Context, plan *ExecutionPlan) (map[string]any, error) {
+	m.mu.Lock()
+	m.callCount++
+	m.mu.Unlock()
+
+	// Simulate delay if configured
+	if m.simulateDelay > 0 {
+		select {
+		case <-time.After(m.simulateDelay):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+	}
+
+	// Return error if configured
+	if m.shouldError {
+		return nil, m.errorToReturn
+	}
+
+	// If we have predefined execution results, return them
+	if len(m.executionResults) > 0 {
+		results := make(map[string]any)
+		for i, result := range m.executionResults {
+			results[fmt.Sprintf("step_%d", i+1)] = result
+		}
+		results["total_steps"] = len(m.executionResults)
+		return results, nil
+	}
+
+	// Default mock execution results
+	results := make(map[string]any)
+	for _, step := range plan.Steps {
+		results[fmt.Sprintf("step_%d", step.StepNumber)] = map[string]any{
+			"tool":        step.Tool,
+			"input":       step.Input,
+			"observation": fmt.Sprintf("Mock execution result for step %d", step.StepNumber),
+		}
+	}
+	results["total_steps"] = len(plan.Steps)
+	return results, nil
+}
+
 // CreateTestPlanExecuteAgent creates a test PlanExecuteAgent with default configuration.
 func CreateTestPlanExecuteAgent(name string, mockLLM llmsiface.ChatModel, tools []tools.Tool) (*PlanExecuteAgent, error) {
 	return NewPlanExecuteAgent(name, mockLLM, tools)
@@ -115,8 +209,8 @@ func CreateTestPlanSteps(count int) []PlanStep {
 			StepNumber: i + 1,
 			Action:     "test_action",
 			Tool:       "test_tool",
-			Input:       "test_input",
-			Reasoning:   "test_reasoning",
+			Input:      "test_input",
+			Reasoning:  "test_reasoning",
 		}
 	}
 	return steps

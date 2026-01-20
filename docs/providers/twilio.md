@@ -244,9 +244,9 @@ Enhanced orchestration with event-driven workflows:
 
 ## Performance Requirements
 
-- **Voice Latency**: <2s from speech completion to agent audio response start
-- **Messaging**: <5s message processing for 95% of messages
-- **Webhooks**: <1s event processing for 99% of events
+- **Voice Latency**: &lt;2s from speech completion to agent audio response start
+- **Messaging**: &lt;5s message processing for 95% of messages
+- **Webhooks**: &lt;1s event processing for 99% of events
 - **Concurrency**: Support 100 concurrent voice calls
 
 ## Error Handling

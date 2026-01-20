@@ -399,7 +399,7 @@ This roadmap provides a phased approach to integrating existing Beluga AI packag
 - ✅ Zero code duplication for audio processing
 
 ### Performance
-- ✅ Latency maintained or improved (<2s target)
+- ✅ Latency maintained or improved (&lt;2s target)
 - ✅ Error rate reduced with automatic recovery
 - ✅ 100 concurrent calls support maintained
 
@@ -464,7 +464,7 @@ Week 5-6: Phase 3 (Enhancement)
 
 1. ✅ **Implementation Complete**: All phases implemented
 2. **Integration Testing**: Run full integration tests with real Twilio credentials
-3. **Performance Validation**: Verify latency targets (<2s) and concurrency (100 calls)
+3. **Performance Validation**: Verify latency targets (&lt;2s) and concurrency (100 calls)
 4. **Production Deployment**: Deploy to production after validation
 
 ---

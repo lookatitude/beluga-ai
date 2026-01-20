@@ -4,10 +4,10 @@ This guide provides strategies for optimizing voice agent performance.
 
 ## Performance Targets
 
-- **Latency**: <200ms for end-to-end processing
+- **Latency**: &lt;200ms for end-to-end processing
 - **Throughput**: 1000+ audio chunks/second
 - **Concurrency**: 100+ concurrent sessions
-- **Memory**: <100MB per session
+- **Memory**: &lt;100MB per session
 
 ## Latency Optimization
 

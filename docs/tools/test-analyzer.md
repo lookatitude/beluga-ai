@@ -203,7 +203,7 @@ func TestComplexLoop(t *testing.T) {
 
 ### SleepDelay
 
-**Severity**: Medium (<1s), High (>1s)  
+**Severity**: Medium (&lt;1s), High (&gt;1s)  
 **Description**: Accumulated sleep delays exceeding threshold  
 **Example**:
 ```go
