@@ -67,164 +67,164 @@ Package orchestration provides advanced test utilities and comprehensive mocks f
 
 ## Index
 
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertExecutionResult\(t \*testing.T, result any, expectedPattern string\)](<#AssertExecutionResult>)
-- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertHealthCheck>)
-- [func CreateTestChain\(name string, steps \[\]string\) iface.Chain](<#CreateTestChain>)
-- [func CreateTestGraph\(name string, nodes \[\]string, edges map\[string\]\[\]string\) iface.Graph](<#CreateTestGraph>)
-- [func CreateTestWorkflow\(name string, tasks \[\]string\) iface.Workflow](<#CreateTestWorkflow>)
-- [func DefaultWorkflowConfig\(\) \*iface.WorkflowConfig](<#DefaultWorkflowConfig>)
-- [func NewChain\(steps \[\]core.Runnable, opts ...iface.ChainOption\) \(iface.Chain, error\)](<#NewChain>)
-- [func NewGraph\(opts ...iface.GraphOption\) \(iface.Graph, error\)](<#NewGraph>)
-- [func NewWorkflow\(workflowFn any, opts ...iface.WorkflowOption\) \(iface.Workflow, error\)](<#NewWorkflow>)
-- [func RunLoadTest\(t \*testing.T, orchestrator \*AdvancedMockOrchestrator, numRequests, concurrency int\)](<#RunLoadTest>)
-- [type Activity](<#Activity>)
-- [type AdvancedMockOrchestrator](<#AdvancedMockOrchestrator>)
-  - [func NewAdvancedMockOrchestrator\(name, orchType string, options ...MockOrchestratorOption\) \*AdvancedMockOrchestrator](<#NewAdvancedMockOrchestrator>)
-  - [func \(m \*AdvancedMockOrchestrator\) CheckHealth\(\) map\[string\]any](<#AdvancedMockOrchestrator.CheckHealth>)
-  - [func \(m \*AdvancedMockOrchestrator\) Execute\(ctx context.Context, input any\) \(any, error\)](<#AdvancedMockOrchestrator.Execute>)
-  - [func \(m \*AdvancedMockOrchestrator\) ExecuteChain\(ctx context.Context, chain iface.Chain\) \(any, error\)](<#AdvancedMockOrchestrator.ExecuteChain>)
-  - [func \(m \*AdvancedMockOrchestrator\) ExecuteGraph\(ctx context.Context, graph iface.Graph\) \(any, error\)](<#AdvancedMockOrchestrator.ExecuteGraph>)
-  - [func \(m \*AdvancedMockOrchestrator\) ExecuteWorkflow\(ctx context.Context, workflow iface.Workflow\) \(any, error\)](<#AdvancedMockOrchestrator.ExecuteWorkflow>)
-  - [func \(m \*AdvancedMockOrchestrator\) GetCallCount\(\) int](<#AdvancedMockOrchestrator.GetCallCount>)
-  - [func \(m \*AdvancedMockOrchestrator\) GetName\(\) string](<#AdvancedMockOrchestrator.GetName>)
-  - [func \(m \*AdvancedMockOrchestrator\) GetType\(\) string](<#AdvancedMockOrchestrator.GetType>)
-- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
-  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
-- [type Chain](<#Chain>)
-- [type ChainBuilder](<#ChainBuilder>)
-  - [func NewChainBuilder\(\) \*ChainBuilder](<#NewChainBuilder>)
-  - [func \(b \*ChainBuilder\) AddStep\(step core.Runnable\) \*ChainBuilder](<#ChainBuilder.AddStep>)
-  - [func \(b \*ChainBuilder\) Build\(\) \*SimpleChain](<#ChainBuilder.Build>)
-  - [func \(b \*ChainBuilder\) WithMemory\(memory memory.Memory\) \*ChainBuilder](<#ChainBuilder.WithMemory>)
-- [type ChainConfig](<#ChainConfig>)
-- [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
-  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
-  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
-  - [func NewConfig\(opts ...Option\) \(\*Config, error\)](<#NewConfig>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type EnabledFeatures](<#EnabledFeatures>)
-- [type Graph](<#Graph>)
-- [type GraphConfig](<#GraphConfig>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddOrchestrator\(name string, orch \*AdvancedMockOrchestrator\)](<#IntegrationTestHelper.AddOrchestrator>)
-  - [func \(h \*IntegrationTestHelper\) GetMetrics\(\) \*MockMetricsRecorder](<#IntegrationTestHelper.GetMetrics>)
-  - [func \(h \*IntegrationTestHelper\) GetOrchestrator\(name string\) \*AdvancedMockOrchestrator](<#IntegrationTestHelper.GetOrchestrator>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type MetricRecord](<#MetricRecord>)
-- [type Metrics](<#Metrics>)
-  - [func NewMetrics\(meter metric.Meter, tracer trace.Tracer\) \(\*Metrics, error\)](<#NewMetrics>)
-  - [func NoOpMetrics\(\) \*Metrics](<#NoOpMetrics>)
-  - [func \(m \*Metrics\) RecordChainActive\(ctx context.Context, delta int64, chainName string\)](<#Metrics.RecordChainActive>)
-  - [func \(m \*Metrics\) RecordChainExecution\(ctx context.Context, duration time.Duration, success bool, chainName string\)](<#Metrics.RecordChainExecution>)
-  - [func \(m \*Metrics\) RecordGraphActive\(ctx context.Context, delta int64, graphName string\)](<#Metrics.RecordGraphActive>)
-  - [func \(m \*Metrics\) RecordGraphExecution\(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int\)](<#Metrics.RecordGraphExecution>)
-  - [func \(m \*Metrics\) RecordWorkflowActive\(ctx context.Context, delta int64, workflowName string\)](<#Metrics.RecordWorkflowActive>)
-  - [func \(m \*Metrics\) RecordWorkflowExecution\(ctx context.Context, duration time.Duration, success bool, workflowName string\)](<#Metrics.RecordWorkflowExecution>)
-  - [func \(m \*Metrics\) StartChainSpan\(ctx context.Context, chainName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartChainSpan>)
-  - [func \(m \*Metrics\) StartGraphSpan\(ctx context.Context, graphName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartGraphSpan>)
-  - [func \(m \*Metrics\) StartWorkflowSpan\(ctx context.Context, workflowName, operation string\) \(context.Context, trace.Span\)](<#Metrics.StartWorkflowSpan>)
-- [type MockMetricsRecorder](<#MockMetricsRecorder>)
-  - [func NewMockMetricsRecorder\(\) \*MockMetricsRecorder](<#NewMockMetricsRecorder>)
-  - [func \(m \*MockMetricsRecorder\) Clear\(\)](<#MockMetricsRecorder.Clear>)
-  - [func \(m \*MockMetricsRecorder\) GetRecordings\(\) \[\]MetricRecord](<#MockMetricsRecorder.GetRecordings>)
-  - [func \(m \*MockMetricsRecorder\) RecordChainExecution\(ctx context.Context, duration time.Duration, success bool, chainName string\)](<#MockMetricsRecorder.RecordChainExecution>)
-  - [func \(m \*MockMetricsRecorder\) RecordGraphExecution\(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int\)](<#MockMetricsRecorder.RecordGraphExecution>)
-  - [func \(m \*MockMetricsRecorder\) RecordWorkflowExecution\(ctx context.Context, duration time.Duration, success bool, workflowName string\)](<#MockMetricsRecorder.RecordWorkflowExecution>)
-- [type MockOrchestratorOption](<#MockOrchestratorOption>)
-  - [func WithEdges\(edges map\[string\]\[\]string\) MockOrchestratorOption](<#WithEdges>)
-  - [func WithExecutionDelay\(delay time.Duration\) MockOrchestratorOption](<#WithExecutionDelay>)
-  - [func WithMockError\(shouldError bool, err error\) MockOrchestratorOption](<#WithMockError>)
-  - [func WithMockResponses\(responses \[\]any\) MockOrchestratorOption](<#WithMockResponses>)
-  - [func WithNodes\(nodes \[\]string\) MockOrchestratorOption](<#WithNodes>)
-- [type ObservabilityConfig](<#ObservabilityConfig>)
-- [type Option](<#Option>)
-  - [func WithChainTimeout\(timeout time.Duration\) Option](<#WithChainTimeout>)
-  - [func WithFeatures\(features EnabledFeatures\) Option](<#WithFeatures>)
-  - [func WithGraphMaxWorkers\(workers int\) Option](<#WithGraphMaxWorkers>)
-  - [func WithMetricsPrefix\(prefix string\) Option](<#WithMetricsPrefix>)
-  - [func WithWorkflowTaskQueue\(queue string\) Option](<#WithWorkflowTaskQueue>)
-- [type OrchestrationContainer](<#OrchestrationContainer>)
-  - [func NewOrchestrationContainer\(\) \*OrchestrationContainer](<#NewOrchestrationContainer>)
-  - [func \(oc \*OrchestrationContainer\) BuildChain\(steps \[\]core.Runnable, memory memory.Memory\) \(\*SimpleChain, error\)](<#OrchestrationContainer.BuildChain>)
-  - [func \(oc \*OrchestrationContainer\) GetContainer\(\) core.Container](<#OrchestrationContainer.GetContainer>)
-  - [func \(oc \*OrchestrationContainer\) RegisterComponent\(factoryFunc any\) error](<#OrchestrationContainer.RegisterComponent>)
-- [type Orchestrator](<#Orchestrator>)
-  - [func NewDefaultOrchestrator\(\) \(\*Orchestrator, error\)](<#NewDefaultOrchestrator>)
-  - [func NewOrchestrator\(config \*Config\) \(\*Orchestrator, error\)](<#NewOrchestrator>)
-  - [func NewOrchestratorWithOptions\(opts ...Option\) \(\*Orchestrator, error\)](<#NewOrchestratorWithOptions>)
-  - [func \(o \*Orchestrator\) Check\(ctx context.Context\) error](<#Orchestrator.Check>)
-  - [func \(o \*Orchestrator\) CreateChain\(steps \[\]core.Runnable, opts ...iface.ChainOption\) \(iface.Chain, error\)](<#Orchestrator.CreateChain>)
-  - [func \(o \*Orchestrator\) CreateGraph\(opts ...iface.GraphOption\) \(iface.Graph, error\)](<#Orchestrator.CreateGraph>)
-  - [func \(o \*Orchestrator\) CreateWorkflow\(workflowFn any, opts ...iface.WorkflowOption\) \(iface.Workflow, error\)](<#Orchestrator.CreateWorkflow>)
-  - [func \(o \*Orchestrator\) GetMetrics\(\) iface.OrchestratorMetrics](<#Orchestrator.GetMetrics>)
-- [type SimpleChain](<#SimpleChain>)
-  - [func NewSimpleChain\(steps \[\]core.Runnable, mem memory.Memory\) \*SimpleChain](<#NewSimpleChain>)
-  - [func NewSimpleChainWithOptions\(options ...SimpleChainOption\) \*SimpleChain](<#NewSimpleChainWithOptions>)
-  - [func \(c \*SimpleChain\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#SimpleChain.Batch>)
-  - [func \(c \*SimpleChain\) GetInputKeys\(\) \[\]string](<#SimpleChain.GetInputKeys>)
-  - [func \(c \*SimpleChain\) GetMemory\(\) memory.Memory](<#SimpleChain.GetMemory>)
-  - [func \(c \*SimpleChain\) GetOutputKeys\(\) \[\]string](<#SimpleChain.GetOutputKeys>)
-  - [func \(c \*SimpleChain\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#SimpleChain.Invoke>)
-  - [func \(c \*SimpleChain\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#SimpleChain.Stream>)
-- [type SimpleChainConfig](<#SimpleChainConfig>)
-  - [func DefaultSimpleChainConfig\(\) \*SimpleChainConfig](<#DefaultSimpleChainConfig>)
-- [type SimpleChainOption](<#SimpleChainOption>)
-  - [func WithMemory\(mem memory.Memory\) SimpleChainOption](<#WithMemory>)
-  - [func WithSteps\(steps ...core.Runnable\) SimpleChainOption](<#WithSteps>)
-- [type SimpleMockcomponent](<#SimpleMockcomponent>)
-  - [func NewSimpleMockcomponent\(\) \*SimpleMockcomponent](<#NewSimpleMockcomponent>)
-- [type TestChain](<#TestChain>)
-  - [func \(c \*TestChain\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#TestChain.Batch>)
-  - [func \(c \*TestChain\) GetInputKeys\(\) \[\]string](<#TestChain.GetInputKeys>)
-  - [func \(c \*TestChain\) GetMemory\(\) memoryiface.Memory](<#TestChain.GetMemory>)
-  - [func \(c \*TestChain\) GetName\(\) string](<#TestChain.GetName>)
-  - [func \(c \*TestChain\) GetOutputKeys\(\) \[\]string](<#TestChain.GetOutputKeys>)
-  - [func \(c \*TestChain\) GetSteps\(\) \[\]string](<#TestChain.GetSteps>)
-  - [func \(c \*TestChain\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#TestChain.Invoke>)
-  - [func \(c \*TestChain\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#TestChain.Stream>)
-- [type TestGraph](<#TestGraph>)
-  - [func \(g \*TestGraph\) AddEdge\(sourceNode, targetNode string\) error](<#TestGraph.AddEdge>)
-  - [func \(g \*TestGraph\) AddNode\(name string, runnable core.Runnable\) error](<#TestGraph.AddNode>)
-  - [func \(g \*TestGraph\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#TestGraph.Batch>)
-  - [func \(g \*TestGraph\) GetEdges\(\) map\[string\]\[\]string](<#TestGraph.GetEdges>)
-  - [func \(g \*TestGraph\) GetName\(\) string](<#TestGraph.GetName>)
-  - [func \(g \*TestGraph\) GetNodes\(\) \[\]string](<#TestGraph.GetNodes>)
-  - [func \(g \*TestGraph\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#TestGraph.Invoke>)
-  - [func \(g \*TestGraph\) SetEntryPoint\(nodeNames \[\]string\) error](<#TestGraph.SetEntryPoint>)
-  - [func \(g \*TestGraph\) SetFinishPoint\(nodeNames \[\]string\) error](<#TestGraph.SetFinishPoint>)
-  - [func \(g \*TestGraph\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#TestGraph.Stream>)
-- [type TestWorkflow](<#TestWorkflow>)
-  - [func \(w \*TestWorkflow\) Cancel\(ctx context.Context, workflowID, runID string\) error](<#TestWorkflow.Cancel>)
-  - [func \(w \*TestWorkflow\) Execute\(ctx context.Context, input any\) \(string, string, error\)](<#TestWorkflow.Execute>)
-  - [func \(w \*TestWorkflow\) GetName\(\) string](<#TestWorkflow.GetName>)
-  - [func \(w \*TestWorkflow\) GetResult\(ctx context.Context, workflowID, runID string\) \(any, error\)](<#TestWorkflow.GetResult>)
-  - [func \(w \*TestWorkflow\) GetTasks\(\) \[\]string](<#TestWorkflow.GetTasks>)
-  - [func \(w \*TestWorkflow\) Query\(ctx context.Context, workflowID, runID, queryType string, args ...any\) \(any, error\)](<#TestWorkflow.Query>)
-  - [func \(w \*TestWorkflow\) Signal\(ctx context.Context, workflowID, runID, signalName string, data any\) error](<#TestWorkflow.Signal>)
-  - [func \(w \*TestWorkflow\) Terminate\(ctx context.Context, workflowID, runID, reason string, details ...any\) error](<#TestWorkflow.Terminate>)
-- [type Workflow](<#Workflow>)
-- [type WorkflowBuilder](<#WorkflowBuilder>)
-  - [func NewWorkflowBuilder\(\) \*WorkflowBuilder](<#NewWorkflowBuilder>)
-  - [func \(b \*WorkflowBuilder\) Build\(\) \*iface.WorkflowConfig](<#WorkflowBuilder.Build>)
-  - [func \(b \*WorkflowBuilder\) WithContainer\(container core.Container\) \*WorkflowBuilder](<#WorkflowBuilder.WithContainer>)
-  - [func \(b \*WorkflowBuilder\) WithDescription\(description string\) \*WorkflowBuilder](<#WorkflowBuilder.WithDescription>)
-  - [func \(b \*WorkflowBuilder\) WithName\(name string\) \*WorkflowBuilder](<#WorkflowBuilder.WithName>)
-  - [func \(b \*WorkflowBuilder\) WithRetries\(retries int\) \*WorkflowBuilder](<#WorkflowBuilder.WithRetries>)
-  - [func \(b \*WorkflowBuilder\) WithTimeout\(timeout int\) \*WorkflowBuilder](<#WorkflowBuilder.WithTimeout>)
-- [type WorkflowConfig](<#WorkflowConfig>)
-- [type WorkflowOption](<#WorkflowOption>)
-  - [func WithWorkflowContainer\(container core.Container\) WorkflowOption](<#WithWorkflowContainer>)
-  - [func WithWorkflowDescription\(description string\) WorkflowOption](<#WithWorkflowDescription>)
-  - [func WithWorkflowName\(name string\) WorkflowOption](<#WithWorkflowName>)
-  - [func WithWorkflowRetries\(retries int\) WorkflowOption](<#WithWorkflowRetries>)
-  - [func WithWorkflowTimeout\(timeout int\) WorkflowOption](<#WithWorkflowTimeout>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertExecutionResult\(t \*testing.T, result any, expectedPattern string\)](#AssertExecutionResult>)
+- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](#AssertHealthCheck>)
+- [func CreateTestChain\(name string, steps \[\]string\) iface.Chain](#CreateTestChain>)
+- [func CreateTestGraph\(name string, nodes \[\]string, edges map\[string\]\[\]string\) iface.Graph](#CreateTestGraph>)
+- [func CreateTestWorkflow\(name string, tasks \[\]string\) iface.Workflow](#CreateTestWorkflow>)
+- [func DefaultWorkflowConfig\(\) \*iface.WorkflowConfig](#DefaultWorkflowConfig>)
+- [func NewChain\(steps \[\]core.Runnable, opts ...iface.ChainOption\) \(iface.Chain, error\)](#NewChain>)
+- [func NewGraph\(opts ...iface.GraphOption\) \(iface.Graph, error\)](#NewGraph>)
+- [func NewWorkflow\(workflowFn any, opts ...iface.WorkflowOption\) \(iface.Workflow, error\)](#NewWorkflow>)
+- [func RunLoadTest\(t \*testing.T, orchestrator \*AdvancedMockOrchestrator, numRequests, concurrency int\)](#RunLoadTest>)
+- [type Activity](#Activity>)
+- [type AdvancedMockOrchestrator](#AdvancedMockOrchestrator>)
+  - [func NewAdvancedMockOrchestrator\(name, orchType string, options ...MockOrchestratorOption\) \*AdvancedMockOrchestrator](#NewAdvancedMockOrchestrator>)
+  - [func \(m \*AdvancedMockOrchestrator\) CheckHealth\(\) map\[string\]any](#AdvancedMockOrchestrator.CheckHealth>)
+  - [func \(m \*AdvancedMockOrchestrator\) Execute\(ctx context.Context, input any\) \(any, error\)](#AdvancedMockOrchestrator.Execute>)
+  - [func \(m \*AdvancedMockOrchestrator\) ExecuteChain\(ctx context.Context, chain iface.Chain\) \(any, error\)](#AdvancedMockOrchestrator.ExecuteChain>)
+  - [func \(m \*AdvancedMockOrchestrator\) ExecuteGraph\(ctx context.Context, graph iface.Graph\) \(any, error\)](#AdvancedMockOrchestrator.ExecuteGraph>)
+  - [func \(m \*AdvancedMockOrchestrator\) ExecuteWorkflow\(ctx context.Context, workflow iface.Workflow\) \(any, error\)](#AdvancedMockOrchestrator.ExecuteWorkflow>)
+  - [func \(m \*AdvancedMockOrchestrator\) GetCallCount\(\) int](#AdvancedMockOrchestrator.GetCallCount>)
+  - [func \(m \*AdvancedMockOrchestrator\) GetName\(\) string](#AdvancedMockOrchestrator.GetName>)
+  - [func \(m \*AdvancedMockOrchestrator\) GetType\(\) string](#AdvancedMockOrchestrator.GetType>)
+- [type AdvancedMockcomponent](#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](#NewAdvancedMockcomponent>)
+- [type Chain](#Chain>)
+- [type ChainBuilder](#ChainBuilder>)
+  - [func NewChainBuilder\(\) \*ChainBuilder](#NewChainBuilder>)
+  - [func \(b \*ChainBuilder\) AddStep\(step core.Runnable\) \*ChainBuilder](#ChainBuilder.AddStep>)
+  - [func \(b \*ChainBuilder\) Build\(\) \*SimpleChain](#ChainBuilder.Build>)
+  - [func \(b \*ChainBuilder\) WithMemory\(memory memory.Memory\) \*ChainBuilder](#ChainBuilder.WithMemory>)
+- [type ChainConfig](#ChainConfig>)
+- [type ConcurrentTestRunner](#ConcurrentTestRunner>)
+  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](#NewConcurrentTestRunner>)
+  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](#ConcurrentTestRunner.Run>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) \*Config](#DefaultConfig>)
+  - [func NewConfig\(opts ...Option\) \(\*Config, error\)](#NewConfig>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type EnabledFeatures](#EnabledFeatures>)
+- [type Graph](#Graph>)
+- [type GraphConfig](#GraphConfig>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddOrchestrator\(name string, orch \*AdvancedMockOrchestrator\)](#IntegrationTestHelper.AddOrchestrator>)
+  - [func \(h \*IntegrationTestHelper\) GetMetrics\(\) \*MockMetricsRecorder](#IntegrationTestHelper.GetMetrics>)
+  - [func \(h \*IntegrationTestHelper\) GetOrchestrator\(name string\) \*AdvancedMockOrchestrator](#IntegrationTestHelper.GetOrchestrator>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type MetricRecord](#MetricRecord>)
+- [type Metrics](#Metrics>)
+  - [func NewMetrics\(meter metric.Meter, tracer trace.Tracer\) \(\*Metrics, error\)](#NewMetrics>)
+  - [func NoOpMetrics\(\) \*Metrics](#NoOpMetrics>)
+  - [func \(m \*Metrics\) RecordChainActive\(ctx context.Context, delta int64, chainName string\)](#Metrics.RecordChainActive>)
+  - [func \(m \*Metrics\) RecordChainExecution\(ctx context.Context, duration time.Duration, success bool, chainName string\)](#Metrics.RecordChainExecution>)
+  - [func \(m \*Metrics\) RecordGraphActive\(ctx context.Context, delta int64, graphName string\)](#Metrics.RecordGraphActive>)
+  - [func \(m \*Metrics\) RecordGraphExecution\(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int\)](#Metrics.RecordGraphExecution>)
+  - [func \(m \*Metrics\) RecordWorkflowActive\(ctx context.Context, delta int64, workflowName string\)](#Metrics.RecordWorkflowActive>)
+  - [func \(m \*Metrics\) RecordWorkflowExecution\(ctx context.Context, duration time.Duration, success bool, workflowName string\)](#Metrics.RecordWorkflowExecution>)
+  - [func \(m \*Metrics\) StartChainSpan\(ctx context.Context, chainName, operation string\) \(context.Context, trace.Span\)](#Metrics.StartChainSpan>)
+  - [func \(m \*Metrics\) StartGraphSpan\(ctx context.Context, graphName, operation string\) \(context.Context, trace.Span\)](#Metrics.StartGraphSpan>)
+  - [func \(m \*Metrics\) StartWorkflowSpan\(ctx context.Context, workflowName, operation string\) \(context.Context, trace.Span\)](#Metrics.StartWorkflowSpan>)
+- [type MockMetricsRecorder](#MockMetricsRecorder>)
+  - [func NewMockMetricsRecorder\(\) \*MockMetricsRecorder](#NewMockMetricsRecorder>)
+  - [func \(m \*MockMetricsRecorder\) Clear\(\)](#MockMetricsRecorder.Clear>)
+  - [func \(m \*MockMetricsRecorder\) GetRecordings\(\) \[\]MetricRecord](#MockMetricsRecorder.GetRecordings>)
+  - [func \(m \*MockMetricsRecorder\) RecordChainExecution\(ctx context.Context, duration time.Duration, success bool, chainName string\)](#MockMetricsRecorder.RecordChainExecution>)
+  - [func \(m \*MockMetricsRecorder\) RecordGraphExecution\(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int\)](#MockMetricsRecorder.RecordGraphExecution>)
+  - [func \(m \*MockMetricsRecorder\) RecordWorkflowExecution\(ctx context.Context, duration time.Duration, success bool, workflowName string\)](#MockMetricsRecorder.RecordWorkflowExecution>)
+- [type MockOrchestratorOption](#MockOrchestratorOption>)
+  - [func WithEdges\(edges map\[string\]\[\]string\) MockOrchestratorOption](#WithEdges>)
+  - [func WithExecutionDelay\(delay time.Duration\) MockOrchestratorOption](#WithExecutionDelay>)
+  - [func WithMockError\(shouldError bool, err error\) MockOrchestratorOption](#WithMockError>)
+  - [func WithMockResponses\(responses \[\]any\) MockOrchestratorOption](#WithMockResponses>)
+  - [func WithNodes\(nodes \[\]string\) MockOrchestratorOption](#WithNodes>)
+- [type ObservabilityConfig](#ObservabilityConfig>)
+- [type Option](#Option>)
+  - [func WithChainTimeout\(timeout time.Duration\) Option](#WithChainTimeout>)
+  - [func WithFeatures\(features EnabledFeatures\) Option](#WithFeatures>)
+  - [func WithGraphMaxWorkers\(workers int\) Option](#WithGraphMaxWorkers>)
+  - [func WithMetricsPrefix\(prefix string\) Option](#WithMetricsPrefix>)
+  - [func WithWorkflowTaskQueue\(queue string\) Option](#WithWorkflowTaskQueue>)
+- [type OrchestrationContainer](#OrchestrationContainer>)
+  - [func NewOrchestrationContainer\(\) \*OrchestrationContainer](#NewOrchestrationContainer>)
+  - [func \(oc \*OrchestrationContainer\) BuildChain\(steps \[\]core.Runnable, memory memory.Memory\) \(\*SimpleChain, error\)](#OrchestrationContainer.BuildChain>)
+  - [func \(oc \*OrchestrationContainer\) GetContainer\(\) core.Container](#OrchestrationContainer.GetContainer>)
+  - [func \(oc \*OrchestrationContainer\) RegisterComponent\(factoryFunc any\) error](#OrchestrationContainer.RegisterComponent>)
+- [type Orchestrator](#Orchestrator>)
+  - [func NewDefaultOrchestrator\(\) \(\*Orchestrator, error\)](#NewDefaultOrchestrator>)
+  - [func NewOrchestrator\(config \*Config\) \(\*Orchestrator, error\)](#NewOrchestrator>)
+  - [func NewOrchestratorWithOptions\(opts ...Option\) \(\*Orchestrator, error\)](#NewOrchestratorWithOptions>)
+  - [func \(o \*Orchestrator\) Check\(ctx context.Context\) error](#Orchestrator.Check>)
+  - [func \(o \*Orchestrator\) CreateChain\(steps \[\]core.Runnable, opts ...iface.ChainOption\) \(iface.Chain, error\)](#Orchestrator.CreateChain>)
+  - [func \(o \*Orchestrator\) CreateGraph\(opts ...iface.GraphOption\) \(iface.Graph, error\)](#Orchestrator.CreateGraph>)
+  - [func \(o \*Orchestrator\) CreateWorkflow\(workflowFn any, opts ...iface.WorkflowOption\) \(iface.Workflow, error\)](#Orchestrator.CreateWorkflow>)
+  - [func \(o \*Orchestrator\) GetMetrics\(\) iface.OrchestratorMetrics](#Orchestrator.GetMetrics>)
+- [type SimpleChain](#SimpleChain>)
+  - [func NewSimpleChain\(steps \[\]core.Runnable, mem memory.Memory\) \*SimpleChain](#NewSimpleChain>)
+  - [func NewSimpleChainWithOptions\(options ...SimpleChainOption\) \*SimpleChain](#NewSimpleChainWithOptions>)
+  - [func \(c \*SimpleChain\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#SimpleChain.Batch>)
+  - [func \(c \*SimpleChain\) GetInputKeys\(\) \[\]string](#SimpleChain.GetInputKeys>)
+  - [func \(c \*SimpleChain\) GetMemory\(\) memory.Memory](#SimpleChain.GetMemory>)
+  - [func \(c \*SimpleChain\) GetOutputKeys\(\) \[\]string](#SimpleChain.GetOutputKeys>)
+  - [func \(c \*SimpleChain\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#SimpleChain.Invoke>)
+  - [func \(c \*SimpleChain\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#SimpleChain.Stream>)
+- [type SimpleChainConfig](#SimpleChainConfig>)
+  - [func DefaultSimpleChainConfig\(\) \*SimpleChainConfig](#DefaultSimpleChainConfig>)
+- [type SimpleChainOption](#SimpleChainOption>)
+  - [func WithMemory\(mem memory.Memory\) SimpleChainOption](#WithMemory>)
+  - [func WithSteps\(steps ...core.Runnable\) SimpleChainOption](#WithSteps>)
+- [type SimpleMockcomponent](#SimpleMockcomponent>)
+  - [func NewSimpleMockcomponent\(\) \*SimpleMockcomponent](#NewSimpleMockcomponent>)
+- [type TestChain](#TestChain>)
+  - [func \(c \*TestChain\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#TestChain.Batch>)
+  - [func \(c \*TestChain\) GetInputKeys\(\) \[\]string](#TestChain.GetInputKeys>)
+  - [func \(c \*TestChain\) GetMemory\(\) memoryiface.Memory](#TestChain.GetMemory>)
+  - [func \(c \*TestChain\) GetName\(\) string](#TestChain.GetName>)
+  - [func \(c \*TestChain\) GetOutputKeys\(\) \[\]string](#TestChain.GetOutputKeys>)
+  - [func \(c \*TestChain\) GetSteps\(\) \[\]string](#TestChain.GetSteps>)
+  - [func \(c \*TestChain\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#TestChain.Invoke>)
+  - [func \(c \*TestChain\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#TestChain.Stream>)
+- [type TestGraph](#TestGraph>)
+  - [func \(g \*TestGraph\) AddEdge\(sourceNode, targetNode string\) error](#TestGraph.AddEdge>)
+  - [func \(g \*TestGraph\) AddNode\(name string, runnable core.Runnable\) error](#TestGraph.AddNode>)
+  - [func \(g \*TestGraph\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#TestGraph.Batch>)
+  - [func \(g \*TestGraph\) GetEdges\(\) map\[string\]\[\]string](#TestGraph.GetEdges>)
+  - [func \(g \*TestGraph\) GetName\(\) string](#TestGraph.GetName>)
+  - [func \(g \*TestGraph\) GetNodes\(\) \[\]string](#TestGraph.GetNodes>)
+  - [func \(g \*TestGraph\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#TestGraph.Invoke>)
+  - [func \(g \*TestGraph\) SetEntryPoint\(nodeNames \[\]string\) error](#TestGraph.SetEntryPoint>)
+  - [func \(g \*TestGraph\) SetFinishPoint\(nodeNames \[\]string\) error](#TestGraph.SetFinishPoint>)
+  - [func \(g \*TestGraph\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#TestGraph.Stream>)
+- [type TestWorkflow](#TestWorkflow>)
+  - [func \(w \*TestWorkflow\) Cancel\(ctx context.Context, workflowID, runID string\) error](#TestWorkflow.Cancel>)
+  - [func \(w \*TestWorkflow\) Execute\(ctx context.Context, input any\) \(string, string, error\)](#TestWorkflow.Execute>)
+  - [func \(w \*TestWorkflow\) GetName\(\) string](#TestWorkflow.GetName>)
+  - [func \(w \*TestWorkflow\) GetResult\(ctx context.Context, workflowID, runID string\) \(any, error\)](#TestWorkflow.GetResult>)
+  - [func \(w \*TestWorkflow\) GetTasks\(\) \[\]string](#TestWorkflow.GetTasks>)
+  - [func \(w \*TestWorkflow\) Query\(ctx context.Context, workflowID, runID, queryType string, args ...any\) \(any, error\)](#TestWorkflow.Query>)
+  - [func \(w \*TestWorkflow\) Signal\(ctx context.Context, workflowID, runID, signalName string, data any\) error](#TestWorkflow.Signal>)
+  - [func \(w \*TestWorkflow\) Terminate\(ctx context.Context, workflowID, runID, reason string, details ...any\) error](#TestWorkflow.Terminate>)
+- [type Workflow](#Workflow>)
+- [type WorkflowBuilder](#WorkflowBuilder>)
+  - [func NewWorkflowBuilder\(\) \*WorkflowBuilder](#NewWorkflowBuilder>)
+  - [func \(b \*WorkflowBuilder\) Build\(\) \*iface.WorkflowConfig](#WorkflowBuilder.Build>)
+  - [func \(b \*WorkflowBuilder\) WithContainer\(container core.Container\) \*WorkflowBuilder](#WorkflowBuilder.WithContainer>)
+  - [func \(b \*WorkflowBuilder\) WithDescription\(description string\) \*WorkflowBuilder](#WorkflowBuilder.WithDescription>)
+  - [func \(b \*WorkflowBuilder\) WithName\(name string\) \*WorkflowBuilder](#WorkflowBuilder.WithName>)
+  - [func \(b \*WorkflowBuilder\) WithRetries\(retries int\) \*WorkflowBuilder](#WorkflowBuilder.WithRetries>)
+  - [func \(b \*WorkflowBuilder\) WithTimeout\(timeout int\) \*WorkflowBuilder](#WorkflowBuilder.WithTimeout>)
+- [type WorkflowConfig](#WorkflowConfig>)
+- [type WorkflowOption](#WorkflowOption>)
+  - [func WithWorkflowContainer\(container core.Container\) WorkflowOption](#WithWorkflowContainer>)
+  - [func WithWorkflowDescription\(description string\) WorkflowOption](#WithWorkflowDescription>)
+  - [func WithWorkflowName\(name string\) WorkflowOption](#WithWorkflowName>)
+  - [func WithWorkflowRetries\(retries int\) WorkflowOption](#WithWorkflowRetries>)
+  - [func WithWorkflowTimeout\(timeout int\) WorkflowOption](#WithWorkflowTimeout>)
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L433>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L433)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -232,8 +232,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType validates error types and codes.
 
-<a name="AssertExecutionResult"></a>
-## func [AssertExecutionResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L424>)
+
+## func [AssertExecutionResult](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L424)
 
 ```go
 func AssertExecutionResult(t *testing.T, result any, expectedPattern string)
@@ -241,8 +241,8 @@ func AssertExecutionResult(t *testing.T, result any, expectedPattern string)
 
 AssertExecutionResult validates execution results.
 
-<a name="AssertHealthCheck"></a>
-## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L416>)
+
+## func [AssertHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L416)
 
 ```go
 func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string)
@@ -250,8 +250,8 @@ func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus strin
 
 AssertHealthCheck validates health check results.
 
-<a name="CreateTestChain"></a>
-## func [CreateTestChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L280>)
+
+## func [CreateTestChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L280)
 
 ```go
 func CreateTestChain(name string, steps []string) iface.Chain
@@ -259,8 +259,8 @@ func CreateTestChain(name string, steps []string) iface.Chain
 
 CreateTestChain creates a test chain configuration.
 
-<a name="CreateTestGraph"></a>
-## func [CreateTestGraph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L319>)
+
+## func [CreateTestGraph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L319)
 
 ```go
 func CreateTestGraph(name string, nodes []string, edges map[string][]string) iface.Graph
@@ -268,8 +268,8 @@ func CreateTestGraph(name string, nodes []string, edges map[string][]string) ifa
 
 CreateTestGraph creates a test graph configuration.
 
-<a name="CreateTestWorkflow"></a>
-## func [CreateTestWorkflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L373>)
+
+## func [CreateTestWorkflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L373)
 
 ```go
 func CreateTestWorkflow(name string, tasks []string) iface.Workflow
@@ -277,8 +277,8 @@ func CreateTestWorkflow(name string, tasks []string) iface.Workflow
 
 CreateTestWorkflow creates a test workflow configuration.
 
-<a name="DefaultWorkflowConfig"></a>
-## func [DefaultWorkflowConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L155>)
+
+## func [DefaultWorkflowConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L155)
 
 ```go
 func DefaultWorkflowConfig() *iface.WorkflowConfig
@@ -286,8 +286,8 @@ func DefaultWorkflowConfig() *iface.WorkflowConfig
 
 DefaultWorkflowConfig returns default workflow configuration.
 
-<a name="NewChain"></a>
-## func [NewChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L339>)
+
+## func [NewChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L339)
 
 ```go
 func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error)
@@ -295,8 +295,8 @@ func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, er
 
 NewChain creates a new chain with default orchestrator.
 
-<a name="NewGraph"></a>
-## func [NewGraph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L348>)
+
+## func [NewGraph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L348)
 
 ```go
 func NewGraph(opts ...iface.GraphOption) (iface.Graph, error)
@@ -304,8 +304,8 @@ func NewGraph(opts ...iface.GraphOption) (iface.Graph, error)
 
 NewGraph creates a new graph with default orchestrator.
 
-<a name="NewWorkflow"></a>
-## func [NewWorkflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L357>)
+
+## func [NewWorkflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L357)
 
 ```go
 func NewWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error)
@@ -313,8 +313,8 @@ func NewWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, 
 
 NewWorkflow creates a new workflow with default orchestrator.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L501>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L501)
 
 ```go
 func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numRequests, concurrency int)
@@ -322,8 +322,8 @@ func RunLoadTest(t *testing.T, orchestrator *AdvancedMockOrchestrator, numReques
 
 RunLoadTest executes a load test scenario.
 
-<a name="Activity"></a>
-## type [Activity](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L73-L77>)
+
+## type [Activity](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L73-L77)
 
 Activity represents a unit of work within a workflow, often corresponding to a Beluga Runnable. This interface helps bridge Beluga components with workflow systems.
 
@@ -335,8 +335,8 @@ type Activity interface {
 }
 ```
 
-<a name="AdvancedMockOrchestrator"></a>
-## type [AdvancedMockOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L22-L40>)
+
+## type [AdvancedMockOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L22-L40)
 
 AdvancedMockOrchestrator provides a comprehensive mock implementation for testing.
 
@@ -347,8 +347,8 @@ type AdvancedMockOrchestrator struct {
 }
 ```
 
-<a name="NewAdvancedMockOrchestrator"></a>
-### func [NewAdvancedMockOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L43>)
+
+### func [NewAdvancedMockOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L43)
 
 ```go
 func NewAdvancedMockOrchestrator(name, orchType string, options ...MockOrchestratorOption) *AdvancedMockOrchestrator
@@ -356,15 +356,15 @@ func NewAdvancedMockOrchestrator(name, orchType string, options ...MockOrchestra
 
 NewAdvancedMockOrchestrator creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockOrchestrator.CheckHealth"></a>
-### func \(\*AdvancedMockOrchestrator\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L190>)
+
+### func \(\*AdvancedMockOrchestrator\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L190)
 
 ```go
 func (m *AdvancedMockOrchestrator) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockOrchestrator.Execute"></a>
-### func \(\*AdvancedMockOrchestrator\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L102>)
+
+### func \(\*AdvancedMockOrchestrator\) [Execute](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L102)
 
 ```go
 func (m *AdvancedMockOrchestrator) Execute(ctx context.Context, input any) (any, error)
@@ -372,50 +372,50 @@ func (m *AdvancedMockOrchestrator) Execute(ctx context.Context, input any) (any,
 
 Mock implementation methods.
 
-<a name="AdvancedMockOrchestrator.ExecuteChain"></a>
-### func \(\*AdvancedMockOrchestrator\) [ExecuteChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L128>)
+
+### func \(\*AdvancedMockOrchestrator\) [ExecuteChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L128)
 
 ```go
 func (m *AdvancedMockOrchestrator) ExecuteChain(ctx context.Context, chain iface.Chain) (any, error)
 ```
 
-<a name="AdvancedMockOrchestrator.ExecuteGraph"></a>
-### func \(\*AdvancedMockOrchestrator\) [ExecuteGraph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L144>)
+
+### func \(\*AdvancedMockOrchestrator\) [ExecuteGraph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L144)
 
 ```go
 func (m *AdvancedMockOrchestrator) ExecuteGraph(ctx context.Context, graph iface.Graph) (any, error)
 ```
 
-<a name="AdvancedMockOrchestrator.ExecuteWorkflow"></a>
-### func \(\*AdvancedMockOrchestrator\) [ExecuteWorkflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L160>)
+
+### func \(\*AdvancedMockOrchestrator\) [ExecuteWorkflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L160)
 
 ```go
 func (m *AdvancedMockOrchestrator) ExecuteWorkflow(ctx context.Context, workflow iface.Workflow) (any, error)
 ```
 
-<a name="AdvancedMockOrchestrator.GetCallCount"></a>
-### func \(\*AdvancedMockOrchestrator\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L184>)
+
+### func \(\*AdvancedMockOrchestrator\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L184)
 
 ```go
 func (m *AdvancedMockOrchestrator) GetCallCount() int
 ```
 
-<a name="AdvancedMockOrchestrator.GetName"></a>
-### func \(\*AdvancedMockOrchestrator\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L176>)
+
+### func \(\*AdvancedMockOrchestrator\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L176)
 
 ```go
 func (m *AdvancedMockOrchestrator) GetName() string
 ```
 
-<a name="AdvancedMockOrchestrator.GetType"></a>
-### func \(\*AdvancedMockOrchestrator\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L180>)
+
+### func \(\*AdvancedMockOrchestrator\) [GetType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L180)
 
 ```go
 func (m *AdvancedMockOrchestrator) GetType() string
 ```
 
-<a name="AdvancedMockcomponent"></a>
-## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/advanced_mock.go#L8-L10>)
+
+## type [AdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/advanced_mock.go#L8-L10)
 
 AdvancedMockcomponent is a mock implementation of Interface.
 
@@ -425,8 +425,8 @@ type AdvancedMockcomponent struct {
 }
 ```
 
-<a name="NewAdvancedMockcomponent"></a>
-### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/advanced_mock.go#L13>)
+
+### func [NewAdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/advanced_mock.go#L13)
 
 ```go
 func NewAdvancedMockcomponent() *AdvancedMockcomponent
@@ -434,8 +434,8 @@ func NewAdvancedMockcomponent() *AdvancedMockcomponent
 
 NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
 
-<a name="Chain"></a>
-## type [Chain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L19-L28>)
+
+## type [Chain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L19-L28)
 
 Chain represents a sequence of components \(Runnables\) executed one after another. The output of one step is typically the input to the next.
 
@@ -452,8 +452,8 @@ type Chain interface {
 }
 ```
 
-<a name="ChainBuilder"></a>
-## type [ChainBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L52-L54>)
+
+## type [ChainBuilder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L52-L54)
 
 ChainBuilder provides a fluent interface for building chains.
 
@@ -463,8 +463,8 @@ type ChainBuilder struct {
 }
 ```
 
-<a name="NewChainBuilder"></a>
-### func [NewChainBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L57>)
+
+### func [NewChainBuilder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L57)
 
 ```go
 func NewChainBuilder() *ChainBuilder
@@ -472,8 +472,8 @@ func NewChainBuilder() *ChainBuilder
 
 NewChainBuilder creates a new chain builder.
 
-<a name="ChainBuilder.AddStep"></a>
-### func \(\*ChainBuilder\) [AddStep](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L64>)
+
+### func \(\*ChainBuilder\) [AddStep](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L64)
 
 ```go
 func (b *ChainBuilder) AddStep(step core.Runnable) *ChainBuilder
@@ -481,8 +481,8 @@ func (b *ChainBuilder) AddStep(step core.Runnable) *ChainBuilder
 
 AddStep adds a step to the chain.
 
-<a name="ChainBuilder.Build"></a>
-### func \(\*ChainBuilder\) [Build](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L76>)
+
+### func \(\*ChainBuilder\) [Build](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L76)
 
 ```go
 func (b *ChainBuilder) Build() *SimpleChain
@@ -490,8 +490,8 @@ func (b *ChainBuilder) Build() *SimpleChain
 
 Build creates the chain.
 
-<a name="ChainBuilder.WithMemory"></a>
-### func \(\*ChainBuilder\) [WithMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L70>)
+
+### func \(\*ChainBuilder\) [WithMemory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L70)
 
 ```go
 func (b *ChainBuilder) WithMemory(memory memory.Memory) *ChainBuilder
@@ -499,8 +499,8 @@ func (b *ChainBuilder) WithMemory(memory memory.Memory) *ChainBuilder
 
 WithMemory sets the memory for the chain.
 
-<a name="ChainConfig"></a>
-## type [ChainConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L21-L26>)
+
+## type [ChainConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L21-L26)
 
 ChainConfig holds configuration specific to chain orchestration.
 
@@ -513,8 +513,8 @@ type ChainConfig struct {
 }
 ```
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L442-L446>)
+
+## type [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L442-L446)
 
 ConcurrentTestRunner runs tests concurrently for performance testing.
 
@@ -526,22 +526,22 @@ type ConcurrentTestRunner struct {
 }
 ```
 
-<a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L448>)
+
+### func [NewConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L448)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
-<a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L456>)
+
+### func \(\*ConcurrentTestRunner\) [Run](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L456)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L12-L18>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L12-L18)
 
 Config holds the main configuration for the orchestration package.
 
@@ -555,8 +555,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L88>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L88)
 
 ```go
 func DefaultConfig() *Config
@@ -564,8 +564,8 @@ func DefaultConfig() *Config
 
 DefaultConfig returns a default configuration.
 
-<a name="NewConfig"></a>
-### func [NewConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L182>)
+
+### func [NewConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L182)
 
 ```go
 func NewConfig(opts ...Option) (*Config, error)
@@ -573,8 +573,8 @@ func NewConfig(opts ...Option) (*Config, error)
 
 NewConfig creates a new configuration with the given options.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L64>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L64)
 
 ```go
 func (c *Config) Validate() error
@@ -582,8 +582,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="EnabledFeatures"></a>
-## type [EnabledFeatures](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L55-L61>)
+
+## type [EnabledFeatures](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L55-L61)
 
 EnabledFeatures holds configuration for enabling/disabling features.
 
@@ -597,8 +597,8 @@ type EnabledFeatures struct {
 }
 ```
 
-<a name="Graph"></a>
-## type [Graph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L32-L44>)
+
+## type [Graph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L32-L44)
 
 Graph represents a more complex orchestration where components can be executed based on dependencies or conditions, forming a directed acyclic graph \(DAG\).
 
@@ -618,8 +618,8 @@ type Graph interface {
 }
 ```
 
-<a name="GraphConfig"></a>
-## type [GraphConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L29-L35>)
+
+## type [GraphConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L29-L35)
 
 GraphConfig holds configuration specific to graph orchestration.
 
@@ -633,8 +633,8 @@ type GraphConfig struct {
 }
 ```
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L539-L542>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L539-L542)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -644,43 +644,43 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L544>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L544)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddOrchestrator"></a>
-### func \(\*IntegrationTestHelper\) [AddOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L551>)
+
+### func \(\*IntegrationTestHelper\) [AddOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L551)
 
 ```go
 func (h *IntegrationTestHelper) AddOrchestrator(name string, orch *AdvancedMockOrchestrator)
 ```
 
-<a name="IntegrationTestHelper.GetMetrics"></a>
-### func \(\*IntegrationTestHelper\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L559>)
+
+### func \(\*IntegrationTestHelper\) [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L559)
 
 ```go
 func (h *IntegrationTestHelper) GetMetrics() *MockMetricsRecorder
 ```
 
-<a name="IntegrationTestHelper.GetOrchestrator"></a>
-### func \(\*IntegrationTestHelper\) [GetOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L555>)
+
+### func \(\*IntegrationTestHelper\) [GetOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L555)
 
 ```go
 func (h *IntegrationTestHelper) GetOrchestrator(name string) *AdvancedMockOrchestrator
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L563>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L563)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="MetricRecord"></a>
-## type [MetricRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L210-L216>)
+
+## type [MetricRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L210-L216)
 
 ```go
 type MetricRecord struct {
@@ -692,8 +692,8 @@ type MetricRecord struct {
 }
 ```
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L13-L39>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L13-L39)
 
 Metrics holds all orchestration\-related metrics.
 
@@ -703,8 +703,8 @@ type Metrics struct {
 }
 ```
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L42>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L42)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
@@ -712,8 +712,8 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error)
 
 NewMetrics creates a new metrics instance with OTEL instrumentation.
 
-<a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L374>)
+
+### func [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L374)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -721,8 +721,8 @@ func NoOpMetrics() *Metrics
 
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
-<a name="Metrics.RecordChainActive"></a>
-### func \(\*Metrics\) [RecordChainActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L221>)
+
+### func \(\*Metrics\) [RecordChainActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L221)
 
 ```go
 func (m *Metrics) RecordChainActive(ctx context.Context, delta int64, chainName string)
@@ -730,8 +730,8 @@ func (m *Metrics) RecordChainActive(ctx context.Context, delta int64, chainName 
 
 RecordChainActive records active chain count changes.
 
-<a name="Metrics.RecordChainExecution"></a>
-### func \(\*Metrics\) [RecordChainExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L190>)
+
+### func \(\*Metrics\) [RecordChainExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L190)
 
 ```go
 func (m *Metrics) RecordChainExecution(ctx context.Context, duration time.Duration, success bool, chainName string)
@@ -739,8 +739,8 @@ func (m *Metrics) RecordChainExecution(ctx context.Context, duration time.Durati
 
 RecordChainExecution records a chain execution.
 
-<a name="Metrics.RecordGraphActive"></a>
-### func \(\*Metrics\) [RecordGraphActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L268>)
+
+### func \(\*Metrics\) [RecordGraphActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L268)
 
 ```go
 func (m *Metrics) RecordGraphActive(ctx context.Context, delta int64, graphName string)
@@ -748,8 +748,8 @@ func (m *Metrics) RecordGraphActive(ctx context.Context, delta int64, graphName 
 
 RecordGraphActive records active graph count changes.
 
-<a name="Metrics.RecordGraphExecution"></a>
-### func \(\*Metrics\) [RecordGraphExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L234>)
+
+### func \(\*Metrics\) [RecordGraphExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L234)
 
 ```go
 func (m *Metrics) RecordGraphExecution(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int)
@@ -757,8 +757,8 @@ func (m *Metrics) RecordGraphExecution(ctx context.Context, duration time.Durati
 
 RecordGraphExecution records a graph execution.
 
-<a name="Metrics.RecordWorkflowActive"></a>
-### func \(\*Metrics\) [RecordWorkflowActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L312>)
+
+### func \(\*Metrics\) [RecordWorkflowActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L312)
 
 ```go
 func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflowName string)
@@ -766,8 +766,8 @@ func (m *Metrics) RecordWorkflowActive(ctx context.Context, delta int64, workflo
 
 RecordWorkflowActive records active workflow count changes.
 
-<a name="Metrics.RecordWorkflowExecution"></a>
-### func \(\*Metrics\) [RecordWorkflowExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L281>)
+
+### func \(\*Metrics\) [RecordWorkflowExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L281)
 
 ```go
 func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration time.Duration, success bool, workflowName string)
@@ -775,8 +775,8 @@ func (m *Metrics) RecordWorkflowExecution(ctx context.Context, duration time.Dur
 
 RecordWorkflowExecution records a workflow execution.
 
-<a name="Metrics.StartChainSpan"></a>
-### func \(\*Metrics\) [StartChainSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L327>)
+
+### func \(\*Metrics\) [StartChainSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L327)
 
 ```go
 func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation string) (context.Context, trace.Span)
@@ -784,8 +784,8 @@ func (m *Metrics) StartChainSpan(ctx context.Context, chainName, operation strin
 
 StartChainSpan starts a new span for chain execution.
 
-<a name="Metrics.StartGraphSpan"></a>
-### func \(\*Metrics\) [StartGraphSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L343>)
+
+### func \(\*Metrics\) [StartGraphSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L343)
 
 ```go
 func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation string) (context.Context, trace.Span)
@@ -793,8 +793,8 @@ func (m *Metrics) StartGraphSpan(ctx context.Context, graphName, operation strin
 
 StartGraphSpan starts a new span for graph execution.
 
-<a name="Metrics.StartWorkflowSpan"></a>
-### func \(\*Metrics\) [StartWorkflowSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L359>)
+
+### func \(\*Metrics\) [StartWorkflowSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/metrics.go#L359)
 
 ```go
 func (m *Metrics) StartWorkflowSpan(ctx context.Context, workflowName, operation string) (context.Context, trace.Span)
@@ -802,8 +802,8 @@ func (m *Metrics) StartWorkflowSpan(ctx context.Context, workflowName, operation
 
 StartWorkflowSpan starts a new span for workflow execution.
 
-<a name="MockMetricsRecorder"></a>
-## type [MockMetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L204-L208>)
+
+## type [MockMetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L204-L208)
 
 MockMetricsRecorder provides a mock metrics collector for testing.
 
@@ -814,50 +814,50 @@ type MockMetricsRecorder struct {
 }
 ```
 
-<a name="NewMockMetricsRecorder"></a>
-### func [NewMockMetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L218>)
+
+### func [NewMockMetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L218)
 
 ```go
 func NewMockMetricsRecorder() *MockMetricsRecorder
 ```
 
-<a name="MockMetricsRecorder.Clear"></a>
-### func \(\*MockMetricsRecorder\) [Clear](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L271>)
+
+### func \(\*MockMetricsRecorder\) [Clear](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L271)
 
 ```go
 func (m *MockMetricsRecorder) Clear()
 ```
 
-<a name="MockMetricsRecorder.GetRecordings"></a>
-### func \(\*MockMetricsRecorder\) [GetRecordings](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L263>)
+
+### func \(\*MockMetricsRecorder\) [GetRecordings](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L263)
 
 ```go
 func (m *MockMetricsRecorder) GetRecordings() []MetricRecord
 ```
 
-<a name="MockMetricsRecorder.RecordChainExecution"></a>
-### func \(\*MockMetricsRecorder\) [RecordChainExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L224>)
+
+### func \(\*MockMetricsRecorder\) [RecordChainExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L224)
 
 ```go
 func (m *MockMetricsRecorder) RecordChainExecution(ctx context.Context, duration time.Duration, success bool, chainName string)
 ```
 
-<a name="MockMetricsRecorder.RecordGraphExecution"></a>
-### func \(\*MockMetricsRecorder\) [RecordGraphExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L237>)
+
+### func \(\*MockMetricsRecorder\) [RecordGraphExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L237)
 
 ```go
 func (m *MockMetricsRecorder) RecordGraphExecution(ctx context.Context, duration time.Duration, success bool, graphName string, nodeCount int)
 ```
 
-<a name="MockMetricsRecorder.RecordWorkflowExecution"></a>
-### func \(\*MockMetricsRecorder\) [RecordWorkflowExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L250>)
+
+### func \(\*MockMetricsRecorder\) [RecordWorkflowExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L250)
 
 ```go
 func (m *MockMetricsRecorder) RecordWorkflowExecution(ctx context.Context, duration time.Duration, success bool, workflowName string)
 ```
 
-<a name="MockOrchestratorOption"></a>
-## type [MockOrchestratorOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L63>)
+
+## type [MockOrchestratorOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L63)
 
 MockOrchestratorOption defines functional options for mock configuration.
 
@@ -865,8 +865,8 @@ MockOrchestratorOption defines functional options for mock configuration.
 type MockOrchestratorOption func(*AdvancedMockOrchestrator)
 ```
 
-<a name="WithEdges"></a>
-### func [WithEdges](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L95>)
+
+### func [WithEdges](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L95)
 
 ```go
 func WithEdges(edges map[string][]string) MockOrchestratorOption
@@ -874,8 +874,8 @@ func WithEdges(edges map[string][]string) MockOrchestratorOption
 
 WithEdges sets the edges for the mock orchestrator.
 
-<a name="WithExecutionDelay"></a>
-### func [WithExecutionDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L81>)
+
+### func [WithExecutionDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L81)
 
 ```go
 func WithExecutionDelay(delay time.Duration) MockOrchestratorOption
@@ -883,8 +883,8 @@ func WithExecutionDelay(delay time.Duration) MockOrchestratorOption
 
 WithExecutionDelay adds artificial delay to mock operations.
 
-<a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L73>)
+
+### func [WithMockError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L73)
 
 ```go
 func WithMockError(shouldError bool, err error) MockOrchestratorOption
@@ -892,8 +892,8 @@ func WithMockError(shouldError bool, err error) MockOrchestratorOption
 
 WithMockError configures the mock to return errors.
 
-<a name="WithMockResponses"></a>
-### func [WithMockResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L66>)
+
+### func [WithMockResponses](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L66)
 
 ```go
 func WithMockResponses(responses []any) MockOrchestratorOption
@@ -901,8 +901,8 @@ func WithMockResponses(responses []any) MockOrchestratorOption
 
 WithMockResponses sets predefined responses for the mock.
 
-<a name="WithNodes"></a>
-### func [WithNodes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L88>)
+
+### func [WithNodes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L88)
 
 ```go
 func WithNodes(nodes []string) MockOrchestratorOption
@@ -910,8 +910,8 @@ func WithNodes(nodes []string) MockOrchestratorOption
 
 WithNodes sets the nodes for the mock orchestrator.
 
-<a name="ObservabilityConfig"></a>
-## type [ObservabilityConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L38-L43>)
+
+## type [ObservabilityConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L38-L43)
 
 ObservabilityConfig holds observability\-related configuration.
 
@@ -924,8 +924,8 @@ type ObservabilityConfig struct {
 }
 ```
 
-<a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L127>)
+
+## type [Option](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L127)
 
 Option represents a functional option for configuring the orchestrator.
 
@@ -933,8 +933,8 @@ Option represents a functional option for configuring the orchestrator.
 type Option func(*Config) error
 ```
 
-<a name="WithChainTimeout"></a>
-### func [WithChainTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L130>)
+
+### func [WithChainTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L130)
 
 ```go
 func WithChainTimeout(timeout time.Duration) Option
@@ -942,8 +942,8 @@ func WithChainTimeout(timeout time.Duration) Option
 
 WithChainTimeout sets the default chain timeout.
 
-<a name="WithFeatures"></a>
-### func [WithFeatures](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L174>)
+
+### func [WithFeatures](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L174)
 
 ```go
 func WithFeatures(features EnabledFeatures) Option
@@ -951,8 +951,8 @@ func WithFeatures(features EnabledFeatures) Option
 
 WithFeatures enables/disables specific features.
 
-<a name="WithGraphMaxWorkers"></a>
-### func [WithGraphMaxWorkers](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L141>)
+
+### func [WithGraphMaxWorkers](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L141)
 
 ```go
 func WithGraphMaxWorkers(workers int) Option
@@ -960,8 +960,8 @@ func WithGraphMaxWorkers(workers int) Option
 
 WithGraphMaxWorkers sets the maximum number of workers for graph execution.
 
-<a name="WithMetricsPrefix"></a>
-### func [WithMetricsPrefix](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L163>)
+
+### func [WithMetricsPrefix](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L163)
 
 ```go
 func WithMetricsPrefix(prefix string) Option
@@ -969,8 +969,8 @@ func WithMetricsPrefix(prefix string) Option
 
 WithMetricsPrefix sets the metrics prefix.
 
-<a name="WithWorkflowTaskQueue"></a>
-### func [WithWorkflowTaskQueue](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L152>)
+
+### func [WithWorkflowTaskQueue](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L152)
 
 ```go
 func WithWorkflowTaskQueue(queue string) Option
@@ -978,8 +978,8 @@ func WithWorkflowTaskQueue(queue string) Option
 
 WithWorkflowTaskQueue sets the workflow task queue.
 
-<a name="OrchestrationContainer"></a>
-## type [OrchestrationContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L81-L83>)
+
+## type [OrchestrationContainer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L81-L83)
 
 OrchestrationContainer provides DI for orchestration components.
 
@@ -989,8 +989,8 @@ type OrchestrationContainer struct {
 }
 ```
 
-<a name="NewOrchestrationContainer"></a>
-### func [NewOrchestrationContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L86>)
+
+### func [NewOrchestrationContainer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L86)
 
 ```go
 func NewOrchestrationContainer() *OrchestrationContainer
@@ -998,8 +998,8 @@ func NewOrchestrationContainer() *OrchestrationContainer
 
 NewOrchestrationContainer creates a new orchestration DI container.
 
-<a name="OrchestrationContainer.BuildChain"></a>
-### func \(\*OrchestrationContainer\) [BuildChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L100>)
+
+### func \(\*OrchestrationContainer\) [BuildChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L100)
 
 ```go
 func (oc *OrchestrationContainer) BuildChain(steps []core.Runnable, memory memory.Memory) (*SimpleChain, error)
@@ -1007,8 +1007,8 @@ func (oc *OrchestrationContainer) BuildChain(steps []core.Runnable, memory memor
 
 BuildChain builds a chain using DI.
 
-<a name="OrchestrationContainer.GetContainer"></a>
-### func \(\*OrchestrationContainer\) [GetContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L112>)
+
+### func \(\*OrchestrationContainer\) [GetContainer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L112)
 
 ```go
 func (oc *OrchestrationContainer) GetContainer() core.Container
@@ -1016,8 +1016,8 @@ func (oc *OrchestrationContainer) GetContainer() core.Container
 
 GetContainer returns the underlying DI container.
 
-<a name="OrchestrationContainer.RegisterComponent"></a>
-### func \(\*OrchestrationContainer\) [RegisterComponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L107>)
+
+### func \(\*OrchestrationContainer\) [RegisterComponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L107)
 
 ```go
 func (oc *OrchestrationContainer) RegisterComponent(factoryFunc any) error
@@ -1025,8 +1025,8 @@ func (oc *OrchestrationContainer) RegisterComponent(factoryFunc any) error
 
 RegisterComponent registers a custom component factory.
 
-<a name="Orchestrator"></a>
-## type [Orchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L69-L77>)
+
+## type [Orchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L69-L77)
 
 Orchestrator implements the main orchestration interface.
 
@@ -1036,8 +1036,8 @@ type Orchestrator struct {
 }
 ```
 
-<a name="NewDefaultOrchestrator"></a>
-### func [NewDefaultOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L123>)
+
+### func [NewDefaultOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L123)
 
 ```go
 func NewDefaultOrchestrator() (*Orchestrator, error)
@@ -1045,8 +1045,8 @@ func NewDefaultOrchestrator() (*Orchestrator, error)
 
 NewDefaultOrchestrator creates a new orchestrator with default configuration.
 
-<a name="NewOrchestrator"></a>
-### func [NewOrchestrator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L80>)
+
+### func [NewOrchestrator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L80)
 
 ```go
 func NewOrchestrator(config *Config) (*Orchestrator, error)
@@ -1054,8 +1054,8 @@ func NewOrchestrator(config *Config) (*Orchestrator, error)
 
 NewOrchestrator creates a new orchestrator with the given configuration.
 
-<a name="NewOrchestratorWithOptions"></a>
-### func [NewOrchestratorWithOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L113>)
+
+### func [NewOrchestratorWithOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L113)
 
 ```go
 func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error)
@@ -1063,8 +1063,8 @@ func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error)
 
 NewOrchestratorWithOptions creates a new orchestrator with functional options.
 
-<a name="Orchestrator.Check"></a>
-### func \(\*Orchestrator\) [Check](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L267>)
+
+### func \(\*Orchestrator\) [Check](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L267)
 
 ```go
 func (o *Orchestrator) Check(ctx context.Context) error
@@ -1072,8 +1072,8 @@ func (o *Orchestrator) Check(ctx context.Context) error
 
 Health check implementation.
 
-<a name="Orchestrator.CreateChain"></a>
-### func \(\*Orchestrator\) [CreateChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L129>)
+
+### func \(\*Orchestrator\) [CreateChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L129)
 
 ```go
 func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error)
@@ -1081,8 +1081,8 @@ func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOpt
 
 CreateChain creates a new chain orchestration.
 
-<a name="Orchestrator.CreateGraph"></a>
-### func \(\*Orchestrator\) [CreateGraph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L174>)
+
+### func \(\*Orchestrator\) [CreateGraph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L174)
 
 ```go
 func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, error)
@@ -1090,8 +1090,8 @@ func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, erro
 
 CreateGraph creates a new graph orchestration.
 
-<a name="Orchestrator.CreateWorkflow"></a>
-### func \(\*Orchestrator\) [CreateWorkflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L216>)
+
+### func \(\*Orchestrator\) [CreateWorkflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L216)
 
 ```go
 func (o *Orchestrator) CreateWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error)
@@ -1099,8 +1099,8 @@ func (o *Orchestrator) CreateWorkflow(workflowFn any, opts ...iface.WorkflowOpti
 
 CreateWorkflow creates a new workflow orchestration.
 
-<a name="Orchestrator.GetMetrics"></a>
-### func \(\*Orchestrator\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L258>)
+
+### func \(\*Orchestrator\) [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator.go#L258)
 
 ```go
 func (o *Orchestrator) GetMetrics() iface.OrchestratorMetrics
@@ -1108,8 +1108,8 @@ func (o *Orchestrator) GetMetrics() iface.OrchestratorMetrics
 
 GetMetrics returns orchestration metrics.
 
-<a name="SimpleChain"></a>
-## type [SimpleChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L82-L85>)
+
+## type [SimpleChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L82-L85)
 
 SimpleChain provides a basic implementation of the Chain interface.
 
@@ -1120,8 +1120,8 @@ type SimpleChain struct {
 }
 ```
 
-<a name="NewSimpleChain"></a>
-### func [NewSimpleChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L88>)
+
+### func [NewSimpleChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L88)
 
 ```go
 func NewSimpleChain(steps []core.Runnable, mem memory.Memory) *SimpleChain
@@ -1129,8 +1129,8 @@ func NewSimpleChain(steps []core.Runnable, mem memory.Memory) *SimpleChain
 
 NewSimpleChain creates a new SimpleChain.
 
-<a name="NewSimpleChainWithOptions"></a>
-### func [NewSimpleChainWithOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L41>)
+
+### func [NewSimpleChainWithOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L41)
 
 ```go
 func NewSimpleChainWithOptions(options ...SimpleChainOption) *SimpleChain
@@ -1138,50 +1138,50 @@ func NewSimpleChainWithOptions(options ...SimpleChainOption) *SimpleChain
 
 NewSimpleChainWithOptions creates a new SimpleChain with functional options.
 
-<a name="SimpleChain.Batch"></a>
-### func \(\*SimpleChain\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L193>)
+
+### func \(\*SimpleChain\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L193)
 
 ```go
 func (c *SimpleChain) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-<a name="SimpleChain.GetInputKeys"></a>
-### func \(\*SimpleChain\) [GetInputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L95>)
+
+### func \(\*SimpleChain\) [GetInputKeys](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L95)
 
 ```go
 func (c *SimpleChain) GetInputKeys() []string
 ```
 
-<a name="SimpleChain.GetMemory"></a>
-### func \(\*SimpleChain\) [GetMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L105>)
+
+### func \(\*SimpleChain\) [GetMemory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L105)
 
 ```go
 func (c *SimpleChain) GetMemory() memory.Memory
 ```
 
-<a name="SimpleChain.GetOutputKeys"></a>
-### func \(\*SimpleChain\) [GetOutputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L100>)
+
+### func \(\*SimpleChain\) [GetOutputKeys](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L100)
 
 ```go
 func (c *SimpleChain) GetOutputKeys() []string
 ```
 
-<a name="SimpleChain.Invoke"></a>
-### func \(\*SimpleChain\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L109>)
+
+### func \(\*SimpleChain\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L109)
 
 ```go
 func (c *SimpleChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-<a name="SimpleChain.Stream"></a>
-### func \(\*SimpleChain\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L206>)
+
+### func \(\*SimpleChain\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L206)
 
 ```go
 func (c *SimpleChain) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-<a name="SimpleChainConfig"></a>
-## type [SimpleChainConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L13-L16>)
+
+## type [SimpleChainConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L13-L16)
 
 SimpleChainConfig holds configuration for SimpleChain.
 
@@ -1192,8 +1192,8 @@ type SimpleChainConfig struct {
 }
 ```
 
-<a name="DefaultSimpleChainConfig"></a>
-### func [DefaultSimpleChainConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L33>)
+
+### func [DefaultSimpleChainConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L33)
 
 ```go
 func DefaultSimpleChainConfig() *SimpleChainConfig
@@ -1201,8 +1201,8 @@ func DefaultSimpleChainConfig() *SimpleChainConfig
 
 DefaultSimpleChainConfig returns default configuration.
 
-<a name="SimpleChainOption"></a>
-## type [SimpleChainOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L10>)
+
+## type [SimpleChainOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L10)
 
 SimpleChainOption represents a functional option for configuring SimpleChain.
 
@@ -1210,8 +1210,8 @@ SimpleChainOption represents a functional option for configuring SimpleChain.
 type SimpleChainOption func(*SimpleChainConfig)
 ```
 
-<a name="WithMemory"></a>
-### func [WithMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L26>)
+
+### func [WithMemory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L26)
 
 ```go
 func WithMemory(mem memory.Memory) SimpleChainOption
@@ -1219,8 +1219,8 @@ func WithMemory(mem memory.Memory) SimpleChainOption
 
 WithMemory sets the memory component.
 
-<a name="WithSteps"></a>
-### func [WithSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L19>)
+
+### func [WithSteps](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L19)
 
 ```go
 func WithSteps(steps ...core.Runnable) SimpleChainOption
@@ -1228,8 +1228,8 @@ func WithSteps(steps ...core.Runnable) SimpleChainOption
 
 WithSteps sets the chain steps.
 
-<a name="SimpleMockcomponent"></a>
-## type [SimpleMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/simple_mock.go#L8-L10>)
+
+## type [SimpleMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/simple_mock.go#L8-L10)
 
 SimpleMockcomponent is a mock implementation of Interface.
 
@@ -1239,8 +1239,8 @@ type SimpleMockcomponent struct {
 }
 ```
 
-<a name="NewSimpleMockcomponent"></a>
-### func [NewSimpleMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/simple_mock.go#L13>)
+
+### func [NewSimpleMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/simple_mock.go#L13)
 
 ```go
 func NewSimpleMockcomponent() *SimpleMockcomponent
@@ -1248,8 +1248,8 @@ func NewSimpleMockcomponent() *SimpleMockcomponent
 
 NewSimpleMockcomponent creates a new SimpleMockcomponent.
 
-<a name="TestChain"></a>
-## type [TestChain](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L287-L290>)
+
+## type [TestChain](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L287-L290)
 
 ```go
 type TestChain struct {
@@ -1257,64 +1257,64 @@ type TestChain struct {
 }
 ```
 
-<a name="TestChain.Batch"></a>
-### func \(\*TestChain\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L298>)
+
+### func \(\*TestChain\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L298)
 
 ```go
 func (c *TestChain) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-<a name="TestChain.GetInputKeys"></a>
-### func \(\*TestChain\) [GetInputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L314>)
+
+### func \(\*TestChain\) [GetInputKeys](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L314)
 
 ```go
 func (c *TestChain) GetInputKeys() []string
 ```
 
-<a name="TestChain.GetMemory"></a>
-### func \(\*TestChain\) [GetMemory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L316>)
+
+### func \(\*TestChain\) [GetMemory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L316)
 
 ```go
 func (c *TestChain) GetMemory() memoryiface.Memory
 ```
 
-<a name="TestChain.GetName"></a>
-### func \(\*TestChain\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L292>)
+
+### func \(\*TestChain\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L292)
 
 ```go
 func (c *TestChain) GetName() string
 ```
 
-<a name="TestChain.GetOutputKeys"></a>
-### func \(\*TestChain\) [GetOutputKeys](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L315>)
+
+### func \(\*TestChain\) [GetOutputKeys](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L315)
 
 ```go
 func (c *TestChain) GetOutputKeys() []string
 ```
 
-<a name="TestChain.GetSteps"></a>
-### func \(\*TestChain\) [GetSteps](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L293>)
+
+### func \(\*TestChain\) [GetSteps](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L293)
 
 ```go
 func (c *TestChain) GetSteps() []string
 ```
 
-<a name="TestChain.Invoke"></a>
-### func \(\*TestChain\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L294>)
+
+### func \(\*TestChain\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L294)
 
 ```go
 func (c *TestChain) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-<a name="TestChain.Stream"></a>
-### func \(\*TestChain\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L306>)
+
+### func \(\*TestChain\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L306)
 
 ```go
 func (c *TestChain) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-<a name="TestGraph"></a>
-## type [TestGraph](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L327-L331>)
+
+## type [TestGraph](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L327-L331)
 
 ```go
 type TestGraph struct {
@@ -1322,78 +1322,78 @@ type TestGraph struct {
 }
 ```
 
-<a name="TestGraph.AddEdge"></a>
-### func \(\*TestGraph\) [AddEdge](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L362>)
+
+### func \(\*TestGraph\) [AddEdge](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L362)
 
 ```go
 func (g *TestGraph) AddEdge(sourceNode, targetNode string) error
 ```
 
-<a name="TestGraph.AddNode"></a>
-### func \(\*TestGraph\) [AddNode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L357>)
+
+### func \(\*TestGraph\) [AddNode](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L357)
 
 ```go
 func (g *TestGraph) AddNode(name string, runnable core.Runnable) error
 ```
 
-<a name="TestGraph.Batch"></a>
-### func \(\*TestGraph\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L340>)
+
+### func \(\*TestGraph\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L340)
 
 ```go
 func (g *TestGraph) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-<a name="TestGraph.GetEdges"></a>
-### func \(\*TestGraph\) [GetEdges](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L335>)
+
+### func \(\*TestGraph\) [GetEdges](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L335)
 
 ```go
 func (g *TestGraph) GetEdges() map[string][]string
 ```
 
-<a name="TestGraph.GetName"></a>
-### func \(\*TestGraph\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L333>)
+
+### func \(\*TestGraph\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L333)
 
 ```go
 func (g *TestGraph) GetName() string
 ```
 
-<a name="TestGraph.GetNodes"></a>
-### func \(\*TestGraph\) [GetNodes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L334>)
+
+### func \(\*TestGraph\) [GetNodes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L334)
 
 ```go
 func (g *TestGraph) GetNodes() []string
 ```
 
-<a name="TestGraph.Invoke"></a>
-### func \(\*TestGraph\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L336>)
+
+### func \(\*TestGraph\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L336)
 
 ```go
 func (g *TestGraph) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-<a name="TestGraph.SetEntryPoint"></a>
-### func \(\*TestGraph\) [SetEntryPoint](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L369>)
+
+### func \(\*TestGraph\) [SetEntryPoint](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L369)
 
 ```go
 func (g *TestGraph) SetEntryPoint(nodeNames []string) error
 ```
 
-<a name="TestGraph.SetFinishPoint"></a>
-### func \(\*TestGraph\) [SetFinishPoint](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L370>)
+
+### func \(\*TestGraph\) [SetFinishPoint](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L370)
 
 ```go
 func (g *TestGraph) SetFinishPoint(nodeNames []string) error
 ```
 
-<a name="TestGraph.Stream"></a>
-### func \(\*TestGraph\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L348>)
+
+### func \(\*TestGraph\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L348)
 
 ```go
 func (g *TestGraph) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-<a name="TestWorkflow"></a>
-## type [TestWorkflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L380-L383>)
+
+## type [TestWorkflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L380-L383)
 
 ```go
 type TestWorkflow struct {
@@ -1401,64 +1401,64 @@ type TestWorkflow struct {
 }
 ```
 
-<a name="TestWorkflow.Cancel"></a>
-### func \(\*TestWorkflow\) [Cancel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L405>)
+
+### func \(\*TestWorkflow\) [Cancel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L405)
 
 ```go
 func (w *TestWorkflow) Cancel(ctx context.Context, workflowID, runID string) error
 ```
 
-<a name="TestWorkflow.Execute"></a>
-### func \(\*TestWorkflow\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L387>)
+
+### func \(\*TestWorkflow\) [Execute](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L387)
 
 ```go
 func (w *TestWorkflow) Execute(ctx context.Context, input any) (string, string, error)
 ```
 
-<a name="TestWorkflow.GetName"></a>
-### func \(\*TestWorkflow\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L385>)
+
+### func \(\*TestWorkflow\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L385)
 
 ```go
 func (w *TestWorkflow) GetName() string
 ```
 
-<a name="TestWorkflow.GetResult"></a>
-### func \(\*TestWorkflow\) [GetResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L393>)
+
+### func \(\*TestWorkflow\) [GetResult](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L393)
 
 ```go
 func (w *TestWorkflow) GetResult(ctx context.Context, workflowID, runID string) (any, error)
 ```
 
-<a name="TestWorkflow.GetTasks"></a>
-### func \(\*TestWorkflow\) [GetTasks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L386>)
+
+### func \(\*TestWorkflow\) [GetTasks](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L386)
 
 ```go
 func (w *TestWorkflow) GetTasks() []string
 ```
 
-<a name="TestWorkflow.Query"></a>
-### func \(\*TestWorkflow\) [Query](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L401>)
+
+### func \(\*TestWorkflow\) [Query](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L401)
 
 ```go
 func (w *TestWorkflow) Query(ctx context.Context, workflowID, runID, queryType string, args ...any) (any, error)
 ```
 
-<a name="TestWorkflow.Signal"></a>
-### func \(\*TestWorkflow\) [Signal](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L397>)
+
+### func \(\*TestWorkflow\) [Signal](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L397)
 
 ```go
 func (w *TestWorkflow) Signal(ctx context.Context, workflowID, runID, signalName string, data any) error
 ```
 
-<a name="TestWorkflow.Terminate"></a>
-### func \(\*TestWorkflow\) [Terminate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L409>)
+
+### func \(\*TestWorkflow\) [Terminate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/test_utils.go#L409)
 
 ```go
 func (w *TestWorkflow) Terminate(ctx context.Context, workflowID, runID, reason string, details ...any) error
 ```
 
-<a name="Workflow"></a>
-## type [Workflow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L48-L69>)
+
+## type [Workflow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/orchestrator_base.go#L48-L69)
 
 Workflow represents a long\-running, potentially distributed orchestration. This interface can be implemented using systems like Temporal.
 
@@ -1487,8 +1487,8 @@ type Workflow interface {
 }
 ```
 
-<a name="WorkflowBuilder"></a>
-## type [WorkflowBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L165-L167>)
+
+## type [WorkflowBuilder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L165-L167)
 
 WorkflowBuilder provides a fluent interface for building workflows.
 
@@ -1498,8 +1498,8 @@ type WorkflowBuilder struct {
 }
 ```
 
-<a name="NewWorkflowBuilder"></a>
-### func [NewWorkflowBuilder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L170>)
+
+### func [NewWorkflowBuilder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L170)
 
 ```go
 func NewWorkflowBuilder() *WorkflowBuilder
@@ -1507,8 +1507,8 @@ func NewWorkflowBuilder() *WorkflowBuilder
 
 NewWorkflowBuilder creates a new workflow builder.
 
-<a name="WorkflowBuilder.Build"></a>
-### func \(\*WorkflowBuilder\) [Build](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L207>)
+
+### func \(\*WorkflowBuilder\) [Build](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L207)
 
 ```go
 func (b *WorkflowBuilder) Build() *iface.WorkflowConfig
@@ -1516,8 +1516,8 @@ func (b *WorkflowBuilder) Build() *iface.WorkflowConfig
 
 Build creates a workflow configuration \(placeholder for future workflow implementation\).
 
-<a name="WorkflowBuilder.WithContainer"></a>
-### func \(\*WorkflowBuilder\) [WithContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L201>)
+
+### func \(\*WorkflowBuilder\) [WithContainer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L201)
 
 ```go
 func (b *WorkflowBuilder) WithContainer(container core.Container) *WorkflowBuilder
@@ -1525,8 +1525,8 @@ func (b *WorkflowBuilder) WithContainer(container core.Container) *WorkflowBuild
 
 WithContainer sets the DI container.
 
-<a name="WorkflowBuilder.WithDescription"></a>
-### func \(\*WorkflowBuilder\) [WithDescription](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L183>)
+
+### func \(\*WorkflowBuilder\) [WithDescription](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L183)
 
 ```go
 func (b *WorkflowBuilder) WithDescription(description string) *WorkflowBuilder
@@ -1534,8 +1534,8 @@ func (b *WorkflowBuilder) WithDescription(description string) *WorkflowBuilder
 
 WithDescription sets the workflow description.
 
-<a name="WorkflowBuilder.WithName"></a>
-### func \(\*WorkflowBuilder\) [WithName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L177>)
+
+### func \(\*WorkflowBuilder\) [WithName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L177)
 
 ```go
 func (b *WorkflowBuilder) WithName(name string) *WorkflowBuilder
@@ -1543,8 +1543,8 @@ func (b *WorkflowBuilder) WithName(name string) *WorkflowBuilder
 
 WithName sets the workflow name.
 
-<a name="WorkflowBuilder.WithRetries"></a>
-### func \(\*WorkflowBuilder\) [WithRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L195>)
+
+### func \(\*WorkflowBuilder\) [WithRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L195)
 
 ```go
 func (b *WorkflowBuilder) WithRetries(retries int) *WorkflowBuilder
@@ -1552,8 +1552,8 @@ func (b *WorkflowBuilder) WithRetries(retries int) *WorkflowBuilder
 
 WithRetries sets the retry count.
 
-<a name="WorkflowBuilder.WithTimeout"></a>
-### func \(\*WorkflowBuilder\) [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L189>)
+
+### func \(\*WorkflowBuilder\) [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L189)
 
 ```go
 func (b *WorkflowBuilder) WithTimeout(timeout int) *WorkflowBuilder
@@ -1561,8 +1561,8 @@ func (b *WorkflowBuilder) WithTimeout(timeout int) *WorkflowBuilder
 
 WithTimeout sets the workflow timeout.
 
-<a name="WorkflowConfig"></a>
-## type [WorkflowConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L46-L52>)
+
+## type [WorkflowConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/config.go#L46-L52)
 
 WorkflowConfig holds configuration specific to workflow orchestration.
 
@@ -1576,8 +1576,8 @@ type WorkflowConfig struct {
 }
 ```
 
-<a name="WorkflowOption"></a>
-## type [WorkflowOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L117>)
+
+## type [WorkflowOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L117)
 
 WorkflowOption represents a functional option for workflow configuration.
 
@@ -1585,8 +1585,8 @@ WorkflowOption represents a functional option for workflow configuration.
 type WorkflowOption func(*iface.WorkflowConfig)
 ```
 
-<a name="WithWorkflowContainer"></a>
-### func [WithWorkflowContainer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L148>)
+
+### func [WithWorkflowContainer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L148)
 
 ```go
 func WithWorkflowContainer(container core.Container) WorkflowOption
@@ -1594,8 +1594,8 @@ func WithWorkflowContainer(container core.Container) WorkflowOption
 
 WithWorkflowContainer sets the DI container.
 
-<a name="WithWorkflowDescription"></a>
-### func [WithWorkflowDescription](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L127>)
+
+### func [WithWorkflowDescription](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L127)
 
 ```go
 func WithWorkflowDescription(description string) WorkflowOption
@@ -1603,8 +1603,8 @@ func WithWorkflowDescription(description string) WorkflowOption
 
 WithWorkflowDescription sets the workflow description.
 
-<a name="WithWorkflowName"></a>
-### func [WithWorkflowName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L120>)
+
+### func [WithWorkflowName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L120)
 
 ```go
 func WithWorkflowName(name string) WorkflowOption
@@ -1612,8 +1612,8 @@ func WithWorkflowName(name string) WorkflowOption
 
 WithWorkflowName sets the workflow name.
 
-<a name="WithWorkflowRetries"></a>
-### func [WithWorkflowRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L141>)
+
+### func [WithWorkflowRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L141)
 
 ```go
 func WithWorkflowRetries(retries int) WorkflowOption
@@ -1621,8 +1621,8 @@ func WithWorkflowRetries(retries int) WorkflowOption
 
 WithWorkflowRetries sets the workflow retry count.
 
-<a name="WithWorkflowTimeout"></a>
-### func [WithWorkflowTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L134>)
+
+### func [WithWorkflowTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/orchestration/options.go#L134)
 
 ```go
 func WithWorkflowTimeout(timeout int) WorkflowOption
@@ -1630,4 +1630,4 @@ func WithWorkflowTimeout(timeout int) WorkflowOption
 
 WithWorkflowTimeout sets the workflow timeout.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

@@ -16,33 +16,33 @@ Package tools defines interfaces and implementations for tools that can be used 
 
 ## Index
 
-- [func WithConcurrency\(n int\) core.Option](<#WithConcurrency>)
-- [func WithEmbedder\(embedder any\) core.Option](<#WithEmbedder>)
-- [func WithFilter\(filter map\[string\]any\) core.Option](<#WithFilter>)
-- [func WithK\(k int\) core.Option](<#WithK>)
-- [func WithRetries\(n int\) core.Option](<#WithRetries>)
-- [func WithTimeout\(seconds float64\) core.Option](<#WithTimeout>)
-- [type BaseTool](<#BaseTool>)
-  - [func \(b \*BaseTool\) Batch\(ctx context.Context, inputs \[\]any\) \(\[\]any, error\)](<#BaseTool.Batch>)
-  - [func \(b \*BaseTool\) Definition\(\) ToolDefinition](<#BaseTool.Definition>)
-  - [func \(b \*BaseTool\) Description\(\) string](<#BaseTool.Description>)
-  - [func \(b \*BaseTool\) Execute\(ctx context.Context, input any\) \(any, error\)](<#BaseTool.Execute>)
-  - [func \(b \*BaseTool\) Name\(\) string](<#BaseTool.Name>)
-  - [func \(b \*BaseTool\) SetDescription\(description string\)](<#BaseTool.SetDescription>)
-  - [func \(b \*BaseTool\) SetInputSchema\(schema any\)](<#BaseTool.SetInputSchema>)
-  - [func \(b \*BaseTool\) SetName\(name string\)](<#BaseTool.SetName>)
-- [type InMemoryToolRegistry](<#InMemoryToolRegistry>)
-  - [func NewInMemoryToolRegistry\(\) \*InMemoryToolRegistry](<#NewInMemoryToolRegistry>)
-  - [func \(r \*InMemoryToolRegistry\) GetTool\(name string\) \(Tool, error\)](<#InMemoryToolRegistry.GetTool>)
-  - [func \(r \*InMemoryToolRegistry\) GetToolDescriptions\(\) string](<#InMemoryToolRegistry.GetToolDescriptions>)
-  - [func \(r \*InMemoryToolRegistry\) ListTools\(\) \[\]string](<#InMemoryToolRegistry.ListTools>)
-  - [func \(r \*InMemoryToolRegistry\) RegisterTool\(tool Tool\) error](<#InMemoryToolRegistry.RegisterTool>)
-- [type Registry](<#Registry>)
-- [type Tool](<#Tool>)
-- [type ToolDefinition](<#ToolDefinition>)
+- [func WithConcurrency\(n int\) core.Option](#WithConcurrency>)
+- [func WithEmbedder\(embedder any\) core.Option](#WithEmbedder>)
+- [func WithFilter\(filter map\[string\]any\) core.Option](#WithFilter>)
+- [func WithK\(k int\) core.Option](#WithK>)
+- [func WithRetries\(n int\) core.Option](#WithRetries>)
+- [func WithTimeout\(seconds float64\) core.Option](#WithTimeout>)
+- [type BaseTool](#BaseTool>)
+  - [func \(b \*BaseTool\) Batch\(ctx context.Context, inputs \[\]any\) \(\[\]any, error\)](#BaseTool.Batch>)
+  - [func \(b \*BaseTool\) Definition\(\) ToolDefinition](#BaseTool.Definition>)
+  - [func \(b \*BaseTool\) Description\(\) string](#BaseTool.Description>)
+  - [func \(b \*BaseTool\) Execute\(ctx context.Context, input any\) \(any, error\)](#BaseTool.Execute>)
+  - [func \(b \*BaseTool\) Name\(\) string](#BaseTool.Name>)
+  - [func \(b \*BaseTool\) SetDescription\(description string\)](#BaseTool.SetDescription>)
+  - [func \(b \*BaseTool\) SetInputSchema\(schema any\)](#BaseTool.SetInputSchema>)
+  - [func \(b \*BaseTool\) SetName\(name string\)](#BaseTool.SetName>)
+- [type InMemoryToolRegistry](#InMemoryToolRegistry>)
+  - [func NewInMemoryToolRegistry\(\) \*InMemoryToolRegistry](#NewInMemoryToolRegistry>)
+  - [func \(r \*InMemoryToolRegistry\) GetTool\(name string\) \(Tool, error\)](#InMemoryToolRegistry.GetTool>)
+  - [func \(r \*InMemoryToolRegistry\) GetToolDescriptions\(\) string](#InMemoryToolRegistry.GetToolDescriptions>)
+  - [func \(r \*InMemoryToolRegistry\) ListTools\(\) \[\]string](#InMemoryToolRegistry.ListTools>)
+  - [func \(r \*InMemoryToolRegistry\) RegisterTool\(tool Tool\) error](#InMemoryToolRegistry.RegisterTool>)
+- [type Registry](#Registry>)
+- [type Tool](#Tool>)
+- [type ToolDefinition](#ToolDefinition>)
 
-<a name="WithConcurrency"></a>
-## func [WithConcurrency](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L133>)
+
+## func [WithConcurrency](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L133)
 
 ```go
 func WithConcurrency(n int) core.Option
@@ -50,8 +50,8 @@ func WithConcurrency(n int) core.Option
 
 WithConcurrency sets the max concurrency for StructuredTool's Batch method.
 
-<a name="WithEmbedder"></a>
-## func [WithEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L154>)
+
+## func [WithEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L154)
 
 ```go
 func WithEmbedder(embedder any) core.Option
@@ -59,8 +59,8 @@ func WithEmbedder(embedder any) core.Option
 
 WithEmbedder provides an embedder to use with tools that require one.
 
-<a name="WithFilter"></a>
-## func [WithFilter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L168>)
+
+## func [WithFilter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L168)
 
 ```go
 func WithFilter(filter map[string]any) core.Option
@@ -68,8 +68,8 @@ func WithFilter(filter map[string]any) core.Option
 
 WithFilter provides a metadata filter.
 
-<a name="WithK"></a>
-## func [WithK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L161>)
+
+## func [WithK](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L161)
 
 ```go
 func WithK(k int) core.Option
@@ -77,8 +77,8 @@ func WithK(k int) core.Option
 
 WithK sets the number of items to retrieve.
 
-<a name="WithRetries"></a>
-## func [WithRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L147>)
+
+## func [WithRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L147)
 
 ```go
 func WithRetries(n int) core.Option
@@ -86,8 +86,8 @@ func WithRetries(n int) core.Option
 
 WithRetries sets the number of times to retry a tool execution on failure.
 
-<a name="WithTimeout"></a>
-## func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L140>)
+
+## func [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L140)
 
 ```go
 func WithTimeout(seconds float64) core.Option
@@ -95,8 +95,8 @@ func WithTimeout(seconds float64) core.Option
 
 WithTimeout sets a timeout duration for tool execution.
 
-<a name="BaseTool"></a>
-## type [BaseTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L40-L44>)
+
+## type [BaseTool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L40-L44)
 
 BaseTool provides a default implementation of the Tool interface. It can be embedded in tool implementations to simplify implementing the interface.
 
@@ -106,8 +106,8 @@ type BaseTool struct {
 }
 ```
 
-<a name="BaseTool.Batch"></a>
-### func \(\*BaseTool\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L87>)
+
+### func \(\*BaseTool\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L87)
 
 ```go
 func (b *BaseTool) Batch(ctx context.Context, inputs []any) ([]any, error)
@@ -115,8 +115,8 @@ func (b *BaseTool) Batch(ctx context.Context, inputs []any) ([]any, error)
 
 Batch implements parallel execution of multiple inputs. By default, it executes each input sequentially. Override for specialized parallel implementations.
 
-<a name="BaseTool.Definition"></a>
-### func \(\*BaseTool\) [Definition](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L57>)
+
+### func \(\*BaseTool\) [Definition](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L57)
 
 ```go
 func (b *BaseTool) Definition() ToolDefinition
@@ -124,8 +124,8 @@ func (b *BaseTool) Definition() ToolDefinition
 
 Definition returns the tool's definition.
 
-<a name="BaseTool.Description"></a>
-### func \(\*BaseTool\) [Description](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L52>)
+
+### func \(\*BaseTool\) [Description](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L52)
 
 ```go
 func (b *BaseTool) Description() string
@@ -133,8 +133,8 @@ func (b *BaseTool) Description() string
 
 Description returns the tool's description.
 
-<a name="BaseTool.Execute"></a>
-### func \(\*BaseTool\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L81>)
+
+### func \(\*BaseTool\) [Execute](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L81)
 
 ```go
 func (b *BaseTool) Execute(ctx context.Context, input any) (any, error)
@@ -142,8 +142,8 @@ func (b *BaseTool) Execute(ctx context.Context, input any) (any, error)
 
 Execute is a placeholder implementation that must be overridden by concrete tool implementations.
 
-<a name="BaseTool.Name"></a>
-### func \(\*BaseTool\) [Name](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L47>)
+
+### func \(\*BaseTool\) [Name](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L47)
 
 ```go
 func (b *BaseTool) Name() string
@@ -151,8 +151,8 @@ func (b *BaseTool) Name() string
 
 Name returns the tool's name.
 
-<a name="BaseTool.SetDescription"></a>
-### func \(\*BaseTool\) [SetDescription](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L71>)
+
+### func \(\*BaseTool\) [SetDescription](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L71)
 
 ```go
 func (b *BaseTool) SetDescription(description string)
@@ -160,8 +160,8 @@ func (b *BaseTool) SetDescription(description string)
 
 SetDescription sets the tool's description.
 
-<a name="BaseTool.SetInputSchema"></a>
-### func \(\*BaseTool\) [SetInputSchema](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L76>)
+
+### func \(\*BaseTool\) [SetInputSchema](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L76)
 
 ```go
 func (b *BaseTool) SetInputSchema(schema any)
@@ -169,8 +169,8 @@ func (b *BaseTool) SetInputSchema(schema any)
 
 SetInputSchema sets the tool's input schema.
 
-<a name="BaseTool.SetName"></a>
-### func \(\*BaseTool\) [SetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L66>)
+
+### func \(\*BaseTool\) [SetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L66)
 
 ```go
 func (b *BaseTool) SetName(name string)
@@ -178,8 +178,8 @@ func (b *BaseTool) SetName(name string)
 
 SetName sets the tool's name.
 
-<a name="InMemoryToolRegistry"></a>
-## type [InMemoryToolRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L23-L25>)
+
+## type [InMemoryToolRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L23-L25)
 
 InMemoryToolRegistry is a simple in\-memory implementation of the ToolRegistry.
 
@@ -189,8 +189,8 @@ type InMemoryToolRegistry struct {
 }
 ```
 
-<a name="NewInMemoryToolRegistry"></a>
-### func [NewInMemoryToolRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L28>)
+
+### func [NewInMemoryToolRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L28)
 
 ```go
 func NewInMemoryToolRegistry() *InMemoryToolRegistry
@@ -198,8 +198,8 @@ func NewInMemoryToolRegistry() *InMemoryToolRegistry
 
 NewInMemoryToolRegistry creates a new InMemoryToolRegistry.
 
-<a name="InMemoryToolRegistry.GetTool"></a>
-### func \(\*InMemoryToolRegistry\) [GetTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L47>)
+
+### func \(\*InMemoryToolRegistry\) [GetTool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L47)
 
 ```go
 func (r *InMemoryToolRegistry) GetTool(name string) (Tool, error)
@@ -207,8 +207,8 @@ func (r *InMemoryToolRegistry) GetTool(name string) (Tool, error)
 
 GetTool retrieves a tool from the registry by its name.
 
-<a name="InMemoryToolRegistry.GetToolDescriptions"></a>
-### func \(\*InMemoryToolRegistry\) [GetToolDescriptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L66>)
+
+### func \(\*InMemoryToolRegistry\) [GetToolDescriptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L66)
 
 ```go
 func (r *InMemoryToolRegistry) GetToolDescriptions() string
@@ -216,8 +216,8 @@ func (r *InMemoryToolRegistry) GetToolDescriptions() string
 
 GetToolDescriptions returns a formatted string of all tool names and descriptions. This can be used to provide context to an LLM about available tools.
 
-<a name="InMemoryToolRegistry.ListTools"></a>
-### func \(\*InMemoryToolRegistry\) [ListTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L56>)
+
+### func \(\*InMemoryToolRegistry\) [ListTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L56)
 
 ```go
 func (r *InMemoryToolRegistry) ListTools() []string
@@ -225,8 +225,8 @@ func (r *InMemoryToolRegistry) ListTools() []string
 
 ListTools returns a list of names of all registered tools.
 
-<a name="InMemoryToolRegistry.RegisterTool"></a>
-### func \(\*InMemoryToolRegistry\) [RegisterTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L35>)
+
+### func \(\*InMemoryToolRegistry\) [RegisterTool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L35)
 
 ```go
 func (r *InMemoryToolRegistry) RegisterTool(tool Tool) error
@@ -234,8 +234,8 @@ func (r *InMemoryToolRegistry) RegisterTool(tool Tool) error
 
 RegisterTool adds a tool to the registry.
 
-<a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L15-L20>)
+
+## type [Registry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/tool_registry.go#L15-L20)
 
 Registry defines the interface for a tool registry. A registry allows for discovering and retrieving tools by name.
 
@@ -248,8 +248,8 @@ type Registry interface {
 }
 ```
 
-<a name="Tool"></a>
-## type [Tool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L14-L29>)
+
+## type [Tool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L14-L29)
 
 Tool defines the interface for tools that agents can use.
 
@@ -272,8 +272,8 @@ type Tool interface {
 }
 ```
 
-<a name="ToolDefinition"></a>
-## type [ToolDefinition](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L32-L36>)
+
+## type [ToolDefinition](https://github.com/lookatitude/beluga-ai/blob/main/pkg/agents/tools/base.go#L32-L36)
 
 ToolDefinition provides metadata about a tool for LLM consumption.
 
@@ -285,4 +285,4 @@ type ToolDefinition struct {
 }
 ```
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

@@ -22,7 +22,8 @@ IMPORTANT: These tests require real API keys and will make actual API calls. The
 
 Usage:
 
-```
+bash
+```bash
 go test -tags=integration ./pkg/llms/...
 ```
 
@@ -34,268 +35,268 @@ Package llms provides tracing functionality for LLM operations using OpenTelemet
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AddSpanAttributesMap\(span trace.Span, attrs map\[string\]any\)](<#AddSpanAttributesMap>)
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any\)](<#AssertHealthCheck>)
-- [func AssertStreamingResponse\(t \*testing.T, chunks \<\-chan iface.AIMessageChunk\)](<#AssertStreamingResponse>)
-- [func BatchGenerate\(ctx context.Context, model iface.ChatModel, prompts \[\]string, options ...core.Option\) \(\[\]string, error\)](<#BatchGenerate>)
-- [func ConcurrentTestRunner\(t \*testing.T, testFunc func\(t \*testing.T\), goroutines int\)](<#ConcurrentTestRunner>)
-- [func CreateTestMessages\(\) \[\]schema.Message](<#CreateTestMessages>)
-- [func EnsureMessages\(input any\) \(\[\]schema.Message, error\)](<#EnsureMessages>)
-- [func EnsureMessagesFromSchema\(input any\) \(\[\]schema.Message, error\)](<#EnsureMessagesFromSchema>)
-- [func GenerateMetrics\(\) string](<#GenerateMetrics>)
-- [func GenerateMock\(config MockProviderConfig\) string](<#GenerateMock>)
-- [func GenerateProvider\(template ProviderTemplate\) string](<#GenerateProvider>)
-- [func GenerateText\(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option\) \(string, error\)](<#GenerateText>)
-- [func GenerateTextWithTools\(ctx context.Context, model iface.ChatModel, prompt string, tools \[\]tools.Tool, options ...core.Option\) \(string, error\)](<#GenerateTextWithTools>)
-- [func GetLLMErrorCode\(err error\) string](<#GetLLMErrorCode>)
-- [func GetSystemAndHumanPromptsFromSchema\(messages \[\]schema.Message\) \(string, string\)](<#GetSystemAndHumanPromptsFromSchema>)
-- [func InitMetrics\(meter metric.Meter\)](<#InitMetrics>)
-- [func IsLLMError\(err error\) bool](<#IsLLMError>)
-- [func IsRetryableError\(err error\) bool](<#IsRetryableError>)
-- [func LoggerAttrs\(provider, model, operation string\) map\[string\]any](<#LoggerAttrs>)
-- [func NewAnthropicChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](<#NewAnthropicChat>)
-- [func NewAnthropicLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](<#NewAnthropicLLM>)
-- [func NewBedrockLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](<#NewBedrockLLM>)
-- [func NewChatModel\(model string, config \*Config, opts ...ChatOption\) \(iface.ChatModel, error\)](<#NewChatModel>)
-- [func NewMockLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](<#NewMockLLM>)
-- [func NewOllamaChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](<#NewOllamaChat>)
-- [func NewOllamaLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](<#NewOllamaLLM>)
-- [func NewOpenAIChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](<#NewOpenAIChat>)
-- [func NewOpenAILLM\(opts ...ConfigOption\) \(iface.LLM, error\)](<#NewOpenAILLM>)
-- [func RecordSpanError\(span trace.Span, err error\)](<#RecordSpanError>)
-- [func RunAllIntegrationTests\(t \*testing.T\)](<#RunAllIntegrationTests>)
-- [func RunIntegrationTestSuite\(t \*testing.T, suite IntegrationTestSuite\)](<#RunIntegrationTestSuite>)
-- [func RunLoadTest\(t \*testing.T, scenario LoadTestScenario\)](<#RunLoadTest>)
-- [func StartSpan\(ctx context.Context, tracer trace.Tracer, operation, provider, model string\) \(context.Context, trace.Span\)](<#StartSpan>)
-- [func StreamText\(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](<#StreamText>)
-- [func TestContext\(\) \(context.Context, context.CancelFunc\)](<#TestContext>)
-- [func TestProviderInterface\(t \*testing.T, provider iface.ChatModel, providerName string\)](<#TestProviderInterface>)
-- [func ValidateModelName\(provider, modelName string\) error](<#ValidateModelName>)
-- [func ValidateProviderConfig\(ctx context.Context, config \*Config\) error](<#ValidateProviderConfig>)
-- [func WithMaxTokensLegacy\(tokens int\) core.Option](<#WithMaxTokensLegacy>)
-- [func WithStopWordsLegacy\(stop \[\]string\) core.Option](<#WithStopWordsLegacy>)
-- [func WithTemperatureLegacy\(temp float32\) core.Option](<#WithTemperatureLegacy>)
-- [func WithToolChoiceLegacy\(choice string\) core.Option](<#WithToolChoiceLegacy>)
-- [func WithToolsLegacy\(toolsToUse \[\]tools.Tool\) core.Option](<#WithToolsLegacy>)
-- [func WithTopKLegacy\(topK int\) core.Option](<#WithTopKLegacy>)
-- [func WithTopPLegacy\(topP float32\) core.Option](<#WithTopPLegacy>)
-- [func WrapError\(op string, err error\) error](<#WrapError>)
-- [type AdvancedMockChatModel](<#AdvancedMockChatModel>)
-  - [func NewAdvancedMockChatModel\(modelName string, opts ...MockOption\) \*AdvancedMockChatModel](<#NewAdvancedMockChatModel>)
-  - [func \(m \*AdvancedMockChatModel\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#AdvancedMockChatModel.Batch>)
-  - [func \(m \*AdvancedMockChatModel\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#AdvancedMockChatModel.BindTools>)
-  - [func \(m \*AdvancedMockChatModel\) CheckHealth\(\) map\[string\]any](<#AdvancedMockChatModel.CheckHealth>)
-  - [func \(m \*AdvancedMockChatModel\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#AdvancedMockChatModel.Generate>)
-  - [func \(m \*AdvancedMockChatModel\) GetCallCount\(\) int](<#AdvancedMockChatModel.GetCallCount>)
-  - [func \(m \*AdvancedMockChatModel\) GetModelName\(\) string](<#AdvancedMockChatModel.GetModelName>)
-  - [func \(m \*AdvancedMockChatModel\) GetProviderName\(\) string](<#AdvancedMockChatModel.GetProviderName>)
-  - [func \(m \*AdvancedMockChatModel\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#AdvancedMockChatModel.Invoke>)
-  - [func \(m \*AdvancedMockChatModel\) Reset\(\)](<#AdvancedMockChatModel.Reset>)
-  - [func \(m \*AdvancedMockChatModel\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#AdvancedMockChatModel.Stream>)
-  - [func \(m \*AdvancedMockChatModel\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](<#AdvancedMockChatModel.StreamChat>)
-- [type AdvancedMockLLM](<#AdvancedMockLLM>)
-  - [func NewAdvancedMockLLM\(modelName string\) \*AdvancedMockLLM](<#NewAdvancedMockLLM>)
-  - [func \(m \*AdvancedMockLLM\) GetModelName\(\) string](<#AdvancedMockLLM.GetModelName>)
-  - [func \(m \*AdvancedMockLLM\) GetProviderName\(\) string](<#AdvancedMockLLM.GetProviderName>)
-  - [func \(m \*AdvancedMockLLM\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#AdvancedMockLLM.Invoke>)
-- [type CallOptions](<#CallOptions>)
-  - [func NewCallOptions\(\) \*CallOptions](<#NewCallOptions>)
-  - [func \(co \*CallOptions\) ApplyCallOption\(opt core.Option\)](<#CallOptions.ApplyCallOption>)
-- [type ChatModel](<#ChatModel>)
-- [type ChatModelAdapter](<#ChatModelAdapter>)
-  - [func NewChatModelAdapter\(llm iface.LLM, options \*ChatOptions\) \*ChatModelAdapter](<#NewChatModelAdapter>)
-  - [func \(c \*ChatModelAdapter\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#ChatModelAdapter.Batch>)
-  - [func \(c \*ChatModelAdapter\) CheckHealth\(\) map\[string\]any](<#ChatModelAdapter.CheckHealth>)
-  - [func \(c \*ChatModelAdapter\) GenerateMessages\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\[\]schema.Message, error\)](<#ChatModelAdapter.GenerateMessages>)
-  - [func \(c \*ChatModelAdapter\) GetModelInfo\(\) ModelInfo](<#ChatModelAdapter.GetModelInfo>)
-  - [func \(c \*ChatModelAdapter\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#ChatModelAdapter.Invoke>)
-  - [func \(c \*ChatModelAdapter\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#ChatModelAdapter.Stream>)
-  - [func \(c \*ChatModelAdapter\) StreamMessages\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan schema.Message, error\)](<#ChatModelAdapter.StreamMessages>)
-- [type ChatModelFactory](<#ChatModelFactory>)
-- [type ChatOption](<#ChatOption>)
-  - [func ChatOptionFunc\(f func\(config \*map\[string\]any\)\) ChatOption](<#ChatOptionFunc>)
-  - [func WithChatFunctionCalling\(enabled bool\) ChatOption](<#WithChatFunctionCalling>)
-  - [func WithChatMaxRetries\(maxRetries int\) ChatOption](<#WithChatMaxRetries>)
-  - [func WithChatMaxTokens\(maxTokens int\) ChatOption](<#WithChatMaxTokens>)
-  - [func WithChatObservability\(metrics, tracing bool\) ChatOption](<#WithChatObservability>)
-  - [func WithChatStopSequences\(sequences \[\]string\) ChatOption](<#WithChatStopSequences>)
-  - [func WithChatSystemPrompt\(prompt string\) ChatOption](<#WithChatSystemPrompt>)
-  - [func WithChatTemperature\(temp float32\) ChatOption](<#WithChatTemperature>)
-  - [func WithChatTimeout\(timeout time.Duration\) ChatOption](<#WithChatTimeout>)
-  - [func WithChatTopP\(topP float32\) ChatOption](<#WithChatTopP>)
-- [type ChatOptions](<#ChatOptions>)
-- [type Config](<#Config>)
-  - [func CreateTestConfig\(\) \*Config](<#CreateTestConfig>)
-  - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
-  - [func NewConfig\(opts ...ConfigOption\) \*Config](<#NewConfig>)
-  - [func NewDefaultConfig\(\) \*Config](<#NewDefaultConfig>)
-  - [func \(c \*Config\) MergeOptions\(opts ...ConfigOption\)](<#Config.MergeOptions>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type ConfigOption](<#ConfigOption>)
-  - [func WithAPIKey\(apiKey string\) ConfigOption](<#WithAPIKey>)
-  - [func WithBaseURL\(baseURL string\) ConfigOption](<#WithBaseURL>)
-  - [func WithMaxConcurrentBatches\(n int\) ConfigOption](<#WithMaxConcurrentBatches>)
-  - [func WithMaxTokensConfig\(maxTokens int\) ConfigOption](<#WithMaxTokensConfig>)
-  - [func WithModelName\(modelName string\) ConfigOption](<#WithModelName>)
-  - [func WithObservability\(tracing, metrics, logging bool\) ConfigOption](<#WithObservability>)
-  - [func WithProvider\(provider string\) ConfigOption](<#WithProvider>)
-  - [func WithProviderSpecific\(key string, value any\) ConfigOption](<#WithProviderSpecific>)
-  - [func WithRetryConfig\(maxRetries int, delay time.Duration, backoff float64\) ConfigOption](<#WithRetryConfig>)
-  - [func WithStopSequences\(sequences \[\]string\) ConfigOption](<#WithStopSequences>)
-  - [func WithTemperatureConfig\(temp float32\) ConfigOption](<#WithTemperatureConfig>)
-  - [func WithTimeout\(timeout time.Duration\) ConfigOption](<#WithTimeout>)
-  - [func WithToolCalling\(enabled bool\) ConfigOption](<#WithToolCalling>)
-  - [func WithTopKConfig\(topK int\) ConfigOption](<#WithTopKConfig>)
-  - [func WithTopPConfig\(topP float32\) ConfigOption](<#WithTopPConfig>)
-- [type ConfigValidationError](<#ConfigValidationError>)
-  - [func \(e \*ConfigValidationError\) AddError\(field string, value any, message string\)](<#ConfigValidationError.AddError>)
-  - [func \(e \*ConfigValidationError\) Error\(\) string](<#ConfigValidationError.Error>)
-  - [func \(e \*ConfigValidationError\) HasErrors\(\) bool](<#ConfigValidationError.HasErrors>)
-- [type Factory](<#Factory>)
-  - [func InitializeDefaultFactory\(\) \*Factory](<#InitializeDefaultFactory>)
-  - [func NewFactory\(\) \*Factory](<#NewFactory>)
-  - [func \(f \*Factory\) CreateLLM\(providerName string, config \*Config\) \(iface.LLM, error\)](<#Factory.CreateLLM>)
-  - [func \(f \*Factory\) CreateProvider\(providerName string, config \*Config\) \(iface.ChatModel, error\)](<#Factory.CreateProvider>)
-  - [func \(f \*Factory\) GetLLM\(name string\) \(iface.LLM, error\)](<#Factory.GetLLM>)
-  - [func \(f \*Factory\) GetProvider\(name string\) \(iface.ChatModel, error\)](<#Factory.GetProvider>)
-  - [func \(f \*Factory\) ListAvailableProviders\(\) \[\]string](<#Factory.ListAvailableProviders>)
-  - [func \(f \*Factory\) ListLLMs\(\) \[\]string](<#Factory.ListLLMs>)
-  - [func \(f \*Factory\) ListProviders\(\) \[\]string](<#Factory.ListProviders>)
-  - [func \(f \*Factory\) RegisterLLM\(name string, llm iface.LLM\)](<#Factory.RegisterLLM>)
-  - [func \(f \*Factory\) RegisterLLMFactory\(name string, factory func\(\*Config\) \(iface.LLM, error\)\)](<#Factory.RegisterLLMFactory>)
-  - [func \(f \*Factory\) RegisterProvider\(name string, provider iface.ChatModel\)](<#Factory.RegisterProvider>)
-  - [func \(f \*Factory\) RegisterProviderFactory\(name string, factory func\(\*Config\) \(iface.ChatModel, error\)\)](<#Factory.RegisterProviderFactory>)
-- [type HealthChecker](<#HealthChecker>)
-- [type IntegrationTestConfig](<#IntegrationTestConfig>)
-  - [func DefaultIntegrationTestConfig\(\) \*IntegrationTestConfig](<#DefaultIntegrationTestConfig>)
-  - [func LoadIntegrationTestConfig\(\) \*IntegrationTestConfig](<#LoadIntegrationTestConfig>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) GetConfig\(\) \*Config](<#IntegrationTestHelper.GetConfig>)
-  - [func \(h \*IntegrationTestHelper\) GetFactory\(\) \*Factory](<#IntegrationTestHelper.GetFactory>)
-  - [func \(h \*IntegrationTestHelper\) GetMetrics\(\) \*MockMetricsRecorder](<#IntegrationTestHelper.GetMetrics>)
-  - [func \(h \*IntegrationTestHelper\) GetTracing\(\) \*MockTracingHelper](<#IntegrationTestHelper.GetTracing>)
-  - [func \(h \*IntegrationTestHelper\) RateLimit\(\)](<#IntegrationTestHelper.RateLimit>)
-  - [func \(h \*IntegrationTestHelper\) SetupAnthropicProvider\(modelName string\) \(iface.ChatModel, error\)](<#IntegrationTestHelper.SetupAnthropicProvider>)
-  - [func \(h \*IntegrationTestHelper\) SetupBedrockProvider\(modelName string\) \(iface.ChatModel, error\)](<#IntegrationTestHelper.SetupBedrockProvider>)
-  - [func \(h \*IntegrationTestHelper\) SetupMockProvider\(providerName, modelName string, opts ...any\) iface.ChatModel](<#IntegrationTestHelper.SetupMockProvider>)
-  - [func \(h \*IntegrationTestHelper\) SetupOllamaProvider\(modelName string\) \(iface.ChatModel, error\)](<#IntegrationTestHelper.SetupOllamaProvider>)
-  - [func \(h \*IntegrationTestHelper\) SetupOpenAIProvider\(modelName string\) \(iface.ChatModel, error\)](<#IntegrationTestHelper.SetupOpenAIProvider>)
-  - [func \(h \*IntegrationTestHelper\) SetupProvider\(providerName string, config \*Config\) \(iface.ChatModel, error\)](<#IntegrationTestHelper.SetupProvider>)
-  - [func \(h \*IntegrationTestHelper\) TestCrossProviderComparison\(t \*testing.T, providers map\[string\]iface.ChatModel, testPrompt string\)](<#IntegrationTestHelper.TestCrossProviderComparison>)
-  - [func \(h \*IntegrationTestHelper\) TestProviderErrorHandling\(t \*testing.T, provider iface.ChatModel, providerName string\)](<#IntegrationTestHelper.TestProviderErrorHandling>)
-  - [func \(h \*IntegrationTestHelper\) TestProviderIntegration\(t \*testing.T, provider iface.ChatModel, providerName string\)](<#IntegrationTestHelper.TestProviderIntegration>)
-- [type IntegrationTestSuite](<#IntegrationTestSuite>)
-  - [func AnthropicIntegrationTestSuite\(\) IntegrationTestSuite](<#AnthropicIntegrationTestSuite>)
-  - [func MultiProviderIntegrationTestSuite\(\) IntegrationTestSuite](<#MultiProviderIntegrationTestSuite>)
-  - [func OllamaIntegrationTestSuite\(\) IntegrationTestSuite](<#OllamaIntegrationTestSuite>)
-  - [func OpenAIIntegrationTestSuite\(\) IntegrationTestSuite](<#OpenAIIntegrationTestSuite>)
-- [type LLMError](<#LLMError>)
-  - [func GetLLMError\(err error\) \*LLMError](<#GetLLMError>)
-  - [func MapHTTPError\(op string, statusCode int, err error\) \*LLMError](<#MapHTTPError>)
-  - [func NewLLMError\(op, code string, err error\) \*LLMError](<#NewLLMError>)
-  - [func NewLLMErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*LLMError](<#NewLLMErrorWithDetails>)
-  - [func NewLLMErrorWithMessage\(op, code, message string, err error\) \*LLMError](<#NewLLMErrorWithMessage>)
-  - [func \(e \*LLMError\) Error\(\) string](<#LLMError.Error>)
-  - [func \(e \*LLMError\) Unwrap\(\) error](<#LLMError.Unwrap>)
-- [type LoadTestScenario](<#LoadTestScenario>)
-- [type MessageGenerator](<#MessageGenerator>)
-- [type Metrics](<#Metrics>)
-  - [func GetMetrics\(\) \*Metrics](<#GetMetrics>)
-  - [func NewMetrics\(meter metric.Meter\) \*Metrics](<#NewMetrics>)
-  - [func \(m \*Metrics\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](<#Metrics.DecrementActiveRequests>)
-  - [func \(m \*Metrics\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](<#Metrics.DecrementActiveStreams>)
-  - [func \(m \*Metrics\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](<#Metrics.IncrementActiveRequests>)
-  - [func \(m \*Metrics\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](<#Metrics.IncrementActiveStreams>)
-  - [func \(m \*Metrics\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](<#Metrics.RecordBatch>)
-  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](<#Metrics.RecordError>)
-  - [func \(m \*Metrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](<#Metrics.RecordRequest>)
-  - [func \(m \*Metrics\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](<#Metrics.RecordStream>)
-  - [func \(m \*Metrics\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](<#Metrics.RecordTokenUsage>)
-  - [func \(m \*Metrics\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](<#Metrics.RecordToolCall>)
-- [type MetricsRecorder](<#MetricsRecorder>)
-- [type MockMetricsRecorder](<#MockMetricsRecorder>)
-  - [func NewMockMetricsRecorder\(\) \*MockMetricsRecorder](<#NewMockMetricsRecorder>)
-  - [func \(m \*MockMetricsRecorder\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](<#MockMetricsRecorder.DecrementActiveRequests>)
-  - [func \(m \*MockMetricsRecorder\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](<#MockMetricsRecorder.DecrementActiveStreams>)
-  - [func \(m \*MockMetricsRecorder\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](<#MockMetricsRecorder.IncrementActiveRequests>)
-  - [func \(m \*MockMetricsRecorder\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](<#MockMetricsRecorder.IncrementActiveStreams>)
-  - [func \(m \*MockMetricsRecorder\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](<#MockMetricsRecorder.RecordBatch>)
-  - [func \(m \*MockMetricsRecorder\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](<#MockMetricsRecorder.RecordError>)
-  - [func \(m \*MockMetricsRecorder\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](<#MockMetricsRecorder.RecordRequest>)
-  - [func \(m \*MockMetricsRecorder\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](<#MockMetricsRecorder.RecordStream>)
-  - [func \(m \*MockMetricsRecorder\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](<#MockMetricsRecorder.RecordTokenUsage>)
-  - [func \(m \*MockMetricsRecorder\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](<#MockMetricsRecorder.RecordToolCall>)
-- [type MockOption](<#MockOption>)
-  - [func WithError\(err error\) MockOption](<#WithError>)
-  - [func WithHealthState\(state string\) MockOption](<#WithHealthState>)
-  - [func WithNetworkDelay\(enabled bool\) MockOption](<#WithNetworkDelay>)
-  - [func WithProviderName\(name string\) MockOption](<#WithProviderName>)
-  - [func WithResponses\(responses ...string\) MockOption](<#WithResponses>)
-  - [func WithStreamingDelay\(delay time.Duration\) MockOption](<#WithStreamingDelay>)
-  - [func WithToolResults\(results map\[string\]any\) MockOption](<#WithToolResults>)
-- [type MockProviderConfig](<#MockProviderConfig>)
-- [type MockTool](<#MockTool>)
-  - [func NewMockTool\(name string\) \*MockTool](<#NewMockTool>)
-  - [func \(m \*MockTool\) Batch\(ctx context.Context, inputs \[\]any\) \(\[\]any, error\)](<#MockTool.Batch>)
-  - [func \(m \*MockTool\) Definition\(\) tools.ToolDefinition](<#MockTool.Definition>)
-  - [func \(m \*MockTool\) Description\(\) string](<#MockTool.Description>)
-  - [func \(m \*MockTool\) Execute\(ctx context.Context, input any\) \(any, error\)](<#MockTool.Execute>)
-  - [func \(m \*MockTool\) Name\(\) string](<#MockTool.Name>)
-  - [func \(m \*MockTool\) SetResult\(result any\)](<#MockTool.SetResult>)
-  - [func \(m \*MockTool\) SetShouldError\(shouldError bool\)](<#MockTool.SetShouldError>)
-- [type MockTracingHelper](<#MockTracingHelper>)
-  - [func NewMockTracingHelper\(\) \*MockTracingHelper](<#NewMockTracingHelper>)
-  - [func \(m \*MockTracingHelper\) AddSpanAttributes\(ctx context.Context, attrs map\[string\]any\)](<#MockTracingHelper.AddSpanAttributes>)
-  - [func \(m \*MockTracingHelper\) EndSpan\(ctx context.Context\)](<#MockTracingHelper.EndSpan>)
-  - [func \(m \*MockTracingHelper\) RecordError\(ctx context.Context, err error\)](<#MockTracingHelper.RecordError>)
-  - [func \(m \*MockTracingHelper\) StartOperation\(ctx context.Context, operation, provider, model string\) context.Context](<#MockTracingHelper.StartOperation>)
-- [type ModelInfo](<#ModelInfo>)
-- [type ModelInfoProvider](<#ModelInfoProvider>)
-- [type NoOpMetrics](<#NoOpMetrics>)
-  - [func NewNoOpMetrics\(\) \*NoOpMetrics](<#NewNoOpMetrics>)
-  - [func \(n \*NoOpMetrics\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](<#NoOpMetrics.DecrementActiveRequests>)
-  - [func \(n \*NoOpMetrics\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](<#NoOpMetrics.DecrementActiveStreams>)
-  - [func \(n \*NoOpMetrics\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](<#NoOpMetrics.IncrementActiveRequests>)
-  - [func \(n \*NoOpMetrics\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](<#NoOpMetrics.IncrementActiveStreams>)
-  - [func \(n \*NoOpMetrics\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](<#NoOpMetrics.RecordBatch>)
-  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](<#NoOpMetrics.RecordError>)
-  - [func \(n \*NoOpMetrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](<#NoOpMetrics.RecordRequest>)
-  - [func \(n \*NoOpMetrics\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](<#NoOpMetrics.RecordStream>)
-  - [func \(n \*NoOpMetrics\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](<#NoOpMetrics.RecordTokenUsage>)
-  - [func \(n \*NoOpMetrics\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](<#NoOpMetrics.RecordToolCall>)
-- [type OpenTelemetryTracer](<#OpenTelemetryTracer>)
-  - [func NewOpenTelemetryTracer\(name string\) \*OpenTelemetryTracer](<#NewOpenTelemetryTracer>)
-  - [func \(t \*OpenTelemetryTracer\) AddSpanAttributes\(span trace.Span, attrs map\[string\]any\)](<#OpenTelemetryTracer.AddSpanAttributes>)
-  - [func \(t \*OpenTelemetryTracer\) RecordError\(span trace.Span, err error\)](<#OpenTelemetryTracer.RecordError>)
-  - [func \(t \*OpenTelemetryTracer\) StartSpan\(ctx context.Context, operation, provider, model string\) \(context.Context, trace.Span\)](<#OpenTelemetryTracer.StartSpan>)
-- [type ProviderConfig](<#ProviderConfig>)
-- [type ProviderError](<#ProviderError>)
-  - [func NewProviderError\(provider, op, code, message string, err error\) \*ProviderError](<#NewProviderError>)
-  - [func \(e \*ProviderError\) Error\(\) string](<#ProviderError.Error>)
-  - [func \(e \*ProviderError\) Unwrap\(\) error](<#ProviderError.Unwrap>)
-- [type ProviderTemplate](<#ProviderTemplate>)
-- [type StreamError](<#StreamError>)
-  - [func NewStreamError\(op, code, message string, err error\) \*StreamError](<#NewStreamError>)
-  - [func \(e \*StreamError\) Error\(\) string](<#StreamError.Error>)
-  - [func \(e \*StreamError\) Unwrap\(\) error](<#StreamError.Unwrap>)
-- [type StreamMessageHandler](<#StreamMessageHandler>)
-- [type TracerProvider](<#TracerProvider>)
-- [type TracingHelper](<#TracingHelper>)
-  - [func NewTracingHelper\(\) \*TracingHelper](<#NewTracingHelper>)
-  - [func \(th \*TracingHelper\) AddSpanAttributes\(ctx context.Context, attrs map\[string\]any\)](<#TracingHelper.AddSpanAttributes>)
-  - [func \(th \*TracingHelper\) EndSpan\(ctx context.Context\)](<#TracingHelper.EndSpan>)
-  - [func \(th \*TracingHelper\) RecordError\(ctx context.Context, err error\)](<#TracingHelper.RecordError>)
-  - [func \(th \*TracingHelper\) StartOperation\(ctx context.Context, operation, provider, model string\) context.Context](<#TracingHelper.StartOperation>)
-- [type ValidationError](<#ValidationError>)
-  - [func NewValidationError\(field string, value any, message string\) \*ValidationError](<#NewValidationError>)
-  - [func \(e \*ValidationError\) Error\(\) string](<#ValidationError.Error>)
+- [Constants](#constants>)
+- [func AddSpanAttributesMap\(span trace.Span, attrs map\[string\]any\)](#AddSpanAttributesMap>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any\)](#AssertHealthCheck>)
+- [func AssertStreamingResponse\(t \*testing.T, chunks \<\-chan iface.AIMessageChunk\)](#AssertStreamingResponse>)
+- [func BatchGenerate\(ctx context.Context, model iface.ChatModel, prompts \[\]string, options ...core.Option\) \(\[\]string, error\)](#BatchGenerate>)
+- [func ConcurrentTestRunner\(t \*testing.T, testFunc func\(t \*testing.T\), goroutines int\)](#ConcurrentTestRunner>)
+- [func CreateTestMessages\(\) \[\]schema.Message](#CreateTestMessages>)
+- [func EnsureMessages\(input any\) \(\[\]schema.Message, error\)](#EnsureMessages>)
+- [func EnsureMessagesFromSchema\(input any\) \(\[\]schema.Message, error\)](#EnsureMessagesFromSchema>)
+- [func GenerateMetrics\(\) string](#GenerateMetrics>)
+- [func GenerateMock\(config MockProviderConfig\) string](#GenerateMock>)
+- [func GenerateProvider\(template ProviderTemplate\) string](#GenerateProvider>)
+- [func GenerateText\(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option\) \(string, error\)](#GenerateText>)
+- [func GenerateTextWithTools\(ctx context.Context, model iface.ChatModel, prompt string, tools \[\]tools.Tool, options ...core.Option\) \(string, error\)](#GenerateTextWithTools>)
+- [func GetLLMErrorCode\(err error\) string](#GetLLMErrorCode>)
+- [func GetSystemAndHumanPromptsFromSchema\(messages \[\]schema.Message\) \(string, string\)](#GetSystemAndHumanPromptsFromSchema>)
+- [func InitMetrics\(meter metric.Meter\)](#InitMetrics>)
+- [func IsLLMError\(err error\) bool](#IsLLMError>)
+- [func IsRetryableError\(err error\) bool](#IsRetryableError>)
+- [func LoggerAttrs\(provider, model, operation string\) map\[string\]any](#LoggerAttrs>)
+- [func NewAnthropicChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](#NewAnthropicChat>)
+- [func NewAnthropicLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](#NewAnthropicLLM>)
+- [func NewBedrockLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](#NewBedrockLLM>)
+- [func NewChatModel\(model string, config \*Config, opts ...ChatOption\) \(iface.ChatModel, error\)](#NewChatModel>)
+- [func NewMockLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](#NewMockLLM>)
+- [func NewOllamaChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](#NewOllamaChat>)
+- [func NewOllamaLLM\(opts ...ConfigOption\) \(iface.LLM, error\)](#NewOllamaLLM>)
+- [func NewOpenAIChat\(opts ...ConfigOption\) \(iface.ChatModel, error\)](#NewOpenAIChat>)
+- [func NewOpenAILLM\(opts ...ConfigOption\) \(iface.LLM, error\)](#NewOpenAILLM>)
+- [func RecordSpanError\(span trace.Span, err error\)](#RecordSpanError>)
+- [func RunAllIntegrationTests\(t \*testing.T\)](#RunAllIntegrationTests>)
+- [func RunIntegrationTestSuite\(t \*testing.T, suite IntegrationTestSuite\)](#RunIntegrationTestSuite>)
+- [func RunLoadTest\(t \*testing.T, scenario LoadTestScenario\)](#RunLoadTest>)
+- [func StartSpan\(ctx context.Context, tracer trace.Tracer, operation, provider, model string\) \(context.Context, trace.Span\)](#StartSpan>)
+- [func StreamText\(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](#StreamText>)
+- [func TestContext\(\) \(context.Context, context.CancelFunc\)](#TestContext>)
+- [func TestProviderInterface\(t \*testing.T, provider iface.ChatModel, providerName string\)](#TestProviderInterface>)
+- [func ValidateModelName\(provider, modelName string\) error](#ValidateModelName>)
+- [func ValidateProviderConfig\(ctx context.Context, config \*Config\) error](#ValidateProviderConfig>)
+- [func WithMaxTokensLegacy\(tokens int\) core.Option](#WithMaxTokensLegacy>)
+- [func WithStopWordsLegacy\(stop \[\]string\) core.Option](#WithStopWordsLegacy>)
+- [func WithTemperatureLegacy\(temp float32\) core.Option](#WithTemperatureLegacy>)
+- [func WithToolChoiceLegacy\(choice string\) core.Option](#WithToolChoiceLegacy>)
+- [func WithToolsLegacy\(toolsToUse \[\]tools.Tool\) core.Option](#WithToolsLegacy>)
+- [func WithTopKLegacy\(topK int\) core.Option](#WithTopKLegacy>)
+- [func WithTopPLegacy\(topP float32\) core.Option](#WithTopPLegacy>)
+- [func WrapError\(op string, err error\) error](#WrapError>)
+- [type AdvancedMockChatModel](#AdvancedMockChatModel>)
+  - [func NewAdvancedMockChatModel\(modelName string, opts ...MockOption\) \*AdvancedMockChatModel](#NewAdvancedMockChatModel>)
+  - [func \(m \*AdvancedMockChatModel\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#AdvancedMockChatModel.Batch>)
+  - [func \(m \*AdvancedMockChatModel\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](#AdvancedMockChatModel.BindTools>)
+  - [func \(m \*AdvancedMockChatModel\) CheckHealth\(\) map\[string\]any](#AdvancedMockChatModel.CheckHealth>)
+  - [func \(m \*AdvancedMockChatModel\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](#AdvancedMockChatModel.Generate>)
+  - [func \(m \*AdvancedMockChatModel\) GetCallCount\(\) int](#AdvancedMockChatModel.GetCallCount>)
+  - [func \(m \*AdvancedMockChatModel\) GetModelName\(\) string](#AdvancedMockChatModel.GetModelName>)
+  - [func \(m \*AdvancedMockChatModel\) GetProviderName\(\) string](#AdvancedMockChatModel.GetProviderName>)
+  - [func \(m \*AdvancedMockChatModel\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#AdvancedMockChatModel.Invoke>)
+  - [func \(m \*AdvancedMockChatModel\) Reset\(\)](#AdvancedMockChatModel.Reset>)
+  - [func \(m \*AdvancedMockChatModel\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#AdvancedMockChatModel.Stream>)
+  - [func \(m \*AdvancedMockChatModel\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](#AdvancedMockChatModel.StreamChat>)
+- [type AdvancedMockLLM](#AdvancedMockLLM>)
+  - [func NewAdvancedMockLLM\(modelName string\) \*AdvancedMockLLM](#NewAdvancedMockLLM>)
+  - [func \(m \*AdvancedMockLLM\) GetModelName\(\) string](#AdvancedMockLLM.GetModelName>)
+  - [func \(m \*AdvancedMockLLM\) GetProviderName\(\) string](#AdvancedMockLLM.GetProviderName>)
+  - [func \(m \*AdvancedMockLLM\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#AdvancedMockLLM.Invoke>)
+- [type CallOptions](#CallOptions>)
+  - [func NewCallOptions\(\) \*CallOptions](#NewCallOptions>)
+  - [func \(co \*CallOptions\) ApplyCallOption\(opt core.Option\)](#CallOptions.ApplyCallOption>)
+- [type ChatModel](#ChatModel>)
+- [type ChatModelAdapter](#ChatModelAdapter>)
+  - [func NewChatModelAdapter\(llm iface.LLM, options \*ChatOptions\) \*ChatModelAdapter](#NewChatModelAdapter>)
+  - [func \(c \*ChatModelAdapter\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#ChatModelAdapter.Batch>)
+  - [func \(c \*ChatModelAdapter\) CheckHealth\(\) map\[string\]any](#ChatModelAdapter.CheckHealth>)
+  - [func \(c \*ChatModelAdapter\) GenerateMessages\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\[\]schema.Message, error\)](#ChatModelAdapter.GenerateMessages>)
+  - [func \(c \*ChatModelAdapter\) GetModelInfo\(\) ModelInfo](#ChatModelAdapter.GetModelInfo>)
+  - [func \(c \*ChatModelAdapter\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#ChatModelAdapter.Invoke>)
+  - [func \(c \*ChatModelAdapter\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#ChatModelAdapter.Stream>)
+  - [func \(c \*ChatModelAdapter\) StreamMessages\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan schema.Message, error\)](#ChatModelAdapter.StreamMessages>)
+- [type ChatModelFactory](#ChatModelFactory>)
+- [type ChatOption](#ChatOption>)
+  - [func ChatOptionFunc\(f func\(config \*map\[string\]any\)\) ChatOption](#ChatOptionFunc>)
+  - [func WithChatFunctionCalling\(enabled bool\) ChatOption](#WithChatFunctionCalling>)
+  - [func WithChatMaxRetries\(maxRetries int\) ChatOption](#WithChatMaxRetries>)
+  - [func WithChatMaxTokens\(maxTokens int\) ChatOption](#WithChatMaxTokens>)
+  - [func WithChatObservability\(metrics, tracing bool\) ChatOption](#WithChatObservability>)
+  - [func WithChatStopSequences\(sequences \[\]string\) ChatOption](#WithChatStopSequences>)
+  - [func WithChatSystemPrompt\(prompt string\) ChatOption](#WithChatSystemPrompt>)
+  - [func WithChatTemperature\(temp float32\) ChatOption](#WithChatTemperature>)
+  - [func WithChatTimeout\(timeout time.Duration\) ChatOption](#WithChatTimeout>)
+  - [func WithChatTopP\(topP float32\) ChatOption](#WithChatTopP>)
+- [type ChatOptions](#ChatOptions>)
+- [type Config](#Config>)
+  - [func CreateTestConfig\(\) \*Config](#CreateTestConfig>)
+  - [func DefaultConfig\(\) \*Config](#DefaultConfig>)
+  - [func NewConfig\(opts ...ConfigOption\) \*Config](#NewConfig>)
+  - [func NewDefaultConfig\(\) \*Config](#NewDefaultConfig>)
+  - [func \(c \*Config\) MergeOptions\(opts ...ConfigOption\)](#Config.MergeOptions>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type ConfigOption](#ConfigOption>)
+  - [func WithAPIKey\(apiKey string\) ConfigOption](#WithAPIKey>)
+  - [func WithBaseURL\(baseURL string\) ConfigOption](#WithBaseURL>)
+  - [func WithMaxConcurrentBatches\(n int\) ConfigOption](#WithMaxConcurrentBatches>)
+  - [func WithMaxTokensConfig\(maxTokens int\) ConfigOption](#WithMaxTokensConfig>)
+  - [func WithModelName\(modelName string\) ConfigOption](#WithModelName>)
+  - [func WithObservability\(tracing, metrics, logging bool\) ConfigOption](#WithObservability>)
+  - [func WithProvider\(provider string\) ConfigOption](#WithProvider>)
+  - [func WithProviderSpecific\(key string, value any\) ConfigOption](#WithProviderSpecific>)
+  - [func WithRetryConfig\(maxRetries int, delay time.Duration, backoff float64\) ConfigOption](#WithRetryConfig>)
+  - [func WithStopSequences\(sequences \[\]string\) ConfigOption](#WithStopSequences>)
+  - [func WithTemperatureConfig\(temp float32\) ConfigOption](#WithTemperatureConfig>)
+  - [func WithTimeout\(timeout time.Duration\) ConfigOption](#WithTimeout>)
+  - [func WithToolCalling\(enabled bool\) ConfigOption](#WithToolCalling>)
+  - [func WithTopKConfig\(topK int\) ConfigOption](#WithTopKConfig>)
+  - [func WithTopPConfig\(topP float32\) ConfigOption](#WithTopPConfig>)
+- [type ConfigValidationError](#ConfigValidationError>)
+  - [func \(e \*ConfigValidationError\) AddError\(field string, value any, message string\)](#ConfigValidationError.AddError>)
+  - [func \(e \*ConfigValidationError\) Error\(\) string](#ConfigValidationError.Error>)
+  - [func \(e \*ConfigValidationError\) HasErrors\(\) bool](#ConfigValidationError.HasErrors>)
+- [type Factory](#Factory>)
+  - [func InitializeDefaultFactory\(\) \*Factory](#InitializeDefaultFactory>)
+  - [func NewFactory\(\) \*Factory](#NewFactory>)
+  - [func \(f \*Factory\) CreateLLM\(providerName string, config \*Config\) \(iface.LLM, error\)](#Factory.CreateLLM>)
+  - [func \(f \*Factory\) CreateProvider\(providerName string, config \*Config\) \(iface.ChatModel, error\)](#Factory.CreateProvider>)
+  - [func \(f \*Factory\) GetLLM\(name string\) \(iface.LLM, error\)](#Factory.GetLLM>)
+  - [func \(f \*Factory\) GetProvider\(name string\) \(iface.ChatModel, error\)](#Factory.GetProvider>)
+  - [func \(f \*Factory\) ListAvailableProviders\(\) \[\]string](#Factory.ListAvailableProviders>)
+  - [func \(f \*Factory\) ListLLMs\(\) \[\]string](#Factory.ListLLMs>)
+  - [func \(f \*Factory\) ListProviders\(\) \[\]string](#Factory.ListProviders>)
+  - [func \(f \*Factory\) RegisterLLM\(name string, llm iface.LLM\)](#Factory.RegisterLLM>)
+  - [func \(f \*Factory\) RegisterLLMFactory\(name string, factory func\(\*Config\) \(iface.LLM, error\)\)](#Factory.RegisterLLMFactory>)
+  - [func \(f \*Factory\) RegisterProvider\(name string, provider iface.ChatModel\)](#Factory.RegisterProvider>)
+  - [func \(f \*Factory\) RegisterProviderFactory\(name string, factory func\(\*Config\) \(iface.ChatModel, error\)\)](#Factory.RegisterProviderFactory>)
+- [type HealthChecker](#HealthChecker>)
+- [type IntegrationTestConfig](#IntegrationTestConfig>)
+  - [func DefaultIntegrationTestConfig\(\) \*IntegrationTestConfig](#DefaultIntegrationTestConfig>)
+  - [func LoadIntegrationTestConfig\(\) \*IntegrationTestConfig](#LoadIntegrationTestConfig>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) GetConfig\(\) \*Config](#IntegrationTestHelper.GetConfig>)
+  - [func \(h \*IntegrationTestHelper\) GetFactory\(\) \*Factory](#IntegrationTestHelper.GetFactory>)
+  - [func \(h \*IntegrationTestHelper\) GetMetrics\(\) \*MockMetricsRecorder](#IntegrationTestHelper.GetMetrics>)
+  - [func \(h \*IntegrationTestHelper\) GetTracing\(\) \*MockTracingHelper](#IntegrationTestHelper.GetTracing>)
+  - [func \(h \*IntegrationTestHelper\) RateLimit\(\)](#IntegrationTestHelper.RateLimit>)
+  - [func \(h \*IntegrationTestHelper\) SetupAnthropicProvider\(modelName string\) \(iface.ChatModel, error\)](#IntegrationTestHelper.SetupAnthropicProvider>)
+  - [func \(h \*IntegrationTestHelper\) SetupBedrockProvider\(modelName string\) \(iface.ChatModel, error\)](#IntegrationTestHelper.SetupBedrockProvider>)
+  - [func \(h \*IntegrationTestHelper\) SetupMockProvider\(providerName, modelName string, opts ...any\) iface.ChatModel](#IntegrationTestHelper.SetupMockProvider>)
+  - [func \(h \*IntegrationTestHelper\) SetupOllamaProvider\(modelName string\) \(iface.ChatModel, error\)](#IntegrationTestHelper.SetupOllamaProvider>)
+  - [func \(h \*IntegrationTestHelper\) SetupOpenAIProvider\(modelName string\) \(iface.ChatModel, error\)](#IntegrationTestHelper.SetupOpenAIProvider>)
+  - [func \(h \*IntegrationTestHelper\) SetupProvider\(providerName string, config \*Config\) \(iface.ChatModel, error\)](#IntegrationTestHelper.SetupProvider>)
+  - [func \(h \*IntegrationTestHelper\) TestCrossProviderComparison\(t \*testing.T, providers map\[string\]iface.ChatModel, testPrompt string\)](#IntegrationTestHelper.TestCrossProviderComparison>)
+  - [func \(h \*IntegrationTestHelper\) TestProviderErrorHandling\(t \*testing.T, provider iface.ChatModel, providerName string\)](#IntegrationTestHelper.TestProviderErrorHandling>)
+  - [func \(h \*IntegrationTestHelper\) TestProviderIntegration\(t \*testing.T, provider iface.ChatModel, providerName string\)](#IntegrationTestHelper.TestProviderIntegration>)
+- [type IntegrationTestSuite](#IntegrationTestSuite>)
+  - [func AnthropicIntegrationTestSuite\(\) IntegrationTestSuite](#AnthropicIntegrationTestSuite>)
+  - [func MultiProviderIntegrationTestSuite\(\) IntegrationTestSuite](#MultiProviderIntegrationTestSuite>)
+  - [func OllamaIntegrationTestSuite\(\) IntegrationTestSuite](#OllamaIntegrationTestSuite>)
+  - [func OpenAIIntegrationTestSuite\(\) IntegrationTestSuite](#OpenAIIntegrationTestSuite>)
+- [type LLMError](#LLMError>)
+  - [func GetLLMError\(err error\) \*LLMError](#GetLLMError>)
+  - [func MapHTTPError\(op string, statusCode int, err error\) \*LLMError](#MapHTTPError>)
+  - [func NewLLMError\(op, code string, err error\) \*LLMError](#NewLLMError>)
+  - [func NewLLMErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*LLMError](#NewLLMErrorWithDetails>)
+  - [func NewLLMErrorWithMessage\(op, code, message string, err error\) \*LLMError](#NewLLMErrorWithMessage>)
+  - [func \(e \*LLMError\) Error\(\) string](#LLMError.Error>)
+  - [func \(e \*LLMError\) Unwrap\(\) error](#LLMError.Unwrap>)
+- [type LoadTestScenario](#LoadTestScenario>)
+- [type MessageGenerator](#MessageGenerator>)
+- [type Metrics](#Metrics>)
+  - [func GetMetrics\(\) \*Metrics](#GetMetrics>)
+  - [func NewMetrics\(meter metric.Meter\) \*Metrics](#NewMetrics>)
+  - [func \(m \*Metrics\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](#Metrics.DecrementActiveRequests>)
+  - [func \(m \*Metrics\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](#Metrics.DecrementActiveStreams>)
+  - [func \(m \*Metrics\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](#Metrics.IncrementActiveRequests>)
+  - [func \(m \*Metrics\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](#Metrics.IncrementActiveStreams>)
+  - [func \(m \*Metrics\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](#Metrics.RecordBatch>)
+  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](#Metrics.RecordError>)
+  - [func \(m \*Metrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](#Metrics.RecordRequest>)
+  - [func \(m \*Metrics\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](#Metrics.RecordStream>)
+  - [func \(m \*Metrics\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](#Metrics.RecordTokenUsage>)
+  - [func \(m \*Metrics\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](#Metrics.RecordToolCall>)
+- [type MetricsRecorder](#MetricsRecorder>)
+- [type MockMetricsRecorder](#MockMetricsRecorder>)
+  - [func NewMockMetricsRecorder\(\) \*MockMetricsRecorder](#NewMockMetricsRecorder>)
+  - [func \(m \*MockMetricsRecorder\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](#MockMetricsRecorder.DecrementActiveRequests>)
+  - [func \(m \*MockMetricsRecorder\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](#MockMetricsRecorder.DecrementActiveStreams>)
+  - [func \(m \*MockMetricsRecorder\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](#MockMetricsRecorder.IncrementActiveRequests>)
+  - [func \(m \*MockMetricsRecorder\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](#MockMetricsRecorder.IncrementActiveStreams>)
+  - [func \(m \*MockMetricsRecorder\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](#MockMetricsRecorder.RecordBatch>)
+  - [func \(m \*MockMetricsRecorder\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](#MockMetricsRecorder.RecordError>)
+  - [func \(m \*MockMetricsRecorder\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](#MockMetricsRecorder.RecordRequest>)
+  - [func \(m \*MockMetricsRecorder\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](#MockMetricsRecorder.RecordStream>)
+  - [func \(m \*MockMetricsRecorder\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](#MockMetricsRecorder.RecordTokenUsage>)
+  - [func \(m \*MockMetricsRecorder\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](#MockMetricsRecorder.RecordToolCall>)
+- [type MockOption](#MockOption>)
+  - [func WithError\(err error\) MockOption](#WithError>)
+  - [func WithHealthState\(state string\) MockOption](#WithHealthState>)
+  - [func WithNetworkDelay\(enabled bool\) MockOption](#WithNetworkDelay>)
+  - [func WithProviderName\(name string\) MockOption](#WithProviderName>)
+  - [func WithResponses\(responses ...string\) MockOption](#WithResponses>)
+  - [func WithStreamingDelay\(delay time.Duration\) MockOption](#WithStreamingDelay>)
+  - [func WithToolResults\(results map\[string\]any\) MockOption](#WithToolResults>)
+- [type MockProviderConfig](#MockProviderConfig>)
+- [type MockTool](#MockTool>)
+  - [func NewMockTool\(name string\) \*MockTool](#NewMockTool>)
+  - [func \(m \*MockTool\) Batch\(ctx context.Context, inputs \[\]any\) \(\[\]any, error\)](#MockTool.Batch>)
+  - [func \(m \*MockTool\) Definition\(\) tools.ToolDefinition](#MockTool.Definition>)
+  - [func \(m \*MockTool\) Description\(\) string](#MockTool.Description>)
+  - [func \(m \*MockTool\) Execute\(ctx context.Context, input any\) \(any, error\)](#MockTool.Execute>)
+  - [func \(m \*MockTool\) Name\(\) string](#MockTool.Name>)
+  - [func \(m \*MockTool\) SetResult\(result any\)](#MockTool.SetResult>)
+  - [func \(m \*MockTool\) SetShouldError\(shouldError bool\)](#MockTool.SetShouldError>)
+- [type MockTracingHelper](#MockTracingHelper>)
+  - [func NewMockTracingHelper\(\) \*MockTracingHelper](#NewMockTracingHelper>)
+  - [func \(m \*MockTracingHelper\) AddSpanAttributes\(ctx context.Context, attrs map\[string\]any\)](#MockTracingHelper.AddSpanAttributes>)
+  - [func \(m \*MockTracingHelper\) EndSpan\(ctx context.Context\)](#MockTracingHelper.EndSpan>)
+  - [func \(m \*MockTracingHelper\) RecordError\(ctx context.Context, err error\)](#MockTracingHelper.RecordError>)
+  - [func \(m \*MockTracingHelper\) StartOperation\(ctx context.Context, operation, provider, model string\) context.Context](#MockTracingHelper.StartOperation>)
+- [type ModelInfo](#ModelInfo>)
+- [type ModelInfoProvider](#ModelInfoProvider>)
+- [type NoOpMetrics](#NoOpMetrics>)
+  - [func NewNoOpMetrics\(\) \*NoOpMetrics](#NewNoOpMetrics>)
+  - [func \(n \*NoOpMetrics\) DecrementActiveRequests\(ctx context.Context, provider, model string\)](#NoOpMetrics.DecrementActiveRequests>)
+  - [func \(n \*NoOpMetrics\) DecrementActiveStreams\(ctx context.Context, provider, model string\)](#NoOpMetrics.DecrementActiveStreams>)
+  - [func \(n \*NoOpMetrics\) IncrementActiveRequests\(ctx context.Context, provider, model string\)](#NoOpMetrics.IncrementActiveRequests>)
+  - [func \(n \*NoOpMetrics\) IncrementActiveStreams\(ctx context.Context, provider, model string\)](#NoOpMetrics.IncrementActiveStreams>)
+  - [func \(n \*NoOpMetrics\) RecordBatch\(ctx context.Context, provider, model string, batchSize int, duration time.Duration\)](#NoOpMetrics.RecordBatch>)
+  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, model, errorCode string, duration time.Duration\)](#NoOpMetrics.RecordError>)
+  - [func \(n \*NoOpMetrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration\)](#NoOpMetrics.RecordRequest>)
+  - [func \(n \*NoOpMetrics\) RecordStream\(ctx context.Context, provider, model string, duration time.Duration\)](#NoOpMetrics.RecordStream>)
+  - [func \(n \*NoOpMetrics\) RecordTokenUsage\(ctx context.Context, provider, model string, inputTokens, outputTokens int\)](#NoOpMetrics.RecordTokenUsage>)
+  - [func \(n \*NoOpMetrics\) RecordToolCall\(ctx context.Context, provider, model, toolName string\)](#NoOpMetrics.RecordToolCall>)
+- [type OpenTelemetryTracer](#OpenTelemetryTracer>)
+  - [func NewOpenTelemetryTracer\(name string\) \*OpenTelemetryTracer](#NewOpenTelemetryTracer>)
+  - [func \(t \*OpenTelemetryTracer\) AddSpanAttributes\(span trace.Span, attrs map\[string\]any\)](#OpenTelemetryTracer.AddSpanAttributes>)
+  - [func \(t \*OpenTelemetryTracer\) RecordError\(span trace.Span, err error\)](#OpenTelemetryTracer.RecordError>)
+  - [func \(t \*OpenTelemetryTracer\) StartSpan\(ctx context.Context, operation, provider, model string\) \(context.Context, trace.Span\)](#OpenTelemetryTracer.StartSpan>)
+- [type ProviderConfig](#ProviderConfig>)
+- [type ProviderError](#ProviderError>)
+  - [func NewProviderError\(provider, op, code, message string, err error\) \*ProviderError](#NewProviderError>)
+  - [func \(e \*ProviderError\) Error\(\) string](#ProviderError.Error>)
+  - [func \(e \*ProviderError\) Unwrap\(\) error](#ProviderError.Unwrap>)
+- [type ProviderTemplate](#ProviderTemplate>)
+- [type StreamError](#StreamError>)
+  - [func NewStreamError\(op, code, message string, err error\) \*StreamError](#NewStreamError>)
+  - [func \(e \*StreamError\) Error\(\) string](#StreamError.Error>)
+  - [func \(e \*StreamError\) Unwrap\(\) error](#StreamError.Unwrap>)
+- [type StreamMessageHandler](#StreamMessageHandler>)
+- [type TracerProvider](#TracerProvider>)
+- [type TracingHelper](#TracingHelper>)
+  - [func NewTracingHelper\(\) \*TracingHelper](#NewTracingHelper>)
+  - [func \(th \*TracingHelper\) AddSpanAttributes\(ctx context.Context, attrs map\[string\]any\)](#TracingHelper.AddSpanAttributes>)
+  - [func \(th \*TracingHelper\) EndSpan\(ctx context.Context\)](#TracingHelper.EndSpan>)
+  - [func \(th \*TracingHelper\) RecordError\(ctx context.Context, err error\)](#TracingHelper.RecordError>)
+  - [func \(th \*TracingHelper\) StartOperation\(ctx context.Context, operation, provider, model string\) context.Context](#TracingHelper.StartOperation>)
+- [type ValidationError](#ValidationError>)
+  - [func NewValidationError\(field string, value any, message string\) \*ValidationError](#NewValidationError>)
+  - [func \(e \*ValidationError\) Error\(\) string](#ValidationError.Error>)
 
 ## Constants
 
-<a name="ErrCodeInvalidConfig"></a>Error codes for LLM operations.
+Error codes for LLM operations.
 
 ```go
 const (
@@ -338,8 +339,8 @@ const (
 )
 ```
 
-<a name="AddSpanAttributesMap"></a>
-## func [AddSpanAttributesMap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L148>)
+
+## func [AddSpanAttributesMap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L148)
 
 ```go
 func AddSpanAttributesMap(span trace.Span, attrs map[string]any)
@@ -347,8 +348,8 @@ func AddSpanAttributesMap(span trace.Span, attrs map[string]any)
 
 AddSpanAttributesMap adds multiple attributes to a span.
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L621>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L621)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -356,8 +357,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType checks if an error matches expected type.
 
-<a name="AssertHealthCheck"></a>
-## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L595>)
+
+## func [AssertHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L595)
 
 ```go
 func AssertHealthCheck(t *testing.T, health map[string]any)
@@ -365,8 +366,8 @@ func AssertHealthCheck(t *testing.T, health map[string]any)
 
 AssertHealthCheck validates health check results.
 
-<a name="AssertStreamingResponse"></a>
-## func [AssertStreamingResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L605>)
+
+## func [AssertStreamingResponse](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L605)
 
 ```go
 func AssertStreamingResponse(t *testing.T, chunks <-chan iface.AIMessageChunk)
@@ -374,8 +375,8 @@ func AssertStreamingResponse(t *testing.T, chunks <-chan iface.AIMessageChunk)
 
 AssertStreamingResponse validates streaming responses.
 
-<a name="BatchGenerate"></a>
-## func [BatchGenerate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L279>)
+
+## func [BatchGenerate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L279)
 
 ```go
 func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string, options ...core.Option) ([]string, error)
@@ -383,8 +384,8 @@ func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string,
 
 BatchGenerate is a convenience function for batch text generation.
 
-<a name="ConcurrentTestRunner"></a>
-## func [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L636>)
+
+## func [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L636)
 
 ```go
 func ConcurrentTestRunner(t *testing.T, testFunc func(t *testing.T), goroutines int)
@@ -392,8 +393,8 @@ func ConcurrentTestRunner(t *testing.T, testFunc func(t *testing.T), goroutines 
 
 ConcurrentTestRunner runs a test function concurrently.
 
-<a name="CreateTestMessages"></a>
-## func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L573>)
+
+## func [CreateTestMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L573)
 
 ```go
 func CreateTestMessages() []schema.Message
@@ -401,8 +402,8 @@ func CreateTestMessages() []schema.Message
 
 CreateTestMessages creates a set of test messages.
 
-<a name="EnsureMessages"></a>
-## func [EnsureMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L187>)
+
+## func [EnsureMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L187)
 
 ```go
 func EnsureMessages(input any) ([]schema.Message, error)
@@ -443,8 +444,8 @@ func main() {
 Converted 1 messages
 ```
 
-<a name="EnsureMessagesFromSchema"></a>
-## func [EnsureMessagesFromSchema](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L204>)
+
+## func [EnsureMessagesFromSchema](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L204)
 
 ```go
 func EnsureMessagesFromSchema(input any) ([]schema.Message, error)
@@ -452,8 +453,8 @@ func EnsureMessagesFromSchema(input any) ([]schema.Message, error)
 
 EnsureMessagesFromSchema ensures the input is a slice of schema.Message. It attempts to convert common input types \(like a single string or Message\) into the required format. Deprecated: Use EnsureMessages instead.
 
-<a name="GenerateMetrics"></a>
-## func [GenerateMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L402>)
+
+## func [GenerateMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L402)
 
 ```go
 func GenerateMetrics() string
@@ -461,8 +462,8 @@ func GenerateMetrics() string
 
 GenerateMetrics generates metrics collection code.
 
-<a name="GenerateMock"></a>
-## func [GenerateMock](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L34>)
+
+## func [GenerateMock](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L34)
 
 ```go
 func GenerateMock(config MockProviderConfig) string
@@ -470,8 +471,8 @@ func GenerateMock(config MockProviderConfig) string
 
 GenerateMock generates a mock implementation for testing.
 
-<a name="GenerateProvider"></a>
-## func [GenerateProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L180>)
+
+## func [GenerateProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L180)
 
 ```go
 func GenerateProvider(template ProviderTemplate) string
@@ -479,8 +480,8 @@ func GenerateProvider(template ProviderTemplate) string
 
 GenerateProvider generates a new provider implementation template.
 
-<a name="GenerateText"></a>
-## func [GenerateText](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L236>)
+
+## func [GenerateText](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L236)
 
 ```go
 func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (string, error)
@@ -488,8 +489,8 @@ func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, opt
 
 GenerateText is a convenience function for generating text with a ChatModel.
 
-<a name="GenerateTextWithTools"></a>
-## func [GenerateTextWithTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L251>)
+
+## func [GenerateTextWithTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L251)
 
 ```go
 func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt string, tools []tools.Tool, options ...core.Option) (string, error)
@@ -497,8 +498,8 @@ func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt st
 
 GenerateTextWithTools is a convenience function for generating text with tool calling.
 
-<a name="GetLLMErrorCode"></a>
-## func [GetLLMErrorCode](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L122>)
+
+## func [GetLLMErrorCode](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L122)
 
 ```go
 func GetLLMErrorCode(err error) string
@@ -506,8 +507,8 @@ func GetLLMErrorCode(err error) string
 
 GetLLMErrorCode extracts the error code from an LLMError.
 
-<a name="GetSystemAndHumanPromptsFromSchema"></a>
-## func [GetSystemAndHumanPromptsFromSchema](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L211>)
+
+## func [GetSystemAndHumanPromptsFromSchema](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L211)
 
 ```go
 func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, string)
@@ -557,8 +558,8 @@ Human: What is 2 + 2?
 What is 3 + 3?
 ```
 
-<a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L27>)
+
+## func [InitMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L27)
 
 ```go
 func InitMetrics(meter metric.Meter)
@@ -566,8 +567,8 @@ func InitMetrics(meter metric.Meter)
 
 InitMetrics initializes the global metrics instance.
 
-<a name="IsLLMError"></a>
-## func [IsLLMError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L107>)
+
+## func [IsLLMError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L107)
 
 ```go
 func IsLLMError(err error) bool
@@ -575,8 +576,8 @@ func IsLLMError(err error) bool
 
 IsLLMError checks if an error is an LLMError.
 
-<a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L131>)
+
+## func [IsRetryableError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L131)
 
 ```go
 func IsRetryableError(err error) bool
@@ -584,8 +585,8 @@ func IsRetryableError(err error) bool
 
 IsRetryableError checks if an error is retryable.
 
-<a name="LoggerAttrs"></a>
-## func [LoggerAttrs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L177>)
+
+## func [LoggerAttrs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L177)
 
 ```go
 func LoggerAttrs(provider, model, operation string) map[string]any
@@ -593,8 +594,8 @@ func LoggerAttrs(provider, model, operation string) map[string]any
 
 LoggerAttrs returns structured logging attributes for LLM operations.
 
-<a name="NewAnthropicChat"></a>
-## func [NewAnthropicChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L405>)
+
+## func [NewAnthropicChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L405)
 
 ```go
 func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error)
@@ -602,8 +603,8 @@ func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error)
 
 NewAnthropicChat creates a new Anthropic chat model provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewAnthropicLLM"></a>
-## func [NewAnthropicLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L464>)
+
+## func [NewAnthropicLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L464)
 
 ```go
 func NewAnthropicLLM(opts ...ConfigOption) (iface.LLM, error)
@@ -611,8 +612,8 @@ func NewAnthropicLLM(opts ...ConfigOption) (iface.LLM, error)
 
 NewAnthropicLLM creates a new Anthropic LLM provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewBedrockLLM"></a>
-## func [NewBedrockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L500>)
+
+## func [NewBedrockLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L500)
 
 ```go
 func NewBedrockLLM(opts ...ConfigOption) (iface.LLM, error)
@@ -620,8 +621,8 @@ func NewBedrockLLM(opts ...ConfigOption) (iface.LLM, error)
 
 NewBedrockLLM creates a new Bedrock LLM provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewChatModel"></a>
-## func [NewChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L189>)
+
+## func [NewChatModel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L189)
 
 ```go
 func NewChatModel(model string, config *Config, opts ...ChatOption) (iface.ChatModel, error)
@@ -646,13 +647,14 @@ Example:
 config := llms.DefaultConfig()
 config.DefaultProvider = "openai"
 model, err := llms.NewChatModel("gpt-4", config,
+
 	llms.WithChatTemperature(0.7),
 	llms.WithChatMaxTokens(1000),
 )
 ```
 
-<a name="NewMockLLM"></a>
-## func [NewMockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L536>)
+
+## func [NewMockLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L536)
 
 ```go
 func NewMockLLM(opts ...ConfigOption) (iface.LLM, error)
@@ -660,8 +662,8 @@ func NewMockLLM(opts ...ConfigOption) (iface.LLM, error)
 
 NewMockLLM creates a new Mock LLM provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewOllamaChat"></a>
-## func [NewOllamaChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L445>)
+
+## func [NewOllamaChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L445)
 
 ```go
 func NewOllamaChat(opts ...ConfigOption) (iface.ChatModel, error)
@@ -669,8 +671,8 @@ func NewOllamaChat(opts ...ConfigOption) (iface.ChatModel, error)
 
 NewOllamaChat creates a new Ollama chat model provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewOllamaLLM"></a>
-## func [NewOllamaLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L518>)
+
+## func [NewOllamaLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L518)
 
 ```go
 func NewOllamaLLM(opts ...ConfigOption) (iface.LLM, error)
@@ -678,8 +680,8 @@ func NewOllamaLLM(opts ...ConfigOption) (iface.LLM, error)
 
 NewOllamaLLM creates a new Ollama LLM provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewOpenAIChat"></a>
-## func [NewOpenAIChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L426>)
+
+## func [NewOpenAIChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L426)
 
 ```go
 func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error)
@@ -687,8 +689,8 @@ func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error)
 
 NewOpenAIChat creates a new OpenAI chat model provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="NewOpenAILLM"></a>
-## func [NewOpenAILLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L482>)
+
+## func [NewOpenAILLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L482)
 
 ```go
 func NewOpenAILLM(opts ...ConfigOption) (iface.LLM, error)
@@ -696,8 +698,8 @@ func NewOpenAILLM(opts ...ConfigOption) (iface.LLM, error)
 
 NewOpenAILLM creates a new OpenAI LLM provider with the given options. This is a convenience function that internally uses the factory pattern.
 
-<a name="RecordSpanError"></a>
-## func [RecordSpanError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L140>)
+
+## func [RecordSpanError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L140)
 
 ```go
 func RecordSpanError(span trace.Span, err error)
@@ -705,8 +707,8 @@ func RecordSpanError(span trace.Span, err error)
 
 RecordSpanError records an error on a span.
 
-<a name="RunAllIntegrationTests"></a>
-## func [RunAllIntegrationTests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L599>)
+
+## func [RunAllIntegrationTests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L599)
 
 ```go
 func RunAllIntegrationTests(t *testing.T)
@@ -714,8 +716,8 @@ func RunAllIntegrationTests(t *testing.T)
 
 RunAllIntegrationTests runs all available integration tests.
 
-<a name="RunIntegrationTestSuite"></a>
-## func [RunIntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L470>)
+
+## func [RunIntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L470)
 
 ```go
 func RunIntegrationTestSuite(t *testing.T, suite IntegrationTestSuite)
@@ -723,8 +725,8 @@ func RunIntegrationTestSuite(t *testing.T, suite IntegrationTestSuite)
 
 RunIntegrationTestSuite runs a complete integration test suite.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L672>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L672)
 
 ```go
 func RunLoadTest(t *testing.T, scenario LoadTestScenario)
@@ -732,8 +734,8 @@ func RunLoadTest(t *testing.T, scenario LoadTestScenario)
 
 RunLoadTest executes a load test scenario.
 
-<a name="StartSpan"></a>
-## func [StartSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L129>)
+
+## func [StartSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L129)
 
 ```go
 func StartSpan(ctx context.Context, tracer trace.Tracer, operation, provider, model string) (context.Context, trace.Span)
@@ -741,8 +743,8 @@ func StartSpan(ctx context.Context, tracer trace.Tracer, operation, provider, mo
 
 StartSpan is a convenience function for starting spans. The returned span must be ended by the caller using span.End\(\).
 
-<a name="StreamText"></a>
-## func [StreamText](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L269>)
+
+## func [StreamText](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L269)
 
 ```go
 func StreamText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (<-chan iface.AIMessageChunk, error)
@@ -750,8 +752,8 @@ func StreamText(ctx context.Context, model iface.ChatModel, prompt string, optio
 
 StreamText is a convenience function for streaming text generation.
 
-<a name="TestContext"></a>
-## func [TestContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L568>)
+
+## func [TestContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L568)
 
 ```go
 func TestContext() (context.Context, context.CancelFunc)
@@ -759,8 +761,8 @@ func TestContext() (context.Context, context.CancelFunc)
 
 TestContext creates a context with timeout suitable for testing.
 
-<a name="TestProviderInterface"></a>
-## func [TestProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L787>)
+
+## func [TestProviderInterface](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L787)
 
 ```go
 func TestProviderInterface(t *testing.T, provider iface.ChatModel, providerName string)
@@ -768,8 +770,8 @@ func TestProviderInterface(t *testing.T, provider iface.ChatModel, providerName 
 
 TestProviderInterface tests that a provider implements the ChatModel interface correctly.
 
-<a name="ValidateModelName"></a>
-## func [ValidateModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L307>)
+
+## func [ValidateModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L307)
 
 ```go
 func ValidateModelName(provider, modelName string) error
@@ -827,8 +829,8 @@ Anthropic Claude valid: true
 Unknown provider: true
 ```
 
-<a name="ValidateProviderConfig"></a>
-## func [ValidateProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L214>)
+
+## func [ValidateProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L214)
 
 ```go
 func ValidateProviderConfig(ctx context.Context, config *Config) error
@@ -836,8 +838,8 @@ func ValidateProviderConfig(ctx context.Context, config *Config) error
 
 ValidateProviderConfig validates a provider configuration.
 
-<a name="WithMaxTokensLegacy"></a>
-## func [WithMaxTokensLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L369>)
+
+## func [WithMaxTokensLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L369)
 
 ```go
 func WithMaxTokensLegacy(tokens int) core.Option
@@ -845,8 +847,8 @@ func WithMaxTokensLegacy(tokens int) core.Option
 
 WithMaxTokensLegacy sets the maximum number of tokens to generate \(deprecated, use core.WithOption\).
 
-<a name="WithStopWordsLegacy"></a>
-## func [WithStopWordsLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L389>)
+
+## func [WithStopWordsLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L389)
 
 ```go
 func WithStopWordsLegacy(stop []string) core.Option
@@ -854,8 +856,8 @@ func WithStopWordsLegacy(stop []string) core.Option
 
 WithStopWordsLegacy sets the stop sequences for generation \(deprecated, use core.WithOption\).
 
-<a name="WithTemperatureLegacy"></a>
-## func [WithTemperatureLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L374>)
+
+## func [WithTemperatureLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L374)
 
 ```go
 func WithTemperatureLegacy(temp float32) core.Option
@@ -863,8 +865,8 @@ func WithTemperatureLegacy(temp float32) core.Option
 
 WithTemperatureLegacy sets the sampling temperature \(deprecated, use core.WithOption\).
 
-<a name="WithToolChoiceLegacy"></a>
-## func [WithToolChoiceLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L399>)
+
+## func [WithToolChoiceLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L399)
 
 ```go
 func WithToolChoiceLegacy(choice string) core.Option
@@ -872,8 +874,8 @@ func WithToolChoiceLegacy(choice string) core.Option
 
 WithToolChoiceLegacy forces the model to call a specific tool \(deprecated, use core.WithOption\).
 
-<a name="WithToolsLegacy"></a>
-## func [WithToolsLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L394>)
+
+## func [WithToolsLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L394)
 
 ```go
 func WithToolsLegacy(toolsToUse []tools.Tool) core.Option
@@ -881,8 +883,8 @@ func WithToolsLegacy(toolsToUse []tools.Tool) core.Option
 
 WithToolsLegacy sets the tools that the model can call \(deprecated, use core.WithOption\).
 
-<a name="WithTopKLegacy"></a>
-## func [WithTopKLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L384>)
+
+## func [WithTopKLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L384)
 
 ```go
 func WithTopKLegacy(topK int) core.Option
@@ -890,8 +892,8 @@ func WithTopKLegacy(topK int) core.Option
 
 WithTopKLegacy sets the top\-k sampling parameter \(deprecated, use core.WithOption\).
 
-<a name="WithTopPLegacy"></a>
-## func [WithTopPLegacy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L379>)
+
+## func [WithTopPLegacy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L379)
 
 ```go
 func WithTopPLegacy(topP float32) core.Option
@@ -899,8 +901,8 @@ func WithTopPLegacy(topP float32) core.Option
 
 WithTopPLegacy sets the nucleus sampling probability \(deprecated, use core.WithOption\).
 
-<a name="WrapError"></a>
-## func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L161>)
+
+## func [WrapError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L161)
 
 ```go
 func WrapError(op string, err error) error
@@ -908,8 +910,8 @@ func WrapError(op string, err error) error
 
 WrapError wraps an error with additional context.
 
-<a name="AdvancedMockChatModel"></a>
-## type [AdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L23-L40>)
+
+## type [AdvancedMockChatModel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L23-L40)
 
 AdvancedMockChatModel provides a comprehensive mock implementation for testing.
 
@@ -920,8 +922,8 @@ type AdvancedMockChatModel struct {
 }
 ```
 
-<a name="NewAdvancedMockChatModel"></a>
-### func [NewAdvancedMockChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L43>)
+
+### func [NewAdvancedMockChatModel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L43)
 
 ```go
 func NewAdvancedMockChatModel(modelName string, opts ...MockOption) *AdvancedMockChatModel
@@ -929,8 +931,8 @@ func NewAdvancedMockChatModel(modelName string, opts ...MockOption) *AdvancedMoc
 
 NewAdvancedMockChatModel creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockChatModel.Batch"></a>
-### func \(\*AdvancedMockChatModel\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L284>)
+
+### func \(\*AdvancedMockChatModel\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L284)
 
 ```go
 func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -938,8 +940,8 @@ func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options
 
 Batch implements the Runnable interface.
 
-<a name="AdvancedMockChatModel.BindTools"></a>
-### func \(\*AdvancedMockChatModel\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L226>)
+
+### func \(\*AdvancedMockChatModel\) [BindTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L226)
 
 ```go
 func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatModel
@@ -947,8 +949,8 @@ func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatMo
 
 BindTools implements the ChatModel interface.
 
-<a name="AdvancedMockChatModel.CheckHealth"></a>
-### func \(\*AdvancedMockChatModel\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L355>)
+
+### func \(\*AdvancedMockChatModel\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L355)
 
 ```go
 func (m *AdvancedMockChatModel) CheckHealth() map[string]any
@@ -956,8 +958,8 @@ func (m *AdvancedMockChatModel) CheckHealth() map[string]any
 
 CheckHealth implements the HealthChecker interface.
 
-<a name="AdvancedMockChatModel.Generate"></a>
-### func \(\*AdvancedMockChatModel\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L118>)
+
+### func \(\*AdvancedMockChatModel\) [Generate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L118)
 
 ```go
 func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
@@ -965,8 +967,8 @@ func (m *AdvancedMockChatModel) Generate(ctx context.Context, messages []schema.
 
 Generate implements the ChatModel interface.
 
-<a name="AdvancedMockChatModel.GetCallCount"></a>
-### func \(\*AdvancedMockChatModel\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L389>)
+
+### func \(\*AdvancedMockChatModel\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L389)
 
 ```go
 func (m *AdvancedMockChatModel) GetCallCount() int
@@ -974,8 +976,8 @@ func (m *AdvancedMockChatModel) GetCallCount() int
 
 GetCallCount returns the number of times methods were called.
 
-<a name="AdvancedMockChatModel.GetModelName"></a>
-### func \(\*AdvancedMockChatModel\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L244>)
+
+### func \(\*AdvancedMockChatModel\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L244)
 
 ```go
 func (m *AdvancedMockChatModel) GetModelName() string
@@ -983,8 +985,8 @@ func (m *AdvancedMockChatModel) GetModelName() string
 
 GetModelName implements the ChatModel interface.
 
-<a name="AdvancedMockChatModel.GetProviderName"></a>
-### func \(\*AdvancedMockChatModel\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L249>)
+
+### func \(\*AdvancedMockChatModel\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L249)
 
 ```go
 func (m *AdvancedMockChatModel) GetProviderName() string
@@ -992,8 +994,8 @@ func (m *AdvancedMockChatModel) GetProviderName() string
 
 GetProviderName returns the provider name.
 
-<a name="AdvancedMockChatModel.Invoke"></a>
-### func \(\*AdvancedMockChatModel\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L254>)
+
+### func \(\*AdvancedMockChatModel\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L254)
 
 ```go
 func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -1001,8 +1003,8 @@ func (m *AdvancedMockChatModel) Invoke(ctx context.Context, input any, options .
 
 Invoke implements the Runnable interface.
 
-<a name="AdvancedMockChatModel.Reset"></a>
-### func \(\*AdvancedMockChatModel\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L396>)
+
+### func \(\*AdvancedMockChatModel\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L396)
 
 ```go
 func (m *AdvancedMockChatModel) Reset()
@@ -1010,8 +1012,8 @@ func (m *AdvancedMockChatModel) Reset()
 
 Reset resets the mock state.
 
-<a name="AdvancedMockChatModel.Stream"></a>
-### func \(\*AdvancedMockChatModel\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L313>)
+
+### func \(\*AdvancedMockChatModel\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L313)
 
 ```go
 func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -1019,8 +1021,8 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 
 Stream implements the Runnable interface.
 
-<a name="AdvancedMockChatModel.StreamChat"></a>
-### func \(\*AdvancedMockChatModel\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L146>)
+
+### func \(\*AdvancedMockChatModel\) [StreamChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L146)
 
 ```go
 func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
@@ -1028,8 +1030,8 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 
 StreamChat implements the ChatModel interface with realistic streaming.
 
-<a name="AdvancedMockLLM"></a>
-## type [AdvancedMockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L407-L413>)
+
+## type [AdvancedMockLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L407-L413)
 
 AdvancedMockLLM provides a mock LLM implementation.
 
@@ -1040,36 +1042,36 @@ type AdvancedMockLLM struct {
 }
 ```
 
-<a name="NewAdvancedMockLLM"></a>
-### func [NewAdvancedMockLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L415>)
+
+### func [NewAdvancedMockLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L415)
 
 ```go
 func NewAdvancedMockLLM(modelName string) *AdvancedMockLLM
 ```
 
-<a name="AdvancedMockLLM.GetModelName"></a>
-### func \(\*AdvancedMockLLM\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L437>)
+
+### func \(\*AdvancedMockLLM\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L437)
 
 ```go
 func (m *AdvancedMockLLM) GetModelName() string
 ```
 
-<a name="AdvancedMockLLM.GetProviderName"></a>
-### func \(\*AdvancedMockLLM\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L441>)
+
+### func \(\*AdvancedMockLLM\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L441)
 
 ```go
 func (m *AdvancedMockLLM) GetProviderName() string
 ```
 
-<a name="AdvancedMockLLM.Invoke"></a>
-### func \(\*AdvancedMockLLM\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L422>)
+
+### func \(\*AdvancedMockLLM\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L422)
 
 ```go
 func (m *AdvancedMockLLM) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
 ```
 
-<a name="CallOptions"></a>
-## type [CallOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L258-L269>)
+
+## type [CallOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L258-L269)
 
 CallOptions represents runtime call options for LLM invocations.
 
@@ -1088,8 +1090,8 @@ type CallOptions struct {
 }
 ```
 
-<a name="NewCallOptions"></a>
-### func [NewCallOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L272>)
+
+### func [NewCallOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L272)
 
 ```go
 func NewCallOptions() *CallOptions
@@ -1097,8 +1099,8 @@ func NewCallOptions() *CallOptions
 
 NewCallOptions creates new call options.
 
-<a name="CallOptions.ApplyCallOption"></a>
-### func \(\*CallOptions\) [ApplyCallOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L279>)
+
+### func \(\*CallOptions\) [ApplyCallOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L279)
 
 ```go
 func (co *CallOptions) ApplyCallOption(opt core.Option)
@@ -1106,8 +1108,8 @@ func (co *CallOptions) ApplyCallOption(opt core.Option)
 
 ApplyCallOption applies a core.Option to CallOptions.
 
-<a name="ChatModel"></a>
-## type [ChatModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L49-L55>)
+
+## type [ChatModel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L49-L55)
 
 ChatModel defines the core interface for chat\-based language models. It combines message generation with model information and health checking capabilities. This follows the Interface Segregation Principle while providing a composite interface for the most common use cases.
 
@@ -1497,8 +1499,8 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 }
 ```
 
-<a name="ChatModelAdapter"></a>
-## type [ChatModelAdapter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L285-L288>)
+
+## type [ChatModelAdapter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L285-L288)
 
 ChatModelAdapter wraps an LLM to provide the ChatModel interface.
 
@@ -1508,8 +1510,8 @@ type ChatModelAdapter struct {
 }
 ```
 
-<a name="NewChatModelAdapter"></a>
-### func [NewChatModelAdapter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L291>)
+
+### func [NewChatModelAdapter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L291)
 
 ```go
 func NewChatModelAdapter(llm iface.LLM, options *ChatOptions) *ChatModelAdapter
@@ -1517,8 +1519,8 @@ func NewChatModelAdapter(llm iface.LLM, options *ChatOptions) *ChatModelAdapter
 
 NewChatModelAdapter creates a new ChatModelAdapter.
 
-<a name="ChatModelAdapter.Batch"></a>
-### func \(\*ChatModelAdapter\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L368>)
+
+### func \(\*ChatModelAdapter\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L368)
 
 ```go
 func (c *ChatModelAdapter) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -1526,8 +1528,8 @@ func (c *ChatModelAdapter) Batch(ctx context.Context, inputs []any, options ...c
 
 Batch implements the Runnable interface.
 
-<a name="ChatModelAdapter.CheckHealth"></a>
-### func \(\*ChatModelAdapter\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L345>)
+
+### func \(\*ChatModelAdapter\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L345)
 
 ```go
 func (c *ChatModelAdapter) CheckHealth() map[string]any
@@ -1535,8 +1537,8 @@ func (c *ChatModelAdapter) CheckHealth() map[string]any
 
 CheckHealth implements the HealthChecker interface.
 
-<a name="ChatModelAdapter.GenerateMessages"></a>
-### func \(\*ChatModelAdapter\) [GenerateMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L299>)
+
+### func \(\*ChatModelAdapter\) [GenerateMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L299)
 
 ```go
 func (c *ChatModelAdapter) GenerateMessages(ctx context.Context, messages []schema.Message, options ...core.Option) ([]schema.Message, error)
@@ -1544,8 +1546,8 @@ func (c *ChatModelAdapter) GenerateMessages(ctx context.Context, messages []sche
 
 GenerateMessages implements the MessageGenerator interface.
 
-<a name="ChatModelAdapter.GetModelInfo"></a>
-### func \(\*ChatModelAdapter\) [GetModelInfo](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L334>)
+
+### func \(\*ChatModelAdapter\) [GetModelInfo](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L334)
 
 ```go
 func (c *ChatModelAdapter) GetModelInfo() ModelInfo
@@ -1553,8 +1555,8 @@ func (c *ChatModelAdapter) GetModelInfo() ModelInfo
 
 GetModelInfo implements the ModelInfoProvider interface.
 
-<a name="ChatModelAdapter.Invoke"></a>
-### func \(\*ChatModelAdapter\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L355>)
+
+### func \(\*ChatModelAdapter\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L355)
 
 ```go
 func (c *ChatModelAdapter) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -1562,8 +1564,8 @@ func (c *ChatModelAdapter) Invoke(ctx context.Context, input any, options ...cor
 
 Invoke implements the Runnable interface.
 
-<a name="ChatModelAdapter.Stream"></a>
-### func \(\*ChatModelAdapter\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L381>)
+
+### func \(\*ChatModelAdapter\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L381)
 
 ```go
 func (c *ChatModelAdapter) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -1571,8 +1573,8 @@ func (c *ChatModelAdapter) Stream(ctx context.Context, input any, options ...cor
 
 Stream implements the Runnable interface.
 
-<a name="ChatModelAdapter.StreamMessages"></a>
-### func \(\*ChatModelAdapter\) [StreamMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L319>)
+
+### func \(\*ChatModelAdapter\) [StreamMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L319)
 
 ```go
 func (c *ChatModelAdapter) StreamMessages(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan schema.Message, error)
@@ -1580,8 +1582,8 @@ func (c *ChatModelAdapter) StreamMessages(ctx context.Context, messages []schema
 
 StreamMessages implements the StreamMessageHandler interface.
 
-<a name="ChatModelFactory"></a>
-## type [ChatModelFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L100-L103>)
+
+## type [ChatModelFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L100-L103)
 
 ChatModelFactory defines the interface for creating chat model instances. It enables dependency injection and different chat model creation strategies.
 
@@ -1592,8 +1594,8 @@ type ChatModelFactory interface {
 }
 ```
 
-<a name="ChatOption"></a>
-## type [ChatOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L67-L69>)
+
+## type [ChatOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L67-L69)
 
 ChatOption represents a functional option for configuring chat models.
 
@@ -1603,8 +1605,8 @@ type ChatOption interface {
 }
 ```
 
-<a name="ChatOptionFunc"></a>
-### func [ChatOptionFunc](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L80>)
+
+### func [ChatOptionFunc](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L80)
 
 ```go
 func ChatOptionFunc(f func(config *map[string]any)) ChatOption
@@ -1612,8 +1614,8 @@ func ChatOptionFunc(f func(config *map[string]any)) ChatOption
 
 ChatOptionFunc creates a new ChatOption that executes the provided function.
 
-<a name="WithChatFunctionCalling"></a>
-### func [WithChatFunctionCalling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L141>)
+
+### func [WithChatFunctionCalling](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L141)
 
 ```go
 func WithChatFunctionCalling(enabled bool) ChatOption
@@ -1621,8 +1623,8 @@ func WithChatFunctionCalling(enabled bool) ChatOption
 
 WithChatFunctionCalling enables or disables function calling for chat models.
 
-<a name="WithChatMaxRetries"></a>
-### func [WithChatMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L155>)
+
+### func [WithChatMaxRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L155)
 
 ```go
 func WithChatMaxRetries(maxRetries int) ChatOption
@@ -1630,8 +1632,8 @@ func WithChatMaxRetries(maxRetries int) ChatOption
 
 WithChatMaxRetries sets the maximum retries for chat model operations.
 
-<a name="WithChatMaxTokens"></a>
-### func [WithChatMaxTokens](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L113>)
+
+### func [WithChatMaxTokens](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L113)
 
 ```go
 func WithChatMaxTokens(maxTokens int) ChatOption
@@ -1639,8 +1641,8 @@ func WithChatMaxTokens(maxTokens int) ChatOption
 
 WithChatMaxTokens sets the maximum tokens for chat model generation.
 
-<a name="WithChatObservability"></a>
-### func [WithChatObservability](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L162>)
+
+### func [WithChatObservability](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L162)
 
 ```go
 func WithChatObservability(metrics, tracing bool) ChatOption
@@ -1648,8 +1650,8 @@ func WithChatObservability(metrics, tracing bool) ChatOption
 
 WithChatObservability enables or disables observability features for chat models.
 
-<a name="WithChatStopSequences"></a>
-### func [WithChatStopSequences](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L127>)
+
+### func [WithChatStopSequences](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L127)
 
 ```go
 func WithChatStopSequences(sequences []string) ChatOption
@@ -1657,8 +1659,8 @@ func WithChatStopSequences(sequences []string) ChatOption
 
 WithChatStopSequences sets the stop sequences for chat model generation.
 
-<a name="WithChatSystemPrompt"></a>
-### func [WithChatSystemPrompt](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L134>)
+
+### func [WithChatSystemPrompt](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L134)
 
 ```go
 func WithChatSystemPrompt(prompt string) ChatOption
@@ -1666,8 +1668,8 @@ func WithChatSystemPrompt(prompt string) ChatOption
 
 WithChatSystemPrompt sets the system prompt for chat model generation.
 
-<a name="WithChatTemperature"></a>
-### func [WithChatTemperature](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L106>)
+
+### func [WithChatTemperature](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L106)
 
 ```go
 func WithChatTemperature(temp float32) ChatOption
@@ -1675,8 +1677,8 @@ func WithChatTemperature(temp float32) ChatOption
 
 WithChatTemperature sets the temperature for chat model generation.
 
-<a name="WithChatTimeout"></a>
-### func [WithChatTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L148>)
+
+### func [WithChatTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L148)
 
 ```go
 func WithChatTimeout(timeout time.Duration) ChatOption
@@ -1684,8 +1686,8 @@ func WithChatTimeout(timeout time.Duration) ChatOption
 
 WithChatTimeout sets the timeout for chat model operations.
 
-<a name="WithChatTopP"></a>
-### func [WithChatTopP](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L120>)
+
+### func [WithChatTopP](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L120)
 
 ```go
 func WithChatTopP(topP float32) ChatOption
@@ -1693,8 +1695,8 @@ func WithChatTopP(topP float32) ChatOption
 
 WithChatTopP sets the top\-p value for chat model generation.
 
-<a name="ChatOptions"></a>
-## type [ChatOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L85-L96>)
+
+## type [ChatOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L85-L96)
 
 ChatOptions holds the configuration options for chat models.
 
@@ -1713,8 +1715,8 @@ type ChatOptions struct {
 }
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L16-L39>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L16-L39)
 
 Config represents the configuration for LLM providers. It includes common settings that apply to all LLM providers.
 
@@ -1745,8 +1747,8 @@ type Config struct {
 }
 ```
 
-<a name="CreateTestConfig"></a>
-### func [CreateTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L583>)
+
+### func [CreateTestConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L583)
 
 ```go
 func CreateTestConfig() *Config
@@ -1754,8 +1756,8 @@ func CreateTestConfig() *Config
 
 CreateTestConfig creates a test configuration.
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L340>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L340)
 
 ```go
 func DefaultConfig() *Config
@@ -1763,8 +1765,8 @@ func DefaultConfig() *Config
 
 DefaultConfig returns a default configuration for LLM operations.
 
-<a name="NewConfig"></a>
-### func [NewConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L201>)
+
+### func [NewConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L201)
 
 ```go
 func NewConfig(opts ...ConfigOption) *Config
@@ -1818,8 +1820,8 @@ func main() {
 Config validated for provider: anthropic
 ```
 
-<a name="NewDefaultConfig"></a>
-### func [NewDefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L157>)
+
+### func [NewDefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L157)
 
 ```go
 func NewDefaultConfig() *Config
@@ -1827,8 +1829,8 @@ func NewDefaultConfig() *Config
 
 NewDefaultConfig returns a default configuration.
 
-<a name="Config.MergeOptions"></a>
-### func \(\*Config\) [MergeOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L194>)
+
+### func \(\*Config\) [MergeOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L194)
 
 ```go
 func (c *Config) MergeOptions(opts ...ConfigOption)
@@ -1836,8 +1838,8 @@ func (c *Config) MergeOptions(opts ...ConfigOption)
 
 MergeOptions applies functional options to the configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L185>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L185)
 
 ```go
 func (c *Config) Validate() error
@@ -1845,8 +1847,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L42>)
+
+## type [ConfigOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L42)
 
 ConfigOption is a functional option for configuring LLM instances.
 
@@ -1854,8 +1856,8 @@ ConfigOption is a functional option for configuring LLM instances.
 type ConfigOption func(*Config)
 ```
 
-<a name="WithAPIKey"></a>
-### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L59>)
+
+### func [WithAPIKey](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L59)
 
 ```go
 func WithAPIKey(apiKey string) ConfigOption
@@ -1863,8 +1865,8 @@ func WithAPIKey(apiKey string) ConfigOption
 
 WithAPIKey sets the API key.
 
-<a name="WithBaseURL"></a>
-### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L66>)
+
+### func [WithBaseURL](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L66)
 
 ```go
 func WithBaseURL(baseURL string) ConfigOption
@@ -1872,8 +1874,8 @@ func WithBaseURL(baseURL string) ConfigOption
 
 WithBaseURL sets the base URL.
 
-<a name="WithMaxConcurrentBatches"></a>
-### func [WithMaxConcurrentBatches](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L115>)
+
+### func [WithMaxConcurrentBatches](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L115)
 
 ```go
 func WithMaxConcurrentBatches(n int) ConfigOption
@@ -1881,8 +1883,8 @@ func WithMaxConcurrentBatches(n int) ConfigOption
 
 WithMaxConcurrentBatches sets the maximum concurrent batches.
 
-<a name="WithMaxTokensConfig"></a>
-### func [WithMaxTokensConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L101>)
+
+### func [WithMaxTokensConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L101)
 
 ```go
 func WithMaxTokensConfig(maxTokens int) ConfigOption
@@ -1890,8 +1892,8 @@ func WithMaxTokensConfig(maxTokens int) ConfigOption
 
 WithMaxTokensConfig sets the maximum tokens.
 
-<a name="WithModelName"></a>
-### func [WithModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L52>)
+
+### func [WithModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L52)
 
 ```go
 func WithModelName(modelName string) ConfigOption
@@ -1899,8 +1901,8 @@ func WithModelName(modelName string) ConfigOption
 
 WithModelName sets the model name.
 
-<a name="WithObservability"></a>
-### func [WithObservability](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L141>)
+
+### func [WithObservability](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L141)
 
 ```go
 func WithObservability(tracing, metrics, logging bool) ConfigOption
@@ -1908,8 +1910,8 @@ func WithObservability(tracing, metrics, logging bool) ConfigOption
 
 WithObservability enables or disables observability features.
 
-<a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L45>)
+
+### func [WithProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L45)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -1917,8 +1919,8 @@ func WithProvider(provider string) ConfigOption
 
 WithProvider sets the LLM provider.
 
-<a name="WithProviderSpecific"></a>
-### func [WithProviderSpecific](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L131>)
+
+### func [WithProviderSpecific](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L131)
 
 ```go
 func WithProviderSpecific(key string, value any) ConfigOption
@@ -1926,8 +1928,8 @@ func WithProviderSpecific(key string, value any) ConfigOption
 
 WithProviderSpecific sets provider\-specific configuration.
 
-<a name="WithRetryConfig"></a>
-### func [WithRetryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L122>)
+
+### func [WithRetryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L122)
 
 ```go
 func WithRetryConfig(maxRetries int, delay time.Duration, backoff float64) ConfigOption
@@ -1935,8 +1937,8 @@ func WithRetryConfig(maxRetries int, delay time.Duration, backoff float64) Confi
 
 WithRetryConfig sets retry configuration.
 
-<a name="WithStopSequences"></a>
-### func [WithStopSequences](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L108>)
+
+### func [WithStopSequences](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L108)
 
 ```go
 func WithStopSequences(sequences []string) ConfigOption
@@ -1944,8 +1946,8 @@ func WithStopSequences(sequences []string) ConfigOption
 
 WithStopSequences sets the stop sequences.
 
-<a name="WithTemperatureConfig"></a>
-### func [WithTemperatureConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L80>)
+
+### func [WithTemperatureConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L80)
 
 ```go
 func WithTemperatureConfig(temp float32) ConfigOption
@@ -1953,8 +1955,8 @@ func WithTemperatureConfig(temp float32) ConfigOption
 
 WithTemperatureConfig sets the temperature.
 
-<a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L73>)
+
+### func [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L73)
 
 ```go
 func WithTimeout(timeout time.Duration) ConfigOption
@@ -1962,8 +1964,8 @@ func WithTimeout(timeout time.Duration) ConfigOption
 
 WithTimeout sets the timeout.
 
-<a name="WithToolCalling"></a>
-### func [WithToolCalling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L150>)
+
+### func [WithToolCalling](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L150)
 
 ```go
 func WithToolCalling(enabled bool) ConfigOption
@@ -1971,8 +1973,8 @@ func WithToolCalling(enabled bool) ConfigOption
 
 WithToolCalling enables or disables tool calling.
 
-<a name="WithTopKConfig"></a>
-### func [WithTopKConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L94>)
+
+### func [WithTopKConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L94)
 
 ```go
 func WithTopKConfig(topK int) ConfigOption
@@ -1980,8 +1982,8 @@ func WithTopKConfig(topK int) ConfigOption
 
 WithTopKConfig sets the top\-k value.
 
-<a name="WithTopPConfig"></a>
-### func [WithTopPConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L87>)
+
+### func [WithTopPConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L87)
 
 ```go
 func WithTopPConfig(topP float32) ConfigOption
@@ -1989,8 +1991,8 @@ func WithTopPConfig(topP float32) ConfigOption
 
 WithTopPConfig sets the top\-p value.
 
-<a name="ConfigValidationError"></a>
-## type [ConfigValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L241-L243>)
+
+## type [ConfigValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L241-L243)
 
 ConfigValidationError represents multiple validation errors.
 
@@ -2000,8 +2002,8 @@ type ConfigValidationError struct {
 }
 ```
 
-<a name="ConfigValidationError.AddError"></a>
-### func \(\*ConfigValidationError\) [AddError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L257>)
+
+### func \(\*ConfigValidationError\) [AddError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L257)
 
 ```go
 func (e *ConfigValidationError) AddError(field string, value any, message string)
@@ -2009,8 +2011,8 @@ func (e *ConfigValidationError) AddError(field string, value any, message string
 
 AddError adds a validation error.
 
-<a name="ConfigValidationError.Error"></a>
-### func \(\*ConfigValidationError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L246>)
+
+### func \(\*ConfigValidationError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L246)
 
 ```go
 func (e *ConfigValidationError) Error() string
@@ -2018,8 +2020,8 @@ func (e *ConfigValidationError) Error() string
 
 Error implements the error interface.
 
-<a name="ConfigValidationError.HasErrors"></a>
-### func \(\*ConfigValidationError\) [HasErrors](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L266>)
+
+### func \(\*ConfigValidationError\) [HasErrors](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L266)
 
 ```go
 func (e *ConfigValidationError) HasErrors() bool
@@ -2027,8 +2029,8 @@ func (e *ConfigValidationError) HasErrors() bool
 
 HasErrors checks if there are any validation errors.
 
-<a name="Factory"></a>
-## type [Factory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L40-L46>)
+
+## type [Factory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L40-L46)
 
 Factory provides a factory pattern for creating LLM instances. It manages the creation of different LLM providers based on configuration.
 
@@ -2038,8 +2040,8 @@ type Factory struct {
 }
 ```
 
-<a name="InitializeDefaultFactory"></a>
-### func [InitializeDefaultFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L553>)
+
+### func [InitializeDefaultFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L553)
 
 ```go
 func InitializeDefaultFactory() *Factory
@@ -2047,8 +2049,8 @@ func InitializeDefaultFactory() *Factory
 
 InitializeDefaultFactory creates and returns a factory with all built\-in providers registered.
 
-<a name="NewFactory"></a>
-### func [NewFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L49>)
+
+### func [NewFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L49)
 
 ```go
 func NewFactory() *Factory
@@ -2162,8 +2164,8 @@ func (m *MockChatModel) Stream(ctx context.Context, input any, options ...core.O
 Retrieved model: example-model
 ```
 
-<a name="Factory.CreateLLM"></a>
-### func \(\*Factory\) [CreateLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L142>)
+
+### func \(\*Factory\) [CreateLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L142)
 
 ```go
 func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, error)
@@ -2171,8 +2173,8 @@ func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, err
 
 CreateLLM creates an LLM instance using the registered factory.
 
-<a name="Factory.CreateProvider"></a>
-### func \(\*Factory\) [CreateProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L123>)
+
+### func \(\*Factory\) [CreateProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L123)
 
 ```go
 func (f *Factory) CreateProvider(providerName string, config *Config) (iface.ChatModel, error)
@@ -2180,8 +2182,8 @@ func (f *Factory) CreateProvider(providerName string, config *Config) (iface.Cha
 
 CreateProvider creates a provider instance using the registered factory.
 
-<a name="Factory.GetLLM"></a>
-### func \(\*Factory\) [GetLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L86>)
+
+### func \(\*Factory\) [GetLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L86)
 
 ```go
 func (f *Factory) GetLLM(name string) (iface.LLM, error)
@@ -2189,8 +2191,8 @@ func (f *Factory) GetLLM(name string) (iface.LLM, error)
 
 GetLLM returns a registered LLM provider.
 
-<a name="Factory.GetProvider"></a>
-### func \(\*Factory\) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L73>)
+
+### func \(\*Factory\) [GetProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L73)
 
 ```go
 func (f *Factory) GetProvider(name string) (iface.ChatModel, error)
@@ -2198,8 +2200,8 @@ func (f *Factory) GetProvider(name string) (iface.ChatModel, error)
 
 GetProvider returns a registered ChatModel provider.
 
-<a name="Factory.ListAvailableProviders"></a>
-### func \(\*Factory\) [ListAvailableProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L161>)
+
+### func \(\*Factory\) [ListAvailableProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L161)
 
 ```go
 func (f *Factory) ListAvailableProviders() []string
@@ -2207,8 +2209,8 @@ func (f *Factory) ListAvailableProviders() []string
 
 ListAvailableProviders returns a list of all available provider names.
 
-<a name="Factory.ListLLMs"></a>
-### func \(\*Factory\) [ListLLMs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L111>)
+
+### func \(\*Factory\) [ListLLMs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L111)
 
 ```go
 func (f *Factory) ListLLMs() []string
@@ -2216,8 +2218,8 @@ func (f *Factory) ListLLMs() []string
 
 ListLLMs returns a list of all registered LLM names.
 
-<a name="Factory.ListProviders"></a>
-### func \(\*Factory\) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L99>)
+
+### func \(\*Factory\) [ListProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L99)
 
 ```go
 func (f *Factory) ListProviders() []string
@@ -2225,8 +2227,8 @@ func (f *Factory) ListProviders() []string
 
 ListProviders returns a list of all registered provider names.
 
-<a name="Factory.RegisterLLM"></a>
-### func \(\*Factory\) [RegisterLLM](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L66>)
+
+### func \(\*Factory\) [RegisterLLM](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L66)
 
 ```go
 func (f *Factory) RegisterLLM(name string, llm iface.LLM)
@@ -2234,15 +2236,15 @@ func (f *Factory) RegisterLLM(name string, llm iface.LLM)
 
 RegisterLLM registers an LLM provider with the factory.
 
-<a name="Factory.RegisterLLMFactory"></a>
-### func \(\*Factory\) [RegisterLLMFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L179>)
+
+### func \(\*Factory\) [RegisterLLMFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L179)
 
 ```go
 func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.LLM, error))
 ```
 
-<a name="Factory.RegisterProvider"></a>
-### func \(\*Factory\) [RegisterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L59>)
+
+### func \(\*Factory\) [RegisterProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L59)
 
 ```go
 func (f *Factory) RegisterProvider(name string, provider iface.ChatModel)
@@ -2250,8 +2252,8 @@ func (f *Factory) RegisterProvider(name string, provider iface.ChatModel)
 
 RegisterProvider registers a ChatModel provider with the factory.
 
-<a name="Factory.RegisterProviderFactory"></a>
-### func \(\*Factory\) [RegisterProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L173>)
+
+### func \(\*Factory\) [RegisterProviderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L173)
 
 ```go
 func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (iface.ChatModel, error))
@@ -2259,8 +2261,8 @@ func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (if
 
 RegisterProviderFactory registers a provider factory function.
 
-<a name="HealthChecker"></a>
-## type [HealthChecker](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L40-L43>)
+
+## type [HealthChecker](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L40-L43)
 
 HealthChecker defines the interface for health checking chat model components.
 
@@ -2271,8 +2273,8 @@ type HealthChecker interface {
 }
 ```
 
-<a name="IntegrationTestConfig"></a>
-## type [IntegrationTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L28-L45>)
+
+## type [IntegrationTestConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L28-L45)
 
 IntegrationTestConfig holds configuration for integration tests.
 
@@ -2297,8 +2299,8 @@ type IntegrationTestConfig struct {
 }
 ```
 
-<a name="DefaultIntegrationTestConfig"></a>
-### func [DefaultIntegrationTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L48>)
+
+### func [DefaultIntegrationTestConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L48)
 
 ```go
 func DefaultIntegrationTestConfig() *IntegrationTestConfig
@@ -2306,8 +2308,8 @@ func DefaultIntegrationTestConfig() *IntegrationTestConfig
 
 DefaultIntegrationTestConfig returns a default configuration for integration tests.
 
-<a name="LoadIntegrationTestConfig"></a>
-### func [LoadIntegrationTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L61>)
+
+### func [LoadIntegrationTestConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L61)
 
 ```go
 func LoadIntegrationTestConfig() *IntegrationTestConfig
@@ -2315,8 +2317,8 @@ func LoadIntegrationTestConfig() *IntegrationTestConfig
 
 LoadIntegrationTestConfig loads configuration from environment variables.
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L95-L101>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L95-L101)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -2326,8 +2328,8 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L104>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L104)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
@@ -2335,8 +2337,8 @@ func NewIntegrationTestHelper() *IntegrationTestHelper
 
 NewIntegrationTestHelper creates a new integration test helper.
 
-<a name="IntegrationTestHelper.GetConfig"></a>
-### func \(\*IntegrationTestHelper\) [GetConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L237>)
+
+### func \(\*IntegrationTestHelper\) [GetConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L237)
 
 ```go
 func (h *IntegrationTestHelper) GetConfig() *Config
@@ -2344,8 +2346,8 @@ func (h *IntegrationTestHelper) GetConfig() *Config
 
 GetConfig returns the test configuration as \*Config for compatibility.
 
-<a name="IntegrationTestHelper.GetFactory"></a>
-### func \(\*IntegrationTestHelper\) [GetFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L232>)
+
+### func \(\*IntegrationTestHelper\) [GetFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L232)
 
 ```go
 func (h *IntegrationTestHelper) GetFactory() *Factory
@@ -2353,8 +2355,8 @@ func (h *IntegrationTestHelper) GetFactory() *Factory
 
 GetFactory returns the factory.
 
-<a name="IntegrationTestHelper.GetMetrics"></a>
-### func \(\*IntegrationTestHelper\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L250>)
+
+### func \(\*IntegrationTestHelper\) [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L250)
 
 ```go
 func (h *IntegrationTestHelper) GetMetrics() *MockMetricsRecorder
@@ -2362,8 +2364,8 @@ func (h *IntegrationTestHelper) GetMetrics() *MockMetricsRecorder
 
 GetMetrics returns a mock metrics recorder.
 
-<a name="IntegrationTestHelper.GetTracing"></a>
-### func \(\*IntegrationTestHelper\) [GetTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L255>)
+
+### func \(\*IntegrationTestHelper\) [GetTracing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L255)
 
 ```go
 func (h *IntegrationTestHelper) GetTracing() *MockTracingHelper
@@ -2371,8 +2373,8 @@ func (h *IntegrationTestHelper) GetTracing() *MockTracingHelper
 
 GetTracing returns a mock tracing helper.
 
-<a name="IntegrationTestHelper.RateLimit"></a>
-### func \(\*IntegrationTestHelper\) [RateLimit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L196>)
+
+### func \(\*IntegrationTestHelper\) [RateLimit](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L196)
 
 ```go
 func (h *IntegrationTestHelper) RateLimit()
@@ -2380,8 +2382,8 @@ func (h *IntegrationTestHelper) RateLimit()
 
 RateLimit enforces rate limiting between requests.
 
-<a name="IntegrationTestHelper.SetupAnthropicProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupAnthropicProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L132>)
+
+### func \(\*IntegrationTestHelper\) [SetupAnthropicProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L132)
 
 ```go
 func (h *IntegrationTestHelper) SetupAnthropicProvider(modelName string) (iface.ChatModel, error)
@@ -2389,8 +2391,8 @@ func (h *IntegrationTestHelper) SetupAnthropicProvider(modelName string) (iface.
 
 SetupAnthropicProvider sets up an Anthropic provider.
 
-<a name="IntegrationTestHelper.SetupBedrockProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupBedrockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L168>)
+
+### func \(\*IntegrationTestHelper\) [SetupBedrockProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L168)
 
 ```go
 func (h *IntegrationTestHelper) SetupBedrockProvider(modelName string) (iface.ChatModel, error)
@@ -2398,8 +2400,8 @@ func (h *IntegrationTestHelper) SetupBedrockProvider(modelName string) (iface.Ch
 
 SetupBedrockProvider sets up an AWS Bedrock provider.
 
-<a name="IntegrationTestHelper.SetupMockProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupMockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L214>)
+
+### func \(\*IntegrationTestHelper\) [SetupMockProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L214)
 
 ```go
 func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string, opts ...any) iface.ChatModel
@@ -2407,8 +2409,8 @@ func (h *IntegrationTestHelper) SetupMockProvider(providerName, modelName string
 
 SetupMockProvider sets up a mock provider for integration testing.
 
-<a name="IntegrationTestHelper.SetupOllamaProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupOllamaProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L182>)
+
+### func \(\*IntegrationTestHelper\) [SetupOllamaProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L182)
 
 ```go
 func (h *IntegrationTestHelper) SetupOllamaProvider(modelName string) (iface.ChatModel, error)
@@ -2416,8 +2418,8 @@ func (h *IntegrationTestHelper) SetupOllamaProvider(modelName string) (iface.Cha
 
 SetupOllamaProvider sets up an Ollama provider.
 
-<a name="IntegrationTestHelper.SetupOpenAIProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupOpenAIProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L150>)
+
+### func \(\*IntegrationTestHelper\) [SetupOpenAIProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L150)
 
 ```go
 func (h *IntegrationTestHelper) SetupOpenAIProvider(modelName string) (iface.ChatModel, error)
@@ -2425,8 +2427,8 @@ func (h *IntegrationTestHelper) SetupOpenAIProvider(modelName string) (iface.Cha
 
 SetupOpenAIProvider sets up an OpenAI provider.
 
-<a name="IntegrationTestHelper.SetupProvider"></a>
-### func \(\*IntegrationTestHelper\) [SetupProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L117>)
+
+### func \(\*IntegrationTestHelper\) [SetupProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L117)
 
 ```go
 func (h *IntegrationTestHelper) SetupProvider(providerName string, config *Config) (iface.ChatModel, error)
@@ -2434,8 +2436,8 @@ func (h *IntegrationTestHelper) SetupProvider(providerName string, config *Confi
 
 SetupProvider sets up a provider for integration testing.
 
-<a name="IntegrationTestHelper.TestCrossProviderComparison"></a>
-### func \(\*IntegrationTestHelper\) [TestCrossProviderComparison](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L366>)
+
+### func \(\*IntegrationTestHelper\) [TestCrossProviderComparison](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L366)
 
 ```go
 func (h *IntegrationTestHelper) TestCrossProviderComparison(t *testing.T, providers map[string]iface.ChatModel, testPrompt string)
@@ -2443,8 +2445,8 @@ func (h *IntegrationTestHelper) TestCrossProviderComparison(t *testing.T, provid
 
 TestCrossProviderComparison compares responses from multiple providers.
 
-<a name="IntegrationTestHelper.TestProviderErrorHandling"></a>
-### func \(\*IntegrationTestHelper\) [TestProviderErrorHandling](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L420>)
+
+### func \(\*IntegrationTestHelper\) [TestProviderErrorHandling](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L420)
 
 ```go
 func (h *IntegrationTestHelper) TestProviderErrorHandling(t *testing.T, provider iface.ChatModel, providerName string)
@@ -2452,8 +2454,8 @@ func (h *IntegrationTestHelper) TestProviderErrorHandling(t *testing.T, provider
 
 TestProviderErrorHandling tests error handling scenarios.
 
-<a name="IntegrationTestHelper.TestProviderIntegration"></a>
-### func \(\*IntegrationTestHelper\) [TestProviderIntegration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L260>)
+
+### func \(\*IntegrationTestHelper\) [TestProviderIntegration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L260)
 
 ```go
 func (h *IntegrationTestHelper) TestProviderIntegration(t *testing.T, provider iface.ChatModel, providerName string)
@@ -2461,8 +2463,8 @@ func (h *IntegrationTestHelper) TestProviderIntegration(t *testing.T, provider i
 
 TestProviderIntegration tests a provider with basic integration tests.
 
-<a name="IntegrationTestSuite"></a>
-## type [IntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L462-L467>)
+
+## type [IntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L462-L467)
 
 IntegrationTestSuite represents a complete integration test suite.
 
@@ -2475,8 +2477,8 @@ type IntegrationTestSuite struct {
 }
 ```
 
-<a name="AnthropicIntegrationTestSuite"></a>
-### func [AnthropicIntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L486>)
+
+### func [AnthropicIntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L486)
 
 ```go
 func AnthropicIntegrationTestSuite() IntegrationTestSuite
@@ -2484,8 +2486,8 @@ func AnthropicIntegrationTestSuite() IntegrationTestSuite
 
 AnthropicIntegrationTestSuite returns a test suite for Anthropic.
 
-<a name="MultiProviderIntegrationTestSuite"></a>
-### func [MultiProviderIntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L528>)
+
+### func [MultiProviderIntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L528)
 
 ```go
 func MultiProviderIntegrationTestSuite() IntegrationTestSuite
@@ -2493,8 +2495,8 @@ func MultiProviderIntegrationTestSuite() IntegrationTestSuite
 
 MultiProviderIntegrationTestSuite returns a test suite comparing multiple providers.
 
-<a name="OllamaIntegrationTestSuite"></a>
-### func [OllamaIntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L578>)
+
+### func [OllamaIntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L578)
 
 ```go
 func OllamaIntegrationTestSuite() IntegrationTestSuite
@@ -2502,8 +2504,8 @@ func OllamaIntegrationTestSuite() IntegrationTestSuite
 
 OllamaIntegrationTestSuite returns a test suite for Ollama.
 
-<a name="OpenAIIntegrationTestSuite"></a>
-### func [OpenAIIntegrationTestSuite](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L507>)
+
+### func [OpenAIIntegrationTestSuite](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/integration_test_setup.go#L507)
 
 ```go
 func OpenAIIntegrationTestSuite() IntegrationTestSuite
@@ -2511,8 +2513,8 @@ func OpenAIIntegrationTestSuite() IntegrationTestSuite
 
 OpenAIIntegrationTestSuite returns a test suite for OpenAI.
 
-<a name="LLMError"></a>
-## type [LLMError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L52-L58>)
+
+## type [LLMError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L52-L58)
 
 LLMError represents an error that occurred during LLM operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -2564,8 +2566,8 @@ LLM Error Code: rate_limit
 Is Retryable: true
 ```
 
-<a name="GetLLMError"></a>
-### func [GetLLMError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L113>)
+
+### func [GetLLMError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L113)
 
 ```go
 func GetLLMError(err error) *LLMError
@@ -2573,8 +2575,8 @@ func GetLLMError(err error) *LLMError
 
 GetLLMError extracts an LLMError from an error if it exists.
 
-<a name="MapHTTPError"></a>
-### func [MapHTTPError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L188>)
+
+### func [MapHTTPError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L188)
 
 ```go
 func MapHTTPError(op string, statusCode int, err error) *LLMError
@@ -2582,8 +2584,8 @@ func MapHTTPError(op string, statusCode int, err error) *LLMError
 
 MapHTTPError maps HTTP status codes to LLM error codes.
 
-<a name="NewLLMError"></a>
-### func [NewLLMError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L77>)
+
+### func [NewLLMError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L77)
 
 ```go
 func NewLLMError(op, code string, err error) *LLMError
@@ -2591,8 +2593,8 @@ func NewLLMError(op, code string, err error) *LLMError
 
 NewLLMError creates a new LLMError.
 
-<a name="NewLLMErrorWithDetails"></a>
-### func [NewLLMErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L96>)
+
+### func [NewLLMErrorWithDetails](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L96)
 
 ```go
 func NewLLMErrorWithDetails(op, code, message string, err error, details map[string]any) *LLMError
@@ -2600,8 +2602,8 @@ func NewLLMErrorWithDetails(op, code, message string, err error, details map[str
 
 NewLLMErrorWithDetails creates a new LLMError with additional details.
 
-<a name="NewLLMErrorWithMessage"></a>
-### func [NewLLMErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L86>)
+
+### func [NewLLMErrorWithMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L86)
 
 ```go
 func NewLLMErrorWithMessage(op, code, message string, err error) *LLMError
@@ -2609,8 +2611,8 @@ func NewLLMErrorWithMessage(op, code, message string, err error) *LLMError
 
 NewLLMErrorWithMessage creates a new LLMError with a custom message.
 
-<a name="LLMError.Error"></a>
-### func \(\*LLMError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L61>)
+
+### func \(\*LLMError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L61)
 
 ```go
 func (e *LLMError) Error() string
@@ -2618,8 +2620,8 @@ func (e *LLMError) Error() string
 
 Error implements the error interface.
 
-<a name="LLMError.Unwrap"></a>
-### func \(\*LLMError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L72>)
+
+### func \(\*LLMError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L72)
 
 ```go
 func (e *LLMError) Unwrap() error
@@ -2627,8 +2629,8 @@ func (e *LLMError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-<a name="LoadTestScenario"></a>
-## type [LoadTestScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L663-L669>)
+
+## type [LoadTestScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L663-L669)
 
 LoadTestScenario represents a load testing scenario.
 
@@ -2642,8 +2644,8 @@ type LoadTestScenario struct {
 }
 ```
 
-<a name="MessageGenerator"></a>
-## type [MessageGenerator](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L20-L24>)
+
+## type [MessageGenerator](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L20-L24)
 
 MessageGenerator defines the interface for generating messages. This focuses solely on message generation capabilities.
 
@@ -2655,8 +2657,8 @@ type MessageGenerator interface {
 }
 ```
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L69-L84>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L69-L84)
 
 Metrics contains all the metrics for LLM operations.
 
@@ -2666,8 +2668,8 @@ type Metrics struct {
 }
 ```
 
-<a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L34>)
+
+### func [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/llms.go#L34)
 
 ```go
 func GetMetrics() *Metrics
@@ -2675,8 +2677,8 @@ func GetMetrics() *Metrics
 
 GetMetrics returns the global metrics instance.
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L87>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L87)
 
 ```go
 func NewMetrics(meter metric.Meter) *Metrics
@@ -2684,8 +2686,8 @@ func NewMetrics(meter metric.Meter) *Metrics
 
 NewMetrics creates a new Metrics instance.
 
-<a name="Metrics.DecrementActiveRequests"></a>
-### func \(\*Metrics\) [DecrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L158>)
+
+### func \(\*Metrics\) [DecrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L158)
 
 ```go
 func (m *Metrics) DecrementActiveRequests(ctx context.Context, provider, model string)
@@ -2693,8 +2695,8 @@ func (m *Metrics) DecrementActiveRequests(ctx context.Context, provider, model s
 
 DecrementActiveRequests decrements the active requests counter.
 
-<a name="Metrics.DecrementActiveStreams"></a>
-### func \(\*Metrics\) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L170>)
+
+### func \(\*Metrics\) [DecrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L170)
 
 ```go
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model string)
@@ -2702,8 +2704,8 @@ func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model st
 
 DecrementActiveStreams decrements the active streams counter.
 
-<a name="Metrics.IncrementActiveRequests"></a>
-### func \(\*Metrics\) [IncrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L152>)
+
+### func \(\*Metrics\) [IncrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L152)
 
 ```go
 func (m *Metrics) IncrementActiveRequests(ctx context.Context, provider, model string)
@@ -2711,8 +2713,8 @@ func (m *Metrics) IncrementActiveRequests(ctx context.Context, provider, model s
 
 IncrementActiveRequests increments the active requests counter.
 
-<a name="Metrics.IncrementActiveStreams"></a>
-### func \(\*Metrics\) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L164>)
+
+### func \(\*Metrics\) [IncrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L164)
 
 ```go
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model string)
@@ -2720,8 +2722,8 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model st
 
 IncrementActiveStreams increments the active streams counter.
 
-<a name="Metrics.RecordBatch"></a>
-### func \(\*Metrics\) [RecordBatch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L138>)
+
+### func \(\*Metrics\) [RecordBatch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L138)
 
 ```go
 func (m *Metrics) RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration)
@@ -2729,8 +2731,8 @@ func (m *Metrics) RecordBatch(ctx context.Context, provider, model string, batch
 
 RecordBatch records batch processing metrics.
 
-<a name="Metrics.RecordError"></a>
-### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L117>)
+
+### func \(\*Metrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L117)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration)
@@ -2738,8 +2740,8 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode st
 
 RecordError records an error metric.
 
-<a name="Metrics.RecordRequest"></a>
-### func \(\*Metrics\) [RecordRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L109>)
+
+### func \(\*Metrics\) [RecordRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L109)
 
 ```go
 func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, duration time.Duration)
@@ -2747,8 +2749,8 @@ func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, dur
 
 RecordRequest records a request metric.
 
-<a name="Metrics.RecordStream"></a>
-### func \(\*Metrics\) [RecordStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L145>)
+
+### func \(\*Metrics\) [RecordStream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L145)
 
 ```go
 func (m *Metrics) RecordStream(ctx context.Context, provider, model string, duration time.Duration)
@@ -2756,8 +2758,8 @@ func (m *Metrics) RecordStream(ctx context.Context, provider, model string, dura
 
 RecordStream records streaming metrics.
 
-<a name="Metrics.RecordTokenUsage"></a>
-### func \(\*Metrics\) [RecordTokenUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L125>)
+
+### func \(\*Metrics\) [RecordTokenUsage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L125)
 
 ```go
 func (m *Metrics) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int)
@@ -2765,8 +2767,8 @@ func (m *Metrics) RecordTokenUsage(ctx context.Context, provider, model string, 
 
 RecordTokenUsage records token usage metrics.
 
-<a name="Metrics.RecordToolCall"></a>
-### func \(\*Metrics\) [RecordToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L132>)
+
+### func \(\*Metrics\) [RecordToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L132)
 
 ```go
 func (m *Metrics) RecordToolCall(ctx context.Context, provider, model, toolName string)
@@ -2774,8 +2776,8 @@ func (m *Metrics) RecordToolCall(ctx context.Context, provider, model, toolName 
 
 RecordToolCall records a tool call metric.
 
-<a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L12-L23>)
+
+## type [MetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L12-L23)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -2794,8 +2796,8 @@ type MetricsRecorder interface {
 }
 ```
 
-<a name="MockMetricsRecorder"></a>
-## type [MockMetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L446-L448>)
+
+## type [MockMetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L446-L448)
 
 MockMetricsRecorder provides a mock implementation of MetricsRecorder.
 
@@ -2805,85 +2807,85 @@ type MockMetricsRecorder struct {
 }
 ```
 
-<a name="NewMockMetricsRecorder"></a>
-### func [NewMockMetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L450>)
+
+### func [NewMockMetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L450)
 
 ```go
 func NewMockMetricsRecorder() *MockMetricsRecorder
 ```
 
-<a name="MockMetricsRecorder.DecrementActiveRequests"></a>
-### func \(\*MockMetricsRecorder\) [DecrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L503>)
+
+### func \(\*MockMetricsRecorder\) [DecrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L503)
 
 ```go
 func (m *MockMetricsRecorder) DecrementActiveRequests(ctx context.Context, provider, model string)
 ```
 
-<a name="MockMetricsRecorder.DecrementActiveStreams"></a>
-### func \(\*MockMetricsRecorder\) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L517>)
+
+### func \(\*MockMetricsRecorder\) [DecrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L517)
 
 ```go
 func (m *MockMetricsRecorder) DecrementActiveStreams(ctx context.Context, provider, model string)
 ```
 
-<a name="MockMetricsRecorder.IncrementActiveRequests"></a>
-### func \(\*MockMetricsRecorder\) [IncrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L496>)
+
+### func \(\*MockMetricsRecorder\) [IncrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L496)
 
 ```go
 func (m *MockMetricsRecorder) IncrementActiveRequests(ctx context.Context, provider, model string)
 ```
 
-<a name="MockMetricsRecorder.IncrementActiveStreams"></a>
-### func \(\*MockMetricsRecorder\) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L510>)
+
+### func \(\*MockMetricsRecorder\) [IncrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L510)
 
 ```go
 func (m *MockMetricsRecorder) IncrementActiveStreams(ctx context.Context, provider, model string)
 ```
 
-<a name="MockMetricsRecorder.RecordBatch"></a>
-### func \(\*MockMetricsRecorder\) [RecordBatch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L482>)
+
+### func \(\*MockMetricsRecorder\) [RecordBatch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L482)
 
 ```go
 func (m *MockMetricsRecorder) RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration)
 ```
 
-<a name="MockMetricsRecorder.RecordError"></a>
-### func \(\*MockMetricsRecorder\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L461>)
+
+### func \(\*MockMetricsRecorder\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L461)
 
 ```go
 func (m *MockMetricsRecorder) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration)
 ```
 
-<a name="MockMetricsRecorder.RecordRequest"></a>
-### func \(\*MockMetricsRecorder\) [RecordRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L454>)
+
+### func \(\*MockMetricsRecorder\) [RecordRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L454)
 
 ```go
 func (m *MockMetricsRecorder) RecordRequest(ctx context.Context, provider, model string, duration time.Duration)
 ```
 
-<a name="MockMetricsRecorder.RecordStream"></a>
-### func \(\*MockMetricsRecorder\) [RecordStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L489>)
+
+### func \(\*MockMetricsRecorder\) [RecordStream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L489)
 
 ```go
 func (m *MockMetricsRecorder) RecordStream(ctx context.Context, provider, model string, duration time.Duration)
 ```
 
-<a name="MockMetricsRecorder.RecordTokenUsage"></a>
-### func \(\*MockMetricsRecorder\) [RecordTokenUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L468>)
+
+### func \(\*MockMetricsRecorder\) [RecordTokenUsage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L468)
 
 ```go
 func (m *MockMetricsRecorder) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int)
 ```
 
-<a name="MockMetricsRecorder.RecordToolCall"></a>
-### func \(\*MockMetricsRecorder\) [RecordToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L475>)
+
+### func \(\*MockMetricsRecorder\) [RecordToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L475)
 
 ```go
 func (m *MockMetricsRecorder) RecordToolCall(ctx context.Context, provider, model, toolName string)
 ```
 
-<a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L63>)
+
+## type [MockOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L63)
 
 MockOption configures the behavior of AdvancedMockChatModel.
 
@@ -2891,8 +2893,8 @@ MockOption configures the behavior of AdvancedMockChatModel.
 type MockOption func(*AdvancedMockChatModel)
 ```
 
-<a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L80>)
+
+### func [WithError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L80)
 
 ```go
 func WithError(err error) MockOption
@@ -2900,8 +2902,8 @@ func WithError(err error) MockOption
 
 WithError configures the mock to return an error.
 
-<a name="WithHealthState"></a>
-### func [WithHealthState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L102>)
+
+### func [WithHealthState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L102)
 
 ```go
 func WithHealthState(state string) MockOption
@@ -2909,8 +2911,8 @@ func WithHealthState(state string) MockOption
 
 WithHealthState sets the health check state.
 
-<a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L95>)
+
+### func [WithNetworkDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L95)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -2918,8 +2920,8 @@ func WithNetworkDelay(enabled bool) MockOption
 
 WithNetworkDelay enables network delay simulation.
 
-<a name="WithProviderName"></a>
-### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L66>)
+
+### func [WithProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L66)
 
 ```go
 func WithProviderName(name string) MockOption
@@ -2927,8 +2929,8 @@ func WithProviderName(name string) MockOption
 
 WithProviderName sets the provider name.
 
-<a name="WithResponses"></a>
-### func [WithResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L73>)
+
+### func [WithResponses](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L73)
 
 ```go
 func WithResponses(responses ...string) MockOption
@@ -2936,8 +2938,8 @@ func WithResponses(responses ...string) MockOption
 
 WithResponses sets the responses to return.
 
-<a name="WithStreamingDelay"></a>
-### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L88>)
+
+### func [WithStreamingDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L88)
 
 ```go
 func WithStreamingDelay(delay time.Duration) MockOption
@@ -2945,8 +2947,8 @@ func WithStreamingDelay(delay time.Duration) MockOption
 
 WithStreamingDelay sets the delay between streaming chunks.
 
-<a name="WithToolResults"></a>
-### func [WithToolResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L109>)
+
+### func [WithToolResults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L109)
 
 ```go
 func WithToolResults(results map[string]any) MockOption
@@ -2954,8 +2956,8 @@ func WithToolResults(results map[string]any) MockOption
 
 WithToolResults pre\-configures tool execution results.
 
-<a name="MockProviderConfig"></a>
-## type [MockProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L16-L22>)
+
+## type [MockProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L16-L22)
 
 MockProviderConfig represents configuration for generating mock providers.
 
@@ -2969,8 +2971,8 @@ type MockProviderConfig struct {
 }
 ```
 
-<a name="MockTool"></a>
-## type [MockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L726-L731>)
+
+## type [MockTool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L726-L731)
 
 MockTool provides a mock tool implementation for testing.
 
@@ -2980,64 +2982,64 @@ type MockTool struct {
 }
 ```
 
-<a name="NewMockTool"></a>
-### func [NewMockTool](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L733>)
+
+### func [NewMockTool](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L733)
 
 ```go
 func NewMockTool(name string) *MockTool
 ```
 
-<a name="MockTool.Batch"></a>
-### func \(\*MockTool\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L766>)
+
+### func \(\*MockTool\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L766)
 
 ```go
 func (m *MockTool) Batch(ctx context.Context, inputs []any) ([]any, error)
 ```
 
-<a name="MockTool.Definition"></a>
-### func \(\*MockTool\) [Definition](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L748>)
+
+### func \(\*MockTool\) [Definition](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L748)
 
 ```go
 func (m *MockTool) Definition() tools.ToolDefinition
 ```
 
-<a name="MockTool.Description"></a>
-### func \(\*MockTool\) [Description](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L744>)
+
+### func \(\*MockTool\) [Description](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L744)
 
 ```go
 func (m *MockTool) Description() string
 ```
 
-<a name="MockTool.Execute"></a>
-### func \(\*MockTool\) [Execute](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L756>)
+
+### func \(\*MockTool\) [Execute](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L756)
 
 ```go
 func (m *MockTool) Execute(ctx context.Context, input any) (any, error)
 ```
 
-<a name="MockTool.Name"></a>
-### func \(\*MockTool\) [Name](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L740>)
+
+### func \(\*MockTool\) [Name](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L740)
 
 ```go
 func (m *MockTool) Name() string
 ```
 
-<a name="MockTool.SetResult"></a>
-### func \(\*MockTool\) [SetResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L782>)
+
+### func \(\*MockTool\) [SetResult](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L782)
 
 ```go
 func (m *MockTool) SetResult(result any)
 ```
 
-<a name="MockTool.SetShouldError"></a>
-### func \(\*MockTool\) [SetShouldError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L778>)
+
+### func \(\*MockTool\) [SetShouldError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L778)
 
 ```go
 func (m *MockTool) SetShouldError(shouldError bool)
 ```
 
-<a name="MockTracingHelper"></a>
-## type [MockTracingHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L525-L527>)
+
+## type [MockTracingHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L525-L527)
 
 MockTracingHelper provides a mock implementation of tracing functionality.
 
@@ -3047,43 +3049,43 @@ type MockTracingHelper struct {
 }
 ```
 
-<a name="NewMockTracingHelper"></a>
-### func [NewMockTracingHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L529>)
+
+### func [NewMockTracingHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L529)
 
 ```go
 func NewMockTracingHelper() *MockTracingHelper
 ```
 
-<a name="MockTracingHelper.AddSpanAttributes"></a>
-### func \(\*MockTracingHelper\) [AddSpanAttributes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L551>)
+
+### func \(\*MockTracingHelper\) [AddSpanAttributes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L551)
 
 ```go
 func (m *MockTracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]any)
 ```
 
-<a name="MockTracingHelper.EndSpan"></a>
-### func \(\*MockTracingHelper\) [EndSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L558>)
+
+### func \(\*MockTracingHelper\) [EndSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L558)
 
 ```go
 func (m *MockTracingHelper) EndSpan(ctx context.Context)
 ```
 
-<a name="MockTracingHelper.RecordError"></a>
-### func \(\*MockTracingHelper\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L544>)
+
+### func \(\*MockTracingHelper\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L544)
 
 ```go
 func (m *MockTracingHelper) RecordError(ctx context.Context, err error)
 ```
 
-<a name="MockTracingHelper.StartOperation"></a>
-### func \(\*MockTracingHelper\) [StartOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L533>)
+
+### func \(\*MockTracingHelper\) [StartOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/test_utils.go#L533)
 
 ```go
 func (m *MockTracingHelper) StartOperation(ctx context.Context, operation, provider, model string) context.Context
 ```
 
-<a name="ModelInfo"></a>
-## type [ModelInfo](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L58-L64>)
+
+## type [ModelInfo](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L58-L64)
 
 ModelInfo contains metadata about a chat model.
 
@@ -3097,8 +3099,8 @@ type ModelInfo struct {
 }
 ```
 
-<a name="ModelInfoProvider"></a>
-## type [ModelInfoProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L34-L37>)
+
+## type [ModelInfoProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L34-L37)
 
 ModelInfoProvider defines the interface for providing model information.
 
@@ -3109,8 +3111,8 @@ type ModelInfoProvider interface {
 }
 ```
 
-<a name="NoOpMetrics"></a>
-## type [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L26>)
+
+## type [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L26)
 
 NoOpMetrics provides a no\-operation implementation for when metrics are disabled.
 
@@ -3118,8 +3120,8 @@ NoOpMetrics provides a no\-operation implementation for when metrics are disable
 type NoOpMetrics struct{}
 ```
 
-<a name="NewNoOpMetrics"></a>
-### func [NewNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L29>)
+
+### func [NewNoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L29)
 
 ```go
 func NewNoOpMetrics() *NoOpMetrics
@@ -3127,8 +3129,8 @@ func NewNoOpMetrics() *NoOpMetrics
 
 NewNoOpMetrics creates a new no\-operation metrics recorder.
 
-<a name="NoOpMetrics.DecrementActiveRequests"></a>
-### func \(\*NoOpMetrics\) [DecrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L60>)
+
+### func \(\*NoOpMetrics\) [DecrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L60)
 
 ```go
 func (n *NoOpMetrics) DecrementActiveRequests(ctx context.Context, provider, model string)
@@ -3136,8 +3138,8 @@ func (n *NoOpMetrics) DecrementActiveRequests(ctx context.Context, provider, mod
 
 DecrementActiveRequests is a no\-op implementation.
 
-<a name="NoOpMetrics.DecrementActiveStreams"></a>
-### func \(\*NoOpMetrics\) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L66>)
+
+### func \(\*NoOpMetrics\) [DecrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L66)
 
 ```go
 func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, model string)
@@ -3145,8 +3147,8 @@ func (n *NoOpMetrics) DecrementActiveStreams(ctx context.Context, provider, mode
 
 DecrementActiveStreams is a no\-op implementation.
 
-<a name="NoOpMetrics.IncrementActiveRequests"></a>
-### func \(\*NoOpMetrics\) [IncrementActiveRequests](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L57>)
+
+### func \(\*NoOpMetrics\) [IncrementActiveRequests](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L57)
 
 ```go
 func (n *NoOpMetrics) IncrementActiveRequests(ctx context.Context, provider, model string)
@@ -3154,8 +3156,8 @@ func (n *NoOpMetrics) IncrementActiveRequests(ctx context.Context, provider, mod
 
 IncrementActiveRequests is a no\-op implementation.
 
-<a name="NoOpMetrics.IncrementActiveStreams"></a>
-### func \(\*NoOpMetrics\) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L63>)
+
+### func \(\*NoOpMetrics\) [IncrementActiveStreams](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L63)
 
 ```go
 func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, model string)
@@ -3163,8 +3165,8 @@ func (n *NoOpMetrics) IncrementActiveStreams(ctx context.Context, provider, mode
 
 IncrementActiveStreams is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordBatch"></a>
-### func \(\*NoOpMetrics\) [RecordBatch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L49>)
+
+### func \(\*NoOpMetrics\) [RecordBatch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L49)
 
 ```go
 func (n *NoOpMetrics) RecordBatch(ctx context.Context, provider, model string, batchSize int, duration time.Duration)
@@ -3172,8 +3174,8 @@ func (n *NoOpMetrics) RecordBatch(ctx context.Context, provider, model string, b
 
 RecordBatch is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordError"></a>
-### func \(\*NoOpMetrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L38>)
+
+### func \(\*NoOpMetrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L38)
 
 ```go
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration)
@@ -3181,8 +3183,8 @@ func (n *NoOpMetrics) RecordError(ctx context.Context, provider, model, errorCod
 
 RecordError is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordRequest"></a>
-### func \(\*NoOpMetrics\) [RecordRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L34>)
+
+### func \(\*NoOpMetrics\) [RecordRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L34)
 
 ```go
 func (n *NoOpMetrics) RecordRequest(ctx context.Context, provider, model string, duration time.Duration)
@@ -3190,8 +3192,8 @@ func (n *NoOpMetrics) RecordRequest(ctx context.Context, provider, model string,
 
 RecordRequest is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordStream"></a>
-### func \(\*NoOpMetrics\) [RecordStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L53>)
+
+### func \(\*NoOpMetrics\) [RecordStream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L53)
 
 ```go
 func (n *NoOpMetrics) RecordStream(ctx context.Context, provider, model string, duration time.Duration)
@@ -3199,8 +3201,8 @@ func (n *NoOpMetrics) RecordStream(ctx context.Context, provider, model string, 
 
 RecordStream is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordTokenUsage"></a>
-### func \(\*NoOpMetrics\) [RecordTokenUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L42>)
+
+### func \(\*NoOpMetrics\) [RecordTokenUsage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L42)
 
 ```go
 func (n *NoOpMetrics) RecordTokenUsage(ctx context.Context, provider, model string, inputTokens, outputTokens int)
@@ -3208,8 +3210,8 @@ func (n *NoOpMetrics) RecordTokenUsage(ctx context.Context, provider, model stri
 
 RecordTokenUsage is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordToolCall"></a>
-### func \(\*NoOpMetrics\) [RecordToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L46>)
+
+### func \(\*NoOpMetrics\) [RecordToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/metrics.go#L46)
 
 ```go
 func (n *NoOpMetrics) RecordToolCall(ctx context.Context, provider, model, toolName string)
@@ -3217,8 +3219,8 @@ func (n *NoOpMetrics) RecordToolCall(ctx context.Context, provider, model, toolN
 
 RecordToolCall is a no\-op implementation.
 
-<a name="OpenTelemetryTracer"></a>
-## type [OpenTelemetryTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L22-L24>)
+
+## type [OpenTelemetryTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L22-L24)
 
 OpenTelemetryTracer implements TracerProvider using OpenTelemetry.
 
@@ -3228,8 +3230,8 @@ type OpenTelemetryTracer struct {
 }
 ```
 
-<a name="NewOpenTelemetryTracer"></a>
-### func [NewOpenTelemetryTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L27>)
+
+### func [NewOpenTelemetryTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L27)
 
 ```go
 func NewOpenTelemetryTracer(name string) *OpenTelemetryTracer
@@ -3237,8 +3239,8 @@ func NewOpenTelemetryTracer(name string) *OpenTelemetryTracer
 
 NewOpenTelemetryTracer creates a new OpenTelemetry tracer.
 
-<a name="OpenTelemetryTracer.AddSpanAttributes"></a>
-### func \(\*OpenTelemetryTracer\) [AddSpanAttributes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L56>)
+
+### func \(\*OpenTelemetryTracer\) [AddSpanAttributes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L56)
 
 ```go
 func (t *OpenTelemetryTracer) AddSpanAttributes(span trace.Span, attrs map[string]any)
@@ -3246,8 +3248,8 @@ func (t *OpenTelemetryTracer) AddSpanAttributes(span trace.Span, attrs map[strin
 
 AddSpanAttributes adds attributes to a span.
 
-<a name="OpenTelemetryTracer.RecordError"></a>
-### func \(\*OpenTelemetryTracer\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L48>)
+
+### func \(\*OpenTelemetryTracer\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L48)
 
 ```go
 func (t *OpenTelemetryTracer) RecordError(span trace.Span, err error)
@@ -3255,8 +3257,8 @@ func (t *OpenTelemetryTracer) RecordError(span trace.Span, err error)
 
 RecordError records an error on a span.
 
-<a name="OpenTelemetryTracer.StartSpan"></a>
-### func \(\*OpenTelemetryTracer\) [StartSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L37>)
+
+### func \(\*OpenTelemetryTracer\) [StartSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L37)
 
 ```go
 func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation, provider, model string) (context.Context, trace.Span)
@@ -3264,8 +3266,8 @@ func (t *OpenTelemetryTracer) StartSpan(ctx context.Context, operation, provider
 
 StartSpan starts a new trace span for an LLM operation. The returned span must be ended by the caller using span.End\(\).
 
-<a name="ProviderConfig"></a>
-## type [ProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L208-L211>)
+
+## type [ProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/config.go#L208-L211)
 
 ProviderConfig represents configuration for a specific provider.
 
@@ -3275,8 +3277,8 @@ type ProviderConfig struct {
 }
 ```
 
-<a name="ProviderError"></a>
-## type [ProviderError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L271-L277>)
+
+## type [ProviderError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L271-L277)
 
 ProviderError represents provider\-specific errors.
 
@@ -3290,8 +3292,8 @@ type ProviderError struct {
 }
 ```
 
-<a name="NewProviderError"></a>
-### func [NewProviderError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L290>)
+
+### func [NewProviderError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L290)
 
 ```go
 func NewProviderError(provider, op, code, message string, err error) *ProviderError
@@ -3299,8 +3301,8 @@ func NewProviderError(provider, op, code, message string, err error) *ProviderEr
 
 NewProviderError creates a new ProviderError.
 
-<a name="ProviderError.Error"></a>
-### func \(\*ProviderError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L280>)
+
+### func \(\*ProviderError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L280)
 
 ```go
 func (e *ProviderError) Error() string
@@ -3308,8 +3310,8 @@ func (e *ProviderError) Error() string
 
 Error implements the error interface.
 
-<a name="ProviderError.Unwrap"></a>
-### func \(\*ProviderError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L285>)
+
+### func \(\*ProviderError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L285)
 
 ```go
 func (e *ProviderError) Unwrap() error
@@ -3317,8 +3319,8 @@ func (e *ProviderError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-<a name="ProviderTemplate"></a>
-## type [ProviderTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L25-L31>)
+
+## type [ProviderTemplate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/generate.go#L25-L31)
 
 ProviderTemplate represents a template for generating new providers.
 
@@ -3332,8 +3334,8 @@ type ProviderTemplate struct {
 }
 ```
 
-<a name="StreamError"></a>
-## type [StreamError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L301-L306>)
+
+## type [StreamError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L301-L306)
 
 StreamError represents streaming\-specific errors.
 
@@ -3346,8 +3348,8 @@ type StreamError struct {
 }
 ```
 
-<a name="NewStreamError"></a>
-### func [NewStreamError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L319>)
+
+### func [NewStreamError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L319)
 
 ```go
 func NewStreamError(op, code, message string, err error) *StreamError
@@ -3355,8 +3357,8 @@ func NewStreamError(op, code, message string, err error) *StreamError
 
 NewStreamError creates a new StreamError.
 
-<a name="StreamError.Error"></a>
-### func \(\*StreamError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L309>)
+
+### func \(\*StreamError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L309)
 
 ```go
 func (e *StreamError) Error() string
@@ -3364,8 +3366,8 @@ func (e *StreamError) Error() string
 
 Error implements the error interface.
 
-<a name="StreamError.Unwrap"></a>
-### func \(\*StreamError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L314>)
+
+### func \(\*StreamError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L314)
 
 ```go
 func (e *StreamError) Unwrap() error
@@ -3373,8 +3375,8 @@ func (e *StreamError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-<a name="StreamMessageHandler"></a>
-## type [StreamMessageHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L28-L31>)
+
+## type [StreamMessageHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/chatmodels.go#L28-L31)
 
 StreamMessageHandler defines the interface for streaming message responses. This allows for real\-time streaming of chat responses.
 
@@ -3385,8 +3387,8 @@ type StreamMessageHandler interface {
 }
 ```
 
-<a name="TracerProvider"></a>
-## type [TracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L15-L19>)
+
+## type [TracerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L15-L19)
 
 TracerProvider defines the interface for tracing operations.
 
@@ -3398,8 +3400,8 @@ type TracerProvider interface {
 }
 ```
 
-<a name="TracingHelper"></a>
-## type [TracingHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L85-L87>)
+
+## type [TracingHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L85-L87)
 
 TracingHelper provides high\-level tracing utilities.
 
@@ -3409,8 +3411,8 @@ type TracingHelper struct {
 }
 ```
 
-<a name="NewTracingHelper"></a>
-### func [NewTracingHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L90>)
+
+### func [NewTracingHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L90)
 
 ```go
 func NewTracingHelper() *TracingHelper
@@ -3418,8 +3420,8 @@ func NewTracingHelper() *TracingHelper
 
 NewTracingHelper creates a new TracingHelper with OpenTelemetry.
 
-<a name="TracingHelper.AddSpanAttributes"></a>
-### func \(\*TracingHelper\) [AddSpanAttributes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L112>)
+
+### func \(\*TracingHelper\) [AddSpanAttributes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L112)
 
 ```go
 func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string]any)
@@ -3427,8 +3429,8 @@ func (th *TracingHelper) AddSpanAttributes(ctx context.Context, attrs map[string
 
 AddSpanAttributes adds attributes to the current span.
 
-<a name="TracingHelper.EndSpan"></a>
-### func \(\*TracingHelper\) [EndSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L119>)
+
+### func \(\*TracingHelper\) [EndSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L119)
 
 ```go
 func (th *TracingHelper) EndSpan(ctx context.Context)
@@ -3436,8 +3438,8 @@ func (th *TracingHelper) EndSpan(ctx context.Context)
 
 EndSpan ends the current span.
 
-<a name="TracingHelper.RecordError"></a>
-### func \(\*TracingHelper\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L105>)
+
+### func \(\*TracingHelper\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L105)
 
 ```go
 func (th *TracingHelper) RecordError(ctx context.Context, err error)
@@ -3445,8 +3447,8 @@ func (th *TracingHelper) RecordError(ctx context.Context, err error)
 
 RecordError records an error on the current span.
 
-<a name="TracingHelper.StartOperation"></a>
-### func \(\*TracingHelper\) [StartOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L98>)
+
+### func \(\*TracingHelper\) [StartOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/tracing.go#L98)
 
 ```go
 func (th *TracingHelper) StartOperation(ctx context.Context, operation, provider, model string) context.Context
@@ -3454,8 +3456,8 @@ func (th *TracingHelper) StartOperation(ctx context.Context, operation, provider
 
 StartOperation starts a new trace span for an LLM operation. The span must be ended by calling EndSpan on the returned context.
 
-<a name="ValidationError"></a>
-## type [ValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L220-L224>)
+
+## type [ValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L220-L224)
 
 ValidationError represents a configuration validation error.
 
@@ -3467,8 +3469,8 @@ type ValidationError struct {
 }
 ```
 
-<a name="NewValidationError"></a>
-### func [NewValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L232>)
+
+### func [NewValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L232)
 
 ```go
 func NewValidationError(field string, value any, message string) *ValidationError
@@ -3476,8 +3478,8 @@ func NewValidationError(field string, value any, message string) *ValidationErro
 
 NewValidationError creates a new ValidationError.
 
-<a name="ValidationError.Error"></a>
-### func \(\*ValidationError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L227>)
+
+### func \(\*ValidationError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/errors.go#L227)
 
 ```go
 func (e *ValidationError) Error() string
@@ -3485,4 +3487,4 @@ func (e *ValidationError) Error() string
 
 Error implements the error interface.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

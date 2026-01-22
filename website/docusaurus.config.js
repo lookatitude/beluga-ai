@@ -36,6 +36,9 @@ module.exports = {
           path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/',
+          // Exclude template files with placeholder syntax
+          // Also exclude API packages subdir while investigating build issues
+          exclude: ['api/packages/**', '**/_template.md'],
         },
         blog: {
           path: 'blog',
@@ -102,7 +105,7 @@ module.exports = {
               },
               {
                 label: 'API Reference',
-                to: '/docs/api',
+                to: '/docs/api-reference',
               },
               {
                 label: 'Use Cases',
@@ -123,11 +126,11 @@ module.exports = {
               },
               {
                 label: 'Best Practices',
-                to: '/docs/guides/best-practices',
+                to: '/docs/best-practices',
               },
               {
                 label: 'Architecture',
-                to: '/docs/guides/architecture',
+                to: '/docs/architecture',
               },
             ],
           },

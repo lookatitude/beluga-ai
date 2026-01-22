@@ -18,62 +18,62 @@ Package vad provides interfaces and implementations for Voice Activity Detection
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AssertVADProviderInterface\(t \*testing.T, provider iface.VADProvider\)](<#AssertVADProviderInterface>)
-- [func InitMetrics\(meter metric.Meter\)](<#InitMetrics>)
-- [func IsRetryableError\(err error\) bool](<#IsRetryableError>)
-- [func NewProvider\(ctx context.Context, providerName string, config \*Config, opts ...ConfigOption\) \(iface.VADProvider, error\)](<#NewProvider>)
-- [type AdvancedMockVADProvider](<#AdvancedMockVADProvider>)
-  - [func NewAdvancedMockVADProvider\(providerName string, opts ...MockOption\) \*AdvancedMockVADProvider](<#NewAdvancedMockVADProvider>)
-  - [func \(m \*AdvancedMockVADProvider\) GetCallCount\(\) int](<#AdvancedMockVADProvider.GetCallCount>)
-  - [func \(m \*AdvancedMockVADProvider\) Process\(ctx context.Context, audio \[\]byte\) \(bool, error\)](<#AdvancedMockVADProvider.Process>)
-  - [func \(m \*AdvancedMockVADProvider\) ProcessStream\(ctx context.Context, audioCh \<\-chan \[\]byte\) \(\<\-chan iface.VADResult, error\)](<#AdvancedMockVADProvider.ProcessStream>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type ConfigOption](<#ConfigOption>)
-  - [func WithEnablePreprocessing\(enable bool\) ConfigOption](<#WithEnablePreprocessing>)
-  - [func WithFrameSize\(frameSize int\) ConfigOption](<#WithFrameSize>)
-  - [func WithMaxSilenceDuration\(duration time.Duration\) ConfigOption](<#WithMaxSilenceDuration>)
-  - [func WithMinSpeechDuration\(duration time.Duration\) ConfigOption](<#WithMinSpeechDuration>)
-  - [func WithModelPath\(path string\) ConfigOption](<#WithModelPath>)
-  - [func WithProvider\(provider string\) ConfigOption](<#WithProvider>)
-  - [func WithSampleRate\(sampleRate int\) ConfigOption](<#WithSampleRate>)
-  - [func WithThreshold\(threshold float64\) ConfigOption](<#WithThreshold>)
-- [type Metrics](<#Metrics>)
-  - [func GetMetrics\(\) \*Metrics](<#GetMetrics>)
-  - [func NewMetrics\(meter metric.Meter\) \*Metrics](<#NewMetrics>)
-  - [func \(m \*Metrics\) IncrementProcessedFrames\(ctx context.Context, provider string\)](<#Metrics.IncrementProcessedFrames>)
-  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](<#Metrics.RecordError>)
-  - [func \(m \*Metrics\) RecordProcessing\(ctx context.Context, provider string, duration time.Duration, detected bool\)](<#Metrics.RecordProcessing>)
-- [type MetricsRecorder](<#MetricsRecorder>)
-- [type MockOption](<#MockOption>)
-  - [func WithError\(err error\) MockOption](<#WithError>)
-  - [func WithNetworkDelay\(enabled bool\) MockOption](<#WithNetworkDelay>)
-  - [func WithProcessingDelay\(delay time.Duration\) MockOption](<#WithProcessingDelay>)
-  - [func WithProviderName\(name string\) MockOption](<#WithProviderName>)
-  - [func WithSpeechResults\(results ...bool\) MockOption](<#WithSpeechResults>)
-- [type NoOpMetrics](<#NoOpMetrics>)
-  - [func NewNoOpMetrics\(\) \*NoOpMetrics](<#NewNoOpMetrics>)
-  - [func \(n \*NoOpMetrics\) IncrementProcessedFrames\(ctx context.Context, provider string\)](<#NoOpMetrics.IncrementProcessedFrames>)
-  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](<#NoOpMetrics.RecordError>)
-  - [func \(n \*NoOpMetrics\) RecordProcessing\(ctx context.Context, provider string, duration time.Duration, detected bool\)](<#NoOpMetrics.RecordProcessing>)
-- [type Registry](<#Registry>)
-  - [func GetRegistry\(\) \*Registry](<#GetRegistry>)
-  - [func \(r \*Registry\) GetProvider\(name string, config \*Config\) \(iface.VADProvider, error\)](<#Registry.GetProvider>)
-  - [func \(r \*Registry\) IsRegistered\(name string\) bool](<#Registry.IsRegistered>)
-  - [func \(r \*Registry\) ListProviders\(\) \[\]string](<#Registry.ListProviders>)
-  - [func \(r \*Registry\) Register\(name string, factory func\(\*Config\) \(iface.VADProvider, error\)\)](<#Registry.Register>)
-- [type VADError](<#VADError>)
-  - [func NewVADError\(op, code string, err error\) \*VADError](<#NewVADError>)
-  - [func NewVADErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*VADError](<#NewVADErrorWithDetails>)
-  - [func NewVADErrorWithMessage\(op, code, message string, err error\) \*VADError](<#NewVADErrorWithMessage>)
-  - [func \(e \*VADError\) Error\(\) string](<#VADError.Error>)
-  - [func \(e \*VADError\) Unwrap\(\) error](<#VADError.Unwrap>)
+- [Constants](#constants>)
+- [func AssertVADProviderInterface\(t \*testing.T, provider iface.VADProvider\)](#AssertVADProviderInterface>)
+- [func InitMetrics\(meter metric.Meter\)](#InitMetrics>)
+- [func IsRetryableError\(err error\) bool](#IsRetryableError>)
+- [func NewProvider\(ctx context.Context, providerName string, config \*Config, opts ...ConfigOption\) \(iface.VADProvider, error\)](#NewProvider>)
+- [type AdvancedMockVADProvider](#AdvancedMockVADProvider>)
+  - [func NewAdvancedMockVADProvider\(providerName string, opts ...MockOption\) \*AdvancedMockVADProvider](#NewAdvancedMockVADProvider>)
+  - [func \(m \*AdvancedMockVADProvider\) GetCallCount\(\) int](#AdvancedMockVADProvider.GetCallCount>)
+  - [func \(m \*AdvancedMockVADProvider\) Process\(ctx context.Context, audio \[\]byte\) \(bool, error\)](#AdvancedMockVADProvider.Process>)
+  - [func \(m \*AdvancedMockVADProvider\) ProcessStream\(ctx context.Context, audioCh \<\-chan \[\]byte\) \(\<\-chan iface.VADResult, error\)](#AdvancedMockVADProvider.ProcessStream>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) \*Config](#DefaultConfig>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type ConfigOption](#ConfigOption>)
+  - [func WithEnablePreprocessing\(enable bool\) ConfigOption](#WithEnablePreprocessing>)
+  - [func WithFrameSize\(frameSize int\) ConfigOption](#WithFrameSize>)
+  - [func WithMaxSilenceDuration\(duration time.Duration\) ConfigOption](#WithMaxSilenceDuration>)
+  - [func WithMinSpeechDuration\(duration time.Duration\) ConfigOption](#WithMinSpeechDuration>)
+  - [func WithModelPath\(path string\) ConfigOption](#WithModelPath>)
+  - [func WithProvider\(provider string\) ConfigOption](#WithProvider>)
+  - [func WithSampleRate\(sampleRate int\) ConfigOption](#WithSampleRate>)
+  - [func WithThreshold\(threshold float64\) ConfigOption](#WithThreshold>)
+- [type Metrics](#Metrics>)
+  - [func GetMetrics\(\) \*Metrics](#GetMetrics>)
+  - [func NewMetrics\(meter metric.Meter\) \*Metrics](#NewMetrics>)
+  - [func \(m \*Metrics\) IncrementProcessedFrames\(ctx context.Context, provider string\)](#Metrics.IncrementProcessedFrames>)
+  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](#Metrics.RecordError>)
+  - [func \(m \*Metrics\) RecordProcessing\(ctx context.Context, provider string, duration time.Duration, detected bool\)](#Metrics.RecordProcessing>)
+- [type MetricsRecorder](#MetricsRecorder>)
+- [type MockOption](#MockOption>)
+  - [func WithError\(err error\) MockOption](#WithError>)
+  - [func WithNetworkDelay\(enabled bool\) MockOption](#WithNetworkDelay>)
+  - [func WithProcessingDelay\(delay time.Duration\) MockOption](#WithProcessingDelay>)
+  - [func WithProviderName\(name string\) MockOption](#WithProviderName>)
+  - [func WithSpeechResults\(results ...bool\) MockOption](#WithSpeechResults>)
+- [type NoOpMetrics](#NoOpMetrics>)
+  - [func NewNoOpMetrics\(\) \*NoOpMetrics](#NewNoOpMetrics>)
+  - [func \(n \*NoOpMetrics\) IncrementProcessedFrames\(ctx context.Context, provider string\)](#NoOpMetrics.IncrementProcessedFrames>)
+  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](#NoOpMetrics.RecordError>)
+  - [func \(n \*NoOpMetrics\) RecordProcessing\(ctx context.Context, provider string, duration time.Duration, detected bool\)](#NoOpMetrics.RecordProcessing>)
+- [type Registry](#Registry>)
+  - [func GetRegistry\(\) \*Registry](#GetRegistry>)
+  - [func \(r \*Registry\) GetProvider\(name string, config \*Config\) \(iface.VADProvider, error\)](#Registry.GetProvider>)
+  - [func \(r \*Registry\) IsRegistered\(name string\) bool](#Registry.IsRegistered>)
+  - [func \(r \*Registry\) ListProviders\(\) \[\]string](#Registry.ListProviders>)
+  - [func \(r \*Registry\) Register\(name string, factory func\(\*Config\) \(iface.VADProvider, error\)\)](#Registry.Register>)
+- [type VADError](#VADError>)
+  - [func NewVADError\(op, code string, err error\) \*VADError](#NewVADError>)
+  - [func NewVADErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*VADError](#NewVADErrorWithDetails>)
+  - [func NewVADErrorWithMessage\(op, code, message string, err error\) \*VADError](#NewVADErrorWithMessage>)
+  - [func \(e \*VADError\) Error\(\) string](#VADError.Error>)
+  - [func \(e \*VADError\) Unwrap\(\) error](#VADError.Unwrap>)
 
 ## Constants
 
-<a name="ErrCodeInvalidConfig"></a>Error codes for VAD operations.
+Error codes for VAD operations.
 
 ```go
 const (
@@ -99,8 +99,8 @@ const (
 )
 ```
 
-<a name="AssertVADProviderInterface"></a>
-## func [AssertVADProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L199>)
+
+## func [AssertVADProviderInterface](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L199)
 
 ```go
 func AssertVADProviderInterface(t *testing.T, provider iface.VADProvider)
@@ -108,8 +108,8 @@ func AssertVADProviderInterface(t *testing.T, provider iface.VADProvider)
 
 AssertVADProviderInterface ensures that a type implements the VADProvider interface.
 
-<a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L22>)
+
+## func [InitMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L22)
 
 ```go
 func InitMetrics(meter metric.Meter)
@@ -117,8 +117,8 @@ func InitMetrics(meter metric.Meter)
 
 InitMetrics initializes the global metrics instance.
 
-<a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L88>)
+
+## func [IsRetryableError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L88)
 
 ```go
 func IsRetryableError(err error) bool
@@ -126,8 +126,8 @@ func IsRetryableError(err error) bool
 
 IsRetryableError checks if an error is retryable.
 
-<a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L35>)
+
+## func [NewProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L35)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.VADProvider, error)
@@ -135,8 +135,8 @@ func NewProvider(ctx context.Context, providerName string, config *Config, opts 
 
 NewProvider creates a new VAD provider instance based on the configuration. It uses the global registry to find and instantiate the appropriate provider.
 
-<a name="AdvancedMockVADProvider"></a>
-## type [AdvancedMockVADProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L16-L27>)
+
+## type [AdvancedMockVADProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L16-L27)
 
 AdvancedMockVADProvider provides a comprehensive mock implementation for testing.
 
@@ -147,8 +147,8 @@ type AdvancedMockVADProvider struct {
 }
 ```
 
-<a name="NewAdvancedMockVADProvider"></a>
-### func [NewAdvancedMockVADProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L30>)
+
+### func [NewAdvancedMockVADProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L30)
 
 ```go
 func NewAdvancedMockVADProvider(providerName string, opts ...MockOption) *AdvancedMockVADProvider
@@ -156,8 +156,8 @@ func NewAdvancedMockVADProvider(providerName string, opts ...MockOption) *Advanc
 
 NewAdvancedMockVADProvider creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockVADProvider.GetCallCount"></a>
-### func \(\*AdvancedMockVADProvider\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L192>)
+
+### func \(\*AdvancedMockVADProvider\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L192)
 
 ```go
 func (m *AdvancedMockVADProvider) GetCallCount() int
@@ -165,8 +165,8 @@ func (m *AdvancedMockVADProvider) GetCallCount() int
 
 GetCallCount returns the number of times Process has been called.
 
-<a name="AdvancedMockVADProvider.Process"></a>
-### func \(\*AdvancedMockVADProvider\) [Process](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L85>)
+
+### func \(\*AdvancedMockVADProvider\) [Process](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L85)
 
 ```go
 func (m *AdvancedMockVADProvider) Process(ctx context.Context, audio []byte) (bool, error)
@@ -174,8 +174,8 @@ func (m *AdvancedMockVADProvider) Process(ctx context.Context, audio []byte) (bo
 
 Process implements the VADProvider interface.
 
-<a name="AdvancedMockVADProvider.ProcessStream"></a>
-### func \(\*AdvancedMockVADProvider\) [ProcessStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L134>)
+
+### func \(\*AdvancedMockVADProvider\) [ProcessStream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L134)
 
 ```go
 func (m *AdvancedMockVADProvider) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan iface.VADResult, error)
@@ -183,8 +183,8 @@ func (m *AdvancedMockVADProvider) ProcessStream(ctx context.Context, audioCh <-c
 
 ProcessStream implements the VADProvider interface.
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L12-L26>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L12-L26)
 
 Config represents the configuration for VAD providers. It includes common settings that apply to all VAD providers.
 
@@ -206,8 +206,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L97>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L97)
 
 ```go
 func DefaultConfig() *Config
@@ -215,8 +215,8 @@ func DefaultConfig() *Config
 
 DefaultConfig returns a default configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L88>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L88)
 
 ```go
 func (c *Config) Validate() error
@@ -224,8 +224,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L29>)
+
+## type [ConfigOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L29)
 
 ConfigOption is a functional option for configuring VAD instances.
 
@@ -233,8 +233,8 @@ ConfigOption is a functional option for configuring VAD instances.
 type ConfigOption func(*Config)
 ```
 
-<a name="WithEnablePreprocessing"></a>
-### func [WithEnablePreprocessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L74>)
+
+### func [WithEnablePreprocessing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L74)
 
 ```go
 func WithEnablePreprocessing(enable bool) ConfigOption
@@ -242,8 +242,8 @@ func WithEnablePreprocessing(enable bool) ConfigOption
 
 WithEnablePreprocessing sets preprocessing enablement.
 
-<a name="WithFrameSize"></a>
-### func [WithFrameSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L46>)
+
+### func [WithFrameSize](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L46)
 
 ```go
 func WithFrameSize(frameSize int) ConfigOption
@@ -251,8 +251,8 @@ func WithFrameSize(frameSize int) ConfigOption
 
 WithFrameSize sets the frame size.
 
-<a name="WithMaxSilenceDuration"></a>
-### func [WithMaxSilenceDuration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L67>)
+
+### func [WithMaxSilenceDuration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L67)
 
 ```go
 func WithMaxSilenceDuration(duration time.Duration) ConfigOption
@@ -260,8 +260,8 @@ func WithMaxSilenceDuration(duration time.Duration) ConfigOption
 
 WithMaxSilenceDuration sets the maximum silence duration.
 
-<a name="WithMinSpeechDuration"></a>
-### func [WithMinSpeechDuration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L60>)
+
+### func [WithMinSpeechDuration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L60)
 
 ```go
 func WithMinSpeechDuration(duration time.Duration) ConfigOption
@@ -269,8 +269,8 @@ func WithMinSpeechDuration(duration time.Duration) ConfigOption
 
 WithMinSpeechDuration sets the minimum speech duration.
 
-<a name="WithModelPath"></a>
-### func [WithModelPath](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L81>)
+
+### func [WithModelPath](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L81)
 
 ```go
 func WithModelPath(path string) ConfigOption
@@ -278,8 +278,8 @@ func WithModelPath(path string) ConfigOption
 
 WithModelPath sets the model path.
 
-<a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L32>)
+
+### func [WithProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L32)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -287,8 +287,8 @@ func WithProvider(provider string) ConfigOption
 
 WithProvider sets the VAD provider.
 
-<a name="WithSampleRate"></a>
-### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L53>)
+
+### func [WithSampleRate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L53)
 
 ```go
 func WithSampleRate(sampleRate int) ConfigOption
@@ -296,8 +296,8 @@ func WithSampleRate(sampleRate int) ConfigOption
 
 WithSampleRate sets the sample rate.
 
-<a name="WithThreshold"></a>
-### func [WithThreshold](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L39>)
+
+### func [WithThreshold](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/config.go#L39)
 
 ```go
 func WithThreshold(threshold float64) ConfigOption
@@ -305,8 +305,8 @@ func WithThreshold(threshold float64) ConfigOption
 
 WithThreshold sets the speech detection threshold.
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L38-L44>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L38-L44)
 
 Metrics contains all the metrics for VAD operations.
 
@@ -316,8 +316,8 @@ type Metrics struct {
 }
 ```
 
-<a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L29>)
+
+### func [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/vad.go#L29)
 
 ```go
 func GetMetrics() *Metrics
@@ -325,8 +325,8 @@ func GetMetrics() *Metrics
 
 GetMetrics returns the global metrics instance.
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L47>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L47)
 
 ```go
 func NewMetrics(meter metric.Meter) *Metrics
@@ -334,8 +334,8 @@ func NewMetrics(meter metric.Meter) *Metrics
 
 NewMetrics creates a new Metrics instance.
 
-<a name="Metrics.IncrementProcessedFrames"></a>
-### func \(\*Metrics\) [IncrementProcessedFrames](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L85>)
+
+### func \(\*Metrics\) [IncrementProcessedFrames](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L85)
 
 ```go
 func (m *Metrics) IncrementProcessedFrames(ctx context.Context, provider string)
@@ -343,8 +343,8 @@ func (m *Metrics) IncrementProcessedFrames(ctx context.Context, provider string)
 
 IncrementProcessedFrames increments the processed frames counter.
 
-<a name="Metrics.RecordError"></a>
-### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L75>)
+
+### func \(\*Metrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L75)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -352,8 +352,8 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 
 RecordError records an error.
 
-<a name="Metrics.RecordProcessing"></a>
-### func \(\*Metrics\) [RecordProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L60>)
+
+### func \(\*Metrics\) [RecordProcessing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L60)
 
 ```go
 func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duration time.Duration, detected bool)
@@ -361,8 +361,8 @@ func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duratio
 
 RecordProcessing records a processing operation.
 
-<a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L12-L16>)
+
+## type [MetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L12-L16)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -374,8 +374,8 @@ type MetricsRecorder interface {
 }
 ```
 
-<a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L46>)
+
+## type [MockOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L46)
 
 MockOption configures the behavior of AdvancedMockVADProvider.
 
@@ -383,8 +383,8 @@ MockOption configures the behavior of AdvancedMockVADProvider.
 type MockOption func(*AdvancedMockVADProvider)
 ```
 
-<a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L63>)
+
+### func [WithError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L63)
 
 ```go
 func WithError(err error) MockOption
@@ -392,8 +392,8 @@ func WithError(err error) MockOption
 
 WithError configures the mock to return an error.
 
-<a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L78>)
+
+### func [WithNetworkDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L78)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -401,8 +401,8 @@ func WithNetworkDelay(enabled bool) MockOption
 
 WithNetworkDelay enables network delay simulation.
 
-<a name="WithProcessingDelay"></a>
-### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L71>)
+
+### func [WithProcessingDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L71)
 
 ```go
 func WithProcessingDelay(delay time.Duration) MockOption
@@ -410,8 +410,8 @@ func WithProcessingDelay(delay time.Duration) MockOption
 
 WithProcessingDelay sets the delay for processing.
 
-<a name="WithProviderName"></a>
-### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L49>)
+
+### func [WithProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L49)
 
 ```go
 func WithProviderName(name string) MockOption
@@ -419,8 +419,8 @@ func WithProviderName(name string) MockOption
 
 WithProviderName sets the provider name.
 
-<a name="WithSpeechResults"></a>
-### func [WithSpeechResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L56>)
+
+### func [WithSpeechResults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/test_utils.go#L56)
 
 ```go
 func WithSpeechResults(results ...bool) MockOption
@@ -428,8 +428,8 @@ func WithSpeechResults(results ...bool) MockOption
 
 WithSpeechResults sets the speech detection results to return.
 
-<a name="NoOpMetrics"></a>
-## type [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L19>)
+
+## type [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L19)
 
 NoOpMetrics provides a no\-operation implementation for when metrics are disabled.
 
@@ -437,8 +437,8 @@ NoOpMetrics provides a no\-operation implementation for when metrics are disable
 type NoOpMetrics struct{}
 ```
 
-<a name="NewNoOpMetrics"></a>
-### func [NewNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L22>)
+
+### func [NewNoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L22)
 
 ```go
 func NewNoOpMetrics() *NoOpMetrics
@@ -446,8 +446,8 @@ func NewNoOpMetrics() *NoOpMetrics
 
 NewNoOpMetrics creates a new no\-operation metrics recorder.
 
-<a name="NoOpMetrics.IncrementProcessedFrames"></a>
-### func \(\*NoOpMetrics\) [IncrementProcessedFrames](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L35>)
+
+### func \(\*NoOpMetrics\) [IncrementProcessedFrames](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L35)
 
 ```go
 func (n *NoOpMetrics) IncrementProcessedFrames(ctx context.Context, provider string)
@@ -455,8 +455,8 @@ func (n *NoOpMetrics) IncrementProcessedFrames(ctx context.Context, provider str
 
 IncrementProcessedFrames is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordError"></a>
-### func \(\*NoOpMetrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L31>)
+
+### func \(\*NoOpMetrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L31)
 
 ```go
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -464,8 +464,8 @@ func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode strin
 
 RecordError is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordProcessing"></a>
-### func \(\*NoOpMetrics\) [RecordProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L27>)
+
+### func \(\*NoOpMetrics\) [RecordProcessing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/metrics.go#L27)
 
 ```go
 func (n *NoOpMetrics) RecordProcessing(ctx context.Context, provider string, duration time.Duration, detected bool)
@@ -473,8 +473,8 @@ func (n *NoOpMetrics) RecordProcessing(ctx context.Context, provider string, dur
 
 RecordProcessing is a no\-op implementation.
 
-<a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L17-L20>)
+
+## type [Registry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L17-L20)
 
 Registry manages VAD provider registration and retrieval.
 
@@ -484,8 +484,8 @@ type Registry struct {
 }
 ```
 
-<a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L23>)
+
+### func [GetRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L23)
 
 ```go
 func GetRegistry() *Registry
@@ -493,8 +493,8 @@ func GetRegistry() *Registry
 
 GetRegistry returns the global registry instance.
 
-<a name="Registry.GetProvider"></a>
-### func \(\*Registry\) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L40>)
+
+### func \(\*Registry\) [GetProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L40)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.VADProvider, error)
@@ -502,8 +502,8 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.VADProvider, 
 
 GetProvider returns a provider instance for the given name.
 
-<a name="Registry.IsRegistered"></a>
-### func \(\*Registry\) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L66>)
+
+### func \(\*Registry\) [IsRegistered](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L66)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -511,8 +511,8 @@ func (r *Registry) IsRegistered(name string) bool
 
 IsRegistered checks if a provider is registered.
 
-<a name="Registry.ListProviders"></a>
-### func \(\*Registry\) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L54>)
+
+### func \(\*Registry\) [ListProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L54)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -520,8 +520,8 @@ func (r *Registry) ListProviders() []string
 
 ListProviders returns a list of all registered provider names.
 
-<a name="Registry.Register"></a>
-### func \(\*Registry\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L33>)
+
+### func \(\*Registry\) [Register](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/registry.go#L33)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.VADProvider, error))
@@ -529,8 +529,8 @@ func (r *Registry) Register(name string, factory func(*Config) (iface.VADProvide
 
 Register registers a provider factory function.
 
-<a name="VADError"></a>
-## type [VADError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L33-L39>)
+
+## type [VADError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L33-L39)
 
 VADError represents an error that occurred during VAD operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -544,8 +544,8 @@ type VADError struct {
 }
 ```
 
-<a name="NewVADError"></a>
-### func [NewVADError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L58>)
+
+### func [NewVADError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L58)
 
 ```go
 func NewVADError(op, code string, err error) *VADError
@@ -553,8 +553,8 @@ func NewVADError(op, code string, err error) *VADError
 
 NewVADError creates a new VADError.
 
-<a name="NewVADErrorWithDetails"></a>
-### func [NewVADErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L77>)
+
+### func [NewVADErrorWithDetails](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L77)
 
 ```go
 func NewVADErrorWithDetails(op, code, message string, err error, details map[string]any) *VADError
@@ -562,8 +562,8 @@ func NewVADErrorWithDetails(op, code, message string, err error, details map[str
 
 NewVADErrorWithDetails creates a new VADError with additional details.
 
-<a name="NewVADErrorWithMessage"></a>
-### func [NewVADErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L67>)
+
+### func [NewVADErrorWithMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L67)
 
 ```go
 func NewVADErrorWithMessage(op, code, message string, err error) *VADError
@@ -571,8 +571,8 @@ func NewVADErrorWithMessage(op, code, message string, err error) *VADError
 
 NewVADErrorWithMessage creates a new VADError with a custom message.
 
-<a name="VADError.Error"></a>
-### func \(\*VADError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L42>)
+
+### func \(\*VADError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L42)
 
 ```go
 func (e *VADError) Error() string
@@ -580,8 +580,8 @@ func (e *VADError) Error() string
 
 Error implements the error interface.
 
-<a name="VADError.Unwrap"></a>
-### func \(\*VADError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L53>)
+
+### func \(\*VADError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/vad/errors.go#L53)
 
 ```go
 func (e *VADError) Unwrap() error
@@ -589,4 +589,4 @@ func (e *VADError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

@@ -43,6 +43,7 @@ module.exports = {
           items: [
             'concepts/core',
             'concepts/llms',
+            'concepts/agent-design',
             'concepts/agents',
             'concepts/memory',
             'concepts/orchestration',
@@ -56,7 +57,7 @@ module.exports = {
           label: 'Guides',
           items: [
             // Core Architecture & Patterns
-            'architecture',
+            'architecture/architecture',
             'best-practices',
             'package_design_patterns',
             // Advanced Features
@@ -100,7 +101,6 @@ module.exports = {
               ],
             },
             // Migration & Troubleshooting
-            'migration',
             'troubleshooting',
           ],
         },
@@ -148,7 +148,6 @@ module.exports = {
             'cookbook/tool-recipes',
             'cookbook/integration-recipes',
             'cookbook/document-ingestion-recipes',
-            // Advanced Recipes
             {
               type: 'category',
               label: 'Advanced Recipes',
@@ -156,6 +155,64 @@ module.exports = {
                 'cookbook/llm-error-handling',
                 'cookbook/custom-agent',
                 'cookbook/voice-backends',
+                'cookbook/voice-backend-scaling-concurrent-streams',
+                'cookbook/voice-session-preemptive-generation',
+                'cookbook/voice-session-long-utterances',
+                'cookbook/voice-turn-sentence-boundary-aware',
+                'cookbook/voice-turn-ml-based-barge-in',
+                'cookbook/voice-vad-sensitivity-profiles',
+              ],
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Integrations',
+          items: [
+            {
+              type: 'category',
+              label: 'Voice',
+              items: [
+                {
+                  type: 'category',
+                  label: 'Backend',
+                  items: [
+                    'integrations/voice/backend/livekit-webhooks-integration',
+                    'integrations/voice/backend/vapi-custom-tools',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'Session',
+                  items: [
+                    'integrations/voice/session/voice-session-persistence',
+                    'integrations/voice/session/multi-provider-session-routing',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'VAD',
+                  items: [
+                    'integrations/voice/vad/webrtc-vad-browser',
+                    'integrations/voice/vad/onnx-runtime-edge-vad',
+                  ],
+                },
+                {
+                  type: 'category',
+                  label: 'Turn Detection',
+                  items: [
+                    'integrations/voice/turn/custom-turn-detectors-noisy-environments',
+                    'integrations/voice/turn/heuristic-tuning',
+                  ],
+                },
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Agents',
+              items: [
+                'integrations/agents/agents-mcp-tools-integration',
+                'integrations/agents/agents-custom-tools-registry',
               ],
             },
           ],
@@ -165,96 +222,15 @@ module.exports = {
           label: 'Reference',
           items: [
             'framework-comparison',
-            'documentation-roadmap',
             'api-package-inventory',
-            'godoc-coverage-report',
           ],
         },
       ],
     },
     {
-      type: 'category',
+      type: 'doc',
+      id: 'api-reference',
       label: 'API Reference',
-      items: [
-        'api/index',
-        {
-          type: 'category',
-          label: 'Core Packages',
-          items: [
-            'api/packages/core',
-            'api/packages/schema',
-            'api/packages/config',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'LLM Packages',
-          items: [
-            'api/packages/llms_base',
-            'api/packages/llms',
-            'api/packages/chatmodels',
-            {
-              type: 'category',
-              label: 'LLM Providers',
-              items: [
-                'api/packages/llms/openai',
-                'api/packages/llms/anthropic',
-                'api/packages/llms/bedrock',
-                'api/packages/llms/ollama',
-                'api/packages/llms/mock',
-              ],
-            },
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Agent Packages',
-          items: [
-            'api/packages/agents',
-            'api/packages/tools',
-            'api/packages/orchestration',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Memory & RAG Packages',
-          items: [
-            'api/packages/memory',
-            'api/packages/rag',
-            'api/packages/embeddings',
-            'api/packages/vectorstores',
-            'api/packages/retrievers',
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Voice Packages',
-          items: [
-            {
-              type: 'category',
-              label: 'Voice Components',
-              items: [
-                'api/packages/voice/stt',
-                'api/packages/voice/tts',
-                'api/packages/voice/vad',
-                'api/packages/voice/turndetection',
-                'api/packages/voice/transport',
-                'api/packages/voice/noise',
-                'api/packages/voice/session',
-              ],
-            },
-          ],
-        },
-        {
-          type: 'category',
-          label: 'Supporting Packages',
-          items: [
-            'api/packages/prompts',
-            'api/packages/monitoring',
-            'api/packages/server',
-          ],
-        },
-      ],
     },
     {
       type: 'category',

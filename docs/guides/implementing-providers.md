@@ -263,7 +263,7 @@ Create `provider.go` implementing `iface.ChatModel`:
 
 **Required Methods:**
 - `Generate(ctx, messages, options) (Message, error)`
-- `StreamChat(ctx, messages, options) (<-chan AIMessageChunk, error)`
+- `StreamChat(ctx, messages, options) (\<-chan AIMessageChunk, error)`
 - `BindTools(tools) ChatModel`
 - `GetModelName() string`
 - `GetProviderName() string`
@@ -271,7 +271,7 @@ Create `provider.go` implementing `iface.ChatModel`:
 **Also implement `core.Runnable`:**
 - `Invoke(ctx, input, options) (any, error)`
 - `Batch(ctx, inputs, options) ([]any, error)`
-- `Stream(ctx, input, options) (<-chan any, error)`
+- `Stream(ctx, input, options) (\<-chan any, error)`
 
 ### Step 4: Add Auto-Registration
 
@@ -445,7 +445,7 @@ Create `streaming.go` implementing `iface.StreamingSession`:
 
 **Required Methods:**
 - `SendAudio(ctx, audio) error`
-- `ReceiveAudio() <-chan AudioOutputChunk`
+- `ReceiveAudio() \<-chan AudioOutputChunk`
 - `Close() error`
 
 ### Step 5: Add Auto-Registration

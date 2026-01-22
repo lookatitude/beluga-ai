@@ -22,92 +22,92 @@ Package embeddings provides advanced test utilities and comprehensive mocks for 
 
 ## Index
 
-- [func AssertEmbedding\(t \*testing.T, embedding \[\]float32, expectedDim int\)](<#AssertEmbedding>)
-- [func AssertEmbeddings\(t \*testing.T, embeddings \[\]\[\]float32, expectedCount, expectedDim int\)](<#AssertEmbeddings>)
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertHealthCheck>)
-- [func AssertSimilarityScore\(t \*testing.T, emb1, emb2 \[\]float32, minSimilarity float32\)](<#AssertSimilarityScore>)
-- [func CosineSimilarity\(a, b \[\]float32\) float32](<#CosineSimilarity>)
-- [func CreateTestEmbeddings\(count, dimension int\) \[\]\[\]float32](<#CreateTestEmbeddings>)
-- [func CreateTestTexts\(count int\) \[\]string](<#CreateTestTexts>)
-- [func EuclideanDistance\(a, b \[\]float32\) float32](<#EuclideanDistance>)
-- [func ListAvailableProviders\(\) \[\]string](<#ListAvailableProviders>)
-- [func NewEmbedder\(ctx context.Context, name string, config Config\) \(iface.Embedder, error\)](<#NewEmbedder>)
-- [func RegisterGlobal\(name string, creator func\(ctx context.Context, config Config\) \(iface.Embedder, error\)\)](<#RegisterGlobal>)
-- [func RunLoadTest\(t \*testing.T, embedder \*AdvancedMockEmbedder, numOperations, concurrency int\)](<#RunLoadTest>)
-- [type AdvancedMockEmbedder](<#AdvancedMockEmbedder>)
-  - [func NewAdvancedMockEmbedder\(providerName, modelName string, dimension int, options ...MockEmbedderOption\) \*AdvancedMockEmbedder](<#NewAdvancedMockEmbedder>)
-  - [func \(e \*AdvancedMockEmbedder\) CheckHealth\(\) map\[string\]any](<#AdvancedMockEmbedder.CheckHealth>)
-  - [func \(e \*AdvancedMockEmbedder\) EmbedDocuments\(ctx context.Context, texts \[\]string\) \(\[\]\[\]float32, error\)](<#AdvancedMockEmbedder.EmbedDocuments>)
-  - [func \(e \*AdvancedMockEmbedder\) EmbedQuery\(ctx context.Context, text string\) \(\[\]float32, error\)](<#AdvancedMockEmbedder.EmbedQuery>)
-  - [func \(e \*AdvancedMockEmbedder\) GetCallCount\(\) int](<#AdvancedMockEmbedder.GetCallCount>)
-  - [func \(e \*AdvancedMockEmbedder\) GetDimension\(ctx context.Context\) \(int, error\)](<#AdvancedMockEmbedder.GetDimension>)
-  - [func \(e \*AdvancedMockEmbedder\) GetModelName\(\) string](<#AdvancedMockEmbedder.GetModelName>)
-  - [func \(e \*AdvancedMockEmbedder\) GetProviderName\(\) string](<#AdvancedMockEmbedder.GetProviderName>)
-  - [func \(e \*AdvancedMockEmbedder\) ResetRateLimit\(\)](<#AdvancedMockEmbedder.ResetRateLimit>)
-- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
-  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
-- [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
-  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
-  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
-- [type Config](<#Config>)
-  - [func CreateTestConfig\(provider string\) Config](<#CreateTestConfig>)
-  - [func \(c \*Config\) SetDefaults\(\)](<#Config.SetDefaults>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type EmbedderFactory](<#EmbedderFactory>)
-  - [func NewEmbedderFactory\(config \*Config, opts ...Option\) \(\*EmbedderFactory, error\)](<#NewEmbedderFactory>)
-  - [func \(f \*EmbedderFactory\) CheckHealth\(ctx context.Context, providerType string\) error](<#EmbedderFactory.CheckHealth>)
-  - [func \(f \*EmbedderFactory\) GetAvailableProviders\(\) \[\]string](<#EmbedderFactory.GetAvailableProviders>)
-  - [func \(f \*EmbedderFactory\) NewEmbedder\(providerType string\) \(iface.Embedder, error\)](<#EmbedderFactory.NewEmbedder>)
-- [type EmbeddingBenchmark](<#EmbeddingBenchmark>)
-  - [func NewEmbeddingBenchmark\(embedder iface.Embedder, textCount int\) \*EmbeddingBenchmark](<#NewEmbeddingBenchmark>)
-  - [func \(b \*EmbeddingBenchmark\) BenchmarkBatchEmbedding\(batchSize, iterations int\) \(time.Duration, error\)](<#EmbeddingBenchmark.BenchmarkBatchEmbedding>)
-  - [func \(b \*EmbeddingBenchmark\) BenchmarkSingleEmbedding\(iterations int\) \(time.Duration, error\)](<#EmbeddingBenchmark.BenchmarkSingleEmbedding>)
-- [type EmbeddingQualityTester](<#EmbeddingQualityTester>)
-  - [func NewEmbeddingQualityTester\(embedder iface.Embedder\) \*EmbeddingQualityTester](<#NewEmbeddingQualityTester>)
-  - [func \(q \*EmbeddingQualityTester\) TestSemanticSimilarity\(ctx context.Context, similarTexts \[\]string\) \(float32, error\)](<#EmbeddingQualityTester.TestSemanticSimilarity>)
-  - [func \(q \*EmbeddingQualityTester\) TestSimilarityConsistency\(ctx context.Context, text string, iterations int\) \(float32, error\)](<#EmbeddingQualityTester.TestSimilarityConsistency>)
-- [type EmbeddingsMockcomponent](<#EmbeddingsMockcomponent>)
-  - [func NewEmbeddingsMockcomponent\(\) \*EmbeddingsMockcomponent](<#NewEmbeddingsMockcomponent>)
-- [type Factory](<#Factory>)
-- [type HealthChecker](<#HealthChecker>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder \*AdvancedMockEmbedder\)](<#IntegrationTestHelper.AddEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) \*AdvancedMockEmbedder](<#IntegrationTestHelper.GetEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) GetRegistry\(\) \*ProviderRegistry](<#IntegrationTestHelper.GetRegistry>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type Metrics](<#Metrics>)
-  - [func NewMetrics\(meter metric.Meter\) \*Metrics](<#NewMetrics>)
-  - [func \(m \*Metrics\) EndRequest\(ctx context.Context, provider, model string\)](<#Metrics.EndRequest>)
-  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, model, errorType string\)](<#Metrics.RecordError>)
-  - [func \(m \*Metrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration, inputCount, outputDimension int\)](<#Metrics.RecordRequest>)
-  - [func \(m \*Metrics\) RecordTokensProcessed\(ctx context.Context, provider, model string, tokenCount int\)](<#Metrics.RecordTokensProcessed>)
-  - [func \(m \*Metrics\) StartRequest\(ctx context.Context, provider, model string\)](<#Metrics.StartRequest>)
-- [type MockConfig](<#MockConfig>)
-  - [func \(c \*MockConfig\) Validate\(\) error](<#MockConfig.Validate>)
-- [type MockEmbedderOption](<#MockEmbedderOption>)
-  - [func WithMockDelay\(delay time.Duration\) MockEmbedderOption](<#WithMockDelay>)
-  - [func WithMockEmbeddings\(embeddings \[\]\[\]float32\) MockEmbedderOption](<#WithMockEmbeddings>)
-  - [func WithMockError\(shouldError bool, err error\) MockEmbedderOption](<#WithMockError>)
-  - [func WithMockRateLimit\(enabled bool\) MockEmbedderOption](<#WithMockRateLimit>)
-- [type OllamaConfig](<#OllamaConfig>)
-  - [func \(c \*OllamaConfig\) Validate\(\) error](<#OllamaConfig.Validate>)
-- [type OpenAIConfig](<#OpenAIConfig>)
-  - [func \(c \*OpenAIConfig\) Validate\(\) error](<#OpenAIConfig.Validate>)
-- [type Option](<#Option>)
-  - [func WithMaxRetries\(maxRetries int\) Option](<#WithMaxRetries>)
-  - [func WithModel\(model string\) Option](<#WithModel>)
-  - [func WithTimeout\(timeout time.Duration\) Option](<#WithTimeout>)
-- [type ProviderRegistry](<#ProviderRegistry>)
-  - [func GetGlobalRegistry\(\) \*ProviderRegistry](<#GetGlobalRegistry>)
-  - [func NewProviderRegistry\(\) \*ProviderRegistry](<#NewProviderRegistry>)
-  - [func \(f \*ProviderRegistry\) Create\(ctx context.Context, name string, config Config\) \(iface.Embedder, error\)](<#ProviderRegistry.Create>)
-  - [func \(f \*ProviderRegistry\) ListProviders\(\) \[\]string](<#ProviderRegistry.ListProviders>)
-  - [func \(f \*ProviderRegistry\) Register\(name string, creator func\(ctx context.Context, config Config\) \(iface.Embedder, error\)\)](<#ProviderRegistry.Register>)
+- [func AssertEmbedding\(t \*testing.T, embedding \[\]float32, expectedDim int\)](#AssertEmbedding>)
+- [func AssertEmbeddings\(t \*testing.T, embeddings \[\]\[\]float32, expectedCount, expectedDim int\)](#AssertEmbeddings>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](#AssertHealthCheck>)
+- [func AssertSimilarityScore\(t \*testing.T, emb1, emb2 \[\]float32, minSimilarity float32\)](#AssertSimilarityScore>)
+- [func CosineSimilarity\(a, b \[\]float32\) float32](#CosineSimilarity>)
+- [func CreateTestEmbeddings\(count, dimension int\) \[\]\[\]float32](#CreateTestEmbeddings>)
+- [func CreateTestTexts\(count int\) \[\]string](#CreateTestTexts>)
+- [func EuclideanDistance\(a, b \[\]float32\) float32](#EuclideanDistance>)
+- [func ListAvailableProviders\(\) \[\]string](#ListAvailableProviders>)
+- [func NewEmbedder\(ctx context.Context, name string, config Config\) \(iface.Embedder, error\)](#NewEmbedder>)
+- [func RegisterGlobal\(name string, creator func\(ctx context.Context, config Config\) \(iface.Embedder, error\)\)](#RegisterGlobal>)
+- [func RunLoadTest\(t \*testing.T, embedder \*AdvancedMockEmbedder, numOperations, concurrency int\)](#RunLoadTest>)
+- [type AdvancedMockEmbedder](#AdvancedMockEmbedder>)
+  - [func NewAdvancedMockEmbedder\(providerName, modelName string, dimension int, options ...MockEmbedderOption\) \*AdvancedMockEmbedder](#NewAdvancedMockEmbedder>)
+  - [func \(e \*AdvancedMockEmbedder\) CheckHealth\(\) map\[string\]any](#AdvancedMockEmbedder.CheckHealth>)
+  - [func \(e \*AdvancedMockEmbedder\) EmbedDocuments\(ctx context.Context, texts \[\]string\) \(\[\]\[\]float32, error\)](#AdvancedMockEmbedder.EmbedDocuments>)
+  - [func \(e \*AdvancedMockEmbedder\) EmbedQuery\(ctx context.Context, text string\) \(\[\]float32, error\)](#AdvancedMockEmbedder.EmbedQuery>)
+  - [func \(e \*AdvancedMockEmbedder\) GetCallCount\(\) int](#AdvancedMockEmbedder.GetCallCount>)
+  - [func \(e \*AdvancedMockEmbedder\) GetDimension\(ctx context.Context\) \(int, error\)](#AdvancedMockEmbedder.GetDimension>)
+  - [func \(e \*AdvancedMockEmbedder\) GetModelName\(\) string](#AdvancedMockEmbedder.GetModelName>)
+  - [func \(e \*AdvancedMockEmbedder\) GetProviderName\(\) string](#AdvancedMockEmbedder.GetProviderName>)
+  - [func \(e \*AdvancedMockEmbedder\) ResetRateLimit\(\)](#AdvancedMockEmbedder.ResetRateLimit>)
+- [type AdvancedMockcomponent](#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](#NewAdvancedMockcomponent>)
+- [type ConcurrentTestRunner](#ConcurrentTestRunner>)
+  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](#NewConcurrentTestRunner>)
+  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](#ConcurrentTestRunner.Run>)
+- [type Config](#Config>)
+  - [func CreateTestConfig\(provider string\) Config](#CreateTestConfig>)
+  - [func \(c \*Config\) SetDefaults\(\)](#Config.SetDefaults>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type EmbedderFactory](#EmbedderFactory>)
+  - [func NewEmbedderFactory\(config \*Config, opts ...Option\) \(\*EmbedderFactory, error\)](#NewEmbedderFactory>)
+  - [func \(f \*EmbedderFactory\) CheckHealth\(ctx context.Context, providerType string\) error](#EmbedderFactory.CheckHealth>)
+  - [func \(f \*EmbedderFactory\) GetAvailableProviders\(\) \[\]string](#EmbedderFactory.GetAvailableProviders>)
+  - [func \(f \*EmbedderFactory\) NewEmbedder\(providerType string\) \(iface.Embedder, error\)](#EmbedderFactory.NewEmbedder>)
+- [type EmbeddingBenchmark](#EmbeddingBenchmark>)
+  - [func NewEmbeddingBenchmark\(embedder iface.Embedder, textCount int\) \*EmbeddingBenchmark](#NewEmbeddingBenchmark>)
+  - [func \(b \*EmbeddingBenchmark\) BenchmarkBatchEmbedding\(batchSize, iterations int\) \(time.Duration, error\)](#EmbeddingBenchmark.BenchmarkBatchEmbedding>)
+  - [func \(b \*EmbeddingBenchmark\) BenchmarkSingleEmbedding\(iterations int\) \(time.Duration, error\)](#EmbeddingBenchmark.BenchmarkSingleEmbedding>)
+- [type EmbeddingQualityTester](#EmbeddingQualityTester>)
+  - [func NewEmbeddingQualityTester\(embedder iface.Embedder\) \*EmbeddingQualityTester](#NewEmbeddingQualityTester>)
+  - [func \(q \*EmbeddingQualityTester\) TestSemanticSimilarity\(ctx context.Context, similarTexts \[\]string\) \(float32, error\)](#EmbeddingQualityTester.TestSemanticSimilarity>)
+  - [func \(q \*EmbeddingQualityTester\) TestSimilarityConsistency\(ctx context.Context, text string, iterations int\) \(float32, error\)](#EmbeddingQualityTester.TestSimilarityConsistency>)
+- [type EmbeddingsMockcomponent](#EmbeddingsMockcomponent>)
+  - [func NewEmbeddingsMockcomponent\(\) \*EmbeddingsMockcomponent](#NewEmbeddingsMockcomponent>)
+- [type Factory](#Factory>)
+- [type HealthChecker](#HealthChecker>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder \*AdvancedMockEmbedder\)](#IntegrationTestHelper.AddEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) \*AdvancedMockEmbedder](#IntegrationTestHelper.GetEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) GetRegistry\(\) \*ProviderRegistry](#IntegrationTestHelper.GetRegistry>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type Metrics](#Metrics>)
+  - [func NewMetrics\(meter metric.Meter\) \*Metrics](#NewMetrics>)
+  - [func \(m \*Metrics\) EndRequest\(ctx context.Context, provider, model string\)](#Metrics.EndRequest>)
+  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, model, errorType string\)](#Metrics.RecordError>)
+  - [func \(m \*Metrics\) RecordRequest\(ctx context.Context, provider, model string, duration time.Duration, inputCount, outputDimension int\)](#Metrics.RecordRequest>)
+  - [func \(m \*Metrics\) RecordTokensProcessed\(ctx context.Context, provider, model string, tokenCount int\)](#Metrics.RecordTokensProcessed>)
+  - [func \(m \*Metrics\) StartRequest\(ctx context.Context, provider, model string\)](#Metrics.StartRequest>)
+- [type MockConfig](#MockConfig>)
+  - [func \(c \*MockConfig\) Validate\(\) error](#MockConfig.Validate>)
+- [type MockEmbedderOption](#MockEmbedderOption>)
+  - [func WithMockDelay\(delay time.Duration\) MockEmbedderOption](#WithMockDelay>)
+  - [func WithMockEmbeddings\(embeddings \[\]\[\]float32\) MockEmbedderOption](#WithMockEmbeddings>)
+  - [func WithMockError\(shouldError bool, err error\) MockEmbedderOption](#WithMockError>)
+  - [func WithMockRateLimit\(enabled bool\) MockEmbedderOption](#WithMockRateLimit>)
+- [type OllamaConfig](#OllamaConfig>)
+  - [func \(c \*OllamaConfig\) Validate\(\) error](#OllamaConfig.Validate>)
+- [type OpenAIConfig](#OpenAIConfig>)
+  - [func \(c \*OpenAIConfig\) Validate\(\) error](#OpenAIConfig.Validate>)
+- [type Option](#Option>)
+  - [func WithMaxRetries\(maxRetries int\) Option](#WithMaxRetries>)
+  - [func WithModel\(model string\) Option](#WithModel>)
+  - [func WithTimeout\(timeout time.Duration\) Option](#WithTimeout>)
+- [type ProviderRegistry](#ProviderRegistry>)
+  - [func GetGlobalRegistry\(\) \*ProviderRegistry](#GetGlobalRegistry>)
+  - [func NewProviderRegistry\(\) \*ProviderRegistry](#NewProviderRegistry>)
+  - [func \(f \*ProviderRegistry\) Create\(ctx context.Context, name string, config Config\) \(iface.Embedder, error\)](#ProviderRegistry.Create>)
+  - [func \(f \*ProviderRegistry\) ListProviders\(\) \[\]string](#ProviderRegistry.ListProviders>)
+  - [func \(f \*ProviderRegistry\) Register\(name string, creator func\(ctx context.Context, config Config\) \(iface.Embedder, error\)\)](#ProviderRegistry.Register>)
 
-<a name="AssertEmbedding"></a>
-## func [AssertEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L333>)
+
+## func [AssertEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L333)
 
 ```go
 func AssertEmbedding(t *testing.T, embedding []float32, expectedDim int)
@@ -115,8 +115,8 @@ func AssertEmbedding(t *testing.T, embedding []float32, expectedDim int)
 
 AssertEmbedding validates an embedding result.
 
-<a name="AssertEmbeddings"></a>
-## func [AssertEmbeddings](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L345>)
+
+## func [AssertEmbeddings](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L345)
 
 ```go
 func AssertEmbeddings(t *testing.T, embeddings [][]float32, expectedCount, expectedDim int)
@@ -124,8 +124,8 @@ func AssertEmbeddings(t *testing.T, embeddings [][]float32, expectedCount, expec
 
 AssertEmbeddings validates multiple embedding results.
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L383>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L383)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -133,8 +133,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType validates error types and codes.
 
-<a name="AssertHealthCheck"></a>
-## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L373>)
+
+## func [AssertHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L373)
 
 ```go
 func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string)
@@ -142,8 +142,8 @@ func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus strin
 
 AssertHealthCheck validates health check results.
 
-<a name="AssertSimilarityScore"></a>
-## func [AssertSimilarityScore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L365>)
+
+## func [AssertSimilarityScore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L365)
 
 ```go
 func AssertSimilarityScore(t *testing.T, emb1, emb2 []float32, minSimilarity float32)
@@ -151,8 +151,8 @@ func AssertSimilarityScore(t *testing.T, emb1, emb2 []float32, minSimilarity flo
 
 AssertSimilarityScore validates similarity between embeddings.
 
-<a name="CosineSimilarity"></a>
-## func [CosineSimilarity](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L395>)
+
+## func [CosineSimilarity](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L395)
 
 ```go
 func CosineSimilarity(a, b []float32) float32
@@ -160,8 +160,8 @@ func CosineSimilarity(a, b []float32) float32
 
 CosineSimilarity calculates cosine similarity between two embeddings.
 
-<a name="CreateTestEmbeddings"></a>
-## func [CreateTestEmbeddings](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L279>)
+
+## func [CreateTestEmbeddings](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L279)
 
 ```go
 func CreateTestEmbeddings(count, dimension int) [][]float32
@@ -169,8 +169,8 @@ func CreateTestEmbeddings(count, dimension int) [][]float32
 
 CreateTestEmbeddings creates a set of test embeddings.
 
-<a name="CreateTestTexts"></a>
-## func [CreateTestTexts](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L270>)
+
+## func [CreateTestTexts](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L270)
 
 ```go
 func CreateTestTexts(count int) []string
@@ -178,8 +178,8 @@ func CreateTestTexts(count int) []string
 
 CreateTestTexts creates a set of test texts for embedding.
 
-<a name="EuclideanDistance"></a>
-## func [EuclideanDistance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L416>)
+
+## func [EuclideanDistance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L416)
 
 ```go
 func EuclideanDistance(a, b []float32) float32
@@ -187,8 +187,8 @@ func EuclideanDistance(a, b []float32) float32
 
 EuclideanDistance calculates Euclidean distance between two embeddings.
 
-<a name="ListAvailableProviders"></a>
-## func [ListAvailableProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L84>)
+
+## func [ListAvailableProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L84)
 
 ```go
 func ListAvailableProviders() []string
@@ -196,8 +196,8 @@ func ListAvailableProviders() []string
 
 ListAvailableProviders returns all available providers from the global factory.
 
-<a name="NewEmbedder"></a>
-## func [NewEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L79>)
+
+## func [NewEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L79)
 
 ```go
 func NewEmbedder(ctx context.Context, name string, config Config) (iface.Embedder, error)
@@ -205,8 +205,8 @@ func NewEmbedder(ctx context.Context, name string, config Config) (iface.Embedde
 
 NewEmbedder creates an embedder using the global factory.
 
-<a name="RegisterGlobal"></a>
-## func [RegisterGlobal](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L74>)
+
+## func [RegisterGlobal](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L74)
 
 ```go
 func RegisterGlobal(name string, creator func(ctx context.Context, config Config) (iface.Embedder, error))
@@ -214,8 +214,8 @@ func RegisterGlobal(name string, creator func(ctx context.Context, config Config
 
 RegisterGlobal registers a provider with the global factory.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L518>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L518)
 
 ```go
 func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations, concurrency int)
@@ -223,8 +223,8 @@ func RunLoadTest(t *testing.T, embedder *AdvancedMockEmbedder, numOperations, co
 
 RunLoadTest executes a load test scenario on embedder.
 
-<a name="AdvancedMockEmbedder"></a>
-## type [AdvancedMockEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L21-L37>)
+
+## type [AdvancedMockEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L21-L37)
 
 AdvancedMockEmbedder provides a comprehensive mock implementation for testing.
 
@@ -235,8 +235,8 @@ type AdvancedMockEmbedder struct {
 }
 ```
 
-<a name="NewAdvancedMockEmbedder"></a>
-### func [NewAdvancedMockEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L40>)
+
+### func [NewAdvancedMockEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L40)
 
 ```go
 func NewAdvancedMockEmbedder(providerName, modelName string, dimension int, options ...MockEmbedderOption) *AdvancedMockEmbedder
@@ -244,15 +244,15 @@ func NewAdvancedMockEmbedder(providerName, modelName string, dimension int, opti
 
 NewAdvancedMockEmbedder creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockEmbedder.CheckHealth"></a>
-### func \(\*AdvancedMockEmbedder\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L254>)
+
+### func \(\*AdvancedMockEmbedder\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L254)
 
 ```go
 func (e *AdvancedMockEmbedder) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockEmbedder.EmbedDocuments"></a>
-### func \(\*AdvancedMockEmbedder\) [EmbedDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L110>)
+
+### func \(\*AdvancedMockEmbedder\) [EmbedDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L110)
 
 ```go
 func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error)
@@ -260,50 +260,50 @@ func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []strin
 
 Mock implementation methods.
 
-<a name="AdvancedMockEmbedder.EmbedQuery"></a>
-### func \(\*AdvancedMockEmbedder\) [EmbedQuery](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L170>)
+
+### func \(\*AdvancedMockEmbedder\) [EmbedQuery](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L170)
 
 ```go
 func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, error)
 ```
 
-<a name="AdvancedMockEmbedder.GetCallCount"></a>
-### func \(\*AdvancedMockEmbedder\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L234>)
+
+### func \(\*AdvancedMockEmbedder\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L234)
 
 ```go
 func (e *AdvancedMockEmbedder) GetCallCount() int
 ```
 
-<a name="AdvancedMockEmbedder.GetDimension"></a>
-### func \(\*AdvancedMockEmbedder\) [GetDimension](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L222>)
+
+### func \(\*AdvancedMockEmbedder\) [GetDimension](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L222)
 
 ```go
 func (e *AdvancedMockEmbedder) GetDimension(ctx context.Context) (int, error)
 ```
 
-<a name="AdvancedMockEmbedder.GetModelName"></a>
-### func \(\*AdvancedMockEmbedder\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L240>)
+
+### func \(\*AdvancedMockEmbedder\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L240)
 
 ```go
 func (e *AdvancedMockEmbedder) GetModelName() string
 ```
 
-<a name="AdvancedMockEmbedder.GetProviderName"></a>
-### func \(\*AdvancedMockEmbedder\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L244>)
+
+### func \(\*AdvancedMockEmbedder\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L244)
 
 ```go
 func (e *AdvancedMockEmbedder) GetProviderName() string
 ```
 
-<a name="AdvancedMockEmbedder.ResetRateLimit"></a>
-### func \(\*AdvancedMockEmbedder\) [ResetRateLimit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L248>)
+
+### func \(\*AdvancedMockEmbedder\) [ResetRateLimit](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L248)
 
 ```go
 func (e *AdvancedMockEmbedder) ResetRateLimit()
 ```
 
-<a name="AdvancedMockcomponent"></a>
-## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/advanced_mock.go#L8-L10>)
+
+## type [AdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/advanced_mock.go#L8-L10)
 
 AdvancedMockcomponent is a mock implementation of Interface.
 
@@ -313,8 +313,8 @@ type AdvancedMockcomponent struct {
 }
 ```
 
-<a name="NewAdvancedMockcomponent"></a>
-### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/advanced_mock.go#L13>)
+
+### func [NewAdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/advanced_mock.go#L13)
 
 ```go
 func NewAdvancedMockcomponent() *AdvancedMockcomponent
@@ -322,8 +322,8 @@ func NewAdvancedMockcomponent() *AdvancedMockcomponent
 
 NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L459-L463>)
+
+## type [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L459-L463)
 
 ConcurrentTestRunner runs embedding tests concurrently for performance testing.
 
@@ -335,22 +335,22 @@ type ConcurrentTestRunner struct {
 }
 ```
 
-<a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L465>)
+
+### func [NewConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L465)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
-<a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L473>)
+
+### func \(\*ConcurrentTestRunner\) [Run](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L473)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L52-L57>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L52-L57)
 
 Config holds configuration for the embeddings package.
 
@@ -363,8 +363,8 @@ type Config struct {
 }
 ```
 
-<a name="CreateTestConfig"></a>
-### func [CreateTestConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L295>)
+
+### func [CreateTestConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L295)
 
 ```go
 func CreateTestConfig(provider string) Config
@@ -372,8 +372,8 @@ func CreateTestConfig(provider string) Config
 
 CreateTestConfig creates a test embedding configuration.
 
-<a name="Config.SetDefaults"></a>
-### func \(\*Config\) [SetDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L116>)
+
+### func \(\*Config\) [SetDefaults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L116)
 
 ```go
 func (c *Config) SetDefaults()
@@ -381,8 +381,8 @@ func (c *Config) SetDefaults()
 
 SetDefaults sets default values for the configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L89>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L89)
 
 ```go
 func (c *Config) Validate() error
@@ -390,8 +390,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="EmbedderFactory"></a>
-## type [EmbedderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L28-L33>)
+
+## type [EmbedderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L28-L33)
 
 EmbedderFactory provides factory methods for creating embedder instances.
 
@@ -401,8 +401,8 @@ type EmbedderFactory struct {
 }
 ```
 
-<a name="NewEmbedderFactory"></a>
-### func [NewEmbedderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L36>)
+
+### func [NewEmbedderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L36)
 
 ```go
 func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error)
@@ -410,8 +410,8 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 
 NewEmbedderFactory creates a new embedder factory with the given configuration.
 
-<a name="EmbedderFactory.CheckHealth"></a>
-### func \(\*EmbedderFactory\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L176>)
+
+### func \(\*EmbedderFactory\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L176)
 
 ```go
 func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) error
@@ -419,8 +419,8 @@ func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) 
 
 CheckHealth performs a health check on the embedder.
 
-<a name="EmbedderFactory.GetAvailableProviders"></a>
-### func \(\*EmbedderFactory\) [GetAvailableProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L152>)
+
+### func \(\*EmbedderFactory\) [GetAvailableProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L152)
 
 ```go
 func (f *EmbedderFactory) GetAvailableProviders() []string
@@ -428,8 +428,8 @@ func (f *EmbedderFactory) GetAvailableProviders() []string
 
 GetAvailableProviders returns a list of available provider types.
 
-<a name="EmbedderFactory.NewEmbedder"></a>
-### func \(\*EmbedderFactory\) [NewEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L73>)
+
+### func \(\*EmbedderFactory\) [NewEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L73)
 
 ```go
 func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, error)
@@ -437,8 +437,8 @@ func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, erro
 
 NewEmbedder creates an embedder instance based on the provider type.
 
-<a name="EmbeddingBenchmark"></a>
-## type [EmbeddingBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L600-L603>)
+
+## type [EmbeddingBenchmark](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L600-L603)
 
 EmbeddingBenchmark provides benchmarking utilities.
 
@@ -448,29 +448,29 @@ type EmbeddingBenchmark struct {
 }
 ```
 
-<a name="NewEmbeddingBenchmark"></a>
-### func [NewEmbeddingBenchmark](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L605>)
+
+### func [NewEmbeddingBenchmark](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L605)
 
 ```go
 func NewEmbeddingBenchmark(embedder iface.Embedder, textCount int) *EmbeddingBenchmark
 ```
 
-<a name="EmbeddingBenchmark.BenchmarkBatchEmbedding"></a>
-### func \(\*EmbeddingBenchmark\) [BenchmarkBatchEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L626>)
+
+### func \(\*EmbeddingBenchmark\) [BenchmarkBatchEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L626)
 
 ```go
 func (b *EmbeddingBenchmark) BenchmarkBatchEmbedding(batchSize, iterations int) (time.Duration, error)
 ```
 
-<a name="EmbeddingBenchmark.BenchmarkSingleEmbedding"></a>
-### func \(\*EmbeddingBenchmark\) [BenchmarkSingleEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L612>)
+
+### func \(\*EmbeddingBenchmark\) [BenchmarkSingleEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L612)
 
 ```go
 func (b *EmbeddingBenchmark) BenchmarkSingleEmbedding(iterations int) (time.Duration, error)
 ```
 
-<a name="EmbeddingQualityTester"></a>
-## type [EmbeddingQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L642-L644>)
+
+## type [EmbeddingQualityTester](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L642-L644)
 
 EmbeddingQualityTester provides utilities for testing embedding quality.
 
@@ -480,29 +480,29 @@ type EmbeddingQualityTester struct {
 }
 ```
 
-<a name="NewEmbeddingQualityTester"></a>
-### func [NewEmbeddingQualityTester](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L646>)
+
+### func [NewEmbeddingQualityTester](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L646)
 
 ```go
 func NewEmbeddingQualityTester(embedder iface.Embedder) *EmbeddingQualityTester
 ```
 
-<a name="EmbeddingQualityTester.TestSemanticSimilarity"></a>
-### func \(\*EmbeddingQualityTester\) [TestSemanticSimilarity](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L681>)
+
+### func \(\*EmbeddingQualityTester\) [TestSemanticSimilarity](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L681)
 
 ```go
 func (q *EmbeddingQualityTester) TestSemanticSimilarity(ctx context.Context, similarTexts []string) (float32, error)
 ```
 
-<a name="EmbeddingQualityTester.TestSimilarityConsistency"></a>
-### func \(\*EmbeddingQualityTester\) [TestSimilarityConsistency](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L650>)
+
+### func \(\*EmbeddingQualityTester\) [TestSimilarityConsistency](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L650)
 
 ```go
 func (q *EmbeddingQualityTester) TestSimilarityConsistency(ctx context.Context, text string, iterations int) (float32, error)
 ```
 
-<a name="EmbeddingsMockcomponent"></a>
-## type [EmbeddingsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings_mock.go#L8-L10>)
+
+## type [EmbeddingsMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings_mock.go#L8-L10)
 
 EmbeddingsMockcomponent is a mock implementation of Interface.
 
@@ -512,8 +512,8 @@ type EmbeddingsMockcomponent struct {
 }
 ```
 
-<a name="NewEmbeddingsMockcomponent"></a>
-### func [NewEmbeddingsMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings_mock.go#L13>)
+
+### func [NewEmbeddingsMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings_mock.go#L13)
 
 ```go
 func NewEmbeddingsMockcomponent() *EmbeddingsMockcomponent
@@ -521,8 +521,8 @@ func NewEmbeddingsMockcomponent() *EmbeddingsMockcomponent
 
 NewEmbeddingsMockcomponent creates a new EmbeddingsMockcomponent.
 
-<a name="Factory"></a>
-## type [Factory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L15-L19>)
+
+## type [Factory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L15-L19)
 
 Factory defines the interface for creating Embedder instances. This enables dependency injection and makes testing easier.
 
@@ -534,8 +534,8 @@ type Factory interface {
 }
 ```
 
-<a name="HealthChecker"></a>
-## type [HealthChecker](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L171-L173>)
+
+## type [HealthChecker](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/embeddings.go#L171-L173)
 
 HealthChecker interface for embedder health checks.
 
@@ -545,8 +545,8 @@ type HealthChecker interface {
 }
 ```
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L567-L570>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L567-L570)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -556,43 +556,43 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L572>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L572)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [AddEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L579>)
+
+### func \(\*IntegrationTestHelper\) [AddEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L579)
 
 ```go
 func (h *IntegrationTestHelper) AddEmbedder(name string, embedder *AdvancedMockEmbedder)
 ```
 
-<a name="IntegrationTestHelper.GetEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [GetEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L583>)
+
+### func \(\*IntegrationTestHelper\) [GetEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L583)
 
 ```go
 func (h *IntegrationTestHelper) GetEmbedder(name string) *AdvancedMockEmbedder
 ```
 
-<a name="IntegrationTestHelper.GetRegistry"></a>
-### func \(\*IntegrationTestHelper\) [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L587>)
+
+### func \(\*IntegrationTestHelper\) [GetRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L587)
 
 ```go
 func (h *IntegrationTestHelper) GetRegistry() *ProviderRegistry
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L591>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L591)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L12-L18>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L12-L18)
 
 Metrics holds the metrics for the embeddings package.
 
@@ -602,8 +602,8 @@ type Metrics struct {
 }
 ```
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L21>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L21)
 
 ```go
 func NewMetrics(meter metric.Meter) *Metrics
@@ -611,8 +611,8 @@ func NewMetrics(meter metric.Meter) *Metrics
 
 NewMetrics creates a new metrics instance.
 
-<a name="Metrics.EndRequest"></a>
-### func \(\*Metrics\) [EndRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L99>)
+
+### func \(\*Metrics\) [EndRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L99)
 
 ```go
 func (m *Metrics) EndRequest(ctx context.Context, provider, model string)
@@ -620,8 +620,8 @@ func (m *Metrics) EndRequest(ctx context.Context, provider, model string)
 
 EndRequest decrements the in\-flight counter.
 
-<a name="Metrics.RecordError"></a>
-### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L71>)
+
+### func \(\*Metrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L71)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType string)
@@ -629,8 +629,8 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, errorType st
 
 RecordError records an embedding error.
 
-<a name="Metrics.RecordRequest"></a>
-### func \(\*Metrics\) [RecordRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L55>)
+
+### func \(\*Metrics\) [RecordRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L55)
 
 ```go
 func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, duration time.Duration, inputCount, outputDimension int)
@@ -638,8 +638,8 @@ func (m *Metrics) RecordRequest(ctx context.Context, provider, model string, dur
 
 RecordRequest records a successful embedding request.
 
-<a name="Metrics.RecordTokensProcessed"></a>
-### func \(\*Metrics\) [RecordTokensProcessed](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L81>)
+
+### func \(\*Metrics\) [RecordTokensProcessed](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L81)
 
 ```go
 func (m *Metrics) RecordTokensProcessed(ctx context.Context, provider, model string, tokenCount int)
@@ -647,8 +647,8 @@ func (m *Metrics) RecordTokensProcessed(ctx context.Context, provider, model str
 
 RecordTokensProcessed records the number of tokens processed.
 
-<a name="Metrics.StartRequest"></a>
-### func \(\*Metrics\) [StartRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L90>)
+
+### func \(\*Metrics\) [StartRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/metrics.go#L90)
 
 ```go
 func (m *Metrics) StartRequest(ctx context.Context, provider, model string)
@@ -656,8 +656,8 @@ func (m *Metrics) StartRequest(ctx context.Context, provider, model string)
 
 StartRequest increments the in\-flight counter.
 
-<a name="MockConfig"></a>
-## type [MockConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L81-L86>)
+
+## type [MockConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L81-L86)
 
 MockConfig holds configuration for mock embedding provider.
 
@@ -670,8 +670,8 @@ type MockConfig struct {
 }
 ```
 
-<a name="MockConfig.Validate"></a>
-### func \(\*MockConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L177>)
+
+### func \(\*MockConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L177)
 
 ```go
 func (c *MockConfig) Validate() error
@@ -679,8 +679,8 @@ func (c *MockConfig) Validate() error
 
 ValidateMock validates Mock configuration.
 
-<a name="MockEmbedderOption"></a>
-## type [MockEmbedderOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L63>)
+
+## type [MockEmbedderOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L63)
 
 MockEmbedderOption defines functional options for mock configuration.
 
@@ -688,8 +688,8 @@ MockEmbedderOption defines functional options for mock configuration.
 type MockEmbedderOption func(*AdvancedMockEmbedder)
 ```
 
-<a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L82>)
+
+### func [WithMockDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L82)
 
 ```go
 func WithMockDelay(delay time.Duration) MockEmbedderOption
@@ -697,8 +697,8 @@ func WithMockDelay(delay time.Duration) MockEmbedderOption
 
 WithMockDelay adds artificial delay to mock operations.
 
-<a name="WithMockEmbeddings"></a>
-### func [WithMockEmbeddings](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L74>)
+
+### func [WithMockEmbeddings](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L74)
 
 ```go
 func WithMockEmbeddings(embeddings [][]float32) MockEmbedderOption
@@ -706,8 +706,8 @@ func WithMockEmbeddings(embeddings [][]float32) MockEmbedderOption
 
 WithMockEmbeddings sets predefined embeddings for the mock.
 
-<a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L66>)
+
+### func [WithMockError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L66)
 
 ```go
 func WithMockError(shouldError bool, err error) MockEmbedderOption
@@ -715,8 +715,8 @@ func WithMockError(shouldError bool, err error) MockEmbedderOption
 
 WithMockError configures the mock to return errors.
 
-<a name="WithMockRateLimit"></a>
-### func [WithMockRateLimit](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L89>)
+
+### func [WithMockRateLimit](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/test_utils.go#L89)
 
 ```go
 func WithMockRateLimit(enabled bool) MockEmbedderOption
@@ -724,8 +724,8 @@ func WithMockRateLimit(enabled bool) MockEmbedderOption
 
 WithMockRateLimit simulates rate limiting behavior.
 
-<a name="OllamaConfig"></a>
-## type [OllamaConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L71-L78>)
+
+## type [OllamaConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L71-L78)
 
 OllamaConfig holds configuration for Ollama embedding provider.
 
@@ -740,8 +740,8 @@ type OllamaConfig struct {
 }
 ```
 
-<a name="OllamaConfig.Validate"></a>
-### func \(\*OllamaConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L169>)
+
+### func \(\*OllamaConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L169)
 
 ```go
 func (c *OllamaConfig) Validate() error
@@ -749,8 +749,8 @@ func (c *OllamaConfig) Validate() error
 
 ValidateOllama validates Ollama configuration.
 
-<a name="OpenAIConfig"></a>
-## type [OpenAIConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L60-L68>)
+
+## type [OpenAIConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L60-L68)
 
 OpenAIConfig holds configuration for OpenAI embedding provider.
 
@@ -766,8 +766,8 @@ type OpenAIConfig struct {
 }
 ```
 
-<a name="OpenAIConfig.Validate"></a>
-### func \(\*OpenAIConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L158>)
+
+### func \(\*OpenAIConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L158)
 
 ```go
 func (c *OpenAIConfig) Validate() error
@@ -775,8 +775,8 @@ func (c *OpenAIConfig) Validate() error
 
 ValidateOpenAI validates OpenAI configuration.
 
-<a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L12>)
+
+## type [Option](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L12)
 
 Option is a functional option for configuring embedders.
 
@@ -784,8 +784,8 @@ Option is a functional option for configuring embedders.
 type Option func(*optionConfig)
 ```
 
-<a name="WithMaxRetries"></a>
-### func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L29>)
+
+### func [WithMaxRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L29)
 
 ```go
 func WithMaxRetries(maxRetries int) Option
@@ -793,8 +793,8 @@ func WithMaxRetries(maxRetries int) Option
 
 WithMaxRetries sets the maximum number of retries for failed operations.
 
-<a name="WithModel"></a>
-### func [WithModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L36>)
+
+### func [WithModel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L36)
 
 ```go
 func WithModel(model string) Option
@@ -802,8 +802,8 @@ func WithModel(model string) Option
 
 WithModel sets the model to use for embeddings.
 
-<a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L22>)
+
+### func [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/config.go#L22)
 
 ```go
 func WithTimeout(timeout time.Duration) Option
@@ -811,8 +811,8 @@ func WithTimeout(timeout time.Duration) Option
 
 WithTimeout sets the timeout for embedding operations.
 
-<a name="ProviderRegistry"></a>
-## type [ProviderRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L23-L26>)
+
+## type [ProviderRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L23-L26)
 
 ProviderRegistry is the global factory for creating embedder instances. It maintains a registry of available providers and their creation functions.
 
@@ -822,8 +822,8 @@ type ProviderRegistry struct {
 }
 ```
 
-<a name="GetGlobalRegistry"></a>
-### func [GetGlobalRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L89>)
+
+### func [GetGlobalRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L89)
 
 ```go
 func GetGlobalRegistry() *ProviderRegistry
@@ -831,8 +831,8 @@ func GetGlobalRegistry() *ProviderRegistry
 
 GetGlobalRegistry returns the global registry instance for advanced usage.
 
-<a name="NewProviderRegistry"></a>
-### func [NewProviderRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L29>)
+
+### func [NewProviderRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L29)
 
 ```go
 func NewProviderRegistry() *ProviderRegistry
@@ -840,8 +840,8 @@ func NewProviderRegistry() *ProviderRegistry
 
 NewProviderRegistry creates a new ProviderRegistry instance.
 
-<a name="ProviderRegistry.Create"></a>
-### func \(\*ProviderRegistry\) [Create](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L43>)
+
+### func \(\*ProviderRegistry\) [Create](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L43)
 
 ```go
 func (f *ProviderRegistry) Create(ctx context.Context, name string, config Config) (iface.Embedder, error)
@@ -849,8 +849,8 @@ func (f *ProviderRegistry) Create(ctx context.Context, name string, config Confi
 
 Create creates a new embedder instance using the registered provider.
 
-<a name="ProviderRegistry.ListProviders"></a>
-### func \(\*ProviderRegistry\) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L59>)
+
+### func \(\*ProviderRegistry\) [ListProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L59)
 
 ```go
 func (f *ProviderRegistry) ListProviders() []string
@@ -858,8 +858,8 @@ func (f *ProviderRegistry) ListProviders() []string
 
 ListProviders returns a list of all registered provider names.
 
-<a name="ProviderRegistry.Register"></a>
-### func \(\*ProviderRegistry\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L36>)
+
+### func \(\*ProviderRegistry\) [Register](https://github.com/lookatitude/beluga-ai/blob/main/pkg/embeddings/factory.go#L36)
 
 ```go
 func (f *ProviderRegistry) Register(name string, creator func(ctx context.Context, config Config) (iface.Embedder, error))
@@ -867,4 +867,4 @@ func (f *ProviderRegistry) Register(name string, creator func(ctx context.Contex
 
 Register registers a new embedder provider with the factory.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

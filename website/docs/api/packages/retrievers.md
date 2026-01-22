@@ -58,120 +58,120 @@ Package retrievers provides implementations of the core.Retriever interface.
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertRetrievalRelevance\(t \*testing.T, documents \[\]schema.Document, query string, minRelevance float32\)](<#AssertRetrievalRelevance>)
-- [func AssertRetrievalResults\(t \*testing.T, documents \[\]schema.Document, expectedMinCount, expectedMaxCount int\)](<#AssertRetrievalResults>)
-- [func AssertRetrieverHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertRetrieverHealth>)
-- [func CalculateRelevanceScore\(query, docContent string\) float32](<#CalculateRelevanceScore>)
-- [func CreateTestRetrievalDocuments\(count int\) \[\]schema.Document](<#CreateTestRetrievalDocuments>)
-- [func CreateTestRetrievalQueries\(count int\) \[\]string](<#CreateTestRetrievalQueries>)
-- [func GetRetrieverTypes\(\) \[\]string](<#GetRetrieverTypes>)
-- [func RunLoadTest\(t \*testing.T, retriever \*AdvancedMockRetriever, numOperations, concurrency int\)](<#RunLoadTest>)
-- [func ValidateRetrieverConfig\(config Config\) error](<#ValidateRetrieverConfig>)
-- [type AdvancedMockRetriever](<#AdvancedMockRetriever>)
-  - [func NewAdvancedMockRetriever\(name, retrieverType string, options ...MockRetrieverOption\) \*AdvancedMockRetriever](<#NewAdvancedMockRetriever>)
-  - [func \(r \*AdvancedMockRetriever\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#AdvancedMockRetriever.Batch>)
-  - [func \(r \*AdvancedMockRetriever\) CheckHealth\(\) map\[string\]any](<#AdvancedMockRetriever.CheckHealth>)
-  - [func \(r \*AdvancedMockRetriever\) GetCallCount\(\) int](<#AdvancedMockRetriever.GetCallCount>)
-  - [func \(r \*AdvancedMockRetriever\) GetDocumentCount\(\) int](<#AdvancedMockRetriever.GetDocumentCount>)
-  - [func \(r \*AdvancedMockRetriever\) GetName\(\) string](<#AdvancedMockRetriever.GetName>)
-  - [func \(r \*AdvancedMockRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](<#AdvancedMockRetriever.GetRelevantDocuments>)
-  - [func \(r \*AdvancedMockRetriever\) GetType\(\) string](<#AdvancedMockRetriever.GetType>)
-  - [func \(r \*AdvancedMockRetriever\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#AdvancedMockRetriever.Invoke>)
-  - [func \(r \*AdvancedMockRetriever\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#AdvancedMockRetriever.Stream>)
-- [type AdvancedMockVectorStoreRetriever](<#AdvancedMockVectorStoreRetriever>)
-  - [func NewAdvancedMockVectorStoreRetriever\(name string, options ...MockRetrieverOption\) \*AdvancedMockVectorStoreRetriever](<#NewAdvancedMockVectorStoreRetriever>)
-  - [func \(r \*AdvancedMockVectorStoreRetriever\) GetEmbedder\(\) any](<#AdvancedMockVectorStoreRetriever.GetEmbedder>)
-  - [func \(r \*AdvancedMockVectorStoreRetriever\) GetVectorStore\(\) any](<#AdvancedMockVectorStoreRetriever.GetVectorStore>)
-  - [func \(r \*AdvancedMockVectorStoreRetriever\) SetEmbedder\(embedder any\)](<#AdvancedMockVectorStoreRetriever.SetEmbedder>)
-  - [func \(r \*AdvancedMockVectorStoreRetriever\) SetVectorStore\(store any\)](<#AdvancedMockVectorStoreRetriever.SetVectorStore>)
-- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
-  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
-- [type BenchmarkHelper](<#BenchmarkHelper>)
-  - [func NewBenchmarkHelper\(retriever core.Retriever, queryCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkBatchRetrieval\(batchSize, iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkBatchRetrieval>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkRetrieval\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkRetrieval>)
-- [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
-  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
-  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) Config](<#DefaultConfig>)
-  - [func \(c \*Config\) ApplyDefaults\(\)](<#Config.ApplyDefaults>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type DocumentScore](<#DocumentScore>)
-  - [func RankDocuments\(query string, documents \[\]schema.Document\) \[\]DocumentScore](<#RankDocuments>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder any\)](<#IntegrationTestHelper.AddEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) AddRetriever\(name string, retriever \*AdvancedMockRetriever\)](<#IntegrationTestHelper.AddRetriever>)
-  - [func \(h \*IntegrationTestHelper\) AddVectorStore\(name string, store any\)](<#IntegrationTestHelper.AddVectorStore>)
-  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) any](<#IntegrationTestHelper.GetEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) GetRetriever\(name string\) \*AdvancedMockRetriever](<#IntegrationTestHelper.GetRetriever>)
-  - [func \(h \*IntegrationTestHelper\) GetVectorStore\(name string\) any](<#IntegrationTestHelper.GetVectorStore>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type Metrics](<#Metrics>)
-  - [func NewMetrics\(meter metric.Meter\) \(\*Metrics, error\)](<#NewMetrics>)
-  - [func \(m \*Metrics\) RecordBatchOperation\(ctx context.Context, operation string, batchSize int, duration time.Duration\)](<#Metrics.RecordBatchOperation>)
-  - [func \(m \*Metrics\) RecordEmbeddingDimension\(ctx context.Context, dimension int\)](<#Metrics.RecordEmbeddingDimension>)
-  - [func \(m \*Metrics\) RecordRetrieval\(ctx context.Context, retrieverType string, duration time.Duration, documentCount int, avgScore float64, err error\)](<#Metrics.RecordRetrieval>)
-  - [func \(m \*Metrics\) RecordVectorStoreOperation\(ctx context.Context, operation string, duration time.Duration, documentCount int, err error\)](<#Metrics.RecordVectorStoreOperation>)
-- [type MockRetrieverOption](<#MockRetrieverOption>)
-  - [func WithMockDefaultK\(k int\) MockRetrieverOption](<#WithMockDefaultK>)
-  - [func WithMockDelay\(delay time.Duration\) MockRetrieverOption](<#WithMockDelay>)
-  - [func WithMockDocuments\(documents \[\]schema.Document\) MockRetrieverOption](<#WithMockDocuments>)
-  - [func WithMockError\(shouldError bool, err error\) MockRetrieverOption](<#WithMockError>)
-  - [func WithMockScores\(scores \[\]float32\) MockRetrieverOption](<#WithMockScores>)
-  - [func WithScoreThreshold\(threshold float32\) MockRetrieverOption](<#WithScoreThreshold>)
-- [type Option](<#Option>)
-  - [func WithDefaultK\(k int\) Option](<#WithDefaultK>)
-  - [func WithLogger\(logger \*slog.Logger\) Option](<#WithLogger>)
-  - [func WithMaxRetries\(retries int\) Option](<#WithMaxRetries>)
-  - [func WithMeter\(meter metric.Meter\) Option](<#WithMeter>)
-  - [func WithMetrics\(enabled bool\) Option](<#WithMetrics>)
-  - [func WithTimeout\(timeout time.Duration\) Option](<#WithTimeout>)
-  - [func WithTracer\(tracer trace.Tracer\) Option](<#WithTracer>)
-  - [func WithTracing\(enabled bool\) Option](<#WithTracing>)
-- [type QueryDocumentPair](<#QueryDocumentPair>)
-- [type Retriever](<#Retriever>)
-- [type RetrieverError](<#RetrieverError>)
-  - [func NewRetrieverError\(op string, err error, code string\) \*RetrieverError](<#NewRetrieverError>)
-  - [func NewRetrieverErrorWithMessage\(op string, err error, code, message string\) \*RetrieverError](<#NewRetrieverErrorWithMessage>)
-  - [func \(e \*RetrieverError\) Error\(\) string](<#RetrieverError.Error>)
-  - [func \(e \*RetrieverError\) Unwrap\(\) error](<#RetrieverError.Unwrap>)
-- [type RetrieverOptions](<#RetrieverOptions>)
-  - [func CreateTestRetrieverConfig\(\) RetrieverOptions](<#CreateTestRetrieverConfig>)
-- [type RetrieverScenarioRunner](<#RetrieverScenarioRunner>)
-  - [func NewRetrieverScenarioRunner\(retriever core.Retriever\) \*RetrieverScenarioRunner](<#NewRetrieverScenarioRunner>)
-  - [func \(r \*RetrieverScenarioRunner\) RunMultiQueryScenario\(ctx context.Context, queries \[\]string\) \(\[\]\[\]schema.Document, error\)](<#RetrieverScenarioRunner.RunMultiQueryScenario>)
-  - [func \(r \*RetrieverScenarioRunner\) RunRelevanceTestScenario\(ctx context.Context, queryDocPairs \[\]QueryDocumentPair\) error](<#RetrieverScenarioRunner.RunRelevanceTestScenario>)
-- [type RetrieversMockcomponent](<#RetrieversMockcomponent>)
-  - [func NewRetrieversMockcomponent\(\) \*RetrieversMockcomponent](<#NewRetrieversMockcomponent>)
-- [type TimeoutError](<#TimeoutError>)
-  - [func NewTimeoutError\(op string, timeout time.Duration, err error\) \*TimeoutError](<#NewTimeoutError>)
-  - [func \(e \*TimeoutError\) Error\(\) string](<#TimeoutError.Error>)
-  - [func \(e \*TimeoutError\) Unwrap\(\) error](<#TimeoutError.Unwrap>)
-- [type ValidationError](<#ValidationError>)
-  - [func \(e \*ValidationError\) Error\(\) string](<#ValidationError.Error>)
-- [type VectorStoreConfig](<#VectorStoreConfig>)
-  - [func \(c \*VectorStoreConfig\) ApplyDefaults\(\)](<#VectorStoreConfig.ApplyDefaults>)
-  - [func \(c \*VectorStoreConfig\) Validate\(\) error](<#VectorStoreConfig.Validate>)
-- [type VectorStoreRetriever](<#VectorStoreRetriever>)
-  - [func NewVectorStoreRetriever\(vectorStore vectorstores.VectorStore, options ...Option\) \(\*VectorStoreRetriever, error\)](<#NewVectorStoreRetriever>)
-  - [func NewVectorStoreRetrieverFromConfig\(vectorStore vectorstores.VectorStore, config VectorStoreRetrieverConfig\) \(\*VectorStoreRetriever, error\)](<#NewVectorStoreRetrieverFromConfig>)
-  - [func \(r \*VectorStoreRetriever\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#VectorStoreRetriever.Batch>)
-  - [func \(r \*VectorStoreRetriever\) CheckHealth\(ctx context.Context\) error](<#VectorStoreRetriever.CheckHealth>)
-  - [func \(r \*VectorStoreRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](<#VectorStoreRetriever.GetRelevantDocuments>)
-  - [func \(r \*VectorStoreRetriever\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#VectorStoreRetriever.Invoke>)
-  - [func \(r \*VectorStoreRetriever\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#VectorStoreRetriever.Stream>)
-- [type VectorStoreRetrieverConfig](<#VectorStoreRetrieverConfig>)
-  - [func DefaultVectorStoreRetrieverConfig\(\) VectorStoreRetrieverConfig](<#DefaultVectorStoreRetrieverConfig>)
-  - [func \(c \*VectorStoreRetrieverConfig\) ApplyDefaults\(\)](<#VectorStoreRetrieverConfig.ApplyDefaults>)
-  - [func \(c \*VectorStoreRetrieverConfig\) Validate\(\) error](<#VectorStoreRetrieverConfig.Validate>)
+- [Constants](#constants>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertRetrievalRelevance\(t \*testing.T, documents \[\]schema.Document, query string, minRelevance float32\)](#AssertRetrievalRelevance>)
+- [func AssertRetrievalResults\(t \*testing.T, documents \[\]schema.Document, expectedMinCount, expectedMaxCount int\)](#AssertRetrievalResults>)
+- [func AssertRetrieverHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](#AssertRetrieverHealth>)
+- [func CalculateRelevanceScore\(query, docContent string\) float32](#CalculateRelevanceScore>)
+- [func CreateTestRetrievalDocuments\(count int\) \[\]schema.Document](#CreateTestRetrievalDocuments>)
+- [func CreateTestRetrievalQueries\(count int\) \[\]string](#CreateTestRetrievalQueries>)
+- [func GetRetrieverTypes\(\) \[\]string](#GetRetrieverTypes>)
+- [func RunLoadTest\(t \*testing.T, retriever \*AdvancedMockRetriever, numOperations, concurrency int\)](#RunLoadTest>)
+- [func ValidateRetrieverConfig\(config Config\) error](#ValidateRetrieverConfig>)
+- [type AdvancedMockRetriever](#AdvancedMockRetriever>)
+  - [func NewAdvancedMockRetriever\(name, retrieverType string, options ...MockRetrieverOption\) \*AdvancedMockRetriever](#NewAdvancedMockRetriever>)
+  - [func \(r \*AdvancedMockRetriever\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#AdvancedMockRetriever.Batch>)
+  - [func \(r \*AdvancedMockRetriever\) CheckHealth\(\) map\[string\]any](#AdvancedMockRetriever.CheckHealth>)
+  - [func \(r \*AdvancedMockRetriever\) GetCallCount\(\) int](#AdvancedMockRetriever.GetCallCount>)
+  - [func \(r \*AdvancedMockRetriever\) GetDocumentCount\(\) int](#AdvancedMockRetriever.GetDocumentCount>)
+  - [func \(r \*AdvancedMockRetriever\) GetName\(\) string](#AdvancedMockRetriever.GetName>)
+  - [func \(r \*AdvancedMockRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](#AdvancedMockRetriever.GetRelevantDocuments>)
+  - [func \(r \*AdvancedMockRetriever\) GetType\(\) string](#AdvancedMockRetriever.GetType>)
+  - [func \(r \*AdvancedMockRetriever\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#AdvancedMockRetriever.Invoke>)
+  - [func \(r \*AdvancedMockRetriever\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#AdvancedMockRetriever.Stream>)
+- [type AdvancedMockVectorStoreRetriever](#AdvancedMockVectorStoreRetriever>)
+  - [func NewAdvancedMockVectorStoreRetriever\(name string, options ...MockRetrieverOption\) \*AdvancedMockVectorStoreRetriever](#NewAdvancedMockVectorStoreRetriever>)
+  - [func \(r \*AdvancedMockVectorStoreRetriever\) GetEmbedder\(\) any](#AdvancedMockVectorStoreRetriever.GetEmbedder>)
+  - [func \(r \*AdvancedMockVectorStoreRetriever\) GetVectorStore\(\) any](#AdvancedMockVectorStoreRetriever.GetVectorStore>)
+  - [func \(r \*AdvancedMockVectorStoreRetriever\) SetEmbedder\(embedder any\)](#AdvancedMockVectorStoreRetriever.SetEmbedder>)
+  - [func \(r \*AdvancedMockVectorStoreRetriever\) SetVectorStore\(store any\)](#AdvancedMockVectorStoreRetriever.SetVectorStore>)
+- [type AdvancedMockcomponent](#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](#NewAdvancedMockcomponent>)
+- [type BenchmarkHelper](#BenchmarkHelper>)
+  - [func NewBenchmarkHelper\(retriever core.Retriever, queryCount int\) \*BenchmarkHelper](#NewBenchmarkHelper>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkBatchRetrieval\(batchSize, iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkBatchRetrieval>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkRetrieval\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkRetrieval>)
+- [type ConcurrentTestRunner](#ConcurrentTestRunner>)
+  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](#NewConcurrentTestRunner>)
+  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](#ConcurrentTestRunner.Run>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) Config](#DefaultConfig>)
+  - [func \(c \*Config\) ApplyDefaults\(\)](#Config.ApplyDefaults>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type DocumentScore](#DocumentScore>)
+  - [func RankDocuments\(query string, documents \[\]schema.Document\) \[\]DocumentScore](#RankDocuments>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder any\)](#IntegrationTestHelper.AddEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) AddRetriever\(name string, retriever \*AdvancedMockRetriever\)](#IntegrationTestHelper.AddRetriever>)
+  - [func \(h \*IntegrationTestHelper\) AddVectorStore\(name string, store any\)](#IntegrationTestHelper.AddVectorStore>)
+  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) any](#IntegrationTestHelper.GetEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) GetRetriever\(name string\) \*AdvancedMockRetriever](#IntegrationTestHelper.GetRetriever>)
+  - [func \(h \*IntegrationTestHelper\) GetVectorStore\(name string\) any](#IntegrationTestHelper.GetVectorStore>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type Metrics](#Metrics>)
+  - [func NewMetrics\(meter metric.Meter\) \(\*Metrics, error\)](#NewMetrics>)
+  - [func \(m \*Metrics\) RecordBatchOperation\(ctx context.Context, operation string, batchSize int, duration time.Duration\)](#Metrics.RecordBatchOperation>)
+  - [func \(m \*Metrics\) RecordEmbeddingDimension\(ctx context.Context, dimension int\)](#Metrics.RecordEmbeddingDimension>)
+  - [func \(m \*Metrics\) RecordRetrieval\(ctx context.Context, retrieverType string, duration time.Duration, documentCount int, avgScore float64, err error\)](#Metrics.RecordRetrieval>)
+  - [func \(m \*Metrics\) RecordVectorStoreOperation\(ctx context.Context, operation string, duration time.Duration, documentCount int, err error\)](#Metrics.RecordVectorStoreOperation>)
+- [type MockRetrieverOption](#MockRetrieverOption>)
+  - [func WithMockDefaultK\(k int\) MockRetrieverOption](#WithMockDefaultK>)
+  - [func WithMockDelay\(delay time.Duration\) MockRetrieverOption](#WithMockDelay>)
+  - [func WithMockDocuments\(documents \[\]schema.Document\) MockRetrieverOption](#WithMockDocuments>)
+  - [func WithMockError\(shouldError bool, err error\) MockRetrieverOption](#WithMockError>)
+  - [func WithMockScores\(scores \[\]float32\) MockRetrieverOption](#WithMockScores>)
+  - [func WithScoreThreshold\(threshold float32\) MockRetrieverOption](#WithScoreThreshold>)
+- [type Option](#Option>)
+  - [func WithDefaultK\(k int\) Option](#WithDefaultK>)
+  - [func WithLogger\(logger \*slog.Logger\) Option](#WithLogger>)
+  - [func WithMaxRetries\(retries int\) Option](#WithMaxRetries>)
+  - [func WithMeter\(meter metric.Meter\) Option](#WithMeter>)
+  - [func WithMetrics\(enabled bool\) Option](#WithMetrics>)
+  - [func WithTimeout\(timeout time.Duration\) Option](#WithTimeout>)
+  - [func WithTracer\(tracer trace.Tracer\) Option](#WithTracer>)
+  - [func WithTracing\(enabled bool\) Option](#WithTracing>)
+- [type QueryDocumentPair](#QueryDocumentPair>)
+- [type Retriever](#Retriever>)
+- [type RetrieverError](#RetrieverError>)
+  - [func NewRetrieverError\(op string, err error, code string\) \*RetrieverError](#NewRetrieverError>)
+  - [func NewRetrieverErrorWithMessage\(op string, err error, code, message string\) \*RetrieverError](#NewRetrieverErrorWithMessage>)
+  - [func \(e \*RetrieverError\) Error\(\) string](#RetrieverError.Error>)
+  - [func \(e \*RetrieverError\) Unwrap\(\) error](#RetrieverError.Unwrap>)
+- [type RetrieverOptions](#RetrieverOptions>)
+  - [func CreateTestRetrieverConfig\(\) RetrieverOptions](#CreateTestRetrieverConfig>)
+- [type RetrieverScenarioRunner](#RetrieverScenarioRunner>)
+  - [func NewRetrieverScenarioRunner\(retriever core.Retriever\) \*RetrieverScenarioRunner](#NewRetrieverScenarioRunner>)
+  - [func \(r \*RetrieverScenarioRunner\) RunMultiQueryScenario\(ctx context.Context, queries \[\]string\) \(\[\]\[\]schema.Document, error\)](#RetrieverScenarioRunner.RunMultiQueryScenario>)
+  - [func \(r \*RetrieverScenarioRunner\) RunRelevanceTestScenario\(ctx context.Context, queryDocPairs \[\]QueryDocumentPair\) error](#RetrieverScenarioRunner.RunRelevanceTestScenario>)
+- [type RetrieversMockcomponent](#RetrieversMockcomponent>)
+  - [func NewRetrieversMockcomponent\(\) \*RetrieversMockcomponent](#NewRetrieversMockcomponent>)
+- [type TimeoutError](#TimeoutError>)
+  - [func NewTimeoutError\(op string, timeout time.Duration, err error\) \*TimeoutError](#NewTimeoutError>)
+  - [func \(e \*TimeoutError\) Error\(\) string](#TimeoutError.Error>)
+  - [func \(e \*TimeoutError\) Unwrap\(\) error](#TimeoutError.Unwrap>)
+- [type ValidationError](#ValidationError>)
+  - [func \(e \*ValidationError\) Error\(\) string](#ValidationError.Error>)
+- [type VectorStoreConfig](#VectorStoreConfig>)
+  - [func \(c \*VectorStoreConfig\) ApplyDefaults\(\)](#VectorStoreConfig.ApplyDefaults>)
+  - [func \(c \*VectorStoreConfig\) Validate\(\) error](#VectorStoreConfig.Validate>)
+- [type VectorStoreRetriever](#VectorStoreRetriever>)
+  - [func NewVectorStoreRetriever\(vectorStore vectorstores.VectorStore, options ...Option\) \(\*VectorStoreRetriever, error\)](#NewVectorStoreRetriever>)
+  - [func NewVectorStoreRetrieverFromConfig\(vectorStore vectorstores.VectorStore, config VectorStoreRetrieverConfig\) \(\*VectorStoreRetriever, error\)](#NewVectorStoreRetrieverFromConfig>)
+  - [func \(r \*VectorStoreRetriever\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#VectorStoreRetriever.Batch>)
+  - [func \(r \*VectorStoreRetriever\) CheckHealth\(ctx context.Context\) error](#VectorStoreRetriever.CheckHealth>)
+  - [func \(r \*VectorStoreRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](#VectorStoreRetriever.GetRelevantDocuments>)
+  - [func \(r \*VectorStoreRetriever\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#VectorStoreRetriever.Invoke>)
+  - [func \(r \*VectorStoreRetriever\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#VectorStoreRetriever.Stream>)
+- [type VectorStoreRetrieverConfig](#VectorStoreRetrieverConfig>)
+  - [func DefaultVectorStoreRetrieverConfig\(\) VectorStoreRetrieverConfig](#DefaultVectorStoreRetrieverConfig>)
+  - [func \(c \*VectorStoreRetrieverConfig\) ApplyDefaults\(\)](#VectorStoreRetrieverConfig.ApplyDefaults>)
+  - [func \(c \*VectorStoreRetrieverConfig\) Validate\(\) error](#VectorStoreRetrieverConfig.Validate>)
 
 ## Constants
 
-<a name="ErrCodeInvalidConfig"></a>Error codes for programmatic error handling.
+Error codes for programmatic error handling.
 
 ```go
 const (
@@ -186,8 +186,8 @@ const (
 )
 ```
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L361>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L361)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -195,8 +195,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType validates error types and codes.
 
-<a name="AssertRetrievalRelevance"></a>
-## func [AssertRetrievalRelevance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L338>)
+
+## func [AssertRetrievalRelevance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L338)
 
 ```go
 func AssertRetrievalRelevance(t *testing.T, documents []schema.Document, query string, minRelevance float32)
@@ -204,8 +204,8 @@ func AssertRetrievalRelevance(t *testing.T, documents []schema.Document, query s
 
 AssertRetrievalRelevance validates document relevance to query.
 
-<a name="AssertRetrievalResults"></a>
-## func [AssertRetrievalResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L324>)
+
+## func [AssertRetrievalResults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L324)
 
 ```go
 func AssertRetrievalResults(t *testing.T, documents []schema.Document, expectedMinCount, expectedMaxCount int)
@@ -213,8 +213,8 @@ func AssertRetrievalResults(t *testing.T, documents []schema.Document, expectedM
 
 AssertRetrievalResults validates retrieval results.
 
-<a name="AssertRetrieverHealth"></a>
-## func [AssertRetrieverHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L351>)
+
+## func [AssertRetrieverHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L351)
 
 ```go
 func AssertRetrieverHealth(t *testing.T, health map[string]any, expectedStatus string)
@@ -222,8 +222,8 @@ func AssertRetrieverHealth(t *testing.T, health map[string]any, expectedStatus s
 
 AssertRetrieverHealth validates retriever health check results.
 
-<a name="CalculateRelevanceScore"></a>
-## func [CalculateRelevanceScore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L592>)
+
+## func [CalculateRelevanceScore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L592)
 
 ```go
 func CalculateRelevanceScore(query, docContent string) float32
@@ -231,8 +231,8 @@ func CalculateRelevanceScore(query, docContent string) float32
 
 CalculateRelevanceScore calculates a simple relevance score between query and document.
 
-<a name="CreateTestRetrievalDocuments"></a>
-## func [CreateTestRetrievalDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L284>)
+
+## func [CreateTestRetrievalDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L284)
 
 ```go
 func CreateTestRetrievalDocuments(count int) []schema.Document
@@ -240,8 +240,8 @@ func CreateTestRetrievalDocuments(count int) []schema.Document
 
 CreateTestRetrievalDocuments creates documents optimized for retrieval testing.
 
-<a name="CreateTestRetrievalQueries"></a>
-## func [CreateTestRetrievalQueries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L271>)
+
+## func [CreateTestRetrievalQueries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L271)
 
 ```go
 func CreateTestRetrievalQueries(count int) []string
@@ -249,8 +249,8 @@ func CreateTestRetrievalQueries(count int) []string
 
 CreateTestRetrievalQueries creates standardized test queries.
 
-<a name="GetRetrieverTypes"></a>
-## func [GetRetrieverTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L200>)
+
+## func [GetRetrieverTypes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L200)
 
 ```go
 func GetRetrieverTypes() []string
@@ -258,8 +258,8 @@ func GetRetrieverTypes() []string
 
 GetRetrieverTypes returns a list of available retriever types.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L432>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L432)
 
 ```go
 func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations, concurrency int)
@@ -267,8 +267,8 @@ func RunLoadTest(t *testing.T, retriever *AdvancedMockRetriever, numOperations, 
 
 RunLoadTest executes a load test scenario on retriever.
 
-<a name="ValidateRetrieverConfig"></a>
-## func [ValidateRetrieverConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L208>)
+
+## func [ValidateRetrieverConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L208)
 
 ```go
 func ValidateRetrieverConfig(config Config) error
@@ -276,8 +276,8 @@ func ValidateRetrieverConfig(config Config) error
 
 ValidateRetrieverConfig validates a retriever configuration.
 
-<a name="AdvancedMockRetriever"></a>
-## type [AdvancedMockRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L21-L37>)
+
+## type [AdvancedMockRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L21-L37)
 
 AdvancedMockRetriever provides a comprehensive mock implementation for testing.
 
@@ -288,8 +288,8 @@ type AdvancedMockRetriever struct {
 }
 ```
 
-<a name="NewAdvancedMockRetriever"></a>
-### func [NewAdvancedMockRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L40>)
+
+### func [NewAdvancedMockRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L40)
 
 ```go
 func NewAdvancedMockRetriever(name, retrieverType string, options ...MockRetrieverOption) *AdvancedMockRetriever
@@ -297,43 +297,43 @@ func NewAdvancedMockRetriever(name, retrieverType string, options ...MockRetriev
 
 NewAdvancedMockRetriever creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockRetriever.Batch"></a>
-### func \(\*AdvancedMockRetriever\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L116>)
+
+### func \(\*AdvancedMockRetriever\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L116)
 
 ```go
 func (r *AdvancedMockRetriever) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
 ```
 
-<a name="AdvancedMockRetriever.CheckHealth"></a>
-### func \(\*AdvancedMockRetriever\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L224>)
+
+### func \(\*AdvancedMockRetriever\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L224)
 
 ```go
 func (r *AdvancedMockRetriever) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockRetriever.GetCallCount"></a>
-### func \(\*AdvancedMockRetriever\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L212>)
+
+### func \(\*AdvancedMockRetriever\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L212)
 
 ```go
 func (r *AdvancedMockRetriever) GetCallCount() int
 ```
 
-<a name="AdvancedMockRetriever.GetDocumentCount"></a>
-### func \(\*AdvancedMockRetriever\) [GetDocumentCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L218>)
+
+### func \(\*AdvancedMockRetriever\) [GetDocumentCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L218)
 
 ```go
 func (r *AdvancedMockRetriever) GetDocumentCount() int
 ```
 
-<a name="AdvancedMockRetriever.GetName"></a>
-### func \(\*AdvancedMockRetriever\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L204>)
+
+### func \(\*AdvancedMockRetriever\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L204)
 
 ```go
 func (r *AdvancedMockRetriever) GetName() string
 ```
 
-<a name="AdvancedMockRetriever.GetRelevantDocuments"></a>
-### func \(\*AdvancedMockRetriever\) [GetRelevantDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L143>)
+
+### func \(\*AdvancedMockRetriever\) [GetRelevantDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L143)
 
 ```go
 func (r *AdvancedMockRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error)
@@ -341,15 +341,15 @@ func (r *AdvancedMockRetriever) GetRelevantDocuments(ctx context.Context, query 
 
 Mock implementation methods for Retriever interface.
 
-<a name="AdvancedMockRetriever.GetType"></a>
-### func \(\*AdvancedMockRetriever\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L208>)
+
+### func \(\*AdvancedMockRetriever\) [GetType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L208)
 
 ```go
 func (r *AdvancedMockRetriever) GetType() string
 ```
 
-<a name="AdvancedMockRetriever.Invoke"></a>
-### func \(\*AdvancedMockRetriever\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L109>)
+
+### func \(\*AdvancedMockRetriever\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L109)
 
 ```go
 func (r *AdvancedMockRetriever) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -357,15 +357,15 @@ func (r *AdvancedMockRetriever) Invoke(ctx context.Context, input any, options .
 
 Mock implementation methods for core.Runnable interface.
 
-<a name="AdvancedMockRetriever.Stream"></a>
-### func \(\*AdvancedMockRetriever\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L128>)
+
+### func \(\*AdvancedMockRetriever\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L128)
 
 ```go
 func (r *AdvancedMockRetriever) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
 ```
 
-<a name="AdvancedMockVectorStoreRetriever"></a>
-## type [AdvancedMockVectorStoreRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L239-L243>)
+
+## type [AdvancedMockVectorStoreRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L239-L243)
 
 AdvancedMockVectorStoreRetriever provides a comprehensive mock for vector store retrievers.
 
@@ -376,43 +376,43 @@ type AdvancedMockVectorStoreRetriever struct {
 }
 ```
 
-<a name="NewAdvancedMockVectorStoreRetriever"></a>
-### func [NewAdvancedMockVectorStoreRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L245>)
+
+### func [NewAdvancedMockVectorStoreRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L245)
 
 ```go
 func NewAdvancedMockVectorStoreRetriever(name string, options ...MockRetrieverOption) *AdvancedMockVectorStoreRetriever
 ```
 
-<a name="AdvancedMockVectorStoreRetriever.GetEmbedder"></a>
-### func \(\*AdvancedMockVectorStoreRetriever\) [GetEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L260>)
+
+### func \(\*AdvancedMockVectorStoreRetriever\) [GetEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L260)
 
 ```go
 func (r *AdvancedMockVectorStoreRetriever) GetEmbedder() any
 ```
 
-<a name="AdvancedMockVectorStoreRetriever.GetVectorStore"></a>
-### func \(\*AdvancedMockVectorStoreRetriever\) [GetVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L252>)
+
+### func \(\*AdvancedMockVectorStoreRetriever\) [GetVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L252)
 
 ```go
 func (r *AdvancedMockVectorStoreRetriever) GetVectorStore() any
 ```
 
-<a name="AdvancedMockVectorStoreRetriever.SetEmbedder"></a>
-### func \(\*AdvancedMockVectorStoreRetriever\) [SetEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L264>)
+
+### func \(\*AdvancedMockVectorStoreRetriever\) [SetEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L264)
 
 ```go
 func (r *AdvancedMockVectorStoreRetriever) SetEmbedder(embedder any)
 ```
 
-<a name="AdvancedMockVectorStoreRetriever.SetVectorStore"></a>
-### func \(\*AdvancedMockVectorStoreRetriever\) [SetVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L256>)
+
+### func \(\*AdvancedMockVectorStoreRetriever\) [SetVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L256)
 
 ```go
 func (r *AdvancedMockVectorStoreRetriever) SetVectorStore(store any)
 ```
 
-<a name="AdvancedMockcomponent"></a>
-## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/advanced_mock.go#L8-L10>)
+
+## type [AdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/advanced_mock.go#L8-L10)
 
 AdvancedMockcomponent is a mock implementation of Interface.
 
@@ -422,8 +422,8 @@ type AdvancedMockcomponent struct {
 }
 ```
 
-<a name="NewAdvancedMockcomponent"></a>
-### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/advanced_mock.go#L13>)
+
+### func [NewAdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/advanced_mock.go#L13)
 
 ```go
 func NewAdvancedMockcomponent() *AdvancedMockcomponent
@@ -431,8 +431,8 @@ func NewAdvancedMockcomponent() *AdvancedMockcomponent
 
 NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L675-L678>)
+
+## type [BenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L675-L678)
 
 BenchmarkHelper provides benchmarking utilities for retrievers.
 
@@ -442,29 +442,29 @@ type BenchmarkHelper struct {
 }
 ```
 
-<a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L680>)
+
+### func [NewBenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L680)
 
 ```go
 func NewBenchmarkHelper(retriever core.Retriever, queryCount int) *BenchmarkHelper
 ```
 
-<a name="BenchmarkHelper.BenchmarkBatchRetrieval"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkBatchRetrieval](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L702>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkBatchRetrieval](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L702)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkBatchRetrieval(batchSize, iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkRetrieval"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkRetrieval](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L687>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkRetrieval](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L687)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkRetrieval(iterations int) (time.Duration, error)
 ```
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L373-L377>)
+
+## type [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L373-L377)
 
 ConcurrentTestRunner runs retriever tests concurrently for performance testing.
 
@@ -476,22 +476,22 @@ type ConcurrentTestRunner struct {
 }
 ```
 
-<a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L379>)
+
+### func [NewConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L379)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
-<a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L387>)
+
+### func \(\*ConcurrentTestRunner\) [Run](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L387)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L11-L19>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L11-L19)
 
 Config holds the configuration for retrievers.
 
@@ -507,8 +507,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L69>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L69)
 
 ```go
 func DefaultConfig() Config
@@ -516,8 +516,8 @@ func DefaultConfig() Config
 
 DefaultConfig returns a default configuration for retrievers.
 
-<a name="Config.ApplyDefaults"></a>
-### func \(\*Config\) [ApplyDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L87>)
+
+### func \(\*Config\) [ApplyDefaults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L87)
 
 ```go
 func (c *Config) ApplyDefaults()
@@ -525,8 +525,8 @@ func (c *Config) ApplyDefaults()
 
 ApplyDefaults applies default values to unset fields in the configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L110>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L110)
 
 ```go
 func (c *Config) Validate() error
@@ -534,8 +534,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="DocumentScore"></a>
-## type [DocumentScore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L668-L672>)
+
+## type [DocumentScore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L668-L672)
 
 DocumentScore represents a document with its relevance score.
 
@@ -547,8 +547,8 @@ type DocumentScore struct {
 }
 ```
 
-<a name="RankDocuments"></a>
-### func [RankDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L642>)
+
+### func [RankDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L642)
 
 ```go
 func RankDocuments(query string, documents []schema.Document) []DocumentScore
@@ -556,8 +556,8 @@ func RankDocuments(query string, documents []schema.Document) []DocumentScore
 
 RankDocuments ranks documents by relevance score.
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L473-L477>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L473-L477)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -567,64 +567,64 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L479>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L479)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [AddEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L495>)
+
+### func \(\*IntegrationTestHelper\) [AddEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L495)
 
 ```go
 func (h *IntegrationTestHelper) AddEmbedder(name string, embedder any)
 ```
 
-<a name="IntegrationTestHelper.AddRetriever"></a>
-### func \(\*IntegrationTestHelper\) [AddRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L487>)
+
+### func \(\*IntegrationTestHelper\) [AddRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L487)
 
 ```go
 func (h *IntegrationTestHelper) AddRetriever(name string, retriever *AdvancedMockRetriever)
 ```
 
-<a name="IntegrationTestHelper.AddVectorStore"></a>
-### func \(\*IntegrationTestHelper\) [AddVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L491>)
+
+### func \(\*IntegrationTestHelper\) [AddVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L491)
 
 ```go
 func (h *IntegrationTestHelper) AddVectorStore(name string, store any)
 ```
 
-<a name="IntegrationTestHelper.GetEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [GetEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L507>)
+
+### func \(\*IntegrationTestHelper\) [GetEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L507)
 
 ```go
 func (h *IntegrationTestHelper) GetEmbedder(name string) any
 ```
 
-<a name="IntegrationTestHelper.GetRetriever"></a>
-### func \(\*IntegrationTestHelper\) [GetRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L499>)
+
+### func \(\*IntegrationTestHelper\) [GetRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L499)
 
 ```go
 func (h *IntegrationTestHelper) GetRetriever(name string) *AdvancedMockRetriever
 ```
 
-<a name="IntegrationTestHelper.GetVectorStore"></a>
-### func \(\*IntegrationTestHelper\) [GetVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L503>)
+
+### func \(\*IntegrationTestHelper\) [GetVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L503)
 
 ```go
 func (h *IntegrationTestHelper) GetVectorStore(name string) any
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L511>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L511)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L13-L31>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L13-L31)
 
 Metrics holds the metrics for retriever operations.
 
@@ -634,8 +634,8 @@ type Metrics struct {
 }
 ```
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L34>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L34)
 
 ```go
 func NewMetrics(meter metric.Meter) (*Metrics, error)
@@ -643,8 +643,8 @@ func NewMetrics(meter metric.Meter) (*Metrics, error)
 
 NewMetrics creates a new Metrics instance with registered metrics.
 
-<a name="Metrics.RecordBatchOperation"></a>
-### func \(\*Metrics\) [RecordBatchOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L184>)
+
+### func \(\*Metrics\) [RecordBatchOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L184)
 
 ```go
 func (m *Metrics) RecordBatchOperation(ctx context.Context, operation string, batchSize int, duration time.Duration)
@@ -652,8 +652,8 @@ func (m *Metrics) RecordBatchOperation(ctx context.Context, operation string, ba
 
 RecordBatchOperation records metrics for batch operations.
 
-<a name="Metrics.RecordEmbeddingDimension"></a>
-### func \(\*Metrics\) [RecordEmbeddingDimension](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L193>)
+
+### func \(\*Metrics\) [RecordEmbeddingDimension](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L193)
 
 ```go
 func (m *Metrics) RecordEmbeddingDimension(ctx context.Context, dimension int)
@@ -661,8 +661,8 @@ func (m *Metrics) RecordEmbeddingDimension(ctx context.Context, dimension int)
 
 RecordEmbeddingDimension records the embedding dimension.
 
-<a name="Metrics.RecordRetrieval"></a>
-### func \(\*Metrics\) [RecordRetrieval](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L144>)
+
+### func \(\*Metrics\) [RecordRetrieval](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L144)
 
 ```go
 func (m *Metrics) RecordRetrieval(ctx context.Context, retrieverType string, duration time.Duration, documentCount int, avgScore float64, err error)
@@ -670,8 +670,8 @@ func (m *Metrics) RecordRetrieval(ctx context.Context, retrieverType string, dur
 
 RecordRetrieval records metrics for a retrieval operation.
 
-<a name="Metrics.RecordVectorStoreOperation"></a>
-### func \(\*Metrics\) [RecordVectorStoreOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L163>)
+
+### func \(\*Metrics\) [RecordVectorStoreOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/metrics.go#L163)
 
 ```go
 func (m *Metrics) RecordVectorStoreOperation(ctx context.Context, operation string, duration time.Duration, documentCount int, err error)
@@ -679,8 +679,8 @@ func (m *Metrics) RecordVectorStoreOperation(ctx context.Context, operation stri
 
 RecordVectorStoreOperation records metrics for a vector store operation.
 
-<a name="MockRetrieverOption"></a>
-## type [MockRetrieverOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L61>)
+
+## type [MockRetrieverOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L61)
 
 MockRetrieverOption defines functional options for mock configuration.
 
@@ -688,8 +688,8 @@ MockRetrieverOption defines functional options for mock configuration.
 type MockRetrieverOption func(*AdvancedMockRetriever)
 ```
 
-<a name="WithMockDefaultK"></a>
-### func [WithMockDefaultK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L95>)
+
+### func [WithMockDefaultK](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L95)
 
 ```go
 func WithMockDefaultK(k int) MockRetrieverOption
@@ -697,8 +697,8 @@ func WithMockDefaultK(k int) MockRetrieverOption
 
 WithMockDefaultK sets the default number of documents to return.
 
-<a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L80>)
+
+### func [WithMockDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L80)
 
 ```go
 func WithMockDelay(delay time.Duration) MockRetrieverOption
@@ -706,8 +706,8 @@ func WithMockDelay(delay time.Duration) MockRetrieverOption
 
 WithMockDelay adds artificial delay to mock operations.
 
-<a name="WithMockDocuments"></a>
-### func [WithMockDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L72>)
+
+### func [WithMockDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L72)
 
 ```go
 func WithMockDocuments(documents []schema.Document) MockRetrieverOption
@@ -715,8 +715,8 @@ func WithMockDocuments(documents []schema.Document) MockRetrieverOption
 
 WithMockDocuments sets the documents to return from searches.
 
-<a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L64>)
+
+### func [WithMockError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L64)
 
 ```go
 func WithMockError(shouldError bool, err error) MockRetrieverOption
@@ -724,8 +724,8 @@ func WithMockError(shouldError bool, err error) MockRetrieverOption
 
 WithMockError configures the mock to return errors.
 
-<a name="WithMockScores"></a>
-### func [WithMockScores](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L87>)
+
+### func [WithMockScores](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L87)
 
 ```go
 func WithMockScores(scores []float32) MockRetrieverOption
@@ -733,8 +733,8 @@ func WithMockScores(scores []float32) MockRetrieverOption
 
 WithMockScores sets predefined similarity scores.
 
-<a name="WithScoreThreshold"></a>
-### func [WithScoreThreshold](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L102>)
+
+### func [WithScoreThreshold](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L102)
 
 ```go
 func WithScoreThreshold(threshold float32) MockRetrieverOption
@@ -742,8 +742,8 @@ func WithScoreThreshold(threshold float32) MockRetrieverOption
 
 WithScoreThreshold sets the minimum similarity score threshold.
 
-<a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L49>)
+
+## type [Option](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L49)
 
 Option is a functional option for configuring retrievers.
 
@@ -751,8 +751,8 @@ Option is a functional option for configuring retrievers.
 type Option func(*RetrieverOptions)
 ```
 
-<a name="WithDefaultK"></a>
-### func [WithDefaultK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L66>)
+
+### func [WithDefaultK](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L66)
 
 ```go
 func WithDefaultK(k int) Option
@@ -760,8 +760,8 @@ func WithDefaultK(k int) Option
 
 WithDefaultK sets the default number of documents to retrieve.
 
-<a name="WithLogger"></a>
-### func [WithLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L101>)
+
+### func [WithLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L101)
 
 ```go
 func WithLogger(logger *slog.Logger) Option
@@ -769,8 +769,8 @@ func WithLogger(logger *slog.Logger) Option
 
 WithLogger sets a custom logger.
 
-<a name="WithMaxRetries"></a>
-### func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L73>)
+
+### func [WithMaxRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L73)
 
 ```go
 func WithMaxRetries(retries int) Option
@@ -778,8 +778,8 @@ func WithMaxRetries(retries int) Option
 
 WithMaxRetries sets the maximum number of retries for failed operations.
 
-<a name="WithMeter"></a>
-### func [WithMeter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L115>)
+
+### func [WithMeter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L115)
 
 ```go
 func WithMeter(meter metric.Meter) Option
@@ -787,8 +787,8 @@ func WithMeter(meter metric.Meter) Option
 
 WithMeter sets a custom metrics meter.
 
-<a name="WithMetrics"></a>
-### func [WithMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L94>)
+
+### func [WithMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L94)
 
 ```go
 func WithMetrics(enabled bool) Option
@@ -796,8 +796,8 @@ func WithMetrics(enabled bool) Option
 
 WithMetrics enables or disables metrics collection.
 
-<a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L80>)
+
+### func [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L80)
 
 ```go
 func WithTimeout(timeout time.Duration) Option
@@ -805,8 +805,8 @@ func WithTimeout(timeout time.Duration) Option
 
 WithTimeout sets the timeout for operations.
 
-<a name="WithTracer"></a>
-### func [WithTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L108>)
+
+### func [WithTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L108)
 
 ```go
 func WithTracer(tracer trace.Tracer) Option
@@ -814,8 +814,8 @@ func WithTracer(tracer trace.Tracer) Option
 
 WithTracer sets a custom tracer.
 
-<a name="WithTracing"></a>
-### func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L87>)
+
+### func [WithTracing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L87)
 
 ```go
 func WithTracing(enabled bool) Option
@@ -823,8 +823,8 @@ func WithTracing(enabled bool) Option
 
 WithTracing enables or disables tracing.
 
-<a name="QueryDocumentPair"></a>
-## type [QueryDocumentPair](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L582-L587>)
+
+## type [QueryDocumentPair](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L582-L587)
 
 QueryDocumentPair represents a query and its expected relevant document.
 
@@ -837,8 +837,8 @@ type QueryDocumentPair struct {
 }
 ```
 
-<a name="Retriever"></a>
-## type [Retriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L44-L46>)
+
+## type [Retriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L44-L46)
 
 Retriever represents a component that can retrieve relevant documents for a given query.
 
@@ -848,8 +848,8 @@ type Retriever interface {
 }
 ```
 
-<a name="RetrieverError"></a>
-## type [RetrieverError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L22-L27>)
+
+## type [RetrieverError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L22-L27)
 
 RetrieverError represents an error that occurred during retrieval operations.
 
@@ -862,8 +862,8 @@ type RetrieverError struct {
 }
 ```
 
-<a name="NewRetrieverError"></a>
-### func [NewRetrieverError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L41>)
+
+### func [NewRetrieverError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L41)
 
 ```go
 func NewRetrieverError(op string, err error, code string) *RetrieverError
@@ -871,8 +871,8 @@ func NewRetrieverError(op string, err error, code string) *RetrieverError
 
 NewRetrieverError creates a new RetrieverError.
 
-<a name="NewRetrieverErrorWithMessage"></a>
-### func [NewRetrieverErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L50>)
+
+### func [NewRetrieverErrorWithMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L50)
 
 ```go
 func NewRetrieverErrorWithMessage(op string, err error, code, message string) *RetrieverError
@@ -880,22 +880,22 @@ func NewRetrieverErrorWithMessage(op string, err error, code, message string) *R
 
 NewRetrieverErrorWithMessage creates a new RetrieverError with a custom message.
 
-<a name="RetrieverError.Error"></a>
-### func \(\*RetrieverError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L29>)
+
+### func \(\*RetrieverError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L29)
 
 ```go
 func (e *RetrieverError) Error() string
 ```
 
-<a name="RetrieverError.Unwrap"></a>
-### func \(\*RetrieverError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L36>)
+
+### func \(\*RetrieverError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L36)
 
 ```go
 func (e *RetrieverError) Unwrap() error
 ```
 
-<a name="RetrieverOptions"></a>
-## type [RetrieverOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L52-L63>)
+
+## type [RetrieverOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L52-L63)
 
 RetrieverOptions holds configuration options for retrievers.
 
@@ -914,8 +914,8 @@ type RetrieverOptions struct {
 }
 ```
 
-<a name="CreateTestRetrieverConfig"></a>
-### func [CreateTestRetrieverConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L310>)
+
+### func [CreateTestRetrieverConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L310)
 
 ```go
 func CreateTestRetrieverConfig() RetrieverOptions
@@ -923,8 +923,8 @@ func CreateTestRetrieverConfig() RetrieverOptions
 
 CreateTestRetrieverConfig creates a test retriever configuration.
 
-<a name="RetrieverScenarioRunner"></a>
-## type [RetrieverScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L519-L521>)
+
+## type [RetrieverScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L519-L521)
 
 RetrieverScenarioRunner runs common retriever scenarios.
 
@@ -934,29 +934,29 @@ type RetrieverScenarioRunner struct {
 }
 ```
 
-<a name="NewRetrieverScenarioRunner"></a>
-### func [NewRetrieverScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L523>)
+
+### func [NewRetrieverScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L523)
 
 ```go
 func NewRetrieverScenarioRunner(retriever core.Retriever) *RetrieverScenarioRunner
 ```
 
-<a name="RetrieverScenarioRunner.RunMultiQueryScenario"></a>
-### func \(\*RetrieverScenarioRunner\) [RunMultiQueryScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L529>)
+
+### func \(\*RetrieverScenarioRunner\) [RunMultiQueryScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L529)
 
 ```go
 func (r *RetrieverScenarioRunner) RunMultiQueryScenario(ctx context.Context, queries []string) ([][]schema.Document, error)
 ```
 
-<a name="RetrieverScenarioRunner.RunRelevanceTestScenario"></a>
-### func \(\*RetrieverScenarioRunner\) [RunRelevanceTestScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L543>)
+
+### func \(\*RetrieverScenarioRunner\) [RunRelevanceTestScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/test_utils.go#L543)
 
 ```go
 func (r *RetrieverScenarioRunner) RunRelevanceTestScenario(ctx context.Context, queryDocPairs []QueryDocumentPair) error
 ```
 
-<a name="RetrieversMockcomponent"></a>
-## type [RetrieversMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers_mock.go#L8-L10>)
+
+## type [RetrieversMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers_mock.go#L8-L10)
 
 RetrieversMockcomponent is a mock implementation of Interface.
 
@@ -966,8 +966,8 @@ type RetrieversMockcomponent struct {
 }
 ```
 
-<a name="NewRetrieversMockcomponent"></a>
-### func [NewRetrieversMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers_mock.go#L13>)
+
+### func [NewRetrieversMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers_mock.go#L13)
 
 ```go
 func NewRetrieversMockcomponent() *RetrieversMockcomponent
@@ -975,8 +975,8 @@ func NewRetrieversMockcomponent() *RetrieversMockcomponent
 
 NewRetrieversMockcomponent creates a new RetrieversMockcomponent.
 
-<a name="TimeoutError"></a>
-## type [TimeoutError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L71-L75>)
+
+## type [TimeoutError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L71-L75)
 
 TimeoutError represents a timeout error.
 
@@ -988,8 +988,8 @@ type TimeoutError struct {
 }
 ```
 
-<a name="NewTimeoutError"></a>
-### func [NewTimeoutError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L86>)
+
+### func [NewTimeoutError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L86)
 
 ```go
 func NewTimeoutError(op string, timeout time.Duration, err error) *TimeoutError
@@ -997,22 +997,22 @@ func NewTimeoutError(op string, timeout time.Duration, err error) *TimeoutError
 
 NewTimeoutError creates a new TimeoutError.
 
-<a name="TimeoutError.Error"></a>
-### func \(\*TimeoutError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L77>)
+
+### func \(\*TimeoutError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L77)
 
 ```go
 func (e *TimeoutError) Error() string
 ```
 
-<a name="TimeoutError.Unwrap"></a>
-### func \(\*TimeoutError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L81>)
+
+### func \(\*TimeoutError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L81)
 
 ```go
 func (e *TimeoutError) Unwrap() error
 ```
 
-<a name="ValidationError"></a>
-## type [ValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L60-L64>)
+
+## type [ValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L60-L64)
 
 ValidationError represents a configuration validation error.
 
@@ -1024,15 +1024,15 @@ type ValidationError struct {
 }
 ```
 
-<a name="ValidationError.Error"></a>
-### func \(\*ValidationError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L66>)
+
+### func \(\*ValidationError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/errors.go#L66)
 
 ```go
 func (e *ValidationError) Error() string
 ```
 
-<a name="VectorStoreConfig"></a>
-## type [VectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L22-L30>)
+
+## type [VectorStoreConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L22-L30)
 
 VectorStoreConfig holds vector store specific configuration.
 
@@ -1048,8 +1048,8 @@ type VectorStoreConfig struct {
 }
 ```
 
-<a name="VectorStoreConfig.ApplyDefaults"></a>
-### func \(\*VectorStoreConfig\) [ApplyDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L102>)
+
+### func \(\*VectorStoreConfig\) [ApplyDefaults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L102)
 
 ```go
 func (c *VectorStoreConfig) ApplyDefaults()
@@ -1057,8 +1057,8 @@ func (c *VectorStoreConfig) ApplyDefaults()
 
 ApplyDefaults applies default values to unset fields in VectorStoreConfig.
 
-<a name="VectorStoreConfig.Validate"></a>
-### func \(\*VectorStoreConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L33>)
+
+### func \(\*VectorStoreConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L33)
 
 ```go
 func (c *VectorStoreConfig) Validate() error
@@ -1066,8 +1066,8 @@ func (c *VectorStoreConfig) Validate() error
 
 Validate validates the VectorStoreConfig.
 
-<a name="VectorStoreRetriever"></a>
-## type [VectorStoreRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L21-L32>)
+
+## type [VectorStoreRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L21-L32)
 
 VectorStoreRetriever implements the core.Retriever interface using an underlying vectorstores.VectorStore. It provides configurable retrieval with support for tracing, metrics, and structured logging.
 
@@ -1077,8 +1077,8 @@ type VectorStoreRetriever struct {
 }
 ```
 
-<a name="NewVectorStoreRetriever"></a>
-### func [NewVectorStoreRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L130>)
+
+### func [NewVectorStoreRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L130)
 
 ```go
 func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Option) (*VectorStoreRetriever, error)
@@ -1088,7 +1088,8 @@ NewVectorStoreRetriever creates a new VectorStoreRetriever with the given vector
 
 Example:
 
-```
+go
+```go
 retriever := retrievers.NewVectorStoreRetriever(vectorStore,
     retrievers.WithDefaultK(5),
     retrievers.WithScoreThreshold(0.7),
@@ -1096,8 +1097,8 @@ retriever := retrievers.NewVectorStoreRetriever(vectorStore,
 )
 ```
 
-<a name="NewVectorStoreRetrieverFromConfig"></a>
-### func [NewVectorStoreRetrieverFromConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L177>)
+
+### func [NewVectorStoreRetrieverFromConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/retrievers.go#L177)
 
 ```go
 func NewVectorStoreRetrieverFromConfig(vectorStore vectorstores.VectorStore, config VectorStoreRetrieverConfig) (*VectorStoreRetriever, error)
@@ -1116,8 +1117,8 @@ config := retrievers.VectorStoreRetrieverConfig{
 retriever, err := retrievers.NewVectorStoreRetrieverFromConfig(vectorStore, config)
 ```
 
-<a name="VectorStoreRetriever.Batch"></a>
-### func \(\*VectorStoreRetriever\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L195>)
+
+### func \(\*VectorStoreRetriever\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L195)
 
 ```go
 func (r *VectorStoreRetriever) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -1125,8 +1126,8 @@ func (r *VectorStoreRetriever) Batch(ctx context.Context, inputs []any, options 
 
 Batch implements the core.Runnable interface.
 
-<a name="VectorStoreRetriever.CheckHealth"></a>
-### func \(\*VectorStoreRetriever\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L218>)
+
+### func \(\*VectorStoreRetriever\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L218)
 
 ```go
 func (r *VectorStoreRetriever) CheckHealth(ctx context.Context) error
@@ -1134,8 +1135,8 @@ func (r *VectorStoreRetriever) CheckHealth(ctx context.Context) error
 
 CheckHealth implements the core.HealthChecker interface. It performs a basic health check by validating the retriever's configuration and dependencies.
 
-<a name="VectorStoreRetriever.GetRelevantDocuments"></a>
-### func \(\*VectorStoreRetriever\) [GetRelevantDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L76>)
+
+### func \(\*VectorStoreRetriever\) [GetRelevantDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L76)
 
 ```go
 func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error)
@@ -1143,8 +1144,8 @@ func (r *VectorStoreRetriever) GetRelevantDocuments(ctx context.Context, query s
 
 GetRelevantDocuments retrieves documents from the vector store based on the query. This method adheres to the core.Retriever interface and uses the retriever's default configuration. For call\-specific options, use the Invoke method.
 
-<a name="VectorStoreRetriever.Invoke"></a>
-### func \(\*VectorStoreRetriever\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L184>)
+
+### func \(\*VectorStoreRetriever\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L184)
 
 ```go
 func (r *VectorStoreRetriever) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -1152,8 +1153,8 @@ func (r *VectorStoreRetriever) Invoke(ctx context.Context, input any, options ..
 
 Invoke implements the core.Runnable interface.
 
-<a name="VectorStoreRetriever.Stream"></a>
-### func \(\*VectorStoreRetriever\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L211>)
+
+### func \(\*VectorStoreRetriever\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/vectorstore.go#L211)
 
 ```go
 func (r *VectorStoreRetriever) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -1161,8 +1162,8 @@ func (r *VectorStoreRetriever) Stream(ctx context.Context, input any, options ..
 
 Stream implements the core.Runnable interface. Streaming is not typically applicable to retrievers, so it returns an error.
 
-<a name="VectorStoreRetrieverConfig"></a>
-## type [VectorStoreRetrieverConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L59-L66>)
+
+## type [VectorStoreRetrieverConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L59-L66)
 
 VectorStoreRetrieverConfig holds configuration specific to VectorStoreRetriever.
 
@@ -1177,8 +1178,8 @@ type VectorStoreRetrieverConfig struct {
 }
 ```
 
-<a name="DefaultVectorStoreRetrieverConfig"></a>
-### func [DefaultVectorStoreRetrieverConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L149>)
+
+### func [DefaultVectorStoreRetrieverConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L149)
 
 ```go
 func DefaultVectorStoreRetrieverConfig() VectorStoreRetrieverConfig
@@ -1186,8 +1187,8 @@ func DefaultVectorStoreRetrieverConfig() VectorStoreRetrieverConfig
 
 DefaultVectorStoreRetrieverConfig returns a default configuration for VectorStoreRetriever.
 
-<a name="VectorStoreRetrieverConfig.ApplyDefaults"></a>
-### func \(\*VectorStoreRetrieverConfig\) [ApplyDefaults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L159>)
+
+### func \(\*VectorStoreRetrieverConfig\) [ApplyDefaults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L159)
 
 ```go
 func (c *VectorStoreRetrieverConfig) ApplyDefaults()
@@ -1195,8 +1196,8 @@ func (c *VectorStoreRetrieverConfig) ApplyDefaults()
 
 ApplyDefaults applies default values to unset fields in the configuration.
 
-<a name="VectorStoreRetrieverConfig.Validate"></a>
-### func \(\*VectorStoreRetrieverConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L173>)
+
+### func \(\*VectorStoreRetrieverConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/retrievers/config.go#L173)
 
 ```go
 func (c *VectorStoreRetrieverConfig) Validate() error
@@ -1204,4 +1205,4 @@ func (c *VectorStoreRetrieverConfig) Validate() error
 
 Validate validates the VectorStoreRetrieverConfig.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

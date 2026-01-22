@@ -748,7 +748,7 @@ func (c *CustomProvider) generateInternal(ctx context.Context, ...) (schema.Mess
 **A:** Check:
 1. You're checking `ctx.Done()` in your streaming goroutine
 2. The channel is being closed properly with `defer close(outputChan)`
-3. API errors are being sent through the channel: `outputChan <- iface.AIMessageChunk{Err: err}`
+3. API errors are being sent through the channel: `outputChan \<- iface.AIMessageChunk{Err: err}`
 
 ### Q: Tool calls aren't working
 

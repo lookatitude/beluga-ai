@@ -20,265 +20,265 @@ Package schema provides advanced test utilities and comprehensive mocks for test
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AssertAgentAction\(t \*testing.T, action AgentAction, expectedTool string\)](<#AssertAgentAction>)
-- [func AssertAgentFinish\(t \*testing.T, finish AgentFinish, expectedMinReturnValues int\)](<#AssertAgentFinish>)
-- [func AssertDocument\(t \*testing.T, document Document, expectedMinContentLength int\)](<#AssertDocument>)
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertMessage\(t \*testing.T, message Message, expectedType iface.MessageType, expectedMinLength int\)](<#AssertMessage>)
-- [func AssertMessageHistory\(t \*testing.T, messages \[\]Message, expectedMinCount int\)](<#AssertMessageHistory>)
-- [func AssertToolCall\(t \*testing.T, toolCall iface.ToolCall, expectedName string\)](<#AssertToolCall>)
-- [func CreateTestToolCall\(name, input string\) iface.ToolCall](<#CreateTestToolCall>)
-- [func RecordA2ACommunicationError\(ctx context.Context, operation string, err error\)](<#RecordA2ACommunicationError>)
-- [func RecordAgentActionCreated\(ctx context.Context, tool string\)](<#RecordAgentActionCreated>)
-- [func RecordAgentLifecycleEvent\(ctx context.Context, agentID, eventType string\)](<#RecordAgentLifecycleEvent>)
-- [func RecordAgentMessageReceived\(ctx context.Context, messageType, toAgentID string\)](<#RecordAgentMessageReceived>)
-- [func RecordAgentMessageSent\(ctx context.Context, messageType, fromAgentID string\)](<#RecordAgentMessageSent>)
-- [func RecordAgentObservationCreated\(ctx context.Context\)](<#RecordAgentObservationCreated>)
-- [func RecordAgentRequestReceived\(ctx context.Context, action, toAgentID string\)](<#RecordAgentRequestReceived>)
-- [func RecordAgentRequestSent\(ctx context.Context, action, fromAgentID string\)](<#RecordAgentRequestSent>)
-- [func RecordAgentResponseReceived\(ctx context.Context, status, fromAgentID string\)](<#RecordAgentResponseReceived>)
-- [func RecordAgentResponseSent\(ctx context.Context, status, toAgentID string\)](<#RecordAgentResponseSent>)
-- [func RecordConfigError\(ctx context.Context, configType string, err error\)](<#RecordConfigError>)
-- [func RecordConfigValidation\(ctx context.Context, configType string\)](<#RecordConfigValidation>)
-- [func RecordDocumentCreated\(ctx context.Context\)](<#RecordDocumentCreated>)
-- [func RecordDocumentError\(ctx context.Context, err error\)](<#RecordDocumentError>)
-- [func RecordDocumentValidation\(ctx context.Context\)](<#RecordDocumentValidation>)
-- [func RecordDocumentValidationError\(ctx context.Context, err error\)](<#RecordDocumentValidationError>)
-- [func RecordEventConsumed\(ctx context.Context, eventType, consumer string\)](<#RecordEventConsumed>)
-- [func RecordEventProcessingError\(ctx context.Context, eventType string, err error\)](<#RecordEventProcessingError>)
-- [func RecordEventPublished\(ctx context.Context, eventType, source string\)](<#RecordEventPublished>)
-- [func RecordFactoryCreation\(ctx context.Context, objectType string\)](<#RecordFactoryCreation>)
-- [func RecordFactoryError\(ctx context.Context, objectType string, err error\)](<#RecordFactoryError>)
-- [func RecordGenerationCreated\(ctx context.Context\)](<#RecordGenerationCreated>)
-- [func RecordHistoryOperation\(ctx context.Context, operation string\)](<#RecordHistoryOperation>)
-- [func RecordHistorySize\(ctx context.Context, size int\)](<#RecordHistorySize>)
-- [func RecordLLMResponseCreated\(ctx context.Context\)](<#RecordLLMResponseCreated>)
-- [func RecordMessageCreated\(ctx context.Context, msgType MessageType\)](<#RecordMessageCreated>)
-- [func RecordMessageError\(ctx context.Context, msgType MessageType, err error\)](<#RecordMessageError>)
-- [func RecordMessageValidation\(ctx context.Context, msgType MessageType\)](<#RecordMessageValidation>)
-- [func RecordMessageValidationError\(ctx context.Context, msgType MessageType, err error\)](<#RecordMessageValidationError>)
-- [func RecordSchemaValidation\(ctx context.Context, validationType string\)](<#RecordSchemaValidation>)
-- [func RecordSchemaValidationError\(ctx context.Context, validationType string, err error\)](<#RecordSchemaValidationError>)
-- [func RecordStepCreated\(ctx context.Context\)](<#RecordStepCreated>)
-- [func RecordTaskEvent\(ctx context.Context, taskID, eventType string\)](<#RecordTaskEvent>)
-- [func RecordWorkflowEvent\(ctx context.Context, workflowID, eventType string\)](<#RecordWorkflowEvent>)
-- [func RunLoadTest\(t \*testing.T, message \*AdvancedMockMessage, numOperations, concurrency int\)](<#RunLoadTest>)
-- [func SetGlobalMetrics\(m \*Metrics\)](<#SetGlobalMetrics>)
-- [func ValidateConversationFlow\(messages \[\]Message\) error](<#ValidateConversationFlow>)
-- [func ValidateDocument\(doc Document\) error](<#ValidateDocument>)
-- [func ValidateDocumentCollection\(documents \[\]Document\) error](<#ValidateDocumentCollection>)
-- [func ValidateMessage\(msg Message\) error](<#ValidateMessage>)
-- [func ValidateMessageType\(msgType iface.MessageType\) bool](<#ValidateMessageType>)
-- [type AIMessage](<#AIMessage>)
-- [type AdvancedMockDocument](<#AdvancedMockDocument>)
-  - [func NewAdvancedMockDocument\(content string, metadata map\[string\]string, options ...MockDocumentOption\) \*AdvancedMockDocument](<#NewAdvancedMockDocument>)
-  - [func \(d \*AdvancedMockDocument\) AdditionalArgs\(\) map\[string\]any](<#AdvancedMockDocument.AdditionalArgs>)
-  - [func \(d \*AdvancedMockDocument\) GetCallCount\(\) int](<#AdvancedMockDocument.GetCallCount>)
-  - [func \(d \*AdvancedMockDocument\) GetContent\(\) string](<#AdvancedMockDocument.GetContent>)
-  - [func \(d \*AdvancedMockDocument\) GetEmbedding\(\) \[\]float32](<#AdvancedMockDocument.GetEmbedding>)
-  - [func \(d \*AdvancedMockDocument\) GetID\(\) string](<#AdvancedMockDocument.GetID>)
-  - [func \(d \*AdvancedMockDocument\) GetMetadata\(\) map\[string\]string](<#AdvancedMockDocument.GetMetadata>)
-  - [func \(d \*AdvancedMockDocument\) GetScore\(\) float32](<#AdvancedMockDocument.GetScore>)
-  - [func \(d \*AdvancedMockDocument\) GetType\(\) iface.MessageType](<#AdvancedMockDocument.GetType>)
-  - [func \(d \*AdvancedMockDocument\) ToolCalls\(\) \[\]iface.ToolCall](<#AdvancedMockDocument.ToolCalls>)
-- [type AdvancedMockMessage](<#AdvancedMockMessage>)
-  - [func NewAdvancedMockMessage\(messageType iface.MessageType, content string, options ...MockMessageOption\) \*AdvancedMockMessage](<#NewAdvancedMockMessage>)
-  - [func \(m \*AdvancedMockMessage\) AddToolCall\(toolCall iface.ToolCall\)](<#AdvancedMockMessage.AddToolCall>)
-  - [func \(m \*AdvancedMockMessage\) AdditionalArgs\(\) map\[string\]any](<#AdvancedMockMessage.AdditionalArgs>)
-  - [func \(m \*AdvancedMockMessage\) CheckHealth\(\) map\[string\]any](<#AdvancedMockMessage.CheckHealth>)
-  - [func \(m \*AdvancedMockMessage\) GetCallCount\(\) int](<#AdvancedMockMessage.GetCallCount>)
-  - [func \(m \*AdvancedMockMessage\) GetContent\(\) string](<#AdvancedMockMessage.GetContent>)
-  - [func \(m \*AdvancedMockMessage\) GetType\(\) iface.MessageType](<#AdvancedMockMessage.GetType>)
-  - [func \(m \*AdvancedMockMessage\) SetContent\(content string\)](<#AdvancedMockMessage.SetContent>)
-  - [func \(m \*AdvancedMockMessage\) ToolCalls\(\) \[\]iface.ToolCall](<#AdvancedMockMessage.ToolCalls>)
-- [type AgentAction](<#AgentAction>)
-  - [func CreateTestAgentAction\(tool, input, log string\) AgentAction](<#CreateTestAgentAction>)
-  - [func NewAgentAction\(tool string, toolInput any, log string\) AgentAction](<#NewAgentAction>)
-- [type AgentConfig](<#AgentConfig>)
-  - [func NewAgentConfig\(name, llmProviderName string, opts ...AgentOption\) \(\*AgentConfig, error\)](<#NewAgentConfig>)
-  - [func \(c \*AgentConfig\) Validate\(\) error](<#AgentConfig.Validate>)
-- [type AgentError](<#AgentError>)
-  - [func NewAgentError\(code, message string, details map\[string\]any\) \*AgentError](<#NewAgentError>)
-- [type AgentFinish](<#AgentFinish>)
-  - [func CreateTestAgentFinish\(returnValues map\[string\]any, log string\) AgentFinish](<#CreateTestAgentFinish>)
-  - [func NewAgentFinish\(returnValues map\[string\]any, log string\) AgentFinish](<#NewAgentFinish>)
-- [type AgentLifecycleEvent](<#AgentLifecycleEvent>)
-  - [func NewAgentLifecycleEvent\(agentID string, eventType AgentLifecycleEventType\) AgentLifecycleEvent](<#NewAgentLifecycleEvent>)
-- [type AgentLifecycleEventType](<#AgentLifecycleEventType>)
-- [type AgentMessage](<#AgentMessage>)
-  - [func NewAgentMessage\(fromAgentID, messageID string, messageType AgentMessageType, payload any\) AgentMessage](<#NewAgentMessage>)
-- [type AgentMessageType](<#AgentMessageType>)
-- [type AgentObservation](<#AgentObservation>)
-  - [func NewAgentObservation\(actionLog, output string, parsedOutput any\) AgentObservation](<#NewAgentObservation>)
-- [type AgentOption](<#AgentOption>)
-  - [func WithAgentType\(agentType string\) AgentOption](<#WithAgentType>)
-  - [func WithMaxIterations\(maxIterations int\) AgentOption](<#WithMaxIterations>)
-  - [func WithMemoryProvider\(providerName, memoryType string\) AgentOption](<#WithMemoryProvider>)
-  - [func WithPromptTemplate\(template string\) AgentOption](<#WithPromptTemplate>)
-  - [func WithToolNames\(toolNames \[\]string\) AgentOption](<#WithToolNames>)
-- [type AgentRequest](<#AgentRequest>)
-  - [func NewAgentRequest\(action string, parameters map\[string\]any\) AgentRequest](<#NewAgentRequest>)
-- [type AgentResponse](<#AgentResponse>)
-  - [func NewAgentResponse\(requestID, status string, result any\) AgentResponse](<#NewAgentResponse>)
-- [type AgentScratchPadEntry](<#AgentScratchPadEntry>)
-- [type BaseChatHistory](<#BaseChatHistory>)
-- [type BenchmarkHelper](<#BenchmarkHelper>)
-  - [func NewBenchmarkHelper\(messageCount, documentCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkDocumentOperations\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkDocumentOperations>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkMessageOperations\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkMessageOperations>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkSchemaCreation\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkSchemaCreation>)
-- [type CallOptions](<#CallOptions>)
-  - [func NewCallOptions\(\) \*CallOptions](<#NewCallOptions>)
-- [type ChatHistory](<#ChatHistory>)
-  - [func NewBaseChatHistory\(opts ...ChatHistoryOption\) \(ChatHistory, error\)](<#NewBaseChatHistory>)
-- [type ChatHistoryConfig](<#ChatHistoryConfig>)
-  - [func NewChatHistoryConfig\(opts ...ChatHistoryOption\) \(\*ChatHistoryConfig, error\)](<#NewChatHistoryConfig>)
-- [type ChatHistoryOption](<#ChatHistoryOption>)
-  - [func WithMaxMessages\(maxMessages int\) ChatHistoryOption](<#WithMaxMessages>)
-  - [func WithPersistence\(enable bool\) ChatHistoryOption](<#WithPersistence>)
-  - [func WithTTL\(ttl time.Duration\) ChatHistoryOption](<#WithTTL>)
-- [type ChatMessage](<#ChatMessage>)
-- [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
-  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
-  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
-- [type Document](<#Document>)
-  - [func CreateTestDocuments\(count int, topic string\) \[\]Document](<#CreateTestDocuments>)
-  - [func NewDocument\(pageContent string, metadata map\[string\]string\) Document](<#NewDocument>)
-  - [func NewDocumentWithEmbedding\(pageContent string, metadata map\[string\]string, embedding \[\]float32\) Document](<#NewDocumentWithEmbedding>)
-  - [func NewDocumentWithID\(id, pageContent string, metadata map\[string\]string\) Document](<#NewDocumentWithID>)
-- [type EmbeddingOption](<#EmbeddingOption>)
-  - [func WithEmbeddingBaseURL\(baseURL string\) EmbeddingOption](<#WithEmbeddingBaseURL>)
-  - [func WithEmbeddingProviderSpecific\(specific map\[string\]any\) EmbeddingOption](<#WithEmbeddingProviderSpecific>)
-- [type EmbeddingProviderConfig](<#EmbeddingProviderConfig>)
-  - [func NewEmbeddingProviderConfig\(name, provider, modelName, apiKey string, opts ...EmbeddingOption\) \(\*EmbeddingProviderConfig, error\)](<#NewEmbeddingProviderConfig>)
-  - [func \(c \*EmbeddingProviderConfig\) Validate\(\) error](<#EmbeddingProviderConfig.Validate>)
-- [type Event](<#Event>)
-  - [func NewEvent\(eventID, eventType, source string, payload any\) Event](<#NewEvent>)
-- [type FinalAnswer](<#FinalAnswer>)
-  - [func NewFinalAnswer\(output string, sourceDocuments \[\]any, intermediateSteps \[\]Step\) FinalAnswer](<#NewFinalAnswer>)
-- [type FunctionCall](<#FunctionCall>)
-- [type Generation](<#Generation>)
-  - [func NewGeneration\(text string, message Message, generationInfo map\[string\]any\) \*Generation](<#NewGeneration>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddDocument\(name string, document \*AdvancedMockDocument\)](<#IntegrationTestHelper.AddDocument>)
-  - [func \(h \*IntegrationTestHelper\) AddMessage\(name string, message \*AdvancedMockMessage\)](<#IntegrationTestHelper.AddMessage>)
-  - [func \(h \*IntegrationTestHelper\) GetDocument\(name string\) \*AdvancedMockDocument](<#IntegrationTestHelper.GetDocument>)
-  - [func \(h \*IntegrationTestHelper\) GetMessage\(name string\) \*AdvancedMockMessage](<#IntegrationTestHelper.GetMessage>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type LLMOption](<#LLMOption>)
-  - [func WithFrequencyPenalty\(penalty float64\) LLMOption](<#WithFrequencyPenalty>)
-  - [func WithMaxTokens\(maxTokens int\) LLMOption](<#WithMaxTokens>)
-  - [func WithPresencePenalty\(penalty float64\) LLMOption](<#WithPresencePenalty>)
-  - [func WithProviderSpecificArg\(key string, value any\) LLMOption](<#WithProviderSpecificArg>)
-  - [func WithStopSequences\(stop \[\]string\) LLMOption](<#WithStopSequences>)
-  - [func WithStreaming\(streaming bool\) LLMOption](<#WithStreaming>)
-  - [func WithTemperature\(temp float64\) LLMOption](<#WithTemperature>)
-  - [func WithTopP\(topP float64\) LLMOption](<#WithTopP>)
-- [type LLMProviderConfig](<#LLMProviderConfig>)
-  - [func NewLLMProviderConfig\(name, provider, modelName string, opts ...LLMProviderOption\) \(\*LLMProviderConfig, error\)](<#NewLLMProviderConfig>)
-  - [func \(c \*LLMProviderConfig\) Validate\(\) error](<#LLMProviderConfig.Validate>)
-- [type LLMProviderOption](<#LLMProviderOption>)
-  - [func WithAPIKey\(apiKey string\) LLMProviderOption](<#WithAPIKey>)
-  - [func WithBaseURL\(baseURL string\) LLMProviderOption](<#WithBaseURL>)
-  - [func WithDefaultCallOptions\(options map\[string\]any\) LLMProviderOption](<#WithDefaultCallOptions>)
-  - [func WithProviderSpecific\(specific map\[string\]any\) LLMProviderOption](<#WithProviderSpecific>)
-- [type LLMResponse](<#LLMResponse>)
-  - [func NewLLMResponse\(generations \[\]\[\]\*Generation, llmOutput map\[string\]any\) \*LLMResponse](<#NewLLMResponse>)
-- [type Message](<#Message>)
-  - [func CreateTestMessages\(count int\) \[\]Message](<#CreateTestMessages>)
-  - [func NewAIMessage\(content string\) Message](<#NewAIMessage>)
-  - [func NewAIMessageWithContext\(ctx context.Context, content string\) Message](<#NewAIMessageWithContext>)
-  - [func NewChatMessage\(role MessageType, content string\) Message](<#NewChatMessage>)
-  - [func NewFunctionMessage\(name, content string\) Message](<#NewFunctionMessage>)
-  - [func NewHumanMessage\(content string\) Message](<#NewHumanMessage>)
-  - [func NewHumanMessageWithContext\(ctx context.Context, content string\) Message](<#NewHumanMessageWithContext>)
-  - [func NewSystemMessage\(content string\) Message](<#NewSystemMessage>)
-  - [func NewToolMessage\(content, toolCallID string\) Message](<#NewToolMessage>)
-- [type MessageType](<#MessageType>)
-- [type Metrics](<#Metrics>)
-  - [func GetGlobalMetrics\(\) \*Metrics](<#GetGlobalMetrics>)
-  - [func NewMetrics\(meter metric.Meter\) \(\*Metrics, error\)](<#NewMetrics>)
-  - [func NoOpMetrics\(\) \*Metrics](<#NoOpMetrics>)
-  - [func \(m \*Metrics\) RecordA2ACommunicationError\(ctx context.Context, operation string, err error\)](<#Metrics.RecordA2ACommunicationError>)
-  - [func \(m \*Metrics\) RecordAgentActionCreated\(ctx context.Context, tool string\)](<#Metrics.RecordAgentActionCreated>)
-  - [func \(m \*Metrics\) RecordAgentLifecycleEvent\(ctx context.Context, agentID, eventType string\)](<#Metrics.RecordAgentLifecycleEvent>)
-  - [func \(m \*Metrics\) RecordAgentMessageReceived\(ctx context.Context, messageType, toAgentID string\)](<#Metrics.RecordAgentMessageReceived>)
-  - [func \(m \*Metrics\) RecordAgentMessageSent\(ctx context.Context, messageType, fromAgentID string\)](<#Metrics.RecordAgentMessageSent>)
-  - [func \(m \*Metrics\) RecordAgentObservationCreated\(ctx context.Context\)](<#Metrics.RecordAgentObservationCreated>)
-  - [func \(m \*Metrics\) RecordAgentRequestReceived\(ctx context.Context, action, toAgentID string\)](<#Metrics.RecordAgentRequestReceived>)
-  - [func \(m \*Metrics\) RecordAgentRequestSent\(ctx context.Context, action, fromAgentID string\)](<#Metrics.RecordAgentRequestSent>)
-  - [func \(m \*Metrics\) RecordAgentResponseReceived\(ctx context.Context, status, fromAgentID string\)](<#Metrics.RecordAgentResponseReceived>)
-  - [func \(m \*Metrics\) RecordAgentResponseSent\(ctx context.Context, status, toAgentID string\)](<#Metrics.RecordAgentResponseSent>)
-  - [func \(m \*Metrics\) RecordConfigError\(ctx context.Context, configType string, err error\)](<#Metrics.RecordConfigError>)
-  - [func \(m \*Metrics\) RecordConfigValidation\(ctx context.Context, configType string\)](<#Metrics.RecordConfigValidation>)
-  - [func \(m \*Metrics\) RecordDocumentCreated\(ctx context.Context\)](<#Metrics.RecordDocumentCreated>)
-  - [func \(m \*Metrics\) RecordDocumentError\(ctx context.Context, err error\)](<#Metrics.RecordDocumentError>)
-  - [func \(m \*Metrics\) RecordDocumentValidation\(ctx context.Context\)](<#Metrics.RecordDocumentValidation>)
-  - [func \(m \*Metrics\) RecordDocumentValidationError\(ctx context.Context, err error\)](<#Metrics.RecordDocumentValidationError>)
-  - [func \(m \*Metrics\) RecordEventConsumed\(ctx context.Context, eventType, consumer string\)](<#Metrics.RecordEventConsumed>)
-  - [func \(m \*Metrics\) RecordEventProcessingError\(ctx context.Context, eventType string, err error\)](<#Metrics.RecordEventProcessingError>)
-  - [func \(m \*Metrics\) RecordEventPublished\(ctx context.Context, eventType, source string\)](<#Metrics.RecordEventPublished>)
-  - [func \(m \*Metrics\) RecordFactoryCreation\(ctx context.Context, objectType string\)](<#Metrics.RecordFactoryCreation>)
-  - [func \(m \*Metrics\) RecordFactoryError\(ctx context.Context, objectType string, err error\)](<#Metrics.RecordFactoryError>)
-  - [func \(m \*Metrics\) RecordGenerationCreated\(ctx context.Context\)](<#Metrics.RecordGenerationCreated>)
-  - [func \(m \*Metrics\) RecordHistoryOperation\(ctx context.Context, operation string\)](<#Metrics.RecordHistoryOperation>)
-  - [func \(m \*Metrics\) RecordHistorySize\(ctx context.Context, size int\)](<#Metrics.RecordHistorySize>)
-  - [func \(m \*Metrics\) RecordLLMResponseCreated\(ctx context.Context\)](<#Metrics.RecordLLMResponseCreated>)
-  - [func \(m \*Metrics\) RecordMessageCreated\(ctx context.Context, msgType MessageType\)](<#Metrics.RecordMessageCreated>)
-  - [func \(m \*Metrics\) RecordMessageError\(ctx context.Context, msgType MessageType, err error\)](<#Metrics.RecordMessageError>)
-  - [func \(m \*Metrics\) RecordMessageValidation\(ctx context.Context, msgType MessageType\)](<#Metrics.RecordMessageValidation>)
-  - [func \(m \*Metrics\) RecordMessageValidationError\(ctx context.Context, msgType MessageType, err error\)](<#Metrics.RecordMessageValidationError>)
-  - [func \(m \*Metrics\) RecordSchemaValidation\(ctx context.Context, validationType string\)](<#Metrics.RecordSchemaValidation>)
-  - [func \(m \*Metrics\) RecordSchemaValidationError\(ctx context.Context, validationType string, err error\)](<#Metrics.RecordSchemaValidationError>)
-  - [func \(m \*Metrics\) RecordStepCreated\(ctx context.Context\)](<#Metrics.RecordStepCreated>)
-  - [func \(m \*Metrics\) RecordTaskEvent\(ctx context.Context, taskID, eventType string\)](<#Metrics.RecordTaskEvent>)
-  - [func \(m \*Metrics\) RecordWorkflowEvent\(ctx context.Context, workflowID, eventType string\)](<#Metrics.RecordWorkflowEvent>)
-- [type MockDocumentOption](<#MockDocumentOption>)
-  - [func WithMockEmbedding\(embedding \[\]float32\) MockDocumentOption](<#WithMockEmbedding>)
-  - [func WithMockID\(id string\) MockDocumentOption](<#WithMockID>)
-  - [func WithMockScore\(score float32\) MockDocumentOption](<#WithMockScore>)
-- [type MockMessageOption](<#MockMessageOption>)
-  - [func WithMockAdditionalArgs\(args map\[string\]any\) MockMessageOption](<#WithMockAdditionalArgs>)
-  - [func WithMockToolCalls\(toolCalls \[\]iface.ToolCall\) MockMessageOption](<#WithMockToolCalls>)
-- [type SchemaScenarioRunner](<#SchemaScenarioRunner>)
-  - [func NewSchemaScenarioRunner\(messageCount, documentCount int\) \*SchemaScenarioRunner](<#NewSchemaScenarioRunner>)
-  - [func \(r \*SchemaScenarioRunner\) RunConversationScenario\(\) error](<#SchemaScenarioRunner.RunConversationScenario>)
-  - [func \(r \*SchemaScenarioRunner\) RunDocumentProcessingScenario\(\) error](<#SchemaScenarioRunner.RunDocumentProcessingScenario>)
-  - [func \(r \*SchemaScenarioRunner\) RunMessageProcessingScenario\(\) error](<#SchemaScenarioRunner.RunMessageProcessingScenario>)
-- [type SchemaValidationConfig](<#SchemaValidationConfig>)
-  - [func NewSchemaValidationConfig\(opts ...SchemaValidationOption\) \(\*SchemaValidationConfig, error\)](<#NewSchemaValidationConfig>)
-  - [func \(c \*SchemaValidationConfig\) Validate\(\) error](<#SchemaValidationConfig.Validate>)
-- [type SchemaValidationOption](<#SchemaValidationOption>)
-  - [func WithAllowedMessageTypes\(types \[\]string\) SchemaValidationOption](<#WithAllowedMessageTypes>)
-  - [func WithContentValidation\(enable bool\) SchemaValidationOption](<#WithContentValidation>)
-  - [func WithMaxMessageLength\(maxLength int\) SchemaValidationOption](<#WithMaxMessageLength>)
-  - [func WithMaxMetadataSize\(maxSize int\) SchemaValidationOption](<#WithMaxMetadataSize>)
-  - [func WithMaxToolCalls\(maxCalls int\) SchemaValidationOption](<#WithMaxToolCalls>)
-  - [func WithRequiredMetadataFields\(fields \[\]string\) SchemaValidationOption](<#WithRequiredMetadataFields>)
-  - [func WithStrictValidation\(enable bool\) SchemaValidationOption](<#WithStrictValidation>)
-- [type Step](<#Step>)
-  - [func NewStep\(action AgentAction, observation AgentObservation\) Step](<#NewStep>)
-- [type TaskEvent](<#TaskEvent>)
-  - [func NewTaskEvent\(taskID, agentID string, eventType TaskEventType\) TaskEvent](<#NewTaskEvent>)
-- [type TaskEventType](<#TaskEventType>)
-- [type ToolCall](<#ToolCall>)
-- [type ToolCallChunk](<#ToolCallChunk>)
-- [type ToolMessage](<#ToolMessage>)
-- [type VectorStoreConfig](<#VectorStoreConfig>)
-  - [func NewVectorStoreConfig\(name, provider string, opts ...VectorStoreOption\) \(\*VectorStoreConfig, error\)](<#NewVectorStoreConfig>)
-  - [func \(c \*VectorStoreConfig\) Validate\(\) error](<#VectorStoreConfig.Validate>)
-- [type VectorStoreOption](<#VectorStoreOption>)
-  - [func WithConnectionString\(connectionString string\) VectorStoreOption](<#WithConnectionString>)
-  - [func WithVectorStoreProviderSpecific\(specific map\[string\]any\) VectorStoreOption](<#WithVectorStoreProviderSpecific>)
-- [type WorkflowEvent](<#WorkflowEvent>)
-  - [func NewWorkflowEvent\(workflowID string, eventType WorkflowEventType\) WorkflowEvent](<#NewWorkflowEvent>)
-- [type WorkflowEventType](<#WorkflowEventType>)
+- [Constants](#constants>)
+- [func AssertAgentAction\(t \*testing.T, action AgentAction, expectedTool string\)](#AssertAgentAction>)
+- [func AssertAgentFinish\(t \*testing.T, finish AgentFinish, expectedMinReturnValues int\)](#AssertAgentFinish>)
+- [func AssertDocument\(t \*testing.T, document Document, expectedMinContentLength int\)](#AssertDocument>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertMessage\(t \*testing.T, message Message, expectedType iface.MessageType, expectedMinLength int\)](#AssertMessage>)
+- [func AssertMessageHistory\(t \*testing.T, messages \[\]Message, expectedMinCount int\)](#AssertMessageHistory>)
+- [func AssertToolCall\(t \*testing.T, toolCall iface.ToolCall, expectedName string\)](#AssertToolCall>)
+- [func CreateTestToolCall\(name, input string\) iface.ToolCall](#CreateTestToolCall>)
+- [func RecordA2ACommunicationError\(ctx context.Context, operation string, err error\)](#RecordA2ACommunicationError>)
+- [func RecordAgentActionCreated\(ctx context.Context, tool string\)](#RecordAgentActionCreated>)
+- [func RecordAgentLifecycleEvent\(ctx context.Context, agentID, eventType string\)](#RecordAgentLifecycleEvent>)
+- [func RecordAgentMessageReceived\(ctx context.Context, messageType, toAgentID string\)](#RecordAgentMessageReceived>)
+- [func RecordAgentMessageSent\(ctx context.Context, messageType, fromAgentID string\)](#RecordAgentMessageSent>)
+- [func RecordAgentObservationCreated\(ctx context.Context\)](#RecordAgentObservationCreated>)
+- [func RecordAgentRequestReceived\(ctx context.Context, action, toAgentID string\)](#RecordAgentRequestReceived>)
+- [func RecordAgentRequestSent\(ctx context.Context, action, fromAgentID string\)](#RecordAgentRequestSent>)
+- [func RecordAgentResponseReceived\(ctx context.Context, status, fromAgentID string\)](#RecordAgentResponseReceived>)
+- [func RecordAgentResponseSent\(ctx context.Context, status, toAgentID string\)](#RecordAgentResponseSent>)
+- [func RecordConfigError\(ctx context.Context, configType string, err error\)](#RecordConfigError>)
+- [func RecordConfigValidation\(ctx context.Context, configType string\)](#RecordConfigValidation>)
+- [func RecordDocumentCreated\(ctx context.Context\)](#RecordDocumentCreated>)
+- [func RecordDocumentError\(ctx context.Context, err error\)](#RecordDocumentError>)
+- [func RecordDocumentValidation\(ctx context.Context\)](#RecordDocumentValidation>)
+- [func RecordDocumentValidationError\(ctx context.Context, err error\)](#RecordDocumentValidationError>)
+- [func RecordEventConsumed\(ctx context.Context, eventType, consumer string\)](#RecordEventConsumed>)
+- [func RecordEventProcessingError\(ctx context.Context, eventType string, err error\)](#RecordEventProcessingError>)
+- [func RecordEventPublished\(ctx context.Context, eventType, source string\)](#RecordEventPublished>)
+- [func RecordFactoryCreation\(ctx context.Context, objectType string\)](#RecordFactoryCreation>)
+- [func RecordFactoryError\(ctx context.Context, objectType string, err error\)](#RecordFactoryError>)
+- [func RecordGenerationCreated\(ctx context.Context\)](#RecordGenerationCreated>)
+- [func RecordHistoryOperation\(ctx context.Context, operation string\)](#RecordHistoryOperation>)
+- [func RecordHistorySize\(ctx context.Context, size int\)](#RecordHistorySize>)
+- [func RecordLLMResponseCreated\(ctx context.Context\)](#RecordLLMResponseCreated>)
+- [func RecordMessageCreated\(ctx context.Context, msgType MessageType\)](#RecordMessageCreated>)
+- [func RecordMessageError\(ctx context.Context, msgType MessageType, err error\)](#RecordMessageError>)
+- [func RecordMessageValidation\(ctx context.Context, msgType MessageType\)](#RecordMessageValidation>)
+- [func RecordMessageValidationError\(ctx context.Context, msgType MessageType, err error\)](#RecordMessageValidationError>)
+- [func RecordSchemaValidation\(ctx context.Context, validationType string\)](#RecordSchemaValidation>)
+- [func RecordSchemaValidationError\(ctx context.Context, validationType string, err error\)](#RecordSchemaValidationError>)
+- [func RecordStepCreated\(ctx context.Context\)](#RecordStepCreated>)
+- [func RecordTaskEvent\(ctx context.Context, taskID, eventType string\)](#RecordTaskEvent>)
+- [func RecordWorkflowEvent\(ctx context.Context, workflowID, eventType string\)](#RecordWorkflowEvent>)
+- [func RunLoadTest\(t \*testing.T, message \*AdvancedMockMessage, numOperations, concurrency int\)](#RunLoadTest>)
+- [func SetGlobalMetrics\(m \*Metrics\)](#SetGlobalMetrics>)
+- [func ValidateConversationFlow\(messages \[\]Message\) error](#ValidateConversationFlow>)
+- [func ValidateDocument\(doc Document\) error](#ValidateDocument>)
+- [func ValidateDocumentCollection\(documents \[\]Document\) error](#ValidateDocumentCollection>)
+- [func ValidateMessage\(msg Message\) error](#ValidateMessage>)
+- [func ValidateMessageType\(msgType iface.MessageType\) bool](#ValidateMessageType>)
+- [type AIMessage](#AIMessage>)
+- [type AdvancedMockDocument](#AdvancedMockDocument>)
+  - [func NewAdvancedMockDocument\(content string, metadata map\[string\]string, options ...MockDocumentOption\) \*AdvancedMockDocument](#NewAdvancedMockDocument>)
+  - [func \(d \*AdvancedMockDocument\) AdditionalArgs\(\) map\[string\]any](#AdvancedMockDocument.AdditionalArgs>)
+  - [func \(d \*AdvancedMockDocument\) GetCallCount\(\) int](#AdvancedMockDocument.GetCallCount>)
+  - [func \(d \*AdvancedMockDocument\) GetContent\(\) string](#AdvancedMockDocument.GetContent>)
+  - [func \(d \*AdvancedMockDocument\) GetEmbedding\(\) \[\]float32](#AdvancedMockDocument.GetEmbedding>)
+  - [func \(d \*AdvancedMockDocument\) GetID\(\) string](#AdvancedMockDocument.GetID>)
+  - [func \(d \*AdvancedMockDocument\) GetMetadata\(\) map\[string\]string](#AdvancedMockDocument.GetMetadata>)
+  - [func \(d \*AdvancedMockDocument\) GetScore\(\) float32](#AdvancedMockDocument.GetScore>)
+  - [func \(d \*AdvancedMockDocument\) GetType\(\) iface.MessageType](#AdvancedMockDocument.GetType>)
+  - [func \(d \*AdvancedMockDocument\) ToolCalls\(\) \[\]iface.ToolCall](#AdvancedMockDocument.ToolCalls>)
+- [type AdvancedMockMessage](#AdvancedMockMessage>)
+  - [func NewAdvancedMockMessage\(messageType iface.MessageType, content string, options ...MockMessageOption\) \*AdvancedMockMessage](#NewAdvancedMockMessage>)
+  - [func \(m \*AdvancedMockMessage\) AddToolCall\(toolCall iface.ToolCall\)](#AdvancedMockMessage.AddToolCall>)
+  - [func \(m \*AdvancedMockMessage\) AdditionalArgs\(\) map\[string\]any](#AdvancedMockMessage.AdditionalArgs>)
+  - [func \(m \*AdvancedMockMessage\) CheckHealth\(\) map\[string\]any](#AdvancedMockMessage.CheckHealth>)
+  - [func \(m \*AdvancedMockMessage\) GetCallCount\(\) int](#AdvancedMockMessage.GetCallCount>)
+  - [func \(m \*AdvancedMockMessage\) GetContent\(\) string](#AdvancedMockMessage.GetContent>)
+  - [func \(m \*AdvancedMockMessage\) GetType\(\) iface.MessageType](#AdvancedMockMessage.GetType>)
+  - [func \(m \*AdvancedMockMessage\) SetContent\(content string\)](#AdvancedMockMessage.SetContent>)
+  - [func \(m \*AdvancedMockMessage\) ToolCalls\(\) \[\]iface.ToolCall](#AdvancedMockMessage.ToolCalls>)
+- [type AgentAction](#AgentAction>)
+  - [func CreateTestAgentAction\(tool, input, log string\) AgentAction](#CreateTestAgentAction>)
+  - [func NewAgentAction\(tool string, toolInput any, log string\) AgentAction](#NewAgentAction>)
+- [type AgentConfig](#AgentConfig>)
+  - [func NewAgentConfig\(name, llmProviderName string, opts ...AgentOption\) \(\*AgentConfig, error\)](#NewAgentConfig>)
+  - [func \(c \*AgentConfig\) Validate\(\) error](#AgentConfig.Validate>)
+- [type AgentError](#AgentError>)
+  - [func NewAgentError\(code, message string, details map\[string\]any\) \*AgentError](#NewAgentError>)
+- [type AgentFinish](#AgentFinish>)
+  - [func CreateTestAgentFinish\(returnValues map\[string\]any, log string\) AgentFinish](#CreateTestAgentFinish>)
+  - [func NewAgentFinish\(returnValues map\[string\]any, log string\) AgentFinish](#NewAgentFinish>)
+- [type AgentLifecycleEvent](#AgentLifecycleEvent>)
+  - [func NewAgentLifecycleEvent\(agentID string, eventType AgentLifecycleEventType\) AgentLifecycleEvent](#NewAgentLifecycleEvent>)
+- [type AgentLifecycleEventType](#AgentLifecycleEventType>)
+- [type AgentMessage](#AgentMessage>)
+  - [func NewAgentMessage\(fromAgentID, messageID string, messageType AgentMessageType, payload any\) AgentMessage](#NewAgentMessage>)
+- [type AgentMessageType](#AgentMessageType>)
+- [type AgentObservation](#AgentObservation>)
+  - [func NewAgentObservation\(actionLog, output string, parsedOutput any\) AgentObservation](#NewAgentObservation>)
+- [type AgentOption](#AgentOption>)
+  - [func WithAgentType\(agentType string\) AgentOption](#WithAgentType>)
+  - [func WithMaxIterations\(maxIterations int\) AgentOption](#WithMaxIterations>)
+  - [func WithMemoryProvider\(providerName, memoryType string\) AgentOption](#WithMemoryProvider>)
+  - [func WithPromptTemplate\(template string\) AgentOption](#WithPromptTemplate>)
+  - [func WithToolNames\(toolNames \[\]string\) AgentOption](#WithToolNames>)
+- [type AgentRequest](#AgentRequest>)
+  - [func NewAgentRequest\(action string, parameters map\[string\]any\) AgentRequest](#NewAgentRequest>)
+- [type AgentResponse](#AgentResponse>)
+  - [func NewAgentResponse\(requestID, status string, result any\) AgentResponse](#NewAgentResponse>)
+- [type AgentScratchPadEntry](#AgentScratchPadEntry>)
+- [type BaseChatHistory](#BaseChatHistory>)
+- [type BenchmarkHelper](#BenchmarkHelper>)
+  - [func NewBenchmarkHelper\(messageCount, documentCount int\) \*BenchmarkHelper](#NewBenchmarkHelper>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkDocumentOperations\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkDocumentOperations>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkMessageOperations\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkMessageOperations>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkSchemaCreation\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkSchemaCreation>)
+- [type CallOptions](#CallOptions>)
+  - [func NewCallOptions\(\) \*CallOptions](#NewCallOptions>)
+- [type ChatHistory](#ChatHistory>)
+  - [func NewBaseChatHistory\(opts ...ChatHistoryOption\) \(ChatHistory, error\)](#NewBaseChatHistory>)
+- [type ChatHistoryConfig](#ChatHistoryConfig>)
+  - [func NewChatHistoryConfig\(opts ...ChatHistoryOption\) \(\*ChatHistoryConfig, error\)](#NewChatHistoryConfig>)
+- [type ChatHistoryOption](#ChatHistoryOption>)
+  - [func WithMaxMessages\(maxMessages int\) ChatHistoryOption](#WithMaxMessages>)
+  - [func WithPersistence\(enable bool\) ChatHistoryOption](#WithPersistence>)
+  - [func WithTTL\(ttl time.Duration\) ChatHistoryOption](#WithTTL>)
+- [type ChatMessage](#ChatMessage>)
+- [type ConcurrentTestRunner](#ConcurrentTestRunner>)
+  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](#NewConcurrentTestRunner>)
+  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](#ConcurrentTestRunner.Run>)
+- [type Document](#Document>)
+  - [func CreateTestDocuments\(count int, topic string\) \[\]Document](#CreateTestDocuments>)
+  - [func NewDocument\(pageContent string, metadata map\[string\]string\) Document](#NewDocument>)
+  - [func NewDocumentWithEmbedding\(pageContent string, metadata map\[string\]string, embedding \[\]float32\) Document](#NewDocumentWithEmbedding>)
+  - [func NewDocumentWithID\(id, pageContent string, metadata map\[string\]string\) Document](#NewDocumentWithID>)
+- [type EmbeddingOption](#EmbeddingOption>)
+  - [func WithEmbeddingBaseURL\(baseURL string\) EmbeddingOption](#WithEmbeddingBaseURL>)
+  - [func WithEmbeddingProviderSpecific\(specific map\[string\]any\) EmbeddingOption](#WithEmbeddingProviderSpecific>)
+- [type EmbeddingProviderConfig](#EmbeddingProviderConfig>)
+  - [func NewEmbeddingProviderConfig\(name, provider, modelName, apiKey string, opts ...EmbeddingOption\) \(\*EmbeddingProviderConfig, error\)](#NewEmbeddingProviderConfig>)
+  - [func \(c \*EmbeddingProviderConfig\) Validate\(\) error](#EmbeddingProviderConfig.Validate>)
+- [type Event](#Event>)
+  - [func NewEvent\(eventID, eventType, source string, payload any\) Event](#NewEvent>)
+- [type FinalAnswer](#FinalAnswer>)
+  - [func NewFinalAnswer\(output string, sourceDocuments \[\]any, intermediateSteps \[\]Step\) FinalAnswer](#NewFinalAnswer>)
+- [type FunctionCall](#FunctionCall>)
+- [type Generation](#Generation>)
+  - [func NewGeneration\(text string, message Message, generationInfo map\[string\]any\) \*Generation](#NewGeneration>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddDocument\(name string, document \*AdvancedMockDocument\)](#IntegrationTestHelper.AddDocument>)
+  - [func \(h \*IntegrationTestHelper\) AddMessage\(name string, message \*AdvancedMockMessage\)](#IntegrationTestHelper.AddMessage>)
+  - [func \(h \*IntegrationTestHelper\) GetDocument\(name string\) \*AdvancedMockDocument](#IntegrationTestHelper.GetDocument>)
+  - [func \(h \*IntegrationTestHelper\) GetMessage\(name string\) \*AdvancedMockMessage](#IntegrationTestHelper.GetMessage>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type LLMOption](#LLMOption>)
+  - [func WithFrequencyPenalty\(penalty float64\) LLMOption](#WithFrequencyPenalty>)
+  - [func WithMaxTokens\(maxTokens int\) LLMOption](#WithMaxTokens>)
+  - [func WithPresencePenalty\(penalty float64\) LLMOption](#WithPresencePenalty>)
+  - [func WithProviderSpecificArg\(key string, value any\) LLMOption](#WithProviderSpecificArg>)
+  - [func WithStopSequences\(stop \[\]string\) LLMOption](#WithStopSequences>)
+  - [func WithStreaming\(streaming bool\) LLMOption](#WithStreaming>)
+  - [func WithTemperature\(temp float64\) LLMOption](#WithTemperature>)
+  - [func WithTopP\(topP float64\) LLMOption](#WithTopP>)
+- [type LLMProviderConfig](#LLMProviderConfig>)
+  - [func NewLLMProviderConfig\(name, provider, modelName string, opts ...LLMProviderOption\) \(\*LLMProviderConfig, error\)](#NewLLMProviderConfig>)
+  - [func \(c \*LLMProviderConfig\) Validate\(\) error](#LLMProviderConfig.Validate>)
+- [type LLMProviderOption](#LLMProviderOption>)
+  - [func WithAPIKey\(apiKey string\) LLMProviderOption](#WithAPIKey>)
+  - [func WithBaseURL\(baseURL string\) LLMProviderOption](#WithBaseURL>)
+  - [func WithDefaultCallOptions\(options map\[string\]any\) LLMProviderOption](#WithDefaultCallOptions>)
+  - [func WithProviderSpecific\(specific map\[string\]any\) LLMProviderOption](#WithProviderSpecific>)
+- [type LLMResponse](#LLMResponse>)
+  - [func NewLLMResponse\(generations \[\]\[\]\*Generation, llmOutput map\[string\]any\) \*LLMResponse](#NewLLMResponse>)
+- [type Message](#Message>)
+  - [func CreateTestMessages\(count int\) \[\]Message](#CreateTestMessages>)
+  - [func NewAIMessage\(content string\) Message](#NewAIMessage>)
+  - [func NewAIMessageWithContext\(ctx context.Context, content string\) Message](#NewAIMessageWithContext>)
+  - [func NewChatMessage\(role MessageType, content string\) Message](#NewChatMessage>)
+  - [func NewFunctionMessage\(name, content string\) Message](#NewFunctionMessage>)
+  - [func NewHumanMessage\(content string\) Message](#NewHumanMessage>)
+  - [func NewHumanMessageWithContext\(ctx context.Context, content string\) Message](#NewHumanMessageWithContext>)
+  - [func NewSystemMessage\(content string\) Message](#NewSystemMessage>)
+  - [func NewToolMessage\(content, toolCallID string\) Message](#NewToolMessage>)
+- [type MessageType](#MessageType>)
+- [type Metrics](#Metrics>)
+  - [func GetGlobalMetrics\(\) \*Metrics](#GetGlobalMetrics>)
+  - [func NewMetrics\(meter metric.Meter\) \(\*Metrics, error\)](#NewMetrics>)
+  - [func NoOpMetrics\(\) \*Metrics](#NoOpMetrics>)
+  - [func \(m \*Metrics\) RecordA2ACommunicationError\(ctx context.Context, operation string, err error\)](#Metrics.RecordA2ACommunicationError>)
+  - [func \(m \*Metrics\) RecordAgentActionCreated\(ctx context.Context, tool string\)](#Metrics.RecordAgentActionCreated>)
+  - [func \(m \*Metrics\) RecordAgentLifecycleEvent\(ctx context.Context, agentID, eventType string\)](#Metrics.RecordAgentLifecycleEvent>)
+  - [func \(m \*Metrics\) RecordAgentMessageReceived\(ctx context.Context, messageType, toAgentID string\)](#Metrics.RecordAgentMessageReceived>)
+  - [func \(m \*Metrics\) RecordAgentMessageSent\(ctx context.Context, messageType, fromAgentID string\)](#Metrics.RecordAgentMessageSent>)
+  - [func \(m \*Metrics\) RecordAgentObservationCreated\(ctx context.Context\)](#Metrics.RecordAgentObservationCreated>)
+  - [func \(m \*Metrics\) RecordAgentRequestReceived\(ctx context.Context, action, toAgentID string\)](#Metrics.RecordAgentRequestReceived>)
+  - [func \(m \*Metrics\) RecordAgentRequestSent\(ctx context.Context, action, fromAgentID string\)](#Metrics.RecordAgentRequestSent>)
+  - [func \(m \*Metrics\) RecordAgentResponseReceived\(ctx context.Context, status, fromAgentID string\)](#Metrics.RecordAgentResponseReceived>)
+  - [func \(m \*Metrics\) RecordAgentResponseSent\(ctx context.Context, status, toAgentID string\)](#Metrics.RecordAgentResponseSent>)
+  - [func \(m \*Metrics\) RecordConfigError\(ctx context.Context, configType string, err error\)](#Metrics.RecordConfigError>)
+  - [func \(m \*Metrics\) RecordConfigValidation\(ctx context.Context, configType string\)](#Metrics.RecordConfigValidation>)
+  - [func \(m \*Metrics\) RecordDocumentCreated\(ctx context.Context\)](#Metrics.RecordDocumentCreated>)
+  - [func \(m \*Metrics\) RecordDocumentError\(ctx context.Context, err error\)](#Metrics.RecordDocumentError>)
+  - [func \(m \*Metrics\) RecordDocumentValidation\(ctx context.Context\)](#Metrics.RecordDocumentValidation>)
+  - [func \(m \*Metrics\) RecordDocumentValidationError\(ctx context.Context, err error\)](#Metrics.RecordDocumentValidationError>)
+  - [func \(m \*Metrics\) RecordEventConsumed\(ctx context.Context, eventType, consumer string\)](#Metrics.RecordEventConsumed>)
+  - [func \(m \*Metrics\) RecordEventProcessingError\(ctx context.Context, eventType string, err error\)](#Metrics.RecordEventProcessingError>)
+  - [func \(m \*Metrics\) RecordEventPublished\(ctx context.Context, eventType, source string\)](#Metrics.RecordEventPublished>)
+  - [func \(m \*Metrics\) RecordFactoryCreation\(ctx context.Context, objectType string\)](#Metrics.RecordFactoryCreation>)
+  - [func \(m \*Metrics\) RecordFactoryError\(ctx context.Context, objectType string, err error\)](#Metrics.RecordFactoryError>)
+  - [func \(m \*Metrics\) RecordGenerationCreated\(ctx context.Context\)](#Metrics.RecordGenerationCreated>)
+  - [func \(m \*Metrics\) RecordHistoryOperation\(ctx context.Context, operation string\)](#Metrics.RecordHistoryOperation>)
+  - [func \(m \*Metrics\) RecordHistorySize\(ctx context.Context, size int\)](#Metrics.RecordHistorySize>)
+  - [func \(m \*Metrics\) RecordLLMResponseCreated\(ctx context.Context\)](#Metrics.RecordLLMResponseCreated>)
+  - [func \(m \*Metrics\) RecordMessageCreated\(ctx context.Context, msgType MessageType\)](#Metrics.RecordMessageCreated>)
+  - [func \(m \*Metrics\) RecordMessageError\(ctx context.Context, msgType MessageType, err error\)](#Metrics.RecordMessageError>)
+  - [func \(m \*Metrics\) RecordMessageValidation\(ctx context.Context, msgType MessageType\)](#Metrics.RecordMessageValidation>)
+  - [func \(m \*Metrics\) RecordMessageValidationError\(ctx context.Context, msgType MessageType, err error\)](#Metrics.RecordMessageValidationError>)
+  - [func \(m \*Metrics\) RecordSchemaValidation\(ctx context.Context, validationType string\)](#Metrics.RecordSchemaValidation>)
+  - [func \(m \*Metrics\) RecordSchemaValidationError\(ctx context.Context, validationType string, err error\)](#Metrics.RecordSchemaValidationError>)
+  - [func \(m \*Metrics\) RecordStepCreated\(ctx context.Context\)](#Metrics.RecordStepCreated>)
+  - [func \(m \*Metrics\) RecordTaskEvent\(ctx context.Context, taskID, eventType string\)](#Metrics.RecordTaskEvent>)
+  - [func \(m \*Metrics\) RecordWorkflowEvent\(ctx context.Context, workflowID, eventType string\)](#Metrics.RecordWorkflowEvent>)
+- [type MockDocumentOption](#MockDocumentOption>)
+  - [func WithMockEmbedding\(embedding \[\]float32\) MockDocumentOption](#WithMockEmbedding>)
+  - [func WithMockID\(id string\) MockDocumentOption](#WithMockID>)
+  - [func WithMockScore\(score float32\) MockDocumentOption](#WithMockScore>)
+- [type MockMessageOption](#MockMessageOption>)
+  - [func WithMockAdditionalArgs\(args map\[string\]any\) MockMessageOption](#WithMockAdditionalArgs>)
+  - [func WithMockToolCalls\(toolCalls \[\]iface.ToolCall\) MockMessageOption](#WithMockToolCalls>)
+- [type SchemaScenarioRunner](#SchemaScenarioRunner>)
+  - [func NewSchemaScenarioRunner\(messageCount, documentCount int\) \*SchemaScenarioRunner](#NewSchemaScenarioRunner>)
+  - [func \(r \*SchemaScenarioRunner\) RunConversationScenario\(\) error](#SchemaScenarioRunner.RunConversationScenario>)
+  - [func \(r \*SchemaScenarioRunner\) RunDocumentProcessingScenario\(\) error](#SchemaScenarioRunner.RunDocumentProcessingScenario>)
+  - [func \(r \*SchemaScenarioRunner\) RunMessageProcessingScenario\(\) error](#SchemaScenarioRunner.RunMessageProcessingScenario>)
+- [type SchemaValidationConfig](#SchemaValidationConfig>)
+  - [func NewSchemaValidationConfig\(opts ...SchemaValidationOption\) \(\*SchemaValidationConfig, error\)](#NewSchemaValidationConfig>)
+  - [func \(c \*SchemaValidationConfig\) Validate\(\) error](#SchemaValidationConfig.Validate>)
+- [type SchemaValidationOption](#SchemaValidationOption>)
+  - [func WithAllowedMessageTypes\(types \[\]string\) SchemaValidationOption](#WithAllowedMessageTypes>)
+  - [func WithContentValidation\(enable bool\) SchemaValidationOption](#WithContentValidation>)
+  - [func WithMaxMessageLength\(maxLength int\) SchemaValidationOption](#WithMaxMessageLength>)
+  - [func WithMaxMetadataSize\(maxSize int\) SchemaValidationOption](#WithMaxMetadataSize>)
+  - [func WithMaxToolCalls\(maxCalls int\) SchemaValidationOption](#WithMaxToolCalls>)
+  - [func WithRequiredMetadataFields\(fields \[\]string\) SchemaValidationOption](#WithRequiredMetadataFields>)
+  - [func WithStrictValidation\(enable bool\) SchemaValidationOption](#WithStrictValidation>)
+- [type Step](#Step>)
+  - [func NewStep\(action AgentAction, observation AgentObservation\) Step](#NewStep>)
+- [type TaskEvent](#TaskEvent>)
+  - [func NewTaskEvent\(taskID, agentID string, eventType TaskEventType\) TaskEvent](#NewTaskEvent>)
+- [type TaskEventType](#TaskEventType>)
+- [type ToolCall](#ToolCall>)
+- [type ToolCallChunk](#ToolCallChunk>)
+- [type ToolMessage](#ToolMessage>)
+- [type VectorStoreConfig](#VectorStoreConfig>)
+  - [func NewVectorStoreConfig\(name, provider string, opts ...VectorStoreOption\) \(\*VectorStoreConfig, error\)](#NewVectorStoreConfig>)
+  - [func \(c \*VectorStoreConfig\) Validate\(\) error](#VectorStoreConfig.Validate>)
+- [type VectorStoreOption](#VectorStoreOption>)
+  - [func WithConnectionString\(connectionString string\) VectorStoreOption](#WithConnectionString>)
+  - [func WithVectorStoreProviderSpecific\(specific map\[string\]any\) VectorStoreOption](#WithVectorStoreProviderSpecific>)
+- [type WorkflowEvent](#WorkflowEvent>)
+  - [func NewWorkflowEvent\(workflowID string, eventType WorkflowEventType\) WorkflowEvent](#NewWorkflowEvent>)
+- [type WorkflowEventType](#WorkflowEventType>)
 
 ## Constants
 
-<a name="RoleHuman"></a>Re\-export constants from iface.
+Re\-export constants from iface.
 
 ```go
 const (
@@ -290,7 +290,7 @@ const (
 )
 ```
 
-<a name="AgentMessageRequest"></a>Re\-export A2A Communication constants.
+Re\-export A2A Communication constants.
 
 ```go
 const (
@@ -302,7 +302,7 @@ const (
 )
 ```
 
-<a name="AgentStarted"></a>Re\-export Event constants.
+Re\-export Event constants.
 
 ```go
 const (
@@ -327,8 +327,8 @@ const (
 )
 ```
 
-<a name="AssertAgentAction"></a>
-## func [AssertAgentAction](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L348>)
+
+## func [AssertAgentAction](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L348)
 
 ```go
 func AssertAgentAction(t *testing.T, action AgentAction, expectedTool string)
@@ -336,8 +336,8 @@ func AssertAgentAction(t *testing.T, action AgentAction, expectedTool string)
 
 AssertAgentAction validates agent action properties.
 
-<a name="AssertAgentFinish"></a>
-## func [AssertAgentFinish](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L356>)
+
+## func [AssertAgentFinish](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L356)
 
 ```go
 func AssertAgentFinish(t *testing.T, finish AgentFinish, expectedMinReturnValues int)
@@ -345,8 +345,8 @@ func AssertAgentFinish(t *testing.T, finish AgentFinish, expectedMinReturnValues
 
 AssertAgentFinish validates agent finish properties.
 
-<a name="AssertDocument"></a>
-## func [AssertDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L332>)
+
+## func [AssertDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L332)
 
 ```go
 func AssertDocument(t *testing.T, document Document, expectedMinContentLength int)
@@ -354,8 +354,8 @@ func AssertDocument(t *testing.T, document Document, expectedMinContentLength in
 
 AssertDocument validates document properties.
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L375>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L375)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -363,8 +363,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType validates error types and codes.
 
-<a name="AssertMessage"></a>
-## func [AssertMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L323>)
+
+## func [AssertMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L323)
 
 ```go
 func AssertMessage(t *testing.T, message Message, expectedType iface.MessageType, expectedMinLength int)
@@ -372,8 +372,8 @@ func AssertMessage(t *testing.T, message Message, expectedType iface.MessageType
 
 AssertMessage validates message properties.
 
-<a name="AssertMessageHistory"></a>
-## func [AssertMessageHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L364>)
+
+## func [AssertMessageHistory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L364)
 
 ```go
 func AssertMessageHistory(t *testing.T, messages []Message, expectedMinCount int)
@@ -381,8 +381,8 @@ func AssertMessageHistory(t *testing.T, messages []Message, expectedMinCount int
 
 AssertMessageHistory validates message history.
 
-<a name="AssertToolCall"></a>
-## func [AssertToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L340>)
+
+## func [AssertToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L340)
 
 ```go
 func AssertToolCall(t *testing.T, toolCall iface.ToolCall, expectedName string)
@@ -390,8 +390,8 @@ func AssertToolCall(t *testing.T, toolCall iface.ToolCall, expectedName string)
 
 AssertToolCall validates tool call properties.
 
-<a name="CreateTestToolCall"></a>
-## func [CreateTestToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L290>)
+
+## func [CreateTestToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L290)
 
 ```go
 func CreateTestToolCall(name, input string) iface.ToolCall
@@ -399,8 +399,8 @@ func CreateTestToolCall(name, input string) iface.ToolCall
 
 CreateTestToolCall creates a test tool call.
 
-<a name="RecordA2ACommunicationError"></a>
-## func [RecordA2ACommunicationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L962>)
+
+## func [RecordA2ACommunicationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L962)
 
 ```go
 func RecordA2ACommunicationError(ctx context.Context, operation string, err error)
@@ -408,8 +408,8 @@ func RecordA2ACommunicationError(ctx context.Context, operation string, err erro
 
 RecordA2ACommunicationError records an A2A communication error if global metrics is set.
 
-<a name="RecordAgentActionCreated"></a>
-## func [RecordAgentActionCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L869>)
+
+## func [RecordAgentActionCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L869)
 
 ```go
 func RecordAgentActionCreated(ctx context.Context, tool string)
@@ -417,8 +417,8 @@ func RecordAgentActionCreated(ctx context.Context, tool string)
 
 RecordAgentActionCreated records an agent action if global metrics is set.
 
-<a name="RecordAgentLifecycleEvent"></a>
-## func [RecordAgentLifecycleEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L985>)
+
+## func [RecordAgentLifecycleEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L985)
 
 ```go
 func RecordAgentLifecycleEvent(ctx context.Context, agentID, eventType string)
@@ -426,8 +426,8 @@ func RecordAgentLifecycleEvent(ctx context.Context, agentID, eventType string)
 
 RecordAgentLifecycleEvent records an agent lifecycle event if global metrics is set.
 
-<a name="RecordAgentMessageReceived"></a>
-## func [RecordAgentMessageReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L927>)
+
+## func [RecordAgentMessageReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L927)
 
 ```go
 func RecordAgentMessageReceived(ctx context.Context, messageType, toAgentID string)
@@ -435,8 +435,8 @@ func RecordAgentMessageReceived(ctx context.Context, messageType, toAgentID stri
 
 RecordAgentMessageReceived records an agent message received if global metrics is set.
 
-<a name="RecordAgentMessageSent"></a>
-## func [RecordAgentMessageSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L920>)
+
+## func [RecordAgentMessageSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L920)
 
 ```go
 func RecordAgentMessageSent(ctx context.Context, messageType, fromAgentID string)
@@ -444,8 +444,8 @@ func RecordAgentMessageSent(ctx context.Context, messageType, fromAgentID string
 
 RecordAgentMessageSent records an agent message sent if global metrics is set.
 
-<a name="RecordAgentObservationCreated"></a>
-## func [RecordAgentObservationCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L876>)
+
+## func [RecordAgentObservationCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L876)
 
 ```go
 func RecordAgentObservationCreated(ctx context.Context)
@@ -453,8 +453,8 @@ func RecordAgentObservationCreated(ctx context.Context)
 
 RecordAgentObservationCreated records an agent observation if global metrics is set.
 
-<a name="RecordAgentRequestReceived"></a>
-## func [RecordAgentRequestReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L941>)
+
+## func [RecordAgentRequestReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L941)
 
 ```go
 func RecordAgentRequestReceived(ctx context.Context, action, toAgentID string)
@@ -462,8 +462,8 @@ func RecordAgentRequestReceived(ctx context.Context, action, toAgentID string)
 
 RecordAgentRequestReceived records an agent request received if global metrics is set.
 
-<a name="RecordAgentRequestSent"></a>
-## func [RecordAgentRequestSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L934>)
+
+## func [RecordAgentRequestSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L934)
 
 ```go
 func RecordAgentRequestSent(ctx context.Context, action, fromAgentID string)
@@ -471,8 +471,8 @@ func RecordAgentRequestSent(ctx context.Context, action, fromAgentID string)
 
 RecordAgentRequestSent records an agent request sent if global metrics is set.
 
-<a name="RecordAgentResponseReceived"></a>
-## func [RecordAgentResponseReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L955>)
+
+## func [RecordAgentResponseReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L955)
 
 ```go
 func RecordAgentResponseReceived(ctx context.Context, status, fromAgentID string)
@@ -480,8 +480,8 @@ func RecordAgentResponseReceived(ctx context.Context, status, fromAgentID string
 
 RecordAgentResponseReceived records an agent response received if global metrics is set.
 
-<a name="RecordAgentResponseSent"></a>
-## func [RecordAgentResponseSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L948>)
+
+## func [RecordAgentResponseSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L948)
 
 ```go
 func RecordAgentResponseSent(ctx context.Context, status, toAgentID string)
@@ -489,8 +489,8 @@ func RecordAgentResponseSent(ctx context.Context, status, toAgentID string)
 
 RecordAgentResponseSent records an agent response sent if global metrics is set.
 
-<a name="RecordConfigError"></a>
-## func [RecordConfigError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L911>)
+
+## func [RecordConfigError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L911)
 
 ```go
 func RecordConfigError(ctx context.Context, configType string, err error)
@@ -498,8 +498,8 @@ func RecordConfigError(ctx context.Context, configType string, err error)
 
 RecordConfigError records a config error if global metrics is set.
 
-<a name="RecordConfigValidation"></a>
-## func [RecordConfigValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L904>)
+
+## func [RecordConfigValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L904)
 
 ```go
 func RecordConfigValidation(ctx context.Context, configType string)
@@ -507,8 +507,8 @@ func RecordConfigValidation(ctx context.Context, configType string)
 
 RecordConfigValidation records a config validation if global metrics is set.
 
-<a name="RecordDocumentCreated"></a>
-## func [RecordDocumentCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L841>)
+
+## func [RecordDocumentCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L841)
 
 ```go
 func RecordDocumentCreated(ctx context.Context)
@@ -516,8 +516,8 @@ func RecordDocumentCreated(ctx context.Context)
 
 RecordDocumentCreated records a document creation if global metrics is set.
 
-<a name="RecordDocumentError"></a>
-## func [RecordDocumentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L848>)
+
+## func [RecordDocumentError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L848)
 
 ```go
 func RecordDocumentError(ctx context.Context, err error)
@@ -525,8 +525,8 @@ func RecordDocumentError(ctx context.Context, err error)
 
 RecordDocumentError records a document error if global metrics is set.
 
-<a name="RecordDocumentValidation"></a>
-## func [RecordDocumentValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1043>)
+
+## func [RecordDocumentValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1043)
 
 ```go
 func RecordDocumentValidation(ctx context.Context)
@@ -534,8 +534,8 @@ func RecordDocumentValidation(ctx context.Context)
 
 RecordDocumentValidation records a document validation if global metrics is set.
 
-<a name="RecordDocumentValidationError"></a>
-## func [RecordDocumentValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1050>)
+
+## func [RecordDocumentValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1050)
 
 ```go
 func RecordDocumentValidationError(ctx context.Context, err error)
@@ -543,8 +543,8 @@ func RecordDocumentValidationError(ctx context.Context, err error)
 
 RecordDocumentValidationError records a document validation error if global metrics is set.
 
-<a name="RecordEventConsumed"></a>
-## func [RecordEventConsumed](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L978>)
+
+## func [RecordEventConsumed](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L978)
 
 ```go
 func RecordEventConsumed(ctx context.Context, eventType, consumer string)
@@ -552,8 +552,8 @@ func RecordEventConsumed(ctx context.Context, eventType, consumer string)
 
 RecordEventConsumed records an event consumed if global metrics is set.
 
-<a name="RecordEventProcessingError"></a>
-## func [RecordEventProcessingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1006>)
+
+## func [RecordEventProcessingError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1006)
 
 ```go
 func RecordEventProcessingError(ctx context.Context, eventType string, err error)
@@ -561,8 +561,8 @@ func RecordEventProcessingError(ctx context.Context, eventType string, err error
 
 RecordEventProcessingError records an event processing error if global metrics is set.
 
-<a name="RecordEventPublished"></a>
-## func [RecordEventPublished](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L971>)
+
+## func [RecordEventPublished](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L971)
 
 ```go
 func RecordEventPublished(ctx context.Context, eventType, source string)
@@ -570,8 +570,8 @@ func RecordEventPublished(ctx context.Context, eventType, source string)
 
 RecordEventPublished records an event published if global metrics is set.
 
-<a name="RecordFactoryCreation"></a>
-## func [RecordFactoryCreation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1059>)
+
+## func [RecordFactoryCreation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1059)
 
 ```go
 func RecordFactoryCreation(ctx context.Context, objectType string)
@@ -579,8 +579,8 @@ func RecordFactoryCreation(ctx context.Context, objectType string)
 
 RecordFactoryCreation records a factory creation if global metrics is set.
 
-<a name="RecordFactoryError"></a>
-## func [RecordFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1066>)
+
+## func [RecordFactoryError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1066)
 
 ```go
 func RecordFactoryError(ctx context.Context, objectType string, err error)
@@ -588,8 +588,8 @@ func RecordFactoryError(ctx context.Context, objectType string, err error)
 
 RecordFactoryError records a factory error if global metrics is set.
 
-<a name="RecordGenerationCreated"></a>
-## func [RecordGenerationCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L890>)
+
+## func [RecordGenerationCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L890)
 
 ```go
 func RecordGenerationCreated(ctx context.Context)
@@ -597,8 +597,8 @@ func RecordGenerationCreated(ctx context.Context)
 
 RecordGenerationCreated records a generation creation if global metrics is set.
 
-<a name="RecordHistoryOperation"></a>
-## func [RecordHistoryOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L855>)
+
+## func [RecordHistoryOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L855)
 
 ```go
 func RecordHistoryOperation(ctx context.Context, operation string)
@@ -606,8 +606,8 @@ func RecordHistoryOperation(ctx context.Context, operation string)
 
 RecordHistoryOperation records a history operation if global metrics is set.
 
-<a name="RecordHistorySize"></a>
-## func [RecordHistorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L862>)
+
+## func [RecordHistorySize](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L862)
 
 ```go
 func RecordHistorySize(ctx context.Context, size int)
@@ -615,8 +615,8 @@ func RecordHistorySize(ctx context.Context, size int)
 
 RecordHistorySize records history size if global metrics is set.
 
-<a name="RecordLLMResponseCreated"></a>
-## func [RecordLLMResponseCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L897>)
+
+## func [RecordLLMResponseCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L897)
 
 ```go
 func RecordLLMResponseCreated(ctx context.Context)
@@ -624,8 +624,8 @@ func RecordLLMResponseCreated(ctx context.Context)
 
 RecordLLMResponseCreated records an LLM response creation if global metrics is set.
 
-<a name="RecordMessageCreated"></a>
-## func [RecordMessageCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L827>)
+
+## func [RecordMessageCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L827)
 
 ```go
 func RecordMessageCreated(ctx context.Context, msgType MessageType)
@@ -633,8 +633,8 @@ func RecordMessageCreated(ctx context.Context, msgType MessageType)
 
 RecordMessageCreated records a message creation if global metrics is set.
 
-<a name="RecordMessageError"></a>
-## func [RecordMessageError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L834>)
+
+## func [RecordMessageError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L834)
 
 ```go
 func RecordMessageError(ctx context.Context, msgType MessageType, err error)
@@ -642,8 +642,8 @@ func RecordMessageError(ctx context.Context, msgType MessageType, err error)
 
 RecordMessageError records a message error if global metrics is set.
 
-<a name="RecordMessageValidation"></a>
-## func [RecordMessageValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1029>)
+
+## func [RecordMessageValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1029)
 
 ```go
 func RecordMessageValidation(ctx context.Context, msgType MessageType)
@@ -651,8 +651,8 @@ func RecordMessageValidation(ctx context.Context, msgType MessageType)
 
 RecordMessageValidation records a message validation if global metrics is set.
 
-<a name="RecordMessageValidationError"></a>
-## func [RecordMessageValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1036>)
+
+## func [RecordMessageValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1036)
 
 ```go
 func RecordMessageValidationError(ctx context.Context, msgType MessageType, err error)
@@ -660,8 +660,8 @@ func RecordMessageValidationError(ctx context.Context, msgType MessageType, err 
 
 RecordMessageValidationError records a message validation error if global metrics is set.
 
-<a name="RecordSchemaValidation"></a>
-## func [RecordSchemaValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1015>)
+
+## func [RecordSchemaValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1015)
 
 ```go
 func RecordSchemaValidation(ctx context.Context, validationType string)
@@ -669,8 +669,8 @@ func RecordSchemaValidation(ctx context.Context, validationType string)
 
 RecordSchemaValidation records a schema validation if global metrics is set.
 
-<a name="RecordSchemaValidationError"></a>
-## func [RecordSchemaValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1022>)
+
+## func [RecordSchemaValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L1022)
 
 ```go
 func RecordSchemaValidationError(ctx context.Context, validationType string, err error)
@@ -678,8 +678,8 @@ func RecordSchemaValidationError(ctx context.Context, validationType string, err
 
 RecordSchemaValidationError records a schema validation error if global metrics is set.
 
-<a name="RecordStepCreated"></a>
-## func [RecordStepCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L883>)
+
+## func [RecordStepCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L883)
 
 ```go
 func RecordStepCreated(ctx context.Context)
@@ -687,8 +687,8 @@ func RecordStepCreated(ctx context.Context)
 
 RecordStepCreated records a step creation if global metrics is set.
 
-<a name="RecordTaskEvent"></a>
-## func [RecordTaskEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L992>)
+
+## func [RecordTaskEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L992)
 
 ```go
 func RecordTaskEvent(ctx context.Context, taskID, eventType string)
@@ -696,8 +696,8 @@ func RecordTaskEvent(ctx context.Context, taskID, eventType string)
 
 RecordTaskEvent records a task event if global metrics is set.
 
-<a name="RecordWorkflowEvent"></a>
-## func [RecordWorkflowEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L999>)
+
+## func [RecordWorkflowEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L999)
 
 ```go
 func RecordWorkflowEvent(ctx context.Context, workflowID, eventType string)
@@ -705,8 +705,8 @@ func RecordWorkflowEvent(ctx context.Context, workflowID, eventType string)
 
 RecordWorkflowEvent records a workflow event if global metrics is set.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L446>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L446)
 
 ```go
 func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations, concurrency int)
@@ -714,8 +714,8 @@ func RunLoadTest(t *testing.T, message *AdvancedMockMessage, numOperations, conc
 
 RunLoadTest executes a load test scenario on schema components.
 
-<a name="SetGlobalMetrics"></a>
-## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L815>)
+
+## func [SetGlobalMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L815)
 
 ```go
 func SetGlobalMetrics(m *Metrics)
@@ -723,8 +723,8 @@ func SetGlobalMetrics(m *Metrics)
 
 SetGlobalMetrics sets the global metrics instance.
 
-<a name="ValidateConversationFlow"></a>
-## func [ValidateConversationFlow](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L696>)
+
+## func [ValidateConversationFlow](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L696)
 
 ```go
 func ValidateConversationFlow(messages []Message) error
@@ -732,8 +732,8 @@ func ValidateConversationFlow(messages []Message) error
 
 ValidateConversationFlow checks if message sequence follows proper conversation patterns.
 
-<a name="ValidateDocument"></a>
-## func [ValidateDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L452>)
+
+## func [ValidateDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L452)
 
 ```go
 func ValidateDocument(doc Document) error
@@ -741,8 +741,8 @@ func ValidateDocument(doc Document) error
 
 ValidateDocument validates a document.
 
-<a name="ValidateDocumentCollection"></a>
-## func [ValidateDocumentCollection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L720>)
+
+## func [ValidateDocumentCollection](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L720)
 
 ```go
 func ValidateDocumentCollection(documents []Document) error
@@ -750,8 +750,8 @@ func ValidateDocumentCollection(documents []Document) error
 
 ValidateDocumentCollection validates a collection of documents.
 
-<a name="ValidateMessage"></a>
-## func [ValidateMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L435>)
+
+## func [ValidateMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L435)
 
 ```go
 func ValidateMessage(msg Message) error
@@ -759,8 +759,8 @@ func ValidateMessage(msg Message) error
 
 ValidateMessage validates a message implementation.
 
-<a name="ValidateMessageType"></a>
-## func [ValidateMessageType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L677>)
+
+## func [ValidateMessageType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L677)
 
 ```go
 func ValidateMessageType(msgType iface.MessageType) bool
@@ -768,8 +768,8 @@ func ValidateMessageType(msgType iface.MessageType) bool
 
 ValidateMessageType checks if a message type is valid.
 
-<a name="AIMessage"></a>
-## type [AIMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L49>)
+
+## type [AIMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L49)
 
 Re\-export types from iface and internal packages.
 
@@ -777,8 +777,8 @@ Re\-export types from iface and internal packages.
 type AIMessage = internal.AIMessage
 ```
 
-<a name="AdvancedMockDocument"></a>
-## type [AdvancedMockDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L136-L144>)
+
+## type [AdvancedMockDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L136-L144)
 
 AdvancedMockDocument provides a comprehensive mock implementation for testing.
 
@@ -788,29 +788,29 @@ type AdvancedMockDocument struct {
 }
 ```
 
-<a name="NewAdvancedMockDocument"></a>
-### func [NewAdvancedMockDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L146>)
+
+### func [NewAdvancedMockDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L146)
 
 ```go
 func NewAdvancedMockDocument(content string, metadata map[string]string, options ...MockDocumentOption) *AdvancedMockDocument
 ```
 
-<a name="AdvancedMockDocument.AdditionalArgs"></a>
-### func \(\*AdvancedMockDocument\) [AdditionalArgs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L208>)
+
+### func \(\*AdvancedMockDocument\) [AdditionalArgs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L208)
 
 ```go
 func (d *AdvancedMockDocument) AdditionalArgs() map[string]any
 ```
 
-<a name="AdvancedMockDocument.GetCallCount"></a>
-### func \(\*AdvancedMockDocument\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L239>)
+
+### func \(\*AdvancedMockDocument\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L239)
 
 ```go
 func (d *AdvancedMockDocument) GetCallCount() int
 ```
 
-<a name="AdvancedMockDocument.GetContent"></a>
-### func \(\*AdvancedMockDocument\) [GetContent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L193>)
+
+### func \(\*AdvancedMockDocument\) [GetContent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L193)
 
 ```go
 func (d *AdvancedMockDocument) GetContent() string
@@ -818,22 +818,22 @@ func (d *AdvancedMockDocument) GetContent() string
 
 Document interface implementation.
 
-<a name="AdvancedMockDocument.GetEmbedding"></a>
-### func \(\*AdvancedMockDocument\) [GetEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L227>)
+
+### func \(\*AdvancedMockDocument\) [GetEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L227)
 
 ```go
 func (d *AdvancedMockDocument) GetEmbedding() []float32
 ```
 
-<a name="AdvancedMockDocument.GetID"></a>
-### func \(\*AdvancedMockDocument\) [GetID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L223>)
+
+### func \(\*AdvancedMockDocument\) [GetID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L223)
 
 ```go
 func (d *AdvancedMockDocument) GetID() string
 ```
 
-<a name="AdvancedMockDocument.GetMetadata"></a>
-### func \(\*AdvancedMockDocument\) [GetMetadata](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L213>)
+
+### func \(\*AdvancedMockDocument\) [GetMetadata](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L213)
 
 ```go
 func (d *AdvancedMockDocument) GetMetadata() map[string]string
@@ -841,29 +841,29 @@ func (d *AdvancedMockDocument) GetMetadata() map[string]string
 
 Additional document\-specific methods.
 
-<a name="AdvancedMockDocument.GetScore"></a>
-### func \(\*AdvancedMockDocument\) [GetScore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L235>)
+
+### func \(\*AdvancedMockDocument\) [GetScore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L235)
 
 ```go
 func (d *AdvancedMockDocument) GetScore() float32
 ```
 
-<a name="AdvancedMockDocument.GetType"></a>
-### func \(\*AdvancedMockDocument\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L200>)
+
+### func \(\*AdvancedMockDocument\) [GetType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L200)
 
 ```go
 func (d *AdvancedMockDocument) GetType() iface.MessageType
 ```
 
-<a name="AdvancedMockDocument.ToolCalls"></a>
-### func \(\*AdvancedMockDocument\) [ToolCalls](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L204>)
+
+### func \(\*AdvancedMockDocument\) [ToolCalls](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L204)
 
 ```go
 func (d *AdvancedMockDocument) ToolCalls() []iface.ToolCall
 ```
 
-<a name="AdvancedMockMessage"></a>
-## type [AdvancedMockMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L19-L29>)
+
+## type [AdvancedMockMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L19-L29)
 
 AdvancedMockMessage provides a comprehensive mock implementation for testing.
 
@@ -874,8 +874,8 @@ type AdvancedMockMessage struct {
 }
 ```
 
-<a name="NewAdvancedMockMessage"></a>
-### func [NewAdvancedMockMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L32>)
+
+### func [NewAdvancedMockMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L32)
 
 ```go
 func NewAdvancedMockMessage(messageType iface.MessageType, content string, options ...MockMessageOption) *AdvancedMockMessage
@@ -883,29 +883,29 @@ func NewAdvancedMockMessage(messageType iface.MessageType, content string, optio
 
 NewAdvancedMockMessage creates a new advanced mock message.
 
-<a name="AdvancedMockMessage.AddToolCall"></a>
-### func \(\*AdvancedMockMessage\) [AddToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L116>)
+
+### func \(\*AdvancedMockMessage\) [AddToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L116)
 
 ```go
 func (m *AdvancedMockMessage) AddToolCall(toolCall iface.ToolCall)
 ```
 
-<a name="AdvancedMockMessage.AdditionalArgs"></a>
-### func \(\*AdvancedMockMessage\) [AdditionalArgs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L93>)
+
+### func \(\*AdvancedMockMessage\) [AdditionalArgs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L93)
 
 ```go
 func (m *AdvancedMockMessage) AdditionalArgs() map[string]any
 ```
 
-<a name="AdvancedMockMessage.CheckHealth"></a>
-### func \(\*AdvancedMockMessage\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L122>)
+
+### func \(\*AdvancedMockMessage\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L122)
 
 ```go
 func (m *AdvancedMockMessage) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockMessage.GetCallCount"></a>
-### func \(\*AdvancedMockMessage\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L104>)
+
+### func \(\*AdvancedMockMessage\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L104)
 
 ```go
 func (m *AdvancedMockMessage) GetCallCount() int
@@ -913,15 +913,15 @@ func (m *AdvancedMockMessage) GetCallCount() int
 
 Additional helper methods for testing.
 
-<a name="AdvancedMockMessage.GetContent"></a>
-### func \(\*AdvancedMockMessage\) [GetContent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L78>)
+
+### func \(\*AdvancedMockMessage\) [GetContent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L78)
 
 ```go
 func (m *AdvancedMockMessage) GetContent() string
 ```
 
-<a name="AdvancedMockMessage.GetType"></a>
-### func \(\*AdvancedMockMessage\) [GetType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L71>)
+
+### func \(\*AdvancedMockMessage\) [GetType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L71)
 
 ```go
 func (m *AdvancedMockMessage) GetType() iface.MessageType
@@ -929,22 +929,22 @@ func (m *AdvancedMockMessage) GetType() iface.MessageType
 
 Mock implementation methods for Message interface.
 
-<a name="AdvancedMockMessage.SetContent"></a>
-### func \(\*AdvancedMockMessage\) [SetContent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L110>)
+
+### func \(\*AdvancedMockMessage\) [SetContent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L110)
 
 ```go
 func (m *AdvancedMockMessage) SetContent(content string)
 ```
 
-<a name="AdvancedMockMessage.ToolCalls"></a>
-### func \(\*AdvancedMockMessage\) [ToolCalls](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L85>)
+
+### func \(\*AdvancedMockMessage\) [ToolCalls](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L85)
 
 ```go
 func (m *AdvancedMockMessage) ToolCalls() []iface.ToolCall
 ```
 
-<a name="AgentAction"></a>
-## type [AgentAction](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L33>)
+
+## type [AgentAction](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L33)
 
 Re\-export types from iface and internal packages.
 
@@ -952,8 +952,8 @@ Re\-export types from iface and internal packages.
 type AgentAction = internal.AgentAction
 ```
 
-<a name="CreateTestAgentAction"></a>
-### func [CreateTestAgentAction](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L304>)
+
+### func [CreateTestAgentAction](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L304)
 
 ```go
 func CreateTestAgentAction(tool, input, log string) AgentAction
@@ -961,8 +961,8 @@ func CreateTestAgentAction(tool, input, log string) AgentAction
 
 CreateTestAgentAction creates a test agent action.
 
-<a name="NewAgentAction"></a>
-### func [NewAgentAction](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L195>)
+
+### func [NewAgentAction](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L195)
 
 ```go
 func NewAgentAction(tool string, toolInput any, log string) AgentAction
@@ -970,8 +970,8 @@ func NewAgentAction(tool string, toolInput any, log string) AgentAction
 
 NewAgentAction creates a new AgentAction.
 
-<a name="AgentConfig"></a>
-## type [AgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L12-L26>)
+
+## type [AgentConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L12-L26)
 
 AgentConfig defines the configuration for an agent. This can include settings for the LLM, tools, memory, and other agent\-specific parameters.
 
@@ -993,8 +993,8 @@ type AgentConfig struct {
 }
 ```
 
-<a name="NewAgentConfig"></a>
-### func [NewAgentConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L95>)
+
+### func [NewAgentConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L95)
 
 ```go
 func NewAgentConfig(name, llmProviderName string, opts ...AgentOption) (*AgentConfig, error)
@@ -1002,8 +1002,8 @@ func NewAgentConfig(name, llmProviderName string, opts ...AgentOption) (*AgentCo
 
 NewAgentConfig creates a new AgentConfig with validation.
 
-<a name="AgentConfig.Validate"></a>
-### func \(\*AgentConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L59>)
+
+### func \(\*AgentConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L59)
 
 ```go
 func (c *AgentConfig) Validate() error
@@ -1011,8 +1011,8 @@ func (c *AgentConfig) Validate() error
 
 Validate validates the AgentConfig struct.
 
-<a name="AgentError"></a>
-## type [AgentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L57>)
+
+## type [AgentError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L57)
 
 Re\-export types from iface and internal packages.
 
@@ -1020,8 +1020,8 @@ Re\-export types from iface and internal packages.
 type AgentError = internal.AgentError
 ```
 
-<a name="NewAgentError"></a>
-### func [NewAgentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L356>)
+
+### func [NewAgentError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L356)
 
 ```go
 func NewAgentError(code, message string, details map[string]any) *AgentError
@@ -1029,8 +1029,8 @@ func NewAgentError(code, message string, details map[string]any) *AgentError
 
 NewAgentError creates a new AgentError.
 
-<a name="AgentFinish"></a>
-## type [AgentFinish](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L37>)
+
+## type [AgentFinish](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L37)
 
 Re\-export types from iface and internal packages.
 
@@ -1038,8 +1038,8 @@ Re\-export types from iface and internal packages.
 type AgentFinish = internal.AgentFinish
 ```
 
-<a name="CreateTestAgentFinish"></a>
-### func [CreateTestAgentFinish](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L313>)
+
+### func [CreateTestAgentFinish](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L313)
 
 ```go
 func CreateTestAgentFinish(returnValues map[string]any, log string) AgentFinish
@@ -1047,8 +1047,8 @@ func CreateTestAgentFinish(returnValues map[string]any, log string) AgentFinish
 
 CreateTestAgentFinish creates a test agent finish.
 
-<a name="NewAgentFinish"></a>
-### func [NewAgentFinish](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L230>)
+
+### func [NewAgentFinish](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L230)
 
 ```go
 func NewAgentFinish(returnValues map[string]any, log string) AgentFinish
@@ -1056,8 +1056,8 @@ func NewAgentFinish(returnValues map[string]any, log string) AgentFinish
 
 NewAgentFinish creates a new AgentFinish.
 
-<a name="AgentLifecycleEvent"></a>
-## type [AgentLifecycleEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L61>)
+
+## type [AgentLifecycleEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L61)
 
 Re\-export types from iface and internal packages.
 
@@ -1065,8 +1065,8 @@ Re\-export types from iface and internal packages.
 type AgentLifecycleEvent = internal.AgentLifecycleEvent
 ```
 
-<a name="NewAgentLifecycleEvent"></a>
-### func [NewAgentLifecycleEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L380>)
+
+### func [NewAgentLifecycleEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L380)
 
 ```go
 func NewAgentLifecycleEvent(agentID string, eventType AgentLifecycleEventType) AgentLifecycleEvent
@@ -1074,8 +1074,8 @@ func NewAgentLifecycleEvent(agentID string, eventType AgentLifecycleEventType) A
 
 NewAgentLifecycleEvent creates a new AgentLifecycleEvent.
 
-<a name="AgentLifecycleEventType"></a>
-## type [AgentLifecycleEventType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L62>)
+
+## type [AgentLifecycleEventType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L62)
 
 Re\-export types from iface and internal packages.
 
@@ -1083,8 +1083,8 @@ Re\-export types from iface and internal packages.
 type AgentLifecycleEventType = internal.AgentLifecycleEventType
 ```
 
-<a name="AgentMessage"></a>
-## type [AgentMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L53>)
+
+## type [AgentMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L53)
 
 A2A Communication Types.
 
@@ -1092,8 +1092,8 @@ A2A Communication Types.
 type AgentMessage = internal.AgentMessage
 ```
 
-<a name="NewAgentMessage"></a>
-### func [NewAgentMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L327>)
+
+### func [NewAgentMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L327)
 
 ```go
 func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType, payload any) AgentMessage
@@ -1101,8 +1101,8 @@ func NewAgentMessage(fromAgentID, messageID string, messageType AgentMessageType
 
 NewAgentMessage creates a new AgentMessage.
 
-<a name="AgentMessageType"></a>
-## type [AgentMessageType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L54>)
+
+## type [AgentMessageType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L54)
 
 Re\-export types from iface and internal packages.
 
@@ -1110,8 +1110,8 @@ Re\-export types from iface and internal packages.
 type AgentMessageType = internal.AgentMessageType
 ```
 
-<a name="AgentObservation"></a>
-## type [AgentObservation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L34>)
+
+## type [AgentObservation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L34)
 
 Re\-export types from iface and internal packages.
 
@@ -1119,8 +1119,8 @@ Re\-export types from iface and internal packages.
 type AgentObservation = internal.AgentObservation
 ```
 
-<a name="NewAgentObservation"></a>
-### func [NewAgentObservation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L204>)
+
+### func [NewAgentObservation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L204)
 
 ```go
 func NewAgentObservation(actionLog, output string, parsedOutput any) AgentObservation
@@ -1128,8 +1128,8 @@ func NewAgentObservation(actionLog, output string, parsedOutput any) AgentObserv
 
 NewAgentObservation creates a new AgentObservation.
 
-<a name="AgentOption"></a>
-## type [AgentOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L294>)
+
+## type [AgentOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L294)
 
 AgentOption defines a function type for AgentConfig options.
 
@@ -1137,8 +1137,8 @@ AgentOption defines a function type for AgentConfig options.
 type AgentOption func(*AgentConfig)
 ```
 
-<a name="WithAgentType"></a>
-### func [WithAgentType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L326>)
+
+### func [WithAgentType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L326)
 
 ```go
 func WithAgentType(agentType string) AgentOption
@@ -1146,8 +1146,8 @@ func WithAgentType(agentType string) AgentOption
 
 WithAgentType sets the agent type.
 
-<a name="WithMaxIterations"></a>
-### func [WithMaxIterations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L312>)
+
+### func [WithMaxIterations](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L312)
 
 ```go
 func WithMaxIterations(maxIterations int) AgentOption
@@ -1155,8 +1155,8 @@ func WithMaxIterations(maxIterations int) AgentOption
 
 WithMaxIterations sets the maximum iterations for the agent.
 
-<a name="WithMemoryProvider"></a>
-### func [WithMemoryProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L304>)
+
+### func [WithMemoryProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L304)
 
 ```go
 func WithMemoryProvider(providerName, memoryType string) AgentOption
@@ -1164,8 +1164,8 @@ func WithMemoryProvider(providerName, memoryType string) AgentOption
 
 WithMemoryProvider sets the memory provider for the agent.
 
-<a name="WithPromptTemplate"></a>
-### func [WithPromptTemplate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L319>)
+
+### func [WithPromptTemplate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L319)
 
 ```go
 func WithPromptTemplate(template string) AgentOption
@@ -1173,8 +1173,8 @@ func WithPromptTemplate(template string) AgentOption
 
 WithPromptTemplate sets the prompt template for the agent.
 
-<a name="WithToolNames"></a>
-### func [WithToolNames](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L297>)
+
+### func [WithToolNames](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L297)
 
 ```go
 func WithToolNames(toolNames []string) AgentOption
@@ -1182,8 +1182,8 @@ func WithToolNames(toolNames []string) AgentOption
 
 WithToolNames sets the tool names for the agent.
 
-<a name="AgentRequest"></a>
-## type [AgentRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L55>)
+
+## type [AgentRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L55)
 
 Re\-export types from iface and internal packages.
 
@@ -1191,8 +1191,8 @@ Re\-export types from iface and internal packages.
 type AgentRequest = internal.AgentRequest
 ```
 
-<a name="NewAgentRequest"></a>
-### func [NewAgentRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L339>)
+
+### func [NewAgentRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L339)
 
 ```go
 func NewAgentRequest(action string, parameters map[string]any) AgentRequest
@@ -1200,8 +1200,8 @@ func NewAgentRequest(action string, parameters map[string]any) AgentRequest
 
 NewAgentRequest creates a new AgentRequest.
 
-<a name="AgentResponse"></a>
-## type [AgentResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L56>)
+
+## type [AgentResponse](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L56)
 
 Re\-export types from iface and internal packages.
 
@@ -1209,8 +1209,8 @@ Re\-export types from iface and internal packages.
 type AgentResponse = internal.AgentResponse
 ```
 
-<a name="NewAgentResponse"></a>
-### func [NewAgentResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L347>)
+
+### func [NewAgentResponse](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L347)
 
 ```go
 func NewAgentResponse(requestID, status string, result any) AgentResponse
@@ -1218,8 +1218,8 @@ func NewAgentResponse(requestID, status string, result any) AgentResponse
 
 NewAgentResponse creates a new AgentResponse.
 
-<a name="AgentScratchPadEntry"></a>
-## type [AgentScratchPadEntry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L38>)
+
+## type [AgentScratchPadEntry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L38)
 
 Re\-export types from iface and internal packages.
 
@@ -1227,8 +1227,8 @@ Re\-export types from iface and internal packages.
 type AgentScratchPadEntry = internal.AgentScratchPadEntry
 ```
 
-<a name="BaseChatHistory"></a>
-## type [BaseChatHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L44>)
+
+## type [BaseChatHistory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L44)
 
 Re\-export types from iface and internal packages.
 
@@ -1236,8 +1236,8 @@ Re\-export types from iface and internal packages.
 type BaseChatHistory = internal.BaseChatHistory
 ```
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L622-L625>)
+
+## type [BenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L622-L625)
 
 BenchmarkHelper provides benchmarking utilities for schema.
 
@@ -1247,36 +1247,36 @@ type BenchmarkHelper struct {
 }
 ```
 
-<a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L627>)
+
+### func [NewBenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L627)
 
 ```go
 func NewBenchmarkHelper(messageCount, documentCount int) *BenchmarkHelper
 ```
 
-<a name="BenchmarkHelper.BenchmarkDocumentOperations"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkDocumentOperations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L649>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkDocumentOperations](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L649)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkDocumentOperations(iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkMessageOperations"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkMessageOperations](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L634>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkMessageOperations](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L634)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkMessageOperations(iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkSchemaCreation"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkSchemaCreation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L663>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkSchemaCreation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L663)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkSchemaCreation(iterations int) (time.Duration, error)
 ```
 
-<a name="CallOptions"></a>
-## type [CallOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L46>)
+
+## type [CallOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L46)
 
 Re\-export types from iface and internal packages.
 
@@ -1284,8 +1284,8 @@ Re\-export types from iface and internal packages.
 type CallOptions = internal.CallOptions
 ```
 
-<a name="NewCallOptions"></a>
-### func [NewCallOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L240>)
+
+### func [NewCallOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L240)
 
 ```go
 func NewCallOptions() *CallOptions
@@ -1293,8 +1293,8 @@ func NewCallOptions() *CallOptions
 
 NewCallOptions creates a new CallOptions with default values.
 
-<a name="ChatHistory"></a>
-## type [ChatHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L29>)
+
+## type [ChatHistory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L29)
 
 Re\-export types from iface and internal packages.
 
@@ -1302,8 +1302,8 @@ Re\-export types from iface and internal packages.
 type ChatHistory = iface.ChatHistory
 ```
 
-<a name="NewBaseChatHistory"></a>
-### func [NewBaseChatHistory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L183>)
+
+### func [NewBaseChatHistory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L183)
 
 ```go
 func NewBaseChatHistory(opts ...ChatHistoryOption) (ChatHistory, error)
@@ -1311,8 +1311,8 @@ func NewBaseChatHistory(opts ...ChatHistoryOption) (ChatHistory, error)
 
 NewBaseChatHistory creates a new BaseChatHistory.
 
-<a name="ChatHistoryConfig"></a>
-## type [ChatHistoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L45>)
+
+## type [ChatHistoryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L45)
 
 Re\-export types from iface and internal packages.
 
@@ -1320,8 +1320,8 @@ Re\-export types from iface and internal packages.
 type ChatHistoryConfig = internal.ChatHistoryConfig
 ```
 
-<a name="NewChatHistoryConfig"></a>
-### func [NewChatHistoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L175>)
+
+### func [NewChatHistoryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L175)
 
 ```go
 func NewChatHistoryConfig(opts ...ChatHistoryOption) (*ChatHistoryConfig, error)
@@ -1329,8 +1329,8 @@ func NewChatHistoryConfig(opts ...ChatHistoryOption) (*ChatHistoryConfig, error)
 
 NewChatHistoryConfig creates a new ChatHistoryConfig with validation.
 
-<a name="ChatHistoryOption"></a>
-## type [ChatHistoryOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L398>)
+
+## type [ChatHistoryOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L398)
 
 ChatHistoryOption defines a function type for ChatHistoryConfig options.
 
@@ -1338,8 +1338,8 @@ ChatHistoryOption defines a function type for ChatHistoryConfig options.
 type ChatHistoryOption func(*ChatHistoryConfig)
 ```
 
-<a name="WithMaxMessages"></a>
-### func [WithMaxMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L401>)
+
+### func [WithMaxMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L401)
 
 ```go
 func WithMaxMessages(maxMessages int) ChatHistoryOption
@@ -1347,8 +1347,8 @@ func WithMaxMessages(maxMessages int) ChatHistoryOption
 
 WithMaxMessages sets the maximum number of messages to keep in history.
 
-<a name="WithPersistence"></a>
-### func [WithPersistence](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L415>)
+
+### func [WithPersistence](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L415)
 
 ```go
 func WithPersistence(enable bool) ChatHistoryOption
@@ -1356,8 +1356,8 @@ func WithPersistence(enable bool) ChatHistoryOption
 
 WithPersistence enables or disables persistence for chat history.
 
-<a name="WithTTL"></a>
-### func [WithTTL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L408>)
+
+### func [WithTTL](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L408)
 
 ```go
 func WithTTL(ttl time.Duration) ChatHistoryOption
@@ -1365,8 +1365,8 @@ func WithTTL(ttl time.Duration) ChatHistoryOption
 
 WithTTL sets the time\-to\-live for messages in history.
 
-<a name="ChatMessage"></a>
-## type [ChatMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L48>)
+
+## type [ChatMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L48)
 
 Re\-export types from iface and internal packages.
 
@@ -1374,8 +1374,8 @@ Re\-export types from iface and internal packages.
 type ChatMessage = internal.ChatMessage
 ```
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L387-L391>)
+
+## type [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L387-L391)
 
 ConcurrentTestRunner runs schema tests concurrently for performance testing.
 
@@ -1387,22 +1387,22 @@ type ConcurrentTestRunner struct {
 }
 ```
 
-<a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L393>)
+
+### func [NewConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L393)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
-<a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L401>)
+
+### func \(\*ConcurrentTestRunner\) [Run](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L401)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
-<a name="Document"></a>
-## type [Document](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L32>)
+
+## type [Document](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L32)
 
 Types from internal.
 
@@ -1410,8 +1410,8 @@ Types from internal.
 type Document = internal.Document
 ```
 
-<a name="CreateTestDocuments"></a>
-### func [CreateTestDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L270>)
+
+### func [CreateTestDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L270)
 
 ```go
 func CreateTestDocuments(count int, topic string) []Document
@@ -1419,8 +1419,8 @@ func CreateTestDocuments(count int, topic string) []Document
 
 CreateTestDocuments creates a set of test documents.
 
-<a name="NewDocument"></a>
-### func [NewDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L164>)
+
+### func [NewDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L164)
 
 ```go
 func NewDocument(pageContent string, metadata map[string]string) Document
@@ -1428,8 +1428,8 @@ func NewDocument(pageContent string, metadata map[string]string) Document
 
 NewDocument creates a new Document.
 
-<a name="NewDocumentWithEmbedding"></a>
-### func [NewDocumentWithEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L174>)
+
+### func [NewDocumentWithEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L174)
 
 ```go
 func NewDocumentWithEmbedding(pageContent string, metadata map[string]string, embedding []float32) Document
@@ -1437,8 +1437,8 @@ func NewDocumentWithEmbedding(pageContent string, metadata map[string]string, em
 
 NewDocumentWithEmbedding creates a new Document with an embedding.
 
-<a name="NewDocumentWithID"></a>
-### func [NewDocumentWithID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L169>)
+
+### func [NewDocumentWithID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L169)
 
 ```go
 func NewDocumentWithID(id, pageContent string, metadata map[string]string) Document
@@ -1446,8 +1446,8 @@ func NewDocumentWithID(id, pageContent string, metadata map[string]string) Docum
 
 NewDocumentWithID creates a new Document with an ID.
 
-<a name="EmbeddingOption"></a>
-## type [EmbeddingOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L364>)
+
+## type [EmbeddingOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L364)
 
 EmbeddingOption defines a function type for EmbeddingProviderConfig options.
 
@@ -1455,8 +1455,8 @@ EmbeddingOption defines a function type for EmbeddingProviderConfig options.
 type EmbeddingOption func(*EmbeddingProviderConfig)
 ```
 
-<a name="WithEmbeddingBaseURL"></a>
-### func [WithEmbeddingBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L367>)
+
+### func [WithEmbeddingBaseURL](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L367)
 
 ```go
 func WithEmbeddingBaseURL(baseURL string) EmbeddingOption
@@ -1464,8 +1464,8 @@ func WithEmbeddingBaseURL(baseURL string) EmbeddingOption
 
 WithEmbeddingBaseURL sets the base URL for the embedding provider.
 
-<a name="WithEmbeddingProviderSpecific"></a>
-### func [WithEmbeddingProviderSpecific](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L374>)
+
+### func [WithEmbeddingProviderSpecific](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L374)
 
 ```go
 func WithEmbeddingProviderSpecific(specific map[string]any) EmbeddingOption
@@ -1473,8 +1473,8 @@ func WithEmbeddingProviderSpecific(specific map[string]any) EmbeddingOption
 
 WithEmbeddingProviderSpecific sets provider\-specific configuration for embeddings.
 
-<a name="EmbeddingProviderConfig"></a>
-## type [EmbeddingProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L41-L48>)
+
+## type [EmbeddingProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L41-L48)
 
 EmbeddingProviderConfig defines the configuration for a specific embedding provider instance.
 
@@ -1489,8 +1489,8 @@ type EmbeddingProviderConfig struct {
 }
 ```
 
-<a name="NewEmbeddingProviderConfig"></a>
-### func [NewEmbeddingProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L135>)
+
+### func [NewEmbeddingProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L135)
 
 ```go
 func NewEmbeddingProviderConfig(name, provider, modelName, apiKey string, opts ...EmbeddingOption) (*EmbeddingProviderConfig, error)
@@ -1498,8 +1498,8 @@ func NewEmbeddingProviderConfig(name, provider, modelName, apiKey string, opts .
 
 NewEmbeddingProviderConfig creates a new EmbeddingProviderConfig with validation.
 
-<a name="EmbeddingProviderConfig.Validate"></a>
-### func \(\*EmbeddingProviderConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L77>)
+
+### func \(\*EmbeddingProviderConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L77)
 
 ```go
 func (c *EmbeddingProviderConfig) Validate() error
@@ -1507,8 +1507,8 @@ func (c *EmbeddingProviderConfig) Validate() error
 
 Validate validates the EmbeddingProviderConfig struct.
 
-<a name="Event"></a>
-## type [Event](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L60>)
+
+## type [Event](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L60)
 
 Event Types.
 
@@ -1516,8 +1516,8 @@ Event Types.
 type Event = internal.Event
 ```
 
-<a name="NewEvent"></a>
-### func [NewEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L367>)
+
+### func [NewEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L367)
 
 ```go
 func NewEvent(eventID, eventType, source string, payload any) Event
@@ -1525,8 +1525,8 @@ func NewEvent(eventID, eventType, source string, payload any) Event
 
 NewEvent creates a new Event.
 
-<a name="FinalAnswer"></a>
-## type [FinalAnswer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L36>)
+
+## type [FinalAnswer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L36)
 
 Re\-export types from iface and internal packages.
 
@@ -1534,8 +1534,8 @@ Re\-export types from iface and internal packages.
 type FinalAnswer = internal.FinalAnswer
 ```
 
-<a name="NewFinalAnswer"></a>
-### func [NewFinalAnswer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L221>)
+
+### func [NewFinalAnswer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L221)
 
 ```go
 func NewFinalAnswer(output string, sourceDocuments []any, intermediateSteps []Step) FinalAnswer
@@ -1543,8 +1543,8 @@ func NewFinalAnswer(output string, sourceDocuments []any, intermediateSteps []St
 
 NewFinalAnswer creates a new FinalAnswer.
 
-<a name="FunctionCall"></a>
-## type [FunctionCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L41>)
+
+## type [FunctionCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L41)
 
 Re\-export types from iface and internal packages.
 
@@ -1552,8 +1552,8 @@ Re\-export types from iface and internal packages.
 type FunctionCall = iface.FunctionCall
 ```
 
-<a name="Generation"></a>
-## type [Generation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L42>)
+
+## type [Generation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L42)
 
 Re\-export types from iface and internal packages.
 
@@ -1561,8 +1561,8 @@ Re\-export types from iface and internal packages.
 type Generation = internal.Generation
 ```
 
-<a name="NewGeneration"></a>
-### func [NewGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L308>)
+
+### func [NewGeneration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L308)
 
 ```go
 func NewGeneration(text string, message Message, generationInfo map[string]any) *Generation
@@ -1570,8 +1570,8 @@ func NewGeneration(text string, message Message, generationInfo map[string]any) 
 
 NewGeneration creates a new Generation.
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L491-L494>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L491-L494)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -1581,50 +1581,50 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L496>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L496)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddDocument"></a>
-### func \(\*IntegrationTestHelper\) [AddDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L507>)
+
+### func \(\*IntegrationTestHelper\) [AddDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L507)
 
 ```go
 func (h *IntegrationTestHelper) AddDocument(name string, document *AdvancedMockDocument)
 ```
 
-<a name="IntegrationTestHelper.AddMessage"></a>
-### func \(\*IntegrationTestHelper\) [AddMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L503>)
+
+### func \(\*IntegrationTestHelper\) [AddMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L503)
 
 ```go
 func (h *IntegrationTestHelper) AddMessage(name string, message *AdvancedMockMessage)
 ```
 
-<a name="IntegrationTestHelper.GetDocument"></a>
-### func \(\*IntegrationTestHelper\) [GetDocument](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L515>)
+
+### func \(\*IntegrationTestHelper\) [GetDocument](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L515)
 
 ```go
 func (h *IntegrationTestHelper) GetDocument(name string) *AdvancedMockDocument
 ```
 
-<a name="IntegrationTestHelper.GetMessage"></a>
-### func \(\*IntegrationTestHelper\) [GetMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L511>)
+
+### func \(\*IntegrationTestHelper\) [GetMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L511)
 
 ```go
 func (h *IntegrationTestHelper) GetMessage(name string) *AdvancedMockMessage
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L519>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L519)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="LLMOption"></a>
-## type [LLMOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L47>)
+
+## type [LLMOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L47)
 
 Re\-export types from iface and internal packages.
 
@@ -1632,8 +1632,8 @@ Re\-export types from iface and internal packages.
 type LLMOption = internal.LLMOption
 ```
 
-<a name="WithFrequencyPenalty"></a>
-### func [WithFrequencyPenalty](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L268>)
+
+### func [WithFrequencyPenalty](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L268)
 
 ```go
 func WithFrequencyPenalty(penalty float64) LLMOption
@@ -1641,8 +1641,8 @@ func WithFrequencyPenalty(penalty float64) LLMOption
 
 WithFrequencyPenalty sets the frequency penalty for LLM calls.
 
-<a name="WithMaxTokens"></a>
-### func [WithMaxTokens](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L254>)
+
+### func [WithMaxTokens](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L254)
 
 ```go
 func WithMaxTokens(maxTokens int) LLMOption
@@ -1650,8 +1650,8 @@ func WithMaxTokens(maxTokens int) LLMOption
 
 WithMaxTokens sets the max tokens for LLM calls.
 
-<a name="WithPresencePenalty"></a>
-### func [WithPresencePenalty](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L275>)
+
+### func [WithPresencePenalty](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L275)
 
 ```go
 func WithPresencePenalty(penalty float64) LLMOption
@@ -1659,8 +1659,8 @@ func WithPresencePenalty(penalty float64) LLMOption
 
 WithPresencePenalty sets the presence penalty for LLM calls.
 
-<a name="WithProviderSpecificArg"></a>
-### func [WithProviderSpecificArg](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L296>)
+
+### func [WithProviderSpecificArg](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L296)
 
 ```go
 func WithProviderSpecificArg(key string, value any) LLMOption
@@ -1668,8 +1668,8 @@ func WithProviderSpecificArg(key string, value any) LLMOption
 
 WithProviderSpecificArg adds a provider\-specific argument.
 
-<a name="WithStopSequences"></a>
-### func [WithStopSequences](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L282>)
+
+### func [WithStopSequences](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L282)
 
 ```go
 func WithStopSequences(stop []string) LLMOption
@@ -1677,8 +1677,8 @@ func WithStopSequences(stop []string) LLMOption
 
 WithStopSequences sets the stop sequences for LLM calls.
 
-<a name="WithStreaming"></a>
-### func [WithStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L289>)
+
+### func [WithStreaming](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L289)
 
 ```go
 func WithStreaming(streaming bool) LLMOption
@@ -1686,8 +1686,8 @@ func WithStreaming(streaming bool) LLMOption
 
 WithStreaming enables or disables streaming for LLM calls.
 
-<a name="WithTemperature"></a>
-### func [WithTemperature](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L247>)
+
+### func [WithTemperature](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L247)
 
 ```go
 func WithTemperature(temp float64) LLMOption
@@ -1695,8 +1695,8 @@ func WithTemperature(temp float64) LLMOption
 
 WithTemperature sets the temperature for LLM calls.
 
-<a name="WithTopP"></a>
-### func [WithTopP](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L261>)
+
+### func [WithTopP](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L261)
 
 ```go
 func WithTopP(topP float64) LLMOption
@@ -1704,8 +1704,8 @@ func WithTopP(topP float64) LLMOption
 
 WithTopP sets the TopP for LLM calls.
 
-<a name="LLMProviderConfig"></a>
-## type [LLMProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L30-L38>)
+
+## type [LLMProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L30-L38)
 
 LLMProviderConfig defines the configuration for a specific LLM provider instance. It allows for common parameters and a flexible way to include provider\-specific settings.
 
@@ -1721,8 +1721,8 @@ type LLMProviderConfig struct {
 }
 ```
 
-<a name="NewLLMProviderConfig"></a>
-### func [NewLLMProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L114>)
+
+### func [NewLLMProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L114)
 
 ```go
 func NewLLMProviderConfig(name, provider, modelName string, opts ...LLMProviderOption) (*LLMProviderConfig, error)
@@ -1730,8 +1730,8 @@ func NewLLMProviderConfig(name, provider, modelName string, opts ...LLMProviderO
 
 NewLLMProviderConfig creates a new LLMProviderConfig with validation.
 
-<a name="LLMProviderConfig.Validate"></a>
-### func \(\*LLMProviderConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L68>)
+
+### func \(\*LLMProviderConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L68)
 
 ```go
 func (c *LLMProviderConfig) Validate() error
@@ -1739,8 +1739,8 @@ func (c *LLMProviderConfig) Validate() error
 
 Validate validates the LLMProviderConfig struct.
 
-<a name="LLMProviderOption"></a>
-## type [LLMProviderOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L333>)
+
+## type [LLMProviderOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L333)
 
 LLMProviderOption defines a function type for LLMProviderConfig options.
 
@@ -1748,8 +1748,8 @@ LLMProviderOption defines a function type for LLMProviderConfig options.
 type LLMProviderOption func(*LLMProviderConfig)
 ```
 
-<a name="WithAPIKey"></a>
-### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L336>)
+
+### func [WithAPIKey](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L336)
 
 ```go
 func WithAPIKey(apiKey string) LLMProviderOption
@@ -1757,8 +1757,8 @@ func WithAPIKey(apiKey string) LLMProviderOption
 
 WithAPIKey sets the API key for the LLM provider.
 
-<a name="WithBaseURL"></a>
-### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L343>)
+
+### func [WithBaseURL](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L343)
 
 ```go
 func WithBaseURL(baseURL string) LLMProviderOption
@@ -1766,8 +1766,8 @@ func WithBaseURL(baseURL string) LLMProviderOption
 
 WithBaseURL sets the base URL for the LLM provider.
 
-<a name="WithDefaultCallOptions"></a>
-### func [WithDefaultCallOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L350>)
+
+### func [WithDefaultCallOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L350)
 
 ```go
 func WithDefaultCallOptions(options map[string]any) LLMProviderOption
@@ -1775,8 +1775,8 @@ func WithDefaultCallOptions(options map[string]any) LLMProviderOption
 
 WithDefaultCallOptions sets the default call options for the LLM provider.
 
-<a name="WithProviderSpecific"></a>
-### func [WithProviderSpecific](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L357>)
+
+### func [WithProviderSpecific](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L357)
 
 ```go
 func WithProviderSpecific(specific map[string]any) LLMProviderOption
@@ -1784,8 +1784,8 @@ func WithProviderSpecific(specific map[string]any) LLMProviderOption
 
 WithProviderSpecific sets provider\-specific configuration.
 
-<a name="LLMResponse"></a>
-## type [LLMResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L43>)
+
+## type [LLMResponse](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L43)
 
 Re\-export types from iface and internal packages.
 
@@ -1793,8 +1793,8 @@ Re\-export types from iface and internal packages.
 type LLMResponse = internal.LLMResponse
 ```
 
-<a name="NewLLMResponse"></a>
-### func [NewLLMResponse](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L317>)
+
+### func [NewLLMResponse](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L317)
 
 ```go
 func NewLLMResponse(generations [][]*Generation, llmOutput map[string]any) *LLMResponse
@@ -1802,8 +1802,8 @@ func NewLLMResponse(generations [][]*Generation, llmOutput map[string]any) *LLMR
 
 NewLLMResponse creates a new LLMResponse.
 
-<a name="Message"></a>
-## type [Message](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L28>)
+
+## type [Message](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L28)
 
 Interfaces from iface.
 
@@ -1811,8 +1811,8 @@ Interfaces from iface.
 type Message = iface.Message
 ```
 
-<a name="CreateTestMessages"></a>
-### func [CreateTestMessages](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L248>)
+
+### func [CreateTestMessages](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L248)
 
 ```go
 func CreateTestMessages(count int) []Message
@@ -1820,8 +1820,8 @@ func CreateTestMessages(count int) []Message
 
 CreateTestMessages creates a variety of test messages.
 
-<a name="NewAIMessage"></a>
-### func [NewAIMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L123>)
+
+### func [NewAIMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L123)
 
 ```go
 func NewAIMessage(content string) Message
@@ -1829,8 +1829,8 @@ func NewAIMessage(content string) Message
 
 NewAIMessage creates a new AI message.
 
-<a name="NewAIMessageWithContext"></a>
-### func [NewAIMessageWithContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L420>)
+
+### func [NewAIMessageWithContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L420)
 
 ```go
 func NewAIMessageWithContext(ctx context.Context, content string) Message
@@ -1838,8 +1838,8 @@ func NewAIMessageWithContext(ctx context.Context, content string) Message
 
 NewAIMessageWithContext creates a new AI message with tracing context.
 
-<a name="NewChatMessage"></a>
-### func [NewChatMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L154>)
+
+### func [NewChatMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L154)
 
 ```go
 func NewChatMessage(role MessageType, content string) Message
@@ -1847,8 +1847,8 @@ func NewChatMessage(role MessageType, content string) Message
 
 NewChatMessage creates a new chat message with specified role.
 
-<a name="NewFunctionMessage"></a>
-### func [NewFunctionMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L146>)
+
+### func [NewFunctionMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L146)
 
 ```go
 func NewFunctionMessage(name, content string) Message
@@ -1856,8 +1856,8 @@ func NewFunctionMessage(name, content string) Message
 
 NewFunctionMessage creates a new function message.
 
-<a name="NewHumanMessage"></a>
-### func [NewHumanMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L115>)
+
+### func [NewHumanMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L115)
 
 ```go
 func NewHumanMessage(content string) Message
@@ -1865,8 +1865,8 @@ func NewHumanMessage(content string) Message
 
 NewHumanMessage creates a new human message.
 
-<a name="NewHumanMessageWithContext"></a>
-### func [NewHumanMessageWithContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L407>)
+
+### func [NewHumanMessageWithContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L407)
 
 ```go
 func NewHumanMessageWithContext(ctx context.Context, content string) Message
@@ -1874,8 +1874,8 @@ func NewHumanMessageWithContext(ctx context.Context, content string) Message
 
 NewHumanMessageWithContext creates a new human message with tracing context.
 
-<a name="NewSystemMessage"></a>
-### func [NewSystemMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L130>)
+
+### func [NewSystemMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L130)
 
 ```go
 func NewSystemMessage(content string) Message
@@ -1883,8 +1883,8 @@ func NewSystemMessage(content string) Message
 
 NewSystemMessage creates a new system message.
 
-<a name="NewToolMessage"></a>
-### func [NewToolMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L138>)
+
+### func [NewToolMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L138)
 
 ```go
 func NewToolMessage(content, toolCallID string) Message
@@ -1892,8 +1892,8 @@ func NewToolMessage(content, toolCallID string) Message
 
 NewToolMessage creates a new tool message.
 
-<a name="MessageType"></a>
-## type [MessageType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L70>)
+
+## type [MessageType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L70)
 
 Re\-export MessageType from iface.
 
@@ -1901,8 +1901,8 @@ Re\-export MessageType from iface.
 type MessageType = iface.MessageType
 ```
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L11-L65>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L11-L65)
 
 Metrics holds all the metrics for the schema package.
 
@@ -1912,8 +1912,8 @@ type Metrics struct {
 }
 ```
 
-<a name="GetGlobalMetrics"></a>
-### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L820>)
+
+### func [GetGlobalMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L820)
 
 ```go
 func GetGlobalMetrics() *Metrics
@@ -1921,8 +1921,8 @@ func GetGlobalMetrics() *Metrics
 
 GetGlobalMetrics returns the global metrics instance.
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L68>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L68)
 
 ```go
 func NewMetrics(meter metric.Meter) (*Metrics, error)
@@ -1930,8 +1930,8 @@ func NewMetrics(meter metric.Meter) (*Metrics, error)
 
 NewMetrics creates a new Metrics instance with OpenTelemetry instruments.
 
-<a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L419>)
+
+### func [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L419)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -1939,8 +1939,8 @@ func NoOpMetrics() *Metrics
 
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
-<a name="Metrics.RecordA2ACommunicationError"></a>
-### func \(\*Metrics\) [RecordA2ACommunicationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L628>)
+
+### func \(\*Metrics\) [RecordA2ACommunicationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L628)
 
 ```go
 func (m *Metrics) RecordA2ACommunicationError(ctx context.Context, operation string, err error)
@@ -1948,8 +1948,8 @@ func (m *Metrics) RecordA2ACommunicationError(ctx context.Context, operation str
 
 RecordA2ACommunicationError records an A2A communication error.
 
-<a name="Metrics.RecordAgentActionCreated"></a>
-### func \(\*Metrics\) [RecordAgentActionCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L483>)
+
+### func \(\*Metrics\) [RecordAgentActionCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L483)
 
 ```go
 func (m *Metrics) RecordAgentActionCreated(ctx context.Context, tool string)
@@ -1957,8 +1957,8 @@ func (m *Metrics) RecordAgentActionCreated(ctx context.Context, tool string)
 
 RecordAgentActionCreated records an agent action creation.
 
-<a name="Metrics.RecordAgentLifecycleEvent"></a>
-### func \(\*Metrics\) [RecordAgentLifecycleEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L669>)
+
+### func \(\*Metrics\) [RecordAgentLifecycleEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L669)
 
 ```go
 func (m *Metrics) RecordAgentLifecycleEvent(ctx context.Context, agentID, eventType string)
@@ -1966,8 +1966,8 @@ func (m *Metrics) RecordAgentLifecycleEvent(ctx context.Context, agentID, eventT
 
 RecordAgentLifecycleEvent records an agent lifecycle event.
 
-<a name="Metrics.RecordAgentMessageReceived"></a>
-### func \(\*Metrics\) [RecordAgentMessageReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L563>)
+
+### func \(\*Metrics\) [RecordAgentMessageReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L563)
 
 ```go
 func (m *Metrics) RecordAgentMessageReceived(ctx context.Context, messageType, toAgentID string)
@@ -1975,8 +1975,8 @@ func (m *Metrics) RecordAgentMessageReceived(ctx context.Context, messageType, t
 
 RecordAgentMessageReceived records an agent message being received.
 
-<a name="Metrics.RecordAgentMessageSent"></a>
-### func \(\*Metrics\) [RecordAgentMessageSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L550>)
+
+### func \(\*Metrics\) [RecordAgentMessageSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L550)
 
 ```go
 func (m *Metrics) RecordAgentMessageSent(ctx context.Context, messageType, fromAgentID string)
@@ -1984,8 +1984,8 @@ func (m *Metrics) RecordAgentMessageSent(ctx context.Context, messageType, fromA
 
 RecordAgentMessageSent records an agent message being sent.
 
-<a name="Metrics.RecordAgentObservationCreated"></a>
-### func \(\*Metrics\) [RecordAgentObservationCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L493>)
+
+### func \(\*Metrics\) [RecordAgentObservationCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L493)
 
 ```go
 func (m *Metrics) RecordAgentObservationCreated(ctx context.Context)
@@ -1993,8 +1993,8 @@ func (m *Metrics) RecordAgentObservationCreated(ctx context.Context)
 
 RecordAgentObservationCreated records an agent observation creation.
 
-<a name="Metrics.RecordAgentRequestReceived"></a>
-### func \(\*Metrics\) [RecordAgentRequestReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L589>)
+
+### func \(\*Metrics\) [RecordAgentRequestReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L589)
 
 ```go
 func (m *Metrics) RecordAgentRequestReceived(ctx context.Context, action, toAgentID string)
@@ -2002,8 +2002,8 @@ func (m *Metrics) RecordAgentRequestReceived(ctx context.Context, action, toAgen
 
 RecordAgentRequestReceived records an agent request being received.
 
-<a name="Metrics.RecordAgentRequestSent"></a>
-### func \(\*Metrics\) [RecordAgentRequestSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L576>)
+
+### func \(\*Metrics\) [RecordAgentRequestSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L576)
 
 ```go
 func (m *Metrics) RecordAgentRequestSent(ctx context.Context, action, fromAgentID string)
@@ -2011,8 +2011,8 @@ func (m *Metrics) RecordAgentRequestSent(ctx context.Context, action, fromAgentI
 
 RecordAgentRequestSent records an agent request being sent.
 
-<a name="Metrics.RecordAgentResponseReceived"></a>
-### func \(\*Metrics\) [RecordAgentResponseReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L615>)
+
+### func \(\*Metrics\) [RecordAgentResponseReceived](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L615)
 
 ```go
 func (m *Metrics) RecordAgentResponseReceived(ctx context.Context, status, fromAgentID string)
@@ -2020,8 +2020,8 @@ func (m *Metrics) RecordAgentResponseReceived(ctx context.Context, status, fromA
 
 RecordAgentResponseReceived records an agent response being received.
 
-<a name="Metrics.RecordAgentResponseSent"></a>
-### func \(\*Metrics\) [RecordAgentResponseSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L602>)
+
+### func \(\*Metrics\) [RecordAgentResponseSent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L602)
 
 ```go
 func (m *Metrics) RecordAgentResponseSent(ctx context.Context, status, toAgentID string)
@@ -2029,8 +2029,8 @@ func (m *Metrics) RecordAgentResponseSent(ctx context.Context, status, toAgentID
 
 RecordAgentResponseSent records an agent response being sent.
 
-<a name="Metrics.RecordConfigError"></a>
-### func \(\*Metrics\) [RecordConfigError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L535>)
+
+### func \(\*Metrics\) [RecordConfigError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L535)
 
 ```go
 func (m *Metrics) RecordConfigError(ctx context.Context, configType string, err error)
@@ -2038,8 +2038,8 @@ func (m *Metrics) RecordConfigError(ctx context.Context, configType string, err 
 
 RecordConfigError records a configuration validation error.
 
-<a name="Metrics.RecordConfigValidation"></a>
-### func \(\*Metrics\) [RecordConfigValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L525>)
+
+### func \(\*Metrics\) [RecordConfigValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L525)
 
 ```go
 func (m *Metrics) RecordConfigValidation(ctx context.Context, configType string)
@@ -2047,8 +2047,8 @@ func (m *Metrics) RecordConfigValidation(ctx context.Context, configType string)
 
 RecordConfigValidation records a configuration validation.
 
-<a name="Metrics.RecordDocumentCreated"></a>
-### func \(\*Metrics\) [RecordDocumentCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L447>)
+
+### func \(\*Metrics\) [RecordDocumentCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L447)
 
 ```go
 func (m *Metrics) RecordDocumentCreated(ctx context.Context)
@@ -2056,8 +2056,8 @@ func (m *Metrics) RecordDocumentCreated(ctx context.Context)
 
 RecordDocumentCreated records a document creation event.
 
-<a name="Metrics.RecordDocumentError"></a>
-### func \(\*Metrics\) [RecordDocumentError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L455>)
+
+### func \(\*Metrics\) [RecordDocumentError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L455)
 
 ```go
 func (m *Metrics) RecordDocumentError(ctx context.Context, err error)
@@ -2065,8 +2065,8 @@ func (m *Metrics) RecordDocumentError(ctx context.Context, err error)
 
 RecordDocumentError records a document creation error.
 
-<a name="Metrics.RecordDocumentValidation"></a>
-### func \(\*Metrics\) [RecordDocumentValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L769>)
+
+### func \(\*Metrics\) [RecordDocumentValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L769)
 
 ```go
 func (m *Metrics) RecordDocumentValidation(ctx context.Context)
@@ -2074,8 +2074,8 @@ func (m *Metrics) RecordDocumentValidation(ctx context.Context)
 
 RecordDocumentValidation records a document validation.
 
-<a name="Metrics.RecordDocumentValidationError"></a>
-### func \(\*Metrics\) [RecordDocumentValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L777>)
+
+### func \(\*Metrics\) [RecordDocumentValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L777)
 
 ```go
 func (m *Metrics) RecordDocumentValidationError(ctx context.Context, err error)
@@ -2083,8 +2083,8 @@ func (m *Metrics) RecordDocumentValidationError(ctx context.Context, err error)
 
 RecordDocumentValidationError records a document validation error.
 
-<a name="Metrics.RecordEventConsumed"></a>
-### func \(\*Metrics\) [RecordEventConsumed](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L656>)
+
+### func \(\*Metrics\) [RecordEventConsumed](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L656)
 
 ```go
 func (m *Metrics) RecordEventConsumed(ctx context.Context, eventType, consumer string)
@@ -2092,8 +2092,8 @@ func (m *Metrics) RecordEventConsumed(ctx context.Context, eventType, consumer s
 
 RecordEventConsumed records an event being consumed.
 
-<a name="Metrics.RecordEventProcessingError"></a>
-### func \(\*Metrics\) [RecordEventProcessingError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L708>)
+
+### func \(\*Metrics\) [RecordEventProcessingError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L708)
 
 ```go
 func (m *Metrics) RecordEventProcessingError(ctx context.Context, eventType string, err error)
@@ -2101,8 +2101,8 @@ func (m *Metrics) RecordEventProcessingError(ctx context.Context, eventType stri
 
 RecordEventProcessingError records an event processing error.
 
-<a name="Metrics.RecordEventPublished"></a>
-### func \(\*Metrics\) [RecordEventPublished](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L643>)
+
+### func \(\*Metrics\) [RecordEventPublished](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L643)
 
 ```go
 func (m *Metrics) RecordEventPublished(ctx context.Context, eventType, source string)
@@ -2110,8 +2110,8 @@ func (m *Metrics) RecordEventPublished(ctx context.Context, eventType, source st
 
 RecordEventPublished records an event being published.
 
-<a name="Metrics.RecordFactoryCreation"></a>
-### func \(\*Metrics\) [RecordFactoryCreation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L789>)
+
+### func \(\*Metrics\) [RecordFactoryCreation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L789)
 
 ```go
 func (m *Metrics) RecordFactoryCreation(ctx context.Context, objectType string)
@@ -2119,8 +2119,8 @@ func (m *Metrics) RecordFactoryCreation(ctx context.Context, objectType string)
 
 RecordFactoryCreation records a factory creation.
 
-<a name="Metrics.RecordFactoryError"></a>
-### func \(\*Metrics\) [RecordFactoryError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L799>)
+
+### func \(\*Metrics\) [RecordFactoryError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L799)
 
 ```go
 func (m *Metrics) RecordFactoryError(ctx context.Context, objectType string, err error)
@@ -2128,8 +2128,8 @@ func (m *Metrics) RecordFactoryError(ctx context.Context, objectType string, err
 
 RecordFactoryError records a factory creation error.
 
-<a name="Metrics.RecordGenerationCreated"></a>
-### func \(\*Metrics\) [RecordGenerationCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L509>)
+
+### func \(\*Metrics\) [RecordGenerationCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L509)
 
 ```go
 func (m *Metrics) RecordGenerationCreated(ctx context.Context)
@@ -2137,8 +2137,8 @@ func (m *Metrics) RecordGenerationCreated(ctx context.Context)
 
 RecordGenerationCreated records a generation creation.
 
-<a name="Metrics.RecordHistoryOperation"></a>
-### func \(\*Metrics\) [RecordHistoryOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L465>)
+
+### func \(\*Metrics\) [RecordHistoryOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L465)
 
 ```go
 func (m *Metrics) RecordHistoryOperation(ctx context.Context, operation string)
@@ -2146,8 +2146,8 @@ func (m *Metrics) RecordHistoryOperation(ctx context.Context, operation string)
 
 RecordHistoryOperation records a chat history operation.
 
-<a name="Metrics.RecordHistorySize"></a>
-### func \(\*Metrics\) [RecordHistorySize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L475>)
+
+### func \(\*Metrics\) [RecordHistorySize](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L475)
 
 ```go
 func (m *Metrics) RecordHistorySize(ctx context.Context, size int)
@@ -2155,8 +2155,8 @@ func (m *Metrics) RecordHistorySize(ctx context.Context, size int)
 
 RecordHistorySize records the current size of chat history.
 
-<a name="Metrics.RecordLLMResponseCreated"></a>
-### func \(\*Metrics\) [RecordLLMResponseCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L517>)
+
+### func \(\*Metrics\) [RecordLLMResponseCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L517)
 
 ```go
 func (m *Metrics) RecordLLMResponseCreated(ctx context.Context)
@@ -2164,8 +2164,8 @@ func (m *Metrics) RecordLLMResponseCreated(ctx context.Context)
 
 RecordLLMResponseCreated records an LLM response creation.
 
-<a name="Metrics.RecordMessageCreated"></a>
-### func \(\*Metrics\) [RecordMessageCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L424>)
+
+### func \(\*Metrics\) [RecordMessageCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L424)
 
 ```go
 func (m *Metrics) RecordMessageCreated(ctx context.Context, msgType MessageType)
@@ -2173,8 +2173,8 @@ func (m *Metrics) RecordMessageCreated(ctx context.Context, msgType MessageType)
 
 RecordMessageCreated records a message creation event.
 
-<a name="Metrics.RecordMessageError"></a>
-### func \(\*Metrics\) [RecordMessageError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L434>)
+
+### func \(\*Metrics\) [RecordMessageError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L434)
 
 ```go
 func (m *Metrics) RecordMessageError(ctx context.Context, msgType MessageType, err error)
@@ -2182,8 +2182,8 @@ func (m *Metrics) RecordMessageError(ctx context.Context, msgType MessageType, e
 
 RecordMessageError records a message creation error.
 
-<a name="Metrics.RecordMessageValidation"></a>
-### func \(\*Metrics\) [RecordMessageValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L746>)
+
+### func \(\*Metrics\) [RecordMessageValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L746)
 
 ```go
 func (m *Metrics) RecordMessageValidation(ctx context.Context, msgType MessageType)
@@ -2191,8 +2191,8 @@ func (m *Metrics) RecordMessageValidation(ctx context.Context, msgType MessageTy
 
 RecordMessageValidation records a message validation.
 
-<a name="Metrics.RecordMessageValidationError"></a>
-### func \(\*Metrics\) [RecordMessageValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L756>)
+
+### func \(\*Metrics\) [RecordMessageValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L756)
 
 ```go
 func (m *Metrics) RecordMessageValidationError(ctx context.Context, msgType MessageType, err error)
@@ -2200,8 +2200,8 @@ func (m *Metrics) RecordMessageValidationError(ctx context.Context, msgType Mess
 
 RecordMessageValidationError records a message validation error.
 
-<a name="Metrics.RecordSchemaValidation"></a>
-### func \(\*Metrics\) [RecordSchemaValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L723>)
+
+### func \(\*Metrics\) [RecordSchemaValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L723)
 
 ```go
 func (m *Metrics) RecordSchemaValidation(ctx context.Context, validationType string)
@@ -2209,8 +2209,8 @@ func (m *Metrics) RecordSchemaValidation(ctx context.Context, validationType str
 
 RecordSchemaValidation records a schema validation.
 
-<a name="Metrics.RecordSchemaValidationError"></a>
-### func \(\*Metrics\) [RecordSchemaValidationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L733>)
+
+### func \(\*Metrics\) [RecordSchemaValidationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L733)
 
 ```go
 func (m *Metrics) RecordSchemaValidationError(ctx context.Context, validationType string, err error)
@@ -2218,8 +2218,8 @@ func (m *Metrics) RecordSchemaValidationError(ctx context.Context, validationTyp
 
 RecordSchemaValidationError records a schema validation error.
 
-<a name="Metrics.RecordStepCreated"></a>
-### func \(\*Metrics\) [RecordStepCreated](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L501>)
+
+### func \(\*Metrics\) [RecordStepCreated](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L501)
 
 ```go
 func (m *Metrics) RecordStepCreated(ctx context.Context)
@@ -2227,8 +2227,8 @@ func (m *Metrics) RecordStepCreated(ctx context.Context)
 
 RecordStepCreated records a step creation.
 
-<a name="Metrics.RecordTaskEvent"></a>
-### func \(\*Metrics\) [RecordTaskEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L682>)
+
+### func \(\*Metrics\) [RecordTaskEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L682)
 
 ```go
 func (m *Metrics) RecordTaskEvent(ctx context.Context, taskID, eventType string)
@@ -2236,8 +2236,8 @@ func (m *Metrics) RecordTaskEvent(ctx context.Context, taskID, eventType string)
 
 RecordTaskEvent records a task event.
 
-<a name="Metrics.RecordWorkflowEvent"></a>
-### func \(\*Metrics\) [RecordWorkflowEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L695>)
+
+### func \(\*Metrics\) [RecordWorkflowEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/metrics.go#L695)
 
 ```go
 func (m *Metrics) RecordWorkflowEvent(ctx context.Context, workflowID, eventType string)
@@ -2245,8 +2245,8 @@ func (m *Metrics) RecordWorkflowEvent(ctx context.Context, workflowID, eventType
 
 RecordWorkflowEvent records a workflow event.
 
-<a name="MockDocumentOption"></a>
-## type [MockDocumentOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L168>)
+
+## type [MockDocumentOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L168)
 
 MockDocumentOption defines functional options for mock document configuration.
 
@@ -2254,8 +2254,8 @@ MockDocumentOption defines functional options for mock document configuration.
 type MockDocumentOption func(*AdvancedMockDocument)
 ```
 
-<a name="WithMockEmbedding"></a>
-### func [WithMockEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L171>)
+
+### func [WithMockEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L171)
 
 ```go
 func WithMockEmbedding(embedding []float32) MockDocumentOption
@@ -2263,8 +2263,8 @@ func WithMockEmbedding(embedding []float32) MockDocumentOption
 
 WithMockEmbedding sets the embedding for the mock document.
 
-<a name="WithMockID"></a>
-### func [WithMockID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L186>)
+
+### func [WithMockID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L186)
 
 ```go
 func WithMockID(id string) MockDocumentOption
@@ -2272,8 +2272,8 @@ func WithMockID(id string) MockDocumentOption
 
 WithMockID sets the ID for the mock document.
 
-<a name="WithMockScore"></a>
-### func [WithMockScore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L179>)
+
+### func [WithMockScore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L179)
 
 ```go
 func WithMockScore(score float32) MockDocumentOption
@@ -2281,8 +2281,8 @@ func WithMockScore(score float32) MockDocumentOption
 
 WithMockScore sets the score for the mock document.
 
-<a name="MockMessageOption"></a>
-## type [MockMessageOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L50>)
+
+## type [MockMessageOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L50)
 
 MockMessageOption defines functional options for mock configuration.
 
@@ -2290,8 +2290,8 @@ MockMessageOption defines functional options for mock configuration.
 type MockMessageOption func(*AdvancedMockMessage)
 ```
 
-<a name="WithMockAdditionalArgs"></a>
-### func [WithMockAdditionalArgs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L61>)
+
+### func [WithMockAdditionalArgs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L61)
 
 ```go
 func WithMockAdditionalArgs(args map[string]any) MockMessageOption
@@ -2299,8 +2299,8 @@ func WithMockAdditionalArgs(args map[string]any) MockMessageOption
 
 WithMockAdditionalArgs sets additional arguments for the mock message.
 
-<a name="WithMockToolCalls"></a>
-### func [WithMockToolCalls](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L53>)
+
+### func [WithMockToolCalls](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L53)
 
 ```go
 func WithMockToolCalls(toolCalls []iface.ToolCall) MockMessageOption
@@ -2308,8 +2308,8 @@ func WithMockToolCalls(toolCalls []iface.ToolCall) MockMessageOption
 
 WithMockToolCalls sets tool calls for the mock message.
 
-<a name="SchemaScenarioRunner"></a>
-## type [SchemaScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L529-L532>)
+
+## type [SchemaScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L529-L532)
 
 SchemaScenarioRunner runs common schema scenarios.
 
@@ -2319,36 +2319,36 @@ type SchemaScenarioRunner struct {
 }
 ```
 
-<a name="NewSchemaScenarioRunner"></a>
-### func [NewSchemaScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L534>)
+
+### func [NewSchemaScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L534)
 
 ```go
 func NewSchemaScenarioRunner(messageCount, documentCount int) *SchemaScenarioRunner
 ```
 
-<a name="SchemaScenarioRunner.RunConversationScenario"></a>
-### func \(\*SchemaScenarioRunner\) [RunConversationScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L589>)
+
+### func \(\*SchemaScenarioRunner\) [RunConversationScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L589)
 
 ```go
 func (r *SchemaScenarioRunner) RunConversationScenario() error
 ```
 
-<a name="SchemaScenarioRunner.RunDocumentProcessingScenario"></a>
-### func \(\*SchemaScenarioRunner\) [RunDocumentProcessingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L567>)
+
+### func \(\*SchemaScenarioRunner\) [RunDocumentProcessingScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L567)
 
 ```go
 func (r *SchemaScenarioRunner) RunDocumentProcessingScenario() error
 ```
 
-<a name="SchemaScenarioRunner.RunMessageProcessingScenario"></a>
-### func \(\*SchemaScenarioRunner\) [RunMessageProcessingScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L541>)
+
+### func \(\*SchemaScenarioRunner\) [RunMessageProcessingScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/test_utils.go#L541)
 
 ```go
 func (r *SchemaScenarioRunner) RunMessageProcessingScenario() error
 ```
 
-<a name="SchemaValidationConfig"></a>
-## type [SchemaValidationConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L193-L203>)
+
+## type [SchemaValidationConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L193-L203)
 
 SchemaValidationConfig defines configuration for schema validation rules.
 
@@ -2366,8 +2366,8 @@ type SchemaValidationConfig struct {
 }
 ```
 
-<a name="NewSchemaValidationConfig"></a>
-### func [NewSchemaValidationConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L215>)
+
+### func [NewSchemaValidationConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L215)
 
 ```go
 func NewSchemaValidationConfig(opts ...SchemaValidationOption) (*SchemaValidationConfig, error)
@@ -2375,8 +2375,8 @@ func NewSchemaValidationConfig(opts ...SchemaValidationOption) (*SchemaValidatio
 
 NewSchemaValidationConfig creates a new SchemaValidationConfig with validation.
 
-<a name="SchemaValidationConfig.Validate"></a>
-### func \(\*SchemaValidationConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L206>)
+
+### func \(\*SchemaValidationConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L206)
 
 ```go
 func (c *SchemaValidationConfig) Validate() error
@@ -2384,8 +2384,8 @@ func (c *SchemaValidationConfig) Validate() error
 
 Validate validates the SchemaValidationConfig struct.
 
-<a name="SchemaValidationOption"></a>
-## type [SchemaValidationOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L240>)
+
+## type [SchemaValidationOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L240)
 
 SchemaValidationOption defines a function type for SchemaValidationConfig options.
 
@@ -2393,8 +2393,8 @@ SchemaValidationOption defines a function type for SchemaValidationConfig option
 type SchemaValidationOption func(*SchemaValidationConfig)
 ```
 
-<a name="WithAllowedMessageTypes"></a>
-### func [WithAllowedMessageTypes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L271>)
+
+### func [WithAllowedMessageTypes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L271)
 
 ```go
 func WithAllowedMessageTypes(types []string) SchemaValidationOption
@@ -2402,8 +2402,8 @@ func WithAllowedMessageTypes(types []string) SchemaValidationOption
 
 WithAllowedMessageTypes sets the allowed message types.
 
-<a name="WithContentValidation"></a>
-### func [WithContentValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L285>)
+
+### func [WithContentValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L285)
 
 ```go
 func WithContentValidation(enable bool) SchemaValidationOption
@@ -2411,8 +2411,8 @@ func WithContentValidation(enable bool) SchemaValidationOption
 
 WithContentValidation enables or disables content validation.
 
-<a name="WithMaxMessageLength"></a>
-### func [WithMaxMessageLength](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L250>)
+
+### func [WithMaxMessageLength](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L250)
 
 ```go
 func WithMaxMessageLength(maxLength int) SchemaValidationOption
@@ -2420,8 +2420,8 @@ func WithMaxMessageLength(maxLength int) SchemaValidationOption
 
 WithMaxMessageLength sets the maximum message length.
 
-<a name="WithMaxMetadataSize"></a>
-### func [WithMaxMetadataSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L257>)
+
+### func [WithMaxMetadataSize](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L257)
 
 ```go
 func WithMaxMetadataSize(maxSize int) SchemaValidationOption
@@ -2429,8 +2429,8 @@ func WithMaxMetadataSize(maxSize int) SchemaValidationOption
 
 WithMaxMetadataSize sets the maximum metadata size.
 
-<a name="WithMaxToolCalls"></a>
-### func [WithMaxToolCalls](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L264>)
+
+### func [WithMaxToolCalls](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L264)
 
 ```go
 func WithMaxToolCalls(maxCalls int) SchemaValidationOption
@@ -2438,8 +2438,8 @@ func WithMaxToolCalls(maxCalls int) SchemaValidationOption
 
 WithMaxToolCalls sets the maximum number of tool calls.
 
-<a name="WithRequiredMetadataFields"></a>
-### func [WithRequiredMetadataFields](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L278>)
+
+### func [WithRequiredMetadataFields](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L278)
 
 ```go
 func WithRequiredMetadataFields(fields []string) SchemaValidationOption
@@ -2447,8 +2447,8 @@ func WithRequiredMetadataFields(fields []string) SchemaValidationOption
 
 WithRequiredMetadataFields sets required metadata fields.
 
-<a name="WithStrictValidation"></a>
-### func [WithStrictValidation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L243>)
+
+### func [WithStrictValidation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L243)
 
 ```go
 func WithStrictValidation(enable bool) SchemaValidationOption
@@ -2456,8 +2456,8 @@ func WithStrictValidation(enable bool) SchemaValidationOption
 
 WithStrictValidation enables or disables strict validation.
 
-<a name="Step"></a>
-## type [Step](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L35>)
+
+## type [Step](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L35)
 
 Re\-export types from iface and internal packages.
 
@@ -2465,8 +2465,8 @@ Re\-export types from iface and internal packages.
 type Step = internal.Step
 ```
 
-<a name="NewStep"></a>
-### func [NewStep](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L213>)
+
+### func [NewStep](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L213)
 
 ```go
 func NewStep(action AgentAction, observation AgentObservation) Step
@@ -2474,8 +2474,8 @@ func NewStep(action AgentAction, observation AgentObservation) Step
 
 NewStep creates a new Step with an action and observation.
 
-<a name="TaskEvent"></a>
-## type [TaskEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L63>)
+
+## type [TaskEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L63)
 
 Re\-export types from iface and internal packages.
 
@@ -2483,8 +2483,8 @@ Re\-export types from iface and internal packages.
 type TaskEvent = internal.TaskEvent
 ```
 
-<a name="NewTaskEvent"></a>
-### func [NewTaskEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L388>)
+
+### func [NewTaskEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L388)
 
 ```go
 func NewTaskEvent(taskID, agentID string, eventType TaskEventType) TaskEvent
@@ -2492,8 +2492,8 @@ func NewTaskEvent(taskID, agentID string, eventType TaskEventType) TaskEvent
 
 NewTaskEvent creates a new TaskEvent.
 
-<a name="TaskEventType"></a>
-## type [TaskEventType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L64>)
+
+## type [TaskEventType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L64)
 
 Re\-export types from iface and internal packages.
 
@@ -2501,8 +2501,8 @@ Re\-export types from iface and internal packages.
 type TaskEventType = internal.TaskEventType
 ```
 
-<a name="ToolCall"></a>
-## type [ToolCall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L39>)
+
+## type [ToolCall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L39)
 
 Re\-export types from iface and internal packages.
 
@@ -2510,8 +2510,8 @@ Re\-export types from iface and internal packages.
 type ToolCall = iface.ToolCall
 ```
 
-<a name="ToolCallChunk"></a>
-## type [ToolCallChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L40>)
+
+## type [ToolCallChunk](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L40)
 
 Re\-export types from iface and internal packages.
 
@@ -2519,8 +2519,8 @@ Re\-export types from iface and internal packages.
 type ToolCallChunk = internal.ToolCallChunk
 ```
 
-<a name="ToolMessage"></a>
-## type [ToolMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L50>)
+
+## type [ToolMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L50)
 
 Re\-export types from iface and internal packages.
 
@@ -2528,8 +2528,8 @@ Re\-export types from iface and internal packages.
 type ToolMessage = internal.ToolMessage
 ```
 
-<a name="VectorStoreConfig"></a>
-## type [VectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L51-L56>)
+
+## type [VectorStoreConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L51-L56)
 
 VectorStoreConfig defines the configuration for a vector store provider.
 
@@ -2542,8 +2542,8 @@ type VectorStoreConfig struct {
 }
 ```
 
-<a name="NewVectorStoreConfig"></a>
-### func [NewVectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L156>)
+
+### func [NewVectorStoreConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L156)
 
 ```go
 func NewVectorStoreConfig(name, provider string, opts ...VectorStoreOption) (*VectorStoreConfig, error)
@@ -2551,8 +2551,8 @@ func NewVectorStoreConfig(name, provider string, opts ...VectorStoreOption) (*Ve
 
 NewVectorStoreConfig creates a new VectorStoreConfig with validation.
 
-<a name="VectorStoreConfig.Validate"></a>
-### func \(\*VectorStoreConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L86>)
+
+### func \(\*VectorStoreConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L86)
 
 ```go
 func (c *VectorStoreConfig) Validate() error
@@ -2560,8 +2560,8 @@ func (c *VectorStoreConfig) Validate() error
 
 Validate validates the VectorStoreConfig struct.
 
-<a name="VectorStoreOption"></a>
-## type [VectorStoreOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L381>)
+
+## type [VectorStoreOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L381)
 
 VectorStoreOption defines a function type for VectorStoreConfig options.
 
@@ -2569,8 +2569,8 @@ VectorStoreOption defines a function type for VectorStoreConfig options.
 type VectorStoreOption func(*VectorStoreConfig)
 ```
 
-<a name="WithConnectionString"></a>
-### func [WithConnectionString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L384>)
+
+### func [WithConnectionString](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L384)
 
 ```go
 func WithConnectionString(connectionString string) VectorStoreOption
@@ -2578,8 +2578,8 @@ func WithConnectionString(connectionString string) VectorStoreOption
 
 WithConnectionString sets the connection string for the vector store.
 
-<a name="WithVectorStoreProviderSpecific"></a>
-### func [WithVectorStoreProviderSpecific](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L391>)
+
+### func [WithVectorStoreProviderSpecific](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/config.go#L391)
 
 ```go
 func WithVectorStoreProviderSpecific(specific map[string]any) VectorStoreOption
@@ -2587,8 +2587,8 @@ func WithVectorStoreProviderSpecific(specific map[string]any) VectorStoreOption
 
 WithVectorStoreProviderSpecific sets provider\-specific configuration for vector store.
 
-<a name="WorkflowEvent"></a>
-## type [WorkflowEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L65>)
+
+## type [WorkflowEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L65)
 
 Re\-export types from iface and internal packages.
 
@@ -2596,8 +2596,8 @@ Re\-export types from iface and internal packages.
 type WorkflowEvent = internal.WorkflowEvent
 ```
 
-<a name="NewWorkflowEvent"></a>
-### func [NewWorkflowEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L397>)
+
+### func [NewWorkflowEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L397)
 
 ```go
 func NewWorkflowEvent(workflowID string, eventType WorkflowEventType) WorkflowEvent
@@ -2605,8 +2605,8 @@ func NewWorkflowEvent(workflowID string, eventType WorkflowEventType) WorkflowEv
 
 NewWorkflowEvent creates a new WorkflowEvent.
 
-<a name="WorkflowEventType"></a>
-## type [WorkflowEventType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L66>)
+
+## type [WorkflowEventType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/schema/schema.go#L66)
 
 Re\-export types from iface and internal packages.
 
@@ -2614,4 +2614,4 @@ Re\-export types from iface and internal packages.
 type WorkflowEventType = internal.WorkflowEventType
 ```
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

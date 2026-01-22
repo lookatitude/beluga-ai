@@ -53,6 +53,7 @@ config.SearchK = 20
 config.ScoreThreshold = 0.8
 
 store, err := vectorstores.NewVectorStore(ctx, "pgvector", config,
+
 	vectorstores.WithProviderConfig("table_name", "my_documents"),
 	vectorstores.WithMetadataFilter("category", "tech"),
 )
@@ -85,154 +86,154 @@ vectorstores.SetGlobalLogger(logger)
 
 ## Index
 
-- [Constants](<#constants>)
-- [Variables](<#variables>)
-- [func AddDocuments\(ctx context.Context, store VectorStore, documents \[\]schema.Document, embedder Embedder, opts ...Option\) \(\[\]string, error\)](<#AddDocuments>)
-- [func ApplyOptions\(config \*vectorstoresiface.Config, opts ...Option\)](<#ApplyOptions>)
-- [func AsVectorStoreError\(err error, target \*\*VectorStoreError\) bool](<#AsVectorStoreError>)
-- [func AssertDocumentStorage\(t \*testing.T, ids \[\]string, expectedCount int\)](<#AssertDocumentStorage>)
-- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](<#AssertErrorType>)
-- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertHealthCheck>)
-- [func AssertVectorStoreResults\(t \*testing.T, documents \[\]schema.Document, scores \[\]float32, expectedMinCount int, expectedMaxScore float32\)](<#AssertVectorStoreResults>)
-- [func BatchAddDocuments\(ctx context.Context, store VectorStore, documents \[\]schema.Document, batchSize int, embedder Embedder, opts ...Option\) \(\[\]string, error\)](<#BatchAddDocuments>)
-- [func BatchSearch\(ctx context.Context, store VectorStore, queries \[\]string, k int, embedder Embedder, opts ...Option\) \(\[\]\[\]schema.Document, \[\]\[\]float32, error\)](<#BatchSearch>)
-- [func CreateTestDocuments\(count int\) \[\]schema.Document](<#CreateTestDocuments>)
-- [func CreateTestEmbeddings\(count, dimension int\) \[\]\[\]float32](<#CreateTestEmbeddings>)
-- [func CreateTestVectorStoreConfig\(\) vectorstoresiface.Config](<#CreateTestVectorStoreConfig>)
-- [func DeleteDocuments\(ctx context.Context, store VectorStore, ids \[\]string, opts ...Option\) error](<#DeleteDocuments>)
-- [func IsVectorStoreError\(err error, code string\) bool](<#IsVectorStoreError>)
-- [func ListProviders\(\) \[\]string](<#ListProviders>)
-- [func NewDefaultConfig\(\) \*vectorstoresiface.Config](<#NewDefaultConfig>)
-- [func RegisterGlobal\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](<#RegisterGlobal>)
-- [func RegisterProvider\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](<#RegisterProvider>)
-- [func RunLoadTest\(t \*testing.T, vectorStore \*AdvancedMockVectorStore, numOperations, concurrency int\)](<#RunLoadTest>)
-- [func SearchByQuery\(ctx context.Context, store VectorStore, query string, k int, embedder Embedder, opts ...Option\) \(\[\]schema.Document, \[\]float32, error\)](<#SearchByQuery>)
-- [func SearchByVector\(ctx context.Context, store VectorStore, queryVector \[\]float32, k int, opts ...Option\) \(\[\]schema.Document, \[\]float32, error\)](<#SearchByVector>)
-- [func SetGlobalLogger\(logger \*Logger\)](<#SetGlobalLogger>)
-- [func SetGlobalMetrics\(mc \*MetricsCollector\)](<#SetGlobalMetrics>)
-- [func SetGlobalTracer\(tp \*TracerProvider\)](<#SetGlobalTracer>)
-- [func ValidateProvider\(name string\) bool](<#ValidateProvider>)
-- [type AdvancedMockEmbedder](<#AdvancedMockEmbedder>)
-  - [func NewAdvancedMockEmbedder\(dimension int\) \*AdvancedMockEmbedder](<#NewAdvancedMockEmbedder>)
-  - [func \(e \*AdvancedMockEmbedder\) EmbedDocuments\(ctx context.Context, texts \[\]string\) \(\[\]\[\]float32, error\)](<#AdvancedMockEmbedder.EmbedDocuments>)
-  - [func \(e \*AdvancedMockEmbedder\) EmbedQuery\(ctx context.Context, text string\) \(\[\]float32, error\)](<#AdvancedMockEmbedder.EmbedQuery>)
-- [type AdvancedMockRetriever](<#AdvancedMockRetriever>)
-  - [func \(r \*AdvancedMockRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](<#AdvancedMockRetriever.GetRelevantDocuments>)
-- [type AdvancedMockVectorStore](<#AdvancedMockVectorStore>)
-  - [func NewAdvancedMockVectorStore\(name string, options ...MockVectorStoreOption\) \*AdvancedMockVectorStore](<#NewAdvancedMockVectorStore>)
-  - [func \(v \*AdvancedMockVectorStore\) AddDocuments\(ctx context.Context, documents \[\]schema.Document, opts ...vectorstoresiface.Option\) \(\[\]string, error\)](<#AdvancedMockVectorStore.AddDocuments>)
-  - [func \(v \*AdvancedMockVectorStore\) AsRetriever\(opts ...vectorstoresiface.Option\) vectorstoresiface.Retriever](<#AdvancedMockVectorStore.AsRetriever>)
-  - [func \(v \*AdvancedMockVectorStore\) CheckHealth\(\) map\[string\]any](<#AdvancedMockVectorStore.CheckHealth>)
-  - [func \(v \*AdvancedMockVectorStore\) DeleteDocuments\(ctx context.Context, ids \[\]string, opts ...vectorstoresiface.Option\) error](<#AdvancedMockVectorStore.DeleteDocuments>)
-  - [func \(v \*AdvancedMockVectorStore\) GetCallCount\(\) int](<#AdvancedMockVectorStore.GetCallCount>)
-  - [func \(v \*AdvancedMockVectorStore\) GetDocumentCount\(\) int](<#AdvancedMockVectorStore.GetDocumentCount>)
-  - [func \(v \*AdvancedMockVectorStore\) GetDocuments\(\) \[\]schema.Document](<#AdvancedMockVectorStore.GetDocuments>)
-  - [func \(v \*AdvancedMockVectorStore\) GetName\(\) string](<#AdvancedMockVectorStore.GetName>)
-  - [func \(v \*AdvancedMockVectorStore\) SimilaritySearch\(ctx context.Context, queryVector \[\]float32, k int, opts ...vectorstoresiface.Option\) \(\[\]schema.Document, \[\]float32, error\)](<#AdvancedMockVectorStore.SimilaritySearch>)
-  - [func \(v \*AdvancedMockVectorStore\) SimilaritySearchByQuery\(ctx context.Context, query string, k int, embedder vectorstoresiface.Embedder, opts ...vectorstoresiface.Option\) \(\[\]schema.Document, \[\]float32, error\)](<#AdvancedMockVectorStore.SimilaritySearchByQuery>)
-- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
-  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
-- [type BaseConfig](<#BaseConfig>)
-- [type BenchmarkHelper](<#BenchmarkHelper>)
-  - [func NewBenchmarkHelper\(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder, docCount int\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkAddDocuments\(batchSize, iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkAddDocuments>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkSimilaritySearch\(k, iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkSimilaritySearch>)
-- [type ConcurrentTestRunner](<#ConcurrentTestRunner>)
-  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](<#NewConcurrentTestRunner>)
-  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](<#ConcurrentTestRunner.Run>)
-- [type ConfigLoader](<#ConfigLoader>)
-  - [func NewConfigLoader\(\) \*ConfigLoader](<#NewConfigLoader>)
-  - [func \(cl \*ConfigLoader\) LoadInMemoryConfig\(data map\[string\]any\) \(\*InMemoryConfig, error\)](<#ConfigLoader.LoadInMemoryConfig>)
-  - [func \(cl \*ConfigLoader\) LoadPgVectorConfig\(data map\[string\]any\) \(\*PgVectorConfig, error\)](<#ConfigLoader.LoadPgVectorConfig>)
-  - [func \(cl \*ConfigLoader\) LoadPineconeConfig\(data map\[string\]any\) \(\*PineconeConfig, error\)](<#ConfigLoader.LoadPineconeConfig>)
-- [type Embedder](<#Embedder>)
-- [type Factory](<#Factory>)
-- [type InMemoryConfig](<#InMemoryConfig>)
-  - [func \(c \*InMemoryConfig\) Validate\(\) error](<#InMemoryConfig.Validate>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder \*AdvancedMockEmbedder\)](<#IntegrationTestHelper.AddEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) AddVectorStore\(name string, store \*AdvancedMockVectorStore\)](<#IntegrationTestHelper.AddVectorStore>)
-  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) \*AdvancedMockEmbedder](<#IntegrationTestHelper.GetEmbedder>)
-  - [func \(h \*IntegrationTestHelper\) GetVectorStore\(name string\) \*AdvancedMockVectorStore](<#IntegrationTestHelper.GetVectorStore>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type Logger](<#Logger>)
-  - [func GetGlobalLogger\(\) \*Logger](<#GetGlobalLogger>)
-  - [func NewLogger\(logger \*slog.Logger\) \*Logger](<#NewLogger>)
-  - [func \(l \*Logger\) LogDebug\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](<#Logger.LogDebug>)
-  - [func \(l \*Logger\) LogDocumentOperation\(ctx context.Context, level slog.Level, operation, storeName string, docCount int, duration time.Duration, err error\)](<#Logger.LogDocumentOperation>)
-  - [func \(l \*Logger\) LogEmbeddingOperation\(ctx context.Context, level slog.Level, storeName string, textCount int, duration time.Duration, err error\)](<#Logger.LogEmbeddingOperation>)
-  - [func \(l \*Logger\) LogError\(ctx context.Context, err error, operation, storeName string, additionalAttrs ...slog.Attr\)](<#Logger.LogError>)
-  - [func \(l \*Logger\) LogInfo\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](<#Logger.LogInfo>)
-  - [func \(l \*Logger\) LogPerformance\(ctx context.Context, operation, storeName string, duration time.Duration, additionalAttrs ...slog.Attr\)](<#Logger.LogPerformance>)
-  - [func \(l \*Logger\) LogSearchOperation\(ctx context.Context, level slog.Level, storeName string, queryLength, k, resultCount int, duration time.Duration, err error\)](<#Logger.LogSearchOperation>)
-  - [func \(l \*Logger\) LogStoreLifecycle\(ctx context.Context, event, storeName string, additionalAttrs ...slog.Attr\)](<#Logger.LogStoreLifecycle>)
-  - [func \(l \*Logger\) LogWarn\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](<#Logger.LogWarn>)
-- [type MetricsCollector](<#MetricsCollector>)
-  - [func GetGlobalMetrics\(\) \*MetricsCollector](<#GetGlobalMetrics>)
-  - [func NewMetricsCollector\(meter metric.Meter\) \(\*MetricsCollector, error\)](<#NewMetricsCollector>)
-  - [func \(mc \*MetricsCollector\) RecordDiskUsage\(ctx context.Context, bytes int64, storeName string\)](<#MetricsCollector.RecordDiskUsage>)
-  - [func \(mc \*MetricsCollector\) RecordDocumentsAdded\(ctx context.Context, count int, storeName string\)](<#MetricsCollector.RecordDocumentsAdded>)
-  - [func \(mc \*MetricsCollector\) RecordDocumentsDeleted\(ctx context.Context, count int, storeName string\)](<#MetricsCollector.RecordDocumentsDeleted>)
-  - [func \(mc \*MetricsCollector\) RecordEmbedding\(ctx context.Context, duration time.Duration, textCount int, storeName string\)](<#MetricsCollector.RecordEmbedding>)
-  - [func \(mc \*MetricsCollector\) RecordError\(ctx context.Context, errorCode, storeName string\)](<#MetricsCollector.RecordError>)
-  - [func \(mc \*MetricsCollector\) RecordMemoryUsage\(ctx context.Context, bytes int64, storeName string\)](<#MetricsCollector.RecordMemoryUsage>)
-  - [func \(mc \*MetricsCollector\) RecordSearch\(ctx context.Context, duration time.Duration, resultCount int, storeName string\)](<#MetricsCollector.RecordSearch>)
-- [type MockVectorStoreOption](<#MockVectorStoreOption>)
-  - [func WithDefaultK\(k int\) MockVectorStoreOption](<#WithDefaultK>)
-  - [func WithMockCapacity\(capacity int\) MockVectorStoreOption](<#WithMockCapacity>)
-  - [func WithMockDelay\(delay time.Duration\) MockVectorStoreOption](<#WithMockDelay>)
-  - [func WithMockError\(shouldError bool, err error\) MockVectorStoreOption](<#WithMockError>)
-  - [func WithPreloadedDocuments\(documents \[\]schema.Document, embeddings \[\]\[\]float32\) MockVectorStoreOption](<#WithPreloadedDocuments>)
-- [type Option](<#Option>)
-  - [func WithEmbedder\(embedder Embedder\) Option](<#WithEmbedder>)
-  - [func WithMetadataFilter\(key string, value any\) Option](<#WithMetadataFilter>)
-  - [func WithMetadataFilters\(filters map\[string\]any\) Option](<#WithMetadataFilters>)
-  - [func WithProviderConfig\(key string, value any\) Option](<#WithProviderConfig>)
-  - [func WithProviderConfigs\(config map\[string\]any\) Option](<#WithProviderConfigs>)
-  - [func WithScoreThreshold\(threshold float32\) Option](<#WithScoreThreshold>)
-  - [func WithSearchK\(k int\) Option](<#WithSearchK>)
-- [type PgVectorConfig](<#PgVectorConfig>)
-  - [func \(c \*PgVectorConfig\) GetConnectionString\(\) string](<#PgVectorConfig.GetConnectionString>)
-  - [func \(c \*PgVectorConfig\) GetFullTableName\(\) string](<#PgVectorConfig.GetFullTableName>)
-  - [func \(c \*PgVectorConfig\) Validate\(\) error](<#PgVectorConfig.Validate>)
-- [type PineconeConfig](<#PineconeConfig>)
-  - [func \(c \*PineconeConfig\) Validate\(\) error](<#PineconeConfig.Validate>)
-- [type Retriever](<#Retriever>)
-  - [func AsRetriever\(store VectorStore, opts ...Option\) Retriever](<#AsRetriever>)
-- [type StoreFactory](<#StoreFactory>)
-  - [func NewStoreFactory\(\) \*StoreFactory](<#NewStoreFactory>)
-  - [func \(f \*StoreFactory\) Create\(ctx context.Context, name string, config vectorstoresiface.Config\) \(VectorStore, error\)](<#StoreFactory.Create>)
-  - [func \(f \*StoreFactory\) Register\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](<#StoreFactory.Register>)
-- [type TracerProvider](<#TracerProvider>)
-  - [func GetGlobalTracer\(\) \*TracerProvider](<#GetGlobalTracer>)
-  - [func NewTracerProvider\(tracerName string\) \*TracerProvider](<#NewTracerProvider>)
-  - [func \(tp \*TracerProvider\) StartAddDocumentsSpan\(ctx context.Context, storeName string, docCount int\) \(context.Context, func\(\)\)](<#TracerProvider.StartAddDocumentsSpan>)
-  - [func \(tp \*TracerProvider\) StartDeleteDocumentsSpan\(ctx context.Context, storeName string, docCount int\) \(context.Context, func\(\)\)](<#TracerProvider.StartDeleteDocumentsSpan>)
-  - [func \(tp \*TracerProvider\) StartEmbeddingSpan\(ctx context.Context, storeName string, textCount int\) \(context.Context, func\(\)\)](<#TracerProvider.StartEmbeddingSpan>)
-  - [func \(tp \*TracerProvider\) StartSearchSpan\(ctx context.Context, storeName string, queryLength, k int\) \(context.Context, func\(\)\)](<#TracerProvider.StartSearchSpan>)
-  - [func \(tp \*TracerProvider\) StartSpan\(ctx context.Context, operation string, opts ...attribute.KeyValue\) \(context.Context, func\(\)\)](<#TracerProvider.StartSpan>)
-- [type VectorStore](<#VectorStore>)
-  - [func NewInMemoryStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](<#NewInMemoryStore>)
-  - [func NewPgVectorStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](<#NewPgVectorStore>)
-  - [func NewPineconeStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](<#NewPineconeStore>)
-  - [func NewVectorStore\(ctx context.Context, name string, config vectorstoresiface.Config\) \(VectorStore, error\)](<#NewVectorStore>)
-- [type VectorStoreError](<#VectorStoreError>)
-  - [func NewVectorStoreError\(code, message string, args ...any\) \*VectorStoreError](<#NewVectorStoreError>)
-  - [func WrapError\(cause error, code, message string, args ...any\) \*VectorStoreError](<#WrapError>)
-  - [func \(e \*VectorStoreError\) Error\(\) string](<#VectorStoreError.Error>)
-  - [func \(e \*VectorStoreError\) Unwrap\(\) error](<#VectorStoreError.Unwrap>)
-- [type VectorStoreScenarioRunner](<#VectorStoreScenarioRunner>)
-  - [func NewVectorStoreScenarioRunner\(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder\) \*VectorStoreScenarioRunner](<#NewVectorStoreScenarioRunner>)
-  - [func \(r \*VectorStoreScenarioRunner\) RunDocumentDeletionScenario\(ctx context.Context, idsToDelete \[\]string\) error](<#VectorStoreScenarioRunner.RunDocumentDeletionScenario>)
-  - [func \(r \*VectorStoreScenarioRunner\) RunDocumentIngestionScenario\(ctx context.Context, documentCount int\) error](<#VectorStoreScenarioRunner.RunDocumentIngestionScenario>)
-  - [func \(r \*VectorStoreScenarioRunner\) RunSimilaritySearchScenario\(ctx context.Context, queries \[\]string, k int\) \(\[\]\[\]schema.Document, error\)](<#VectorStoreScenarioRunner.RunSimilaritySearchScenario>)
-- [type VectorStoresMockcomponent](<#VectorStoresMockcomponent>)
-  - [func NewVectorStoresMockcomponent\(\) \*VectorStoresMockcomponent](<#NewVectorStoresMockcomponent>)
+- [Constants](#constants>)
+- [Variables](#variables>)
+- [func AddDocuments\(ctx context.Context, store VectorStore, documents \[\]schema.Document, embedder Embedder, opts ...Option\) \(\[\]string, error\)](#AddDocuments>)
+- [func ApplyOptions\(config \*vectorstoresiface.Config, opts ...Option\)](#ApplyOptions>)
+- [func AsVectorStoreError\(err error, target \*\*VectorStoreError\) bool](#AsVectorStoreError>)
+- [func AssertDocumentStorage\(t \*testing.T, ids \[\]string, expectedCount int\)](#AssertDocumentStorage>)
+- [func AssertErrorType\(t \*testing.T, err error, expectedCode string\)](#AssertErrorType>)
+- [func AssertHealthCheck\(t \*testing.T, health map\[string\]any, expectedStatus string\)](#AssertHealthCheck>)
+- [func AssertVectorStoreResults\(t \*testing.T, documents \[\]schema.Document, scores \[\]float32, expectedMinCount int, expectedMaxScore float32\)](#AssertVectorStoreResults>)
+- [func BatchAddDocuments\(ctx context.Context, store VectorStore, documents \[\]schema.Document, batchSize int, embedder Embedder, opts ...Option\) \(\[\]string, error\)](#BatchAddDocuments>)
+- [func BatchSearch\(ctx context.Context, store VectorStore, queries \[\]string, k int, embedder Embedder, opts ...Option\) \(\[\]\[\]schema.Document, \[\]\[\]float32, error\)](#BatchSearch>)
+- [func CreateTestDocuments\(count int\) \[\]schema.Document](#CreateTestDocuments>)
+- [func CreateTestEmbeddings\(count, dimension int\) \[\]\[\]float32](#CreateTestEmbeddings>)
+- [func CreateTestVectorStoreConfig\(\) vectorstoresiface.Config](#CreateTestVectorStoreConfig>)
+- [func DeleteDocuments\(ctx context.Context, store VectorStore, ids \[\]string, opts ...Option\) error](#DeleteDocuments>)
+- [func IsVectorStoreError\(err error, code string\) bool](#IsVectorStoreError>)
+- [func ListProviders\(\) \[\]string](#ListProviders>)
+- [func NewDefaultConfig\(\) \*vectorstoresiface.Config](#NewDefaultConfig>)
+- [func RegisterGlobal\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](#RegisterGlobal>)
+- [func RegisterProvider\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](#RegisterProvider>)
+- [func RunLoadTest\(t \*testing.T, vectorStore \*AdvancedMockVectorStore, numOperations, concurrency int\)](#RunLoadTest>)
+- [func SearchByQuery\(ctx context.Context, store VectorStore, query string, k int, embedder Embedder, opts ...Option\) \(\[\]schema.Document, \[\]float32, error\)](#SearchByQuery>)
+- [func SearchByVector\(ctx context.Context, store VectorStore, queryVector \[\]float32, k int, opts ...Option\) \(\[\]schema.Document, \[\]float32, error\)](#SearchByVector>)
+- [func SetGlobalLogger\(logger \*Logger\)](#SetGlobalLogger>)
+- [func SetGlobalMetrics\(mc \*MetricsCollector\)](#SetGlobalMetrics>)
+- [func SetGlobalTracer\(tp \*TracerProvider\)](#SetGlobalTracer>)
+- [func ValidateProvider\(name string\) bool](#ValidateProvider>)
+- [type AdvancedMockEmbedder](#AdvancedMockEmbedder>)
+  - [func NewAdvancedMockEmbedder\(dimension int\) \*AdvancedMockEmbedder](#NewAdvancedMockEmbedder>)
+  - [func \(e \*AdvancedMockEmbedder\) EmbedDocuments\(ctx context.Context, texts \[\]string\) \(\[\]\[\]float32, error\)](#AdvancedMockEmbedder.EmbedDocuments>)
+  - [func \(e \*AdvancedMockEmbedder\) EmbedQuery\(ctx context.Context, text string\) \(\[\]float32, error\)](#AdvancedMockEmbedder.EmbedQuery>)
+- [type AdvancedMockRetriever](#AdvancedMockRetriever>)
+  - [func \(r \*AdvancedMockRetriever\) GetRelevantDocuments\(ctx context.Context, query string\) \(\[\]schema.Document, error\)](#AdvancedMockRetriever.GetRelevantDocuments>)
+- [type AdvancedMockVectorStore](#AdvancedMockVectorStore>)
+  - [func NewAdvancedMockVectorStore\(name string, options ...MockVectorStoreOption\) \*AdvancedMockVectorStore](#NewAdvancedMockVectorStore>)
+  - [func \(v \*AdvancedMockVectorStore\) AddDocuments\(ctx context.Context, documents \[\]schema.Document, opts ...vectorstoresiface.Option\) \(\[\]string, error\)](#AdvancedMockVectorStore.AddDocuments>)
+  - [func \(v \*AdvancedMockVectorStore\) AsRetriever\(opts ...vectorstoresiface.Option\) vectorstoresiface.Retriever](#AdvancedMockVectorStore.AsRetriever>)
+  - [func \(v \*AdvancedMockVectorStore\) CheckHealth\(\) map\[string\]any](#AdvancedMockVectorStore.CheckHealth>)
+  - [func \(v \*AdvancedMockVectorStore\) DeleteDocuments\(ctx context.Context, ids \[\]string, opts ...vectorstoresiface.Option\) error](#AdvancedMockVectorStore.DeleteDocuments>)
+  - [func \(v \*AdvancedMockVectorStore\) GetCallCount\(\) int](#AdvancedMockVectorStore.GetCallCount>)
+  - [func \(v \*AdvancedMockVectorStore\) GetDocumentCount\(\) int](#AdvancedMockVectorStore.GetDocumentCount>)
+  - [func \(v \*AdvancedMockVectorStore\) GetDocuments\(\) \[\]schema.Document](#AdvancedMockVectorStore.GetDocuments>)
+  - [func \(v \*AdvancedMockVectorStore\) GetName\(\) string](#AdvancedMockVectorStore.GetName>)
+  - [func \(v \*AdvancedMockVectorStore\) SimilaritySearch\(ctx context.Context, queryVector \[\]float32, k int, opts ...vectorstoresiface.Option\) \(\[\]schema.Document, \[\]float32, error\)](#AdvancedMockVectorStore.SimilaritySearch>)
+  - [func \(v \*AdvancedMockVectorStore\) SimilaritySearchByQuery\(ctx context.Context, query string, k int, embedder vectorstoresiface.Embedder, opts ...vectorstoresiface.Option\) \(\[\]schema.Document, \[\]float32, error\)](#AdvancedMockVectorStore.SimilaritySearchByQuery>)
+- [type AdvancedMockcomponent](#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](#NewAdvancedMockcomponent>)
+- [type BaseConfig](#BaseConfig>)
+- [type BenchmarkHelper](#BenchmarkHelper>)
+  - [func NewBenchmarkHelper\(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder, docCount int\) \*BenchmarkHelper](#NewBenchmarkHelper>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkAddDocuments\(batchSize, iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkAddDocuments>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkSimilaritySearch\(k, iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkSimilaritySearch>)
+- [type ConcurrentTestRunner](#ConcurrentTestRunner>)
+  - [func NewConcurrentTestRunner\(numGoroutines int, duration time.Duration, testFunc func\(\) error\) \*ConcurrentTestRunner](#NewConcurrentTestRunner>)
+  - [func \(r \*ConcurrentTestRunner\) Run\(\) error](#ConcurrentTestRunner.Run>)
+- [type ConfigLoader](#ConfigLoader>)
+  - [func NewConfigLoader\(\) \*ConfigLoader](#NewConfigLoader>)
+  - [func \(cl \*ConfigLoader\) LoadInMemoryConfig\(data map\[string\]any\) \(\*InMemoryConfig, error\)](#ConfigLoader.LoadInMemoryConfig>)
+  - [func \(cl \*ConfigLoader\) LoadPgVectorConfig\(data map\[string\]any\) \(\*PgVectorConfig, error\)](#ConfigLoader.LoadPgVectorConfig>)
+  - [func \(cl \*ConfigLoader\) LoadPineconeConfig\(data map\[string\]any\) \(\*PineconeConfig, error\)](#ConfigLoader.LoadPineconeConfig>)
+- [type Embedder](#Embedder>)
+- [type Factory](#Factory>)
+- [type InMemoryConfig](#InMemoryConfig>)
+  - [func \(c \*InMemoryConfig\) Validate\(\) error](#InMemoryConfig.Validate>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddEmbedder\(name string, embedder \*AdvancedMockEmbedder\)](#IntegrationTestHelper.AddEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) AddVectorStore\(name string, store \*AdvancedMockVectorStore\)](#IntegrationTestHelper.AddVectorStore>)
+  - [func \(h \*IntegrationTestHelper\) GetEmbedder\(name string\) \*AdvancedMockEmbedder](#IntegrationTestHelper.GetEmbedder>)
+  - [func \(h \*IntegrationTestHelper\) GetVectorStore\(name string\) \*AdvancedMockVectorStore](#IntegrationTestHelper.GetVectorStore>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type Logger](#Logger>)
+  - [func GetGlobalLogger\(\) \*Logger](#GetGlobalLogger>)
+  - [func NewLogger\(logger \*slog.Logger\) \*Logger](#NewLogger>)
+  - [func \(l \*Logger\) LogDebug\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](#Logger.LogDebug>)
+  - [func \(l \*Logger\) LogDocumentOperation\(ctx context.Context, level slog.Level, operation, storeName string, docCount int, duration time.Duration, err error\)](#Logger.LogDocumentOperation>)
+  - [func \(l \*Logger\) LogEmbeddingOperation\(ctx context.Context, level slog.Level, storeName string, textCount int, duration time.Duration, err error\)](#Logger.LogEmbeddingOperation>)
+  - [func \(l \*Logger\) LogError\(ctx context.Context, err error, operation, storeName string, additionalAttrs ...slog.Attr\)](#Logger.LogError>)
+  - [func \(l \*Logger\) LogInfo\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](#Logger.LogInfo>)
+  - [func \(l \*Logger\) LogPerformance\(ctx context.Context, operation, storeName string, duration time.Duration, additionalAttrs ...slog.Attr\)](#Logger.LogPerformance>)
+  - [func \(l \*Logger\) LogSearchOperation\(ctx context.Context, level slog.Level, storeName string, queryLength, k, resultCount int, duration time.Duration, err error\)](#Logger.LogSearchOperation>)
+  - [func \(l \*Logger\) LogStoreLifecycle\(ctx context.Context, event, storeName string, additionalAttrs ...slog.Attr\)](#Logger.LogStoreLifecycle>)
+  - [func \(l \*Logger\) LogWarn\(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr\)](#Logger.LogWarn>)
+- [type MetricsCollector](#MetricsCollector>)
+  - [func GetGlobalMetrics\(\) \*MetricsCollector](#GetGlobalMetrics>)
+  - [func NewMetricsCollector\(meter metric.Meter\) \(\*MetricsCollector, error\)](#NewMetricsCollector>)
+  - [func \(mc \*MetricsCollector\) RecordDiskUsage\(ctx context.Context, bytes int64, storeName string\)](#MetricsCollector.RecordDiskUsage>)
+  - [func \(mc \*MetricsCollector\) RecordDocumentsAdded\(ctx context.Context, count int, storeName string\)](#MetricsCollector.RecordDocumentsAdded>)
+  - [func \(mc \*MetricsCollector\) RecordDocumentsDeleted\(ctx context.Context, count int, storeName string\)](#MetricsCollector.RecordDocumentsDeleted>)
+  - [func \(mc \*MetricsCollector\) RecordEmbedding\(ctx context.Context, duration time.Duration, textCount int, storeName string\)](#MetricsCollector.RecordEmbedding>)
+  - [func \(mc \*MetricsCollector\) RecordError\(ctx context.Context, errorCode, storeName string\)](#MetricsCollector.RecordError>)
+  - [func \(mc \*MetricsCollector\) RecordMemoryUsage\(ctx context.Context, bytes int64, storeName string\)](#MetricsCollector.RecordMemoryUsage>)
+  - [func \(mc \*MetricsCollector\) RecordSearch\(ctx context.Context, duration time.Duration, resultCount int, storeName string\)](#MetricsCollector.RecordSearch>)
+- [type MockVectorStoreOption](#MockVectorStoreOption>)
+  - [func WithDefaultK\(k int\) MockVectorStoreOption](#WithDefaultK>)
+  - [func WithMockCapacity\(capacity int\) MockVectorStoreOption](#WithMockCapacity>)
+  - [func WithMockDelay\(delay time.Duration\) MockVectorStoreOption](#WithMockDelay>)
+  - [func WithMockError\(shouldError bool, err error\) MockVectorStoreOption](#WithMockError>)
+  - [func WithPreloadedDocuments\(documents \[\]schema.Document, embeddings \[\]\[\]float32\) MockVectorStoreOption](#WithPreloadedDocuments>)
+- [type Option](#Option>)
+  - [func WithEmbedder\(embedder Embedder\) Option](#WithEmbedder>)
+  - [func WithMetadataFilter\(key string, value any\) Option](#WithMetadataFilter>)
+  - [func WithMetadataFilters\(filters map\[string\]any\) Option](#WithMetadataFilters>)
+  - [func WithProviderConfig\(key string, value any\) Option](#WithProviderConfig>)
+  - [func WithProviderConfigs\(config map\[string\]any\) Option](#WithProviderConfigs>)
+  - [func WithScoreThreshold\(threshold float32\) Option](#WithScoreThreshold>)
+  - [func WithSearchK\(k int\) Option](#WithSearchK>)
+- [type PgVectorConfig](#PgVectorConfig>)
+  - [func \(c \*PgVectorConfig\) GetConnectionString\(\) string](#PgVectorConfig.GetConnectionString>)
+  - [func \(c \*PgVectorConfig\) GetFullTableName\(\) string](#PgVectorConfig.GetFullTableName>)
+  - [func \(c \*PgVectorConfig\) Validate\(\) error](#PgVectorConfig.Validate>)
+- [type PineconeConfig](#PineconeConfig>)
+  - [func \(c \*PineconeConfig\) Validate\(\) error](#PineconeConfig.Validate>)
+- [type Retriever](#Retriever>)
+  - [func AsRetriever\(store VectorStore, opts ...Option\) Retriever](#AsRetriever>)
+- [type StoreFactory](#StoreFactory>)
+  - [func NewStoreFactory\(\) \*StoreFactory](#NewStoreFactory>)
+  - [func \(f \*StoreFactory\) Create\(ctx context.Context, name string, config vectorstoresiface.Config\) \(VectorStore, error\)](#StoreFactory.Create>)
+  - [func \(f \*StoreFactory\) Register\(name string, creator func\(ctx context.Context, config vectorstoresiface.Config\) \(VectorStore, error\)\)](#StoreFactory.Register>)
+- [type TracerProvider](#TracerProvider>)
+  - [func GetGlobalTracer\(\) \*TracerProvider](#GetGlobalTracer>)
+  - [func NewTracerProvider\(tracerName string\) \*TracerProvider](#NewTracerProvider>)
+  - [func \(tp \*TracerProvider\) StartAddDocumentsSpan\(ctx context.Context, storeName string, docCount int\) \(context.Context, func\(\)\)](#TracerProvider.StartAddDocumentsSpan>)
+  - [func \(tp \*TracerProvider\) StartDeleteDocumentsSpan\(ctx context.Context, storeName string, docCount int\) \(context.Context, func\(\)\)](#TracerProvider.StartDeleteDocumentsSpan>)
+  - [func \(tp \*TracerProvider\) StartEmbeddingSpan\(ctx context.Context, storeName string, textCount int\) \(context.Context, func\(\)\)](#TracerProvider.StartEmbeddingSpan>)
+  - [func \(tp \*TracerProvider\) StartSearchSpan\(ctx context.Context, storeName string, queryLength, k int\) \(context.Context, func\(\)\)](#TracerProvider.StartSearchSpan>)
+  - [func \(tp \*TracerProvider\) StartSpan\(ctx context.Context, operation string, opts ...attribute.KeyValue\) \(context.Context, func\(\)\)](#TracerProvider.StartSpan>)
+- [type VectorStore](#VectorStore>)
+  - [func NewInMemoryStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](#NewInMemoryStore>)
+  - [func NewPgVectorStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](#NewPgVectorStore>)
+  - [func NewPineconeStore\(ctx context.Context, opts ...Option\) \(VectorStore, error\)](#NewPineconeStore>)
+  - [func NewVectorStore\(ctx context.Context, name string, config vectorstoresiface.Config\) \(VectorStore, error\)](#NewVectorStore>)
+- [type VectorStoreError](#VectorStoreError>)
+  - [func NewVectorStoreError\(code, message string, args ...any\) \*VectorStoreError](#NewVectorStoreError>)
+  - [func WrapError\(cause error, code, message string, args ...any\) \*VectorStoreError](#WrapError>)
+  - [func \(e \*VectorStoreError\) Error\(\) string](#VectorStoreError.Error>)
+  - [func \(e \*VectorStoreError\) Unwrap\(\) error](#VectorStoreError.Unwrap>)
+- [type VectorStoreScenarioRunner](#VectorStoreScenarioRunner>)
+  - [func NewVectorStoreScenarioRunner\(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder\) \*VectorStoreScenarioRunner](#NewVectorStoreScenarioRunner>)
+  - [func \(r \*VectorStoreScenarioRunner\) RunDocumentDeletionScenario\(ctx context.Context, idsToDelete \[\]string\) error](#VectorStoreScenarioRunner.RunDocumentDeletionScenario>)
+  - [func \(r \*VectorStoreScenarioRunner\) RunDocumentIngestionScenario\(ctx context.Context, documentCount int\) error](#VectorStoreScenarioRunner.RunDocumentIngestionScenario>)
+  - [func \(r \*VectorStoreScenarioRunner\) RunSimilaritySearchScenario\(ctx context.Context, queries \[\]string, k int\) \(\[\]\[\]schema.Document, error\)](#VectorStoreScenarioRunner.RunSimilaritySearchScenario>)
+- [type VectorStoresMockcomponent](#VectorStoresMockcomponent>)
+  - [func NewVectorStoresMockcomponent\(\) \*VectorStoresMockcomponent](#NewVectorStoresMockcomponent>)
 
 ## Constants
 
-<a name="ErrCodeUnknownProvider"></a>Common error codes.
+Common error codes.
 
 ```go
 const (
@@ -251,7 +252,7 @@ const (
 
 ## Variables
 
-<a name="LogError"></a>Default convenience functions that use the global logger.
+Default convenience functions that use the global logger.
 
 ```go
 var (
@@ -285,8 +286,8 @@ var (
 )
 ```
 
-<a name="AddDocuments"></a>
-## func [AddDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L455>)
+
+## func [AddDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L455)
 
 ```go
 func AddDocuments(ctx context.Context, store VectorStore, documents []schema.Document, embedder Embedder, opts ...Option) ([]string, error)
@@ -300,8 +301,8 @@ Example:
 ids, err := vectorstores.AddDocuments(ctx, store, docs, embedder)
 ```
 
-<a name="ApplyOptions"></a>
-## func [ApplyOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L139>)
+
+## func [ApplyOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L139)
 
 ```go
 func ApplyOptions(config *vectorstoresiface.Config, opts ...Option)
@@ -309,8 +310,8 @@ func ApplyOptions(config *vectorstoresiface.Config, opts ...Option)
 
 ApplyOptions applies a slice of options to a Config.
 
-<a name="AsVectorStoreError"></a>
-## func [AsVectorStoreError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L322>)
+
+## func [AsVectorStoreError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L322)
 
 ```go
 func AsVectorStoreError(err error, target **VectorStoreError) bool
@@ -318,8 +319,8 @@ func AsVectorStoreError(err error, target **VectorStoreError) bool
 
 AsVectorStoreError attempts to cast an error to VectorStoreError.
 
-<a name="AssertDocumentStorage"></a>
-## func [AssertDocumentStorage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L474>)
+
+## func [AssertDocumentStorage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L474)
 
 ```go
 func AssertDocumentStorage(t *testing.T, ids []string, expectedCount int)
@@ -327,8 +328,8 @@ func AssertDocumentStorage(t *testing.T, ids []string, expectedCount int)
 
 AssertDocumentStorage validates document storage operations.
 
-<a name="AssertErrorType"></a>
-## func [AssertErrorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L498>)
+
+## func [AssertErrorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L498)
 
 ```go
 func AssertErrorType(t *testing.T, err error, expectedCode string)
@@ -336,8 +337,8 @@ func AssertErrorType(t *testing.T, err error, expectedCode string)
 
 AssertErrorType validates error types and codes.
 
-<a name="AssertHealthCheck"></a>
-## func [AssertHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L488>)
+
+## func [AssertHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L488)
 
 ```go
 func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus string)
@@ -345,8 +346,8 @@ func AssertHealthCheck(t *testing.T, health map[string]any, expectedStatus strin
 
 AssertHealthCheck validates health check results.
 
-<a name="AssertVectorStoreResults"></a>
-## func [AssertVectorStoreResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L451>)
+
+## func [AssertVectorStoreResults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L451)
 
 ```go
 func AssertVectorStoreResults(t *testing.T, documents []schema.Document, scores []float32, expectedMinCount int, expectedMaxScore float32)
@@ -354,8 +355,8 @@ func AssertVectorStoreResults(t *testing.T, documents []schema.Document, scores 
 
 AssertVectorStoreResults validates vector store search results.
 
-<a name="BatchAddDocuments"></a>
-## func [BatchAddDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L520>)
+
+## func [BatchAddDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L520)
 
 ```go
 func BatchAddDocuments(ctx context.Context, store VectorStore, documents []schema.Document, batchSize int, embedder Embedder, opts ...Option) ([]string, error)
@@ -369,8 +370,8 @@ Example:
 results, err := vectorstores.BatchAddDocuments(ctx, store, allDocs, 100, embedder)
 ```
 
-<a name="BatchSearch"></a>
-## func [BatchSearch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L553>)
+
+## func [BatchSearch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L553)
 
 ```go
 func BatchSearch(ctx context.Context, store VectorStore, queries []string, k int, embedder Embedder, opts ...Option) ([][]schema.Document, [][]float32, error)
@@ -384,8 +385,8 @@ Example:
 results, err := vectorstores.BatchSearch(ctx, store, queries, 5, embedder)
 ```
 
-<a name="CreateTestDocuments"></a>
-## func [CreateTestDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L381>)
+
+## func [CreateTestDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L381)
 
 ```go
 func CreateTestDocuments(count int) []schema.Document
@@ -393,8 +394,8 @@ func CreateTestDocuments(count int) []schema.Document
 
 CreateTestDocuments creates a set of test documents.
 
-<a name="CreateTestEmbeddings"></a>
-## func [CreateTestEmbeddings](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L396>)
+
+## func [CreateTestEmbeddings](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L396)
 
 ```go
 func CreateTestEmbeddings(count, dimension int) [][]float32
@@ -402,8 +403,8 @@ func CreateTestEmbeddings(count, dimension int) [][]float32
 
 CreateTestEmbeddings creates test embeddings for documents.
 
-<a name="CreateTestVectorStoreConfig"></a>
-## func [CreateTestVectorStoreConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L405>)
+
+## func [CreateTestVectorStoreConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L405)
 
 ```go
 func CreateTestVectorStoreConfig() vectorstoresiface.Config
@@ -411,8 +412,8 @@ func CreateTestVectorStoreConfig() vectorstoresiface.Config
 
 CreateTestVectorStoreConfig creates a test vector store configuration.
 
-<a name="DeleteDocuments"></a>
-## func [DeleteDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L498>)
+
+## func [DeleteDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L498)
 
 ```go
 func DeleteDocuments(ctx context.Context, store VectorStore, ids []string, opts ...Option) error
@@ -422,12 +423,13 @@ DeleteDocuments is a convenience function for document deletion.
 
 Example:
 
-```
+go
+```go
 err := vectorstores.DeleteDocuments(ctx, store, []string{"doc1", "doc2"})
 ```
 
-<a name="IsVectorStoreError"></a>
-## func [IsVectorStoreError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L313>)
+
+## func [IsVectorStoreError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L313)
 
 ```go
 func IsVectorStoreError(err error, code string) bool
@@ -435,8 +437,8 @@ func IsVectorStoreError(err error, code string) bool
 
 IsVectorStoreError checks if an error is a VectorStoreError with the given code.
 
-<a name="ListProviders"></a>
-## func [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L424>)
+
+## func [ListProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L424)
 
 ```go
 func ListProviders() []string
@@ -446,13 +448,14 @@ ListProviders returns a list of all registered provider names. This is useful fo
 
 Example:
 
-```
+go
+```go
 providers := vectorstores.ListProviders()
 fmt.Printf("Available providers: %v\n", providers)
 ```
 
-<a name="NewDefaultConfig"></a>
-## func [NewDefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L131>)
+
+## func [NewDefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L131)
 
 ```go
 func NewDefaultConfig() *vectorstoresiface.Config
@@ -460,8 +463,8 @@ func NewDefaultConfig() *vectorstoresiface.Config
 
 NewDefaultConfig creates a new Config with default values.
 
-<a name="RegisterGlobal"></a>
-## func [RegisterGlobal](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L251>)
+
+## func [RegisterGlobal](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L251)
 
 ```go
 func RegisterGlobal(name string, creator func(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error))
@@ -469,8 +472,8 @@ func RegisterGlobal(name string, creator func(ctx context.Context, config vector
 
 RegisterGlobal registers a provider with the global factory.
 
-<a name="RegisterProvider"></a>
-## func [RegisterProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L413>)
+
+## func [RegisterProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L413)
 
 ```go
 func RegisterProvider(name string, creator func(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error))
@@ -486,8 +489,8 @@ vectorstores.RegisterProvider("custom", func(ctx context.Context, config vectors
 })
 ```
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L569>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L569)
 
 ```go
 func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperations, concurrency int)
@@ -495,8 +498,8 @@ func RunLoadTest(t *testing.T, vectorStore *AdvancedMockVectorStore, numOperatio
 
 RunLoadTest executes a load test scenario on vector store.
 
-<a name="SearchByQuery"></a>
-## func [SearchByQuery](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L472>)
+
+## func [SearchByQuery](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L472)
 
 ```go
 func SearchByQuery(ctx context.Context, store VectorStore, query string, k int, embedder Embedder, opts ...Option) ([]schema.Document, []float32, error)
@@ -510,8 +513,8 @@ Example:
 results, scores, err := vectorstores.SearchByQuery(ctx, store, "machine learning", 5, embedder)
 ```
 
-<a name="SearchByVector"></a>
-## func [SearchByVector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L489>)
+
+## func [SearchByVector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L489)
 
 ```go
 func SearchByVector(ctx context.Context, store VectorStore, queryVector []float32, k int, opts ...Option) ([]schema.Document, []float32, error)
@@ -525,8 +528,8 @@ Example:
 results, scores, err := vectorstores.SearchByVector(ctx, store, queryVector, 5)
 ```
 
-<a name="SetGlobalLogger"></a>
-## func [SetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L223>)
+
+## func [SetGlobalLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L223)
 
 ```go
 func SetGlobalLogger(logger *Logger)
@@ -534,8 +537,8 @@ func SetGlobalLogger(logger *Logger)
 
 SetGlobalLogger sets the global logger instance.
 
-<a name="SetGlobalMetrics"></a>
-## func [SetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L293>)
+
+## func [SetGlobalMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L293)
 
 ```go
 func SetGlobalMetrics(mc *MetricsCollector)
@@ -543,8 +546,8 @@ func SetGlobalMetrics(mc *MetricsCollector)
 
 SetGlobalMetrics sets the global metrics collector.
 
-<a name="SetGlobalTracer"></a>
-## func [SetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L303>)
+
+## func [SetGlobalTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L303)
 
 ```go
 func SetGlobalTracer(tp *TracerProvider)
@@ -552,8 +555,8 @@ func SetGlobalTracer(tp *TracerProvider)
 
 SetGlobalTracer sets the global tracer provider.
 
-<a name="ValidateProvider"></a>
-## func [ValidateProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L437>)
+
+## func [ValidateProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L437)
 
 ```go
 func ValidateProvider(name string) bool
@@ -563,14 +566,15 @@ ValidateProvider checks if a provider name is registered and valid.
 
 Example:
 
+
 ```
-if !vectorstores.ValidateProvider("inmemory") {
+if !vectorstores.ValidateProvider("inmemory") \{
 	log.Fatal("Invalid provider")
 }
 ```
 
-<a name="AdvancedMockEmbedder"></a>
-## type [AdvancedMockEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L357-L360>)
+
+## type [AdvancedMockEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L357-L360)
 
 AdvancedMockEmbedder for vector store testing.
 
@@ -580,29 +584,29 @@ type AdvancedMockEmbedder struct {
 }
 ```
 
-<a name="NewAdvancedMockEmbedder"></a>
-### func [NewAdvancedMockEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L362>)
+
+### func [NewAdvancedMockEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L362)
 
 ```go
 func NewAdvancedMockEmbedder(dimension int) *AdvancedMockEmbedder
 ```
 
-<a name="AdvancedMockEmbedder.EmbedDocuments"></a>
-### func \(\*AdvancedMockEmbedder\) [EmbedDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L366>)
+
+### func \(\*AdvancedMockEmbedder\) [EmbedDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L366)
 
 ```go
 func (e *AdvancedMockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error)
 ```
 
-<a name="AdvancedMockEmbedder.EmbedQuery"></a>
-### func \(\*AdvancedMockEmbedder\) [EmbedQuery](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L374>)
+
+### func \(\*AdvancedMockEmbedder\) [EmbedQuery](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L374)
 
 ```go
 func (e *AdvancedMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, error)
 ```
 
-<a name="AdvancedMockRetriever"></a>
-## type [AdvancedMockRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L345-L348>)
+
+## type [AdvancedMockRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L345-L348)
 
 AdvancedMockRetriever implements the Retriever interface for testing.
 
@@ -612,15 +616,15 @@ type AdvancedMockRetriever struct {
 }
 ```
 
-<a name="AdvancedMockRetriever.GetRelevantDocuments"></a>
-### func \(\*AdvancedMockRetriever\) [GetRelevantDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L350>)
+
+### func \(\*AdvancedMockRetriever\) [GetRelevantDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L350)
 
 ```go
 func (r *AdvancedMockRetriever) GetRelevantDocuments(ctx context.Context, query string) ([]schema.Document, error)
 ```
 
-<a name="AdvancedMockVectorStore"></a>
-## type [AdvancedMockVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L24-L42>)
+
+## type [AdvancedMockVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L24-L42)
 
 AdvancedMockVectorStore provides a comprehensive mock implementation for testing.
 
@@ -631,8 +635,8 @@ type AdvancedMockVectorStore struct {
 }
 ```
 
-<a name="NewAdvancedMockVectorStore"></a>
-### func [NewAdvancedMockVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L45>)
+
+### func [NewAdvancedMockVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L45)
 
 ```go
 func NewAdvancedMockVectorStore(name string, options ...MockVectorStoreOption) *AdvancedMockVectorStore
@@ -640,8 +644,8 @@ func NewAdvancedMockVectorStore(name string, options ...MockVectorStoreOption) *
 
 NewAdvancedMockVectorStore creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockVectorStore.AddDocuments"></a>
-### func \(\*AdvancedMockVectorStore\) [AddDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L120>)
+
+### func \(\*AdvancedMockVectorStore\) [AddDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L120)
 
 ```go
 func (v *AdvancedMockVectorStore) AddDocuments(ctx context.Context, documents []schema.Document, opts ...vectorstoresiface.Option) ([]string, error)
@@ -649,71 +653,71 @@ func (v *AdvancedMockVectorStore) AddDocuments(ctx context.Context, documents []
 
 Mock implementation methods.
 
-<a name="AdvancedMockVectorStore.AsRetriever"></a>
-### func \(\*AdvancedMockVectorStore\) [AsRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L301>)
+
+### func \(\*AdvancedMockVectorStore\) [AsRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L301)
 
 ```go
 func (v *AdvancedMockVectorStore) AsRetriever(opts ...vectorstoresiface.Option) vectorstoresiface.Retriever
 ```
 
-<a name="AdvancedMockVectorStore.CheckHealth"></a>
-### func \(\*AdvancedMockVectorStore\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L332>)
+
+### func \(\*AdvancedMockVectorStore\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L332)
 
 ```go
 func (v *AdvancedMockVectorStore) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockVectorStore.DeleteDocuments"></a>
-### func \(\*AdvancedMockVectorStore\) [DeleteDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L170>)
+
+### func \(\*AdvancedMockVectorStore\) [DeleteDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L170)
 
 ```go
 func (v *AdvancedMockVectorStore) DeleteDocuments(ctx context.Context, ids []string, opts ...vectorstoresiface.Option) error
 ```
 
-<a name="AdvancedMockVectorStore.GetCallCount"></a>
-### func \(\*AdvancedMockVectorStore\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L312>)
+
+### func \(\*AdvancedMockVectorStore\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L312)
 
 ```go
 func (v *AdvancedMockVectorStore) GetCallCount() int
 ```
 
-<a name="AdvancedMockVectorStore.GetDocumentCount"></a>
-### func \(\*AdvancedMockVectorStore\) [GetDocumentCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L318>)
+
+### func \(\*AdvancedMockVectorStore\) [GetDocumentCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L318)
 
 ```go
 func (v *AdvancedMockVectorStore) GetDocumentCount() int
 ```
 
-<a name="AdvancedMockVectorStore.GetDocuments"></a>
-### func \(\*AdvancedMockVectorStore\) [GetDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L324>)
+
+### func \(\*AdvancedMockVectorStore\) [GetDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L324)
 
 ```go
 func (v *AdvancedMockVectorStore) GetDocuments() []schema.Document
 ```
 
-<a name="AdvancedMockVectorStore.GetName"></a>
-### func \(\*AdvancedMockVectorStore\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L308>)
+
+### func \(\*AdvancedMockVectorStore\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L308)
 
 ```go
 func (v *AdvancedMockVectorStore) GetName() string
 ```
 
-<a name="AdvancedMockVectorStore.SimilaritySearch"></a>
-### func \(\*AdvancedMockVectorStore\) [SimilaritySearch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L200>)
+
+### func \(\*AdvancedMockVectorStore\) [SimilaritySearch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L200)
 
 ```go
 func (v *AdvancedMockVectorStore) SimilaritySearch(ctx context.Context, queryVector []float32, k int, opts ...vectorstoresiface.Option) ([]schema.Document, []float32, error)
 ```
 
-<a name="AdvancedMockVectorStore.SimilaritySearchByQuery"></a>
-### func \(\*AdvancedMockVectorStore\) [SimilaritySearchByQuery](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L275>)
+
+### func \(\*AdvancedMockVectorStore\) [SimilaritySearchByQuery](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L275)
 
 ```go
 func (v *AdvancedMockVectorStore) SimilaritySearchByQuery(ctx context.Context, query string, k int, embedder vectorstoresiface.Embedder, opts ...vectorstoresiface.Option) ([]schema.Document, []float32, error)
 ```
 
-<a name="AdvancedMockcomponent"></a>
-## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/advanced_mock.go#L8-L10>)
+
+## type [AdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/advanced_mock.go#L8-L10)
 
 AdvancedMockcomponent is a mock implementation of Interface.
 
@@ -723,8 +727,8 @@ type AdvancedMockcomponent struct {
 }
 ```
 
-<a name="NewAdvancedMockcomponent"></a>
-### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/advanced_mock.go#L13>)
+
+### func [NewAdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/advanced_mock.go#L13)
 
 ```go
 func NewAdvancedMockcomponent() *AdvancedMockcomponent
@@ -732,8 +736,8 @@ func NewAdvancedMockcomponent() *AdvancedMockcomponent
 
 NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
 
-<a name="BaseConfig"></a>
-## type [BaseConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L15-L20>)
+
+## type [BaseConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L15-L20)
 
 ```go
 type BaseConfig struct {
@@ -744,8 +748,8 @@ type BaseConfig struct {
 }
 ```
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L720-L724>)
+
+## type [BenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L720-L724)
 
 BenchmarkHelper provides benchmarking utilities for vector stores.
 
@@ -755,29 +759,29 @@ type BenchmarkHelper struct {
 }
 ```
 
-<a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L726>)
+
+### func [NewBenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L726)
 
 ```go
 func NewBenchmarkHelper(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder, docCount int) *BenchmarkHelper
 ```
 
-<a name="BenchmarkHelper.BenchmarkAddDocuments"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkAddDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L734>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkAddDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L734)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkAddDocuments(batchSize, iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkSimilaritySearch"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkSimilaritySearch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L749>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkSimilaritySearch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L749)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkSimilaritySearch(k, iterations int) (time.Duration, error)
 ```
 
-<a name="ConcurrentTestRunner"></a>
-## type [ConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L510-L514>)
+
+## type [ConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L510-L514)
 
 ConcurrentTestRunner runs vector store tests concurrently for performance testing.
 
@@ -789,22 +793,22 @@ type ConcurrentTestRunner struct {
 }
 ```
 
-<a name="NewConcurrentTestRunner"></a>
-### func [NewConcurrentTestRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L516>)
+
+### func [NewConcurrentTestRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L516)
 
 ```go
 func NewConcurrentTestRunner(numGoroutines int, duration time.Duration, testFunc func() error) *ConcurrentTestRunner
 ```
 
-<a name="ConcurrentTestRunner.Run"></a>
-### func \(\*ConcurrentTestRunner\) [Run](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L524>)
+
+### func \(\*ConcurrentTestRunner\) [Run](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L524)
 
 ```go
 func (r *ConcurrentTestRunner) Run() error
 ```
 
-<a name="ConfigLoader"></a>
-## type [ConfigLoader](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L107-L109>)
+
+## type [ConfigLoader](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L107-L109)
 
 ConfigLoader handles loading and validating configuration from various sources.
 
@@ -814,8 +818,8 @@ type ConfigLoader struct {
 }
 ```
 
-<a name="NewConfigLoader"></a>
-### func [NewConfigLoader](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L112>)
+
+### func [NewConfigLoader](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L112)
 
 ```go
 func NewConfigLoader() *ConfigLoader
@@ -823,8 +827,8 @@ func NewConfigLoader() *ConfigLoader
 
 NewConfigLoader creates a new configuration loader with custom validation rules.
 
-<a name="ConfigLoader.LoadInMemoryConfig"></a>
-### func \(\*ConfigLoader\) [LoadInMemoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L124>)
+
+### func \(\*ConfigLoader\) [LoadInMemoryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L124)
 
 ```go
 func (cl *ConfigLoader) LoadInMemoryConfig(data map[string]any) (*InMemoryConfig, error)
@@ -832,8 +836,8 @@ func (cl *ConfigLoader) LoadInMemoryConfig(data map[string]any) (*InMemoryConfig
 
 LoadInMemoryConfig loads and validates InMemoryConfig from a map.
 
-<a name="ConfigLoader.LoadPgVectorConfig"></a>
-### func \(\*ConfigLoader\) [LoadPgVectorConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L133>)
+
+### func \(\*ConfigLoader\) [LoadPgVectorConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L133)
 
 ```go
 func (cl *ConfigLoader) LoadPgVectorConfig(data map[string]any) (*PgVectorConfig, error)
@@ -841,8 +845,8 @@ func (cl *ConfigLoader) LoadPgVectorConfig(data map[string]any) (*PgVectorConfig
 
 LoadPgVectorConfig loads and validates PgVectorConfig from a map.
 
-<a name="ConfigLoader.LoadPineconeConfig"></a>
-### func \(\*ConfigLoader\) [LoadPineconeConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L142>)
+
+### func \(\*ConfigLoader\) [LoadPineconeConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L142)
 
 ```go
 func (cl *ConfigLoader) LoadPineconeConfig(data map[string]any) (*PineconeConfig, error)
@@ -850,8 +854,8 @@ func (cl *ConfigLoader) LoadPineconeConfig(data map[string]any) (*PineconeConfig
 
 LoadPineconeConfig loads and validates PineconeConfig from a map.
 
-<a name="Embedder"></a>
-## type [Embedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L85-L88>)
+
+## type [Embedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L85-L88)
 
 Embedder defines the interface for generating vector embeddings from text. This follows the Interface Segregation Principle by focusing on embedding functionality.
 
@@ -862,8 +866,8 @@ type Embedder interface {
 }
 ```
 
-<a name="Factory"></a>
-## type [Factory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L214-L218>)
+
+## type [Factory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L214-L218)
 
 Factory defines the interface for creating VectorStore instances. This enables dependency injection and makes testing easier.
 
@@ -875,8 +879,8 @@ type Factory interface {
 }
 ```
 
-<a name="InMemoryConfig"></a>
-## type [InMemoryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L23-L28>)
+
+## type [InMemoryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L23-L28)
 
 InMemoryConfig holds configuration for the in\-memory vector store provider.
 
@@ -889,8 +893,8 @@ type InMemoryConfig struct {
 }
 ```
 
-<a name="InMemoryConfig.Validate"></a>
-### func \(\*InMemoryConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L60>)
+
+### func \(\*InMemoryConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L60)
 
 ```go
 func (c *InMemoryConfig) Validate() error
@@ -898,8 +902,8 @@ func (c *InMemoryConfig) Validate() error
 
 Validate validates the configuration using struct tags and custom validation rules.
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L629-L632>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L629-L632)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -909,50 +913,50 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L634>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L634)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [AddEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L645>)
+
+### func \(\*IntegrationTestHelper\) [AddEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L645)
 
 ```go
 func (h *IntegrationTestHelper) AddEmbedder(name string, embedder *AdvancedMockEmbedder)
 ```
 
-<a name="IntegrationTestHelper.AddVectorStore"></a>
-### func \(\*IntegrationTestHelper\) [AddVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L641>)
+
+### func \(\*IntegrationTestHelper\) [AddVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L641)
 
 ```go
 func (h *IntegrationTestHelper) AddVectorStore(name string, store *AdvancedMockVectorStore)
 ```
 
-<a name="IntegrationTestHelper.GetEmbedder"></a>
-### func \(\*IntegrationTestHelper\) [GetEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L653>)
+
+### func \(\*IntegrationTestHelper\) [GetEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L653)
 
 ```go
 func (h *IntegrationTestHelper) GetEmbedder(name string) *AdvancedMockEmbedder
 ```
 
-<a name="IntegrationTestHelper.GetVectorStore"></a>
-### func \(\*IntegrationTestHelper\) [GetVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L649>)
+
+### func \(\*IntegrationTestHelper\) [GetVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L649)
 
 ```go
 func (h *IntegrationTestHelper) GetVectorStore(name string) *AdvancedMockVectorStore
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L657>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L657)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="Logger"></a>
-## type [Logger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L13-L15>)
+
+## type [Logger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L13-L15)
 
 Logger provides structured logging for vector store operations. It integrates with OpenTelemetry tracing for consistent log correlation.
 
@@ -962,8 +966,8 @@ type Logger struct {
 }
 ```
 
-<a name="GetGlobalLogger"></a>
-### func [GetGlobalLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L228>)
+
+### func [GetGlobalLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L228)
 
 ```go
 func GetGlobalLogger() *Logger
@@ -971,8 +975,8 @@ func GetGlobalLogger() *Logger
 
 GetGlobalLogger returns the global logger instance.
 
-<a name="NewLogger"></a>
-### func [NewLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L18>)
+
+### func [NewLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L18)
 
 ```go
 func NewLogger(logger *slog.Logger) *Logger
@@ -980,8 +984,8 @@ func NewLogger(logger *slog.Logger) *Logger
 
 NewLogger creates a new structured logger for vector stores.
 
-<a name="Logger.LogDebug"></a>
-### func \(\*Logger\) [LogDebug](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L140>)
+
+### func \(\*Logger\) [LogDebug](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L140)
 
 ```go
 func (l *Logger) LogDebug(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr)
@@ -989,8 +993,8 @@ func (l *Logger) LogDebug(ctx context.Context, message, storeName string, additi
 
 LogDebug logs debug messages.
 
-<a name="Logger.LogDocumentOperation"></a>
-### func \(\*Logger\) [LogDocumentOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L28>)
+
+### func \(\*Logger\) [LogDocumentOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L28)
 
 ```go
 func (l *Logger) LogDocumentOperation(ctx context.Context, level slog.Level, operation, storeName string, docCount int, duration time.Duration, err error)
@@ -998,8 +1002,8 @@ func (l *Logger) LogDocumentOperation(ctx context.Context, level slog.Level, ope
 
 LogDocumentOperation logs document\-related operations.
 
-<a name="Logger.LogEmbeddingOperation"></a>
-### func \(\*Logger\) [LogEmbeddingOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L77>)
+
+### func \(\*Logger\) [LogEmbeddingOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L77)
 
 ```go
 func (l *Logger) LogEmbeddingOperation(ctx context.Context, level slog.Level, storeName string, textCount int, duration time.Duration, err error)
@@ -1007,8 +1011,8 @@ func (l *Logger) LogEmbeddingOperation(ctx context.Context, level slog.Level, st
 
 LogEmbeddingOperation logs embedding operations.
 
-<a name="Logger.LogError"></a>
-### func \(\*Logger\) [LogError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L100>)
+
+### func \(\*Logger\) [LogError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L100)
 
 ```go
 func (l *Logger) LogError(ctx context.Context, err error, operation, storeName string, additionalAttrs ...slog.Attr)
@@ -1016,8 +1020,8 @@ func (l *Logger) LogError(ctx context.Context, err error, operation, storeName s
 
 LogError logs errors with context.
 
-<a name="Logger.LogInfo"></a>
-### func \(\*Logger\) [LogInfo](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L121>)
+
+### func \(\*Logger\) [LogInfo](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L121)
 
 ```go
 func (l *Logger) LogInfo(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr)
@@ -1025,8 +1029,8 @@ func (l *Logger) LogInfo(ctx context.Context, message, storeName string, additio
 
 LogInfo logs informational messages.
 
-<a name="Logger.LogPerformance"></a>
-### func \(\*Logger\) [LogPerformance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L198>)
+
+### func \(\*Logger\) [LogPerformance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L198)
 
 ```go
 func (l *Logger) LogPerformance(ctx context.Context, operation, storeName string, duration time.Duration, additionalAttrs ...slog.Attr)
@@ -1034,8 +1038,8 @@ func (l *Logger) LogPerformance(ctx context.Context, operation, storeName string
 
 LogPerformance logs performance\-related information.
 
-<a name="Logger.LogSearchOperation"></a>
-### func \(\*Logger\) [LogSearchOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L52>)
+
+### func \(\*Logger\) [LogSearchOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L52)
 
 ```go
 func (l *Logger) LogSearchOperation(ctx context.Context, level slog.Level, storeName string, queryLength, k, resultCount int, duration time.Duration, err error)
@@ -1043,8 +1047,8 @@ func (l *Logger) LogSearchOperation(ctx context.Context, level slog.Level, store
 
 LogSearchOperation logs search operations.
 
-<a name="Logger.LogStoreLifecycle"></a>
-### func \(\*Logger\) [LogStoreLifecycle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L178>)
+
+### func \(\*Logger\) [LogStoreLifecycle](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L178)
 
 ```go
 func (l *Logger) LogStoreLifecycle(ctx context.Context, event, storeName string, additionalAttrs ...slog.Attr)
@@ -1052,8 +1056,8 @@ func (l *Logger) LogStoreLifecycle(ctx context.Context, event, storeName string,
 
 LogStoreLifecycle logs vector store lifecycle events.
 
-<a name="Logger.LogWarn"></a>
-### func \(\*Logger\) [LogWarn](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L159>)
+
+### func \(\*Logger\) [LogWarn](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/logging.go#L159)
 
 ```go
 func (l *Logger) LogWarn(ctx context.Context, message, storeName string, additionalAttrs ...slog.Attr)
@@ -1061,8 +1065,8 @@ func (l *Logger) LogWarn(ctx context.Context, message, storeName string, additio
 
 LogWarn logs warning messages.
 
-<a name="MetricsCollector"></a>
-## type [MetricsCollector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L15-L38>)
+
+## type [MetricsCollector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L15-L38)
 
 MetricsCollector provides metrics collection for vector store operations. It follows OpenTelemetry conventions for consistent observability.
 
@@ -1072,8 +1076,8 @@ type MetricsCollector struct {
 }
 ```
 
-<a name="GetGlobalMetrics"></a>
-### func [GetGlobalMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L298>)
+
+### func [GetGlobalMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L298)
 
 ```go
 func GetGlobalMetrics() *MetricsCollector
@@ -1081,8 +1085,8 @@ func GetGlobalMetrics() *MetricsCollector
 
 GetGlobalMetrics returns the global metrics collector.
 
-<a name="NewMetricsCollector"></a>
-### func [NewMetricsCollector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L41>)
+
+### func [NewMetricsCollector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L41)
 
 ```go
 func NewMetricsCollector(meter metric.Meter) (*MetricsCollector, error)
@@ -1090,8 +1094,8 @@ func NewMetricsCollector(meter metric.Meter) (*MetricsCollector, error)
 
 NewMetricsCollector creates a new metrics collector with OpenTelemetry.
 
-<a name="MetricsCollector.RecordDiskUsage"></a>
-### func \(\*MetricsCollector\) [RecordDiskUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L217>)
+
+### func \(\*MetricsCollector\) [RecordDiskUsage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L217)
 
 ```go
 func (mc *MetricsCollector) RecordDiskUsage(ctx context.Context, bytes int64, storeName string)
@@ -1099,8 +1103,8 @@ func (mc *MetricsCollector) RecordDiskUsage(ctx context.Context, bytes int64, st
 
 RecordDiskUsage records current disk usage.
 
-<a name="MetricsCollector.RecordDocumentsAdded"></a>
-### func \(\*MetricsCollector\) [RecordDocumentsAdded](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L149>)
+
+### func \(\*MetricsCollector\) [RecordDocumentsAdded](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L149)
 
 ```go
 func (mc *MetricsCollector) RecordDocumentsAdded(ctx context.Context, count int, storeName string)
@@ -1108,8 +1112,8 @@ func (mc *MetricsCollector) RecordDocumentsAdded(ctx context.Context, count int,
 
 RecordDocumentsAdded records metrics when documents are added.
 
-<a name="MetricsCollector.RecordDocumentsDeleted"></a>
-### func \(\*MetricsCollector\) [RecordDocumentsDeleted](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L159>)
+
+### func \(\*MetricsCollector\) [RecordDocumentsDeleted](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L159)
 
 ```go
 func (mc *MetricsCollector) RecordDocumentsDeleted(ctx context.Context, count int, storeName string)
@@ -1117,8 +1121,8 @@ func (mc *MetricsCollector) RecordDocumentsDeleted(ctx context.Context, count in
 
 RecordDocumentsDeleted records metrics when documents are deleted.
 
-<a name="MetricsCollector.RecordEmbedding"></a>
-### func \(\*MetricsCollector\) [RecordEmbedding](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L181>)
+
+### func \(\*MetricsCollector\) [RecordEmbedding](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L181)
 
 ```go
 func (mc *MetricsCollector) RecordEmbedding(ctx context.Context, duration time.Duration, textCount int, storeName string)
@@ -1126,8 +1130,8 @@ func (mc *MetricsCollector) RecordEmbedding(ctx context.Context, duration time.D
 
 RecordEmbedding records metrics for embedding operations.
 
-<a name="MetricsCollector.RecordError"></a>
-### func \(\*MetricsCollector\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L195>)
+
+### func \(\*MetricsCollector\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L195)
 
 ```go
 func (mc *MetricsCollector) RecordError(ctx context.Context, errorCode, storeName string)
@@ -1135,8 +1139,8 @@ func (mc *MetricsCollector) RecordError(ctx context.Context, errorCode, storeNam
 
 RecordError records error metrics.
 
-<a name="MetricsCollector.RecordMemoryUsage"></a>
-### func \(\*MetricsCollector\) [RecordMemoryUsage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L208>)
+
+### func \(\*MetricsCollector\) [RecordMemoryUsage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L208)
 
 ```go
 func (mc *MetricsCollector) RecordMemoryUsage(ctx context.Context, bytes int64, storeName string)
@@ -1144,8 +1148,8 @@ func (mc *MetricsCollector) RecordMemoryUsage(ctx context.Context, bytes int64, 
 
 RecordMemoryUsage records current memory usage.
 
-<a name="MetricsCollector.RecordSearch"></a>
-### func \(\*MetricsCollector\) [RecordSearch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L169>)
+
+### func \(\*MetricsCollector\) [RecordSearch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L169)
 
 ```go
 func (mc *MetricsCollector) RecordSearch(ctx context.Context, duration time.Duration, resultCount int, storeName string)
@@ -1153,8 +1157,8 @@ func (mc *MetricsCollector) RecordSearch(ctx context.Context, duration time.Dura
 
 RecordSearch records metrics for search operations.
 
-<a name="MockVectorStoreOption"></a>
-## type [MockVectorStoreOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L68>)
+
+## type [MockVectorStoreOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L68)
 
 MockVectorStoreOption defines functional options for mock configuration.
 
@@ -1162,8 +1166,8 @@ MockVectorStoreOption defines functional options for mock configuration.
 type MockVectorStoreOption func(*AdvancedMockVectorStore)
 ```
 
-<a name="WithDefaultK"></a>
-### func [WithDefaultK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L113>)
+
+### func [WithDefaultK](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L113)
 
 ```go
 func WithDefaultK(k int) MockVectorStoreOption
@@ -1171,8 +1175,8 @@ func WithDefaultK(k int) MockVectorStoreOption
 
 WithDefaultK sets the default number of results to return.
 
-<a name="WithMockCapacity"></a>
-### func [WithMockCapacity](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L86>)
+
+### func [WithMockCapacity](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L86)
 
 ```go
 func WithMockCapacity(capacity int) MockVectorStoreOption
@@ -1180,8 +1184,8 @@ func WithMockCapacity(capacity int) MockVectorStoreOption
 
 WithMockCapacity sets the storage capacity limit.
 
-<a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L79>)
+
+### func [WithMockDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L79)
 
 ```go
 func WithMockDelay(delay time.Duration) MockVectorStoreOption
@@ -1189,8 +1193,8 @@ func WithMockDelay(delay time.Duration) MockVectorStoreOption
 
 WithMockDelay adds artificial delay to mock operations.
 
-<a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L71>)
+
+### func [WithMockError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L71)
 
 ```go
 func WithMockError(shouldError bool, err error) MockVectorStoreOption
@@ -1198,8 +1202,8 @@ func WithMockError(shouldError bool, err error) MockVectorStoreOption
 
 WithMockError configures the mock to return errors.
 
-<a name="WithPreloadedDocuments"></a>
-### func [WithPreloadedDocuments](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L93>)
+
+### func [WithPreloadedDocuments](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L93)
 
 ```go
 func WithPreloadedDocuments(documents []schema.Document, embeddings [][]float32) MockVectorStoreOption
@@ -1207,8 +1211,8 @@ func WithPreloadedDocuments(documents []schema.Document, embeddings [][]float32)
 
 WithPreloadedDocuments preloads documents into the mock.
 
-<a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L128>)
+
+## type [Option](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L128)
 
 Option represents a functional option for configuring VectorStore operations. This follows the functional options pattern for flexible configuration.
 
@@ -1216,8 +1220,8 @@ Option represents a functional option for configuring VectorStore operations. Th
 type Option func(*vectorstoresiface.Config)
 ```
 
-<a name="WithEmbedder"></a>
-### func [WithEmbedder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L146>)
+
+### func [WithEmbedder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L146)
 
 ```go
 func WithEmbedder(embedder Embedder) Option
@@ -1225,8 +1229,8 @@ func WithEmbedder(embedder Embedder) Option
 
 WithEmbedder sets the embedder to use for generating embeddings.
 
-<a name="WithMetadataFilter"></a>
-### func [WithMetadataFilter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L169>)
+
+### func [WithMetadataFilter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L169)
 
 ```go
 func WithMetadataFilter(key string, value any) Option
@@ -1234,8 +1238,8 @@ func WithMetadataFilter(key string, value any) Option
 
 WithMetadataFilter adds a metadata filter for search operations. Only documents matching the filter criteria will be considered.
 
-<a name="WithMetadataFilters"></a>
-### func [WithMetadataFilters](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L179>)
+
+### func [WithMetadataFilters](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L179)
 
 ```go
 func WithMetadataFilters(filters map[string]any) Option
@@ -1243,8 +1247,8 @@ func WithMetadataFilters(filters map[string]any) Option
 
 WithMetadataFilters sets multiple metadata filters for search operations.
 
-<a name="WithProviderConfig"></a>
-### func [WithProviderConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L191>)
+
+### func [WithProviderConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L191)
 
 ```go
 func WithProviderConfig(key string, value any) Option
@@ -1252,8 +1256,8 @@ func WithProviderConfig(key string, value any) Option
 
 WithProviderConfig sets provider\-specific configuration options.
 
-<a name="WithProviderConfigs"></a>
-### func [WithProviderConfigs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L201>)
+
+### func [WithProviderConfigs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L201)
 
 ```go
 func WithProviderConfigs(config map[string]any) Option
@@ -1261,8 +1265,8 @@ func WithProviderConfigs(config map[string]any) Option
 
 WithProviderConfigs sets multiple provider\-specific configuration options.
 
-<a name="WithScoreThreshold"></a>
-### func [WithScoreThreshold](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L161>)
+
+### func [WithScoreThreshold](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L161)
 
 ```go
 func WithScoreThreshold(threshold float32) Option
@@ -1270,8 +1274,8 @@ func WithScoreThreshold(threshold float32) Option
 
 WithScoreThreshold sets the minimum similarity score threshold for search results. Documents with scores below this threshold will be filtered out.
 
-<a name="WithSearchK"></a>
-### func [WithSearchK](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L153>)
+
+### func [WithSearchK](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L153)
 
 ```go
 func WithSearchK(k int) Option
@@ -1279,8 +1283,8 @@ func WithSearchK(k int) Option
 
 WithSearchK sets the number of similar documents to return in search operations.
 
-<a name="PgVectorConfig"></a>
-## type [PgVectorConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L31-L45>)
+
+## type [PgVectorConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L31-L45)
 
 PgVectorConfig holds configuration for the PostgreSQL vector store provider.
 
@@ -1302,8 +1306,8 @@ type PgVectorConfig struct {
 }
 ```
 
-<a name="PgVectorConfig.GetConnectionString"></a>
-### func \(\*PgVectorConfig\) [GetConnectionString](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L93>)
+
+### func \(\*PgVectorConfig\) [GetConnectionString](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L93)
 
 ```go
 func (c *PgVectorConfig) GetConnectionString() string
@@ -1311,8 +1315,8 @@ func (c *PgVectorConfig) GetConnectionString() string
 
 GetConnectionString returns a PostgreSQL connection string from the configuration.
 
-<a name="PgVectorConfig.GetFullTableName"></a>
-### func \(\*PgVectorConfig\) [GetFullTableName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L99>)
+
+### func \(\*PgVectorConfig\) [GetFullTableName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L99)
 
 ```go
 func (c *PgVectorConfig) GetFullTableName() string
@@ -1320,8 +1324,8 @@ func (c *PgVectorConfig) GetFullTableName() string
 
 GetFullTableName returns the fully qualified table name including schema.
 
-<a name="PgVectorConfig.Validate"></a>
-### func \(\*PgVectorConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L69>)
+
+### func \(\*PgVectorConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L69)
 
 ```go
 func (c *PgVectorConfig) Validate() error
@@ -1329,8 +1333,8 @@ func (c *PgVectorConfig) Validate() error
 
 Validate validates the configuration using struct tags and custom validation rules.
 
-<a name="PineconeConfig"></a>
-## type [PineconeConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L48-L57>)
+
+## type [PineconeConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L48-L57)
 
 PineconeConfig holds configuration for the Pinecone vector store provider.
 
@@ -1347,8 +1351,8 @@ type PineconeConfig struct {
 }
 ```
 
-<a name="PineconeConfig.Validate"></a>
-### func \(\*PineconeConfig\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L84>)
+
+### func \(\*PineconeConfig\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/config.go#L84)
 
 ```go
 func (c *PineconeConfig) Validate() error
@@ -1356,8 +1360,8 @@ func (c *PineconeConfig) Validate() error
 
 Validate validates the configuration using struct tags and custom validation rules.
 
-<a name="Retriever"></a>
-## type [Retriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L92-L94>)
+
+## type [Retriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L92-L94)
 
 Retriever defines the interface for retrieving documents based on queries. This enables VectorStores to be used in retrieval chains and graphs.
 
@@ -1367,8 +1371,8 @@ type Retriever interface {
 }
 ```
 
-<a name="AsRetriever"></a>
-### func [AsRetriever](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L508>)
+
+### func [AsRetriever](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L508)
 
 ```go
 func AsRetriever(store VectorStore, opts ...Option) Retriever
@@ -1383,8 +1387,8 @@ retriever := vectorstores.AsRetriever(store, vectorstores.WithSearchK(10))
 docs, err := retriever.GetRelevantDocuments(ctx, "query")
 ```
 
-<a name="StoreFactory"></a>
-## type [StoreFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L222-L224>)
+
+## type [StoreFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L222-L224)
 
 StoreFactory is the global factory for creating vector store instances. It maintains a registry of available providers and their creation functions.
 
@@ -1394,8 +1398,8 @@ type StoreFactory struct {
 }
 ```
 
-<a name="NewStoreFactory"></a>
-### func [NewStoreFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L227>)
+
+### func [NewStoreFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L227)
 
 ```go
 func NewStoreFactory() *StoreFactory
@@ -1403,8 +1407,8 @@ func NewStoreFactory() *StoreFactory
 
 NewStoreFactory creates a new StoreFactory instance.
 
-<a name="StoreFactory.Create"></a>
-### func \(\*StoreFactory\) [Create](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L239>)
+
+### func \(\*StoreFactory\) [Create](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L239)
 
 ```go
 func (f *StoreFactory) Create(ctx context.Context, name string, config vectorstoresiface.Config) (VectorStore, error)
@@ -1412,8 +1416,8 @@ func (f *StoreFactory) Create(ctx context.Context, name string, config vectorsto
 
 Create creates a new vector store instance using the registered provider.
 
-<a name="StoreFactory.Register"></a>
-### func \(\*StoreFactory\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L234>)
+
+### func \(\*StoreFactory\) [Register](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L234)
 
 ```go
 func (f *StoreFactory) Register(name string, creator func(ctx context.Context, config vectorstoresiface.Config) (VectorStore, error))
@@ -1421,8 +1425,8 @@ func (f *StoreFactory) Register(name string, creator func(ctx context.Context, c
 
 Register registers a new vector store provider with the factory.
 
-<a name="TracerProvider"></a>
-## type [TracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L226-L228>)
+
+## type [TracerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L226-L228)
 
 TracerProvider provides tracing functionality for vector store operations.
 
@@ -1432,8 +1436,8 @@ type TracerProvider struct {
 }
 ```
 
-<a name="GetGlobalTracer"></a>
-### func [GetGlobalTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L308>)
+
+### func [GetGlobalTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L308)
 
 ```go
 func GetGlobalTracer() *TracerProvider
@@ -1441,8 +1445,8 @@ func GetGlobalTracer() *TracerProvider
 
 GetGlobalTracer returns the global tracer provider.
 
-<a name="NewTracerProvider"></a>
-### func [NewTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L231>)
+
+### func [NewTracerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L231)
 
 ```go
 func NewTracerProvider(tracerName string) *TracerProvider
@@ -1450,8 +1454,8 @@ func NewTracerProvider(tracerName string) *TracerProvider
 
 NewTracerProvider creates a new tracer provider for vector stores.
 
-<a name="TracerProvider.StartAddDocumentsSpan"></a>
-### func \(\*TracerProvider\) [StartAddDocumentsSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L254>)
+
+### func \(\*TracerProvider\) [StartAddDocumentsSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L254)
 
 ```go
 func (tp *TracerProvider) StartAddDocumentsSpan(ctx context.Context, storeName string, docCount int) (context.Context, func())
@@ -1459,8 +1463,8 @@ func (tp *TracerProvider) StartAddDocumentsSpan(ctx context.Context, storeName s
 
 StartAddDocumentsSpan starts a span for document addition operations.
 
-<a name="TracerProvider.StartDeleteDocumentsSpan"></a>
-### func \(\*TracerProvider\) [StartDeleteDocumentsSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L262>)
+
+### func \(\*TracerProvider\) [StartDeleteDocumentsSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L262)
 
 ```go
 func (tp *TracerProvider) StartDeleteDocumentsSpan(ctx context.Context, storeName string, docCount int) (context.Context, func())
@@ -1468,8 +1472,8 @@ func (tp *TracerProvider) StartDeleteDocumentsSpan(ctx context.Context, storeNam
 
 StartDeleteDocumentsSpan starts a span for document deletion operations.
 
-<a name="TracerProvider.StartEmbeddingSpan"></a>
-### func \(\*TracerProvider\) [StartEmbeddingSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L279>)
+
+### func \(\*TracerProvider\) [StartEmbeddingSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L279)
 
 ```go
 func (tp *TracerProvider) StartEmbeddingSpan(ctx context.Context, storeName string, textCount int) (context.Context, func())
@@ -1477,8 +1481,8 @@ func (tp *TracerProvider) StartEmbeddingSpan(ctx context.Context, storeName stri
 
 StartEmbeddingSpan starts a span for embedding operations.
 
-<a name="TracerProvider.StartSearchSpan"></a>
-### func \(\*TracerProvider\) [StartSearchSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L270>)
+
+### func \(\*TracerProvider\) [StartSearchSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L270)
 
 ```go
 func (tp *TracerProvider) StartSearchSpan(ctx context.Context, storeName string, queryLength, k int) (context.Context, func())
@@ -1486,8 +1490,8 @@ func (tp *TracerProvider) StartSearchSpan(ctx context.Context, storeName string,
 
 StartSearchSpan starts a span for search operations.
 
-<a name="TracerProvider.StartSpan"></a>
-### func \(\*TracerProvider\) [StartSpan](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L241>)
+
+### func \(\*TracerProvider\) [StartSpan](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/metrics.go#L241)
 
 ```go
 func (tp *TracerProvider) StartSpan(ctx context.Context, operation string, opts ...attribute.KeyValue) (context.Context, func())
@@ -1495,8 +1499,8 @@ func (tp *TracerProvider) StartSpan(ctx context.Context, operation string, opts 
 
 StartSpan starts a new trace span for an operation.
 
-<a name="VectorStore"></a>
-## type [VectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L99-L124>)
+
+## type [VectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L99-L124)
 
 VectorStore defines the core interface for storing and querying vector embeddings. It provides methods for document storage, deletion, and similarity search. Implementations should be thread\-safe and handle context cancellation properly.
 
@@ -1529,8 +1533,8 @@ type VectorStore interface {
 }
 ```
 
-<a name="NewInMemoryStore"></a>
-### func [NewInMemoryStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L350>)
+
+### func [NewInMemoryStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L350)
 
 ```go
 func NewInMemoryStore(ctx context.Context, opts ...Option) (VectorStore, error)
@@ -1542,6 +1546,7 @@ Example:
 
 ```
 store, err := vectorstores.NewInMemoryStore(ctx,
+
 	vectorstores.WithEmbedder(embedder),
 	vectorstores.WithSearchK(10),
 )
@@ -1549,8 +1554,8 @@ store, err := vectorstores.NewInMemoryStore(ctx,
 
 Note: This function requires the inmemory provider to be imported for registration. Import it with: import \_ "github.com/lookatitude/beluga\-ai/pkg/vectorstores/providers/inmemory".
 
-<a name="NewPgVectorStore"></a>
-### func [NewPgVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L371>)
+
+### func [NewPgVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L371)
 
 ```go
 func NewPgVectorStore(ctx context.Context, opts ...Option) (VectorStore, error)
@@ -1562,6 +1567,7 @@ Example:
 
 ```
 store, err := vectorstores.NewPgVectorStore(ctx,
+
 	vectorstores.WithEmbedder(embedder),
 	vectorstores.WithProviderConfig("connection_string", "postgres://user:pass@localhost/db"),
 	vectorstores.WithProviderConfig("table_name", "documents"),
@@ -1571,8 +1577,8 @@ store, err := vectorstores.NewPgVectorStore(ctx,
 
 Note: This function requires the pgvector provider to be imported for registration. Import it with: import \_ "github.com/lookatitude/beluga\-ai/pkg/vectorstores/providers/pgvector".
 
-<a name="NewPineconeStore"></a>
-### func [NewPineconeStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L391>)
+
+### func [NewPineconeStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L391)
 
 ```go
 func NewPineconeStore(ctx context.Context, opts ...Option) (VectorStore, error)
@@ -1584,6 +1590,7 @@ Example:
 
 ```
 store, err := vectorstores.NewPineconeStore(ctx,
+
 	vectorstores.WithEmbedder(embedder),
 	vectorstores.WithProviderConfig("api_key", "your-api-key"),
 	vectorstores.WithProviderConfig("environment", "us-west1-gcp"),
@@ -1592,8 +1599,8 @@ store, err := vectorstores.NewPineconeStore(ctx,
 )
 ```
 
-<a name="NewVectorStore"></a>
-### func [NewVectorStore](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L256>)
+
+### func [NewVectorStore](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L256)
 
 ```go
 func NewVectorStore(ctx context.Context, name string, config vectorstoresiface.Config) (VectorStore, error)
@@ -1601,8 +1608,8 @@ func NewVectorStore(ctx context.Context, name string, config vectorstoresiface.C
 
 NewVectorStore creates a vector store using the global factory.
 
-<a name="VectorStoreError"></a>
-## type [VectorStoreError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L262-L266>)
+
+## type [VectorStoreError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L262-L266)
 
 VectorStoreError represents errors specific to vector store operations. It provides structured error information for programmatic error handling.
 
@@ -1614,8 +1621,8 @@ type VectorStoreError struct {
 }
 ```
 
-<a name="NewVectorStoreError"></a>
-### func [NewVectorStoreError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L282>)
+
+### func [NewVectorStoreError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L282)
 
 ```go
 func NewVectorStoreError(code, message string, args ...any) *VectorStoreError
@@ -1623,8 +1630,8 @@ func NewVectorStoreError(code, message string, args ...any) *VectorStoreError
 
 NewVectorStoreError creates a new VectorStoreError with the given code and message.
 
-<a name="WrapError"></a>
-### func [WrapError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L290>)
+
+### func [WrapError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L290)
 
 ```go
 func WrapError(cause error, code, message string, args ...any) *VectorStoreError
@@ -1632,8 +1639,8 @@ func WrapError(cause error, code, message string, args ...any) *VectorStoreError
 
 WrapError wraps an existing error with vector store context.
 
-<a name="VectorStoreError.Error"></a>
-### func \(\*VectorStoreError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L269>)
+
+### func \(\*VectorStoreError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L269)
 
 ```go
 func (e *VectorStoreError) Error() string
@@ -1641,8 +1648,8 @@ func (e *VectorStoreError) Error() string
 
 Error implements the error interface.
 
-<a name="VectorStoreError.Unwrap"></a>
-### func \(\*VectorStoreError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L277>)
+
+### func \(\*VectorStoreError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores.go#L277)
 
 ```go
 func (e *VectorStoreError) Unwrap() error
@@ -1650,8 +1657,8 @@ func (e *VectorStoreError) Unwrap() error
 
 Unwrap returns the underlying error for error wrapping compatibility.
 
-<a name="VectorStoreScenarioRunner"></a>
-## type [VectorStoreScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L668-L671>)
+
+## type [VectorStoreScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L668-L671)
 
 VectorStoreScenarioRunner runs common vector store scenarios.
 
@@ -1661,36 +1668,36 @@ type VectorStoreScenarioRunner struct {
 }
 ```
 
-<a name="NewVectorStoreScenarioRunner"></a>
-### func [NewVectorStoreScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L673>)
+
+### func [NewVectorStoreScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L673)
 
 ```go
 func NewVectorStoreScenarioRunner(store vectorstoresiface.VectorStore, embedder vectorstoresiface.Embedder) *VectorStoreScenarioRunner
 ```
 
-<a name="VectorStoreScenarioRunner.RunDocumentDeletionScenario"></a>
-### func \(\*VectorStoreScenarioRunner\) [RunDocumentDeletionScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L715>)
+
+### func \(\*VectorStoreScenarioRunner\) [RunDocumentDeletionScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L715)
 
 ```go
 func (r *VectorStoreScenarioRunner) RunDocumentDeletionScenario(ctx context.Context, idsToDelete []string) error
 ```
 
-<a name="VectorStoreScenarioRunner.RunDocumentIngestionScenario"></a>
-### func \(\*VectorStoreScenarioRunner\) [RunDocumentIngestionScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L680>)
+
+### func \(\*VectorStoreScenarioRunner\) [RunDocumentIngestionScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L680)
 
 ```go
 func (r *VectorStoreScenarioRunner) RunDocumentIngestionScenario(ctx context.Context, documentCount int) error
 ```
 
-<a name="VectorStoreScenarioRunner.RunSimilaritySearchScenario"></a>
-### func \(\*VectorStoreScenarioRunner\) [RunSimilaritySearchScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L701>)
+
+### func \(\*VectorStoreScenarioRunner\) [RunSimilaritySearchScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/test_utils.go#L701)
 
 ```go
 func (r *VectorStoreScenarioRunner) RunSimilaritySearchScenario(ctx context.Context, queries []string, k int) ([][]schema.Document, error)
 ```
 
-<a name="VectorStoresMockcomponent"></a>
-## type [VectorStoresMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores_mock.go#L8-L10>)
+
+## type [VectorStoresMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores_mock.go#L8-L10)
 
 VectorStoresMockcomponent is a mock implementation of Interface.
 
@@ -1700,8 +1707,8 @@ type VectorStoresMockcomponent struct {
 }
 ```
 
-<a name="NewVectorStoresMockcomponent"></a>
-### func [NewVectorStoresMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores_mock.go#L13>)
+
+### func [NewVectorStoresMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/vectorstores/vectorstores_mock.go#L13)
 
 ```go
 func NewVectorStoresMockcomponent() *VectorStoresMockcomponent
@@ -1709,4 +1716,4 @@ func NewVectorStoresMockcomponent() *VectorStoresMockcomponent
 
 NewVectorStoresMockcomponent creates a new VectorStoresMockcomponent.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

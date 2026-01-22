@@ -64,142 +64,142 @@ Package monitoring provides advanced test utilities and comprehensive mocks for 
 
 ## Index
 
-- [func AssertLogRecord\(t \*testing.T, log LogRecord, expectedLevel string\)](<#AssertLogRecord>)
-- [func AssertMonitorHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](<#AssertMonitorHealth>)
-- [func AssertMonitoringData\(t \*testing.T, monitor \*AdvancedMockMonitor, expectedMinMetrics, expectedMinTraces, expectedMinLogs int\)](<#AssertMonitoringData>)
-- [func AssertTraceRecord\(t \*testing.T, trace TraceRecord, expectedOperation string\)](<#AssertTraceRecord>)
-- [func CreateTestMetrics\(count int\) map\[string\]any](<#CreateTestMetrics>)
-- [func RunLoadTest\(t \*testing.T, monitor \*AdvancedMockMonitor, numOperations, concurrency int\)](<#RunLoadTest>)
-- [type AdvancedMockMonitor](<#AdvancedMockMonitor>)
-  - [func NewAdvancedMockMonitor\(name, monitorType string, options ...MockMonitorOption\) \*AdvancedMockMonitor](<#NewAdvancedMockMonitor>)
-  - [func \(m \*AdvancedMockMonitor\) CheckComponentHealth\(ctx context.Context, component string\) \(map\[string\]any, error\)](<#AdvancedMockMonitor.CheckComponentHealth>)
-  - [func \(m \*AdvancedMockMonitor\) CheckHealth\(\) map\[string\]any](<#AdvancedMockMonitor.CheckHealth>)
-  - [func \(m \*AdvancedMockMonitor\) FinishTrace\(ctx context.Context, traceID string, success bool\) error](<#AdvancedMockMonitor.FinishTrace>)
-  - [func \(m \*AdvancedMockMonitor\) GetCallCount\(\) int](<#AdvancedMockMonitor.GetCallCount>)
-  - [func \(m \*AdvancedMockMonitor\) GetHealthChecks\(\) \[\]HealthRecord](<#AdvancedMockMonitor.GetHealthChecks>)
-  - [func \(m \*AdvancedMockMonitor\) GetLogs\(\) \[\]LogRecord](<#AdvancedMockMonitor.GetLogs>)
-  - [func \(m \*AdvancedMockMonitor\) GetMetrics\(\) map\[string\]any](<#AdvancedMockMonitor.GetMetrics>)
-  - [func \(m \*AdvancedMockMonitor\) GetMonitorType\(\) string](<#AdvancedMockMonitor.GetMonitorType>)
-  - [func \(m \*AdvancedMockMonitor\) GetName\(\) string](<#AdvancedMockMonitor.GetName>)
-  - [func \(m \*AdvancedMockMonitor\) GetTraces\(\) \[\]TraceRecord](<#AdvancedMockMonitor.GetTraces>)
-  - [func \(m \*AdvancedMockMonitor\) Log\(ctx context.Context, level, message string, fields map\[string\]any\) error](<#AdvancedMockMonitor.Log>)
-  - [func \(m \*AdvancedMockMonitor\) RecordMetric\(ctx context.Context, name string, value any, labels map\[string\]string\) error](<#AdvancedMockMonitor.RecordMetric>)
-  - [func \(m \*AdvancedMockMonitor\) StartTrace\(ctx context.Context, operation string\) \(context.Context, string, error\)](<#AdvancedMockMonitor.StartTrace>)
-- [type AdvancedMockcomponent](<#AdvancedMockcomponent>)
-  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](<#NewAdvancedMockcomponent>)
-- [type BenchmarkHelper](<#BenchmarkHelper>)
-  - [func NewBenchmarkHelper\(monitor \*AdvancedMockMonitor\) \*BenchmarkHelper](<#NewBenchmarkHelper>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkLogging\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkLogging>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkMetricRecording\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkMetricRecording>)
-  - [func \(b \*BenchmarkHelper\) BenchmarkTracing\(iterations int\) \(time.Duration, error\)](<#BenchmarkHelper.BenchmarkTracing>)
-- [type BestPracticesConfig](<#BestPracticesConfig>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) Config](<#DefaultConfig>)
-  - [func LoadConfig\(opts ...ConfigOption\) \(Config, error\)](<#LoadConfig>)
-  - [func LoadFromMainConfig\(mainConfig \*iface.Config\) \(Config, error\)](<#LoadFromMainConfig>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-  - [func \(c \*Config\) ValidateWithMainConfig\(mainConfig \*iface.Config\) error](<#Config.ValidateWithMainConfig>)
-- [type ConfigOption](<#ConfigOption>)
-  - [func WithEthics\(fairnessThreshold float64, requireApproval bool\) ConfigOption](<#WithEthics>)
-  - [func WithHealth\(checkInterval time.Duration\) ConfigOption](<#WithHealth>)
-  - [func WithLogging\(level, format string\) ConfigOption](<#WithLogging>)
-  - [func WithOpenTelemetry\(endpoint string\) ConfigOption](<#WithOpenTelemetry>)
-  - [func WithSafety\(riskThreshold float64, humanReview bool\) ConfigOption](<#WithSafety>)
-  - [func WithServiceName\(name string\) ConfigOption](<#WithServiceName>)
-  - [func WithTracing\(sampleRate float64\) ConfigOption](<#WithTracing>)
-- [type EthicsConfig](<#EthicsConfig>)
-- [type HealthConfig](<#HealthConfig>)
-- [type HealthRecord](<#HealthRecord>)
-- [type IntegrationHelper](<#IntegrationHelper>)
-  - [func NewIntegrationHelper\(monitor iface.Monitor\) \*IntegrationHelper](<#NewIntegrationHelper>)
-  - [func \(ih \*IntegrationHelper\) CheckSafety\(ctx context.Context, content, contextInfo string\) \(iface.SafetyResult, error\)](<#IntegrationHelper.CheckSafety>)
-  - [func \(ih \*IntegrationHelper\) IsSystemHealthy\(ctx context.Context\) bool](<#IntegrationHelper.IsSystemHealthy>)
-  - [func \(ih \*IntegrationHelper\) LogEvent\(ctx context.Context, level, message string, fields map\[string\]any\)](<#IntegrationHelper.LogEvent>)
-  - [func \(ih \*IntegrationHelper\) RecordMetric\(ctx context.Context, name, description string, value float64, labels map\[string\]string\)](<#IntegrationHelper.RecordMetric>)
-  - [func \(ih \*IntegrationHelper\) ValidateBestPractices\(ctx context.Context, data any, component string\) \[\]iface.ValidationIssue](<#IntegrationHelper.ValidateBestPractices>)
-  - [func \(ih \*IntegrationHelper\) WithHealthCheck\(name string, check iface.HealthCheckFunc\) error](<#IntegrationHelper.WithHealthCheck>)
-  - [func \(ih \*IntegrationHelper\) WithMonitoring\(operationName string, fn func\(\) error\) error](<#IntegrationHelper.WithMonitoring>)
-  - [func \(ih \*IntegrationHelper\) WithMonitoringAndContext\(ctx context.Context, operationName string, fn func\(context.Context\) error\) error](<#IntegrationHelper.WithMonitoringAndContext>)
-- [type IntegrationTestHelper](<#IntegrationTestHelper>)
-  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](<#NewIntegrationTestHelper>)
-  - [func \(h \*IntegrationTestHelper\) AddMonitor\(name string, monitor \*AdvancedMockMonitor\)](<#IntegrationTestHelper.AddMonitor>)
-  - [func \(h \*IntegrationTestHelper\) GetMonitor\(name string\) \*AdvancedMockMonitor](<#IntegrationTestHelper.GetMonitor>)
-  - [func \(h \*IntegrationTestHelper\) Reset\(\)](<#IntegrationTestHelper.Reset>)
-- [type LogLevel](<#LogLevel>)
-  - [func \(l LogLevel\) String\(\) string](<#LogLevel.String>)
-- [type LogRecord](<#LogRecord>)
-  - [func CreateTestLogs\(count int\) \[\]LogRecord](<#CreateTestLogs>)
-- [type LoggerProvider](<#LoggerProvider>)
-- [type LoggingConfig](<#LoggingConfig>)
-- [type MetricsConfig](<#MetricsConfig>)
-- [type MetricsProvider](<#MetricsProvider>)
-- [type MockMonitorOption](<#MockMonitorOption>)
-  - [func WithMockDelay\(delay time.Duration\) MockMonitorOption](<#WithMockDelay>)
-  - [func WithMockError\(shouldError bool, err error\) MockMonitorOption](<#WithMockError>)
-- [type Monitor](<#Monitor>)
-  - [func NewMonitor\(opts ...Option\) \(Monitor, error\)](<#NewMonitor>)
-  - [func NewMonitorWithConfig\(mainConfig \*iface.Config, opts ...Option\) \(Monitor, error\)](<#NewMonitorWithConfig>)
-- [type MonitoringScenarioRunner](<#MonitoringScenarioRunner>)
-  - [func NewMonitoringScenarioRunner\(monitor \*AdvancedMockMonitor\) \*MonitoringScenarioRunner](<#NewMonitoringScenarioRunner>)
-  - [func \(r \*MonitoringScenarioRunner\) RunFullObservabilityScenario\(ctx context.Context, operations \[\]string\) error](<#MonitoringScenarioRunner.RunFullObservabilityScenario>)
-- [type OpenTelemetryConfig](<#OpenTelemetryConfig>)
-- [type Option](<#Option>)
-- [type PackageMetrics](<#PackageMetrics>)
-  - [func NewPackageMetrics\(meter metric.Meter\) \*PackageMetrics](<#NewPackageMetrics>)
-  - [func \(pm \*PackageMetrics\) GetUptime\(\) time.Duration](<#PackageMetrics.GetUptime>)
-  - [func \(pm \*PackageMetrics\) RecordAPIRequest\(ctx context.Context, method, endpoint string\)](<#PackageMetrics.RecordAPIRequest>)
-  - [func \(pm \*PackageMetrics\) RecordCacheOperation\(ctx context.Context, operation, key string, hit bool\)](<#PackageMetrics.RecordCacheOperation>)
-  - [func \(pm \*PackageMetrics\) RecordCustomCounter\(ctx context.Context, name string, value int64, labels map\[string\]string\)](<#PackageMetrics.RecordCustomCounter>)
-  - [func \(pm \*PackageMetrics\) RecordCustomHistogram\(ctx context.Context, name string, value float64, labels map\[string\]string\)](<#PackageMetrics.RecordCustomHistogram>)
-  - [func \(pm \*PackageMetrics\) RecordDatabaseQuery\(ctx context.Context, operation, table string, duration time.Duration\)](<#PackageMetrics.RecordDatabaseQuery>)
-  - [func \(pm \*PackageMetrics\) RecordError\(ctx context.Context, component string, err error\)](<#PackageMetrics.RecordError>)
-  - [func \(pm \*PackageMetrics\) RecordEthicsCheck\(ctx context.Context, duration time.Duration, success bool\)](<#PackageMetrics.RecordEthicsCheck>)
-  - [func \(pm \*PackageMetrics\) RecordExternalAPICall\(ctx context.Context, service, endpoint string, duration time.Duration, success bool\)](<#PackageMetrics.RecordExternalAPICall>)
-  - [func \(pm \*PackageMetrics\) RecordHealthCheck\(ctx context.Context, component string, duration time.Duration, success bool\)](<#PackageMetrics.RecordHealthCheck>)
-  - [func \(pm \*PackageMetrics\) RecordLoggingOperation\(ctx context.Context, duration time.Duration, success bool\)](<#PackageMetrics.RecordLoggingOperation>)
-  - [func \(pm \*PackageMetrics\) RecordOperationEnd\(ctx context.Context, operation string, duration time.Duration\)](<#PackageMetrics.RecordOperationEnd>)
-  - [func \(pm \*PackageMetrics\) RecordOperationStart\(ctx context.Context, operation string\)](<#PackageMetrics.RecordOperationStart>)
-  - [func \(pm \*PackageMetrics\) RecordRequest\(ctx context.Context, operation string\)](<#PackageMetrics.RecordRequest>)
-  - [func \(pm \*PackageMetrics\) RecordSafetyCheck\(ctx context.Context, duration time.Duration, success bool\)](<#PackageMetrics.RecordSafetyCheck>)
-  - [func \(pm \*PackageMetrics\) RecordTracingOperation\(ctx context.Context, duration time.Duration, success bool\)](<#PackageMetrics.RecordTracingOperation>)
-  - [func \(pm \*PackageMetrics\) RecordValidationOperation\(ctx context.Context, validatorType string, duration time.Duration, success bool\)](<#PackageMetrics.RecordValidationOperation>)
-  - [func \(pm \*PackageMetrics\) RegisterCustomCounter\(name, description string\) error](<#PackageMetrics.RegisterCustomCounter>)
-  - [func \(pm \*PackageMetrics\) RegisterCustomHistogram\(name, description string\) error](<#PackageMetrics.RegisterCustomHistogram>)
-  - [func \(pm \*PackageMetrics\) UpdateComponentHealth\(ctx context.Context, component string, healthy bool\)](<#PackageMetrics.UpdateComponentHealth>)
-- [type Provider](<#Provider>)
-- [type ProviderRegistry](<#ProviderRegistry>)
-  - [func GetGlobalRegistry\(\) \*ProviderRegistry](<#GetGlobalRegistry>)
-  - [func NewProviderRegistry\(\) \*ProviderRegistry](<#NewProviderRegistry>)
-  - [func \(pr \*ProviderRegistry\) CreateLogger\(name string, config map\[string\]any\) \(iface.Logger, error\)](<#ProviderRegistry.CreateLogger>)
-  - [func \(pr \*ProviderRegistry\) CreateMetricsCollector\(config map\[string\]any\) \(iface.MetricsCollector, error\)](<#ProviderRegistry.CreateMetricsCollector>)
-  - [func \(pr \*ProviderRegistry\) CreateTracer\(serviceName string, config map\[string\]any\) \(iface.Tracer, error\)](<#ProviderRegistry.CreateTracer>)
-  - [func \(pr \*ProviderRegistry\) GetAvailableProviders\(\) map\[string\]\[\]string](<#ProviderRegistry.GetAvailableProviders>)
-  - [func \(pr \*ProviderRegistry\) RegisterLoggerProvider\(provider LoggerProvider\) error](<#ProviderRegistry.RegisterLoggerProvider>)
-  - [func \(pr \*ProviderRegistry\) RegisterMetricsProvider\(provider MetricsProvider\) error](<#ProviderRegistry.RegisterMetricsProvider>)
-  - [func \(pr \*ProviderRegistry\) RegisterTracerProvider\(provider TracerProvider\) error](<#ProviderRegistry.RegisterTracerProvider>)
-  - [func \(pr \*ProviderRegistry\) SetCurrentLogger\(name string\) error](<#ProviderRegistry.SetCurrentLogger>)
-  - [func \(pr \*ProviderRegistry\) SetCurrentMetrics\(name string\) error](<#ProviderRegistry.SetCurrentMetrics>)
-  - [func \(pr \*ProviderRegistry\) SetCurrentTracer\(name string\) error](<#ProviderRegistry.SetCurrentTracer>)
-  - [func \(pr \*ProviderRegistry\) Shutdown\(\) error](<#ProviderRegistry.Shutdown>)
-- [type SafetyConfig](<#SafetyConfig>)
-- [type ServerIntegration](<#ServerIntegration>)
-  - [func NewServerIntegration\(monitor iface.Monitor\) \*ServerIntegration](<#NewServerIntegration>)
-  - [func \(si \*ServerIntegration\) BestPracticesCheckHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.BestPracticesCheckHandler>)
-  - [func \(si \*ServerIntegration\) EthicsCheckHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.EthicsCheckHandler>)
-  - [func \(si \*ServerIntegration\) HealthCheckHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.HealthCheckHandler>)
-  - [func \(si \*ServerIntegration\) LogsHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.LogsHandler>)
-  - [func \(si \*ServerIntegration\) MetricsHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.MetricsHandler>)
-  - [func \(si \*ServerIntegration\) MonitoringMiddleware\(next http.Handler\) http.Handler](<#ServerIntegration.MonitoringMiddleware>)
-  - [func \(si \*ServerIntegration\) RegisterRoutes\(mux \*http.ServeMux, pathPrefix string\)](<#ServerIntegration.RegisterRoutes>)
-  - [func \(si \*ServerIntegration\) SafetyCheckHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.SafetyCheckHandler>)
-  - [func \(si \*ServerIntegration\) TracesHandler\(w http.ResponseWriter, r \*http.Request\)](<#ServerIntegration.TracesHandler>)
-- [type TraceRecord](<#TraceRecord>)
-  - [func CreateTestTraces\(count int\) \[\]TraceRecord](<#CreateTestTraces>)
-- [type TracerProvider](<#TracerProvider>)
-- [type TracingConfig](<#TracingConfig>)
+- [func AssertLogRecord\(t \*testing.T, log LogRecord, expectedLevel string\)](#AssertLogRecord>)
+- [func AssertMonitorHealth\(t \*testing.T, health map\[string\]any, expectedStatus string\)](#AssertMonitorHealth>)
+- [func AssertMonitoringData\(t \*testing.T, monitor \*AdvancedMockMonitor, expectedMinMetrics, expectedMinTraces, expectedMinLogs int\)](#AssertMonitoringData>)
+- [func AssertTraceRecord\(t \*testing.T, trace TraceRecord, expectedOperation string\)](#AssertTraceRecord>)
+- [func CreateTestMetrics\(count int\) map\[string\]any](#CreateTestMetrics>)
+- [func RunLoadTest\(t \*testing.T, monitor \*AdvancedMockMonitor, numOperations, concurrency int\)](#RunLoadTest>)
+- [type AdvancedMockMonitor](#AdvancedMockMonitor>)
+  - [func NewAdvancedMockMonitor\(name, monitorType string, options ...MockMonitorOption\) \*AdvancedMockMonitor](#NewAdvancedMockMonitor>)
+  - [func \(m \*AdvancedMockMonitor\) CheckComponentHealth\(ctx context.Context, component string\) \(map\[string\]any, error\)](#AdvancedMockMonitor.CheckComponentHealth>)
+  - [func \(m \*AdvancedMockMonitor\) CheckHealth\(\) map\[string\]any](#AdvancedMockMonitor.CheckHealth>)
+  - [func \(m \*AdvancedMockMonitor\) FinishTrace\(ctx context.Context, traceID string, success bool\) error](#AdvancedMockMonitor.FinishTrace>)
+  - [func \(m \*AdvancedMockMonitor\) GetCallCount\(\) int](#AdvancedMockMonitor.GetCallCount>)
+  - [func \(m \*AdvancedMockMonitor\) GetHealthChecks\(\) \[\]HealthRecord](#AdvancedMockMonitor.GetHealthChecks>)
+  - [func \(m \*AdvancedMockMonitor\) GetLogs\(\) \[\]LogRecord](#AdvancedMockMonitor.GetLogs>)
+  - [func \(m \*AdvancedMockMonitor\) GetMetrics\(\) map\[string\]any](#AdvancedMockMonitor.GetMetrics>)
+  - [func \(m \*AdvancedMockMonitor\) GetMonitorType\(\) string](#AdvancedMockMonitor.GetMonitorType>)
+  - [func \(m \*AdvancedMockMonitor\) GetName\(\) string](#AdvancedMockMonitor.GetName>)
+  - [func \(m \*AdvancedMockMonitor\) GetTraces\(\) \[\]TraceRecord](#AdvancedMockMonitor.GetTraces>)
+  - [func \(m \*AdvancedMockMonitor\) Log\(ctx context.Context, level, message string, fields map\[string\]any\) error](#AdvancedMockMonitor.Log>)
+  - [func \(m \*AdvancedMockMonitor\) RecordMetric\(ctx context.Context, name string, value any, labels map\[string\]string\) error](#AdvancedMockMonitor.RecordMetric>)
+  - [func \(m \*AdvancedMockMonitor\) StartTrace\(ctx context.Context, operation string\) \(context.Context, string, error\)](#AdvancedMockMonitor.StartTrace>)
+- [type AdvancedMockcomponent](#AdvancedMockcomponent>)
+  - [func NewAdvancedMockcomponent\(\) \*AdvancedMockcomponent](#NewAdvancedMockcomponent>)
+- [type BenchmarkHelper](#BenchmarkHelper>)
+  - [func NewBenchmarkHelper\(monitor \*AdvancedMockMonitor\) \*BenchmarkHelper](#NewBenchmarkHelper>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkLogging\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkLogging>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkMetricRecording\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkMetricRecording>)
+  - [func \(b \*BenchmarkHelper\) BenchmarkTracing\(iterations int\) \(time.Duration, error\)](#BenchmarkHelper.BenchmarkTracing>)
+- [type BestPracticesConfig](#BestPracticesConfig>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) Config](#DefaultConfig>)
+  - [func LoadConfig\(opts ...ConfigOption\) \(Config, error\)](#LoadConfig>)
+  - [func LoadFromMainConfig\(mainConfig \*iface.Config\) \(Config, error\)](#LoadFromMainConfig>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+  - [func \(c \*Config\) ValidateWithMainConfig\(mainConfig \*iface.Config\) error](#Config.ValidateWithMainConfig>)
+- [type ConfigOption](#ConfigOption>)
+  - [func WithEthics\(fairnessThreshold float64, requireApproval bool\) ConfigOption](#WithEthics>)
+  - [func WithHealth\(checkInterval time.Duration\) ConfigOption](#WithHealth>)
+  - [func WithLogging\(level, format string\) ConfigOption](#WithLogging>)
+  - [func WithOpenTelemetry\(endpoint string\) ConfigOption](#WithOpenTelemetry>)
+  - [func WithSafety\(riskThreshold float64, humanReview bool\) ConfigOption](#WithSafety>)
+  - [func WithServiceName\(name string\) ConfigOption](#WithServiceName>)
+  - [func WithTracing\(sampleRate float64\) ConfigOption](#WithTracing>)
+- [type EthicsConfig](#EthicsConfig>)
+- [type HealthConfig](#HealthConfig>)
+- [type HealthRecord](#HealthRecord>)
+- [type IntegrationHelper](#IntegrationHelper>)
+  - [func NewIntegrationHelper\(monitor iface.Monitor\) \*IntegrationHelper](#NewIntegrationHelper>)
+  - [func \(ih \*IntegrationHelper\) CheckSafety\(ctx context.Context, content, contextInfo string\) \(iface.SafetyResult, error\)](#IntegrationHelper.CheckSafety>)
+  - [func \(ih \*IntegrationHelper\) IsSystemHealthy\(ctx context.Context\) bool](#IntegrationHelper.IsSystemHealthy>)
+  - [func \(ih \*IntegrationHelper\) LogEvent\(ctx context.Context, level, message string, fields map\[string\]any\)](#IntegrationHelper.LogEvent>)
+  - [func \(ih \*IntegrationHelper\) RecordMetric\(ctx context.Context, name, description string, value float64, labels map\[string\]string\)](#IntegrationHelper.RecordMetric>)
+  - [func \(ih \*IntegrationHelper\) ValidateBestPractices\(ctx context.Context, data any, component string\) \[\]iface.ValidationIssue](#IntegrationHelper.ValidateBestPractices>)
+  - [func \(ih \*IntegrationHelper\) WithHealthCheck\(name string, check iface.HealthCheckFunc\) error](#IntegrationHelper.WithHealthCheck>)
+  - [func \(ih \*IntegrationHelper\) WithMonitoring\(operationName string, fn func\(\) error\) error](#IntegrationHelper.WithMonitoring>)
+  - [func \(ih \*IntegrationHelper\) WithMonitoringAndContext\(ctx context.Context, operationName string, fn func\(context.Context\) error\) error](#IntegrationHelper.WithMonitoringAndContext>)
+- [type IntegrationTestHelper](#IntegrationTestHelper>)
+  - [func NewIntegrationTestHelper\(\) \*IntegrationTestHelper](#NewIntegrationTestHelper>)
+  - [func \(h \*IntegrationTestHelper\) AddMonitor\(name string, monitor \*AdvancedMockMonitor\)](#IntegrationTestHelper.AddMonitor>)
+  - [func \(h \*IntegrationTestHelper\) GetMonitor\(name string\) \*AdvancedMockMonitor](#IntegrationTestHelper.GetMonitor>)
+  - [func \(h \*IntegrationTestHelper\) Reset\(\)](#IntegrationTestHelper.Reset>)
+- [type LogLevel](#LogLevel>)
+  - [func \(l LogLevel\) String\(\) string](#LogLevel.String>)
+- [type LogRecord](#LogRecord>)
+  - [func CreateTestLogs\(count int\) \[\]LogRecord](#CreateTestLogs>)
+- [type LoggerProvider](#LoggerProvider>)
+- [type LoggingConfig](#LoggingConfig>)
+- [type MetricsConfig](#MetricsConfig>)
+- [type MetricsProvider](#MetricsProvider>)
+- [type MockMonitorOption](#MockMonitorOption>)
+  - [func WithMockDelay\(delay time.Duration\) MockMonitorOption](#WithMockDelay>)
+  - [func WithMockError\(shouldError bool, err error\) MockMonitorOption](#WithMockError>)
+- [type Monitor](#Monitor>)
+  - [func NewMonitor\(opts ...Option\) \(Monitor, error\)](#NewMonitor>)
+  - [func NewMonitorWithConfig\(mainConfig \*iface.Config, opts ...Option\) \(Monitor, error\)](#NewMonitorWithConfig>)
+- [type MonitoringScenarioRunner](#MonitoringScenarioRunner>)
+  - [func NewMonitoringScenarioRunner\(monitor \*AdvancedMockMonitor\) \*MonitoringScenarioRunner](#NewMonitoringScenarioRunner>)
+  - [func \(r \*MonitoringScenarioRunner\) RunFullObservabilityScenario\(ctx context.Context, operations \[\]string\) error](#MonitoringScenarioRunner.RunFullObservabilityScenario>)
+- [type OpenTelemetryConfig](#OpenTelemetryConfig>)
+- [type Option](#Option>)
+- [type PackageMetrics](#PackageMetrics>)
+  - [func NewPackageMetrics\(meter metric.Meter\) \*PackageMetrics](#NewPackageMetrics>)
+  - [func \(pm \*PackageMetrics\) GetUptime\(\) time.Duration](#PackageMetrics.GetUptime>)
+  - [func \(pm \*PackageMetrics\) RecordAPIRequest\(ctx context.Context, method, endpoint string\)](#PackageMetrics.RecordAPIRequest>)
+  - [func \(pm \*PackageMetrics\) RecordCacheOperation\(ctx context.Context, operation, key string, hit bool\)](#PackageMetrics.RecordCacheOperation>)
+  - [func \(pm \*PackageMetrics\) RecordCustomCounter\(ctx context.Context, name string, value int64, labels map\[string\]string\)](#PackageMetrics.RecordCustomCounter>)
+  - [func \(pm \*PackageMetrics\) RecordCustomHistogram\(ctx context.Context, name string, value float64, labels map\[string\]string\)](#PackageMetrics.RecordCustomHistogram>)
+  - [func \(pm \*PackageMetrics\) RecordDatabaseQuery\(ctx context.Context, operation, table string, duration time.Duration\)](#PackageMetrics.RecordDatabaseQuery>)
+  - [func \(pm \*PackageMetrics\) RecordError\(ctx context.Context, component string, err error\)](#PackageMetrics.RecordError>)
+  - [func \(pm \*PackageMetrics\) RecordEthicsCheck\(ctx context.Context, duration time.Duration, success bool\)](#PackageMetrics.RecordEthicsCheck>)
+  - [func \(pm \*PackageMetrics\) RecordExternalAPICall\(ctx context.Context, service, endpoint string, duration time.Duration, success bool\)](#PackageMetrics.RecordExternalAPICall>)
+  - [func \(pm \*PackageMetrics\) RecordHealthCheck\(ctx context.Context, component string, duration time.Duration, success bool\)](#PackageMetrics.RecordHealthCheck>)
+  - [func \(pm \*PackageMetrics\) RecordLoggingOperation\(ctx context.Context, duration time.Duration, success bool\)](#PackageMetrics.RecordLoggingOperation>)
+  - [func \(pm \*PackageMetrics\) RecordOperationEnd\(ctx context.Context, operation string, duration time.Duration\)](#PackageMetrics.RecordOperationEnd>)
+  - [func \(pm \*PackageMetrics\) RecordOperationStart\(ctx context.Context, operation string\)](#PackageMetrics.RecordOperationStart>)
+  - [func \(pm \*PackageMetrics\) RecordRequest\(ctx context.Context, operation string\)](#PackageMetrics.RecordRequest>)
+  - [func \(pm \*PackageMetrics\) RecordSafetyCheck\(ctx context.Context, duration time.Duration, success bool\)](#PackageMetrics.RecordSafetyCheck>)
+  - [func \(pm \*PackageMetrics\) RecordTracingOperation\(ctx context.Context, duration time.Duration, success bool\)](#PackageMetrics.RecordTracingOperation>)
+  - [func \(pm \*PackageMetrics\) RecordValidationOperation\(ctx context.Context, validatorType string, duration time.Duration, success bool\)](#PackageMetrics.RecordValidationOperation>)
+  - [func \(pm \*PackageMetrics\) RegisterCustomCounter\(name, description string\) error](#PackageMetrics.RegisterCustomCounter>)
+  - [func \(pm \*PackageMetrics\) RegisterCustomHistogram\(name, description string\) error](#PackageMetrics.RegisterCustomHistogram>)
+  - [func \(pm \*PackageMetrics\) UpdateComponentHealth\(ctx context.Context, component string, healthy bool\)](#PackageMetrics.UpdateComponentHealth>)
+- [type Provider](#Provider>)
+- [type ProviderRegistry](#ProviderRegistry>)
+  - [func GetGlobalRegistry\(\) \*ProviderRegistry](#GetGlobalRegistry>)
+  - [func NewProviderRegistry\(\) \*ProviderRegistry](#NewProviderRegistry>)
+  - [func \(pr \*ProviderRegistry\) CreateLogger\(name string, config map\[string\]any\) \(iface.Logger, error\)](#ProviderRegistry.CreateLogger>)
+  - [func \(pr \*ProviderRegistry\) CreateMetricsCollector\(config map\[string\]any\) \(iface.MetricsCollector, error\)](#ProviderRegistry.CreateMetricsCollector>)
+  - [func \(pr \*ProviderRegistry\) CreateTracer\(serviceName string, config map\[string\]any\) \(iface.Tracer, error\)](#ProviderRegistry.CreateTracer>)
+  - [func \(pr \*ProviderRegistry\) GetAvailableProviders\(\) map\[string\]\[\]string](#ProviderRegistry.GetAvailableProviders>)
+  - [func \(pr \*ProviderRegistry\) RegisterLoggerProvider\(provider LoggerProvider\) error](#ProviderRegistry.RegisterLoggerProvider>)
+  - [func \(pr \*ProviderRegistry\) RegisterMetricsProvider\(provider MetricsProvider\) error](#ProviderRegistry.RegisterMetricsProvider>)
+  - [func \(pr \*ProviderRegistry\) RegisterTracerProvider\(provider TracerProvider\) error](#ProviderRegistry.RegisterTracerProvider>)
+  - [func \(pr \*ProviderRegistry\) SetCurrentLogger\(name string\) error](#ProviderRegistry.SetCurrentLogger>)
+  - [func \(pr \*ProviderRegistry\) SetCurrentMetrics\(name string\) error](#ProviderRegistry.SetCurrentMetrics>)
+  - [func \(pr \*ProviderRegistry\) SetCurrentTracer\(name string\) error](#ProviderRegistry.SetCurrentTracer>)
+  - [func \(pr \*ProviderRegistry\) Shutdown\(\) error](#ProviderRegistry.Shutdown>)
+- [type SafetyConfig](#SafetyConfig>)
+- [type ServerIntegration](#ServerIntegration>)
+  - [func NewServerIntegration\(monitor iface.Monitor\) \*ServerIntegration](#NewServerIntegration>)
+  - [func \(si \*ServerIntegration\) BestPracticesCheckHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.BestPracticesCheckHandler>)
+  - [func \(si \*ServerIntegration\) EthicsCheckHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.EthicsCheckHandler>)
+  - [func \(si \*ServerIntegration\) HealthCheckHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.HealthCheckHandler>)
+  - [func \(si \*ServerIntegration\) LogsHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.LogsHandler>)
+  - [func \(si \*ServerIntegration\) MetricsHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.MetricsHandler>)
+  - [func \(si \*ServerIntegration\) MonitoringMiddleware\(next http.Handler\) http.Handler](#ServerIntegration.MonitoringMiddleware>)
+  - [func \(si \*ServerIntegration\) RegisterRoutes\(mux \*http.ServeMux, pathPrefix string\)](#ServerIntegration.RegisterRoutes>)
+  - [func \(si \*ServerIntegration\) SafetyCheckHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.SafetyCheckHandler>)
+  - [func \(si \*ServerIntegration\) TracesHandler\(w http.ResponseWriter, r \*http.Request\)](#ServerIntegration.TracesHandler>)
+- [type TraceRecord](#TraceRecord>)
+  - [func CreateTestTraces\(count int\) \[\]TraceRecord](#CreateTestTraces>)
+- [type TracerProvider](#TracerProvider>)
+- [type TracingConfig](#TracingConfig>)
 
-<a name="AssertLogRecord"></a>
-## func [AssertLogRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L384>)
+
+## func [AssertLogRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L384)
 
 ```go
 func AssertLogRecord(t *testing.T, log LogRecord, expectedLevel string)
@@ -207,8 +207,8 @@ func AssertLogRecord(t *testing.T, log LogRecord, expectedLevel string)
 
 AssertLogRecord validates log record properties.
 
-<a name="AssertMonitorHealth"></a>
-## func [AssertMonitorHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L392>)
+
+## func [AssertMonitorHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L392)
 
 ```go
 func AssertMonitorHealth(t *testing.T, health map[string]any, expectedStatus string)
@@ -216,8 +216,8 @@ func AssertMonitorHealth(t *testing.T, health map[string]any, expectedStatus str
 
 AssertMonitorHealth validates monitor health check results.
 
-<a name="AssertMonitoringData"></a>
-## func [AssertMonitoringData](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L364>)
+
+## func [AssertMonitoringData](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L364)
 
 ```go
 func AssertMonitoringData(t *testing.T, monitor *AdvancedMockMonitor, expectedMinMetrics, expectedMinTraces, expectedMinLogs int)
@@ -225,8 +225,8 @@ func AssertMonitoringData(t *testing.T, monitor *AdvancedMockMonitor, expectedMi
 
 AssertMonitoringData validates monitoring data collection.
 
-<a name="AssertTraceRecord"></a>
-## func [AssertTraceRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L375>)
+
+## func [AssertTraceRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L375)
 
 ```go
 func AssertTraceRecord(t *testing.T, trace TraceRecord, expectedOperation string)
@@ -234,8 +234,8 @@ func AssertTraceRecord(t *testing.T, trace TraceRecord, expectedOperation string
 
 AssertTraceRecord validates trace record properties.
 
-<a name="CreateTestMetrics"></a>
-## func [CreateTestMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L303>)
+
+## func [CreateTestMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L303)
 
 ```go
 func CreateTestMetrics(count int) map[string]any
@@ -243,8 +243,8 @@ func CreateTestMetrics(count int) map[string]any
 
 CreateTestMetrics creates test metrics for monitoring.
 
-<a name="RunLoadTest"></a>
-## func [RunLoadTest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L403>)
+
+## func [RunLoadTest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L403)
 
 ```go
 func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations, concurrency int)
@@ -252,8 +252,8 @@ func RunLoadTest(t *testing.T, monitor *AdvancedMockMonitor, numOperations, conc
 
 RunLoadTest executes a load test scenario on monitor.
 
-<a name="AdvancedMockMonitor"></a>
-## type [AdvancedMockMonitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L18-L33>)
+
+## type [AdvancedMockMonitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L18-L33)
 
 AdvancedMockMonitor provides a comprehensive mock implementation for testing.
 
@@ -264,8 +264,8 @@ type AdvancedMockMonitor struct {
 }
 ```
 
-<a name="NewAdvancedMockMonitor"></a>
-### func [NewAdvancedMockMonitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L62>)
+
+### func [NewAdvancedMockMonitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L62)
 
 ```go
 func NewAdvancedMockMonitor(name, monitorType string, options ...MockMonitorOption) *AdvancedMockMonitor
@@ -273,64 +273,64 @@ func NewAdvancedMockMonitor(name, monitorType string, options ...MockMonitorOpti
 
 NewAdvancedMockMonitor creates a new advanced mock monitor.
 
-<a name="AdvancedMockMonitor.CheckComponentHealth"></a>
-### func \(\*AdvancedMockMonitor\) [CheckComponentHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L205>)
+
+### func \(\*AdvancedMockMonitor\) [CheckComponentHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L205)
 
 ```go
 func (m *AdvancedMockMonitor) CheckComponentHealth(ctx context.Context, component string) (map[string]any, error)
 ```
 
-<a name="AdvancedMockMonitor.CheckHealth"></a>
-### func \(\*AdvancedMockMonitor\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L285>)
+
+### func \(\*AdvancedMockMonitor\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L285)
 
 ```go
 func (m *AdvancedMockMonitor) CheckHealth() map[string]any
 ```
 
-<a name="AdvancedMockMonitor.FinishTrace"></a>
-### func \(\*AdvancedMockMonitor\) [FinishTrace](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L152>)
+
+### func \(\*AdvancedMockMonitor\) [FinishTrace](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L152)
 
 ```go
 func (m *AdvancedMockMonitor) FinishTrace(ctx context.Context, traceID string, success bool) error
 ```
 
-<a name="AdvancedMockMonitor.GetCallCount"></a>
-### func \(\*AdvancedMockMonitor\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L245>)
+
+### func \(\*AdvancedMockMonitor\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L245)
 
 ```go
 func (m *AdvancedMockMonitor) GetCallCount() int
 ```
 
-<a name="AdvancedMockMonitor.GetHealthChecks"></a>
-### func \(\*AdvancedMockMonitor\) [GetHealthChecks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L277>)
+
+### func \(\*AdvancedMockMonitor\) [GetHealthChecks](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L277)
 
 ```go
 func (m *AdvancedMockMonitor) GetHealthChecks() []HealthRecord
 ```
 
-<a name="AdvancedMockMonitor.GetLogs"></a>
-### func \(\*AdvancedMockMonitor\) [GetLogs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L269>)
+
+### func \(\*AdvancedMockMonitor\) [GetLogs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L269)
 
 ```go
 func (m *AdvancedMockMonitor) GetLogs() []LogRecord
 ```
 
-<a name="AdvancedMockMonitor.GetMetrics"></a>
-### func \(\*AdvancedMockMonitor\) [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L251>)
+
+### func \(\*AdvancedMockMonitor\) [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L251)
 
 ```go
 func (m *AdvancedMockMonitor) GetMetrics() map[string]any
 ```
 
-<a name="AdvancedMockMonitor.GetMonitorType"></a>
-### func \(\*AdvancedMockMonitor\) [GetMonitorType](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L241>)
+
+### func \(\*AdvancedMockMonitor\) [GetMonitorType](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L241)
 
 ```go
 func (m *AdvancedMockMonitor) GetMonitorType() string
 ```
 
-<a name="AdvancedMockMonitor.GetName"></a>
-### func \(\*AdvancedMockMonitor\) [GetName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L237>)
+
+### func \(\*AdvancedMockMonitor\) [GetName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L237)
 
 ```go
 func (m *AdvancedMockMonitor) GetName() string
@@ -338,22 +338,22 @@ func (m *AdvancedMockMonitor) GetName() string
 
 Helper methods for testing.
 
-<a name="AdvancedMockMonitor.GetTraces"></a>
-### func \(\*AdvancedMockMonitor\) [GetTraces](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L261>)
+
+### func \(\*AdvancedMockMonitor\) [GetTraces](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L261)
 
 ```go
 func (m *AdvancedMockMonitor) GetTraces() []TraceRecord
 ```
 
-<a name="AdvancedMockMonitor.Log"></a>
-### func \(\*AdvancedMockMonitor\) [Log](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L174>)
+
+### func \(\*AdvancedMockMonitor\) [Log](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L174)
 
 ```go
 func (m *AdvancedMockMonitor) Log(ctx context.Context, level, message string, fields map[string]any) error
 ```
 
-<a name="AdvancedMockMonitor.RecordMetric"></a>
-### func \(\*AdvancedMockMonitor\) [RecordMetric](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L100>)
+
+### func \(\*AdvancedMockMonitor\) [RecordMetric](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L100)
 
 ```go
 func (m *AdvancedMockMonitor) RecordMetric(ctx context.Context, name string, value any, labels map[string]string) error
@@ -361,15 +361,15 @@ func (m *AdvancedMockMonitor) RecordMetric(ctx context.Context, name string, val
 
 Mock implementation methods.
 
-<a name="AdvancedMockMonitor.StartTrace"></a>
-### func \(\*AdvancedMockMonitor\) [StartTrace](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L126>)
+
+### func \(\*AdvancedMockMonitor\) [StartTrace](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L126)
 
 ```go
 func (m *AdvancedMockMonitor) StartTrace(ctx context.Context, operation string) (context.Context, string, error)
 ```
 
-<a name="AdvancedMockcomponent"></a>
-## type [AdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring_mock.go#L8-L10>)
+
+## type [AdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring_mock.go#L8-L10)
 
 AdvancedMockcomponent is a mock implementation of Interface.
 
@@ -379,8 +379,8 @@ type AdvancedMockcomponent struct {
 }
 ```
 
-<a name="NewAdvancedMockcomponent"></a>
-### func [NewAdvancedMockcomponent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring_mock.go#L13>)
+
+### func [NewAdvancedMockcomponent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring_mock.go#L13)
 
 ```go
 func NewAdvancedMockcomponent() *AdvancedMockcomponent
@@ -388,8 +388,8 @@ func NewAdvancedMockcomponent() *AdvancedMockcomponent
 
 NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
 
-<a name="BenchmarkHelper"></a>
-## type [BenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L556-L558>)
+
+## type [BenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L556-L558)
 
 BenchmarkHelper provides benchmarking utilities for monitoring.
 
@@ -399,36 +399,36 @@ type BenchmarkHelper struct {
 }
 ```
 
-<a name="NewBenchmarkHelper"></a>
-### func [NewBenchmarkHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L560>)
+
+### func [NewBenchmarkHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L560)
 
 ```go
 func NewBenchmarkHelper(monitor *AdvancedMockMonitor) *BenchmarkHelper
 ```
 
-<a name="BenchmarkHelper.BenchmarkLogging"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkLogging](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L600>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkLogging](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L600)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkLogging(iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkMetricRecording"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkMetricRecording](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L566>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkMetricRecording](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L566)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkMetricRecording(iterations int) (time.Duration, error)
 ```
 
-<a name="BenchmarkHelper.BenchmarkTracing"></a>
-### func \(\*BenchmarkHelper\) [BenchmarkTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L581>)
+
+### func \(\*BenchmarkHelper\) [BenchmarkTracing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L581)
 
 ```go
 func (b *BenchmarkHelper) BenchmarkTracing(iterations int) (time.Duration, error)
 ```
 
-<a name="BestPracticesConfig"></a>
-## type [BestPracticesConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L112-L120>)
+
+## type [BestPracticesConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L112-L120)
 
 BestPracticesConfig configures best practices validation.
 
@@ -444,8 +444,8 @@ type BestPracticesConfig struct {
 }
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L14-L24>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L14-L24)
 
 Config contains comprehensive configuration for the monitoring system.
 
@@ -463,8 +463,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L123>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L123)
 
 ```go
 func DefaultConfig() Config
@@ -472,8 +472,8 @@ func DefaultConfig() Config
 
 DefaultConfig returns a default configuration with sensible defaults.
 
-<a name="LoadConfig"></a>
-### func [LoadConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L505>)
+
+### func [LoadConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L505)
 
 ```go
 func LoadConfig(opts ...ConfigOption) (Config, error)
@@ -481,8 +481,8 @@ func LoadConfig(opts ...ConfigOption) (Config, error)
 
 LoadConfig loads configuration from various sources \(environment, files, etc.\) This is a placeholder \- in a real implementation, this would integrate with viper or similar configuration management libraries.
 
-<a name="LoadFromMainConfig"></a>
-### func [LoadFromMainConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L520>)
+
+### func [LoadFromMainConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L520)
 
 ```go
 func LoadFromMainConfig(mainConfig *iface.Config) (Config, error)
@@ -490,8 +490,8 @@ func LoadFromMainConfig(mainConfig *iface.Config) (Config, error)
 
 LoadFromMainConfig loads monitoring configuration from the main config package.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L208>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L208)
 
 ```go
 func (c *Config) Validate() error
@@ -499,8 +499,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="Config.ValidateWithMainConfig"></a>
-### func \(\*Config\) [ValidateWithMainConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L542>)
+
+### func \(\*Config\) [ValidateWithMainConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L542)
 
 ```go
 func (c *Config) ValidateWithMainConfig(mainConfig *iface.Config) error
@@ -508,8 +508,8 @@ func (c *Config) ValidateWithMainConfig(mainConfig *iface.Config) error
 
 ValidateWithMainConfig validates monitoring config against main config.
 
-<a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L447>)
+
+## type [ConfigOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L447)
 
 ConfigOption represents functional options for configuration.
 
@@ -517,8 +517,8 @@ ConfigOption represents functional options for configuration.
 type ConfigOption func(*Config)
 ```
 
-<a name="WithEthics"></a>
-### func [WithEthics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L488>)
+
+### func [WithEthics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L488)
 
 ```go
 func WithEthics(fairnessThreshold float64, requireApproval bool) ConfigOption
@@ -526,8 +526,8 @@ func WithEthics(fairnessThreshold float64, requireApproval bool) ConfigOption
 
 WithEthics configures ethical validation.
 
-<a name="WithHealth"></a>
-### func [WithHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L496>)
+
+### func [WithHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L496)
 
 ```go
 func WithHealth(checkInterval time.Duration) ConfigOption
@@ -535,8 +535,8 @@ func WithHealth(checkInterval time.Duration) ConfigOption
 
 WithHealth configures health monitoring.
 
-<a name="WithLogging"></a>
-### func [WithLogging](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L465>)
+
+### func [WithLogging](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L465)
 
 ```go
 func WithLogging(level, format string) ConfigOption
@@ -544,8 +544,8 @@ func WithLogging(level, format string) ConfigOption
 
 WithLogging configures logging.
 
-<a name="WithOpenTelemetry"></a>
-### func [WithOpenTelemetry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L457>)
+
+### func [WithOpenTelemetry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L457)
 
 ```go
 func WithOpenTelemetry(endpoint string) ConfigOption
@@ -553,8 +553,8 @@ func WithOpenTelemetry(endpoint string) ConfigOption
 
 WithOpenTelemetry enables OpenTelemetry with endpoint.
 
-<a name="WithSafety"></a>
-### func [WithSafety](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L480>)
+
+### func [WithSafety](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L480)
 
 ```go
 func WithSafety(riskThreshold float64, humanReview bool) ConfigOption
@@ -562,8 +562,8 @@ func WithSafety(riskThreshold float64, humanReview bool) ConfigOption
 
 WithSafety configures safety validation.
 
-<a name="WithServiceName"></a>
-### func [WithServiceName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L450>)
+
+### func [WithServiceName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L450)
 
 ```go
 func WithServiceName(name string) ConfigOption
@@ -571,8 +571,8 @@ func WithServiceName(name string) ConfigOption
 
 WithServiceName sets the service name.
 
-<a name="WithTracing"></a>
-### func [WithTracing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L473>)
+
+### func [WithTracing](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L473)
 
 ```go
 func WithTracing(sampleRate float64) ConfigOption
@@ -580,8 +580,8 @@ func WithTracing(sampleRate float64) ConfigOption
 
 WithTracing configures tracing.
 
-<a name="EthicsConfig"></a>
-## type [EthicsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L87-L97>)
+
+## type [EthicsConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L87-L97)
 
 EthicsConfig configures ethical AI validation.
 
@@ -599,8 +599,8 @@ type EthicsConfig struct {
 }
 ```
 
-<a name="HealthConfig"></a>
-## type [HealthConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L100-L109>)
+
+## type [HealthConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L100-L109)
 
 HealthConfig configures health monitoring.
 
@@ -617,8 +617,8 @@ type HealthConfig struct {
 }
 ```
 
-<a name="HealthRecord"></a>
-## type [HealthRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L54-L59>)
+
+## type [HealthRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L54-L59)
 
 HealthRecord represents a health check record for testing.
 
@@ -631,8 +631,8 @@ type HealthRecord struct {
 }
 ```
 
-<a name="IntegrationHelper"></a>
-## type [IntegrationHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L11-L13>)
+
+## type [IntegrationHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L11-L13)
 
 IntegrationHelper provides helper functions for integrating monitoring with other packages.
 
@@ -642,8 +642,8 @@ type IntegrationHelper struct {
 }
 ```
 
-<a name="NewIntegrationHelper"></a>
-### func [NewIntegrationHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L16>)
+
+### func [NewIntegrationHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L16)
 
 ```go
 func NewIntegrationHelper(monitor iface.Monitor) *IntegrationHelper
@@ -651,8 +651,8 @@ func NewIntegrationHelper(monitor iface.Monitor) *IntegrationHelper
 
 NewIntegrationHelper creates a new integration helper.
 
-<a name="IntegrationHelper.CheckSafety"></a>
-### func \(\*IntegrationHelper\) [CheckSafety](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L91>)
+
+### func \(\*IntegrationHelper\) [CheckSafety](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L91)
 
 ```go
 func (ih *IntegrationHelper) CheckSafety(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error)
@@ -660,8 +660,8 @@ func (ih *IntegrationHelper) CheckSafety(ctx context.Context, content, contextIn
 
 CheckSafety performs a safety check on content.
 
-<a name="IntegrationHelper.IsSystemHealthy"></a>
-### func \(\*IntegrationHelper\) [IsSystemHealthy](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L106>)
+
+### func \(\*IntegrationHelper\) [IsSystemHealthy](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L106)
 
 ```go
 func (ih *IntegrationHelper) IsSystemHealthy(ctx context.Context) bool
@@ -669,8 +669,8 @@ func (ih *IntegrationHelper) IsSystemHealthy(ctx context.Context) bool
 
 IsSystemHealthy checks if the system is healthy.
 
-<a name="IntegrationHelper.LogEvent"></a>
-### func \(\*IntegrationHelper\) [LogEvent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L73>)
+
+### func \(\*IntegrationHelper\) [LogEvent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L73)
 
 ```go
 func (ih *IntegrationHelper) LogEvent(ctx context.Context, level, message string, fields map[string]any)
@@ -678,8 +678,8 @@ func (ih *IntegrationHelper) LogEvent(ctx context.Context, level, message string
 
 LogEvent logs an event with structured data.
 
-<a name="IntegrationHelper.RecordMetric"></a>
-### func \(\*IntegrationHelper\) [RecordMetric](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L68>)
+
+### func \(\*IntegrationHelper\) [RecordMetric](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L68)
 
 ```go
 func (ih *IntegrationHelper) RecordMetric(ctx context.Context, name, description string, value float64, labels map[string]string)
@@ -687,8 +687,8 @@ func (ih *IntegrationHelper) RecordMetric(ctx context.Context, name, description
 
 RecordMetric records a custom metric.
 
-<a name="IntegrationHelper.ValidateBestPractices"></a>
-### func \(\*IntegrationHelper\) [ValidateBestPractices](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L96>)
+
+### func \(\*IntegrationHelper\) [ValidateBestPractices](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L96)
 
 ```go
 func (ih *IntegrationHelper) ValidateBestPractices(ctx context.Context, data any, component string) []iface.ValidationIssue
@@ -696,8 +696,8 @@ func (ih *IntegrationHelper) ValidateBestPractices(ctx context.Context, data any
 
 ValidateBestPractices validates best practices for data.
 
-<a name="IntegrationHelper.WithHealthCheck"></a>
-### func \(\*IntegrationHelper\) [WithHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L101>)
+
+### func \(\*IntegrationHelper\) [WithHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L101)
 
 ```go
 func (ih *IntegrationHelper) WithHealthCheck(name string, check iface.HealthCheckFunc) error
@@ -705,8 +705,8 @@ func (ih *IntegrationHelper) WithHealthCheck(name string, check iface.HealthChec
 
 WithHealthCheck registers a health check.
 
-<a name="IntegrationHelper.WithMonitoring"></a>
-### func \(\*IntegrationHelper\) [WithMonitoring](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L21>)
+
+### func \(\*IntegrationHelper\) [WithMonitoring](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L21)
 
 ```go
 func (ih *IntegrationHelper) WithMonitoring(operationName string, fn func() error) error
@@ -714,8 +714,8 @@ func (ih *IntegrationHelper) WithMonitoring(operationName string, fn func() erro
 
 WithMonitoring wraps a function with monitoring.
 
-<a name="IntegrationHelper.WithMonitoringAndContext"></a>
-### func \(\*IntegrationHelper\) [WithMonitoringAndContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L45>)
+
+### func \(\*IntegrationHelper\) [WithMonitoringAndContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/integration.go#L45)
 
 ```go
 func (ih *IntegrationHelper) WithMonitoringAndContext(ctx context.Context, operationName string, fn func(context.Context) error) error
@@ -723,8 +723,8 @@ func (ih *IntegrationHelper) WithMonitoringAndContext(ctx context.Context, opera
 
 WithMonitoringAndContext wraps a function with monitoring and context.
 
-<a name="IntegrationTestHelper"></a>
-## type [IntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L470-L472>)
+
+## type [IntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L470-L472)
 
 IntegrationTestHelper provides utilities for integration testing.
 
@@ -734,36 +734,36 @@ type IntegrationTestHelper struct {
 }
 ```
 
-<a name="NewIntegrationTestHelper"></a>
-### func [NewIntegrationTestHelper](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L474>)
+
+### func [NewIntegrationTestHelper](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L474)
 
 ```go
 func NewIntegrationTestHelper() *IntegrationTestHelper
 ```
 
-<a name="IntegrationTestHelper.AddMonitor"></a>
-### func \(\*IntegrationTestHelper\) [AddMonitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L480>)
+
+### func \(\*IntegrationTestHelper\) [AddMonitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L480)
 
 ```go
 func (h *IntegrationTestHelper) AddMonitor(name string, monitor *AdvancedMockMonitor)
 ```
 
-<a name="IntegrationTestHelper.GetMonitor"></a>
-### func \(\*IntegrationTestHelper\) [GetMonitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L484>)
+
+### func \(\*IntegrationTestHelper\) [GetMonitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L484)
 
 ```go
 func (h *IntegrationTestHelper) GetMonitor(name string) *AdvancedMockMonitor
 ```
 
-<a name="IntegrationTestHelper.Reset"></a>
-### func \(\*IntegrationTestHelper\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L488>)
+
+### func \(\*IntegrationTestHelper\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L488)
 
 ```go
 func (h *IntegrationTestHelper) Reset()
 ```
 
-<a name="LogLevel"></a>
-## type [LogLevel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L437>)
+
+## type [LogLevel](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L437)
 
 LogLevel represents the severity of a log entry.
 
@@ -771,7 +771,7 @@ LogLevel represents the severity of a log entry.
 type LogLevel int
 ```
 
-<a name="DEBUG"></a>
+
 
 ```go
 const (
@@ -784,8 +784,8 @@ const (
 )
 ```
 
-<a name="LogLevel.String"></a>
-### func \(LogLevel\) [String](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L449>)
+
+### func \(LogLevel\) [String](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L449)
 
 ```go
 func (l LogLevel) String() string
@@ -793,8 +793,8 @@ func (l LogLevel) String() string
 
 String returns the string representation of the log level.
 
-<a name="LogRecord"></a>
-## type [LogRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L46-L51>)
+
+## type [LogRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L46-L51)
 
 LogRecord represents a log record for testing.
 
@@ -807,8 +807,8 @@ type LogRecord struct {
 }
 ```
 
-<a name="CreateTestLogs"></a>
-### func [CreateTestLogs](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L340>)
+
+### func [CreateTestLogs](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L340)
 
 ```go
 func CreateTestLogs(count int) []LogRecord
@@ -816,8 +816,8 @@ func CreateTestLogs(count int) []LogRecord
 
 CreateTestLogs creates test log records.
 
-<a name="LoggerProvider"></a>
-## type [LoggerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L20-L23>)
+
+## type [LoggerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L20-L23)
 
 LoggerProvider provides logging functionality.
 
@@ -828,8 +828,8 @@ type LoggerProvider interface {
 }
 ```
 
-<a name="LoggingConfig"></a>
-## type [LoggingConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L38-L49>)
+
+## type [LoggingConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L38-L49)
 
 LoggingConfig configures structured logging.
 
@@ -848,8 +848,8 @@ type LoggingConfig struct {
 }
 ```
 
-<a name="MetricsConfig"></a>
-## type [MetricsConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L62-L71>)
+
+## type [MetricsConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L62-L71)
 
 MetricsConfig configures metrics collection.
 
@@ -866,8 +866,8 @@ type MetricsConfig struct {
 }
 ```
 
-<a name="MetricsProvider"></a>
-## type [MetricsProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L32-L35>)
+
+## type [MetricsProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L32-L35)
 
 MetricsProvider provides metrics functionality.
 
@@ -878,8 +878,8 @@ type MetricsProvider interface {
 }
 ```
 
-<a name="MockMonitorOption"></a>
-## type [MockMonitorOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L82>)
+
+## type [MockMonitorOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L82)
 
 MockMonitorOption defines functional options for mock configuration.
 
@@ -887,8 +887,8 @@ MockMonitorOption defines functional options for mock configuration.
 type MockMonitorOption func(*AdvancedMockMonitor)
 ```
 
-<a name="WithMockDelay"></a>
-### func [WithMockDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L93>)
+
+### func [WithMockDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L93)
 
 ```go
 func WithMockDelay(delay time.Duration) MockMonitorOption
@@ -896,8 +896,8 @@ func WithMockDelay(delay time.Duration) MockMonitorOption
 
 WithMockDelay adds artificial delay to mock operations.
 
-<a name="WithMockError"></a>
-### func [WithMockError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L85>)
+
+### func [WithMockError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L85)
 
 ```go
 func WithMockError(shouldError bool, err error) MockMonitorOption
@@ -905,8 +905,8 @@ func WithMockError(shouldError bool, err error) MockMonitorOption
 
 WithMockError configures the mock to return errors.
 
-<a name="Monitor"></a>
-## type [Monitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L66-L82>)
+
+## type [Monitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L66-L82)
 
 Monitor provides the main interface for comprehensive monitoring.
 
@@ -930,8 +930,8 @@ type Monitor interface {
 }
 ```
 
-<a name="NewMonitor"></a>
-### func [NewMonitor](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L104>)
+
+### func [NewMonitor](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L104)
 
 ```go
 func NewMonitor(opts ...Option) (Monitor, error)
@@ -939,8 +939,8 @@ func NewMonitor(opts ...Option) (Monitor, error)
 
 NewMonitor creates a new comprehensive monitoring system.
 
-<a name="NewMonitorWithConfig"></a>
-### func [NewMonitorWithConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L147>)
+
+### func [NewMonitorWithConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L147)
 
 ```go
 func NewMonitorWithConfig(mainConfig *iface.Config, opts ...Option) (Monitor, error)
@@ -948,8 +948,8 @@ func NewMonitorWithConfig(mainConfig *iface.Config, opts ...Option) (Monitor, er
 
 NewMonitorWithConfig creates a new monitoring system integrated with the main config package.
 
-<a name="MonitoringScenarioRunner"></a>
-## type [MonitoringScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L499-L501>)
+
+## type [MonitoringScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L499-L501)
 
 MonitoringScenarioRunner runs common monitoring scenarios.
 
@@ -959,22 +959,22 @@ type MonitoringScenarioRunner struct {
 }
 ```
 
-<a name="NewMonitoringScenarioRunner"></a>
-### func [NewMonitoringScenarioRunner](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L503>)
+
+### func [NewMonitoringScenarioRunner](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L503)
 
 ```go
 func NewMonitoringScenarioRunner(monitor *AdvancedMockMonitor) *MonitoringScenarioRunner
 ```
 
-<a name="MonitoringScenarioRunner.RunFullObservabilityScenario"></a>
-### func \(\*MonitoringScenarioRunner\) [RunFullObservabilityScenario](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L509>)
+
+### func \(\*MonitoringScenarioRunner\) [RunFullObservabilityScenario](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L509)
 
 ```go
 func (r *MonitoringScenarioRunner) RunFullObservabilityScenario(ctx context.Context, operations []string) error
 ```
 
-<a name="OpenTelemetryConfig"></a>
-## type [OpenTelemetryConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L27-L35>)
+
+## type [OpenTelemetryConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L27-L35)
 
 OpenTelemetryConfig configures OpenTelemetry integration.
 
@@ -990,8 +990,8 @@ type OpenTelemetryConfig struct {
 }
 ```
 
-<a name="Option"></a>
-## type [Option](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L85>)
+
+## type [Option](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/monitoring.go#L85)
 
 Option represents functional options for Monitor configuration.
 
@@ -999,8 +999,8 @@ Option represents functional options for Monitor configuration.
 type Option func(*monitorConfig)
 ```
 
-<a name="PackageMetrics"></a>
-## type [PackageMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L13-L75>)
+
+## type [PackageMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L13-L75)
 
 PackageMetrics defines comprehensive metrics for the monitoring package.
 
@@ -1010,8 +1010,8 @@ type PackageMetrics struct {
 }
 ```
 
-<a name="NewPackageMetrics"></a>
-### func [NewPackageMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L78>)
+
+### func [NewPackageMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L78)
 
 ```go
 func NewPackageMetrics(meter metric.Meter) *PackageMetrics
@@ -1019,8 +1019,8 @@ func NewPackageMetrics(meter metric.Meter) *PackageMetrics
 
 NewPackageMetrics creates a new comprehensive package metrics instance.
 
-<a name="PackageMetrics.GetUptime"></a>
-### func \(\*PackageMetrics\) [GetUptime](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L549>)
+
+### func \(\*PackageMetrics\) [GetUptime](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L549)
 
 ```go
 func (pm *PackageMetrics) GetUptime() time.Duration
@@ -1028,8 +1028,8 @@ func (pm *PackageMetrics) GetUptime() time.Duration
 
 GetUptime returns the uptime of the monitoring system.
 
-<a name="PackageMetrics.RecordAPIRequest"></a>
-### func \(\*PackageMetrics\) [RecordAPIRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L449>)
+
+### func \(\*PackageMetrics\) [RecordAPIRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L449)
 
 ```go
 func (pm *PackageMetrics) RecordAPIRequest(ctx context.Context, method, endpoint string)
@@ -1037,8 +1037,8 @@ func (pm *PackageMetrics) RecordAPIRequest(ctx context.Context, method, endpoint
 
 RecordAPIRequest records an API request.
 
-<a name="PackageMetrics.RecordCacheOperation"></a>
-### func \(\*PackageMetrics\) [RecordCacheOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L469>)
+
+### func \(\*PackageMetrics\) [RecordCacheOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L469)
 
 ```go
 func (pm *PackageMetrics) RecordCacheOperation(ctx context.Context, operation, key string, hit bool)
@@ -1046,8 +1046,8 @@ func (pm *PackageMetrics) RecordCacheOperation(ctx context.Context, operation, k
 
 RecordCacheOperation records a cache operation.
 
-<a name="PackageMetrics.RecordCustomCounter"></a>
-### func \(\*PackageMetrics\) [RecordCustomCounter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L527>)
+
+### func \(\*PackageMetrics\) [RecordCustomCounter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L527)
 
 ```go
 func (pm *PackageMetrics) RecordCustomCounter(ctx context.Context, name string, value int64, labels map[string]string)
@@ -1055,8 +1055,8 @@ func (pm *PackageMetrics) RecordCustomCounter(ctx context.Context, name string, 
 
 RecordCustomCounter records a value for a custom counter.
 
-<a name="PackageMetrics.RecordCustomHistogram"></a>
-### func \(\*PackageMetrics\) [RecordCustomHistogram](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L538>)
+
+### func \(\*PackageMetrics\) [RecordCustomHistogram](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L538)
 
 ```go
 func (pm *PackageMetrics) RecordCustomHistogram(ctx context.Context, name string, value float64, labels map[string]string)
@@ -1064,8 +1064,8 @@ func (pm *PackageMetrics) RecordCustomHistogram(ctx context.Context, name string
 
 RecordCustomHistogram records a value for a custom histogram.
 
-<a name="PackageMetrics.RecordDatabaseQuery"></a>
-### func \(\*PackageMetrics\) [RecordDatabaseQuery](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L458>)
+
+### func \(\*PackageMetrics\) [RecordDatabaseQuery](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L458)
 
 ```go
 func (pm *PackageMetrics) RecordDatabaseQuery(ctx context.Context, operation, table string, duration time.Duration)
@@ -1073,8 +1073,8 @@ func (pm *PackageMetrics) RecordDatabaseQuery(ctx context.Context, operation, ta
 
 RecordDatabaseQuery records a database query.
 
-<a name="PackageMetrics.RecordError"></a>
-### func \(\*PackageMetrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L422>)
+
+### func \(\*PackageMetrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L422)
 
 ```go
 func (pm *PackageMetrics) RecordError(ctx context.Context, component string, err error)
@@ -1082,8 +1082,8 @@ func (pm *PackageMetrics) RecordError(ctx context.Context, component string, err
 
 RecordError records a general monitoring error.
 
-<a name="PackageMetrics.RecordEthicsCheck"></a>
-### func \(\*PackageMetrics\) [RecordEthicsCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L390>)
+
+### func \(\*PackageMetrics\) [RecordEthicsCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L390)
 
 ```go
 func (pm *PackageMetrics) RecordEthicsCheck(ctx context.Context, duration time.Duration, success bool)
@@ -1091,8 +1091,8 @@ func (pm *PackageMetrics) RecordEthicsCheck(ctx context.Context, duration time.D
 
 RecordEthicsCheck records an ethics check operation.
 
-<a name="PackageMetrics.RecordExternalAPICall"></a>
-### func \(\*PackageMetrics\) [RecordExternalAPICall](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L486>)
+
+### func \(\*PackageMetrics\) [RecordExternalAPICall](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L486)
 
 ```go
 func (pm *PackageMetrics) RecordExternalAPICall(ctx context.Context, service, endpoint string, duration time.Duration, success bool)
@@ -1100,8 +1100,8 @@ func (pm *PackageMetrics) RecordExternalAPICall(ctx context.Context, service, en
 
 RecordExternalAPICall records an external API call.
 
-<a name="PackageMetrics.RecordHealthCheck"></a>
-### func \(\*PackageMetrics\) [RecordHealthCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L370>)
+
+### func \(\*PackageMetrics\) [RecordHealthCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L370)
 
 ```go
 func (pm *PackageMetrics) RecordHealthCheck(ctx context.Context, component string, duration time.Duration, success bool)
@@ -1109,8 +1109,8 @@ func (pm *PackageMetrics) RecordHealthCheck(ctx context.Context, component strin
 
 RecordHealthCheck records a health check operation.
 
-<a name="PackageMetrics.RecordLoggingOperation"></a>
-### func \(\*PackageMetrics\) [RecordLoggingOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L440>)
+
+### func \(\*PackageMetrics\) [RecordLoggingOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L440)
 
 ```go
 func (pm *PackageMetrics) RecordLoggingOperation(ctx context.Context, duration time.Duration, success bool)
@@ -1118,8 +1118,8 @@ func (pm *PackageMetrics) RecordLoggingOperation(ctx context.Context, duration t
 
 RecordLoggingOperation records a logging operation.
 
-<a name="PackageMetrics.RecordOperationEnd"></a>
-### func \(\*PackageMetrics\) [RecordOperationEnd](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L361>)
+
+### func \(\*PackageMetrics\) [RecordOperationEnd](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L361)
 
 ```go
 func (pm *PackageMetrics) RecordOperationEnd(ctx context.Context, operation string, duration time.Duration)
@@ -1127,8 +1127,8 @@ func (pm *PackageMetrics) RecordOperationEnd(ctx context.Context, operation stri
 
 RecordOperationEnd records the end of an operation.
 
-<a name="PackageMetrics.RecordOperationStart"></a>
-### func \(\*PackageMetrics\) [RecordOperationStart](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L355>)
+
+### func \(\*PackageMetrics\) [RecordOperationStart](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L355)
 
 ```go
 func (pm *PackageMetrics) RecordOperationStart(ctx context.Context, operation string)
@@ -1136,8 +1136,8 @@ func (pm *PackageMetrics) RecordOperationStart(ctx context.Context, operation st
 
 RecordOperationStart records the start of an operation.
 
-<a name="PackageMetrics.RecordRequest"></a>
-### func \(\*PackageMetrics\) [RecordRequest](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L349>)
+
+### func \(\*PackageMetrics\) [RecordRequest](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L349)
 
 ```go
 func (pm *PackageMetrics) RecordRequest(ctx context.Context, operation string)
@@ -1145,8 +1145,8 @@ func (pm *PackageMetrics) RecordRequest(ctx context.Context, operation string)
 
 RecordRequest records a monitoring request.
 
-<a name="PackageMetrics.RecordSafetyCheck"></a>
-### func \(\*PackageMetrics\) [RecordSafetyCheck](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L381>)
+
+### func \(\*PackageMetrics\) [RecordSafetyCheck](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L381)
 
 ```go
 func (pm *PackageMetrics) RecordSafetyCheck(ctx context.Context, duration time.Duration, success bool)
@@ -1154,8 +1154,8 @@ func (pm *PackageMetrics) RecordSafetyCheck(ctx context.Context, duration time.D
 
 RecordSafetyCheck records a safety check operation.
 
-<a name="PackageMetrics.RecordTracingOperation"></a>
-### func \(\*PackageMetrics\) [RecordTracingOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L431>)
+
+### func \(\*PackageMetrics\) [RecordTracingOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L431)
 
 ```go
 func (pm *PackageMetrics) RecordTracingOperation(ctx context.Context, duration time.Duration, success bool)
@@ -1163,8 +1163,8 @@ func (pm *PackageMetrics) RecordTracingOperation(ctx context.Context, duration t
 
 RecordTracingOperation records a tracing operation.
 
-<a name="PackageMetrics.RecordValidationOperation"></a>
-### func \(\*PackageMetrics\) [RecordValidationOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L498>)
+
+### func \(\*PackageMetrics\) [RecordValidationOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L498)
 
 ```go
 func (pm *PackageMetrics) RecordValidationOperation(ctx context.Context, validatorType string, duration time.Duration, success bool)
@@ -1172,8 +1172,8 @@ func (pm *PackageMetrics) RecordValidationOperation(ctx context.Context, validat
 
 RecordValidationOperation records a validation operation.
 
-<a name="PackageMetrics.RegisterCustomCounter"></a>
-### func \(\*PackageMetrics\) [RegisterCustomCounter](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L507>)
+
+### func \(\*PackageMetrics\) [RegisterCustomCounter](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L507)
 
 ```go
 func (pm *PackageMetrics) RegisterCustomCounter(name, description string) error
@@ -1181,8 +1181,8 @@ func (pm *PackageMetrics) RegisterCustomCounter(name, description string) error
 
 RegisterCustomCounter registers a custom counter metric.
 
-<a name="PackageMetrics.RegisterCustomHistogram"></a>
-### func \(\*PackageMetrics\) [RegisterCustomHistogram](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L517>)
+
+### func \(\*PackageMetrics\) [RegisterCustomHistogram](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L517)
 
 ```go
 func (pm *PackageMetrics) RegisterCustomHistogram(name, description string) error
@@ -1190,8 +1190,8 @@ func (pm *PackageMetrics) RegisterCustomHistogram(name, description string) erro
 
 RegisterCustomHistogram registers a custom histogram metric.
 
-<a name="PackageMetrics.UpdateComponentHealth"></a>
-### func \(\*PackageMetrics\) [UpdateComponentHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L399>)
+
+### func \(\*PackageMetrics\) [UpdateComponentHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/metrics.go#L399)
 
 ```go
 func (pm *PackageMetrics) UpdateComponentHealth(ctx context.Context, component string, healthy bool)
@@ -1199,8 +1199,8 @@ func (pm *PackageMetrics) UpdateComponentHealth(ctx context.Context, component s
 
 UpdateComponentHealth updates the health status of a component.
 
-<a name="Provider"></a>
-## type [Provider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L13-L17>)
+
+## type [Provider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L13-L17)
 
 Provider represents a monitoring backend provider.
 
@@ -1212,8 +1212,8 @@ type Provider interface {
 }
 ```
 
-<a name="ProviderRegistry"></a>
-## type [ProviderRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L38-L44>)
+
+## type [ProviderRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L38-L44)
 
 ProviderRegistry manages monitoring providers.
 
@@ -1223,8 +1223,8 @@ type ProviderRegistry struct {
 }
 ```
 
-<a name="GetGlobalRegistry"></a>
-### func [GetGlobalRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L249>)
+
+### func [GetGlobalRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L249)
 
 ```go
 func GetGlobalRegistry() *ProviderRegistry
@@ -1232,8 +1232,8 @@ func GetGlobalRegistry() *ProviderRegistry
 
 GetGlobalRegistry returns the global provider registry.
 
-<a name="NewProviderRegistry"></a>
-### func [NewProviderRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L47>)
+
+### func [NewProviderRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L47)
 
 ```go
 func NewProviderRegistry() *ProviderRegistry
@@ -1241,8 +1241,8 @@ func NewProviderRegistry() *ProviderRegistry
 
 NewProviderRegistry creates a new provider registry.
 
-<a name="ProviderRegistry.CreateLogger"></a>
-### func \(\*ProviderRegistry\) [CreateLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L138>)
+
+### func \(\*ProviderRegistry\) [CreateLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L138)
 
 ```go
 func (pr *ProviderRegistry) CreateLogger(name string, config map[string]any) (iface.Logger, error)
@@ -1250,8 +1250,8 @@ func (pr *ProviderRegistry) CreateLogger(name string, config map[string]any) (if
 
 CreateLogger creates a logger using the current provider.
 
-<a name="ProviderRegistry.CreateMetricsCollector"></a>
-### func \(\*ProviderRegistry\) [CreateMetricsCollector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L174>)
+
+### func \(\*ProviderRegistry\) [CreateMetricsCollector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L174)
 
 ```go
 func (pr *ProviderRegistry) CreateMetricsCollector(config map[string]any) (iface.MetricsCollector, error)
@@ -1259,8 +1259,8 @@ func (pr *ProviderRegistry) CreateMetricsCollector(config map[string]any) (iface
 
 CreateMetricsCollector creates a metrics collector using the current provider.
 
-<a name="ProviderRegistry.CreateTracer"></a>
-### func \(\*ProviderRegistry\) [CreateTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L156>)
+
+### func \(\*ProviderRegistry\) [CreateTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L156)
 
 ```go
 func (pr *ProviderRegistry) CreateTracer(serviceName string, config map[string]any) (iface.Tracer, error)
@@ -1268,8 +1268,8 @@ func (pr *ProviderRegistry) CreateTracer(serviceName string, config map[string]a
 
 CreateTracer creates a tracer using the current provider.
 
-<a name="ProviderRegistry.GetAvailableProviders"></a>
-### func \(\*ProviderRegistry\) [GetAvailableProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L192>)
+
+### func \(\*ProviderRegistry\) [GetAvailableProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L192)
 
 ```go
 func (pr *ProviderRegistry) GetAvailableProviders() map[string][]string
@@ -1277,8 +1277,8 @@ func (pr *ProviderRegistry) GetAvailableProviders() map[string][]string
 
 GetAvailableProviders returns all available providers.
 
-<a name="ProviderRegistry.RegisterLoggerProvider"></a>
-### func \(\*ProviderRegistry\) [RegisterLoggerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L57>)
+
+### func \(\*ProviderRegistry\) [RegisterLoggerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L57)
 
 ```go
 func (pr *ProviderRegistry) RegisterLoggerProvider(provider LoggerProvider) error
@@ -1286,8 +1286,8 @@ func (pr *ProviderRegistry) RegisterLoggerProvider(provider LoggerProvider) erro
 
 RegisterLoggerProvider registers a logger provider.
 
-<a name="ProviderRegistry.RegisterMetricsProvider"></a>
-### func \(\*ProviderRegistry\) [RegisterMetricsProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L85>)
+
+### func \(\*ProviderRegistry\) [RegisterMetricsProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L85)
 
 ```go
 func (pr *ProviderRegistry) RegisterMetricsProvider(provider MetricsProvider) error
@@ -1295,8 +1295,8 @@ func (pr *ProviderRegistry) RegisterMetricsProvider(provider MetricsProvider) er
 
 RegisterMetricsProvider registers a metrics provider.
 
-<a name="ProviderRegistry.RegisterTracerProvider"></a>
-### func \(\*ProviderRegistry\) [RegisterTracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L71>)
+
+### func \(\*ProviderRegistry\) [RegisterTracerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L71)
 
 ```go
 func (pr *ProviderRegistry) RegisterTracerProvider(provider TracerProvider) error
@@ -1304,8 +1304,8 @@ func (pr *ProviderRegistry) RegisterTracerProvider(provider TracerProvider) erro
 
 RegisterTracerProvider registers a tracer provider.
 
-<a name="ProviderRegistry.SetCurrentLogger"></a>
-### func \(\*ProviderRegistry\) [SetCurrentLogger](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L99>)
+
+### func \(\*ProviderRegistry\) [SetCurrentLogger](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L99)
 
 ```go
 func (pr *ProviderRegistry) SetCurrentLogger(name string) error
@@ -1313,8 +1313,8 @@ func (pr *ProviderRegistry) SetCurrentLogger(name string) error
 
 SetCurrentLogger sets the current logger provider.
 
-<a name="ProviderRegistry.SetCurrentMetrics"></a>
-### func \(\*ProviderRegistry\) [SetCurrentMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L125>)
+
+### func \(\*ProviderRegistry\) [SetCurrentMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L125)
 
 ```go
 func (pr *ProviderRegistry) SetCurrentMetrics(name string) error
@@ -1322,8 +1322,8 @@ func (pr *ProviderRegistry) SetCurrentMetrics(name string) error
 
 SetCurrentMetrics sets the current metrics provider.
 
-<a name="ProviderRegistry.SetCurrentTracer"></a>
-### func \(\*ProviderRegistry\) [SetCurrentTracer](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L112>)
+
+### func \(\*ProviderRegistry\) [SetCurrentTracer](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L112)
 
 ```go
 func (pr *ProviderRegistry) SetCurrentTracer(name string) error
@@ -1331,8 +1331,8 @@ func (pr *ProviderRegistry) SetCurrentTracer(name string) error
 
 SetCurrentTracer sets the current tracer provider.
 
-<a name="ProviderRegistry.Shutdown"></a>
-### func \(\*ProviderRegistry\) [Shutdown](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L211>)
+
+### func \(\*ProviderRegistry\) [Shutdown](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L211)
 
 ```go
 func (pr *ProviderRegistry) Shutdown() error
@@ -1340,8 +1340,8 @@ func (pr *ProviderRegistry) Shutdown() error
 
 Shutdown shuts down all registered providers.
 
-<a name="SafetyConfig"></a>
-## type [SafetyConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L74-L84>)
+
+## type [SafetyConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L74-L84)
 
 SafetyConfig configures safety validation.
 
@@ -1359,8 +1359,8 @@ type SafetyConfig struct {
 }
 ```
 
-<a name="ServerIntegration"></a>
-## type [ServerIntegration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L14-L16>)
+
+## type [ServerIntegration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L14-L16)
 
 ServerIntegration provides HTTP handlers for safety and ethics monitoring.
 
@@ -1370,8 +1370,8 @@ type ServerIntegration struct {
 }
 ```
 
-<a name="NewServerIntegration"></a>
-### func [NewServerIntegration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L19>)
+
+### func [NewServerIntegration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L19)
 
 ```go
 func NewServerIntegration(monitor iface.Monitor) *ServerIntegration
@@ -1379,8 +1379,8 @@ func NewServerIntegration(monitor iface.Monitor) *ServerIntegration
 
 NewServerIntegration creates a new server integration.
 
-<a name="ServerIntegration.BestPracticesCheckHandler"></a>
-### func \(\*ServerIntegration\) [BestPracticesCheckHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L141>)
+
+### func \(\*ServerIntegration\) [BestPracticesCheckHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L141)
 
 ```go
 func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r *http.Request)
@@ -1388,8 +1388,8 @@ func (si *ServerIntegration) BestPracticesCheckHandler(w http.ResponseWriter, r 
 
 BestPracticesCheckHandler provides a best practices validation endpoint.
 
-<a name="ServerIntegration.EthicsCheckHandler"></a>
-### func \(\*ServerIntegration\) [EthicsCheckHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L100>)
+
+### func \(\*ServerIntegration\) [EthicsCheckHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L100)
 
 ```go
 func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.Request)
@@ -1397,8 +1397,8 @@ func (si *ServerIntegration) EthicsCheckHandler(w http.ResponseWriter, r *http.R
 
 EthicsCheckHandler provides an ethical validation endpoint.
 
-<a name="ServerIntegration.HealthCheckHandler"></a>
-### func \(\*ServerIntegration\) [HealthCheckHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L26>)
+
+### func \(\*ServerIntegration\) [HealthCheckHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L26)
 
 ```go
 func (si *ServerIntegration) HealthCheckHandler(w http.ResponseWriter, r *http.Request)
@@ -1406,8 +1406,8 @@ func (si *ServerIntegration) HealthCheckHandler(w http.ResponseWriter, r *http.R
 
 HealthCheckHandler provides a health check endpoint.
 
-<a name="ServerIntegration.LogsHandler"></a>
-### func \(\*ServerIntegration\) [LogsHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L221>)
+
+### func \(\*ServerIntegration\) [LogsHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L221)
 
 ```go
 func (si *ServerIntegration) LogsHandler(w http.ResponseWriter, r *http.Request)
@@ -1415,8 +1415,8 @@ func (si *ServerIntegration) LogsHandler(w http.ResponseWriter, r *http.Request)
 
 LogsHandler provides log search endpoint.
 
-<a name="ServerIntegration.MetricsHandler"></a>
-### func \(\*ServerIntegration\) [MetricsHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L170>)
+
+### func \(\*ServerIntegration\) [MetricsHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L170)
 
 ```go
 func (si *ServerIntegration) MetricsHandler(w http.ResponseWriter, r *http.Request)
@@ -1424,8 +1424,8 @@ func (si *ServerIntegration) MetricsHandler(w http.ResponseWriter, r *http.Reque
 
 MetricsHandler provides metrics endpoint.
 
-<a name="ServerIntegration.MonitoringMiddleware"></a>
-### func \(\*ServerIntegration\) [MonitoringMiddleware](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L284>)
+
+### func \(\*ServerIntegration\) [MonitoringMiddleware](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L284)
 
 ```go
 func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handler
@@ -1433,8 +1433,8 @@ func (si *ServerIntegration) MonitoringMiddleware(next http.Handler) http.Handle
 
 Middleware for automatic monitoring of HTTP requests.
 
-<a name="ServerIntegration.RegisterRoutes"></a>
-### func \(\*ServerIntegration\) [RegisterRoutes](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L244>)
+
+### func \(\*ServerIntegration\) [RegisterRoutes](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L244)
 
 ```go
 func (si *ServerIntegration) RegisterRoutes(mux *http.ServeMux, pathPrefix string)
@@ -1442,8 +1442,8 @@ func (si *ServerIntegration) RegisterRoutes(mux *http.ServeMux, pathPrefix strin
 
 RegisterRoutes registers all monitoring routes with an HTTP mux.
 
-<a name="ServerIntegration.SafetyCheckHandler"></a>
-### func \(\*ServerIntegration\) [SafetyCheckHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L59>)
+
+### func \(\*ServerIntegration\) [SafetyCheckHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L59)
 
 ```go
 func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.Request)
@@ -1451,8 +1451,8 @@ func (si *ServerIntegration) SafetyCheckHandler(w http.ResponseWriter, r *http.R
 
 SafetyCheckHandler provides a safety validation endpoint.
 
-<a name="ServerIntegration.TracesHandler"></a>
-### func \(\*ServerIntegration\) [TracesHandler](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L192>)
+
+### func \(\*ServerIntegration\) [TracesHandler](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/server_integration.go#L192)
 
 ```go
 func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Request)
@@ -1460,8 +1460,8 @@ func (si *ServerIntegration) TracesHandler(w http.ResponseWriter, r *http.Reques
 
 TracesHandler provides trace information endpoint.
 
-<a name="TraceRecord"></a>
-## type [TraceRecord](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L36-L43>)
+
+## type [TraceRecord](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L36-L43)
 
 TraceRecord represents a trace record for testing.
 
@@ -1476,8 +1476,8 @@ type TraceRecord struct {
 }
 ```
 
-<a name="CreateTestTraces"></a>
-### func [CreateTestTraces](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L322>)
+
+### func [CreateTestTraces](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/test_utils.go#L322)
 
 ```go
 func CreateTestTraces(count int) []TraceRecord
@@ -1485,8 +1485,8 @@ func CreateTestTraces(count int) []TraceRecord
 
 CreateTestTraces creates test trace records.
 
-<a name="TracerProvider"></a>
-## type [TracerProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L26-L29>)
+
+## type [TracerProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/providers.go#L26-L29)
 
 TracerProvider provides tracing functionality.
 
@@ -1497,8 +1497,8 @@ type TracerProvider interface {
 }
 ```
 
-<a name="TracingConfig"></a>
-## type [TracingConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L52-L59>)
+
+## type [TracingConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/config.go#L52-L59)
 
 TracingConfig configures distributed tracing.
 
@@ -1513,4 +1513,4 @@ type TracingConfig struct {
 }
 ```
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

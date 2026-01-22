@@ -16,28 +16,28 @@ Package mock provides a mock implementation of the llms.ChatModel interface for 
 
 ## Index
 
-- [Constants](<#constants>)
-- [func NewMockProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](<#NewMockProviderFactory>)
-- [type MockProvider](<#MockProvider>)
-  - [func NewMockProvider\(config \*llms.Config\) \(\*MockProvider, error\)](<#NewMockProvider>)
-  - [func \(m \*MockProvider\) AddToolResult\(toolName, result string\)](<#MockProvider.AddToolResult>)
-  - [func \(m \*MockProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#MockProvider.Batch>)
-  - [func \(m \*MockProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#MockProvider.BindTools>)
-  - [func \(m \*MockProvider\) CheckHealth\(\) map\[string\]any](<#MockProvider.CheckHealth>)
-  - [func \(m \*MockProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#MockProvider.Generate>)
-  - [func \(m \*MockProvider\) GetCallCount\(\) int](<#MockProvider.GetCallCount>)
-  - [func \(m \*MockProvider\) GetModelName\(\) string](<#MockProvider.GetModelName>)
-  - [func \(m \*MockProvider\) GetProviderName\(\) string](<#MockProvider.GetProviderName>)
-  - [func \(m \*MockProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#MockProvider.Invoke>)
-  - [func \(m \*MockProvider\) Reset\(\)](<#MockProvider.Reset>)
-  - [func \(m \*MockProvider\) SetResponses\(responses \[\]string\)](<#MockProvider.SetResponses>)
-  - [func \(m \*MockProvider\) SetShouldError\(shouldError bool\)](<#MockProvider.SetShouldError>)
-  - [func \(m \*MockProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#MockProvider.Stream>)
-  - [func \(m \*MockProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](<#MockProvider.StreamChat>)
+- [Constants](#constants>)
+- [func NewMockProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](#NewMockProviderFactory>)
+- [type MockProvider](#MockProvider>)
+  - [func NewMockProvider\(config \*llms.Config\) \(\*MockProvider, error\)](#NewMockProvider>)
+  - [func \(m \*MockProvider\) AddToolResult\(toolName, result string\)](#MockProvider.AddToolResult>)
+  - [func \(m \*MockProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#MockProvider.Batch>)
+  - [func \(m \*MockProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](#MockProvider.BindTools>)
+  - [func \(m \*MockProvider\) CheckHealth\(\) map\[string\]any](#MockProvider.CheckHealth>)
+  - [func \(m \*MockProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](#MockProvider.Generate>)
+  - [func \(m \*MockProvider\) GetCallCount\(\) int](#MockProvider.GetCallCount>)
+  - [func \(m \*MockProvider\) GetModelName\(\) string](#MockProvider.GetModelName>)
+  - [func \(m \*MockProvider\) GetProviderName\(\) string](#MockProvider.GetProviderName>)
+  - [func \(m \*MockProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#MockProvider.Invoke>)
+  - [func \(m \*MockProvider\) Reset\(\)](#MockProvider.Reset>)
+  - [func \(m \*MockProvider\) SetResponses\(responses \[\]string\)](#MockProvider.SetResponses>)
+  - [func \(m \*MockProvider\) SetShouldError\(shouldError bool\)](#MockProvider.SetShouldError>)
+  - [func \(m \*MockProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#MockProvider.Stream>)
+  - [func \(m \*MockProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](#MockProvider.StreamChat>)
 
 ## Constants
 
-<a name="ProviderName"></a>Provider constants.
+Provider constants.
 
 ```go
 const (
@@ -46,8 +46,8 @@ const (
 )
 ```
 
-<a name="NewMockProviderFactory"></a>
-## func [NewMockProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L354>)
+
+## func [NewMockProviderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L354)
 
 ```go
 func NewMockProviderFactory() func(*llms.Config) (iface.ChatModel, error)
@@ -55,8 +55,8 @@ func NewMockProviderFactory() func(*llms.Config) (iface.ChatModel, error)
 
 Factory function for creating mock providers.
 
-<a name="MockProvider"></a>
-## type [MockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L26-L36>)
+
+## type [MockProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L26-L36)
 
 MockProvider implements the ChatModel interface for testing and development.
 
@@ -66,8 +66,8 @@ type MockProvider struct {
 }
 ```
 
-<a name="NewMockProvider"></a>
-### func [NewMockProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L39>)
+
+### func [NewMockProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L39)
 
 ```go
 func NewMockProvider(config *llms.Config) (*MockProvider, error)
@@ -75,8 +75,8 @@ func NewMockProvider(config *llms.Config) (*MockProvider, error)
 
 NewMockProvider creates a new mock provider instance.
 
-<a name="MockProvider.AddToolResult"></a>
-### func \(\*MockProvider\) [AddToolResult](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L332>)
+
+### func \(\*MockProvider\) [AddToolResult](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L332)
 
 ```go
 func (m *MockProvider) AddToolResult(toolName, result string)
@@ -84,8 +84,8 @@ func (m *MockProvider) AddToolResult(toolName, result string)
 
 AddToolResult adds a mock result for a specific tool.
 
-<a name="MockProvider.Batch"></a>
-### func \(\*MockProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L263>)
+
+### func \(\*MockProvider\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L263)
 
 ```go
 func (m *MockProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -93,8 +93,8 @@ func (m *MockProvider) Batch(ctx context.Context, inputs []any, options ...core.
 
 Batch implements the Runnable interface.
 
-<a name="MockProvider.BindTools"></a>
-### func \(\*MockProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L230>)
+
+### func \(\*MockProvider\) [BindTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L230)
 
 ```go
 func (m *MockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
@@ -102,8 +102,8 @@ func (m *MockProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
 
 BindTools implements the ChatModel interface.
 
-<a name="MockProvider.CheckHealth"></a>
-### func \(\*MockProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L340>)
+
+### func \(\*MockProvider\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L340)
 
 ```go
 func (m *MockProvider) CheckHealth() map[string]any
@@ -111,8 +111,8 @@ func (m *MockProvider) CheckHealth() map[string]any
 
 CheckHealth implements the HealthChecker interface.
 
-<a name="MockProvider.Generate"></a>
-### func \(\*MockProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L85>)
+
+### func \(\*MockProvider\) [Generate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L85)
 
 ```go
 func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
@@ -120,8 +120,8 @@ func (m *MockProvider) Generate(ctx context.Context, messages []schema.Message, 
 
 Generate implements the ChatModel interface.
 
-<a name="MockProvider.GetCallCount"></a>
-### func \(\*MockProvider\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L311>)
+
+### func \(\*MockProvider\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L311)
 
 ```go
 func (m *MockProvider) GetCallCount() int
@@ -129,8 +129,8 @@ func (m *MockProvider) GetCallCount() int
 
 GetCallCount returns the number of calls made to this provider.
 
-<a name="MockProvider.GetModelName"></a>
-### func \(\*MockProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L245>)
+
+### func \(\*MockProvider\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L245)
 
 ```go
 func (m *MockProvider) GetModelName() string
@@ -138,15 +138,15 @@ func (m *MockProvider) GetModelName() string
 
 GetModelName implements the ChatModel interface.
 
-<a name="MockProvider.GetProviderName"></a>
-### func \(\*MockProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L249>)
+
+### func \(\*MockProvider\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L249)
 
 ```go
 func (m *MockProvider) GetProviderName() string
 ```
 
-<a name="MockProvider.Invoke"></a>
-### func \(\*MockProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L254>)
+
+### func \(\*MockProvider\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L254)
 
 ```go
 func (m *MockProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -154,8 +154,8 @@ func (m *MockProvider) Invoke(ctx context.Context, input any, options ...core.Op
 
 Invoke implements the Runnable interface.
 
-<a name="MockProvider.Reset"></a>
-### func \(\*MockProvider\) [Reset](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L326>)
+
+### func \(\*MockProvider\) [Reset](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L326)
 
 ```go
 func (m *MockProvider) Reset()
@@ -163,8 +163,8 @@ func (m *MockProvider) Reset()
 
 Reset resets the provider state.
 
-<a name="MockProvider.SetResponses"></a>
-### func \(\*MockProvider\) [SetResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L316>)
+
+### func \(\*MockProvider\) [SetResponses](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L316)
 
 ```go
 func (m *MockProvider) SetResponses(responses []string)
@@ -172,8 +172,8 @@ func (m *MockProvider) SetResponses(responses []string)
 
 SetResponses sets the mock responses.
 
-<a name="MockProvider.SetShouldError"></a>
-### func \(\*MockProvider\) [SetShouldError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L321>)
+
+### func \(\*MockProvider\) [SetShouldError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L321)
 
 ```go
 func (m *MockProvider) SetShouldError(shouldError bool)
@@ -181,8 +181,8 @@ func (m *MockProvider) SetShouldError(shouldError bool)
 
 SetShouldError sets whether the provider should return errors.
 
-<a name="MockProvider.Stream"></a>
-### func \(\*MockProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L283>)
+
+### func \(\*MockProvider\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L283)
 
 ```go
 func (m *MockProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -190,8 +190,8 @@ func (m *MockProvider) Stream(ctx context.Context, input any, options ...core.Op
 
 Stream implements the Runnable interface.
 
-<a name="MockProvider.StreamChat"></a>
-### func \(\*MockProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L137>)
+
+### func \(\*MockProvider\) [StreamChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/mock/provider.go#L137)
 
 ```go
 func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
@@ -199,4 +199,4 @@ func (m *MockProvider) StreamChat(ctx context.Context, messages []schema.Message
 
 StreamChat implements the ChatModel interface.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

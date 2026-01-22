@@ -16,23 +16,23 @@ Package openai provides an implementation of the llms.ChatModel interface using 
 
 ## Index
 
-- [Constants](<#constants>)
-- [func NewOpenAIProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](<#NewOpenAIProviderFactory>)
-- [type OpenAIProvider](<#OpenAIProvider>)
-  - [func NewOpenAIProvider\(config \*llms.Config\) \(\*OpenAIProvider, error\)](<#NewOpenAIProvider>)
-  - [func \(o \*OpenAIProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#OpenAIProvider.Batch>)
-  - [func \(o \*OpenAIProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#OpenAIProvider.BindTools>)
-  - [func \(o \*OpenAIProvider\) CheckHealth\(\) map\[string\]any](<#OpenAIProvider.CheckHealth>)
-  - [func \(o \*OpenAIProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#OpenAIProvider.Generate>)
-  - [func \(o \*OpenAIProvider\) GetModelName\(\) string](<#OpenAIProvider.GetModelName>)
-  - [func \(o \*OpenAIProvider\) GetProviderName\(\) string](<#OpenAIProvider.GetProviderName>)
-  - [func \(o \*OpenAIProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#OpenAIProvider.Invoke>)
-  - [func \(o \*OpenAIProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#OpenAIProvider.Stream>)
-  - [func \(o \*OpenAIProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](<#OpenAIProvider.StreamChat>)
+- [Constants](#constants>)
+- [func NewOpenAIProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](#NewOpenAIProviderFactory>)
+- [type OpenAIProvider](#OpenAIProvider>)
+  - [func NewOpenAIProvider\(config \*llms.Config\) \(\*OpenAIProvider, error\)](#NewOpenAIProvider>)
+  - [func \(o \*OpenAIProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#OpenAIProvider.Batch>)
+  - [func \(o \*OpenAIProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](#OpenAIProvider.BindTools>)
+  - [func \(o \*OpenAIProvider\) CheckHealth\(\) map\[string\]any](#OpenAIProvider.CheckHealth>)
+  - [func \(o \*OpenAIProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](#OpenAIProvider.Generate>)
+  - [func \(o \*OpenAIProvider\) GetModelName\(\) string](#OpenAIProvider.GetModelName>)
+  - [func \(o \*OpenAIProvider\) GetProviderName\(\) string](#OpenAIProvider.GetProviderName>)
+  - [func \(o \*OpenAIProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#OpenAIProvider.Invoke>)
+  - [func \(o \*OpenAIProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#OpenAIProvider.Stream>)
+  - [func \(o \*OpenAIProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](#OpenAIProvider.StreamChat>)
 
 ## Constants
 
-<a name="ProviderName"></a>Provider constants.
+Provider constants.
 
 ```go
 const (
@@ -48,8 +48,8 @@ const (
 )
 ```
 
-<a name="NewOpenAIProviderFactory"></a>
-## func [NewOpenAIProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L593>)
+
+## func [NewOpenAIProviderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L593)
 
 ```go
 func NewOpenAIProviderFactory() func(*llms.Config) (iface.ChatModel, error)
@@ -57,8 +57,8 @@ func NewOpenAIProviderFactory() func(*llms.Config) (iface.ChatModel, error)
 
 Factory function for creating OpenAI providers.
 
-<a name="OpenAIProvider"></a>
-## type [OpenAIProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L37-L45>)
+
+## type [OpenAIProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L37-L45)
 
 OpenAIProvider implements the ChatModel interface for OpenAI GPT models.
 
@@ -68,8 +68,8 @@ type OpenAIProvider struct {
 }
 ```
 
-<a name="NewOpenAIProvider"></a>
-### func [NewOpenAIProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L48>)
+
+### func [NewOpenAIProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L48)
 
 ```go
 func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error)
@@ -77,8 +77,8 @@ func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error)
 
 NewOpenAIProvider creates a new OpenAI provider instance.
 
-<a name="OpenAIProvider.Batch"></a>
-### func \(\*OpenAIProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L176>)
+
+### func \(\*OpenAIProvider\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L176)
 
 ```go
 func (o *OpenAIProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -86,8 +86,8 @@ func (o *OpenAIProvider) Batch(ctx context.Context, inputs []any, options ...cor
 
 Batch implements the Runnable interface.
 
-<a name="OpenAIProvider.BindTools"></a>
-### func \(\*OpenAIProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L150>)
+
+### func \(\*OpenAIProvider\) [BindTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L150)
 
 ```go
 func (o *OpenAIProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
@@ -95,8 +95,8 @@ func (o *OpenAIProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
 
 BindTools implements the ChatModel interface.
 
-<a name="OpenAIProvider.CheckHealth"></a>
-### func \(\*OpenAIProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L581>)
+
+### func \(\*OpenAIProvider\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L581)
 
 ```go
 func (o *OpenAIProvider) CheckHealth() map[string]any
@@ -104,8 +104,8 @@ func (o *OpenAIProvider) CheckHealth() map[string]any
 
 CheckHealth implements the HealthChecker interface.
 
-<a name="OpenAIProvider.Generate"></a>
-### func \(\*OpenAIProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L90>)
+
+### func \(\*OpenAIProvider\) [Generate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L90)
 
 ```go
 func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
@@ -113,8 +113,8 @@ func (o *OpenAIProvider) Generate(ctx context.Context, messages []schema.Message
 
 Generate implements the ChatModel interface.
 
-<a name="OpenAIProvider.GetModelName"></a>
-### func \(\*OpenAIProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L158>)
+
+### func \(\*OpenAIProvider\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L158)
 
 ```go
 func (o *OpenAIProvider) GetModelName() string
@@ -122,15 +122,15 @@ func (o *OpenAIProvider) GetModelName() string
 
 GetModelName implements the ChatModel interface.
 
-<a name="OpenAIProvider.GetProviderName"></a>
-### func \(\*OpenAIProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L162>)
+
+### func \(\*OpenAIProvider\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L162)
 
 ```go
 func (o *OpenAIProvider) GetProviderName() string
 ```
 
-<a name="OpenAIProvider.Invoke"></a>
-### func \(\*OpenAIProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L167>)
+
+### func \(\*OpenAIProvider\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L167)
 
 ```go
 func (o *OpenAIProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -138,8 +138,8 @@ func (o *OpenAIProvider) Invoke(ctx context.Context, input any, options ...core.
 
 Invoke implements the Runnable interface.
 
-<a name="OpenAIProvider.Stream"></a>
-### func \(\*OpenAIProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L216>)
+
+### func \(\*OpenAIProvider\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L216)
 
 ```go
 func (o *OpenAIProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -147,8 +147,8 @@ func (o *OpenAIProvider) Stream(ctx context.Context, input any, options ...core.
 
 Stream implements the Runnable interface.
 
-<a name="OpenAIProvider.StreamChat"></a>
-### func \(\*OpenAIProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L132>)
+
+### func \(\*OpenAIProvider\) [StreamChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/openai/provider.go#L132)
 
 ```go
 func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
@@ -156,4 +156,4 @@ func (o *OpenAIProvider) StreamChat(ctx context.Context, messages []schema.Messa
 
 StreamChat implements the ChatModel interface.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

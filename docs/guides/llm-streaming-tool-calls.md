@@ -155,7 +155,7 @@ Now let's send a message that might trigger a tool call:
 Streaming response:
 ```
 
-**Why this works:** `StreamChat` initiates a streaming request to the LLM. It returns a channel (`<-chan iface.AIMessageChunk`) that will receive chunks as they arrive. This is non-blocking - chunks arrive asynchronously.
+**Why this works:** `StreamChat` initiates a streaming request to the LLM. It returns a channel (`\<-chan iface.AIMessageChunk`) that will receive chunks as they arrive. This is non-blocking - chunks arrive asynchronously.
 
 ### Step 3: Process streaming chunks
 

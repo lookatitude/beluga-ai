@@ -18,61 +18,61 @@ Package turndetection provides interfaces and implementations for Turn Detection
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AssertTurnDetectorInterface\(t \*testing.T, detector iface.TurnDetector\)](<#AssertTurnDetectorInterface>)
-- [func InitMetrics\(meter metric.Meter\)](<#InitMetrics>)
-- [func IsRetryableError\(err error\) bool](<#IsRetryableError>)
-- [func NewProvider\(ctx context.Context, providerName string, config \*Config, opts ...ConfigOption\) \(iface.TurnDetector, error\)](<#NewProvider>)
-- [type AdvancedMockTurnDetector](<#AdvancedMockTurnDetector>)
-  - [func NewAdvancedMockTurnDetector\(detectorName string, opts ...MockOption\) \*AdvancedMockTurnDetector](<#NewAdvancedMockTurnDetector>)
-  - [func \(m \*AdvancedMockTurnDetector\) DetectTurn\(ctx context.Context, audio \[\]byte\) \(bool, error\)](<#AdvancedMockTurnDetector.DetectTurn>)
-  - [func \(m \*AdvancedMockTurnDetector\) DetectTurnWithSilence\(ctx context.Context, audio \[\]byte, silenceDuration time.Duration\) \(bool, error\)](<#AdvancedMockTurnDetector.DetectTurnWithSilence>)
-  - [func \(m \*AdvancedMockTurnDetector\) GetCallCount\(\) int](<#AdvancedMockTurnDetector.GetCallCount>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type ConfigOption](<#ConfigOption>)
-  - [func WithMaxTurnLength\(length int\) ConfigOption](<#WithMaxTurnLength>)
-  - [func WithMinSilenceDuration\(duration time.Duration\) ConfigOption](<#WithMinSilenceDuration>)
-  - [func WithMinTurnLength\(length int\) ConfigOption](<#WithMinTurnLength>)
-  - [func WithModelPath\(path string\) ConfigOption](<#WithModelPath>)
-  - [func WithProvider\(provider string\) ConfigOption](<#WithProvider>)
-  - [func WithSentenceEndMarkers\(markers string\) ConfigOption](<#WithSentenceEndMarkers>)
-  - [func WithThreshold\(threshold float64\) ConfigOption](<#WithThreshold>)
-- [type Metrics](<#Metrics>)
-  - [func GetMetrics\(\) \*Metrics](<#GetMetrics>)
-  - [func NewMetrics\(meter metric.Meter\) \*Metrics](<#NewMetrics>)
-  - [func \(m \*Metrics\) IncrementDetections\(ctx context.Context, provider string\)](<#Metrics.IncrementDetections>)
-  - [func \(m \*Metrics\) RecordDetection\(ctx context.Context, provider string, duration time.Duration, turnDetected bool\)](<#Metrics.RecordDetection>)
-  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](<#Metrics.RecordError>)
-- [type MetricsRecorder](<#MetricsRecorder>)
-- [type MockOption](<#MockOption>)
-  - [func WithDetectorName\(name string\) MockOption](<#WithDetectorName>)
-  - [func WithError\(err error\) MockOption](<#WithError>)
-  - [func WithNetworkDelay\(enabled bool\) MockOption](<#WithNetworkDelay>)
-  - [func WithProcessingDelay\(delay time.Duration\) MockOption](<#WithProcessingDelay>)
-  - [func WithTurnResults\(results ...bool\) MockOption](<#WithTurnResults>)
-- [type NoOpMetrics](<#NoOpMetrics>)
-  - [func NewNoOpMetrics\(\) \*NoOpMetrics](<#NewNoOpMetrics>)
-  - [func \(n \*NoOpMetrics\) IncrementDetections\(ctx context.Context, provider string\)](<#NoOpMetrics.IncrementDetections>)
-  - [func \(n \*NoOpMetrics\) RecordDetection\(ctx context.Context, provider string, duration time.Duration, turnDetected bool\)](<#NoOpMetrics.RecordDetection>)
-  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](<#NoOpMetrics.RecordError>)
-- [type Registry](<#Registry>)
-  - [func GetRegistry\(\) \*Registry](<#GetRegistry>)
-  - [func \(r \*Registry\) GetProvider\(name string, config \*Config\) \(iface.TurnDetector, error\)](<#Registry.GetProvider>)
-  - [func \(r \*Registry\) IsRegistered\(name string\) bool](<#Registry.IsRegistered>)
-  - [func \(r \*Registry\) ListProviders\(\) \[\]string](<#Registry.ListProviders>)
-  - [func \(r \*Registry\) Register\(name string, factory func\(\*Config\) \(iface.TurnDetector, error\)\)](<#Registry.Register>)
-- [type TurnDetectionError](<#TurnDetectionError>)
-  - [func NewTurnDetectionError\(op, code string, err error\) \*TurnDetectionError](<#NewTurnDetectionError>)
-  - [func NewTurnDetectionErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*TurnDetectionError](<#NewTurnDetectionErrorWithDetails>)
-  - [func NewTurnDetectionErrorWithMessage\(op, code, message string, err error\) \*TurnDetectionError](<#NewTurnDetectionErrorWithMessage>)
-  - [func \(e \*TurnDetectionError\) Error\(\) string](<#TurnDetectionError.Error>)
-  - [func \(e \*TurnDetectionError\) Unwrap\(\) error](<#TurnDetectionError.Unwrap>)
+- [Constants](#constants>)
+- [func AssertTurnDetectorInterface\(t \*testing.T, detector iface.TurnDetector\)](#AssertTurnDetectorInterface>)
+- [func InitMetrics\(meter metric.Meter\)](#InitMetrics>)
+- [func IsRetryableError\(err error\) bool](#IsRetryableError>)
+- [func NewProvider\(ctx context.Context, providerName string, config \*Config, opts ...ConfigOption\) \(iface.TurnDetector, error\)](#NewProvider>)
+- [type AdvancedMockTurnDetector](#AdvancedMockTurnDetector>)
+  - [func NewAdvancedMockTurnDetector\(detectorName string, opts ...MockOption\) \*AdvancedMockTurnDetector](#NewAdvancedMockTurnDetector>)
+  - [func \(m \*AdvancedMockTurnDetector\) DetectTurn\(ctx context.Context, audio \[\]byte\) \(bool, error\)](#AdvancedMockTurnDetector.DetectTurn>)
+  - [func \(m \*AdvancedMockTurnDetector\) DetectTurnWithSilence\(ctx context.Context, audio \[\]byte, silenceDuration time.Duration\) \(bool, error\)](#AdvancedMockTurnDetector.DetectTurnWithSilence>)
+  - [func \(m \*AdvancedMockTurnDetector\) GetCallCount\(\) int](#AdvancedMockTurnDetector.GetCallCount>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) \*Config](#DefaultConfig>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type ConfigOption](#ConfigOption>)
+  - [func WithMaxTurnLength\(length int\) ConfigOption](#WithMaxTurnLength>)
+  - [func WithMinSilenceDuration\(duration time.Duration\) ConfigOption](#WithMinSilenceDuration>)
+  - [func WithMinTurnLength\(length int\) ConfigOption](#WithMinTurnLength>)
+  - [func WithModelPath\(path string\) ConfigOption](#WithModelPath>)
+  - [func WithProvider\(provider string\) ConfigOption](#WithProvider>)
+  - [func WithSentenceEndMarkers\(markers string\) ConfigOption](#WithSentenceEndMarkers>)
+  - [func WithThreshold\(threshold float64\) ConfigOption](#WithThreshold>)
+- [type Metrics](#Metrics>)
+  - [func GetMetrics\(\) \*Metrics](#GetMetrics>)
+  - [func NewMetrics\(meter metric.Meter\) \*Metrics](#NewMetrics>)
+  - [func \(m \*Metrics\) IncrementDetections\(ctx context.Context, provider string\)](#Metrics.IncrementDetections>)
+  - [func \(m \*Metrics\) RecordDetection\(ctx context.Context, provider string, duration time.Duration, turnDetected bool\)](#Metrics.RecordDetection>)
+  - [func \(m \*Metrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](#Metrics.RecordError>)
+- [type MetricsRecorder](#MetricsRecorder>)
+- [type MockOption](#MockOption>)
+  - [func WithDetectorName\(name string\) MockOption](#WithDetectorName>)
+  - [func WithError\(err error\) MockOption](#WithError>)
+  - [func WithNetworkDelay\(enabled bool\) MockOption](#WithNetworkDelay>)
+  - [func WithProcessingDelay\(delay time.Duration\) MockOption](#WithProcessingDelay>)
+  - [func WithTurnResults\(results ...bool\) MockOption](#WithTurnResults>)
+- [type NoOpMetrics](#NoOpMetrics>)
+  - [func NewNoOpMetrics\(\) \*NoOpMetrics](#NewNoOpMetrics>)
+  - [func \(n \*NoOpMetrics\) IncrementDetections\(ctx context.Context, provider string\)](#NoOpMetrics.IncrementDetections>)
+  - [func \(n \*NoOpMetrics\) RecordDetection\(ctx context.Context, provider string, duration time.Duration, turnDetected bool\)](#NoOpMetrics.RecordDetection>)
+  - [func \(n \*NoOpMetrics\) RecordError\(ctx context.Context, provider, errorCode string, duration time.Duration\)](#NoOpMetrics.RecordError>)
+- [type Registry](#Registry>)
+  - [func GetRegistry\(\) \*Registry](#GetRegistry>)
+  - [func \(r \*Registry\) GetProvider\(name string, config \*Config\) \(iface.TurnDetector, error\)](#Registry.GetProvider>)
+  - [func \(r \*Registry\) IsRegistered\(name string\) bool](#Registry.IsRegistered>)
+  - [func \(r \*Registry\) ListProviders\(\) \[\]string](#Registry.ListProviders>)
+  - [func \(r \*Registry\) Register\(name string, factory func\(\*Config\) \(iface.TurnDetector, error\)\)](#Registry.Register>)
+- [type TurnDetectionError](#TurnDetectionError>)
+  - [func NewTurnDetectionError\(op, code string, err error\) \*TurnDetectionError](#NewTurnDetectionError>)
+  - [func NewTurnDetectionErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*TurnDetectionError](#NewTurnDetectionErrorWithDetails>)
+  - [func NewTurnDetectionErrorWithMessage\(op, code, message string, err error\) \*TurnDetectionError](#NewTurnDetectionErrorWithMessage>)
+  - [func \(e \*TurnDetectionError\) Error\(\) string](#TurnDetectionError.Error>)
+  - [func \(e \*TurnDetectionError\) Unwrap\(\) error](#TurnDetectionError.Unwrap>)
 
 ## Constants
 
-<a name="ErrCodeInvalidConfig"></a>Error codes for Turn Detection operations.
+Error codes for Turn Detection operations.
 
 ```go
 const (
@@ -92,8 +92,8 @@ const (
 )
 ```
 
-<a name="AssertTurnDetectorInterface"></a>
-## func [AssertTurnDetectorInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L162>)
+
+## func [AssertTurnDetectorInterface](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L162)
 
 ```go
 func AssertTurnDetectorInterface(t *testing.T, detector iface.TurnDetector)
@@ -101,8 +101,8 @@ func AssertTurnDetectorInterface(t *testing.T, detector iface.TurnDetector)
 
 AssertTurnDetectorInterface ensures that a type implements the TurnDetector interface.
 
-<a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L22>)
+
+## func [InitMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L22)
 
 ```go
 func InitMetrics(meter metric.Meter)
@@ -110,8 +110,8 @@ func InitMetrics(meter metric.Meter)
 
 InitMetrics initializes the global metrics instance.
 
-<a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L82>)
+
+## func [IsRetryableError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L82)
 
 ```go
 func IsRetryableError(err error) bool
@@ -119,8 +119,8 @@ func IsRetryableError(err error) bool
 
 IsRetryableError checks if an error is retryable.
 
-<a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L35>)
+
+## func [NewProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L35)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.TurnDetector, error)
@@ -128,8 +128,8 @@ func NewProvider(ctx context.Context, providerName string, config *Config, opts 
 
 NewProvider creates a new Turn Detection provider instance based on the configuration. It uses the global registry to find and instantiate the appropriate provider.
 
-<a name="AdvancedMockTurnDetector"></a>
-## type [AdvancedMockTurnDetector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L16-L27>)
+
+## type [AdvancedMockTurnDetector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L16-L27)
 
 AdvancedMockTurnDetector provides a comprehensive mock implementation for testing.
 
@@ -140,8 +140,8 @@ type AdvancedMockTurnDetector struct {
 }
 ```
 
-<a name="NewAdvancedMockTurnDetector"></a>
-### func [NewAdvancedMockTurnDetector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L30>)
+
+### func [NewAdvancedMockTurnDetector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L30)
 
 ```go
 func NewAdvancedMockTurnDetector(detectorName string, opts ...MockOption) *AdvancedMockTurnDetector
@@ -149,8 +149,8 @@ func NewAdvancedMockTurnDetector(detectorName string, opts ...MockOption) *Advan
 
 NewAdvancedMockTurnDetector creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockTurnDetector.DetectTurn"></a>
-### func \(\*AdvancedMockTurnDetector\) [DetectTurn](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L85>)
+
+### func \(\*AdvancedMockTurnDetector\) [DetectTurn](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L85)
 
 ```go
 func (m *AdvancedMockTurnDetector) DetectTurn(ctx context.Context, audio []byte) (bool, error)
@@ -158,8 +158,8 @@ func (m *AdvancedMockTurnDetector) DetectTurn(ctx context.Context, audio []byte)
 
 DetectTurn implements the TurnDetector interface.
 
-<a name="AdvancedMockTurnDetector.DetectTurnWithSilence"></a>
-### func \(\*AdvancedMockTurnDetector\) [DetectTurnWithSilence](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L134>)
+
+### func \(\*AdvancedMockTurnDetector\) [DetectTurnWithSilence](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L134)
 
 ```go
 func (m *AdvancedMockTurnDetector) DetectTurnWithSilence(ctx context.Context, audio []byte, silenceDuration time.Duration) (bool, error)
@@ -167,8 +167,8 @@ func (m *AdvancedMockTurnDetector) DetectTurnWithSilence(ctx context.Context, au
 
 DetectTurnWithSilence implements the TurnDetector interface.
 
-<a name="AdvancedMockTurnDetector.GetCallCount"></a>
-### func \(\*AdvancedMockTurnDetector\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L155>)
+
+### func \(\*AdvancedMockTurnDetector\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L155)
 
 ```go
 func (m *AdvancedMockTurnDetector) GetCallCount() int
@@ -176,8 +176,8 @@ func (m *AdvancedMockTurnDetector) GetCallCount() int
 
 GetCallCount returns the number of times DetectTurn has been called.
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L12-L26>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L12-L26)
 
 Config represents the configuration for Turn Detection providers. It includes common settings that apply to all Turn Detection providers.
 
@@ -199,8 +199,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L90>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L90)
 
 ```go
 func DefaultConfig() *Config
@@ -208,8 +208,8 @@ func DefaultConfig() *Config
 
 DefaultConfig returns a default configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L81>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L81)
 
 ```go
 func (c *Config) Validate() error
@@ -217,8 +217,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L29>)
+
+## type [ConfigOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L29)
 
 ConfigOption is a functional option for configuring Turn Detection instances.
 
@@ -226,8 +226,8 @@ ConfigOption is a functional option for configuring Turn Detection instances.
 type ConfigOption func(*Config)
 ```
 
-<a name="WithMaxTurnLength"></a>
-### func [WithMaxTurnLength](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L53>)
+
+### func [WithMaxTurnLength](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L53)
 
 ```go
 func WithMaxTurnLength(length int) ConfigOption
@@ -235,8 +235,8 @@ func WithMaxTurnLength(length int) ConfigOption
 
 WithMaxTurnLength sets the maximum turn length.
 
-<a name="WithMinSilenceDuration"></a>
-### func [WithMinSilenceDuration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L39>)
+
+### func [WithMinSilenceDuration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L39)
 
 ```go
 func WithMinSilenceDuration(duration time.Duration) ConfigOption
@@ -244,8 +244,8 @@ func WithMinSilenceDuration(duration time.Duration) ConfigOption
 
 WithMinSilenceDuration sets the minimum silence duration.
 
-<a name="WithMinTurnLength"></a>
-### func [WithMinTurnLength](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L46>)
+
+### func [WithMinTurnLength](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L46)
 
 ```go
 func WithMinTurnLength(length int) ConfigOption
@@ -253,8 +253,8 @@ func WithMinTurnLength(length int) ConfigOption
 
 WithMinTurnLength sets the minimum turn length.
 
-<a name="WithModelPath"></a>
-### func [WithModelPath](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L74>)
+
+### func [WithModelPath](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L74)
 
 ```go
 func WithModelPath(path string) ConfigOption
@@ -262,8 +262,8 @@ func WithModelPath(path string) ConfigOption
 
 WithModelPath sets the model path.
 
-<a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L32>)
+
+### func [WithProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L32)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -271,8 +271,8 @@ func WithProvider(provider string) ConfigOption
 
 WithProvider sets the Turn Detection provider.
 
-<a name="WithSentenceEndMarkers"></a>
-### func [WithSentenceEndMarkers](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L60>)
+
+### func [WithSentenceEndMarkers](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L60)
 
 ```go
 func WithSentenceEndMarkers(markers string) ConfigOption
@@ -280,8 +280,8 @@ func WithSentenceEndMarkers(markers string) ConfigOption
 
 WithSentenceEndMarkers sets the sentence end markers.
 
-<a name="WithThreshold"></a>
-### func [WithThreshold](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L67>)
+
+### func [WithThreshold](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/config.go#L67)
 
 ```go
 func WithThreshold(threshold float64) ConfigOption
@@ -289,8 +289,8 @@ func WithThreshold(threshold float64) ConfigOption
 
 WithThreshold sets the turn detection threshold.
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L38-L44>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L38-L44)
 
 Metrics contains all the metrics for Turn Detection operations.
 
@@ -300,8 +300,8 @@ type Metrics struct {
 }
 ```
 
-<a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L29>)
+
+### func [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/turndetection.go#L29)
 
 ```go
 func GetMetrics() *Metrics
@@ -309,8 +309,8 @@ func GetMetrics() *Metrics
 
 GetMetrics returns the global metrics instance.
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L47>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L47)
 
 ```go
 func NewMetrics(meter metric.Meter) *Metrics
@@ -318,8 +318,8 @@ func NewMetrics(meter metric.Meter) *Metrics
 
 NewMetrics creates a new Metrics instance.
 
-<a name="Metrics.IncrementDetections"></a>
-### func \(\*Metrics\) [IncrementDetections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L85>)
+
+### func \(\*Metrics\) [IncrementDetections](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L85)
 
 ```go
 func (m *Metrics) IncrementDetections(ctx context.Context, provider string)
@@ -327,8 +327,8 @@ func (m *Metrics) IncrementDetections(ctx context.Context, provider string)
 
 IncrementDetections increments the detections counter.
 
-<a name="Metrics.RecordDetection"></a>
-### func \(\*Metrics\) [RecordDetection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L60>)
+
+### func \(\*Metrics\) [RecordDetection](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L60)
 
 ```go
 func (m *Metrics) RecordDetection(ctx context.Context, provider string, duration time.Duration, turnDetected bool)
@@ -336,8 +336,8 @@ func (m *Metrics) RecordDetection(ctx context.Context, provider string, duration
 
 RecordDetection records a detection operation.
 
-<a name="Metrics.RecordError"></a>
-### func \(\*Metrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L75>)
+
+### func \(\*Metrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L75)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -345,8 +345,8 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 
 RecordError records an error.
 
-<a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L12-L16>)
+
+## type [MetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L12-L16)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -358,8 +358,8 @@ type MetricsRecorder interface {
 }
 ```
 
-<a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L46>)
+
+## type [MockOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L46)
 
 MockOption configures the behavior of AdvancedMockTurnDetector.
 
@@ -367,8 +367,8 @@ MockOption configures the behavior of AdvancedMockTurnDetector.
 type MockOption func(*AdvancedMockTurnDetector)
 ```
 
-<a name="WithDetectorName"></a>
-### func [WithDetectorName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L49>)
+
+### func [WithDetectorName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L49)
 
 ```go
 func WithDetectorName(name string) MockOption
@@ -376,8 +376,8 @@ func WithDetectorName(name string) MockOption
 
 WithDetectorName sets the detector name.
 
-<a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L63>)
+
+### func [WithError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L63)
 
 ```go
 func WithError(err error) MockOption
@@ -385,8 +385,8 @@ func WithError(err error) MockOption
 
 WithError configures the mock to return an error.
 
-<a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L78>)
+
+### func [WithNetworkDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L78)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -394,8 +394,8 @@ func WithNetworkDelay(enabled bool) MockOption
 
 WithNetworkDelay enables network delay simulation.
 
-<a name="WithProcessingDelay"></a>
-### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L71>)
+
+### func [WithProcessingDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L71)
 
 ```go
 func WithProcessingDelay(delay time.Duration) MockOption
@@ -403,8 +403,8 @@ func WithProcessingDelay(delay time.Duration) MockOption
 
 WithProcessingDelay sets the delay for processing.
 
-<a name="WithTurnResults"></a>
-### func [WithTurnResults](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L56>)
+
+### func [WithTurnResults](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/test_utils.go#L56)
 
 ```go
 func WithTurnResults(results ...bool) MockOption
@@ -412,8 +412,8 @@ func WithTurnResults(results ...bool) MockOption
 
 WithTurnResults sets the turn detection results to return.
 
-<a name="NoOpMetrics"></a>
-## type [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L19>)
+
+## type [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L19)
 
 NoOpMetrics provides a no\-operation implementation for when metrics are disabled.
 
@@ -421,8 +421,8 @@ NoOpMetrics provides a no\-operation implementation for when metrics are disable
 type NoOpMetrics struct{}
 ```
 
-<a name="NewNoOpMetrics"></a>
-### func [NewNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L22>)
+
+### func [NewNoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L22)
 
 ```go
 func NewNoOpMetrics() *NoOpMetrics
@@ -430,8 +430,8 @@ func NewNoOpMetrics() *NoOpMetrics
 
 NewNoOpMetrics creates a new no\-operation metrics recorder.
 
-<a name="NoOpMetrics.IncrementDetections"></a>
-### func \(\*NoOpMetrics\) [IncrementDetections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L35>)
+
+### func \(\*NoOpMetrics\) [IncrementDetections](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L35)
 
 ```go
 func (n *NoOpMetrics) IncrementDetections(ctx context.Context, provider string)
@@ -439,8 +439,8 @@ func (n *NoOpMetrics) IncrementDetections(ctx context.Context, provider string)
 
 IncrementDetections is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordDetection"></a>
-### func \(\*NoOpMetrics\) [RecordDetection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L27>)
+
+### func \(\*NoOpMetrics\) [RecordDetection](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L27)
 
 ```go
 func (n *NoOpMetrics) RecordDetection(ctx context.Context, provider string, duration time.Duration, turnDetected bool)
@@ -448,8 +448,8 @@ func (n *NoOpMetrics) RecordDetection(ctx context.Context, provider string, dura
 
 RecordDetection is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordError"></a>
-### func \(\*NoOpMetrics\) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L31>)
+
+### func \(\*NoOpMetrics\) [RecordError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/metrics.go#L31)
 
 ```go
 func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -457,8 +457,8 @@ func (n *NoOpMetrics) RecordError(ctx context.Context, provider, errorCode strin
 
 RecordError is a no\-op implementation.
 
-<a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L17-L20>)
+
+## type [Registry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L17-L20)
 
 Registry manages Turn Detection provider registration and retrieval.
 
@@ -468,8 +468,8 @@ type Registry struct {
 }
 ```
 
-<a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L23>)
+
+### func [GetRegistry](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L23)
 
 ```go
 func GetRegistry() *Registry
@@ -477,8 +477,8 @@ func GetRegistry() *Registry
 
 GetRegistry returns the global registry instance.
 
-<a name="Registry.GetProvider"></a>
-### func \(\*Registry\) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L40>)
+
+### func \(\*Registry\) [GetProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L40)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.TurnDetector, error)
@@ -486,8 +486,8 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.TurnDetector,
 
 GetProvider returns a provider instance for the given name.
 
-<a name="Registry.IsRegistered"></a>
-### func \(\*Registry\) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L66>)
+
+### func \(\*Registry\) [IsRegistered](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L66)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -495,8 +495,8 @@ func (r *Registry) IsRegistered(name string) bool
 
 IsRegistered checks if a provider is registered.
 
-<a name="Registry.ListProviders"></a>
-### func \(\*Registry\) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L54>)
+
+### func \(\*Registry\) [ListProviders](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L54)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -504,8 +504,8 @@ func (r *Registry) ListProviders() []string
 
 ListProviders returns a list of all registered provider names.
 
-<a name="Registry.Register"></a>
-### func \(\*Registry\) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L33>)
+
+### func \(\*Registry\) [Register](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/registry.go#L33)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.TurnDetector, error))
@@ -513,8 +513,8 @@ func (r *Registry) Register(name string, factory func(*Config) (iface.TurnDetect
 
 Register registers a provider factory function.
 
-<a name="TurnDetectionError"></a>
-## type [TurnDetectionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L27-L33>)
+
+## type [TurnDetectionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L27-L33)
 
 TurnDetectionError represents an error that occurred during Turn Detection operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -528,8 +528,8 @@ type TurnDetectionError struct {
 }
 ```
 
-<a name="NewTurnDetectionError"></a>
-### func [NewTurnDetectionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L52>)
+
+### func [NewTurnDetectionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L52)
 
 ```go
 func NewTurnDetectionError(op, code string, err error) *TurnDetectionError
@@ -537,8 +537,8 @@ func NewTurnDetectionError(op, code string, err error) *TurnDetectionError
 
 NewTurnDetectionError creates a new TurnDetectionError.
 
-<a name="NewTurnDetectionErrorWithDetails"></a>
-### func [NewTurnDetectionErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L71>)
+
+### func [NewTurnDetectionErrorWithDetails](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L71)
 
 ```go
 func NewTurnDetectionErrorWithDetails(op, code, message string, err error, details map[string]any) *TurnDetectionError
@@ -546,8 +546,8 @@ func NewTurnDetectionErrorWithDetails(op, code, message string, err error, detai
 
 NewTurnDetectionErrorWithDetails creates a new TurnDetectionError with additional details.
 
-<a name="NewTurnDetectionErrorWithMessage"></a>
-### func [NewTurnDetectionErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L61>)
+
+### func [NewTurnDetectionErrorWithMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L61)
 
 ```go
 func NewTurnDetectionErrorWithMessage(op, code, message string, err error) *TurnDetectionError
@@ -555,8 +555,8 @@ func NewTurnDetectionErrorWithMessage(op, code, message string, err error) *Turn
 
 NewTurnDetectionErrorWithMessage creates a new TurnDetectionError with a custom message.
 
-<a name="TurnDetectionError.Error"></a>
-### func \(\*TurnDetectionError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L36>)
+
+### func \(\*TurnDetectionError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L36)
 
 ```go
 func (e *TurnDetectionError) Error() string
@@ -564,8 +564,8 @@ func (e *TurnDetectionError) Error() string
 
 Error implements the error interface.
 
-<a name="TurnDetectionError.Unwrap"></a>
-### func \(\*TurnDetectionError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L47>)
+
+### func \(\*TurnDetectionError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/turndetection/errors.go#L47)
 
 ```go
 func (e *TurnDetectionError) Unwrap() error
@@ -573,4 +573,4 @@ func (e *TurnDetectionError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

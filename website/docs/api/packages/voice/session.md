@@ -18,114 +18,114 @@ Package session provides advanced test utilities and comprehensive mocks for tes
 
 ## Index
 
-- [Constants](<#constants>)
-- [func AssertAgentState\(t \*testing.T, instance \*AdvancedMockAgentInstance, expectedState AgentState\)](<#AssertAgentState>)
-- [func AssertSessionInterface\(t \*testing.T, s iface.VoiceSession\)](<#AssertSessionInterface>)
-- [func AssertStreamingActive\(t \*testing.T, instance \*AdvancedMockAgentInstance, expectedActive bool\)](<#AssertStreamingActive>)
-- [func CreateTestSessionWithAgent\(sessionID string, agentInstance \*AdvancedMockAgentInstance\) \(\*AdvancedMockSession, \*MockStreamingAgentIntegration\)](<#CreateTestSessionWithAgent>)
-- [func InitMetrics\(meter metric.Meter\)](<#InitMetrics>)
-- [func IsRetryableError\(err error\) bool](<#IsRetryableError>)
-- [func NewVoiceSession\(ctx context.Context, opts ...VoiceOption\) \(iface.VoiceSession, error\)](<#NewVoiceSession>)
-- [type AdvancedMockAgentInstance](<#AdvancedMockAgentInstance>)
-  - [func NewAdvancedMockAgentInstance\(agent, config any, options ...MockAgentInstanceOption\) \*AdvancedMockAgentInstance](<#NewAdvancedMockAgentInstance>)
-  - [func \(a \*AdvancedMockAgentInstance\) GetContext\(\) \*AgentContext](<#AdvancedMockAgentInstance.GetContext>)
-  - [func \(a \*AdvancedMockAgentInstance\) GetInterruptionCount\(\) int](<#AdvancedMockAgentInstance.GetInterruptionCount>)
-  - [func \(a \*AdvancedMockAgentInstance\) GetState\(\) AgentState](<#AdvancedMockAgentInstance.GetState>)
-  - [func \(a \*AdvancedMockAgentInstance\) IncrementInterruptionCount\(\)](<#AdvancedMockAgentInstance.IncrementInterruptionCount>)
-  - [func \(a \*AdvancedMockAgentInstance\) IsStreamingActive\(\) bool](<#AdvancedMockAgentInstance.IsStreamingActive>)
-  - [func \(a \*AdvancedMockAgentInstance\) SetState\(state AgentState\)](<#AdvancedMockAgentInstance.SetState>)
-  - [func \(a \*AdvancedMockAgentInstance\) SetStreamingActive\(active bool\)](<#AdvancedMockAgentInstance.SetStreamingActive>)
-- [type AdvancedMockSession](<#AdvancedMockSession>)
-  - [func NewAdvancedMockSession\(sessionID string, opts ...MockOption\) \*AdvancedMockSession](<#NewAdvancedMockSession>)
-  - [func \(m \*AdvancedMockSession\) GetCallCount\(\) int](<#AdvancedMockSession.GetCallCount>)
-  - [func \(m \*AdvancedMockSession\) GetSessionID\(\) string](<#AdvancedMockSession.GetSessionID>)
-  - [func \(m \*AdvancedMockSession\) GetState\(\) iface.SessionState](<#AdvancedMockSession.GetState>)
-  - [func \(m \*AdvancedMockSession\) IsActive\(\) bool](<#AdvancedMockSession.IsActive>)
-  - [func \(m \*AdvancedMockSession\) OnStateChanged\(callback func\(iface.SessionState\)\)](<#AdvancedMockSession.OnStateChanged>)
-  - [func \(m \*AdvancedMockSession\) ProcessAudio\(ctx context.Context, audio \[\]byte\) error](<#AdvancedMockSession.ProcessAudio>)
-  - [func \(m \*AdvancedMockSession\) Say\(ctx context.Context, text string\) \(iface.SayHandle, error\)](<#AdvancedMockSession.Say>)
-  - [func \(m \*AdvancedMockSession\) SayWithOptions\(ctx context.Context, text string, options iface.SayOptions\) \(iface.SayHandle, error\)](<#AdvancedMockSession.SayWithOptions>)
-  - [func \(m \*AdvancedMockSession\) Start\(ctx context.Context\) error](<#AdvancedMockSession.Start>)
-  - [func \(m \*AdvancedMockSession\) Stop\(ctx context.Context\) error](<#AdvancedMockSession.Stop>)
-- [type AgentContext](<#AgentContext>)
-  - [func CreateTestAgentContext\(\) \*AgentContext](<#CreateTestAgentContext>)
-- [type AgentState](<#AgentState>)
-- [type AgentStreamChunk](<#AgentStreamChunk>)
-- [type Config](<#Config>)
-  - [func DefaultConfig\(\) \*Config](<#DefaultConfig>)
-  - [func \(c \*Config\) Validate\(\) error](<#Config.Validate>)
-- [type ConfigOption](<#ConfigOption>)
-  - [func WithAutoStart\(autoStart bool\) ConfigOption](<#WithAutoStart>)
-  - [func WithEnableKeepAlive\(enable bool\) ConfigOption](<#WithEnableKeepAlive>)
-  - [func WithKeepAliveInterval\(interval time.Duration\) ConfigOption](<#WithKeepAliveInterval>)
-  - [func WithMaxRetries\(maxRetries int\) ConfigOption](<#WithMaxRetries>)
-  - [func WithSessionID\(id string\) ConfigOption](<#WithSessionID>)
-  - [func WithTimeout\(timeout time.Duration\) ConfigOption](<#WithTimeout>)
-- [type Metrics](<#Metrics>)
-  - [func GetMetrics\(\) \*Metrics](<#GetMetrics>)
-  - [func NewMetrics\(meter metric.Meter\) \*Metrics](<#NewMetrics>)
-  - [func \(m \*Metrics\) DecrementActiveSessions\(ctx context.Context\)](<#Metrics.DecrementActiveSessions>)
-  - [func \(m \*Metrics\) IncrementActiveSessions\(ctx context.Context\)](<#Metrics.IncrementActiveSessions>)
-  - [func \(m \*Metrics\) RecordAgentOperation\(ctx context.Context, sessionID string, latency time.Duration\)](<#Metrics.RecordAgentOperation>)
-  - [func \(m \*Metrics\) RecordAgentStreamingChunk\(ctx context.Context, sessionID string, duration time.Duration\)](<#Metrics.RecordAgentStreamingChunk>)
-  - [func \(m \*Metrics\) RecordAgentToolExecution\(ctx context.Context, sessionID, toolName string, duration time.Duration\)](<#Metrics.RecordAgentToolExecution>)
-  - [func \(m \*Metrics\) RecordSessionError\(ctx context.Context, sessionID, errorCode string, duration time.Duration\)](<#Metrics.RecordSessionError>)
-  - [func \(m \*Metrics\) RecordSessionStart\(ctx context.Context, sessionID string, duration time.Duration\)](<#Metrics.RecordSessionStart>)
-  - [func \(m \*Metrics\) RecordSessionStop\(ctx context.Context, sessionID string, duration time.Duration\)](<#Metrics.RecordSessionStop>)
-- [type MetricsRecorder](<#MetricsRecorder>)
-- [type MockAgentInstanceOption](<#MockAgentInstanceOption>)
-  - [func WithAgentContext\(ctx \*AgentContext\) MockAgentInstanceOption](<#WithAgentContext>)
-  - [func WithAgentState\(state AgentState\) MockAgentInstanceOption](<#WithAgentState>)
-  - [func WithStreamingChunks\(chunks \[\]AgentStreamChunk\) MockAgentInstanceOption](<#WithStreamingChunks>)
-- [type MockOption](<#MockOption>)
-  - [func WithActive\(active bool\) MockOption](<#WithActive>)
-  - [func WithError\(err error\) MockOption](<#WithError>)
-  - [func WithMockSessionID\(id string\) MockOption](<#WithMockSessionID>)
-  - [func WithNetworkDelay\(enabled bool\) MockOption](<#WithNetworkDelay>)
-  - [func WithProcessingDelay\(delay time.Duration\) MockOption](<#WithProcessingDelay>)
-  - [func WithStarted\(started bool\) MockOption](<#WithStarted>)
-- [type MockStreamingAgentIntegration](<#MockStreamingAgentIntegration>)
-  - [func NewMockStreamingAgentIntegration\(agentInstance \*AdvancedMockAgentInstance\) \*MockStreamingAgentIntegration](<#NewMockStreamingAgentIntegration>)
-  - [func \(m \*MockStreamingAgentIntegration\) GetAgentInstance\(\) \*AdvancedMockAgentInstance](<#MockStreamingAgentIntegration.GetAgentInstance>)
-  - [func \(m \*MockStreamingAgentIntegration\) IsStarted\(\) bool](<#MockStreamingAgentIntegration.IsStarted>)
-  - [func \(m \*MockStreamingAgentIntegration\) Start\(ctx context.Context\) error](<#MockStreamingAgentIntegration.Start>)
-  - [func \(m \*MockStreamingAgentIntegration\) Stop\(ctx context.Context\) error](<#MockStreamingAgentIntegration.Stop>)
-- [type NoOpMetrics](<#NoOpMetrics>)
-  - [func NewNoOpMetrics\(\) \*NoOpMetrics](<#NewNoOpMetrics>)
-  - [func \(n \*NoOpMetrics\) DecrementActiveSessions\(ctx context.Context\)](<#NoOpMetrics.DecrementActiveSessions>)
-  - [func \(n \*NoOpMetrics\) IncrementActiveSessions\(ctx context.Context\)](<#NoOpMetrics.IncrementActiveSessions>)
-  - [func \(n \*NoOpMetrics\) RecordSessionError\(ctx context.Context, sessionID, errorCode string, duration time.Duration\)](<#NoOpMetrics.RecordSessionError>)
-  - [func \(n \*NoOpMetrics\) RecordSessionStart\(ctx context.Context, sessionID string, duration time.Duration\)](<#NoOpMetrics.RecordSessionStart>)
-  - [func \(n \*NoOpMetrics\) RecordSessionStop\(ctx context.Context, sessionID string, duration time.Duration\)](<#NoOpMetrics.RecordSessionStop>)
-- [type SayHandle](<#SayHandle>)
-- [type SayOptions](<#SayOptions>)
-- [type SessionError](<#SessionError>)
-  - [func NewAgentIntegrationError\(op, code string, err error\) \*SessionError](<#NewAgentIntegrationError>)
-  - [func NewSessionError\(op, code string, err error\) \*SessionError](<#NewSessionError>)
-  - [func NewSessionErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*SessionError](<#NewSessionErrorWithDetails>)
-  - [func NewSessionErrorWithMessage\(op, code, message string, err error\) \*SessionError](<#NewSessionErrorWithMessage>)
-  - [func WrapAgentIntegrationError\(op, code string, err error\) \*SessionError](<#WrapAgentIntegrationError>)
-  - [func \(e \*SessionError\) Error\(\) string](<#SessionError.Error>)
-  - [func \(e \*SessionError\) Unwrap\(\) error](<#SessionError.Unwrap>)
-- [type SessionState](<#SessionState>)
-- [type StreamingState](<#StreamingState>)
-  - [func CreateTestStreamingState\(\) \*StreamingState](<#CreateTestStreamingState>)
-- [type VoiceOption](<#VoiceOption>)
-  - [func WithAgentCallback\(callback func\(ctx context.Context, transcript string\) \(string, error\)\) VoiceOption](<#WithAgentCallback>)
-  - [func WithAgentInstance\(agent agentsiface.StreamingAgent, config \*schema.AgentConfig\) VoiceOption](<#WithAgentInstance>)
-  - [func WithConfig\(config \*Config\) VoiceOption](<#WithConfig>)
-  - [func WithNoiseCancellation\(noiseCancellation iface.NoiseCancellation\) VoiceOption](<#WithNoiseCancellation>)
-  - [func WithOnStateChanged\(callback func\(state SessionState\)\) VoiceOption](<#WithOnStateChanged>)
-  - [func WithSTTProvider\(provider iface.STTProvider\) VoiceOption](<#WithSTTProvider>)
-  - [func WithTTSProvider\(provider iface.TTSProvider\) VoiceOption](<#WithTTSProvider>)
-  - [func WithTransport\(transport iface.Transport\) VoiceOption](<#WithTransport>)
-  - [func WithTurnDetector\(detector iface.TurnDetector\) VoiceOption](<#WithTurnDetector>)
-  - [func WithVADProvider\(provider iface.VADProvider\) VoiceOption](<#WithVADProvider>)
-- [type VoiceOptions](<#VoiceOptions>)
+- [Constants](#constants>)
+- [func AssertAgentState\(t \*testing.T, instance \*AdvancedMockAgentInstance, expectedState AgentState\)](#AssertAgentState>)
+- [func AssertSessionInterface\(t \*testing.T, s iface.VoiceSession\)](#AssertSessionInterface>)
+- [func AssertStreamingActive\(t \*testing.T, instance \*AdvancedMockAgentInstance, expectedActive bool\)](#AssertStreamingActive>)
+- [func CreateTestSessionWithAgent\(sessionID string, agentInstance \*AdvancedMockAgentInstance\) \(\*AdvancedMockSession, \*MockStreamingAgentIntegration\)](#CreateTestSessionWithAgent>)
+- [func InitMetrics\(meter metric.Meter\)](#InitMetrics>)
+- [func IsRetryableError\(err error\) bool](#IsRetryableError>)
+- [func NewVoiceSession\(ctx context.Context, opts ...VoiceOption\) \(iface.VoiceSession, error\)](#NewVoiceSession>)
+- [type AdvancedMockAgentInstance](#AdvancedMockAgentInstance>)
+  - [func NewAdvancedMockAgentInstance\(agent, config any, options ...MockAgentInstanceOption\) \*AdvancedMockAgentInstance](#NewAdvancedMockAgentInstance>)
+  - [func \(a \*AdvancedMockAgentInstance\) GetContext\(\) \*AgentContext](#AdvancedMockAgentInstance.GetContext>)
+  - [func \(a \*AdvancedMockAgentInstance\) GetInterruptionCount\(\) int](#AdvancedMockAgentInstance.GetInterruptionCount>)
+  - [func \(a \*AdvancedMockAgentInstance\) GetState\(\) AgentState](#AdvancedMockAgentInstance.GetState>)
+  - [func \(a \*AdvancedMockAgentInstance\) IncrementInterruptionCount\(\)](#AdvancedMockAgentInstance.IncrementInterruptionCount>)
+  - [func \(a \*AdvancedMockAgentInstance\) IsStreamingActive\(\) bool](#AdvancedMockAgentInstance.IsStreamingActive>)
+  - [func \(a \*AdvancedMockAgentInstance\) SetState\(state AgentState\)](#AdvancedMockAgentInstance.SetState>)
+  - [func \(a \*AdvancedMockAgentInstance\) SetStreamingActive\(active bool\)](#AdvancedMockAgentInstance.SetStreamingActive>)
+- [type AdvancedMockSession](#AdvancedMockSession>)
+  - [func NewAdvancedMockSession\(sessionID string, opts ...MockOption\) \*AdvancedMockSession](#NewAdvancedMockSession>)
+  - [func \(m \*AdvancedMockSession\) GetCallCount\(\) int](#AdvancedMockSession.GetCallCount>)
+  - [func \(m \*AdvancedMockSession\) GetSessionID\(\) string](#AdvancedMockSession.GetSessionID>)
+  - [func \(m \*AdvancedMockSession\) GetState\(\) iface.SessionState](#AdvancedMockSession.GetState>)
+  - [func \(m \*AdvancedMockSession\) IsActive\(\) bool](#AdvancedMockSession.IsActive>)
+  - [func \(m \*AdvancedMockSession\) OnStateChanged\(callback func\(iface.SessionState\)\)](#AdvancedMockSession.OnStateChanged>)
+  - [func \(m \*AdvancedMockSession\) ProcessAudio\(ctx context.Context, audio \[\]byte\) error](#AdvancedMockSession.ProcessAudio>)
+  - [func \(m \*AdvancedMockSession\) Say\(ctx context.Context, text string\) \(iface.SayHandle, error\)](#AdvancedMockSession.Say>)
+  - [func \(m \*AdvancedMockSession\) SayWithOptions\(ctx context.Context, text string, options iface.SayOptions\) \(iface.SayHandle, error\)](#AdvancedMockSession.SayWithOptions>)
+  - [func \(m \*AdvancedMockSession\) Start\(ctx context.Context\) error](#AdvancedMockSession.Start>)
+  - [func \(m \*AdvancedMockSession\) Stop\(ctx context.Context\) error](#AdvancedMockSession.Stop>)
+- [type AgentContext](#AgentContext>)
+  - [func CreateTestAgentContext\(\) \*AgentContext](#CreateTestAgentContext>)
+- [type AgentState](#AgentState>)
+- [type AgentStreamChunk](#AgentStreamChunk>)
+- [type Config](#Config>)
+  - [func DefaultConfig\(\) \*Config](#DefaultConfig>)
+  - [func \(c \*Config\) Validate\(\) error](#Config.Validate>)
+- [type ConfigOption](#ConfigOption>)
+  - [func WithAutoStart\(autoStart bool\) ConfigOption](#WithAutoStart>)
+  - [func WithEnableKeepAlive\(enable bool\) ConfigOption](#WithEnableKeepAlive>)
+  - [func WithKeepAliveInterval\(interval time.Duration\) ConfigOption](#WithKeepAliveInterval>)
+  - [func WithMaxRetries\(maxRetries int\) ConfigOption](#WithMaxRetries>)
+  - [func WithSessionID\(id string\) ConfigOption](#WithSessionID>)
+  - [func WithTimeout\(timeout time.Duration\) ConfigOption](#WithTimeout>)
+- [type Metrics](#Metrics>)
+  - [func GetMetrics\(\) \*Metrics](#GetMetrics>)
+  - [func NewMetrics\(meter metric.Meter\) \*Metrics](#NewMetrics>)
+  - [func \(m \*Metrics\) DecrementActiveSessions\(ctx context.Context\)](#Metrics.DecrementActiveSessions>)
+  - [func \(m \*Metrics\) IncrementActiveSessions\(ctx context.Context\)](#Metrics.IncrementActiveSessions>)
+  - [func \(m \*Metrics\) RecordAgentOperation\(ctx context.Context, sessionID string, latency time.Duration\)](#Metrics.RecordAgentOperation>)
+  - [func \(m \*Metrics\) RecordAgentStreamingChunk\(ctx context.Context, sessionID string, duration time.Duration\)](#Metrics.RecordAgentStreamingChunk>)
+  - [func \(m \*Metrics\) RecordAgentToolExecution\(ctx context.Context, sessionID, toolName string, duration time.Duration\)](#Metrics.RecordAgentToolExecution>)
+  - [func \(m \*Metrics\) RecordSessionError\(ctx context.Context, sessionID, errorCode string, duration time.Duration\)](#Metrics.RecordSessionError>)
+  - [func \(m \*Metrics\) RecordSessionStart\(ctx context.Context, sessionID string, duration time.Duration\)](#Metrics.RecordSessionStart>)
+  - [func \(m \*Metrics\) RecordSessionStop\(ctx context.Context, sessionID string, duration time.Duration\)](#Metrics.RecordSessionStop>)
+- [type MetricsRecorder](#MetricsRecorder>)
+- [type MockAgentInstanceOption](#MockAgentInstanceOption>)
+  - [func WithAgentContext\(ctx \*AgentContext\) MockAgentInstanceOption](#WithAgentContext>)
+  - [func WithAgentState\(state AgentState\) MockAgentInstanceOption](#WithAgentState>)
+  - [func WithStreamingChunks\(chunks \[\]AgentStreamChunk\) MockAgentInstanceOption](#WithStreamingChunks>)
+- [type MockOption](#MockOption>)
+  - [func WithActive\(active bool\) MockOption](#WithActive>)
+  - [func WithError\(err error\) MockOption](#WithError>)
+  - [func WithMockSessionID\(id string\) MockOption](#WithMockSessionID>)
+  - [func WithNetworkDelay\(enabled bool\) MockOption](#WithNetworkDelay>)
+  - [func WithProcessingDelay\(delay time.Duration\) MockOption](#WithProcessingDelay>)
+  - [func WithStarted\(started bool\) MockOption](#WithStarted>)
+- [type MockStreamingAgentIntegration](#MockStreamingAgentIntegration>)
+  - [func NewMockStreamingAgentIntegration\(agentInstance \*AdvancedMockAgentInstance\) \*MockStreamingAgentIntegration](#NewMockStreamingAgentIntegration>)
+  - [func \(m \*MockStreamingAgentIntegration\) GetAgentInstance\(\) \*AdvancedMockAgentInstance](#MockStreamingAgentIntegration.GetAgentInstance>)
+  - [func \(m \*MockStreamingAgentIntegration\) IsStarted\(\) bool](#MockStreamingAgentIntegration.IsStarted>)
+  - [func \(m \*MockStreamingAgentIntegration\) Start\(ctx context.Context\) error](#MockStreamingAgentIntegration.Start>)
+  - [func \(m \*MockStreamingAgentIntegration\) Stop\(ctx context.Context\) error](#MockStreamingAgentIntegration.Stop>)
+- [type NoOpMetrics](#NoOpMetrics>)
+  - [func NewNoOpMetrics\(\) \*NoOpMetrics](#NewNoOpMetrics>)
+  - [func \(n \*NoOpMetrics\) DecrementActiveSessions\(ctx context.Context\)](#NoOpMetrics.DecrementActiveSessions>)
+  - [func \(n \*NoOpMetrics\) IncrementActiveSessions\(ctx context.Context\)](#NoOpMetrics.IncrementActiveSessions>)
+  - [func \(n \*NoOpMetrics\) RecordSessionError\(ctx context.Context, sessionID, errorCode string, duration time.Duration\)](#NoOpMetrics.RecordSessionError>)
+  - [func \(n \*NoOpMetrics\) RecordSessionStart\(ctx context.Context, sessionID string, duration time.Duration\)](#NoOpMetrics.RecordSessionStart>)
+  - [func \(n \*NoOpMetrics\) RecordSessionStop\(ctx context.Context, sessionID string, duration time.Duration\)](#NoOpMetrics.RecordSessionStop>)
+- [type SayHandle](#SayHandle>)
+- [type SayOptions](#SayOptions>)
+- [type SessionError](#SessionError>)
+  - [func NewAgentIntegrationError\(op, code string, err error\) \*SessionError](#NewAgentIntegrationError>)
+  - [func NewSessionError\(op, code string, err error\) \*SessionError](#NewSessionError>)
+  - [func NewSessionErrorWithDetails\(op, code, message string, err error, details map\[string\]any\) \*SessionError](#NewSessionErrorWithDetails>)
+  - [func NewSessionErrorWithMessage\(op, code, message string, err error\) \*SessionError](#NewSessionErrorWithMessage>)
+  - [func WrapAgentIntegrationError\(op, code string, err error\) \*SessionError](#WrapAgentIntegrationError>)
+  - [func \(e \*SessionError\) Error\(\) string](#SessionError.Error>)
+  - [func \(e \*SessionError\) Unwrap\(\) error](#SessionError.Unwrap>)
+- [type SessionState](#SessionState>)
+- [type StreamingState](#StreamingState>)
+  - [func CreateTestStreamingState\(\) \*StreamingState](#CreateTestStreamingState>)
+- [type VoiceOption](#VoiceOption>)
+  - [func WithAgentCallback\(callback func\(ctx context.Context, transcript string\) \(string, error\)\) VoiceOption](#WithAgentCallback>)
+  - [func WithAgentInstance\(agent agentsiface.StreamingAgent, config \*schema.AgentConfig\) VoiceOption](#WithAgentInstance>)
+  - [func WithConfig\(config \*Config\) VoiceOption](#WithConfig>)
+  - [func WithNoiseCancellation\(noiseCancellation iface.NoiseCancellation\) VoiceOption](#WithNoiseCancellation>)
+  - [func WithOnStateChanged\(callback func\(state SessionState\)\) VoiceOption](#WithOnStateChanged>)
+  - [func WithSTTProvider\(provider iface.STTProvider\) VoiceOption](#WithSTTProvider>)
+  - [func WithTTSProvider\(provider iface.TTSProvider\) VoiceOption](#WithTTSProvider>)
+  - [func WithTransport\(transport iface.Transport\) VoiceOption](#WithTransport>)
+  - [func WithTurnDetector\(detector iface.TurnDetector\) VoiceOption](#WithTurnDetector>)
+  - [func WithVADProvider\(provider iface.VADProvider\) VoiceOption](#WithVADProvider>)
+- [type VoiceOptions](#VoiceOptions>)
 
 ## Constants
 
-<a name="ErrCodeInvalidConfig"></a>Error codes for Session operations.
+Error codes for Session operations.
 
 ```go
 const (
@@ -154,7 +154,7 @@ const (
 )
 ```
 
-<a name="SessionStateInitial"></a>SessionState constants.
+SessionState constants.
 
 ```go
 const (
@@ -167,8 +167,8 @@ const (
 )
 ```
 
-<a name="AssertAgentState"></a>
-## func [AssertAgentState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L515>)
+
+## func [AssertAgentState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L515)
 
 ```go
 func AssertAgentState(t *testing.T, instance *AdvancedMockAgentInstance, expectedState AgentState)
@@ -176,8 +176,8 @@ func AssertAgentState(t *testing.T, instance *AdvancedMockAgentInstance, expecte
 
 AssertAgentState validates agent state transitions.
 
-<a name="AssertSessionInterface"></a>
-## func [AssertSessionInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L250>)
+
+## func [AssertSessionInterface](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L250)
 
 ```go
 func AssertSessionInterface(t *testing.T, s iface.VoiceSession)
@@ -185,8 +185,8 @@ func AssertSessionInterface(t *testing.T, s iface.VoiceSession)
 
 AssertSessionInterface ensures that a type implements the VoiceSession interface.
 
-<a name="AssertStreamingActive"></a>
-## func [AssertStreamingActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L521>)
+
+## func [AssertStreamingActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L521)
 
 ```go
 func AssertStreamingActive(t *testing.T, instance *AdvancedMockAgentInstance, expectedActive bool)
@@ -194,8 +194,8 @@ func AssertStreamingActive(t *testing.T, instance *AdvancedMockAgentInstance, ex
 
 AssertStreamingActive validates streaming active state.
 
-<a name="CreateTestSessionWithAgent"></a>
-## func [CreateTestSessionWithAgent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L508>)
+
+## func [CreateTestSessionWithAgent](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L508)
 
 ```go
 func CreateTestSessionWithAgent(sessionID string, agentInstance *AdvancedMockAgentInstance) (*AdvancedMockSession, *MockStreamingAgentIntegration)
@@ -203,8 +203,8 @@ func CreateTestSessionWithAgent(sessionID string, agentInstance *AdvancedMockAge
 
 CreateTestSessionWithAgent creates a test session setup helper for agent integration.
 
-<a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L25>)
+
+## func [InitMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L25)
 
 ```go
 func InitMetrics(meter metric.Meter)
@@ -212,8 +212,8 @@ func InitMetrics(meter metric.Meter)
 
 InitMetrics initializes the global metrics instance.
 
-<a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L91>)
+
+## func [IsRetryableError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L91)
 
 ```go
 func IsRetryableError(err error) bool
@@ -221,8 +221,8 @@ func IsRetryableError(err error) bool
 
 IsRetryableError checks if an error is retryable.
 
-<a name="NewVoiceSession"></a>
-## func [NewVoiceSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L38>)
+
+## func [NewVoiceSession](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L38)
 
 ```go
 func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSession, error)
@@ -230,8 +230,8 @@ func NewVoiceSession(ctx context.Context, opts ...VoiceOption) (iface.VoiceSessi
 
 NewVoiceSession creates a new VoiceSession instance based on the provided options. It validates the configuration and initializes all required components.
 
-<a name="AdvancedMockAgentInstance"></a>
-## type [AdvancedMockAgentInstance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L316-L325>)
+
+## type [AdvancedMockAgentInstance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L316-L325)
 
 AdvancedMockAgentInstance provides a comprehensive mock implementation for agent instances.
 
@@ -241,8 +241,8 @@ type AdvancedMockAgentInstance struct {
 }
 ```
 
-<a name="NewAdvancedMockAgentInstance"></a>
-### func [NewAdvancedMockAgentInstance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L352>)
+
+### func [NewAdvancedMockAgentInstance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L352)
 
 ```go
 func NewAdvancedMockAgentInstance(agent, config any, options ...MockAgentInstanceOption) *AdvancedMockAgentInstance
@@ -250,8 +250,8 @@ func NewAdvancedMockAgentInstance(agent, config any, options ...MockAgentInstanc
 
 NewAdvancedMockAgentInstance creates a new advanced agent instance mock.
 
-<a name="AdvancedMockAgentInstance.GetContext"></a>
-### func \(\*AdvancedMockAgentInstance\) [GetContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L389>)
+
+### func \(\*AdvancedMockAgentInstance\) [GetContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L389)
 
 ```go
 func (a *AdvancedMockAgentInstance) GetContext() *AgentContext
@@ -259,8 +259,8 @@ func (a *AdvancedMockAgentInstance) GetContext() *AgentContext
 
 GetContext returns the agent context.
 
-<a name="AdvancedMockAgentInstance.GetInterruptionCount"></a>
-### func \(\*AdvancedMockAgentInstance\) [GetInterruptionCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L417>)
+
+### func \(\*AdvancedMockAgentInstance\) [GetInterruptionCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L417)
 
 ```go
 func (a *AdvancedMockAgentInstance) GetInterruptionCount() int
@@ -268,8 +268,8 @@ func (a *AdvancedMockAgentInstance) GetInterruptionCount() int
 
 GetInterruptionCount returns the number of interruptions.
 
-<a name="AdvancedMockAgentInstance.GetState"></a>
-### func \(\*AdvancedMockAgentInstance\) [GetState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L375>)
+
+### func \(\*AdvancedMockAgentInstance\) [GetState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L375)
 
 ```go
 func (a *AdvancedMockAgentInstance) GetState() AgentState
@@ -277,8 +277,8 @@ func (a *AdvancedMockAgentInstance) GetState() AgentState
 
 GetState returns the current agent state.
 
-<a name="AdvancedMockAgentInstance.IncrementInterruptionCount"></a>
-### func \(\*AdvancedMockAgentInstance\) [IncrementInterruptionCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L410>)
+
+### func \(\*AdvancedMockAgentInstance\) [IncrementInterruptionCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L410)
 
 ```go
 func (a *AdvancedMockAgentInstance) IncrementInterruptionCount()
@@ -286,8 +286,8 @@ func (a *AdvancedMockAgentInstance) IncrementInterruptionCount()
 
 IncrementInterruptionCount increments the interruption counter.
 
-<a name="AdvancedMockAgentInstance.IsStreamingActive"></a>
-### func \(\*AdvancedMockAgentInstance\) [IsStreamingActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L396>)
+
+### func \(\*AdvancedMockAgentInstance\) [IsStreamingActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L396)
 
 ```go
 func (a *AdvancedMockAgentInstance) IsStreamingActive() bool
@@ -295,8 +295,8 @@ func (a *AdvancedMockAgentInstance) IsStreamingActive() bool
 
 IsStreamingActive returns whether streaming is currently active.
 
-<a name="AdvancedMockAgentInstance.SetState"></a>
-### func \(\*AdvancedMockAgentInstance\) [SetState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L382>)
+
+### func \(\*AdvancedMockAgentInstance\) [SetState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L382)
 
 ```go
 func (a *AdvancedMockAgentInstance) SetState(state AgentState)
@@ -304,8 +304,8 @@ func (a *AdvancedMockAgentInstance) SetState(state AgentState)
 
 SetState sets the agent state.
 
-<a name="AdvancedMockAgentInstance.SetStreamingActive"></a>
-### func \(\*AdvancedMockAgentInstance\) [SetStreamingActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L403>)
+
+### func \(\*AdvancedMockAgentInstance\) [SetStreamingActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L403)
 
 ```go
 func (a *AdvancedMockAgentInstance) SetStreamingActive(active bool)
@@ -313,8 +313,8 @@ func (a *AdvancedMockAgentInstance) SetStreamingActive(active bool)
 
 SetStreamingActive sets the streaming active flag.
 
-<a name="AdvancedMockSession"></a>
-## type [AdvancedMockSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L17-L29>)
+
+## type [AdvancedMockSession](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L17-L29)
 
 AdvancedMockSession provides a comprehensive mock implementation for testing.
 
@@ -325,8 +325,8 @@ type AdvancedMockSession struct {
 }
 ```
 
-<a name="NewAdvancedMockSession"></a>
-### func [NewAdvancedMockSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L32>)
+
+### func [NewAdvancedMockSession](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L32)
 
 ```go
 func NewAdvancedMockSession(sessionID string, opts ...MockOption) *AdvancedMockSession
@@ -334,8 +334,8 @@ func NewAdvancedMockSession(sessionID string, opts ...MockOption) *AdvancedMockS
 
 NewAdvancedMockSession creates a new advanced mock with configurable behavior.
 
-<a name="AdvancedMockSession.GetCallCount"></a>
-### func \(\*AdvancedMockSession\) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L243>)
+
+### func \(\*AdvancedMockSession\) [GetCallCount](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L243)
 
 ```go
 func (m *AdvancedMockSession) GetCallCount() int
@@ -343,8 +343,8 @@ func (m *AdvancedMockSession) GetCallCount() int
 
 GetCallCount returns the number of times methods have been called.
 
-<a name="AdvancedMockSession.GetSessionID"></a>
-### func \(\*AdvancedMockSession\) [GetSessionID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L200>)
+
+### func \(\*AdvancedMockSession\) [GetSessionID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L200)
 
 ```go
 func (m *AdvancedMockSession) GetSessionID() string
@@ -352,8 +352,8 @@ func (m *AdvancedMockSession) GetSessionID() string
 
 GetSessionID implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.GetState"></a>
-### func \(\*AdvancedMockSession\) [GetState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L207>)
+
+### func \(\*AdvancedMockSession\) [GetState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L207)
 
 ```go
 func (m *AdvancedMockSession) GetState() iface.SessionState
@@ -361,8 +361,8 @@ func (m *AdvancedMockSession) GetState() iface.SessionState
 
 GetState implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.IsActive"></a>
-### func \(\*AdvancedMockSession\) [IsActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L193>)
+
+### func \(\*AdvancedMockSession\) [IsActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L193)
 
 ```go
 func (m *AdvancedMockSession) IsActive() bool
@@ -370,8 +370,8 @@ func (m *AdvancedMockSession) IsActive() bool
 
 IsActive implements the Session interface.
 
-<a name="AdvancedMockSession.OnStateChanged"></a>
-### func \(\*AdvancedMockSession\) [OnStateChanged](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L238>)
+
+### func \(\*AdvancedMockSession\) [OnStateChanged](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L238)
 
 ```go
 func (m *AdvancedMockSession) OnStateChanged(callback func(iface.SessionState))
@@ -379,8 +379,8 @@ func (m *AdvancedMockSession) OnStateChanged(callback func(iface.SessionState))
 
 OnStateChanged implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.ProcessAudio"></a>
-### func \(\*AdvancedMockSession\) [ProcessAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L232>)
+
+### func \(\*AdvancedMockSession\) [ProcessAudio](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L232)
 
 ```go
 func (m *AdvancedMockSession) ProcessAudio(ctx context.Context, audio []byte) error
@@ -388,8 +388,8 @@ func (m *AdvancedMockSession) ProcessAudio(ctx context.Context, audio []byte) er
 
 ProcessAudio implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.Say"></a>
-### func \(\*AdvancedMockSession\) [Say](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L220>)
+
+### func \(\*AdvancedMockSession\) [Say](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L220)
 
 ```go
 func (m *AdvancedMockSession) Say(ctx context.Context, text string) (iface.SayHandle, error)
@@ -397,8 +397,8 @@ func (m *AdvancedMockSession) Say(ctx context.Context, text string) (iface.SayHa
 
 Say implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.SayWithOptions"></a>
-### func \(\*AdvancedMockSession\) [SayWithOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L226>)
+
+### func \(\*AdvancedMockSession\) [SayWithOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L226)
 
 ```go
 func (m *AdvancedMockSession) SayWithOptions(ctx context.Context, text string, options iface.SayOptions) (iface.SayHandle, error)
@@ -406,8 +406,8 @@ func (m *AdvancedMockSession) SayWithOptions(ctx context.Context, text string, o
 
 SayWithOptions implements the VoiceSession interface.
 
-<a name="AdvancedMockSession.Start"></a>
-### func \(\*AdvancedMockSession\) [Start](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L96>)
+
+### func \(\*AdvancedMockSession\) [Start](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L96)
 
 ```go
 func (m *AdvancedMockSession) Start(ctx context.Context) error
@@ -415,8 +415,8 @@ func (m *AdvancedMockSession) Start(ctx context.Context) error
 
 Start implements the Session interface.
 
-<a name="AdvancedMockSession.Stop"></a>
-### func \(\*AdvancedMockSession\) [Stop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L149>)
+
+### func \(\*AdvancedMockSession\) [Stop](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L149)
 
 ```go
 func (m *AdvancedMockSession) Stop(ctx context.Context) error
@@ -424,8 +424,8 @@ func (m *AdvancedMockSession) Stop(ctx context.Context) error
 
 Stop implements the Session interface.
 
-<a name="AgentContext"></a>
-## type [AgentContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L298-L304>)
+
+## type [AgentContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L298-L304)
 
 AgentContext represents the agent\-specific context within a voice session. This type matches the contract definition from data\-model.md.
 
@@ -439,8 +439,8 @@ type AgentContext struct {
 }
 ```
 
-<a name="CreateTestAgentContext"></a>
-### func [CreateTestAgentContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L486>)
+
+### func [CreateTestAgentContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L486)
 
 ```go
 func CreateTestAgentContext() *AgentContext
@@ -448,8 +448,8 @@ func CreateTestAgentContext() *AgentContext
 
 CreateTestAgentContext creates a test agent context.
 
-<a name="AgentState"></a>
-## type [AgentState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L273>)
+
+## type [AgentState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L273)
 
 AgentState represents the state of an agent in a voice session. This type matches the contract definition for agent state.
 
@@ -457,7 +457,7 @@ AgentState represents the state of an agent in a voice session. This type matche
 type AgentState string
 ```
 
-<a name="AgentStateIdle"></a>
+
 
 ```go
 const (
@@ -471,8 +471,8 @@ const (
 )
 ```
 
-<a name="AgentStreamChunk"></a>
-## type [AgentStreamChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L287-L294>)
+
+## type [AgentStreamChunk](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L287-L294)
 
 AgentStreamChunk represents a chunk of agent execution output. This matches the definition from pkg/agents for consistency.
 
@@ -487,8 +487,8 @@ type AgentStreamChunk struct {
 }
 ```
 
-<a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L12-L23>)
+
+## type [Config](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L12-L23)
 
 Config represents the configuration for Session providers. It includes common settings that apply to all Session providers.
 
@@ -507,8 +507,8 @@ type Config struct {
 }
 ```
 
-<a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L80>)
+
+### func [DefaultConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L80)
 
 ```go
 func DefaultConfig() *Config
@@ -516,8 +516,8 @@ func DefaultConfig() *Config
 
 DefaultConfig returns a default configuration.
 
-<a name="Config.Validate"></a>
-### func \(\*Config\) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L71>)
+
+### func \(\*Config\) [Validate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L71)
 
 ```go
 func (c *Config) Validate() error
@@ -525,8 +525,8 @@ func (c *Config) Validate() error
 
 Validate validates the configuration.
 
-<a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L26>)
+
+## type [ConfigOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L26)
 
 ConfigOption is a functional option for configuring Session instances.
 
@@ -534,8 +534,8 @@ ConfigOption is a functional option for configuring Session instances.
 type ConfigOption func(*Config)
 ```
 
-<a name="WithAutoStart"></a>
-### func [WithAutoStart](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L43>)
+
+### func [WithAutoStart](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L43)
 
 ```go
 func WithAutoStart(autoStart bool) ConfigOption
@@ -543,8 +543,8 @@ func WithAutoStart(autoStart bool) ConfigOption
 
 WithAutoStart sets auto\-start enablement.
 
-<a name="WithEnableKeepAlive"></a>
-### func [WithEnableKeepAlive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L50>)
+
+### func [WithEnableKeepAlive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L50)
 
 ```go
 func WithEnableKeepAlive(enable bool) ConfigOption
@@ -552,8 +552,8 @@ func WithEnableKeepAlive(enable bool) ConfigOption
 
 WithEnableKeepAlive sets keep\-alive enablement.
 
-<a name="WithKeepAliveInterval"></a>
-### func [WithKeepAliveInterval](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L57>)
+
+### func [WithKeepAliveInterval](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L57)
 
 ```go
 func WithKeepAliveInterval(interval time.Duration) ConfigOption
@@ -561,8 +561,8 @@ func WithKeepAliveInterval(interval time.Duration) ConfigOption
 
 WithKeepAliveInterval sets the keep\-alive interval.
 
-<a name="WithMaxRetries"></a>
-### func [WithMaxRetries](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L64>)
+
+### func [WithMaxRetries](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L64)
 
 ```go
 func WithMaxRetries(maxRetries int) ConfigOption
@@ -570,8 +570,8 @@ func WithMaxRetries(maxRetries int) ConfigOption
 
 WithMaxRetries sets the maximum number of retries.
 
-<a name="WithSessionID"></a>
-### func [WithSessionID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L29>)
+
+### func [WithSessionID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L29)
 
 ```go
 func WithSessionID(id string) ConfigOption
@@ -579,8 +579,8 @@ func WithSessionID(id string) ConfigOption
 
 WithSessionID sets the session ID.
 
-<a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L36>)
+
+### func [WithTimeout](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/config.go#L36)
 
 ```go
 func WithTimeout(timeout time.Duration) ConfigOption
@@ -588,8 +588,8 @@ func WithTimeout(timeout time.Duration) ConfigOption
 
 WithTimeout sets the session timeout.
 
-<a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L47-L59>)
+
+## type [Metrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L47-L59)
 
 Metrics contains all the metrics for Session operations.
 
@@ -599,8 +599,8 @@ type Metrics struct {
 }
 ```
 
-<a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L32>)
+
+### func [GetMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/session.go#L32)
 
 ```go
 func GetMetrics() *Metrics
@@ -608,8 +608,8 @@ func GetMetrics() *Metrics
 
 GetMetrics returns the global metrics instance.
 
-<a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L62>)
+
+### func [NewMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L62)
 
 ```go
 func NewMetrics(meter metric.Meter) *Metrics
@@ -617,8 +617,8 @@ func NewMetrics(meter metric.Meter) *Metrics
 
 NewMetrics creates a new Metrics instance.
 
-<a name="Metrics.DecrementActiveSessions"></a>
-### func \(\*Metrics\) [DecrementActiveSessions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L116>)
+
+### func \(\*Metrics\) [DecrementActiveSessions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L116)
 
 ```go
 func (m *Metrics) DecrementActiveSessions(ctx context.Context)
@@ -626,8 +626,8 @@ func (m *Metrics) DecrementActiveSessions(ctx context.Context)
 
 DecrementActiveSessions decrements the active sessions counter.
 
-<a name="Metrics.IncrementActiveSessions"></a>
-### func \(\*Metrics\) [IncrementActiveSessions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L111>)
+
+### func \(\*Metrics\) [IncrementActiveSessions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L111)
 
 ```go
 func (m *Metrics) IncrementActiveSessions(ctx context.Context)
@@ -635,8 +635,8 @@ func (m *Metrics) IncrementActiveSessions(ctx context.Context)
 
 IncrementActiveSessions increments the active sessions counter.
 
-<a name="Metrics.RecordAgentOperation"></a>
-### func \(\*Metrics\) [RecordAgentOperation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L123>)
+
+### func \(\*Metrics\) [RecordAgentOperation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L123)
 
 ```go
 func (m *Metrics) RecordAgentOperation(ctx context.Context, sessionID string, latency time.Duration)
@@ -644,8 +644,8 @@ func (m *Metrics) RecordAgentOperation(ctx context.Context, sessionID string, la
 
 RecordAgentOperation records agent operation latency \(from input to first response\).
 
-<a name="Metrics.RecordAgentStreamingChunk"></a>
-### func \(\*Metrics\) [RecordAgentStreamingChunk](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L131>)
+
+### func \(\*Metrics\) [RecordAgentStreamingChunk](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L131)
 
 ```go
 func (m *Metrics) RecordAgentStreamingChunk(ctx context.Context, sessionID string, duration time.Duration)
@@ -653,8 +653,8 @@ func (m *Metrics) RecordAgentStreamingChunk(ctx context.Context, sessionID strin
 
 RecordAgentStreamingChunk records agent streaming chunk metrics.
 
-<a name="Metrics.RecordAgentToolExecution"></a>
-### func \(\*Metrics\) [RecordAgentToolExecution](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L139>)
+
+### func \(\*Metrics\) [RecordAgentToolExecution](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L139)
 
 ```go
 func (m *Metrics) RecordAgentToolExecution(ctx context.Context, sessionID, toolName string, duration time.Duration)
@@ -662,8 +662,8 @@ func (m *Metrics) RecordAgentToolExecution(ctx context.Context, sessionID, toolN
 
 RecordAgentToolExecution records agent tool execution time.
 
-<a name="Metrics.RecordSessionError"></a>
-### func \(\*Metrics\) [RecordSessionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L101>)
+
+### func \(\*Metrics\) [RecordSessionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L101)
 
 ```go
 func (m *Metrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration)
@@ -671,8 +671,8 @@ func (m *Metrics) RecordSessionError(ctx context.Context, sessionID, errorCode s
 
 RecordSessionError records an error.
 
-<a name="Metrics.RecordSessionStart"></a>
-### func \(\*Metrics\) [RecordSessionStart](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L81>)
+
+### func \(\*Metrics\) [RecordSessionStart](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L81)
 
 ```go
 func (m *Metrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration)
@@ -680,8 +680,8 @@ func (m *Metrics) RecordSessionStart(ctx context.Context, sessionID string, dura
 
 RecordSessionStart records a session start operation.
 
-<a name="Metrics.RecordSessionStop"></a>
-### func \(\*Metrics\) [RecordSessionStop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L91>)
+
+### func \(\*Metrics\) [RecordSessionStop](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L91)
 
 ```go
 func (m *Metrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration)
@@ -689,8 +689,8 @@ func (m *Metrics) RecordSessionStop(ctx context.Context, sessionID string, durat
 
 RecordSessionStop records a session stop operation.
 
-<a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L12-L18>)
+
+## type [MetricsRecorder](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L12-L18)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -704,8 +704,8 @@ type MetricsRecorder interface {
 }
 ```
 
-<a name="MockAgentInstanceOption"></a>
-## type [MockAgentInstanceOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L328>)
+
+## type [MockAgentInstanceOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L328)
 
 MockAgentInstanceOption defines functional options for configuring agent instance mocks.
 
@@ -713,8 +713,8 @@ MockAgentInstanceOption defines functional options for configuring agent instanc
 type MockAgentInstanceOption func(*AdvancedMockAgentInstance)
 ```
 
-<a name="WithAgentContext"></a>
-### func [WithAgentContext](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L338>)
+
+### func [WithAgentContext](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L338)
 
 ```go
 func WithAgentContext(ctx *AgentContext) MockAgentInstanceOption
@@ -722,8 +722,8 @@ func WithAgentContext(ctx *AgentContext) MockAgentInstanceOption
 
 WithAgentContext sets the agent context.
 
-<a name="WithAgentState"></a>
-### func [WithAgentState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L331>)
+
+### func [WithAgentState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L331)
 
 ```go
 func WithAgentState(state AgentState) MockAgentInstanceOption
@@ -731,8 +731,8 @@ func WithAgentState(state AgentState) MockAgentInstanceOption
 
 WithAgentState sets the initial agent state.
 
-<a name="WithStreamingChunks"></a>
-### func [WithStreamingChunks](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L345>)
+
+### func [WithStreamingChunks](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L345)
 
 ```go
 func WithStreamingChunks(chunks []AgentStreamChunk) MockAgentInstanceOption
@@ -740,8 +740,8 @@ func WithStreamingChunks(chunks []AgentStreamChunk) MockAgentInstanceOption
 
 WithStreamingChunks sets predefined chunks to stream.
 
-<a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L50>)
+
+## type [MockOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L50)
 
 MockOption configures the behavior of AdvancedMockSession.
 
@@ -749,8 +749,8 @@ MockOption configures the behavior of AdvancedMockSession.
 type MockOption func(*AdvancedMockSession)
 ```
 
-<a name="WithActive"></a>
-### func [WithActive](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L60>)
+
+### func [WithActive](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L60)
 
 ```go
 func WithActive(active bool) MockOption
@@ -758,8 +758,8 @@ func WithActive(active bool) MockOption
 
 WithActive sets the active state.
 
-<a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L74>)
+
+### func [WithError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L74)
 
 ```go
 func WithError(err error) MockOption
@@ -767,8 +767,8 @@ func WithError(err error) MockOption
 
 WithError configures the mock to return an error.
 
-<a name="WithMockSessionID"></a>
-### func [WithMockSessionID](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L53>)
+
+### func [WithMockSessionID](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L53)
 
 ```go
 func WithMockSessionID(id string) MockOption
@@ -776,8 +776,8 @@ func WithMockSessionID(id string) MockOption
 
 WithMockSessionID sets the session ID for the mock.
 
-<a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L89>)
+
+### func [WithNetworkDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L89)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -785,8 +785,8 @@ func WithNetworkDelay(enabled bool) MockOption
 
 WithNetworkDelay enables network delay simulation.
 
-<a name="WithProcessingDelay"></a>
-### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L82>)
+
+### func [WithProcessingDelay](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L82)
 
 ```go
 func WithProcessingDelay(delay time.Duration) MockOption
@@ -794,8 +794,8 @@ func WithProcessingDelay(delay time.Duration) MockOption
 
 WithProcessingDelay sets the delay for processing.
 
-<a name="WithStarted"></a>
-### func [WithStarted](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L67>)
+
+### func [WithStarted](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L67)
 
 ```go
 func WithStarted(started bool) MockOption
@@ -803,8 +803,8 @@ func WithStarted(started bool) MockOption
 
 WithStarted sets the started state.
 
-<a name="MockStreamingAgentIntegration"></a>
-## type [MockStreamingAgentIntegration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L424-L429>)
+
+## type [MockStreamingAgentIntegration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L424-L429)
 
 MockStreamingAgentIntegration provides a mock for testing agent integration in voice sessions.
 
@@ -814,8 +814,8 @@ type MockStreamingAgentIntegration struct {
 }
 ```
 
-<a name="NewMockStreamingAgentIntegration"></a>
-### func [NewMockStreamingAgentIntegration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L432>)
+
+### func [NewMockStreamingAgentIntegration](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L432)
 
 ```go
 func NewMockStreamingAgentIntegration(agentInstance *AdvancedMockAgentInstance) *MockStreamingAgentIntegration
@@ -823,8 +823,8 @@ func NewMockStreamingAgentIntegration(agentInstance *AdvancedMockAgentInstance) 
 
 NewMockStreamingAgentIntegration creates a new mock streaming agent integration.
 
-<a name="MockStreamingAgentIntegration.GetAgentInstance"></a>
-### func \(\*MockStreamingAgentIntegration\) [GetAgentInstance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L477>)
+
+### func \(\*MockStreamingAgentIntegration\) [GetAgentInstance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L477)
 
 ```go
 func (m *MockStreamingAgentIntegration) GetAgentInstance() *AdvancedMockAgentInstance
@@ -832,8 +832,8 @@ func (m *MockStreamingAgentIntegration) GetAgentInstance() *AdvancedMockAgentIns
 
 GetAgentInstance returns the agent instance.
 
-<a name="MockStreamingAgentIntegration.IsStarted"></a>
-### func \(\*MockStreamingAgentIntegration\) [IsStarted](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L470>)
+
+### func \(\*MockStreamingAgentIntegration\) [IsStarted](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L470)
 
 ```go
 func (m *MockStreamingAgentIntegration) IsStarted() bool
@@ -841,8 +841,8 @@ func (m *MockStreamingAgentIntegration) IsStarted() bool
 
 IsStarted returns whether the integration is started.
 
-<a name="MockStreamingAgentIntegration.Start"></a>
-### func \(\*MockStreamingAgentIntegration\) [Start](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L441>)
+
+### func \(\*MockStreamingAgentIntegration\) [Start](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L441)
 
 ```go
 func (m *MockStreamingAgentIntegration) Start(ctx context.Context) error
@@ -850,8 +850,8 @@ func (m *MockStreamingAgentIntegration) Start(ctx context.Context) error
 
 Start initializes the agent integration.
 
-<a name="MockStreamingAgentIntegration.Stop"></a>
-### func \(\*MockStreamingAgentIntegration\) [Stop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L455>)
+
+### func \(\*MockStreamingAgentIntegration\) [Stop](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L455)
 
 ```go
 func (m *MockStreamingAgentIntegration) Stop(ctx context.Context) error
@@ -859,8 +859,8 @@ func (m *MockStreamingAgentIntegration) Stop(ctx context.Context) error
 
 Stop stops the agent integration.
 
-<a name="NoOpMetrics"></a>
-## type [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L21>)
+
+## type [NoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L21)
 
 NoOpMetrics provides a no\-operation implementation for when metrics are disabled.
 
@@ -868,8 +868,8 @@ NoOpMetrics provides a no\-operation implementation for when metrics are disable
 type NoOpMetrics struct{}
 ```
 
-<a name="NewNoOpMetrics"></a>
-### func [NewNoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L24>)
+
+### func [NewNoOpMetrics](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L24)
 
 ```go
 func NewNoOpMetrics() *NoOpMetrics
@@ -877,8 +877,8 @@ func NewNoOpMetrics() *NoOpMetrics
 
 NewNoOpMetrics creates a new no\-operation metrics recorder.
 
-<a name="NoOpMetrics.DecrementActiveSessions"></a>
-### func \(\*NoOpMetrics\) [DecrementActiveSessions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L44>)
+
+### func \(\*NoOpMetrics\) [DecrementActiveSessions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L44)
 
 ```go
 func (n *NoOpMetrics) DecrementActiveSessions(ctx context.Context)
@@ -886,8 +886,8 @@ func (n *NoOpMetrics) DecrementActiveSessions(ctx context.Context)
 
 DecrementActiveSessions is a no\-op implementation.
 
-<a name="NoOpMetrics.IncrementActiveSessions"></a>
-### func \(\*NoOpMetrics\) [IncrementActiveSessions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L41>)
+
+### func \(\*NoOpMetrics\) [IncrementActiveSessions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L41)
 
 ```go
 func (n *NoOpMetrics) IncrementActiveSessions(ctx context.Context)
@@ -895,8 +895,8 @@ func (n *NoOpMetrics) IncrementActiveSessions(ctx context.Context)
 
 IncrementActiveSessions is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordSessionError"></a>
-### func \(\*NoOpMetrics\) [RecordSessionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L37>)
+
+### func \(\*NoOpMetrics\) [RecordSessionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L37)
 
 ```go
 func (n *NoOpMetrics) RecordSessionError(ctx context.Context, sessionID, errorCode string, duration time.Duration)
@@ -904,8 +904,8 @@ func (n *NoOpMetrics) RecordSessionError(ctx context.Context, sessionID, errorCo
 
 RecordSessionError is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordSessionStart"></a>
-### func \(\*NoOpMetrics\) [RecordSessionStart](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L29>)
+
+### func \(\*NoOpMetrics\) [RecordSessionStart](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L29)
 
 ```go
 func (n *NoOpMetrics) RecordSessionStart(ctx context.Context, sessionID string, duration time.Duration)
@@ -913,8 +913,8 @@ func (n *NoOpMetrics) RecordSessionStart(ctx context.Context, sessionID string, 
 
 RecordSessionStart is a no\-op implementation.
 
-<a name="NoOpMetrics.RecordSessionStop"></a>
-### func \(\*NoOpMetrics\) [RecordSessionStop](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L33>)
+
+### func \(\*NoOpMetrics\) [RecordSessionStop](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/metrics.go#L33)
 
 ```go
 func (n *NoOpMetrics) RecordSessionStop(ctx context.Context, sessionID string, duration time.Duration)
@@ -922,8 +922,8 @@ func (n *NoOpMetrics) RecordSessionStop(ctx context.Context, sessionID string, d
 
 RecordSessionStop is a no\-op implementation.
 
-<a name="SayHandle"></a>
-## type [SayHandle](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L15>)
+
+## type [SayHandle](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L15)
 
 Re\-export types from iface for convenience.
 
@@ -931,8 +931,8 @@ Re\-export types from iface for convenience.
 type SayHandle = iface.SayHandle
 ```
 
-<a name="SayOptions"></a>
-## type [SayOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L14>)
+
+## type [SayOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L14)
 
 Re\-export types from iface for convenience.
 
@@ -940,8 +940,8 @@ Re\-export types from iface for convenience.
 type SayOptions = iface.SayOptions
 ```
 
-<a name="SessionError"></a>
-## type [SessionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L36-L42>)
+
+## type [SessionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L36-L42)
 
 SessionError represents an error that occurred during Session operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -955,8 +955,8 @@ type SessionError struct {
 }
 ```
 
-<a name="NewAgentIntegrationError"></a>
-### func [NewAgentIntegrationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L111>)
+
+### func [NewAgentIntegrationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L111)
 
 ```go
 func NewAgentIntegrationError(op, code string, err error) *SessionError
@@ -964,8 +964,8 @@ func NewAgentIntegrationError(op, code string, err error) *SessionError
 
 NewAgentIntegrationError creates a new SessionError for agent integration operations. It follows the Op/Err/Code pattern for consistency.
 
-<a name="NewSessionError"></a>
-### func [NewSessionError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L61>)
+
+### func [NewSessionError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L61)
 
 ```go
 func NewSessionError(op, code string, err error) *SessionError
@@ -973,8 +973,8 @@ func NewSessionError(op, code string, err error) *SessionError
 
 NewSessionError creates a new SessionError.
 
-<a name="NewSessionErrorWithDetails"></a>
-### func [NewSessionErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L80>)
+
+### func [NewSessionErrorWithDetails](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L80)
 
 ```go
 func NewSessionErrorWithDetails(op, code, message string, err error, details map[string]any) *SessionError
@@ -982,8 +982,8 @@ func NewSessionErrorWithDetails(op, code, message string, err error, details map
 
 NewSessionErrorWithDetails creates a new SessionError with additional details.
 
-<a name="NewSessionErrorWithMessage"></a>
-### func [NewSessionErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L70>)
+
+### func [NewSessionErrorWithMessage](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L70)
 
 ```go
 func NewSessionErrorWithMessage(op, code, message string, err error) *SessionError
@@ -991,8 +991,8 @@ func NewSessionErrorWithMessage(op, code, message string, err error) *SessionErr
 
 NewSessionErrorWithMessage creates a new SessionError with a custom message.
 
-<a name="WrapAgentIntegrationError"></a>
-### func [WrapAgentIntegrationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L116>)
+
+### func [WrapAgentIntegrationError](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L116)
 
 ```go
 func WrapAgentIntegrationError(op, code string, err error) *SessionError
@@ -1000,8 +1000,8 @@ func WrapAgentIntegrationError(op, code string, err error) *SessionError
 
 WrapAgentIntegrationError wraps an existing error as a SessionError for agent integration.
 
-<a name="SessionError.Error"></a>
-### func \(\*SessionError\) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L45>)
+
+### func \(\*SessionError\) [Error](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L45)
 
 ```go
 func (e *SessionError) Error() string
@@ -1009,8 +1009,8 @@ func (e *SessionError) Error() string
 
 Error implements the error interface.
 
-<a name="SessionError.Unwrap"></a>
-### func \(\*SessionError\) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L56>)
+
+### func \(\*SessionError\) [Unwrap](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/errors.go#L56)
 
 ```go
 func (e *SessionError) Unwrap() error
@@ -1018,8 +1018,8 @@ func (e *SessionError) Unwrap() error
 
 Unwrap returns the underlying error.
 
-<a name="SessionState"></a>
-## type [SessionState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L13>)
+
+## type [SessionState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L13)
 
 Re\-export types from iface for convenience.
 
@@ -1027,8 +1027,8 @@ Re\-export types from iface for convenience.
 type SessionState = iface.SessionState
 ```
 
-<a name="StreamingState"></a>
-## type [StreamingState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L307-L313>)
+
+## type [StreamingState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L307-L313)
 
 StreamingState represents the current streaming state.
 
@@ -1042,8 +1042,8 @@ type StreamingState struct {
 }
 ```
 
-<a name="CreateTestStreamingState"></a>
-### func [CreateTestStreamingState](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L497>)
+
+### func [CreateTestStreamingState](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/test_utils.go#L497)
 
 ```go
 func CreateTestStreamingState() *StreamingState
@@ -1051,8 +1051,8 @@ func CreateTestStreamingState() *StreamingState
 
 CreateTestStreamingState creates a test streaming state.
 
-<a name="VoiceOption"></a>
-## type [VoiceOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L65>)
+
+## type [VoiceOption](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L65)
 
 VoiceOption is a functional option for configuring VoiceSession.
 
@@ -1060,8 +1060,8 @@ VoiceOption is a functional option for configuring VoiceSession.
 type VoiceOption func(*VoiceOptions)
 ```
 
-<a name="WithAgentCallback"></a>
-### func [WithAgentCallback](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L110>)
+
+### func [WithAgentCallback](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L110)
 
 ```go
 func WithAgentCallback(callback func(ctx context.Context, transcript string) (string, error)) VoiceOption
@@ -1069,8 +1069,8 @@ func WithAgentCallback(callback func(ctx context.Context, transcript string) (st
 
 WithAgentCallback sets the agent callback.
 
-<a name="WithAgentInstance"></a>
-### func [WithAgentInstance](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L133>)
+
+### func [WithAgentInstance](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L133)
 
 ```go
 func WithAgentInstance(agent agentsiface.StreamingAgent, config *schema.AgentConfig) VoiceOption
@@ -1078,8 +1078,8 @@ func WithAgentInstance(agent agentsiface.StreamingAgent, config *schema.AgentCon
 
 WithAgentInstance sets the agent instance for the voice session. When provided, the session will use streaming agent execution instead of callbacks. The agent must implement the StreamingAgent interface.
 
-<a name="WithConfig"></a>
-### func [WithConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L124>)
+
+### func [WithConfig](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L124)
 
 ```go
 func WithConfig(config *Config) VoiceOption
@@ -1087,8 +1087,8 @@ func WithConfig(config *Config) VoiceOption
 
 WithConfig sets the session configuration.
 
-<a name="WithNoiseCancellation"></a>
-### func [WithNoiseCancellation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L103>)
+
+### func [WithNoiseCancellation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L103)
 
 ```go
 func WithNoiseCancellation(noiseCancellation iface.NoiseCancellation) VoiceOption
@@ -1096,8 +1096,8 @@ func WithNoiseCancellation(noiseCancellation iface.NoiseCancellation) VoiceOptio
 
 WithNoiseCancellation sets the noise cancellation provider.
 
-<a name="WithOnStateChanged"></a>
-### func [WithOnStateChanged](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L117>)
+
+### func [WithOnStateChanged](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L117)
 
 ```go
 func WithOnStateChanged(callback func(state SessionState)) VoiceOption
@@ -1105,8 +1105,8 @@ func WithOnStateChanged(callback func(state SessionState)) VoiceOption
 
 WithOnStateChanged sets the state change callback.
 
-<a name="WithSTTProvider"></a>
-### func [WithSTTProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L68>)
+
+### func [WithSTTProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L68)
 
 ```go
 func WithSTTProvider(provider iface.STTProvider) VoiceOption
@@ -1114,8 +1114,8 @@ func WithSTTProvider(provider iface.STTProvider) VoiceOption
 
 WithSTTProvider sets the STT provider.
 
-<a name="WithTTSProvider"></a>
-### func [WithTTSProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L75>)
+
+### func [WithTTSProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L75)
 
 ```go
 func WithTTSProvider(provider iface.TTSProvider) VoiceOption
@@ -1123,8 +1123,8 @@ func WithTTSProvider(provider iface.TTSProvider) VoiceOption
 
 WithTTSProvider sets the TTS provider.
 
-<a name="WithTransport"></a>
-### func [WithTransport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L96>)
+
+### func [WithTransport](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L96)
 
 ```go
 func WithTransport(transport iface.Transport) VoiceOption
@@ -1132,8 +1132,8 @@ func WithTransport(transport iface.Transport) VoiceOption
 
 WithTransport sets the transport provider.
 
-<a name="WithTurnDetector"></a>
-### func [WithTurnDetector](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L89>)
+
+### func [WithTurnDetector](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L89)
 
 ```go
 func WithTurnDetector(detector iface.TurnDetector) VoiceOption
@@ -1141,8 +1141,8 @@ func WithTurnDetector(detector iface.TurnDetector) VoiceOption
 
 WithTurnDetector sets the turn detector.
 
-<a name="WithVADProvider"></a>
-### func [WithVADProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L82>)
+
+### func [WithVADProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L82)
 
 ```go
 func WithVADProvider(provider iface.VADProvider) VoiceOption
@@ -1150,8 +1150,8 @@ func WithVADProvider(provider iface.VADProvider) VoiceOption
 
 WithVADProvider sets the VAD provider.
 
-<a name="VoiceOptions"></a>
-## type [VoiceOptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L29-L62>)
+
+## type [VoiceOptions](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/session/types.go#L29-L62)
 
 VoiceOptions represents options for configuring a VoiceSession.
 
@@ -1192,4 +1192,4 @@ type VoiceOptions struct {
 }
 ```
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)

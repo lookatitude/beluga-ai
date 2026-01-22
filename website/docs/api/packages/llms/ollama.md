@@ -16,23 +16,23 @@ Package ollama provides an implementation of the llms.ChatModel interface using 
 
 ## Index
 
-- [Constants](<#constants>)
-- [func NewOllamaProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](<#NewOllamaProviderFactory>)
-- [type OllamaProvider](<#OllamaProvider>)
-  - [func NewOllamaProvider\(config \*llms.Config\) \(\*OllamaProvider, error\)](<#NewOllamaProvider>)
-  - [func \(o \*OllamaProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](<#OllamaProvider.Batch>)
-  - [func \(o \*OllamaProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](<#OllamaProvider.BindTools>)
-  - [func \(o \*OllamaProvider\) CheckHealth\(\) map\[string\]any](<#OllamaProvider.CheckHealth>)
-  - [func \(o \*OllamaProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](<#OllamaProvider.Generate>)
-  - [func \(o \*OllamaProvider\) GetModelName\(\) string](<#OllamaProvider.GetModelName>)
-  - [func \(o \*OllamaProvider\) GetProviderName\(\) string](<#OllamaProvider.GetProviderName>)
-  - [func \(o \*OllamaProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](<#OllamaProvider.Invoke>)
-  - [func \(o \*OllamaProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](<#OllamaProvider.Stream>)
-  - [func \(o \*OllamaProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](<#OllamaProvider.StreamChat>)
+- [Constants](#constants>)
+- [func NewOllamaProviderFactory\(\) func\(\*llms.Config\) \(iface.ChatModel, error\)](#NewOllamaProviderFactory>)
+- [type OllamaProvider](#OllamaProvider>)
+  - [func NewOllamaProvider\(config \*llms.Config\) \(\*OllamaProvider, error\)](#NewOllamaProvider>)
+  - [func \(o \*OllamaProvider\) Batch\(ctx context.Context, inputs \[\]any, options ...core.Option\) \(\[\]any, error\)](#OllamaProvider.Batch>)
+  - [func \(o \*OllamaProvider\) BindTools\(toolsToBind \[\]tools.Tool\) iface.ChatModel](#OllamaProvider.BindTools>)
+  - [func \(o \*OllamaProvider\) CheckHealth\(\) map\[string\]any](#OllamaProvider.CheckHealth>)
+  - [func \(o \*OllamaProvider\) Generate\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(schema.Message, error\)](#OllamaProvider.Generate>)
+  - [func \(o \*OllamaProvider\) GetModelName\(\) string](#OllamaProvider.GetModelName>)
+  - [func \(o \*OllamaProvider\) GetProviderName\(\) string](#OllamaProvider.GetProviderName>)
+  - [func \(o \*OllamaProvider\) Invoke\(ctx context.Context, input any, options ...core.Option\) \(any, error\)](#OllamaProvider.Invoke>)
+  - [func \(o \*OllamaProvider\) Stream\(ctx context.Context, input any, options ...core.Option\) \(\<\-chan any, error\)](#OllamaProvider.Stream>)
+  - [func \(o \*OllamaProvider\) StreamChat\(ctx context.Context, messages \[\]schema.Message, options ...core.Option\) \(\<\-chan iface.AIMessageChunk, error\)](#OllamaProvider.StreamChat>)
 
 ## Constants
 
-<a name="ProviderName"></a>Provider constants.
+Provider constants.
 
 ```go
 const (
@@ -46,8 +46,8 @@ const (
 )
 ```
 
-<a name="NewOllamaProviderFactory"></a>
-## func [NewOllamaProviderFactory](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L622>)
+
+## func [NewOllamaProviderFactory](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L622)
 
 ```go
 func NewOllamaProviderFactory() func(*llms.Config) (iface.ChatModel, error)
@@ -55,8 +55,8 @@ func NewOllamaProviderFactory() func(*llms.Config) (iface.ChatModel, error)
 
 Factory function for creating Ollama providers.
 
-<a name="OllamaProvider"></a>
-## type [OllamaProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L37-L46>)
+
+## type [OllamaProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L37-L46)
 
 OllamaProvider implements the ChatModel interface for Ollama models.
 
@@ -66,8 +66,8 @@ type OllamaProvider struct {
 }
 ```
 
-<a name="NewOllamaProvider"></a>
-### func [NewOllamaProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L49>)
+
+### func [NewOllamaProvider](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L49)
 
 ```go
 func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error)
@@ -75,8 +75,8 @@ func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error)
 
 NewOllamaProvider creates a new Ollama provider instance.
 
-<a name="OllamaProvider.Batch"></a>
-### func \(\*OllamaProvider\) [Batch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L201>)
+
+### func \(\*OllamaProvider\) [Batch](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L201)
 
 ```go
 func (o *OllamaProvider) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error)
@@ -84,8 +84,8 @@ func (o *OllamaProvider) Batch(ctx context.Context, inputs []any, options ...cor
 
 Batch implements the Runnable interface.
 
-<a name="OllamaProvider.BindTools"></a>
-### func \(\*OllamaProvider\) [BindTools](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L175>)
+
+### func \(\*OllamaProvider\) [BindTools](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L175)
 
 ```go
 func (o *OllamaProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
@@ -93,8 +93,8 @@ func (o *OllamaProvider) BindTools(toolsToBind []tools.Tool) iface.ChatModel
 
 BindTools implements the ChatModel interface.
 
-<a name="OllamaProvider.CheckHealth"></a>
-### func \(\*OllamaProvider\) [CheckHealth](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L610>)
+
+### func \(\*OllamaProvider\) [CheckHealth](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L610)
 
 ```go
 func (o *OllamaProvider) CheckHealth() map[string]any
@@ -102,8 +102,8 @@ func (o *OllamaProvider) CheckHealth() map[string]any
 
 CheckHealth implements the HealthChecker interface.
 
-<a name="OllamaProvider.Generate"></a>
-### func \(\*OllamaProvider\) [Generate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L87>)
+
+### func \(\*OllamaProvider\) [Generate](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L87)
 
 ```go
 func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message, options ...core.Option) (schema.Message, error)
@@ -111,8 +111,8 @@ func (o *OllamaProvider) Generate(ctx context.Context, messages []schema.Message
 
 Generate implements the ChatModel interface.
 
-<a name="OllamaProvider.GetModelName"></a>
-### func \(\*OllamaProvider\) [GetModelName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L183>)
+
+### func \(\*OllamaProvider\) [GetModelName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L183)
 
 ```go
 func (o *OllamaProvider) GetModelName() string
@@ -120,15 +120,15 @@ func (o *OllamaProvider) GetModelName() string
 
 GetModelName implements the ChatModel interface.
 
-<a name="OllamaProvider.GetProviderName"></a>
-### func \(\*OllamaProvider\) [GetProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L187>)
+
+### func \(\*OllamaProvider\) [GetProviderName](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L187)
 
 ```go
 func (o *OllamaProvider) GetProviderName() string
 ```
 
-<a name="OllamaProvider.Invoke"></a>
-### func \(\*OllamaProvider\) [Invoke](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L192>)
+
+### func \(\*OllamaProvider\) [Invoke](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L192)
 
 ```go
 func (o *OllamaProvider) Invoke(ctx context.Context, input any, options ...core.Option) (any, error)
@@ -136,8 +136,8 @@ func (o *OllamaProvider) Invoke(ctx context.Context, input any, options ...core.
 
 Invoke implements the Runnable interface.
 
-<a name="OllamaProvider.Stream"></a>
-### func \(\*OllamaProvider\) [Stream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L241>)
+
+### func \(\*OllamaProvider\) [Stream](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L241)
 
 ```go
 func (o *OllamaProvider) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error)
@@ -145,8 +145,8 @@ func (o *OllamaProvider) Stream(ctx context.Context, input any, options ...core.
 
 Stream implements the Runnable interface.
 
-<a name="OllamaProvider.StreamChat"></a>
-### func \(\*OllamaProvider\) [StreamChat](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L129>)
+
+### func \(\*OllamaProvider\) [StreamChat](https://github.com/lookatitude/beluga-ai/blob/main/pkg/llms/providers/ollama/provider.go#L129)
 
 ```go
 func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Message, options ...core.Option) (<-chan iface.AIMessageChunk, error)
@@ -154,4 +154,4 @@ func (o *OllamaProvider) StreamChat(ctx context.Context, messages []schema.Messa
 
 StreamChat implements the ChatModel interface.
 
-Generated by [gomarkdoc](<https://github.com/princjef/gomarkdoc>)
+Generated by [gomarkdoc](https://github.com/princjef/gomarkdoc)
