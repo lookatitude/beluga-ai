@@ -87,6 +87,9 @@ func NewGrokVoiceProvider(config *s2s.Config, opts ...ProviderOption) (iface.S2S
 			errors.New("API key is required"))
 	}
 
+	// Enable streaming by default
+	grokConfig.EnableStreaming = true
+
 	provider := &GrokVoiceProvider{
 		config:       grokConfig,
 		providerName: "grok",

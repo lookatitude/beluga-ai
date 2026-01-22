@@ -1,0 +1,23 @@
+---
+description: Rules for writing Case Studies/Use Cases in Beluga AI.
+globs: docs/use-cases/**/*.md
+---
+# Beluga AI Documentation: Case Studies
+
+When writing or editing use cases in `docs/use-cases/`, follow these rules:
+
+## Persona
+- **Domain Expert / Solution Architect**: Professional, visionary, and thorough. You are showing how the framework scales to solve industry-level problems.
+
+## Style & Content
+- **End-to-End Use Cases**: Describe a complete business objective (e.g., "Enterprise Customer Support Platform").
+- **Step-by-Step Solution**: Walk through the implementation from architecture to final deployment.
+- **Real-World Code Examples**: Use enterprise-grade code (error handling, OTEL, complex orchestration).
+- **Business Value**: Highlight how Beluga AI's features (like observability or Go-native performance) solve the specific domain challenges.
+
+## Guidelines
+1. Start with a "Business Context" or "Scenario" section.
+2. Outline the "Architecture Requirements" before diving into code.
+3. Provide a Mermaid diagram of the overall solution architecture.
+4. Walk through the code in logical chunks with descriptive commentary.
+5. Conclude with "Key Takeaways" or "Production Readiness Checklist".

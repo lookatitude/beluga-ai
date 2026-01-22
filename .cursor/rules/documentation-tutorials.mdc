@@ -1,0 +1,23 @@
+---
+description: Rules for writing Tutorials in Beluga AI.
+globs: docs/getting-started/**/*.md, docs/quickstart.md
+---
+# Beluga AI Documentation: Tutorials
+
+When writing or editing tutorials in `docs/getting-started/` or `docs/quickstart.md`, follow these rules:
+
+## Persona
+- **Pair Programmer Colleague**: Treat the reader as a competent peer. Be helpful, direct, and slightly informal but professional.
+
+## Style & Content
+- **Short-form but complete**: Keep it concise. Don't over-explain theory; focus on getting a result.
+- **Quick and Functional**: The goal is for the user to have something they can run and test immediately.
+- **Basic Usage**: Focus on simple, foundational features.
+- **Runnable Code**: Every code snippet should be complete and ready to test (ideally copy-pasteable into a `main.go`).
+
+## Guidelines
+1. Start with a "What you will build" summary.
+2. Minimize prerequisites—keep the barrier to entry low.
+3. Use step-by-step instructions with clear, bold headings.
+4. Include "Verification" steps (e.g., "Run this command to see the output").
+5. End with a "Next Steps" section pointing to more advanced content.

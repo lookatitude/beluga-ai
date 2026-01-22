@@ -89,11 +89,15 @@ generate_package_docs() {
     
     # Convert <details> tags to headings for MDX compatibility
     # This removes collapsible functionality but ensures MDX can parse the file
-    python3 << PYTHON_SCRIPT
+    # Also fix escaped backslashes and JSX-like patterns in markdown links
+    local python_script=$(mktemp)
+    cat > "${python_script}" << 'PYTHON_EOF'
 import re
 import sys
 
-with open("${temp_file}", 'r') as f:
+temp_file = sys.argv[1]
+
+with open(temp_file, 'r') as f:
     content = f.read()
 
 # Convert <details><summary>...</summary>...content...</details> to ### Heading\n\n...content...
@@ -101,7 +105,7 @@ def replace_details(match):
     summary = match.group(1)
     content = match.group(2)
     summary_text = re.sub(r'<[^>]+>', '', summary).strip()
-    return f'\n\n### {summary_text}\n\n{content.strip()}\n\n'
+    return '\n\n### {}\n\n{}\n\n'.format(summary_text, content.strip())
 
 content = re.sub(
     r'<details><summary>(.*?)</summary>\s*(.*?)</details>',
@@ -113,12 +117,77 @@ content = re.sub(
 # Remove any remaining <p> tags
 content = re.sub(r'</?p>', '', content)
 
+# Fix escaped backslashes in text (but preserve in code blocks)
+# Pattern: \ followed by - (but not inside code blocks)
+def fix_escaped_backslashes(text):
+    lines = text.split('\n')
+    in_code_block = False
+    result = []
+    
+    for line in lines:
+        # Track code block state
+        if line.strip().startswith('```'):
+            in_code_block = not in_code_block
+            result.append(line)
+            continue
+        
+        # Only fix escaped backslashes outside code blocks
+        if not in_code_block:
+            # Fix \- which is commonly used in godoc
+            # This pattern matches a backslash followed by a hyphen
+            # We need to be careful - in Python strings, \\ represents a single \
+            line = line.replace('\\-', '-')
+        
+        result.append(line)
+    
+    return '\n'.join(result)
+
+content = fix_escaped_backslashes(content)
+
+# Fix JSX-like patterns in markdown links
+# MDX tries to parse < and > as JSX, so we need to escape them in markdown links
+# Pattern: [text](<#anchor>) where text contains < or > (like <\-chan)
+def fix_jsx_in_links(text):
+    # Find markdown links that contain < or > in the link text
+    # Escape < and > in link text using HTML entities
+    def escape_link_text(match):
+        full_link = match.group(0)
+        link_text = match.group(1)
+        link_url = match.group(2)
+        
+        # If link text contains < or > (but not as part of HTML), escape them
+        # This handles cases like <\-chan, <\-chan iface.AIMessageChunk, etc.
+        if '<' in link_text or '>' in link_text:
+            # Replace < with &lt; and > with &gt; in link text
+            # But preserve existing HTML entities
+            escaped_text = link_text.replace('<', '&lt;').replace('>', '&gt;')
+            # Fix double-escaped entities
+            escaped_text = escaped_text.replace('&amp;lt;', '&lt;').replace('&amp;gt;', '&gt;')
+            return '[{}]({})'.format(escaped_text, link_url)
+        
+        return full_link
+    
+    # Match markdown links: [text](url)
+    # Handle links with parentheses in the URL (like <#anchor>)
+    result = re.sub(
+        r'\[([^\]]+)\]\(([^)]+)\)',
+        escape_link_text,
+        text
+    )
+    
+    return result
+
+content = fix_jsx_in_links(content)
+
 # Clean up multiple blank lines
 content = re.sub(r'\n{3,}', '\n\n', content)
 
-with open("${temp_file}", 'w') as f:
+with open(temp_file, 'w') as f:
     f.write(content)
-PYTHON_SCRIPT
+PYTHON_EOF
+    
+    python3 "${python_script}" "${temp_file}"
+    rm -f "${python_script}"
     
     {
         echo "---"

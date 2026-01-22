@@ -285,14 +285,14 @@ result, _ := calculator.Execute(ctx, "10 + 5")
 ### Input Format
 
 Tools accept input as:
-- `map[string]interface{}` - Structured data
+- `map[string]interface\{\}` - Structured data
 - `string` - JSON string (will be parsed)
 
 ### Output Format
 
 Tools return:
 - `string` - Text result
-- `map[string]interface{}` - Structured data
+- `map[string]interface\{\}` - Structured data
 - Any serializable type
 
 ### Example: Structured Input/Output

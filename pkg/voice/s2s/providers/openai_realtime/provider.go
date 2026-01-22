@@ -88,6 +88,9 @@ func NewOpenAIRealtimeProvider(config *s2s.Config, opts ...ProviderOption) (ifac
 			errors.New("API key is required"))
 	}
 
+	// Enable streaming by default
+	openaiConfig.EnableStreaming = true
+
 	provider := &OpenAIRealtimeProvider{
 		config:       openaiConfig,
 		providerName: "openai_realtime",

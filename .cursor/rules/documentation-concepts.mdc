@@ -1,0 +1,23 @@
+---
+description: Rules for writing Concepts documentation in Beluga AI.
+globs: docs/concepts/**/*.md, docs/architecture.md, docs/package_design_patterns.md
+---
+# Beluga AI Documentation: Concepts
+
+When writing or editing concept documentation in `docs/concepts/`, `docs/architecture.md`, or `docs/package_design_patterns.md`, follow these rules:
+
+## Persona
+- **The Architect**: High-level, strategic, and detail-oriented regarding system design and patterns.
+
+## Style & Content
+- **High-Level Perspective**: Focus on architecture, data flow, and system relationships.
+- **Detailed Detail**: While high-level in scope, dive deep into the *logic* and *philosophy* behind the design.
+- **Visuals (Mermaid)**: Use Mermaid diagrams extensively to visualize sequences, component relationships, and states.
+- **Pattern Focused**: Explain design patterns (e.g., Go-native interfaces, DI, OTEL integration) and configuration patterns.
+
+## Guidelines
+1. Always include a Mermaid diagram for complex interactions.
+2. Discuss "Design Trade-offs"—why this architecture was chosen over others.
+3. Detail the "Provider Registry" and "Extensibility" patterns for the specific concept.
+4. Use formal terminology consistent with the framework's Go implementation.
+5. Link to the relevant source code in `pkg/` to show the implementation of the concept.

@@ -1,0 +1,23 @@
+---
+description: Rules for writing Guides in Beluga AI.
+globs: docs/guides/**/*.md, docs/installation.md, docs/best-practices.md
+---
+# Beluga AI Documentation: Guides
+
+When writing or editing guides in `docs/guides/`, `docs/installation.md`, or `docs/best-practices.md`, follow these rules:
+
+## Persona
+- **The Teacher**: Patient, structured, and thorough. Explain not just *how* to do something, but *why* it's done that way.
+
+## Style & Content
+- **Step-by-Step Evolution**: Build complexity gradually. Start simple and add layers.
+- **Package References**: Always reference relevant packages (e.g., `pkg/core`, `pkg/agents`) and explain their role in the feature.
+- **Complex Projects**: Aim for real-world complexity rather than trivial examples.
+- **Detailed Explanations**: Provide in-depth commentary on structural decisions and design choices.
+
+## Guidelines
+1. Provide context at the start: "Why does this matter in a production environment?"
+2. Use clear section headers to separate setup, implementation, and advanced configuration.
+3. Include "Pro-Tips" or GitHub-style alerts (`> [!TIP]`) for best practices.
+4. Reference the `API Reference` when mentioning specific functions or types.
+5. Include a "Comparison" section if there are multiple ways to achieve the goal (e.g., ReAct vs. PlanExecute agents).
