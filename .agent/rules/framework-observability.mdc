@@ -1,0 +1,226 @@
+---
+description: Beluga AI Framework observability with OpenTelemetry (MANDATORY)
+globs: "**/*.go"
+alwaysApply: true
+---
+
+# Beluga AI Observability Standards
+
+**MANDATORY**: Use OpenTelemetry (OTEL) for ALL metrics, tracing, and logging. NO custom metric libraries.
+
+## metrics.go Requirements (REQUIRED for Every Package)
+
+```go
+package mypackage
+
+import (
+    "go.opentelemetry.io/otel/metric"
+    "go.opentelemetry.io/otel/trace"
+)
+
+type Metrics struct {
+    operationsTotal   metric.Int64Counter
+    operationDuration metric.Float64Histogram
+    errorsTotal       metric.Int64Counter
+    tracer            trace.Tracer
+}
+
+func NewMetrics(meter metric.Meter, tracer trace.Tracer) (*Metrics, error) {
+    ops, err := meter.Int64Counter(
+        "mypackage_operations_total",
+        metric.WithDescription("Total number of operations"),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    dur, err := meter.Float64Histogram(
+        "mypackage_operation_duration_seconds",
+        metric.WithDescription("Operation duration in seconds"),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    errs, err := meter.Int64Counter(
+        "mypackage_errors_total",
+        metric.WithDescription("Total number of errors"),
+    )
+    if err != nil {
+        return nil, err
+    }
+
+    return &Metrics{
+        operationsTotal:   ops,
+        operationDuration: dur,
+        errorsTotal:       errs,
+        tracer:            tracer,
+    }, nil
+}
+```
+
+## Standard Metric Names
+
+| Metric | Format | Type |
+|--------|--------|------|
+| Operations count | `{pkg}_operations_total` | Counter |
+| Operation duration | `{pkg}_operation_duration_seconds` | Histogram |
+| Error count | `{pkg}_errors_total` | Counter |
+| Active connections | `{pkg}_active_connections` | Gauge (if applicable) |
+
+## Tracing Requirements
+
+### All Public Methods MUST Have Tracing
+
+```go
+func (c *Component) Process(ctx context.Context, input Input) (Output, error) {
+    ctx, span := c.metrics.tracer.Start(ctx, "component.process")
+    defer span.End()
+
+    // Add attributes
+    span.SetAttributes(
+        attribute.String("input.type", input.Type),
+        attribute.Int("input.size", len(input.Data)),
+    )
+
+    start := time.Now()
+    defer func() {
+        c.metrics.operationDuration.Record(ctx, time.Since(start).Seconds())
+    }()
+
+    c.metrics.operationsTotal.Add(ctx, 1)
+
+    result, err := c.doWork(ctx, input)
+    if err != nil {
+        c.metrics.errorsTotal.Add(ctx, 1)
+        span.RecordError(err)
+        span.SetStatus(codes.Error, err.Error())
+        return Output{}, err
+    }
+
+    span.SetStatus(codes.Ok, "success")
+    return result, nil
+}
+```
+
+### Span Naming Convention
+
+- Format: `{component}.{method}` (lowercase)
+- Examples: `agent.run`, `llm.generate`, `vectorstore.search`
+
+### Required Span Attributes
+
+| Attribute | When to Add |
+|-----------|-------------|
+| Error details | On any error |
+| Input type/size | For processing methods |
+| Provider name | For multi-provider packages |
+| Result count | For search/list operations |
+
+## Logging Requirements
+
+### Structured Logging with Trace Context
+
+```go
+import (
+    "log/slog"
+    "go.opentelemetry.io/otel/trace"
+)
+
+func (c *Component) logWithTrace(ctx context.Context, msg string, args ...any) {
+    span := trace.SpanFromContext(ctx)
+    spanCtx := span.SpanContext()
+
+    args = append(args,
+        "trace_id", spanCtx.TraceID().String(),
+        "span_id", spanCtx.SpanID().String(),
+    )
+
+    slog.InfoContext(ctx, msg, args...)
+}
+```
+
+### Log Levels
+
+| Level | Use For |
+|-------|---------|
+| Debug | Detailed debugging info (not in production) |
+| Info | Normal operations, state changes |
+| Warn | Recoverable issues, deprecated usage |
+| Error | Failures that need attention |
+
+## Context Propagation
+
+**ALWAYS** propagate context for:
+- Cancellation
+- Timeouts
+- Tracing
+- Request-scoped values
+
+```go
+// Good: Context propagation
+func (c *Component) Process(ctx context.Context, input Input) error {
+    // Check for cancellation
+    select {
+    case <-ctx.Done():
+        return ctx.Err()
+    default:
+    }
+
+    // Pass context to downstream calls
+    result, err := c.downstream.Call(ctx, input)
+    // ...
+}
+```
+
+## OTEL Test Validation
+
+Tests MUST verify metrics are recorded:
+
+```go
+func TestMetricsRecorded(t *testing.T) {
+    reader := metric.NewManualReader()
+    provider := metric.NewMeterProvider(metric.WithReader(reader))
+    meter := provider.Meter("test")
+
+    metrics, err := NewMetrics(meter, nil)
+    require.NoError(t, err)
+
+    component := NewComponent(WithMetrics(metrics))
+
+    // Execute operation
+    _, _ = component.Process(ctx, input)
+
+    // Collect and verify metrics
+    rm := &metricdata.ResourceMetrics{}
+    require.NoError(t, reader.Collect(ctx, rm))
+
+    // Assert operations_total was incremented
+    // Assert duration_seconds was recorded
+}
+```
+
+## Dependencies
+
+```go
+import (
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/codes"
+    "go.opentelemetry.io/otel/metric"
+    "go.opentelemetry.io/otel/trace"
+)
+```
+
+## Anti-Patterns to Avoid
+
+1. **Custom metric libraries** - OTEL only
+2. **Missing trace context** - Always propagate ctx
+3. **Unstructured logging** - Use slog with trace IDs
+4. **Silent failures** - Record all errors in spans
+5. **Missing cleanup** - Always `defer span.End()`
+
+## References
+
+- `pkg/monitoring/` - OTEL integration package
+- `.agent/personas/backend-developer/` - Implementation patterns

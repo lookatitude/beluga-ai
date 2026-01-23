@@ -36,9 +36,8 @@ module.exports = {
           path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/',
-          // Exclude template files with placeholder syntax
-          // Also exclude API packages subdir while investigating build issues
-          exclude: ['api/packages/**', '**/_template.md'],
+          // Exclude template files only
+          exclude: ['**/_template.md'],
         },
         blog: {
           path: 'blog',

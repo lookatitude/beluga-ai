@@ -311,6 +311,6 @@ Set `BELUGA_DEBUG=true` for detailed logging during tests.
 
 ## References
 
-- [Beluga Test Standards](../.cursor/rules/beluga-test-standards.mdc)
-- [Beluga Design Patterns](../.cursor/rules/beluga-design-patterns.mdc)
+- [Framework Quality Standards](../.agent/rules/framework-quality.mdc)
+- [Framework Architecture](../.agent/rules/framework-architecture.mdc)
 - [Integration Testing Framework](../tests/README.md)

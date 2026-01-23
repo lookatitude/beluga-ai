@@ -1,0 +1,226 @@
+---
+description: Beluga AI Framework quality standards, testing requirements, and CI/CD
+globs: "**/*.go, **/*_test.go"
+alwaysApply: true
+---
+
+# Beluga AI Quality Standards
+
+**MANDATORY**: All code MUST pass these quality gates.
+
+## Build & Format
+
+- **Go Version**: 1.24+ (matches `go.mod`)
+- **Build**: `make build` (MUST pass)
+- **Format**: `make fmt-check` (MUST pass). Fix: `make fmt`
+
+## Linting & Static Analysis
+
+- **Lint**: `make lint` (golangci-lint v2.6.2). Fix: `make lint-fix`
+- **Vet**: `make vet` (MUST pass)
+
+## Testing Requirements
+
+### Coverage Targets
+
+| Level | Target | Notes |
+|-------|--------|-------|
+| Critical paths | 100% | MUST be fully covered |
+| Overall package | ≥80% | Minimum acceptable |
+
+### Required Test Files Per Package
+
+```
+pkg/{package}/
+├── test_utils.go       # Advanced mocks (REQUIRED)
+├── advanced_test.go    # Comprehensive suites (REQUIRED)
+├── {package}_test.go   # Unit tests
+└── integration_test.go # Cross-package tests (optional)
+```
+
+### Test Categories (ALL REQUIRED)
+
+#### 1. Table-Driven Tests
+```go
+func TestComponent(t *testing.T) {
+    tests := []struct {
+        name          string
+        input         Input
+        expected      Output
+        expectedError bool
+        errorCode     ErrorCode
+    }{
+        {name: "success case", ...},
+        {name: "error - invalid input", expectedError: true, errorCode: ErrCodeInvalidInput},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Test implementation
+        })
+    }
+}
+```
+
+#### 2. Concurrency Tests
+```go
+func TestConcurrency(t *testing.T) {
+    runner := NewConcurrentTestRunner(100) // 100 goroutines
+    component := NewComponent()
+    runner.Run(func() error {
+        _, err := component.Process(ctx, input)
+        return err
+    })
+    require.NoError(t, runner.Wait())
+}
+```
+
+#### 3. Load Tests
+```go
+func TestLoad(t *testing.T) {
+    if testing.Short() {
+        t.Skip("skipping load test in short mode")
+    }
+    result := RunLoadTest(LoadTestConfig{
+        Operations:  1000,
+        Concurrency: 10,
+    })
+    assert.True(t, result.SuccessRate > 0.99)
+}
+```
+
+#### 4. Error Scenario Tests
+Test ALL error codes with proper error type assertions.
+
+#### 5. OTEL Validation Tests
+Verify metrics and traces are recorded correctly.
+
+#### 6. Registry Tests
+Test provider registration and creation for multi-provider packages.
+
+### test_utils.go Requirements
+
+```go
+// Advanced mock with configurable behavior
+type AdvancedMock{Name} struct {
+    mock.Mock
+    config      MockConfig
+    healthState atomic.Bool
+}
+
+type MockConfig struct {
+    Error        error
+    Delay        time.Duration
+    ResponseFunc func(input string) string
+}
+
+// Mock options
+func WithMockError(err error) MockOption
+func WithMockDelay(d time.Duration) MockOption
+
+// Test helpers
+type ConcurrentTestRunner struct { ... }
+func RunLoadTest(config LoadTestConfig) LoadTestResult
+```
+
+## Security Requirements
+
+- **Scan**: `make security` (gosec, govulncheck, gitleaks)
+- **Secrets**: NO secrets in code (`gitleaks` must pass)
+- **Optional**: `make security-full` (Trivy)
+
+## CI/CD Workflow
+
+### Local Check: `make ci-local`
+
+Executes in order:
+1. `fmt-check` - Format verification
+2. `lint` - Linting (advisory)
+3. `vet` - Go vet
+4. `security` - Security scans
+5. `test-unit` - Unit tests with race detection
+6. `test-integration` - Integration tests (15m timeout)
+7. `test-coverage` - Coverage report
+8. `build` - Build verification
+
+### Quality Commands
+
+```bash
+# All tests
+make test
+
+# Unit tests with race detection
+make test-unit
+
+# Integration tests (15m timeout)
+make test-integration
+
+# Race detection only
+make test-race
+
+# Coverage report
+make test-coverage
+
+# Linting
+make lint
+make lint-fix
+
+# Security scans
+make security
+
+# Full CI locally
+make ci-local
+```
+
+## Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Types
+- `feat`: New feature (MINOR version bump)
+- `fix`: Bug fix (PATCH version bump)
+- `docs`: Documentation changes
+- `test`: Test additions/changes
+- `refactor`: Code refactoring
+- `perf`: Performance improvements
+- `chore`: Dependency updates, etc.
+
+### Breaking Changes
+```
+feat: allow provided config object to extend other configs
+
+BREAKING CHANGE: `extends` key in config file is now used for extending
+```
+
+## Pre-commit Hooks
+
+```bash
+pip install pre-commit
+pre-commit install
+```
+
+## Quality Gates Checklist
+
+Before committing:
+
+- [ ] `make fmt` passes
+- [ ] `make lint` passes
+- [ ] `make test-unit` passes (with race detection)
+- [ ] `make security` passes
+- [ ] Coverage ≥80%
+- [ ] Table-driven tests present
+- [ ] Concurrency tests present
+- [ ] Error scenarios covered
+- [ ] OTEL metrics validated
+
+## References
+
+- `.agent/personas/qa/` - QA Engineer persona
+- `.agent/skills/create_test_suite/` - Test suite creation skill

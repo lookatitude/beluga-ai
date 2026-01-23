@@ -25,4 +25,4 @@ If you're just starting out, we recommend following our [Getting Started Series]
 
 ---
 
-*These tutorials follow the [Pair Programmer Colleague](../../.cursor/rules/documentation-tutorials.mdc) style - concise, functional, and ready to run.*
+*These tutorials follow a practical, hands-on style - concise, functional, and ready to run.*

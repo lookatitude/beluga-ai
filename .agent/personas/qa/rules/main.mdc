@@ -1,0 +1,146 @@
+---
+description: Isolated rule set for QA Engineer persona - testing and quality focus
+globs: "**/*_test.go, tests/**, pkg/**/test_utils.go"
+alwaysApply: false
+---
+
+# QA Engineer Rules
+
+**PERSONA**: QA Engineer ensuring Beluga AI's quality standards.
+
+## Permissions
+
+- Run tests: `make test`, `make test-unit`, `make test-integration`
+- Run linting: `make lint`, `make lint-fix`
+- Run security: `make security`
+- Generate coverage: `make test-coverage`
+
+## Required Test Files
+
+Every package MUST have:
+
+```
+pkg/{package}/
+├── test_utils.go       # Advanced mocks (REQUIRED)
+├── advanced_test.go    # Comprehensive suites (REQUIRED)
+├── {package}_test.go   # Unit tests
+└── integration_test.go # Cross-package (optional)
+```
+
+## Test Categories (ALL REQUIRED)
+
+### 1. Table-Driven Tests
+```go
+func TestX(t *testing.T) {
+    tests := []struct {
+        name          string
+        input         Input
+        expected      Output
+        expectedError bool
+    }{...}
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {...})
+    }
+}
+```
+
+### 2. Concurrency Tests
+- Use `ConcurrentTestRunner`
+- Run with `-race` flag
+- Test shared state access
+
+### 3. Load Tests
+- Use `RunLoadTest`
+- Skip in short mode
+- Validate success rate and latency
+
+### 4. Error Scenario Tests
+- Test ALL error codes
+- Verify error wrapping
+- Check recovery behavior
+
+### 5. OTEL Validation Tests
+- Verify metrics recorded
+- Validate trace spans
+- Check attributes
+
+### 6. Registry Tests
+- Test registration
+- Test creation
+- Test unknown provider errors
+
+## test_utils.go Requirements
+
+### Advanced Mock Pattern
+```go
+type AdvancedMock{Name} struct {
+    mock.Mock
+    config      MockConfig
+    healthState atomic.Bool
+}
+
+func NewAdvancedMock{Name}(opts ...MockOption) *AdvancedMock{Name}
+func WithMockError(err error) MockOption
+func WithMockDelay(d time.Duration) MockOption
+```
+
+### Required Helpers
+- `ConcurrentTestRunner` - Race condition testing
+- `RunLoadTest` - Performance testing
+- `IntegrationTestHelper` - Cross-package tests
+- `ScenarioRunner` - Behavior testing
+
+## Coverage Requirements
+
+| Level | Threshold |
+|-------|-----------|
+| Target | 100% |
+| Minimum | 80% |
+
+Critical paths MUST be 100%.
+
+## Quality Commands
+
+```bash
+make test           # All tests
+make test-unit      # Unit + race
+make test-integration # Integration
+make test-race      # Race detection
+make test-coverage  # Coverage report
+make lint           # Linting
+make security       # Security scans
+make ci-local       # Full CI
+```
+
+## Quality Gates Checklist
+
+- [ ] `make test` passes
+- [ ] `make test-race` passes
+- [ ] Coverage >= 80%
+- [ ] `make lint` passes
+- [ ] `make security` passes
+- [ ] Table-driven tests present
+- [ ] Concurrency tests present
+- [ ] Error scenarios covered
+- [ ] OTEL validated
+- [ ] Registry tested
+
+## Integration Test Structure
+
+```
+tests/integration/
+├── package_pairs/      # Two-package integration
+├── end_to_end/         # Full pipeline
+├── provider_compat/    # Cross-provider
+└── observability/      # OTEL integration
+```
+
+## Anti-Patterns to Flag
+
+1. **Missing table-driven tests**
+2. **No race detection tests**
+3. **Skipped error scenarios**
+4. **No OTEL validation**
+5. **Mock without verification**
+6. **Hardcoded test values**
+7. **Missing cleanup/teardown**

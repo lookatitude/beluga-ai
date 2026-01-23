@@ -1,0 +1,103 @@
+# Verify Architecture & Compliance Workflow
+#
+# This workflow scans the codebase, validates architecture patterns,
+# and generates a compliance report. If issues are found, it can
+# trigger the fix-and-validate workflow.
+#
+# Usage: ./.agent/scripts/run-workflow.sh verify-architecture
+
+name: Verify Architecture & Compliance
+description: Multi-persona workflow to scan, validate, and optionally fix architecture issues
+
+config:
+  max_iterations: 3  # Maximum fix→validate loops
+  timeout: 300       # Step timeout in seconds
+  report_format: markdown
+
+steps:
+  - name: scan-codebase
+    description: Analyze the complete codebase structure and identify all patterns
+    persona: researcher
+    skill: research_topic
+    input:
+      question: |
+        Analyze the complete codebase structure and identify:
+        1. All packages in pkg/ and their purposes
+        2. Architecture patterns being used
+        3. Layer dependencies (do they follow the layered architecture?)
+        4. Interface definitions and their implementations
+        5. OTEL observability implementation status
+        6. Error handling patterns in use
+      scope:
+        - "pkg/**/*.go"
+        - "docs/architecture.md"
+        - "docs/package_design_patterns.md"
+      depth: comprehensive
+    output: scan-report.md
+
+  - name: validate-architecture
+    id: validate
+    description: Validate all patterns against framework rules
+    persona: architect
+    skill: review_architecture
+    input:
+      source: ${scan-report.md}
+      checklist:
+        - name: layer-compliance
+          description: Dependencies point downward only (App→Agent→LLM→RAG→Memory→Infra)
+          severity: critical
+        - name: interface-segregation
+          description: Small, focused interfaces (ISP)
+          severity: high
+        - name: dependency-inversion
+          description: Depend on abstractions, not concretions (DIP)
+          severity: high
+        - name: package-structure
+          description: Required files exist (iface/, config.go, metrics.go, errors.go)
+          severity: medium
+        - name: otel-observability
+          description: OTEL metrics, tracing, and logging implemented
+          severity: critical
+        - name: error-handling
+          description: Op/Err/Code pattern for custom errors
+          severity: medium
+        - name: registry-pattern
+          description: Global registry for multi-provider packages
+          severity: medium
+    output: validation-report.md
+    on_failure: trigger-fixes
+
+  - name: generate-report
+    description: Generate final compliance report
+    persona: architect
+    skill: design_component
+    input:
+      validation: ${validation-report.md}
+      format: compliance-report
+      include:
+        - executive_summary
+        - detailed_findings
+        - recommendations
+        - compliance_score
+    output: architecture-compliance-report.md
+    condition: validation.passed == true
+
+  - name: trigger-fixes
+    id: trigger-fixes
+    description: Trigger fix workflow for failed validations
+    persona: backend-developer
+    workflow: fix-and-validate
+    input:
+      issues: ${validation-report.md}
+      auto_fix: false  # Require confirmation for each fix
+    output: fix-report.md
+    then: validate  # Re-run validation after fixes
+
+outputs:
+  - name: Final Report
+    file: architecture-compliance-report.md
+    description: Complete architecture compliance report
+
+  - name: Validation Details
+    file: validation-report.md
+    description: Detailed validation results per checklist item

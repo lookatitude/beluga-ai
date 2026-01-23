@@ -340,6 +340,22 @@ func TestInfiniteLoop(t *testing.T) {
 		default:
 			// Loop body
 		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+			return
+		default:
+			// Loop body
+		}
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(5 * time.Second):
+			return
+		default:
+			// Loop body
+		}
 		// This is an infinite loop without exit condition
 	}
 }

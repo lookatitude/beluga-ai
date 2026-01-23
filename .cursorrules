@@ -1,41 +1,84 @@
 # Beluga AI Project Rules
 
-You are working on the Beluga AI Framework, a comprehensive Go-native framework for agentic applications.
-These rules supplement the detailed rules found in `.cursor/rules/*.mdc`.
+## Source of Truth: .agent/
 
-## Core Principles
+All agent configurations, rules, skills, and workflows are defined in `.agent/`.
+This file provides a quick reference; see `.agent/` for complete details.
 
-1.  **Architecture**: Follow the layered architecture: `App` -> `Agent` -> `Orchestration` -> `LLM` -> `RAG` -> `Memory` -> `Infrastructure`.
-2.  **Interface-Driven**: Always define small, focused interfaces. Depend on abstractions, not implementations.
-3.  **Observability (MANDATORY)**: Use OpenTelemetry (OTEL) for ALL metrics, tracing, and logging. NO custom metric libraries.
-4.  **Testing**: Achieve high test coverage (Target: 100%, Min: 80%). Use table-driven tests, advanced mocks, and integration tests.
+## Loading Rules
 
-## Package Structure Requirements
+Rules are loaded based on the active persona:
+1. **Framework rules**: `.agent/rules/` (always loaded)
+2. **Persona rules**: `.agent/personas/{name}/rules/` (per activation)
 
-Every package in `pkg/` MUST follow this structure:
--   `iface/`: Interfaces and types.
--   `internal/`: Private implementation.
--   `providers/`: Provider implementations (e.g., `pkg/llms/providers/openai`).
--   `config.go`: Configuration structs with `mapstructure`, `yaml`, `env` tags and validation.
--   `metrics.go`: OTEL metrics initialization.
--   `errors.go`: Custom error types (`Op`, `Err`, `Code`).
--   `test_utils.go`: Advanced mocks and test helpers.
+## Activating a Persona
 
-## Development Workflow
+```bash
+./.agent/scripts/activate-persona.sh <persona-name>
+```
 
-1.  **Work in Feature Branches**: `feat/` or `fix/`.
-2.  **Commit Messages**: Follow Conventional Commits (e.g., `feat(llm): add streaming support`, `fix: handle timeout`).
-3.  **Quality Checks**: Run `make all` before committing. This runs format, vet, lint, and test.
-4.  **Security**: Run `make security` to check for vulnerabilities and secrets.
+Available: `backend-developer`, `architect`, `researcher`, `qa`, `documentation-writer`
 
-## Common Commands
+## Running Workflows
 
--   `make test`: Run all tests.
--   `make lint`: Run golangci-lint.
--   `make fmt`: Format code.
--   `make security`: Run security scans.
+```bash
+# Run multi-persona workflow
+./.agent/scripts/run-workflow.sh <workflow-name>
+
+# Dry run to see steps
+./.agent/scripts/run-workflow.sh <workflow-name> --dry-run
+```
+
+Available workflows: `verify-architecture`, `fix-and-validate`, `comprehensive-review`
+
+## Quick Reference
+
+| Resource | Location |
+|----------|----------|
+| Persona Registry | `.agent/agents.md` |
+| Framework Rules | `.agent/rules/` |
+| Orchestration | `.agent/orchestration/ORCHESTRATION.md` |
+| AI Guide | `CLAUDE.md` |
+
+## Core Principles (from .agent/rules/)
+
+1. **Architecture**: Follow layered architecture (App -> Agent -> LLM -> RAG -> Memory -> Infrastructure)
+2. **Interface-Driven**: Small, focused interfaces (ISP). Depend on abstractions (DIP).
+3. **Observability**: OTEL for ALL metrics, tracing, logging. NO custom metrics.
+4. **Testing**: Target 100%, min 80%. Table-driven, concurrency, load, error tests.
+
+## Package Structure
+
+Every `pkg/` package MUST follow:
+- `iface/` - Interfaces and types
+- `config.go` - Configuration with validation
+- `metrics.go` - OTEL metrics
+- `errors.go` - Custom errors (Op/Err/Code)
+- `test_utils.go` - Advanced mocks
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `make test` | All tests |
+| `make lint` | Linting |
+| `make fmt` | Format code |
+| `make security` | Security scans |
+| `make ci-local` | Full CI pipeline |
+
+## Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `test`: Tests
+- `refactor`: Refactoring
+- `chore`: Maintenance
 
 ## References
 
--   See `.cursor/rules/` for specific patterns (Architecture, Design, Testing).
--   See `CONTRIBUTING.md` for detailed contribution guidelines.
+- `.agent/agents.md` - Persona documentation
+- `.agent/orchestration/ORCHESTRATION.md` - Workflow orchestration
+- `CLAUDE.md` - AI assistant guide
+- `CONTRIBUTING.md` - Contribution guidelines
