@@ -25,36 +25,26 @@ This use case implements a unified LLM gateway that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Client Applications                          │
-│              (Services, Agents, APIs)                          │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │ Unified API
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              LLM Gateway (pkg/llms, pkg/server)                  │
-│                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   Request    │→ │   Provider   │→ │   Response  │         │
-│  │  Router      │  │  Selection   │  │  Handler    │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   LLM        │    │   Monitoring  │    │  Rate Limit  │
-│  Providers   │    │  (pkg/        │    │  Manager     │
-│  (pkg/llms)  │    │  monitoring)  │    │              │
-│              │    │               │    │              │
-│  - OpenAI    │    │  - Metrics    │    │  - Per       │
-│  - Anthropic │    │  - Tracing    │    │    Provider  │
-│  - Bedrock   │    │  - Logging    │    │  - Global    │
-│  - Ollama    │    │               │    │              │
-└──────────────┘    └──────────────┘    └──────────────┘
+```mermaid
+graph TB
+    subgraph Clients["Client Applications"]
+        A[Services / Agents / APIs]
+    end
+
+    subgraph Gateway["LLM Gateway - pkg/llms, pkg/server"]
+        B1[Request Router] --> B2[Provider Selection] --> B3[Response Handler]
+    end
+
+    subgraph Components["Core Components"]
+        C[LLM Providers - pkg/llms<br>OpenAI / Anthropic / Bedrock / Ollama]
+        D[Monitoring - pkg/monitoring<br>Metrics / Tracing / Logging]
+        E[Rate Limit Manager<br>Per Provider / Global]
+    end
+
+    A -->|Unified API| B1
+    B2 --> C
+    B2 --> D
+    B2 --> E
 ```
 
 ## Component Usage

@@ -8,16 +8,9 @@ import (
 
 // SplitterConfig contains common configuration for all splitters.
 type SplitterConfig struct {
-	// ChunkSize is the target maximum chunk size (required).
-	ChunkSize int `mapstructure:"chunk_size" yaml:"chunk_size" env:"SPLITTER_CHUNK_SIZE" validate:"required,min=1"`
-
-	// ChunkOverlap is the number of characters/tokens to overlap between chunks.
-	// Must be less than ChunkSize.
-	ChunkOverlap int `mapstructure:"chunk_overlap" yaml:"chunk_overlap" env:"SPLITTER_CHUNK_OVERLAP" validate:"min=0,ltfield=ChunkSize"`
-
-	// LengthFunction measures text length. Defaults to len() for character count.
-	// Set to a tokenizer function for token-based splitting.
 	LengthFunction func(string) int `mapstructure:"-" yaml:"-"`
+	ChunkSize      int              `mapstructure:"chunk_size" yaml:"chunk_size" env:"SPLITTER_CHUNK_SIZE" validate:"required,min=1"`
+	ChunkOverlap   int              `mapstructure:"chunk_overlap" yaml:"chunk_overlap" env:"SPLITTER_CHUNK_OVERLAP" validate:"min=0,ltfield=ChunkSize"`
 }
 
 // DefaultSplitterConfig returns a SplitterConfig with sensible defaults.

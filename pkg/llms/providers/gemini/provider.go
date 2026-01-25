@@ -76,19 +76,19 @@ type geminiTool struct {
 }
 
 type geminiFunctionDeclaration struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Parameters  interface{} `json:"parameters,omitempty"`
+	Parameters  any    `json:"parameters,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 type geminiGenerateResponse struct {
-	Candidates    []geminiCandidate    `json:"candidates"`
 	UsageMetadata *geminiUsageMetadata `json:"usageMetadata,omitempty"`
+	Candidates    []geminiCandidate    `json:"candidates"`
 }
 
 type geminiCandidate struct {
-	Content      geminiContent `json:"content"`
 	FinishReason string        `json:"finishReason,omitempty"`
+	Content      geminiContent `json:"content"`
 }
 
 type geminiUsageMetadata struct {
@@ -386,7 +386,7 @@ func (g *GeminiProvider) streamInternal(ctx context.Context, messages []schema.M
 			return
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 		if err != nil {
 			outputChan <- iface.AIMessageChunk{
 				Err: llms.WrapError("gemini.stream", err),
@@ -533,7 +533,7 @@ func (g *GeminiProvider) convertTools(tools []tools.Tool) []geminiTool {
 }
 
 // makeAPIRequest makes an HTTP request to the Gemini API.
-func (g *GeminiProvider) makeAPIRequest(ctx context.Context, method string, reqBody interface{}) (*geminiGenerateResponse, error) {
+func (g *GeminiProvider) makeAPIRequest(ctx context.Context, method string, reqBody any) (*geminiGenerateResponse, error) {
 	url := fmt.Sprintf("%s/models/%s:%s?key=%s", g.baseURL, g.modelName, method, g.apiKey)
 
 	bodyBytes, err := json.Marshal(reqBody)
@@ -541,7 +541,7 @@ func (g *GeminiProvider) makeAPIRequest(ctx context.Context, method string, reqB
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

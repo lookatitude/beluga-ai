@@ -2,6 +2,7 @@ package vapi
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,9 +20,9 @@ type VapiBackend struct {
 	config          *VapiConfig
 	sessionManager  *internal.SessionManager
 	httpClient      *http.Client
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
 	metrics         *backend.Metrics
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -75,7 +76,7 @@ func (b *VapiBackend) Start(ctx context.Context) error {
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "VapiBackend.Start", func() error {
 		// Test connection by making a simple API call
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/assistants", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/assistants", nil)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,6 @@ func (b *VapiBackend) Start(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		b.connectionState = iface.ConnectionStateError
 		backend.RecordSpanError(span, err)
@@ -156,7 +156,7 @@ func (b *VapiBackend) CreateSession(ctx context.Context, config *iface.SessionCo
 
 	if connectionState != iface.ConnectionStateConnected {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("backend not connected"))
+			errors.New("backend not connected"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (b *VapiBackend) CreateSession(ctx context.Context, config *iface.SessionCo
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "VapiBackend.CreateSession", func() error {
 		// Create Vapi call
-		callURL := fmt.Sprintf("%s/calls", b.config.APIURL)
-		req, err := http.NewRequestWithContext(ctx, "POST", callURL, nil)
+		callURL := b.config.APIURL + "/calls"
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, callURL, nil)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,6 @@ func (b *VapiBackend) CreateSession(ctx context.Context, config *iface.SessionCo
 
 		return nil
 	})
-
 	if err != nil {
 		backend.RecordSpanError(span, err)
 		backend.LogWithOTELContext(ctx, slog.LevelError, "Failed to create Vapi call", "error", err)
@@ -255,7 +254,7 @@ func (b *VapiBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus, err
 	defer b.mu.RUnlock()
 
 	// Check Vapi API health
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/assistants", b.config.APIURL), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/assistants", nil)
 	if err != nil {
 		return nil, backend.WrapError("HealthCheck", err)
 	}
@@ -313,7 +312,7 @@ func (b *VapiBackend) UpdateConfig(ctx context.Context, config *iface.Config) er
 	// If connection state is connected, verify connection still works
 	if b.connectionState == iface.ConnectionStateConnected {
 		// Test connection
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/assistants", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/assistants", nil)
 		if err != nil {
 			return backend.NewBackendError("UpdateConfig", backend.ErrCodeConnectionFailed, err)
 		}

@@ -18,26 +18,26 @@ type BedrockRuntimeClient interface {
 
 // MockBedrockClient is a mock implementation of BedrockRuntimeClient for testing.
 type MockBedrockClient struct {
-	mu                sync.RWMutex
 	responses         map[string]*MockBedrockResponse
 	defaultResp       *MockBedrockResponse
 	requestCount      map[string]int
 	invokeErrors      map[string]error
 	streamResponses   map[string]*MockBedrockStreamResponse
 	defaultStreamResp *MockBedrockStreamResponse
+	mu                sync.RWMutex
 }
 
 // MockBedrockResponse represents a mock Bedrock API response.
 type MockBedrockResponse struct {
-	Body        []byte
-	ContentType string
 	Error       error
+	ContentType string
+	Body        []byte
 }
 
 // MockBedrockStreamResponse represents a mock Bedrock streaming API response.
 type MockBedrockStreamResponse struct {
-	Chunks []types.ResponseStream
 	Error  error
+	Chunks []types.ResponseStream
 }
 
 // NewMockBedrockClient creates a new mock Bedrock client.

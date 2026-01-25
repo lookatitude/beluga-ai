@@ -33,7 +33,7 @@ type LLMProviderConfig struct {
 	Name               string         `mapstructure:"name" yaml:"name" json:"name" validate:"required"`
 	Provider           string         `mapstructure:"provider" yaml:"provider" json:"provider" validate:"required"`
 	ModelName          string         `mapstructure:"model_name" yaml:"model_name" json:"model_name" validate:"required"`
-	APIKey             string         `mapstructure:"api_key" yaml:"api_key,omitempty" json:"api_key,omitempty"`
+	APIKey             string         `mapstructure:"api_key" yaml:"api_key,omitempty" json:"-"`
 	BaseURL            string         `mapstructure:"base_url" yaml:"base_url,omitempty" json:"base_url,omitempty"`
 }
 
@@ -43,7 +43,7 @@ type EmbeddingProviderConfig struct {
 	Name             string         `mapstructure:"name" yaml:"name" json:"name" validate:"required"`
 	Provider         string         `mapstructure:"provider" yaml:"provider" json:"provider" validate:"required"`
 	ModelName        string         `mapstructure:"model_name" yaml:"model_name" json:"model_name" validate:"required"`
-	APIKey           string         `mapstructure:"api_key" yaml:"api_key" json:"api_key" validate:"required"`
+	APIKey           string         `mapstructure:"api_key" yaml:"api_key" json:"-" validate:"required"`
 	BaseURL          string         `mapstructure:"base_url" yaml:"base_url,omitempty" json:"base_url,omitempty"`
 }
 
@@ -52,7 +52,7 @@ type VectorStoreConfig struct {
 	ProviderSpecific map[string]any `mapstructure:"provider_specific,omitempty" yaml:"provider_specific,omitempty"`
 	Name             string         `mapstructure:"name" yaml:"name" validate:"required"`
 	Provider         string         `mapstructure:"provider" yaml:"provider" validate:"required"`
-	ConnectionString string         `mapstructure:"connection_string,omitempty" yaml:"connection_string,omitempty"`
+	ConnectionString string         `mapstructure:"connection_string,omitempty" yaml:"connection_string,omitempty" json:"-"`
 }
 
 // Validate validates the AgentConfig struct.

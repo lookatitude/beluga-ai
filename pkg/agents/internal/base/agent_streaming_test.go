@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -85,7 +84,7 @@ func (m *mockStreamingChatModel) StreamChat(ctx context.Context, messages []sche
 	return ch, nil
 }
 
-func (m *mockStreamingChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel {
+func (m *mockStreamingChatModel) BindTools(toolsToBind []iface.Tool) llmsiface.ChatModel {
 	return m
 }
 

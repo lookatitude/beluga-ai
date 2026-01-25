@@ -13,21 +13,15 @@ import (
 
 // AdvancedMockVoiceComponent provides a comprehensive mock implementation for testing voice components.
 type AdvancedMockVoiceComponent struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	mock.Mock
+	name          string
+	healthState   string
+	callCount     int
+	simulateDelay time.Duration
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // NewAdvancedMockVoiceComponent creates a new advanced mock voice component with configurable behavior.
@@ -73,9 +67,9 @@ func (m *AdvancedMockVoiceComponent) GetCallCount() int {
 
 // ConcurrentTestRunner provides utilities for concurrent testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 // NewConcurrentTestRunner creates a new concurrent test runner.
@@ -121,3 +115,35 @@ func (r *ConcurrentTestRunner) Run(t *testing.T) {
 		}
 	}
 }
+
+// EXCLUSION DOCUMENTATION
+//
+// The following code paths are excluded from test coverage:
+//
+// 1. Provider-specific implementations (providers/*/*.go, backend/providers/*/*.go, etc.)
+//    - Reason: These require actual external service connections (Twilio, LiveKit, Pipecat, etc.)
+//    - Coverage: Tested via integration tests with mocks where possible
+//    - Files: pkg/voice/providers/*/*.go, pkg/voice/backend/providers/*/*.go, etc.
+//
+// 2. Internal implementations (internal/*.go, backend/internal/*.go, etc.)
+//    - Reason: Internal implementation details, tested indirectly through public APIs
+//    - Coverage: Tested via integration tests and public API tests
+//    - Files: pkg/voice/internal/*.go, pkg/voice/backend/internal/*.go, etc.
+//
+// 3. Audio processing and real-time streaming paths
+//    - Reason: Requires actual audio hardware/streams, timing-dependent
+//    - Coverage: Tested via integration tests with mock audio streams
+//    - Files: Various provider implementations with audio processing
+//
+// 4. Network and WebSocket connection handling
+//    - Reason: Requires actual network connections, difficult to mock reliably
+//    - Coverage: Tested via integration tests with test servers
+//    - Files: WebSocket and network-related provider code
+//
+// 5. OS-level and platform-specific code
+//    - Reason: Cannot simulate OS-level errors in unit tests
+//    - Coverage: Error types tested, actual OS failures tested in integration tests
+//    - Files: Platform-specific implementations
+//
+// Note: Integration tests in tests/integration/voice/ provide comprehensive coverage
+// for cross-package interactions, real-world usage scenarios, and provider integrations.

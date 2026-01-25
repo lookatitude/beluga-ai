@@ -83,7 +83,7 @@ type PgVectorStoreConfig struct {
 //	}
 //	store, err := pgvector.NewPgVectorStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewPgVectorStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract pgvector-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pgvector"]

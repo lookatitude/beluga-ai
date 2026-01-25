@@ -56,6 +56,7 @@ This use case implements an AI-powered code review system that:
 │  - API       │    │  - VectorStore│   │  - Anthropic │
 │  - GoFunc    │    │               │    │              │
 └──────────────┘    └──────────────┘    └──────────────┘
+
         │                     │                     │
         └─────────────────────┼─────────────────────┘
                               │

@@ -481,7 +481,7 @@ Congratulations! You've completed the Getting Started Tutorial series. Next, exp
 - **[Best Practices](../best-practices.md)** - Production best practices
 - **[Troubleshooting](../troubleshooting.md)** - Common issues and solutions
 - **[Use Cases](../use-cases/)** - Real-world examples
-- **[API Reference](../../website/docs/api/)** - Detailed API documentation
+- **[API Reference](../api-reference.md)** - Detailed API documentation
 
 ---
 

@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -26,10 +27,10 @@ import (
 // REFERENCE: This pattern should be used for all creation/factory tests.
 func TestMonitorCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockMonitor
 		validate    func(t *testing.T, monitor *AdvancedMockMonitor)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -91,11 +92,11 @@ func TestMonitorCreationAdvanced(t *testing.T) {
 // REFERENCE: This pattern should be used for all operation/method tests.
 func TestMonitorOperationsAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockMonitor
 		operation   func(t *testing.T, ctx context.Context, monitor *AdvancedMockMonitor) error
 		validate    func(t *testing.T, monitor *AdvancedMockMonitor, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -272,7 +273,7 @@ func TestConcurrentMetricRecording(t *testing.T) {
 			ctx := context.Background()
 			for j := 0; j < numMetricsPerGoroutine; j++ {
 				err := monitor.RecordMetric(ctx, fmt.Sprintf("metric_%d_%d", id, j), float64(j), map[string]string{
-					"goroutine": fmt.Sprintf("%d", id),
+					"goroutine": strconv.Itoa(id),
 				})
 				if err != nil {
 					errChan <- err
@@ -403,7 +404,7 @@ func TestMonitorWithContext(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("operations_with_cancelled_context", func(t *testing.T) {
+	t.Run("operations_with_canceled_context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		monitor := NewAdvancedMockMonitor("cancel-monitor", "test-type")
@@ -731,4 +732,279 @@ func BenchmarkConcurrentOperations(b *testing.B) {
 			_ = monitor.IsHealthy(ctx)
 		}
 	})
+}
+
+// =============================================================================
+// SECTION 8: Config Tests
+// =============================================================================
+
+// TestConfigValidation tests Config.Validate() function.
+func TestConfigValidation(t *testing.T) {
+	t.Run("default_config_valid", func(t *testing.T) {
+		cfg := DefaultConfig()
+		err := cfg.Validate()
+		assert.NoError(t, err)
+	})
+
+	t.Run("config_with_invalid_service_name", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.ServiceName = "" // Empty service name should fail
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "required")
+	})
+
+	t.Run("config_with_invalid_log_level", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.Logging.Level = "invalid"
+		err := cfg.Validate()
+		assert.Error(t, err)
+	})
+
+	t.Run("config_with_invalid_sample_rate", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.OpenTelemetry.SampleRate = 1.5 // > 1.0
+		err := cfg.Validate()
+		assert.Error(t, err)
+	})
+
+	t.Run("config_with_invalid_histogram_buckets", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.Metrics.HistogramBuckets = []float64{0.5, 0.1, 0.3} // Not sorted
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "sorted")
+	})
+
+	t.Run("config_with_invalid_health_timeout", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.Health.Timeout = cfg.Health.CheckInterval // Timeout >= interval
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "timeout must be less")
+	})
+
+	t.Run("config_with_invalid_custom_patterns", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.Safety.CustomPatterns = map[string][]string{
+			"test": {"[invalid regex"}, // Invalid regex
+		}
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid regex")
+	})
+
+	t.Run("config_with_opentelemetry_enabled_no_endpoint", func(t *testing.T) {
+		cfg := DefaultConfig()
+		cfg.OpenTelemetry.Enabled = true
+		cfg.OpenTelemetry.Endpoint = "" // Empty endpoint when enabled
+		err := cfg.Validate()
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "endpoint is required")
+	})
+
+	t.Run("config_functional_options", func(t *testing.T) {
+		cfg := DefaultConfig()
+		WithServiceName("test-service")(&cfg)
+		assert.Equal(t, "test-service", cfg.ServiceName)
+
+		WithOpenTelemetry("localhost:4318")(&cfg)
+		assert.True(t, cfg.OpenTelemetry.Enabled)
+		assert.Equal(t, "localhost:4318", cfg.OpenTelemetry.Endpoint)
+
+		WithLogging("debug", "text")(&cfg)
+		assert.Equal(t, "debug", cfg.Logging.Level)
+		assert.Equal(t, "text", cfg.Logging.Format)
+
+		WithTracing(0.5)(&cfg)
+		assert.Equal(t, 0.5, cfg.Tracing.SampleRate)
+
+		WithSafety(0.8, true)(&cfg)
+		assert.Equal(t, 0.8, cfg.Safety.RiskThreshold)
+		assert.True(t, cfg.Safety.EnableHumanReview)
+
+		WithEthics(0.9, true)(&cfg)
+		assert.Equal(t, 0.9, cfg.Ethics.FairnessThreshold)
+		assert.True(t, cfg.Ethics.RequireHumanApproval)
+
+		WithHealth(60 * time.Second)(&cfg)
+		assert.Equal(t, 60*time.Second, cfg.Health.CheckInterval)
+	})
+
+	t.Run("load_config", func(t *testing.T) {
+		cfg, err := LoadConfig(
+			WithServiceName("test-service"),
+			WithOpenTelemetry("localhost:4317"),
+		)
+		require.NoError(t, err)
+		assert.Equal(t, "test-service", cfg.ServiceName)
+		assert.True(t, cfg.OpenTelemetry.Enabled)
+	})
+
+	t.Run("load_config_invalid", func(t *testing.T) {
+		cfg, err := LoadConfig(
+			WithServiceName(""), // Invalid
+		)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "invalid configuration")
+		assert.Equal(t, Config{}, cfg)
+	})
+}
+
+// TestConfigDefaultFunctions tests default pattern functions.
+func TestConfigDefaultFunctions(t *testing.T) {
+	t.Run("get_default_toxicity_patterns", func(t *testing.T) {
+		patterns := getDefaultToxicityPatterns()
+		assert.NotEmpty(t, patterns)
+		assert.NotEmpty(t, patterns)
+	})
+
+	t.Run("get_default_bias_patterns", func(t *testing.T) {
+		patterns := getDefaultBiasPatterns()
+		assert.NotEmpty(t, patterns)
+		assert.NotEmpty(t, patterns)
+	})
+
+	t.Run("get_default_harmful_patterns", func(t *testing.T) {
+		patterns := getDefaultHarmfulPatterns()
+		assert.NotEmpty(t, patterns)
+		assert.NotEmpty(t, patterns)
+	})
+}
+
+// =============================================================================
+// SECTION 9: Error Handling Tests
+// =============================================================================
+
+// TestMonitoringErrorHandling tests error handling in monitoring package.
+func TestMonitoringErrorHandling(t *testing.T) {
+	tests := []struct {
+		err           error
+		validateError func(t *testing.T, err *MonitoringError)
+		name          string
+		op            string
+		code          string
+		message       string
+	}{
+		{
+			name:    "error_with_message",
+			op:      "test_operation",
+			code:    ErrCodeInvalidConfig,
+			err:     nil,
+			message: "Test error message",
+			validateError: func(t *testing.T, err *MonitoringError) {
+				assert.Equal(t, "test_operation", err.Op)
+				assert.Equal(t, ErrCodeInvalidConfig, err.Code)
+				assert.Equal(t, "Test error message", err.Message)
+				assert.Contains(t, err.Error(), "test_operation")
+				assert.Contains(t, err.Error(), ErrCodeInvalidConfig)
+			},
+		},
+		{
+			name:    "error_with_underlying_error",
+			op:      "test_operation",
+			code:    ErrCodeProviderError,
+			err:     errors.New("underlying error"),
+			message: "",
+			validateError: func(t *testing.T, err *MonitoringError) {
+				assert.Equal(t, "test_operation", err.Op)
+				assert.Equal(t, ErrCodeProviderError, err.Code)
+				assert.Error(t, err.Err)
+				assert.Equal(t, errors.New("underlying error"), err.Unwrap())
+			},
+		},
+		{
+			name:    "error_without_message_or_err",
+			op:      "test_operation",
+			code:    ErrCodeInitializationFailed,
+			err:     nil,
+			message: "",
+			validateError: func(t *testing.T, err *MonitoringError) {
+				assert.Equal(t, "test_operation", err.Op)
+				assert.Equal(t, ErrCodeInitializationFailed, err.Code)
+				assert.Contains(t, err.Error(), "unknown error")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var err *MonitoringError
+			if tt.message != "" {
+				err = NewMonitoringErrorWithMessage(tt.op, tt.code, tt.message, tt.err)
+			} else {
+				err = NewMonitoringError(tt.op, tt.code, tt.err)
+			}
+			tt.validateError(t, err)
+		})
+	}
+}
+
+// TestIsMonitoringError tests IsMonitoringError function.
+func TestIsMonitoringError(t *testing.T) {
+	t.Run("is_monitoring_error", func(t *testing.T) {
+		err := NewMonitoringError("test", ErrCodeInvalidConfig, nil)
+		assert.True(t, IsMonitoringError(err))
+	})
+
+	t.Run("not_monitoring_error", func(t *testing.T) {
+		err := errors.New("regular error")
+		assert.False(t, IsMonitoringError(err))
+	})
+
+	t.Run("nil_error", func(t *testing.T) {
+		assert.False(t, IsMonitoringError(nil))
+	})
+}
+
+// TestAsMonitoringError tests AsMonitoringError function.
+func TestAsMonitoringError(t *testing.T) {
+	t.Run("as_monitoring_error_success", func(t *testing.T) {
+		err := NewMonitoringError("test", ErrCodeInvalidConfig, nil)
+		monitoringErr, ok := AsMonitoringError(err)
+		assert.True(t, ok)
+		assert.NotNil(t, monitoringErr)
+		assert.Equal(t, "test", monitoringErr.Op)
+		assert.Equal(t, ErrCodeInvalidConfig, monitoringErr.Code)
+	})
+
+	t.Run("as_monitoring_error_failure", func(t *testing.T) {
+		err := errors.New("regular error")
+		monitoringErr, ok := AsMonitoringError(err)
+		assert.False(t, ok)
+		assert.Nil(t, monitoringErr)
+	})
+
+	t.Run("nil_error", func(t *testing.T) {
+		monitoringErr, ok := AsMonitoringError(nil)
+		assert.False(t, ok)
+		assert.Nil(t, monitoringErr)
+	})
+}
+
+// TestErrorCodes tests all error code constants.
+func TestErrorCodes(t *testing.T) {
+	codes := []string{
+		ErrCodeInvalidConfig,
+		ErrCodeProviderNotFound,
+		ErrCodeProviderError,
+		ErrCodeInitializationFailed,
+		ErrCodeShutdownFailed,
+		ErrCodeMetricError,
+		ErrCodeTraceError,
+		ErrCodeLogError,
+		ErrCodeExportError,
+		ErrCodeInvalidMetric,
+		ErrCodeInvalidTrace,
+		ErrCodeContextCanceled,
+		ErrCodeContextTimeout,
+	}
+
+	for _, code := range codes {
+		t.Run(code, func(t *testing.T) {
+			err := NewMonitoringError("test", code, nil)
+			assert.Equal(t, code, err.Code)
+			assert.Contains(t, err.Error(), code)
+		})
+	}
 }

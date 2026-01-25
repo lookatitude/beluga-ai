@@ -61,7 +61,6 @@ beluga-ai/
 │   ├── vectorstores/      # Vector database providers
 │   └── voice/             # Complete voice framework (STT, TTS, VAD)
 │
-├── cmd/                    # Command-line tools
 ├── examples/               # 64+ runnable examples by category
 ├── tests/                  # Integration testing framework
 │   └── integration/       # End-to-end, package pairs, provider compat
@@ -274,6 +273,135 @@ BREAKING CHANGE: `extends` key in config file is now used for extending
 make ci-local
 ```
 This runs: format check, lint, vet, security scans, unit tests, integration tests, coverage check, and build verification.
+
+## Agent Configuration System
+
+All agent configurations are defined in `.agent/` - the **single source of truth** for both Claude and Cursor.
+
+### Directory Structure
+
+```
+.agent/
+├── agents.md                 # Master registry of all personas
+├── rules/                    # Framework-wide rules (always loaded)
+│   ├── framework-architecture.mdc
+│   ├── framework-quality.mdc
+│   └── framework-observability.mdc
+├── personas/                 # Role-specific configurations
+│   ├── backend-developer/
+│   ├── architect/
+│   ├── researcher/
+│   ├── qa/
+│   └── documentation-writer/
+├── skills/                   # Reusable skills
+├── workflows/                # Simple workflows
+├── orchestration/            # Multi-persona workflow orchestration
+│   ├── ORCHESTRATION.md
+│   ├── workflows/            # Workflow definitions (YAML)
+│   └── reports/              # Generated reports
+└── scripts/                  # Activation and runner scripts
+```
+
+### Rule Loading
+
+Rules are loaded in hierarchy:
+1. **Framework rules**: `.agent/rules/` (always loaded for all personas)
+2. **Persona rules**: `.agent/personas/{name}/rules/` (loaded on activation)
+
+## Agent Personas
+
+Beluga AI provides specialized agent personas for different development roles. Each persona has tailored skills, rules, and permissions.
+
+### Available Personas
+
+| Persona | Focus | Permissions |
+|---------|-------|-------------|
+| `backend-developer` | Implementation | Build, Test, Lint, Commit |
+| `architect` | Design & Review | Read-only |
+| `researcher` | Analysis & Exploration | Read-only |
+| `qa` | Testing & Quality | Test, Lint, Security |
+| `documentation-writer` | Documentation | Docs only |
+
+### Activating a Persona
+
+```bash
+# Activate backend developer persona
+./.agent/scripts/activate-persona.sh backend-developer
+
+# Activate QA persona
+./.agent/scripts/activate-persona.sh qa
+
+# Show current persona
+./.agent/scripts/activate-persona.sh --current
+
+# List available personas
+./.agent/scripts/activate-persona.sh --list
+```
+
+### Persona Structure
+
+Each persona is defined in `.agent/personas/<name>/`:
+- `PERSONA.md` - Role definition, skills, and permissions
+- `rules/main.mdc` - Isolated rule set
+
+### Skills Available
+
+| Skill | Description | Personas |
+|-------|-------------|----------|
+| `implement_feature` | End-to-end feature implementation | Backend Developer |
+| `fix_bug` | Bug investigation and fixing | Backend Developer |
+| `design_component` | Component design (ISP, DIP, SRP) | Architect |
+| `review_architecture` | Architecture compliance review | Architect |
+| `research_topic` | Codebase exploration | Researcher |
+| `compare_approaches` | Trade-off analysis | Researcher |
+| `create_test_suite` | Comprehensive test creation | QA |
+| `write_guide` | Guide documentation | Documentation Writer |
+| `write_api_docs` | API reference documentation | Documentation Writer |
+
+See [.agent/agents.md](./.agent/agents.md) for detailed persona documentation.
+
+## Workflow Orchestration
+
+Multi-persona workflows allow chaining different personas together for complex tasks.
+
+### Running Workflows
+
+```bash
+# Run a workflow
+./.agent/scripts/run-workflow.sh <workflow-name>
+
+# Dry run (preview steps)
+./.agent/scripts/run-workflow.sh <workflow-name> --dry-run
+
+# With verbose output
+./.agent/scripts/run-workflow.sh <workflow-name> --verbose
+```
+
+### Available Workflows
+
+| Workflow | Description | Personas Used |
+|----------|-------------|---------------|
+| `verify-architecture` | Scan codebase, validate patterns, generate report | researcher -> architect |
+| `fix-and-validate` | Fix identified issues and re-validate | backend-developer -> architect |
+| `comprehensive-review` | Full quality review | researcher -> architect -> qa |
+
+### Workflow Example: verify-architecture
+
+```
+┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   RESEARCHER    │────>│    ARCHITECT    │────>│     REPORT      │
+│  scan-codebase  │     │validate-patterns│     │  (if PASSED)    │
+└─────────────────┘     └────────┬────────┘     └─────────────────┘
+                                 │
+                                 │ if FAILED
+                                 v
+                        ┌─────────────────┐     ┌─────────────────┐
+                        │BACKEND DEVELOPER│────>│   RE-VALIDATE   │
+                        │   fix-issues    │     │   (loop back)   │
+                        └─────────────────┘     └─────────────────┘
+```
+
+See [.agent/orchestration/ORCHESTRATION.md](./.agent/orchestration/ORCHESTRATION.md) for detailed workflow documentation.
 
 ## Important Notes
 

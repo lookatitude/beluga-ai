@@ -16,10 +16,10 @@ import (
 // TestConfigValidationAdvanced provides advanced table-driven tests for config validation.
 func TestConfigValidationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		config      *Config
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -66,10 +66,10 @@ func TestConfigValidationAdvanced(t *testing.T) {
 // TestErrorHandlingAdvanced provides advanced table-driven tests for error handling.
 func TestErrorHandlingAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		createError func() error
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
 	}{
 		{
 			name:        "basic_voice_error",

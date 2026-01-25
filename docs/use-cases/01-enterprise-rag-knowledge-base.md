@@ -25,67 +25,47 @@ This use case implements a comprehensive Retrieval-Augmented Generation (RAG) sy
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Client Applications                       │
-│              (Web UI, Mobile App, API Consumers)                 │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │ HTTP/REST
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    REST Server (pkg/server)                      │
-│  - Request routing                                              │
-│  - Authentication/Authorization                                 │
-│  - Rate limiting                                                 │
-│  - Request/Response logging                                      │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              RAG Orchestration Chain (pkg/orchestration)          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  1. Query    │→ │  2. Retrieve │→ │  3. Generate  │         │
-│  │  Processing  │  │  Documents    │  │  Response     │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Embeddings │    │  Retrievers   │    │     LLMs      │
-│  (pkg/       │    │  (pkg/       │    │  (pkg/llms)   │
-│  embeddings) │    │  retrievers) │    │               │
-└──────┬───────┘    └──────┬───────┘    └──────┬───────┘
-       │                   │                     │
-       │                   │                     │
-       └───────────────────┼─────────────────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-              │   Vector Stores        │
-              │  (pkg/vectorstores)   │
-              │  - PgVector           │
-              │  - Pinecone           │
-              │  - InMemory           │
-              └────────────────────────┘
-                           │
-                           ▼
-              ┌────────────────────────┐
-              │   PostgreSQL /        │
-              │   Pinecone Cloud      │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph Clients["Client Applications"]
+        A[Web UI / Mobile App / API Consumers]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - OpenTelemetry Metrics (pkg/monitoring)                       │
-│  - Distributed Tracing                                           │
-│  - Structured Logging                                            │
-│  - Health Checks                                                 │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Server["REST Server - pkg/server"]
+        B[Request Routing<br>Authentication<br>Rate Limiting<br>Logging]
+    end
+
+    subgraph Orchestration["RAG Orchestration Chain - pkg/orchestration"]
+        C1[1. Query Processing] --> C2[2. Retrieve Documents] --> C3[3. Generate Response]
+    end
+
+    subgraph Components["Core Components"]
+        D[Embeddings<br>pkg/embeddings]
+        E[Retrievers<br>pkg/retrievers]
+        F[LLMs<br>pkg/llms]
+    end
+
+    subgraph Storage["Vector Stores - pkg/vectorstores"]
+        G[PgVector / Pinecone / InMemory]
+    end
+
+    subgraph Database["Database Layer"]
+        H[PostgreSQL / Pinecone Cloud]
+    end
+
+    subgraph Observability["Observability Layer - pkg/monitoring"]
+        I[OpenTelemetry Metrics<br>Distributed Tracing<br>Structured Logging<br>Health Checks]
+    end
+
+    A -->|HTTP/REST| B
+    B --> C1
+    C2 --> D
+    C2 --> E
+    C3 --> F
+    D --> G
+    E --> G
+    F --> G
+    G --> H
 ```
 
 ## Component Usage

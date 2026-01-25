@@ -62,6 +62,7 @@ This use case implements an advanced conversational AI assistant that:
 │  - Summary   │    │  - OpenAI    │    │  - PgVector  │
 │  - VectorStore│   │  - Anthropic │    │  - Pinecone  │
 └──────────────┘    └──────────────┘    └──────────────┘
+
         │                     │                     │
         └─────────────────────┼─────────────────────┘
                               │

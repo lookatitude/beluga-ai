@@ -105,13 +105,13 @@ func TestAmazonNovaProvider_SendAudio_ContextCancellation(t *testing.T) {
 	require.NotNil(t, session)
 	defer func() { _ = session.Close() }()
 
-	// Test with cancelled context
+	// Test with canceled context
 	cancelledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 
 	err = session.SendAudio(cancelledCtx, []byte{1, 2, 3})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "cancelled")
+	assert.Contains(t, err.Error(), "canceled")
 }
 
 func TestAmazonNovaProvider_SendAudio_ClosedSession(t *testing.T) {

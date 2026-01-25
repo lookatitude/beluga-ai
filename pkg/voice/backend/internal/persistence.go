@@ -12,14 +12,14 @@ import (
 
 // SessionState represents the serializable state of a voice session (T305, T306).
 type SessionState struct {
+	CreatedAt         time.Time                 `json:"created_at"`
+	LastActivity      time.Time                 `json:"last_activity"`
+	Metadata          map[string]any            `json:"metadata"`
+	Config            *SessionConfigState       `json:"config"`
 	ID                string                    `json:"id"`
 	UserID            string                    `json:"user_id"`
 	State             vbiface.PipelineState     `json:"state"`
 	PersistenceStatus vbiface.PersistenceStatus `json:"persistence_status"`
-	Metadata          map[string]any            `json:"metadata"`
-	Config            *SessionConfigState       `json:"config"`
-	CreatedAt         time.Time                 `json:"created_at"`
-	LastActivity      time.Time                 `json:"last_activity"`
 }
 
 // SessionConfigState represents the serializable session configuration.

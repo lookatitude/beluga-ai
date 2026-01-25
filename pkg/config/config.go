@@ -39,7 +39,7 @@ import (
 //	options.ConfigName = "myapp"
 //	loader, err := config.NewLoader(options)
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func DefaultLoaderOptions() iface.LoaderOptions {
 	return iface.LoaderOptions{
 		ConfigName:  "config",
@@ -68,7 +68,7 @@ func DefaultLoaderOptions() iface.LoaderOptions {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewLoader(options iface.LoaderOptions) (iface.Loader, error) {
 	return loader.NewLoader(options)
 }
@@ -93,7 +93,7 @@ func NewLoader(options iface.LoaderOptions) (iface.Loader, error) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewProvider(configName string, configPaths []string, envPrefix, format string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, format)
 }
@@ -114,7 +114,7 @@ func NewProvider(configName string, configPaths []string, envPrefix, format stri
 //
 //	provider, err := config.NewYAMLProvider("config", []string{"./config"}, "BELUGA")
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewYAMLProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, "yaml")
 }
@@ -135,7 +135,7 @@ func NewYAMLProvider(configName string, configPaths []string, envPrefix string) 
 //
 //	provider, err := config.NewJSONProvider("config", []string{"./config"}, "BELUGA")
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewJSONProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, "json")
 }
@@ -156,7 +156,7 @@ func NewJSONProvider(configName string, configPaths []string, envPrefix string) 
 //
 //	provider, err := config.NewTOMLProvider("config", []string{"./config"}, "BELUGA")
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewTOMLProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, "toml")
 }
@@ -177,7 +177,7 @@ func NewTOMLProvider(configName string, configPaths []string, envPrefix string) 
 //
 //	provider, err := config.NewAutoDetectProvider("config", []string{"./config"}, "BELUGA")
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewAutoDetectProvider(configName string, configPaths []string, envPrefix string) (iface.Provider, error) {
 	return viper.NewViperProvider(configName, configPaths, envPrefix, "")
 }
@@ -198,7 +198,7 @@ func NewAutoDetectProvider(configName string, configPaths []string, envPrefix st
 //	envProvider, _ := config.NewProvider("", nil, "BELUGA", "")
 //	composite := config.NewCompositeProvider(fileProvider, envProvider)
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func NewCompositeProvider(providers ...iface.Provider) iface.Provider {
 	return composite.NewCompositeProvider(providers...)
 }
@@ -218,7 +218,7 @@ func NewCompositeProvider(providers ...iface.Provider) iface.Provider {
 //	    log.Fatal("Failed to load config:", err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func LoadConfig() (*iface.Config, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
 	ctx, span := tracer.Start(context.Background(), "LoadConfig")
@@ -273,7 +273,7 @@ func LoadConfig() (*iface.Config, error) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func LoadFromEnv(prefix string) (*iface.Config, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
 	ctx, span := tracer.Start(context.Background(), "LoadFromEnv")
@@ -319,7 +319,7 @@ func LoadFromEnv(prefix string) (*iface.Config, error) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func LoadFromFile(filePath string) (*iface.Config, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")
 	ctx, span := tracer.Start(context.Background(), "LoadFromFile")
@@ -360,7 +360,7 @@ func LoadFromFile(filePath string) (*iface.Config, error) {
 //	cfg := config.MustLoadConfig()
 //	// Use cfg...
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func MustLoadConfig() *iface.Config {
 	cfg, err := LoadConfig()
 	if err != nil {
@@ -386,7 +386,7 @@ func MustLoadConfig() *iface.Config {
 //	    log.Fatal("Invalid configuration:", err)
 //	}
 //
-// Example usage can be found in examples/config/basic/main.go
+// Example usage can be found in examples/config/basic/main.go.
 func ValidateConfig(cfg *iface.Config) error {
 	ctx := context.Background()
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/config")

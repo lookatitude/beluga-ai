@@ -4,19 +4,19 @@ import (
 	"fmt"
 )
 
-// Error codes (duplicated from parent package to avoid import cycle)
+// Error codes (duplicated from parent package to avoid import cycle).
 const (
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeEmptyInput    = "empty_input"
-	ErrCodeCancelled     = "cancelled"
+	ErrCodeCancelled     = "canceled"
 )
 
 // SplitterError represents an error during text splitting (duplicated to avoid import cycle).
 type SplitterError struct {
+	Err     error
 	Op      string
 	Code    string
 	Message string
-	Err     error
 }
 
 func (e *SplitterError) Error() string {

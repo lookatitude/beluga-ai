@@ -183,7 +183,7 @@ StreamChat(ctx context.Context, messages []schema.Message, options ...GenerateOp
 - `options` (...GenerateOption): Optional generation parameters.
 
 **Returns:**
-- `<-chan schema.AIMessageChunk`: Channel that receives message chunks. Each chunk contains:
+- `\<-chan schema.AIMessageChunk`: Channel that receives message chunks. Each chunk contains:
   - `Content` (string): Text content of the chunk
   - `Err` (error): Error if chunk generation failed (nil otherwise)
   - Channel closes when stream completes or errors
@@ -399,10 +399,10 @@ Batch(ctx context.Context, inputs []interface{}) ([]interface{}, error)
 
 **Parameters:**
 - `ctx` (context.Context): Context for cancellation and timeout.
-- `inputs` ([]interface{}): Array of inputs. Each input should be `[]schema.Message` or convertible to messages.
+- `inputs` ([]interface\{\}): Array of inputs. Each input should be `[]schema.Message` or convertible to messages.
 
 **Returns:**
-- `[]interface{}`: Array of results. Each result is a `schema.Message`.
+- `[]interface\{\}`: Array of results. Each result is a `schema.Message`.
 - `error`: Error if batch processing fails. Individual item failures may be in result messages.
 
 **Example:**

@@ -39,7 +39,7 @@ func (p *TwilioProvider) HandleMessageEvent(ctx context.Context, event *iface.We
 		// Note: Orchestrator would come from base Config, not TwilioConfig
 		// For now, skip orchestration integration - would need to get from p.config.Config.Orchestrator
 		if false {
-			var orchestrator interface{} // Would be from p.config.Config.Orchestrator
+			var orchestrator any // Would be from p.config.Config.Orchestrator
 			orchestrationMgr, err := NewOrchestrationManager(p, orchestrator)
 			if err == nil {
 				return orchestrationMgr.TriggerMessageFlowWorkflow(ctx, event)

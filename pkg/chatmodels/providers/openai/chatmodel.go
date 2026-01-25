@@ -64,7 +64,7 @@ type OpenAIChatModel struct {
 //	}
 //	messages, err := model.GenerateMessages(ctx, inputMessages)
 //
-// Example usage can be found in examples/chatmodels/basic/main.go
+// Example usage can be found in examples/chatmodels/basic/main.go.
 func NewOpenAIChatModel(model string, config any, options *iface.Options) (*OpenAIChatModel, error) {
 	// Simple stub to avoid import cycle - in real implementation would extract API key from config
 

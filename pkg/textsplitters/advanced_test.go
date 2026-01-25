@@ -3,6 +3,7 @@ package textsplitters
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -16,13 +17,13 @@ import (
 // TestRecursiveCharacterTextSplitter provides table-driven tests for RecursiveCharacterTextSplitter.
 func TestRecursiveCharacterTextSplitter(t *testing.T) {
 	tests := []struct {
+		setupFn     func() *RecursiveConfig
+		validateFn  func(t *testing.T, chunks []string, err error)
 		name        string
 		description string
 		text        string
-		setupFn     func() *RecursiveConfig
-		wantErr     bool
 		errContains string
-		validateFn  func(t *testing.T, chunks []string, err error)
+		wantErr     bool
 	}{
 		{
 			name:        "empty_text",
@@ -162,12 +163,12 @@ func TestRecursiveCharacterTextSplitter(t *testing.T) {
 // TestMarkdownTextSplitter provides table-driven tests for MarkdownTextSplitter.
 func TestMarkdownTextSplitter(t *testing.T) {
 	tests := []struct {
+		setupFn     func() *MarkdownConfig
+		validateFn  func(t *testing.T, chunks []string, err error)
 		name        string
 		description string
 		text        string
-		setupFn     func() *MarkdownConfig
 		wantErr     bool
-		validateFn  func(t *testing.T, chunks []string, err error)
 	}{
 		{
 			name:        "header_boundaries",
@@ -315,5 +316,286 @@ func BenchmarkTextSplitting_100Docs(b *testing.B) {
 		if duration > 1*time.Second {
 			b.Logf("WARNING: Splitting 100 docs took %v, exceeds 1s requirement", duration)
 		}
+	}
+}
+
+// TestConfigFunctions tests configuration functions and defaults.
+func TestConfigFunctions(t *testing.T) {
+	tests := []struct {
+		testFunc func(t *testing.T)
+		name     string
+	}{
+		{
+			name: "default_splitter_config",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultSplitterConfig()
+				assert.NotNil(t, cfg)
+				assert.Equal(t, 1000, cfg.ChunkSize)
+				assert.Equal(t, 200, cfg.ChunkOverlap)
+				assert.NotNil(t, cfg.LengthFunction)
+				// Test length function
+				assert.Equal(t, 5, cfg.LengthFunction("hello"))
+			},
+		},
+		{
+			name: "default_recursive_config",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultRecursiveConfig()
+				assert.NotNil(t, cfg)
+				assert.Equal(t, 1000, cfg.ChunkSize)
+				assert.Equal(t, 200, cfg.ChunkOverlap)
+				assert.NotNil(t, cfg.Separators)
+				assert.Equal(t, []string{"\n\n", "\n", " ", ""}, cfg.Separators)
+			},
+		},
+		{
+			name: "default_markdown_config",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultMarkdownConfig()
+				assert.NotNil(t, cfg)
+				assert.Equal(t, 1000, cfg.ChunkSize)
+				assert.Equal(t, 200, cfg.ChunkOverlap)
+				assert.NotNil(t, cfg.HeadersToSplitOn)
+				assert.Contains(t, cfg.HeadersToSplitOn, "#")
+				assert.Contains(t, cfg.HeadersToSplitOn, "##")
+				assert.False(t, cfg.ReturnEachLine)
+			},
+		},
+		{
+			name: "splitter_config_validation_valid",
+			testFunc: func(t *testing.T) {
+				cfg := &SplitterConfig{
+					ChunkSize:    1000,
+					ChunkOverlap: 200,
+				}
+				err := cfg.Validate()
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name: "splitter_config_validation_invalid_chunk_size",
+			testFunc: func(t *testing.T) {
+				cfg := &SplitterConfig{
+					ChunkSize:    0,
+					ChunkOverlap: 200,
+				}
+				err := cfg.Validate()
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid_config")
+			},
+		},
+		{
+			name: "splitter_config_validation_invalid_overlap",
+			testFunc: func(t *testing.T) {
+				cfg := &SplitterConfig{
+					ChunkSize:    100,
+					ChunkOverlap: 200, // Overlap >= ChunkSize
+				}
+				err := cfg.Validate()
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid_config")
+			},
+		},
+		{
+			name: "recursive_config_validation",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultRecursiveConfig()
+				err := cfg.Validate()
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name: "markdown_config_validation",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultMarkdownConfig()
+				err := cfg.Validate()
+				assert.NoError(t, err)
+			},
+		},
+		{
+			name: "config_options",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultSplitterConfig()
+				WithChunkSize(500)(cfg)
+				WithChunkOverlap(100)(cfg)
+				customLenFn := func(s string) int { return len(s) * 2 }
+				WithLengthFunction(customLenFn)(cfg)
+
+				assert.Equal(t, 500, cfg.ChunkSize)
+				assert.Equal(t, 100, cfg.ChunkOverlap)
+				assert.Equal(t, 10, cfg.LengthFunction("hello"))
+			},
+		},
+		{
+			name: "recursive_options",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultRecursiveConfig()
+				WithRecursiveChunkSize(500)(cfg)
+				WithRecursiveChunkOverlap(100)(cfg)
+				WithSeparators("|", ";")(cfg)
+
+				assert.Equal(t, 500, cfg.ChunkSize)
+				assert.Equal(t, 100, cfg.ChunkOverlap)
+				assert.Equal(t, []string{"|", ";"}, cfg.Separators)
+			},
+		},
+		{
+			name: "markdown_options",
+			testFunc: func(t *testing.T) {
+				cfg := DefaultMarkdownConfig()
+				WithMarkdownChunkSize(500)(cfg)
+				WithMarkdownChunkOverlap(100)(cfg)
+				WithHeadersToSplitOn("#", "##")(cfg)
+
+				assert.Equal(t, 500, cfg.ChunkSize)
+				assert.Equal(t, 100, cfg.ChunkOverlap)
+				assert.Equal(t, []string{"#", "##"}, cfg.HeadersToSplitOn)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.testFunc(t)
+		})
+	}
+}
+
+// TestErrorHelperFunctions tests error helper functions (IsSplitterError, GetSplitterError).
+func TestErrorHelperFunctions(t *testing.T) {
+	tests := []struct {
+		err           error
+		name          string
+		expectedCode  string
+		expectIsError bool
+		expectGetErr  bool
+	}{
+		{
+			name:          "splitter_error",
+			err:           NewSplitterError("TestOp", ErrCodeInvalidConfig, "test message", nil),
+			expectIsError: true,
+			expectGetErr:  true,
+			expectedCode:  ErrCodeInvalidConfig,
+		},
+		{
+			name:          "regular_error",
+			err:           errors.New("regular error"),
+			expectIsError: false,
+			expectGetErr:  false,
+		},
+		{
+			name:          "nil_error",
+			err:           nil,
+			expectIsError: false,
+			expectGetErr:  false,
+		},
+		{
+			name:          "wrapped_splitter_error",
+			err:           fmt.Errorf("wrapped: %w", NewSplitterError("TestOp", ErrCodeEmptyInput, "empty", nil)),
+			expectIsError: true, // errors.As works with wrapped errors
+			expectGetErr:  true,
+			expectedCode:  ErrCodeEmptyInput,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			isErr := IsSplitterError(tt.err)
+			assert.Equal(t, tt.expectIsError, isErr, "IsSplitterError should return %v", tt.expectIsError)
+
+			splitterErr := GetSplitterError(tt.err)
+			if tt.expectGetErr {
+				assert.NotNil(t, splitterErr, "GetSplitterError should return error")
+				assert.Equal(t, tt.expectedCode, splitterErr.Code, "Error code should match")
+			} else {
+				assert.Nil(t, splitterErr, "GetSplitterError should return nil")
+			}
+		})
+	}
+}
+
+// TestNewRecursiveCharacterTextSplitter tests the factory function.
+func TestNewRecursiveCharacterTextSplitter(t *testing.T) {
+	tests := []struct {
+		name    string
+		opts    []RecursiveOption
+		wantErr bool
+	}{
+		{
+			name:    "default_config",
+			opts:    nil,
+			wantErr: false,
+		},
+		{
+			name: "custom_config",
+			opts: []RecursiveOption{
+				WithRecursiveChunkSize(500),
+				WithRecursiveChunkOverlap(100),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid_config",
+			opts: []RecursiveOption{
+				WithRecursiveChunkSize(0), // Invalid
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			splitter, err := NewRecursiveCharacterTextSplitter(tt.opts...)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, splitter)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, splitter)
+			}
+		})
+	}
+}
+
+// TestNewMarkdownTextSplitter tests the factory function.
+func TestNewMarkdownTextSplitter(t *testing.T) {
+	tests := []struct {
+		name    string
+		opts    []MarkdownOption
+		wantErr bool
+	}{
+		{
+			name:    "default_config",
+			opts:    nil,
+			wantErr: false,
+		},
+		{
+			name: "custom_config",
+			opts: []MarkdownOption{
+				WithMarkdownChunkSize(500),
+				WithMarkdownChunkOverlap(100),
+			},
+			wantErr: false,
+		},
+		{
+			name: "invalid_config",
+			opts: []MarkdownOption{
+				WithMarkdownChunkSize(0), // Invalid
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			splitter, err := NewMarkdownTextSplitter(tt.opts...)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, splitter)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, splitter)
+			}
+		})
 	}
 }

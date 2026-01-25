@@ -5,7 +5,6 @@ package iface
 import (
 	"context"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -31,7 +30,7 @@ type ChatModel interface {
 	// will then be able to call these tools.
 	// The specific way tools are bound and used depends on the underlying model provider.
 	// Returns a new ChatModel instance with the tools bound to avoid mutating the original.
-	BindTools(toolsToBind []tools.Tool) ChatModel
+	BindTools(toolsToBind []core.Tool) ChatModel
 
 	// GetModelName returns the model name used by this ChatModel instance.
 	// This is useful for logging, metrics, and debugging.

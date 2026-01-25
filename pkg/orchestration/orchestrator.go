@@ -96,7 +96,7 @@ type Orchestrator struct {
 //	}
 //	chain, err := orchestrator.CreateChain(steps)
 //
-// Example usage can be found in examples/orchestration/chain/main.go
+// Example usage can be found in examples/orchestration/chain/main.go.
 func NewOrchestrator(config *Config) (*Orchestrator, error) {
 	if config == nil {
 		return nil, iface.ErrInvalidConfig("orchestrator_creation", errors.New("config cannot be nil"))
@@ -146,7 +146,7 @@ func NewOrchestrator(config *Config) (*Orchestrator, error) {
 //	    orchestration.WithRetries(3),
 //	)
 //
-// Example usage can be found in examples/orchestration/chain/main.go
+// Example usage can be found in examples/orchestration/chain/main.go.
 func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 	config, err := NewConfig(opts...)
 	if err != nil {
@@ -170,7 +170,7 @@ func NewOrchestratorWithOptions(opts ...Option) (*Orchestrator, error) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/orchestration/chain/main.go
+// Example usage can be found in examples/orchestration/chain/main.go.
 func NewDefaultOrchestrator() (*Orchestrator, error) {
 	config := DefaultConfig()
 	return NewOrchestrator(config)
@@ -242,7 +242,7 @@ func (o *Orchestrator) CreateChain(steps []core.Runnable, opts ...iface.ChainOpt
 //	)
 //	result, err := graph.Invoke(ctx, input)
 //
-// Example usage can be found in examples/orchestration/workflow/main.go
+// Example usage can be found in examples/orchestration/workflow/main.go.
 func (o *Orchestrator) CreateGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	if !o.config.Enabled.Graphs {
 		return nil, iface.ErrInvalidState("create_graph", "graphs_disabled", "graphs_enabled")
@@ -427,7 +427,7 @@ func (m *orchestratorMetrics) GetErrorCount() int64 {
 //	)
 //	result, err := chain.Invoke(ctx, input)
 //
-// Example usage can be found in examples/orchestration/chain/main.go
+// Example usage can be found in examples/orchestration/chain/main.go.
 func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -455,7 +455,7 @@ func NewChain(steps []core.Runnable, opts ...iface.ChainOption) (iface.Chain, er
 //	)
 //	result, err := graph.Invoke(ctx, input)
 //
-// Example usage can be found in examples/orchestration/workflow/main.go
+// Example usage can be found in examples/orchestration/workflow/main.go.
 func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {
@@ -485,7 +485,7 @@ func NewGraph(opts ...iface.GraphOption) (iface.Graph, error) {
 //	    orchestration.WithWorkflowName("simple-workflow"),
 //	)
 //
-// Example usage can be found in examples/orchestration/workflow/main.go
+// Example usage can be found in examples/orchestration/workflow/main.go.
 func NewWorkflow(workflowFn any, opts ...iface.WorkflowOption) (iface.Workflow, error) {
 	orch, err := NewDefaultOrchestrator()
 	if err != nil {

@@ -17,9 +17,9 @@ import (
 type MockVoiceSession struct {
 	mock.Mock
 	id     string
-	active bool
 	state  string
 	mu     sync.RWMutex
+	active bool
 }
 
 func (m *MockVoiceSession) Start(ctx context.Context) error {
@@ -59,23 +59,23 @@ func (m *MockVoiceSession) OnStateChanged(callback func(string)) {
 	// Mock implementation
 }
 
-func (m *MockVoiceSession) Say(ctx context.Context, text string) (interface{}, error) {
+func (m *MockVoiceSession) Say(ctx context.Context, text string) (any, error) {
 	args := m.Called(ctx, text)
 	return args.Get(0), args.Error(1)
 }
 
-func (m *MockVoiceSession) SayWithOptions(ctx context.Context, text string, options interface{}) (interface{}, error) {
+func (m *MockVoiceSession) SayWithOptions(ctx context.Context, text string, options any) (any, error) {
 	args := m.Called(ctx, text, options)
 	return args.Get(0), args.Error(1)
 }
 
 // MockAudioStream implements AudioStream for testing.
 type MockAudioStream struct {
-	mock.Mock
 	audioIn  chan []byte
 	audioOut chan []byte
-	closed   bool
-	mu       sync.RWMutex
+	mock.Mock
+	mu     sync.RWMutex
+	closed bool
 }
 
 func NewMockAudioStream() *MockAudioStream {
@@ -119,8 +119,8 @@ func (m *MockAudioStream) Close() error {
 
 // MockBackend implements TwilioBackend methods for testing.
 type MockBackend struct {
-	mock.Mock
 	sessions map[string]vbiface.VoiceSession
+	mock.Mock
 }
 
 func (m *MockBackend) StreamAudio(ctx context.Context, sessionID string) (*AudioStream, error) {
@@ -135,10 +135,10 @@ func TestTwilioSessionAdapter_Creation(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name          string
 		config        *TwilioConfig
 		sessionConfig *vbiface.SessionConfig
 		backend       *TwilioBackend
+		name          string
 		expectError   bool
 	}{
 		{
@@ -286,7 +286,7 @@ func TestTwilioTransportAdapter_SendAudio(t *testing.T) {
 	// Test round-trip conversion
 	pcmAudio2 := convertMuLawToPCM(mulawAudio)
 	assert.NotNil(t, pcmAudio2)
-	assert.Equal(t, len(pcmAudio), len(pcmAudio2))
+	assert.Len(t, pcmAudio2, len(pcmAudio))
 }
 
 func TestTwilioTransportAdapter_Close(t *testing.T) {
@@ -351,9 +351,9 @@ func TestProviderFactories(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
 		config      *TwilioConfig
-		factoryFunc func(context.Context, *TwilioConfig) (interface{}, error)
+		factoryFunc func(context.Context, *TwilioConfig) (any, error)
+		name        string
 		expectError bool
 	}{
 		{
@@ -368,7 +368,7 @@ func TestProviderFactories(t *testing.T) {
 					},
 				},
 			},
-			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (interface{}, error) {
+			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (any, error) {
 				return createVADProvider(ctx, cfg)
 			},
 			expectError: false, // May fail if VAD provider not registered
@@ -385,7 +385,7 @@ func TestProviderFactories(t *testing.T) {
 				},
 				TurnDetectorProvider: "silence",
 			},
-			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (interface{}, error) {
+			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (any, error) {
 				return createTurnDetector(ctx, cfg)
 			},
 			expectError: false, // May fail if turn detector not registered
@@ -402,7 +402,7 @@ func TestProviderFactories(t *testing.T) {
 					},
 				},
 			},
-			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (interface{}, error) {
+			factoryFunc: func(ctx context.Context, cfg *TwilioConfig) (any, error) {
 				return createNoiseCancellation(ctx, cfg)
 			},
 			expectError: false, // May fail if noise cancellation not registered
@@ -430,12 +430,12 @@ func TestMuLawCodecConversion(t *testing.T) {
 	muLawAudio := []byte{0xFF, 0x7F, 0x00, 0x80}
 	pcmAudio := convertMuLawToPCM(muLawAudio)
 	assert.NotNil(t, pcmAudio)
-	assert.Equal(t, len(muLawAudio)*2, len(pcmAudio)) // PCM is twice the size
+	assert.Len(t, pcmAudio, len(muLawAudio)*2) // PCM is twice the size
 
 	// Test PCM to mu-law conversion (round-trip test)
 	muLawAudio2 := convertPCMToMuLaw(pcmAudio)
 	assert.NotNil(t, muLawAudio2)
-	assert.Equal(t, len(muLawAudio), len(muLawAudio2))
+	assert.Len(t, muLawAudio2, len(muLawAudio))
 
 	// Test that conversion is approximately reversible
 	// (exact match may not be possible due to quantization)

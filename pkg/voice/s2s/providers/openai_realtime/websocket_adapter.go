@@ -26,12 +26,12 @@ type websocketConnAdapter struct {
 }
 
 // ReadJSON implements WebSocketConn interface.
-func (w *websocketConnAdapter) ReadJSON(v interface{}) error {
+func (w *websocketConnAdapter) ReadJSON(v any) error {
 	return w.conn.ReadJSON(v)
 }
 
 // WriteJSON implements WebSocketConn interface.
-func (w *websocketConnAdapter) WriteJSON(v interface{}) error {
+func (w *websocketConnAdapter) WriteJSON(v any) error {
 	return w.conn.WriteJSON(v)
 }
 

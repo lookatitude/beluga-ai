@@ -12,6 +12,7 @@ import (
 // Config represents the configuration for messaging backends.
 // It includes common settings that apply to all messaging providers.
 type Config struct {
+	ProviderSpecific        map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
 	Provider                string         `mapstructure:"provider" yaml:"provider" validate:"required"`
 	Timeout                 time.Duration  `mapstructure:"timeout" yaml:"timeout" default:"30s" validate:"min=1s,max=5m"`
 	MaxRetries              int            `mapstructure:"max_retries" yaml:"max_retries" default:"3" validate:"gte=0,lte=10"`
@@ -20,7 +21,6 @@ type Config struct {
 	EnableTracing           bool           `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
 	EnableMetrics           bool           `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
 	EnableStructuredLogging bool           `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
-	ProviderSpecific        map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
 }
 
 // ConfigOption is a functional option for configuring messaging instances.

@@ -35,11 +35,11 @@ const (
 // FrameworkError represents a standardized error in the Beluga AI framework.
 // It follows the Op/Err/Code pattern used across all Beluga AI packages.
 type FrameworkError struct {
-	Op      string         // operation that failed
-	Err     error          // underlying error
-	Code    string         // error code for programmatic handling
-	Message string         // human-readable message (optional)
-	Context map[string]any // additional context (optional)
+	Err     error
+	Context map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.
@@ -73,7 +73,7 @@ func (e *FrameworkError) Unwrap() error {
 //
 //	err := core.NewValidationError("validate_config", "invalid API key format", nil)
 //
-// Example usage can be found in examples/core/basic/main.go
+// Example usage can be found in examples/core/basic/main.go.
 func NewValidationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
 		Op:      op,
@@ -98,7 +98,7 @@ func NewValidationError(op, message string, err error) *FrameworkError {
 //
 //	err := core.NewNetworkError("connect", "connection timeout", timeoutErr)
 //
-// Example usage can be found in examples/core/basic/main.go
+// Example usage can be found in examples/core/basic/main.go.
 func NewNetworkError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
 		Op:      op,
@@ -123,7 +123,7 @@ func NewNetworkError(op, message string, err error) *FrameworkError {
 //
 //	err := core.NewAuthenticationError("authenticate", "invalid API key", authErr)
 //
-// Example usage can be found in examples/core/basic/main.go
+// Example usage can be found in examples/core/basic/main.go.
 func NewAuthenticationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
 		Op:      op,
@@ -148,7 +148,7 @@ func NewAuthenticationError(op, message string, err error) *FrameworkError {
 //
 //	err := core.NewInternalError("process", "unexpected state", stateErr)
 //
-// Example usage can be found in examples/core/basic/main.go
+// Example usage can be found in examples/core/basic/main.go.
 func NewInternalError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
 		Op:      op,
@@ -173,7 +173,7 @@ func NewInternalError(op, message string, err error) *FrameworkError {
 //
 //	err := core.NewConfigurationError("load_config", "missing required config key", nil)
 //
-// Example usage can be found in examples/core/basic/main.go
+// Example usage can be found in examples/core/basic/main.go.
 func NewConfigurationError(op, message string, err error) *FrameworkError {
 	return &FrameworkError{
 		Op:      op,

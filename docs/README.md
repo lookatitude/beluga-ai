@@ -42,10 +42,10 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
   - Component interaction diagrams
   - Sequence diagrams
 
-- **[Architecture Visualizations](./architecture/)** - Detailed architecture diagrams
-  - [Component Diagrams](./architecture/component-diagrams.md) - Package structure and interface hierarchy
-  - [Data Flows](./architecture/data-flows.md) - Data flow through the system
-  - [Sequence Diagrams](./architecture/sequences.md) - Component interaction sequences
+- **[Architecture Visualizations](./concepts/architecture/)** - Detailed architecture diagrams
+  - [Component Diagrams](./concepts/architecture/component-diagrams.md) - Package structure and interface hierarchy
+  - [Data Flows](./concepts/architecture/data-flows.md) - Data flow through the system
+  - [Sequence Diagrams](./concepts/architecture/sequences.md) - Component interaction sequences
 
 - **[Package Design Patterns](./package_design_patterns.md)** - Design patterns and conventions for all packages
   - Core principles (ISP, DIP, SRP)
@@ -55,10 +55,10 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
   - Observability patterns
   - Testing patterns
 
-- **[Pattern Implementation Guides](./patterns/)** - Practical pattern examples
-  - [Pattern Examples](./patterns/pattern-examples.md) - Real-world pattern implementations
-  - [Cross-Package Patterns](./patterns/cross-package-patterns.md) - How patterns work together
-  - [Pattern Decision Guide](./patterns/pattern-decision-guide.md) - When to use which pattern
+- **[Pattern Implementation Guides](./concepts/patterns/pattern-examples.md)** - Practical pattern examples
+  - [Pattern Examples](./concepts/patterns/pattern-examples.md) - Real-world pattern implementations
+  - [Cross-Package Patterns](./concepts/patterns/cross-package-patterns.md) - How patterns work together
+  - [Pattern Decision Guide](./concepts/patterns/pattern-decision-guide.md) - When to use which pattern
 
 - **[Concepts Guide](./concepts/)** - Core concepts and architectural patterns
   - [Core Concepts](./concepts/core.md) - Runnable interface, messages, context
@@ -79,7 +79,7 @@ Welcome to the Beluga AI Framework documentation! This directory contains compre
 
 ### Advanced Guides
 
-- **[Guides](./guides/)** - In-depth guides for advanced features
+- **[Guides](./guides/llm-providers.md)** - In-depth guides for advanced features
   - [Streaming LLM with Tool Calls](./guides/llm-streaming-tool-calls.md) - Real-time streaming with function calling
   - [Agent Types (PlanExecute/ReAct)](./guides/agent-types.md) - Choosing and implementing agent patterns
   - [Multimodal RAG](./guides/rag-multimodal.md) - RAG with images and video
@@ -113,9 +113,9 @@ The [use-cases](./use-cases/) directory contains detailed examples of real-world
 ### Provider Documentation
 
 - **[Provider Documentation](./providers/)** - Detailed provider guides
-  - [LLM Providers](./providers/llms/) - OpenAI, Anthropic, Bedrock, Ollama
-  - [Vector Store Providers](./providers/vectorstores/) - InMemory, PgVector, Pinecone
-  - [Embedding Providers](./providers/embeddings/) - OpenAI, Ollama
+  - [LLM Providers](https://github.com/lookatitude/beluga-ai/tree/main/pkg/llms) - OpenAI, Anthropic, Bedrock, Ollama
+  - [Vector Store Providers](https://github.com/lookatitude/beluga-ai/tree/main/pkg/vectorstores) - InMemory, PgVector, Pinecone
+  - [Embedding Providers](https://github.com/lookatitude/beluga-ai/tree/main/pkg/embeddings) - OpenAI, Ollama
   - Provider comparisons and selection guides
 
 ### Best Practices & Guides
@@ -214,24 +214,24 @@ docs/
 ## 📖 Additional Resources
 
 ### Main Project Documentation
-- **[Main README](../README.md)** - Project overview and installation
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute
-- **[CHANGELOG](../CHANGELOG.md)** - Release notes and changes
+- **[Main README](https://github.com/lookatitude/beluga-ai/blob/main/README.md)** - Project overview and installation
+- **[Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md)** - How to contribute
+- **[CHANGELOG](https://github.com/lookatitude/beluga-ai/blob/main/CHANGELOG.md)** - Release notes and changes
 
 ### API Documentation
-- **[API Documentation](../website/docs/api/)** - Detailed API reference
+- **[API Documentation](./api-reference.md)** - Detailed API reference
   - Package-specific documentation
   - Provider implementations
   - Configuration options
 
 ### Examples
-- **[Examples Directory](../examples/)** - Comprehensive runnable examples
-  - [Agent Examples](../examples/agents/) - Basic, tools, ReAct, memory integration
-  - [RAG Examples](../examples/rag/) - Simple, with memory, advanced patterns
-  - [Orchestration Examples](../examples/orchestration/) - Chains, workflows, multi-agent
-  - [Multi-Agent Examples](../examples/multi-agent/) - Collaboration, specialized roles
-  - [Integration Examples](../examples/integration/) - Full-stack, observability
-  - See [Examples README](../examples/README.md) for complete guide
+- **[Examples Directory](https://github.com/lookatitude/beluga-ai/tree/main/examples/)** - Comprehensive runnable examples
+  - [Agent Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/agents/) - Basic, tools, ReAct, memory integration
+  - [RAG Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag/) - Simple, with memory, advanced patterns
+  - [Orchestration Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/orchestration/) - Chains, workflows, multi-agent
+  - [Multi-Agent Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/multi-agent/) - Collaboration, specialized roles
+  - [Integration Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/integration/) - Full-stack, observability
+  - See [Examples README](https://github.com/lookatitude/beluga-ai/tree/main/examples/README.md) for complete guide
 
 ## 🔍 Finding What You Need
 
@@ -252,7 +252,7 @@ docs/
 - [Quick Start Guide](./quickstart.md) - Basic usage
 - [Use Cases](./use-cases/) - Real-world examples
 - [Cookbook](./cookbook/) - Quick recipes and snippets
-- [Examples Directory](../examples/) - Code examples
+- [Examples Directory](https://github.com/lookatitude/beluga-ai/tree/main/examples/) - Code examples
 - [Provider Documentation](./providers/) - Provider-specific guides
 
 **Comparison & Context**
@@ -263,7 +263,7 @@ docs/
 - [Best Practices](./best-practices.md) - Production best practices
 - [Troubleshooting Guide](./troubleshooting.md) - Common issues and solutions
 - [Migration Guide](./migration.md) - Version upgrades and migrations
-- [Contributing Guide](../CONTRIBUTING.md) - Contribution process
+- [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md) - Contribution process
 
 ## 📝 Documentation Status
 
@@ -286,7 +286,7 @@ See [Documentation Roadmap](./documentation-roadmap.md) for details on documenta
 
 ## 🤝 Contributing to Documentation
 
-We welcome contributions to improve our documentation! Please see the [Contributing Guide](../CONTRIBUTING.md) for guidelines.
+We welcome contributions to improve our documentation! Please see the [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md) for guidelines.
 
 ### Documentation Standards
 - Use clear, concise language

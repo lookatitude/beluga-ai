@@ -7,10 +7,10 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 
-	// Import providers to register them for tests
-	// This is now safe because providers use registry/iface instead of importing the main package
+	// Import providers to register them for tests.
+	// This is now safe because providers use registry/iface instead of importing the main package.
+	// Note: ollama provider is excluded due to security vulnerabilities (requires experimental build tag).
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/ollama"
 	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 )
 
@@ -92,11 +92,6 @@ func TestEmbedderFactory_NewEmbedder(t *testing.T) {
 		{
 			name:         "openai provider",
 			providerType: "openai",
-			wantErr:      false,
-		},
-		{
-			name:         "ollama provider",
-			providerType: "ollama",
 			wantErr:      false,
 		},
 		{
@@ -295,7 +290,7 @@ func TestEmbedderFactory_GetAvailableProviders_EnabledDisabled(t *testing.T) {
 		},
 		Ollama: &OllamaConfig{
 			Model:   "nomic-embed-text",
-			Enabled: true,
+			Enabled: false, // Disabled - ollama requires experimental build tag
 		},
 		Mock: &MockConfig{
 			Dimension: 128,
@@ -308,15 +303,15 @@ func TestEmbedderFactory_GetAvailableProviders_EnabledDisabled(t *testing.T) {
 		t.Fatalf("Failed to create factory: %v", err)
 	}
 
-	// Manually disable OpenAI after SetDefaults
+	// Manually disable OpenAI and Ollama after SetDefaults (SetDefaults may override these)
 	config.OpenAI.Enabled = false
+	config.Ollama.Enabled = false
 
 	providers := factory.GetAvailableProviders()
 
 	// Should only include enabled providers
 	expectedProviders := map[string]bool{
-		"ollama": true,
-		"mock":   true,
+		"mock": true,
 	}
 
 	if len(providers) != len(expectedProviders) {
@@ -542,9 +537,7 @@ func TestEmbedderFactory_MultipleProviders(t *testing.T) {
 			APIKey: "sk-test",
 			Model:  "text-embedding-ada-002",
 		},
-		Ollama: &OllamaConfig{
-			Model: "nomic-embed-text",
-		},
+		// Note: ollama provider requires experimental build tag due to security vulnerabilities
 		Mock: &MockConfig{
 			Dimension: 128,
 		},
@@ -558,7 +551,8 @@ func TestEmbedderFactory_MultipleProviders(t *testing.T) {
 	ctx := context.Background()
 
 	// Test creating multiple different embedders
-	providers := []string{"openai", "ollama", "mock"}
+	// Note: ollama excluded - requires experimental build tag
+	providers := []string{"openai", "mock"}
 	embedders := make(map[string]iface.Embedder)
 
 	for _, provider := range providers {
@@ -576,12 +570,8 @@ func TestEmbedderFactory_MultipleProviders(t *testing.T) {
 		if err != nil {
 			t.Errorf("%s embedder GetDimension failed: %v", provider, err)
 		}
-		// Ollama returns 0 (unknown), others return positive dimensions
-		if provider != "ollama" && dimension <= 0 {
+		if dimension <= 0 {
 			t.Errorf("%s embedder returned invalid dimension: %d", provider, dimension)
-		}
-		if provider == "ollama" && dimension != 0 {
-			t.Logf("Ollama returned dimension %d (unexpected but not an error)", dimension)
 		}
 	}
 }

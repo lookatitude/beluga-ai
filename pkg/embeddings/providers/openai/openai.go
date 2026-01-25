@@ -58,7 +58,7 @@ type OpenAIEmbedder struct {
 //	}
 //	embeddings, err := embedder.EmbedDocuments(ctx, texts)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, error) {
 	clientConfig := openaiClient.DefaultConfig(config.APIKey)
 	if config.BaseURL != "" {
@@ -91,7 +91,7 @@ func NewOpenAIEmbedder(config *Config, tracer trace.Tracer) (*OpenAIEmbedder, er
 //	mockClient := &MockOpenAIClient{}
 //	embedder, err := openai.NewOpenAIEmbedderWithClient(config, tracer, mockClient)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewOpenAIEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*OpenAIEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

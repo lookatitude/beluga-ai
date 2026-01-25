@@ -178,7 +178,7 @@ StreamChat(ctx context.Context, messages []schema.Message, options ...GenerateOp
 - `options` (...GenerateOption): Optional generation parameters.
 
 **Returns:**
-- `<-chan schema.AIMessageChunk`: Channel that receives message chunks. Each chunk contains:
+- `\<-chan schema.AIMessageChunk`: Channel that receives message chunks. Each chunk contains:
   - `Content` (string): Text content of the chunk
   - `Err` (error): Error if chunk generation failed (nil otherwise)
   - Channel closes when stream completes or errors

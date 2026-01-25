@@ -22,24 +22,11 @@ func DefaultLoaderConfig() *LoaderConfig {
 
 // DirectoryConfig contains configuration for RecursiveDirectoryLoader.
 type DirectoryConfig struct {
-	LoaderConfig `mapstructure:",squash"`
-
-	// Path is the root directory to load from (required).
-	// Note: This is not used directly in the config struct, but passed via fs.FS in factory.
-	// We keep it here for registry-based creation.
-	Path string `mapstructure:"path" yaml:"path" env:"LOADER_PATH" validate:"required"`
-
-	// MaxDepth limits recursion depth (default: 10, 0 = root only).
-	MaxDepth int `mapstructure:"max_depth" yaml:"max_depth" env:"LOADER_MAX_DEPTH" validate:"min=0"`
-
-	// Extensions filters files by extension (nil = all files).
-	// Extensions should include the dot (e.g., ".txt", ".md").
-	Extensions []string `mapstructure:"extensions" yaml:"extensions" env:"LOADER_EXTENSIONS"`
-
-	// Concurrency sets the number of concurrent file readers (default: GOMAXPROCS).
-	Concurrency int `mapstructure:"concurrency" yaml:"concurrency" env:"LOADER_CONCURRENCY" validate:"min=1"`
-
-	// FollowSymlinks enables following symbolic links (default: true).
+	Path           string   `mapstructure:"path" yaml:"path" env:"LOADER_PATH" validate:"required"`
+	Extensions     []string `mapstructure:"extensions" yaml:"extensions" env:"LOADER_EXTENSIONS"`
+	LoaderConfig   `mapstructure:",squash"`
+	MaxDepth       int  `mapstructure:"max_depth" yaml:"max_depth" env:"LOADER_MAX_DEPTH" validate:"min=0"`
+	Concurrency    int  `mapstructure:"concurrency" yaml:"concurrency" env:"LOADER_CONCURRENCY" validate:"min=1"`
 	FollowSymlinks bool `mapstructure:"follow_symlinks" yaml:"follow_symlinks" env:"LOADER_FOLLOW_SYMLINKS"`
 }
 

@@ -11,10 +11,10 @@ import (
 
 func TestNewVideoMessage(t *testing.T) {
 	tests := []struct {
+		validate    func(t *testing.T, msg Message)
 		name        string
 		videoURL    string
 		textContent string
-		validate    func(t *testing.T, msg Message)
 	}{
 		{
 			name:        "basic_video_message",
@@ -95,8 +95,8 @@ func TestVideoMessageAdditionalArgs(t *testing.T) {
 
 func TestIsVideoMessage(t *testing.T) {
 	tests := []struct {
-		name     string
 		msg      Message
+		name     string
 		expected bool
 	}{
 		{

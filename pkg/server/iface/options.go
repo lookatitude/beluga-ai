@@ -216,11 +216,11 @@ const (
 // ServerError represents a structured server error.
 // It follows the standard Op/Err/Code pattern used across all Beluga AI packages.
 type ServerError struct {
-	Op      string // operation that failed (renamed from Operation)
-	Err     error  // underlying error
-	Code    string // error code for programmatic handling
-	Message string // human-readable message
-	Details any    `json:"details,omitempty"` // additional context (optional)
+	Err     error
+	Details any `json:"details,omitempty"`
+	Op      string
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.

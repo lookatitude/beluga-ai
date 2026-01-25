@@ -92,6 +92,13 @@ func WithTracing(enabled bool) iface.Option {
 	}
 }
 
+// WithEnableSafety enables or disables safety middleware for the agent.
+func WithEnableSafety(enabled bool) iface.Option {
+	return func(o *iface.Options) {
+		o.EnableSafety = enabled
+	}
+}
+
 // WithEventHandler registers an event handler for a specific event type.
 func WithEventHandler(eventType string, handler iface.EventHandler) iface.Option {
 	return func(o *iface.Options) {

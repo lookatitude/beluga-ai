@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(yarn build:*)",
+      "Bash(npm run build:*)",
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "Bash(xxd:*)",
+      "Bash(git checkout:*)",
+      "Bash(tee:*)",
+      "Bash(while read f)",
+      "Bash(do head -10 \"$f\")",
+      "Bash(done)",
+      "Bash(echo:*)",
+      "Bash(find:*)",
+      "Bash(for ref in api/index api/packages/core api/packages/schema api/packages/config api/packages/llms_base api/packages/llms api/packages/chatmodels api/packages/agents api/packages/tools api/packages/orchestration api/packages/memory api/packages/rag api/packages/embeddings api/packages/vectorstores api/packages/retrievers api/packages/voice/stt api/packages/voice/tts api/packages/voice/vad api/packages/voice/turndetection api/packages/voice/transport api/packages/voice/noise api/packages/voice/session api/packages/prompts api/packages/monitoring api/packages/server api/packages/llms/openai api/packages/llms/anthropic api/packages/llms/bedrock api/packages/llms/ollama api/packages/llms/mock)",
+      "Bash(do)",
+      "Bash(if [ ! -f \"./website/docs/$ref.md\" ])",
+      "Bash(then)",
+      "Bash(fi)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git pull:*)",
+      "Bash(git rebase:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(chmod:*)",
+      "Bash(./.agent/scripts/activate-persona.sh:*)",
+      "Bash(./.agent/scripts/run-workflow.sh:*)",
+      "Bash(make docs-generate:*)"
+    ]
+  }
+}

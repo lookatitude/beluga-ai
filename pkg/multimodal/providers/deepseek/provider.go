@@ -223,7 +223,6 @@ func (p *DeepSeekProvider) ProcessStream(ctx context.Context, input *types.Multi
 				}
 			}
 		})
-
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -314,7 +313,7 @@ func (p *DeepSeekProvider) SupportsModality(ctx context.Context, modality string
 	case "video":
 		supported = p.capabilities.Video
 	default:
-		span.SetStatus(codes.Error, fmt.Sprintf("unknown modality: %s", modality))
+		span.SetStatus(codes.Error, "unknown modality: "+modality)
 		return false, fmt.Errorf("unknown modality: %s", modality)
 	}
 
@@ -345,7 +344,7 @@ func (p *DeepSeekProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// DeepSeek API request/response structures
+// DeepSeek API request/response structures.
 type deepseekChatRequest struct {
 	Model    string            `json:"model"`
 	Messages []deepseekMessage `json:"messages"`
@@ -358,9 +357,9 @@ type deepseekMessage struct {
 }
 
 type deepseekContent struct {
-	Type     string            `json:"type"` // "text" or "image_url"
-	Text     string            `json:"text,omitempty"`
 	ImageURL *deepseekImageURL `json:"image_url,omitempty"`
+	Type     string            `json:"type"`
+	Text     string            `json:"text,omitempty"`
 }
 
 type deepseekImageURL struct {
@@ -370,16 +369,16 @@ type deepseekImageURL struct {
 type deepseekChatResponse struct {
 	ID      string           `json:"id"`
 	Object  string           `json:"object"`
-	Created int64            `json:"created"`
 	Model   string           `json:"model"`
 	Choices []deepseekChoice `json:"choices"`
 	Usage   deepseekUsage    `json:"usage"`
+	Created int64            `json:"created"`
 }
 
 type deepseekChoice struct {
-	Index        int             `json:"index"`
-	Message      deepseekMessage `json:"message"`
 	FinishReason string          `json:"finish_reason"`
+	Message      deepseekMessage `json:"message"`
+	Index        int             `json:"index"`
 }
 
 type deepseekUsage struct {
@@ -416,7 +415,7 @@ func (p *DeepSeekProvider) convertToDeepSeekMessages(ctx context.Context, blocks
 			} else if block.URL != "" {
 				imageURL = block.URL
 			} else {
-				return nil, fmt.Errorf("image block has no URL or data")
+				return nil, errors.New("image block has no URL or data")
 			}
 
 			contentParts = append(contentParts, deepseekContent{
@@ -446,20 +445,20 @@ func (p *DeepSeekProvider) convertToDeepSeekMessages(ctx context.Context, blocks
 
 // makeAPIRequest makes an HTTP request to DeepSeek API.
 func (p *DeepSeekProvider) makeAPIRequest(ctx context.Context, req *deepseekChatRequest) (*deepseekChatResponse, error) {
-	url := fmt.Sprintf("%s/chat/completions", p.config.BaseURL)
+	url := p.config.BaseURL + "/chat/completions"
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -482,20 +481,20 @@ func (p *DeepSeekProvider) makeAPIRequest(ctx context.Context, req *deepseekChat
 
 // makeStreamingRequest makes a streaming HTTP request to DeepSeek API.
 func (p *DeepSeekProvider) makeStreamingRequest(ctx context.Context, req *deepseekChatRequest, onChunk func(string)) error {
-	url := fmt.Sprintf("%s/chat/completions", p.config.BaseURL)
+	url := p.config.BaseURL + "/chat/completions"
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -544,11 +543,13 @@ func (p *DeepSeekProvider) convertDeepSeekResponse(ctx context.Context, resp *de
 	var content string
 
 	// Extract text content from message
+	var contentSb547 strings.Builder
 	for _, contentPart := range choice.Message.Content {
 		if contentPart.Type == "text" && contentPart.Text != "" {
-			content += contentPart.Text
+			contentSb547.WriteString(contentPart.Text)
 		}
 	}
+	content += contentSb547.String()
 
 	if content == "" {
 		return nil, errors.New("no content in DeepSeek response")

@@ -14,12 +14,12 @@ func TestRecursiveDirectoryLoader_Load(t *testing.T) {
 	fsys := fstest.MapFS{
 		"file1.txt": &fstest.MapFile{
 			Data:    []byte("Content 1"),
-			Mode:    0644,
+			Mode:    0o644,
 			ModTime: time.Now(),
 		},
 		"file2.txt": &fstest.MapFile{
 			Data:    []byte("Content 2"),
-			Mode:    0644,
+			Mode:    0o644,
 			ModTime: time.Now(),
 		},
 	}

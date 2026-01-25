@@ -40,8 +40,8 @@ import (
 type ChromaStore struct {
 	url            string
 	collectionName string
-	embeddingDim   int
 	name           string
+	embeddingDim   int
 	mu             sync.RWMutex
 }
 
@@ -69,7 +69,7 @@ type ChromaStore struct {
 //	}
 //	store, err := chroma.NewChromaStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewChromaStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract chroma-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["chroma"]

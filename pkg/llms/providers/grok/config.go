@@ -2,6 +2,7 @@
 package grok
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -28,7 +29,7 @@ type GrokConfig struct {
 // Validate validates the Grok configuration.
 func (c *GrokConfig) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("grok API key is required")
+		return errors.New("grok API key is required")
 	}
 
 	if c.BaseURL == "" {

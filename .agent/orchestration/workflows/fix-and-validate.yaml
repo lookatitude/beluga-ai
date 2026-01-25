@@ -1,0 +1,155 @@
+# Fix and Validate Workflow
+#
+# This workflow takes a list of issues, fixes them using the backend
+# developer persona, and then re-validates to ensure fixes are correct.
+#
+# Usually triggered by verify-architecture when issues are found.
+#
+# Usage: ./.agent/scripts/run-workflow.sh fix-and-validate --input issues.md
+
+name: Fix and Validate
+description: Fix identified issues and re-validate the changes
+
+config:
+  max_iterations: 3
+  timeout: 600  # Longer timeout for fixes
+  require_confirmation: true
+
+inputs:
+  - name: issues
+    description: Report containing issues to fix
+    required: true
+    type: file
+
+steps:
+  - name: analyze-issues
+    description: Parse and prioritize issues from the report
+    persona: architect
+    skill: review_architecture
+    input:
+      source: ${issues}
+      action: prioritize
+      criteria:
+        - severity
+        - impact
+        - complexity
+    output: prioritized-issues.md
+
+  - name: fix-critical
+    description: Fix critical severity issues first
+    persona: backend-developer
+    skill: fix_bug
+    input:
+      issues: ${prioritized-issues.md}
+      filter: severity == critical
+      approach: |
+        For each critical issue:
+        1. Identify the affected files
+        2. Understand the required pattern from .agent/rules/
+        3. Implement the fix following framework standards
+        4. Add/update tests if needed
+    output: critical-fixes.md
+    on_failure: manual-intervention
+
+  - name: fix-high
+    description: Fix high severity issues
+    persona: backend-developer
+    skill: fix_bug
+    input:
+      issues: ${prioritized-issues.md}
+      filter: severity == high
+      approach: |
+        For each high severity issue:
+        1. Review the architectural requirement
+        2. Implement the fix
+        3. Ensure no new issues introduced
+    output: high-fixes.md
+    condition: critical_fixes.success == true
+
+  - name: fix-medium
+    description: Fix medium severity issues
+    persona: backend-developer
+    skill: fix_bug
+    input:
+      issues: ${prioritized-issues.md}
+      filter: severity == medium
+    output: medium-fixes.md
+    condition: high_fixes.success == true
+
+  - name: run-tests
+    description: Run test suite to verify fixes
+    persona: qa
+    skill: run_quality_checks
+    input:
+      checks:
+        - make test-unit
+        - make lint
+        - make vet
+      fail_fast: false
+    output: test-results.md
+    on_failure: fix-test-failures
+
+  - name: fix-test-failures
+    id: fix-test-failures
+    description: Fix any test failures introduced by the fixes
+    persona: backend-developer
+    skill: fix_bug
+    input:
+      source: ${test-results.md}
+      filter: failed_tests
+    output: test-fix-report.md
+    then: run-tests  # Re-run tests after fixing
+
+  - name: validate-fixes
+    description: Validate that all fixes meet framework standards
+    persona: architect
+    skill: review_architecture
+    input:
+      changes:
+        - ${critical-fixes.md}
+        - ${high-fixes.md}
+        - ${medium-fixes.md}
+      checklist:
+        - Fixes follow framework patterns
+        - No new architecture violations
+        - Tests pass
+        - OTEL instrumentation maintained
+    output: validation-report.md
+
+  - name: generate-fix-report
+    description: Generate summary of all fixes applied
+    persona: documentation-writer
+    skill: write_guide
+    input:
+      fixes:
+        - ${critical-fixes.md}
+        - ${high-fixes.md}
+        - ${medium-fixes.md}
+      validation: ${validation-report.md}
+      tests: ${test-results.md}
+      format: fix-summary
+    output: fix-summary-report.md
+
+  - name: manual-intervention
+    id: manual-intervention
+    description: Request manual intervention for unfixable issues
+    persona: architect
+    skill: design_component
+    input:
+      failed_fixes: ${critical-fixes.md}
+      action: document_blockers
+    output: manual-intervention-required.md
+    exit_code: 1  # Mark workflow as failed
+
+outputs:
+  - name: Fix Summary
+    file: fix-summary-report.md
+    description: Summary of all fixes applied
+
+  - name: Validation Results
+    file: validation-report.md
+    description: Validation of fixes against framework standards
+
+  - name: Test Results
+    file: test-results.md
+    description: Test suite results after fixes

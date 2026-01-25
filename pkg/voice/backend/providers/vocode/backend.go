@@ -2,6 +2,7 @@ package vocode
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,9 +20,9 @@ type VocodeBackend struct {
 	config          *VocodeConfig
 	sessionManager  *internal.SessionManager
 	httpClient      *http.Client
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
 	metrics         *backend.Metrics
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -75,7 +76,7 @@ func (b *VocodeBackend) Start(ctx context.Context) error {
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "VocodeBackend.Start", func() error {
 		// Test connection by making a simple API call
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/agents", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/agents", nil)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,6 @@ func (b *VocodeBackend) Start(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		b.connectionState = iface.ConnectionStateError
 		backend.RecordSpanError(span, err)
@@ -156,7 +156,7 @@ func (b *VocodeBackend) CreateSession(ctx context.Context, config *iface.Session
 
 	if connectionState != iface.ConnectionStateConnected {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("backend not connected"))
+			errors.New("backend not connected"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (b *VocodeBackend) CreateSession(ctx context.Context, config *iface.Session
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "VocodeBackend.CreateSession", func() error {
 		// Create Vocode call
-		callURL := fmt.Sprintf("%s/calls", b.config.APIURL)
-		req, err := http.NewRequestWithContext(ctx, "POST", callURL, nil)
+		callURL := b.config.APIURL + "/calls"
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, callURL, nil)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,6 @@ func (b *VocodeBackend) CreateSession(ctx context.Context, config *iface.Session
 
 		return nil
 	})
-
 	if err != nil {
 		backend.RecordSpanError(span, err)
 		backend.LogWithOTELContext(ctx, slog.LevelError, "Failed to create Vocode call", "error", err)
@@ -255,7 +254,7 @@ func (b *VocodeBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus, e
 	defer b.mu.RUnlock()
 
 	// Check Vocode API health
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/agents", b.config.APIURL), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/agents", nil)
 	if err != nil {
 		return nil, backend.WrapError("HealthCheck", err)
 	}
@@ -313,7 +312,7 @@ func (b *VocodeBackend) UpdateConfig(ctx context.Context, config *iface.Config) 
 	// If connection state is connected, verify connection still works
 	if b.connectionState == iface.ConnectionStateConnected {
 		// Test connection
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/agents", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/agents", nil)
 		if err != nil {
 			return backend.NewBackendError("UpdateConfig", backend.ErrCodeConnectionFailed, err)
 		}

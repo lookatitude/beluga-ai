@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -14,27 +15,18 @@ type MockOption func(*MockConfig)
 
 // MockConfig holds configuration for advanced mock behavior.
 type MockConfig struct {
-	// Error behavior
-	ShouldError bool
-	ErrorCode   string
-	ErrorDelay  time.Duration
-
-	// Delay behavior
-	OperationDelay  time.Duration
-	ProcessingDelay time.Duration
-
-	// Audio data
-	AudioData      []byte
-	AudioResponses [][]byte
-
-	// Session behavior
+	CallCounts        map[string]int
+	ErrorCode         string
+	AudioData         []byte
+	AudioResponses    [][]byte
+	ErrorDelay        time.Duration
+	OperationDelay    time.Duration
+	ProcessingDelay   time.Duration
 	MaxSessions       int
 	SessionDelay      time.Duration
+	CallCountsMu      sync.RWMutex
+	ShouldError       bool
 	AutoStartSessions bool
-
-	// State tracking
-	CallCounts   map[string]int
-	CallCountsMu sync.RWMutex
 }
 
 // WithMockError configures the mock to return an error (T249).
@@ -92,8 +84,8 @@ func WithAutoStartSessions(autoStart bool) MockOption {
 type AdvancedMockVoiceBackend struct {
 	config          *MockConfig
 	sessions        map[string]iface.VoiceSession
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -197,6 +189,14 @@ func (b *AdvancedMockVoiceBackend) CreateSession(ctx context.Context, config *if
 		return nil, NewBackendError("CreateSession", b.config.ErrorCode, nil)
 	}
 
+	// Check session limit
+	b.mu.RLock()
+	currentCount := len(b.sessions)
+	b.mu.RUnlock()
+	if b.config.MaxSessions > 0 && currentCount >= b.config.MaxSessions {
+		return nil, NewBackendError("CreateSession", ErrCodeSessionLimitExceeded, nil)
+	}
+
 	session := NewAdvancedMockVoiceSession(b.config, config)
 
 	b.mu.Lock()
@@ -251,10 +251,12 @@ func (b *AdvancedMockVoiceBackend) CloseSession(ctx context.Context, sessionID s
 // HealthCheck returns the health status.
 func (b *AdvancedMockVoiceBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus, error) {
 	b.incrementCallCount("HealthCheck")
-	b.mu.RLock()
-	defer b.mu.RUnlock()
+	b.mu.Lock()
 	b.healthStatus.LastCheck = time.Now()
-	return b.healthStatus, nil
+	// Return a copy to avoid returning pointer to protected data
+	status := *b.healthStatus
+	b.mu.Unlock()
+	return &status, nil
 }
 
 // GetConnectionState returns the connection state.
@@ -292,23 +294,23 @@ func (b *AdvancedMockVoiceBackend) UpdateConfig(ctx context.Context, config *ifa
 
 // AdvancedMockVoiceSession provides an advanced mock implementation of VoiceSession (T250).
 type AdvancedMockVoiceSession struct {
-	id                string
 	config            *MockConfig
 	sessionConfig     *iface.SessionConfig
-	state             iface.PipelineState
-	persistenceStatus iface.PersistenceStatus
 	metadata          map[string]any
 	audioOutput       chan []byte
-	mu                sync.RWMutex
-	active            bool
 	callCounts        map[string]int
+	id                string
+	state             iface.PipelineState
+	persistenceStatus iface.PersistenceStatus
+	mu                sync.RWMutex
 	callCountsMu      sync.RWMutex
+	active            bool
 }
 
 // NewAdvancedMockVoiceSession creates a new advanced mock session (T250).
 func NewAdvancedMockVoiceSession(mockConfig *MockConfig, sessionConfig *iface.SessionConfig) *AdvancedMockVoiceSession {
 	return &AdvancedMockVoiceSession{
-		id:                "mock-session-" + time.Now().Format("20060102150405"),
+		id:                fmt.Sprintf("mock-session-%d", time.Now().UnixNano()),
 		config:            mockConfig,
 		sessionConfig:     sessionConfig,
 		state:             iface.PipelineStateIdle,
@@ -572,7 +574,7 @@ func (r *ConcurrentTestRunner) Run(ctx context.Context, fn func(ctx context.Cont
 }
 
 // RunLoadTest runs a load test with configurable parameters (T252).
-func RunLoadTest(ctx context.Context, backend iface.VoiceBackend, numSessions int, operationsPerSession int, timeout time.Duration) error {
+func RunLoadTest(ctx context.Context, backend iface.VoiceBackend, numSessions, operationsPerSession int, timeout time.Duration) error {
 	runner := NewConcurrentTestRunner(numSessions, operationsPerSession, timeout)
 	return runner.Run(ctx, func(ctx context.Context, workerID, iteration int) error {
 		sessionConfig := &iface.SessionConfig{

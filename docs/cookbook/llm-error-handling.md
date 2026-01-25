@@ -343,5 +343,5 @@ func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.
 
 - **[Custom Agent Extension](./custom-agent.md)** - Use error handling in custom agents
 - **[Streaming LLM Guide](../guides/llm-streaming-tool-calls.md)** - Error handling in streaming scenarios
-- **[Configuration Guide](../guides/config-providers.md)** - Configure retry behavior via config files
+- **[Configuration Guide](../guides/implementing-providers.md)** - Configure retry behavior via config files
 - **[Observability Guide](../guides/observability-tracing.md)** - Track retry metrics with OTEL

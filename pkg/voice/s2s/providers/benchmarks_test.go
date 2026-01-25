@@ -143,9 +143,9 @@ func BenchmarkOpenAIRealtime(b *testing.B) {
 // BenchmarkProviderComparison compares all providers.
 func BenchmarkProviderComparison(b *testing.B) {
 	providers := []struct {
+		provider *s2s.AdvancedMockS2SProvider
 		name     string
 		delay    time.Duration
-		provider *s2s.AdvancedMockS2SProvider
 	}{
 		{
 			name:     "amazon_nova",

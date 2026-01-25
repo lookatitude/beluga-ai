@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +21,10 @@ import (
 
 // GeminiNativeProvider implements the S2SProvider interface for Gemini 2.5 Flash Native Audio.
 type GeminiNativeProvider struct {
-	config       *GeminiNativeConfig
 	httpClient   HTTPClient
-	mu           sync.RWMutex
+	config       *GeminiNativeConfig
 	providerName string
+	mu           sync.RWMutex
 }
 
 // HTTPClient is an interface for HTTP client operations.
@@ -123,7 +124,7 @@ func (p *GeminiNativeProvider) Process(ctx context.Context, input *internal.Audi
 	case <-ctx.Done():
 		s2s.RecordSpanError(span, ctx.Err())
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 
@@ -151,7 +152,7 @@ func (p *GeminiNativeProvider) Process(ctx context.Context, input *internal.Audi
 	url := fmt.Sprintf("%s/models/%s:generateContent?key=%s", p.config.APIEndpoint, p.config.Model, p.config.APIKey)
 
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		s2s.RecordSpanError(span, err)
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidRequest,
@@ -196,8 +197,8 @@ func (p *GeminiNativeProvider) Process(ctx context.Context, input *internal.Audi
 	output.Latency = time.Since(startTime)
 	s2s.RecordSpanLatency(span, output.Latency)
 	s2s.RecordSpanAttributes(span, map[string]string{
-		"output_size": fmt.Sprintf("%d", len(output.Data)),
-		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+		"output_size": strconv.Itoa(len(output.Data)),
+		"latency_ms":  strconv.FormatInt(output.Latency.Milliseconds(), 10),
 	})
 
 	return output, nil
@@ -264,17 +265,17 @@ func (p *GeminiNativeProvider) parseGeminiResponse(responseBody []byte, input *i
 	}
 
 	if len(response.Candidates) == 0 {
-		return nil, fmt.Errorf("no candidates in response")
+		return nil, errors.New("no candidates in response")
 	}
 
 	candidate := response.Candidates[0]
 	if len(candidate.Content.Parts) == 0 {
-		return nil, fmt.Errorf("no parts in candidate")
+		return nil, errors.New("no parts in candidate")
 	}
 
 	part := candidate.Content.Parts[0]
 	if part.InlineData.Data == "" {
-		return nil, fmt.Errorf("no audio data in response")
+		return nil, errors.New("no audio data in response")
 	}
 
 	// Decode base64 audio
@@ -343,7 +344,7 @@ func (p *GeminiNativeProvider) StartStreaming(ctx context.Context, convCtx *inte
 	select {
 	case <-ctx.Done():
 		return nil, s2s.NewS2SError("StartStreaming", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 

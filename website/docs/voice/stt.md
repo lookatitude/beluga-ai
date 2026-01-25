@@ -340,7 +340,7 @@ OpenAI Whisper is **architecturally designed for batch processing** of complete 
 4. **No streaming endpoint**: OpenAI doesn't provide a streaming API endpoint for Whisper - it's designed as a batch transcription service
 
 **For real-time streaming applications**, use providers that support streaming:
-- **Deepgram**: WebSocket-based streaming with low latency (&lt;200ms)
+- **Deepgram**: WebSocket-based streaming with low latency (\<200ms)
 - **Google Cloud Speech-to-Text**: gRPC streaming support
 - **Azure Speech Services**: WebSocket streaming support
 

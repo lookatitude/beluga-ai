@@ -16,14 +16,14 @@ import (
 // VoiceDocument represents a document containing audio/voice data.
 // It extends Document with audio-specific fields while maintaining compatibility.
 type VoiceDocument struct {
+	AudioURL    string `json:"audio_url,omitempty"`
+	AudioFormat string `json:"audio_format,omitempty"`
+	Transcript  string `json:"transcript,omitempty"`
+	AudioData   []byte `json:"audio_data,omitempty"`
 	internal.Document
-	AudioURL    string  `json:"audio_url,omitempty"`    // URL to the audio file
-	AudioData   []byte  `json:"audio_data,omitempty"`   // Base64-encoded audio data
-	AudioFormat string  `json:"audio_format,omitempty"` // Format: "wav", "mp3", "ogg", etc.
-	Duration    float64 `json:"duration,omitempty"`     // Duration in seconds
-	Transcript  string  `json:"transcript,omitempty"`   // Optional transcript of the audio
-	SampleRate  int     `json:"sample_rate,omitempty"`  // Audio sample rate in Hz
-	Channels    int     `json:"channels,omitempty"`     // Number of audio channels
+	Duration   float64 `json:"duration,omitempty"`
+	SampleRate int     `json:"sample_rate,omitempty"`
+	Channels   int     `json:"channels,omitempty"`
 }
 
 // GetContent returns the transcript if available, otherwise the page content.
@@ -77,7 +77,7 @@ func (d *VoiceDocument) GetChannels() int {
 // NewVoiceDocument creates a new VoiceDocument with a URL.
 // Note: VoiceDocument embeds Document but is a different type.
 // Use AsDocument() to convert to Document if needed, or use directly as Message.
-func NewVoiceDocument(audioURL string, transcript string, metadata map[string]string) *VoiceDocument {
+func NewVoiceDocument(audioURL, transcript string, metadata map[string]string) *VoiceDocument {
 	return &VoiceDocument{
 		Document: internal.Document{
 			PageContent: transcript,
@@ -92,7 +92,7 @@ func NewVoiceDocument(audioURL string, transcript string, metadata map[string]st
 // NewVoiceDocumentWithData creates a new VoiceDocument with audio data.
 // Note: VoiceDocument embeds Document but is a different type.
 // Use AsDocument() to convert to Document if needed, or use directly as Message.
-func NewVoiceDocumentWithData(audioData []byte, format string, transcript string, metadata map[string]string) *VoiceDocument {
+func NewVoiceDocumentWithData(audioData []byte, format, transcript string, metadata map[string]string) *VoiceDocument {
 	return &VoiceDocument{
 		Document: internal.Document{
 			PageContent: transcript,
@@ -107,7 +107,7 @@ func NewVoiceDocumentWithData(audioData []byte, format string, transcript string
 // NewVoiceDocumentWithContext creates a new VoiceDocument with OTEL tracing context.
 // Note: VoiceDocument embeds Document but is a different type.
 // Use AsDocument() to convert to Document if needed, or use directly as Message.
-func NewVoiceDocumentWithContext(ctx context.Context, audioURL string, transcript string, metadata map[string]string) *VoiceDocument {
+func NewVoiceDocumentWithContext(ctx context.Context, audioURL, transcript string, metadata map[string]string) *VoiceDocument {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
 	ctx, span := tracer.Start(ctx, "schema.NewVoiceDocument",
 		trace.WithAttributes(

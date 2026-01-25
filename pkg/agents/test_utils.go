@@ -1,5 +1,37 @@
 // Package agents provides advanced test utilities and comprehensive mocks for testing agent implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//   - Panic handlers in concurrent test runners (ConcurrentTestRunner, ConcurrentStreamingTestRunner)
+//   - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//   - Some context cancellation paths in streaming operations are difficult to reliably test
+//   - Race conditions between context cancellation and channel operations
+//
+// 3. Error Paths Requiring System Conditions:
+//   - Network errors that require actual network failures
+//   - File system errors that require specific OS conditions
+//   - Memory exhaustion scenarios
+//
+// 4. Provider-Specific Untestable Paths:
+//   - Some provider implementations have paths that require external service failures
+//   - These are tested through integration tests rather than unit tests
+//
+// 5. Test Utility Functions:
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//   - Package init() functions and global variable initialization
+//   - These are executed automatically and difficult to test in isolation
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package agents
 
 import (
@@ -21,7 +53,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Static error variables for testing (err113 compliance)
+// Static error variables for testing (err113 compliance).
 var (
 	errMockStreamingError    = errors.New("mock streaming error")
 	errTaskReturnedNilResult = errors.New("task returned nil result")
@@ -36,7 +68,7 @@ type AdvancedMockAgent struct {
 	name             string
 	agentType        string
 	healthState      string
-	tools            []tools.Tool
+	tools            []iface.Tool
 	planningSteps    []string
 	responses        []any
 	executionHistory []ExecutionRecord
@@ -63,7 +95,7 @@ func NewAdvancedMockAgent(name, agentType string, options ...MockAgentOption) *A
 		name:             name,
 		agentType:        agentType,
 		responses:        []any{},
-		tools:            []tools.Tool{},
+		tools:            []iface.Tool{},
 		executionHistory: make([]ExecutionRecord, 0),
 		state:            make(map[string]any),
 		planningSteps:    []string{},
@@ -89,6 +121,63 @@ func WithMockError(shouldError bool, err error) MockAgentOption {
 	}
 }
 
+// WithMockAgentError configures the mock to return an AgentError with the specified code.
+func WithMockAgentError(op, code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewAgentError(op, code, underlyingErr)
+	}
+}
+
+// WithMockExecutionError configures the mock to return an ExecutionError.
+func WithMockExecutionError(agent string, step int, action string, underlyingErr error, retryable bool) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewExecutionError(agent, step, action, underlyingErr, retryable)
+	}
+}
+
+// WithMockPlanningError configures the mock to return a PlanningError.
+func WithMockPlanningError(agent string, inputKeys []string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewPlanningError(agent, inputKeys, underlyingErr)
+	}
+}
+
+// WithMockStreamingError configures the mock to return a StreamingError.
+func WithMockStreamingError(op, agent, code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewStreamingError(op, agent, code, underlyingErr)
+	}
+}
+
+// WithMockValidationError configures the mock to return a ValidationError.
+func WithMockValidationError(field, message string) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewValidationError(field, message)
+	}
+}
+
+// WithMockFactoryError configures the mock to return a FactoryError.
+func WithMockFactoryError(agentType string, config any, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewFactoryError(agentType, config, underlyingErr)
+	}
+}
+
+// WithMockErrorCode configures the mock to return an AgentError with a specific error code.
+// This is a convenience function for common error codes.
+func WithMockErrorCode(code string, underlyingErr error) MockAgentOption {
+	return func(a *AdvancedMockAgent) {
+		a.shouldError = true
+		a.errorToReturn = NewAgentError("mock_operation", code, underlyingErr)
+	}
+}
+
 // WithMockResponses sets predefined responses for the mock.
 func WithMockResponses(responses []any) MockAgentOption {
 	return func(a *AdvancedMockAgent) {
@@ -104,7 +193,7 @@ func WithExecutionDelay(delay time.Duration) MockAgentOption {
 }
 
 // WithMockTools sets the tools available to the agent.
-func WithMockTools(agentTools []tools.Tool) MockAgentOption {
+func WithMockTools(agentTools []iface.Tool) MockAgentOption {
 	return func(a *AdvancedMockAgent) {
 		a.tools = agentTools
 	}
@@ -237,7 +326,7 @@ func (a *AdvancedMockAgent) OutputVariables() []string {
 	return []string{"output"}
 }
 
-func (a *AdvancedMockAgent) GetTools() []tools.Tool {
+func (a *AdvancedMockAgent) GetTools() []iface.Tool {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	result := make([]tools.Tool, len(a.tools))
@@ -414,8 +503,8 @@ func CreateTestAgentConfig(agentType string) Config {
 }
 
 // CreateTestTools creates a set of mock tools for testing.
-func CreateTestTools(count int) []tools.Tool {
-	testTools := make([]tools.Tool, count)
+func CreateTestTools(count int) []iface.Tool {
+	testTools := make([]iface.Tool, count)
 	for i := 0; i < count; i++ {
 		toolName := fmt.Sprintf("test_tool_%d", i+1)
 		description := fmt.Sprintf("Test tool %d for agent testing", i+1)
@@ -823,7 +912,7 @@ func CreateCollaborativeAgents(count int, sharedState map[string]any) []*Advance
 		agentType := "collaborative"
 
 		// Create shared tools for collaboration
-		collaborativeTools := []tools.Tool{
+		collaborativeTools := []iface.Tool{
 			NewMockTool("communicate", "Communicate with other agents"),
 			NewMockTool("coordinate", "Coordinate task execution"),
 			NewMockTool("share_state", "Share state information"),

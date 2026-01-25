@@ -59,53 +59,35 @@ const (
 
 // HealthStatus represents the health status of a voice backend.
 type HealthStatus struct {
-	Status    string         `json:"status"`     // "healthy", "degraded", "unhealthy"
-	Details   map[string]any `json:"details"`    // Additional health details
-	LastCheck time.Time      `json:"last_check"` // Last health check timestamp
+	LastCheck time.Time      `json:"last_check"`
+	Details   map[string]any `json:"details"`
+	Status    string         `json:"status"`
 }
 
 // ProviderCapabilities represents the capabilities of a voice backend provider.
 type ProviderCapabilities struct {
-	// S2SSupport indicates if the provider supports speech-to-speech processing.
-	S2SSupport bool `json:"s2s_support"`
-	// MultiUserSupport indicates if the provider supports concurrent multi-user conversations.
-	MultiUserSupport bool `json:"multi_user_support"`
-	// SessionPersistence indicates if the provider supports session state persistence.
-	SessionPersistence bool `json:"session_persistence"`
-	// CustomAuth indicates if the provider supports custom authentication.
-	CustomAuth bool `json:"custom_auth"`
-	// CustomRateLimiting indicates if the provider supports custom rate limiting.
-	CustomRateLimiting bool `json:"custom_rate_limiting"`
-	// MaxConcurrentSessions is the maximum concurrent sessions (0 = unlimited).
-	MaxConcurrentSessions int `json:"max_concurrent_sessions"`
-	// MinLatency is the minimum achievable latency.
-	MinLatency time.Duration `json:"min_latency"`
-	// SupportedCodecs is a list of supported audio codecs (e.g., ["opus", "pcm"]).
-	SupportedCodecs []string `json:"supported_codecs"`
+	SupportedCodecs       []string      `json:"supported_codecs"`
+	MaxConcurrentSessions int           `json:"max_concurrent_sessions"`
+	MinLatency            time.Duration `json:"min_latency"`
+	S2SSupport            bool          `json:"s2s_support"`
+	MultiUserSupport      bool          `json:"multi_user_support"`
+	SessionPersistence    bool          `json:"session_persistence"`
+	CustomAuth            bool          `json:"custom_auth"`
+	CustomRateLimiting    bool          `json:"custom_rate_limiting"`
 }
 
 // PipelineConfiguration represents the audio processing pipeline setup.
 type PipelineConfiguration struct {
-	// Type is the pipeline type (STT_TTS or S2S).
-	Type PipelineType `json:"type"`
-	// STTProvider is the STT provider name (if STT_TTS pipeline).
-	STTProvider string `json:"stt_provider,omitempty"`
-	// TTSProvider is the TTS provider name (if STT_TTS pipeline).
-	TTSProvider string `json:"tts_provider,omitempty"`
-	// S2SProvider is the S2S provider name (if S2S pipeline).
-	S2SProvider string `json:"s2s_provider,omitempty"`
-	// VADProvider is the VAD provider name (optional).
-	VADProvider string `json:"vad_provider,omitempty"`
-	// TurnDetectionProvider is the turn detection provider name (optional).
-	TurnDetectionProvider string `json:"turn_detection_provider,omitempty"`
-	// NoiseCancellationProvider is the noise cancellation provider name (optional).
-	NoiseCancellationProvider string `json:"noise_cancellation_provider,omitempty"`
-	// ProcessingOrder is the order of processing components.
-	ProcessingOrder []string `json:"processing_order,omitempty"`
-	// LatencyTarget is the target latency (e.g., 500ms).
-	LatencyTarget time.Duration `json:"latency_target"`
-	// CustomProcessors is a list of custom audio processors (extensibility hooks).
-	CustomProcessors []CustomProcessor `json:"custom_processors,omitempty"`
+	Type                      PipelineType      `json:"type"`
+	STTProvider               string            `json:"stt_provider,omitempty"`
+	TTSProvider               string            `json:"tts_provider,omitempty"`
+	S2SProvider               string            `json:"s2s_provider,omitempty"`
+	VADProvider               string            `json:"vad_provider,omitempty"`
+	TurnDetectionProvider     string            `json:"turn_detection_provider,omitempty"`
+	NoiseCancellationProvider string            `json:"noise_cancellation_provider,omitempty"`
+	ProcessingOrder           []string          `json:"processing_order,omitempty"`
+	CustomProcessors          []CustomProcessor `json:"custom_processors,omitempty"`
+	LatencyTarget             time.Duration     `json:"latency_target"`
 }
 
 // CustomProcessor represents a custom audio processor for extensibility.

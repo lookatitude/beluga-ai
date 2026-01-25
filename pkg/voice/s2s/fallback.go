@@ -14,11 +14,11 @@ import (
 // ProviderFallback manages fallback switching between S2S providers.
 type ProviderFallback struct {
 	primary       iface.S2SProvider
-	fallbacks     []iface.S2SProvider
 	breaker       *CircuitBreaker
-	usingFallback bool
-	currentIndex  int // Index of current provider (0 = primary, 1+ = fallback)
+	fallbacks     []iface.S2SProvider
+	currentIndex  int
 	mu            sync.RWMutex
+	usingFallback bool
 }
 
 // NewProviderFallback creates a new S2S provider fallback manager.
@@ -122,7 +122,7 @@ func (pf *ProviderFallback) ProcessWithFallback(ctx context.Context, input *inte
 					// Wait before retry
 					select {
 					case <-ctx.Done():
-						return nil, fmt.Errorf("context cancelled during retry: %w", ctx.Err())
+						return nil, fmt.Errorf("context canceled during retry: %w", ctx.Err())
 					case <-time.After(delay):
 						// Exponential backoff
 						delay = time.Duration(float64(delay) * backoffFactor)
@@ -163,7 +163,7 @@ func (pf *ProviderFallback) ProcessWithFallback(ctx context.Context, input *inte
 			if attempt > 0 {
 				select {
 				case <-ctx.Done():
-					return nil, fmt.Errorf("context cancelled during fallback retry: %w", ctx.Err())
+					return nil, fmt.Errorf("context canceled during fallback retry: %w", ctx.Err())
 				case <-time.After(delay):
 					delay = time.Duration(float64(delay) * backoffFactor)
 					if delay > maxDelay {
@@ -215,10 +215,10 @@ func isRetryableError(err error) bool {
 
 // CircuitBreaker implements a simple circuit breaker pattern for provider resilience.
 type CircuitBreaker struct {
+	lastFailureTime  time.Time
 	failureThreshold int
 	resetTimeout     time.Duration
 	failureCount     int
-	lastFailureTime  time.Time
 	state            CircuitBreakerState
 	mu               sync.RWMutex
 }
@@ -236,7 +236,7 @@ const (
 )
 
 // NewCircuitBreaker creates a new circuit breaker.
-func NewCircuitBreaker(failureThreshold int, resetTimeoutMs int, resetTimeout time.Duration) *CircuitBreaker {
+func NewCircuitBreaker(failureThreshold, resetTimeoutMs int, resetTimeout time.Duration) *CircuitBreaker {
 	// Use resetTimeout if provided, otherwise calculate from resetTimeoutMs
 	timeout := resetTimeout
 	if timeout == 0 && resetTimeoutMs > 0 {
@@ -265,7 +265,7 @@ func (cb *CircuitBreaker) Call(fn func() error) error {
 			cb.failureCount = 0
 		} else {
 			cb.mu.Unlock()
-			return fmt.Errorf("circuit breaker is open")
+			return errors.New("circuit breaker is open")
 		}
 	}
 

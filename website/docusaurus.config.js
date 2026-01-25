@@ -8,9 +8,10 @@ module.exports = {
   title: 'Beluga AI Framework',
   tagline: 'A production-ready Go framework for building sophisticated AI and agentic applications.',
   url: 'https://lookatitude.github.io',
-  baseUrl: '/beluga-ai/',
+  baseUrl: '/',
   onBrokenLinks: 'warn',
   markdown: {
+    mermaid: true,
     hooks: {
       onBrokenMarkdownLinks: 'warn',
     },
@@ -36,6 +37,8 @@ module.exports = {
           path: '../docs',
           sidebarPath: require.resolve('./sidebars.js'),
           editUrl: 'https://github.com/lookatitude/beluga-ai/tree/main/',
+          // Exclude template files only
+          exclude: ['**/_template.md'],
         },
         blog: {
           path: 'blog',
@@ -50,6 +53,8 @@ module.exports = {
       }),
     ],
   ],
+
+  themes: ['@docusaurus/theme-mermaid'],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -69,7 +74,7 @@ module.exports = {
           },
           {
             type: 'doc',
-            docId: 'getting-started/quickstart',
+            docId: 'quickstart',
             position: 'left',
             label: 'Get Started',
           },
@@ -94,7 +99,7 @@ module.exports = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/docs/getting-started/quickstart',
+                to: '/docs/quickstart',
               },
               {
                 label: 'Concepts',
@@ -102,7 +107,7 @@ module.exports = {
               },
               {
                 label: 'API Reference',
-                to: '/docs/api',
+                to: '/docs/api-reference',
               },
               {
                 label: 'Use Cases',
@@ -123,11 +128,11 @@ module.exports = {
               },
               {
                 label: 'Best Practices',
-                to: '/docs/guides/best-practices',
+                to: '/docs/best-practices',
               },
               {
                 label: 'Architecture',
-                to: '/docs/guides/architecture',
+                to: '/docs/architecture',
               },
             ],
           },

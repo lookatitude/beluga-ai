@@ -49,7 +49,7 @@ result, _ := agent.Invoke(ctx, input)
 
 ## Contributing
 
-Add your own recipes! See [Contributing Guide](../../CONTRIBUTING.md).
+Add your own recipes! See [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md).
 
 ---
 

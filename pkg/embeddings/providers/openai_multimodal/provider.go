@@ -61,7 +61,7 @@ type OpenAIMultimodalEmbedder struct {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/multimodal/basic/main.go
+// Example usage can be found in examples/multimodal/basic/main.go.
 func NewOpenAIMultimodalEmbedder(config *Config, tracer trace.Tracer) (*OpenAIMultimodalEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
@@ -171,7 +171,7 @@ func (e *OpenAIMultimodalEmbedder) embedDocumentMultimodal(ctx context.Context, 
 	// Check if document has image content in metadata
 	imageURL, hasImageURL := doc.Metadata["image_url"]
 	imageBase64, hasImageBase64 := doc.Metadata["image_base64"]
-	imageType, _ := doc.Metadata["image_type"] // e.g., "image/png", "image/jpeg"
+	imageType := doc.Metadata["image_type"] // e.g., "image/png", "image/jpeg"
 
 	// If no image content, fall back to text-only
 	if !hasImageURL && !hasImageBase64 {
@@ -235,7 +235,7 @@ func (e *OpenAIMultimodalEmbedder) embedDocumentMultimodal(ctx context.Context, 
 
 // fetchImageFromURL fetches an image from a URL and returns it as base64.
 func (e *OpenAIMultimodalEmbedder) fetchImageFromURL(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

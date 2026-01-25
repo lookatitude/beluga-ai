@@ -191,7 +191,7 @@ jobs:
       - name: go vet
         run: |
           echo "Running go vet..."
-          go vet ./pkg/... ./cmd/... ./tests/... 2>&1 | tee vet-report.txt
+          go vet ./pkg/... ./tests/... 2>&1 | tee vet-report.txt
           vet_status=${PIPESTATUS[0]}
           if [ "$vet_status" -ne 0 ]; then
             echo "::warning::go vet found issues (advisory - does not block merge)"
@@ -318,8 +318,8 @@ jobs:
           # G204: Subprocess launch (intentional for shell tool and test runner)
           # G304: File inclusion (file paths from code analysis, not user input)
           # G404: Weak random (acceptable in test/mock files)
-          gosec -fmt=json -out=coverage/gosec-report.json -exclude=G101,G201,G204,G304,G404 ./pkg/... ./cmd/... ./tests/... || true
-          gosec -fmt=text -exclude=G101,G201,G204,G304,G404 ./pkg/... ./cmd/... ./tests/... 2>&1 | tee coverage/gosec-report.txt
+          gosec -fmt=json -out=coverage/gosec-report.json -exclude=G101,G201,G204,G304,G404 ./pkg/... ./tests/... || true
+          gosec -fmt=text -exclude=G101,G201,G204,G304,G404 ./pkg/... ./tests/... 2>&1 | tee coverage/gosec-report.txt
           
           # Check if any issues were found
           if grep -q "Issues : [1-9]" coverage/gosec-report.txt; then
@@ -332,7 +332,7 @@ jobs:
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           echo "Running govulncheck vulnerability scan..."
-          govulncheck ./pkg/... ./cmd/... ./tests/... 2>&1 | tee coverage/govulncheck-report.txt || true
+          govulncheck ./pkg/... ./tests/... 2>&1 | tee coverage/govulncheck-report.txt || true
           echo "✅ Vulnerability scan completed"
       
       - name: Run gitleaks (secret detection)
@@ -790,7 +790,7 @@ jobs:
         run: |
           # If merged coverage doesn't exist, generate it
           if [ ! -f coverage.out ]; then
-            go test -coverprofile=coverage.out -covermode=atomic ./pkg/... ./cmd/... ./tests/... > /dev/null 2>&1
+            go test -coverprofile=coverage.out -covermode=atomic ./pkg/... ./tests/... > /dev/null 2>&1
           fi
           
           pct=$(go tool cover -func=coverage.out | tail -n1 | awk '{print $3}' | sed 's/%//')
@@ -863,7 +863,7 @@ jobs:
           echo "Building all packages..."
           # Build packages using relative paths
           set +e
-          go build -v ./pkg/... ./cmd/...
+          go build -v ./pkg/...
           build_exit=$?
           set -e
           
@@ -882,7 +882,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Built Packages:" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          go list ./pkg/... ./cmd/... >> $GITHUB_STEP_SUMMARY
+          go list ./pkg/... >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
   # ============================================================================

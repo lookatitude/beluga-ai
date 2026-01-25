@@ -132,7 +132,7 @@ type docWithScore struct {
 //	store := inmemory.NewInMemoryVectorStore(embedder)
 //	ids, err := store.AddDocuments(ctx, documents)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewInMemoryVectorStore(embedder Embedder) *InMemoryVectorStore {
 	store := &InMemoryVectorStore{
 		documents:  make([]schema.Document, 0),
@@ -164,7 +164,7 @@ func NewInMemoryVectorStore(embedder Embedder) *InMemoryVectorStore {
 //	}
 //	store, err := inmemory.NewInMemoryVectorStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewInMemoryVectorStoreFromConfig(ctx context.Context, config Config) (VectorStore, error) {
 	store := NewInMemoryVectorStore(config.Embedder)
 	return store, nil

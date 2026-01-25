@@ -1668,6 +1668,6 @@ func (p *Provider) CheckHealth() map[string]any {
 - **[Extensibility Guide](./extensibility.md)**: General framework extension patterns
 - **[Voice Backends Cookbook](../cookbook/voice-backends.md)**: Quick recipes for voice configuration
 - **[Voice Sessions Use Case](../use-cases/voice-sessions.md)**: Real-world voice agent implementation
-- **[STT Package Documentation](/pkg/voice/stt/README.md)**: Detailed STT package docs
-- **[TTS Package Documentation](/pkg/voice/tts/README.md)**: Detailed TTS package docs
-- **[S2S Package Documentation](/pkg/voice/s2s/README.md)**: Detailed S2S package docs
+- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/README.md)**: Detailed STT package docs
+- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/README.md)**: Detailed TTS package docs
+- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/s2s/README.md)**: Detailed S2S package docs

@@ -1,0 +1,200 @@
+# Comprehensive Review Workflow
+#
+# Full codebase quality review covering architecture, code quality,
+# testing, security, and documentation.
+#
+# Usage: ./.agent/scripts/run-workflow.sh comprehensive-review
+
+name: Comprehensive Codebase Review
+description: Full quality review across architecture, testing, security, and documentation
+
+config:
+  max_iterations: 2
+  timeout: 900
+  parallel_steps: false  # Run sequentially for consistent context
+
+steps:
+  # Phase 1: Research and Discovery
+  - name: codebase-analysis
+    description: Deep analysis of codebase structure and patterns
+    persona: researcher
+    skill: research_topic
+    input:
+      question: |
+        Perform a comprehensive analysis of the codebase:
+        1. Package structure and organization
+        2. Dependency graph between packages
+        3. Interface definitions and implementations
+        4. Configuration patterns
+        5. Error handling approaches
+        6. Test coverage and patterns
+        7. Documentation completeness
+      scope:
+        - "pkg/**/*.go"
+        - "**/*_test.go"
+        - "docs/**/*.md"
+        - "*.md"
+      output_format: structured_report
+    output: codebase-analysis.md
+
+  # Phase 2: Architecture Review
+  - name: architecture-review
+    description: Validate architecture against framework rules
+    persona: architect
+    skill: review_architecture
+    input:
+      source: ${codebase-analysis.md}
+      rules:
+        - .agent/rules/framework-architecture.mdc
+        - .agent/rules/framework-observability.mdc
+      checklist:
+        - name: layered-architecture
+          description: Verify layer boundaries and dependencies
+        - name: interface-design
+          description: Check ISP and DIP compliance
+        - name: package-structure
+          description: Verify required files and organization
+        - name: registry-pattern
+          description: Check multi-provider implementations
+        - name: otel-instrumentation
+          description: Verify metrics, tracing, logging
+    output: architecture-review.md
+
+  # Phase 3: Quality Assessment
+  - name: quality-assessment
+    description: Run quality checks and analyze results
+    persona: qa
+    skill: run_quality_checks
+    input:
+      checks:
+        - name: unit-tests
+          command: make test-unit
+          required: true
+        - name: lint
+          command: make lint
+          required: true
+        - name: vet
+          command: make vet
+          required: true
+        - name: security
+          command: make security
+          required: true
+        - name: coverage
+          command: make test-coverage
+          required: false
+      analysis:
+        - test_coverage_by_package
+        - lint_violations_by_category
+        - security_findings_by_severity
+    output: quality-assessment.md
+
+  # Phase 4: Test Coverage Analysis
+  - name: test-analysis
+    description: Analyze test coverage and patterns
+    persona: qa
+    skill: create_test_suite
+    input:
+      mode: analyze
+      source: ${codebase-analysis.md}
+      requirements:
+        - Table-driven tests present
+        - Concurrency tests for concurrent code
+        - Error scenario tests
+        - OTEL validation tests
+        - Registry tests for multi-provider packages
+      coverage_target: 80
+    output: test-analysis.md
+
+  # Phase 5: Documentation Review
+  - name: documentation-review
+    description: Review documentation completeness and accuracy
+    persona: documentation-writer
+    skill: write_api_docs
+    input:
+      mode: review
+      scope:
+        - docs/**/*.md
+        - pkg/**/README.md
+        - "*.md"
+      checklist:
+        - Package READMEs present and complete
+        - API documentation accurate
+        - Architecture docs up to date
+        - Examples compile and work
+        - Links valid
+    output: documentation-review.md
+
+  # Phase 6: Compile Findings
+  - name: compile-findings
+    description: Aggregate all review findings
+    persona: researcher
+    skill: compare_approaches
+    input:
+      sources:
+        - ${architecture-review.md}
+        - ${quality-assessment.md}
+        - ${test-analysis.md}
+        - ${documentation-review.md}
+      analysis:
+        - Categorize findings by severity
+        - Identify patterns in issues
+        - Cross-reference related findings
+    output: compiled-findings.md
+
+  # Phase 7: Generate Recommendations
+  - name: generate-recommendations
+    description: Create actionable recommendations
+    persona: architect
+    skill: design_component
+    input:
+      findings: ${compiled-findings.md}
+      format: recommendations
+      prioritization:
+        - critical_fixes_first
+        - quick_wins
+        - long_term_improvements
+    output: recommendations.md
+
+  # Phase 8: Final Report
+  - name: final-report
+    description: Generate comprehensive review report
+    persona: documentation-writer
+    skill: write_guide
+    input:
+      sections:
+        - title: Executive Summary
+          source: ${compiled-findings.md}
+          extract: summary
+        - title: Architecture Review
+          source: ${architecture-review.md}
+        - title: Quality Assessment
+          source: ${quality-assessment.md}
+        - title: Test Coverage
+          source: ${test-analysis.md}
+        - title: Documentation Status
+          source: ${documentation-review.md}
+        - title: Recommendations
+          source: ${recommendations.md}
+        - title: Action Items
+          source: ${recommendations.md}
+          extract: action_items
+      format: comprehensive_report
+      include_metrics: true
+    output: comprehensive-review-report.md
+
+outputs:
+  - name: Comprehensive Report
+    file: comprehensive-review-report.md
+    description: Full review report with all findings and recommendations
+
+  - name: Action Items
+    file: recommendations.md
+    description: Prioritized list of recommended actions
+
+  - name: Architecture Review
+    file: architecture-review.md
+    description: Detailed architecture compliance findings
+
+  - name: Quality Assessment
+    file: quality-assessment.md
+    description: Quality checks results and analysis

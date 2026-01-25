@@ -25,49 +25,42 @@ This use case implements a distributed workflow orchestration system that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Workflow Clients                              │
-│              (Applications, APIs, Services)                      │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Orchestration Layer (pkg/orchestration)              │
-│                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   Chains     │  │   Graphs     │  │  Workflows   │         │
-│  │  (Sequential)│  │  (DAG)       │  │  (Temporal)  │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   LLMs       │    │   Memory     │    │  Temporal    │
-│  (pkg/llms)  │    │  (pkg/memory)│    │  Workflow    │
-│              │    │               │    │  Engine      │
-│  - OpenAI    │    │  - Buffer     │    │              │
-│  - Anthropic │    │  - VectorStore│   │  - Activities │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   External Services    │
-              │  - APIs                │
-              │  - Databases          │
-              │  - Message Queues     │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph Clients["Workflow Clients"]
+        A[Applications / APIs / Services]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - Workflow execution metrics                                   │
-│  - Distributed tracing                                          │
-│  - Performance monitoring                                       │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Orchestration["Orchestration Layer - pkg/orchestration"]
+        B1[Chains<br>Sequential]
+        B2[Graphs<br>DAG]
+        B3[Workflows<br>Temporal]
+    end
+
+    subgraph Components["Core Components"]
+        C[LLMs - pkg/llms<br>OpenAI / Anthropic]
+        D[Memory - pkg/memory<br>Buffer / VectorStore]
+        E[Temporal Workflow Engine<br>Activities]
+    end
+
+    subgraph External["External Services"]
+        F[APIs / Databases / Message Queues]
+    end
+
+    subgraph Observability["Observability Layer"]
+        G[Workflow Execution Metrics<br>Distributed Tracing<br>Performance Monitoring]
+    end
+
+    A --> B1
+    A --> B2
+    A --> B3
+    B1 --> C
+    B2 --> C
+    B3 --> E
+    B1 --> D
+    B2 --> D
+    C --> F
+    E --> F
 ```
 
 ## Component Usage

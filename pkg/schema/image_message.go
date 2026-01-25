@@ -16,11 +16,11 @@ import (
 // ImageMessage represents a message containing an image.
 // It implements the Message interface and extends BaseMessage with image-specific data.
 type ImageMessage struct {
+	Metadata map[string]string `json:"metadata,omitempty"`
 	internal.BaseMessage
-	ImageURL    string            `json:"image_url,omitempty"`    // URL to the image
-	ImageData   []byte            `json:"image_data,omitempty"`   // Base64-encoded image data
-	ImageFormat string            `json:"image_format,omitempty"` // Format: "png", "jpeg", "webp", etc.
-	Metadata    map[string]string `json:"metadata,omitempty"`     // Additional image metadata
+	ImageURL    string `json:"image_url,omitempty"`
+	ImageFormat string `json:"image_format,omitempty"`
+	ImageData   []byte `json:"image_data,omitempty"`
 }
 
 // GetType returns the message type, which is RoleHuman for ImageMessage.
@@ -31,8 +31,8 @@ func (m *ImageMessage) GetType() iface.MessageType {
 // GetContent returns a text description or placeholder for the image.
 // For multimodal messages, the actual content is in ImageURL or ImageData.
 func (m *ImageMessage) GetContent() string {
-	if m.BaseMessage.Content != "" {
-		return m.BaseMessage.Content
+	if m.Content != "" {
+		return m.Content
 	}
 	if m.ImageURL != "" {
 		return "[Image: " + m.ImageURL + "]"
@@ -85,7 +85,7 @@ func (m *ImageMessage) GetImageFormat() string {
 }
 
 // NewImageMessage creates a new ImageMessage with a URL.
-func NewImageMessage(imageURL string, textContent string) iface.Message {
+func NewImageMessage(imageURL, textContent string) iface.Message {
 	return &ImageMessage{
 		BaseMessage: internal.BaseMessage{Content: textContent},
 		ImageURL:    imageURL,
@@ -94,7 +94,7 @@ func NewImageMessage(imageURL string, textContent string) iface.Message {
 }
 
 // NewImageMessageWithData creates a new ImageMessage with image data.
-func NewImageMessageWithData(imageData []byte, format string, textContent string) iface.Message {
+func NewImageMessageWithData(imageData []byte, format, textContent string) iface.Message {
 	return &ImageMessage{
 		BaseMessage: internal.BaseMessage{Content: textContent},
 		ImageData:   imageData,
@@ -103,7 +103,7 @@ func NewImageMessageWithData(imageData []byte, format string, textContent string
 }
 
 // NewImageMessageWithContext creates a new ImageMessage with OTEL tracing context.
-func NewImageMessageWithContext(ctx context.Context, imageURL string, textContent string) iface.Message {
+func NewImageMessageWithContext(ctx context.Context, imageURL, textContent string) iface.Message {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
 	ctx, span := tracer.Start(ctx, "schema.NewImageMessage",
 		trace.WithAttributes(

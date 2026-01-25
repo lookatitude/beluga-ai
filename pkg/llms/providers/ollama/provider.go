@@ -71,7 +71,7 @@ type OllamaProvider struct {
 //	}
 //	response, err := provider.Generate(ctx, messages)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewOllamaProvider(config *llms.Config) (*OllamaProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -660,7 +660,7 @@ func (o *OllamaProvider) CheckHealth() map[string]any {
 //	factory.RegisterProviderFactory("ollama", ollama.NewOllamaProviderFactory())
 //	provider, err := factory.CreateProvider("ollama", config)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewOllamaProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOllamaProvider(config)

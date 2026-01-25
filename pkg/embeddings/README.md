@@ -60,14 +60,22 @@ Uses OpenAI's embedding models for high-quality embeddings.
 - `text-embedding-3-small` (1536 dimensions)
 - `text-embedding-3-large` (3072 dimensions)
 
-### Ollama
+### Ollama (Experimental)
 Uses local Ollama models for private, offline embeddings.
+
+**⚠️ Security Notice:** Ollama contains high-severity CVEs (GO-2025-3824, GO-2025-3695) allowing cross-domain token exposure and DoS attacks. This provider is **only available when building with the experimental tag**:
+
+```bash
+go build -tags experimental ./...
+```
 
 **Features:**
 - Local model execution
 - No API costs
 - Full data privacy
 - Custom models support
+
+**Security Recommendation:** Use only in isolated, air-gapped environments or with proper network security controls.
 
 ### Mock
 Provides deterministic mock embeddings for testing and development.

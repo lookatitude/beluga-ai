@@ -6,13 +6,13 @@ package planexecute
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -21,23 +21,23 @@ import (
 // PlanExecuteAgent implements the Plan-and-Execute strategy.
 // It first creates a plan, then executes it step by step.
 type PlanExecuteAgent struct {
+	llm         llmsiface.ChatModel
+	plannerLLM  llmsiface.ChatModel
+	executorLLM llmsiface.ChatModel
 	*base.BaseAgent
-	llm           llmsiface.ChatModel
-	tools         []tools.Tool
-	toolMap       map[string]tools.Tool
-	plannerLLM    llmsiface.ChatModel // Optional separate LLM for planning
-	executorLLM   llmsiface.ChatModel // Optional separate LLM for execution
+	toolMap       map[string]iface.Tool
+	tools         []iface.Tool
 	maxPlanSteps  int
 	maxIterations int
 }
 
 // PlanStep represents a single step in the execution plan.
 type PlanStep struct {
-	StepNumber int    `json:"step_number"`
 	Action     string `json:"action"`
 	Tool       string `json:"tool,omitempty"`
 	Input      string `json:"input,omitempty"`
 	Reasoning  string `json:"reasoning,omitempty"`
+	StepNumber int    `json:"step_number"`
 }
 
 // ExecutionPlan represents a complete execution plan.
@@ -58,10 +58,10 @@ type ExecutionPlan struct {
 // Returns:
 //   - New Plan-and-Execute agent instance
 //   - Error if initialization fails
-func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.Tool, opts ...iface.Option) (*PlanExecuteAgent, error) {
+func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []iface.Tool, opts ...iface.Option) (*PlanExecuteAgent, error) {
 	// Validate required parameters
 	if chatLLM == nil {
-		return nil, fmt.Errorf("chatLLM cannot be nil")
+		return nil, errors.New("chatLLM cannot be nil")
 	}
 
 	// Create base agent first
@@ -71,7 +71,7 @@ func NewPlanExecuteAgent(name string, chatLLM llmsiface.ChatModel, agentTools []
 	}
 
 	// Build tool map for efficient lookup
-	toolMap := make(map[string]tools.Tool)
+	toolMap := make(map[string]iface.Tool)
 	for _, tool := range agentTools {
 		toolName := tool.Name()
 		if _, exists := toolMap[toolName]; exists {
@@ -138,13 +138,13 @@ func (a *PlanExecuteAgent) Plan(ctx context.Context, intermediateSteps []iface.I
 	}
 
 	if inputText == "" {
-		return iface.AgentAction{}, iface.AgentFinish{}, fmt.Errorf("no input found in inputs")
+		return iface.AgentAction{}, iface.AgentFinish{}, errors.New("no input found in inputs")
 	}
 
 	// Generate plan using planner LLM
 	plan, err := a.generatePlan(ctx, inputText)
 	if err != nil {
-		config := a.BaseAgent.GetConfig()
+		config := a.GetConfig()
 		agentName := config.Name
 		if a.GetMetrics() != nil {
 			a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), false)
@@ -156,7 +156,7 @@ func (a *PlanExecuteAgent) Plan(ctx context.Context, intermediateSteps []iface.I
 	// For now, we'll return an action that indicates planning is complete
 	// The actual execution will happen in a separate phase
 
-	config := a.BaseAgent.GetConfig()
+	config := a.GetConfig()
 	agentName := config.Name
 	if a.GetMetrics() != nil {
 		a.GetMetrics().RecordPlanningCall(ctx, agentName, time.Since(start), true)
@@ -237,7 +237,7 @@ Limit the plan to a maximum of %d steps.`, goal, toolsDesc.String(), a.maxPlanSt
 
 	// Validate plan
 	if len(plan.Steps) == 0 {
-		return nil, fmt.Errorf("plan has no steps")
+		return nil, errors.New("plan has no steps")
 	}
 
 	if len(plan.Steps) > a.maxPlanSteps {
@@ -258,7 +258,7 @@ func (a *PlanExecuteAgent) parsePlan(responseText string) (*ExecutionPlan, error
 	jsonEnd := strings.LastIndex(responseText, "}")
 
 	if jsonStart == -1 || jsonEnd == -1 || jsonEnd <= jsonStart {
-		return nil, fmt.Errorf("no JSON found in response")
+		return nil, errors.New("no JSON found in response")
 	}
 
 	jsonText := responseText[jsonStart : jsonEnd+1]
@@ -392,7 +392,7 @@ func (a *PlanExecuteAgent) OutputVariables() []string {
 }
 
 // GetTools returns the tools available to the agent.
-func (a *PlanExecuteAgent) GetTools() []tools.Tool {
+func (a *PlanExecuteAgent) GetTools() []iface.Tool {
 	return a.tools
 }
 

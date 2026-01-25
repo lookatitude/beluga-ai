@@ -205,7 +205,7 @@ func (p *GeminiProvider) ProcessStream(ctx context.Context, input *types.Multimo
 			return
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -400,10 +400,10 @@ func (p *GeminiProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Gemini API request/response structures
+// Gemini API request/response structures.
 type geminiGenerateRequest struct {
-	Contents         []geminiContent         `json:"contents"`
 	GenerationConfig *geminiGenerationConfig `json:"generationConfig,omitempty"`
+	Contents         []geminiContent         `json:"contents"`
 }
 
 type geminiContent struct {
@@ -412,9 +412,9 @@ type geminiContent struct {
 }
 
 type geminiPart struct {
-	Text       string            `json:"text,omitempty"`
 	InlineData *geminiInlineData `json:"inlineData,omitempty"`
 	FileData   *geminiFileData   `json:"fileData,omitempty"`
+	Text       string            `json:"text,omitempty"`
 }
 
 type geminiInlineData struct {
@@ -436,13 +436,13 @@ type geminiGenerationConfig struct {
 }
 
 type geminiGenerateResponse struct {
-	Candidates    []geminiCandidate    `json:"candidates"`
 	UsageMetadata *geminiUsageMetadata `json:"usageMetadata,omitempty"`
+	Candidates    []geminiCandidate    `json:"candidates"`
 }
 
 type geminiCandidate struct {
-	Content      geminiContent `json:"content"`
 	FinishReason string        `json:"finishReason,omitempty"`
+	Content      geminiContent `json:"content"`
 }
 
 type geminiUsageMetadata struct {
@@ -483,7 +483,7 @@ func (p *GeminiProvider) convertToGeminiContents(ctx context.Context, blocks []*
 				// For URLs, we'd need to use FileData with a file URI
 				// For now, we'll use inline data by fetching the URL
 				// In production, you might want to use Gemini's file upload API
-				return nil, fmt.Errorf("image URL support requires file upload API (not implemented)")
+				return nil, errors.New("image URL support requires file upload API (not implemented)")
 			}
 
 			if inlineData != nil {
@@ -540,7 +540,7 @@ func (p *GeminiProvider) makeAPIRequest(ctx context.Context, endpoint string, re
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

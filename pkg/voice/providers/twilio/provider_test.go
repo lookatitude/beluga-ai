@@ -33,17 +33,20 @@ func TestTwilioProvider_ValidateConfig(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name    string
 		config  *vbiface.Config
+		name    string
 		wantErr bool
 	}{
 		{
 			name: "valid config",
 			config: &vbiface.Config{
-				Provider:     "twilio",
-				PipelineType: vbiface.PipelineTypeSTTTTS,
-				STTProvider:  "openai",
-				TTSProvider:  "openai",
+				Provider:      "twilio",
+				PipelineType:  vbiface.PipelineTypeSTTTTS,
+				STTProvider:   "openai",
+				TTSProvider:   "openai",
+				LatencyTarget: 500 * time.Millisecond,
+				Timeout:       30 * time.Second,
+				RetryDelay:    1 * time.Second,
 				ProviderConfig: map[string]any{
 					"account_sid":  "AC1234567890abcdef",
 					"auth_token":   "auth_token_123",
@@ -55,10 +58,13 @@ func TestTwilioProvider_ValidateConfig(t *testing.T) {
 		{
 			name: "missing account_sid",
 			config: &vbiface.Config{
-				Provider:     "twilio",
-				PipelineType: vbiface.PipelineTypeSTTTTS,
-				STTProvider:  "openai",
-				TTSProvider:  "openai",
+				Provider:      "twilio",
+				PipelineType:  vbiface.PipelineTypeSTTTTS,
+				STTProvider:   "openai",
+				TTSProvider:   "openai",
+				LatencyTarget: 500 * time.Millisecond,
+				Timeout:       30 * time.Second,
+				RetryDelay:    1 * time.Second,
 				ProviderConfig: map[string]any{
 					"auth_token":   "auth_token_123",
 					"phone_number": "+15551234567",
@@ -69,10 +75,13 @@ func TestTwilioProvider_ValidateConfig(t *testing.T) {
 		{
 			name: "wrong pipeline type",
 			config: &vbiface.Config{
-				Provider:     "twilio",
-				PipelineType: vbiface.PipelineTypeS2S,
-				STTProvider:  "openai",
-				TTSProvider:  "openai",
+				Provider:      "twilio",
+				PipelineType:  vbiface.PipelineTypeS2S,
+				STTProvider:   "openai",
+				TTSProvider:   "openai",
+				LatencyTarget: 500 * time.Millisecond,
+				Timeout:       30 * time.Second,
+				RetryDelay:    1 * time.Second,
 				ProviderConfig: map[string]any{
 					"account_sid":  "AC1234567890abcdef",
 					"auth_token":   "auth_token_123",
@@ -100,10 +109,13 @@ func TestTwilioProvider_CreateBackend(t *testing.T) {
 	ctx := context.Background()
 
 	config := &vbiface.Config{
-		Provider:     "twilio",
-		PipelineType: vbiface.PipelineTypeSTTTTS,
-		STTProvider:  "openai",
-		TTSProvider:  "openai",
+		Provider:      "twilio",
+		PipelineType:  vbiface.PipelineTypeSTTTTS,
+		STTProvider:   "openai",
+		TTSProvider:   "openai",
+		LatencyTarget: 500 * time.Millisecond,
+		Timeout:       30 * time.Second,
+		RetryDelay:    1 * time.Second,
 		ProviderConfig: map[string]any{
 			"account_sid":  "AC1234567890abcdef",
 			"auth_token":   "auth_token_123",

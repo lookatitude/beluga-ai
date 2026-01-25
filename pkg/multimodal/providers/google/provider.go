@@ -221,7 +221,6 @@ func (p *GoogleProvider) ProcessStream(ctx context.Context, input *types.Multimo
 				}
 			}
 		})
-
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -312,7 +311,7 @@ func (p *GoogleProvider) SupportsModality(ctx context.Context, modality string) 
 	case "video":
 		supported = p.capabilities.Video
 	default:
-		span.SetStatus(codes.Error, fmt.Sprintf("unknown modality: %s", modality))
+		span.SetStatus(codes.Error, "unknown modality: "+modality)
 		return false, fmt.Errorf("unknown modality: %s", modality)
 	}
 
@@ -343,10 +342,10 @@ func (p *GoogleProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Vertex AI API request/response structures
+// Vertex AI API request/response structures.
 type vertexAIGenerateRequest struct {
-	Contents         []vertexAIContent         `json:"contents"`
 	GenerationConfig *vertexAIGenerationConfig `json:"generationConfig,omitempty"`
+	Contents         []vertexAIContent         `json:"contents"`
 }
 
 type vertexAIContent struct {
@@ -355,9 +354,9 @@ type vertexAIContent struct {
 }
 
 type vertexAIPart struct {
-	Text       string              `json:"text,omitempty"`
 	InlineData *vertexAIInlineData `json:"inlineData,omitempty"`
 	FileData   *vertexAIFileData   `json:"fileData,omitempty"`
+	Text       string              `json:"text,omitempty"`
 }
 
 type vertexAIInlineData struct {
@@ -379,13 +378,13 @@ type vertexAIGenerationConfig struct {
 }
 
 type vertexAIGenerateResponse struct {
-	Candidates    []vertexAICandidate    `json:"candidates"`
 	UsageMetadata *vertexAIUsageMetadata `json:"usageMetadata,omitempty"`
+	Candidates    []vertexAICandidate    `json:"candidates"`
 }
 
 type vertexAICandidate struct {
-	Content      vertexAIContent `json:"content"`
 	FinishReason string          `json:"finishReason,omitempty"`
+	Content      vertexAIContent `json:"content"`
 }
 
 type vertexAIUsageMetadata struct {
@@ -422,7 +421,7 @@ func (p *GoogleProvider) convertToVertexAIContents(ctx context.Context, blocks [
 					Data:     encoded,
 				}
 			} else if block.URL != "" {
-				return nil, fmt.Errorf("image URL support requires file upload API (not implemented)")
+				return nil, errors.New("image URL support requires file upload API (not implemented)")
 			}
 
 			if inlineData != nil {
@@ -488,7 +487,7 @@ func (p *GoogleProvider) makeAPIRequest(ctx context.Context, req *vertexAIGenera
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -498,7 +497,7 @@ func (p *GoogleProvider) makeAPIRequest(ctx context.Context, req *vertexAIGenera
 	// Add authentication - Vertex AI uses OAuth2 tokens or API keys
 	if p.config.APIKey != "" {
 		url = fmt.Sprintf("%s?key=%s", url, p.config.APIKey)
-		httpReq, err = http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+		httpReq, err = http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 		if err != nil {
 			return nil, fmt.Errorf("failed to create request: %w", err)
 		}
@@ -548,7 +547,7 @@ func (p *GoogleProvider) makeStreamingRequest(ctx context.Context, req *vertexAI
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}

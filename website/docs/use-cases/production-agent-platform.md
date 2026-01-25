@@ -75,6 +75,7 @@ This use case implements a complete, production-ready AI agent platform that:
 │  - Bedrock   │    │  - Graphs    │    │  - Pinecone  │
 │  - Ollama    │    │  - Workflows │    │  - InMemory  │
 └──────────────┘    └──────────────┘    └──────────────┘
+
         │                     │                     │
         └─────────────────────┼─────────────────────┘
                               │

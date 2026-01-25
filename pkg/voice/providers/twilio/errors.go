@@ -22,11 +22,11 @@ const (
 // TwilioError represents an error that occurred during Twilio voice operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type TwilioError struct {
-	Op      string
 	Err     error
+	Details map[string]any
+	Op      string
 	Code    string
 	Message string
-	Details map[string]any
 }
 
 // Error implements the error interface.
@@ -46,7 +46,7 @@ func (e *TwilioError) Unwrap() error {
 }
 
 // NewTwilioError creates a new TwilioError.
-func NewTwilioError(op, code string, err interface{}) *TwilioError {
+func NewTwilioError(op, code string, err any) *TwilioError {
 	var errVal error
 	var message string
 

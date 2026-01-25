@@ -470,6 +470,6 @@ func (m *MultiLanguageVoice) GetTTSProvider(ctx context.Context, lang string) (t
 - **[Voice Provider Integration Guide](../guides/voice-providers.md)**: Complete provider implementation guide
 - **[Voice Sessions Use Case](../use-cases/voice-sessions.md)**: Real-world voice agent patterns
 - **[LLM Error Handling Cookbook](./llm-error-handling.md)**: Similar error handling patterns
-- **[STT Package Documentation](/pkg/voice/stt/README.md)**: Detailed STT docs
-- **[TTS Package Documentation](/pkg/voice/tts/README.md)**: Detailed TTS docs
-- **[S2S Package Documentation](/pkg/voice/s2s/README.md)**: Detailed S2S docs
+- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/README.md)**: Detailed STT docs
+- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/README.md)**: Detailed TTS docs
+- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/s2s/README.md)**: Detailed S2S docs

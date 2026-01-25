@@ -115,7 +115,7 @@ func TestProviderFallback_ProcessWithFallback_ContextCancellation(t *testing.T) 
 	output, err := fallback.ProcessWithFallback(ctx, input, convCtx)
 	require.Error(t, err)
 	assert.Nil(t, output)
-	assert.Contains(t, err.Error(), "context cancelled")
+	assert.Contains(t, err.Error(), "context canceled")
 }
 
 func TestCircuitBreaker_StateTransitions(t *testing.T) {
@@ -165,8 +165,8 @@ func TestCircuitBreaker_Recovery_Resilience(t *testing.T) {
 
 func TestIsRetryableError_Resilience(t *testing.T) {
 	tests := []struct {
-		name     string
 		err      error
+		name     string
 		expected bool
 	}{
 		{

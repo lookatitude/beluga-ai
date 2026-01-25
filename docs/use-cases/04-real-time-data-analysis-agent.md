@@ -25,48 +25,35 @@ This use case implements an autonomous data analysis agent that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    User Interface / API                          │
-│              (Dashboard, CLI, REST API)                         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Data Analysis Agent (pkg/agents)                     │
-│  - ReAct Agent with reasoning capabilities                       │
-│  - Tool integration for data operations                          │
-│  - Memory for context retention                                  │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Tools      │    │   Memory     │    │     LLMs     │
-│  (pkg/agents/│    │  (pkg/memory)│    │  (pkg/llms)  │
-│   tools)     │    │               │    │              │
-│  - API Tool  │    │  - Buffer     │    │  - OpenAI    │
-│  - Calculator│    │  - VectorStore│   │  - Anthropic │
-│  - GoFunc    │    │               │    │              │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Data Sources         │
-              │  - REST APIs           │
-              │  - Databases          │
-              │  - File Systems       │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph UI["User Interface / API"]
+        A[Dashboard / CLI / REST API]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - Agent execution metrics                                       │
-│  - Tool usage tracking                                           │
-│  - Analysis performance monitoring                              │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Agent["Data Analysis Agent - pkg/agents"]
+        B[ReAct Agent<br>Reasoning Capabilities<br>Tool Integration<br>Context Retention]
+    end
+
+    subgraph Components["Supporting Components"]
+        C[Tools - pkg/agents/tools<br>API Tool / Calculator / GoFunc]
+        D[Memory - pkg/memory<br>Buffer / VectorStore]
+        E[LLMs - pkg/llms<br>OpenAI / Anthropic]
+    end
+
+    subgraph DataSources["Data Sources"]
+        F[REST APIs / Databases / File Systems]
+    end
+
+    subgraph Observability["Observability Layer"]
+        G[Agent Execution Metrics<br>Tool Usage Tracking<br>Analysis Performance Monitoring]
+    end
+
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    C --> F
 ```
 
 ## Component Usage

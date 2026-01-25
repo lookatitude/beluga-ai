@@ -31,7 +31,7 @@ func LogWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs
 // StartSpan starts a new trace span for a voice backend operation.
 func StartSpan(ctx context.Context, operation, provider string) (context.Context, trace.Span) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/voice/backend")
-	ctx, span := tracer.Start(ctx, fmt.Sprintf("backend.%s", operation),
+	ctx, span := tracer.Start(ctx, "backend."+operation,
 		trace.WithAttributes(
 			attribute.String("backend.provider", provider),
 			attribute.String("operation", operation),

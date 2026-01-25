@@ -66,21 +66,21 @@ type Conversation struct {
 
 // Message represents a message in a conversation.
 type Message struct {
-	MessageSID      string         `json:"message_sid"`      // Unique message identifier
-	ConversationSID string         `json:"conversation_sid"` // Parent conversation identifier
-	AccountSID      string         `json:"account_sid"`      // Account identifier
-	Channel         Channel        `json:"channel"`          // Message channel
-	From            string         `json:"from"`             // Sender identifier
-	To              string         `json:"to"`               // Recipient identifier
-	Body            string         `json:"body"`             // Message text content
-	MediaURLs       []string       `json:"media_urls"`       // URLs to media attachments
-	Index           int            `json:"index"`            // Message index within conversation (0-based)
-	Author          string         `json:"author"`           // Author identifier (participant SID or identity)
-	DateCreated     time.Time      `json:"date_created"`     // When message was created
-	DateUpdated     time.Time      `json:"date_updated"`     // When message was last updated
-	DeliveryStatus  DeliveryStatus `json:"delivery_status"`  // Delivery status
-	Attributes      string         `json:"attributes"`       // JSON string with additional attributes
-	Metadata        map[string]any `json:"metadata"`         // Additional metadata
+	DateCreated     time.Time      `json:"date_created"`
+	DateUpdated     time.Time      `json:"date_updated"`
+	Metadata        map[string]any `json:"metadata"`
+	Body            string         `json:"body"`
+	From            string         `json:"from"`
+	To              string         `json:"to"`
+	MessageSID      string         `json:"message_sid"`
+	Author          string         `json:"author"`
+	Channel         Channel        `json:"channel"`
+	AccountSID      string         `json:"account_sid"`
+	DeliveryStatus  DeliveryStatus `json:"delivery_status"`
+	Attributes      string         `json:"attributes"`
+	ConversationSID string         `json:"conversation_sid"`
+	MediaURLs       []string       `json:"media_urls"`
+	Index           int            `json:"index"`
 }
 
 // Participant represents a participant in a conversation.
@@ -98,24 +98,24 @@ type Participant struct {
 
 // WebhookEvent represents an event received from the provider via webhook.
 type WebhookEvent struct {
-	EventID     string         `json:"event_id"`     // Unique event identifier (generated)
-	EventType   string         `json:"event_type"`   // Event type
-	EventData   map[string]any `json:"event_data"`   // Event payload (varies by event type)
-	AccountSID  string         `json:"account_sid"`  // Account identifier
-	Timestamp   time.Time      `json:"timestamp"`    // When event was received
-	Signature   string         `json:"signature"`    // Webhook signature (for validation)
-	Source      string         `json:"source"`       // Event source (conversations-api, etc.)
-	ResourceSID string         `json:"resource_sid"` // Related resource identifier
-	Metadata    map[string]any `json:"metadata"`     // Additional metadata
+	Timestamp   time.Time      `json:"timestamp"`
+	EventData   map[string]any `json:"event_data"`
+	Metadata    map[string]any `json:"metadata"`
+	EventID     string         `json:"event_id"`
+	EventType   string         `json:"event_type"`
+	AccountSID  string         `json:"account_sid"`
+	Signature   string         `json:"signature"`
+	Source      string         `json:"source"`
+	ResourceSID string         `json:"resource_sid"`
 }
 
 // ConversationConfig represents configuration for creating a conversation.
 type ConversationConfig struct {
-	FriendlyName string            `json:"friendly_name"` // Human-readable conversation name
-	UniqueName   string            `json:"unique_name"`   // Unique identifier (optional)
-	Attributes   string            `json:"attributes"`    // JSON attributes
-	State        ConversationState `json:"state"`         // Initial state
-	Metadata     map[string]any    `json:"metadata"`      // Additional metadata
+	Metadata     map[string]any    `json:"metadata"`
+	FriendlyName string            `json:"friendly_name"`
+	UniqueName   string            `json:"unique_name"`
+	Attributes   string            `json:"attributes"`
+	State        ConversationState `json:"state"`
 }
 
 // HealthStatusDetail represents detailed health status information.

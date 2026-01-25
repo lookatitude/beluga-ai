@@ -3,6 +3,7 @@ package documentloaders
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -18,13 +19,13 @@ import (
 // TestRecursiveDirectoryLoader provides table-driven tests for RecursiveDirectoryLoader.
 func TestRecursiveDirectoryLoader(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		fsys        fs.FS
 		setupFn     func() *DirectoryConfig
-		wantErr     bool
-		errContains string
 		validateFn  func(t *testing.T, docs []schema.Document, err error)
+		name        string
+		description string
+		errContains string
+		wantErr     bool
 	}{
 		{
 			name:        "empty_directory",
@@ -45,7 +46,7 @@ func TestRecursiveDirectoryLoader(t *testing.T) {
 			fsys: fstest.MapFS{
 				"file.txt": &fstest.MapFile{
 					Data:    []byte("Hello, world!"),
-					Mode:    0644,
+					Mode:    0o644,
 					ModTime: time.Now(),
 				},
 			},
@@ -198,12 +199,12 @@ func TestRecursiveDirectoryLoader(t *testing.T) {
 // TestTextLoader provides table-driven tests for TextLoader.
 func TestTextLoader(t *testing.T) {
 	tests := []struct {
+		setupFn     func() (string, func())
+		validateFn  func(t *testing.T, docs []schema.Document, err error)
 		name        string
 		description string
-		setupFn     func() (string, func()) // Returns file path and cleanup function
-		wantErr     bool
 		errContains string
-		validateFn  func(t *testing.T, docs []schema.Document, err error)
+		wantErr     bool
 	}{
 		{
 			name:        "valid_file",
@@ -360,6 +361,361 @@ func BenchmarkDirectoryLoader(b *testing.B) {
 }
 
 // BenchmarkDirectoryLoader_1000Files verifies SC-001: 1000 files in <5s.
+// TestDocumentLoadersErrorHandling tests comprehensive error handling scenarios.
+func TestDocumentLoadersErrorHandling(t *testing.T) {
+	tests := []struct {
+		name        string
+		err         *LoaderError
+		expectedMsg string
+	}{
+		{
+			name:        "error_with_message_and_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "file read failed", nil),
+			expectedMsg: "documentloaders Load [/path/to/file.txt]: file read failed (code: io_error)",
+		},
+		{
+			name:        "error_with_message_no_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "file read failed", nil),
+			expectedMsg: "documentloaders Load: file read failed (code: io_error)",
+		},
+		{
+			name:        "error_with_underlying_error_and_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "", errors.New("permission denied")),
+			expectedMsg: "documentloaders Load [/path/to/file.txt]: permission denied (code: io_error)",
+		},
+		{
+			name:        "error_with_underlying_error_no_path",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "", errors.New("permission denied")),
+			expectedMsg: "documentloaders Load: permission denied (code: io_error)",
+		},
+		{
+			name:        "error_no_message_no_underlying",
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "", nil),
+			expectedMsg: "documentloaders Load: unknown error (code: io_error)",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			msg := tt.err.Error()
+			assert.Contains(t, msg, tt.expectedMsg)
+			assert.Contains(t, msg, tt.err.Op)
+			assert.Contains(t, msg, tt.err.Code)
+		})
+	}
+}
+
+// TestLoaderErrorHelpers tests error helper functions.
+func TestLoaderErrorHelpers(t *testing.T) {
+	t.Run("IsLoaderError", func(t *testing.T) {
+		loaderErr := NewLoaderError("Load", ErrCodeIOError, "", "test error", nil)
+		assert.True(t, IsLoaderError(loaderErr))
+		assert.False(t, IsLoaderError(errors.New("not a loader error")))
+	})
+
+	t.Run("GetLoaderError", func(t *testing.T) {
+		loaderErr := NewLoaderError("Load", ErrCodeIOError, "", "test error", nil)
+		extracted := GetLoaderError(loaderErr)
+		require.NotNil(t, extracted)
+		assert.Equal(t, loaderErr.Op, extracted.Op)
+		assert.Equal(t, loaderErr.Code, extracted.Code)
+
+		// Test with non-loader error
+		extracted = GetLoaderError(errors.New("not a loader error"))
+		assert.Nil(t, extracted)
+	})
+
+	t.Run("Unwrap", func(t *testing.T) {
+		underlying := errors.New("underlying error")
+		loaderErr := NewLoaderError("Load", ErrCodeIOError, "", "test error", underlying)
+		unwrapped := loaderErr.Unwrap()
+		assert.Equal(t, underlying, unwrapped)
+	})
+}
+
+// TestNewDirectoryLoaderOptions tests NewDirectoryLoader with various options.
+func TestNewDirectoryLoaderOptions(t *testing.T) {
+	fsys := fstest.MapFS{
+		"file.txt": &fstest.MapFile{
+			Data: []byte("test content"),
+		},
+	}
+
+	tests := []struct {
+		name    string
+		opts    []DirectoryOption
+		wantErr bool
+	}{
+		{
+			name:    "default_options",
+			opts:    []DirectoryOption{},
+			wantErr: false,
+		},
+		{
+			name: "with_max_depth",
+			opts: []DirectoryOption{
+				WithMaxDepth(5),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_extensions",
+			opts: []DirectoryOption{
+				WithExtensions(".txt", ".md"),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_concurrency",
+			opts: []DirectoryOption{
+				WithConcurrency(2),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_follow_symlinks",
+			opts: []DirectoryOption{
+				WithFollowSymlinks(false),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_max_file_size",
+			opts: []DirectoryOption{
+				WithDirectoryMaxFileSize(50 * 1024 * 1024),
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			loader, err := NewDirectoryLoader(fsys, tt.opts...)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, loader)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, loader)
+			}
+		})
+	}
+}
+
+// TestNewTextLoaderOptions tests NewTextLoader with various options.
+func TestNewTextLoaderOptions(t *testing.T) {
+	// Create a temporary file for testing
+	tmpFile, err := os.CreateTemp("", "test-*.txt")
+	require.NoError(t, err)
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	_, err = tmpFile.WriteString("test content")
+	require.NoError(t, err)
+	tmpFile.Close()
+
+	tests := []struct {
+		name    string
+		path    string
+		opts    []Option
+		wantErr bool
+	}{
+		{
+			name:    "valid_file_default_options",
+			path:    tmpFile.Name(),
+			opts:    []Option{},
+			wantErr: false,
+		},
+		{
+			name: "valid_file_with_max_file_size",
+			path: tmpFile.Name(),
+			opts: []Option{
+				WithMaxFileSize(1024 * 1024),
+			},
+			wantErr: false,
+		},
+		{
+			name:    "non_existent_file_creation_succeeds",
+			path:    "/nonexistent/file.txt",
+			opts:    []Option{},
+			wantErr: false, // NewTextLoader doesn't validate file existence at creation, only during Load()
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			loader, err := NewTextLoader(tt.path, tt.opts...)
+			if tt.wantErr {
+				assert.Error(t, err)
+				assert.Nil(t, loader)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, loader)
+
+				// For non-existent files, test that Load() fails
+				if tt.name == "non_existent_file_creation_succeeds" {
+					ctx := context.Background()
+					_, loadErr := loader.Load(ctx)
+					assert.Error(t, loadErr, "Load() should fail for non-existent file")
+				}
+			}
+		})
+	}
+}
+
+// TestLogWithOTELContext tests the logWithOTELContext function.
+func TestLogWithOTELContext(t *testing.T) {
+	ctx := context.Background()
+
+	// Test without OTEL context
+	logWithOTELContext(ctx, 0, "test message", "key", "value")
+
+	// Test with OTEL context (if available)
+	// This is difficult to test without setting up full OTEL, but we can at least call it
+	ctxWithSpan := context.WithValue(ctx, "test", "value")
+	logWithOTELContext(ctxWithSpan, 0, "test message with context", "key", "value")
+}
+
+// TestAdvancedMockLoaderErrorTypes tests AdvancedMockLoader with different error types.
+func TestAdvancedMockLoaderErrorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		setupMock   func() *AdvancedMockLoader
+		name        string
+		errorCode   string
+		expectedErr bool
+	}{
+		{
+			name:      "io_error",
+			errorCode: ErrCodeIOError,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeIOError, "", "IO error", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "not_found_error",
+			errorCode: ErrCodeNotFound,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeNotFound, "", "not found", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "invalid_config_error",
+			errorCode: ErrCodeInvalidConfig,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeInvalidConfig, "", "invalid config", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "cycle_detected_error",
+			errorCode: ErrCodeCycleDetected,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeCycleDetected, "", "cycle detected", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "binary_file_error",
+			errorCode: ErrCodeBinaryFile,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeBinaryFile, "", "binary file", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "file_too_large_error",
+			errorCode: ErrCodeFileTooLarge,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeFileTooLarge, "", "file too large", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "canceled_error",
+			errorCode: ErrCodeCancelled,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeCancelled, "", "canceled", nil)))
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := tt.setupMock()
+			docs, err := mock.Load(ctx)
+
+			if tt.expectedErr {
+				require.Error(t, err)
+				assert.Nil(t, docs)
+				assert.True(t, IsLoaderError(err))
+				loaderErr := GetLoaderError(err)
+				require.NotNil(t, loaderErr)
+				assert.Equal(t, tt.errorCode, loaderErr.Code)
+			} else {
+				require.NoError(t, err)
+				assert.NotNil(t, docs)
+			}
+		})
+	}
+}
+
+// TestAdvancedMockLoaderLazyLoadErrorTypes tests LazyLoad with different error types.
+func TestAdvancedMockLoaderLazyLoadErrorTypes(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		setupMock   func() *AdvancedMockLoader
+		name        string
+		errorCode   string
+		expectedErr bool
+	}{
+		{
+			name:      "lazy_load_io_error",
+			errorCode: ErrCodeIOError,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("LazyLoad", ErrCodeIOError, "", "IO error", nil)))
+			},
+			expectedErr: true,
+		},
+		{
+			name:      "lazy_load_canceled",
+			errorCode: ErrCodeCancelled,
+			setupMock: func() *AdvancedMockLoader {
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("LazyLoad", ErrCodeCancelled, "", "canceled", nil)))
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mock := tt.setupMock()
+			ch, err := mock.LazyLoad(ctx)
+
+			if tt.expectedErr {
+				// LazyLoad returns channel, error comes through channel
+				require.NoError(t, err)
+				require.NotNil(t, ch)
+
+				// Read from channel to get error
+				item := <-ch
+				if err, ok := item.(error); ok {
+					assert.Error(t, err)
+					assert.True(t, IsLoaderError(err))
+				}
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, ch)
+			}
+		})
+	}
+}
+
 func BenchmarkDirectoryLoader_1000Files(b *testing.B) {
 	fsys := make(fstest.MapFS)
 	for i := 0; i < 1000; i++ {

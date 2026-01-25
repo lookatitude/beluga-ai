@@ -1,9 +1,42 @@
 // Package multimodal provides test utilities and mock implementations for testing.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//   - Panic handlers in concurrent test runners
+//   - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//   - Some context cancellation paths in streaming operations are difficult to reliably test
+//   - Race conditions between context cancellation and channel operations
+//
+// 3. Error Paths Requiring System Conditions:
+//   - Network errors that require actual network failures (NewContentBlockFromURL)
+//   - File system errors that require specific OS conditions (NewContentBlockFromFile)
+//   - Memory exhaustion scenarios
+//
+// 4. Provider-Specific Untestable Paths:
+//   - Provider implementations in pkg/multimodal/providers/* require external service failures
+//   - These are tested through integration tests rather than unit tests
+//   - Provider registry initialization code (init() functions)
+//
+// 5. Test Utility Functions:
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//   - Package init() functions and global variable initialization
+//   - Registry registration code that executes automatically
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package multimodal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -14,21 +47,72 @@ import (
 
 // MockMultimodalModel provides a mock implementation of MultimodalModel for testing.
 type MockMultimodalModel struct {
-	mu               sync.RWMutex
+	errorToReturn    error
+	capabilities     *types.ModalityCapabilities
+	lastInput        *types.MultimodalInput
+	lastOutput       *types.MultimodalOutput
 	providerName     string
 	modelName        string
-	capabilities     *types.ModalityCapabilities
-	shouldError      bool
-	errorToReturn    error
 	simulateDelay    time.Duration
 	processCallCount int
 	streamCallCount  int
-	lastInput        *types.MultimodalInput
-	lastOutput       *types.MultimodalOutput
+	mu               sync.RWMutex
+	shouldError      bool
+}
+
+// MockOption configures the behavior of MockMultimodalModel.
+type MockOption func(*MockMultimodalModel)
+
+// WithMockError configures the mock to return an error.
+func WithMockError(shouldError bool, err error) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.shouldError = shouldError
+		m.errorToReturn = err
+	}
+}
+
+// WithErrorCode configures the mock to return a MultimodalError with a specific error code.
+func WithErrorCode(op, code string) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.shouldError = true
+		m.errorToReturn = NewMultimodalError(op, code, errors.New("mock error"))
+	}
+}
+
+// WithTimeoutError configures the mock to return a timeout error.
+func WithTimeoutError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeTimeout)
+}
+
+// WithRateLimitError configures the mock to return a rate limit error.
+func WithRateLimitError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeRateLimit)
+}
+
+// WithNetworkError configures the mock to return a network error.
+func WithNetworkError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeNetworkError)
+}
+
+// WithInvalidInputError configures the mock to return an invalid input error.
+func WithInvalidInputError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeInvalidInput)
+}
+
+// WithProviderError configures the mock to return a provider error.
+func WithProviderError(op string) MockOption {
+	return WithErrorCode(op, ErrCodeProviderError)
+}
+
+// WithMockDelay sets the delay for operations.
+func WithMockDelay(delay time.Duration) MockOption {
+	return func(m *MockMultimodalModel) {
+		m.simulateDelay = delay
+	}
 }
 
 // NewMockMultimodalModel creates a new mock multimodal model.
-func NewMockMultimodalModel(providerName, modelName string, capabilities *types.ModalityCapabilities) *MockMultimodalModel {
+func NewMockMultimodalModel(providerName, modelName string, capabilities *types.ModalityCapabilities, opts ...MockOption) *MockMultimodalModel {
 	if capabilities == nil {
 		capabilities = &types.ModalityCapabilities{
 			Text:  true,
@@ -37,11 +121,18 @@ func NewMockMultimodalModel(providerName, modelName string, capabilities *types.
 			Video: true,
 		}
 	}
-	return &MockMultimodalModel{
+	m := &MockMultimodalModel{
 		providerName: providerName,
 		modelName:    modelName,
 		capabilities: capabilities,
 	}
+
+	// Apply options
+	for _, opt := range opts {
+		opt(m)
+	}
+
+	return m
 }
 
 // Process processes a multimodal input and returns a multimodal output.
@@ -161,10 +252,10 @@ func (m *MockMultimodalModel) CheckHealth(ctx context.Context) error {
 
 // MockMultimodalProvider provides a mock implementation of MultimodalProvider for testing.
 type MockMultimodalProvider struct {
-	name          string
-	capabilities  *types.ModalityCapabilities
-	shouldError   bool
 	errorToReturn error
+	capabilities  *types.ModalityCapabilities
+	name          string
+	shouldError   bool
 }
 
 // NewMockMultimodalProvider creates a new mock multimodal provider.
@@ -212,20 +303,20 @@ func (m *MockMultimodalProvider) ValidateConfig(ctx context.Context, config map[
 	}
 	// Basic validation
 	if _, ok := config["Provider"].(string); !ok {
-		return fmt.Errorf("provider not specified")
+		return errors.New("provider not specified")
 	}
 	return nil
 }
 
 // MockContentBlock provides a mock implementation of ContentBlock for testing.
 type MockContentBlock struct {
+	metadata    map[string]any
 	contentType string
-	data        []byte
 	url         string
 	filePath    string
 	mimeType    string
+	data        []byte
 	size        int64
-	metadata    map[string]any
 }
 
 // NewMockContentBlock creates a new mock content block.
@@ -283,7 +374,7 @@ type TestBaseMultimodalModel struct {
 // This is a public wrapper around internal.NewBaseMultimodalModel for use in integration tests.
 // Config can be either a Config struct or map[string]any.
 // Capabilities can be either *ModalityCapabilities or *types.ModalityCapabilities.
-func NewTestBaseMultimodalModel(providerName, modelName string, config any, capabilities any) *TestBaseMultimodalModel {
+func NewTestBaseMultimodalModel(providerName, modelName string, config, capabilities any) *TestBaseMultimodalModel {
 	var configMap map[string]any
 	switch v := config.(type) {
 	case Config:

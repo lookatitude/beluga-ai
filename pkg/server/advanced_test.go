@@ -6,8 +6,10 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -19,10 +21,10 @@ import (
 // TestServerCreationAdvanced provides advanced table-driven tests for server creation.
 func TestServerCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockServer
 		validate    func(t *testing.T, server *AdvancedMockServer)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -103,9 +105,9 @@ func TestServerCreationAdvanced(t *testing.T) {
 // TestServerLifecycleAdvanced tests server lifecycle operations.
 func TestServerLifecycleAdvanced(t *testing.T) {
 	tests := []struct {
+		testFunc    func(t *testing.T)
 		name        string
 		description string
-		testFunc    func(t *testing.T)
 	}{
 		{
 			name:        "server_startup",
@@ -411,7 +413,7 @@ func TestServerWithContext(t *testing.T) {
 		assert.Equal(t, 200, statusCode)
 	})
 
-	t.Run("server_operations_with_cancelled_context", func(t *testing.T) {
+	t.Run("server_operations_with_canceled_context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		server := NewAdvancedMockServer("cancel-server", "http", 9201)
@@ -427,7 +429,7 @@ func TestServerWithContext(t *testing.T) {
 		health := server.CheckHealth()
 		assert.NotNil(t, health)
 
-		// Stop with cancelled context
+		// Stop with canceled context
 		server.Stop(ctx)
 	})
 }
@@ -435,10 +437,10 @@ func TestServerWithContext(t *testing.T) {
 // TestServerHealthCheck tests server health check functionality.
 func TestServerHealthCheck(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func() *AdvancedMockServer
 		validate    func(t *testing.T, health map[string]any)
+		name        string
+		description string
 	}{
 		{
 			name:        "healthy_server",
@@ -635,4 +637,337 @@ func BenchmarkMockServerRequests(b *testing.B) {
 	require.NoError(b, err)
 
 	b.ReportMetric(float64(b.N)/duration.Seconds(), "requests/sec")
+}
+
+// TestDefaultRESTConfig tests the DefaultRESTConfig function.
+func TestDefaultRESTConfig(t *testing.T) {
+	config := DefaultRESTConfig()
+
+	// Verify base config values
+	assert.Equal(t, "localhost", config.Host)
+	assert.Equal(t, 8080, config.Port)
+	assert.Equal(t, 30*time.Second, config.ReadTimeout)
+	assert.Equal(t, 30*time.Second, config.WriteTimeout)
+	assert.Equal(t, 120*time.Second, config.IdleTimeout)
+	assert.Equal(t, 1<<20, config.MaxHeaderBytes) // 1MB
+	assert.True(t, config.EnableCORS)
+	assert.Contains(t, config.CORSOrigins, "*")
+	assert.True(t, config.EnableMetrics)
+	assert.True(t, config.EnableTracing)
+	assert.Equal(t, "info", config.LogLevel)
+	assert.Equal(t, 30*time.Second, config.ShutdownTimeout)
+
+	// Verify REST-specific config values
+	assert.Equal(t, "/api/v1", config.APIBasePath)
+	assert.True(t, config.EnableStreaming)
+	assert.Equal(t, int64(10<<20), config.MaxRequestSize) // 10MB
+	assert.Equal(t, 1000, config.RateLimitRequests)
+	assert.True(t, config.EnableRateLimit)
+}
+
+// TestDefaultMCPConfig tests the DefaultMCPConfig function.
+func TestDefaultMCPConfig(t *testing.T) {
+	config := DefaultMCPConfig()
+
+	// Verify base config values
+	assert.Equal(t, "localhost", config.Host)
+	assert.Equal(t, 8081, config.Port)
+	assert.Equal(t, 30*time.Second, config.ReadTimeout)
+	assert.Equal(t, 30*time.Second, config.WriteTimeout)
+	assert.Equal(t, 120*time.Second, config.IdleTimeout)
+	assert.Equal(t, 1<<20, config.MaxHeaderBytes) // 1MB
+	assert.True(t, config.EnableMetrics)
+	assert.True(t, config.EnableTracing)
+	assert.Equal(t, "info", config.LogLevel)
+	assert.Equal(t, 30*time.Second, config.ShutdownTimeout)
+
+	// Verify MCP-specific config values
+	assert.Equal(t, "beluga-mcp-server", config.ServerName)
+	assert.Equal(t, "1.0.0", config.ServerVersion)
+	assert.Equal(t, "2024-11-05", config.ProtocolVersion)
+	assert.Equal(t, 10, config.MaxConcurrentRequests)
+	assert.Equal(t, 60*time.Second, config.RequestTimeout)
+}
+
+// TestCORSMiddleware tests the CORSMiddleware function.
+func TestCORSMiddleware(t *testing.T) {
+	tests := []struct {
+		expectHeaders  map[string]string
+		name           string
+		requestOrigin  string
+		method         string
+		allowedOrigins []string
+		expectCORS     bool
+	}{
+		{
+			name:           "wildcard_origin_allowed",
+			allowedOrigins: []string{"*"},
+			requestOrigin:  "https://example.com",
+			method:         "GET",
+			expectCORS:     true,
+			expectHeaders: map[string]string{
+				"Access-Control-Allow-Origin": "https://example.com",
+			},
+		},
+		{
+			name:           "specific_origin_allowed",
+			allowedOrigins: []string{"https://example.com", "https://test.com"},
+			requestOrigin:  "https://example.com",
+			method:         "POST",
+			expectCORS:     true,
+			expectHeaders: map[string]string{
+				"Access-Control-Allow-Origin": "https://example.com",
+			},
+		},
+		{
+			name:           "origin_not_allowed",
+			allowedOrigins: []string{"https://example.com"},
+			requestOrigin:  "https://unauthorized.com",
+			method:         "GET",
+			expectCORS:     false,
+		},
+		{
+			name:           "no_origin_header",
+			allowedOrigins: []string{"*"},
+			requestOrigin:  "",
+			method:         "GET",
+			expectCORS:     false,
+		},
+		{
+			name:           "options_preflight",
+			allowedOrigins: []string{"*"},
+			requestOrigin:  "https://example.com",
+			method:         "OPTIONS",
+			expectCORS:     true,
+			expectHeaders: map[string]string{
+				"Access-Control-Allow-Origin": "https://example.com",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			})
+
+			middleware := CORSMiddleware(tt.allowedOrigins)
+			wrappedHandler := middleware(handler)
+
+			req := httptest.NewRequest(tt.method, "/test", nil)
+			if tt.requestOrigin != "" {
+				req.Header.Set("Origin", tt.requestOrigin)
+			}
+			w := httptest.NewRecorder()
+
+			wrappedHandler.ServeHTTP(w, req)
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if tt.expectCORS {
+				for header, expectedValue := range tt.expectHeaders {
+					assert.Equal(t, expectedValue, resp.Header.Get(header), "CORS header %s should match", header)
+				}
+				assert.Contains(t, resp.Header.Get("Access-Control-Allow-Methods"), "GET")
+				assert.Contains(t, resp.Header.Get("Access-Control-Allow-Headers"), "Content-Type")
+			} else {
+				assert.Empty(t, resp.Header.Get("Access-Control-Allow-Origin"), "CORS headers should not be set")
+			}
+
+			if tt.method == "OPTIONS" {
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+			}
+		})
+	}
+}
+
+// TestLoggingMiddleware tests the LoggingMiddleware function.
+func TestLoggingMiddleware(t *testing.T) {
+	logger := newMockLogger()
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	middleware := LoggingMiddleware(logger)
+	wrappedHandler := middleware(handler)
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("User-Agent", "test-agent")
+	req.RemoteAddr = "127.0.0.1:12345"
+	w := httptest.NewRecorder()
+
+	wrappedHandler.ServeHTTP(w, req)
+
+	// Verify logging occurred
+	logs := logger.getLogs("INFO")
+	assert.NotEmpty(t, logs, "Should log request")
+
+	// Check that log contains expected fields
+	found := false
+	for _, log := range logs {
+		if strings.Contains(log.message, "HTTP Request") {
+			found = true
+			// Verify log args contain expected fields
+			argsStr := fmt.Sprintf("%v", log.args)
+			assert.Contains(t, argsStr, "GET", "Should log method")
+			assert.Contains(t, argsStr, "/test", "Should log path")
+			break
+		}
+	}
+	assert.True(t, found, "Should find HTTP Request log entry")
+}
+
+// TestRecoveryMiddleware tests the RecoveryMiddleware function.
+func TestRecoveryMiddleware(t *testing.T) {
+	logger := newMockLogger()
+
+	tests := []struct {
+		handler     http.HandlerFunc
+		name        string
+		expectPanic bool
+		expectError bool
+	}{
+		{
+			name: "normal_handler",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			},
+			expectPanic: false,
+			expectError: false,
+		},
+		{
+			name: "handler_with_panic",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				panic("test panic")
+			},
+			expectPanic: true,
+			expectError: true,
+		},
+		{
+			name: "handler_with_string_panic",
+			handler: func(w http.ResponseWriter, r *http.Request) {
+				panic("string panic")
+			},
+			expectPanic: true,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			middleware := RecoveryMiddleware(logger)
+			wrappedHandler := middleware(tt.handler)
+
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
+			w := httptest.NewRecorder()
+
+			// Should not panic even if handler panics
+			assert.NotPanics(t, func() {
+				wrappedHandler.ServeHTTP(w, req)
+			})
+
+			resp := w.Result()
+			defer resp.Body.Close()
+
+			if tt.expectPanic {
+				assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+				// Verify error was logged
+				errorLogs := logger.getLogs("ERROR")
+				assert.NotEmpty(t, errorLogs, "Should log panic recovery")
+			} else {
+				assert.Equal(t, http.StatusOK, resp.StatusCode)
+			}
+		})
+	}
+}
+
+// TestIsServerError tests the IsServerError function.
+func TestIsServerError(t *testing.T) {
+	tests := []struct {
+		err      error
+		name     string
+		expected bool
+	}{
+		{
+			name:     "server_error",
+			err:      NewInvalidRequestError("test_op", "test message", nil),
+			expected: true,
+		},
+		{
+			name:     "not_server_error",
+			err:      errors.New("regular error"),
+			expected: false,
+		},
+		{
+			name:     "nil_error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "wrapped_server_error",
+			err:      fmt.Errorf("wrapped: %w", NewInternalError("test_op", errors.New("underlying"))),
+			expected: true, // errors.As works with wrapped errors
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := IsServerError(tt.err)
+			assert.Equal(t, tt.expected, result, "IsServerError should return %v for %v", tt.expected, tt.err)
+		})
+	}
+}
+
+// TestAsServerError tests the AsServerError function.
+func TestAsServerError(t *testing.T) {
+	tests := []struct {
+		err           error
+		name          string
+		expectedCode  string
+		expectedFound bool
+	}{
+		{
+			name:          "server_error",
+			err:           NewInvalidRequestError("test_op", "test message", nil),
+			expectedFound: true,
+			expectedCode:  string(ErrCodeInvalidRequest),
+		},
+		{
+			name:          "not_server_error",
+			err:           errors.New("regular error"),
+			expectedFound: false,
+		},
+		{
+			name:          "nil_error",
+			err:           nil,
+			expectedFound: false,
+		},
+		{
+			name:          "internal_error",
+			err:           NewInternalError("test_op", errors.New("underlying")),
+			expectedFound: true,
+			expectedCode:  string(ErrCodeInternalError),
+		},
+		{
+			name:          "not_found_error",
+			err:           NewNotFoundError("test_op", "resource"),
+			expectedFound: true,
+			expectedCode:  string(ErrCodeNotFound),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			serverErr, found := AsServerError(tt.err)
+			assert.Equal(t, tt.expectedFound, found, "AsServerError should find error: %v", tt.expectedFound)
+
+			if tt.expectedFound {
+				assert.NotNil(t, serverErr, "ServerError should not be nil")
+				assert.Equal(t, tt.expectedCode, serverErr.Code, "Error code should match")
+			} else {
+				assert.Nil(t, serverErr, "ServerError should be nil when not found")
+			}
+		})
+	}
 }

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
@@ -677,5 +678,570 @@ func BenchmarkBenchmarkHelper(b *testing.B) {
 		if err != nil {
 			b.Errorf("BenchmarkStreaming error: %v", err)
 		}
+	})
+}
+
+// TestNewDefaultConfig tests the NewDefaultConfig function.
+func TestNewDefaultConfig(t *testing.T) {
+	config := NewDefaultConfig()
+	require.NotNil(t, config)
+	assert.Equal(t, "gpt-3.5-turbo", config.DefaultModel)
+	assert.Equal(t, "openai", config.DefaultProvider)
+	assert.Equal(t, float32(0.7), config.DefaultTemperature)
+	assert.Equal(t, 1000, config.DefaultMaxTokens)
+	assert.Equal(t, 30*time.Second, config.DefaultTimeout)
+}
+
+// TestValidateConfig tests the ValidateConfig function.
+func TestValidateConfig(t *testing.T) {
+	tests := []struct {
+		config  *Config
+		name    string
+		wantErr bool
+	}{
+		{
+			name:    "valid_config",
+			config:  DefaultConfig(),
+			wantErr: false,
+		},
+		{
+			name: "invalid_temperature_too_high",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultTemperature = 3.0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_temperature_negative",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultTemperature = -1.0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_max_tokens",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultMaxTokens = 0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_timeout",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultTimeout = 0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_max_retries",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultMaxRetries = -1
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_retry_delay",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.DefaultRetryDelay = -1 * time.Second
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_max_concurrent_requests",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.MaxConcurrentRequests = 0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_stream_buffer_size",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.StreamBufferSize = 0
+				return c
+			}(),
+			wantErr: true,
+		},
+		{
+			name: "invalid_stream_timeout",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.StreamTimeout = 0
+				return c
+			}(),
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateConfig(tt.config)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.True(t, IsValidationError(err))
+			} else {
+				require.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestGenerateMessagesConvenience tests the GenerateMessages convenience function.
+func TestGenerateMessagesConvenience(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		name        string
+		chatModel   iface.ChatModel
+		messages    []schema.Message
+		expectedErr bool
+	}{
+		{
+			name:      "successful_generation",
+			chatModel: NewAdvancedMockChatModel("test-model", "test-provider"),
+			messages: []schema.Message{
+				schema.NewHumanMessage("Hello"),
+			},
+			expectedErr: false,
+		},
+		{
+			name: "generation_error",
+			chatModel: NewAdvancedMockChatModel("error-model", "error-provider",
+				WithMockError(true, NewChatModelError("generate", "test-model", "test-provider", ErrCodeGeneration, errors.New("generation failed")))),
+			messages: []schema.Message{
+				schema.NewHumanMessage("Test"),
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := GenerateMessages(ctx, tt.chatModel, tt.messages)
+			if tt.expectedErr {
+				require.Error(t, err)
+				assert.Nil(t, result)
+			} else {
+				require.NoError(t, err)
+				assert.NotEmpty(t, result)
+			}
+		})
+	}
+}
+
+// TestStreamMessagesConvenience tests the StreamMessages convenience function.
+func TestStreamMessagesConvenience(t *testing.T) {
+	ctx := context.Background()
+	tests := []struct {
+		name        string
+		chatModel   iface.ChatModel
+		messages    []schema.Message
+		expectedErr bool
+	}{
+		{
+			name:      "successful_streaming",
+			chatModel: NewAdvancedMockChatModel("test-model", "test-provider"),
+			messages: []schema.Message{
+				schema.NewHumanMessage("Hello"),
+			},
+			expectedErr: false,
+		},
+		{
+			name: "streaming_error",
+			chatModel: NewAdvancedMockChatModel("error-model", "error-provider",
+				WithMockError(true, NewChatModelError("stream", "test-model", "test-provider", ErrCodeStreaming, errors.New("streaming failed")))),
+			messages: []schema.Message{
+				schema.NewHumanMessage("Test"),
+			},
+			expectedErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			streamCh, err := StreamMessages(ctx, tt.chatModel, tt.messages)
+			if tt.expectedErr {
+				require.Error(t, err)
+				assert.Nil(t, streamCh)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, streamCh)
+				// Consume stream
+				msgCount := 0
+				for msg := range streamCh {
+					assert.NotNil(t, msg)
+					msgCount++
+				}
+				assert.Positive(t, msgCount)
+			}
+		})
+	}
+}
+
+// TestConfigFunctionalOptions tests all functional option functions.
+func TestConfigFunctionalOptions(t *testing.T) {
+	tests := []struct {
+		option iface.Option
+		verify func(t *testing.T, config map[string]any)
+		name   string
+	}{
+		{
+			name:   "WithTemperature",
+			option: WithTemperature(0.8),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, float32(0.8), config["temperature"])
+			},
+		},
+		{
+			name:   "WithMaxTokens",
+			option: WithMaxTokens(2000),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, 2000, config["max_tokens"])
+			},
+		},
+		{
+			name:   "WithTopP",
+			option: WithTopP(0.9),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, float32(0.9), config["top_p"])
+			},
+		},
+		{
+			name:   "WithStopSequences",
+			option: WithStopSequences([]string{"stop1", "stop2"}),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, []string{"stop1", "stop2"}, config["stop_sequences"])
+			},
+		},
+		{
+			name:   "WithSystemPrompt",
+			option: WithSystemPrompt("You are a helpful assistant"),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, "You are a helpful assistant", config["system_prompt"])
+			},
+		},
+		{
+			name:   "WithFunctionCalling",
+			option: WithFunctionCalling(true),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, true, config["function_calling"])
+			},
+		},
+		{
+			name:   "WithTimeout",
+			option: WithTimeout(60 * time.Second),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, 60*time.Second, config["timeout"])
+			},
+		},
+		{
+			name:   "WithMaxRetries",
+			option: WithMaxRetries(5),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, 5, config["max_retries"])
+			},
+		},
+		{
+			name:   "WithMetrics",
+			option: WithMetrics(false),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, false, config["enable_metrics"])
+			},
+		},
+		{
+			name:   "WithTracing",
+			option: WithTracing(false),
+			verify: func(t *testing.T, config map[string]any) {
+				assert.Equal(t, false, config["enable_tracing"])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var config map[string]any
+			tt.option.Apply(&config)
+			require.NotNil(t, config)
+			tt.verify(t, config)
+		})
+	}
+}
+
+// TestConfigGetProviderConfig tests GetProviderConfig method.
+func TestConfigGetProviderConfig(t *testing.T) {
+	tests := []struct {
+		name           string
+		config         *Config
+		provider       string
+		expectedConfig bool
+		expectedErr    bool
+	}{
+		{
+			name: "existing_provider_config",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.Providers["test-provider"] = &ProviderConfig{
+					APIKey:     "test-key",
+					Timeout:    60 * time.Second,
+					MaxRetries: 5,
+				}
+				return c
+			}(),
+			provider:       "test-provider",
+			expectedConfig: true,
+			expectedErr:    false,
+		},
+		{
+			name: "non_existent_provider_default",
+			config: func() *Config {
+				return DefaultConfig()
+			}(),
+			provider:       "non-existent",
+			expectedConfig: true,
+			expectedErr:    false,
+		},
+		{
+			name: "invalid_provider_config_type",
+			config: func() *Config {
+				c := DefaultConfig()
+				c.Providers["invalid"] = "not a ProviderConfig"
+				return c
+			}(),
+			provider:       "invalid",
+			expectedConfig: false,
+			expectedErr:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config, err := tt.config.GetProviderConfig(tt.provider)
+			if tt.expectedErr {
+				require.Error(t, err)
+				assert.Nil(t, config)
+			} else {
+				require.NoError(t, err)
+				require.NotNil(t, config)
+				if tt.provider == "test-provider" {
+					assert.Equal(t, "test-key", config.APIKey)
+					assert.Equal(t, 60*time.Second, config.Timeout)
+					assert.Equal(t, 5, config.MaxRetries)
+				}
+			}
+		})
+	}
+}
+
+// TestChatModelErrorTypes tests all error types and helper functions.
+func TestChatModelErrorTypes(t *testing.T) {
+	t.Run("ChatModelError", func(t *testing.T) {
+		err := NewChatModelError("test-op", "test-model", "test-provider", ErrCodeGeneration, errors.New("underlying error"))
+		require.NotNil(t, err)
+		assert.Equal(t, "test-op", err.Op)
+		assert.Equal(t, "test-model", err.Fields["model"])
+		assert.Equal(t, "test-provider", err.Fields["provider"])
+		assert.Equal(t, ErrCodeGeneration, err.Code)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test-op")
+		assert.Contains(t, err.Error(), ErrCodeGeneration)
+
+		// Test WithField
+		err = err.WithField("custom_field", "custom_value")
+		assert.Equal(t, "custom_value", err.Fields["custom_field"])
+
+		// Test Unwrap
+		unwrapped := err.Unwrap()
+		assert.Error(t, unwrapped)
+	})
+
+	t.Run("ValidationError", func(t *testing.T) {
+		err := NewValidationError("test_field", "test message")
+		require.NotNil(t, err)
+		assert.Equal(t, "test_field", err.Field)
+		assert.Equal(t, "test message", err.Message)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test_field")
+		assert.Contains(t, err.Error(), "test message")
+	})
+
+	t.Run("ProviderError", func(t *testing.T) {
+		err := NewProviderError("test-provider", "test-operation", errors.New("provider error"))
+		require.NotNil(t, err)
+		assert.Equal(t, "test-provider", err.Provider)
+		assert.Equal(t, "test-operation", err.Operation)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test-provider")
+		assert.Contains(t, err.Error(), "test-operation")
+
+		// Test Unwrap
+		unwrapped := err.Unwrap()
+		assert.Error(t, unwrapped)
+	})
+
+	t.Run("GenerationError", func(t *testing.T) {
+		err := NewGenerationError("test-model", 5, errors.New("generation failed"))
+		require.NotNil(t, err)
+		assert.Equal(t, "test-model", err.Model)
+		assert.Equal(t, 5, err.Messages)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test-model")
+		assert.Contains(t, err.Error(), "5 messages")
+
+		// Test WithTokenCount
+		err = err.WithTokenCount(100)
+		assert.Equal(t, 100, err.Tokens)
+		assert.Contains(t, err.Error(), "100 tokens")
+
+		// Test WithSuggestion
+		err = err.WithSuggestion("Try reducing max_tokens")
+		assert.Equal(t, "Try reducing max_tokens", err.Suggestion)
+		assert.Contains(t, err.Error(), "Try reducing max_tokens")
+
+		// Test Unwrap
+		unwrapped := err.Unwrap()
+		assert.Error(t, unwrapped)
+	})
+
+	t.Run("StreamingError", func(t *testing.T) {
+		err := NewStreamingError("test-model", errors.New("streaming failed"))
+		require.NotNil(t, err)
+		assert.Equal(t, "test-model", err.Model)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "test-model")
+
+		// Test WithDuration
+		err = err.WithDuration("5s")
+		assert.Equal(t, "5s", err.Duration)
+		assert.Contains(t, err.Error(), "5s")
+
+		// Test Unwrap
+		unwrapped := err.Unwrap()
+		assert.Error(t, unwrapped)
+	})
+}
+
+// TestErrorHelperFunctions tests error helper functions.
+func TestErrorHelperFunctions(t *testing.T) {
+	t.Run("IsRetryable", func(t *testing.T) {
+		tests := []struct {
+			err      error
+			name     string
+			expected bool
+		}{
+			{
+				name:     "rate_limit_error",
+				err:      NewChatModelError("op", "model", "provider", ErrCodeRateLimit, errors.New("rate limit")),
+				expected: true,
+			},
+			{
+				name:     "network_error",
+				err:      NewChatModelError("op", "model", "provider", ErrCodeNetworkError, errors.New("network")),
+				expected: true,
+			},
+			{
+				name:     "timeout_error",
+				err:      NewChatModelError("op", "model", "provider", ErrCodeTimeout, errors.New("timeout")),
+				expected: true,
+			},
+			{
+				name:     "resource_exhausted",
+				err:      NewChatModelError("op", "model", "provider", ErrCodeResourceExhausted, errors.New("exhausted")),
+				expected: true,
+			},
+			{
+				name:     "generation_error",
+				err:      NewChatModelError("op", "model", "provider", ErrCodeGeneration, errors.New("generation")),
+				expected: false,
+			},
+			{
+				name:     "common_timeout",
+				err:      ErrTimeout,
+				expected: true,
+			},
+			{
+				name:     "common_rate_limit",
+				err:      ErrRateLimitExceeded,
+				expected: true,
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				result := IsRetryable(tt.err)
+				assert.Equal(t, tt.expected, result)
+			})
+		}
+	})
+
+	t.Run("IsValidationError", func(t *testing.T) {
+		assert.True(t, IsValidationError(NewValidationError("field", "message")))
+		assert.False(t, IsValidationError(errors.New("not validation")))
+	})
+
+	t.Run("IsProviderError", func(t *testing.T) {
+		assert.True(t, IsProviderError(NewProviderError("provider", "op", errors.New("err"))))
+		assert.False(t, IsProviderError(errors.New("not provider")))
+	})
+
+	t.Run("IsGenerationError", func(t *testing.T) {
+		assert.True(t, IsGenerationError(NewGenerationError("model", 1, errors.New("err"))))
+		assert.False(t, IsGenerationError(errors.New("not generation")))
+	})
+
+	t.Run("IsStreamingError", func(t *testing.T) {
+		assert.True(t, IsStreamingError(NewStreamingError("model", errors.New("err"))))
+		assert.False(t, IsStreamingError(errors.New("not streaming")))
+	})
+
+	t.Run("IsAuthenticationError", func(t *testing.T) {
+		assert.True(t, IsAuthenticationError(NewChatModelError("op", "model", "provider", ErrCodeAuthentication, errors.New("auth"))))
+		assert.True(t, IsAuthenticationError(ErrAuthenticationFailed))
+		assert.False(t, IsAuthenticationError(errors.New("not auth")))
+	})
+
+	t.Run("IsQuotaError", func(t *testing.T) {
+		assert.True(t, IsQuotaError(NewChatModelError("op", "model", "provider", ErrCodeQuotaExceeded, errors.New("quota"))))
+		assert.True(t, IsQuotaError(ErrQuotaExceeded))
+		assert.False(t, IsQuotaError(errors.New("not quota")))
+	})
+}
+
+// TestChatModelErrorErrorMessages tests error message formatting.
+func TestChatModelErrorErrorMessages(t *testing.T) {
+	t.Run("error_with_model_and_provider", func(t *testing.T) {
+		err := NewChatModelError("test-op", "test-model", "test-provider", ErrCodeGeneration, errors.New("underlying"))
+		msg := err.Error()
+		assert.Contains(t, msg, "test-model")
+		assert.Contains(t, msg, "test-provider")
+		assert.Contains(t, msg, "test-op")
+		assert.Contains(t, msg, ErrCodeGeneration)
+	})
+
+	t.Run("error_with_model_only", func(t *testing.T) {
+		err := NewChatModelError("test-op", "test-model", "", ErrCodeGeneration, errors.New("underlying"))
+		msg := err.Error()
+		assert.Contains(t, msg, "test-model")
+		assert.Contains(t, msg, "test-op")
+		assert.NotContains(t, msg, "provider:")
+	})
+
+	t.Run("error_without_model", func(t *testing.T) {
+		err := NewChatModelError("test-op", "", "", ErrCodeGeneration, errors.New("underlying"))
+		msg := err.Error()
+		assert.Contains(t, msg, "test-op")
+		assert.Contains(t, msg, ErrCodeGeneration)
 	})
 }

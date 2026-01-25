@@ -19,7 +19,7 @@ fi
 # Get package name from path
 PACKAGE_NAME=$(basename "$PACKAGE_PATH")
 # If it's a nested package, use parent_dir_child_dir format
-if [ "$(dirname "$PACKAGE_PATH")" != "." ] && [ "$(dirname "$PACKAGE_PATH")" != "./pkg" ] && [ "$(dirname "$PACKAGE_PATH")" != "./cmd" ] && [ "$(dirname "$PACKAGE_PATH")" != "./tests" ]; then
+if [ "$(dirname "$PACKAGE_PATH")" != "." ] && [ "$(dirname "$PACKAGE_PATH")" != "./pkg" ] && [ "$(dirname "$PACKAGE_PATH")" != "./tests" ]; then
     PARENT_DIR=$(basename "$(dirname "$PACKAGE_PATH")")
     PACKAGE_NAME="${PARENT_DIR}_${PACKAGE_NAME}"
 fi

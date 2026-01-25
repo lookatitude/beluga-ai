@@ -51,39 +51,38 @@ By implementing proper observability with Prometheus and Grafana, the team gaine
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         AI Application                               │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐                 │
-│  │   Agents    │  │    LLMs     │  │   Memory    │                 │
-│  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘                 │
-│         │                │                │                         │
-│         └────────────────┼────────────────┘                         │
-│                          │                                          │
-│                    ┌─────▼─────┐                                    │
-│                    │   OTEL    │                                    │
-│                    │  Metrics  │                                    │
-│                    └─────┬─────┘                                    │
-└──────────────────────────┼──────────────────────────────────────────┘
-                           │
-                           ▼
-            ┌──────────────────────────┐
-            │   OpenTelemetry Collector │
-            └──────────────┬───────────┘
-                           │
-              ┌────────────┼────────────┐
-              │            │            │
-              ▼            ▼            ▼
-      ┌───────────┐ ┌───────────┐ ┌───────────┐
-      │ Prometheus│ │   Jaeger  │ │   Loki    │
-      │ (Metrics) │ │ (Traces)  │ │  (Logs)   │
-      └─────┬─────┘ └───────────┘ └───────────┘
-            │
-            ▼
-      ┌───────────┐
-      │  Grafana  │
-      │(Dashboards)│
-      └───────────┘
+```mermaid
+graph TB
+    subgraph App["AI Application"]
+        A1[Agents]
+        A2[LLMs]
+        A3[Memory]
+        A1 --> O[OTEL Metrics]
+        A2 --> O
+        A3 --> O
+    end
+
+    subgraph Collector["Telemetry Collection"]
+        C[OpenTelemetry Collector]
+    end
+
+    subgraph Backends["Storage Backends"]
+        P[Prometheus<br>Metrics]
+        J[Jaeger<br>Traces]
+        L[Loki<br>Logs]
+    end
+
+    subgraph Viz["Visualization"]
+        G[Grafana<br>Dashboards]
+    end
+
+    O --> C
+    C --> P
+    C --> J
+    C --> L
+    P --> G
+    J --> G
+    L --> G
 ```
 
 ## Implementation
@@ -543,6 +542,6 @@ The team now monitors:
 ## Related Resources
 
 - **[Observability Tracing Guide](../guides/observability-tracing.md)**: Detailed tracing setup
-- **[Single Binary Deployment](../../examples/deployment/single_binary/)**: Production deployment
-- **[Batch Processing Use Case](./batch-processing.md)**: Monitoring batch workloads
+- **[Single Binary Deployment](https://github.com/lookatitude/beluga-ai/tree/main/examples/deployment/single_binary/)**: Production deployment
+- **[Batch Processing Use Case](./11-batch-processing.md)**: Monitoring batch workloads
 - **[LLM Error Handling Cookbook](../cookbook/llm-error-handling.md)**: Error handling patterns

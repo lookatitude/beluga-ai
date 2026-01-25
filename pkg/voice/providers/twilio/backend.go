@@ -20,9 +20,9 @@ type TwilioBackend struct {
 	config          *TwilioConfig
 	client          *twilio.RestClient
 	sessions        map[string]vbiface.VoiceSession
-	connectionState vbiface.ConnectionState
 	healthStatus    *vbiface.HealthStatus
 	metrics         *Metrics
+	connectionState vbiface.ConnectionState
 	mu              sync.RWMutex
 }
 

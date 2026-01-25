@@ -70,8 +70,8 @@ func TestTwilioProvider_SendMessage(t *testing.T) {
 
 func TestTwilioConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *TwilioConfig
+		name    string
 		wantErr bool
 	}{
 		{

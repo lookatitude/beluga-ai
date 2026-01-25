@@ -16,7 +16,7 @@ const (
 	ErrCodeProviderError        = "provider_error"
 	ErrCodeUnsupportedModality  = "unsupported_modality"
 	ErrCodeTimeout              = "timeout"
-	ErrCodeCancelled            = "cancelled"
+	ErrCodeCancelled            = "canceled"
 	ErrCodeFileNotFound         = "file_not_found"
 	ErrCodeRateLimit            = "rate_limit"
 	ErrCodeQuotaExceeded        = "quota_exceeded"
@@ -247,7 +247,7 @@ func WrapIOError(err error, op string) *MultimodalError {
 
 // WrapValidationError wraps a validation error as a MultimodalError.
 // Used for input validation, config validation, and format validation errors.
-func WrapValidationError(err error, op string, validationType string) *MultimodalError {
+func WrapValidationError(err error, op, validationType string) *MultimodalError {
 	if err == nil {
 		return nil
 	}

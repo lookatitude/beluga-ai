@@ -3,7 +3,9 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/registry"
 	"github.com/lookatitude/beluga-ai/pkg/multimodal/types"
@@ -24,11 +26,11 @@ func NewRouter(reg *registry.ProviderRegistry) *Router {
 // Route determines which provider should handle each content block.
 func (r *Router) Route(ctx context.Context, input *types.MultimodalInput) (map[string]string, error) {
 	if input == nil {
-		return nil, fmt.Errorf("Route: input cannot be nil")
+		return nil, errors.New("Route: input cannot be nil")
 	}
 
 	if len(input.ContentBlocks) == 0 {
-		return nil, fmt.Errorf("Route: input must have at least one content block")
+		return nil, errors.New("Route: input must have at least one content block")
 	}
 
 	// If routing config is provided, use it
@@ -59,7 +61,7 @@ func (r *Router) routeWithConfig(ctx context.Context, input *types.MultimodalInp
 					return nil, fmt.Errorf("routeWithConfig: no provider specified for %s content and fallback disabled", block.Type)
 				}
 			}
-			routing[fmt.Sprintf("%d", i)] = provider
+			routing[strconv.Itoa(i)] = provider
 		}
 	case "fallback":
 		// Try to find providers, fallback to text if not found
@@ -73,7 +75,7 @@ func (r *Router) routeWithConfig(ctx context.Context, input *types.MultimodalInp
 					return nil, fmt.Errorf("routeWithConfig: no provider found for %s content and fallback disabled", block.Type)
 				}
 			}
-			routing[fmt.Sprintf("%d", i)] = provider
+			routing[strconv.Itoa(i)] = provider
 		}
 	default: // "auto"
 		return r.routeAuto(ctx, input)
@@ -83,7 +85,7 @@ func (r *Router) routeWithConfig(ctx context.Context, input *types.MultimodalInp
 }
 
 // getStringFromMap extracts a string value from a map.
-func getStringFromMap(m map[string]any, key string, defaultValue string) string {
+func getStringFromMap(m map[string]any, key, defaultValue string) string {
 	if val, ok := m[key].(string); ok {
 		return val
 	}
@@ -108,10 +110,10 @@ func (r *Router) routeAuto(ctx context.Context, input *types.MultimodalInput) (m
 			// Fallback to text-only if no provider found
 			provider = r.findTextProvider(ctx)
 			if provider == "" {
-				return nil, fmt.Errorf("routeAuto: no provider found for any modality")
+				return nil, errors.New("routeAuto: no provider found for any modality")
 			}
 		}
-		routing[fmt.Sprintf("%d", i)] = provider
+		routing[strconv.Itoa(i)] = provider
 	}
 
 	return routing, nil

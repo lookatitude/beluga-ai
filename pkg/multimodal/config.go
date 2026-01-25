@@ -11,68 +11,30 @@ import (
 
 // Config holds configuration for multimodal operations.
 type Config struct {
-	// Provider name (e.g., "openai", "google", "anthropic")
-	Provider string `mapstructure:"provider" yaml:"provider" env:"MULTIMODAL_PROVIDER" validate:"required"`
-
-	// Model name (e.g., "gpt-4o", "gemini-pro")
-	Model string `mapstructure:"model" yaml:"model" env:"MULTIMODAL_MODEL" validate:"required"`
-
-	// API key for the provider
-	APIKey string `mapstructure:"api_key" yaml:"api_key" env:"MULTIMODAL_API_KEY"`
-
-	// Base URL for the API (optional, uses provider default if not set)
-	BaseURL string `mapstructure:"base_url" yaml:"base_url" env:"MULTIMODAL_BASE_URL"`
-
-	// Request timeout
-	Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" env:"MULTIMODAL_TIMEOUT" default:"30s"`
-
-	// Maximum retry attempts
-	MaxRetries int `mapstructure:"max_retries" yaml:"max_retries" env:"MULTIMODAL_MAX_RETRIES" default:"3"`
-
-	// Delay between retries
-	RetryDelay time.Duration `mapstructure:"retry_delay" yaml:"retry_delay" env:"MULTIMODAL_RETRY_DELAY" default:"1s"`
-
-	// Enable streaming support
-	EnableStreaming bool `mapstructure:"enable_streaming" yaml:"enable_streaming" env:"MULTIMODAL_ENABLE_STREAMING" default:"false"`
-
-	// Chunk size for streaming operations
-	StreamChunkSize int64 `mapstructure:"stream_chunk_size" yaml:"stream_chunk_size" env:"MULTIMODAL_STREAM_CHUNK_SIZE" default:"1048576"` // 1MB
-
-	// Provider-specific settings
 	ProviderSpecific map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
+	Provider         string         `mapstructure:"provider" yaml:"provider" env:"MULTIMODAL_PROVIDER" validate:"required"`
+	Model            string         `mapstructure:"model" yaml:"model" env:"MULTIMODAL_MODEL" validate:"required"`
+	APIKey           string         `mapstructure:"api_key" yaml:"api_key" env:"MULTIMODAL_API_KEY"`
+	BaseURL          string         `mapstructure:"base_url" yaml:"base_url" env:"MULTIMODAL_BASE_URL"`
+	Timeout          time.Duration  `mapstructure:"timeout" yaml:"timeout" env:"MULTIMODAL_TIMEOUT" default:"30s"`
+	MaxRetries       int            `mapstructure:"max_retries" yaml:"max_retries" env:"MULTIMODAL_MAX_RETRIES" default:"3"`
+	RetryDelay       time.Duration  `mapstructure:"retry_delay" yaml:"retry_delay" env:"MULTIMODAL_RETRY_DELAY" default:"1s"`
+	StreamChunkSize  int64          `mapstructure:"stream_chunk_size" yaml:"stream_chunk_size" env:"MULTIMODAL_STREAM_CHUNK_SIZE" default:"1048576"`
+	EnableStreaming  bool           `mapstructure:"enable_streaming" yaml:"enable_streaming" env:"MULTIMODAL_ENABLE_STREAMING" default:"false"`
 }
 
 // ModalityCapabilities represents the capabilities of a provider or model for different modalities.
 type ModalityCapabilities struct {
-	// Text processing support
-	Text bool `mapstructure:"text" yaml:"text" default:"true"`
-
-	// Image processing support
-	Image bool `mapstructure:"image" yaml:"image" default:"false"`
-
-	// Audio processing support
-	Audio bool `mapstructure:"audio" yaml:"audio" default:"false"`
-
-	// Video processing support
-	Video bool `mapstructure:"video" yaml:"video" default:"false"`
-
-	// Maximum image size in bytes
-	MaxImageSize int64 `mapstructure:"max_image_size" yaml:"max_image_size" default:"10485760"` // 10MB
-
-	// Maximum audio size in bytes
-	MaxAudioSize int64 `mapstructure:"max_audio_size" yaml:"max_audio_size" default:"10485760"` // 10MB
-
-	// Maximum video size in bytes
-	MaxVideoSize int64 `mapstructure:"max_video_size" yaml:"max_video_size" default:"104857600"` // 100MB
-
-	// Supported image formats
 	SupportedImageFormats []string `mapstructure:"supported_image_formats" yaml:"supported_image_formats"`
-
-	// Supported audio formats
 	SupportedAudioFormats []string `mapstructure:"supported_audio_formats" yaml:"supported_audio_formats"`
-
-	// Supported video formats
 	SupportedVideoFormats []string `mapstructure:"supported_video_formats" yaml:"supported_video_formats"`
+	MaxImageSize          int64    `mapstructure:"max_image_size" yaml:"max_image_size" default:"10485760"`
+	MaxAudioSize          int64    `mapstructure:"max_audio_size" yaml:"max_audio_size" default:"10485760"`
+	MaxVideoSize          int64    `mapstructure:"max_video_size" yaml:"max_video_size" default:"104857600"`
+	Text                  bool     `mapstructure:"text" yaml:"text" default:"true"`
+	Image                 bool     `mapstructure:"image" yaml:"image" default:"false"`
+	Audio                 bool     `mapstructure:"audio" yaml:"audio" default:"false"`
+	Video                 bool     `mapstructure:"video" yaml:"video" default:"false"`
 }
 
 // RoutingConfig represents routing instructions for content blocks.

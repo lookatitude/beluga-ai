@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -38,7 +37,7 @@ type BaseAgent struct {
 	cancelFunc      context.CancelFunc
 	name            string
 	state           iface.AgentState
-	tools           []tools.Tool
+	tools           []iface.Tool
 	config          schema.AgentConfig
 	retryDelay      time.Duration
 	errorCount      int
@@ -48,7 +47,7 @@ type BaseAgent struct {
 }
 
 // NewBaseAgent creates a new BaseAgent with the provided configuration.
-func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts ...iface.Option) (*BaseAgent, error) {
+func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []iface.Tool, opts ...iface.Option) (*BaseAgent, error) {
 	if llm == nil {
 		return nil, errors.New("LLM cannot be nil")
 	}
@@ -119,7 +118,7 @@ func (a *BaseAgent) OutputVariables() []string {
 }
 
 // GetTools returns the list of tools available to the agent.
-func (a *BaseAgent) GetTools() []tools.Tool {
+func (a *BaseAgent) GetTools() []iface.Tool {
 	a.mutex.RLock()
 	defer a.mutex.RUnlock()
 	return a.tools

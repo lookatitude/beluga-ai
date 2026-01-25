@@ -40,7 +40,7 @@ type ConversationalBackend interface {
 	AddParticipant(ctx context.Context, conversationID string, participant *Participant) error
 
 	// RemoveParticipant removes a participant from a conversation.
-	RemoveParticipant(ctx context.Context, conversationID string, participantID string) error
+	RemoveParticipant(ctx context.Context, conversationID, participantID string) error
 
 	// Webhook Handling
 	// HandleWebhook handles a webhook event from the provider.
@@ -51,5 +51,5 @@ type ConversationalBackend interface {
 	HealthCheck(ctx context.Context) (*HealthStatus, error)
 
 	// GetConfig returns the backend configuration.
-	GetConfig() interface{} // Returns *messaging.Config - using interface{} to avoid circular import
+	GetConfig() any // Returns *messaging.Config - using interface{} to avoid circular import
 }

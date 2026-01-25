@@ -7,7 +7,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -54,7 +53,7 @@ type Agent interface {
 	OutputVariables() []string
 
 	// GetTools returns the tools available to the agent.
-	GetTools() []tools.Tool
+	GetTools() []Tool
 
 	// GetConfig returns the agent's configuration.
 	GetConfig() schema.AgentConfig
@@ -136,6 +135,7 @@ type Options struct {
 	MaxIterations   int
 	EnableMetrics   bool
 	EnableTracing   bool
+	EnableSafety    bool
 	StreamingConfig StreamingConfig
 }
 

@@ -25,7 +25,7 @@ The VAD package follows the Beluga AI Framework design patterns, providing:
 - **Features**: ONNX-based, high accuracy, low latency
 - **Model**: Silero VAD v4
 - **Best for**: Production applications requiring high accuracy
-- **Latency**: &lt;50ms
+- **Latency**: \<50ms
 - **Accuracy**: 95%+
 
 ### Energy-based VAD
@@ -33,7 +33,7 @@ The VAD package follows the Beluga AI Framework design patterns, providing:
 - **Features**: Simple, adaptive thresholds, no model required
 - **Model**: None (algorithm-based)
 - **Best for**: Simple use cases, low resource requirements
-- **Latency**: &lt;10ms
+- **Latency**: \<10ms
 - **Accuracy**: 80-90%
 
 ### WebRTC VAD
@@ -41,7 +41,7 @@ The VAD package follows the Beluga AI Framework design patterns, providing:
 - **Features**: Built-in VAD, multiple sensitivity modes
 - **Model**: Built into WebRTC
 - **Best for**: WebRTC-based applications
-- **Latency**: &lt;20ms
+- **Latency**: \<20ms
 - **Accuracy**: 85-90%
 
 ### RNNoise VAD
@@ -49,7 +49,7 @@ The VAD package follows the Beluga AI Framework design patterns, providing:
 - **Features**: Deep learning-based, noise suppression included
 - **Model**: RNNoise model
 - **Best for**: Noisy environments
-- **Latency**: &lt;30ms
+- **Latency**: \<30ms
 - **Accuracy**: 90-95%
 
 ## Quick Start
@@ -179,9 +179,9 @@ if err != nil {
 
 ## Performance
 
-- **Latency**: &lt;50ms for most providers
+- **Latency**: \<50ms for most providers
 - **Throughput**: 1000+ frames per second
-- **CPU Usage**: Low (&lt;5% on modern CPUs)
+- **CPU Usage**: Low (\<5% on modern CPUs)
 
 ## API Reference
 

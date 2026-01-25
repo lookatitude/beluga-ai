@@ -11,11 +11,11 @@ type ConfigSchema struct {
 
 // ConfigField represents a single configuration field.
 type ConfigField struct {
-	Name        string      `json:"name"`
-	Type        string      `json:"type"`
-	Required    bool        `json:"required"`
-	Description string      `json:"description"`
-	Default     interface{} `json:"default,omitempty"`
+	Default     any    `json:"default,omitempty"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Description string `json:"description"`
+	Required    bool   `json:"required"`
 }
 
 // BackendProvider defines the interface for voice backend provider implementations.

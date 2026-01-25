@@ -9,11 +9,11 @@ import (
 // It includes context about the operation that failed and wraps the underlying error.
 // It follows the standard Op/Err/Code pattern used across all Beluga AI packages.
 type AgentError struct {
-	Op      string         // operation that failed
-	Err     error          // underlying error
-	Code    string         // error code for programmatic handling
-	Message string         // human-readable message (optional)
-	Fields  map[string]any // additional context (optional)
+	Err     error
+	Fields  map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.

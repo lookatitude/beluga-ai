@@ -86,24 +86,32 @@ Explain the reasoning behind each requirement.
 
 <!--
 Describe the solution architecture.
-Include a diagram (ASCII or Mermaid).
+Include a diagram using Mermaid syntax (required - do NOT use ASCII box diagrams).
 Use a narrative style to explain how components interact.
 -->
 
 ### High-Level Design
 
-```
-┌─────────────────┐       ┌─────────────────┐       ┌─────────────────┐
-│                 │       │                 │       │                 │
-│   {Component}   │──────▶│   {Component}   │──────▶│   {Component}   │
-│                 │       │                 │       │                 │
-└─────────────────┘       └─────────────────┘       └─────────────────┘
-         │                         │
-         │                         │
-         ▼                         ▼
-┌─────────────────┐       ┌─────────────────┐
-│   {Component}   │       │   {Component}   │
-└─────────────────┘       └─────────────────┘
+```mermaid
+graph TB
+    subgraph Input["Input Layer"]
+        A["{Component}"]
+    end
+
+    subgraph Processing["Processing Layer"]
+        B["{Component}"]
+        C["{Component}"]
+    end
+
+    subgraph Output["Output Layer"]
+        D["{Component}"]
+        E["{Component}"]
+    end
+
+    A --> B
+    A --> C
+    B --> D
+    C --> E
 ```
 
 ### How It Works
@@ -254,5 +262,5 @@ If you're working on a similar project, you might also find these helpful:
 
 - **[{Related Use Case}](./related-use-case.md)** - Similar scenario focusing on {different aspect}
 - **[{Guide}](../guides/{guide}.md)** - Deep dive into {technology used}
-- **[{Example}](/examples/{example}/README.md)** - Runnable code demonstrating {feature}
+- **[{Example}](https://github.com/lookatitude/beluga-ai/blob/main/examples/{example}/README.md)** - Runnable code demonstrating {feature}
 - **[{Cookbook Recipe}](../cookbook/{recipe}.md)** - Quick solution for {specific problem}

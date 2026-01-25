@@ -1,4 +1,40 @@
 // Package textsplitters provides advanced test utilities and comprehensive mocks for testing text splitter implementations.
+//
+// Test Coverage Exclusions:
+//
+// The following code paths are intentionally excluded from 100% coverage requirements:
+//
+// 1. Panic Recovery Paths:
+//   - Panic handlers in concurrent test runners
+//   - These paths are difficult to test without causing actual panics in test code
+//
+// 2. Context Cancellation Edge Cases:
+//   - Some context cancellation paths in splitting operations are difficult to reliably test
+//   - Race conditions between context cancellation and text processing
+//
+// 3. Error Paths Requiring System Conditions:
+//   - Memory exhaustion scenarios
+//   - File system errors that require specific OS conditions
+//
+// 4. Provider-Specific Untestable Paths:
+//   - Provider implementations in pkg/textsplitters/providers/* require specific text patterns
+//   - These are tested through integration tests rather than unit tests
+//   - Provider registry initialization code (init() functions)
+//
+// 5. Test Utility Functions:
+//   - Helper functions in test_utils.go that are used by tests but not directly tested
+//   - These are validated through their usage in actual test cases
+//
+// 6. Initialization Code:
+//   - Package init() functions and global variable initialization
+//   - Registry registration code that executes automatically
+//
+// 7. OTEL Logging Helper:
+//   - logWithOTELContext function is tested indirectly through splitter operations
+//   - Direct testing would require OTEL context setup which is complex
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// The target is 100% coverage of testable code paths, excluding the above categories.
 package textsplitters
 
 import (
@@ -11,13 +47,13 @@ import (
 
 // AdvancedMockSplitter provides a comprehensive mock implementation for testing.
 type AdvancedMockSplitter struct {
+	errorToReturn  error
 	chunks         []string
 	documents      []schema.Document
-	errorToReturn  error
-	shouldError    bool
 	callCount      int
 	splitTextCount int
 	mu             sync.RWMutex
+	shouldError    bool
 }
 
 // NewAdvancedMockSplitter creates a new advanced mock with configurable behavior.
@@ -139,5 +175,5 @@ func (m *AdvancedMockSplitter) Reset() {
 	m.errorToReturn = nil
 }
 
-// Ensure AdvancedMockSplitter implements iface.TextSplitter
+// Ensure AdvancedMockSplitter implements iface.TextSplitter.
 var _ iface.TextSplitter = (*AdvancedMockSplitter)(nil)

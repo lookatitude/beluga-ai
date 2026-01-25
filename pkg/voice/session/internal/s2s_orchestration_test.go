@@ -25,7 +25,7 @@ func (m *mockOrchestrator) CreateGraph(opts ...orchestrationiface.GraphOption) (
 	return nil, nil
 }
 
-func (m *mockOrchestrator) CreateWorkflow(workflowFn interface{}, opts ...orchestrationiface.WorkflowOption) (orchestrationiface.Workflow, error) {
+func (m *mockOrchestrator) CreateWorkflow(workflowFn any, opts ...orchestrationiface.WorkflowOption) (orchestrationiface.Workflow, error) {
 	return nil, nil
 }
 

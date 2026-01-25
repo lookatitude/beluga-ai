@@ -66,7 +66,7 @@ type OpenAIProvider struct {
 //	}
 //	response, err := provider.Generate(ctx, messages)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewOpenAIProvider(config *llms.Config) (*OpenAIProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -623,7 +623,7 @@ func (o *OpenAIProvider) CheckHealth() map[string]any {
 //	factory.RegisterProviderFactory("openai", openai.NewOpenAIProviderFactory())
 //	provider, err := factory.CreateProvider("openai", config)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewOpenAIProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewOpenAIProvider(config)

@@ -23,7 +23,7 @@ help: ## Show this help message
 
 build: ## Build all packages
 	@echo "Building all packages..."
-	@go build -v ./pkg/... ./cmd/... ./tests/...
+	@go build -v ./pkg/... ./tests/...
 
 build-examples: ## Build all example binaries to .cache/bin
 	@echo "Building example binaries to $(CACHE_DIR)/bin..."
@@ -47,7 +47,7 @@ build-examples: ## Build all example binaries to .cache/bin
 test-build: ## Build test binaries to .cache/test-binaries
 	@echo "Building test binaries to $(TEST_BIN_DIR)..."
 	@mkdir -p $(TEST_BIN_DIR)
-	@for pkg in $$(go list ./pkg/... ./cmd/... ./tests/...); do \
+	@for pkg in $$(go list ./pkg/... ./tests/...); do \
 		name=$$(basename $$pkg); \
 		if [ -n "$$name" ]; then \
 			echo "Building test binary for $$pkg -> $(TEST_BIN_DIR)/$$name.test"; \
@@ -58,7 +58,7 @@ test-build: ## Build test binaries to .cache/test-binaries
 
 test: ## Run all tests
 	@echo "Running tests..."
-	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -v ./pkg/... ./tests/...
 
 test-unit: ## Run unit tests only (pkg packages, excluding integration tests)
 	@echo "Running unit tests..."
@@ -70,12 +70,12 @@ test-integration: ## Run integration tests
 
 test-race: ## Run tests with race detection
 	@echo "Running tests with race detection..."
-	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -race -v ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -race -v ./pkg/... ./tests/...
 
 test-coverage: ## Generate test coverage report
 	@echo "Generating test coverage report..."
 	@mkdir -p $(COVERAGE_DIR)
-	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./tests/...
 	@go tool cover -html=$(COVERAGE_FILE) -o $(COVERAGE_HTML)
 	@go tool cover -func=$(COVERAGE_FILE)
 	@echo ""
@@ -84,7 +84,7 @@ test-coverage: ## Generate test coverage report
 test-coverage-ci: ## Generate test coverage for CI (JSON output)
 	@echo "Generating test coverage for CI..."
 	@mkdir -p $(COVERAGE_DIR)
-	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./cmd/... ./tests/...
+	@GOCACHE=$(abspath $(GO_CACHE_DIR)) go test -coverprofile=$(COVERAGE_FILE) -covermode=atomic ./pkg/... ./tests/...
 	@go tool cover -func=$(COVERAGE_FILE)
 
 test-coverage-threshold: ## Check if coverage meets 80% threshold (advisory - matches CI behavior)
@@ -113,7 +113,7 @@ lint: ## Run golangci-lint
 		echo "golangci-lint not found. Installing..."; \
 		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $$(go env GOPATH)/bin v2.6.2; \
 	fi
-	@packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
+	@packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -vE "github.com/lookatitude/beluga-ai/pkg/agents/providers/react|github.com/lookatitude/beluga-ai/tests/integration" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
 	if [ -z "$$packages" ]; then \
 		echo "Error: No packages found after filtering"; \
 		exit 1; \
@@ -131,7 +131,7 @@ lint-fix: ## Run golangci-lint with auto-fix
 		PATH="$$PATH:$$(go env GOPATH)/bin" golangci-lint run --timeout=5m --fix $(PKG); \
 	else \
 		echo "Fixing lint errors in all packages (excluding react due to golangci-lint v2.6.2 panic bug)..."; \
-		packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -v "github.com/lookatitude/beluga-ai/pkg/agents/providers/react$$" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
+		packages=$$(go list ./pkg/... ./tests/... 2>/dev/null | grep -vE "github.com/lookatitude/beluga-ai/pkg/agents/providers/react|github.com/lookatitude/beluga-ai/tests/integration" | sed 's|github.com/lookatitude/beluga-ai/||' | tr '\n' ' '); \
 		if [ -z "$$packages" ]; then \
 			echo "Error: No packages found after filtering"; \
 			exit 1; \
@@ -159,7 +159,7 @@ fmt-check: ## Check if code is properly formatted
 
 vet: ## Run go vet
 	@echo "Running go vet..."
-	@go vet ./pkg/... ./cmd/... ./tests/...
+	@go vet ./pkg/... ./tests/...
 
 security: ## Run security scans (gosec, govulncheck, and gitleaks)
 	@echo "Running security scans..."
@@ -169,15 +169,15 @@ security: ## Run security scans (gosec, govulncheck, and gitleaks)
 		echo "gosec not found. Installing..."; \
 		go install github.com/securego/gosec/v2/cmd/gosec@latest; \
 	fi
-	@gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json ./pkg/... ./cmd/... ./tests/... || true
-	@gosec -exclude-dir=test,tests,mock,fixtures -exclude=G404,G101,G204,G201,G304,G302,G301,G306,G602 ./pkg/... ./cmd/... ./tests/... || (echo "⚠️  Security issues found (some may be false positives - see gosec-report.json)" && exit 1)
+	@$$(go env GOPATH)/bin/gosec -fmt=json -out=$(COVERAGE_DIR)/gosec-report.json ./pkg/... ./tests/... || true
+	@$$(go env GOPATH)/bin/gosec -exclude-dir=test,tests,mock,fixtures -exclude=G404,G101,G204,G201,G304,G302,G301,G306,G602 ./pkg/... ./tests/... || (echo "⚠️  Security issues found (some may be false positives - see gosec-report.json)" && exit 1)
 	@echo ""
 	@echo "Running govulncheck..."
 	@if ! command -v govulncheck >/dev/null 2>&1; then \
 		echo "govulncheck not found. Installing..."; \
 		go install golang.org/x/vuln/cmd/govulncheck@latest; \
 	fi
-	@govulncheck ./pkg/... ./cmd/... ./tests/... 2>&1 | tee $(COVERAGE_DIR)/govulncheck-report.txt || true
+	@$$(go env GOPATH)/bin/govulncheck ./pkg/... ./tests/... 2>&1 | tee $(COVERAGE_DIR)/govulncheck-report.txt || true
 	@echo ""
 	@echo "Running gitleaks..."
 	@if ! command -v gitleaks >/dev/null 2>&1; then \

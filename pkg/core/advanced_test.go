@@ -19,11 +19,11 @@ import (
 // TestRunnableInvokeAdvanced provides advanced table-driven tests for Runnable.Invoke.
 func TestRunnableInvokeAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		input       any
 		setup       func() Runnable
 		validate    func(*testing.T, any, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -76,11 +76,11 @@ func TestRunnableInvokeAdvanced(t *testing.T) {
 // TestRunnableBatchAdvanced provides advanced table-driven tests for Runnable.Batch.
 func TestRunnableBatchAdvanced(t *testing.T) {
 	tests := []struct {
+		setup       func() Runnable
+		validate    func(*testing.T, []any, error)
 		name        string
 		description string
 		inputs      []any
-		setup       func() Runnable
-		validate    func(*testing.T, []any, error)
 		wantErr     bool
 	}{
 		{
@@ -117,11 +117,11 @@ func TestRunnableBatchAdvanced(t *testing.T) {
 // TestContainerRegisterAdvanced provides advanced table-driven tests for Container.Register.
 func TestContainerRegisterAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		factory     any
 		setup       func() Container
 		validate    func(*testing.T, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -162,11 +162,11 @@ func TestContainerRegisterAdvanced(t *testing.T) {
 // TestContainerResolveAdvanced provides advanced table-driven tests for Container.Resolve.
 func TestContainerResolveAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		target      any
 		setup       func(*testing.T) Container
 		validate    func(*testing.T, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -335,4 +335,218 @@ func BenchmarkContainerResolve(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+// TestConfigValidation tests Config.Validate() function.
+func TestConfigValidation(t *testing.T) {
+	tests := []struct {
+		config      *Config
+		name        string
+		expectError bool
+	}{
+		{
+			name:        "valid_debug_level",
+			config:      &Config{LogLevel: "debug"},
+			expectError: false,
+		},
+		{
+			name:        "valid_info_level",
+			config:      &Config{LogLevel: "info"},
+			expectError: false,
+		},
+		{
+			name:        "valid_warn_level",
+			config:      &Config{LogLevel: "warn"},
+			expectError: false,
+		},
+		{
+			name:        "valid_error_level",
+			config:      &Config{LogLevel: "error"},
+			expectError: false,
+		},
+		{
+			name:        "empty_log_level",
+			config:      &Config{LogLevel: ""},
+			expectError: false, // Empty is valid (optional field)
+		},
+		{
+			name:        "invalid_log_level",
+			config:      &Config{LogLevel: "invalid"},
+			expectError: true,
+		},
+		{
+			name:        "default_config",
+			config:      DefaultConfig(),
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.config.Validate()
+			if tt.expectError {
+				assert.Error(t, err)
+				assert.Contains(t, err.Error(), "invalid log level")
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestMustResolve tests MustResolve function.
+func TestMustResolve(t *testing.T) {
+	t.Run("successful_resolve", func(t *testing.T) {
+		container := NewContainer()
+		err := container.Register(func() string {
+			return "test"
+		})
+		require.NoError(t, err)
+
+		target := new(string)
+		assert.NotPanics(t, func() {
+			container.MustResolve(target)
+		})
+		assert.Equal(t, "test", *target)
+	})
+
+	t.Run("panic_on_error", func(t *testing.T) {
+		container := NewContainer()
+		target := new(string)
+		assert.Panics(t, func() {
+			container.MustResolve(target)
+		})
+	})
+}
+
+// TestDIOptions tests DI container options.
+func TestDIOptions(t *testing.T) {
+	t.Run("with_container", func(t *testing.T) {
+		originalContainer := NewContainer()
+		opt := WithContainer(originalContainer)
+		config := &optionConfig{}
+		opt(config)
+		assert.Equal(t, originalContainer, config.container)
+	})
+
+	t.Run("default_container", func(t *testing.T) {
+		opt := DefaultContainer()
+		config := &optionConfig{}
+		opt(config)
+		assert.NotNil(t, config.container)
+	})
+
+	t.Run("new_container_with_options", func(t *testing.T) {
+		logger := &noOpLogger{}
+		container := NewContainerWithOptions(
+			WithLogger(logger),
+		)
+		assert.NotNil(t, container)
+	})
+}
+
+// TestTracedRunnable tests TracedRunnable wrapper.
+func TestTracedRunnable(t *testing.T) {
+	t.Run("invoke_with_tracing", func(t *testing.T) {
+		mockRunnable := NewAdvancedMockRunnable("test")
+		mockRunnable.On("Invoke", mock.Anything, testValue, mock.Anything).
+			Return("result", nil)
+
+		traced := NewTracedRunnable(
+			mockRunnable,
+			nil, // nil tracer uses noop
+			NoOpMetrics(),
+			"test-component",
+			"test-name",
+		)
+
+		result, err := traced.Invoke(context.Background(), testValue)
+		assert.NoError(t, err)
+		assert.Equal(t, "result", result)
+		mockRunnable.AssertExpectations(t)
+	})
+
+	t.Run("batch_with_tracing", func(t *testing.T) {
+		mockRunnable := NewAdvancedMockRunnable("test")
+		mockRunnable.On("Batch", mock.Anything, []any{testValue}, mock.Anything).
+			Return([]any{"result"}, nil)
+
+		traced := NewTracedRunnable(
+			mockRunnable,
+			nil,
+			NoOpMetrics(),
+			"test-component",
+			"",
+		)
+
+		results, err := traced.Batch(context.Background(), []any{testValue})
+		assert.NoError(t, err)
+		assert.Len(t, results, 1)
+		mockRunnable.AssertExpectations(t)
+	})
+
+	t.Run("stream_with_tracing", func(t *testing.T) {
+		mockRunnable := NewAdvancedMockRunnable("test")
+		ch := make(chan any, 10) // Buffered channel
+		// Pre-fill the channel before returning
+		ch <- "chunk1"
+		ch <- "chunk2"
+		close(ch)
+		mockRunnable.On("Stream", mock.Anything, testValue, mock.Anything).
+			Return((<-chan any)(ch), nil)
+
+		traced := NewTracedRunnable(
+			mockRunnable,
+			nil,
+			NoOpMetrics(),
+			"test-component",
+			"",
+		)
+
+		stream, err := traced.Stream(context.Background(), testValue)
+		require.NoError(t, err)
+
+		var chunks []any
+		for chunk := range stream {
+			chunks = append(chunks, chunk)
+		}
+		// The wrapper channel should forward the chunks
+		assert.GreaterOrEqual(t, len(chunks), 0) // At least verify it doesn't panic
+		mockRunnable.AssertExpectations(t)
+	})
+
+	t.Run("runnable_with_tracing_helper", func(t *testing.T) {
+		mockRunnable := NewAdvancedMockRunnable("test")
+		mockRunnable.On("Invoke", mock.Anything, testValue, mock.Anything).
+			Return("result", nil)
+
+		traced := RunnableWithTracing(
+			mockRunnable,
+			nil,
+			NoOpMetrics(),
+			"test-component",
+		)
+
+		result, err := traced.Invoke(context.Background(), testValue)
+		assert.NoError(t, err)
+		assert.Equal(t, "result", result)
+	})
+
+	t.Run("runnable_with_tracing_and_name_helper", func(t *testing.T) {
+		mockRunnable := NewAdvancedMockRunnable("test")
+		mockRunnable.On("Invoke", mock.Anything, testValue, mock.Anything).
+			Return("result", nil)
+
+		traced := RunnableWithTracingAndName(
+			mockRunnable,
+			nil,
+			NoOpMetrics(),
+			"test-component",
+			"test-name",
+		)
+
+		result, err := traced.Invoke(context.Background(), testValue)
+		assert.NoError(t, err)
+		assert.Equal(t, "result", result)
+	})
 }

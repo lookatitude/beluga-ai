@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Static error variables for testing (err113 compliance)
+// Static error variables for testing (err113 compliance).
 var (
 	errOriginalError   = errors.New("original error")
 	errExecutionFailed = errors.New("execution failed")

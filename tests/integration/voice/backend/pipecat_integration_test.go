@@ -26,6 +26,8 @@ func TestPipecatIntegration(t *testing.T) {
 	// Create Pipecat backend configuration
 	config := backend.DefaultConfig()
 	config.Provider = "pipecat"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["daily_api_key"] = "test-key"
 	config.ProviderConfig["daily_api_url"] = "https://api.daily.co"
@@ -102,6 +104,8 @@ func TestPipecatHealthCheck(t *testing.T) {
 
 	config := backend.DefaultConfig()
 	config.Provider = "pipecat"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["daily_api_key"] = "test-key"
 	config.ProviderConfig["daily_api_url"] = "https://api.daily.co"
@@ -143,6 +147,8 @@ func TestPipecatGracefulShutdown(t *testing.T) {
 
 	config := backend.DefaultConfig()
 	config.Provider = "pipecat"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["daily_api_key"] = "test-key"
 	config.ProviderConfig["daily_api_url"] = "https://api.daily.co"

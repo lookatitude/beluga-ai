@@ -127,7 +127,7 @@ const (
 //
 //	msg := schema.NewHumanMessage("What is machine learning?")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewHumanMessage(content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -148,7 +148,7 @@ func NewHumanMessage(content string) Message {
 //
 //	msg := schema.NewAIMessage("Machine learning is a subset of AI.")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewAIMessage(content string) Message {
 	return &internal.AIMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -168,7 +168,7 @@ func NewAIMessage(content string) Message {
 //
 //	msg := schema.NewSystemMessage("You are a helpful assistant.")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewSystemMessage(content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -190,7 +190,7 @@ func NewSystemMessage(content string) Message {
 //
 //	msg := schema.NewToolMessage("42", "call_123")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewToolMessage(content, toolCallID string) Message {
 	return &internal.ToolMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -212,7 +212,7 @@ func NewToolMessage(content, toolCallID string) Message {
 //
 //	msg := schema.NewFunctionMessage("calculate", "42")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewFunctionMessage(name, content string) Message {
 	return &internal.FunctionMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -234,7 +234,7 @@ func NewFunctionMessage(name, content string) Message {
 //
 //	msg := schema.NewChatMessage(schema.RoleHuman, "Hello")
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewChatMessage(role MessageType, content string) Message {
 	return &internal.ChatMessage{
 		BaseMessage: internal.BaseMessage{Content: content},
@@ -261,7 +261,7 @@ func NewChatMessage(role MessageType, content string) Message {
 //	    map[string]string{"source": "textbook", "topic": "AI"},
 //	)
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewDocument(pageContent string, metadata map[string]string) Document {
 	return internal.NewDocument(pageContent, metadata)
 }
@@ -285,7 +285,7 @@ func NewDocument(pageContent string, metadata map[string]string) Document {
 //	    map[string]string{"source": "textbook"},
 //	)
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewDocumentWithID(id, pageContent string, metadata map[string]string) Document {
 	return internal.NewDocumentWithID(id, pageContent, metadata)
 }
@@ -310,7 +310,7 @@ func NewDocumentWithID(id, pageContent string, metadata map[string]string) Docum
 //	    embedding,
 //	)
 //
-// Example usage can be found in examples/schema/basic/main.go
+// Example usage can be found in examples/schema/basic/main.go.
 func NewDocumentWithEmbedding(pageContent string, metadata map[string]string, embedding []float32) Document {
 	doc := internal.NewDocument(pageContent, metadata)
 	doc.Embedding = embedding

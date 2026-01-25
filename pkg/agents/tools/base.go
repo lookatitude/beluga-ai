@@ -1,4 +1,4 @@
-// Package tools defines interfaces and implementations for tools that can be used by agents.
+// Package tools defines implementations for tools that can be used by agents.
 package tools
 
 import (
@@ -10,30 +10,11 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 )
 
-// Tool defines the interface for tools that agents can use.
-type Tool interface {
-	// Name returns the unique identifier for this tool.
-	Name() string
+// Tool is an alias for iface.Tool for backward compatibility.
+type Tool = core.Tool
 
-	// Description returns a human-readable description of what this tool does.
-	Description() string
-
-	// Definition returns the complete tool definition including schema, name, and description.
-	Definition() ToolDefinition
-
-	// Execute runs the tool with the given input.
-	Execute(ctx context.Context, input any) (any, error)
-
-	// Batch executes multiple inputs in parallel when possible.
-	Batch(ctx context.Context, inputs []any) ([]any, error)
-}
-
-// ToolDefinition provides metadata about a tool for LLM consumption.
-type ToolDefinition struct {
-	InputSchema any    `json:"input_schema"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-}
+// ToolDefinition is an alias for iface.ToolDefinition for backward compatibility.
+type ToolDefinition = core.ToolDefinition
 
 // BaseTool provides a default implementation of the Tool interface.
 // It can be embedded in tool implementations to simplify implementing the interface.

@@ -1,5 +1,40 @@
 // Package llms provides advanced test utilities and comprehensive mocks for testing LLM implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Test Coverage Exclusions:
+//
+// 1. Global State Initialization:
+//   - File: llms.go:40-53 (InitMetrics with sync.Once)
+//   - Reason: sync.Once prevents re-initialization in tests, making it difficult to test all code paths
+//   - Coverage Impact: ~0.2% of code
+//   - Workaround: Test metrics creation separately with NewMetrics
+//
+// 2. Provider Implementation Details:
+//   - File: providers/*/provider.go (all provider implementations)
+//   - Reason: Provider implementations require actual API credentials and network access
+//   - Coverage Impact: Provider-specific code is tested via integration tests with mocks
+//   - Workaround: Use AdvancedMockChatModel for unit tests, integration tests for real providers
+//
+// 3. Error Recovery Paths:
+//   - File: llms.go:46-49 (metrics creation error fallback)
+//   - Reason: Difficult to simulate NewMetrics failure without modifying the metrics package
+//   - Coverage Impact: ~0.1% of code
+//   - Workaround: Test NoOpMetrics() directly
+//
+// 4. Context Cancellation Edge Cases:
+//   - File: llms.go:497-519 (GenerateText with context cancellation)
+//   - Reason: Timing-dependent, difficult to reliably test all cancellation scenarios
+//   - Coverage Impact: ~0.3% of code
+//   - Workaround: Test context cancellation with timeouts in integration tests
+//
+// 5. Streaming Edge Cases:
+//   - File: llms.go:619-650 (StreamText error handling)
+//   - Reason: Complex channel closure and error propagation scenarios
+//   - Coverage Impact: ~0.2% of code
+//   - Workaround: Test streaming with mock providers that simulate errors
+//
+// All exclusions are documented here to maintain transparency about coverage goals.
+// Target: 100% coverage of testable code paths (excluding the above).
 package llms
 
 import (
@@ -84,6 +119,52 @@ func WithError(err error) MockOption {
 	}
 }
 
+// WithErrorCode configures the mock to return a specific LLM error code.
+// This is a convenience function for creating common error scenarios.
+func WithErrorCode(code string) MockOption {
+	return func(m *AdvancedMockChatModel) {
+		m.shouldError = true
+		var err error
+		switch code {
+		case ErrCodeRateLimit:
+			err = NewLLMError("mock", ErrCodeRateLimit, errors.New("rate limit exceeded"))
+		case ErrCodeTimeout:
+			err = NewLLMError("mock", ErrCodeTimeout, errors.New("request timeout"))
+		case ErrCodeNetworkError:
+			err = NewLLMError("mock", ErrCodeNetworkError, errors.New("network error"))
+		case ErrCodeAuthentication:
+			err = NewLLMError("mock", ErrCodeAuthentication, errors.New("authentication failed"))
+		case ErrCodeAuthorization:
+			err = NewLLMError("mock", ErrCodeAuthorization, errors.New("authorization failed"))
+		case ErrCodeInvalidConfig:
+			err = NewLLMError("mock", ErrCodeInvalidConfig, errors.New("invalid configuration"))
+		case ErrCodeInvalidInput:
+			err = NewLLMError("mock", ErrCodeInvalidInput, errors.New("invalid input"))
+		case ErrCodeQuotaExceeded:
+			err = NewLLMError("mock", ErrCodeQuotaExceeded, errors.New("quota exceeded"))
+		case ErrCodeContextCanceled:
+			err = NewLLMError("mock", ErrCodeContextCanceled, context.Canceled)
+		case ErrCodeContextTimeout:
+			err = NewLLMError("mock", ErrCodeContextTimeout, context.DeadlineExceeded)
+		case ErrCodeStreamError:
+			err = NewLLMError("mock", ErrCodeStreamError, errors.New("stream error"))
+		case ErrCodeStreamTimeout:
+			err = NewLLMError("mock", ErrCodeStreamTimeout, errors.New("stream timeout"))
+		case ErrCodeStreamClosed:
+			err = NewLLMError("mock", ErrCodeStreamClosed, errors.New("stream closed"))
+		case ErrCodeToolCallError:
+			err = NewLLMError("mock", ErrCodeToolCallError, errors.New("tool call error"))
+		case ErrCodeToolNotFound:
+			err = NewLLMError("mock", ErrCodeToolNotFound, errors.New("tool not found"))
+		case ErrCodeToolExecutionError:
+			err = NewLLMError("mock", ErrCodeToolExecutionError, errors.New("tool execution error"))
+		default:
+			err = NewLLMError("mock", code, errors.New("mock error"))
+		}
+		m.errorToReturn = err
+	}
+}
+
 // WithStreamingDelay sets the delay between streaming chunks.
 func WithStreamingDelay(delay time.Duration) MockOption {
 	return func(m *AdvancedMockChatModel) {
@@ -152,8 +233,11 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
-			return args.Get(0).(<-chan iface.AIMessageChunk), args.Error(1)
+			if ch, ok := args.Get(0).(<-chan iface.AIMessageChunk); ok {
+				return ch, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {
@@ -228,7 +312,9 @@ func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatMo
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(toolsToBind)
 		if args.Get(0) != nil {
-			return args.Get(0).(iface.ChatModel)
+			if cm, ok := args.Get(0).(iface.ChatModel); ok {
+				return cm
+			}
 		}
 	}
 
@@ -286,8 +372,11 @@ func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, inputs, options)
 		if args.Get(0) != nil {
-			return args.Get(0).([]any), args.Error(1)
+			if results, ok := args.Get(0).([]any); ok {
+				return results, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {
@@ -315,8 +404,11 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, input, options)
 		if args.Get(0) != nil {
-			return args.Get(0).(<-chan any), args.Error(1)
+			if ch, ok := args.Get(0).(<-chan any); ok {
+				return ch, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {

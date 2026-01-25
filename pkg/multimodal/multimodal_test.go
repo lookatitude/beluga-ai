@@ -12,9 +12,9 @@ func TestNewContentBlock(t *testing.T) {
 	tests := []struct {
 		name        string
 		contentType string
+		errContains string
 		data        []byte
 		wantErr     bool
-		errContains string
 	}{
 		{
 			name:        "valid text block",
@@ -64,10 +64,10 @@ func TestNewContentBlock(t *testing.T) {
 
 func TestContentBlock_Validate(t *testing.T) {
 	tests := []struct {
-		name        string
 		block       *ContentBlock
-		wantErr     bool
+		name        string
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name: "valid text block with data",
@@ -141,10 +141,10 @@ func TestContentBlock_Validate(t *testing.T) {
 func TestNewMultimodalInput(t *testing.T) {
 	tests := []struct {
 		name        string
+		errContains string
 		blocks      []*ContentBlock
 		opts        []MultimodalInputOption
 		wantErr     bool
-		errContains string
 	}{
 		{
 			name: "valid input with one block",
@@ -250,7 +250,7 @@ func TestNewMultimodalInput(t *testing.T) {
 				require.NoError(t, err)
 				assert.NotNil(t, input)
 				assert.NotEmpty(t, input.ID)
-				assert.Equal(t, len(tt.blocks), len(input.ContentBlocks))
+				assert.Len(t, input.ContentBlocks, len(tt.blocks))
 				assert.NotNil(t, input.Metadata)
 			}
 		})
@@ -259,10 +259,10 @@ func TestNewMultimodalInput(t *testing.T) {
 
 func TestMultimodalInput_Validate(t *testing.T) {
 	tests := []struct {
-		name        string
 		input       *MultimodalInput
-		wantErr     bool
+		name        string
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name: "valid input",
@@ -318,10 +318,10 @@ func TestMultimodalInput_Validate(t *testing.T) {
 
 func TestMultimodalOutput_Validate(t *testing.T) {
 	tests := []struct {
-		name        string
 		output      *MultimodalOutput
-		wantErr     bool
+		name        string
 		errContains string
+		wantErr     bool
 	}{
 		{
 			name: "valid output",

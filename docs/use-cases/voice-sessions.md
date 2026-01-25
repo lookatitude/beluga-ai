@@ -57,45 +57,40 @@ A well-implemented voice session system delivers:
 
 ### System Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              Voice Session System                           │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  ┌─────────────┐         ┌──────────────────────────────────────────────┐  │
-│  │   Client    │         │            Session Manager                    │  │
-│  │ (Web/Mobile)│◄───────►│                                              │  │
-│  └─────────────┘         │  ┌──────────┐ ┌──────────┐ ┌──────────┐     │  │
-│        │                 │  │ Session 1│ │ Session 2│ │ Session N│     │  │
-│        │ WebSocket/      │  └────┬─────┘ └────┬─────┘ └────┬─────┘     │  │
-│        │ WebRTC          │       │            │            │           │  │
-│        │                 └───────┼────────────┼────────────┼───────────┘  │
-│        │                         │            │            │              │
-│        ▼                         ▼            ▼            ▼              │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                       Audio Pipeline                                 │  │
-│  │  ┌───────┐   ┌──────────┐   ┌──────────┐   ┌───────────────────┐   │  │
-│  │  │  VAD  │──►│ Denoise  │──►│   Turn   │──►│   STT/S2S/TTS    │   │  │
-│  │  └───────┘   └──────────┘   │ Detection│   │    Processing    │   │  │
-│  │                             └──────────┘   └───────────────────┘   │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                        Agent Processing                              │  │
-│  │  ┌───────────────┐   ┌───────────────┐   ┌───────────────────────┐ │  │
-│  │  │ Conversation  │──►│     Agent     │──►│    Response           │ │  │
-│  │  │   History     │   │   Execution   │   │    Generation         │ │  │
-│  │  └───────────────┘   └───────────────┘   └───────────────────────┘ │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐  │
-│  │                        Observability                                 │  │
-│  │  ┌───────────┐  ┌───────────┐  ┌────────────┐  ┌────────────────┐  │  │
-│  │  │  Traces   │  │  Metrics  │  │   Logs     │  │  Health Checks │  │  │
-│  │  └───────────┘  └───────────┘  └────────────┘  └────────────────┘  │  │
-│  └─────────────────────────────────────────────────────────────────────┘  │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    subgraph Client["Client Layer"]
+        CL[Client<br>Web/Mobile]
+    end
+
+    subgraph SessionMgmt["Session Manager"]
+        S1[Session 1]
+        S2[Session 2]
+        SN[Session N]
+    end
+
+    subgraph AudioPipeline["Audio Pipeline"]
+        VAD[VAD] --> DN[Denoise] --> TD[Turn Detection] --> PROC[STT/S2S/TTS<br>Processing]
+    end
+
+    subgraph AgentLayer["Agent Processing"]
+        HIST[Conversation<br>History] --> AGENT[Agent<br>Execution] --> RESP[Response<br>Generation]
+    end
+
+    subgraph Observability["Observability Layer"]
+        TR[Traces]
+        MET[Metrics]
+        LOG[Logs]
+        HC[Health Checks]
+    end
+
+    CL <-->|WebSocket/WebRTC| SessionMgmt
+    S1 --> AudioPipeline
+    S2 --> AudioPipeline
+    SN --> AudioPipeline
+    PROC --> AgentLayer
+    AgentLayer --> Observability
+    AudioPipeline --> Observability
 ```
 
 ### How It Works
@@ -841,7 +836,7 @@ sum(rate(beluga_voice_session_reconnect_attempts_total[5m]))
 ## Related Resources
 
 - **[Voice Providers Guide](../guides/voice-providers.md)**: STT/TTS/S2S integration
-- **[Advanced Voice Detection](../examples/voice/advanced_detection/advanced_detection_guide.md)**: VAD and turn detection
+- **[Advanced Voice Detection](https://github.com/lookatitude/beluga-ai/tree/main/examples/voice/advanced_detection/advanced_detection_guide.md)**: VAD and turn detection
 - **[Voice Backends Cookbook](../cookbook/voice-backends.md)**: Configuration recipes
 - **[Observability Tracing Guide](../guides/observability-tracing.md)**: Distributed tracing
 - **[Monitoring Dashboards](./monitoring-dashboards.md)**: Prometheus and Grafana setup

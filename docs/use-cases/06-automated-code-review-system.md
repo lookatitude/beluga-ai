@@ -25,42 +25,31 @@ This use case implements an AI-powered code review system that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Version Control System                         │
-│              (GitHub, GitLab, Bitbucket)                        │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │ Webhook / API
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Code Review Agent (pkg/agents)                      │
-│  - ReAct Agent for code analysis                                │
-│  - Tool integration for code operations                        │
-│  - Memory for review context                                    │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Tools      │    │   Memory     │    │     LLMs     │
-│  (pkg/agents/│    │  (pkg/memory)│    │  (pkg/llms)  │
-│   tools)     │    │               │    │              │
-│  - Shell     │    │  - Buffer     │    │  - OpenAI    │
-│  - API       │    │  - VectorStore│   │  - Anthropic │
-│  - GoFunc    │    │               │    │              │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Code Analysis Tools  │
-              │  - Static Analyzers    │
-              │  - Linters            │
-              │  - Security Scanners  │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph VCS["Version Control System"]
+        A[GitHub / GitLab / Bitbucket]
+    end
+
+    subgraph Agent["Code Review Agent - pkg/agents"]
+        B[ReAct Agent<br>Code Analysis<br>Tool Integration<br>Review Context]
+    end
+
+    subgraph Components["Supporting Components"]
+        C[Tools - pkg/agents/tools<br>Shell / API / GoFunc]
+        D[Memory - pkg/memory<br>Buffer / VectorStore]
+        E[LLMs - pkg/llms<br>OpenAI / Anthropic]
+    end
+
+    subgraph Analysis["Code Analysis Tools"]
+        F[Static Analyzers / Linters / Security Scanners]
+    end
+
+    A -->|Webhook / API| B
+    B --> C
+    B --> D
+    B --> E
+    C --> F
 ```
 
 ## Component Usage

@@ -13,11 +13,14 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/metric/noop"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // TestEnsureMessagesAdvanced provides advanced table-driven tests for EnsureMessages.
@@ -1167,4 +1170,740 @@ func collectStreamContent(streamChan <-chan iface.AIMessageChunk) string {
 		}
 	}
 	return content.String()
+}
+
+// TestConfigTopK tests WithTopKConfig option.
+func TestConfigTopK(t *testing.T) {
+	tests := []struct {
+		expected *int
+		name     string
+		topK     int
+	}{
+		{
+			name:     "valid_top_k",
+			topK:     10,
+			expected: intPtr(10),
+		},
+		{
+			name:     "zero_top_k",
+			topK:     0,
+			expected: intPtr(0),
+		},
+		{
+			name:     "max_top_k",
+			topK:     100,
+			expected: intPtr(100),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := NewDefaultConfig()
+			WithTopKConfig(tt.topK)(config)
+			assert.Equal(t, tt.expected, config.TopK)
+		})
+	}
+}
+
+// TestNewCallOptions tests NewCallOptions creation.
+func TestNewCallOptions(t *testing.T) {
+	opts := NewCallOptions()
+	assert.NotNil(t, opts)
+	assert.NotNil(t, opts.AdditionalArgs)
+	assert.Empty(t, opts.AdditionalArgs)
+	assert.Nil(t, opts.Temperature)
+	assert.Nil(t, opts.TopP)
+	assert.Nil(t, opts.TopK)
+	assert.Nil(t, opts.MaxTokens)
+}
+
+// TestApplyCallOption tests ApplyCallOption with various options.
+func TestApplyCallOption(t *testing.T) {
+	tests := []struct {
+		option   core.Option
+		validate func(t *testing.T, opts *CallOptions)
+		name     string
+	}{
+		{
+			name:   "temperature_float32",
+			option: core.WithOption("temperature", float32(0.7)),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.Temperature)
+				assert.Equal(t, float32(0.7), *opts.Temperature)
+			},
+		},
+		{
+			name:   "temperature_float64",
+			option: core.WithOption("temperature", 0.8),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.Temperature)
+				assert.Equal(t, float32(0.8), *opts.Temperature)
+			},
+		},
+		{
+			name:   "top_p_float32",
+			option: core.WithOption("top_p", float32(0.9)),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.TopP)
+				assert.Equal(t, float32(0.9), *opts.TopP)
+			},
+		},
+		{
+			name:   "top_k_int",
+			option: core.WithOption("top_k", 50),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.TopK)
+				assert.Equal(t, 50, *opts.TopK)
+			},
+		},
+		{
+			name:   "max_tokens_int",
+			option: core.WithOption("max_tokens", 1000),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.MaxTokens)
+				assert.Equal(t, 1000, *opts.MaxTokens)
+			},
+		},
+		{
+			name:   "stop_sequences",
+			option: core.WithOption("stop_sequences", []string{"stop1", "stop2"}),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.Equal(t, []string{"stop1", "stop2"}, opts.StopSequences)
+			},
+		},
+		{
+			name:   "frequency_penalty_float32",
+			option: core.WithOption("frequency_penalty", float32(0.5)),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.FrequencyPenalty)
+				assert.Equal(t, float32(0.5), *opts.FrequencyPenalty)
+			},
+		},
+		{
+			name:   "presence_penalty_float64",
+			option: core.WithOption("presence_penalty", 0.6),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.NotNil(t, opts.PresencePenalty)
+				assert.Equal(t, float32(0.6), *opts.PresencePenalty)
+			},
+		},
+		{
+			name:   "unknown_key",
+			option: core.WithOption("unknown_key", "value"),
+			validate: func(t *testing.T, opts *CallOptions) {
+				assert.Equal(t, "value", opts.AdditionalArgs["unknown_key"])
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			opts := NewCallOptions()
+			opts.ApplyCallOption(tt.option)
+			tt.validate(t, opts)
+		})
+	}
+}
+
+// TestValidateProviderConfig tests ValidateProviderConfig with various scenarios.
+func TestValidateProviderConfig(t *testing.T) {
+	ctx := context.Background()
+
+	tests := []struct {
+		config      *Config
+		name        string
+		errContains string
+		expectError bool
+	}{
+		{
+			name:        "nil_config",
+			config:      nil,
+			expectError: true,
+			errContains: "cannot be nil",
+		},
+		{
+			name: "valid_openai_config",
+			config: NewConfig(
+				WithProvider("openai"),
+				WithModelName("gpt-4"),
+				WithAPIKey("test-key"),
+			),
+			expectError: false,
+		},
+		{
+			name: "openai_missing_model",
+			config: &Config{
+				Provider:             "openai",
+				APIKey:               "test-key",
+				ModelName:            "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
+				MaxConcurrentBatches: 5,
+				RetryBackoff:         2.0,
+			},
+			expectError: true,
+			errContains: "ModelName", // Struct validation fails first
+		},
+		{
+			name: "openai_missing_api_key",
+			config: &Config{
+				Provider:             "openai",
+				ModelName:            "gpt-4",
+				APIKey:               "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
+				MaxConcurrentBatches: 5,
+				RetryBackoff:         2.0,
+			},
+			expectError: true,
+			errContains: "APIKey", // Struct validation fails first
+		},
+		{
+			name: "valid_anthropic_config",
+			config: NewConfig(
+				WithProvider("anthropic"),
+				WithModelName("claude-3"),
+				WithAPIKey("test-key"),
+			),
+			expectError: false,
+		},
+		{
+			name: "anthropic_missing_model",
+			config: &Config{
+				Provider:             "anthropic",
+				APIKey:               "test-key",
+				ModelName:            "",
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
+				MaxConcurrentBatches: 5,
+				RetryBackoff:         2.0,
+			},
+			expectError: true,
+			errContains: "ModelName", // Struct validation fails first
+		},
+		{
+			name: "mock_provider_auto_model",
+			config: &Config{
+				Provider:             "mock",
+				ModelName:            "test-model", // Set to pass struct validation, auto-set logic still tested
+				Timeout:              30 * time.Second,
+				RetryDelay:           time.Second,
+				MaxConcurrentBatches: 5,
+				RetryBackoff:         2.0,
+			},
+			expectError: false,
+		},
+		{
+			name: "timeout_too_short",
+			config: &Config{
+				Provider:             "mock",
+				ModelName:            "test-model",
+				Timeout:              500 * time.Millisecond,
+				RetryDelay:           time.Second,
+				MaxConcurrentBatches: 5,
+				RetryBackoff:         2.0,
+			},
+			expectError: true,
+			errContains: "Timeout", // Struct validation fails first on min tag
+		},
+		{
+			name: "valid_timeout",
+			config: NewConfig(
+				WithProvider("mock"),
+				WithModelName("test-model"),
+				WithTimeout(2*time.Second),
+			),
+			expectError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateProviderConfig(ctx, tt.config)
+			if tt.expectError {
+				require.Error(t, err)
+				if tt.errContains != "" {
+					assert.Contains(t, err.Error(), tt.errContains)
+				}
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
+
+// TestErrorWithMessage tests NewLLMErrorWithMessage.
+func TestErrorWithMessage(t *testing.T) {
+	tests := []struct {
+		err     error
+		check   func(t *testing.T, e *LLMError)
+		name    string
+		op      string
+		code    string
+		message string
+	}{
+		{
+			name:    "with_message_and_error",
+			op:      "test_operation",
+			code:    ErrCodeInvalidInput,
+			message: "Custom error message",
+			err:     errors.New("underlying error"),
+			check: func(t *testing.T, e *LLMError) {
+				assert.Equal(t, "test_operation", e.Op)
+				assert.Equal(t, ErrCodeInvalidInput, e.Code)
+				assert.Equal(t, "Custom error message", e.Message)
+				assert.Error(t, e.Err)
+				assert.Contains(t, e.Error(), "Custom error message")
+			},
+		},
+		{
+			name:    "with_message_no_error",
+			op:      "test_operation",
+			code:    ErrCodeNetworkError,
+			message: "Network failed",
+			err:     nil,
+			check: func(t *testing.T, e *LLMError) {
+				assert.Equal(t, "test_operation", e.Op)
+				assert.Equal(t, ErrCodeNetworkError, e.Code)
+				assert.Equal(t, "Network failed", e.Message)
+				assert.NoError(t, e.Err)
+				assert.Contains(t, e.Error(), "Network failed")
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := NewLLMErrorWithMessage(tt.op, tt.code, tt.message, tt.err)
+			require.NotNil(t, err)
+			tt.check(t, err)
+		})
+	}
+}
+
+// TestErrorWithDetails tests NewLLMErrorWithDetails.
+func TestErrorWithDetails(t *testing.T) {
+	tests := []struct {
+		err     error
+		details map[string]any
+		check   func(t *testing.T, e *LLMError)
+		name    string
+		op      string
+		code    string
+		message string
+	}{
+		{
+			name:    "with_details",
+			op:      "test_operation",
+			code:    ErrCodeRateLimit,
+			message: "Rate limit exceeded",
+			err:     errors.New("429 Too Many Requests"),
+			details: map[string]any{
+				"retry_after": 60,
+				"limit":       100,
+			},
+			check: func(t *testing.T, e *LLMError) {
+				assert.Equal(t, "test_operation", e.Op)
+				assert.Equal(t, ErrCodeRateLimit, e.Code)
+				assert.Equal(t, "Rate limit exceeded", e.Message)
+				assert.Error(t, e.Err)
+				assert.Equal(t, 60, e.Details["retry_after"])
+				assert.Equal(t, 100, e.Details["limit"])
+			},
+		},
+		{
+			name:    "with_empty_details",
+			op:      "test_operation",
+			code:    ErrCodeTimeout,
+			message: "Request timeout",
+			err:     nil,
+			details: map[string]any{},
+			check: func(t *testing.T, e *LLMError) {
+				assert.Equal(t, "test_operation", e.Op)
+				assert.Equal(t, ErrCodeTimeout, e.Code)
+				assert.Equal(t, "Request timeout", e.Message)
+				assert.NotNil(t, e.Details)
+				assert.Empty(t, e.Details)
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := NewLLMErrorWithDetails(tt.op, tt.code, tt.message, tt.err, tt.details)
+			require.NotNil(t, err)
+			tt.check(t, err)
+		})
+	}
+}
+
+// TestMetricsAdvanced tests metrics recording functions.
+func TestMetricsAdvanced(t *testing.T) {
+	ctx := context.Background()
+
+	// Create a no-op meter for testing
+	meter := noop.NewMeterProvider().Meter("test")
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+
+	metrics, err := NewMetrics(meter, tracer)
+	require.NoError(t, err)
+	require.NotNil(t, metrics)
+
+	t.Run("record_request", func(t *testing.T) {
+		metrics.RecordRequest(ctx, "test-provider", "test-model", 100*time.Millisecond)
+		// No-op metrics don't error, just verify it doesn't panic
+	})
+
+	t.Run("record_error", func(t *testing.T) {
+		metrics.RecordError(ctx, "test-provider", "test-model", ErrCodeNetworkError, 50*time.Millisecond)
+	})
+
+	t.Run("record_token_usage", func(t *testing.T) {
+		metrics.RecordTokenUsage(ctx, "test-provider", "test-model", 100, 200)
+	})
+
+	t.Run("record_tool_call", func(t *testing.T) {
+		metrics.RecordToolCall(ctx, "test-provider", "test-model", "test-tool")
+	})
+
+	t.Run("record_batch", func(t *testing.T) {
+		metrics.RecordBatch(ctx, "test-provider", "test-model", 10, 500*time.Millisecond)
+	})
+
+	t.Run("record_stream", func(t *testing.T) {
+		metrics.RecordStream(ctx, "test-provider", "test-model", 1*time.Second)
+	})
+
+	t.Run("increment_decrement_active_requests", func(t *testing.T) {
+		metrics.IncrementActiveRequests(ctx, "test-provider", "test-model")
+		metrics.DecrementActiveRequests(ctx, "test-provider", "test-model")
+	})
+
+	t.Run("increment_decrement_active_streams", func(t *testing.T) {
+		metrics.IncrementActiveStreams(ctx, "test-provider", "test-model")
+		metrics.DecrementActiveStreams(ctx, "test-provider", "test-model")
+	})
+
+	t.Run("nil_metrics_safety", func(t *testing.T) {
+		var nilMetrics *Metrics
+		nilMetrics.RecordRequest(ctx, "provider", "model", time.Second)
+		nilMetrics.RecordError(ctx, "provider", "model", "error", time.Second)
+		nilMetrics.RecordTokenUsage(ctx, "provider", "model", 1, 2)
+		nilMetrics.RecordToolCall(ctx, "provider", "model", "tool")
+		nilMetrics.RecordBatch(ctx, "provider", "model", 1, time.Second)
+		nilMetrics.RecordStream(ctx, "provider", "model", time.Second)
+		nilMetrics.IncrementActiveRequests(ctx, "provider", "model")
+		nilMetrics.DecrementActiveRequests(ctx, "provider", "model")
+		nilMetrics.IncrementActiveStreams(ctx, "provider", "model")
+		nilMetrics.DecrementActiveStreams(ctx, "provider", "model")
+		// Should not panic
+	})
+
+	t.Run("noop_metrics", func(t *testing.T) {
+		noop := NoOpMetrics()
+		assert.NotNil(t, noop)
+		noop.RecordRequest(ctx, "provider", "model", time.Second)
+		// Should not panic
+	})
+}
+
+// Helper function for int pointer.
+func intPtr(i int) *int {
+	return &i
+}
+
+// TestInitMetricsAndGetMetrics tests InitMetrics and GetMetrics.
+func TestInitMetricsAndGetMetrics(t *testing.T) {
+	// Create a no-op meter for testing
+	meter := noop.NewMeterProvider().Meter("test")
+	tracer := trace.NewNoopTracerProvider().Tracer("test")
+
+	// Initialize metrics
+	InitMetrics(meter, tracer)
+
+	// Should now return metrics instance
+	metrics := GetMetrics()
+	assert.NotNil(t, metrics)
+
+	// Call InitMetrics again - should be idempotent (sync.Once ensures it only runs once)
+	InitMetrics(meter, tracer)
+	metrics2 := GetMetrics()
+	assert.Equal(t, metrics, metrics2) // Should be the same instance
+
+	// Test with nil tracer - should use no-op tracer
+	meter2 := noop.NewMeterProvider().Meter("test2")
+	InitMetrics(meter2, nil)
+	metrics3 := GetMetrics()
+	// Note: Due to sync.Once, this won't actually reinitialize, but we test the nil tracer path
+	// by checking that the function doesn't panic
+	assert.NotNil(t, metrics3)
+}
+
+// TestFactoryRegisterLLMAndGetLLM tests RegisterLLM and GetLLM.
+func TestFactoryRegisterLLMAndGetLLM(t *testing.T) {
+	factory := NewFactory()
+	mockLLM := NewAdvancedMockChatModel("test-llm")
+
+	// Test registering LLM
+	factory.RegisterLLM("test-llm", mockLLM)
+
+	// Test getting registered LLM
+	llm, err := factory.GetLLM("test-llm")
+	assert.NoError(t, err)
+	assert.Equal(t, mockLLM, llm)
+
+	// Test getting non-existent LLM
+	_, err = factory.GetLLM("non-existent")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not registered")
+	llmErr := GetLLMError(err)
+	assert.NotNil(t, llmErr)
+	assert.Equal(t, ErrCodeUnsupportedProvider, llmErr.Code)
+}
+
+// TestFactoryListLLMs tests ListLLMs.
+func TestFactoryListLLMs(t *testing.T) {
+	factory := NewFactory()
+
+	// Initially should be empty
+	llms := factory.ListLLMs()
+	assert.Empty(t, llms)
+
+	// Register some LLMs
+	mockLLM1 := NewAdvancedMockChatModel("llm1")
+	mockLLM2 := NewAdvancedMockChatModel("llm2")
+	factory.RegisterLLM("llm1", mockLLM1)
+	factory.RegisterLLM("llm2", mockLLM2)
+
+	// Should list both
+	llms = factory.ListLLMs()
+	assert.Len(t, llms, 2)
+	assert.Contains(t, llms, "llm1")
+	assert.Contains(t, llms, "llm2")
+}
+
+// TestFactoryListAvailableProviders tests ListAvailableProviders.
+func TestFactoryListAvailableProviders(t *testing.T) {
+	factory := NewFactory()
+
+	// Initially should be empty
+	providers := factory.ListAvailableProviders()
+	assert.Empty(t, providers)
+
+	// Register a provider factory
+	factory.RegisterProviderFactory("test-provider", func(config *Config) (iface.ChatModel, error) {
+		return NewAdvancedMockChatModel("test"), nil
+	})
+
+	// Should list the factory
+	providers = factory.ListAvailableProviders()
+	assert.Len(t, providers, 1)
+	assert.Contains(t, providers, "test-provider")
+}
+
+// TestFactoryCreateProviderErrorCases tests error cases for CreateProvider.
+func TestFactoryCreateProviderErrorCases(t *testing.T) {
+	factory := NewFactory()
+	config := NewConfig(WithProvider("test"), WithModelName("test-model"), WithAPIKey("test-key"))
+
+	// Test creating provider without factory registration
+	_, err := factory.CreateProvider("non-existent", config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not registered")
+	llmErr := GetLLMError(err)
+	assert.NotNil(t, llmErr)
+	assert.Equal(t, ErrCodeUnsupportedProvider, llmErr.Code)
+
+	// Test creating provider with factory that returns error
+	factory.RegisterProviderFactory("error-provider", func(config *Config) (iface.ChatModel, error) {
+		return nil, NewLLMError("factory", ErrCodeInvalidConfig, errors.New("factory error"))
+	})
+
+	_, err = factory.CreateProvider("error-provider", config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "factory error")
+
+	// Test creating provider with empty provider name in config (should be set)
+	config2 := NewConfig(WithModelName("test-model"), WithAPIKey("test-key"))
+	factory.RegisterProviderFactory("auto-provider", func(config *Config) (iface.ChatModel, error) {
+		assert.Equal(t, "auto-provider", config.Provider)
+		return NewAdvancedMockChatModel("test"), nil
+	})
+
+	provider, err := factory.CreateProvider("auto-provider", config2)
+	assert.NoError(t, err)
+	assert.NotNil(t, provider)
+}
+
+// TestFactoryCreateLLMErrorCases tests error cases for CreateLLM.
+func TestFactoryCreateLLMErrorCases(t *testing.T) {
+	factory := NewFactory()
+	config := NewConfig(WithProvider("test"), WithModelName("test-model"), WithAPIKey("test-key"))
+
+	// Test creating LLM without factory registration
+	_, err := factory.CreateLLM("non-existent", config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "not registered")
+	llmErr := GetLLMError(err)
+	assert.NotNil(t, llmErr)
+	assert.Equal(t, ErrCodeUnsupportedProvider, llmErr.Code)
+
+	// Test creating LLM with factory that returns error
+	factory.RegisterLLMFactory("error-llm", func(config *Config) (iface.LLM, error) {
+		return nil, NewLLMError("factory", ErrCodeInvalidConfig, errors.New("factory error"))
+	})
+
+	_, err = factory.CreateLLM("error-llm", config)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "factory error")
+
+	// Test creating LLM with empty provider name in config (should be set)
+	config2 := NewConfig(WithModelName("test-model"), WithAPIKey("test-key"))
+	factory.RegisterLLMFactory("auto-llm", func(config *Config) (iface.LLM, error) {
+		assert.Equal(t, "auto-llm", config.Provider)
+		return NewAdvancedMockChatModel("test"), nil
+	})
+
+	llm, err := factory.CreateLLM("auto-llm", config2)
+	assert.NoError(t, err)
+	assert.NotNil(t, llm)
+}
+
+// TestEnsureMessagesFromSchema tests EnsureMessagesFromSchema (deprecated wrapper).
+func TestEnsureMessagesFromSchema(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    any
+		expected []schema.Message
+		wantErr  bool
+	}{
+		{
+			name:     "string_input",
+			input:    "Hello world",
+			expected: []schema.Message{schema.NewHumanMessage("Hello world")},
+			wantErr:  false,
+		},
+		{
+			name:     "message_input",
+			input:    schema.NewHumanMessage("Test"),
+			expected: []schema.Message{schema.NewHumanMessage("Test")},
+			wantErr:  false,
+		},
+		{
+			name:     "message_slice",
+			input:    []schema.Message{schema.NewSystemMessage("System"), schema.NewHumanMessage("Human")},
+			expected: []schema.Message{schema.NewSystemMessage("System"), schema.NewHumanMessage("Human")},
+			wantErr:  false,
+		},
+		{
+			name:    "invalid_input",
+			input:   123,
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := EnsureMessagesFromSchema(tt.input)
+			if tt.wantErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tt.expected, result)
+			}
+		})
+	}
+}
+
+// TestGenerateTextWithTools tests GenerateTextWithTools.
+func TestGenerateTextWithTools(t *testing.T) {
+	ctx := context.Background()
+	mockModel := NewAdvancedMockChatModel("test-model",
+		WithResponses("Tool response"))
+
+	// Create a mock tool
+	mockTool := NewMockTool("test-tool")
+
+	// Test generating text with tools
+	response, err := GenerateTextWithTools(ctx, mockModel, "Test prompt", []tools.Tool{mockTool})
+	assert.NoError(t, err)
+	assert.NotEmpty(t, response)
+
+	// Test with error from model
+	errorModel := NewAdvancedMockChatModel("error-model",
+		WithError(NewLLMError("generate", ErrCodeNetworkError, errors.New("network error"))))
+	_, err = GenerateTextWithTools(ctx, errorModel, "Test prompt", []tools.Tool{mockTool})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "network")
+}
+
+// TestAdvancedMockErrorTypes tests that AdvancedMockChatModel supports all error types.
+func TestAdvancedMockErrorTypes(t *testing.T) {
+	ctx := context.Background()
+	messages := CreateTestMessages()
+
+	errorCodes := []string{
+		ErrCodeRateLimit,
+		ErrCodeTimeout,
+		ErrCodeNetworkError,
+		ErrCodeAuthentication,
+		ErrCodeAuthorization,
+		ErrCodeInvalidConfig,
+		ErrCodeInvalidInput,
+		ErrCodeQuotaExceeded,
+		ErrCodeContextCanceled,
+		ErrCodeContextTimeout,
+		ErrCodeStreamError,
+		ErrCodeToolCallError,
+	}
+
+	for _, code := range errorCodes {
+		t.Run(code, func(t *testing.T) {
+			mock := NewAdvancedMockChatModel("test", WithErrorCode(code))
+			_, err := mock.Generate(ctx, messages)
+			assert.Error(t, err)
+			assert.Equal(t, code, GetLLMErrorCode(err))
+		})
+	}
+}
+
+// TestStreamText tests StreamText.
+func TestStreamText(t *testing.T) {
+	ctx := context.Background()
+	mockModel := NewAdvancedMockChatModel("test-model",
+		WithResponses("Chunk 1", "Chunk 2", "Chunk 3"),
+		WithStreamingDelay(10*time.Millisecond))
+
+	// Test streaming text
+	stream, err := StreamText(ctx, mockModel, "Test prompt")
+	assert.NoError(t, err)
+	assert.NotNil(t, stream)
+
+	// Collect chunks
+	var chunks []iface.AIMessageChunk
+	for chunk := range stream {
+		if chunk.Err == nil {
+			chunks = append(chunks, chunk)
+		}
+	}
+
+	assert.NotEmpty(t, chunks)
+
+	// Test with error from model
+	errorModel := NewAdvancedMockChatModel("error-model",
+		WithError(NewLLMError("stream", ErrCodeStreamError, errors.New("stream error"))))
+	stream2, err := StreamText(ctx, errorModel, "Test prompt")
+	if err == nil {
+		// If stream starts, check for error in chunks
+		hasError := false
+		for chunk := range stream2 {
+			if chunk.Err != nil {
+				hasError = true
+				break
+			}
+		}
+		assert.True(t, hasError || err != nil, "Expected error in stream")
+	} else {
+		assert.Error(t, err)
+	}
 }

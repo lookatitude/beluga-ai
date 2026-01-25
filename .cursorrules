@@ -1,0 +1,84 @@
+# Beluga AI Project Rules
+
+## Source of Truth: .agent/
+
+All agent configurations, rules, skills, and workflows are defined in `.agent/`.
+This file provides a quick reference; see `.agent/` for complete details.
+
+## Loading Rules
+
+Rules are loaded based on the active persona:
+1. **Framework rules**: `.agent/rules/` (always loaded)
+2. **Persona rules**: `.agent/personas/{name}/rules/` (per activation)
+
+## Activating a Persona
+
+```bash
+./.agent/scripts/activate-persona.sh <persona-name>
+```
+
+Available: `backend-developer`, `architect`, `researcher`, `qa`, `documentation-writer`
+
+## Running Workflows
+
+```bash
+# Run multi-persona workflow
+./.agent/scripts/run-workflow.sh <workflow-name>
+
+# Dry run to see steps
+./.agent/scripts/run-workflow.sh <workflow-name> --dry-run
+```
+
+Available workflows: `verify-architecture`, `fix-and-validate`, `comprehensive-review`
+
+## Quick Reference
+
+| Resource | Location |
+|----------|----------|
+| Persona Registry | `.agent/agents.md` |
+| Framework Rules | `.agent/rules/` |
+| Orchestration | `.agent/orchestration/ORCHESTRATION.md` |
+| AI Guide | `CLAUDE.md` |
+
+## Core Principles (from .agent/rules/)
+
+1. **Architecture**: Follow layered architecture (App -> Agent -> LLM -> RAG -> Memory -> Infrastructure)
+2. **Interface-Driven**: Small, focused interfaces (ISP). Depend on abstractions (DIP).
+3. **Observability**: OTEL for ALL metrics, tracing, logging. NO custom metrics.
+4. **Testing**: Target 100%, min 80%. Table-driven, concurrency, load, error tests.
+
+## Package Structure
+
+Every `pkg/` package MUST follow:
+- `iface/` - Interfaces and types
+- `config.go` - Configuration with validation
+- `metrics.go` - OTEL metrics
+- `errors.go` - Custom errors (Op/Err/Code)
+- `test_utils.go` - Advanced mocks
+
+## Commands
+
+| Command | Description |
+|---------|-------------|
+| `make test` | All tests |
+| `make lint` | Linting |
+| `make fmt` | Format code |
+| `make security` | Security scans |
+| `make ci-local` | Full CI pipeline |
+
+## Commit Convention
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `test`: Tests
+- `refactor`: Refactoring
+- `chore`: Maintenance
+
+## References
+
+- `.agent/agents.md` - Persona documentation
+- `.agent/orchestration/ORCHESTRATION.md` - Workflow orchestration
+- `CLAUDE.md` - AI assistant guide
+- `CONTRIBUTING.md` - Contribution guidelines

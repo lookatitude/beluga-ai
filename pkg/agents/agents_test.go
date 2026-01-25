@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Static error variables for testing (err113 compliance)
+// Static error variables for testing (err113 compliance).
 var (
 	errTestOriginal = errors.New("original error")
 	errTestTimeout  = errors.New("timeout")
@@ -77,7 +77,7 @@ func (m *mockChatModel) StreamChat(ctx context.Context, messages []schema.Messag
 	return ch, nil
 }
 
-func (m *mockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel {
+func (m *mockChatModel) BindTools(toolsToBind []iface.Tool) llmsiface.ChatModel {
 	return m
 }
 
@@ -110,7 +110,7 @@ func (m *mockTool) Description() string {
 	return m.description
 }
 
-func (m *mockTool) Definition() tools.ToolDefinition {
+func (m *mockTool) Definition() iface.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: m.description,
@@ -130,8 +130,8 @@ func (m *mockTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 	return results, nil
 }
 
-func createMockTools() []tools.Tool {
-	return []tools.Tool{
+func createMockTools() []iface.Tool {
+	return []iface.Tool{
 		&mockTool{name: "calculator", description: "A calculator tool"},
 		&mockTool{name: "webSearch", description: "A web search tool"},
 	}
@@ -169,7 +169,7 @@ func (m *mockErrorTool) Description() string {
 	return m.description
 }
 
-func (m *mockErrorTool) Definition() tools.ToolDefinition {
+func (m *mockErrorTool) Definition() iface.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: m.description,
@@ -236,7 +236,7 @@ func TestNewBaseAgent(t *testing.T) {
 		name      string
 		agentName string
 		llm       llmsiface.LLM
-		tools     []tools.Tool
+		tools     []iface.Tool
 		opts      []iface.Option
 		wantErr   bool
 	}{
@@ -288,7 +288,7 @@ func TestNewReActAgent(t *testing.T) {
 		name      string
 		agentName string
 		llm       llmsiface.ChatModel
-		tools     []tools.Tool
+		tools     []iface.Tool
 		prompt    any
 		opts      []iface.Option
 		wantErr   bool
@@ -582,7 +582,7 @@ func TestAgentCreationErrors(t *testing.T) {
 		llm       llmsiface.LLM
 		name      string
 		errString string
-		tools     []tools.Tool
+		tools     []iface.Tool
 		wantErr   bool
 	}{
 		{

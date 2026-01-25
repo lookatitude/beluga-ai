@@ -148,14 +148,14 @@ func TestGeminiNativeProvider_Process_ContextCancellation(t *testing.T) {
 		SessionID:      "test-session",
 	}
 
-	// Test with cancelled context
+	// Test with canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	output, err := provider.Process(ctx, input, convCtx)
 	require.Error(t, err)
 	assert.Nil(t, output)
-	assert.Contains(t, err.Error(), "cancelled")
+	assert.Contains(t, err.Error(), "canceled")
 }
 
 func TestGeminiNativeProvider_Process_ContextTimeout(t *testing.T) {
@@ -193,7 +193,7 @@ func TestGeminiNativeProvider_Process_ContextTimeout(t *testing.T) {
 	output, err := provider.Process(ctx, input, convCtx)
 	require.Error(t, err)
 	assert.Nil(t, output)
-	assert.Contains(t, err.Error(), "cancelled")
+	assert.Contains(t, err.Error(), "canceled")
 }
 
 func TestGeminiNativeProvider_Streaming_ContextCancellation(t *testing.T) {
@@ -216,24 +216,24 @@ func TestGeminiNativeProvider_Streaming_ContextCancellation(t *testing.T) {
 		SessionID:      "test-session",
 	}
 
-	// Test with cancelled context
+	// Test with canceled context
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	session, err := streamingProvider.StartStreaming(ctx, convCtx)
 	if err != nil {
-		// Expected to fail with cancelled context
-		assert.Contains(t, err.Error(), "cancelled")
+		// Expected to fail with canceled context
+		assert.Contains(t, err.Error(), "canceled")
 		return
 	}
 
-	// If session was created, test sending audio with cancelled context
+	// If session was created, test sending audio with canceled context
 	if session != nil {
 		ctx2, cancel2 := context.WithCancel(context.Background())
 		cancel2()
 		err = session.SendAudio(ctx2, []byte{1, 2, 3})
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cancelled")
+		assert.Contains(t, err.Error(), "canceled")
 		_ = session.Close()
 	}
 }
@@ -268,7 +268,7 @@ func TestGeminiNativeProvider_Streaming_ContextTimeout(t *testing.T) {
 	session, err := streamingProvider.StartStreaming(ctx, convCtx)
 	if err != nil {
 		// Expected to fail with timeout context
-		assert.Contains(t, err.Error(), "cancelled")
+		assert.Contains(t, err.Error(), "canceled")
 		return
 	}
 
@@ -279,7 +279,7 @@ func TestGeminiNativeProvider_Streaming_ContextTimeout(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 		err = session.SendAudio(ctx2, []byte{1, 2, 3})
 		require.Error(t, err)
-		assert.Contains(t, err.Error(), "cancelled")
+		assert.Contains(t, err.Error(), "canceled")
 		_ = session.Close()
 	}
 }

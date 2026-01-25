@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -14,10 +15,10 @@ import (
 
 // OpenAIRealtimeProvider implements the S2SProvider interface for OpenAI Realtime API.
 type OpenAIRealtimeProvider struct {
-	config       *OpenAIRealtimeConfig
 	wsDialer     WebSocketDialer
-	mu           sync.RWMutex
+	config       *OpenAIRealtimeConfig
 	providerName string
+	mu           sync.RWMutex
 }
 
 // WebSocketDialer is an interface for WebSocket dialing operations.
@@ -28,8 +29,8 @@ type WebSocketDialer interface {
 
 // WebSocketConn is an interface for WebSocket connection operations.
 type WebSocketConn interface {
-	ReadJSON(v interface{}) error
-	WriteJSON(v interface{}) error
+	ReadJSON(v any) error
+	WriteJSON(v any) error
 	Close() error
 }
 
@@ -88,6 +89,9 @@ func NewOpenAIRealtimeProvider(config *s2s.Config, opts ...ProviderOption) (ifac
 			errors.New("API key is required"))
 	}
 
+	// Enable streaming by default
+	openaiConfig.EnableStreaming = true
+
 	provider := &OpenAIRealtimeProvider{
 		config:       openaiConfig,
 		providerName: "openai_realtime",
@@ -116,7 +120,7 @@ func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.Au
 	case <-ctx.Done():
 		s2s.RecordSpanError(span, ctx.Err())
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 
@@ -167,13 +171,13 @@ func (p *OpenAIRealtimeProvider) Process(ctx context.Context, input *internal.Au
 			}
 			audioData = append(audioData, chunk.Audio...)
 		case <-timeout.C:
-			s2s.RecordSpanError(span, fmt.Errorf("timeout waiting for audio"))
+			s2s.RecordSpanError(span, errors.New("timeout waiting for audio"))
 			return nil, s2s.NewS2SError("Process", s2s.ErrCodeTimeout,
-				fmt.Errorf("timeout waiting for audio output"))
+				errors.New("timeout waiting for audio output"))
 		case <-ctx.Done():
 			s2s.RecordSpanError(span, ctx.Err())
 			return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
-				fmt.Errorf("context cancelled: %w", ctx.Err()))
+				fmt.Errorf("context canceled: %w", ctx.Err()))
 		}
 	}
 
@@ -197,8 +201,8 @@ done:
 
 	s2s.RecordSpanLatency(span, output.Latency)
 	s2s.RecordSpanAttributes(span, map[string]string{
-		"output_size": fmt.Sprintf("%d", len(output.Data)),
-		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+		"output_size": strconv.Itoa(len(output.Data)),
+		"latency_ms":  strconv.FormatInt(output.Latency.Milliseconds(), 10),
 	})
 
 	return output, nil
@@ -218,7 +222,7 @@ func (p *OpenAIRealtimeProvider) StartStreaming(ctx context.Context, convCtx *in
 	select {
 	case <-ctx.Done():
 		return nil, s2s.NewS2SError("StartStreaming", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 

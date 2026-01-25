@@ -25,7 +25,7 @@ The Noise Cancellation package follows the Beluga AI Framework design patterns, 
 - **Features**: FFT-based, adaptive noise profiles, no model required
 - **Model**: None (algorithm-based)
 - **Best for**: General noise reduction, low resource requirements
-- **Latency**: &lt;20ms
+- **Latency**: \<20ms
 - **Noise Reduction**: 10-20dB
 
 ### RNNoise
@@ -33,7 +33,7 @@ The Noise Cancellation package follows the Beluga AI Framework design patterns, 
 - **Features**: Deep learning-based, high quality
 - **Model**: RNNoise model file required
 - **Best for**: High-quality noise suppression
-- **Latency**: &lt;30ms
+- **Latency**: \<30ms
 - **Noise Reduction**: 15-25dB
 
 ### WebRTC
@@ -41,7 +41,7 @@ The Noise Cancellation package follows the Beluga AI Framework design patterns, 
 - **Features**: Built-in noise suppression
 - **Model**: Built into WebRTC
 - **Best for**: WebRTC-based applications
-- **Latency**: &lt;15ms
+- **Latency**: \<15ms
 - **Noise Reduction**: 10-15dB
 
 ## Quick Start
@@ -157,9 +157,9 @@ if err != nil {
 
 ## Performance
 
-- **Latency**: &lt;30ms for most providers
+- **Latency**: \<30ms for most providers
 - **CPU Usage**: Low to moderate (5-15% on modern CPUs)
-- **Memory**: Low (&lt;50MB for most providers)
+- **Memory**: Low (\<50MB for most providers)
 
 ## API Reference
 

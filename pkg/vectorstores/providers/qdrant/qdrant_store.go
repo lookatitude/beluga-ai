@@ -43,12 +43,12 @@ import (
 
 // QdrantStore implements the VectorStore interface using Qdrant API.
 type QdrantStore struct {
+	httpClient     *http.Client
 	url            string
 	apiKey         string
 	collectionName string
-	embeddingDim   int
 	name           string
-	httpClient     *http.Client
+	embeddingDim   int
 	mu             sync.RWMutex
 }
 
@@ -66,18 +66,18 @@ type qdrantUpsertRequest struct {
 }
 
 type qdrantPoint struct {
-	ID      interface{}            `json:"id"` // Can be string or int
-	Vector  []float32              `json:"vector"`
-	Payload map[string]interface{} `json:"payload,omitempty"`
+	ID      any            `json:"id"`
+	Payload map[string]any `json:"payload,omitempty"`
+	Vector  []float32      `json:"vector"`
 }
 
 type qdrantSearchRequest struct {
+	Filter         *qdrantFilter `json:"filter,omitempty"`
 	Vector         []float32     `json:"vector"`
 	Limit          int           `json:"limit"`
+	ScoreThreshold float32       `json:"score_threshold,omitempty"`
 	WithPayload    bool          `json:"with_payload"`
 	WithVector     bool          `json:"with_vector"`
-	Filter         *qdrantFilter `json:"filter,omitempty"`
-	ScoreThreshold float32       `json:"score_threshold,omitempty"`
 }
 
 type qdrantFilter struct {
@@ -87,8 +87,8 @@ type qdrantFilter struct {
 }
 
 type qdrantCondition struct {
-	Key   string      `json:"key"`
-	Match interface{} `json:"match"` // Can be string, int, or map
+	Match any    `json:"match"`
+	Key   string `json:"key"`
 }
 
 type qdrantSearchResponse struct {
@@ -96,14 +96,14 @@ type qdrantSearchResponse struct {
 }
 
 type qdrantScoredPoint struct {
-	ID      interface{}            `json:"id"`
-	Score   float32                `json:"score"`
-	Payload map[string]interface{} `json:"payload,omitempty"`
-	Vector  []float32              `json:"vector,omitempty"`
+	ID      any            `json:"id"`
+	Payload map[string]any `json:"payload,omitempty"`
+	Vector  []float32      `json:"vector,omitempty"`
+	Score   float32        `json:"score"`
 }
 
 type qdrantDeleteRequest struct {
-	Points []interface{} `json:"points"` // Can be string IDs or filter
+	Points []any `json:"points"` // Can be string IDs or filter
 }
 
 type qdrantCollectionInfo struct {
@@ -148,7 +148,7 @@ type qdrantVectorsConfig struct {
 //	}
 //	store, err := qdrant.NewQdrantStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewQdrantStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract qdrant-specific configuration
 	url, _ := config.ProviderConfig["url"].(string)
@@ -194,7 +194,7 @@ func NewQdrantStoreFromConfig(ctx context.Context, config vectorstoresiface.Conf
 func (s *QdrantStore) ensureCollection(ctx context.Context) error {
 	// Check if collection exists
 	url := fmt.Sprintf("%s/collections/%s", s.url, s.collectionName)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
@@ -231,8 +231,8 @@ func (s *QdrantStore) ensureCollection(ctx context.Context) error {
 
 // createCollection creates a new Qdrant collection.
 func (s *QdrantStore) createCollection(ctx context.Context) error {
-	createReq := map[string]interface{}{
-		"vectors": map[string]interface{}{
+	createReq := map[string]any{
+		"vectors": map[string]any{
 			"size":     s.embeddingDim,
 			"distance": "Cosine",
 		},
@@ -244,7 +244,7 @@ func (s *QdrantStore) createCollection(ctx context.Context) error {
 	}
 
 	url := fmt.Sprintf("%s/collections/%s", s.url, s.collectionName)
-	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
@@ -318,7 +318,7 @@ func (s *QdrantStore) AddDocuments(ctx context.Context, documents []schema.Docum
 		ids[i] = id
 
 		// Prepare payload (metadata + content)
-		payload := make(map[string]interface{})
+		payload := make(map[string]any)
 		for k, v := range doc.Metadata {
 			payload[k] = v
 		}
@@ -342,7 +342,7 @@ func (s *QdrantStore) AddDocuments(ctx context.Context, documents []schema.Docum
 	}
 
 	url := fmt.Sprintf("%s/collections/%s/points", s.url, s.collectionName)
-	req, err := http.NewRequestWithContext(ctx, "PUT", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func (s *QdrantStore) DeleteDocuments(ctx context.Context, ids []string, opts ..
 	}
 
 	// Convert string IDs to interface slice
-	pointIDs := make([]interface{}, len(ids))
+	pointIDs := make([]any, len(ids))
 	for i, id := range ids {
 		pointIDs[i] = id
 	}
@@ -391,7 +391,7 @@ func (s *QdrantStore) DeleteDocuments(ctx context.Context, ids []string, opts ..
 	}
 
 	url := fmt.Sprintf("%s/collections/%s/points/delete", s.url, s.collectionName)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
@@ -464,7 +464,7 @@ func (s *QdrantStore) SimilaritySearch(ctx context.Context, queryVector []float3
 	}
 
 	url := fmt.Sprintf("%s/collections/%s/points/search", s.url, s.collectionName)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, nil, err
 	}

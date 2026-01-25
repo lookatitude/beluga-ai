@@ -63,7 +63,7 @@ func (m *mockChatModel) StreamChat(ctx context.Context, messages []schema.Messag
 	return ch, nil
 }
 
-func (m *mockChatModel) BindTools(toolsToBind []tools.Tool) llmsiface.ChatModel {
+func (m *mockChatModel) BindTools(toolsToBind []iface.Tool) llmsiface.ChatModel {
 	return m
 }
 
@@ -99,7 +99,7 @@ func (m *mockTool) Description() string {
 	return m.description
 }
 
-func (m *mockTool) Definition() tools.ToolDefinition {
+func (m *mockTool) Definition() iface.ToolDefinition {
 	return tools.ToolDefinition{
 		Name:        m.name,
 		Description: m.description,
@@ -132,7 +132,7 @@ func TestNewReActAgent(t *testing.T) {
 		name      string
 		agentName string
 		llm       llmsiface.ChatModel
-		tools     []tools.Tool
+		tools     []iface.Tool
 		prompt    interface{}
 		opts      []iface.Option
 		wantErr   bool
@@ -141,7 +141,7 @@ func TestNewReActAgent(t *testing.T) {
 			name:      "valid react agent creation",
 			agentName: "test-react-agent",
 			llm:       &mockChatModel{response: "test response"},
-			tools:     []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}},
+			tools:     []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}},
 			prompt:    "Test prompt template",
 			opts:      []iface.Option{},
 			wantErr:   false,
@@ -150,7 +150,7 @@ func TestNewReActAgent(t *testing.T) {
 			name:      "nil chat model",
 			agentName: "test-agent",
 			llm:       nil,
-			tools:     []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}},
+			tools:     []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}},
 			prompt:    "Test prompt",
 			wantErr:   true,
 		},
@@ -224,7 +224,7 @@ func TestReActAgent_Plan(t *testing.T) {
 				shouldError: tt.shouldError,
 			}
 			mockTool := &mockTool{name: "calculator", description: "Calculator tool", result: "4"}
-			tools := []tools.Tool{mockTool}
+			tools := []iface.Tool{mockTool}
 
 			agent, err := NewReActAgent("test-agent", mockLLM, tools, "Test prompt")
 			if err != nil {
@@ -270,7 +270,7 @@ func TestReActAgent_Plan(t *testing.T) {
 
 func TestReActAgent_ConstructScratchpad(t *testing.T) {
 	mockLLM := &mockChatModel{response: "test"}
-	tools := []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}}
 
 	agent, err := NewReActAgent("test-agent", mockLLM, tools, "Test prompt")
 	if err != nil {
@@ -309,7 +309,7 @@ func TestReActAgent_ConstructScratchpad(t *testing.T) {
 
 func TestReActAgent_FormatPrompt(t *testing.T) {
 	mockLLM := &mockChatModel{response: "test"}
-	tools := []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}}
 
 	agent, err := NewReActAgent("test-agent", mockLLM, tools, "Input: {input}\nScratchpad: {agent_scratchpad}\nTools: {tools}")
 	if err != nil {
@@ -339,7 +339,7 @@ func TestReActAgent_FormatPrompt(t *testing.T) {
 
 func TestReActAgent_ParseResponse(t *testing.T) {
 	mockLLM := &mockChatModel{response: "test"}
-	tools := []tools.Tool{
+	tools := []iface.Tool{
 		&mockTool{name: "calculator", description: "Calculator tool"},
 	}
 
@@ -415,7 +415,7 @@ func TestReActAgent_ParseResponse(t *testing.T) {
 // Benchmark tests
 func BenchmarkNewReActAgent(b *testing.B) {
 	mockLLM := &mockChatModel{response: "test"}
-	tools := []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -425,7 +425,7 @@ func BenchmarkNewReActAgent(b *testing.B) {
 
 func BenchmarkReActAgent_ConstructScratchpad(b *testing.B) {
 	mockLLM := &mockChatModel{response: "test"}
-	tools := []tools.Tool{&mockTool{name: "test-tool", description: "test tool"}}
+	tools := []iface.Tool{&mockTool{name: "test-tool", description: "test tool"}}
 
 	agent, _ := NewReActAgent("bench-agent", mockLLM, tools, "Test prompt")
 

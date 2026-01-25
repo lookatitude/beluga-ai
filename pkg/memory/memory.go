@@ -217,7 +217,7 @@ func (f *DefaultFactory) createVectorStoreRetrieverMemory(ctx context.Context, c
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/agents/with_memory/main.go
+// Example usage can be found in examples/agents/with_memory/main.go.
 func NewMemory(memoryType MemoryType, options ...Option) (Memory, error) {
 	config := Config{
 		Type:           memoryType,
@@ -289,7 +289,7 @@ func (m *NoOpMemory) Clear(ctx context.Context) error {
 //	inputKey, outputKey, err := memory.GetInputOutputKeys(inputs, outputs)
 //	// inputKey: "input", outputKey: "output"
 //
-// Example usage can be found in examples/agents/with_memory/main.go
+// Example usage can be found in examples/agents/with_memory/main.go.
 func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error) {
 	if len(inputs) == 0 {
 		return "", "", errors.New("inputs map is empty")
@@ -361,7 +361,7 @@ func GetInputOutputKeys(inputs, outputs map[string]any) (string, string, error) 
 //	buffer := memory.GetBufferString(messages, "Human", "AI")
 //	// Returns: "Human: Hello\nAI: Hi there\n"
 //
-// Example usage can be found in examples/agents/with_memory/main.go
+// Example usage can be found in examples/agents/with_memory/main.go.
 func GetBufferString(messages []schema.Message, humanPrefix, aiPrefix string) string {
 	var buffer strings.Builder
 

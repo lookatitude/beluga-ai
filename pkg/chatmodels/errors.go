@@ -9,10 +9,10 @@ import (
 // It includes context about the operation that failed and wraps the underlying error.
 // This follows the standard Beluga AI error pattern with Op/Err/Code.
 type ChatModelError struct {
-	Op     string
 	Err    error
-	Code   string
 	Fields map[string]any
+	Op     string
+	Code   string
 }
 
 // Error implements the error interface.

@@ -15,7 +15,6 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 )
@@ -25,9 +24,9 @@ import (
 type ReActAgent struct {
 	*base.BaseAgent
 	llm           llmsiface.ChatModel
-	tools         []tools.Tool
+	tools         []iface.Tool
 	prompt        interface{} // Prompt template (to be defined)
-	toolMap       map[string]tools.Tool
+	toolMap       map[string]iface.Tool
 	scratchpadKey string
 }
 
@@ -43,7 +42,7 @@ type ReActAgent struct {
 // Returns:
 //   - New ReAct agent instance
 //   - Error if initialization fails
-func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.Tool, promptTemplate interface{}, opts ...iface.Option) (*ReActAgent, error) {
+func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []iface.Tool, promptTemplate interface{}, opts ...iface.Option) (*ReActAgent, error) {
 	// Validate required parameters
 	if chatLLM == nil {
 		return nil, fmt.Errorf("chatLLM cannot be nil")
@@ -56,7 +55,7 @@ func NewReActAgent(name string, chatLLM llmsiface.ChatModel, agentTools []tools.
 	}
 
 	// Build tool map for efficient lookup
-	toolMap := make(map[string]tools.Tool)
+	toolMap := make(map[string]iface.Tool)
 	for _, tool := range agentTools {
 		toolName := tool.Name()
 		if _, exists := toolMap[toolName]; exists {

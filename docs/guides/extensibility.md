@@ -668,6 +668,6 @@ func TestConcurrentAccess(t *testing.T) {
 
 - **[LLM Providers Guide](./llm-providers.md)**: Complete LLM provider integration tutorial
 - **[Voice Providers Guide](./voice-providers.md)**: STT, TTS, and S2S provider integration
-- **[Custom LLM Provider Example](/examples/llms/custom_provider/)**: Working code example
+- **[Custom LLM Provider Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/custom_provider/)**: Working code example
 - **[Observability Tracing Guide](./observability-tracing.md)**: Adding OTEL to your extensions
 - **[Error Handling Cookbook](../cookbook/llm-error-handling.md)**: Error handling patterns

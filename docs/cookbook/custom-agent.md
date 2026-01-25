@@ -389,5 +389,5 @@ func NewRateLimitedAgent(base iface.Agent, rps float64) *CustomAgent {
 
 - **[LLM Error Handling](./llm-error-handling.md)** - Handle errors in your custom agent
 - **[Agent Types Guide](../guides/agent-types.md)** - Understanding base agents to extend
-- **[Batch Processing Use Case](../use-cases/batch-processing.md)** - Using custom agents at scale
+- **[Batch Processing Use Case](../use-cases/11-batch-processing.md)** - Using custom agents at scale
 - **[Observability Guide](../guides/observability-tracing.md)** - Adding OTEL to custom agents

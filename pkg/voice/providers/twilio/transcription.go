@@ -2,7 +2,7 @@ package twilio
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
@@ -44,6 +44,14 @@ func (tm *TranscriptionManager) RetrieveTranscription(ctx context.Context, trans
 	defer span.End()
 
 	span.SetAttributes(attribute.String("transcription_sid", transcriptionSID))
+
+	// Check if backend client is initialized (Start must be called first)
+	if tm.backend == nil || tm.backend.client == nil {
+		err := errors.New("backend not started: call Start() first")
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "backend not started")
+		return nil, err
+	}
 
 	// Fetch transcription from Twilio API
 	transcription, err := tm.backend.client.Api.FetchTranscription(transcriptionSID, &twiliov2010.FetchTranscriptionParams{})
@@ -87,7 +95,7 @@ func (tm *TranscriptionManager) StoreTranscription(ctx context.Context, transcri
 	)
 
 	if tm.vectorStore == nil {
-		err := fmt.Errorf("vector store not configured")
+		err := errors.New("vector store not configured")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return NewTwilioError("StoreTranscription", ErrCodeTwilioTranscriptionError, err)
@@ -137,14 +145,14 @@ func (tm *TranscriptionManager) SearchTranscriptions(ctx context.Context, query 
 	if tm.retriever == nil {
 		// Create retriever from vector store if not set
 		if tm.vectorStore == nil {
-			err := fmt.Errorf("vector store not configured")
+			err := errors.New("vector store not configured")
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
 			return nil, NewTwilioError("SearchTranscriptions", ErrCodeTwilioTranscriptionError, err)
 		}
 
 		// In a full implementation, would create retriever from vector store
-		err := fmt.Errorf("retriever not configured")
+		err := errors.New("retriever not configured")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, NewTwilioError("SearchTranscriptions", ErrCodeTwilioTranscriptionError, err)
@@ -217,6 +225,9 @@ func (tm *TranscriptionManager) MultimodalRAGSearch(ctx context.Context, query s
 
 // Transcription represents a Twilio transcription.
 type Transcription struct {
+	DateCreated      time.Time
+	DateUpdated      time.Time
+	Metadata         map[string]any
 	TranscriptionSID string
 	CallSID          string
 	AccountSID       string
@@ -224,10 +235,7 @@ type Transcription struct {
 	Text             string
 	Language         string
 	Confidence       float64
-	DateCreated      time.Time
-	DateUpdated      time.Time
 	Duration         int
-	Metadata         map[string]any
 }
 
 // startSpan starts an OTEL span for tracing.

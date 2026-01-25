@@ -816,3 +816,37 @@ llm_providers:
 		t.Error("expected error for invalid config, got none")
 	}
 }
+
+func TestConfig_String(t *testing.T) {
+	// Test that Config.String() returns a redacted message
+	config := &iface.Config{
+		LLMProviders: []schema.LLMProviderConfig{
+			{
+				Name:      "test-openai",
+				Provider:  "openai",
+				ModelName: "gpt-4",
+				APIKey:    "sk-test-secret-key", // This should be redacted
+			},
+		},
+		EmbeddingProviders: []schema.EmbeddingProviderConfig{
+			{
+				Name:      "test-embeddings",
+				Provider:  "openai",
+				ModelName: "text-embedding-ada-002",
+				APIKey:    "sk-another-secret", // This should be redacted
+			},
+		},
+	}
+
+	result := config.String()
+
+	// Should not contain the actual API keys
+	if result == "" {
+		t.Error("String() returned empty string")
+	}
+
+	expected := "<redacted configuration - sensitive fields not displayed for security>"
+	if result != expected {
+		t.Errorf("Config.String() = %q, want %q", result, expected)
+	}
+}

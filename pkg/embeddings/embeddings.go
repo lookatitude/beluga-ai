@@ -53,7 +53,7 @@ type EmbedderFactory struct {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error) {
 	if config == nil {
 		return nil, errors.New("config cannot be nil")
@@ -111,7 +111,7 @@ func NewEmbedderFactory(config *Config, opts ...Option) (*EmbedderFactory, error
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func (f *EmbedderFactory) NewEmbedder(providerType string) (iface.Embedder, error) {
 	ctx := context.Background()
 	if f.tracer != nil {
@@ -161,7 +161,7 @@ func (f *EmbedderFactory) newMockEmbedder() (iface.Embedder, error) {
 //	providers := factory.GetAvailableProviders()
 //	fmt.Printf("Available providers: %v\n", providers)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func (f *EmbedderFactory) GetAvailableProviders() []string {
 	providers := []string{}
 
@@ -205,7 +205,7 @@ type HealthChecker interface {
 //	    log.Printf("Health check failed: %v", err)
 //	}
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func (f *EmbedderFactory) CheckHealth(ctx context.Context, providerType string) error {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/embeddings")
 	ctx, span := tracer.Start(ctx, "embeddings.CheckHealth",

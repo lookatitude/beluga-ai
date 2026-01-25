@@ -2,7 +2,7 @@ package livekit
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 	"sync"
 	"time"
@@ -20,9 +20,9 @@ type LiveKitBackend struct {
 	config          *LiveKitConfig
 	sessionManager  *internal.SessionManager
 	roomService     *lksdkwrapper.RoomServiceClient
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
 	metrics         *backend.Metrics
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -88,7 +88,6 @@ func (b *LiveKitBackend) Start(ctx context.Context) error {
 		_, err = roomService.ListRooms(ctx, &livekit.ListRoomsRequest{})
 		return err
 	})
-
 	if err != nil {
 		b.connectionState = iface.ConnectionStateError
 		backend.RecordSpanError(span, err)
@@ -184,14 +183,14 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 	if connectionState != iface.ConnectionStateConnected {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("backend not connected"))
+			errors.New("backend not connected"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
 
 	if roomService == nil {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("room service not initialized"))
+			errors.New("room service not initialized"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -214,7 +213,7 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 		if !authResult.Authorized {
 			err := backend.NewBackendError("CreateSession", backend.ErrCodeAuthenticationFailed,
-				fmt.Errorf("user not authorized"))
+				errors.New("user not authorized"))
 			backend.RecordSpanError(span, err)
 			return nil, err
 		}
@@ -250,7 +249,7 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 		if !authorized {
 			err := backend.NewBackendError("CreateSession", backend.ErrCodeAuthorizationFailed,
-				fmt.Errorf("user not authorized to create session"))
+				errors.New("user not authorized to create session"))
 			backend.RecordSpanError(span, err)
 			return nil, err
 		}
@@ -302,7 +301,7 @@ func (b *LiveKitBackend) CreateSession(ctx context.Context, config *iface.Sessio
 	if roomName == "" {
 		roomName = b.config.RoomName
 		if roomName == "" {
-			roomName = fmt.Sprintf("room-%s", config.UserID)
+			roomName = "room-" + config.UserID
 		}
 	}
 
@@ -383,7 +382,7 @@ func (b *LiveKitBackend) CloseSession(ctx context.Context, sessionID string) err
 	livekitSession, ok := session.(*LiveKitSession)
 	if !ok {
 		return backend.NewBackendError("CloseSession", backend.ErrCodeSessionNotFound,
-			fmt.Errorf("session is not a LiveKit session"))
+			errors.New("session is not a LiveKit session"))
 	}
 
 	roomName := livekitSession.GetRoomName()

@@ -80,7 +80,6 @@ func TestOpenAIProvider_Process(t *testing.T) {
 
 	// Process - will make actual API call
 	output, err := provider.Process(ctx, input)
-
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -169,7 +168,6 @@ func TestOpenAIProvider_ProcessStream(t *testing.T) {
 
 	// Process stream - will make actual API call
 	outputChan, err := provider.ProcessStream(ctx, input)
-
 	// Check if it's an API error (expected without valid credentials)
 	if err != nil {
 		errStr := err.Error()
@@ -202,8 +200,8 @@ func TestOpenAIProvider_ProcessStream(t *testing.T) {
 
 func TestConfig_Validate(t *testing.T) {
 	testCases := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{

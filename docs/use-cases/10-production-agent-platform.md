@@ -26,61 +26,48 @@ This use case implements a complete, production-ready AI agent platform that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Platform API Layer                            │
-│  - REST API  - MCP Server  - WebSocket  - gRPC                 │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Agent Management Layer                             │
-│                                                                  │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  Agent       │  │  Agent       │  │  Agent       │         │
-│  │  Registry    │  │  Executor    │  │  Factory     │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Agents     │    │   Tools      │    │   Memory     │
-│  (pkg/agents)│    │  (pkg/agents/│    │  (pkg/memory)│
-│              │    │   tools)     │    │              │
-│  - ReAct     │    │  - API       │    │  - Buffer     │
-│  - Base      │    │  - Shell     │    │  - Summary   │
-│              │    │  - Calculator│    │  - VectorStore│
-└──────────────┘    │  - GoFunc    │    └──────────────┘
-        │           │  - MCP       │              │
-        │           └──────────────┘              │
-        │                     │                   │
-        └─────────────────────┼───────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   LLMs       │    │ Orchestration│    │ VectorStores │
-│  (pkg/llms)  │    │  (pkg/       │    │  (pkg/       │
-│              │    │  orchestration)│   │  vectorstores)│
-│  - OpenAI    │    │              │    │              │
-│  - Anthropic │    │  - Chains    │    │  - PgVector  │
-│  - Bedrock   │    │  - Graphs    │    │  - Pinecone  │
-│  - Ollama    │    │  - Workflows │    │  - InMemory  │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Observability        │
-              │  (pkg/monitoring)     │
-              │  - Metrics            │
-              │  - Tracing            │
-              │  - Logging            │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph API["Platform API Layer"]
+        A[REST API / MCP Server / WebSocket / gRPC]
+    end
+
+    subgraph Management["Agent Management Layer"]
+        B1[Agent Registry]
+        B2[Agent Executor]
+        B3[Agent Factory]
+    end
+
+    subgraph Components["Core Components"]
+        C1[Agents - pkg/agents<br>ReAct / Base]
+        C2[Tools - pkg/agents/tools<br>API / Shell / Calculator / GoFunc / MCP]
+        C3[Memory - pkg/memory<br>Buffer / Summary / VectorStore]
+    end
+
+    subgraph Infrastructure["Infrastructure Layer"]
+        D1[LLMs - pkg/llms<br>OpenAI / Anthropic / Bedrock / Ollama]
+        D2[Orchestration - pkg/orchestration<br>Chains / Graphs / Workflows]
+        D3[VectorStores - pkg/vectorstores<br>PgVector / Pinecone / InMemory]
+    end
+
+    subgraph Observability["Observability Layer"]
+        E[Monitoring - pkg/monitoring<br>Metrics / Tracing / Logging]
+    end
+
+    A --> B1
+    A --> B2
+    A --> B3
+    B1 --> C1
+    B2 --> C1
+    B2 --> C2
+    B3 --> C3
+    C1 --> D1
+    C1 --> D2
+    C2 --> D1
+    C3 --> D3
+    D1 --> E
+    D2 --> E
+    D3 --> E
 ```
 
 ## Component Usage

@@ -46,7 +46,7 @@ type PromptManager struct {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/prompts/basic/main.go
+// Example usage can be found in examples/prompts/basic/main.go.
 func NewPromptManager(opts ...Option) (*PromptManager, error) {
 	// Apply options
 	options := &iface.Options{
@@ -127,7 +127,7 @@ func NewPromptManager(opts ...Option) (*PromptManager, error) {
 //	)
 //	result, err := template.Format(map[string]any{"name": "Alice", "company": "Beluga"})
 //
-// Example usage can be found in examples/prompts/basic/main.go
+// Example usage can be found in examples/prompts/basic/main.go.
 func (pm *PromptManager) NewStringTemplate(name, template string) (iface.Template, error) {
 	if name == "" {
 		return nil, NewValidationError("new_string_template", "template name cannot be empty", nil)

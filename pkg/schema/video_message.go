@@ -16,12 +16,12 @@ import (
 // VideoMessage represents a message containing a video.
 // It implements the Message interface and extends BaseMessage with video-specific data.
 type VideoMessage struct {
+	Metadata map[string]string `json:"metadata,omitempty"`
 	internal.BaseMessage
-	VideoURL    string            `json:"video_url,omitempty"`    // URL to the video
-	VideoData   []byte            `json:"video_data,omitempty"`   // Base64-encoded video data
-	VideoFormat string            `json:"video_format,omitempty"` // Format: "mp4", "webm", "mov", etc.
-	Duration    float64           `json:"duration,omitempty"`     // Duration in seconds
-	Metadata    map[string]string `json:"metadata,omitempty"`     // Additional video metadata
+	VideoURL    string  `json:"video_url,omitempty"`
+	VideoFormat string  `json:"video_format,omitempty"`
+	VideoData   []byte  `json:"video_data,omitempty"`
+	Duration    float64 `json:"duration,omitempty"`
 }
 
 // GetType returns the message type, which is RoleHuman for VideoMessage.
@@ -32,8 +32,8 @@ func (m *VideoMessage) GetType() iface.MessageType {
 // GetContent returns a text description or placeholder for the video.
 // For multimodal messages, the actual content is in VideoURL or VideoData.
 func (m *VideoMessage) GetContent() string {
-	if m.BaseMessage.Content != "" {
-		return m.BaseMessage.Content
+	if m.Content != "" {
+		return m.Content
 	}
 	if m.VideoURL != "" {
 		return "[Video: " + m.VideoURL + "]"
@@ -94,7 +94,7 @@ func (m *VideoMessage) GetDuration() float64 {
 }
 
 // NewVideoMessage creates a new VideoMessage with a URL.
-func NewVideoMessage(videoURL string, textContent string) iface.Message {
+func NewVideoMessage(videoURL, textContent string) iface.Message {
 	return &VideoMessage{
 		BaseMessage: internal.BaseMessage{Content: textContent},
 		VideoURL:    videoURL,
@@ -103,7 +103,7 @@ func NewVideoMessage(videoURL string, textContent string) iface.Message {
 }
 
 // NewVideoMessageWithData creates a new VideoMessage with video data.
-func NewVideoMessageWithData(videoData []byte, format string, textContent string) iface.Message {
+func NewVideoMessageWithData(videoData []byte, format, textContent string) iface.Message {
 	return &VideoMessage{
 		BaseMessage: internal.BaseMessage{Content: textContent},
 		VideoData:   videoData,
@@ -112,7 +112,7 @@ func NewVideoMessageWithData(videoData []byte, format string, textContent string
 }
 
 // NewVideoMessageWithContext creates a new VideoMessage with OTEL tracing context.
-func NewVideoMessageWithContext(ctx context.Context, videoURL string, textContent string) iface.Message {
+func NewVideoMessageWithContext(ctx context.Context, videoURL, textContent string) iface.Message {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/schema")
 	ctx, span := tracer.Start(ctx, "schema.NewVideoMessage",
 		trace.WithAttributes(

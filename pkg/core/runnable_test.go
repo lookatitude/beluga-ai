@@ -43,22 +43,22 @@ type MockRunnable struct {
 type InvokeCall struct {
 	Time    time.Time
 	Input   any
-	Options []Option
 	Ctx     context.Context
+	Options []Option
 }
 
 type BatchCall struct {
 	Time    time.Time
+	Ctx     context.Context
 	Inputs  []any
 	Options []Option
-	Ctx     context.Context
 }
 
 type StreamCall struct {
 	Time    time.Time
 	Input   any
-	Options []Option
 	Ctx     context.Context
+	Options []Option
 }
 
 func NewMockRunnable() *MockRunnable {

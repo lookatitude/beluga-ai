@@ -10,42 +10,23 @@ import (
 // Config represents the configuration for S2S providers.
 // It includes common settings that apply to all S2S providers.
 type Config struct {
-	// Provider selection
-	Provider          string   `mapstructure:"provider" yaml:"provider" validate:"required,oneof=amazon_nova grok gemini openai_realtime mock"`
-	FallbackProviders []string `mapstructure:"fallback_providers" yaml:"fallback_providers"`
-
-	// Authentication
-	APIKey string `mapstructure:"api_key" yaml:"api_key" validate:"required_unless=Provider mock"`
-
-	// Provider-specific settings
-	ProviderSpecific map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
-
-	// Audio settings
-	SampleRate int `mapstructure:"sample_rate" yaml:"sample_rate" default:"24000" validate:"oneof=8000 16000 24000 48000"`
-	Channels   int `mapstructure:"channels" yaml:"channels" default:"1" validate:"oneof=1 2"`
-
-	// Language settings
-	Language string `mapstructure:"language" yaml:"language" validate:"omitempty,len=5"`
-
-	// Timeout settings
-	Timeout      time.Duration `mapstructure:"timeout" yaml:"timeout" default:"30s" validate:"min=1s,max=5m"`
-	RetryDelay   time.Duration `mapstructure:"retry_delay" yaml:"retry_delay" default:"1s" validate:"min=100ms,max=30s"`
-	MaxRetries   int           `mapstructure:"max_retries" yaml:"max_retries" default:"3" validate:"gte=0,lte=10"`
-	RetryBackoff float64       `mapstructure:"retry_backoff" yaml:"retry_backoff" default:"2.0" validate:"gte=1,lte=5"`
-
-	// Observability
-	EnableTracing           bool `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
-	EnableMetrics           bool `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
-	EnableStructuredLogging bool `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
-
-	// Latency settings
-	LatencyTarget string `mapstructure:"latency_target" yaml:"latency_target" default:"medium" validate:"oneof=low medium high"`
-
-	// Reasoning mode
-	ReasoningMode string `mapstructure:"reasoning_mode" yaml:"reasoning_mode" default:"built-in" validate:"oneof=built-in external"`
-
-	// Concurrent session limits
-	MaxConcurrentSessions int `mapstructure:"max_concurrent_sessions" yaml:"max_concurrent_sessions" default:"50" validate:"gte=1,lte=1000"`
+	ProviderSpecific        map[string]any `mapstructure:"provider_specific" yaml:"provider_specific"`
+	Provider                string         `mapstructure:"provider" yaml:"provider" validate:"required,oneof=amazon_nova grok gemini openai_realtime mock"`
+	APIKey                  string         `mapstructure:"api_key" yaml:"api_key" validate:"required_unless=Provider mock"`
+	ReasoningMode           string         `mapstructure:"reasoning_mode" yaml:"reasoning_mode" default:"built-in" validate:"oneof=built-in external"`
+	LatencyTarget           string         `mapstructure:"latency_target" yaml:"latency_target" default:"medium" validate:"oneof=low medium high"`
+	Language                string         `mapstructure:"language" yaml:"language" validate:"omitempty,len=5"`
+	FallbackProviders       []string       `mapstructure:"fallback_providers" yaml:"fallback_providers"`
+	RetryDelay              time.Duration  `mapstructure:"retry_delay" yaml:"retry_delay" default:"1s" validate:"min=100ms,max=30s"`
+	Timeout                 time.Duration  `mapstructure:"timeout" yaml:"timeout" default:"30s" validate:"min=1s,max=5m"`
+	MaxRetries              int            `mapstructure:"max_retries" yaml:"max_retries" default:"3" validate:"gte=0,lte=10"`
+	RetryBackoff            float64        `mapstructure:"retry_backoff" yaml:"retry_backoff" default:"2.0" validate:"gte=1,lte=5"`
+	Channels                int            `mapstructure:"channels" yaml:"channels" default:"1" validate:"oneof=1 2"`
+	SampleRate              int            `mapstructure:"sample_rate" yaml:"sample_rate" default:"24000" validate:"oneof=8000 16000 24000 48000"`
+	MaxConcurrentSessions   int            `mapstructure:"max_concurrent_sessions" yaml:"max_concurrent_sessions" default:"50" validate:"gte=1,lte=1000"`
+	EnableTracing           bool           `mapstructure:"enable_tracing" yaml:"enable_tracing" default:"true"`
+	EnableMetrics           bool           `mapstructure:"enable_metrics" yaml:"enable_metrics" default:"true"`
+	EnableStructuredLogging bool           `mapstructure:"enable_structured_logging" yaml:"enable_structured_logging" default:"true"`
 }
 
 // ConfigOption is a functional option for configuring S2S instances.

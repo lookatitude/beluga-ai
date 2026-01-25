@@ -155,7 +155,7 @@ Now let's send a message that might trigger a tool call:
 Streaming response:
 ```
 
-**Why this works:** `StreamChat` initiates a streaming request to the LLM. It returns a channel (`<-chan iface.AIMessageChunk`) that will receive chunks as they arrive. This is non-blocking - chunks arrive asynchronously.
+**Why this works:** `StreamChat` initiates a streaming request to the LLM. It returns a channel (`\<-chan iface.AIMessageChunk`) that will receive chunks as they arrive. This is non-blocking - chunks arrive asynchronously.
 
 ### Step 3: Process streaming chunks
 
@@ -667,6 +667,6 @@ Now that you understand streaming LLM calls with tool calling, explore:
 
 - **[Agent Types Guide](./agent-types.md)** - Learn how agents orchestrate multiple tool calls in a reasoning loop
 - **[LLM Providers Guide](./llm-providers.md)** - Deep dive into configuring different LLM providers
-- **[Streaming Example](/examples/llms/streaming/README.md)** - Complete implementation with tests and OTEL instrumentation
+- **[Streaming Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/streaming/README.md)** - Complete implementation with tests and OTEL instrumentation
 - **[LLM Error Handling](../cookbook/llm-error-handling.md)** - Handle rate limits and API errors gracefully
-- **[Batch Processing Use Case](../use-cases/batch-processing.md)** - See streaming in action for high-volume processing
+- **[Batch Processing Use Case](../use-cases/11-batch-processing.md)** - See streaming in action for high-volume processing

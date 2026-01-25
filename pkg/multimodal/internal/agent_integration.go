@@ -3,8 +3,10 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
@@ -49,7 +51,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		} else if len(imgMsg.ImageData) > 0 {
 			imageBlock, err = types.NewContentBlock("image", imgMsg.ImageData)
 		} else {
-			err = fmt.Errorf("ImageMessage has no image URL or data")
+			err = errors.New("ImageMessage has no image URL or data")
 		}
 
 		if err != nil {
@@ -61,8 +63,8 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		contentBlocks = append(contentBlocks, imageBlock)
 
 		// Add text content if present
-		if imgMsg.BaseMessage.Content != "" {
-			textBlock, err := types.NewContentBlock("text", []byte(imgMsg.BaseMessage.Content))
+		if imgMsg.Content != "" {
+			textBlock, err := types.NewContentBlock("text", []byte(imgMsg.Content))
 			if err != nil {
 				return nil, fmt.Errorf("HandleMultimodalMessage: %w", err)
 			}
@@ -80,7 +82,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		} else if len(vidMsg.VideoData) > 0 {
 			videoBlock, err = types.NewContentBlock("video", vidMsg.VideoData)
 		} else {
-			err = fmt.Errorf("VideoMessage has no video URL or data")
+			err = errors.New("VideoMessage has no video URL or data")
 		}
 
 		if err != nil {
@@ -92,8 +94,8 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		contentBlocks = append(contentBlocks, videoBlock)
 
 		// Add text content if present
-		if vidMsg.BaseMessage.Content != "" {
-			textBlock, err := types.NewContentBlock("text", []byte(vidMsg.BaseMessage.Content))
+		if vidMsg.Content != "" {
+			textBlock, err := types.NewContentBlock("text", []byte(vidMsg.Content))
 			if err != nil {
 				return nil, fmt.Errorf("HandleMultimodalMessage: %w", err)
 			}
@@ -111,7 +113,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		} else if len(voiceDoc.AudioData) > 0 {
 			audioBlock, err = types.NewContentBlock("audio", voiceDoc.AudioData)
 		} else {
-			err = fmt.Errorf("VoiceDocument has no audio URL or data")
+			err = errors.New("VoiceDocument has no audio URL or data")
 		}
 
 		if err != nil {
@@ -153,7 +155,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 		} else if len(audioData) > 0 {
 			audioBlock, err = types.NewContentBlock("audio", audioData)
 		} else {
-			err = fmt.Errorf("VoiceDocument has no audio URL or data")
+			err = errors.New("VoiceDocument has no audio URL or data")
 		}
 
 		if err != nil {
@@ -185,7 +187,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 	}
 
 	if len(contentBlocks) == 0 {
-		return nil, fmt.Errorf("HandleMultimodalMessage: no content blocks created from message")
+		return nil, errors.New("HandleMultimodalMessage: no content blocks created from message")
 	}
 
 	input, err := types.NewMultimodalInput(contentBlocks)
@@ -203,7 +205,7 @@ func (m *MultimodalAgentExtension) HandleMultimodalMessage(ctx context.Context, 
 }
 
 // ProcessForAgent processes multimodal input or output for agent use and returns schema messages.
-func (m *MultimodalAgentExtension) ProcessForAgent(ctx context.Context, inputOrOutput interface{}) ([]schema.Message, error) {
+func (m *MultimodalAgentExtension) ProcessForAgent(ctx context.Context, inputOrOutput any) ([]schema.Message, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/internal")
 	ctx, span := tracer.Start(ctx, "multimodal.ProcessForAgent")
 	defer span.End()
@@ -294,11 +296,11 @@ func (m *MultimodalAgentExtension) CreateMultimodalTool(name, description string
 
 // multimodalTool is a tool that processes multimodal inputs.
 type multimodalTool struct {
+	extension   *MultimodalAgentExtension
+	processFunc func(ctx context.Context, input *types.MultimodalInput) (*types.MultimodalOutput, error)
 	tools.BaseTool
 	name        string
 	description string
-	extension   *MultimodalAgentExtension
-	processFunc func(ctx context.Context, input *types.MultimodalInput) (*types.MultimodalOutput, error)
 }
 
 // Name returns the tool name.
@@ -330,7 +332,7 @@ func (t *multimodalTool) Execute(ctx context.Context, input any) (any, error) {
 			}
 		}
 		if len(contentBlocks) == 0 {
-			return nil, fmt.Errorf("invalid input format for multimodal tool")
+			return nil, errors.New("invalid input format for multimodal tool")
 		}
 		var err error
 		multimodalInput, err = types.NewMultimodalInput(contentBlocks)
@@ -383,7 +385,7 @@ func (m *MultimodalAgentExtension) ConvertAgentMessagesToMultimodalInput(ctx con
 	}
 
 	if len(contentBlocks) == 0 {
-		return nil, fmt.Errorf("ConvertAgentMessagesToMultimodalInput: no content blocks created from messages")
+		return nil, errors.New("ConvertAgentMessagesToMultimodalInput: no content blocks created from messages")
 	}
 
 	return types.NewMultimodalInput(contentBlocks)
@@ -443,11 +445,13 @@ func (m *MultimodalAgentExtension) EnableVoiceReActLoop(ctx context.Context, age
 
 		// Convert output to text for agent planning
 		textOutput := ""
+		var textOutputSb446 strings.Builder
 		for _, block := range output.ContentBlocks {
 			if block.Type == "text" {
-				textOutput += string(block.Data) + "\n"
+				textOutputSb446.WriteString(string(block.Data) + "\n")
 			}
 		}
+		textOutput += textOutputSb446.String()
 
 		// Update inputs with processed text
 		inputs["processed_voice_input"] = textOutput
@@ -541,7 +545,7 @@ func (m *MultimodalAgentExtension) HandleOrchestrationGraphInput(ctx context.Con
 		if len(messages) > 0 {
 			return messages[0], nil
 		}
-		return nil, fmt.Errorf("HandleOrchestrationGraphInput: no messages generated from output")
+		return nil, errors.New("HandleOrchestrationGraphInput: no messages generated from output")
 	default:
 		// Return input as-is if not multimodal
 		return input, nil
@@ -549,7 +553,7 @@ func (m *MultimodalAgentExtension) HandleOrchestrationGraphInput(ctx context.Con
 }
 
 // PreserveMultimodalDataInAgentCommunication preserves multimodal data when agents communicate.
-func (m *MultimodalAgentExtension) PreserveMultimodalDataInAgentCommunication(ctx context.Context, fromAgent iface.Agent, toAgent iface.Agent, data any) (any, error) {
+func (m *MultimodalAgentExtension) PreserveMultimodalDataInAgentCommunication(ctx context.Context, fromAgent, toAgent iface.Agent, data any) (any, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal/internal")
 	ctx, span := tracer.Start(ctx, "multimodal.PreserveMultimodalDataInAgentCommunication",
 		trace.WithAttributes(

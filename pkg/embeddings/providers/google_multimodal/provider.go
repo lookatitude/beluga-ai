@@ -7,6 +7,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -84,7 +85,7 @@ type googleEmbeddingValue struct {
 //	}
 //	embeddings, err := embedder.EmbedDocumentsMultimodal(ctx, documents)
 //
-// Example usage can be found in examples/multimodal/basic/main.go
+// Example usage can be found in examples/multimodal/basic/main.go.
 func NewGoogleMultimodalEmbedder(config *Config, tracer trace.Tracer) (*GoogleMultimodalEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
@@ -204,7 +205,7 @@ func (e *GoogleMultimodalEmbedder) SupportsMultimodal() bool {
 }
 
 // embedText embeds a text string.
-func (e *GoogleMultimodalEmbedder) embedText(ctx context.Context, text string, task string) ([]float32, error) {
+func (e *GoogleMultimodalEmbedder) embedText(ctx context.Context, text, task string) ([]float32, error) {
 	req := &googleEmbedRequest{
 		Model: e.config.Model,
 		Task:  task,
@@ -219,7 +220,7 @@ func (e *GoogleMultimodalEmbedder) embedDocumentMultimodal(ctx context.Context, 
 	// Check if document has image content in metadata
 	imageURL, hasImageURL := doc.Metadata["image_url"]
 	imageBase64, hasImageBase64 := doc.Metadata["image_base64"]
-	imageType, _ := doc.Metadata["image_type"] // e.g., "image/png", "image/jpeg"
+	imageType := doc.Metadata["image_type"] // e.g., "image/png", "image/jpeg"
 
 	req := &googleEmbedRequest{
 		Model: e.config.Model,
@@ -270,7 +271,7 @@ func (e *GoogleMultimodalEmbedder) makeEmbeddingRequest(ctx context.Context, req
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -298,7 +299,7 @@ func (e *GoogleMultimodalEmbedder) makeEmbeddingRequest(ctx context.Context, req
 	}
 
 	if len(geminiResp.Embedding.Values) == 0 {
-		return nil, fmt.Errorf("empty embedding in response")
+		return nil, errors.New("empty embedding in response")
 	}
 
 	return geminiResp.Embedding.Values, nil
@@ -306,7 +307,7 @@ func (e *GoogleMultimodalEmbedder) makeEmbeddingRequest(ctx context.Context, req
 
 // fetchImageFromURL fetches an image from a URL and returns it as bytes.
 func (e *GoogleMultimodalEmbedder) fetchImageFromURL(ctx context.Context, url string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
 	}

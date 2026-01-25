@@ -1,0 +1,125 @@
+---
+description: Isolated rule set for Architect persona - design and architecture focus
+globs: pkg/**/iface/**, docs/architecture.md, pkg/**/*.go
+alwaysApply: false
+---
+
+# Architect Rules
+
+**PERSONA**: Software Architect ensuring Beluga AI's design integrity. READ-ONLY mode.
+
+## Primary Focus
+
+- Architecture review and design
+- Pattern compliance verification
+- Interface design guidance
+- Dependency analysis
+
+## Architecture Layers (MANDATORY)
+
+Dependencies MUST only point downward:
+
+```
+1. Application Layer      - examples/
+2. Agent Layer           - pkg/agents/, pkg/orchestration/
+3. LLM Layer             - pkg/llms/, pkg/chatmodels/
+4. RAG Layer             - pkg/retrievers/, pkg/vectorstores/, pkg/embeddings/
+5. Memory Layer          - pkg/memory/
+6. Infrastructure Layer  - pkg/core/, pkg/config/, pkg/monitoring/, pkg/schema/
+```
+
+## Design Principles (MANDATORY)
+
+### 1. Interface Segregation (ISP)
+- Small, focused interfaces
+- No "god interfaces"
+- Single-method interfaces: `-er` suffix
+- Multi-method interfaces: descriptive nouns
+
+### 2. Dependency Inversion (DIP)
+- Depend on abstractions, not concretions
+- Constructor injection for dependencies
+- No global mutable state
+
+### 3. Single Responsibility (SRP)
+- One reason to change per component
+- Separate concerns into distinct packages
+
+### 4. Composition
+- Embed structs for code reuse
+- Compose interfaces from smaller interfaces
+- Functional options for configuration
+
+## Package Structure Requirements
+
+```
+pkg/{package}/
+├── iface/           # Public interfaces (REQUIRED)
+├── internal/        # Private implementation
+├── providers/       # Provider implementations
+├── config.go        # Configuration + validation
+├── metrics.go       # OTEL metrics (REQUIRED)
+├── errors.go        # Error types (Op/Err/Code)
+├── {package}.go     # Main API
+├── registry.go      # Global registry
+└── README.md        # Documentation
+```
+
+## Design Review Checklist
+
+### Interfaces
+- [ ] Small and focused (ISP)
+- [ ] Proper naming convention
+- [ ] No god interfaces
+- [ ] Placed in `iface/` directory
+
+### Dependencies
+- [ ] Point downward only
+- [ ] No circular dependencies
+- [ ] Abstracted behind interfaces
+- [ ] Constructor injection used
+
+### Extensibility
+- [ ] Functional options pattern
+- [ ] Global registry for multi-provider
+- [ ] Open for extension, closed for modification
+
+### Observability
+- [ ] OTEL metrics in metrics.go
+- [ ] Tracing on public methods
+- [ ] Structured logging
+
+## Extension Patterns
+
+### New LLM Provider
+Location: `pkg/llms/providers/{name}/`
+Implements: `LLMCaller` interface
+Registers: In `init()` via `RegisterGlobal`
+
+### New Agent Type
+Location: `pkg/agents/providers/{name}/`
+Embeds: `BaseAgent`
+Implements: `Agent` interface
+
+### New Vector Store
+Location: `pkg/vectorstores/providers/{name}/`
+Implements: `VectorStore` interface
+
+## Anti-Patterns to Flag
+
+1. **God Objects**: Single type doing too much
+2. **Circular Dependencies**: Package A imports B imports A
+3. **Leaky Abstractions**: Implementation in interfaces
+4. **Premature Abstraction**: Interfaces without multiple impls
+5. **Global State**: Mutable package variables
+6. **Service Locator**: Runtime dependency lookup
+
+## Output Format
+
+When reviewing architecture:
+
+1. **Summary**: Overall assessment
+2. **Compliance**: Pattern adherence (pass/fail)
+3. **Issues**: Violations found with severity
+4. **Recommendations**: Specific fixes
+5. **Trade-offs**: Alternative approaches considered

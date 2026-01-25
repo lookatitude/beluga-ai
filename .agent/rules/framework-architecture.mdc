@@ -1,0 +1,251 @@
+---
+description: Beluga AI Framework architecture, design patterns, and package structure
+globs: pkg/**
+alwaysApply: true
+---
+
+# Beluga AI Framework Architecture
+
+**MANDATORY**: All code in `pkg/` MUST follow this architecture.
+
+## Layered Architecture
+
+Dependencies can ONLY point downward. Never create upward or circular dependencies.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  1. Application Layer                                        │
+│     examples/                                                │
+├─────────────────────────────────────────────────────────────┤
+│  2. Agent Layer                                              │
+│     pkg/agents/, pkg/orchestration/, pkg/server/             │
+├─────────────────────────────────────────────────────────────┤
+│  3. LLM Layer                                                │
+│     pkg/llms/, pkg/chatmodels/                               │
+├─────────────────────────────────────────────────────────────┤
+│  4. RAG Layer                                                │
+│     pkg/retrievers/, pkg/vectorstores/, pkg/embeddings/      │
+│     pkg/textsplitters/, pkg/documentloaders/                 │
+├─────────────────────────────────────────────────────────────┤
+│  5. Memory Layer                                             │
+│     pkg/memory/                                              │
+├─────────────────────────────────────────────────────────────┤
+│  6. Infrastructure Layer (Foundation - No Dependencies)      │
+│     pkg/core/, pkg/config/, pkg/monitoring/, pkg/schema/     │
+│     pkg/prompts/                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Package Structure (REQUIRED)
+
+Every package in `pkg/` MUST follow this structure:
+
+```
+pkg/{package}/
+├── iface/                    # Public interfaces and types (REQUIRED)
+├── internal/                 # Private implementation details
+├── providers/                # Provider implementations (multi-provider)
+├── config.go                 # Configuration with mapstructure/validate tags
+├── metrics.go                # OTEL metrics (REQUIRED)
+├── errors.go                 # Custom errors (Op/Err/Code pattern)
+├── {package}.go              # Main API and factory functions
+├── registry.go               # Global registry (multi-provider packages)
+├── test_utils.go             # Advanced mocks and test helpers
+├── advanced_test.go          # Comprehensive test suites
+└── README.md                 # Package documentation
+```
+
+## Design Principles (MANDATORY)
+
+### 1. Interface Segregation Principle (ISP)
+- Small, focused interfaces with single responsibilities
+- No "god interfaces" - prefer composition
+- Single-method interfaces use `-er` suffix (`Embedder`, `Generator`)
+- Multi-method interfaces use descriptive nouns (`VectorStore`, `Memory`)
+
+```go
+// Good: Focused interfaces
+type Generator interface {
+    Generate(ctx context.Context, prompt string) (string, error)
+}
+
+type Streamer interface {
+    Stream(ctx context.Context, prompt string) (<-chan string, error)
+}
+
+// Bad: God interface
+type LLM interface {
+    Generate() // + 10 more methods
+}
+```
+
+### 2. Dependency Inversion Principle (DIP)
+- Depend on abstractions (interfaces), not concretions
+- Use constructor injection for all dependencies
+- No global mutable state
+
+```go
+// Good: Interface dependency + constructor injection
+type Agent struct {
+    llm LLMCaller  // Interface, not *openai.Client
+}
+
+func NewAgent(llm LLMCaller) *Agent {
+    return &Agent{llm: llm}
+}
+```
+
+### 3. Single Responsibility Principle (SRP)
+- Each component has one reason to change
+- Separate concerns into distinct packages/types
+- Avoid "utils" or "helpers" packages
+
+### 4. Composition Over Inheritance
+- Use struct embedding for code reuse
+- Compose interfaces from smaller interfaces
+- Functional options for configuration
+
+## Global Registry Pattern (Multi-Provider Packages)
+
+Required for packages with multiple providers (llms, embeddings, vectorstores):
+
+```go
+type ProviderRegistry struct {
+    mu       sync.RWMutex
+    creators map[string]CreatorFunc
+}
+
+type CreatorFunc func(ctx context.Context, config Config) (Interface, error)
+
+func RegisterGlobal(name string, creator CreatorFunc) {
+    registry.mu.Lock()
+    defer registry.mu.Unlock()
+    registry.creators[name] = creator
+}
+
+func NewProvider(ctx context.Context, name string, config Config) (Interface, error) {
+    registry.mu.RLock()
+    creator, ok := registry.creators[name]
+    registry.mu.RUnlock()
+    if !ok {
+        return nil, &Error{Op: "NewProvider", Code: ErrCodeNotFound}
+    }
+    return creator(ctx, config)
+}
+```
+
+## Configuration Pattern (REQUIRED)
+
+```go
+type Config struct {
+    // Required fields
+    Name    string        `mapstructure:"name" yaml:"name" validate:"required"`
+    Timeout time.Duration `mapstructure:"timeout" yaml:"timeout" validate:"required,min=1s"`
+
+    // Optional with defaults
+    MaxRetries int `mapstructure:"max_retries" yaml:"max_retries" validate:"gte=0,lte=10"`
+}
+
+func (c *Config) Validate() error {
+    return validator.New().Struct(c)
+}
+
+// Functional options for runtime configuration
+type Option func(*Component)
+
+func WithTimeout(t time.Duration) Option {
+    return func(c *Component) { c.timeout = t }
+}
+```
+
+## Error Handling Pattern (REQUIRED)
+
+```go
+type ErrorCode string
+
+const (
+    ErrCodeInvalidInput ErrorCode = "INVALID_INPUT"
+    ErrCodeTimeout      ErrorCode = "TIMEOUT"
+    ErrCodeRateLimit    ErrorCode = "RATE_LIMIT"
+    ErrCodeNotFound     ErrorCode = "NOT_FOUND"
+)
+
+type Error struct {
+    Op   string    // Operation: "Component.Method"
+    Err  error     // Underlying error
+    Code ErrorCode // Classification
+}
+
+func (e *Error) Error() string {
+    return fmt.Sprintf("%s: %s: %v", e.Op, e.Code, e.Err)
+}
+
+func (e *Error) Unwrap() error {
+    return e.Err
+}
+```
+
+## Extension Patterns
+
+### Adding New LLM Provider
+```
+pkg/llms/providers/{name}/
+├── {name}.go       # Implement LLMCaller interface
+├── config.go       # Provider-specific config
+└── {name}_test.go  # Tests
+```
+
+### Adding New Agent Type
+```
+pkg/agents/providers/{name}/
+├── agent.go        # Embed BaseAgent, implement Agent
+├── config.go       # Agent-specific config
+└── agent_test.go   # Tests
+```
+
+### Adding New Vector Store
+```
+pkg/vectorstores/providers/{name}/
+├── {name}.go       # Implement VectorStore interface
+├── config.go       # Provider-specific config
+└── {name}_test.go  # Tests
+```
+
+## Import Organization
+
+```go
+import (
+    // Standard library
+    "context"
+    "fmt"
+
+    // Third-party packages
+    "go.opentelemetry.io/otel/trace"
+
+    // Internal packages
+    "github.com/lookatitude/beluga-ai/pkg/schema"
+)
+```
+
+## Integration Flows
+
+### RAG Flow
+```
+Query → Retriever → Embedder → VectorStore → Documents → LLM → Response
+```
+
+### Agent Flow
+```
+Input → Agent → Planner → Executor → Tools → LLM → Memory → Response
+```
+
+### Multi-Agent Flow
+```
+Task → Coordinator → Scheduler → Agents → MessageBus → Aggregated Response
+```
+
+## References
+
+- `docs/architecture.md` - Detailed architecture documentation
+- `docs/package_design_patterns.md` - Design patterns guide
+- `.agent/personas/architect/` - Architecture review persona

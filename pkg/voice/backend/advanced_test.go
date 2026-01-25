@@ -18,9 +18,9 @@ func TestRegistryOperations(t *testing.T) {
 	tests := []struct {
 		name           string
 		providerName   string
+		errorCode      string
 		shouldRegister bool
 		shouldError    bool
-		errorCode      string
 	}{
 		{
 			name:           "register mock provider",
@@ -82,13 +82,13 @@ func TestRegistryOperations(t *testing.T) {
 // TestBackendCreationAndLifecycle tests backend creation and lifecycle with table-driven tests (T254).
 func TestBackendCreationAndLifecycle(t *testing.T) {
 	tests := []struct {
-		name        string
-		provider    string
 		config      *iface.Config
-		shouldError bool
-		errorCode   string
 		setup       func(*iface.Config)
 		teardown    func(iface.VoiceBackend)
+		name        string
+		provider    string
+		errorCode   string
+		shouldError bool
 	}{
 		{
 			name:     "create mock backend",
@@ -181,11 +181,11 @@ func TestBackendCreationAndLifecycle(t *testing.T) {
 // TestSessionManagementOperations tests session management operations with table-driven tests (T255).
 func TestSessionManagementOperations(t *testing.T) {
 	tests := []struct {
-		name        string
 		setup       func() iface.VoiceBackend
 		operation   func(t *testing.T, backend iface.VoiceBackend, ctx context.Context)
-		shouldError bool
+		name        string
 		errorCode   string
+		shouldError bool
 	}{
 		{
 			name: "create session",
@@ -320,12 +320,12 @@ func TestSessionManagementOperations(t *testing.T) {
 // TestPipelineOrchestration tests pipeline orchestration with table-driven tests (T256).
 func TestPipelineOrchestration(t *testing.T) {
 	tests := []struct {
+		agentCallback func(context.Context, string) (string, error)
 		name          string
 		pipelineType  iface.PipelineType
+		errorCode     string
 		audioData     []byte
 		shouldError   bool
-		errorCode     string
-		agentCallback func(context.Context, string) (string, error)
 	}{
 		{
 			name:         "STT/TTS pipeline processing",
@@ -396,11 +396,11 @@ func TestPipelineOrchestration(t *testing.T) {
 // TestErrorHandlingScenarios tests error handling scenarios with table-driven tests (T257).
 func TestErrorHandlingScenarios(t *testing.T) {
 	tests := []struct {
-		name        string
 		setup       func() iface.VoiceBackend
 		operation   func(t *testing.T, backend iface.VoiceBackend, ctx context.Context) error
-		shouldError bool
+		name        string
 		errorCode   string
+		shouldError bool
 	}{
 		{
 			name: "connection failure",
@@ -510,15 +510,15 @@ func TestTurnDetectionAndInterruption(t *testing.T) {
 		{
 			name: "normal turn completion",
 			audioChunks: [][]byte{
-				[]byte{1, 2, 3},
-				[]byte{4, 5, 6},
+				{1, 2, 3},
+				{4, 5, 6},
 			},
 			shouldInterrupt: false,
 		},
 		{
 			name: "interruption during processing",
 			audioChunks: [][]byte{
-				[]byte{1, 2, 3},
+				{1, 2, 3},
 			},
 			shouldInterrupt: true,
 		},

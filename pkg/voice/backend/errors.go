@@ -28,11 +28,11 @@ const (
 // BackendError represents an error that occurred during voice backend operations.
 // It includes an operation name, underlying error, and error code for programmatic handling.
 type BackendError struct {
-	Op      string
 	Err     error
+	Details map[string]any
+	Op      string
 	Code    string
 	Message string
-	Details map[string]any
 }
 
 // Error implements the error interface.

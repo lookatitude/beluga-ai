@@ -55,19 +55,19 @@ type AudioStream struct {
 	ctx                  context.Context
 	cancel               context.CancelFunc
 	conn                 *websocket.Conn
+	audioIn              chan []byte
+	audioOut             chan []byte
+	metrics              *Metrics
 	streamSID            string
 	callSID              string
-	audioIn              chan []byte // Incoming audio from Twilio (mu-law)
-	audioOut             chan []byte // Outgoing audio to Twilio (mu-law)
-	closed               bool
-	mu                   sync.RWMutex
-	metrics              *Metrics
 	reconnectAttempts    int
 	maxReconnectAttempts int
+	mu                   sync.RWMutex
+	closed               bool
 }
 
 // NewAudioStream creates a new audio stream for a Twilio call.
-func NewAudioStream(ctx context.Context, streamURL string, streamSID, callSID string, metrics *Metrics) (*AudioStream, error) {
+func NewAudioStream(ctx context.Context, streamURL, streamSID, callSID string, metrics *Metrics) (*AudioStream, error) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	// Connect to Twilio Media Stream WebSocket
@@ -126,7 +126,7 @@ func (b *TwilioBackend) StreamAudio(ctx context.Context, sessionID string) (*Aud
 	// The URL should point to our WebSocket server endpoint
 	streamURL := b.config.WebhookURL
 	if streamURL == "" {
-		err := NewTwilioError("StreamAudio", ErrCodeTwilioInvalidConfig, fmt.Errorf("webhook URL not configured"))
+		err := NewTwilioError("StreamAudio", ErrCodeTwilioInvalidConfig, errors.New("webhook URL not configured"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
@@ -134,7 +134,7 @@ func (b *TwilioBackend) StreamAudio(ctx context.Context, sessionID string) (*Aud
 	// Ensure it's a WebSocket URL (wss://)
 	// Note: Twilio Media Streams require wss:// URLs
 	if len(streamURL) < 4 {
-		err := NewTwilioError("StreamAudio", ErrCodeTwilioInvalidConfig, fmt.Errorf("invalid webhook URL"))
+		err := NewTwilioError("StreamAudio", ErrCodeTwilioInvalidConfig, errors.New("invalid webhook URL"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
@@ -313,7 +313,7 @@ func (s *AudioStream) SendAudio(ctx context.Context, audio []byte) error {
 	case <-ctx.Done():
 		return NewTwilioError("SendAudio", ErrCodeTwilioTimeout, ctx.Err())
 	case <-s.ctx.Done():
-		return NewTwilioError("SendAudio", ErrCodeTwilioStreamFailed, errors.New("stream context cancelled"))
+		return NewTwilioError("SendAudio", ErrCodeTwilioStreamFailed, errors.New("stream context canceled"))
 	}
 }
 
@@ -370,7 +370,7 @@ func encodeMuLawAudio(audio []byte) string {
 	return base64.StdEncoding.EncodeToString(audio)
 }
 
-// Mu-law encoding constants
+// Mu-law encoding constants.
 const (
 	ulawBias = 0x84  // Bias for linear PCM (132 decimal)
 	ulawClip = 32635 // Maximum linear input magnitude for μ-law
@@ -378,7 +378,7 @@ const (
 
 // convertLinearToMuLaw converts linear PCM (16-bit signed) to mu-law (PCMU).
 // Input: []byte representing 16-bit signed PCM samples (little-endian)
-// Output: []byte representing 8-bit mu-law encoded samples
+// Output: []byte representing 8-bit mu-law encoded samples.
 func convertLinearToMuLaw(linear []byte) []byte {
 	if len(linear)%2 != 0 {
 		// If odd length, pad with zero
@@ -399,7 +399,7 @@ func convertLinearToMuLaw(linear []byte) []byte {
 
 // convertMuLawToLinear converts mu-law (PCMU) to linear PCM (16-bit signed).
 // Input: []byte representing 8-bit mu-law encoded samples
-// Output: []byte representing 16-bit signed PCM samples (little-endian)
+// Output: []byte representing 16-bit signed PCM samples (little-endian).
 func convertMuLawToLinear(mulaw []byte) []byte {
 	result := make([]byte, len(mulaw)*2)
 	for i, u := range mulaw {

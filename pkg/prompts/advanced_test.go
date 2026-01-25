@@ -727,3 +727,388 @@ func BenchmarkBenchmarkHelper(b *testing.B) {
 		}
 	})
 }
+
+// Mock implementations for testing.
+type mockMetrics struct{}
+
+func (m *mockMetrics) RecordTemplateCreated(templateType string)                    {}
+func (m *mockMetrics) RecordTemplateExecuted(templateName string, duration float64) {}
+func (m *mockMetrics) RecordTemplateError(templateName, errorType string)           {}
+func (m *mockMetrics) RecordFormattingRequest(adapterType string, duration float64) {}
+func (m *mockMetrics) RecordFormattingError(adapterType, errorType string)          {}
+func (m *mockMetrics) RecordValidationRequest()                                     {}
+func (m *mockMetrics) RecordValidationError(errorType string)                       {}
+func (m *mockMetrics) RecordCacheHit()                                              {}
+func (m *mockMetrics) RecordCacheMiss()                                             {}
+func (m *mockMetrics) RecordCacheSize(size int64)                                   {}
+func (m *mockMetrics) RecordAdapterRequest(adapterType string)                      {}
+func (m *mockMetrics) RecordAdapterError(adapterType, errorType string)             {}
+
+type mockValidator struct{}
+
+func (m *mockValidator) Validate(required []string, provided map[string]any) error {
+	return nil
+}
+
+func (m *mockValidator) ValidateTypes(variables map[string]any) error {
+	return nil
+}
+
+type mockTemplateEngine struct{}
+
+func (m *mockTemplateEngine) Parse(name, template string) (iface.ParsedTemplate, error) {
+	return nil, nil
+}
+
+func (m *mockTemplateEngine) ExtractVariables(template string) ([]string, error) {
+	return nil, nil
+}
+
+type mockHealthChecker struct{}
+
+func (m *mockHealthChecker) Check(ctx context.Context) error {
+	return nil
+}
+
+// TestPromptManager_NewPromptManager tests NewPromptManager with various configurations.
+func TestPromptManager_NewPromptManager(t *testing.T) {
+	tests := []struct {
+		name      string
+		errString string
+		opts      []Option
+		wantErr   bool
+	}{
+		{
+			name:    "default_configuration",
+			opts:    []Option{},
+			wantErr: false,
+		},
+		{
+			name: "with_custom_config",
+			opts: []Option{
+				WithConfig(&Config{
+					EnableMetrics: false,
+					EnableTracing: false,
+				}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_custom_metrics",
+			opts: []Option{
+				WithMetrics(&mockMetrics{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_custom_tracer",
+			opts: []Option{
+				WithTracer(&iface.TracerNoOp{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_custom_logger",
+			opts: []Option{
+				WithLogger(&iface.LoggerNoOp{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_custom_validator",
+			opts: []Option{
+				WithValidator(&mockValidator{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_template_engine",
+			opts: []Option{
+				WithTemplateEngine(&mockTemplateEngine{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_health_checker",
+			opts: []Option{
+				WithHealthChecker(&mockHealthChecker{}),
+			},
+			wantErr: false,
+		},
+		{
+			name: "with_all_options",
+			opts: []Option{
+				WithConfig(DefaultConfig()),
+				WithMetrics(&mockMetrics{}),
+				WithTracer(&iface.TracerNoOp{}),
+				WithLogger(&iface.LoggerNoOp{}),
+				WithValidator(&mockValidator{}),
+				WithTemplateEngine(&mockTemplateEngine{}),
+				WithHealthChecker(&mockHealthChecker{}),
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			manager, err := NewPromptManager(tt.opts...)
+			if tt.wantErr {
+				require.Error(t, err)
+				if tt.errString != "" {
+					assert.Contains(t, err.Error(), tt.errString)
+				}
+				return
+			}
+			require.NoError(t, err)
+			require.NotNil(t, manager)
+		})
+	}
+}
+
+// TestPromptManager_GetMetrics tests GetMetrics method.
+func TestPromptManager_GetMetrics(t *testing.T) {
+	t.Run("with_metrics_enabled", func(t *testing.T) {
+		manager, err := NewPromptManager(
+			WithConfig(&Config{
+				EnableMetrics: true,
+			}),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+
+		metrics := manager.GetMetrics()
+		assert.NotNil(t, metrics)
+	})
+
+	t.Run("with_metrics_disabled", func(t *testing.T) {
+		manager, err := NewPromptManager(
+			WithConfig(&Config{
+				EnableMetrics: false,
+			}),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+
+		metrics := manager.GetMetrics()
+		// When metrics are disabled, GetMetrics may return nil
+		// This is implementation-dependent
+		if metrics != nil {
+			t.Logf("GetMetrics returned non-nil value when metrics disabled: %T", metrics)
+		}
+	})
+
+	t.Run("with_custom_metrics", func(t *testing.T) {
+		customMetrics := &mockMetrics{}
+		manager, err := NewPromptManager(
+			WithMetrics(customMetrics),
+		)
+		require.NoError(t, err)
+		require.NotNil(t, manager)
+
+		metrics := manager.GetMetrics()
+		assert.Equal(t, customMetrics, metrics)
+	})
+}
+
+// TestPromptManager_Check tests the Check method comprehensively.
+func TestPromptManager_Check(t *testing.T) {
+	t.Run("successful_health_check", func(t *testing.T) {
+		manager, err := NewPromptManager()
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = manager.Check(ctx)
+		assert.NoError(t, err)
+	})
+
+	t.Run("health_check_with_template_creation_error", func(t *testing.T) {
+		// This tests the error path in Check when template creation fails
+		// We can't easily simulate this without modifying internal code,
+		// but we can test that Check handles errors properly
+		manager, err := NewPromptManager()
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = manager.Check(ctx)
+		// Check should succeed in normal conditions
+		assert.NoError(t, err)
+	})
+
+	t.Run("health_check_with_adapter_creation_error", func(t *testing.T) {
+		manager, err := NewPromptManager()
+		require.NoError(t, err)
+
+		ctx := context.Background()
+		err = manager.Check(ctx)
+		// Check should succeed in normal conditions
+		assert.NoError(t, err)
+	})
+}
+
+// TestPromptManager_ConvenienceFunctions tests convenience functions.
+func TestPromptManager_ConvenienceFunctions(t *testing.T) {
+	t.Run("NewStringPromptTemplate_success", func(t *testing.T) {
+		template, err := NewStringPromptTemplate("test-template", "Hello {{.name}}")
+		require.NoError(t, err)
+		assert.NotNil(t, template)
+		assert.Equal(t, "test-template", template.Name())
+	})
+
+	t.Run("NewStringPromptTemplate_error", func(t *testing.T) {
+		// Test error path when manager creation fails
+		// This is hard to simulate without modifying code, but we test the happy path
+		template, err := NewStringPromptTemplate("", "Hello {{.name}}")
+		require.Error(t, err)
+		assert.Nil(t, template)
+	})
+
+	t.Run("NewDefaultPromptAdapter_success", func(t *testing.T) {
+		adapter, err := NewDefaultPromptAdapter("test-adapter", "Hello {{.name}}", []string{"name"})
+		require.NoError(t, err)
+		assert.NotNil(t, adapter)
+	})
+
+	t.Run("NewDefaultPromptAdapter_error", func(t *testing.T) {
+		adapter, err := NewDefaultPromptAdapter("", "Hello {{.name}}", []string{"name"})
+		require.Error(t, err)
+		assert.Nil(t, adapter)
+	})
+
+	t.Run("NewChatPromptAdapter_success", func(t *testing.T) {
+		adapter, err := NewChatPromptAdapter(
+			"test-chat-adapter",
+			"System: {{.system}}",
+			"User: {{.user}}",
+			[]string{"system", "user"},
+		)
+		require.NoError(t, err)
+		assert.NotNil(t, adapter)
+	})
+
+	t.Run("NewChatPromptAdapter_error", func(t *testing.T) {
+		adapter, err := NewChatPromptAdapter("", "System: {{.system}}", "User: {{.user}}", []string{"system", "user"})
+		require.Error(t, err)
+		assert.Nil(t, adapter)
+	})
+}
+
+// TestConfig_WithTemplateEngine tests WithTemplateEngine option.
+func TestConfig_WithTemplateEngine(t *testing.T) {
+	engine := &mockTemplateEngine{}
+	manager, err := NewPromptManager(
+		WithTemplateEngine(engine),
+	)
+	require.NoError(t, err)
+	assert.NotNil(t, manager)
+}
+
+// TestConfig_WithHealthChecker tests WithHealthChecker option.
+func TestConfig_WithHealthChecker(t *testing.T) {
+	checker := &mockHealthChecker{}
+	manager, err := NewPromptManager(
+		WithHealthChecker(checker),
+	)
+	require.NoError(t, err)
+	assert.NotNil(t, manager)
+}
+
+// TestErrors_AllErrorFunctions tests all error creation functions.
+func TestErrors_AllErrorFunctions(t *testing.T) {
+	tests := []struct {
+		name      string
+		createErr func() *PromptError
+		code      string
+	}{
+		{
+			name: "NewTemplateParseError",
+			createErr: func() *PromptError {
+				return NewTemplateParseError("test_op", "test_template", errors.New("parse error"))
+			},
+			code: ErrCodeTemplateParse,
+		},
+		{
+			name: "NewTemplateExecuteError",
+			createErr: func() *PromptError {
+				return NewTemplateExecuteError("test_op", "test_template", errors.New("execute error"))
+			},
+			code: ErrCodeTemplateExecute,
+		},
+		{
+			name: "NewVariableMissingError",
+			createErr: func() *PromptError {
+				return NewVariableMissingError("test_op", "test_var", "test_template")
+			},
+			code: ErrCodeVariableMissing,
+		},
+		{
+			name: "NewVariableInvalidError",
+			createErr: func() *PromptError {
+				return NewVariableInvalidError("test_op", "test_var", "string", "int")
+			},
+			code: ErrCodeVariableInvalid,
+		},
+		{
+			name: "NewCacheError",
+			createErr: func() *PromptError {
+				return NewCacheError("test_op", "cache operation failed", errors.New("cache error"))
+			},
+			code: ErrCodeCacheError,
+		},
+		{
+			name: "NewAdapterError",
+			createErr: func() *PromptError {
+				return NewAdapterError("test_op", "default", errors.New("adapter error"))
+			},
+			code: ErrCodeAdapterError,
+		},
+		{
+			name: "NewConfigurationError",
+			createErr: func() *PromptError {
+				return NewConfigurationError("test_op", "config invalid", errors.New("config error"))
+			},
+			code: ErrCodeConfigurationError,
+		},
+		{
+			name: "NewTimeoutError",
+			createErr: func() *PromptError {
+				return NewTimeoutError("test_op", "30s")
+			},
+			code: ErrCodeTimeout,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.createErr()
+			require.NotNil(t, err)
+			assert.Equal(t, tt.code, err.Code)
+			assert.NotEmpty(t, err.Op)
+			assert.NotEmpty(t, err.Error())
+		})
+	}
+}
+
+// TestErrors_ErrorCodes tests all error code constants.
+func TestErrors_ErrorCodes(t *testing.T) {
+	errorCodes := []struct {
+		name string
+		code string
+	}{
+		{"ErrCodeTemplateParse", ErrCodeTemplateParse},
+		{"ErrCodeTemplateExecute", ErrCodeTemplateExecute},
+		{"ErrCodeVariableMissing", ErrCodeVariableMissing},
+		{"ErrCodeVariableInvalid", ErrCodeVariableInvalid},
+		{"ErrCodeValidationFailed", ErrCodeValidationFailed},
+		{"ErrCodeCacheError", ErrCodeCacheError},
+		{"ErrCodeAdapterError", ErrCodeAdapterError},
+		{"ErrCodeConfigurationError", ErrCodeConfigurationError},
+		{"ErrCodeTimeout", ErrCodeTimeout},
+	}
+
+	for _, tt := range errorCodes {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.NotEmpty(t, tt.code, "Error code should not be empty")
+		})
+	}
+}

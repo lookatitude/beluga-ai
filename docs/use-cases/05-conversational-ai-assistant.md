@@ -25,46 +25,37 @@ This use case implements an advanced conversational AI assistant that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    User Interface                                │
-│              (Web, Mobile, Chat, Voice)                         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │ HTTP/REST
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    REST Server (pkg/server)                      │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Conversation Manager                                │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  1. Load     │→ │  2. Generate │→ │  3. Save      │         │
-│  │  Context      │  │  Response    │  │  Context     │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Memory     │    │  ChatModels  │    │  VectorStores│
-│  (pkg/memory)│    │  (pkg/       │    │  (pkg/       │
-│              │    │  chatmodels) │    │  vectorstores)│
-│  - Buffer    │    │              │    │              │
-│  - Summary   │    │  - OpenAI    │    │  - PgVector  │
-│  - VectorStore│   │  - Anthropic │    │  - Pinecone  │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Embeddings            │
-              │  (pkg/embeddings)      │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph UI["User Interface"]
+        A[Web / Mobile / Chat / Voice]
+    end
+
+    subgraph Server["REST Server - pkg/server"]
+        B[Request Handler]
+    end
+
+    subgraph Manager["Conversation Manager"]
+        C1[1. Load Context] --> C2[2. Generate Response] --> C3[3. Save Context]
+    end
+
+    subgraph Components["Core Components"]
+        D[Memory - pkg/memory<br>Buffer / Summary / VectorStore]
+        E[ChatModels - pkg/chatmodels<br>OpenAI / Anthropic]
+        F[VectorStores - pkg/vectorstores<br>PgVector / Pinecone]
+    end
+
+    subgraph Embeddings["Embeddings Layer"]
+        G[Embeddings - pkg/embeddings]
+    end
+
+    A -->|HTTP/REST| B
+    B --> C1
+    C1 --> D
+    C2 --> E
+    C3 --> D
+    D --> F
+    F --> G
 ```
 
 ## Component Usage

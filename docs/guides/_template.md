@@ -314,6 +314,6 @@ Include brief descriptions of why each is relevant.
 Now that you understand {topic}, you might want to explore:
 
 - **[{Related Guide}](../guides/{guide}.md)** - Learn how to {brief description}
-- **[{Example}](/examples/{example}/README.md)** - See a complete implementation of {description}
+- **[{Example}](https://github.com/lookatitude/beluga-ai/blob/main/examples/{example}/README.md)** - See a complete implementation of {description}
 - **[{Cookbook Recipe}](../cookbook/{recipe}.md)** - Quick solution for {specific task}
 - **[{Use Case}](../use-cases/{use-case}.md)** - Real-world scenario showing {description}

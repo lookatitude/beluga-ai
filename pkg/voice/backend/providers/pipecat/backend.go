@@ -2,6 +2,7 @@ package pipecat
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,9 +20,9 @@ type PipecatBackend struct {
 	config          *PipecatConfig
 	sessionManager  *internal.SessionManager
 	httpClient      *http.Client
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
 	metrics         *backend.Metrics
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -75,7 +76,7 @@ func (b *PipecatBackend) Start(ctx context.Context) error {
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "PipecatBackend.Start", func() error {
 		// Test connection by making a simple API call
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/rooms", b.config.DailyAPIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.DailyAPIURL+"/rooms", nil)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,6 @@ func (b *PipecatBackend) Start(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		b.connectionState = iface.ConnectionStateError
 		backend.RecordSpanError(span, err)
@@ -190,7 +190,7 @@ func (b *PipecatBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 	if connectionState != iface.ConnectionStateConnected {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("backend not connected"))
+			errors.New("backend not connected"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -207,8 +207,8 @@ func (b *PipecatBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "PipecatBackend.CreateSession", func() error {
 		// Create Daily.co room
-		roomURL := fmt.Sprintf("%s/rooms", b.config.DailyAPIURL)
-		req, err := http.NewRequestWithContext(ctx, "POST", roomURL, nil)
+		roomURL := b.config.DailyAPIURL + "/rooms"
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, roomURL, nil)
 		if err != nil {
 			return err
 		}
@@ -230,7 +230,6 @@ func (b *PipecatBackend) CreateSession(ctx context.Context, config *iface.Sessio
 
 		return nil
 	})
-
 	if err != nil {
 		backend.RecordSpanError(span, err)
 		backend.LogWithOTELContext(ctx, slog.LevelError, "Failed to create Daily.co room", "error", err, "room_name", roomName)
@@ -293,7 +292,7 @@ func (b *PipecatBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus, 
 	defer b.mu.RUnlock()
 
 	// Check Daily.co API health
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/rooms", b.config.DailyAPIURL), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.DailyAPIURL+"/rooms", nil)
 	if err != nil {
 		return nil, backend.WrapError("HealthCheck", err)
 	}
@@ -351,7 +350,7 @@ func (b *PipecatBackend) UpdateConfig(ctx context.Context, config *iface.Config)
 	// If connection state is connected, verify connection still works
 	if b.connectionState == iface.ConnectionStateConnected {
 		// Test connection
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/rooms", b.config.DailyAPIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.DailyAPIURL+"/rooms", nil)
 		if err != nil {
 			return backend.NewBackendError("UpdateConfig", backend.ErrCodeConnectionFailed, err)
 		}

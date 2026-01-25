@@ -2,6 +2,7 @@ package twilio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -23,8 +24,8 @@ type TwilioProvider struct {
 	conversations   map[string]*iface.Conversation
 	sessions        map[string]*MessagingSession
 	messageChannels map[string]chan *iface.Message
-	mu              sync.RWMutex
 	metrics         *messaging.Metrics
+	mu              sync.RWMutex
 }
 
 // NewTwilioProvider creates a new Twilio messaging provider.
@@ -129,6 +130,17 @@ func (p *TwilioProvider) CreateConversation(ctx context.Context, config *iface.C
 
 	startTime := time.Now()
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("CreateConversation", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		if p.metrics != nil {
+			p.metrics.RecordConversation(ctx, "create", time.Since(startTime), false)
+		}
+		return nil, err
+	}
+
 	// Create Twilio Conversation resource
 	conversationParams := &twilioconv.CreateConversationParams{}
 	conversationParams.SetFriendlyName(config.FriendlyName)
@@ -205,6 +217,14 @@ func (p *TwilioProvider) GetConversation(ctx context.Context, conversationID str
 
 	span.SetAttributes(attribute.String("conversation_id", conversationID))
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("GetConversation", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		return nil, err
+	}
+
 	// Check local cache first
 	p.mu.RLock()
 	conv, exists := p.conversations[conversationID]
@@ -248,6 +268,14 @@ func (p *TwilioProvider) ListConversations(ctx context.Context) ([]*iface.Conver
 	ctx, span := p.startSpan(ctx, "TwilioProvider.ListConversations")
 	defer span.End()
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("ListConversations", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		return nil, err
+	}
+
 	// Fetch conversations from Twilio API
 	conversations, err := p.client.ConversationsV1.ListConversation(nil)
 	if err != nil {
@@ -283,6 +311,14 @@ func (p *TwilioProvider) CloseConversation(ctx context.Context, conversationID s
 	defer span.End()
 
 	span.SetAttributes(attribute.String("conversation_id", conversationID))
+
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("CloseConversation", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		return err
+	}
 
 	// Update Twilio Conversation resource state to "closed"
 	updateParams := &twilioconv.UpdateConversationParams{}
@@ -328,6 +364,17 @@ func (p *TwilioProvider) SendMessage(ctx context.Context, conversationID string,
 
 	startTime := time.Now()
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("SendMessage", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		if p.metrics != nil {
+			p.metrics.RecordMessage(ctx, string(message.Channel), time.Since(startTime), false)
+		}
+		return err
+	}
+
 	span.SetAttributes(
 		attribute.String("conversation_id", conversationID),
 		attribute.String("channel", string(message.Channel)),
@@ -336,7 +383,7 @@ func (p *TwilioProvider) SendMessage(ctx context.Context, conversationID string,
 
 	// Validate message
 	if message.Body == "" && len(message.MediaURLs) == 0 {
-		err := messaging.NewMessagingError("SendMessage", messaging.ErrCodeInvalidMessage, fmt.Errorf("message must have body or media"))
+		err := messaging.NewMessagingError("SendMessage", messaging.ErrCodeInvalidMessage, errors.New("message must have body or media"))
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -417,6 +464,14 @@ func (p *TwilioProvider) AddParticipant(ctx context.Context, conversationID stri
 		attribute.String("participant_identity", participant.Identity),
 	)
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("AddParticipant", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		return err
+	}
+
 	// Create Twilio Participant resource
 	participantParams := &twilioconv.CreateConversationParticipantParams{}
 	participantParams.SetIdentity(participant.Identity)
@@ -453,7 +508,7 @@ func (p *TwilioProvider) AddParticipant(ctx context.Context, conversationID stri
 }
 
 // RemoveParticipant removes a participant from a conversation.
-func (p *TwilioProvider) RemoveParticipant(ctx context.Context, conversationID string, participantID string) error {
+func (p *TwilioProvider) RemoveParticipant(ctx context.Context, conversationID, participantID string) error {
 	ctx, span := p.startSpan(ctx, "TwilioProvider.RemoveParticipant")
 	defer span.End()
 
@@ -461,6 +516,14 @@ func (p *TwilioProvider) RemoveParticipant(ctx context.Context, conversationID s
 		attribute.String("conversation_id", conversationID),
 		attribute.String("participant_id", participantID),
 	)
+
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("RemoveParticipant", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		return err
+	}
 
 	err := p.client.ConversationsV1.DeleteConversationParticipant(conversationID, participantID, nil)
 	if err != nil {
@@ -507,6 +570,15 @@ func (p *TwilioProvider) HealthCheck(ctx context.Context) (*iface.HealthStatus, 
 
 	startTime := time.Now()
 
+	// Check if client is initialized (Start must be called first)
+	if p.client == nil {
+		err := messaging.NewMessagingError("HealthCheck", messaging.ErrCodeInternalError, errors.New("provider not started: call Start() first"))
+		span.RecordError(err)
+		span.SetStatus(codes.Error, "provider not started")
+		unhealthy := iface.HealthStatusUnhealthy
+		return &unhealthy, err
+	}
+
 	// Verify API connectivity
 	_, err := p.client.Api.FetchAccount(p.config.AccountSID)
 	var status iface.HealthStatus
@@ -546,7 +618,7 @@ func (p *TwilioProvider) HealthCheck(ctx context.Context) (*iface.HealthStatus, 
 }
 
 // GetConfig returns the backend configuration.
-func (p *TwilioProvider) GetConfig() interface{} {
+func (p *TwilioProvider) GetConfig() any {
 	return p.config.Config
 }
 
@@ -601,8 +673,11 @@ func (p *TwilioProvider) isSupportedMediaType(mediaURL string) bool {
 
 // startSpan starts an OTEL span for tracing.
 func (p *TwilioProvider) startSpan(ctx context.Context, operation string) (context.Context, trace.Span) {
-	if p.metrics != nil && p.metrics.Tracer() != nil {
-		return p.metrics.Tracer().Start(ctx, operation)
+	if p.metrics != nil {
+		tracer := p.metrics.Tracer()
+		if tracer != nil {
+			return tracer.Start(ctx, operation)
+		}
 	}
 	return ctx, trace.SpanFromContext(ctx)
 }

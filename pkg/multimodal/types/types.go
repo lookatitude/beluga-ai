@@ -4,6 +4,7 @@ package types
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime"
@@ -18,116 +19,56 @@ import (
 
 // MultimodalInput represents a multimodal input containing one or more content types.
 type MultimodalInput struct {
-	// ID is a unique identifier for this input
-	ID string
-
-	// ContentBlocks contains the content blocks (text, images, audio, video)
+	CreatedAt     time.Time
+	Metadata      map[string]any
+	Routing       map[string]any
+	ID            string
+	Format        string
 	ContentBlocks []*ContentBlock
-
-	// Metadata contains additional metadata
-	Metadata map[string]any
-
-	// Format is the preferred format ("base64", "url", "file_path")
-	Format string
-
-	// Routing contains routing instructions for content blocks
-	Routing map[string]any // Using map to avoid importing multimodal.Config
-
-	// CreatedAt is the timestamp when this input was created
-	CreatedAt time.Time
 }
 
 // MultimodalOutput represents the result of processing a multimodal input.
 type MultimodalOutput struct {
-	// ID is a unique identifier for this output
-	ID string
-
-	// InputID is the ID of the input that generated this output
-	InputID string
-
-	// ContentBlocks contains the output content blocks
+	CreatedAt     time.Time
+	Metadata      map[string]any
+	ID            string
+	InputID       string
+	Provider      string
+	Model         string
 	ContentBlocks []*ContentBlock
-
-	// Metadata contains additional metadata
-	Metadata map[string]any
-
-	// Confidence is the confidence score (0.0 to 1.0)
-	Confidence float32
-
-	// Provider is the name of the provider that generated this output
-	Provider string
-
-	// Model is the name of the model that generated this output
-	Model string
-
-	// CreatedAt is the timestamp when this output was created
-	CreatedAt time.Time
+	Confidence    float32
 }
 
 // ContentBlock represents a single piece of content (text, image, audio, video).
 type ContentBlock struct {
-	// Type is the content type: "text", "image", "audio", "video"
-	Type string
-
-	// Data is the raw content data (base64-encoded for binary content)
-	Data []byte
-
-	// URL is the URL to the content (if using URL format)
-	URL string
-
-	// FilePath is the file path to the content (if using file path format)
-	FilePath string
-
-	// Format is the content format (e.g., "png", "mp3", "mp4")
-	Format string
-
-	// MIMEType is the MIME type of the content
-	MIMEType string
-
-	// Size is the size in bytes
-	Size int64
-
-	// Metadata contains additional metadata for this content block
 	Metadata map[string]any
+	Type     string
+	URL      string
+	FilePath string
+	Format   string
+	MIMEType string
+	Data     []byte
+	Size     int64
 }
 
 // ModalityCapabilities represents the capabilities of a provider or model for different modalities.
 type ModalityCapabilities struct {
-	// Text processing support
-	Text bool
-
-	// Image processing support
-	Image bool
-
-	// Audio processing support
-	Audio bool
-
-	// Video processing support
-	Video bool
-
-	// Maximum image size in bytes
-	MaxImageSize int64
-
-	// Maximum audio size in bytes
-	MaxAudioSize int64
-
-	// Maximum video size in bytes
-	MaxVideoSize int64
-
-	// Supported image formats
 	SupportedImageFormats []string
-
-	// Supported audio formats
 	SupportedAudioFormats []string
-
-	// Supported video formats
 	SupportedVideoFormats []string
+	MaxImageSize          int64
+	MaxAudioSize          int64
+	MaxVideoSize          int64
+	Text                  bool
+	Image                 bool
+	Audio                 bool
+	Video                 bool
 }
 
 // NewContentBlock creates a new content block from raw data.
 func NewContentBlock(contentType string, data []byte) (*ContentBlock, error) {
 	if contentType == "" {
-		return nil, fmt.Errorf("content type cannot be empty")
+		return nil, errors.New("content type cannot be empty")
 	}
 
 	validTypes := []string{"text", "image", "audio", "video"}
@@ -164,17 +105,17 @@ func NewContentBlock(contentType string, data []byte) (*ContentBlock, error) {
 // NewContentBlockFromURL creates a new content block from a URL.
 func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*ContentBlock, error) {
 	if contentType == "" {
-		return nil, fmt.Errorf("content type cannot be empty")
+		return nil, errors.New("content type cannot be empty")
 	}
 	if url == "" {
-		return nil, fmt.Errorf("URL cannot be empty")
+		return nil, errors.New("URL cannot be empty")
 	}
 
 	// Fetch the content from URL using a client with timeout
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, http.NoBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -216,10 +157,10 @@ func NewContentBlockFromURL(ctx context.Context, contentType, url string) (*Cont
 // NewContentBlockFromFile creates a new content block from a file path.
 func NewContentBlockFromFile(ctx context.Context, contentType, filePath string) (*ContentBlock, error) {
 	if contentType == "" {
-		return nil, fmt.Errorf("content type cannot be empty")
+		return nil, errors.New("content type cannot be empty")
 	}
 	if filePath == "" {
-		return nil, fmt.Errorf("file path cannot be empty")
+		return nil, errors.New("file path cannot be empty")
 	}
 
 	// Check if file exists
@@ -260,7 +201,7 @@ func NewContentBlockFromFile(ctx context.Context, contentType, filePath string) 
 // NewMultimodalInput creates a new multimodal input with the given content blocks and options.
 func NewMultimodalInput(contentBlocks []*ContentBlock, opts ...MultimodalInputOption) (*MultimodalInput, error) {
 	if len(contentBlocks) == 0 {
-		return nil, fmt.Errorf("must have at least one content block")
+		return nil, errors.New("must have at least one content block")
 	}
 
 	// Validate all content blocks
@@ -306,12 +247,12 @@ func (cb *ContentBlock) Validate() error {
 
 	// Must have at least one data source
 	if len(cb.Data) == 0 && cb.URL == "" && cb.FilePath == "" {
-		return fmt.Errorf("content block must have at least one of: Data, URL, or FilePath")
+		return errors.New("content block must have at least one of: Data, URL, or FilePath")
 	}
 
 	// Validate size
 	if cb.Size < 0 {
-		return fmt.Errorf("size must be >= 0")
+		return errors.New("size must be >= 0")
 	}
 
 	return nil

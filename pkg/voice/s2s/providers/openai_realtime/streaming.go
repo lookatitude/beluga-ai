@@ -17,13 +17,13 @@ import (
 // OpenAIRealtimeStreamingSession implements StreamingSession for OpenAI Realtime API.
 type OpenAIRealtimeStreamingSession struct {
 	ctx       context.Context
+	conn      WebSocketConn
 	config    *OpenAIRealtimeConfig
 	provider  *OpenAIRealtimeProvider
-	conn      WebSocketConn
 	audioCh   chan iface.AudioOutputChunk
-	closed    bool
-	mu        sync.RWMutex
 	sessionID string
+	mu        sync.RWMutex
+	closed    bool
 }
 
 // RealtimeEvent represents an event in the OpenAI Realtime API protocol.
@@ -60,7 +60,7 @@ func NewOpenAIRealtimeStreamingSession(ctx context.Context, config *OpenAIRealti
 
 	// Set headers
 	headers := make(map[string][]string)
-	headers["Authorization"] = []string{fmt.Sprintf("Bearer %s", config.APIKey)}
+	headers["Authorization"] = []string{"Bearer " + config.APIKey}
 	headers["OpenAI-Beta"] = []string{"realtime=v1"}
 
 	// Use injected dialer or create default one
@@ -212,10 +212,10 @@ func (s *OpenAIRealtimeStreamingSession) SendAudio(ctx context.Context, audio []
 	select {
 	case <-ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	case <-s.ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("session context cancelled: %w", s.ctx.Err()))
+			fmt.Errorf("session context canceled: %w", s.ctx.Err()))
 	default:
 	}
 

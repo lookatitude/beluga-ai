@@ -44,8 +44,8 @@ type PineconeStore struct {
 	projectID    string
 	indexName    string
 	indexHost    string
-	embeddingDim int
 	name         string
+	embeddingDim int
 	mu           sync.RWMutex
 }
 
@@ -85,7 +85,7 @@ type PineconeConfig struct {
 //	}
 //	store, err := pinecone.NewPineconeStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewPineconeStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract pinecone-specific configuration from ProviderConfig
 	providerConfig, ok := config.ProviderConfig["pinecone"]
@@ -341,19 +341,19 @@ func (s *PineconeStore) GetName() string {
 
 // PineconeVector represents a vector in Pinecone format.
 type PineconeVector struct {
+	Metadata map[string]any `json:"metadata,omitempty"`
 	ID       string         `json:"id"`
 	Values   []float32      `json:"values"`
-	Metadata map[string]any `json:"metadata,omitempty"`
 }
 
 // PineconeQueryRequest represents a query request to Pinecone.
 type PineconeQueryRequest struct {
+	Filter          map[string]any `json:"filter,omitempty"`
+	Namespace       string         `json:"namespace,omitempty"`
 	Vector          []float32      `json:"vector"`
 	TopK            int            `json:"topK"`
 	IncludeMetadata bool           `json:"includeMetadata"`
 	IncludeValues   bool           `json:"includeValues"`
-	Filter          map[string]any `json:"filter,omitempty"`
-	Namespace       string         `json:"namespace,omitempty"`
 }
 
 // PineconeQueryResponse represents a query response from Pinecone.
@@ -363,10 +363,10 @@ type PineconeQueryResponse struct {
 
 // PineconeMatch represents a match from Pinecone query.
 type PineconeMatch struct {
-	ID       string         `json:"id"`
-	Score    float32        `json:"score"`
-	Values   []float32      `json:"values,omitempty"`
 	Metadata map[string]any `json:"metadata,omitempty"`
+	ID       string         `json:"id"`
+	Values   []float32      `json:"values,omitempty"`
+	Score    float32        `json:"score"`
 }
 
 // PineconeRetriever implements the Retriever interface for PineconeStore.

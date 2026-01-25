@@ -30,7 +30,7 @@ var (
 //	meter := otel.Meter("beluga.voice.stt")
 //	stt.InitMetrics(meter)
 //
-// Example usage can be found in examples/voice/stt/main.go
+// Example usage can be found in examples/voice/stt/main.go.
 func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter, tracer)
@@ -50,7 +50,7 @@ func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 //	    // Use metrics
 //	}
 //
-// Example usage can be found in examples/voice/stt/main.go
+// Example usage can be found in examples/voice/stt/main.go.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -81,7 +81,7 @@ func GetMetrics() *Metrics {
 //	}
 //	transcript, err := provider.Transcribe(ctx, audioData)
 //
-// Example usage can be found in examples/voice/stt/main.go
+// Example usage can be found in examples/voice/stt/main.go.
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.STTProvider, error) {
 	// Apply options
 	if config == nil {

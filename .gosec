@@ -11,11 +11,7 @@
       "G404": false
     },
     "exclude-dirs": [
-      "tests",
-      "cmd/test-analyzer/internal/fixes",
-      "cmd/test-analyzer/internal/ast",
-      "cmd/test-analyzer/internal/code",
-      "cmd/test-analyzer/fixer.go"
+      "tests"
     ],
     "exclude-rules": [
       "G101",

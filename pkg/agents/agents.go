@@ -44,7 +44,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/base"
 	"github.com/lookatitude/beluga-ai/pkg/agents/internal/executor"
 	"github.com/lookatitude/beluga-ai/pkg/agents/providers/react"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
@@ -92,12 +91,28 @@ func NewAgentFactoryWithMetrics(config *Config, metrics *Metrics) *AgentFactory 
 //		agents.WithMaxRetries(3),
 //		agents.WithTimeout(30*time.Second),
 //	)
-func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []tools.Tool, opts ...iface.Option) (iface.CompositeAgent, error) {
-	return base.NewBaseAgent(name, llm, agentTools, opts...)
+func NewBaseAgent(name string, llm llmsiface.LLM, agentTools []iface.Tool, opts ...iface.Option) (iface.CompositeAgent, error) {
+	baseAgent, err := base.NewBaseAgent(name, llm, agentTools, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var agent iface.CompositeAgent = baseAgent
+
+	// Apply safety middleware if enabled
+	options := &iface.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	if options.EnableSafety {
+		agent = newSafetyMiddleware(agent)
+	}
+
+	return agent, nil
 }
 
 // CreateBaseAgent creates a base agent using the factory's configuration.
-func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llmsiface.LLM, agentTools []tools.Tool, opts ...iface.Option) (iface.CompositeAgent, error) {
+func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llmsiface.LLM, agentTools []iface.Tool, opts ...iface.Option) (iface.CompositeAgent, error) {
 	// Merge factory config with provided options
 	allOpts := []iface.Option{
 		WithMaxRetries(f.config.DefaultMaxRetries),
@@ -117,9 +132,20 @@ func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llm
 	// Add user-provided options
 	allOpts = append(allOpts, opts...)
 
-	agent, err := base.NewBaseAgent(name, llm, agentTools, allOpts...)
+	baseAgent, err := base.NewBaseAgent(name, llm, agentTools, allOpts...)
 	if err != nil {
 		return nil, err
+	}
+
+	var agent iface.CompositeAgent = baseAgent
+
+	// Apply safety middleware if enabled
+	options := &iface.Options{}
+	for _, opt := range allOpts {
+		opt(options)
+	}
+	if options.EnableSafety {
+		agent = newSafetyMiddleware(agent)
 	}
 
 	// Record agent creation metric
@@ -129,7 +155,7 @@ func (f *AgentFactory) CreateBaseAgent(ctx context.Context, name string, llm llm
 }
 
 // CreateReActAgent creates a ReAct agent using the factory's configuration.
-func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
+func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm llmsiface.ChatModel, agentTools []iface.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
 	// Merge factory config with provided options
 	allOpts := []iface.Option{
 		WithMaxRetries(f.config.DefaultMaxRetries),
@@ -142,9 +168,20 @@ func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm ll
 	// Add user-provided options
 	allOpts = append(allOpts, opts...)
 
-	agent, err := react.NewReActAgent(name, llm, agentTools, prompt, allOpts...)
+	reactAgent, err := react.NewReActAgent(name, llm, agentTools, prompt, allOpts...)
 	if err != nil {
 		return nil, err
+	}
+
+	var agent iface.CompositeAgent = reactAgent
+
+	// Apply safety middleware if enabled
+	options := &iface.Options{}
+	for _, opt := range allOpts {
+		opt(options)
+	}
+	if options.EnableSafety {
+		agent = newSafetyMiddleware(agent)
 	}
 
 	// Record agent creation metric
@@ -173,8 +210,24 @@ func (f *AgentFactory) CreateReActAgent(ctx context.Context, name string, llm ll
 //	tools := []tools.Tool{calculator, webSearch}
 //	prompt := prompts.NewReActPrompt()
 //	agent, err := agents.NewReActAgent("researcher", llm, tools, prompt)
-func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []tools.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
-	return react.NewReActAgent(name, llm, agentTools, prompt, opts...)
+func NewReActAgent(name string, llm llmsiface.ChatModel, agentTools []iface.Tool, prompt any, opts ...iface.Option) (iface.CompositeAgent, error) {
+	reactAgent, err := react.NewReActAgent(name, llm, agentTools, prompt, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	var agent iface.CompositeAgent = reactAgent
+
+	// Apply safety middleware if enabled
+	options := &iface.Options{}
+	for _, opt := range opts {
+		opt(options)
+	}
+	if options.EnableSafety {
+		agent = newSafetyMiddleware(agent)
+	}
+
+	return agent, nil
 }
 
 // NewAgentExecutor creates a new agent executor.
@@ -222,8 +275,8 @@ func NewExecutorWithHandleParsingErrors(handle bool) iface.Executor {
 //	registry := agents.NewToolRegistry()
 //	registry.RegisterTool(calculator)
 //	tool, err := registry.GetTool("calculator")
-func NewToolRegistry() tools.Registry {
-	return tools.NewInMemoryToolRegistry()
+func NewToolRegistry() iface.ToolRegistry {
+	return iface.NewInMemoryToolRegistry()
 }
 
 // NewDefaultConfig creates a new configuration instance with default values.

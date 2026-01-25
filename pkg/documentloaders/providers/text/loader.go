@@ -2,9 +2,11 @@ package text
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -23,9 +25,9 @@ type LoaderConfig struct {
 
 // TextLoader loads a single text file.
 type TextLoader struct {
-	path   string
-	config *LoaderConfig
 	tracer trace.Tracer
+	config *LoaderConfig
+	path   string
 }
 
 // NewTextLoader creates a new TextLoader.
@@ -79,7 +81,7 @@ func (l *TextLoader) Load(ctx context.Context) ([]schema.Document, error) {
 
 	// Check MaxFileSize
 	if info.Size() > l.config.MaxFileSize {
-		span.RecordError(fmt.Errorf("file too large"))
+		span.RecordError(errors.New("file too large"))
 		span.SetStatus(codes.Error, "file too large")
 		return nil, newLoaderError("Load", ErrCodeFileTooLarge, l.path, fmt.Sprintf("file size %d exceeds max %d", info.Size(), l.config.MaxFileSize), nil)
 	}
@@ -97,7 +99,7 @@ func (l *TextLoader) Load(ctx context.Context) ([]schema.Document, error) {
 		PageContent: string(content),
 		Metadata: map[string]string{
 			"source":      l.path,
-			"file_size":   fmt.Sprintf("%d", info.Size()),
+			"file_size":   strconv.FormatInt(info.Size(), 10),
 			"modified_at": info.ModTime().Format(time.RFC3339),
 			"loader_type": "text",
 		},
@@ -141,5 +143,5 @@ func (l *TextLoader) LazyLoad(ctx context.Context) (<-chan any, error) {
 	return ch, nil
 }
 
-// Ensure TextLoader implements iface.DocumentLoader
+// Ensure TextLoader implements iface.DocumentLoader.
 var _ iface.DocumentLoader = (*TextLoader)(nil)

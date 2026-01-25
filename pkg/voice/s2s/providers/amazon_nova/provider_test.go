@@ -99,7 +99,6 @@ func TestAmazonNovaProvider_Process(t *testing.T) {
 
 	ctx := context.Background()
 	output, err := provider.Process(ctx, input, convCtx)
-
 	// This test will fail with real API calls if credentials are invalid
 	// In a properly mocked setup, this would succeed
 	if err != nil {
@@ -146,12 +145,11 @@ func TestAmazonNovaProvider_Process_ContextCancellation(t *testing.T) {
 		SessionID:      "test-session",
 	}
 
-	// Create a context that is immediately cancelled
+	// Create a context that is immediately canceled
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	_, err = provider.Process(ctx, input, convCtx)
-
 	// Should respect context cancellation
 	// Note: Current placeholder implementation may not check context,
 	// but the real implementation should
@@ -182,12 +180,11 @@ func TestAmazonNovaProvider_StartStreaming_ContextCancellation(t *testing.T) {
 		SessionID:      "test-session",
 	}
 
-	// Create a context that is immediately cancelled
+	// Create a context that is immediately canceled
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately
 
 	_, err = streamingProvider.StartStreaming(ctx, convCtx)
-
 	// Should respect context cancellation or return config error if streaming disabled
 	if err != nil {
 		// Either context was canceled or streaming is disabled (both are acceptable)

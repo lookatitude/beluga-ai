@@ -22,10 +22,10 @@ import (
 type MultiQueryRetriever struct {
 	retriever     core.Retriever
 	llm           iface.ChatModel
-	numQueries    int
 	tracer        trace.Tracer
 	logger        *slog.Logger
 	metrics       *Metrics
+	numQueries    int
 	enableTracing bool
 	enableMetrics bool
 }
@@ -34,10 +34,10 @@ type MultiQueryRetriever struct {
 type MultiQueryRetrieverOptions struct {
 	Retriever     core.Retriever
 	LLM           iface.ChatModel
-	NumQueries    int
 	Tracer        trace.Tracer
 	Logger        *slog.Logger
 	Metrics       *Metrics
+	NumQueries    int
 	EnableTracing bool
 	EnableMetrics bool
 }

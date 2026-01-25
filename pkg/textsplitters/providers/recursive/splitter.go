@@ -2,7 +2,9 @@ package recursive
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -17,10 +19,10 @@ import (
 
 // RecursiveConfig is duplicated here to avoid import cycle.
 type RecursiveConfig struct {
-	ChunkSize      int
-	ChunkOverlap   int
 	LengthFunction func(string) int
 	Separators     []string
+	ChunkSize      int
+	ChunkOverlap   int
 }
 
 // RecursiveCharacterTextSplitter splits text recursively using a hierarchy of separators.
@@ -63,7 +65,7 @@ func (s *RecursiveCharacterTextSplitter) SplitText(ctx context.Context, text str
 	start := time.Now()
 
 	if text == "" {
-		span.RecordError(fmt.Errorf("empty text"))
+		span.RecordError(errors.New("empty text"))
 		span.SetStatus(codes.Error, "empty text")
 		return nil, newSplitterError("SplitText", ErrCodeEmptyInput, "text cannot be empty", nil)
 	}
@@ -262,8 +264,8 @@ func (s *RecursiveCharacterTextSplitter) SplitDocuments(
 			}
 
 			// Add chunk metadata
-			chunkDoc.Metadata["chunk_index"] = fmt.Sprintf("%d", i)
-			chunkDoc.Metadata["chunk_total"] = fmt.Sprintf("%d", len(chunks))
+			chunkDoc.Metadata["chunk_index"] = strconv.Itoa(i)
+			chunkDoc.Metadata["chunk_total"] = strconv.Itoa(len(chunks))
 
 			allChunks = append(allChunks, chunkDoc)
 		}
@@ -310,5 +312,5 @@ func (s *RecursiveCharacterTextSplitter) CreateDocuments(ctx context.Context, te
 	return s.SplitDocuments(ctx, documents)
 }
 
-// Ensure RecursiveCharacterTextSplitter implements iface.TextSplitter
+// Ensure RecursiveCharacterTextSplitter implements iface.TextSplitter.
 var _ iface.TextSplitter = (*RecursiveCharacterTextSplitter)(nil)

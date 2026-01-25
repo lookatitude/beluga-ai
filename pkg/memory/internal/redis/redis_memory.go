@@ -5,6 +5,7 @@ package redis
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -20,16 +21,16 @@ type RedisMemory struct {
 	memoryKey   string
 	inputKey    string
 	outputKey   string
-	ttl         time.Duration
 	humanPrefix string
 	aiPrefix    string
+	ttl         time.Duration
 }
 
 // RedisClient defines the interface for Redis operations.
 // This allows for dependency injection and testing.
 type RedisClient interface {
 	Get(ctx context.Context, key string) (string, error)
-	Set(ctx context.Context, key string, value string, ttl time.Duration) error
+	Set(ctx context.Context, key, value string, ttl time.Duration) error
 	Del(ctx context.Context, keys ...string) error
 	Exists(ctx context.Context, key string) (bool, error)
 	Expire(ctx context.Context, key string, ttl time.Duration) error
@@ -42,23 +43,23 @@ type RedisConfig struct {
 	MemoryKey   string
 	InputKey    string
 	OutputKey   string
-	TTL         time.Duration
 	HumanPrefix string
 	AIPrefix    string
+	TTL         time.Duration
 }
 
 // NewRedisMemory creates a new Redis-backed memory instance.
 func NewRedisMemory(config *RedisConfig) (*RedisMemory, error) {
 	if config == nil {
-		return nil, fmt.Errorf("config cannot be nil")
+		return nil, errors.New("config cannot be nil")
 	}
 
 	if config.Client == nil {
-		return nil, fmt.Errorf("redis client is required")
+		return nil, errors.New("redis client is required")
 	}
 
 	if config.SessionID == "" {
-		return nil, fmt.Errorf("session ID is required")
+		return nil, errors.New("session ID is required")
 	}
 
 	memoryKey := config.MemoryKey
@@ -325,7 +326,7 @@ func (h *RedisChatMessageHistory) Clear(ctx context.Context) error {
 
 // getRedisKey generates a Redis key for the message history.
 func (h *RedisChatMessageHistory) getRedisKey() string {
-	return fmt.Sprintf("beluga:chat_history:%s", h.sessionID)
+	return "beluga:chat_history:" + h.sessionID
 }
 
 // Ensure RedisMemory implements the Memory interface.

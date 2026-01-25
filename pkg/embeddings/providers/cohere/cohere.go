@@ -40,17 +40,17 @@ type Client interface {
 
 // CohereEmbedRequest represents a request to Cohere embed API.
 type CohereEmbedRequest struct {
-	Texts     []string `json:"texts"`
 	Model     string   `json:"model"`
-	InputType string   `json:"input_type,omitempty"` // "search_document", "search_query", etc.
-	Truncate  string   `json:"truncate,omitempty"`   // "NONE", "START", "END"
+	InputType string   `json:"input_type,omitempty"`
+	Truncate  string   `json:"truncate,omitempty"`
+	Texts     []string `json:"texts"`
 }
 
 // CohereEmbedResponse represents a response from Cohere embed API.
 type CohereEmbedResponse struct {
-	Embeddings [][]float32 `json:"embeddings"`
 	ID         string      `json:"id"`
 	Meta       CohereMeta  `json:"meta"`
+	Embeddings [][]float32 `json:"embeddings"`
 }
 
 // CohereMeta represents metadata in Cohere response.
@@ -87,7 +87,7 @@ type CohereAPIVersion struct {
 //	}
 //	embeddings, err := embedder.EmbedDocuments(ctx, texts)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewCohereEmbedder(config *Config, tracer trace.Tracer) (*CohereEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")
@@ -130,7 +130,7 @@ func NewCohereEmbedder(config *Config, tracer trace.Tracer) (*CohereEmbedder, er
 //	mockClient := &MockCohereClient{}
 //	embedder, err := cohere.NewCohereEmbedderWithClient(config, tracer, mockClient)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewCohereEmbedderWithClient(config *Config, tracer trace.Tracer, client Client) (*CohereEmbedder, error) {
 	if config == nil {
 		return nil, iface.NewEmbeddingError(iface.ErrCodeInvalidConfig, "config cannot be nil")

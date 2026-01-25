@@ -25,76 +25,47 @@ This use case implements an intelligent multi-agent customer support system that
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Customer Support Portal                       │
-│              (Web, Mobile, Email, Chat)                         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              │ HTTP/REST
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    REST Server (pkg/server)                     │
-│  - Request routing                                              │
-│  - Authentication                                              │
-│  - Rate limiting                                               │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Orchestration Graph (pkg/orchestration)              │
-│                                                                  │
-│  ┌──────────────┐                                              │
-│  │  Router      │ ── Determines issue type and routes          │
-│  │  Agent       │    to appropriate specialist                 │
-│  └──────┬───────┘                                              │
-│         │                                                       │
-│    ┌────┴────┬──────────┬──────────┐                          │
-│    │         │          │          │                          │
-│    ▼         ▼          ▼          ▼                          │
-│  ┌────┐  ┌────┐    ┌────┐    ┌────┐                          │
-│  │Tech│  │Billing│  │Sales│  │General│                        │
-│  │Agent│  │Agent │  │Agent│  │Agent │                        │
-│  └────┘  └────┘    └────┘    └────┘                          │
-│    │         │          │          │                          │
-│    └─────────┴──────────┴──────────┘                          │
-│              │                                                 │
-│              ▼                                                 │
-│  ┌──────────────────────┐                                     │
-│  │  Resolution          │ ── Final response generation         │
-│  │  Agent               │                                     │
-│  └──────────────────────┘                                     │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│   Tools      │    │   Memory     │    │     LLMs     │
-│  (pkg/agents/│    │  (pkg/memory) │    │  (pkg/llms)  │
-│   tools)     │    │               │    │              │
-│  - API       │    │  - Buffer     │    │  - OpenAI    │
-│  - Shell     │    │  - VectorStore│   │  - Anthropic │
-│  - Calculator│    │               │    │              │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   External Systems      │
-              │  - CRM                  │
-              │  - Billing System       │
-              │  - Knowledge Base       │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph Portal["Customer Support Portal"]
+        A[Web / Mobile / Email / Chat]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - Agent execution metrics                                       │
-│  - Tool usage tracking                                           │
-│  - Response time monitoring                                      │
-│  - Resolution rate tracking                                      │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Server["REST Server - pkg/server"]
+        B[Request Routing<br>Authentication<br>Rate Limiting]
+    end
+
+    subgraph Orchestration["Orchestration Graph - pkg/orchestration"]
+        C[Router Agent] -->|Determines issue type| D[Tech Agent]
+        C --> E[Billing Agent]
+        C --> F[Sales Agent]
+        C --> G[General Agent]
+        D --> H[Resolution Agent]
+        E --> H
+        F --> H
+        G --> H
+    end
+
+    subgraph Components["Supporting Components"]
+        I[Tools - pkg/agents/tools<br>API / Shell / Calculator]
+        J[Memory - pkg/memory<br>Buffer / VectorStore]
+        K[LLMs - pkg/llms<br>OpenAI / Anthropic]
+    end
+
+    subgraph External["External Systems"]
+        L[CRM / Billing System / Knowledge Base]
+    end
+
+    subgraph Observability["Observability Layer"]
+        M[Agent Metrics<br>Tool Usage<br>Response Time<br>Resolution Rate]
+    end
+
+    A -->|HTTP/REST| B
+    B --> C
+    H --> I
+    H --> J
+    H --> K
+    I --> L
 ```
 
 ## Component Usage

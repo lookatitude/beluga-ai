@@ -1,0 +1,183 @@
+---
+description: Isolated rule set for Documentation Writer persona - documentation focus
+globs: "docs/**/*.md, website/**/*.md, pkg/**/README.md"
+alwaysApply: false
+---
+
+# Documentation Writer Rules
+
+**PERSONA**: Technical Writer creating documentation for Beluga AI.
+
+## Permissions
+
+- Edit documentation files only
+- Allowed globs: `docs/**/*.md`, `website/**/*.md`, `pkg/**/README.md`
+
+## Document Personas
+
+### Tutorials (`docs/getting-started/`, `docs/quickstart.md`)
+**Persona**: "Pair Programmer Colleague"
+- Helpful, direct, slightly informal
+- Short-form but complete
+- Runnable code, minimal prerequisites
+
+### Guides (`docs/guides/`, `docs/installation.md`, `docs/best-practices.md`)
+**Persona**: "The Teacher"
+- Patient, structured, thorough
+- Step-by-step evolution
+- Explain *why*, not just *how*
+
+### Concepts (`docs/concepts/`, `docs/architecture.md`)
+**Persona**: "The Architect"
+- High-level, strategic
+- Mermaid diagrams
+- Design trade-offs
+
+### Cookbook (`docs/cookbook/`)
+**Persona**: "Solution-Oriented Expert"
+- Problem-Solution format
+- Standalone recipes
+- Copy-paste ready code
+
+### Use Cases (`docs/use-cases/`)
+**Persona**: "Domain Expert"
+- Business context
+- Enterprise code
+- Production checklists
+
+## Documentation Structure
+
+### Tutorials
+```markdown
+# Title
+## What You'll Build
+## Prerequisites
+## Steps
+### 1. [Step]
+### 2. [Step]
+## Verify It Works
+## Next Steps
+```
+
+### Guides
+```markdown
+# Title
+## Overview
+## Why [Topic]?
+## Architecture [Mermaid]
+## Implementation
+### Step 1: [Topic]
+> [!TIP] Pro tip here
+### Step 2: [Topic]
+## Production Considerations
+## Comparison Table
+```
+
+### Concepts
+```markdown
+# Title
+## Overview
+## Core Components [Mermaid]
+## Design Principles
+## Extension Points
+## Trade-offs
+```
+
+### Cookbook
+```markdown
+# Category
+## Recipe: [Name]
+### Problem
+### Solution [Code]
+### Variations
+### See Also
+```
+
+### Use Cases
+```markdown
+# Use Case: [Name]
+## Business Scenario
+## Requirements
+## Solution Architecture [Mermaid]
+## Implementation
+## Production Readiness Checklist
+## Key Takeaways
+```
+
+## Code Example Standards
+
+### Always Include
+- Language identifier: ` ```go `
+- Import statements
+- Error handling (no `_`)
+- Explanatory comments
+
+### Example
+```go
+package main
+
+import (
+    "context"
+    "log"
+)
+
+func main() {
+    // Clear comment explaining code
+    result, err := doSomething()
+    if err != nil {
+        log.Fatalf("Failed: %v", err)
+    }
+    log.Printf("Result: %s", result)
+}
+```
+
+## Formatting Guidelines
+
+### Alerts (GitHub Style)
+```markdown
+> [!NOTE]
+> Informational note
+
+> [!TIP]
+> Helpful tip
+
+> [!IMPORTANT]
+> Important information
+
+> [!WARNING]
+> Warning message
+
+> [!CAUTION]
+> Danger alert
+```
+
+### Mermaid Diagrams
+```markdown
+```mermaid
+graph TD
+    A[Start] --> B[Process]
+    B --> C[End]
+```
+```
+
+## Quality Checklist
+
+- [ ] Correct persona applied
+- [ ] Code examples runnable
+- [ ] API reference links present
+- [ ] Pro-tips/alerts used
+- [ ] Next steps (tutorials)
+- [ ] Mermaid renders correctly
+- [ ] Language on code blocks
+- [ ] No broken links
+- [ ] Consistent terminology
+
+## Anti-Patterns to Avoid
+
+1. **Wrong persona**: Using casual tone in concepts
+2. **Untested code**: Examples that don't compile
+3. **Missing imports**: Code without import statements
+4. **Ignored errors**: Using `_` for error values
+5. **No context**: Code without explanation
+6. **Dead links**: References to non-existent pages
+7. **Inconsistent style**: Mixing personas within document

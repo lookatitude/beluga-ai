@@ -2,6 +2,7 @@ package livekit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/livekit/protocol/livekit"
@@ -61,7 +62,7 @@ func (th *TrackHandler) HandleTrackEvent(eventType string) error {
 	case "disconnected":
 		// Handle disconnected event
 		return backend.NewBackendError("HandleTrackEvent", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("track disconnected"))
+			errors.New("track disconnected"))
 	default:
 		return nil
 	}
