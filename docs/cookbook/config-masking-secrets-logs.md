@@ -312,4 +312,4 @@ func (sm *SecretMasker) partialMask(value string) string {
 
 - **[Config Hot-reloading in Production](./config-hot-reloading-production.md)** - Hot-reload configs safely
 - **[Safety PII Redaction in Logs](./safety-pii-redaction-logs.md)** - General PII redaction patterns
-- **[Config Package Guide](../guides/config-providers.md)** - For a deeper understanding of config management
+- **[Config Package Guide](../guides/implementing-providers.md)** - For a deeper understanding of config management

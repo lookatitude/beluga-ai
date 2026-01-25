@@ -326,9 +326,9 @@ func main() {
 Congratulations! You've mastered context usage in Beluga AI. Next, learn how to:
 
 - **[Zap/Logrus Logger Providers](./zap-logrus-providers.md)** - Structured logging integration
-- **[Core Package Documentation](../../api/packages/core.md)** - Deep dive into core package
+- **[Core Package Documentation](../../api-docs/packages/core.md)** - Deep dive into core package
 - **[Best Practices Guide](../../best-practices.md)** - Production patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -352,9 +352,9 @@ func main() {
 Congratulations! You've integrated JSON Schema validation with Beluga AI. Next, learn how to:
 
 - **[Pydantic/Go Struct Bridge](./pydantic-go-struct-bridge.md)** - Convert between Pydantic and Go structs
-- **[Schema Package Documentation](../../api/packages/schema.md)** - Deep dive into schema package
+- **[Schema Package Documentation](../../api-docs/packages/schema.md)** - Deep dive into schema package
 - **[Use Case: Document Processing](../../use-cases/03-intelligent-document-processing.md)** - Real-world validation usage
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -584,7 +584,7 @@ For each provider:
 ## Resources
 
 ### Documentation
-- [S2S Package README](../../../pkg/voice/s2s/README.md)
+- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)
 - [Provider Implementation Guide](./implementing-providers.md)
 - [Beluga AI Design Patterns](../package_design_patterns.md)
 

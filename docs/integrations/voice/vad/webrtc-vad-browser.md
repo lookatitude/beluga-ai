@@ -119,5 +119,5 @@ go
 ## Next Steps
 
 - **[ONNX Runtime for Edge VAD](./onnx-runtime-edge-vad.md)** — Silero on edge.
-- **[Custom VAD with Silero](../../../../tutorials/voice/voice-vad-custom-silero.md)** — Silero provider.
-- **[VAD Sensitivity Profiles](../../../../cookbook/voice-vad-sensitivity-profiles.md)** — Tuning.
+- **[Custom VAD with Silero](../../../tutorials/voice/voice-vad-custom-silero.md)** — Silero provider.
+- **[VAD Sensitivity Profiles](../../../cookbook/voice-vad-sensitivity-profiles.md)** — Tuning.

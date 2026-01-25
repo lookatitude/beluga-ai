@@ -25,7 +25,7 @@ bash
 go get github.com/lookatitude/beluga-ai
 ```
 
-Ensure you have a voice pipeline (e.g. VAD, STT) that can supply audio chunks and silence duration. See [Voice Sessions](../../../../use-cases/voice-sessions.md) and [Low-Latency Turn Prediction](../../../../use-cases/voice-turn-low-latency-prediction.md).
+Ensure you have a voice pipeline (e.g. VAD, STT) that can supply audio chunks and silence duration. See [Voice Sessions](../../../use-cases/voice-sessions.md) and [Low-Latency Turn Prediction](../../../use-cases/voice-turn-low-latency-prediction.md).
 
 ## Step 2: Heuristic Provider for Noisy Environments
 
@@ -129,5 +129,5 @@ Run with real or synthetic noisy audio. Log turn-end events and compare to groun
 ## Next Steps
 
 - **[Heuristic Tuning](./heuristic-tuning.md)** — Fine-tune MinSilenceDuration, sentence-end markers, and question markers.
-- **[Low-Latency Turn Prediction](../../../../use-cases/voice-turn-low-latency-prediction.md)** — Use case and architecture.
-- **[Voice Sessions](../../../../use-cases/voice-sessions.md)** — End-to-end voice pipeline.
+- **[Low-Latency Turn Prediction](../../../use-cases/voice-turn-low-latency-prediction.md)** — Use case and architecture.
+- **[Voice Sessions](../../../use-cases/voice-sessions.md)** — End-to-end voice pipeline.

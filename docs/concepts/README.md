@@ -11,6 +11,12 @@ This guide explains the core concepts and architectural patterns used in the Bel
 5. [RAG Concepts](./rag.md) - Retrieval-augmented generation, embeddings, vector stores
 6. [Orchestration Concepts](./orchestration.md) - Chains, graphs, workflows, task scheduling
 
+### [Design Patterns](./patterns/README.md)
+Implementation patterns, guidelines, and real-world examples for extending the framework.
+
+### [Architecture](./architecture/README.md)
+System-level architecture documentation, component diagrams, and data flows.
+
 ## How to Use This Guide
 
 ### For Beginners
@@ -85,13 +91,14 @@ Workflow and task management:
 ## Related Documentation
 
 - **[Getting Started Tutorial](../getting-started/)** - Step-by-step tutorials
-- **[Architecture Documentation](../architecture.md)** - System architecture
+- **[Architecture Documentation](./architecture/README.md)** - System architecture
+- **[Design Patterns](./patterns/README.md)** - Implementation patterns
 - **[Package Design Patterns](../package_design_patterns.md)** - Design principles
-- **[API Reference](../../website/docs/api/)** - Detailed API docs
+- **[API Reference](../api-reference.md)** - Detailed API docs
 
 ## Contributing
 
-Found an issue or want to improve a concept guide? See the [Contributing Guide](../../CONTRIBUTING.md).
+Found an issue or want to improve a concept guide? See the [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md).
 
 ---
 

@@ -382,9 +382,9 @@ func main() {
 Congratulations! You've integrated HashiCorp Vault with Beluga AI. Next, learn how to:
 
 - **[Viper & Environment Overrides](./viper-environment-overrides.md)** - Configuration management
-- **[Config Package Documentation](../../api/packages/config.md)** - Deep dive into config package
+- **[Config Package Documentation](../../api-docs/packages/config.md)** - Deep dive into config package
 - **[Security Best Practices](../../best-practices.md)** - Security patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

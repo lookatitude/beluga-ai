@@ -300,7 +300,7 @@ All new documentation should follow:
 
 ## Contributing to Documentation
 
-See [Contributing Guide](../CONTRIBUTING.md) for guidelines on:
+See [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md) for guidelines on:
 - Documentation style guide
 - How to submit documentation improvements
 - Review process

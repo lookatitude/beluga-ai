@@ -311,6 +311,6 @@ Set `BELUGA_DEBUG=true` for detailed logging during tests.
 
 ## References
 
-- [Framework Quality Standards](../.agent/rules/framework-quality.mdc)
-- [Framework Architecture](../.agent/rules/framework-architecture.mdc)
-- [Integration Testing Framework](../tests/README.md)
+- [Framework Quality Standards](https://github.com/lookatitude/beluga-ai/blob/main/.agent/rules/framework-quality.mdc)
+- [Framework Architecture](https://github.com/lookatitude/beluga-ai/blob/main/.agent/rules/framework-architecture.mdc)
+- [Integration Testing Framework](https://github.com/lookatitude/beluga-ai/blob/main/tests/README.md)

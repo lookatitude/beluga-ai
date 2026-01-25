@@ -354,9 +354,9 @@ When using Auth0 in production:
 Congratulations! You've integrated Auth0 with Beluga AI. Next, learn how to:
 
 - **[Kubernetes Helm Deployment](./kubernetes-helm-deployment.md)** - Helm deployment
-- **[Server Package Documentation](../../api/packages/server.md)** - Deep dive into server package
+- **[Server Package Documentation](../../api-docs/packages/server.md)** - Deep dive into server package
 - **[Deployment Guide](../../getting-started/07-production-deployment.md)** - Production deployment
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

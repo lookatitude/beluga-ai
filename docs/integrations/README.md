@@ -109,19 +109,19 @@ Integration guides help you connect Beluga AI with external services, third-part
 
 ## Integration Template
 
-Creating a new integration? Use the [Integration Template](./_template.md) as a starting point.
+Creating a new integration? Use the [Integration Template](https://github.com/lookatitude/beluga-ai/blob/main/docs/integrations/_template.md) as a starting point.
 
 ## Related Documentation
 
-- **[Getting Started Tutorials](../getting-started/)** - Learn the basics of Beluga AI
-- **[Guides](../guides/)** - Deep dives into framework concepts
-- **[Use Cases](../use-cases/)** - Real-world implementation examples
-- **[Cookbook](../cookbook/)** - Quick reference recipes
-- **[API Documentation](../api/)** - Complete API reference
+- **[Getting Started Tutorials](../getting-started/README.md)** - Learn the basics of Beluga AI
+- **[Guides](../guides/llm-providers.md)** - Deep dives into framework concepts
+- **[Use Cases](../use-cases/README.md)** - Real-world implementation examples
+- **[Cookbook](../cookbook/README.md)** - Quick reference recipes
+- **[API Documentation](../api-reference.md)** - Complete API reference
 
 ## Contributing
 
-Found an issue with an integration guide or want to add a new one? See our [Contributing Guide](../../CONTRIBUTING.md) for details.
+Found an issue with an integration guide or want to add a new one? See our [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md) for details.
 
 ---
 

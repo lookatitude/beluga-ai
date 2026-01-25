@@ -91,23 +91,17 @@ By implementing AI-powered ETL, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Data Sources] --> B[Extract Stage]
     B --> C[Transform Stage]
     C --> D[AI Enrichment Stage]
     D --> E[Quality Check Stage]
-    E --> F\{Quality OK?\}
+    E --> F{Quality OK?}
     F -->|Yes| G[Load Stage]
     F -->|No| H[Error Handler]
     G --> I[Data Destinations]
-    
-```
     J[Workflow Orchestrator] --> B
     J --> C
     J --> D
@@ -115,6 +109,7 @@ graph TB
     J --> G
     K[LLM] --> D
     L[Metrics Collector] --> J
+```
 
 ### How It Works
 

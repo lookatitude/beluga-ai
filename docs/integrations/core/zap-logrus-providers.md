@@ -357,9 +357,9 @@ func main() {
 Congratulations! You've integrated structured logging with Beluga AI. Next, learn how to:
 
 - **[Context Deep Dive](./context-deep-dive.md)** - Advanced context patterns
-- **[Core Package Documentation](../../api/packages/core.md)** - Deep dive into core package
+- **[Core Package Documentation](../../api-docs/packages/core.md)** - Deep dive into core package
 - **[Observability Guide](../../guides/observability-tracing.md)** - Complete observability setup
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

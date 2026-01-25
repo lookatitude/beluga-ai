@@ -91,13 +91,9 @@ By implementing context-aware memory, the extension could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Developer Query] --> B[Context Retriever]
     B --> C[Project Memory]
     C --> D[Code Index]
@@ -106,11 +102,10 @@ graph TB
     B --> G[Relevant Context]
     G --> H[AI Assistant]
     H --> I[Context-aware Response]
-    
-```
     J[Code Changes] --> K[Context Updater]
     K --> C
     L[Metrics Collector] --> B
+```
 
 ### How It Works
 

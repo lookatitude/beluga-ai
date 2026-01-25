@@ -707,9 +707,9 @@ func (l *LLM) Generate(ctx context.Context, prompt string) (string, error)
 
 For practical examples of these patterns in action, see:
 
-- **[Pattern Examples](../docs/patterns/pattern-examples.md)** - Real-world code examples showing patterns in practice
-- **[Cross-Package Patterns](../docs/patterns/cross-package-patterns.md)** - How patterns work together across packages
-- **[Pattern Decision Guide](../docs/patterns/pattern-decision-guide.md)** - When to use which pattern
+- **[Pattern Examples](./concepts/patterns/pattern-examples.md)** - Real-world code examples showing patterns in practice
+- **[Cross-Package Patterns](./concepts/patterns/cross-package-patterns.md)** - How patterns work together across packages
+- **[Pattern Decision Guide](./concepts/patterns/pattern-decision-guide.md)** - When to use which pattern
 
 ## Implementation Status ✅ **100% COMPLETE**
 

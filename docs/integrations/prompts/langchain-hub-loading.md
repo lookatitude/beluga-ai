@@ -335,9 +335,9 @@ When using LangChain Hub in production:
 Congratulations! You've integrated LangChain Hub with Beluga AI. Next, learn how to:
 
 - **[Local Filesystem Template Store](./local-filesystem-template-store.md)** - Local prompt storage
-- **[Prompts Package Documentation](../../api/packages/prompts.md)** - Deep dive into prompts package
-- **[Prompt Templates Guide](../../guides/)** - Advanced prompt patterns
+- **[Prompts Package Documentation](../../api-docs/packages/prompts.md)** - Deep dive into prompts package
+- **[Prompt Templates Guide](../../guides/llm-providers.md)** - Advanced prompt patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

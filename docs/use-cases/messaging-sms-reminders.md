@@ -91,13 +91,9 @@ By implementing automated SMS reminders, the provider could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Appointment Schedule] --> B[Reminder Scheduler]
     B --> C[Messaging Backend]
     C --> D[SMS Provider]
@@ -106,11 +102,10 @@ graph TB
     F --> G[Response Handler]
     G --> H[Rescheduling Agent]
     H --> I[Appointment System]
-    
-```
     J[Reminder Templates] --> C
     K[Delivery Tracker] --> C
     L[Metrics Collector] --> C
+```
 
 ### How It Works
 

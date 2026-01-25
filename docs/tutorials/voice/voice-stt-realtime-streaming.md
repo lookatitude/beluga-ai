@@ -134,4 +134,4 @@ Always remember to close the session to signal the end of the stream.
 ## Next Steps
 
 - **[Fine-tuning Whisper for Industry Terms](./voice-stt-whisper-finetuning.md)** - Improve accuracy for specialized vocabulary.
-- **[Voice Session Management](../session/README.md)** - Combine STT, TTS, and Agents.
+- **[Voice Session Management](./voice-session-interruptions.md)** - Combine STT, TTS, and Agents.

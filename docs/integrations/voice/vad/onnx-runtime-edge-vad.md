@@ -124,5 +124,5 @@ Use `ProcessStream` when processing a live mic stream on the edge. Feed audio ch
 ## Next Steps
 
 - **[WebRTC VAD in Browser](./webrtc-vad-browser.md)** — Browser-oriented VAD.
-- **[Custom VAD with Silero](../../../../tutorials/voice/voice-vad-custom-silero.md)** — Silero tutorial.
-- **[Noise-Resistant VAD](../../../../use-cases/voice-vad-noise-resistant.md)** — Noisy environments.
+- **[Custom VAD with Silero](../../../tutorials/voice/voice-vad-custom-silero.md)** — Silero tutorial.
+- **[Noise-Resistant VAD](../../../use-cases/voice-vad-noise-resistant.md)** — Noisy environments.

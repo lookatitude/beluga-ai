@@ -91,13 +91,8 @@ By implementing semantic policy search, the team could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Regulatory Query] --> B[Query Analyzer]
     B --> C[Hybrid Retriever]
     C --> D[Semantic Retriever]
@@ -106,12 +101,11 @@ graph TB
     E --> F
     F --> G[Relationship Enhancer]
     G --> H[Ranked Results]
-    
-```
     I[Policy Vector Store] --> D
     J[Policy Index] --> E
     K[Relationship Graph] --> G
     L[Metrics Collector] --> C
+```
 
 ### How It Works
 
@@ -179,7 +173,7 @@ func NewRegulatorySearchEngine(ctx context.Context) (*RegulatorySearchEngine, er
     }
 
     
-    return &RegulatorySearchEngine\{
+    return &RegulatorySearchEngine{
         semanticRetriever: semanticRetriever,
         keywordRetriever:  keywordRetriever,
         relationshipGraph: NewRelationshipGraph(),

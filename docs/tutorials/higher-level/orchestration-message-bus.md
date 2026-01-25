@@ -89,5 +89,5 @@ bus.Subscribe("research.complete", func(...) {
 
 ## Next Steps
 
-- **[Building DAG-based Agents](../orchestration-dag-agents.md)** - Compare with graph-based flows.
+- **[Building DAG-based Agents](./orchestration-dag-agents.md)** - Compare with graph-based flows.
 - **[Long-running Workflows with Temporal](./orchestration-temporal-workflows.md)** - For durable events.

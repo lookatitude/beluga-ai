@@ -18,7 +18,7 @@ Beluga AI is currently in pre-1.0 development. API changes may occur.
 ### Breaking Changes
 
 When upgrading, check:
-- [CHANGELOG.md](../CHANGELOG.md) for breaking changes
+- [CHANGELOG.md](https://github.com/lookatitude/beluga-ai/blob/main/CHANGELOG.md) for breaking changes
 - Package READMEs for API changes
 - This guide for migration steps
 
@@ -103,7 +103,7 @@ result, _ := graph.Invoke(ctx, input)
 
 ### Current Deprecations
 
-None currently. Check [CHANGELOG.md](../CHANGELOG.md) for updates.
+None currently. Check [CHANGELOG.md](https://github.com/lookatitude/beluga-ai/blob/main/CHANGELOG.md) for updates.
 
 ### Deprecation Policy
 
@@ -117,7 +117,7 @@ None currently. Check [CHANGELOG.md](../CHANGELOG.md) for updates.
 If you encounter migration issues:
 
 1. Check [Troubleshooting Guide](./troubleshooting.md)
-2. Review [CHANGELOG.md](../CHANGELOG.md)
+2. Review [CHANGELOG.md](https://github.com/lookatitude/beluga-ai/blob/main/CHANGELOG.md)
 3. Search GitHub Issues
 4. Create a new issue with details
 

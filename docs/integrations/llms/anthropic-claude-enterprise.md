@@ -132,8 +132,8 @@ Congratulations! You've configured Claude Enterprise with Beluga AI. Next, learn
 
 - **[AWS Bedrock Integration](./aws-bedrock-integration.md)** - Use Bedrock models
 - **[LLM Providers Guide](../../guides/llm-providers.md)** - LLM configuration
-- **[LLMs Package Documentation](../../api/packages/llms.md)** - Deep dive into LLMs
+- **[LLMs Package Documentation](../../api-docs/packages/llms.md)** - Deep dive into LLMs
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

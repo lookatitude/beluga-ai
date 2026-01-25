@@ -91,13 +91,8 @@ By implementing semantic knowledge Q&A, the enterprise could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[User Question] --> B[Query Embedder]
     B --> C[Vector Store]
     D[Document Sources] --> E[Document Processor]
@@ -108,11 +103,10 @@ graph TB
     H --> I[Context Retriever]
     I --> J[Answer Generator]
     J --> K[Answer with Citations]
-    
-```
     L[LLM] --> J
     M[Metrics Collector] --> B
     M --> H
+```
 
 ### How It Works
 
@@ -183,7 +177,7 @@ func NewKnowledgeQASystem(ctx context.Context) (*KnowledgeQASystem, error) {
     }
 
     
-    return &KnowledgeQASystem\{
+    return &KnowledgeQASystem{
         embedder:       embedder,
         vectorStore:    vectorStore,
         documentLoader: documentloaders.NewDirectoryLoader("./docs"),
@@ -297,7 +291,7 @@ Provide a clear, accurate answer. If the context doesn't contain enough informat
     }
 
     
-    return &Answer\{
+    return &Answer{
         Answer:  response.GetContent(),
         Sources: sources,
     }, nil

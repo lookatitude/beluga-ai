@@ -91,8 +91,9 @@ By implementing academic-aware text splitting, the institution could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     A[Scientific Papers] -->|PDF/LaTeX/Markdown| B[Format Parser]
     B -->|PDF Parser| C[PDF Extractor]
     B -->|LaTeX Parser| D[LaTeX Parser]
@@ -112,6 +113,7 @@ graph TB
     O[OTEL Metrics] -->|Observability| B
     O -->|Observability| G
     O -->|Observability| J
+```
 
 ### How It Works
 
@@ -575,5 +577,5 @@ If you're working on a similar project, you might also find these helpful:
 
 - **[Optimizing RAG for Large Repositories](./textsplitters-optimizing-rag-large-repos.md)** - Similar scenario focusing on code repository splitting
 - **[Enterprise Knowledge QA](./vectorstores-enterprise-knowledge-qa.md)** - Building the RAG system that uses processed papers
-- **[Text Splitting Guide](../guides/text-splitting.md)** - Deep dive into text splitting strategies
-- **[Academic Paper RAG](../../examples/rag/academic-papers/README.md)** - Runnable code demonstrating academic-aware splitting
+- **[Text Splitting Guide](../concepts/text-splitting.md)** - Deep dive into text splitting strategies
+- **[Academic Paper RAG](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag/academic-papers/README.md)** - Runnable code demonstrating academic-aware splitting

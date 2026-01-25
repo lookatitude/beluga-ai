@@ -204,4 +204,4 @@ sequenceDiagram
 
 - [Component Diagrams](./component-diagrams.md) - Component structure
 - [Data Flows](./data-flows.md) - Data flow through system
-- [Architecture Overview](../architecture.md) - Complete architecture
+- [Architecture Overview](../../architecture.md) - Complete architecture

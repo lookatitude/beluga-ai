@@ -624,6 +624,6 @@ func GetMetrics() *Metrics {
 
 ## Resources
 
-- [Package Design Patterns](../package_design_patterns.md)
-- [Provider Implementation Guide](../guides/implementing-providers.md)
+- [Package Design Patterns](../../package_design_patterns.md)
+- [Provider Implementation Guide](../../guides/implementing-providers.md)
 - [Gap Analysis](../architecture/gaps-analysis.md)

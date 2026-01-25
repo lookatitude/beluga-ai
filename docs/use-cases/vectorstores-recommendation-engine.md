@@ -90,13 +90,8 @@ By implementing semantic-based recommendations, the platform could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[User Request] --> B[User Preference Vector]
     B --> C[Vector Store]
     D[Product Catalog] --> E[Product Embedder]
@@ -104,11 +99,10 @@ graph TB
     C --> F[Similarity Search]
     F --> G[Hybrid Ranker]
     G --> H[Recommendations]
-    
-```
     I[User Behavior] --> B
     J[Product Metadata] --> E
     K[Metrics Collector] --> F
+```
 
 ### How It Works
 
@@ -172,7 +166,7 @@ func NewRecommendationEngine(ctx context.Context) (*RecommendationEngine, error)
     }
 
     
-    return &RecommendationEngine\{
+    return &RecommendationEngine{
         embedder:    embedder,
         vectorStore: vectorStore,
         userPrefs:   NewUserPreferenceEngine(),

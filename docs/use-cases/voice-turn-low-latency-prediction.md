@@ -75,8 +75,9 @@ By implementing low-latency turn prediction:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     Audio[Audio Stream] --> VAD[VAD]
     VAD --> Silence[Silence Duration]
     Audio --> Buffer[Audio Buffer]
@@ -84,9 +85,10 @@ graph TB
     Silence --> TD
     TD --> Decision[Turn End Decision]
     Decision --> Session[Voice Session]
-    Session --> STT[STT] 
+    Session --> STT[STT]
     Session --> LLM[LLM]
     Session --> TTS[TTS]
+```
 
 ### How It Works
 

@@ -91,29 +91,24 @@ By implementing automated processing, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Invoice Input] --> B[Invoice Parser]
     B --> C[Data Extractor]
     C --> D[Validator]
-    D --> E\{Valid?\}
+    D --> E{Valid?}
     E -->|Yes| F[Approval Workflow]
     E -->|No| G[Error Handler]
     F --> H[Accounting Integration]
     H --> I[Processed Invoice]
-    
-```
     J[Workflow Orchestrator] --> B
     J --> C
     J --> D
     J --> F
     K[Checkpoint Manager] --> J
     L[Metrics Collector] --> J
+```
 
 ### How It Works
 
@@ -184,7 +179,7 @@ func NewInvoiceProcessor(ctx context.Context) (*InvoiceProcessor, error) {
     workflow.AddDependency("integrate", "approve")
 
     
-    return &InvoiceProcessor\{
+    return &InvoiceProcessor{
         workflow: workflow,
     }, nil
 }
@@ -237,7 +232,7 @@ func (p *ParseStep) Invoke(ctx context.Context, input any, opts ...core.Option) 
     }
 
     
-    return map[string]any\{
+    return map[string]any{
         "parsed": parsed,
     }, nil
 }
@@ -250,8 +245,9 @@ func (p *ParseStep) Invoke(ctx context.Context, input any, opts ...core.Option) 
 ### Phase 3: Integration/Polish
 
 Finally, we integrated monitoring and recovery:
-// ProcessInvoiceWithRecovery processes with automatic recovery
+
 ```go
+// ProcessInvoiceWithRecovery processes with automatic recovery
 func (i *InvoiceProcessor) ProcessInvoiceWithRecovery(ctx context.Context, invoice Invoice) (*ProcessedInvoice, error) {
     ctx, span := i.tracer.Start(ctx, "invoice_processor.process.recovery")
     defer span.End()
@@ -274,7 +270,6 @@ func (i *InvoiceProcessor) ProcessInvoiceWithRecovery(ctx context.Context, invoi
     // Clear checkpoint on success
     i.clearCheckpoint(ctx, invoice.ID)
 
-    
     return result, nil
 }
 ```

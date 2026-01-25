@@ -278,9 +278,9 @@ When using Twilio in production:
 Congratulations! You've integrated Twilio with Beluga AI. Next, learn how to:
 
 - **[Slack Webhook Handler](./slack-webhook-handler.md)** - Slack integration
-- **[Messaging Package Documentation](../../api/packages/messaging.md)** - Deep dive into messaging package
+- **Messaging Package Documentation** - Deep dive into messaging package
 - **[Messaging Use Cases](../../use-cases/)** - Messaging patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -366,9 +366,9 @@ When using S3 event-driven loading in production:
 Congratulations! You've created an S3 event-driven loader. Next, learn how to:
 
 - **[Google Drive API Scraper](./google-drive-api-scraper.md)** - Google Drive integration
-- **[Document Loaders Documentation](../../api/packages/documentloaders.md)** - Deep dive into document loaders
+- **Document Loaders Documentation** - Deep dive into document loaders
 - **[RAG Guide](../../guides/rag-multimodal.md)** - RAG patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

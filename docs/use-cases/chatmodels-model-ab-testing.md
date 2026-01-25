@@ -90,13 +90,9 @@ By implementing A/B testing, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[User Request] --> B[Traffic Splitter]
     B --> C[Model A]
     B --> D[Model B]
@@ -104,12 +100,11 @@ graph TB
     D --> E
     E --> F[Statistical Analyzer]
     F --> G[Experiment Results]
-    
-```
     H[Experiment Config] --> B
     I[Model Registry] --> C
     I --> D
     J[Dashboard] --> G
+```
 
 ### How It Works
 

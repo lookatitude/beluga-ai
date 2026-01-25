@@ -330,9 +330,9 @@ When using distributed locks in production:
 Congratulations! You've implemented Redis distributed locking. Next, learn how to:
 
 - **[MongoDB Context Persistence](./mongodb-context-persistence.md)** - MongoDB integration
-- **[Memory Package Documentation](../../api/packages/memory.md)** - Deep dive into memory package
+- **[Memory Package Documentation](../../api-docs/packages/memory.md)** - Deep dive into memory package
 - **[Memory Tutorial](../../getting-started/05-memory-management.md)** - Memory patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

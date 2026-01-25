@@ -93,4 +93,4 @@ go run .
 ## Next Steps
 
 - **[Sentence-Boundary Detection](./voice-turn-sentence-boundary-detection.md)** — Heuristic provider.
-- **[Heuristic Tuning](../../integrations/voice/turn/heuristic-tuning.md)** — Fine-tune MinSilenceDuration and markers.
+- **[Heuristic Tuning](../integrations/voice/turn/heuristic-tuning.md)** — Fine-tune MinSilenceDuration and markers.

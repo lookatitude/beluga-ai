@@ -799,7 +799,7 @@ go vad.Detect(ctx, cleanFrame)
 
 ## Related Resources
 
-- **[Voice Providers Guide](../../guides/voice-providers.md)**: Comprehensive STT/TTS/S2S integration
-- **[Voice Sessions Use Case](../../use-cases/voice-sessions.md)**: Full voice agent implementation
-- **[Voice Backends Cookbook](../../cookbook/voice-backends.md)**: Quick configuration recipes
-- **[Observability Tracing Guide](../../guides/observability-tracing.md)**: Distributed tracing setup
+- **[Voice Providers Guide](../../../guides/voice-providers.md)**: Comprehensive STT/TTS/S2S integration
+- **[Voice Sessions Use Case](../../../use-cases/voice-session-multi-turn-forms.md)**: Full voice agent implementation
+- **[Voice Backends Cookbook](../../../cookbook/voice-backends.md)**: Quick configuration recipes
+- **[Observability Tracing Guide](../../../guides/observability-tracing.md)**: Distributed tracing setup

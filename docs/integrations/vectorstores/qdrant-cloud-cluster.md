@@ -299,9 +299,9 @@ When using Qdrant Cloud in production:
 Congratulations! You've integrated Qdrant Cloud with Beluga AI. Next, learn how to:
 
 - **[Pinecone Serverless](./pinecone-serverless.md)** - Serverless vector storage
-- **[Vectorstores Package Documentation](../../api/packages/vectorstores.md)** - Deep dive into vectorstores
+- **[Vectorstores Package Documentation](../../api-docs/packages/vectorstores.md)** - Deep dive into vectorstores
 - **[RAG Tutorial](../../getting-started/02-simple-rag.md)** - Build RAG applications
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

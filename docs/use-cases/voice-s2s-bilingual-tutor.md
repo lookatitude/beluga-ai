@@ -91,13 +91,9 @@ By implementing AI conversation tutor, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Student Voice] --> B[S2S Provider]
     B --> C[Pronunciation Analyzer]
     C --> D[Feedback Generator]
@@ -106,12 +102,11 @@ graph TB
     F --> G[Response Generator]
     G --> B
     B --> H[Student Audio]
-    
-```
     I[Student Profile] --> F
     J[Learning Progress] --> E
     K[Language Models] --> G
     L[Metrics Collector] --> B
+```
 
 ### How It Works
 
@@ -172,7 +167,7 @@ func NewBilingualTutor(ctx context.Context, targetLanguage string) (*BilingualTu
     }
 
     
-    return &BilingualTutor\{
+    return &BilingualTutor{
         s2sProvider:         s2sProvider,
         pronunciationAnalyzer: NewPronunciationAnalyzer(),
         feedbackGenerator:   NewFeedbackGenerator(),
@@ -249,7 +244,7 @@ func (b *BilingualTutor) ConductLesson(ctx context.Context, studentID string, au
                 // Track progress
                 b.progressTracker.RecordProgress(ctx, studentID, pronunciation)
                 
-                outputChan \<- chunk.Audio
+                outputChan <- chunk.Audio
             }
         }
     }()
@@ -265,8 +260,9 @@ func (b *BilingualTutor) ConductLesson(ctx context.Context, studentID string, au
 ### Phase 3: Integration/Polish
 
 Finally, we integrated monitoring and optimization:
-// ConductLessonWithMonitoring conducts with comprehensive tracking
+
 ```go
+// ConductLessonWithMonitoring conducts with comprehensive tracking
 func (b *BilingualTutor) ConductLessonWithMonitoring(ctx context.Context, studentID string, audioStream <-chan []byte) (<-chan []byte, error) {
     ctx, span := b.tracer.Start(ctx, "tutor.conduct_lesson.monitored")
     defer span.End()

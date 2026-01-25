@@ -13,7 +13,7 @@
 
 - Go 1.24+
 - Beluga AI (`go get github.com/lookatitude/beluga-ai`)
-- [First Agent](../../../getting-started/03-first-agent.md) and [Working with Tools](../../../getting-started/04-working-with-tools.md)
+- [First Agent](../../getting-started/03-first-agent.md) and [Working with Tools](../../getting-started/04-working-with-tools.md)
 
 ## Step 1: Define a Custom Tool
 
@@ -83,6 +83,6 @@ If your agent and LLM support streaming, use `StreamExecute` and process chunks 
 
 ## Next Steps
 
-- **[MCP Tools Integration](../../../integrations/agents/agents-mcp-tools-integration.md)** — Expose tools via MCP server.
-- **[Custom Tools Registry](../../../integrations/agents/agents-custom-tools-registry.md)** — More registry patterns.
+- **[MCP Tools Integration](../../integrations/agents/agents-mcp-tools-integration.md)** — Expose tools via MCP server.
+- **[Custom Tools Registry](../../integrations/agents/agents-custom-tools-registry.md)** — More registry patterns.
 - **[Multi-Agent Orchestration](./agents-multi-agent-orchestration.md)** — Coordinate multiple agents.

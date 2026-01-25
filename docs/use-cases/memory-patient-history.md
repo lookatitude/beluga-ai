@@ -91,13 +91,9 @@ By implementing long-term history tracking, the provider could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Patient Interaction] --> B[History Tracker]
     B --> C[Memory Store]
     C --> D[Persistent Storage]
@@ -105,11 +101,10 @@ graph TB
     F --> G[Semantic Search]
     G --> C
     C --> H[Patient History]
-    
-```
     I[Encryption Layer] --> D
     J[Access Control] --> F
     K[Metrics Collector] --> B
+```
 
 ### How It Works
 

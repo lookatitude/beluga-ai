@@ -91,28 +91,23 @@ By implementing real-time PII detection, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[LLM Request] --> B[PII Detector]
-    B --> C\{Pattern Matcher\}
-    B --> D\{ML Classifier\}
-    C --> E\{PII Found?\}
+    B --> C{Pattern Matcher}
+    B --> D{ML Classifier}
+    C --> E{PII Found?}
     D --> E
     E -->|Yes| F[Block Request]
     E -->|No| G[Allow Request]
     F --> H[Alert System]
     F --> I[Audit Logger]
     G --> J[LLM Provider]
-    
-```
     K[PII Patterns] --> C
     L[ML Model] --> D
     M[Metrics Collector] --> B
+```
 
 ### How It Works
 

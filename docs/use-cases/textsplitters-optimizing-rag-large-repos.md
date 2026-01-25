@@ -90,8 +90,9 @@ By implementing code-aware text splitting, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     A[Code Repository] -->|100K+ Files| B[Language Detector]
     B -->|Language| C[Language-Specific Splitter]
     C -->|Go Parser| D[Go Code Splitter]
@@ -110,6 +111,7 @@ graph TB
     N[OTEL Metrics] -->|Observability| B
     N -->|Observability| C
     N -->|Observability| J
+```
 
 ### How It Works
 
@@ -512,5 +514,5 @@ If you're working on a similar project, you might also find these helpful:
 
 - **[Scientific Paper Processing](./textsplitters-scientific-paper-processing.md)** - Similar scenario focusing on academic document splitting
 - **[Enterprise Knowledge QA](./vectorstores-enterprise-knowledge-qa.md)** - Building the RAG system that uses optimized chunks
-- **[Text Splitting Guide](../guides/text-splitting.md)** - Deep dive into text splitting strategies
-- **[Code Repository RAG](../../examples/rag/code-repository/README.md)** - Runnable code demonstrating code-aware splitting
+- **[Text Splitting Guide](../concepts/text-splitting.md)** - Deep dive into text splitting strategies
+- **[Code Repository RAG](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag/code-repository/README.md)** - Runnable code demonstrating code-aware splitting

@@ -90,13 +90,9 @@ By implementing semantic image search, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Search Query] --> B[Query Embedder]
     B --> C[Vector Store]
     D[Product Images] --> E[Image Embedder]
@@ -104,12 +100,11 @@ graph TB
     C --> F[Similarity Search]
     F --> G[Result Ranker]
     G --> H[Search Results]
-    
-```
     I[Multimodal Model] --> B
     I --> E
     J[Metrics Collector] --> B
     J --> E
+```
 
 ### How It Works
 

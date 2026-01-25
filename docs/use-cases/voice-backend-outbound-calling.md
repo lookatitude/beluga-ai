@@ -76,8 +76,9 @@ By automating outbound with a voice backend:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     Scheduler[Job Scheduler] --> Worker[Outbound Worker]
     Worker --> CRM[CRM]
     Worker --> Backend[Voice Backend]
@@ -87,6 +88,7 @@ graph TB
     Session --> Tel[Telephony]
     Tel --> Contact[Contact]
     Worker --> Disposition[Disposition Store]
+```
 
 ### How It Works
 
@@ -107,7 +109,7 @@ graph TB
 ## Implementation
 
 ### Phase 1: Backend and Outbound Session
-go
+
 ```go
 	cfg := &vbiface.Config{
 		Provider:             "vapi",
@@ -199,5 +201,5 @@ On session end (or timeout), worker records disposition. Use retry policy for no
 
 ## Related Resources
 
-- **[Voice Backends Tutorial](../../tutorials/voice/voice-backends-livekit-vapi.md)** — LiveKit and Vapi.
-- **[Scaling Concurrent Streams](../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Backend scaling.
+- **[Voice Backends Tutorial](../tutorials/voice/voice-backends-livekit-vapi.md)** — LiveKit and Vapi.
+- **[Scaling Concurrent Streams](../cookbook/voice-backend-scaling-concurrent-streams.md)** — Backend scaling.

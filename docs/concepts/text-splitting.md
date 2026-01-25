@@ -367,5 +367,5 @@ registry.Register("custom", func(config map[string]any) (iface.TextSplitter, err
 
 - [Document Loading Concepts](./document-loading.md)
 - [RAG Concepts](./rag.md)
-- [Text Splitters Package](../../pkg/textsplitters/README.md)
-- [Examples](../../examples/textsplitters/)
+- [Text Splitters Package](https://github.com/lookatitude/beluga-ai/tree/main/pkg/textsplitters/README.md)
+- [Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/textsplitters/)

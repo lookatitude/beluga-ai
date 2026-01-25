@@ -667,6 +667,6 @@ Now that you understand streaming LLM calls with tool calling, explore:
 
 - **[Agent Types Guide](./agent-types.md)** - Learn how agents orchestrate multiple tool calls in a reasoning loop
 - **[LLM Providers Guide](./llm-providers.md)** - Deep dive into configuring different LLM providers
-- **[Streaming Example](/examples/llms/streaming/README.md)** - Complete implementation with tests and OTEL instrumentation
+- **[Streaming Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/streaming/README.md)** - Complete implementation with tests and OTEL instrumentation
 - **[LLM Error Handling](../cookbook/llm-error-handling.md)** - Handle rate limits and API errors gracefully
-- **[Batch Processing Use Case](../use-cases/batch-processing.md)** - See streaming in action for high-volume processing
+- **[Batch Processing Use Case](../use-cases/11-batch-processing.md)** - See streaming in action for high-volume processing

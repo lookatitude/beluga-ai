@@ -245,9 +245,9 @@ When using Vertex AI in production:
 Congratulations! You've integrated Vertex AI with Beluga AI. Next, learn how to:
 
 - **[Pixtral Mistral Integration](./pixtral-mistral-integration.md)** - Pixtral integration
-- **[Multimodal Package Documentation](../../api/packages/multimodal.md)** - Deep dive into multimodal package
+- **Multimodal Package Documentation** - Deep dive into multimodal package
 - **[Multimodal Guide](../../guides/rag-multimodal.md)** - Multimodal patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -230,9 +230,9 @@ When using LangSmith in production:
 Congratulations! You've integrated LangSmith with Beluga AI. Next, learn how to:
 
 - **[Datadog Dashboard Templates](./datadog-dashboard-templates.md)** - Monitoring dashboards
-- **[Monitoring Package Documentation](../../api/packages/monitoring.md)** - Deep dive into monitoring
+- **[Monitoring Package Documentation](../../api-docs/packages/monitoring.md)** - Deep dive into monitoring
 - **[LLM Providers Guide](../../guides/llm-providers.md)** - LLM configuration
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

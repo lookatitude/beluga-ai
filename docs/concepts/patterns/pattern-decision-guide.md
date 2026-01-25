@@ -287,4 +287,4 @@ Need programmatic error handling?
 
 - [Pattern Examples](./pattern-examples.md) - Real-world examples
 - [Cross-Package Patterns](./cross-package-patterns.md) - Pattern integration
-- [Package Design Patterns](../package_design_patterns.md) - Complete reference
+- [Package Design Patterns](../../package_design_patterns.md) - Complete reference

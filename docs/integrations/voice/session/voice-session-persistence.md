@@ -122,5 +122,5 @@ Use restored state to decide the next question, prompt, or agent context.
 ## Next Steps
 
 - **[Multi-Provider Session Routing](./multi-provider-session-routing.md)** — Route sessions by provider or backend.
-- **[Voice Sessions](../../../../use-cases/voice-sessions.md)** — Session architecture.
-- **[Multi-Turn Voice Forms](../../../../use-cases/voice-session-multi-turn-forms.md)** — Form state and resumption.
+- **[Voice Sessions](../../../use-cases/voice-sessions.md)** — Session architecture.
+- **[Multi-Turn Voice Forms](../../../use-cases/voice-session-multi-turn-forms.md)** — Form state and resumption.

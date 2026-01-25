@@ -140,5 +140,5 @@ go
 ## Next Steps
 
 - **[Voice Session Persistence](./voice-session-persistence.md)** — Persist and restore session state.
-- **[Voice Backends](../../../../cookbook/voice-backends.md)** — Backend providers (LiveKit, Vapi).
-- **[Voice Sessions](../../../../use-cases/voice-sessions.md)** — Session architecture.
+- **[Voice Backends](../../../cookbook/voice-backends.md)** — Backend providers (LiveKit, Vapi).
+- **[Voice Sessions](../../../use-cases/voice-sessions.md)** — Session architecture.

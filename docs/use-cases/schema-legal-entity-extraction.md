@@ -87,27 +87,22 @@ By implementing an automated entity extraction system with schema validation, th
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Document Input] --> B[Document Parser]
     B --> C[LLM Entity Extractor]
     C --> D[Schema Validator]
-    D --> E\{Valid?\}
+    D --> E{Valid?}
     E -->|Yes| F[Structured Output]
     E -->|No| G[Error Handler]
     G --> H[Manual Review Queue]
     D --> I[OTEL Metrics]
     F --> J[Case Management System]
-    
-```
     K[Schema Definitions] --> D
     L[Configuration] --> C
     L --> D
+```
 
 ### How It Works
 

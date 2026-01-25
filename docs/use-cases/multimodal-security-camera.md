@@ -91,27 +91,22 @@ By implementing AI-powered analysis, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Camera Video Stream] --> B[Video Processor]
     B --> C[Frame Extractor]
     C --> D[Multimodal Model]
     D --> E[Event Detector]
-    E --> F\{Threat?\}
+    E --> F{Threat?}
     F -->|Yes| G[Alert Generator]
     F -->|No| H[Event Logger]
     G --> I[Security Team]
     H --> J[Event Database]
-    
-```
     K[Object Recognizer] --> E
     L[Metrics Collector] --> D
     M[Alert Rules] --> E
+```
 
 ### How It Works
 

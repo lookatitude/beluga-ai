@@ -90,13 +90,9 @@ By implementing dynamic tool injection, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Agent Request] --> B[Context Analyzer]
     B --> C[Tool Selector]
     C --> D[Permission Filter]
@@ -104,12 +100,11 @@ graph TB
     E --> F[Prompt Injector]
     F --> G[Enhanced Prompt]
     G --> H[Agent Execution]
-    
-```
     I[Tool Registry] --> C
     J[User Permissions] --> D
     K[Task Context] --> B
     L[Metrics Collector] --> E
+```
 
 ### How It Works
 

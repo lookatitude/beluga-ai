@@ -47,12 +47,45 @@ module.exports = {
         'concepts/rag',
         'concepts/document-loading',
         'concepts/text-splitting',
+        {
+          type: 'category',
+          label: 'Design Patterns',
+          link: {
+            type: 'doc',
+            id: 'concepts/patterns/README',
+          },
+          items: [
+            'concepts/patterns/pattern-decision-guide',
+            'concepts/patterns/cross-package-patterns',
+            'concepts/patterns/consistency-guide',
+            'concepts/patterns/pattern-examples',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Architecture',
+          link: {
+            type: 'generated-index',
+            title: 'Architecture',
+            description: 'System-level architecture documentation and visual representations.',
+          },
+          items: [
+            'concepts/architecture/README',
+            'concepts/architecture/architecture',
+            'concepts/architecture/component-diagrams',
+            'concepts/architecture/data-flows',
+            'concepts/architecture/sequences',
+            'concepts/architecture/gaps-analysis',
+            'concepts/architecture/import-cycle-audit',
+          ],
+        },
       ],
     },
     {
       type: 'category',
       label: 'Guides',
       items: [
+        'guides/README',
         'guides/llm-providers',
         'guides/llm-streaming-tool-calls',
         'guides/agent-types',
@@ -81,8 +114,11 @@ module.exports = {
         {
           type: 'category',
           label: 'Foundation',
+          link: {
+            type: 'doc',
+            id: 'tutorials/foundation/README',
+          },
           items: [
-            'tutorials/foundation/README',
             'tutorials/foundation/core-custom-runnable',
             'tutorials/foundation/core-middleware-implementation',
             'tutorials/foundation/config-environment-secrets',
@@ -97,8 +133,11 @@ module.exports = {
         {
           type: 'category',
           label: 'Providers',
+          link: {
+            type: 'doc',
+            id: 'tutorials/providers/README',
+          },
           items: [
-            'tutorials/providers/README',
             'tutorials/providers/llms-new-provider',
             'tutorials/providers/llms-advanced-inference',
             'tutorials/providers/embeddings-multimodal-google',
@@ -112,8 +151,11 @@ module.exports = {
         {
           type: 'category',
           label: 'Higher-Level',
+          link: {
+            type: 'doc',
+            id: 'tutorials/higher-level/README',
+          },
           items: [
-            'tutorials/higher-level/README',
             'tutorials/higher-level/agents-research-agent',
             'tutorials/higher-level/agents-multi-agent-orchestration',
             'tutorials/higher-level/agents-tools-registry',
@@ -135,8 +177,11 @@ module.exports = {
         {
           type: 'category',
           label: 'Voice',
+          link: {
+            type: 'doc',
+            id: 'tutorials/voice/README',
+          },
           items: [
-            'tutorials/voice/README',
             'tutorials/voice/voice-stt-realtime-streaming',
             'tutorials/voice/voice-stt-whisper-finetuning',
             'tutorials/voice/voice-tts-elevenlabs-cloning',
@@ -156,8 +201,11 @@ module.exports = {
         {
           type: 'category',
           label: 'Other',
+          link: {
+            type: 'doc',
+            id: 'tutorials/other/README',
+          },
           items: [
-            'tutorials/other/README',
             'tutorials/other/docloaders-directory-pdf-scraper',
             'tutorials/other/docloaders-lazy-loading',
             'tutorials/other/textsplitters-markdown-chunking',
@@ -577,15 +625,9 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'Architecture',
+      label: 'Examples',
       items: [
-        'architecture/architecture',
-        'architecture/component-diagrams',
-        'architecture/data-flows',
-        'architecture/sequences',
-        'architecture/gaps-analysis',
-        'architecture/import-cycle-audit',
-        'architecture/test-import-cycles',
+        'examples/README',
       ],
     },
     {
@@ -643,13 +685,6 @@ module.exports = {
     },
     {
       type: 'category',
-      label: 'Tools',
-      items: [
-        'tools/test-analyzer',
-      ],
-    },
-    {
-      type: 'category',
       label: 'Reference',
       items: [
         'best-practices',
@@ -664,6 +699,245 @@ module.exports = {
       label: 'Use Cases',
       items: [
         'use-cases/README',
+        {
+          type: 'category',
+          label: 'Core Use Cases',
+          items: [
+            'use-cases/enterprise-rag-knowledge-base',
+            'use-cases/multi-agent-customer-support',
+            'use-cases/intelligent-document-processing',
+            'use-cases/real-time-data-analysis-agent',
+            'use-cases/conversational-ai-assistant',
+            'use-cases/automated-code-review-system',
+            'use-cases/distributed-workflow-orchestration',
+            'use-cases/semantic-search-recommendation',
+            'use-cases/multi-model-llm-gateway',
+            'use-cases/production-agent-platform',
+            'use-cases/batch-processing',
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Package Deep-Dives',
+          items: [
+            {
+              type: 'category',
+              label: 'Agents',
+              items: [
+                'use-cases/agents-devsecops-auditor',
+                'use-cases/agents-autonomous-support',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'ChatModels',
+              items: [
+                'use-cases/chatmodels-model-ab-testing',
+                'use-cases/chatmodels-cost-optimized-router',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Config',
+              items: [
+                'use-cases/config-multi-tenant-api-keys',
+                'use-cases/config-dynamic-feature-flagging',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Core',
+              items: [
+                'use-cases/core-error-recovery-service',
+                'use-cases/core-high-availability-streaming-proxy',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'DocumentLoaders',
+              items: [
+                'use-cases/docloaders-cloud-sync',
+                'use-cases/docloaders-legacy-archive',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Embeddings',
+              items: [
+                'use-cases/embeddings-semantic-image-search',
+                'use-cases/embeddings-cross-lingual-retrieval',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'LLMs',
+              items: [
+                'use-cases/llms-model-benchmarking-dashboard',
+                'use-cases/llms-automated-code-generation',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Memory',
+              items: [
+                'use-cases/memory-ide-extension',
+                'use-cases/memory-patient-history',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Messaging',
+              items: [
+                'use-cases/messaging-multi-channel-hub',
+                'use-cases/messaging-sms-reminders',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Monitoring',
+              items: [
+                'use-cases/monitoring-pii-leakage-detection',
+                'use-cases/monitoring-dashboards',
+                'use-cases/monitoring-token-cost-attribution',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Multimodal',
+              items: [
+                'use-cases/multimodal-security-camera',
+                'use-cases/multimodal-audio-visual-search',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Orchestration',
+              items: [
+                'use-cases/orchestration-invoice-processor',
+                'use-cases/orchestration-multi-stage-etl',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Prompts',
+              items: [
+                'use-cases/prompts-few-shot-sql',
+                'use-cases/prompts-dynamic-tool-injection',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Retrievers',
+              items: [
+                'use-cases/retrievers-multi-doc-summarizer',
+                'use-cases/retrievers-regulatory-search',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Safety',
+              items: [
+                'use-cases/safety-children-stories',
+                'use-cases/safety-financial-compliance',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Schema',
+              items: [
+                'use-cases/schema-medical-record-standardization',
+                'use-cases/schema-legal-entity-extraction',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Server',
+              items: [
+                'use-cases/server-search-everything',
+                'use-cases/server-customer-support-gateway',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'TextSplitters',
+              items: [
+                'use-cases/textsplitters-optimizing-rag-large-repos',
+                'use-cases/textsplitters-scientific-paper-processing',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'VectorStores',
+              items: [
+                'use-cases/vectorstores-recommendation-engine',
+                'use-cases/vectorstores-enterprise-knowledge-qa',
+              ],
+            },
+          ],
+        },
+        {
+          type: 'category',
+          label: 'Voice Framework',
+          items: [
+            {
+              type: 'category',
+              label: 'Backend',
+              items: [
+                'use-cases/voice-backend-ivr',
+                'use-cases/voice-backend-outbound-calling',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'S2S (Speech-to-Speech)',
+              items: [
+                'use-cases/voice-s2s-bilingual-tutor',
+                'use-cases/voice-s2s-hotel-concierge',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Sessions',
+              items: [
+                'use-cases/voice-sessions',
+                'use-cases/voice-session-multi-turn-forms',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'STT (Speech-to-Text)',
+              items: [
+                'use-cases/voice-stt-meeting-minutes',
+                'use-cases/voice-stt-industrial-control',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'TTS (Text-to-Speech)',
+              items: [
+                'use-cases/voice-tts-elearning-voiceovers',
+                'use-cases/voice-tts-interactive-audiobooks',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'Turn Detection',
+              items: [
+                'use-cases/voice-turn-barge-in-detection',
+                'use-cases/voice-turn-low-latency-prediction',
+              ],
+            },
+            {
+              type: 'category',
+              label: 'VAD',
+              items: [
+                'use-cases/voice-vad-multi-speaker-segmentation',
+                'use-cases/voice-vad-noise-resistant',
+              ],
+            },
+          ],
+        },
+        'use-cases/rag-strategies',
       ],
     },
   ],

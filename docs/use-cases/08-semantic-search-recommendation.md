@@ -25,46 +25,37 @@ This use case implements a semantic search and recommendation engine that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Search Interface                              │
-│              (Web, Mobile, API)                                 │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Search Service                                     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  1. Query    │→ │  2. Retrieve │→ │  3. Rank &   │         │
-│  │  Embedding   │  │  Documents   │  │  Recommend  │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│  Embeddings  │    │  Retrievers  │    │  VectorStores│
-│  (pkg/       │    │  (pkg/       │    │  (pkg/       │
-│  embeddings) │    │  retrievers)│    │  vectorstores)│
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Content Database      │
-              │  - Documents           │
-              │  - Products            │
-              │  - Articles            │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph Interface["Search Interface"]
+        A[Web / Mobile / API]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - Search performance metrics                                    │
-│  - Recommendation accuracy tracking                              │
-│  - User behavior analytics                                      │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Service["Search Service"]
+        B1[1. Query Embedding] --> B2[2. Retrieve Documents] --> B3[3. Rank & Recommend]
+    end
+
+    subgraph Components["Core Components"]
+        C[Embeddings<br>pkg/embeddings]
+        D[Retrievers<br>pkg/retrievers]
+        E[VectorStores<br>pkg/vectorstores]
+    end
+
+    subgraph Database["Content Database"]
+        F[Documents / Products / Articles]
+    end
+
+    subgraph Observability["Observability Layer"]
+        G[Search Performance Metrics<br>Recommendation Accuracy Tracking<br>User Behavior Analytics]
+    end
+
+    A --> B1
+    B1 --> C
+    B2 --> D
+    B2 --> E
+    C --> E
+    D --> E
+    E --> F
 ```
 
 ## Component Usage

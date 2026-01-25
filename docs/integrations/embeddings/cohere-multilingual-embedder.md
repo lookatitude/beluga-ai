@@ -291,9 +291,9 @@ func main() {
 Congratulations! You've integrated Cohere multilingual embeddings with Beluga AI. Next, learn how to:
 
 - **[Ollama Local Embeddings](./ollama-local-embeddings.md)** - Local embedding generation
-- **[Embeddings Package Documentation](../../api/packages/embeddings.md)** - Deep dive into embeddings package
+- **[Embeddings Package Documentation](../../api-docs/packages/embeddings.md)** - Deep dive into embeddings package
 - **[RAG Tutorial](../../getting-started/02-simple-rag.md)** - Use embeddings in RAG
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

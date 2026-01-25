@@ -136,5 +136,5 @@ Run the agent with input that triggers a tool call (e.g. "Say hello to Alice"). 
 ## Next Steps
 
 - **[MCP Tools Integration](./agents-mcp-tools-integration.md)** — Expose tools via MCP.
-- **[Agents Tool Registry Tutorial](../../../tutorials/higher-level/agents-tools-registry.md)** — Tutorial.
-- **[Working with Tools](../../../getting-started/04-working-with-tools.md)** — Getting started.
+- **[Agents Tool Registry Tutorial](../../tutorials/higher-level/agents-tools-registry.md)** — Tutorial.
+- **[Working with Tools](../../getting-started/04-working-with-tools.md)** — Getting started.

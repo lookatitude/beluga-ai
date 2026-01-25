@@ -21,7 +21,7 @@ Before we begin, make sure you have:
 - **Beluga AI Framework** installed (`go get github.com/lookatitude/beluga-ai`)
 - **OpenAI API key** (or another provider) - you'll need this for LLM access
 - **Understanding of basic LLM concepts** - if you're new to this, check out our [LLM concepts guide](../concepts/llms.md)
-- **Understanding of tools** - see our [tools tutorial](../getting-started/tutorials/working-with-tools.md)
+- **Understanding of tools** - see our [tools tutorial](../getting-started/04-working-with-tools.md)
 
 ## Concepts
 
@@ -612,7 +612,7 @@ agent.OnAction(func(action AgentAction) {
 Now that you understand agent types, explore:
 
 - **[Streaming LLM Guide](./llm-streaming-tool-calls.md)** - Combine streaming with agents for responsive UIs
-- **[PlanExecute Example](/examples/agents/planexecute/README.md)** - Complete implementation with tests
+- **[PlanExecute Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/agents/planexecute/README.md)** - Complete implementation with tests
 - **[Custom Agent Cookbook](../cookbook/custom-agent.md)** - Extend agents with custom behavior
-- **[Multi-Agent Use Case](../use-cases/batch-processing.md)** - Coordinate multiple agents
+- **[Multi-Agent Use Case](../use-cases/11-batch-processing.md)** - Coordinate multiple agents
 - **[Agent Concepts](../concepts/agents.md)** - Deep dive into agent architecture

@@ -123,4 +123,4 @@ func SafeSynthesize(p tts.Provider, input string) ([]byte, error) {
 ## Next Steps
 
 - **[Cloning Voices with ElevenLabs](./voice-tts-elevenlabs-cloning.md)** - High-fidelity voices.
-- **[Voice Session Management](../session/README.md)** - Integrate expressive TTS into agents.
+- **[Voice Session Management](./voice-session-interruptions.md)** - Integrate expressive TTS into agents.

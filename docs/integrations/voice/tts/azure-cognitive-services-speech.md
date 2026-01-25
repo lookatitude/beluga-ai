@@ -197,9 +197,9 @@ When using Azure Speech in production:
 Congratulations! You've integrated Azure Speech with Beluga AI. Next, learn how to:
 
 - **[ElevenLabs Streaming API](./elevenlabs-streaming-api.md)** - ElevenLabs integration
-- **[TTS Package Documentation](../../../api/packages/voice/tts.md)** - Deep dive into TTS package
+- **[TTS Package Documentation](../../../api-docs/packages/voice/tts.md)** - Deep dive into TTS package
 - **[Voice Providers Guide](../../../guides/voice-providers.md)** - Voice provider patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

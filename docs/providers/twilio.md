@@ -346,13 +346,13 @@ The provider uses a custom `TwilioTransportAdapter` rather than the generic tran
 - Twilio-specific reconnection logic
 - Custom message format (`MediaStreamMessage`)
 
-See [README](../../pkg/voice/providers/twilio/README.md) for detailed transport evaluation documentation.
+See [README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/providers/twilio/README.md) for detailed transport evaluation documentation.
 
 ## Related Documentation
 
-- [Voice Backend API Contract](../../specs/001-twilio-integration/contracts/voice-backend-api.md)
-- [Conversational Backend API Contract](../../specs/001-twilio-integration/contracts/conversational-backend-api.md)
-- [Webhook API Contract](../../specs/001-twilio-integration/contracts/webhook-api.md)
-- [Quickstart Guide](../../specs/001-twilio-integration/quickstart.md)
+- [Voice Backend API Contract](https://github.com/lookatitude/beluga-ai/blob/main/specs/001-twilio-integration/contracts/voice-backend-api.md)
+- [Conversational Backend API Contract](https://github.com/lookatitude/beluga-ai/blob/main/specs/001-twilio-integration/contracts/conversational-backend-api.md)
+- [Webhook API Contract](https://github.com/lookatitude/beluga-ai/blob/main/specs/001-twilio-integration/contracts/webhook-api.md)
+- [Quickstart Guide](https://github.com/lookatitude/beluga-ai/blob/main/specs/001-twilio-integration/quickstart.md)
 - [Integration Analysis](../twilio-integration-analysis.md) - ✅ IMPLEMENTED
 - [Integration Roadmap](../twilio-integration-roadmap.md) - ✅ COMPLETED

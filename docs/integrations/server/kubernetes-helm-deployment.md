@@ -240,9 +240,9 @@ When using Helm in production:
 Congratulations! You've created Helm charts for Beluga AI. Next, learn how to:
 
 - **[Auth0/JWT Authentication](./auth0-jwt-authentication.md)** - Secure APIs
-- **[Server Package Documentation](../../api/packages/server.md)** - Deep dive into server package
+- **[Server Package Documentation](../../api-docs/packages/server.md)** - Deep dive into server package
 - **[Deployment Guide](../../getting-started/07-production-deployment.md)** - Production deployment
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -90,13 +90,9 @@ By implementing token cost attribution, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[LLM Request] --> B[Token Counter]
     B --> C[User Context]
     C --> D[Cost Calculator]
@@ -106,10 +102,9 @@ graph TB
     G --> H[Cost Database]
     H --> I[Billing System]
     H --> J[Cost Dashboard]
-    
-```
     K[Provider Pricing] --> D
     L[User Metadata] --> C
+```
 
 ### How It Works
 

@@ -9,7 +9,7 @@
 | Document Area | Findings / Issues | Priority |
 | :--- | :--- | :--- |
 | **Use Cases** (`docs/use-cases/`) | Several use cases (e.g., `05-conversational-ai-assistant.md`) use legacy ASCII diagrams instead of Mermaid. Persona does not always align with "Solution Architect" (e.g., missing business context/architecture requirements sections in some newer files). | High |
-| **API Docs** (`docs/api/packages/`) | Hand-written examples often refer to internal methods or deprecated patterns. `rag.md` is nearly empty (placeholder). | Medium |
+| **API Docs** (`docs/api-docs/packages/`) | Hand-written examples often refer to internal methods or deprecated patterns. `rag.md` is nearly empty (placeholder). | Medium |
 | **Alerts & Callouts** | Inconsistent use of GitHub Alerts (`> [!NOTE]`, etc.) across guides vs. use cases. | Low |
 
 ### 1.2 Version Mismatches

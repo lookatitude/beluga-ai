@@ -91,28 +91,23 @@ By implementing autonomous support, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Customer Inquiry] --> B[Support Agent]
-    B --> C\{Understand Intent\}
+    B --> C{Understand Intent}
     C --> D[Knowledge Base Search]
     C --> E[Account Actions]
     C --> F[Documentation Lookup]
-    D --> G\{Resolved?\}
+    D --> G{Resolved?}
     E --> G
     F --> G
     G -->|Yes| H[Response to Customer]
     G -->|No| I[Human Escalation]
-    
-```
     J[Conversation Memory] --> B
     K[Tool Registry] --> B
     L[Metrics Collector] --> B
+```
 
 ### How It Works
 
@@ -192,7 +187,7 @@ func NewAutonomousSupportAgent(ctx context.Context, llm llms.ChatModel) (*Autono
     }
 
     
-    return &AutonomousSupportAgent\{
+    return &AutonomousSupportAgent{
         agent:            agent,
         tools:            toolRegistry,
         memory:           mem,
@@ -224,25 +219,18 @@ func (a *AutonomousSupportAgent) HandleInquiry(ctx context.Context, customerID s
     history, _ := a.memory.LoadMemoryVariables(ctx, map[string]any{"customer_id": customerID})
     
     // Build prompt with context
-    prompt := fmt.Sprintf(`Customer Inquiry: %s
-```
+    prompt := fmt.Sprintf("Customer Inquiry: %s\n\nPrevious conversation:\n%s\n\nResolve this inquiry using available tools. If you cannot resolve it, escalate to human support.", inquiry, formatHistory(history))
 
-Previous conversation:
-%s
-
-Resolve this inquiry using available tools. If you cannot resolve it, escalate to human support.`, inquiry, formatHistory(history))
-    
-```go
     // Execute agent
     result, err := a.agent.Execute(ctx, map[string]any{
-        "task": prompt,
+        "task":        prompt,
         "customer_id": customerID,
     })
     if err != nil {
         span.RecordError(err)
         return nil, fmt.Errorf("agent execution failed: %w", err)
     }
-    
+
     // Check if escalation needed
     if a.needsEscalation(result) {
         ticketID, err := a.escalationHandler.Escalate(ctx, customerID, inquiry)
@@ -250,22 +238,20 @@ Resolve this inquiry using available tools. If you cannot resolve it, escalate t
             return nil, err
         }
         return &SupportResponse{
-            Response: fmt.Sprintf("I've escalated your inquiry to our support team (Ticket #%s). They'll respond shortly.", ticketID),
-            Resolved: false,
+            Response:  fmt.Sprintf("I've escalated your inquiry to our support team (Ticket #%s). They'll respond shortly.", ticketID),
+            Resolved:  false,
             Escalated: true,
         }, nil
     }
 
-    
-
     // Save to memory
     a.memory.SaveContext(ctx, map[string]any{
         "customer_id": customerID,
-        "inquiry":    inquiry,
-        "response":   result,
+        "inquiry":     inquiry,
+        "response":    result,
     })
-    
-    return &SupportResponse\{
+
+    return &SupportResponse{
         Response:  result,
         Resolved:  true,
         Escalated: false,
@@ -280,8 +266,9 @@ Resolve this inquiry using available tools. If you cannot resolve it, escalate t
 ### Phase 3: Integration/Polish
 
 Finally, we integrated monitoring and optimization:
-// HandleInquiryWithMonitoring handles with comprehensive tracking
+
 ```go
+// HandleInquiryWithMonitoring handles with comprehensive tracking
 func (a *AutonomousSupportAgent) HandleInquiryWithMonitoring(ctx context.Context, customerID string, inquiry string) (*SupportResponse, error) {
     ctx, span := a.tracer.Start(ctx, "support.handle_inquiry.monitored",
         trace.WithAttributes(

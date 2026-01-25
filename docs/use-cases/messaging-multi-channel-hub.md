@@ -91,13 +91,9 @@ By implementing unified messaging, the agency could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Campaign Request] --> B[Campaign Manager]
     B --> C[Channel Router]
     C --> D[SMS Channel]
@@ -108,11 +104,10 @@ graph TB
     F --> G
     G --> H[Analytics Engine]
     H --> I[Campaign Dashboard]
-    
-```
     J[Message Templates] --> B
     K[Brand Guidelines] --> B
     L[Metrics Collector] --> C
+```
 
 ### How It Works
 

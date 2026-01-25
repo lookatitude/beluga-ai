@@ -91,29 +91,23 @@ By implementing automated compliance checking, the platform could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Financial Advice] --> B[Compliance Firewall]
     B --> C[Regulatory Rule Checker]
     C --> D[Investment Validator]
     C --> E[Disclaimer Checker]
     C --> F[Prohibited Content Checker]
-    D --> G\{Compliant?\}
+    D --> G{Compliant?}
     E --> G
     F --> G
     G -->|Yes| H[Approved Advice]
     G -->|No| I[Blocked Advice]
     I --> J[Compliance Report]
-    
-```
     K[Regulatory Rules] --> C
     L[Compliance Database] --> C
     M[Metrics Collector] --> B
+```
 
 ### How It Works
 

@@ -321,9 +321,9 @@ func main() {
 Congratulations! You've integrated Viper with Beluga AI. Next, learn how to:
 
 - **[HashiCorp Vault Connector](./hashicorp-vault-connector.md)** - Secure secret management
-- **[Config Package Documentation](../../api/packages/config.md)** - Deep dive into config package
+- **[Config Package Documentation](../../api-docs/packages/config.md)** - Deep dive into config package
 - **[Best Practices Guide](../../best-practices.md)** - Configuration best practices
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

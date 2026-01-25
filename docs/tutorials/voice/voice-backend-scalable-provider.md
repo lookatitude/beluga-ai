@@ -108,6 +108,6 @@ Use the same pattern with `Provider: "vapi"`, `"pipecat"`, `"vocode"`, or `"cart
 
 ## Next Steps
 
-- **[LiveKit Webhooks](../../../integrations/voice/backend/livekit-webhooks-integration.md)** — Webhook handling.
-- **[Vapi Custom Tools](../../../integrations/voice/backend/vapi-custom-tools.md)** — Custom tools with Vapi.
-- **[Scaling Concurrent Streams](../../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.
+- **[LiveKit Webhooks](../../integrations/voice/backend/livekit-webhooks-integration.md)** — Webhook handling.
+- **[Vapi Custom Tools](../../integrations/voice/backend/vapi-custom-tools.md)** — Custom tools with Vapi.
+- **[Scaling Concurrent Streams](../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.

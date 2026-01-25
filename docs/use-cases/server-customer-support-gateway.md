@@ -91,29 +91,23 @@ By implementing a production gateway, the platform could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Client Request] --> B[API Gateway]
     B --> C[Authenticator]
     C --> D[Authorizer]
     D --> E[Rate Limiter]
-    E --> F\{Rate OK?\}
+    E --> F{Rate OK?}
     F -->|Yes| G[Request Router]
     F -->|No| H[Rate Limit Error]
     G --> I[Support Backend]
     I --> J[Response]
     J --> K[Response Transformer]
     K --> A
-    
-```
     L[Auth Service] --> C
     M[Rate Limit Store] --> E
     N[Metrics Collector] --> B
+```
 
 ### How It Works
 
@@ -178,7 +172,7 @@ func NewCustomerSupportGateway(ctx context.Context) (*CustomerSupportGateway, er
     }
 
     
-    return &CustomerSupportGateway\{
+    return &CustomerSupportGateway{
         server:        restServer,
         authenticator: NewAuthenticator(),
         authorizer:    NewAuthorizer(),

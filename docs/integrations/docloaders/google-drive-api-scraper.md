@@ -365,9 +365,9 @@ When using Google Drive in production:
 Congratulations! You've created a Google Drive loader. Next, learn how to:
 
 - **[AWS S3 Event-Driven Loader](./aws-s3-event-driven-loader.md)** - S3 integration
-- **[Document Loaders Documentation](../../api/packages/documentloaders.md)** - Deep dive into document loaders
+- **Document Loaders Documentation** - Deep dive into document loaders
 - **[RAG Guide](../../guides/rag-multimodal.md)** - RAG patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

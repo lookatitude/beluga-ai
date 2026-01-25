@@ -473,5 +473,5 @@ Week 5-6: Phase 3 (Enhancement)
 
 - [Package Catalog](../docs/package-catalog.md)
 - [Integration Analysis](../docs/twilio-integration-analysis.md)
-- [Session Package README](../../pkg/voice/session/README.md)
-- [S2S Package README](../../pkg/voice/s2s/README.md)
+- [Session Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/session/README.md)
+- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)

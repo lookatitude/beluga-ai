@@ -348,7 +348,7 @@ Congratulations! You've created your first agent. Next, learn how to:
 - **[Part 4: Working with Tools](./04-working-with-tools.md)** - Deep dive into tool integration
 - **[Part 5: Memory Management](./05-memory-management.md)** - Add conversation memory
 - **[Concepts: Agents](../concepts/agents.md)** - Deep dive into agent concepts
-- **[Voice Agents with S2S](../../../pkg/voice/s2s/README.md)** - Use Speech-to-Speech models for voice conversations
+- **[Voice Agents with S2S](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)** - Use Speech-to-Speech models for voice conversations
 
 ### Voice Agents with S2S
 
@@ -370,7 +370,7 @@ voiceSession, err := session.NewVoiceSession(ctx,
 )
 ```
 
-See the [S2S Package documentation](../../../pkg/voice/s2s/README.md) for more details.
+See the [S2S Package documentation](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md) for more details.
 
 ---
 

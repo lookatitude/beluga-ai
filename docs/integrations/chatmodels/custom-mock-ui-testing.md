@@ -344,9 +344,9 @@ When using mocks in production:
 Congratulations! You've created custom mocks for UI testing. Next, learn how to:
 
 - **[OpenAI Assistants API Bridge](./openai-assistants-api-bridge.md)** - Assistants integration
-- **[ChatModels Package Documentation](../../api/packages/chatmodels.md)** - Deep dive into chatmodels
+- **[ChatModels Package Documentation](../../api-docs/packages/chatmodels.md)** - Deep dive into chatmodels
 - **[Testing Guide](../../testing-guide.md)** - Testing patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

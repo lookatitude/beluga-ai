@@ -90,8 +90,9 @@ By implementing automated benchmarking, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     A[Benchmark Suite] --> B[Benchmark Runner]
     B --> C[LLM Provider 1]
     B --> D[LLM Provider 2]
@@ -103,6 +104,7 @@ graph TB
     G --> H[Benchmark Dashboard]
     G --> I[Analytics Engine]
     I --> J[Comparative Reports]
+```
 
 ### How It Works
 
@@ -193,8 +195,9 @@ For detailed setup instructions, see the [LLM Providers Guide](../guides/llm-pro
 ### Phase 2: Core Implementation
 
 Next, we implemented benchmark execution:
-// RunBenchmark executes a benchmark suite
+
 ```go
+// RunBenchmark executes a benchmark suite
 func (r *BenchmarkRunner) RunBenchmark(ctx context.Context, suite BenchmarkSuite) ([]BenchmarkResult, error) {
     ctx, span := r.tracer.Start(ctx, "benchmark.run")
     defer span.End()
@@ -265,7 +268,6 @@ func (r *BenchmarkRunner) runTest(ctx context.Context, provider llms.ChatModel, 
     // Record metrics
     r.recordMetrics(ctx, result)
 
-    
     return result, nil
 }
 ```
@@ -295,7 +297,6 @@ func (r *BenchmarkRunner) GenerateComparativeReport(ctx context.Context, results
         report.Providers[provider] = metrics
     }
 
-    
     return report, nil
 }
 ```

@@ -349,9 +349,9 @@ When using NATS in production:
 Congratulations! You've integrated NATS with Beluga AI. Next, learn how to:
 
 - **[Kubernetes Job Scheduler](./kubernetes-job-scheduler.md)** - Kubernetes integration
-- **[Orchestration Package Documentation](../../api/packages/orchestration.md)** - Deep dive into orchestration
+- **[Orchestration Package Documentation](../../api-docs/packages/orchestration.md)** - Deep dive into orchestration
 - **[Orchestration Tutorial](../../getting-started/06-orchestration-basics.md)** - Orchestration patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

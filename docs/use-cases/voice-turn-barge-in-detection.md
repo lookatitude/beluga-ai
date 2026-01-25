@@ -75,8 +75,9 @@ By implementing barge-in detection:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     Mic[Microphone] --> VAD[VAD]
     TTS[TTS Output] --> Playback[Playback]
     VAD --> SpeechOnset[Speech Onset?]
@@ -86,6 +87,7 @@ graph TB
     StopTTS --> Listen[Switch to Listening]
     Listen --> STT[STT]
     BargeIn -->|No| Playback
+```
 
 ### How It Works
 

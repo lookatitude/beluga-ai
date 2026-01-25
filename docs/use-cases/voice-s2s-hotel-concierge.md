@@ -91,13 +91,9 @@ By implementing AI concierge, the chain could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Guest Voice Input] --> B[S2S Provider]
     B --> C[Conversation Manager]
     C --> D[Intent Recognizer]
@@ -110,11 +106,10 @@ graph TB
     H --> I
     I --> B
     B --> J[Guest Audio Output]
-    
-```
     K[Hotel Systems] --> F
     L[Conversation Memory] --> C
     M[Metrics Collector] --> B
+```
 
 ### How It Works
 
@@ -174,7 +169,7 @@ func NewHotelConcierge(ctx context.Context) (*HotelConcierge, error) {
     }
 
     
-    return &HotelConcierge\{
+    return &HotelConcierge{
         s2sProvider:     s2sProvider,
         conversationMgr: NewConversationManager(),
         intentRecognizer: NewIntentRecognizer(),
@@ -237,7 +232,7 @@ func (h *HotelConcierge) HandleConversation(ctx context.Context, guestID string,
                 h.processResponse(ctx, guestID, chunk.Audio)
                 
                 // Forward to guest
-                outputChan \<- chunk.Audio
+                outputChan <- chunk.Audio
             }
         }
     }()
@@ -253,8 +248,9 @@ func (h *HotelConcierge) HandleConversation(ctx context.Context, guestID string,
 ### Phase 3: Integration/Polish
 
 Finally, we integrated monitoring and optimization:
-// HandleConversationWithMonitoring handles with comprehensive tracking
+
 ```go
+// HandleConversationWithMonitoring handles with comprehensive tracking
 func (h *HotelConcierge) HandleConversationWithMonitoring(ctx context.Context, guestID string, audioStream <-chan []byte) (<-chan []byte, error) {
     ctx, span := h.tracer.Start(ctx, "concierge.handle_conversation.monitored")
     defer span.End()
@@ -265,8 +261,6 @@ func (h *HotelConcierge) HandleConversationWithMonitoring(ctx context.Context, g
         span.RecordError(err)
         return nil, err
     }
-
-    
 
     span.SetAttributes(
         attribute.String("guest_id", guestID),

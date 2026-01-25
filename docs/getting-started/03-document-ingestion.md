@@ -288,4 +288,4 @@ func main() {
 - Learn about [RAG Concepts](../concepts/rag.md)
 - Explore [Document Loading Concepts](../concepts/document-loading.md)
 - Read [Text Splitting Concepts](../concepts/text-splitting.md)
-- See [Complete Examples](../../examples/documentloaders/) and [RAG Examples](../../examples/rag/)
+- See [Complete Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/documentloaders/) and [RAG Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag/)

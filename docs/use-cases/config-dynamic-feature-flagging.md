@@ -91,26 +91,20 @@ By implementing dynamic feature flagging, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Feature Flag Config] --> B[Config Watcher]
     B --> C[Config Parser]
     C --> D[Flag Cache]
     D --> E[Flag Evaluator]
     E --> F[Application Code]
-    
     G[Admin API] --> H[Flag Manager]
     H --> A
     H --> I[Audit Logger]
-    
-```
     J[Metrics Collector] --> E
     K[User Context] --> E
+```
 
 ### How It Works
 

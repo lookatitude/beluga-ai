@@ -202,4 +202,4 @@ graph TB
 
 - [Data Flows](./data-flows.md) - Data flow through the system
 - [Sequence Diagrams](./sequences.md) - Interaction sequences
-- [Architecture Overview](../architecture.md) - Complete architecture documentation
+- [Architecture Overview](../../architecture.md) - Complete architecture documentation

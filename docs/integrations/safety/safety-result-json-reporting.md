@@ -269,9 +269,9 @@ When using JSON reporting in production:
 Congratulations! You've implemented JSON reporting for safety results. Next, learn how to:
 
 - **[Third-Party Ethical API Filter](./third-party-ethical-api-filter.md)** - External safety APIs
-- **[Safety Package Documentation](../../api/packages/safety.md)** - Deep dive into safety package
-- **[Safety Guide](../../guides/)** - Safety patterns
+- **Safety Package Documentation** - Deep dive into safety package
+- **[Safety Guide](../../guides/llm-providers.md)** - Safety patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

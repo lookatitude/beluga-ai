@@ -13,7 +13,7 @@
 
 - Go 1.24+
 - Beluga AI (`go get github.com/lookatitude/beluga-ai`)
-- [Voice Sessions](../../../use-cases/voice-sessions.md) and [Real-time STT Streaming](./voice-stt-realtime-streaming.md)
+- [Voice Sessions](../../use-cases/voice-sessions.md) and [Real-time STT Streaming](./voice-stt-realtime-streaming.md)
 
 ## Step 1: Session with Streaming STT and Agent
 
@@ -81,5 +81,5 @@ The session package uses internal `PreemptiveGeneration` and `FinalHandler` for 
 ## Next Steps
 
 - **[Voice Session Interruptions](./voice-session-interruptions.md)** — Cancel playback when the user interrupts.
-- **[Preemptive Generation Cookbook](../../../cookbook/voice-session-preemptive-generation.md)** — Recipe and code.
-- **[Long Utterances Cookbook](../../../cookbook/voice-session-long-utterances.md)** — Chunking and buffering.
+- **[Preemptive Generation Cookbook](../../cookbook/voice-session-preemptive-generation.md)** — Recipe and code.
+- **[Long Utterances Cookbook](../../cookbook/voice-session-long-utterances.md)** — Chunking and buffering.

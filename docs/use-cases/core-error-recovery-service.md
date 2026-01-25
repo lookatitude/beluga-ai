@@ -91,31 +91,26 @@ By implementing an error recovery service, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[LLM Request] --> B[Error Recovery Service]
-    B --> C\{Circuit Breaker\}
+    B --> C{Circuit Breaker}
     C -->|Open| D[Fallback Provider]
     C -->|Closed| E[Primary Provider]
-    E --> F\{Success?\}
+    E --> F{Success?}
     F -->|Yes| G[Response]
-    F -->|No| H\{Retryable?\}
+    F -->|No| H{Retryable?}
     H -->|Yes| I[Retry with Backoff]
     I --> E
     H -->|No| J[Error Handler]
     J --> D
     D --> G
-    
-```
     K[Error Analyzer] --> B
     L[Metrics Collector] --> B
     L --> E
     L --> D
+```
 
 ### How It Works
 

@@ -33,7 +33,7 @@ User Audio → Transport → Noise Cancellation → VAD → STT → Agent → TT
 
 ## Quick Start
 
-See the [quickstart guide](../../specs/004-feature-voice-agents/quickstart.md) for a complete getting started example.
+See the [quickstart guide](https://github.com/lookatitude/beluga-ai/blob/main/specs/004-feature-voice-agents/quickstart.md) for a complete getting started example.
 
 ## Provider Selection
 
@@ -115,7 +115,7 @@ See the [troubleshooting guide](voice-troubleshooting.md) for common issues and 
 
 ## Examples
 
-See the [examples directory](../../../examples/voice/) for complete usage examples.
+See the [examples directory](https://github.com/lookatitude/beluga-ai/tree/main/examples/voice/) for complete usage examples.
 
 ## API Reference
 

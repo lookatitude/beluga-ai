@@ -167,9 +167,9 @@ When using AWS Transcribe in production:
 Congratulations! You've integrated AWS Transcribe with Beluga AI. Next, learn how to:
 
 - **[Deepgram Live Streams](./deepgram-live-streams.md)** - Deepgram integration
-- **[STT Package Documentation](../../../api/packages/voice/stt.md)** - Deep dive into STT package
+- **[STT Package Documentation](../../../api-docs/packages/voice/stt.md)** - Deep dive into STT package
 - **[Voice Providers Guide](../../../guides/voice-providers.md)** - Voice provider patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

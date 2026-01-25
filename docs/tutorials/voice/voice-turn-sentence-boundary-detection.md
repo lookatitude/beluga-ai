@@ -78,4 +78,4 @@ go run .
 ## Next Steps
 
 - **[ML-Based Turn Prediction](./voice-turn-ml-based-prediction.md)** — Use the ONNX provider for model-driven detection.
-- **[Custom Turn Detectors in Noisy Environments](../../integrations/voice/turn/custom-turn-detectors-noisy-environments.md)** — Tune for noisy settings.
+- **[Custom Turn Detectors in Noisy Environments](../integrations/voice/turn/custom-turn-detectors-noisy-environments.md)** — Tune for noisy settings.

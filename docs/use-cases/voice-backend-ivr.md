@@ -76,8 +76,9 @@ By implementing voice-enabled IVR:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     Caller[Caller] --> Tel[Telephony]
     Tel --> Backend[Voice Backend]
     Backend --> Session[Voice Session]
@@ -88,6 +89,7 @@ graph TB
     Router --> SelfServe[Self-Serve Flow]
     Session --> TTS[TTS]
     TTS --> Tel
+```
 
 ### How It Works
 
@@ -108,7 +110,7 @@ graph TB
 ## Implementation
 
 ### Phase 1: Backend and Session
-go
+
 ```go
 	cfg := &vbiface.Config{
 		Provider:       "livekit",
@@ -205,5 +207,5 @@ Use `backend` metrics and OTEL. Enforce `MaxConcurrentSessions`; reject or queue
 
 ## Related Resources
 
-- **[Voice Backends Tutorial](../../tutorials/voice/voice-backends-livekit-vapi.md)** — LiveKit and Vapi.
-- **[Scaling Concurrent Streams](../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Backend scaling.
+- **[Voice Backends Tutorial](../tutorials/voice/voice-backends-livekit-vapi.md)** — LiveKit and Vapi.
+- **[Scaling Concurrent Streams](../cookbook/voice-backend-scaling-concurrent-streams.md)** — Backend scaling.

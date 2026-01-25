@@ -90,8 +90,9 @@ By implementing automated cloud sync, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     A[Cloud Storage Buckets] -->|Webhooks/Polling| B[Change Detector]
     B -->|Change Events| C[Sync Coordinator]
     C -->|Document Paths| D[Cloud Loader Registry]
@@ -104,11 +105,12 @@ graph TB
     H -->|Schema Documents| I[Text Splitter]
     I -->|Chunks| J[Embeddings]
     J -->|Vectors| K[Vector Store]
-    L[Change Tracker DB] \<-->|ETag/Checksum| B
-    L \<-->|Update Status| C
+    L[Change Tracker DB] <-->|ETag/Checksum| B
+    L <-->|Update Status| C
     M[OTEL Metrics] -->|Observability| B
     M -->|Observability| C
     M -->|Observability| H
+```
 
 ### How It Works
 
@@ -482,5 +484,5 @@ If you're working on a similar project, you might also find these helpful:
 
 - **[Legacy Archive Ingestion](./docloaders-legacy-archive.md)** - Similar scenario focusing on batch document ingestion
 - **[Enterprise Knowledge QA](./vectorstores-enterprise-knowledge-qa.md)** - Building the RAG system that consumes synced documents
-- **[Document Ingestion Guide](../guides/document-ingestion.md)** - Deep dive into document loading patterns
-- **[Cloud Storage Integration](../../examples/documentloaders/cloud/README.md)** - Runnable code demonstrating cloud loaders
+- **[Document Ingestion Guide](../getting-started/03-document-ingestion.md)** - Deep dive into document loading patterns
+- **[Cloud Storage Integration](https://github.com/lookatitude/beluga-ai/tree/main/examples/documentloaders/cloud/README.md)** - Runnable code demonstrating cloud loaders

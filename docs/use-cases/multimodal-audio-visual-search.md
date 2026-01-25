@@ -91,14 +91,10 @@ By implementing multimodal search, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
-    A[User Query] --> B\{Query Type\}
+    A[User Query] --> B{Query Type}
     B -->|Image| C[Image Analyzer]
     B -->|Audio| D[Audio Analyzer]
     B -->|Text| E[Text Analyzer]
@@ -108,11 +104,10 @@ graph TB
     F --> G[Product Matcher]
     G --> H[Similarity Search]
     H --> I[Ranked Results]
-    
-```
     J[Product Catalog] --> G
     K[Embeddings] --> H
     L[Metrics Collector] --> F
+```
 
 ### How It Works
 

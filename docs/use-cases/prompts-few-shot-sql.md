@@ -91,28 +91,23 @@ By implementing few-shot SQL generation, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Natural Language Query] --> B[Few-Shot Prompt Builder]
     B --> C[Example Selector]
     C --> D[Prompt Template]
     D --> E[LLM]
     E --> F[SQL Generator]
     F --> G[SQL Validator]
-    G --> H\{Valid?\}
+    G --> H{Valid?}
     H -->|Yes| I[SQL Query]
     H -->|No| J[Error Handler]
     J --> E
-    
-```
     K[Example Database] --> C
     L[Schema Information] --> D
     M[Dialect Templates] --> D
+```
 
 ### How It Works
 

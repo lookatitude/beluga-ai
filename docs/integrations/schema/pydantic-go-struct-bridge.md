@@ -292,9 +292,9 @@ When using Pydantic/Go bridge in production:
 Congratulations! You've created a Pydantic/Go struct bridge. Next, learn how to:
 
 - **[JSON Schema Validation](./json-schema-validation.md)** - Validate data structures
-- **[Schema Package Documentation](../../api/packages/schema.md)** - Deep dive into schema package
+- **[Schema Package Documentation](../../api-docs/packages/schema.md)** - Deep dive into schema package
 - **[Use Case: Multi-Language Services](../../use-cases/)** - Cross-language integration patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -377,9 +377,9 @@ When using third-party APIs in production:
 Congratulations! You've integrated third-party safety APIs with Beluga AI. Next, learn how to:
 
 - **[SafetyResult JSON Reporting](./safety-result-json-reporting.md)** - Export safety results
-- **[Safety Package Documentation](../../api/packages/safety.md)** - Deep dive into safety package
-- **[Safety Guide](../../guides/)** - Safety patterns
+- **Safety Package Documentation** - Deep dive into safety package
+- **[Safety Guide](../../guides/llm-providers.md)** - Safety patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -91,26 +91,21 @@ By implementing automated ingestion, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Legacy Archives] --> B[Format Detector]
     B --> C[Document Loader]
     C --> D[Format Parser]
     D --> E[Quality Validator]
-    E --> F\{Quality OK?\}
+    E --> F{Quality OK?}
     F -->|Yes| G[Document Processor]
     F -->|No| H[Error Handler]
     G --> I[Ingested Documents]
-    
-```
     J[Loader Registry] --> C
     K[Batch Processor] --> C
     L[Metrics Collector] --> C
+```
 
 ### How It Works
 

@@ -233,9 +233,9 @@ When using Assistants API in production:
 Congratulations! You've integrated OpenAI Assistants with Beluga AI. Next, learn how to:
 
 - **[Custom Mock for UI Testing](./custom-mock-ui-testing.md)** - Create mocks for testing
-- **[ChatModels Package Documentation](../../api/packages/chatmodels.md)** - Deep dive into chatmodels
+- **[ChatModels Package Documentation](../../api-docs/packages/chatmodels.md)** - Deep dive into chatmodels
 - **[Agents Guide](../../guides/agent-types.md)** - Agent patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

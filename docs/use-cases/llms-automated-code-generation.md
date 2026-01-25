@@ -90,27 +90,22 @@ By implementing automated code generation, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Code Request] --> B[Request Analyzer]
     B --> C[Pattern Selector]
     C --> D[LLM Code Generator]
     D --> E[Code Validator]
-    E --> F\{Valid?\}
+    E --> F{Valid?}
     F -->|Yes| G[Test Generator]
     F -->|No| H[Error Handler]
     G --> I[Code Formatter]
     I --> J[Generated Code]
-    
-```
     K[Pattern Library] --> C
     L[Code Templates] --> D
     M[Linting Rules] --> E
+```
 
 ### How It Works
 

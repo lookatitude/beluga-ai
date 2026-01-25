@@ -248,9 +248,9 @@ When using Pixtral in production:
 Congratulations! You've integrated Pixtral with Beluga AI. Next, learn how to:
 
 - **[Google Vertex AI Vision](./google-vertex-ai-vision.md)** - Google Vertex AI integration
-- **[Multimodal Package Documentation](../../api/packages/multimodal.md)** - Deep dive into multimodal package
+- **Multimodal Package Documentation** - Deep dive into multimodal package
 - **[Multimodal Guide](../../guides/rag-multimodal.md)** - Multimodal patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

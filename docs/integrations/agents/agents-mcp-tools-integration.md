@@ -108,5 +108,5 @@ Start the MCP server, then use an MCP client to list tools and call them. Ensure
 ## Next Steps
 
 - **[Custom Tools Registry](./agents-custom-tools-registry.md)** — Registry patterns and custom tools.
-- **[Agents Tool Registry Tutorial](../../../tutorials/higher-level/agents-tools-registry.md)** — Tools and registry basics.
-- **[Server MCP](../../../api/packages/server.md)** — MCP server API reference.
+- **[Agents Tool Registry Tutorial](../../tutorials/higher-level/agents-tools-registry.md)** — Tools and registry basics.
+- **[Server MCP](../../api-docs/packages/server.md)** — MCP server API reference.

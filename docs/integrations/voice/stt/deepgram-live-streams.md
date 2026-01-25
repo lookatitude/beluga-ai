@@ -243,9 +243,9 @@ When using Deepgram in production:
 Congratulations! You've integrated Deepgram with Beluga AI. Next, learn how to:
 
 - **[Amazon Transcribe Audio Websockets](./amazon-transcribe-websockets.md)** - AWS Transcribe integration
-- **[STT Package Documentation](../../../api/packages/voice/stt.md)** - Deep dive into STT package
+- **[STT Package Documentation](../../../api-docs/packages/voice/stt.md)** - Deep dive into STT package
 - **[Voice Providers Guide](../../../guides/voice-providers.md)** - Voice provider patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

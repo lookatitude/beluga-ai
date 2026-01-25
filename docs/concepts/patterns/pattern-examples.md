@@ -238,6 +238,6 @@ agent, err := NewAgent(llm, tools,
 
 ## Related Documentation
 
-- [Package Design Patterns](../package_design_patterns.md) - Complete pattern reference
+- [Package Design Patterns](../../package_design_patterns.md) - Complete pattern reference
 - [Cross-Package Patterns](./cross-package-patterns.md) - How patterns work together
 - [Pattern Decision Guide](./pattern-decision-guide.md) - When to use which pattern

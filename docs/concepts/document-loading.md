@@ -307,5 +307,5 @@ registry.Register("custom", func(config map[string]any) (iface.DocumentLoader, e
 
 - [Text Splitting Concepts](./text-splitting.md)
 - [RAG Concepts](./rag.md)
-- [Document Loaders Package](../../pkg/documentloaders/README.md)
-- [Examples](../../examples/documentloaders/)
+- [Document Loaders Package](https://github.com/lookatitude/beluga-ai/tree/main/pkg/documentloaders/README.md)
+- [Examples](https://github.com/lookatitude/beluga-ai/tree/main/examples/documentloaders/)

@@ -91,13 +91,9 @@ By implementing cost-optimized routing, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Chat Request] --> B[Request Classifier]
     B --> C[Cost-Quality Router]
     C --> D[Simple Model]
@@ -107,14 +103,13 @@ graph TB
     E --> G
     F --> G
     G --> H[Quality Checker]
-    H --> I\{Quality OK?\}
+    H --> I{Quality OK?}
     I -->|No| J[Fallback Router]
     J --> F
     I -->|Yes| K[Cost Tracker]
-    
-```
     L[Cost Matrix] --> C
     M[Metrics Collector] --> C
+```
 
 ### How It Works
 

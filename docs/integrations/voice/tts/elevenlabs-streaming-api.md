@@ -214,9 +214,9 @@ When using ElevenLabs in production:
 Congratulations! You've integrated ElevenLabs with Beluga AI. Next, learn how to:
 
 - **[Azure Cognitive Services Speech](./azure-cognitive-services-speech.md)** - Azure TTS integration
-- **[TTS Package Documentation](../../../api/packages/voice/tts.md)** - Deep dive into TTS package
+- **[TTS Package Documentation](../../../api-docs/packages/voice/tts.md)** - Deep dive into TTS package
 - **[Voice Providers Guide](../../../guides/voice-providers.md)** - Voice provider patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

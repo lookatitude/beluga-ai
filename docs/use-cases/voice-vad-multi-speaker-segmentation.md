@@ -103,7 +103,7 @@ graph TB
 ## Implementation
 
 ### Phase 1: VAD and Segment Extraction
-go
+
 ```go
 	provider, _ := vad.NewProvider(ctx, "silero", vad.DefaultConfig(),
 		vad.WithThreshold(0.5),

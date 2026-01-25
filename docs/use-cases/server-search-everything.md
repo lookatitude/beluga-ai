@@ -91,13 +91,8 @@ By implementing unified search, the enterprise could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[User Query] --> B[Search API]
     B --> C[Search Orchestrator]
     C --> D[Documentation Search]
@@ -110,11 +105,10 @@ graph TB
     G --> H
     H --> I[Result Ranker]
     I --> J[Unified Results]
-    
-```
     K[MCP Server] --> B
     L[REST API] --> B
     M[Metrics Collector] --> C
+```
 
 ### How It Works
 
@@ -187,7 +181,7 @@ func NewSearchEverythingBot(ctx context.Context) (*SearchEverythingBot, error) {
     }
 
     
-    return &SearchEverythingBot\{
+    return &SearchEverythingBot{
         server:       restServer,
         orchestrator: NewSearchOrchestrator(),
     }, nil
@@ -238,7 +232,7 @@ func (s *SearchEverythingBot) SearchEverything(ctx context.Context, query string
         attribute.Int("results_count", len(ranked)),
     )
     
-    return &SearchResults\{
+    return &SearchResults{
         Results: ranked,
         Query:   query,
     }, nil

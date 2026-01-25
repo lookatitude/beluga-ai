@@ -150,4 +150,4 @@ go test -c ./pkg/llms 2>&1 | grep -E "(import cycle|cycle not allowed)"
 ## Related Documentation
 
 - [test-import-cycles.md](./test-import-cycles.md) - Detailed explanation of the issue and solutions
-- [TEST_ISSUES_SUMMARY.md](./TEST_ISSUES_SUMMARY.md) - Summary of test issues
+- TEST_ISSUES_SUMMARY.md - Summary of test issues

@@ -193,4 +193,4 @@ runner := ApplyMiddleware(base,
 ## Next Steps
 
 - **[Building a Custom Runnable](./core-custom-runnable.md)** - Review runnable basics
-- **[End-to-End Tracing with OpenTelemetry](../monitoring/monitoring-otel-tracing.md)** - Advanced observability
+- **[End-to-End Tracing with OpenTelemetry](./monitoring-otel-tracing.md)** - Advanced observability

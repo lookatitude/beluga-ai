@@ -92,15 +92,11 @@ By implementing a high-availability streaming proxy, the provider could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Client Requests] --> B[Streaming Proxy]
-    B --> C\{Health Check\}
+    B --> C{Health Check}
     C -->|Healthy| D[Primary LLM Provider]
     C -->|Unhealthy| E[Backup LLM Provider]
     D --> F[Connection Pool]
@@ -108,15 +104,13 @@ graph TB
     F --> G[Stream Handler]
     G --> H[Response Stream]
     H --> A
-    
     I[Health Monitor] --> D
     I --> E
     I --> B
-    
-```
     J[Load Balancer] --> F
     K[Metrics Collector] --> B
     K --> G
+```
 
 ### How It Works
 

@@ -91,13 +91,9 @@ By implementing automated voiceovers, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Course Content] --> B[Content Parser]
     B --> C[Language Detector]
     C --> D[Text Preprocessor]
@@ -107,11 +103,10 @@ graph TB
     G --> E
     E --> H[Audio Generator]
     H --> I[Voiceover Files]
-    
-```
     J[Language Configs] --> E
     K[Voice Library] --> F
     L[Metrics Collector] --> E
+```
 
 ### How It Works
 

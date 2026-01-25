@@ -377,9 +377,9 @@ When using Weaviate in production:
 Congratulations! You've integrated Weaviate with Beluga AI. Next, learn how to:
 
 - **[Elasticsearch Keyword Search](./elasticsearch-keyword-search.md)** - Elasticsearch integration
-- **[Retrievers Package Documentation](../../api/packages/retrievers.md)** - Deep dive into retrievers
+- **[Retrievers Package Documentation](../../api-docs/packages/retrievers.md)** - Deep dive into retrievers
 - **[RAG Tutorial](../../getting-started/02-simple-rag.md)** - Build RAG applications
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

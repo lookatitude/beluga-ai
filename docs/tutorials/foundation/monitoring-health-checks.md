@@ -112,4 +112,4 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 ## Next Steps
 
 - **[End-to-End Tracing](./monitoring-otel-tracing.md)** - Debug issues found by health checks.
-- **[Deploying via REST](../../higher-level/server-rest-deployment.md)** - Host your health endpoint.
+- **[Deploying via REST](../higher-level/server-rest-deployment.md)** - Host your health endpoint.

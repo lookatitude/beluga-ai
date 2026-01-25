@@ -91,13 +91,8 @@ By implementing automated summarization, the platform could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Document Set] --> B[Document Retriever]
     B --> C[Relevance Filter]
     C --> D[Document Chunker]
@@ -105,13 +100,12 @@ graph TB
     E --> F[Information Synthesizer]
     F --> G[Summary Generator]
     G --> H[Summary with Citations]
-    
-```
     I[Vector Store] --> B
     J[LLM] --> E
     J --> F
     J --> G
     K[Metrics Collector] --> B
+```
 
 ### How It Works
 
@@ -237,7 +231,7 @@ Extract:
     response, _ := m.llm.Generate(ctx, messages)
 
     
-    return KeyInformation\{
+    return KeyInformation{
         Content: response.GetContent(),
         Source:  doc.Metadata()["source"].(string),
     }

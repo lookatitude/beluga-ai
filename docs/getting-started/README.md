@@ -73,7 +73,7 @@ If you encounter issues:
 - **[Architecture Documentation](../architecture.md)** - Framework design
 - **[Package Design Patterns](../package_design_patterns.md)** - Best practices
 - **[Use Cases](../use-cases/)** - Real-world examples
-- **[API Reference](../../website/docs/api/)** - Detailed API docs
+- **[API Reference](../api-reference.md)** - Detailed API docs
 
 ## Progress Tracking
 

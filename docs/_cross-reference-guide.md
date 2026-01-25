@@ -61,7 +61,7 @@ Every documentation resource should include a "Related Resources" section at the
 Now that you understand {topic}, explore these related resources:
 
 - **[{Related Guide Title}](../guides/{guide}.md)** - {One sentence describing what users will learn}
-- **[{Example Name}](/examples/{path}/README.md)** - {What the example demonstrates}
+- **[{Example Name}](https://github.com/lookatitude/beluga-ai/blob/main/examples/{path}/README.md)** - {What the example demonstrates}
 - **[{Cookbook Recipe}](../cookbook/{recipe}.md)** - {Quick solution for specific task}
 - **[{Use Case}](../use-cases/{use-case}.md)** - {Real-world scenario description}
 ```
@@ -84,7 +84,7 @@ If you're working on a similar project:
 
 - **[{Use Case Title}](./related-use-case.md)** - Similar scenario with {different focus}
 - **[{Guide}](../guides/{guide}.md)** - Detailed guide for {feature used}
-- **[{Example}](/examples/{path}/README.md)** - Code example for {feature}
+- **[{Example}](https://github.com/lookatitude/beluga-ai/blob/main/examples/{path}/README.md)** - Code example for {feature}
 ```
 
 ### For Example READMEs
@@ -118,7 +118,7 @@ If you're working on a similar project:
 **In a Tutorial Step:**
 ```markdown
 We'll use the `NewLLM` function here. If you need to customize the configuration, 
-see the [configuration options guide](../guides/config-providers.md).
+see the [configuration options guide](../guides/implementing-providers.md).
 ```
 
 **In an Error Handling Section:**
@@ -130,7 +130,7 @@ see our [LLM error handling recipe](../cookbook/llm-error-handling.md).
 **In a Best Practices Section:**
 ```markdown
 In production, you'll want proper observability. Our 
-[batch processing use case](../use-cases/batch-processing.md) shows how we 
+[batch processing use case](../use-cases/11-batch-processing.md) shows how we 
 implemented monitoring for a high-volume system.
 ```
 
@@ -176,31 +176,27 @@ Now that you understand streaming LLM calls with tool calling, explore:
 
 - **[Agent Types Guide](../guides/agent-types.md)** - Learn how agents orchestrate 
   multiple tool calls in a reasoning loop
-- **[Streaming Example](/examples/llms/streaming/README.md)** - Complete 
+- **[Streaming Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/streaming/README.md)** - Complete 
   implementation with tests and OTEL instrumentation
 - **[LLM Error Handling](../cookbook/llm-error-handling.md)** - Handle rate limits 
   and API errors gracefully
-- **[Batch Processing Use Case](../use-cases/batch-processing.md)** - See streaming 
+- **[Batch Processing Use Case](../use-cases/11-batch-processing.md)** - See streaming 
   in action for high-volume processing
 ```
 
 ### Inline Cross-Reference (Tutorial)
 
-```markdown
+```text
 ### Step 3: Configure the LLM Client
 
-Now we'll create the LLM client. We're using the OpenAI provider here, but the 
-same pattern works for [Anthropic](../guides/llm-providers.md#anthropic) and 
-[Ollama](../guides/llm-providers.md#ollama).
+Now we'll create the LLM client. We're using the OpenAI provider here, but the
+same pattern works for [Anthropic](./guides/llm-providers.md#anthropic) and
+[Ollama](./guides/llm-providers.md#ollama).
 
-```go
-client, err := openai.NewClient(
-    openai.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-)
-```
+(code block with Go example here)
 
-> 💡 **Tip**: For local development, [Ollama](../guides/llm-providers.md#ollama) 
-> is a great option that doesn't require API keys.
+> 💡 **Tip**: For local development, Ollama is a great option that doesn't
+> require API keys.
 ```
 
 ## Checklist for Authors

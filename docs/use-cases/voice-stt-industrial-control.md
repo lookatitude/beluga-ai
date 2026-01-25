@@ -91,27 +91,22 @@ By implementing voice-activated controls, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Voice Command] --> B[Noise Filter]
     B --> C[STT Provider]
     C --> D[Command Parser]
     D --> E[Command Validator]
-    E --> F\{Safe?\}
+    E --> F{Safe?}
     F -->|Yes| G[Command Executor]
     F -->|No| H[Rejection Handler]
     G --> I[Equipment Control]
     I --> J[Confirmation]
-    
-```
     K[Command Vocabulary] --> D
     L[Safety Rules] --> E
     M[Metrics Collector] --> C
+```
 
 ### How It Works
 

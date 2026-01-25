@@ -91,13 +91,9 @@ By implementing automated policy auditing, the company could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Policy Definitions] --> B[Policy Auditor Agent]
     B --> C[Infrastructure Scanner]
     B --> D[Code Analyzer]
@@ -105,15 +101,14 @@ graph TB
     C --> F[Violation Detector]
     D --> F
     E --> F
-    F --> G\{Violations Found?\}
+    F --> G{Violations Found?}
     G -->|Yes| H[Alert System]
     G -->|No| I[Compliance Report]
     H --> J[Remediation Tracker]
-    
-```
     K[Tool Registry] --> B
     L[Metrics Collector] --> B
     M[Policy Engine] --> B
+```
 
 ### How It Works
 
@@ -191,7 +186,7 @@ func NewPolicyAuditorAgent(ctx context.Context, llm llms.ChatModel) (*PolicyAudi
     }
 
     
-    return &PolicyAuditorAgent\{
+    return &PolicyAuditorAgent{
         agent:        agent,
         tools:        toolRegistry,
         policyEngine: NewPolicyEngine(),
@@ -229,28 +224,20 @@ func (p *PolicyAuditorAgent) RunAudit(ctx context.Context, scope AuditScope) (*A
     auditPlan := p.buildAuditPlan(ctx, policies, scope)
     
     // Execute audit using agent
-    prompt := fmt.Sprintf(`Perform a comprehensive policy audit for the following scope: %s
-```
+    prompt := fmt.Sprintf("Perform a comprehensive policy audit for the following scope: %s\n\nPolicies to check:\n%s\n\nUse available tools to scan infrastructure, analyze code, and check configurations.\nReport all violations found.", scope.String(), formatPolicies(policies))
 
-Policies to check:
-%s
-
-Use available tools to scan infrastructure, analyze code, and check configurations.
-Report all violations found.`, scope.String(), formatPolicies(policies))
-    
-```go
     result, err := p.agent.Execute(ctx, map[string]any{
-        "task": prompt,
+        "task":  prompt,
         "scope": scope,
     })
     if err != nil {
         span.RecordError(err)
         return nil, fmt.Errorf("audit execution failed: %w", err)
     }
-    
+
     // Parse violations from result
     violations := p.parseViolations(result)
-    
+
     // Generate report
     report := &AuditReport{
         Scope:      scope,
@@ -259,11 +246,9 @@ Report all violations found.`, scope.String(), formatPolicies(policies))
         Timestamp:  time.Now(),
     }
 
-    
-
     // Send alerts for critical violations
     p.alertViolations(ctx, violations)
-    
+
     return report, nil
 }
 ```
@@ -275,8 +260,9 @@ Report all violations found.`, scope.String(), formatPolicies(policies))
 ### Phase 3: Integration/Polish
 
 Finally, we integrated monitoring and reporting:
-// RunAuditWithMonitoring executes audit with comprehensive tracking
+
 ```go
+// RunAuditWithMonitoring executes audit with comprehensive tracking
 func (p *PolicyAuditorAgent) RunAuditWithMonitoring(ctx context.Context, scope AuditScope) (*AuditReport, error) {
     ctx, span := p.tracer.Start(ctx, "policy_audit.run.monitored",
         trace.WithAttributes(

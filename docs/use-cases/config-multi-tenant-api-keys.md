@@ -91,16 +91,12 @@ By implementing secure multi-tenant key management, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[API Request] --> B[Key Validator]
     B --> C[Key Manager]
-    C --> D\{Key Cache\}
+    C --> D{Key Cache}
     D -->|Hit| E[Decrypt Key]
     D -->|Miss| F[Config Loader]
     F --> G[Encrypted Storage]
@@ -109,11 +105,10 @@ graph TB
     H --> I[Rate Limiter]
     I --> J[Feature Checker]
     J --> K[Request Handler]
-    
-```
     L[Key Rotation Service] --> C
     M[Audit Logger] --> C
     N[Metrics Collector] --> B
+```
 
 ### How It Works
 

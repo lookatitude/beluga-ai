@@ -145,5 +145,5 @@ go
 ## Next Steps
 
 - **[LiveKit Webhooks](./livekit-webhooks-integration.md)** — LiveKit webhook handling.
-- **[Voice Backends Tutorial](../../../../tutorials/voice/voice-backends-livekit-vapi.md)** — Backend and Vapi setup.
-- **[Scaling Concurrent Streams](../../../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.
+- **[Voice Backends Tutorial](../../../tutorials/voice/voice-backends-livekit-vapi.md)** — Backend and Vapi setup.
+- **[Scaling Concurrent Streams](../../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.

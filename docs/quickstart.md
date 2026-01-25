@@ -353,8 +353,8 @@ Now that you've completed the quick start, explore more:
 1. **📚 [Architecture Documentation](./architecture.md)** - Understand the framework's design
 2. **📦 [Package Design Patterns](./package_design_patterns.md)** - Learn best practices
 3. **🎯 [Use Cases](./use-cases/)** - See real-world examples
-4. **🔧 [API Documentation](../website/docs/api/)** - Detailed API reference
-5. **🤝 [Contributing Guide](../CONTRIBUTING.md)** - Contribute to the project
+4. **🔧 [API Documentation](./api-reference.md)** - Detailed API reference
+5. **🤝 [Contributing Guide](https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md)** - Contribute to the project
 
 ### Recommended Learning Path
 
@@ -374,7 +374,7 @@ go run main.go
 
 ## Getting Help
 
-- **Documentation**: [Full Documentation](../README.md)
+- **Documentation**: [Full Documentation](https://github.com/lookatitude/beluga-ai/blob/main/README.md)
 - **Issues**: [GitHub Issues](https://github.com/lookatitude/beluga-ai/issues)
 - **Framework Comparison**: [Comparison with LangChain/CrewAI](./framework-comparison.md)
 

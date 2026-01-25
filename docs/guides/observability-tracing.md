@@ -762,6 +762,6 @@ if spanCtx.IsValid() {
 - **[LLM Provider Integration Guide](./llm-providers.md)**: Built-in tracing in LLM providers
 - **[Extensibility Guide](./extensibility.md)**: Adding tracing to custom components
 - **[Monitoring Dashboards Use Case](../use-cases/monitoring-dashboards.md)**: Setting up Prometheus/Grafana
-- **[Single Binary Deployment](../../examples/deployment/single_binary/)**: Production deployment with observability
-- **[Monitoring Package Documentation](/pkg/monitoring/README.md)**: Full monitoring package reference
+- **[Single Binary Deployment](https://github.com/lookatitude/beluga-ai/tree/main/examples/deployment/single_binary/)**: Production deployment with observability
+- **[Monitoring Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/monitoring/README.md)**: Full monitoring package reference
 - **[OpenTelemetry Documentation](https://opentelemetry.io/docs/go/)**: Official OTEL Go docs

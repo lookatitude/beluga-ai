@@ -321,4 +321,4 @@ type VersionedConfig struct {
 ## Related Recipes
 
 - **[Config Masking Secrets in Logs](./config-masking-secrets-logs.md)** - Secure config logging
-- **[Config Package Guide](../guides/config-providers.md)** - For a deeper understanding of config management
+- **[Config Package Guide](../guides/implementing-providers.md)** - For a deeper understanding of config management

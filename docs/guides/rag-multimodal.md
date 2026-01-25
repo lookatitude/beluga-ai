@@ -639,8 +639,8 @@ func TestMultimodalRAG_Query(t *testing.T) {
 
 Now that you understand multimodal RAG, explore:
 
-- **[Multimodal RAG Example](/examples/rag/multimodal/README.md)** - Complete implementation with tests
+- **[Multimodal RAG Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/rag/multimodal/README.md)** - Complete implementation with tests
 - **[Vector Stores Guide](../concepts/rag.md)** - Deep dive into vector databases
 - **[Streaming LLM Guide](./llm-streaming-tool-calls.md)** - Stream multimodal responses
-- **[Embeddings Providers](/docs/providers/embeddings/selection.md)** - Choose the right embedding model
+- **[Embeddings Providers](../guides/rag-multimodal.md)** - Choose the right embedding model
 - **[RAG Strategies Use Case](../use-cases/rag-strategies.md)** - Compare RAG approaches

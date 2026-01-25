@@ -495,9 +495,9 @@ When using SpaCy in production:
 Congratulations! You've integrated SpaCy with Beluga AI. Next, learn how to:
 
 - **[Tiktoken Byte-Pair Encoding](./tiktoken-byte-pair-encoding.md)** - Token-aware splitting
-- **[Text Splitters Documentation](../../api/packages/textsplitters.md)** - Deep dive into text splitters
+- **Text Splitters Documentation** - Deep dive into text splitters
 - **[RAG Guide](../../guides/rag-multimodal.md)** - RAG patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

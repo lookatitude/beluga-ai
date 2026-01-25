@@ -145,5 +145,5 @@ go
 ## Next Steps
 
 - **[Custom Turn Detectors for Noisy Environments](./custom-turn-detectors-noisy-environments.md)** — Tuning for noisy settings.
-- **[Sentence-Boundary Turn Detection](../../../../tutorials/voice/voice-turn-sentence-boundary-detection.md)** — Tutorial on heuristic provider.
-- **[ML-Based Turn Prediction](../../../../tutorials/voice/voice-turn-ml-based-prediction.md)** — ONNX provider.
+- **[Sentence-Boundary Turn Detection](../../../tutorials/voice/voice-turn-sentence-boundary-detection.md)** — Tutorial on heuristic provider.
+- **[ML-Based Turn Prediction](../../../tutorials/voice/voice-turn-ml-based-prediction.md)** — ONNX provider.

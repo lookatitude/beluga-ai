@@ -93,6 +93,6 @@ go run .
 
 ## Next Steps
 
-- **[Noise-Resistant VAD](../../../use-cases/voice-vad-noise-resistant.md)** — Use case for noisy environments.
-- **[WebRTC VAD in Browser](../../../integrations/voice/vad/webrtc-vad-browser.md)** — Browser-based VAD.
-- **[VAD Sensitivity Profiles](../../../cookbook/voice-vad-sensitivity-profiles.md)** — Recipe for tuning.
+- **[Noise-Resistant VAD](../../use-cases/voice-vad-noise-resistant.md)** — Use case for noisy environments.
+- **[WebRTC VAD in Browser](../../integrations/voice/vad/webrtc-vad-browser.md)** — Browser-based VAD.
+- **[VAD Sensitivity Profiles](../../cookbook/voice-vad-sensitivity-profiles.md)** — Recipe for tuning.

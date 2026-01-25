@@ -91,13 +91,9 @@ By implementing automated minute generation, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Meeting Audio Stream] --> B[STT Provider]
     B --> C[Real-time Transcription]
     C --> D[Speaker Diarization]
@@ -106,11 +102,10 @@ graph TB
     F --> G[LLM Summarizer]
     G --> H[Action Item Extractor]
     H --> I[Structured Minutes]
-    
-```
     J[Audio Processor] --> B
     K[Metrics Collector] --> B
     L[Minute Formatter] --> I
+```
 
 ### How It Works
 

@@ -120,4 +120,4 @@ Enforce a hard cap (e.g. 30 s); flush and process when reached even without turn
 
 - **[Preemptive Generation](./voice-session-preemptive-generation.md)** — Interim results and latency.
 - **[Voice Turn Sentence-Boundary-Aware](./voice-turn-sentence-boundary-aware.md)** — Turn boundaries.
-- **[Heuristic Tuning](../../integrations/voice/turn/heuristic-tuning.md)** — MinSilenceDuration and turn length.
+- **[Heuristic Tuning](../integrations/voice/turn/heuristic-tuning.md)** — MinSilenceDuration and turn length.

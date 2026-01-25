@@ -90,13 +90,9 @@ By implementing cross-lingual retrieval, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Search Query] --> B[Language Detector]
     B --> C[Query Embedder]
     C --> D[Vector Store]
@@ -105,12 +101,11 @@ graph TB
     D --> G[Cross-lingual Search]
     G --> H[Result Ranker]
     H --> I[Multilingual Results]
-    
-```
     J[Multilingual Model] --> C
     J --> F
     K[Metrics Collector] --> C
     K --> F
+```
 
 ### How It Works
 

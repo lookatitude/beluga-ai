@@ -90,14 +90,10 @@ By implementing a standardization system with schema validation, the network cou
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
-    A[Medical Record Input] --> B\{Format Detector\}
+    A[Medical Record Input] --> B{Format Detector}
     B -->|HL7 v2| C[HL7 v2 Parser]
     B -->|CDA| D[CDA Parser]
     B -->|Proprietary| E[Custom Parser]
@@ -107,17 +103,16 @@ graph TB
     F --> G[Code Mapper]
     G --> H[FHIR Transformer]
     H --> I[Schema Validator]
-    I --> J\{Valid?\}
+    I --> J{Valid?}
     J -->|Yes| K[FHIR Record]
     J -->|No| L[Error Handler]
     L --> M[Manual Review Queue]
     K --> N[HL7 FHIR Repository]
     I --> O[OTEL Metrics]
-    
-```
     P[FHIR Schema Definitions] --> I
     Q[Code Mapping Tables] --> G
     R[Configuration] --> F
+```
 
 ### How It Works
 

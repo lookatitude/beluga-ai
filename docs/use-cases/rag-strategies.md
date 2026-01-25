@@ -46,30 +46,14 @@ The choice of retrieval strategy significantly impacts your system's effectivene
 
 ### Decision Framework
 
-```
-                         Start Here
-                             │
-                             ▼
-               ┌─────────────────────────────┐
-               │ Do queries contain exact    │
-               │ terms, codes, or IDs?       │
-               └─────────────────────────────┘
-                      │              │
-                     Yes            No
-                      │              │
-                      ▼              ▼
-            ┌─────────────┐  ┌─────────────────────────┐
-            │  Include    │  │ Are queries natural     │
-            │  Keyword    │  │ language questions?     │
-            └─────────────┘  └─────────────────────────┘
-                      │              │              │
-                      │            Yes             No
-                      │              │              │
-                      ▼              ▼              ▼
-            ┌─────────────┐  ┌─────────────┐  ┌─────────────┐
-            │   Hybrid    │  │  Similarity │  │   Analyze   │
-            │   Search    │  │    Search   │  │   Further   │
-            └─────────────┘  └─────────────┘  └─────────────┘
+```mermaid
+flowchart TB
+    A[Start Here] --> B{Do queries contain exact<br>terms, codes, or IDs?}
+    B -->|Yes| C[Include Keyword]
+    B -->|No| D{Are queries natural<br>language questions?}
+    C --> E[Hybrid Search]
+    D -->|Yes| F[Similarity Search]
+    D -->|No| G[Analyze Further]
 ```
 
 ## Strategy 1: Similarity-Only RAG
@@ -428,31 +412,34 @@ func (r *CrossEncoderReranker) Rerank(
 
 ### Choosing Your Strategy
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                     Strategy Selection Guide                        │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. Start with Hybrid                                               │
-│     - Good default for most applications                            │
-│     - Measure baseline metrics                                      │
-│                                                                     │
-│  2. Analyze Failure Cases                                           │
-│     - Too many exact-match failures? → Increase keyword weight     │
-│     - Missing semantic matches? → Increase similarity weight       │
-│     - Both failing? → Consider multi-strategy                      │
-│                                                                     │
-│  3. Optimize Based on Data                                          │
-│     - Tune alpha based on evaluation results                        │
-│     - Add reranking if top-K precision matters                     │
-│     - Consider query classification for diverse workloads          │
-│                                                                     │
-│  4. Monitor and Iterate                                             │
-│     - Track MRR, Precision@K, Recall@K over time                   │
-│     - A/B test strategy changes                                    │
-│     - Collect user feedback                                        │
-│                                                                     │
-└─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Step1["1. Start with Hybrid"]
+        A1[Good default for most applications]
+        A2[Measure baseline metrics]
+    end
+
+    subgraph Step2["2. Analyze Failure Cases"]
+        B1[Too many exact-match failures?<br>→ Increase keyword weight]
+        B2[Missing semantic matches?<br>→ Increase similarity weight]
+        B3[Both failing?<br>→ Consider multi-strategy]
+    end
+
+    subgraph Step3["3. Optimize Based on Data"]
+        C1[Tune alpha based on evaluation results]
+        C2[Add reranking if top-K precision matters]
+        C3[Consider query classification for diverse workloads]
+    end
+
+    subgraph Step4["4. Monitor and Iterate"]
+        D1[Track MRR, Precision@K, Recall@K over time]
+        D2[A/B test strategy changes]
+        D3[Collect user feedback]
+    end
+
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> Step4
 ```
 
 ### Production Configuration
@@ -547,7 +534,7 @@ sum(rate(beluga_rag_retrievals_total[5m]))
 
 ## Related Resources
 
-- **[Advanced Retrieval Guide](../examples/vectorstores/advanced_retrieval/advanced_retrieval_guide.md)**: Implementation details
-- **[RAG Evaluation Guide](../examples/rag/evaluation/rag_evaluation_guide.md)**: Measuring quality
-- **[Multimodal RAG Guide](./guides/rag-multimodal.md)**: RAG with images and video
-- **[Observability Tracing](./guides/observability-tracing.md)**: Monitoring your pipeline
+- **[Advanced Retrieval Guide](https://github.com/lookatitude/beluga-ai/tree/main/examples/vectorstores/advanced_retrieval/advanced_retrieval_guide.md)**: Implementation details
+- **[RAG Evaluation Guide](https://github.com/lookatitude/beluga-ai/tree/main/examples/rag/evaluation/rag_evaluation_guide.md)**: Measuring quality
+- **[Multimodal RAG Guide](../guides/rag-multimodal.md)**: RAG with images and video
+- **[Observability Tracing](../guides/observability-tracing.md)**: Monitoring your pipeline

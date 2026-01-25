@@ -146,4 +146,4 @@ flowchart TD
 
 - [Component Diagrams](./component-diagrams.md) - Component structure
 - [Sequence Diagrams](./sequences.md) - Interaction sequences
-- [Architecture Overview](../architecture.md) - Complete architecture
+- [Architecture Overview](../../architecture.md) - Complete architecture

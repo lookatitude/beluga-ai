@@ -73,8 +73,9 @@ By implementing multi-turn voice forms:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     User[User] --> Mic[Microphone]
     Mic --> Session[Voice Session]
     Session --> STT[STT]
@@ -89,6 +90,7 @@ graph TB
     Agent --> Session
     TTS --> Speaker[Speaker]
     Speaker --> User
+```
 
 ### How It Works
 
@@ -108,7 +110,7 @@ graph TB
 ## Implementation
 
 ### Phase 1: Session and Form Orchestrator
-go
+
 ```go
 	sess, err := session.NewVoiceSession(ctx,
 		session.WithSTTProvider(sttProv),

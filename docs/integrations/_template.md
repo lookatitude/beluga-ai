@@ -187,10 +187,10 @@ func main() {
 Congratulations! You've integrated {external service/tool} with Beluga AI. Next, learn how to:
 
 - **[Related Integration Guide](./related-integration.md)** - {Description}
-- **[Package Documentation](../../api/packages/{package}.md)** - Deep dive into {package} package
+- **[Package Documentation](../../api-docs/packages/{package}.md)** - Deep dive into {package} package
 - **[Use Case Example](../../use-cases/{related-use-case}.md)** - Real-world usage example
 - **[Cookbook Recipe](../../cookbook/{related-recipe}.md)** - Quick reference recipe
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

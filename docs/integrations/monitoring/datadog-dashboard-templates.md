@@ -269,9 +269,9 @@ When using Datadog in production:
 Congratulations! You've integrated Datadog with Beluga AI. Next, learn how to:
 
 - **[LangSmith Debugging Integration](./langsmith-debugging-integration.md)** - Debug LLM calls
-- **[Monitoring Package Documentation](../../api/packages/monitoring.md)** - Deep dive into monitoring
+- **[Monitoring Package Documentation](../../api-docs/packages/monitoring.md)** - Deep dive into monitoring
 - **[Observability Guide](../../guides/observability-tracing.md)** - Complete observability setup
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

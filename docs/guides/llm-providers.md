@@ -535,8 +535,8 @@ func main() {
 
 For a complete, production-ready example, see:
 
-- [Custom LLM Provider Example](/examples/llms/custom_provider/custom_llm_provider.go)
-- [Test Suite](/examples/llms/custom_provider/custom_llm_provider_test.go)
+- [Custom LLM Provider Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/custom_provider/custom_llm_provider.go)
+- [Test Suite](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/custom_provider/custom_llm_provider_test.go)
 
 ## Testing
 
@@ -763,4 +763,4 @@ func (c *CustomProvider) generateInternal(ctx context.Context, ...) (schema.Mess
 - **[Extensibility Guide](./extensibility.md)**: Broader patterns for extending Beluga AI
 - **[Observability Tracing Guide](./observability-tracing.md)**: Deep dive into OTEL integration
 - **[LLM Error Handling Cookbook](../cookbook/llm-error-handling.md)**: Recipes for handling LLM errors gracefully
-- **[Custom LLM Provider Example](/examples/llms/custom_provider/)**: Complete, runnable example code
+- **[Custom LLM Provider Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/custom_provider/)**: Complete, runnable example code

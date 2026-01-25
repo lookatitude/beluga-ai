@@ -75,14 +75,16 @@ By implementing noise-resistant VAD:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-```
     Mic[Microphone] --> Pre[Preprocess]
     Pre --> VAD[VAD Provider]
     VAD --> Silero[Silero / RNNoise]
     Silero --> Decision[Speech?]
     Decision --> App[App Logic]
     VAD --> Metrics[OTEL Metrics]
+```
 
 ### How It Works
 
@@ -102,7 +104,7 @@ graph TB
 ## Implementation
 
 ### Phase 1: Silero Provider and Config
-go
+
 ```go
 	cfg := vad.DefaultConfig()
 	provider, err := vad.NewProvider(ctx, "silero", cfg,

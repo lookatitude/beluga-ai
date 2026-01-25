@@ -228,8 +228,8 @@ Congratulations! You've integrated AWS Bedrock with Beluga AI. Next, learn how t
 
 - **[Anthropic Claude Enterprise](./anthropic-claude-enterprise.md)** - Enterprise Claude setup
 - **[LLM Providers Guide](../../guides/llm-providers.md)** - LLM configuration
-- **[LLMs Package Documentation](../../api/packages/llms.md)** - Deep dive into LLMs package
+- **[LLMs Package Documentation](../../api-docs/packages/llms.md)** - Deep dive into LLMs package
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

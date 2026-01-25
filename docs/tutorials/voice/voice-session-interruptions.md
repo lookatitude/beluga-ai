@@ -13,7 +13,7 @@
 
 - Go 1.24+
 - Beluga AI (`go get github.com/lookatitude/beluga-ai`)
-- [Voice Sessions](../../../use-cases/voice-sessions.md) and [Barge-In Detection](../../../use-cases/voice-turn-barge-in-detection.md) (recommended)
+- [Voice Sessions](../../use-cases/voice-sessions.md) and [Barge-In Detection](../../use-cases/voice-turn-barge-in-detection.md) (recommended)
 
 ## Step 1: Create a Session with STT and TTS
 ```go
@@ -94,7 +94,7 @@ go
 
 ## Step 4: Optional VAD + Turn Detection
 
-For more robust interruption detection, add VAD and turn detection. When VAD detects speech during playback, call `SayHandle.Cancel()` and ensure the session switches to listening (e.g. via `ProcessAudio` and your pipeline). See [Barge-In Detection](../../../use-cases/voice-turn-barge-in-detection.md).
+For more robust interruption detection, add VAD and turn detection. When VAD detects speech during playback, call `SayHandle.Cancel()` and ensure the session switches to listening (e.g. via `ProcessAudio` and your pipeline). See [Barge-In Detection](../../use-cases/voice-turn-barge-in-detection.md).
 
 ## Verification
 
@@ -105,5 +105,5 @@ For more robust interruption detection, add VAD and turn detection. When VAD det
 ## Next Steps
 
 - **[Preemptive Generation](./voice-session-preemptive-generation.md)** — Start generating replies from interim transcripts.
-- **[Voice S2S Handling Interruption](../../../cookbook/voice-s2s-handling-speech-interruption.md)** — Interruption in S2S pipelines.
-- **[Barge-In Detection](../../../use-cases/voice-turn-barge-in-detection.md)** — Full use case.
+- **[Voice S2S Handling Interruption](../../cookbook/voice-s2s-handling-speech-interruption.md)** — Interruption in S2S pipelines.
+- **[Barge-In Detection](../../use-cases/voice-turn-barge-in-detection.md)** — Full use case.

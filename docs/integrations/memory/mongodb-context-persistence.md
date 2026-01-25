@@ -427,9 +427,9 @@ When using MongoDB in production:
 Congratulations! You've integrated MongoDB with Beluga AI memory. Next, learn how to:
 
 - **[Redis Distributed Locking](./redis-distributed-locking.md)** - Distributed locking
-- **[Memory Package Documentation](../../api/packages/memory.md)** - Deep dive into memory package
+- **[Memory Package Documentation](../../api-docs/packages/memory.md)** - Deep dive into memory package
 - **[Memory Tutorial](../../getting-started/05-memory-management.md)** - Memory patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

@@ -67,24 +67,30 @@ By implementing AI-assisted response generation, the team could:
 
 ### High-Level Design
 
-```
-                                    ┌─────────────────────────┐
-                                    │     Rate Limiter        │
-                                    │   (Token Bucket)        │
-                                    └──────────┬──────────────┘
-                                               │
-┌─────────────┐    ┌─────────────┐    ┌────────▼────────┐    ┌─────────────┐
-│             │    │             │    │                 │    │             │
-│   Ticket    │───▶│   Input     │───▶│   Worker Pool   │───▶│   Output    │
-│   Source    │    │   Queue     │    │   (N workers)   │    │   Queue     │
-│             │    │             │    │                 │    │             │
-└─────────────┘    └─────────────┘    └────────┬────────┘    └──────┬──────┘
-                                               │                     │
-                                               ▼                     ▼
-                                    ┌─────────────────────┐   ┌─────────────┐
-                                    │   Error Handler     │   │   Result    │
-                                    │   (Retry Logic)     │   │   Writer    │
-                                    └─────────────────────┘   └─────────────┘
+```mermaid
+graph LR
+    subgraph Input["Input Stage"]
+        A[Ticket Source] --> B[Input Queue]
+    end
+
+    subgraph Processing["Processing Stage"]
+        C[Rate Limiter<br>Token Bucket]
+        D[Worker Pool<br>N workers]
+    end
+
+    subgraph Output["Output Stage"]
+        E[Output Queue] --> F[Result Writer]
+    end
+
+    subgraph ErrorHandling["Error Handling"]
+        G[Error Handler<br>Retry Logic]
+    end
+
+    B --> D
+    C --> D
+    D --> E
+    D --> G
+    G --> D
 ```
 
 ### How It Works
@@ -503,8 +509,8 @@ func (bp *BatchProcessor) ProcessWithProgress(
 
 If you're working on a similar project:
 
-- **[Event-Driven Agents](./event-driven-agents.md)** - Processing items as they arrive
-- **[Distributed Orchestration](./distributed-orchestration.md)** - Scaling across multiple machines
+- **[Event-Driven Agents](./09-multi-model-llm-gateway.md)** - Processing items as they arrive
+- **[Distributed Orchestration](./07-distributed-workflow-orchestration.md)** - Scaling across multiple machines
 - **[LLM Error Handling](../cookbook/llm-error-handling.md)** - Detailed error handling patterns
 - **[Observability Guide](../guides/observability-tracing.md)** - Setting up OTEL for monitoring
-- **[Streaming Example](/examples/llms/streaming/README.md)** - Real-time response processing
+- **[Streaming Example](https://github.com/lookatitude/beluga-ai/blob/main/examples/llms/streaming/README.md)** - Real-time response processing

@@ -26,53 +26,41 @@ This use case implements an intelligent document processing pipeline that:
 
 ## Architecture Diagram
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                    Document Sources                              │
-│  - File System  - Email  - APIs  - Cloud Storage               │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Document Ingestion Chain                            │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  1. Extract  │→ │  2. Process  │→ │  3. Categorize│         │
-│  │  Text        │  │  & Clean    │  │  & Tag        │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              Embedding & Storage Chain                           │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │  4. Generate │→ │  5. Store in │→ │  6. Index    │         │
-│  │  Embeddings  │  │  VectorStore│  │  for Search  │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-└────────────────────────────┬────────────────────────────────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-        ▼                     ▼                     ▼
-┌──────────────┐    ┌──────────────┐    ┌──────────────┐
-│  Embeddings  │    │  VectorStores│   │     LLMs     │
-│  (pkg/       │    │  (pkg/       │    │  (pkg/llms)  │
-│  embeddings) │    │  vectorstores)│   │              │
-└──────────────┘    └──────────────┘    └──────────────┘
-        │                     │                     │
-        └─────────────────────┼─────────────────────┘
-                              │
-                              ▼
-              ┌────────────────────────┐
-              │   Retrievers           │
-              │  (pkg/retrievers)     │
-              └────────────────────────┘
+```mermaid
+graph TB
+    subgraph Sources["Document Sources"]
+        A[File System / Email / APIs / Cloud Storage]
+    end
 
-┌─────────────────────────────────────────────────────────────────┐
-│                    Observability Layer                           │
-│  - Document processing metrics                                   │
-│  - Embedding generation tracking                                │
-│  - Search performance monitoring                                │
-└─────────────────────────────────────────────────────────────────┘
+    subgraph Ingestion["Document Ingestion Chain"]
+        B1[1. Extract Text] --> B2[2. Process & Clean] --> B3[3. Categorize & Tag]
+    end
+
+    subgraph Storage["Embedding & Storage Chain"]
+        C1[4. Generate Embeddings] --> C2[5. Store in VectorStore] --> C3[6. Index for Search]
+    end
+
+    subgraph Components["Core Components"]
+        D[Embeddings<br>pkg/embeddings]
+        E[VectorStores<br>pkg/vectorstores]
+        F[LLMs<br>pkg/llms]
+    end
+
+    subgraph Retrieval["Retrieval Layer"]
+        G[Retrievers<br>pkg/retrievers]
+    end
+
+    subgraph Observability["Observability Layer"]
+        H[Document Processing Metrics<br>Embedding Generation Tracking<br>Search Performance Monitoring]
+    end
+
+    A --> B1
+    B3 --> C1
+    C1 --> D
+    C2 --> E
+    B3 --> F
+    D --> E
+    E --> G
 ```
 
 ## Component Usage

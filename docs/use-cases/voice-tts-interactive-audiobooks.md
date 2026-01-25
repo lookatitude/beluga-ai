@@ -91,13 +91,9 @@ By implementing interactive audiobooks, the platform could:
 ## Architecture
 
 ### High-Level Design
+
+```mermaid
 graph TB
-
-
-
-
-
-
     A[User Choice] --> B[Story State Manager]
     B --> C[Content Generator]
     C --> D[Character Voice Mapper]
@@ -105,12 +101,11 @@ graph TB
     E --> F[Audio Generator]
     F --> G[Audio Stream]
     G --> A
-    
-```
     H[Story Graph] --> B
     I[Voice Library] --> D
     J[User Preferences] --> D
     K[Metrics Collector] --> E
+```
 
 ### How It Works
 

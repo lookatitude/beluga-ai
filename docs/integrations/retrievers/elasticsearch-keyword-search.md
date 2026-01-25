@@ -384,9 +384,9 @@ When using Elasticsearch in production:
 Congratulations! You've integrated Elasticsearch with Beluga AI. Next, learn how to:
 
 - **[Weaviate RAG Connector](./weaviate-rag-connector.md)** - Weaviate integration
-- **[Retrievers Package Documentation](../../api/packages/retrievers.md)** - Deep dive into retrievers
+- **[Retrievers Package Documentation](../../api-docs/packages/retrievers.md)** - Deep dive into retrievers
 - **[RAG Tutorial](../../getting-started/02-simple-rag.md)** - Build RAG applications
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

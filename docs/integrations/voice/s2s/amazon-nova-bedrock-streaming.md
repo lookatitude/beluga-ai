@@ -199,9 +199,9 @@ When using Amazon Nova in production:
 Congratulations! You've integrated Amazon Nova with Beluga AI. Next, learn how to:
 
 - **[OpenAI Realtime API](./openai-realtime-api.md)** - OpenAI Realtime integration
-- **[S2S Package Documentation](../../../api/packages/voice/s2s.md)** - Deep dive into S2S package
+- **[S2S Package Documentation](../../../api-docs/packages/voice/session.md)** - Deep dive into S2S package
 - **[Voice Providers Guide](../../../guides/voice-providers.md)** - Voice provider patterns
 
 ---
 
-**Ready for more?** Check out the [Integrations Index](./README.md) for more integration guides!
+**Ready for more?** Check out the Integrations Index for more integration guides!

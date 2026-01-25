@@ -91,30 +91,24 @@ By implementing automated safety checks, the platform could:
 ## Architecture
 
 ### High-Level Design
+```mermaid
 graph TB
-
-
-
-
-
-
     A[Story Request] --> B[Age-Appropriate Prompt Builder]
     B --> C[Story Generator]
     C --> D[Safety Checker]
-    D --> E\{Safe?\}
+    D --> E{Safe?}
     E -->|Yes| F[Age-Appropriateness Check]
     E -->|No| G[Regenerate]
     G --> C
-    F --> H\{Age-Appropriate?\}
+    F --> H{Age-Appropriate?}
     H -->|Yes| I[Safe Story]
     H -->|No| G
     I --> J[Safety Rating]
-    
-```
     K[Safety Patterns] --> D
     L[Age Guidelines] --> B
     L --> F
     M[Metrics Collector] --> D
+```
 
 ### How It Works
 
@@ -172,7 +166,6 @@ Generate a safe, age-appropriate story for a {{.age}}-year-old child.
 Theme: {{.theme}}
 Length: {{.length}} words
 Age Group: {{.age_group}}
-```
 
 Requirements:
 - No violence, scary content, or inappropriate themes
@@ -184,16 +177,11 @@ Generate the story:
 `)
 
 
-
-
-
-
-```text
-    if err != nil \{
+    if err != nil {
         return nil, fmt.Errorf("failed to create prompt template: %w", err)
     }
 
-    return &SafeStoryGenerator\{
+    return &SafeStoryGenerator{
         llm:            llm,
         safetyChecker: safetyChecker,
         promptTemplate: template,

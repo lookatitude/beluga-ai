@@ -237,4 +237,4 @@ metrics.RecordOperation(ctx, "complete.workflow", duration, err == nil)
 
 - [Pattern Examples](./pattern-examples.md) - Real-world pattern examples
 - [Pattern Decision Guide](./pattern-decision-guide.md) - When to use which pattern
-- [Package Design Patterns](../package_design_patterns.md) - Complete pattern reference
+- [Package Design Patterns](../../package_design_patterns.md) - Complete pattern reference

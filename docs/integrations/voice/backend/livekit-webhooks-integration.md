@@ -142,5 +142,5 @@ When creating a session, use the LiveKit room name (or a mapping) as your logica
 ## Next Steps
 
 - **[Vapi Custom Tools](./vapi-custom-tools.md)** — Custom tools with Vapi.
-- **[Voice Backends Tutorial](../../../../tutorials/voice/voice-backends-livekit-vapi.md)** — Backend setup.
-- **[Scaling Concurrent Streams](../../../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.
+- **[Voice Backends Tutorial](../../../tutorials/voice/voice-backends-livekit-vapi.md)** — Backend setup.
+- **[Scaling Concurrent Streams](../../../cookbook/voice-backend-scaling-concurrent-streams.md)** — Production scaling.
