@@ -32,9 +32,9 @@ func NewBufferPool() *BufferPool {
 	}
 
 	for _, size := range commonSizes {
-		size := size // Capture loop variable
+		// Capture loop variable
 		bp.pools[size] = &sync.Pool{
-			New: func() interface{} {
+			New: func() any {
 				return make([]byte, 0, size)
 			},
 		}
@@ -87,9 +87,11 @@ func (bp *BufferPool) GetExact(size int) []byte {
 	return buf[:size] // Set length to requested size
 }
 
-// Global buffer pool instance
-var globalBufferPool *BufferPool
-var bufferPoolOnce sync.Once
+// Global buffer pool instance.
+var (
+	globalBufferPool *BufferPool
+	bufferPoolOnce   sync.Once
+)
 
 // GetGlobalBufferPool returns the global buffer pool instance.
 // It initializes the pool on first access.

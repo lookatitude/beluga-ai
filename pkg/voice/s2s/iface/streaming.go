@@ -36,13 +36,8 @@ type StreamingSession interface {
 
 // AudioOutputChunk represents an audio output chunk from a streaming session.
 type AudioOutputChunk struct {
-	// Audio data chunk
-	Audio []byte
-
-	// Error if any occurred during streaming
-	Error error
-
-	// Metadata about this chunk
+	Error     error
+	Audio     []byte
 	Timestamp int64
 	IsFinal   bool
 }

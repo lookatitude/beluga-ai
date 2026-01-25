@@ -18,7 +18,7 @@ import (
 // Config is now in iface package - use iface.Config
 // This file contains ConfigOption functions and validation helpers
 
-// Config is an alias for iface.Config for backward compatibility
+// Config is an alias for iface.Config for backward compatibility.
 type Config = vbiface.Config
 
 // ConfigOption is a functional option for configuring voice backend instances.
@@ -67,7 +67,7 @@ func WithOrchestrator(orchestrator orchestrationiface.Orchestrator) ConfigOption
 }
 
 // WithRetriever sets the retriever integration.
-func WithRetriever(retriever interface{}) ConfigOption {
+func WithRetriever(retriever any) ConfigOption {
 	return func(c *vbiface.Config) {
 		c.Retriever = retriever
 	}
@@ -95,7 +95,7 @@ func WithMultimodalModel(model multimodaliface.MultimodalModel) ConfigOption {
 }
 
 // WithPromptTemplate sets the prompt template integration.
-func WithPromptTemplate(template interface{}) ConfigOption {
+func WithPromptTemplate(template any) ConfigOption {
 	return func(c *vbiface.Config) {
 		c.PromptTemplate = template
 	}
@@ -172,14 +172,15 @@ func ValidateConfig(config *vbiface.Config) error {
 	}
 
 	// Additional validation based on pipeline type
-	if config.PipelineType == vbiface.PipelineTypeSTTTTS {
+	switch config.PipelineType {
+	case vbiface.PipelineTypeSTTTTS:
 		if config.STTProvider == "" {
 			return errors.New("stt_provider is required for STT_TTS pipeline")
 		}
 		if config.TTSProvider == "" {
 			return errors.New("tts_provider is required for STT_TTS pipeline")
 		}
-	} else if config.PipelineType == vbiface.PipelineTypeS2S {
+	case vbiface.PipelineTypeS2S:
 		if config.S2SProvider == "" {
 			return errors.New("s2s_provider is required for S2S pipeline")
 		}

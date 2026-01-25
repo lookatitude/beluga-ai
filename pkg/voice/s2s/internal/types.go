@@ -6,15 +6,10 @@ import (
 
 // AudioInput represents audio input data for S2S processing.
 type AudioInput struct {
-	// Audio data (PCM, WAV, etc.)
-	Data []byte
-
-	// Audio format information
-	Format AudioFormat
-
-	// Metadata
 	Timestamp time.Time
+	Format    AudioFormat
 	Language  string
+	Data      []byte
 	Quality   AudioQuality
 }
 
@@ -35,17 +30,10 @@ type AudioOutput struct {
 
 // AudioFormat represents audio format information.
 type AudioFormat struct {
-	// Sample rate in Hz (e.g., 16000, 24000, 48000)
+	Encoding   string
 	SampleRate int
-
-	// Number of channels (1 = mono, 2 = stereo)
-	Channels int
-
-	// Bit depth (8, 16, 24, 32)
-	BitDepth int
-
-	// Encoding format (PCM, WAV, MP3, etc.)
-	Encoding string
+	Channels   int
+	BitDepth   int
 }
 
 // AudioQuality represents audio quality metadata.
@@ -77,36 +65,18 @@ type VoiceCharacteristics struct {
 
 // ConversationContext represents conversation context for S2S processing.
 type ConversationContext struct {
-	// Conversation ID
+	Preferences    map[string]any
+	AgentState     map[string]any
 	ConversationID string
-
-	// Session ID
-	SessionID string
-
-	// User ID (optional)
-	UserID string
-
-	// Conversation history (optional)
-	History []ConversationTurn
-
-	// User preferences (optional)
-	Preferences map[string]any
-
-	// Agent state (optional, for external agent integration)
-	AgentState map[string]any
+	SessionID      string
+	UserID         string
+	History        []ConversationTurn
 }
 
 // ConversationTurn represents a single turn in the conversation.
 type ConversationTurn struct {
-	// Turn ID
-	TurnID string
-
-	// Role (user, assistant, system)
-	Role string
-
-	// Content (transcript or audio reference)
-	Content string
-
-	// Timestamp
 	Timestamp time.Time
+	TurnID    string
+	Role      string
+	Content   string
 }

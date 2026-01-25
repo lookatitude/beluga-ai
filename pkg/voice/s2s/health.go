@@ -14,20 +14,20 @@ import (
 
 // HealthStatus represents the health status of an S2S provider.
 type HealthStatus struct {
-	Healthy   bool
+	Timestamp time.Time
+	Error     error
 	Provider  string
 	Message   string
-	Timestamp time.Time
 	Latency   time.Duration
-	Error     error
+	Healthy   bool
 }
 
 // HealthCheckManager manages health checks for S2S providers.
 type HealthCheckManager struct {
 	registry   *Registry
+	lastChecks map[string]HealthStatus
 	timeout    time.Duration
 	mu         sync.RWMutex
-	lastChecks map[string]HealthStatus
 }
 
 // NewHealthCheckManager creates a new health check manager.
@@ -45,7 +45,7 @@ func (h *HealthCheckManager) CheckHealth(ctx context.Context) error {
 	// Check all providers and return overall health
 	providers := h.registry.ListProviders()
 	if len(providers) == 0 {
-		return fmt.Errorf("no providers registered")
+		return errors.New("no providers registered")
 	}
 
 	var unhealthyProviders []string
@@ -178,7 +178,6 @@ func (h *HealthCheckManager) performHealthCheck(ctx context.Context, provider if
 	// Attempt to process (this will fail quickly if provider is unhealthy)
 	// We use a very short timeout to avoid blocking
 	_, err := provider.Process(ctx, input, convCtx)
-
 	if err != nil {
 		// Check if it's a timeout or context cancellation (expected for health check)
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {

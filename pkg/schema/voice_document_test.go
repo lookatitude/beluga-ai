@@ -10,11 +10,11 @@ import (
 
 func TestNewVoiceDocument(t *testing.T) {
 	tests := []struct {
+		metadata   map[string]string
+		validate   func(t *testing.T, doc *VoiceDocument)
 		name       string
 		audioURL   string
 		transcript string
-		metadata   map[string]string
-		validate   func(t *testing.T, doc *VoiceDocument)
 	}{
 		{
 			name:       "basic_voice_document",

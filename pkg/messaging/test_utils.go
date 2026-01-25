@@ -51,26 +51,18 @@ import (
 
 // AdvancedMockMessaging provides a comprehensive mock implementation for testing.
 type AdvancedMockMessaging struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
-
-	// Session data
-	conversations map[string]*iface.Conversation
-	messages      map[string][]*iface.Message
-	participants  map[string][]*iface.Participant
+	errorToReturn   error
+	conversations   map[string]*iface.Conversation
+	messages        map[string][]*iface.Message
+	participants    map[string][]*iface.Participant
+	mock.Mock
+	name          string
+	healthState   string
+	callCount     int
+	simulateDelay time.Duration
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // MockMessagingOption configures the behavior of AdvancedMockMessaging.
@@ -374,7 +366,7 @@ func (m *AdvancedMockMessaging) AddParticipant(ctx context.Context, conversation
 }
 
 // RemoveParticipant implements the ConversationalBackend interface.
-func (m *AdvancedMockMessaging) RemoveParticipant(ctx context.Context, conversationID string, participantID string) error {
+func (m *AdvancedMockMessaging) RemoveParticipant(ctx context.Context, conversationID, participantID string) error {
 	m.mu.Lock()
 	m.callCount++
 	m.mu.Unlock()
@@ -436,7 +428,7 @@ func (m *AdvancedMockMessaging) HealthCheck(ctx context.Context) (*iface.HealthS
 }
 
 // GetConfig implements the ConversationalBackend interface.
-func (m *AdvancedMockMessaging) GetConfig() interface{} {
+func (m *AdvancedMockMessaging) GetConfig() any {
 	return DefaultConfig()
 }
 
@@ -449,9 +441,9 @@ func (m *AdvancedMockMessaging) GetCallCount() int {
 
 // ConcurrentTestRunner provides utilities for concurrent testing.
 type ConcurrentTestRunner struct {
+	TestFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	TestFunc      func() error
 }
 
 // NewConcurrentTestRunner creates a new concurrent test runner.

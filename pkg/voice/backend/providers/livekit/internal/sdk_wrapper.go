@@ -97,7 +97,7 @@ func (c *RoomServiceClient) DeleteRoom(ctx context.Context, req *livekit.DeleteR
 
 // ListParticipants lists participants in a room.
 func (c *RoomServiceClient) ListParticipants(ctx context.Context, req *livekit.ListParticipantsRequest) (*livekit.ListParticipantsResponse, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +106,7 @@ func (c *RoomServiceClient) ListParticipants(ctx context.Context, req *livekit.L
 
 // GetParticipant gets a participant by identity.
 func (c *RoomServiceClient) GetParticipant(ctx context.Context, req *livekit.RoomParticipantIdentity) (*livekit.ParticipantInfo, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (c *RoomServiceClient) GetParticipant(ctx context.Context, req *livekit.Roo
 
 // RemoveParticipant removes a participant from a room.
 func (c *RoomServiceClient) RemoveParticipant(ctx context.Context, req *livekit.RoomParticipantIdentity) (*livekit.RemoveParticipantResponse, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +124,7 @@ func (c *RoomServiceClient) RemoveParticipant(ctx context.Context, req *livekit.
 
 // MutePublishedTrack mutes a published track.
 func (c *RoomServiceClient) MutePublishedTrack(ctx context.Context, req *livekit.MuteRoomTrackRequest) (*livekit.MuteRoomTrackResponse, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +133,7 @@ func (c *RoomServiceClient) MutePublishedTrack(ctx context.Context, req *livekit
 
 // UpdateParticipant updates participant metadata.
 func (c *RoomServiceClient) UpdateParticipant(ctx context.Context, req *livekit.UpdateParticipantRequest) (*livekit.ParticipantInfo, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +142,7 @@ func (c *RoomServiceClient) UpdateParticipant(ctx context.Context, req *livekit.
 
 // UpdateSubscriptions updates participant subscriptions.
 func (c *RoomServiceClient) UpdateSubscriptions(ctx context.Context, req *livekit.UpdateSubscriptionsRequest) (*livekit.UpdateSubscriptionsResponse, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +151,7 @@ func (c *RoomServiceClient) UpdateSubscriptions(ctx context.Context, req *liveki
 
 // SendData sends data to participants.
 func (c *RoomServiceClient) SendData(ctx context.Context, req *livekit.SendDataRequest) (*livekit.SendDataResponse, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +160,7 @@ func (c *RoomServiceClient) SendData(ctx context.Context, req *livekit.SendDataR
 
 // UpdateRoomMetadata updates room metadata.
 func (c *RoomServiceClient) UpdateRoomMetadata(ctx context.Context, req *livekit.UpdateRoomMetadataRequest) (*livekit.Room, error) {
-	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.Room})
+	ctx, err := c.withAuth(ctx, auth.VideoGrant{RoomAdmin: true, Room: req.GetRoom()})
 	if err != nil {
 		return nil, err
 	}

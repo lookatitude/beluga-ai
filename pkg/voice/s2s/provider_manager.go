@@ -2,6 +2,7 @@ package s2s
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -13,8 +14,8 @@ import (
 // ProviderManager manages multiple S2S providers with fallback support.
 type ProviderManager struct {
 	primary   iface.S2SProvider
-	fallbacks []iface.S2SProvider
 	fallback  *ProviderFallback
+	fallbacks []iface.S2SProvider
 	mu        sync.RWMutex
 }
 
@@ -22,7 +23,7 @@ type ProviderManager struct {
 func NewProviderManager(primary iface.S2SProvider, fallbacks []iface.S2SProvider) (*ProviderManager, error) {
 	if primary == nil {
 		return nil, NewS2SError("NewProviderManager", ErrCodeInvalidConfig,
-			fmt.Errorf("primary provider cannot be nil"))
+			errors.New("primary provider cannot be nil"))
 	}
 
 	breaker := NewCircuitBreaker(5, 100, 5*time.Second)
@@ -84,7 +85,7 @@ func (pm *ProviderManager) StartStreaming(ctx context.Context, convCtx *internal
 	provider := pm.GetCurrentProvider()
 	if provider == nil {
 		return nil, NewS2SError("StartStreaming", ErrCodeInvalidConfig,
-			fmt.Errorf("no provider available"))
+			errors.New("no provider available"))
 	}
 
 	streamingProvider, ok := provider.(iface.StreamingS2SProvider)

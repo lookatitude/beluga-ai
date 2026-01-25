@@ -77,7 +77,7 @@ type RetrieverOptions struct {
 //	    retrievers.WithDefaultK(10),
 //	)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func WithDefaultK(k int) Option {
 	return func(opts *RetrieverOptions) {
 		opts.DefaultK = k
@@ -99,7 +99,7 @@ func WithDefaultK(k int) Option {
 //	    retrievers.WithMaxRetries(3),
 //	)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func WithMaxRetries(retries int) Option {
 	return func(opts *RetrieverOptions) {
 		opts.MaxRetries = retries
@@ -107,7 +107,7 @@ func WithMaxRetries(retries int) Option {
 }
 
 // WithTimeout sets the timeout for operations.
-// Operations that exceed this timeout will be cancelled.
+// Operations that exceed this timeout will be canceled.
 //
 // Parameters:
 //   - timeout: Maximum duration for operations
@@ -121,7 +121,7 @@ func WithMaxRetries(retries int) Option {
 //	    retrievers.WithTimeout(30*time.Second),
 //	)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func WithTimeout(timeout time.Duration) Option {
 	return func(opts *RetrieverOptions) {
 		opts.Timeout = timeout
@@ -143,7 +143,7 @@ func WithTimeout(timeout time.Duration) Option {
 //	    retrievers.WithTracing(true),
 //	)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func WithTracing(enabled bool) Option {
 	return func(opts *RetrieverOptions) {
 		opts.EnableTracing = enabled
@@ -165,7 +165,7 @@ func WithTracing(enabled bool) Option {
 //	    retrievers.WithMetrics(true),
 //	)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func WithMetrics(enabled bool) Option {
 	return func(opts *RetrieverOptions) {
 		opts.EnableMetrics = enabled
@@ -217,7 +217,7 @@ func WithMeter(meter metric.Meter) Option {
 //	}
 //	docs, err := retriever.GetRelevantDocuments(ctx, "What is AI?")
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Option) (*VectorStoreRetriever, error) {
 	opts := &RetrieverOptions{
 		DefaultK:       4,

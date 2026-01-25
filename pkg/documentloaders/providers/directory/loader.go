@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -27,8 +28,8 @@ import (
 // DirectoryConfig is duplicated here to avoid import cycle.
 // It matches the structure in the parent package.
 type DirectoryConfig struct {
-	MaxDepth       int
 	Extensions     []string
+	MaxDepth       int
 	Concurrency    int
 	MaxFileSize    int64
 	FollowSymlinks bool
@@ -39,7 +40,7 @@ type RecursiveDirectoryLoader struct {
 	fsys    fs.FS
 	config  *DirectoryConfig
 	tracer  trace.Tracer
-	metrics interface{} // Will be implemented when metrics are integrated
+	metrics any // Will be implemented when metrics are integrated
 }
 
 // NewRecursiveDirectoryLoader creates a new RecursiveDirectoryLoader.
@@ -96,7 +97,7 @@ func (l *RecursiveDirectoryLoader) Load(ctx context.Context) ([]schema.Document,
 				select {
 				case <-ctx.Done():
 					errOnce.Do(func() {
-						firstErr = newLoaderError("Load", ErrCodeCancelled, "", "context cancelled", ctx.Err())
+						firstErr = newLoaderError("Load", ErrCodeCancelled, "", "context canceled", ctx.Err())
 					})
 					return
 				default:
@@ -343,7 +344,7 @@ func (l *RecursiveDirectoryLoader) loadFile(ctx context.Context, filePath string
 	// Check context cancellation
 	select {
 	case <-ctx.Done():
-		return nil, newLoaderError("loadFile", ErrCodeCancelled, filePath, "context cancelled", ctx.Err())
+		return nil, newLoaderError("loadFile", ErrCodeCancelled, filePath, "context canceled", ctx.Err())
 	default:
 	}
 
@@ -385,7 +386,7 @@ func (l *RecursiveDirectoryLoader) loadFile(ctx context.Context, filePath string
 		PageContent: string(content),
 		Metadata: map[string]string{
 			"source":      filePath,
-			"file_size":   fmt.Sprintf("%d", info.Size()),
+			"file_size":   strconv.FormatInt(info.Size(), 10),
 			"modified_at": info.ModTime().Format(time.RFC3339),
 			"loader_type": "directory",
 		},
@@ -556,5 +557,5 @@ func (l *RecursiveDirectoryLoader) hashPath(path string) uint64 {
 	return hash
 }
 
-// Ensure RecursiveDirectoryLoader implements iface.DocumentLoader
+// Ensure RecursiveDirectoryLoader implements iface.DocumentLoader.
 var _ iface.DocumentLoader = (*RecursiveDirectoryLoader)(nil)

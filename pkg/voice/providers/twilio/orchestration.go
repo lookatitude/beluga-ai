@@ -2,6 +2,7 @@ package twilio
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 
@@ -20,12 +21,12 @@ type EventHandler func(ctx context.Context, event *WebhookEvent) error
 // It provides event-driven workflows using internal event handlers and scheduler for delayed operations.
 type OrchestrationManager struct {
 	orchestrator  orchestrationiface.Orchestrator
-	workflows     map[string]orchestrationiface.Graph
-	eventHandlers map[string][]EventHandler // Map event type to handlers
-	mu            sync.RWMutex
-	backend       *TwilioBackend
 	ctx           context.Context
+	workflows     map[string]orchestrationiface.Graph
+	eventHandlers map[string][]EventHandler
+	backend       *TwilioBackend
 	cancel        context.CancelFunc
+	mu            sync.RWMutex
 }
 
 // NewOrchestrationManager creates a new orchestration manager.
@@ -190,7 +191,7 @@ func (m *OrchestrationManager) createDefaultCallFlowWorkflow() error {
 			// Handle inbound call
 			webhookData, ok := input.(map[string]string)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			session, err := m.backend.HandleInboundCall(ctx, webhookData)
@@ -208,7 +209,7 @@ func (m *OrchestrationManager) createDefaultCallFlowWorkflow() error {
 			// Setup agent for session
 			session, ok := input.(vbiface.VoiceSession)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			// Agent setup logic would go here
@@ -222,7 +223,7 @@ func (m *OrchestrationManager) createDefaultCallFlowWorkflow() error {
 			// Create audio stream for session
 			session, ok := input.(vbiface.VoiceSession)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			stream, err := m.backend.StreamAudio(ctx, session.GetID())
@@ -275,7 +276,7 @@ func (m *OrchestrationManager) TriggerCallFlowWorkflow(ctx context.Context, even
 	m.mu.RUnlock()
 
 	if !exists {
-		err := fmt.Errorf("call flow workflow not found")
+		err := errors.New("call flow workflow not found")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -307,8 +308,8 @@ func (m *OrchestrationManager) startSpan(ctx context.Context, operation string) 
 
 // runnableFunc implements core.Runnable for function-based runnables.
 type runnableFunc struct {
-	name string
 	fn   func(ctx context.Context, input any, options ...core.Option) (any, error)
+	name string
 }
 
 func (r *runnableFunc) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {

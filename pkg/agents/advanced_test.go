@@ -21,10 +21,10 @@ import (
 // TestAgentCreationAdvanced provides advanced table-driven tests for agent creation.
 func TestAgentCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) iface.CompositeAgent
 		validate    func(t *testing.T, agent iface.CompositeAgent)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -55,11 +55,11 @@ func TestAgentCreationAdvanced(t *testing.T) {
 // TestAgentExecutionAdvanced provides advanced table-driven tests for agent execution.
 func TestAgentExecutionAdvanced(t *testing.T) {
 	tests := []struct {
+		setup       func(t *testing.T) iface.CompositeAgent
+		validate    func(t *testing.T, result any, err error)
 		name        string
 		description string
-		setup       func(t *testing.T) iface.CompositeAgent
 		input       string
-		validate    func(t *testing.T, result any, err error)
 		wantErr     bool
 	}{
 		{
@@ -84,7 +84,7 @@ func TestAgentExecutionAdvanced(t *testing.T) {
 			t.Logf("Testing: %s", tt.description)
 			agent := tt.setup(t)
 			ctx := context.Background()
-			result, err := agent.Invoke(ctx, schema.NewHumanMessage(tt.input))
+			result, err := agent.Invoke(ctx, map[string]any{"input": tt.input})
 			tt.validate(t, result, err)
 		})
 	}
@@ -109,7 +109,7 @@ func TestConcurrentAgentExecution(t *testing.T) {
 			defer wg.Done()
 			ctx := context.Background()
 			for j := 0; j < numExecutionsPerGoroutine; j++ {
-				_, err := agent.Invoke(ctx, schema.NewHumanMessage("Concurrent test input"))
+				_, err := agent.Invoke(ctx, map[string]any{"input": "Concurrent test input"})
 				if err != nil {
 					errors <- err
 				}
@@ -136,7 +136,7 @@ func TestAgentWithContext(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("invoke_with_timeout", func(t *testing.T) {
-		result, err := agent.Invoke(ctx, schema.NewHumanMessage("Test input"))
+		result, err := agent.Invoke(ctx, map[string]any{"input": "Test input"})
 		t.Logf("Invoke with timeout: result=%v, err=%v", result != nil, err)
 	})
 }
@@ -157,7 +157,7 @@ func BenchmarkAgentExecution(b *testing.B) {
 	require.NoError(b, err)
 
 	ctx := context.Background()
-	input := schema.NewHumanMessage("Benchmark input")
+	input := map[string]any{"input": "Benchmark input"}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -202,9 +202,9 @@ func (m *mockChatModel) GetProviderName() string {
 // TestNewAgentFactory tests the NewAgentFactory function.
 func TestNewAgentFactory(t *testing.T) {
 	tests := []struct {
-		name     string
 		config   *Config
 		validate func(t *testing.T, factory *AgentFactory)
+		name     string
 	}{
 		{
 			name:   "create_factory_with_default_config",
@@ -275,11 +275,11 @@ func TestNewDefaultConfig(t *testing.T) {
 // TestAgentFactoryCreateBaseAgent tests the CreateBaseAgent method.
 func TestAgentFactoryCreateBaseAgent(t *testing.T) {
 	tests := []struct {
-		name      string
 		setup     func(t *testing.T) (*AgentFactory, llmsiface.LLM)
+		validate  func(t *testing.T, agent iface.CompositeAgent)
+		name      string
 		agentName string
 		wantErr   bool
-		validate  func(t *testing.T, agent iface.CompositeAgent)
 	}{
 		{
 			name: "create_base_agent_success",
@@ -380,8 +380,8 @@ func TestNewToolRegistry(t *testing.T) {
 // TestValidateConfig tests the ValidateConfig function.
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -596,9 +596,9 @@ func TestStreamingErrorWithField(t *testing.T) {
 // TestAdvancedMockAgentErrorTypes tests that AdvancedMockAgent supports all error types.
 func TestAdvancedMockAgentErrorTypes(t *testing.T) {
 	tests := []struct {
-		name      string
 		setupMock func() *AdvancedMockAgent
 		validate  func(t *testing.T, err error)
+		name      string
 	}{
 		{
 			name: "agent_error",

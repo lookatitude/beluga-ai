@@ -10,15 +10,15 @@ const (
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeEmptyInput    = "empty_input"
 	ErrCodeNotFound      = "not_found"
-	ErrCodeCancelled     = "cancelled"
+	ErrCodeCancelled     = "canceled"
 )
 
 // SplitterError represents an error during text splitting.
 type SplitterError struct {
-	Op      string // Operation (e.g., "SplitText", "SplitDocuments")
-	Code    string // Error code for programmatic handling
-	Message string // Human-readable message
-	Err     error  // Underlying error
+	Err     error
+	Op      string
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.

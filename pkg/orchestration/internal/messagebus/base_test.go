@@ -73,8 +73,11 @@ func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 	bus := NewChannelMessageBus()
 
 	ctx := context.Background()
-	// Subscribe with a handler
+	handlerBlock := make(chan struct{})
+
+	// Subscribe with a handler that blocks until we signal
 	_, err := bus.Subscribe(ctx, "test.topic", func(ctx context.Context, msg Message) error {
+		<-handlerBlock // Block until signaled
 		return nil
 	})
 	require.NoError(t, err)
@@ -89,25 +92,31 @@ func TestChannelMessageBus_Publish_Timeout(t *testing.T) {
 
 	// Fill the channel buffer completely to cause blocking
 	// The buffer is 100, so we need to fill it
-	for i := 0; i < 100; i++ {
+	filled := 0
+FillLoop:
+	for i := 0; i < 150; i++ { // Try more than buffer size
 		select {
 		case ch <- Message{ID: fmt.Sprintf("dummy-%d", i), Topic: "test.topic", Payload: "dummy"}:
+			filled++
 		default:
-			// Channel might be getting consumed, try a few more times
-			if i < 50 {
-				time.Sleep(1 * time.Millisecond)
-				continue
-			}
+			// Buffer is full
+			break FillLoop
 		}
+	}
+	// Verify the buffer is actually full (default case was hit)
+	if filled == 150 {
+		t.Skip("Buffer never filled - handler may be consuming messages")
 	}
 
 	// Create a very short context that's already expired
 	shortCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	cancel() // Cancel immediately
 
-	// This should fail because context is already canceled
+	// This should fail because context is already canceled and buffer is full
 	err = bus.Publish(shortCtx, "test.topic", "test_payload", nil)
+
+	// Cleanup: unblock the handler
+	close(handlerBlock)
 
 	require.Error(t, err)
 	// Should get context canceled error

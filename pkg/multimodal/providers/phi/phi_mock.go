@@ -14,18 +14,18 @@ import (
 
 // AdvancedMockPhiProvider provides a comprehensive mock implementation for testing Phi multimodal provider.
 type AdvancedMockPhiProvider struct {
+	errorToReturn error
+	capabilities  *types.ModalityCapabilities
+	lastInput     *types.MultimodalInput
+	lastOutput    *types.MultimodalOutput
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
 	modelName         string
-	capabilities      *types.ModalityCapabilities
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	lastInput         *types.MultimodalInput
-	lastOutput        *types.MultimodalOutput
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockPhiProvider creates a new advanced mock with configurable behavior.
@@ -221,5 +221,5 @@ func (m *AdvancedMockPhiProvider) GetLastOutput() *types.MultimodalOutput {
 	return m.lastOutput
 }
 
-// Ensure AdvancedMockPhiProvider implements iface.MultimodalModel
+// Ensure AdvancedMockPhiProvider implements iface.MultimodalModel.
 var _ iface.MultimodalModel = (*AdvancedMockPhiProvider)(nil)

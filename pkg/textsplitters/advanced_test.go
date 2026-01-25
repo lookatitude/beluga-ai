@@ -3,6 +3,7 @@ package textsplitters
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -16,13 +17,13 @@ import (
 // TestRecursiveCharacterTextSplitter provides table-driven tests for RecursiveCharacterTextSplitter.
 func TestRecursiveCharacterTextSplitter(t *testing.T) {
 	tests := []struct {
+		setupFn     func() *RecursiveConfig
+		validateFn  func(t *testing.T, chunks []string, err error)
 		name        string
 		description string
 		text        string
-		setupFn     func() *RecursiveConfig
-		wantErr     bool
 		errContains string
-		validateFn  func(t *testing.T, chunks []string, err error)
+		wantErr     bool
 	}{
 		{
 			name:        "empty_text",
@@ -162,12 +163,12 @@ func TestRecursiveCharacterTextSplitter(t *testing.T) {
 // TestMarkdownTextSplitter provides table-driven tests for MarkdownTextSplitter.
 func TestMarkdownTextSplitter(t *testing.T) {
 	tests := []struct {
+		setupFn     func() *MarkdownConfig
+		validateFn  func(t *testing.T, chunks []string, err error)
 		name        string
 		description string
 		text        string
-		setupFn     func() *MarkdownConfig
 		wantErr     bool
-		validateFn  func(t *testing.T, chunks []string, err error)
 	}{
 		{
 			name:        "header_boundaries",
@@ -321,8 +322,8 @@ func BenchmarkTextSplitting_100Docs(b *testing.B) {
 // TestConfigFunctions tests configuration functions and defaults.
 func TestConfigFunctions(t *testing.T) {
 	tests := []struct {
-		name     string
 		testFunc func(t *testing.T)
+		name     string
 	}{
 		{
 			name: "default_splitter_config",
@@ -463,11 +464,11 @@ func TestConfigFunctions(t *testing.T) {
 // TestErrorHelperFunctions tests error helper functions (IsSplitterError, GetSplitterError).
 func TestErrorHelperFunctions(t *testing.T) {
 	tests := []struct {
-		name          string
 		err           error
+		name          string
+		expectedCode  string
 		expectIsError bool
 		expectGetErr  bool
-		expectedCode  string
 	}{
 		{
 			name:          "splitter_error",
@@ -478,7 +479,7 @@ func TestErrorHelperFunctions(t *testing.T) {
 		},
 		{
 			name:          "regular_error",
-			err:           fmt.Errorf("regular error"),
+			err:           errors.New("regular error"),
 			expectIsError: false,
 			expectGetErr:  false,
 		},

@@ -786,7 +786,7 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 				require.ErrorAs(t, err, &retErr)
 				assert.Equal(t, "test_op", retErr.Op)
 				assert.Equal(t, ErrCodeRetrievalFailed, retErr.Code)
-				assert.NotNil(t, retErr.Err)
+				assert.Error(t, retErr.Err)
 				assert.Contains(t, err.Error(), "retriever test_op")
 			},
 		},
@@ -813,7 +813,7 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 				var retErr *RetrieverError
 				require.ErrorAs(t, err, &retErr)
 				unwrapped := retErr.Unwrap()
-				assert.NotNil(t, unwrapped)
+				assert.Error(t, unwrapped)
 				assert.Contains(t, unwrapped.Error(), "wrapped error")
 			},
 		},
@@ -848,7 +848,7 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 				assert.Contains(t, err.Error(), "timed out")
 				assert.Contains(t, err.Error(), "30s")
 				unwrapped := timeoutErr.Unwrap()
-				assert.NotNil(t, unwrapped)
+				assert.Error(t, unwrapped)
 			},
 		},
 		{

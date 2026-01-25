@@ -418,7 +418,7 @@ func (p *OpenAIProvider) convertToOpenAIMessages(ctx context.Context, blocks []*
 				encoded := base64.StdEncoding.EncodeToString(block.Data)
 				imageURL = fmt.Sprintf("data:%s;base64,%s", mimeType, encoded)
 			} else {
-				return nil, fmt.Errorf("image block has no URL or data")
+				return nil, errors.New("image block has no URL or data")
 			}
 
 			currentParts = append(currentParts, openaiClient.ChatMessagePart{

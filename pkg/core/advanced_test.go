@@ -19,11 +19,11 @@ import (
 // TestRunnableInvokeAdvanced provides advanced table-driven tests for Runnable.Invoke.
 func TestRunnableInvokeAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		input       any
 		setup       func() Runnable
 		validate    func(*testing.T, any, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -76,11 +76,11 @@ func TestRunnableInvokeAdvanced(t *testing.T) {
 // TestRunnableBatchAdvanced provides advanced table-driven tests for Runnable.Batch.
 func TestRunnableBatchAdvanced(t *testing.T) {
 	tests := []struct {
+		setup       func() Runnable
+		validate    func(*testing.T, []any, error)
 		name        string
 		description string
 		inputs      []any
-		setup       func() Runnable
-		validate    func(*testing.T, []any, error)
 		wantErr     bool
 	}{
 		{
@@ -117,11 +117,11 @@ func TestRunnableBatchAdvanced(t *testing.T) {
 // TestContainerRegisterAdvanced provides advanced table-driven tests for Container.Register.
 func TestContainerRegisterAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		factory     any
 		setup       func() Container
 		validate    func(*testing.T, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -162,11 +162,11 @@ func TestContainerRegisterAdvanced(t *testing.T) {
 // TestContainerResolveAdvanced provides advanced table-driven tests for Container.Resolve.
 func TestContainerResolveAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		target      any
 		setup       func(*testing.T) Container
 		validate    func(*testing.T, error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -340,8 +340,8 @@ func BenchmarkContainerResolve(b *testing.B) {
 // TestConfigValidation tests Config.Validate() function.
 func TestConfigValidation(t *testing.T) {
 	tests := []struct {
-		name        string
 		config      *Config
+		name        string
 		expectError bool
 	}{
 		{

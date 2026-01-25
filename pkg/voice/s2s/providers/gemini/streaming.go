@@ -20,20 +20,20 @@ import (
 
 // GeminiNativeStreamingSession implements StreamingSession for Gemini 2.5 Flash Native Audio.
 type GeminiNativeStreamingSession struct {
-	ctx            context.Context
-	config         *GeminiNativeConfig
-	provider       *GeminiNativeProvider
 	httpClient     HTTPClient
+	ctx            context.Context
+	cancelFunc     context.CancelFunc
+	provider       *GeminiNativeProvider
 	audioCh        chan iface.AudioOutputChunk
-	closed         bool
-	mu             sync.RWMutex
+	restartCh      chan struct{}
+	config         *GeminiNativeConfig
+	restartTimer   *time.Timer
 	audioBuffer    []byte
-	restartCh      chan struct{}      // Channel to signal streaming restart
-	cancelFunc     context.CancelFunc // Cancel function for current streaming context
-	restartTimer   *time.Timer        // Timer for debouncing restarts
-	restartPending bool               // Flag to indicate if restart is pending
-	maxRetries     int                // Maximum retry attempts for stream restart
-	retryDelay     time.Duration      // Initial retry delay
+	maxRetries     int
+	retryDelay     time.Duration
+	mu             sync.RWMutex
+	closed         bool
+	restartPending bool
 }
 
 // GeminiStreamResponse represents a streaming response from Gemini API.
@@ -89,7 +89,7 @@ func (s *GeminiNativeStreamingSession) handleStreaming(ctx context.Context) {
 	}
 
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		s.audioCh <- iface.AudioOutputChunk{
 			Error: fmt.Errorf("failed to create request: %w", err),
@@ -240,10 +240,10 @@ func (s *GeminiNativeStreamingSession) SendAudio(ctx context.Context, audio []by
 	select {
 	case <-ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	case <-s.ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("session context cancelled: %w", s.ctx.Err()))
+			fmt.Errorf("session context canceled: %w", s.ctx.Err()))
 	default:
 	}
 

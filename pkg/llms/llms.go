@@ -36,7 +36,7 @@ var (
 //   - meter: OpenTelemetry meter for recording metrics
 //   - tracer: OpenTelemetry tracer for recording traces (can be nil for no-op)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
 		if tracer == nil {
@@ -58,7 +58,7 @@ func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 // Returns:
 //   - *Metrics: The global metrics instance, or nil if not initialized
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -86,7 +86,7 @@ type Factory struct {
 //	factory.RegisterProviderFactory("openai", openai.NewProvider)
 //	provider, err := factory.CreateProvider("openai", config)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewFactory() *Factory {
 	return &Factory{
 		providers:         make(map[string]iface.ChatModel),
@@ -108,7 +108,7 @@ func NewFactory() *Factory {
 //	openaiProvider, _ := openai.NewProvider(config)
 //	factory.RegisterProvider("openai", openaiProvider)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) RegisterProvider(name string, provider iface.ChatModel) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -127,7 +127,7 @@ func (f *Factory) RegisterProvider(name string, provider iface.ChatModel) {
 //	openaiLLM, _ := openai.NewLLM(config)
 //	factory.RegisterLLM("openai", openaiLLM)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) RegisterLLM(name string, llm iface.LLM) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -151,7 +151,7 @@ func (f *Factory) RegisterLLM(name string, llm iface.LLM) {
 //	    log.Fatal("Provider not found:", err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -181,7 +181,7 @@ func (f *Factory) GetProvider(name string) (iface.ChatModel, error) {
 //	    log.Fatal("LLM not found:", err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -205,7 +205,7 @@ func (f *Factory) GetLLM(name string) (iface.LLM, error) {
 //	providers := factory.ListProviders()
 //	fmt.Printf("Available providers: %v\n", providers)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) ListProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -228,7 +228,7 @@ func (f *Factory) ListProviders() []string {
 //	llms := factory.ListLLMs()
 //	fmt.Printf("Available LLMs: %v\n", llms)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) ListLLMs() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -259,7 +259,7 @@ func (f *Factory) ListLLMs() []string {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) CreateProvider(providerName string, config *Config) (iface.ChatModel, error) {
 	f.mu.RLock()
 	factory, exists := f.providerFactories[providerName]
@@ -297,7 +297,7 @@ func (f *Factory) CreateProvider(providerName string, config *Config) (iface.Cha
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, error) {
 	f.mu.RLock()
 	factory, exists := f.llmFactories[providerName]
@@ -328,7 +328,7 @@ func (f *Factory) CreateLLM(providerName string, config *Config) (iface.LLM, err
 //	available := factory.ListAvailableProviders()
 //	fmt.Printf("Available provider factories: %v\n", available)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) ListAvailableProviders() []string {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
@@ -354,7 +354,7 @@ func (f *Factory) ListAvailableProviders() []string {
 //	    return openai.NewProvider(config)
 //	})
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (iface.ChatModel, error)) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -375,7 +375,7 @@ func (f *Factory) RegisterProviderFactory(name string, factory func(*Config) (if
 //	    return openai.NewLLM(config)
 //	})
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.LLM, error)) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -401,7 +401,7 @@ func (f *Factory) RegisterLLMFactory(name string, factory func(*Config) (iface.L
 //	messages, err := llms.EnsureMessages([]schema.Message{msg1, msg2})
 //	// Returns: []schema.Message{msg1, msg2}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func EnsureMessages(input any) ([]schema.Message, error) {
 	switch v := input.(type) {
 	case string:
@@ -446,7 +446,7 @@ func EnsureMessagesFromSchema(input any) ([]schema.Message, error) {
 //	// system: "You are a helpful assistant."
 //	// human: "Hello\nHow are you?"
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, string) {
 	var systemPrompt string
 	var humanPrompts []string
@@ -493,7 +493,7 @@ func GetSystemAndHumanPromptsFromSchema(messages []schema.Message) (string, stri
 //	}
 //	fmt.Println(response)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.GenerateText",
@@ -551,7 +551,7 @@ func GenerateText(ctx context.Context, model iface.ChatModel, prompt string, opt
 //	}
 //	fmt.Println(response)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt string, tools []tools.Tool, options ...core.Option) (string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.GenerateTextWithTools",
@@ -615,7 +615,7 @@ func GenerateTextWithTools(ctx context.Context, model iface.ChatModel, prompt st
 //	    fmt.Print(chunk.GetContent())
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func StreamText(ctx context.Context, model iface.ChatModel, prompt string, options ...core.Option) (<-chan iface.AIMessageChunk, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.StreamText",
@@ -672,7 +672,7 @@ func StreamText(ctx context.Context, model iface.ChatModel, prompt string, optio
 //	    fmt.Printf("Prompt %d: %s\n", i, response)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func BatchGenerate(ctx context.Context, model iface.ChatModel, prompts []string, options ...core.Option) ([]string, error) {
 	tracer := otel.Tracer("github.com/lookatitude/beluga-ai/pkg/llms")
 	ctx, span := tracer.Start(ctx, "llms.BatchGenerate",
@@ -752,7 +752,7 @@ func logWithOTELContext(ctx context.Context, level slog.Level, msg string, attrs
 //	    log.Fatal("Invalid model:", err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func ValidateModelName(provider, modelName string) error {
 	if modelName == "" {
 		return NewLLMError("ValidateModelName", ErrCodeInvalidModel,
@@ -802,7 +802,7 @@ func ValidateModelName(provider, modelName string) error {
 //	config.ModelName = "gpt-4"
 //	provider, err := llms.NewOpenAIChat(llms.WithConfig(config))
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func DefaultConfig() *Config {
 	return &Config{
 		Provider:                "",
@@ -888,7 +888,7 @@ func WithToolChoiceLegacy(choice string) core.Option {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	config := NewConfig(opts...)
 	config.Provider = "anthropic"
@@ -930,7 +930,7 @@ func NewAnthropicChat(opts ...ConfigOption) (iface.ChatModel, error) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewOpenAIChat(opts ...ConfigOption) (iface.ChatModel, error) {
 	config := NewConfig(opts...)
 	config.Provider = "openai"
@@ -1071,7 +1071,7 @@ func NewMockLLM(opts ...ConfigOption) (iface.LLM, error) {
 //	factory.RegisterProviderFactory("openai", openai.NewProviderFactory())
 //	factory.RegisterProviderFactory("anthropic", anthropic.NewProviderFactory())
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func InitializeDefaultFactory() *Factory {
 	factory := NewFactory()
 

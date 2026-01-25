@@ -24,10 +24,10 @@ type SafetyChecker struct {
 
 // SafetyResult represents the result of a safety check.
 type SafetyResult struct {
-	Safe      bool          `json:"safe"`
-	RiskScore float64       `json:"risk_score"`
-	Issues    []SafetyIssue `json:"issues,omitempty"`
 	Timestamp time.Time     `json:"timestamp"`
+	Issues    []SafetyIssue `json:"issues,omitempty"`
+	RiskScore float64       `json:"risk_score"`
+	Safe      bool          `json:"safe"`
 }
 
 // SafetyIssue represents a specific safety concern found during validation.
@@ -86,7 +86,7 @@ func (sc *SafetyChecker) checkPatterns(content string, patterns []*regexp.Regexp
 		if pattern.MatchString(content) {
 			issues = append(issues, SafetyIssue{
 				Type:        issueType,
-				Description: fmt.Sprintf("%s pattern detected in content", issueType),
+				Description: issueType + " pattern detected in content",
 				Severity:    "medium",
 			})
 		}

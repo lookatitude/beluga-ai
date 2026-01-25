@@ -54,7 +54,7 @@ func TestMockPlanExecuteAgent(t *testing.T) {
 		duration := time.Since(start)
 
 		assert.NoError(t, err)
-		assert.True(t, duration >= delay, "Delay should be respected")
+		assert.GreaterOrEqual(t, duration, delay, "Delay should be respected")
 		assert.Equal(t, 1, mock.GetCallCount())
 	})
 

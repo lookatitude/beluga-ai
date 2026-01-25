@@ -18,23 +18,22 @@ import (
 
 // MessagingSession manages conversation state and agent integration for messaging.
 type MessagingSession struct {
-	id                  string
-	conversationSID     string
-	config              *TwilioConfig
-	provider            *TwilioProvider
-	agentInstance       agentsiface.Agent
-	agentCallback       func(context.Context, string) (string, error)
-	memoryInstance      memoryiface.Memory
-	conversationHistory []*messagingiface.Message
-	participants        []*messagingiface.Participant
-	channels            []string
-	metadata            map[string]any
-	mu                  sync.RWMutex
-	active              bool
 	startTime           time.Time
 	lastActivity        time.Time
-	// Multi-channel context preservation: link by participant identity
+	agentInstance       agentsiface.Agent
+	memoryInstance      memoryiface.Memory
+	config              *TwilioConfig
+	provider            *TwilioProvider
+	agentCallback       func(context.Context, string) (string, error)
+	metadata            map[string]any
+	conversationSID     string
 	participantIdentity string
+	id                  string
+	participants        []*messagingiface.Participant
+	channels            []string
+	conversationHistory []*messagingiface.Message
+	mu                  sync.RWMutex
+	active              bool
 }
 
 // NewMessagingSession creates a new messaging session.

@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -14,12 +15,10 @@ import (
 // SessionManager manages voice session lifecycle and state.
 // It ensures thread-safe access and session isolation (T169, T171).
 type SessionManager struct {
+	store    PersistenceStore
 	sessions map[string]vbiface.VoiceSession
-	mu       sync.RWMutex // Thread-safe access (T169)
 	config   *vbiface.Config
-	store    PersistenceStore // Session persistence store (T305, T306)
-	// Session isolation: Each session has its own state, mutex, and resources
-	// No shared mutable state between sessions (T171)
+	mu       sync.RWMutex
 }
 
 // NewSessionManager creates a new session manager.
@@ -62,7 +61,7 @@ func (sm *SessionManager) CreateSession(ctx context.Context, sessionConfig *vbif
 	// Create session (will be implemented by providers)
 	// For now, return an error indicating this needs provider implementation
 	// The actual session creation will be done by the provider's CreateSession method
-	return nil, fmt.Errorf("session creation must be implemented by provider")
+	return nil, errors.New("session creation must be implemented by provider")
 }
 
 // GetSession retrieves a session by ID with thread-safe access.

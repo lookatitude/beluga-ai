@@ -61,7 +61,6 @@ beluga-ai/
 │   ├── vectorstores/      # Vector database providers
 │   └── voice/             # Complete voice framework (STT, TTS, VAD)
 │
-├── cmd/                    # Command-line tools
 ├── examples/               # 64+ runnable examples by category
 ├── tests/                  # Integration testing framework
 │   └── integration/       # End-to-end, package pairs, provider compat

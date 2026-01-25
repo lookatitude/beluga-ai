@@ -39,7 +39,7 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 				assert.Equal(t, "test_op", err.Op)
 				assert.Equal(t, ErrCodeInvalidConfig, err.Code)
 				assert.Equal(t, "test message", err.Message)
-				assert.NotNil(t, err.Err)
+				assert.Error(t, err.Err)
 				assert.Contains(t, err.Error(), "test message")
 				assert.Contains(t, err.Error(), ErrCodeInvalidConfig)
 			},
@@ -53,7 +53,7 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 			validate: func(t *testing.T, err *EmbeddingError) {
 				assert.Equal(t, "test_op", err.Op)
 				assert.Equal(t, ErrCodeInvalidInput, err.Code)
-				assert.NotNil(t, err.Err)
+				assert.Error(t, err.Err)
 				assert.Contains(t, err.Error(), "underlying error")
 				assert.Contains(t, err.Error(), ErrCodeInvalidInput)
 			},
@@ -67,7 +67,7 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 			validate: func(t *testing.T, err *EmbeddingError) {
 				assert.Equal(t, "test_op", err.Op)
 				assert.Equal(t, ErrCodeEmbeddingFailed, err.Code)
-				assert.Nil(t, err.Err)
+				assert.NoError(t, err.Err)
 				assert.Contains(t, err.Error(), "unknown error")
 			},
 		},
@@ -81,7 +81,7 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 				assert.Equal(t, "test_op", err.Op)
 				assert.Equal(t, ErrCodeProviderError, err.Code)
 				assert.Equal(t, "custom message", err.Message)
-				assert.Nil(t, err.Err)
+				assert.NoError(t, err.Err)
 				assert.Contains(t, err.Error(), "custom message")
 			},
 		},
@@ -98,7 +98,7 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 			if err.Err != nil {
 				assert.Equal(t, err.Err, unwrapped)
 			} else {
-				assert.Nil(t, unwrapped)
+				assert.NoError(t, unwrapped)
 			}
 		})
 	}
@@ -107,10 +107,10 @@ func TestEmbeddingErrorAdvanced(t *testing.T) {
 // TestIsEmbeddingErrorAdvanced tests error type checking.
 func TestIsEmbeddingErrorAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
 		err         error
-		expected    bool
+		name        string
 		description string
+		expected    bool
 	}{
 		{
 			name:        "is_embedding_error",
@@ -150,11 +150,11 @@ func TestIsEmbeddingErrorAdvanced(t *testing.T) {
 // TestAsEmbeddingErrorAdvanced tests error type conversion.
 func TestAsEmbeddingErrorAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
 		err         error
-		expected    bool
 		validate    func(t *testing.T, embErr *EmbeddingError, ok bool)
+		name        string
 		description string
+		expected    bool
 	}{
 		{
 			name:        "convert_embedding_error",
@@ -232,7 +232,7 @@ func TestErrorCodesAdvanced(t *testing.T) {
 	}
 
 	for _, code := range codes {
-		t.Run(fmt.Sprintf("error_code_%s", code), func(t *testing.T) {
+		t.Run("error_code_"+code, func(t *testing.T) {
 			err := NewEmbeddingError("test", code, errors.New("test"))
 			assert.Equal(t, code, err.Code)
 			assert.Contains(t, err.Error(), code)
@@ -357,7 +357,7 @@ func TestLogWithOTELContextAdvanced(t *testing.T) {
 		}
 
 		for _, level := range levels {
-			t.Run(fmt.Sprintf("level_%s", level.String()), func(t *testing.T) {
+			t.Run("level_"+level.String(), func(t *testing.T) {
 				logWithOTELContext(ctx, level, "Test message", "key", "value")
 			})
 		}
@@ -380,10 +380,10 @@ func TestLogWithOTELContextAdvanced(t *testing.T) {
 // TestCohereConfigValidate tests Cohere config validation (0% coverage).
 func TestCohereConfigValidate(t *testing.T) {
 	tests := []struct {
-		name        string
 		config      *CohereConfig
-		wantErr     bool
+		name        string
 		description string
+		wantErr     bool
 	}{
 		{
 			name:        "valid_cohere_config",

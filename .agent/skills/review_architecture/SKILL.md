@@ -32,7 +32,7 @@ Determine what's being reviewed:
 Verify dependencies follow the architecture:
 
 ```
-Application Layer (cmd/, examples/)
+Application Layer (examples/)
        ↓
 Agent Layer (pkg/agents/, pkg/orchestration/)
        ↓

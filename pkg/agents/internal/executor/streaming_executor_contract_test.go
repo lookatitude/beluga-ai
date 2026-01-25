@@ -15,7 +15,7 @@ import (
 )
 
 // TestStreamingExecutor_ExecuteStreamingPlan_ReturnsChannel tests that ExecuteStreamingPlan returns a channel.
-// Contract Requirement: Channel must be non-nil if error is nil
+// Contract Requirement: Channel must be non-nil if error is nil.
 func TestStreamingExecutor_ExecuteStreamingPlan_ReturnsChannel(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T027")
 
@@ -36,7 +36,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_ReturnsChannel(t *testing.T) {
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_ExecutesSequentially tests sequential step execution.
-// Contract Requirement: Execute steps sequentially (one at a time)
+// Contract Requirement: Execute steps sequentially (one at a time).
 func TestStreamingExecutor_ExecuteStreamingPlan_ExecutesSequentially(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T028")
 
@@ -79,7 +79,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_ExecutesSequentially(t *testing.
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_IncludesToolResults tests tool result inclusion.
-// Contract Requirement: Tool execution included in chunks with results
+// Contract Requirement: Tool execution included in chunks with results.
 func TestStreamingExecutor_ExecuteStreamingPlan_IncludesToolResults(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T029")
 
@@ -119,7 +119,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_IncludesToolResults(t *testing.T
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_FinalAnswer tests final answer in last chunk.
-// Contract Requirement: Final chunk must have either FinalAnswer set or Err set
+// Contract Requirement: Final chunk must have either FinalAnswer set or Err set.
 func TestStreamingExecutor_ExecuteStreamingPlan_FinalAnswer(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T030")
 
@@ -159,7 +159,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_FinalAnswer(t *testing.T) {
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellation tests context cancellation handling.
-// Contract Requirement: Canceling context closes channel gracefully
+// Contract Requirement: Canceling context closes channel gracefully.
 func TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellation(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T031")
 
@@ -198,7 +198,7 @@ func TestStreamingExecutor_ExecuteStreamingPlan_ContextCancellation(t *testing.T
 }
 
 // TestStreamingExecutor_ExecuteStreamingPlan_HandlesStepErrors tests error handling.
-// Contract Requirement: Errors are sent as final chunk with Err set
+// Contract Requirement: Errors are sent as final chunk with Err set.
 func TestStreamingExecutor_ExecuteStreamingPlan_HandlesStepErrors(t *testing.T) {
 	t.Skip("Implementation pending - contract test for T032")
 

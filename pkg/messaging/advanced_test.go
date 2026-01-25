@@ -16,12 +16,12 @@ import (
 
 func TestAdvancedMessaging(t *testing.T) {
 	tests := []struct {
-		name           string
 		component      *AdvancedMockMessaging
 		operations     func(ctx context.Context, comp *AdvancedMockMessaging) error
-		expectedError  bool
+		validateResult func(t *testing.T, result any)
+		name           string
 		expectedCalls  int
-		validateResult func(t *testing.T, result interface{})
+		expectedError  bool
 	}{
 		{
 			name:      "successful start",
@@ -113,11 +113,11 @@ func TestConcurrencyAdvanced(t *testing.T) {
 
 func TestMessagingErrorHandling(t *testing.T) {
 	tests := []struct {
-		name        string
 		setupError  error
 		operation   func() error
-		expectError bool
+		name        string
 		errorCode   string
+		expectError bool
 	}{
 		{
 			name:       "rate limit error",
@@ -179,17 +179,17 @@ func TestProviderRegistry(t *testing.T) {
 	assert.Equal(t, ErrCodeProviderNotFound, GetMessagingErrorCode(err))
 }
 
-// T082: Test coverage for pkg/messaging/messaging.go
+// T082: Test coverage for pkg/messaging/messaging.go.
 func TestNewBackend(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name         string
-		providerName string
 		config       *Config
-		shouldError  bool
 		setup        func()
 		teardown     func()
+		name         string
+		providerName string
+		shouldError  bool
 	}{
 		{
 			name:         "create backend with nil config uses default",
@@ -277,7 +277,7 @@ func TestNewBackend(t *testing.T) {
 	}
 }
 
-// T083: Test coverage for pkg/messaging/config.go
+// T083: Test coverage for pkg/messaging/config.go.
 func TestConfig(t *testing.T) {
 	t.Run("DefaultConfig", func(t *testing.T) {
 		config := DefaultConfig()
@@ -294,8 +294,8 @@ func TestConfig(t *testing.T) {
 
 	t.Run("Config_Validate", func(t *testing.T) {
 		tests := []struct {
-			name        string
 			config      *Config
+			name        string
 			shouldError bool
 		}{
 			{
@@ -422,8 +422,8 @@ func TestConfig(t *testing.T) {
 		ctx := context.Background()
 
 		tests := []struct {
-			name        string
 			config      *Config
+			name        string
 			shouldError bool
 		}{
 			{
@@ -476,7 +476,7 @@ func TestConfig(t *testing.T) {
 	})
 }
 
-// T084: Test coverage for pkg/messaging/errors.go
+// T084: Test coverage for pkg/messaging/errors.go.
 func TestMessagingErrors(t *testing.T) {
 	t.Run("NewMessagingError", func(t *testing.T) {
 		err := NewMessagingError("test_op", ErrCodeTimeout, errors.New("timeout occurred"))
@@ -534,13 +534,13 @@ func TestMessagingErrors(t *testing.T) {
 		assert.Equal(t, ErrCodeRateLimit, GetMessagingErrorCode(err))
 
 		regularErr := errors.New("regular error")
-		assert.Equal(t, "", GetMessagingErrorCode(regularErr))
+		assert.Empty(t, GetMessagingErrorCode(regularErr))
 	})
 
 	t.Run("IsRetryableError", func(t *testing.T) {
 		tests := []struct {
-			name      string
 			err       error
+			name      string
 			retryable bool
 		}{
 			{
@@ -607,25 +607,25 @@ func TestMessagingErrors(t *testing.T) {
 		msgErr := GetMessagingError(wrapped)
 		assert.Equal(t, "new_op", msgErr.Op)
 
-		assert.Nil(t, WrapError("op", nil))
+		assert.NoError(t, WrapError("op", nil))
 	})
 
 	t.Run("MapHTTPError", func(t *testing.T) {
 		tests := []struct {
 			name       string
-			statusCode int
 			code       string
+			statusCode int
 		}{
-			{"unauthorized", 401, ErrCodeAuthentication},
-			{"forbidden", 403, ErrCodeAuthorization},
-			{"not found", 404, ErrCodeNotFound},
-			{"too many requests", 429, ErrCodeRateLimit},
-			{"bad request", 400, ErrCodeInvalidInput},
-			{"internal server error", 500, ErrCodeInternalError},
-			{"bad gateway", 502, ErrCodeInternalError},
-			{"service unavailable", 503, ErrCodeInternalError},
-			{"gateway timeout", 504, ErrCodeInternalError},
-			{"unknown", 418, ErrCodeNetworkError},
+			{"unauthorized", ErrCodeAuthentication, 401},
+			{"forbidden", ErrCodeAuthorization, 403},
+			{"not found", ErrCodeNotFound, 404},
+			{"too many requests", ErrCodeRateLimit, 429},
+			{"bad request", ErrCodeInvalidInput, 400},
+			{"internal server error", ErrCodeInternalError, 500},
+			{"bad gateway", ErrCodeInternalError, 502},
+			{"service unavailable", ErrCodeInternalError, 503},
+			{"gateway timeout", ErrCodeInternalError, 504},
+			{"unknown", ErrCodeNetworkError, 418},
 		}
 
 		for _, tt := range tests {

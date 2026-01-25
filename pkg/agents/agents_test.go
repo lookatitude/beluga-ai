@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-// Static error variables for testing (err113 compliance)
+// Static error variables for testing (err113 compliance).
 var (
 	errTestOriginal = errors.New("original error")
 	errTestTimeout  = errors.New("timeout")

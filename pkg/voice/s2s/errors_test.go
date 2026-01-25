@@ -96,9 +96,9 @@ func TestIsRetryableError(t *testing.T) {
 
 func TestErrorFromHTTPStatus(t *testing.T) {
 	tests := []struct {
-		statusCode int
 		name       string
 		wantCode   string
+		statusCode int
 	}{
 		{
 			name:       "bad request",

@@ -26,6 +26,8 @@ func TestLiveKitIntegration(t *testing.T) {
 	// Create LiveKit backend configuration
 	config := backend.DefaultConfig()
 	config.Provider = "livekit"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["url"] = "ws://localhost:7880"
 	config.ProviderConfig["api_key"] = "test-key"
@@ -103,6 +105,8 @@ func TestLiveKitEndToEndLatency(t *testing.T) {
 	// Create LiveKit backend
 	config := backend.DefaultConfig()
 	config.Provider = "livekit"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["url"] = "ws://localhost:7880"
 	config.ProviderConfig["api_key"] = "test-key"
@@ -166,6 +170,8 @@ func TestLiveKitConnectionFailureRecovery(t *testing.T) {
 	// Create LiveKit backend with retry configuration
 	config := backend.DefaultConfig()
 	config.Provider = "livekit"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["url"] = "ws://localhost:7880"
 	config.ProviderConfig["api_key"] = "test-key"
@@ -225,6 +231,8 @@ func TestLiveKitHealthCheck(t *testing.T) {
 
 	config := backend.DefaultConfig()
 	config.Provider = "livekit"
+	config.STTProvider = "mock" // Required for stt_tts pipeline
+	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.ProviderConfig = make(map[string]any)
 	config.ProviderConfig["url"] = "ws://localhost:7880"
 	config.ProviderConfig["api_key"] = "test-key"

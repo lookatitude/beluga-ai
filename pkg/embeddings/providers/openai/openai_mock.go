@@ -11,17 +11,17 @@ import (
 
 // AdvancedMockOpenAIEmbedder provides a comprehensive mock implementation for testing OpenAI embedder.
 type AdvancedMockOpenAIEmbedder struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
 	embeddings        [][]float32
+	callCount         int
 	embeddingIndex    int
 	dimension         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockOpenAIEmbedder creates a new advanced mock with configurable behavior.

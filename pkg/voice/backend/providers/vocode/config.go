@@ -9,27 +9,13 @@ import (
 // VocodeConfig extends the base Config with Vocode-specific configuration.
 type VocodeConfig struct {
 	*iface.Config
-
-	// APIKey is the Vocode API key.
-	APIKey string `mapstructure:"api_key" yaml:"api_key" validate:"required"`
-
-	// APIURL is the Vocode API base URL (default: https://api.vocode.dev).
-	APIURL string `mapstructure:"api_url" yaml:"api_url" validate:"url" default:"https://api.vocode.dev"`
-
-	// AgentID is the Vocode agent ID (optional, can be created via API).
-	AgentID string `mapstructure:"agent_id" yaml:"agent_id"`
-
-	// PhoneNumberID is the phone number ID for telephony (optional).
-	PhoneNumberID string `mapstructure:"phone_number_id" yaml:"phone_number_id"`
-
-	// EnableRecording enables call recording (optional).
-	EnableRecording bool `mapstructure:"enable_recording" yaml:"enable_recording" default:"false"`
-
-	// RecordingType is the recording type if enabled ("transcript" or "audio").
-	RecordingType string `mapstructure:"recording_type" yaml:"recording_type" validate:"omitempty,oneof=transcript audio" default:"transcript"`
-
-	// MaxCallDuration is the maximum call duration (optional).
+	APIKey          string        `mapstructure:"api_key" yaml:"api_key" validate:"required"`
+	APIURL          string        `mapstructure:"api_url" yaml:"api_url" validate:"url" default:"https://api.vocode.dev"`
+	AgentID         string        `mapstructure:"agent_id" yaml:"agent_id"`
+	PhoneNumberID   string        `mapstructure:"phone_number_id" yaml:"phone_number_id"`
+	RecordingType   string        `mapstructure:"recording_type" yaml:"recording_type" validate:"omitempty,oneof=transcript audio" default:"transcript"`
 	MaxCallDuration time.Duration `mapstructure:"max_call_duration" yaml:"max_call_duration" validate:"omitempty,min=1m" default:"30m"`
+	EnableRecording bool          `mapstructure:"enable_recording" yaml:"enable_recording" default:"false"`
 }
 
 // NewVocodeConfig creates a new VocodeConfig from base Config.

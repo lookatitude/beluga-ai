@@ -695,8 +695,8 @@ func TestNewDefaultConfig(t *testing.T) {
 // TestValidateConfig tests the ValidateConfig function.
 func TestValidateConfig(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  *Config
+		name    string
 		wantErr bool
 	}{
 		{
@@ -885,7 +885,7 @@ func TestStreamMessagesConvenience(t *testing.T) {
 					assert.NotNil(t, msg)
 					msgCount++
 				}
-				assert.Greater(t, msgCount, 0)
+				assert.Positive(t, msgCount)
 			}
 		})
 	}
@@ -894,9 +894,9 @@ func TestStreamMessagesConvenience(t *testing.T) {
 // TestConfigFunctionalOptions tests all functional option functions.
 func TestConfigFunctionalOptions(t *testing.T) {
 	tests := []struct {
-		name   string
 		option iface.Option
 		verify func(t *testing.T, config map[string]any)
+		name   string
 	}{
 		{
 			name:   "WithTemperature",
@@ -1137,8 +1137,8 @@ func TestChatModelErrorTypes(t *testing.T) {
 func TestErrorHelperFunctions(t *testing.T) {
 	t.Run("IsRetryable", func(t *testing.T) {
 		tests := []struct {
-			name     string
 			err      error
+			name     string
 			expected bool
 		}{
 			{

@@ -4,22 +4,22 @@ import (
 	"fmt"
 )
 
-// Error codes (duplicated from parent package to avoid import cycle)
+// Error codes (duplicated from parent package to avoid import cycle).
 const (
 	ErrCodeIOError       = "io_error"
 	ErrCodeNotFound      = "not_found"
 	ErrCodeInvalidConfig = "invalid_config"
 	ErrCodeFileTooLarge  = "file_too_large"
-	ErrCodeCancelled     = "cancelled"
+	ErrCodeCancelled     = "canceled"
 )
 
 // LoaderError represents an error during document loading (duplicated to avoid import cycle).
 type LoaderError struct {
+	Err     error
 	Op      string
 	Code    string
 	Path    string
 	Message string
-	Err     error
 }
 
 func (e *LoaderError) Error() string {

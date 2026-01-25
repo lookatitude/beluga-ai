@@ -19,8 +19,8 @@ func TestTwilioProvider_ValidateWebhookSignature(t *testing.T) {
 	require.NoError(t, err)
 
 	tests := []struct {
-		name        string
 		webhookData map[string]string
+		name        string
 		wantErr     bool
 	}{
 		{

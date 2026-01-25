@@ -11,10 +11,10 @@ import (
 
 func TestNewImageMessage(t *testing.T) {
 	tests := []struct {
+		validate    func(t *testing.T, msg Message)
 		name        string
 		imageURL    string
 		textContent string
-		validate    func(t *testing.T, msg Message)
 	}{
 		{
 			name:        "basic_image_message",
@@ -89,8 +89,8 @@ func TestImageMessageAdditionalArgs(t *testing.T) {
 
 func TestIsImageMessage(t *testing.T) {
 	tests := []struct {
-		name     string
 		msg      Message
+		name     string
 		expected bool
 	}{
 		{

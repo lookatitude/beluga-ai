@@ -14,9 +14,9 @@ import (
 
 func TestS2SProvider_Process(t *testing.T) {
 	tests := []struct {
-		name          string
 		provider      iface.S2SProvider
 		input         *internal.AudioInput
+		name          string
 		expectedError bool
 	}{
 		{
@@ -147,8 +147,8 @@ func TestS2SProvider_InterfaceCompliance(t *testing.T) {
 
 func TestStreamingS2SProvider_StartStreaming(t *testing.T) {
 	tests := []struct {
-		name          string
 		provider      iface.S2SProvider
+		name          string
 		expectedError bool
 	}{
 		{

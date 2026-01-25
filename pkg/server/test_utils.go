@@ -265,8 +265,9 @@ func (s *AdvancedMockServer) GetHandlerCount() int {
 }
 
 func (s *AdvancedMockServer) CheckHealth() map[string]any {
+	s.mu.Lock()
 	s.lastHealthCheck = time.Now()
-	return map[string]any{
+	health := map[string]any{
 		"status":        s.healthState,
 		"name":          s.name,
 		"type":          s.serverType,
@@ -278,6 +279,8 @@ func (s *AdvancedMockServer) CheckHealth() map[string]any {
 		"handler_count": len(s.handlerRegistry),
 		"last_checked":  s.lastHealthCheck,
 	}
+	s.mu.Unlock()
+	return health
 }
 
 // Test data creation helpers

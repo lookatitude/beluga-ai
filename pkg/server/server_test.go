@@ -665,7 +665,7 @@ func TestErrorHandling(t *testing.T) {
 		// Test with underlying error - check that Unwrap() returns the underlying error
 		underlyingErr := errors.New("underlying")
 		wrappedErr := NewInternalError("test_op", underlyingErr)
-		if wrappedErr.Unwrap() != underlyingErr {
+		if !errors.Is(wrappedErr.Unwrap(), underlyingErr) {
 			t.Error("Expected Unwrap() to return underlying error")
 		}
 		// Error() string uses Message when set, not underlying error

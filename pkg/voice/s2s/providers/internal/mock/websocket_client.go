@@ -12,8 +12,8 @@ import (
 // WebSocketConn is an interface for WebSocket connection operations.
 // This allows us to mock WebSocket connections in tests.
 type WebSocketConn interface {
-	ReadJSON(v interface{}) error
-	WriteJSON(v interface{}) error
+	ReadJSON(v any) error
+	WriteJSON(v any) error
 	Close() error
 	SetReadDeadline(t time.Time) error
 	SetWriteDeadline(t time.Time) error
@@ -26,27 +26,27 @@ type WebSocketDialer interface {
 
 // MockWebSocketConn is a mock implementation of WebSocketConn for testing.
 type MockWebSocketConn struct {
-	mu            sync.RWMutex
-	messages      []interface{}
-	readIndex     int
-	writeMessages []interface{}
-	closed        bool
 	readDeadline  time.Time
 	writeDeadline time.Time
 	readError     error
 	writeError    error
+	messages      []any
+	writeMessages []any
+	readIndex     int
+	mu            sync.RWMutex
+	closed        bool
 }
 
 // NewMockWebSocketConn creates a new mock WebSocket connection.
 func NewMockWebSocketConn() *MockWebSocketConn {
 	return &MockWebSocketConn{
-		messages:      make([]interface{}, 0),
-		writeMessages: make([]interface{}, 0),
+		messages:      make([]any, 0),
+		writeMessages: make([]any, 0),
 	}
 }
 
 // SetReadMessages sets the messages to be returned by ReadJSON.
-func (m *MockWebSocketConn) SetReadMessages(messages []interface{}) {
+func (m *MockWebSocketConn) SetReadMessages(messages []any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.messages = messages
@@ -54,17 +54,17 @@ func (m *MockWebSocketConn) SetReadMessages(messages []interface{}) {
 }
 
 // AddReadMessage adds a message to be returned by ReadJSON.
-func (m *MockWebSocketConn) AddReadMessage(msg interface{}) {
+func (m *MockWebSocketConn) AddReadMessage(msg any) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.messages = append(m.messages, msg)
 }
 
 // GetWriteMessages returns all messages written via WriteJSON.
-func (m *MockWebSocketConn) GetWriteMessages() []interface{} {
+func (m *MockWebSocketConn) GetWriteMessages() []any {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	result := make([]interface{}, len(m.writeMessages))
+	result := make([]any, len(m.writeMessages))
 	copy(result, m.writeMessages)
 	return result
 }
@@ -84,7 +84,7 @@ func (m *MockWebSocketConn) SetWriteError(err error) {
 }
 
 // ReadJSON implements WebSocketConn interface.
-func (m *MockWebSocketConn) ReadJSON(v interface{}) error {
+func (m *MockWebSocketConn) ReadJSON(v any) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -113,7 +113,7 @@ func (m *MockWebSocketConn) ReadJSON(v interface{}) error {
 }
 
 // WriteJSON implements WebSocketConn interface.
-func (m *MockWebSocketConn) WriteJSON(v interface{}) error {
+func (m *MockWebSocketConn) WriteJSON(v any) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -162,11 +162,11 @@ func (m *MockWebSocketConn) IsClosed() bool {
 
 // MockWebSocketDialer is a mock implementation of WebSocketDialer for testing.
 type MockWebSocketDialer struct {
-	mu               sync.RWMutex
+	defaultDialError error
 	connections      map[string]*MockWebSocketConn
 	defaultConn      *MockWebSocketConn
 	dialError        map[string]error
-	defaultDialError error
+	mu               sync.RWMutex
 }
 
 // NewMockWebSocketDialer creates a new mock WebSocket dialer.

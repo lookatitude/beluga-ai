@@ -12,19 +12,16 @@ import (
 // FrameworkRateLimiter provides a framework fallback rate limiter implementation.
 // This is used when providers don't implement their own rate limiting (FR-024).
 type FrameworkRateLimiter struct {
-	// Rate limit configuration
+	lastUpdate        time.Time
 	requestsPerSecond int
 	burstSize         int
-
-	// Token bucket state
-	tokens     float64
-	lastUpdate time.Time
-	mu         sync.Mutex
+	tokens            float64
+	mu                sync.Mutex
 }
 
 // NewFrameworkRateLimiter creates a new framework rate limiter.
 // Defaults: 100 requests/second, burst size of 10.
-func NewFrameworkRateLimiter(requestsPerSecond int, burstSize int) *FrameworkRateLimiter {
+func NewFrameworkRateLimiter(requestsPerSecond, burstSize int) *FrameworkRateLimiter {
 	if requestsPerSecond <= 0 {
 		requestsPerSecond = 100 // Default: 100 requests/second
 	}

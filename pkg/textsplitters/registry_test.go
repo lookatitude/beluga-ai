@@ -2,7 +2,7 @@ package textsplitters
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/schema"
@@ -100,7 +100,7 @@ func TestErrorHelpers(t *testing.T) {
 
 	// Test IsSplitterError
 	assert.True(t, IsSplitterError(err))
-	assert.False(t, IsSplitterError(fmt.Errorf("regular error")))
+	assert.False(t, IsSplitterError(errors.New("regular error")))
 
 	// Test GetSplitterError
 	extracted := GetSplitterError(err)
@@ -108,8 +108,8 @@ func TestErrorHelpers(t *testing.T) {
 	assert.Equal(t, err, extracted)
 
 	// Test Unwrap
-	assert.Nil(t, err.Unwrap())
-	wrappedErr := fmt.Errorf("wrapped")
+	assert.NoError(t, err.Unwrap())
+	wrappedErr := errors.New("wrapped")
 	errWithWrap := NewSplitterError("TestOp", ErrCodeInvalidConfig, "", wrappedErr)
 	assert.Equal(t, wrappedErr, errWithWrap.Unwrap())
 }
@@ -188,5 +188,5 @@ func (m *mockSplitter) CreateDocuments(ctx context.Context, texts []string, meta
 	return m.SplitDocuments(ctx, result)
 }
 
-// Ensure mockSplitter implements iface.TextSplitter
+// Ensure mockSplitter implements iface.TextSplitter.
 var _ iface.TextSplitter = (*mockSplitter)(nil)

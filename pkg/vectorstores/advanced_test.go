@@ -720,8 +720,8 @@ func BenchmarkBenchmarkHelper(b *testing.B) {
 // TestConfigValidation tests configuration validation.
 func TestConfigValidation(t *testing.T) {
 	tests := []struct {
-		name    string
 		config  func() any
+		name    string
 		wantErr bool
 	}{
 		{
@@ -962,7 +962,7 @@ func TestVectorStoreErrorHandling(t *testing.T) {
 	t.Run("VectorStoreError with underlying error", func(t *testing.T) {
 		underlying := errors.New("underlying error")
 		err := NewVectorStoreError("test_op", ErrCodeInvalidInput, underlying)
-		if err.Unwrap() != underlying {
+		if !errors.Is(err.Unwrap(), underlying) {
 			t.Errorf("Unwrap() = %v, want %v", err.Unwrap(), underlying)
 		}
 	})

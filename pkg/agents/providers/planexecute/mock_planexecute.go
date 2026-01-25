@@ -15,14 +15,14 @@ import (
 
 // MockPlanExecuteAgent provides a mock implementation of PlanExecuteAgent for testing.
 type MockPlanExecuteAgent struct {
+	errorToReturn error
 	*PlanExecuteAgent
-	shouldError      bool
-	errorToReturn    error
 	planSteps        []PlanStep
 	executionResults []map[string]any
 	callCount        int
-	mu               sync.RWMutex
 	simulateDelay    time.Duration
+	mu               sync.RWMutex
+	shouldError      bool
 }
 
 // MockPlanExecuteOption defines functional options for configuring the mock.
@@ -226,11 +226,11 @@ func CreateTestExecutionPlan(goal string, stepCount int) *ExecutionPlan {
 
 // MockChatModelForPlanExecute provides a minimal mock ChatModel for PlanExecute testing.
 type MockChatModelForPlanExecute struct {
-	shouldError   bool
 	errorToReturn error
 	responses     []schema.Message
 	responseIndex int
 	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // NewMockChatModelForPlanExecute creates a new mock ChatModel for PlanExecute testing.
@@ -258,7 +258,7 @@ func (m *MockChatModelForPlanExecute) WithMockError(err error) *MockChatModelFor
 }
 
 // Generate implements llmsiface.ChatModel interface.
-func (m *MockChatModelForPlanExecute) Generate(ctx context.Context, messages []schema.Message, options ...interface{}) (schema.Message, error) {
+func (m *MockChatModelForPlanExecute) Generate(ctx context.Context, messages []schema.Message, options ...any) (schema.Message, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 

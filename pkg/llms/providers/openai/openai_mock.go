@@ -16,17 +16,17 @@ import (
 
 // AdvancedMockOpenAIProvider provides a comprehensive mock implementation for testing OpenAI provider.
 type AdvancedMockOpenAIProvider struct {
-	mu                *sync.RWMutex
-	callCount         int
-	shouldError       bool
 	errorToReturn     error
-	responses         []string
-	responseIndex     int
+	mu                *sync.RWMutex
 	modelName         string
+	responses         []string
 	boundTools        []tools.Tool
+	callCount         int
+	responseIndex     int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockOpenAIProvider creates a new advanced mock with configurable behavior.

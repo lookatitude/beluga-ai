@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -20,10 +21,10 @@ import (
 
 // GrokVoiceProvider implements the S2SProvider interface for Grok Voice Agent.
 type GrokVoiceProvider struct {
-	config       *GrokVoiceConfig
 	httpClient   HTTPClient
-	mu           sync.RWMutex
+	config       *GrokVoiceConfig
 	providerName string
+	mu           sync.RWMutex
 }
 
 // HTTPClient is an interface for HTTP client operations.
@@ -121,7 +122,7 @@ func (p *GrokVoiceProvider) Process(ctx context.Context, input *internal.AudioIn
 	case <-ctx.Done():
 		s2s.RecordSpanError(span, ctx.Err())
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 
@@ -146,10 +147,10 @@ func (p *GrokVoiceProvider) Process(ctx context.Context, input *internal.AudioIn
 	}
 
 	// Build API URL
-	url := fmt.Sprintf("%s/audio/speech", p.config.APIEndpoint)
+	url := p.config.APIEndpoint + "/audio/speech"
 
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		s2s.RecordSpanError(span, err)
 		return nil, s2s.NewS2SError("Process", s2s.ErrCodeInvalidRequest,
@@ -157,7 +158,7 @@ func (p *GrokVoiceProvider) Process(ctx context.Context, input *internal.AudioIn
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	req.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	// Execute request using injected HTTP client
 	resp, err := p.httpClient.Do(req)
@@ -195,8 +196,8 @@ func (p *GrokVoiceProvider) Process(ctx context.Context, input *internal.AudioIn
 	output.Latency = time.Since(startTime)
 	s2s.RecordSpanLatency(span, output.Latency)
 	s2s.RecordSpanAttributes(span, map[string]string{
-		"output_size": fmt.Sprintf("%d", len(output.Data)),
-		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+		"output_size": strconv.Itoa(len(output.Data)),
+		"latency_ms":  strconv.FormatInt(output.Latency.Milliseconds(), 10),
 	})
 
 	return output, nil
@@ -259,9 +260,9 @@ func (p *GrokVoiceProvider) parseGrokResponse(responseBody []byte, input *intern
 	var response struct {
 		Audio  string `json:"audio"`
 		Format struct {
+			Encoding   string `json:"encoding"`
 			SampleRate int    `json:"sample_rate"`
 			Channels   int    `json:"channels"`
-			Encoding   string `json:"encoding"`
 		} `json:"format"`
 		Voice struct {
 			VoiceID  string `json:"voice_id"`
@@ -274,7 +275,7 @@ func (p *GrokVoiceProvider) parseGrokResponse(responseBody []byte, input *intern
 	}
 
 	if response.Audio == "" {
-		return nil, fmt.Errorf("no audio data in response")
+		return nil, errors.New("no audio data in response")
 	}
 
 	// Decode base64 audio
@@ -343,7 +344,7 @@ func (p *GrokVoiceProvider) StartStreaming(ctx context.Context, convCtx *interna
 	select {
 	case <-ctx.Done():
 		return nil, s2s.NewS2SError("StartStreaming", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	default:
 	}
 

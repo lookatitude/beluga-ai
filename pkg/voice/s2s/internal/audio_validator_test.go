@@ -143,8 +143,8 @@ func TestValidateAudioQuality(t *testing.T) {
 
 func TestValidateAudioInput(t *testing.T) {
 	tests := []struct {
-		name    string
 		input   *AudioInput
+		name    string
 		wantErr bool
 	}{
 		{
@@ -212,8 +212,8 @@ func TestValidateAudioInput(t *testing.T) {
 
 func TestValidateAudioOutput(t *testing.T) {
 	tests := []struct {
-		name    string
 		output  *AudioOutput
+		name    string
 		wantErr bool
 	}{
 		{

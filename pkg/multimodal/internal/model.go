@@ -3,8 +3,10 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"sync"
 	"time"
 
@@ -23,18 +25,18 @@ import (
 
 // BaseMultimodalModel provides a base implementation of MultimodalModel.
 type BaseMultimodalModel struct {
-	providerName       string
-	modelName          string
-	config             map[string]any // Using map to avoid importing multimodal.Config
+	llmProvider        chatmodelsiface.ChatModel
+	embedder           embeddingsiface.Embedder
+	multimodalEmbedder embeddingsiface.MultimodalEmbedder
+	vectorStore        vectorstores.VectorStore
+	config             map[string]any
 	capabilities       *types.ModalityCapabilities
 	router             *Router
 	normalizer         *Normalizer
-	llmProvider        chatmodelsiface.ChatModel          // LLM for text processing
-	embedder           embeddingsiface.Embedder           // Embedder for vector generation
-	multimodalEmbedder embeddingsiface.MultimodalEmbedder // Multimodal embedder for RAG
-	vectorStore        vectorstores.VectorStore           // Vector store for RAG
-	streamingState     *StreamingState                    // State for streaming operations
-	streamingStateMu   sync.Mutex                         // Mutex for streaming state
+	streamingState     *StreamingState
+	providerName       string
+	modelName          string
+	streamingStateMu   sync.Mutex
 }
 
 // StreamingState manages state for streaming operations.
@@ -84,7 +86,7 @@ func (m *BaseMultimodalModel) Process(ctx context.Context, input *types.Multimod
 
 	// Validate input - basic validation
 	if len(input.ContentBlocks) == 0 {
-		err := fmt.Errorf("input must have at least one content block")
+		err := errors.New("input must have at least one content block")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		logWithOTELContext(ctx, slog.LevelError, "Input validation failed", "error", err)
@@ -259,12 +261,12 @@ func (m *BaseMultimodalModel) generationPipeline(ctx context.Context, input *typ
 	}
 
 	if textInstruction == "" {
-		return nil, fmt.Errorf("generationPipeline: text instruction required for generation")
+		return nil, errors.New("generationPipeline: text instruction required for generation")
 	}
 
 	// For now, return a simple text response
 	// In a full implementation, this would generate images, audio, or video based on the instruction
-	outputBlock, err := types.NewContentBlock("text", []byte(fmt.Sprintf("Generated response for: %s", textInstruction)))
+	outputBlock, err := types.NewContentBlock("text", []byte("Generated response for: "+textInstruction))
 	if err != nil {
 		return nil, err
 	}
@@ -360,7 +362,7 @@ func (m *BaseMultimodalModel) EmbedMultimodalDocuments(ctx context.Context, docu
 		return embeddings, nil
 	}
 
-	return nil, fmt.Errorf("EmbedMultimodalDocuments: no embedder available")
+	return nil, errors.New("EmbedMultimodalDocuments: no embedder available")
 }
 
 // EmbedMultimodalQuery generates an embedding for a multimodal query (text+image).
@@ -396,7 +398,7 @@ func (m *BaseMultimodalModel) EmbedMultimodalQuery(ctx context.Context, document
 		return embedding, nil
 	}
 
-	return nil, fmt.Errorf("EmbedMultimodalQuery: no embedder available")
+	return nil, errors.New("EmbedMultimodalQuery: no embedder available")
 }
 
 // StoreMultimodalDocuments stores multimodal documents in a vector store.
@@ -411,7 +413,7 @@ func (m *BaseMultimodalModel) StoreMultimodalDocuments(ctx context.Context, docu
 	defer span.End()
 
 	if m.vectorStore == nil {
-		return nil, fmt.Errorf("StoreMultimodalDocuments: vector store not configured")
+		return nil, errors.New("StoreMultimodalDocuments: vector store not configured")
 	}
 
 	// Use multimodal embedder if available, otherwise use regular embedder
@@ -455,7 +457,7 @@ func (m *BaseMultimodalModel) SearchMultimodal(ctx context.Context, queryDocumen
 	defer span.End()
 
 	if m.vectorStore == nil {
-		return nil, nil, fmt.Errorf("SearchMultimodal: vector store not configured")
+		return nil, nil, errors.New("SearchMultimodal: vector store not configured")
 	}
 
 	// Generate query embedding
@@ -496,16 +498,18 @@ func (m *BaseMultimodalModel) FuseMultimodalContent(ctx context.Context, textCon
 	fusedContent := textContent
 	if len(multimodalDocuments) > 0 {
 		fusedContent += "\n\nRetrieved multimodal context:\n"
+		var fusedContentSb499 strings.Builder
 		for i, doc := range multimodalDocuments {
-			fusedContent += fmt.Sprintf("[%d] %s\n", i+1, doc.GetContent())
+			fusedContentSb499.WriteString(fmt.Sprintf("[%d] %s\n", i+1, doc.GetContent()))
 			// Include metadata about multimodal content
 			if imageURL, ok := doc.Metadata["image_url"]; ok {
-				fusedContent += fmt.Sprintf("  Image: %v\n", imageURL)
+				fusedContentSb499.WriteString(fmt.Sprintf("  Image: %v\n", imageURL))
 			}
 			if _, ok := doc.Metadata["image_base64"]; ok {
-				fusedContent += "  Image: [base64 encoded]\n"
+				fusedContentSb499.WriteString("  Image: [base64 encoded]\n")
 			}
 		}
+		fusedContent += fusedContentSb499.String()
 	}
 
 	span.SetStatus(codes.Ok, "")
@@ -598,7 +602,7 @@ func (m *BaseMultimodalModel) ProcessChain(ctx context.Context, inputs []*types.
 	_ = startTime // Suppress unused variable warning
 
 	if len(inputs) == 0 {
-		return nil, fmt.Errorf("ProcessChain: chain must have at least one input")
+		return nil, errors.New("ProcessChain: chain must have at least one input")
 	}
 
 	outputs := make([]*types.MultimodalOutput, 0, len(inputs))
@@ -653,7 +657,7 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 
 	// Validate input - basic validation
 	if len(input.ContentBlocks) == 0 {
-		err := fmt.Errorf("input must have at least one content block")
+		err := errors.New("input must have at least one content block")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return nil, err
@@ -701,8 +705,8 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 		for i, chunkBlock := range chunkedBlocks {
 			select {
 			case <-streamCtx.Done():
-				span.SetStatus(codes.Error, "stream cancelled")
-				logWithOTELContext(ctx, slog.LevelWarn, "Stream cancelled", "error", streamCtx.Err())
+				span.SetStatus(codes.Error, "stream canceled")
+				logWithOTELContext(ctx, slog.LevelWarn, "Stream canceled", "error", streamCtx.Err())
 				return
 			default:
 				// Process chunk
@@ -738,7 +742,7 @@ func (m *BaseMultimodalModel) ProcessStream(ctx context.Context, input *types.Mu
 						"chunk_index", i,
 						"modality", modality)
 				case <-streamCtx.Done():
-					logWithOTELContext(ctx, slog.LevelWarn, "Stream cancelled during send", "error", streamCtx.Err())
+					logWithOTELContext(ctx, slog.LevelWarn, "Stream canceled during send", "error", streamCtx.Err())
 					return
 				}
 			}
@@ -964,7 +968,7 @@ func (m *BaseMultimodalModel) CheckHealth(ctx context.Context) error {
 
 	// Verify router is available
 	if m.router == nil {
-		err := fmt.Errorf("router not initialized")
+		err := errors.New("router not initialized")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		logWithOTELContext(ctx, slog.LevelError, "Health check failed: router not initialized")
@@ -973,7 +977,7 @@ func (m *BaseMultimodalModel) CheckHealth(ctx context.Context) error {
 
 	// Verify normalizer is available
 	if m.normalizer == nil {
-		err := fmt.Errorf("normalizer not initialized")
+		err := errors.New("normalizer not initialized")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		logWithOTELContext(ctx, slog.LevelError, "Health check failed: normalizer not initialized")

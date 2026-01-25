@@ -30,7 +30,7 @@ type VoiceMetrics struct {
 	audioProcessingTime metric.Float64Histogram
 }
 
-// Global metrics instance
+// Global metrics instance.
 var globalMetrics *VoiceMetrics
 
 // GetGlobalMetrics returns the global metrics instance.

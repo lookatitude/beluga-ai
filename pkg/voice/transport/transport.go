@@ -30,7 +30,7 @@ var (
 //	meter := otel.Meter("beluga.voice.transport")
 //	transport.InitMetrics(meter)
 //
-// Example usage can be found in examples/voice/transport/main.go
+// Example usage can be found in examples/voice/transport/main.go.
 func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 	metricsOnce.Do(func() {
 		globalMetrics = NewMetrics(meter, tracer)
@@ -50,7 +50,7 @@ func InitMetrics(meter metric.Meter, tracer trace.Tracer) {
 //	    // Use metrics
 //	}
 //
-// Example usage can be found in examples/voice/transport/main.go
+// Example usage can be found in examples/voice/transport/main.go.
 func GetMetrics() *Metrics {
 	return globalMetrics
 }
@@ -82,7 +82,7 @@ func GetMetrics() *Metrics {
 //	}
 //	err = provider.Send(ctx, audioData)
 //
-// Example usage can be found in examples/voice/transport/main.go
+// Example usage can be found in examples/voice/transport/main.go.
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.Transport, error) {
 	// Apply options
 	if config == nil {

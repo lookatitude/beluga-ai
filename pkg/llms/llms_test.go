@@ -391,7 +391,7 @@ func TestToolBinding(t *testing.T) {
 	mockModel := NewMockChatModel("test-model")
 	mockTool := &MockTool{name: "calculator"}
 
-	mockModel.On("BindTools", mock.AnythingOfType("[]tools.Tool")).
+	mockModel.On("BindTools", mock.Anything).
 		Return(mockModel) // Return self for simplicity
 
 	result := mockModel.BindTools([]tools.Tool{mockTool})

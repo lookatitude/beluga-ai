@@ -21,10 +21,10 @@ import (
 // TestServerCreationAdvanced provides advanced table-driven tests for server creation.
 func TestServerCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockServer
 		validate    func(t *testing.T, server *AdvancedMockServer)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -105,9 +105,9 @@ func TestServerCreationAdvanced(t *testing.T) {
 // TestServerLifecycleAdvanced tests server lifecycle operations.
 func TestServerLifecycleAdvanced(t *testing.T) {
 	tests := []struct {
+		testFunc    func(t *testing.T)
 		name        string
 		description string
-		testFunc    func(t *testing.T)
 	}{
 		{
 			name:        "server_startup",
@@ -413,7 +413,7 @@ func TestServerWithContext(t *testing.T) {
 		assert.Equal(t, 200, statusCode)
 	})
 
-	t.Run("server_operations_with_cancelled_context", func(t *testing.T) {
+	t.Run("server_operations_with_canceled_context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		server := NewAdvancedMockServer("cancel-server", "http", 9201)
@@ -429,7 +429,7 @@ func TestServerWithContext(t *testing.T) {
 		health := server.CheckHealth()
 		assert.NotNil(t, health)
 
-		// Stop with cancelled context
+		// Stop with canceled context
 		server.Stop(ctx)
 	})
 }
@@ -437,10 +437,10 @@ func TestServerWithContext(t *testing.T) {
 // TestServerHealthCheck tests server health check functionality.
 func TestServerHealthCheck(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func() *AdvancedMockServer
 		validate    func(t *testing.T, health map[string]any)
+		name        string
+		description string
 	}{
 		{
 			name:        "healthy_server",
@@ -692,12 +692,12 @@ func TestDefaultMCPConfig(t *testing.T) {
 // TestCORSMiddleware tests the CORSMiddleware function.
 func TestCORSMiddleware(t *testing.T) {
 	tests := []struct {
+		expectHeaders  map[string]string
 		name           string
-		allowedOrigins []string
 		requestOrigin  string
 		method         string
+		allowedOrigins []string
 		expectCORS     bool
-		expectHeaders  map[string]string
 	}{
 		{
 			name:           "wildcard_origin_allowed",
@@ -792,7 +792,7 @@ func TestLoggingMiddleware(t *testing.T) {
 	middleware := LoggingMiddleware(logger)
 	wrappedHandler := middleware(handler)
 
-	req := httptest.NewRequest("GET", "/test", nil)
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
 	req.Header.Set("User-Agent", "test-agent")
 	req.RemoteAddr = "127.0.0.1:12345"
 	w := httptest.NewRecorder()
@@ -801,7 +801,7 @@ func TestLoggingMiddleware(t *testing.T) {
 
 	// Verify logging occurred
 	logs := logger.getLogs("INFO")
-	assert.Greater(t, len(logs), 0, "Should log request")
+	assert.NotEmpty(t, logs, "Should log request")
 
 	// Check that log contains expected fields
 	found := false
@@ -823,8 +823,8 @@ func TestRecoveryMiddleware(t *testing.T) {
 	logger := newMockLogger()
 
 	tests := []struct {
-		name        string
 		handler     http.HandlerFunc
+		name        string
 		expectPanic bool
 		expectError bool
 	}{
@@ -859,7 +859,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 			middleware := RecoveryMiddleware(logger)
 			wrappedHandler := middleware(tt.handler)
 
-			req := httptest.NewRequest("GET", "/test", nil)
+			req := httptest.NewRequest(http.MethodGet, "/test", nil)
 			w := httptest.NewRecorder()
 
 			// Should not panic even if handler panics
@@ -874,7 +874,7 @@ func TestRecoveryMiddleware(t *testing.T) {
 				assert.Equal(t, http.StatusInternalServerError, resp.StatusCode)
 				// Verify error was logged
 				errorLogs := logger.getLogs("ERROR")
-				assert.Greater(t, len(errorLogs), 0, "Should log panic recovery")
+				assert.NotEmpty(t, errorLogs, "Should log panic recovery")
 			} else {
 				assert.Equal(t, http.StatusOK, resp.StatusCode)
 			}
@@ -885,8 +885,8 @@ func TestRecoveryMiddleware(t *testing.T) {
 // TestIsServerError tests the IsServerError function.
 func TestIsServerError(t *testing.T) {
 	tests := []struct {
-		name     string
 		err      error
+		name     string
 		expected bool
 	}{
 		{
@@ -922,10 +922,10 @@ func TestIsServerError(t *testing.T) {
 // TestAsServerError tests the AsServerError function.
 func TestAsServerError(t *testing.T) {
 	tests := []struct {
-		name          string
 		err           error
-		expectedFound bool
+		name          string
 		expectedCode  string
+		expectedFound bool
 	}{
 		{
 			name:          "server_error",

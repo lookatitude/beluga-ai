@@ -14,20 +14,20 @@ import (
 
 // AdvancedMockChromaStore provides a comprehensive mock implementation for testing Chroma provider.
 type AdvancedMockChromaStore struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
+	collectionName    string
+	name              string
+	url               string
 	documents         []schema.Document
 	embeddings        [][]float32
 	documentIDs       []string
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	url               string
-	collectionName    string
-	name              string
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockChromaStore creates a new advanced mock with configurable behavior.

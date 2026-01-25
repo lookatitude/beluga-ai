@@ -15,18 +15,18 @@ type HTTPClient interface {
 
 // MockHTTPClient is a mock implementation of HTTPClient for testing.
 type MockHTTPClient struct {
-	mu           sync.RWMutex
 	responses    map[string]*MockResponse
 	defaultResp  *MockResponse
 	requestCount map[string]int
+	mu           sync.RWMutex
 }
 
 // MockResponse represents a mock HTTP response.
 type MockResponse struct {
-	StatusCode int
-	Body       []byte
-	Header     http.Header
 	Error      error
+	Header     http.Header
+	Body       []byte
+	StatusCode int
 }
 
 // NewMockHTTPClient creates a new mock HTTP client.

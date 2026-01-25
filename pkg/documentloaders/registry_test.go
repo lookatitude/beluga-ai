@@ -2,7 +2,7 @@ package documentloaders
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/documentloaders/iface"
@@ -93,7 +93,7 @@ func TestErrorHelpers(t *testing.T) {
 
 	// Test IsLoaderError
 	assert.True(t, IsLoaderError(err))
-	assert.False(t, IsLoaderError(fmt.Errorf("regular error")))
+	assert.False(t, IsLoaderError(errors.New("regular error")))
 
 	// Test GetLoaderError
 	extracted := GetLoaderError(err)
@@ -101,8 +101,8 @@ func TestErrorHelpers(t *testing.T) {
 	assert.Equal(t, err, extracted)
 
 	// Test Unwrap
-	assert.Nil(t, err.Unwrap())
-	wrappedErr := fmt.Errorf("wrapped")
+	assert.NoError(t, err.Unwrap())
+	wrappedErr := errors.New("wrapped")
 	errWithWrap := NewLoaderError("TestOp", ErrCodeIOError, "", "", wrappedErr)
 	assert.Equal(t, wrappedErr, errWithWrap.Unwrap())
 }
@@ -204,5 +204,5 @@ func (m *mockLoader) LazyLoad(ctx context.Context) (<-chan any, error) {
 	return ch, nil
 }
 
-// Ensure mockLoader implements iface.DocumentLoader
+// Ensure mockLoader implements iface.DocumentLoader.
 var _ iface.DocumentLoader = (*mockLoader)(nil)

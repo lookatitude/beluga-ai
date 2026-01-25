@@ -15,7 +15,7 @@ Dependencies can ONLY point downward. Never create upward or circular dependenci
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │  1. Application Layer                                        │
-│     cmd/, examples/                                          │
+│     examples/                                                │
 ├─────────────────────────────────────────────────────────────┤
 │  2. Agent Layer                                              │
 │     pkg/agents/, pkg/orchestration/, pkg/server/             │

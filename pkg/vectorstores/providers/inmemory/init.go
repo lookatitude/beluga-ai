@@ -26,7 +26,7 @@ func init() {
 	})
 }
 
-// vectorStoreWrapper wraps InMemoryVectorStore to ensure Option type compatibility
+// vectorStoreWrapper wraps InMemoryVectorStore to ensure Option type compatibility.
 type vectorStoreWrapper struct {
 	store *InMemoryVectorStore
 }

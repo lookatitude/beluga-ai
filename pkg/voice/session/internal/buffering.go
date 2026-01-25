@@ -17,10 +17,10 @@ const (
 
 // Buffering manages buffering strategy for long utterances.
 type Buffering struct {
+	pool     *voice.BufferPool
 	buffer   []byte
 	strategy BufferingStrategy
 	maxSize  int
-	pool     *voice.BufferPool
 	mu       sync.RWMutex
 }
 

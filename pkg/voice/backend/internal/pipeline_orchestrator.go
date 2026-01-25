@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"reflect"
@@ -39,11 +40,11 @@ type PipelineOrchestrator struct {
 	// Package integrations (optional)
 	memory          memoryiface.Memory
 	orchestrator    orchestrationiface.Orchestrator
-	retriever       interface{} // retrieversiface.Retriever
+	retriever       any // retrieversiface.Retriever
 	vectorStore     vectorstoresiface.VectorStore
 	embedder        embeddingsiface.Embedder
 	multimodalModel multimodaliface.MultimodalModel
-	promptTemplate  interface{} // promptsiface.PromptTemplate
+	promptTemplate  any // promptsiface.PromptTemplate
 	chatModel       chatmodelsiface.ChatModel
 
 	// Custom processors
@@ -118,7 +119,7 @@ func (po *PipelineOrchestrator) SetOrchestrator(orchestrator orchestrationiface.
 }
 
 // SetRetriever sets the retriever integration.
-func (po *PipelineOrchestrator) SetRetriever(retriever interface{}) {
+func (po *PipelineOrchestrator) SetRetriever(retriever any) {
 	po.mu.Lock()
 	defer po.mu.Unlock()
 	po.retriever = retriever
@@ -146,7 +147,7 @@ func (po *PipelineOrchestrator) SetMultimodalModel(model multimodaliface.Multimo
 }
 
 // SetPromptTemplate sets the prompt template integration.
-func (po *PipelineOrchestrator) SetPromptTemplate(template interface{}) {
+func (po *PipelineOrchestrator) SetPromptTemplate(template any) {
 	po.mu.Lock()
 	defer po.mu.Unlock()
 	po.promptTemplate = template
@@ -234,7 +235,7 @@ func (po *PipelineOrchestrator) processSTTTTSPipeline(ctx context.Context, audio
 
 	if sttProvider == nil {
 		return nil, backend.NewBackendError("processSTTTTSPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("STT provider not configured"))
+			errors.New("STT provider not configured"))
 	}
 
 	transcript, err := sttProvider.Transcribe(ctx, audio)
@@ -303,13 +304,13 @@ func (po *PipelineOrchestrator) processSTTTTSPipeline(ctx context.Context, audio
 			if agentCallback != nil {
 				resp, err = agentCallback(agentCtx, transcript)
 			} else {
-				err = fmt.Errorf("agent instance does not implement Invoke and no callback provided")
+				err = errors.New("agent instance does not implement Invoke and no callback provided")
 			}
 		} else if agentCallback != nil {
 			// Use agent callback
 			resp, err = agentCallback(agentCtx, transcript)
 		} else {
-			err = fmt.Errorf("neither agent instance nor callback provided")
+			err = errors.New("neither agent instance nor callback provided")
 		}
 
 		if err != nil {
@@ -352,7 +353,7 @@ func (po *PipelineOrchestrator) processSTTTTSPipeline(ctx context.Context, audio
 
 	if ttsProvider == nil {
 		return nil, backend.NewBackendError("processSTTTTSPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("TTS provider not configured"))
+			errors.New("TTS provider not configured"))
 	}
 
 	outputAudio, err := ttsProvider.GenerateSpeech(ctx, response)
@@ -459,7 +460,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 
 	if s2sProvider == nil {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("S2S provider not configured"))
+			errors.New("S2S provider not configured"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -468,7 +469,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	audioInput := s2s.NewAudioInput(audio, "")
 	if audioInput == nil {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("failed to create S2S audio input"))
+			errors.New("failed to create S2S audio input"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -477,7 +478,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	conversationContext := s2s.NewConversationContext("")
 	if conversationContext == nil {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("failed to create S2S conversation context"))
+			errors.New("failed to create S2S conversation context"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -508,7 +509,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	// Use buffering and retry for network latency spikes (T292)
 	maxRetries := 2
 	retryDelay := 100 * time.Millisecond
-	var audioOutput interface{} // Use interface{} since we can't import internal package
+	var audioOutput any // Use interface{} since we can't import internal package
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
@@ -545,7 +546,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	var outputAudioData []byte
 	if audioOutput == nil {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("S2S provider returned nil audio output"))
+			errors.New("S2S provider returned nil audio output"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -563,7 +564,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 
 	if outputAudioData == nil {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("S2S provider returned invalid audio output structure"))
+			errors.New("S2S provider returned invalid audio output structure"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -571,7 +572,7 @@ func (po *PipelineOrchestrator) processS2SPipeline(ctx context.Context, audio []
 	// Validate S2S output (T297) - check for malformed output
 	if len(outputAudioData) == 0 {
 		err := backend.NewBackendError("processS2SPipeline", backend.ErrCodePipelineError,
-			fmt.Errorf("S2S provider returned empty audio output"))
+			errors.New("S2S provider returned empty audio output"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}

@@ -13,21 +13,15 @@ import (
 
 // AdvancedMockVoiceComponent provides a comprehensive mock implementation for testing voice components.
 type AdvancedMockVoiceComponent struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	mock.Mock
+	name          string
+	healthState   string
+	callCount     int
+	simulateDelay time.Duration
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // NewAdvancedMockVoiceComponent creates a new advanced mock voice component with configurable behavior.
@@ -73,9 +67,9 @@ func (m *AdvancedMockVoiceComponent) GetCallCount() int {
 
 // ConcurrentTestRunner provides utilities for concurrent testing.
 type ConcurrentTestRunner struct {
+	testFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	testFunc      func() error
 }
 
 // NewConcurrentTestRunner creates a new concurrent test runner.

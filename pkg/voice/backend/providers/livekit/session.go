@@ -2,6 +2,7 @@ package livekit
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -20,28 +21,21 @@ import (
 // LiveKitSession implements the VoiceSession interface for LiveKit.
 // Each session maintains independent state with its own mutex for isolation (T173).
 type LiveKitSession struct {
-	id                   string
-	roomName             string
-	config               *LiveKitConfig
+	lastReconnectTime    time.Time
+	audioOutput          chan []byte
+	metadata             map[string]any
 	sessionConfig        *iface.SessionConfig
 	pipelineOrchestrator *internal.PipelineOrchestrator
 	roomService          *lksdkwrapper.RoomServiceClient
-	state                iface.PipelineState
+	config               *LiveKitConfig
 	persistenceStatus    iface.PersistenceStatus
-	metadata             map[string]any
-	audioOutput          chan []byte
-	mu                   sync.RWMutex // Per-session mutex for state isolation (T173)
+	state                iface.PipelineState
+	id                   string
+	connectionState      iface.ConnectionState
+	roomName             string
+	reconnectAttempts    int
+	mu                   sync.RWMutex
 	active               bool
-	// Session isolation: Each session has independent:
-	// - State (state, persistenceStatus, active)
-	// - Resources (pipelineOrchestrator, audioOutput channel)
-	// - Configuration (sessionConfig, metadata)
-	// No shared mutable state between sessions (T171, T173)
-
-	// Connection state tracking for WebRTC connection loss handling (T289)
-	connectionState   iface.ConnectionState
-	reconnectAttempts int
-	lastReconnectTime time.Time
 }
 
 // NewLiveKitSession creates a new LiveKit session.
@@ -242,7 +236,7 @@ func (s *LiveKitSession) ProcessAudio(ctx context.Context, audio []byte) error {
 		}
 		// Return error to indicate connection issue
 		return backend.NewBackendError("ProcessAudio", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("WebRTC connection lost, reconnecting"))
+			errors.New("WebRTC connection lost, reconnecting"))
 	}
 
 	// Process through pipeline orchestrator with error recovery

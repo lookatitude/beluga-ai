@@ -612,8 +612,8 @@ func TestMemoryErrorHandling(t *testing.T) {
 // TestMemoryErrorFunctions tests all error helper functions.
 func TestMemoryErrorFunctions(t *testing.T) {
 	tests := []struct {
-		name     string
 		testFunc func(t *testing.T)
+		name     string
 	}{
 		{
 			name: "error_unwrap",
@@ -744,11 +744,11 @@ func TestMemoryErrorFunctions(t *testing.T) {
 // TestGetInputOutputKeysEdgeCases tests edge cases for GetInputOutputKeys.
 func TestGetInputOutputKeysEdgeCases(t *testing.T) {
 	tests := []struct {
-		name        string
 		inputs      map[string]any
 		outputs     map[string]any
-		expectError bool
 		validate    func(t *testing.T, inputKey, outputKey string)
+		name        string
+		expectError bool
 	}{
 		{
 			name:        "empty_inputs",
@@ -852,11 +852,11 @@ func TestAdvancedMockMemoryErrorCodes(t *testing.T) {
 // TestGetBufferStringAdvanced tests GetBufferString with various message types.
 func TestGetBufferStringAdvanced(t *testing.T) {
 	tests := []struct {
+		validate    func(t *testing.T, result string)
 		name        string
-		messages    []schema.Message
 		humanPrefix string
 		aiPrefix    string
-		validate    func(t *testing.T, result string)
+		messages    []schema.Message
 	}{
 		{
 			name:        "system_message",

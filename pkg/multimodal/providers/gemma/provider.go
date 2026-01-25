@@ -205,7 +205,7 @@ func (p *GemmaProvider) ProcessStream(ctx context.Context, input *types.Multimod
 			return
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -372,7 +372,7 @@ func (p *GemmaProvider) SupportsModality(ctx context.Context, modality string) (
 	case "video":
 		supported = p.capabilities.Video
 	default:
-		span.SetStatus(codes.Error, fmt.Sprintf("unknown modality: %s", modality))
+		span.SetStatus(codes.Error, "unknown modality: "+modality)
 		return false, fmt.Errorf("unknown modality: %s", modality)
 	}
 
@@ -403,10 +403,10 @@ func (p *GemmaProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Gemma API request/response structures
+// Gemma API request/response structures.
 type gemmaGenerateRequest struct {
-	Contents         []gemmaContent         `json:"contents"`
 	GenerationConfig *gemmaGenerationConfig `json:"generationConfig,omitempty"`
+	Contents         []gemmaContent         `json:"contents"`
 }
 
 type gemmaContent struct {
@@ -415,9 +415,9 @@ type gemmaContent struct {
 }
 
 type gemmaPart struct {
-	Text       string           `json:"text,omitempty"`
 	InlineData *gemmaInlineData `json:"inlineData,omitempty"`
 	FileData   *gemmaFileData   `json:"fileData,omitempty"`
+	Text       string           `json:"text,omitempty"`
 }
 
 type gemmaInlineData struct {
@@ -439,13 +439,13 @@ type gemmaGenerationConfig struct {
 }
 
 type gemmaGenerateResponse struct {
-	Candidates    []gemmaCandidate    `json:"candidates"`
 	UsageMetadata *gemmaUsageMetadata `json:"usageMetadata,omitempty"`
+	Candidates    []gemmaCandidate    `json:"candidates"`
 }
 
 type gemmaCandidate struct {
-	Content      gemmaContent `json:"content"`
 	FinishReason string       `json:"finishReason,omitempty"`
+	Content      gemmaContent `json:"content"`
 }
 
 type gemmaUsageMetadata struct {
@@ -486,7 +486,7 @@ func (p *GemmaProvider) convertToGemmaContents(ctx context.Context, blocks []*ty
 				// For URLs, we'd need to use FileData with a file URI
 				// For now, we'll use inline data by fetching the URL
 				// In production, you might want to use Gemma's file upload API
-				return nil, fmt.Errorf("image URL support requires file upload API (not implemented)")
+				return nil, errors.New("image URL support requires file upload API (not implemented)")
 			}
 
 			if inlineData != nil {
@@ -543,7 +543,7 @@ func (p *GemmaProvider) makeAPIRequest(ctx context.Context, endpoint string, req
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

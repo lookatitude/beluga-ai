@@ -401,7 +401,7 @@ func GetTracer() trace.Tracer {
 	return otel.Tracer("github.com/lookatitude/beluga-ai/pkg/multimodal")
 }
 
-// logMetrics logs metrics with OTEL context
+// logMetrics logs metrics with OTEL context.
 func logMetrics(ctx context.Context, level slog.Level, msg string, attrs ...any) {
 	// Extract OTEL context
 	spanCtx := trace.SpanContextFromContext(ctx)

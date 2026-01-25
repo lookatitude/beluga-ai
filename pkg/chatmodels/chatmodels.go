@@ -215,7 +215,7 @@ func NewMockChatModel(model string, opts ...iface.Option) (iface.ChatModel, erro
 //	config.DefaultMaxTokens = 1000
 //	model, err := chatmodels.NewChatModel("gpt-4", config)
 //
-// Example usage can be found in examples/chatmodels/basic/main.go
+// Example usage can be found in examples/chatmodels/basic/main.go.
 func NewDefaultConfig() *Config {
 	return DefaultConfig()
 }

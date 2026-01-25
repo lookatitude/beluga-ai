@@ -53,7 +53,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// Static error variables for testing (err113 compliance)
+// Static error variables for testing (err113 compliance).
 var (
 	errMockStreamingError    = errors.New("mock streaming error")
 	errTaskReturnedNilResult = errors.New("task returned nil result")

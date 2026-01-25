@@ -32,9 +32,9 @@ import (
 // It handles mu-law ↔ PCM codec conversion between Twilio and the session package.
 type TwilioTransportAdapter struct {
 	audioStream *AudioStream
+	callback    func(audio []byte)
 	mu          sync.RWMutex
 	closed      bool
-	callback    func(audio []byte)
 }
 
 // SendAudio sends audio data to Twilio (converts PCM to mu-law).
@@ -103,19 +103,19 @@ func (t *TwilioTransportAdapter) Close() error {
 // TwilioSessionAdapter wraps pkg/voice/session with Twilio-specific audio handling.
 // It bridges the session package's VoiceSession interface with Twilio's backend VoiceSession interface.
 type TwilioSessionAdapter struct {
-	session      sessioniface.VoiceSession
-	audioStream  *AudioStream
-	transport    transportiface.Transport
-	backend      *TwilioBackend
-	callSID      string
-	id           string
-	mu           sync.RWMutex
-	active       bool
 	startTime    time.Time
 	lastActivity time.Time
+	transport    transportiface.Transport
+	session      sessioniface.VoiceSession
+	backend      *TwilioBackend
+	audioStream  *AudioStream
 	metadata     map[string]any
 	audioInput   chan []byte
 	audioOutput  chan []byte
+	id           string
+	callSID      string
+	mu           sync.RWMutex
+	active       bool
 }
 
 // NewTwilioSessionAdapter creates a new Twilio session adapter.
@@ -514,10 +514,10 @@ func createSTTTTSProviders(ctx context.Context, config *TwilioConfig) (iface.STT
 	var sttProvider iface.STTProvider
 	var ttsProvider iface.TTSProvider
 
-	if config.Config.STTProvider != "" {
+	if config.STTProvider != "" {
 		// Create STT config from provider-specific config
 		sttConfig := stt.DefaultConfig()
-		if providerConfig, ok := config.Config.ProviderConfig["stt"].(map[string]any); ok {
+		if providerConfig, ok := config.ProviderConfig["stt"].(map[string]any); ok {
 			// Map provider-specific config to STT config
 			if apiKey, ok := providerConfig["api_key"].(string); ok {
 				sttConfig.APIKey = apiKey
@@ -532,16 +532,16 @@ func createSTTTTSProviders(ctx context.Context, config *TwilioConfig) (iface.STT
 
 		// Get STT provider from registry
 		var err error
-		sttProvider, err = stt.NewProvider(ctx, config.Config.STTProvider, sttConfig)
+		sttProvider, err = stt.NewProvider(ctx, config.STTProvider, sttConfig)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create STT provider '%s': %w", config.Config.STTProvider, err)
+			return nil, nil, fmt.Errorf("failed to create STT provider '%s': %w", config.STTProvider, err)
 		}
 	}
 
-	if config.Config.TTSProvider != "" {
+	if config.TTSProvider != "" {
 		// Create TTS config from provider-specific config
 		ttsConfig := tts.DefaultConfig()
-		if providerConfig, ok := config.Config.ProviderConfig["tts"].(map[string]any); ok {
+		if providerConfig, ok := config.ProviderConfig["tts"].(map[string]any); ok {
 			// Map provider-specific config to TTS config
 			if apiKey, ok := providerConfig["api_key"].(string); ok {
 				ttsConfig.APIKey = apiKey
@@ -556,9 +556,9 @@ func createSTTTTSProviders(ctx context.Context, config *TwilioConfig) (iface.STT
 
 		// Get TTS provider from registry
 		var err error
-		ttsProvider, err = tts.NewProvider(ctx, config.Config.TTSProvider, ttsConfig)
+		ttsProvider, err = tts.NewProvider(ctx, config.TTSProvider, ttsConfig)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to create TTS provider '%s': %w", config.Config.TTSProvider, err)
+			return nil, nil, fmt.Errorf("failed to create TTS provider '%s': %w", config.TTSProvider, err)
 		}
 	}
 
@@ -571,7 +571,7 @@ func createS2SProvider(ctx context.Context, config *TwilioConfig) (s2siface.S2SP
 	var s2sProviderConfig map[string]any
 	if config.S2SConfig != nil {
 		s2sProviderConfig = config.S2SConfig
-	} else if providerConfig, ok := config.Config.ProviderConfig["s2s"].(map[string]any); ok {
+	} else if providerConfig, ok := config.ProviderConfig["s2s"].(map[string]any); ok {
 		s2sProviderConfig = providerConfig
 	}
 
@@ -619,7 +619,7 @@ func createVADProvider(ctx context.Context, config *TwilioConfig) (iface.VADProv
 	var vadProviderConfig map[string]any
 	if config.VADConfig != nil {
 		vadProviderConfig = config.VADConfig
-	} else if providerConfig, ok := config.Config.ProviderConfig["vad"].(map[string]any); ok {
+	} else if providerConfig, ok := config.ProviderConfig["vad"].(map[string]any); ok {
 		vadProviderConfig = providerConfig
 	}
 
@@ -655,7 +655,7 @@ func createTurnDetector(ctx context.Context, config *TwilioConfig) (iface.TurnDe
 	var turnDetectorConfig map[string]any
 	if config.TurnDetectorConfig != nil {
 		turnDetectorConfig = config.TurnDetectorConfig
-	} else if providerConfig, ok := config.Config.ProviderConfig["turn_detection"].(map[string]any); ok {
+	} else if providerConfig, ok := config.ProviderConfig["turn_detection"].(map[string]any); ok {
 		turnDetectorConfig = providerConfig
 	}
 
@@ -696,7 +696,7 @@ func createNoiseCancellation(ctx context.Context, config *TwilioConfig) (iface.N
 	var noiseCancellationConfig map[string]any
 	if config.NoiseCancellationConfig != nil {
 		noiseCancellationConfig = config.NoiseCancellationConfig
-	} else if providerConfig, ok := config.Config.ProviderConfig["noise_cancellation"].(map[string]any); ok {
+	} else if providerConfig, ok := config.ProviderConfig["noise_cancellation"].(map[string]any); ok {
 		noiseCancellationConfig = providerConfig
 	}
 

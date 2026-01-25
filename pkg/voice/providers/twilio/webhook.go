@@ -127,7 +127,7 @@ func (b *TwilioBackend) ParseWebhookEvent(ctx context.Context, webhookData map[s
 		// Infer event type from other fields
 		if callSID := webhookData["CallSid"]; callSID != "" {
 			callStatus := webhookData["CallStatus"]
-			eventType = fmt.Sprintf("call.%s", callStatus)
+			eventType = "call." + callStatus
 		} else if streamSID := webhookData["StreamSid"]; streamSID != "" {
 			eventType = "stream.event"
 		}
@@ -163,15 +163,15 @@ func (b *TwilioBackend) ParseWebhookEvent(ctx context.Context, webhookData map[s
 
 // WebhookEvent represents a webhook event from Twilio.
 type WebhookEvent struct {
+	Timestamp   time.Time
+	EventData   map[string]any
+	Metadata    map[string]any
 	EventID     string
 	EventType   string
-	EventData   map[string]any
 	AccountSID  string
-	Timestamp   time.Time
 	Signature   string
 	Source      string
 	ResourceSID string
-	Metadata    map[string]any
 }
 
 // HandleWebhook handles a generic webhook event from Twilio.

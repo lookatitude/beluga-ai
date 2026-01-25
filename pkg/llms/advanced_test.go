@@ -1175,9 +1175,9 @@ func collectStreamContent(streamChan <-chan iface.AIMessageChunk) string {
 // TestConfigTopK tests WithTopKConfig option.
 func TestConfigTopK(t *testing.T) {
 	tests := []struct {
+		expected *int
 		name     string
 		topK     int
-		expected *int
 	}{
 		{
 			name:     "valid_top_k",
@@ -1220,9 +1220,9 @@ func TestNewCallOptions(t *testing.T) {
 // TestApplyCallOption tests ApplyCallOption with various options.
 func TestApplyCallOption(t *testing.T) {
 	tests := []struct {
-		name     string
 		option   core.Option
 		validate func(t *testing.T, opts *CallOptions)
+		name     string
 	}{
 		{
 			name:   "temperature_float32",
@@ -1310,10 +1310,10 @@ func TestValidateProviderConfig(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
 		config      *Config
-		expectError bool
+		name        string
 		errContains string
+		expectError bool
 	}{
 		{
 			name:        "nil_config",
@@ -1435,12 +1435,12 @@ func TestValidateProviderConfig(t *testing.T) {
 // TestErrorWithMessage tests NewLLMErrorWithMessage.
 func TestErrorWithMessage(t *testing.T) {
 	tests := []struct {
+		err     error
+		check   func(t *testing.T, e *LLMError)
 		name    string
 		op      string
 		code    string
 		message string
-		err     error
-		check   func(t *testing.T, e *LLMError)
 	}{
 		{
 			name:    "with_message_and_error",
@@ -1452,7 +1452,7 @@ func TestErrorWithMessage(t *testing.T) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeInvalidInput, e.Code)
 				assert.Equal(t, "Custom error message", e.Message)
-				assert.NotNil(t, e.Err)
+				assert.Error(t, e.Err)
 				assert.Contains(t, e.Error(), "Custom error message")
 			},
 		},
@@ -1466,7 +1466,7 @@ func TestErrorWithMessage(t *testing.T) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeNetworkError, e.Code)
 				assert.Equal(t, "Network failed", e.Message)
-				assert.Nil(t, e.Err)
+				assert.NoError(t, e.Err)
 				assert.Contains(t, e.Error(), "Network failed")
 			},
 		},
@@ -1484,13 +1484,13 @@ func TestErrorWithMessage(t *testing.T) {
 // TestErrorWithDetails tests NewLLMErrorWithDetails.
 func TestErrorWithDetails(t *testing.T) {
 	tests := []struct {
+		err     error
+		details map[string]any
+		check   func(t *testing.T, e *LLMError)
 		name    string
 		op      string
 		code    string
 		message string
-		err     error
-		details map[string]any
-		check   func(t *testing.T, e *LLMError)
 	}{
 		{
 			name:    "with_details",
@@ -1506,7 +1506,7 @@ func TestErrorWithDetails(t *testing.T) {
 				assert.Equal(t, "test_operation", e.Op)
 				assert.Equal(t, ErrCodeRateLimit, e.Code)
 				assert.Equal(t, "Rate limit exceeded", e.Message)
-				assert.NotNil(t, e.Err)
+				assert.Error(t, e.Err)
 				assert.Equal(t, 60, e.Details["retry_after"])
 				assert.Equal(t, 100, e.Details["limit"])
 			},

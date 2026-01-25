@@ -5,23 +5,12 @@ type STSOption func(*STSOptions)
 
 // STSOptions represents options for S2S operations.
 type STSOptions struct {
-	// Language preference
-	Language string
-
-	// Voice preferences
-	VoiceID string
-
-	// Latency target (hint for provider optimization)
-	LatencyTarget string // "low", "medium", "high"
-
-	// Enable streaming mode
-	EnableStreaming bool
-
-	// Reasoning mode (built-in vs external agent)
-	ReasoningMode string // "built-in", "external"
-
-	// Additional provider-specific options
 	ProviderOptions map[string]any
+	Language        string
+	VoiceID         string
+	LatencyTarget   string
+	ReasoningMode   string
+	EnableStreaming bool
 }
 
 // WithLanguage sets the language preference.

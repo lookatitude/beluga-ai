@@ -14,20 +14,20 @@ import (
 
 // AdvancedMockPineconeStore provides a comprehensive mock implementation for testing Pinecone provider.
 type AdvancedMockPineconeStore struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
+	indexName         string
+	name              string
+	apiKey            string
 	documents         []schema.Document
 	embeddings        [][]float32
 	documentIDs       []string
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	apiKey            string
-	indexName         string
-	name              string
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockPineconeStore creates a new advanced mock with configurable behavior.
@@ -236,6 +236,4 @@ func (r *simpleMockRetriever) GetRelevantDocuments(ctx context.Context, query st
 	return []schema.Document{}, nil
 }
 
-var (
-	_ vectorstores.VectorStore = (*AdvancedMockPineconeStore)(nil)
-)
+var _ vectorstores.VectorStore = (*AdvancedMockPineconeStore)(nil)

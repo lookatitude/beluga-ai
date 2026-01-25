@@ -3,6 +3,7 @@ package internal
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -24,7 +25,7 @@ func NewNormalizer() *Normalizer {
 // Normalize converts a content block to the target format.
 func (n *Normalizer) Normalize(ctx context.Context, block *types.ContentBlock, targetFormat string) (*types.ContentBlock, error) {
 	if block == nil {
-		return nil, fmt.Errorf("Normalize: content block cannot be nil")
+		return nil, errors.New("Normalize: content block cannot be nil")
 	}
 
 	// Use map for O(1) lookup instead of O(n) slice iteration
@@ -79,7 +80,7 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 	// Fetch from URL
 	if block.URL != "" {
 		// Use context-aware HTTP request
-		req, err := http.NewRequestWithContext(ctx, "GET", block.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, block.URL, nil)
 		if err != nil {
 			return nil, fmt.Errorf("toBase64: failed to create request: %w", err)
 		}
@@ -151,7 +152,7 @@ func (n *Normalizer) toBase64(ctx context.Context, block *types.ContentBlock) (*
 		}, nil
 	}
 
-	return nil, fmt.Errorf("toBase64: content block has no data source")
+	return nil, errors.New("toBase64: content block has no data source")
 }
 
 // toURL converts a content block to URL format (not implemented - would require upload service).
@@ -162,7 +163,7 @@ func (n *Normalizer) toURL(ctx context.Context, block *types.ContentBlock) (*typ
 		return block, nil
 	}
 
-	return nil, fmt.Errorf("toURL: URL conversion requires an upload service (not implemented)")
+	return nil, errors.New("toURL: URL conversion requires an upload service (not implemented)")
 }
 
 // toFilePath converts a content block to file path format.
@@ -184,7 +185,7 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 
 	// Get data from URL if needed
 	if block.URL != "" {
-		req, err := http.NewRequestWithContext(ctx, "GET", block.URL, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, block.URL, nil)
 		if err != nil {
 			return nil, fmt.Errorf("toFilePath: failed to create request: %w", err)
 		}
@@ -217,7 +218,7 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 	} else if len(block.Data) > 0 {
 		data = block.Data
 	} else {
-		return nil, fmt.Errorf("toFilePath: content block has no data source")
+		return nil, errors.New("toFilePath: content block has no data source")
 	}
 
 	// Determine file extension from MIME type or format
@@ -253,7 +254,7 @@ func (n *Normalizer) toFilePath(ctx context.Context, block *types.ContentBlock) 
 	}
 
 	// Create temporary file
-	tmpFile, err := os.CreateTemp("", fmt.Sprintf("multimodal_*.%s", ext))
+	tmpFile, err := os.CreateTemp("", "multimodal_*."+ext)
 	if err != nil {
 		return nil, fmt.Errorf("toFilePath: failed to create temp file: %w", err)
 	}

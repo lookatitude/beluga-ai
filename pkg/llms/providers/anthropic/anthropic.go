@@ -69,7 +69,7 @@ type AnthropicProvider struct {
 //	}
 //	response, err := provider.Generate(ctx, messages)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewAnthropicProvider(config *llms.Config) (*AnthropicProvider, error) {
 	// Validate configuration
 	if err := llms.ValidateProviderConfig(context.Background(), config); err != nil {
@@ -641,7 +641,7 @@ func (a *AnthropicProvider) handleAnthropicError(operation string, err error) er
 //	factory.RegisterProviderFactory("anthropic", anthropic.NewAnthropicProviderFactory())
 //	provider, err := factory.CreateProvider("anthropic", config)
 //
-// Example usage can be found in examples/llm-usage/main.go
+// Example usage can be found in examples/llm-usage/main.go.
 func NewAnthropicProviderFactory() func(*llms.Config) (iface.ChatModel, error) {
 	return func(config *llms.Config) (iface.ChatModel, error) {
 		return NewAnthropicProvider(config)

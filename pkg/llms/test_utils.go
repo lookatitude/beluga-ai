@@ -233,8 +233,11 @@ func (m *AdvancedMockChatModel) StreamChat(ctx context.Context, messages []schem
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, messages, options)
 		if args.Get(0) != nil {
-			return args.Get(0).(<-chan iface.AIMessageChunk), args.Error(1)
+			if ch, ok := args.Get(0).(<-chan iface.AIMessageChunk); ok {
+				return ch, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {
@@ -309,7 +312,9 @@ func (m *AdvancedMockChatModel) BindTools(toolsToBind []tools.Tool) iface.ChatMo
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(toolsToBind)
 		if args.Get(0) != nil {
-			return args.Get(0).(iface.ChatModel)
+			if cm, ok := args.Get(0).(iface.ChatModel); ok {
+				return cm
+			}
 		}
 	}
 
@@ -367,8 +372,11 @@ func (m *AdvancedMockChatModel) Batch(ctx context.Context, inputs []any, options
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, inputs, options)
 		if args.Get(0) != nil {
-			return args.Get(0).([]any), args.Error(1)
+			if results, ok := args.Get(0).([]any); ok {
+				return results, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {
@@ -396,8 +404,11 @@ func (m *AdvancedMockChatModel) Stream(ctx context.Context, input any, options .
 	if m.ExpectedCalls != nil && len(m.ExpectedCalls) > 0 {
 		args := m.Called(ctx, input, options)
 		if args.Get(0) != nil {
-			return args.Get(0).(<-chan any), args.Error(1)
+			if ch, ok := args.Get(0).(<-chan any); ok {
+				return ch, args.Error(1)
+			}
 		}
+		return nil, args.Error(1)
 	}
 
 	if m.shouldError {

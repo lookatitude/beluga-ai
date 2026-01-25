@@ -14,20 +14,20 @@ import (
 
 // AdvancedMockQdrantStore provides a comprehensive mock implementation for testing Qdrant provider.
 type AdvancedMockQdrantStore struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
+	collectionName    string
+	name              string
+	url               string
 	documents         []schema.Document
 	embeddings        [][]float32
 	documentIDs       []string
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	url               string
-	collectionName    string
-	name              string
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockQdrantStore creates a new advanced mock with configurable behavior.
@@ -236,6 +236,4 @@ func (r *simpleMockRetriever) GetRelevantDocuments(ctx context.Context, query st
 	return []schema.Document{}, nil
 }
 
-var (
-	_ vectorstores.VectorStore = (*AdvancedMockQdrantStore)(nil)
-)
+var _ vectorstores.VectorStore = (*AdvancedMockQdrantStore)(nil)

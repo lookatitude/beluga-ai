@@ -14,18 +14,18 @@ import (
 
 // AdvancedMockAnthropicProvider provides a comprehensive mock implementation for testing Anthropic multimodal provider.
 type AdvancedMockAnthropicProvider struct {
+	errorToReturn error
+	capabilities  *types.ModalityCapabilities
+	lastInput     *types.MultimodalInput
+	lastOutput    *types.MultimodalOutput
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
 	modelName         string
-	capabilities      *types.ModalityCapabilities
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	lastInput         *types.MultimodalInput
-	lastOutput        *types.MultimodalOutput
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockAnthropicProvider creates a new advanced mock with configurable behavior.
@@ -217,5 +217,5 @@ func (m *AdvancedMockAnthropicProvider) GetLastOutput() *types.MultimodalOutput 
 	return m.lastOutput
 }
 
-// Ensure AdvancedMockAnthropicProvider implements iface.MultimodalModel
+// Ensure AdvancedMockAnthropicProvider implements iface.MultimodalModel.
 var _ iface.MultimodalModel = (*AdvancedMockAnthropicProvider)(nil)

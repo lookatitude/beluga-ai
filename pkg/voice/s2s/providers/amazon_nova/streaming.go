@@ -21,18 +21,18 @@ import (
 // AmazonNovaStreamingSession implements StreamingSession for Amazon Nova 2 Sonic.
 type AmazonNovaStreamingSession struct {
 	ctx            context.Context
-	config         *AmazonNovaConfig
+	stream         *bedrockruntime.InvokeModelWithResponseStreamOutput
 	provider       *AmazonNovaProvider
 	audioCh        chan iface.AudioOutputChunk
-	closed         bool
-	mu             sync.RWMutex
-	stream         *bedrockruntime.InvokeModelWithResponseStreamOutput
-	audioBuffer    []byte
+	config         *AmazonNovaConfig
+	restartTimer   *time.Timer
 	conversationID string
-	restartTimer   *time.Timer   // Timer for debouncing restarts
-	restartPending bool          // Flag to indicate if restart is pending
-	maxRetries     int           // Maximum retry attempts for stream restart
-	retryDelay     time.Duration // Initial retry delay
+	audioBuffer    []byte
+	maxRetries     int
+	retryDelay     time.Duration
+	mu             sync.RWMutex
+	closed         bool
+	restartPending bool
 }
 
 // NewAmazonNovaStreamingSession creates a new streaming session.
@@ -124,12 +124,17 @@ func (s *AmazonNovaStreamingSession) receiveStreamingResponses() {
 		s.mu.Unlock()
 	}()
 
-	if s.stream == nil {
+	// Safely get the stream under lock
+	s.mu.RLock()
+	streamOutput := s.stream
+	s.mu.RUnlock()
+
+	if streamOutput == nil {
 		return
 	}
 
 	// Check if stream is valid (mock clients may return nil stream)
-	stream := s.stream.GetStream()
+	stream := streamOutput.GetStream()
 	if stream == nil {
 		return
 	}
@@ -169,9 +174,9 @@ func (s *AmazonNovaStreamingSession) processStreamingChunk(chunk types.PayloadPa
 	var chunkData struct {
 		Audio  string `json:"audio,omitempty"`
 		Format struct {
+			Encoding   string `json:"encoding,omitempty"`
 			SampleRate int    `json:"sample_rate,omitempty"`
 			Channels   int    `json:"channels,omitempty"`
-			Encoding   string `json:"encoding,omitempty"`
 		} `json:"format,omitempty"`
 	}
 

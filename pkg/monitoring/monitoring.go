@@ -123,7 +123,7 @@ type monitorConfig struct {
 //	}
 //	ctx, span := monitor.Tracer().StartSpan(ctx, "operation")
 //
-// Example usage can be found in examples/monitoring/basic/main.go
+// Example usage can be found in examples/monitoring/basic/main.go.
 func NewMonitor(opts ...Option) (Monitor, error) {
 	config := &monitorConfig{
 		serviceName:         "beluga-ai-service",

@@ -14,18 +14,18 @@ import (
 
 // AdvancedMockGemmaProvider provides a comprehensive mock implementation for testing Gemma multimodal provider.
 type AdvancedMockGemmaProvider struct {
+	errorToReturn error
+	capabilities  *types.ModalityCapabilities
+	lastInput     *types.MultimodalInput
+	lastOutput    *types.MultimodalOutput
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
 	modelName         string
-	capabilities      *types.ModalityCapabilities
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	lastInput         *types.MultimodalInput
-	lastOutput        *types.MultimodalOutput
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockGemmaProvider creates a new advanced mock with configurable behavior.
@@ -221,5 +221,5 @@ func (m *AdvancedMockGemmaProvider) GetLastOutput() *types.MultimodalOutput {
 	return m.lastOutput
 }
 
-// Ensure AdvancedMockGemmaProvider implements iface.MultimodalModel
+// Ensure AdvancedMockGemmaProvider implements iface.MultimodalModel.
 var _ iface.MultimodalModel = (*AdvancedMockGemmaProvider)(nil)

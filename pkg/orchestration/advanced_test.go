@@ -573,10 +573,10 @@ func BenchmarkWorkflowExecution(b *testing.B) {
 // TestOrchestratorCreationAdvanced provides advanced table-driven tests for orchestrator creation.
 func TestOrchestratorCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) (*Orchestrator, error)
 		validate    func(t *testing.T, orch *Orchestrator, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -644,10 +644,10 @@ func TestOrchestratorCreationAdvanced(t *testing.T) {
 // TestOrchestratorChainCreationAdvanced tests chain creation with various scenarios.
 func TestOrchestratorChainCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name          string
-		description   string
 		setup         func(t *testing.T) (*Orchestrator, []core.Runnable)
 		validate      func(t *testing.T, chain iface.Chain, err error)
+		name          string
+		description   string
 		wantErr       bool
 		chainsEnabled bool
 	}{
@@ -702,10 +702,10 @@ func TestOrchestratorChainCreationAdvanced(t *testing.T) {
 // TestOrchestratorGraphCreationAdvanced tests graph creation with various scenarios.
 func TestOrchestratorGraphCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name          string
-		description   string
 		setup         func(t *testing.T) *Orchestrator
 		validate      func(t *testing.T, graph iface.Graph, err error)
+		name          string
+		description   string
 		wantErr       bool
 		graphsEnabled bool
 	}{
@@ -755,11 +755,11 @@ func TestOrchestratorGraphCreationAdvanced(t *testing.T) {
 // TestOrchestratorWorkflowCreationAdvanced tests workflow creation with various scenarios.
 func TestOrchestratorWorkflowCreationAdvanced(t *testing.T) {
 	tests := []struct {
+		workflowFn       any
+		setup            func(t *testing.T) *Orchestrator
+		validate         func(t *testing.T, workflow iface.Workflow, err error)
 		name             string
 		description      string
-		setup            func(t *testing.T) *Orchestrator
-		workflowFn       any
-		validate         func(t *testing.T, workflow iface.Workflow, err error)
 		wantErr          bool
 		workflowsEnabled bool
 	}{
@@ -815,10 +815,10 @@ func TestOrchestratorWorkflowCreationAdvanced(t *testing.T) {
 // TestOrchestratorHealthCheckAdvanced tests health check functionality.
 func TestOrchestratorHealthCheckAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *Orchestrator
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -890,10 +890,10 @@ func TestNewWorkflow(t *testing.T) {
 // TestConfigValidationAdvanced provides advanced table-driven tests for config validation.
 func TestConfigValidationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		config      *Config
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -999,10 +999,10 @@ func TestConfigValidationAdvanced(t *testing.T) {
 // TestConfigOptionsAdvanced provides advanced table-driven tests for config options.
 func TestConfigOptionsAdvanced(t *testing.T) {
 	tests := []struct {
+		validate    func(t *testing.T, config *Config, err error)
 		name        string
 		description string
 		options     []Option
-		validate    func(t *testing.T, config *Config, err error)
 		wantErr     bool
 	}{
 		{
@@ -1124,10 +1124,10 @@ func TestConfigOptionsAdvanced(t *testing.T) {
 // TestErrorHandlingAdvanced provides advanced table-driven tests for error handling.
 func TestErrorHandlingAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func() *OrchestrationError
 		validate    func(t *testing.T, err *OrchestrationError)
+		name        string
+		description string
 	}{
 		{
 			name:        "basic_error_creation",
@@ -1166,7 +1166,7 @@ func TestErrorHandlingAdvanced(t *testing.T) {
 			},
 			validate: func(t *testing.T, err *OrchestrationError) {
 				underlying := err.Unwrap()
-				assert.NotNil(t, underlying)
+				assert.Error(t, underlying)
 				assert.Equal(t, "underlying error", underlying.Error())
 			},
 		},

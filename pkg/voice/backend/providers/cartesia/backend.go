@@ -2,6 +2,7 @@ package cartesia
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -19,9 +20,9 @@ type CartesiaBackend struct {
 	config          *CartesiaConfig
 	sessionManager  *internal.SessionManager
 	httpClient      *http.Client
-	connectionState iface.ConnectionState
 	healthStatus    *iface.HealthStatus
 	metrics         *backend.Metrics
+	connectionState iface.ConnectionState
 	mu              sync.RWMutex
 }
 
@@ -75,7 +76,7 @@ func (b *CartesiaBackend) Start(ctx context.Context) error {
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "CartesiaBackend.Start", func() error {
 		// Test connection by making a simple API call
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/models", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/models", nil)
 		if err != nil {
 			return err
 		}
@@ -93,7 +94,6 @@ func (b *CartesiaBackend) Start(ctx context.Context) error {
 
 		return nil
 	})
-
 	if err != nil {
 		b.connectionState = iface.ConnectionStateError
 		backend.RecordSpanError(span, err)
@@ -156,7 +156,7 @@ func (b *CartesiaBackend) CreateSession(ctx context.Context, config *iface.Sessi
 
 	if connectionState != iface.ConnectionStateConnected {
 		err := backend.NewBackendError("CreateSession", backend.ErrCodeConnectionFailed,
-			fmt.Errorf("backend not connected"))
+			errors.New("backend not connected"))
 		backend.RecordSpanError(span, err)
 		return nil, err
 	}
@@ -170,8 +170,8 @@ func (b *CartesiaBackend) CreateSession(ctx context.Context, config *iface.Sessi
 
 	err := internal.RetryWithBackoff(ctx, retryConfig, "CartesiaBackend.CreateSession", func() error {
 		// Create Cartesia streaming session
-		sessionURL := fmt.Sprintf("%s/stream", b.config.APIURL)
-		req, err := http.NewRequestWithContext(ctx, "POST", sessionURL, nil)
+		sessionURL := b.config.APIURL + "/stream"
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, sessionURL, nil)
 		if err != nil {
 			return err
 		}
@@ -193,7 +193,6 @@ func (b *CartesiaBackend) CreateSession(ctx context.Context, config *iface.Sessi
 
 		return nil
 	})
-
 	if err != nil {
 		backend.RecordSpanError(span, err)
 		backend.LogWithOTELContext(ctx, slog.LevelError, "Failed to create Cartesia session", "error", err)
@@ -255,7 +254,7 @@ func (b *CartesiaBackend) HealthCheck(ctx context.Context) (*iface.HealthStatus,
 	defer b.mu.RUnlock()
 
 	// Check Cartesia API health
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/models", b.config.APIURL), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/models", nil)
 	if err != nil {
 		return nil, backend.WrapError("HealthCheck", err)
 	}
@@ -313,7 +312,7 @@ func (b *CartesiaBackend) UpdateConfig(ctx context.Context, config *iface.Config
 	// If connection state is connected, verify connection still works
 	if b.connectionState == iface.ConnectionStateConnected {
 		// Test connection
-		req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/models", b.config.APIURL), nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, b.config.APIURL+"/models", nil)
 		if err != nil {
 			return backend.NewBackendError("UpdateConfig", backend.ErrCodeConnectionFailed, err)
 		}

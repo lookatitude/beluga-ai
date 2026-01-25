@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// mockAgent implements iface.Agent for testing
+// mockAgent implements iface.Agent for testing.
 type mockAgent struct {
 	planFunc func(ctx context.Context, steps []iface.IntermediateStep, inputs map[string]any) (iface.AgentAction, iface.AgentFinish, error)
 }
@@ -27,9 +27,11 @@ func (m *mockAgent) Plan(ctx context.Context, steps []iface.IntermediateStep, in
 func (m *mockAgent) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
 	return nil, nil
 }
+
 func (m *mockAgent) Batch(ctx context.Context, inputs []any, options ...core.Option) ([]any, error) {
 	return nil, nil
 }
+
 func (m *mockAgent) Stream(ctx context.Context, input any, options ...core.Option) (<-chan any, error) {
 	return nil, nil
 }

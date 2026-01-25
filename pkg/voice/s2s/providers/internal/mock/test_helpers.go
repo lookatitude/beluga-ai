@@ -11,16 +11,16 @@ import (
 )
 
 // CreateMockAudioResponse creates a mock audio response in the format expected by providers.
-func CreateMockAudioResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]interface{} {
+func CreateMockAudioResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]any {
 	audioBase64 := base64.StdEncoding.EncodeToString(audioData)
-	return map[string]interface{}{
+	return map[string]any{
 		"audio": audioBase64,
-		"format": map[string]interface{}{
+		"format": map[string]any{
 			"sample_rate": format.SampleRate,
 			"channels":    format.Channels,
 			"encoding":    format.Encoding,
 		},
-		"voice": map[string]interface{}{
+		"voice": map[string]any{
 			"voice_id": voiceID,
 			"language": language,
 		},
@@ -28,15 +28,15 @@ func CreateMockAudioResponse(audioData []byte, format internal.AudioFormat, voic
 }
 
 // CreateGeminiMockResponse creates a mock response in Gemini API format.
-func CreateGeminiMockResponse(audioData []byte, format internal.AudioFormat) map[string]interface{} {
+func CreateGeminiMockResponse(audioData []byte, format internal.AudioFormat) map[string]any {
 	audioBase64 := base64.StdEncoding.EncodeToString(audioData)
-	return map[string]interface{}{
-		"candidates": []map[string]interface{}{
+	return map[string]any{
+		"candidates": []map[string]any{
 			{
-				"content": map[string]interface{}{
-					"parts": []map[string]interface{}{
+				"content": map[string]any{
+					"parts": []map[string]any{
 						{
-							"inlineData": map[string]interface{}{
+							"inlineData": map[string]any{
 								"mimeType": "audio/pcm",
 								"data":     audioBase64,
 							},
@@ -49,16 +49,16 @@ func CreateGeminiMockResponse(audioData []byte, format internal.AudioFormat) map
 }
 
 // CreateGrokMockResponse creates a mock response in Grok API format.
-func CreateGrokMockResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]interface{} {
+func CreateGrokMockResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]any {
 	audioBase64 := base64.StdEncoding.EncodeToString(audioData)
-	return map[string]interface{}{
+	return map[string]any{
 		"audio": audioBase64,
-		"format": map[string]interface{}{
+		"format": map[string]any{
 			"sample_rate": format.SampleRate,
 			"channels":    format.Channels,
 			"encoding":    format.Encoding,
 		},
-		"voice": map[string]interface{}{
+		"voice": map[string]any{
 			"voice_id": voiceID,
 			"language": language,
 		},
@@ -66,29 +66,29 @@ func CreateGrokMockResponse(audioData []byte, format internal.AudioFormat, voice
 }
 
 // CreateAmazonNovaMockResponse creates a mock response in Amazon Nova API format.
-func CreateAmazonNovaMockResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]interface{} {
+func CreateAmazonNovaMockResponse(audioData []byte, format internal.AudioFormat, voiceID, language string) map[string]any {
 	audioBase64 := base64.StdEncoding.EncodeToString(audioData)
-	return map[string]interface{}{
-		"output": map[string]interface{}{
+	return map[string]any{
+		"output": map[string]any{
 			"audio": audioBase64,
-			"format": map[string]interface{}{
+			"format": map[string]any{
 				"sample_rate": format.SampleRate,
 				"channels":    format.Channels,
 				"encoding":    format.Encoding,
 			},
 		},
-		"voice": map[string]interface{}{
+		"voice": map[string]any{
 			"voice_id": voiceID,
 			"language": language,
 		},
-		"metadata": map[string]interface{}{
+		"metadata": map[string]any{
 			"latency_ms": 100.0,
 		},
 	}
 }
 
 // CreateHTTPServer creates an HTTP test server with a handler that returns the given response.
-func CreateHTTPServer(response map[string]interface{}, statusCode int) *httptest.Server {
+func CreateHTTPServer(response map[string]any, statusCode int) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(statusCode)

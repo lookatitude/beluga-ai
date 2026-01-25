@@ -223,7 +223,6 @@ func (p *PixtralProvider) ProcessStream(ctx context.Context, input *types.Multim
 				}
 			}
 		})
-
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -346,7 +345,7 @@ func (p *PixtralProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Pixtral API request/response structures
+// Pixtral API request/response structures.
 type pixtralChatRequest struct {
 	Model    string           `json:"model"`
 	Messages []pixtralMessage `json:"messages"`
@@ -359,9 +358,9 @@ type pixtralMessage struct {
 }
 
 type pixtralContent struct {
-	Type     string           `json:"type"` // "text" or "image_url"
-	Text     string           `json:"text,omitempty"`
 	ImageURL *pixtralImageURL `json:"image_url,omitempty"`
+	Type     string           `json:"type"`
+	Text     string           `json:"text,omitempty"`
 }
 
 type pixtralImageURL struct {
@@ -371,16 +370,16 @@ type pixtralImageURL struct {
 type pixtralChatResponse struct {
 	ID      string          `json:"id"`
 	Object  string          `json:"object"`
-	Created int64           `json:"created"`
 	Model   string          `json:"model"`
 	Choices []pixtralChoice `json:"choices"`
 	Usage   pixtralUsage    `json:"usage"`
+	Created int64           `json:"created"`
 }
 
 type pixtralChoice struct {
-	Index        int            `json:"index"`
-	Message      pixtralMessage `json:"message"`
 	FinishReason string         `json:"finish_reason"`
+	Message      pixtralMessage `json:"message"`
+	Index        int            `json:"index"`
 }
 
 type pixtralUsage struct {
@@ -463,7 +462,7 @@ func (p *PixtralProvider) makeAPIRequest(ctx context.Context, req *pixtralChatRe
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -504,7 +503,7 @@ func (p *PixtralProvider) makeStreamingRequest(ctx context.Context, req *pixtral
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {

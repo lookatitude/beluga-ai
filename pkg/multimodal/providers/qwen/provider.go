@@ -25,22 +25,22 @@ import (
 
 // QwenGenerateRequest represents the Qwen API request structure.
 type QwenGenerateRequest struct {
-	Model  string      `json:"model"`
-	Input  interface{} `json:"input"` // Can be string or messages array
-	Stream bool        `json:"stream,omitempty"`
+	Input  any    `json:"input"`
+	Model  string `json:"model"`
+	Stream bool   `json:"stream,omitempty"`
 }
 
 // QwenMessage represents a message in Qwen API format.
 type QwenMessage struct {
-	Role    string      `json:"role"`
-	Content interface{} `json:"content"` // Can be string or array of content parts
+	Content any    `json:"content"`
+	Role    string `json:"role"`
 }
 
 // QwenContentPart represents a content part (text or image).
 type QwenContentPart struct {
+	ImageURL *QwenImageURL `json:"image_url,omitempty"`
 	Type     string        `json:"type"`
 	Text     string        `json:"text,omitempty"`
-	ImageURL *QwenImageURL `json:"image_url,omitempty"`
 }
 
 // QwenImageURL represents an image URL in Qwen format.
@@ -271,7 +271,6 @@ func (p *QwenProvider) ProcessStream(ctx context.Context, input *types.Multimoda
 				}
 			}
 		})
-
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -362,7 +361,7 @@ func (p *QwenProvider) SupportsModality(ctx context.Context, modality string) (b
 	case "video":
 		supported = p.capabilities.Video
 	default:
-		span.SetStatus(codes.Error, fmt.Sprintf("unknown modality: %s", modality))
+		span.SetStatus(codes.Error, "unknown modality: "+modality)
 		return false, fmt.Errorf("unknown modality: %s", modality)
 	}
 
@@ -422,7 +421,7 @@ func (p *QwenProvider) convertToQwenMessages(ctx context.Context, blocks []*type
 			} else if block.URL != "" {
 				imageURL = block.URL
 			} else {
-				return nil, fmt.Errorf("image block has no URL or data")
+				return nil, errors.New("image block has no URL or data")
 			}
 
 			contentParts = append(contentParts, QwenContentPart{
@@ -463,20 +462,20 @@ func (p *QwenProvider) convertToQwenMessages(ctx context.Context, blocks []*type
 
 // makeAPIRequest makes an HTTP request to Qwen API.
 func (p *QwenProvider) makeAPIRequest(ctx context.Context, req *QwenGenerateRequest) (*QwenGenerateResponse, error) {
-	url := fmt.Sprintf("%s/services/aigc/multimodal-generation/generation", p.config.BaseURL)
+	url := p.config.BaseURL + "/services/aigc/multimodal-generation/generation"
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -499,20 +498,20 @@ func (p *QwenProvider) makeAPIRequest(ctx context.Context, req *QwenGenerateRequ
 
 // makeStreamingRequest makes a streaming HTTP request to Qwen API.
 func (p *QwenProvider) makeStreamingRequest(ctx context.Context, req *QwenGenerateRequest, onChunk func(string)) error {
-	url := fmt.Sprintf("%s/services/aigc/multimodal-generation/generation", p.config.BaseURL)
+	url := p.config.BaseURL + "/services/aigc/multimodal-generation/generation"
 
 	reqBody, err := json.Marshal(req)
 	if err != nil {
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -566,15 +565,17 @@ func (p *QwenProvider) convertQwenResponse(ctx context.Context, resp *QwenGenera
 	switch msgContent := choice.Message.Content.(type) {
 	case string:
 		content = msgContent
-	case []interface{}:
+	case []any:
 		// Handle array of content parts
+		var contentSb571 strings.Builder
 		for _, part := range msgContent {
-			if partMap, ok := part.(map[string]interface{}); ok {
+			if partMap, ok := part.(map[string]any); ok {
 				if text, ok := partMap["text"].(string); ok {
-					content += text
+					contentSb571.WriteString(text)
 				}
 			}
 		}
+		content += contentSb571.String()
 	default:
 		return nil, fmt.Errorf("unexpected content type: %T", msgContent)
 	}

@@ -52,11 +52,11 @@ type GroqClient interface {
 // GroqChatRequest represents a request to Groq API.
 type GroqChatRequest struct {
 	Model       string
-	Messages    []GroqMessage
-	Temperature float32
-	MaxTokens   int
-	Tools       []GroqTool
 	ToolChoice  string
+	Messages    []GroqMessage
+	Tools       []GroqTool
+	MaxTokens   int
+	Temperature float32
 }
 
 // GroqChatResponse represents a response from Groq API.
@@ -87,15 +87,15 @@ type GroqUsage struct {
 
 // GroqTool represents a tool definition for Groq.
 type GroqTool struct {
-	Type     string
 	Function GroqFunction
+	Type     string
 }
 
 // GroqFunction represents a function definition for tool calling.
 type GroqFunction struct {
+	Parameters  map[string]any
 	Name        string
 	Description string
-	Parameters  map[string]any
 }
 
 // NewGroqProvider creates a new Groq provider instance.

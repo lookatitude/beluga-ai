@@ -87,7 +87,7 @@ import (
 //	}
 //	err = server.Start(ctx)
 //
-// Example usage can be found in examples/server/basic/main.go
+// Example usage can be found in examples/server/basic/main.go.
 func NewRESTServer(opts ...iface.Option) (RESTServer, error) {
 	return rest.NewServer(opts...)
 }
@@ -114,7 +114,7 @@ func NewRESTServer(opts ...iface.Option) (RESTServer, error) {
 //	server.RegisterTool(calculatorTool)
 //	err = server.Start(ctx)
 //
-// Example usage can be found in examples/server/basic/main.go
+// Example usage can be found in examples/server/basic/main.go.
 func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
 	return mcp.NewServer(opts...)
 }
@@ -137,7 +137,7 @@ func NewMCPServer(opts ...iface.Option) (MCPServer, error) {
 //	config.Port = 9090
 //	server, _ := server.NewRESTServer(server.WithRESTConfig(config))
 //
-// Example usage can be found in examples/server/basic/main.go
+// Example usage can be found in examples/server/basic/main.go.
 func DefaultRESTConfig() RESTConfig {
 	return RESTConfig{
 		Config: Config{
@@ -178,7 +178,7 @@ func DefaultRESTConfig() RESTConfig {
 //	config.ServerName = "my-mcp-server"
 //	server, _ := server.NewMCPServer(server.WithMCPConfig(config))
 //
-// Example usage can be found in examples/server/basic/main.go
+// Example usage can be found in examples/server/basic/main.go.
 func DefaultMCPConfig() MCPConfig {
 	return MCPConfig{
 		Config: Config{

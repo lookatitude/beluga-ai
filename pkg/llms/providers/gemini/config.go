@@ -2,6 +2,7 @@
 package gemini
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -28,7 +29,7 @@ type GeminiConfig struct {
 // Validate validates the Gemini configuration.
 func (c *GeminiConfig) Validate() error {
 	if c.APIKey == "" {
-		return fmt.Errorf("gemini API key is required")
+		return errors.New("gemini API key is required")
 	}
 
 	if c.BaseURL == "" {

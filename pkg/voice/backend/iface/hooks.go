@@ -6,9 +6,9 @@ import (
 
 // AuthResult represents the result of an authentication operation.
 type AuthResult struct {
+	Metadata   map[string]any `json:"metadata,omitempty"`
 	UserID     string         `json:"user_id"`
 	Authorized bool           `json:"authorized"`
-	Metadata   map[string]any `json:"metadata,omitempty"`
 }
 
 // AuthHook defines the interface for custom authentication hooks.
@@ -18,7 +18,7 @@ type AuthHook interface {
 	Authenticate(ctx context.Context, token string, metadata map[string]any) (*AuthResult, error)
 
 	// Authorize checks if a user is authorized to perform an operation.
-	Authorize(ctx context.Context, userID string, operation string) (bool, error)
+	Authorize(ctx context.Context, userID, operation string) (bool, error)
 }
 
 // RateLimiter defines the interface for custom rate limiting.

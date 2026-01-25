@@ -11,11 +11,11 @@ import (
 // MemoryError represents a memory-specific error with additional context.
 // It follows the standard Op/Err/Code pattern used across all Beluga AI packages.
 type MemoryError struct {
-	Op      string         // operation that failed
-	Err     error          // underlying error
-	Code    string         // error code for programmatic handling
-	Message string         // human-readable message (optional)
-	Context map[string]any // additional context (optional)
+	Err     error
+	Context map[string]any
+	Op      string
+	Code    string
+	Message string
 }
 
 // Error implements the error interface.

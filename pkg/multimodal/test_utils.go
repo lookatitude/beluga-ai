@@ -36,7 +36,7 @@ package multimodal
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -47,17 +47,17 @@ import (
 
 // MockMultimodalModel provides a mock implementation of MultimodalModel for testing.
 type MockMultimodalModel struct {
-	mu               sync.RWMutex
+	errorToReturn    error
+	capabilities     *types.ModalityCapabilities
+	lastInput        *types.MultimodalInput
+	lastOutput       *types.MultimodalOutput
 	providerName     string
 	modelName        string
-	capabilities     *types.ModalityCapabilities
-	shouldError      bool
-	errorToReturn    error
 	simulateDelay    time.Duration
 	processCallCount int
 	streamCallCount  int
-	lastInput        *types.MultimodalInput
-	lastOutput       *types.MultimodalOutput
+	mu               sync.RWMutex
+	shouldError      bool
 }
 
 // MockOption configures the behavior of MockMultimodalModel.
@@ -75,7 +75,7 @@ func WithMockError(shouldError bool, err error) MockOption {
 func WithErrorCode(op, code string) MockOption {
 	return func(m *MockMultimodalModel) {
 		m.shouldError = true
-		m.errorToReturn = NewMultimodalError(op, code, fmt.Errorf("mock error"))
+		m.errorToReturn = NewMultimodalError(op, code, errors.New("mock error"))
 	}
 }
 
@@ -252,10 +252,10 @@ func (m *MockMultimodalModel) CheckHealth(ctx context.Context) error {
 
 // MockMultimodalProvider provides a mock implementation of MultimodalProvider for testing.
 type MockMultimodalProvider struct {
-	name          string
-	capabilities  *types.ModalityCapabilities
-	shouldError   bool
 	errorToReturn error
+	capabilities  *types.ModalityCapabilities
+	name          string
+	shouldError   bool
 }
 
 // NewMockMultimodalProvider creates a new mock multimodal provider.
@@ -303,20 +303,20 @@ func (m *MockMultimodalProvider) ValidateConfig(ctx context.Context, config map[
 	}
 	// Basic validation
 	if _, ok := config["Provider"].(string); !ok {
-		return fmt.Errorf("provider not specified")
+		return errors.New("provider not specified")
 	}
 	return nil
 }
 
 // MockContentBlock provides a mock implementation of ContentBlock for testing.
 type MockContentBlock struct {
+	metadata    map[string]any
 	contentType string
-	data        []byte
 	url         string
 	filePath    string
 	mimeType    string
+	data        []byte
 	size        int64
-	metadata    map[string]any
 }
 
 // NewMockContentBlock creates a new mock content block.
@@ -374,7 +374,7 @@ type TestBaseMultimodalModel struct {
 // This is a public wrapper around internal.NewBaseMultimodalModel for use in integration tests.
 // Config can be either a Config struct or map[string]any.
 // Capabilities can be either *ModalityCapabilities or *types.ModalityCapabilities.
-func NewTestBaseMultimodalModel(providerName, modelName string, config any, capabilities any) *TestBaseMultimodalModel {
+func NewTestBaseMultimodalModel(providerName, modelName string, config, capabilities any) *TestBaseMultimodalModel {
 	var configMap map[string]any
 	switch v := config.(type) {
 	case Config:

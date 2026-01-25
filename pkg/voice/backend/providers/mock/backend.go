@@ -14,8 +14,8 @@ import (
 type MockBackend struct {
 	config          *MockConfig
 	sessionManager  *internal.SessionManager
-	connectionState vbiface.ConnectionState
 	healthStatus    *vbiface.HealthStatus
+	connectionState vbiface.ConnectionState
 	mu              sync.RWMutex
 }
 

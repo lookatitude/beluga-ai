@@ -12,17 +12,17 @@ import (
 
 // AdvancedMockGoogleMultimodalEmbedder provides a comprehensive mock implementation for testing Google multimodal embedder.
 type AdvancedMockGoogleMultimodalEmbedder struct {
+	errorToReturn error
 	mock.Mock
-	mu                 sync.RWMutex
-	callCount          int
-	shouldError        bool
-	errorToReturn      error
 	embeddings         [][]float32
+	callCount          int
 	embeddingIndex     int
 	dimension          int
 	simulateDelay      time.Duration
-	simulateRateLimit  bool
 	rateLimitCount     int
+	mu                 sync.RWMutex
+	shouldError        bool
+	simulateRateLimit  bool
 	supportsMultimodal bool
 }
 

@@ -24,10 +24,10 @@ import (
 // TestConfigLoadAdvanced provides advanced table-driven tests for config loading.
 func TestConfigLoadAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) string
 		validate    func(t *testing.T, cfg *iface.Config, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -43,7 +43,7 @@ llm_providers:
     model_name: gpt-4
     api_key: sk-test
 `
-				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 				return configFile
 			},
 			validate: func(t *testing.T, cfg *iface.Config, err error) {
@@ -60,7 +60,7 @@ llm_providers:
 			setup: func(t *testing.T) string {
 				tmpDir := t.TempDir()
 				configFile := filepath.Join(tmpDir, "invalid.yaml")
-				require.NoError(t, os.WriteFile(configFile, []byte("invalid: yaml: content"), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte("invalid: yaml: content"), 0o644))
 				return configFile
 			},
 			validate: func(t *testing.T, cfg *iface.Config, err error) {
@@ -83,10 +83,10 @@ llm_providers:
 // TestConfigValidationAdvanced provides advanced table-driven tests for config validation.
 func TestConfigValidationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		config      *iface.Config
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -140,7 +140,7 @@ llm_providers:
     model_name: gpt-4
     api_key: sk-test
 `
-	require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+	require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 
 	var wg sync.WaitGroup
 	wg.Add(numGoroutines)
@@ -201,7 +201,7 @@ llm_providers:
     model_name: gpt-4
     api_key: sk-test
 `
-	require.NoError(b, os.WriteFile(configFile, []byte(configContent), 0644))
+	require.NoError(b, os.WriteFile(configFile, []byte(configContent), 0o644))
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -232,12 +232,12 @@ func BenchmarkConfigValidation(b *testing.B) {
 // Note: NewProvider creates a provider and tries to read config files if configName is provided.
 func TestNewProvider(t *testing.T) {
 	tests := []struct {
+		setup       func(t *testing.T) []string
 		name        string
 		configName  string
-		configPaths []string
 		envPrefix   string
 		format      string
-		setup       func(t *testing.T) []string
+		configPaths []string
 		wantErr     bool
 	}{
 		{
@@ -259,7 +259,7 @@ func TestNewProvider(t *testing.T) {
 				tmpDir := t.TempDir()
 				configFile := filepath.Join(tmpDir, "test-config.yaml")
 				configContent := `llm_providers: []`
-				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 				return []string{tmpDir}
 			},
 			wantErr: false,
@@ -283,7 +283,7 @@ func TestNewProvider(t *testing.T) {
 				tmpDir := t.TempDir()
 				configFile := filepath.Join(tmpDir, "test-config.json")
 				configContent := `{"llm_providers": []}`
-				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 				return []string{tmpDir}
 			},
 			wantErr: false,
@@ -298,7 +298,7 @@ func TestNewProvider(t *testing.T) {
 				tmpDir := t.TempDir()
 				configFile := filepath.Join(tmpDir, "test-config.toml")
 				configContent := `llm_providers = []`
-				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 				return []string{tmpDir}
 			},
 			wantErr: false,
@@ -313,7 +313,7 @@ func TestNewProvider(t *testing.T) {
 				tmpDir := t.TempDir()
 				configFile := filepath.Join(tmpDir, "test-config.yaml")
 				configContent := `llm_providers: []`
-				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0644))
+				require.NoError(t, os.WriteFile(configFile, []byte(configContent), 0o644))
 				return []string{tmpDir}
 			},
 			wantErr: false,

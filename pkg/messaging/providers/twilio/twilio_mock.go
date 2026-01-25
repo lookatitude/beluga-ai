@@ -13,19 +13,19 @@ import (
 
 // AdvancedMockTwilioProvider provides a comprehensive mock implementation for testing Twilio provider.
 type AdvancedMockTwilioProvider struct {
+	errorToReturn error
+	conversations map[string]*iface.Conversation
+	messages      map[string][]*iface.Message
+	participants  map[string][]*iface.Participant
+	config        *TwilioConfig
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
-	conversations     map[string]*iface.Conversation
-	messages          map[string][]*iface.Message
-	participants      map[string][]*iface.Participant
-	simulateDelay     time.Duration
-	simulateRateLimit bool
-	rateLimitCount    int
 	healthState       iface.HealthStatus
-	config            *TwilioConfig
+	callCount         int
+	simulateDelay     time.Duration
+	rateLimitCount    int
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockTwilioProvider creates a new advanced mock with configurable behavior.
@@ -292,7 +292,7 @@ func (m *AdvancedMockTwilioProvider) AddParticipant(ctx context.Context, convers
 }
 
 // RemoveParticipant implements the ConversationalBackend interface.
-func (m *AdvancedMockTwilioProvider) RemoveParticipant(ctx context.Context, conversationID string, participantID string) error {
+func (m *AdvancedMockTwilioProvider) RemoveParticipant(ctx context.Context, conversationID, participantID string) error {
 	m.mu.Lock()
 	m.callCount++
 	shouldError := m.shouldError
@@ -359,7 +359,7 @@ func (m *AdvancedMockTwilioProvider) HealthCheck(ctx context.Context) (*iface.He
 }
 
 // GetConfig implements the ConversationalBackend interface.
-func (m *AdvancedMockTwilioProvider) GetConfig() interface{} {
+func (m *AdvancedMockTwilioProvider) GetConfig() any {
 	return m.config
 }
 

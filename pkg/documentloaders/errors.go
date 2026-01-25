@@ -13,16 +13,16 @@ const (
 	ErrCodeCycleDetected = "cycle_detected"
 	ErrCodeFileTooLarge  = "file_too_large"
 	ErrCodeBinaryFile    = "binary_file"
-	ErrCodeCancelled     = "cancelled"
+	ErrCodeCancelled     = "canceled"
 )
 
 // LoaderError represents an error during document loading.
 type LoaderError struct {
-	Op      string // Operation (e.g., "Load", "ReadFile")
-	Code    string // Error code for programmatic handling
-	Path    string // File path if applicable
-	Message string // Human-readable message
-	Err     error  // Underlying error
+	Err     error
+	Op      string
+	Code    string
+	Path    string
+	Message string
 }
 
 // Error implements the error interface.

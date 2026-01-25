@@ -4,7 +4,7 @@ package embeddings
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log/slog"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
@@ -42,7 +42,7 @@ func RegisterGlobal(name string, creator func(ctx context.Context, config Config
 		embConfig, ok := config.(Config)
 		if !ok {
 			return nil, iface.WrapError(
-				fmt.Errorf("invalid config type"),
+				errors.New("invalid config type"),
 				iface.ErrCodeInvalidConfig,
 				"invalid config type",
 			)

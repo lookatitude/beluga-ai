@@ -14,21 +14,15 @@ import (
 
 // AdvancedMockRunnable provides a comprehensive mock implementation for testing Runnable.
 type AdvancedMockRunnable struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	errorToReturn error
-	simulateDelay time.Duration
-	shouldError   bool
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
+	errorToReturn   error
+	mock.Mock
+	name          string
+	healthState   string
+	callCount     int
+	simulateDelay time.Duration
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // NewAdvancedMockRunnable creates a new advanced mock runnable with configurable behavior.
@@ -187,16 +181,12 @@ func (m *AdvancedMockRunnable) GetCallCount() int {
 
 // AdvancedMockContainer provides a comprehensive mock implementation for testing Container.
 type AdvancedMockContainer struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
 	errorToReturn error
-	shouldError   bool
+	mock.Mock
+	name        string
+	callCount   int
+	mu          sync.RWMutex
+	shouldError bool
 }
 
 // NewAdvancedMockContainer creates a new advanced mock container with configurable behavior.
@@ -270,7 +260,7 @@ func (m *AdvancedMockContainer) MustResolve(target any) {
 }
 
 // Has implements the Container interface.
-func (m *AdvancedMockContainer) Has(typ interface{}) bool {
+func (m *AdvancedMockContainer) Has(typ any) bool {
 	args := m.Called(typ)
 	return args.Bool(0)
 }

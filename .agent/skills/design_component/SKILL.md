@@ -47,7 +47,7 @@ Document in design spec:
 Determine where this component fits:
 
 ```
-1. Application Layer      - cmd/, examples/
+1. Application Layer      - examples/
 2. Agent Layer           - pkg/agents/, pkg/orchestration/
 3. LLM Layer             - pkg/llms/, pkg/chatmodels/
 4. RAG Layer             - pkg/retrievers/, pkg/vectorstores/

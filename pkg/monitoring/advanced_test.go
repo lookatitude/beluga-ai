@@ -10,6 +10,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"sync"
 	"testing"
 	"time"
@@ -26,10 +27,10 @@ import (
 // REFERENCE: This pattern should be used for all creation/factory tests.
 func TestMonitorCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockMonitor
 		validate    func(t *testing.T, monitor *AdvancedMockMonitor)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -91,11 +92,11 @@ func TestMonitorCreationAdvanced(t *testing.T) {
 // REFERENCE: This pattern should be used for all operation/method tests.
 func TestMonitorOperationsAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func(t *testing.T) *AdvancedMockMonitor
 		operation   func(t *testing.T, ctx context.Context, monitor *AdvancedMockMonitor) error
 		validate    func(t *testing.T, monitor *AdvancedMockMonitor, err error)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -272,7 +273,7 @@ func TestConcurrentMetricRecording(t *testing.T) {
 			ctx := context.Background()
 			for j := 0; j < numMetricsPerGoroutine; j++ {
 				err := monitor.RecordMetric(ctx, fmt.Sprintf("metric_%d_%d", id, j), float64(j), map[string]string{
-					"goroutine": fmt.Sprintf("%d", id),
+					"goroutine": strconv.Itoa(id),
 				})
 				if err != nil {
 					errChan <- err
@@ -403,7 +404,7 @@ func TestMonitorWithContext(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("operations_with_cancelled_context", func(t *testing.T) {
+	t.Run("operations_with_canceled_context", func(t *testing.T) {
 		ctx, cancel := context.WithCancel(context.Background())
 
 		monitor := NewAdvancedMockMonitor("cancel-monitor", "test-type")
@@ -855,19 +856,19 @@ func TestConfigDefaultFunctions(t *testing.T) {
 	t.Run("get_default_toxicity_patterns", func(t *testing.T) {
 		patterns := getDefaultToxicityPatterns()
 		assert.NotEmpty(t, patterns)
-		assert.Greater(t, len(patterns), 0)
+		assert.NotEmpty(t, patterns)
 	})
 
 	t.Run("get_default_bias_patterns", func(t *testing.T) {
 		patterns := getDefaultBiasPatterns()
 		assert.NotEmpty(t, patterns)
-		assert.Greater(t, len(patterns), 0)
+		assert.NotEmpty(t, patterns)
 	})
 
 	t.Run("get_default_harmful_patterns", func(t *testing.T) {
 		patterns := getDefaultHarmfulPatterns()
 		assert.NotEmpty(t, patterns)
-		assert.Greater(t, len(patterns), 0)
+		assert.NotEmpty(t, patterns)
 	})
 }
 
@@ -878,12 +879,12 @@ func TestConfigDefaultFunctions(t *testing.T) {
 // TestMonitoringErrorHandling tests error handling in monitoring package.
 func TestMonitoringErrorHandling(t *testing.T) {
 	tests := []struct {
+		err           error
+		validateError func(t *testing.T, err *MonitoringError)
 		name          string
 		op            string
 		code          string
-		err           error
 		message       string
-		validateError func(t *testing.T, err *MonitoringError)
 	}{
 		{
 			name:    "error_with_message",
@@ -908,7 +909,7 @@ func TestMonitoringErrorHandling(t *testing.T) {
 			validateError: func(t *testing.T, err *MonitoringError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeProviderError, err.Code)
-				assert.NotNil(t, err.Err)
+				assert.Error(t, err.Err)
 				assert.Equal(t, errors.New("underlying error"), err.Unwrap())
 			},
 		},

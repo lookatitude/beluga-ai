@@ -20,29 +20,29 @@ import (
 
 // GrokVoiceStreamingSession implements StreamingSession for Grok Voice Agent.
 type GrokVoiceStreamingSession struct {
-	ctx            context.Context
-	config         *GrokVoiceConfig
-	provider       *GrokVoiceProvider
 	httpClient     HTTPClient
+	ctx            context.Context
+	cancelFunc     context.CancelFunc
+	provider       *GrokVoiceProvider
 	audioCh        chan iface.AudioOutputChunk
-	closed         bool
-	mu             sync.RWMutex
+	restartCh      chan struct{}
+	config         *GrokVoiceConfig
+	restartTimer   *time.Timer
 	audioBuffer    []byte
-	restartCh      chan struct{}      // Channel to signal streaming restart
-	cancelFunc     context.CancelFunc // Cancel function for current streaming context
-	restartTimer   *time.Timer        // Timer for debouncing restarts
-	restartPending bool               // Flag to indicate if restart is pending
-	maxRetries     int                // Maximum retry attempts for stream restart
-	retryDelay     time.Duration      // Initial retry delay
+	maxRetries     int
+	retryDelay     time.Duration
+	mu             sync.RWMutex
+	closed         bool
+	restartPending bool
 }
 
 // GrokStreamResponse represents a streaming response from Grok API.
 type GrokStreamResponse struct {
 	Audio  string `json:"audio"`
 	Format struct {
+		Encoding   string `json:"encoding"`
 		SampleRate int    `json:"sample_rate"`
 		Channels   int    `json:"channels"`
-		Encoding   string `json:"encoding"`
 	} `json:"format"`
 	Voice struct {
 		VoiceID  string `json:"voice_id"`
@@ -77,7 +77,7 @@ func (s *GrokVoiceStreamingSession) handleStreaming(ctx context.Context) {
 	defer close(s.audioCh)
 
 	// Build streaming URL
-	url := fmt.Sprintf("%s/audio/speech/stream", s.config.APIEndpoint)
+	url := s.config.APIEndpoint + "/audio/speech/stream"
 
 	// Prepare request body
 	requestBody, err := s.prepareStreamingRequest()
@@ -89,7 +89,7 @@ func (s *GrokVoiceStreamingSession) handleStreaming(ctx context.Context) {
 	}
 
 	// Create HTTP request
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		s.audioCh <- iface.AudioOutputChunk{
 			Error: fmt.Errorf("failed to create request: %w", err),
@@ -98,7 +98,7 @@ func (s *GrokVoiceStreamingSession) handleStreaming(ctx context.Context) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.config.APIKey))
+	req.Header.Set("Authorization", "Bearer "+s.config.APIKey)
 	req.Header.Set("Accept", "text/event-stream")
 
 	// Execute request
@@ -229,10 +229,10 @@ func (s *GrokVoiceStreamingSession) SendAudio(ctx context.Context, audio []byte)
 	select {
 	case <-ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("context cancelled: %w", ctx.Err()))
+			fmt.Errorf("context canceled: %w", ctx.Err()))
 	case <-s.ctx.Done():
 		return s2s.NewS2SError("SendAudio", s2s.ErrCodeContextCanceled,
-			fmt.Errorf("session context cancelled: %w", s.ctx.Err()))
+			fmt.Errorf("session context canceled: %w", s.ctx.Err()))
 	default:
 	}
 

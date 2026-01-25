@@ -176,7 +176,7 @@ func (p *TwilioProvider) handleMessageAddedEvent(ctx context.Context, event *ifa
 	}
 
 	if conversationID == "" {
-		return fmt.Errorf("missing ConversationSid in event data")
+		return errors.New("missing ConversationSid in event data")
 	}
 
 	// Get or create session

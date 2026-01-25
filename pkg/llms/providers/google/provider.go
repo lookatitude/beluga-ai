@@ -55,9 +55,9 @@ type GoogleClient interface {
 type GoogleGenerateRequest struct {
 	Model       string
 	Contents    []GoogleContent
-	Temperature float32
-	MaxTokens   int
 	Tools       []GoogleTool
+	MaxTokens   int
+	Temperature float32
 }
 
 // GoogleGenerateResponse represents a response from Google Vertex AI.
@@ -74,14 +74,14 @@ type GoogleContent struct {
 
 // GooglePart represents a part of content (text or function call).
 type GooglePart struct {
-	Text         string
 	FunctionCall *GoogleFunctionCall
+	Text         string
 }
 
 // GoogleCandidate represents a candidate response from Google Vertex AI.
 type GoogleCandidate struct {
-	Content      GoogleContent
 	FinishReason string
+	Content      GoogleContent
 }
 
 // GoogleUsage represents token usage information.
@@ -98,15 +98,15 @@ type GoogleTool struct {
 
 // GoogleFunctionDeclaration represents a function declaration for tool calling.
 type GoogleFunctionDeclaration struct {
+	Parameters  map[string]any
 	Name        string
 	Description string
-	Parameters  map[string]any
 }
 
 // GoogleFunctionCall represents a function call in a response.
 type GoogleFunctionCall struct {
-	Name      string
 	Arguments map[string]any
+	Name      string
 }
 
 // NewGoogleProvider creates a new Google Vertex AI provider instance.
@@ -125,7 +125,7 @@ func NewGoogleProvider(config *llms.Config) (*GoogleProvider, error) {
 	// Extract project ID and location from provider-specific config
 	projectID, _ := config.ProviderSpecific["project_id"].(string)
 	if projectID == "" {
-		return nil, fmt.Errorf("project_id is required in provider_specific config for Google Vertex AI")
+		return nil, errors.New("project_id is required in provider_specific config for Google Vertex AI")
 	}
 
 	location, _ := config.ProviderSpecific["location"].(string)

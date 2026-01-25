@@ -15,11 +15,11 @@ import (
 
 func TestAdvancedTwilioVoice(t *testing.T) {
 	tests := []struct {
-		name          string
 		component     *AdvancedMockTwilioVoice
 		operations    func(ctx context.Context, comp *AdvancedMockTwilioVoice) error
-		expectedError bool
+		name          string
 		expectedCalls int
+		expectedError bool
 	}{
 		{
 			name:      "successful start",
@@ -101,11 +101,11 @@ func TestConcurrencyAdvancedTwilio(t *testing.T) {
 
 func TestTwilioErrorHandling(t *testing.T) {
 	tests := []struct {
-		name        string
 		setupError  error
 		operation   func() error
-		expectError bool
+		name        string
 		errorCode   string
+		expectError bool
 	}{
 		{
 			name:       "rate limit error",
@@ -142,7 +142,8 @@ func TestTwilioErrorHandling(t *testing.T) {
 
 			if tt.expectError {
 				assert.Error(t, err)
-				twilioErr, ok := err.(*TwilioError)
+				twilioErr := &TwilioError{}
+				ok := errors.As(err, &twilioErr)
 				if ok {
 					assert.Equal(t, tt.errorCode, twilioErr.Code)
 				}
@@ -155,8 +156,8 @@ func TestTwilioErrorHandling(t *testing.T) {
 
 func TestTwilioConfigValidation(t *testing.T) {
 	tests := []struct {
-		name        string
 		config      *TwilioConfig
+		name        string
 		expectError bool
 	}{
 		{

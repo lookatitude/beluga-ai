@@ -84,11 +84,11 @@ func TestMuLawConversion(t *testing.T) {
 
 	mulaw := convertPCMToMuLaw(pcm)
 	assert.NotNil(t, mulaw)
-	assert.Equal(t, len(pcm)/2, len(mulaw))
+	assert.Len(t, mulaw, len(pcm)/2)
 
 	pcm2 := convertMuLawToPCM(mulaw)
 	assert.NotNil(t, pcm2)
-	assert.Equal(t, len(pcm), len(pcm2))
+	assert.Len(t, pcm2, len(pcm))
 }
 
 func TestNetworkFailureHandling(t *testing.T) {

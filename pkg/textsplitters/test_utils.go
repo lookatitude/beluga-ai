@@ -47,13 +47,13 @@ import (
 
 // AdvancedMockSplitter provides a comprehensive mock implementation for testing.
 type AdvancedMockSplitter struct {
+	errorToReturn  error
 	chunks         []string
 	documents      []schema.Document
-	errorToReturn  error
-	shouldError    bool
 	callCount      int
 	splitTextCount int
 	mu             sync.RWMutex
+	shouldError    bool
 }
 
 // NewAdvancedMockSplitter creates a new advanced mock with configurable behavior.
@@ -175,5 +175,5 @@ func (m *AdvancedMockSplitter) Reset() {
 	m.errorToReturn = nil
 }
 
-// Ensure AdvancedMockSplitter implements iface.TextSplitter
+// Ensure AdvancedMockSplitter implements iface.TextSplitter.
 var _ iface.TextSplitter = (*AdvancedMockSplitter)(nil)

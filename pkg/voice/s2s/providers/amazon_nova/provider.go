@@ -6,13 +6,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
-	"strings"
 
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
 	"github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
@@ -21,10 +22,10 @@ import (
 
 // AmazonNovaProvider implements the S2SProvider interface for Amazon Nova 2 Sonic.
 type AmazonNovaProvider struct {
-	config       *AmazonNovaConfig
 	client       BedrockRuntimeClient
-	mu           sync.RWMutex
+	config       *AmazonNovaConfig
 	providerName string
+	mu           sync.RWMutex
 }
 
 // BedrockRuntimeClient is an interface for AWS Bedrock Runtime operations.
@@ -177,8 +178,8 @@ func (p *AmazonNovaProvider) Process(ctx context.Context, input *internal.AudioI
 	output.Latency = time.Since(startTime)
 	s2s.RecordSpanLatency(span, output.Latency)
 	s2s.RecordSpanAttributes(span, map[string]string{
-		"output_size": fmt.Sprintf("%d", len(output.Data)),
-		"latency_ms":  fmt.Sprintf("%d", output.Latency.Milliseconds()),
+		"output_size": strconv.Itoa(len(output.Data)),
+		"latency_ms":  strconv.FormatInt(output.Latency.Milliseconds(), 10),
 	})
 
 	return output, nil
@@ -252,9 +253,9 @@ func (p *AmazonNovaProvider) parseNovaResponse(responseBody []byte, input *inter
 		Output struct {
 			Audio  string `json:"audio"`
 			Format struct {
+				Encoding   string `json:"encoding"`
 				SampleRate int    `json:"sample_rate"`
 				Channels   int    `json:"channels"`
-				Encoding   string `json:"encoding"`
 			} `json:"format"`
 		} `json:"output"`
 		Voice struct {

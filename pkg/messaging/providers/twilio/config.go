@@ -1,7 +1,7 @@
 package twilio
 
 import (
-	"fmt"
+	"errors"
 
 	"github.com/lookatitude/beluga-ai/pkg/messaging"
 )
@@ -68,10 +68,10 @@ func NewTwilioConfig(baseConfig *messaging.Config) *TwilioConfig {
 // Validate validates the Twilio configuration.
 func (c *TwilioConfig) Validate() error {
 	if c.AccountSID == "" {
-		return messaging.NewMessagingError("Validate", messaging.ErrCodeInvalidConfig, fmt.Errorf("account_sid is required"))
+		return messaging.NewMessagingError("Validate", messaging.ErrCodeInvalidConfig, errors.New("account_sid is required"))
 	}
 	if c.AuthToken == "" {
-		return messaging.NewMessagingError("Validate", messaging.ErrCodeInvalidConfig, fmt.Errorf("auth_token is required"))
+		return messaging.NewMessagingError("Validate", messaging.ErrCodeInvalidConfig, errors.New("auth_token is required"))
 	}
 	return nil
 }

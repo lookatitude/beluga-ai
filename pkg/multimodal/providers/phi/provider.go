@@ -223,7 +223,6 @@ func (p *PhiProvider) ProcessStream(ctx context.Context, input *types.Multimodal
 				}
 			}
 		})
-
 		if err != nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, err.Error())
@@ -314,7 +313,7 @@ func (p *PhiProvider) SupportsModality(ctx context.Context, modality string) (bo
 	case "video":
 		supported = p.capabilities.Video
 	default:
-		span.SetStatus(codes.Error, fmt.Sprintf("unknown modality: %s", modality))
+		span.SetStatus(codes.Error, "unknown modality: "+modality)
 		return false, fmt.Errorf("unknown modality: %s", modality)
 	}
 
@@ -345,7 +344,7 @@ func (p *PhiProvider) CheckHealth(ctx context.Context) error {
 	return nil
 }
 
-// Phi API request/response structures
+// Phi API request/response structures.
 type phiChatRequest struct {
 	Model    string       `json:"model"`
 	Messages []phiMessage `json:"messages"`
@@ -358,9 +357,9 @@ type phiMessage struct {
 }
 
 type phiContent struct {
-	Type     string       `json:"type"` // "text" or "image_url"
-	Text     string       `json:"text,omitempty"`
 	ImageURL *phiImageURL `json:"image_url,omitempty"`
+	Type     string       `json:"type"`
+	Text     string       `json:"text,omitempty"`
 }
 
 type phiImageURL struct {
@@ -370,16 +369,16 @@ type phiImageURL struct {
 type phiChatResponse struct {
 	ID      string      `json:"id"`
 	Object  string      `json:"object"`
-	Created int64       `json:"created"`
 	Model   string      `json:"model"`
 	Choices []phiChoice `json:"choices"`
 	Usage   phiUsage    `json:"usage"`
+	Created int64       `json:"created"`
 }
 
 type phiChoice struct {
-	Index        int        `json:"index"`
-	Message      phiMessage `json:"message"`
 	FinishReason string     `json:"finish_reason"`
+	Message      phiMessage `json:"message"`
+	Index        int        `json:"index"`
 }
 
 type phiUsage struct {
@@ -416,7 +415,7 @@ func (p *PhiProvider) convertToPhiMessages(ctx context.Context, blocks []*types.
 			} else if block.URL != "" {
 				imageURL = block.URL
 			} else {
-				return nil, fmt.Errorf("image block has no URL or data")
+				return nil, errors.New("image block has no URL or data")
 			}
 
 			contentParts = append(contentParts, phiContent{
@@ -454,13 +453,13 @@ func (p *PhiProvider) makeAPIRequest(ctx context.Context, req *phiChatRequest) (
 		return nil, fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -491,13 +490,13 @@ func (p *PhiProvider) makeStreamingRequest(ctx context.Context, req *phiChatRequ
 		return fmt.Errorf("failed to marshal request: %w", err)
 	}
 
-	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(reqBody))
+	httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
 	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", p.config.APIKey))
+	httpReq.Header.Set("Authorization", "Bearer "+p.config.APIKey)
 
 	resp, err := p.httpClient.Do(httpReq)
 	if err != nil {
@@ -546,11 +545,13 @@ func (p *PhiProvider) convertPhiResponse(ctx context.Context, resp *phiChatRespo
 	var content string
 
 	// Extract text content from message
+	var contentSb549 strings.Builder
 	for _, contentPart := range choice.Message.Content {
 		if contentPart.Type == "text" && contentPart.Text != "" {
-			content += contentPart.Text
+			contentSb549.WriteString(contentPart.Text)
 		}
 	}
+	content += contentSb549.String()
 
 	if content == "" {
 		return nil, errors.New("no content in Phi response")

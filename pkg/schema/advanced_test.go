@@ -16,10 +16,10 @@ import (
 // TestMessageCreationAdvanced provides advanced table-driven tests for message creation.
 func TestMessageCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		createFunc  func() Message
 		validate    func(t *testing.T, msg Message)
+		name        string
+		description string
 		wantErr     bool
 	}{
 		{
@@ -74,7 +74,7 @@ func TestMessageCreationAdvanced(t *testing.T) {
 			},
 			validate: func(t *testing.T, msg Message) {
 				assert.Equal(t, iface.RoleHuman, msg.GetType())
-				assert.Equal(t, "", msg.GetContent())
+				assert.Empty(t, msg.GetContent())
 			},
 		},
 		{
@@ -123,10 +123,10 @@ func TestMessageWithContextAdvanced(t *testing.T) {
 // TestDocumentCreationAdvanced provides advanced table-driven tests for document creation.
 func TestDocumentCreationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		createFunc  func() Document
 		validate    func(t *testing.T, doc Document)
+		name        string
+		description string
 	}{
 		{
 			name:        "basic_document",
@@ -226,10 +226,10 @@ func TestConcurrentDocumentCreation(t *testing.T) {
 // TestMessageValidationAdvanced tests message validation scenarios.
 func TestMessageValidationAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		message     Message
 		validate    func(t *testing.T, msg Message)
+		name        string
+		description string
 	}{
 		{
 			name:        "valid_human_message",
@@ -292,12 +292,12 @@ func BenchmarkConcurrentMessageCreation(b *testing.B) {
 // TestSchemaErrorHandling tests error handling in schema package.
 func TestSchemaErrorHandling(t *testing.T) {
 	tests := []struct {
+		err           error
+		validateError func(t *testing.T, err *SchemaError)
 		name          string
 		op            string
 		code          string
-		err           error
 		message       string
-		validateError func(t *testing.T, err *SchemaError)
 	}{
 		{
 			name:    "error_with_message",
@@ -322,7 +322,7 @@ func TestSchemaErrorHandling(t *testing.T) {
 			validateError: func(t *testing.T, err *SchemaError) {
 				assert.Equal(t, "test_operation", err.Op)
 				assert.Equal(t, ErrCodeValidationFailed, err.Code)
-				assert.NotNil(t, err.Err)
+				assert.Error(t, err.Err)
 				assert.Equal(t, assert.AnError, err.Unwrap())
 			},
 		},

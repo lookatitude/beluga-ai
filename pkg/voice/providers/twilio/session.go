@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -20,27 +21,26 @@ import (
 
 // TwilioVoiceSession implements the VoiceSession interface for Twilio.
 type TwilioVoiceSession struct {
-	id                string
-	callSID           string
-	config            *TwilioConfig
-	sessionConfig     *vbiface.SessionConfig
-	backend           *TwilioBackend
-	audioStream       *AudioStream
-	sttProvider       iface.STTProvider
-	ttsProvider       iface.TTSProvider
-	agentInstance     agentsiface.Agent
-	agentCallback     func(context.Context, string) (string, error)
-	state             vbiface.PipelineState
-	persistenceStatus vbiface.PersistenceStatus
-	metadata          map[string]any
-	audioOutput       chan []byte
-	audioInput        chan []byte
-	mu                sync.RWMutex
-	active            bool
 	startTime         time.Time
 	lastActivity      time.Time
-	// Edge case: Partial conversation state for call drops
-	partialState map[string]any
+	sttProvider       iface.STTProvider
+	agentInstance     agentsiface.Agent
+	ttsProvider       iface.TTSProvider
+	sessionConfig     *vbiface.SessionConfig
+	audioStream       *AudioStream
+	backend           *TwilioBackend
+	audioInput        chan []byte
+	agentCallback     func(context.Context, string) (string, error)
+	config            *TwilioConfig
+	partialState      map[string]any
+	metadata          map[string]any
+	audioOutput       chan []byte
+	state             vbiface.PipelineState
+	persistenceStatus vbiface.PersistenceStatus
+	id                string
+	callSID           string
+	mu                sync.RWMutex
+	active            bool
 }
 
 // NewTwilioVoiceSession creates a new Twilio voice session.
@@ -58,10 +58,10 @@ func NewTwilioVoiceSession(
 
 	ctx := context.Background()
 
-	if config.Config.STTProvider != "" {
+	if config.STTProvider != "" {
 		// Create STT config from provider-specific config
 		sttConfig := stt.DefaultConfig()
-		if providerConfig, ok := config.Config.ProviderConfig["stt"].(map[string]any); ok {
+		if providerConfig, ok := config.ProviderConfig["stt"].(map[string]any); ok {
 			// Map provider-specific config to STT config
 			if apiKey, ok := providerConfig["api_key"].(string); ok {
 				sttConfig.APIKey = apiKey
@@ -76,16 +76,16 @@ func NewTwilioVoiceSession(
 
 		// Get STT provider from registry
 		var err error
-		sttProvider, err = stt.NewProvider(ctx, config.Config.STTProvider, sttConfig)
+		sttProvider, err = stt.NewProvider(ctx, config.STTProvider, sttConfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create STT provider '%s': %w", config.Config.STTProvider, err)
+			return nil, fmt.Errorf("failed to create STT provider '%s': %w", config.STTProvider, err)
 		}
 	}
 
-	if config.Config.TTSProvider != "" {
+	if config.TTSProvider != "" {
 		// Create TTS config from provider-specific config
 		ttsConfig := tts.DefaultConfig()
-		if providerConfig, ok := config.Config.ProviderConfig["tts"].(map[string]any); ok {
+		if providerConfig, ok := config.ProviderConfig["tts"].(map[string]any); ok {
 			// Map provider-specific config to TTS config
 			if apiKey, ok := providerConfig["api_key"].(string); ok {
 				ttsConfig.APIKey = apiKey
@@ -100,9 +100,9 @@ func NewTwilioVoiceSession(
 
 		// Get TTS provider from registry
 		var err error
-		ttsProvider, err = tts.NewProvider(ctx, config.Config.TTSProvider, ttsConfig)
+		ttsProvider, err = tts.NewProvider(ctx, config.TTSProvider, ttsConfig)
 		if err != nil {
-			return nil, fmt.Errorf("failed to create TTS provider '%s': %w", config.Config.TTSProvider, err)
+			return nil, fmt.Errorf("failed to create TTS provider '%s': %w", config.TTSProvider, err)
 		}
 	}
 
@@ -237,9 +237,11 @@ func (s *TwilioVoiceSession) ProcessAudio(ctx context.Context, audio []byte) err
 			if err == nil && len(relevantTranscriptions) > 0 {
 				// Build context from relevant transcriptions
 				ragContext = "Previous conversations:\n"
+				var ragContextSb240 strings.Builder
 				for _, t := range relevantTranscriptions {
-					ragContext += fmt.Sprintf("- %s\n", t.Text)
+					ragContextSb240.WriteString(fmt.Sprintf("- %s\n", t.Text))
 				}
+				ragContext += ragContextSb240.String()
 			}
 		}
 

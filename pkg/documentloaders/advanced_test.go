@@ -3,6 +3,7 @@ package documentloaders
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -18,13 +19,13 @@ import (
 // TestRecursiveDirectoryLoader provides table-driven tests for RecursiveDirectoryLoader.
 func TestRecursiveDirectoryLoader(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		fsys        fs.FS
 		setupFn     func() *DirectoryConfig
-		wantErr     bool
-		errContains string
 		validateFn  func(t *testing.T, docs []schema.Document, err error)
+		name        string
+		description string
+		errContains string
+		wantErr     bool
 	}{
 		{
 			name:        "empty_directory",
@@ -45,7 +46,7 @@ func TestRecursiveDirectoryLoader(t *testing.T) {
 			fsys: fstest.MapFS{
 				"file.txt": &fstest.MapFile{
 					Data:    []byte("Hello, world!"),
-					Mode:    0644,
+					Mode:    0o644,
 					ModTime: time.Now(),
 				},
 			},
@@ -198,12 +199,12 @@ func TestRecursiveDirectoryLoader(t *testing.T) {
 // TestTextLoader provides table-driven tests for TextLoader.
 func TestTextLoader(t *testing.T) {
 	tests := []struct {
+		setupFn     func() (string, func())
+		validateFn  func(t *testing.T, docs []schema.Document, err error)
 		name        string
 		description string
-		setupFn     func() (string, func()) // Returns file path and cleanup function
-		wantErr     bool
 		errContains string
-		validateFn  func(t *testing.T, docs []schema.Document, err error)
+		wantErr     bool
 	}{
 		{
 			name:        "valid_file",
@@ -379,12 +380,12 @@ func TestDocumentLoadersErrorHandling(t *testing.T) {
 		},
 		{
 			name:        "error_with_underlying_error_and_path",
-			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "", fmt.Errorf("permission denied")),
+			err:         NewLoaderError("Load", ErrCodeIOError, "/path/to/file.txt", "", errors.New("permission denied")),
 			expectedMsg: "documentloaders Load [/path/to/file.txt]: permission denied (code: io_error)",
 		},
 		{
 			name:        "error_with_underlying_error_no_path",
-			err:         NewLoaderError("Load", ErrCodeIOError, "", "", fmt.Errorf("permission denied")),
+			err:         NewLoaderError("Load", ErrCodeIOError, "", "", errors.New("permission denied")),
 			expectedMsg: "documentloaders Load: permission denied (code: io_error)",
 		},
 		{
@@ -409,7 +410,7 @@ func TestLoaderErrorHelpers(t *testing.T) {
 	t.Run("IsLoaderError", func(t *testing.T) {
 		loaderErr := NewLoaderError("Load", ErrCodeIOError, "", "test error", nil)
 		assert.True(t, IsLoaderError(loaderErr))
-		assert.False(t, IsLoaderError(fmt.Errorf("not a loader error")))
+		assert.False(t, IsLoaderError(errors.New("not a loader error")))
 	})
 
 	t.Run("GetLoaderError", func(t *testing.T) {
@@ -420,12 +421,12 @@ func TestLoaderErrorHelpers(t *testing.T) {
 		assert.Equal(t, loaderErr.Code, extracted.Code)
 
 		// Test with non-loader error
-		extracted = GetLoaderError(fmt.Errorf("not a loader error"))
+		extracted = GetLoaderError(errors.New("not a loader error"))
 		assert.Nil(t, extracted)
 	})
 
 	t.Run("Unwrap", func(t *testing.T) {
-		underlying := fmt.Errorf("underlying error")
+		underlying := errors.New("underlying error")
 		loaderErr := NewLoaderError("Load", ErrCodeIOError, "", "test error", underlying)
 		unwrapped := loaderErr.Unwrap()
 		assert.Equal(t, underlying, unwrapped)
@@ -580,9 +581,9 @@ func TestAdvancedMockLoaderErrorTypes(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		setupMock   func() *AdvancedMockLoader
 		name        string
 		errorCode   string
-		setupMock   func() *AdvancedMockLoader
 		expectedErr bool
 	}{
 		{
@@ -634,10 +635,10 @@ func TestAdvancedMockLoaderErrorTypes(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:      "cancelled_error",
+			name:      "canceled_error",
 			errorCode: ErrCodeCancelled,
 			setupMock: func() *AdvancedMockLoader {
-				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeCancelled, "", "cancelled", nil)))
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("Load", ErrCodeCancelled, "", "canceled", nil)))
 			},
 			expectedErr: true,
 		},
@@ -668,9 +669,9 @@ func TestAdvancedMockLoaderLazyLoadErrorTypes(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
+		setupMock   func() *AdvancedMockLoader
 		name        string
 		errorCode   string
-		setupMock   func() *AdvancedMockLoader
 		expectedErr bool
 	}{
 		{
@@ -682,10 +683,10 @@ func TestAdvancedMockLoaderLazyLoadErrorTypes(t *testing.T) {
 			expectedErr: true,
 		},
 		{
-			name:      "lazy_load_cancelled",
+			name:      "lazy_load_canceled",
 			errorCode: ErrCodeCancelled,
 			setupMock: func() *AdvancedMockLoader {
-				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("LazyLoad", ErrCodeCancelled, "", "cancelled", nil)))
+				return NewAdvancedMockLoader(nil, WithError(NewLoaderError("LazyLoad", ErrCodeCancelled, "", "canceled", nil)))
 			},
 			expectedErr: true,
 		},

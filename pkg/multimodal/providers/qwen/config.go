@@ -30,13 +30,13 @@ func (c *Config) Validate() error {
 // MultimodalConfig represents the multimodal.Config type without importing the package.
 // This avoids import cycles.
 type MultimodalConfig struct {
+	ProviderSpecific map[string]any
 	Provider         string
 	Model            string
 	APIKey           string
 	BaseURL          string
 	Timeout          time.Duration
 	MaxRetries       int
-	ProviderSpecific map[string]any
 }
 
 // FromMultimodalConfig extracts Qwen-specific config from multimodal.Config.

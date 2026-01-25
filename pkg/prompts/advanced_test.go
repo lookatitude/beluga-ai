@@ -728,7 +728,7 @@ func BenchmarkBenchmarkHelper(b *testing.B) {
 	})
 }
 
-// Mock implementations for testing
+// Mock implementations for testing.
 type mockMetrics struct{}
 
 func (m *mockMetrics) RecordTemplateCreated(templateType string)                    {}
@@ -749,6 +749,7 @@ type mockValidator struct{}
 func (m *mockValidator) Validate(required []string, provided map[string]any) error {
 	return nil
 }
+
 func (m *mockValidator) ValidateTypes(variables map[string]any) error {
 	return nil
 }
@@ -758,6 +759,7 @@ type mockTemplateEngine struct{}
 func (m *mockTemplateEngine) Parse(name, template string) (iface.ParsedTemplate, error) {
 	return nil, nil
 }
+
 func (m *mockTemplateEngine) ExtractVariables(template string) ([]string, error) {
 	return nil, nil
 }
@@ -772,9 +774,9 @@ func (m *mockHealthChecker) Check(ctx context.Context) error {
 func TestPromptManager_NewPromptManager(t *testing.T) {
 	tests := []struct {
 		name      string
+		errString string
 		opts      []Option
 		wantErr   bool
-		errString string
 	}{
 		{
 			name:    "default_configuration",

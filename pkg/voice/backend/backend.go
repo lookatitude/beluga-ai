@@ -37,7 +37,7 @@ import (
 //	}
 //	session, err := backend.CreateSession(ctx, roomName)
 //
-// Example usage can be found in examples/voice/backend/main.go
+// Example usage can be found in examples/voice/backend/main.go.
 func NewBackend(ctx context.Context, providerName string, config *vbiface.Config) (vbiface.VoiceBackend, error) {
 	registry := GetRegistry()
 	return registry.Create(ctx, providerName, config)

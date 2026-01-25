@@ -21,7 +21,7 @@ func SetLogger(logger *slog.Logger) {
 }
 
 // LogProcess logs a process operation with structured fields.
-func LogProcess(ctx context.Context, level slog.Level, msg string, provider, model, sessionID string, err error) {
+func LogProcess(ctx context.Context, level slog.Level, msg, provider, model, sessionID string, err error) {
 	attrs := []any{
 		"provider", provider,
 		"model", model,
@@ -46,7 +46,7 @@ func LogProcess(ctx context.Context, level slog.Level, msg string, provider, mod
 }
 
 // LogStreaming logs a streaming operation with structured fields.
-func LogStreaming(ctx context.Context, level slog.Level, msg string, provider, model, sessionID string, err error) {
+func LogStreaming(ctx context.Context, level slog.Level, msg, provider, model, sessionID string, err error) {
 	attrs := []any{
 		"provider", provider,
 		"model", model,
@@ -72,7 +72,7 @@ func LogStreaming(ctx context.Context, level slog.Level, msg string, provider, m
 }
 
 // LogError logs an error with structured fields.
-func LogError(ctx context.Context, msg string, provider, model, errorCode, sessionID string, err error) {
+func LogError(ctx context.Context, msg, provider, model, errorCode, sessionID string, err error) {
 	attrs := []any{
 		"provider", provider,
 		"model", model,

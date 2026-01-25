@@ -9,27 +9,13 @@ import (
 // VapiConfig extends the base Config with Vapi-specific configuration.
 type VapiConfig struct {
 	*iface.Config
-
-	// APIKey is the Vapi API key.
-	APIKey string `mapstructure:"api_key" yaml:"api_key" validate:"required"`
-
-	// APIURL is the Vapi API base URL (default: https://api.vapi.ai).
-	APIURL string `mapstructure:"api_url" yaml:"api_url" validate:"url" default:"https://api.vapi.ai"`
-
-	// AssistantID is the Vapi assistant ID (optional, can be created via API).
-	AssistantID string `mapstructure:"assistant_id" yaml:"assistant_id"`
-
-	// PhoneNumberID is the phone number ID for telephony (optional).
-	PhoneNumberID string `mapstructure:"phone_number_id" yaml:"phone_number_id"`
-
-	// EnableRecording enables call recording (optional).
-	EnableRecording bool `mapstructure:"enable_recording" yaml:"enable_recording" default:"false"`
-
-	// RecordingType is the recording type if enabled ("transcript" or "audio").
-	RecordingType string `mapstructure:"recording_type" yaml:"recording_type" validate:"omitempty,oneof=transcript audio" default:"transcript"`
-
-	// MaxCallDuration is the maximum call duration (optional).
+	APIKey          string        `mapstructure:"api_key" yaml:"api_key" validate:"required"`
+	APIURL          string        `mapstructure:"api_url" yaml:"api_url" validate:"url" default:"https://api.vapi.ai"`
+	AssistantID     string        `mapstructure:"assistant_id" yaml:"assistant_id"`
+	PhoneNumberID   string        `mapstructure:"phone_number_id" yaml:"phone_number_id"`
+	RecordingType   string        `mapstructure:"recording_type" yaml:"recording_type" validate:"omitempty,oneof=transcript audio" default:"transcript"`
 	MaxCallDuration time.Duration `mapstructure:"max_call_duration" yaml:"max_call_duration" validate:"omitempty,min=1m" default:"30m"`
+	EnableRecording bool          `mapstructure:"enable_recording" yaml:"enable_recording" default:"false"`
 }
 
 // NewVapiConfig creates a new VapiConfig from base Config.

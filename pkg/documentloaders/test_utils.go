@@ -48,12 +48,12 @@ import (
 
 // AdvancedMockLoader provides a comprehensive mock implementation for testing.
 type AdvancedMockLoader struct {
-	documents     []schema.Document
 	errorToReturn error
-	shouldError   bool
+	documents     []schema.Document
 	callCount     int
 	lazyLoadCount int
 	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // NewAdvancedMockLoader creates a new advanced mock with configurable behavior.
@@ -109,7 +109,7 @@ func WithFileTooLargeError() MockOption {
 	return WithErrorCode(ErrCodeFileTooLarge)
 }
 
-// WithCancelledError configures the mock to return a cancelled error.
+// WithCancelledError configures the mock to return a canceled error.
 func WithCancelledError() MockOption {
 	return WithErrorCode(ErrCodeCancelled)
 }
@@ -213,5 +213,5 @@ func (m *AdvancedMockLoader) Reset() {
 	m.errorToReturn = nil
 }
 
-// Ensure AdvancedMockLoader implements iface.DocumentLoader
+// Ensure AdvancedMockLoader implements iface.DocumentLoader.
 var _ iface.DocumentLoader = (*AdvancedMockLoader)(nil)

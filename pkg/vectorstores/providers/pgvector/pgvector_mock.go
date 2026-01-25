@@ -14,20 +14,20 @@ import (
 
 // AdvancedMockPgVectorStore provides a comprehensive mock implementation for testing PgVector provider.
 type AdvancedMockPgVectorStore struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
+	tableName         string
+	name              string
+	connectionString  string
 	documents         []schema.Document
 	embeddings        [][]float32
 	documentIDs       []string
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
-	connectionString  string
-	tableName         string
-	name              string
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockPgVectorStore creates a new advanced mock with configurable behavior.
@@ -236,6 +236,4 @@ func (r *simpleMockRetriever) GetRelevantDocuments(ctx context.Context, query st
 	return []schema.Document{}, nil
 }
 
-var (
-	_ vectorstores.VectorStore = (*AdvancedMockPgVectorStore)(nil)
-)
+var _ vectorstores.VectorStore = (*AdvancedMockPgVectorStore)(nil)

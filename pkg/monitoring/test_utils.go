@@ -301,7 +301,7 @@ func (m *AdvancedMockMonitor) CheckHealth() map[string]any {
 	}
 }
 
-// Monitor interface implementation methods
+// Monitor interface implementation methods.
 func (m *AdvancedMockMonitor) Logger() iface.Logger {
 	return &MockLogger{}
 }
@@ -342,7 +342,7 @@ func (m *AdvancedMockMonitor) IsHealthy(ctx context.Context) bool {
 	return m.healthState == "healthy"
 }
 
-// Mock implementations for interface methods
+// Mock implementations for interface methods.
 type MockLogger struct{}
 
 func (m *MockLogger) Debug(ctx context.Context, message string, fields ...map[string]any)   {}
@@ -382,14 +382,19 @@ type MockMetricsCollector struct{}
 
 func (m *MockMetricsCollector) Counter(ctx context.Context, name, description string, value float64, labels map[string]string) {
 }
+
 func (m *MockMetricsCollector) Gauge(ctx context.Context, name, description string, value float64, labels map[string]string) {
 }
+
 func (m *MockMetricsCollector) Histogram(ctx context.Context, name, description string, value float64, labels map[string]string) {
 }
+
 func (m *MockMetricsCollector) Timing(ctx context.Context, name, description string, duration time.Duration, labels map[string]string) {
 }
+
 func (m *MockMetricsCollector) Increment(ctx context.Context, name, description string, labels map[string]string) {
 }
+
 func (m *MockMetricsCollector) StartTimer(ctx context.Context, name string, labels map[string]string) iface.Timer {
 	return &MockTimer{}
 }
@@ -411,6 +416,7 @@ type MockSafetyChecker struct{}
 func (m *MockSafetyChecker) CheckContent(ctx context.Context, content, contextInfo string) (iface.SafetyResult, error) {
 	return iface.SafetyResult{Safe: true, Issues: []iface.SafetyIssue{}}, nil
 }
+
 func (m *MockSafetyChecker) RequestHumanReview(ctx context.Context, content, contextInfo string, riskScore float64) (iface.ReviewDecision, error) {
 	return iface.ReviewDecision{Approved: true}, nil
 }

@@ -22,13 +22,13 @@ import (
 // TestMultimodalModelAdvanced provides advanced table-driven tests for MultimodalModel operations.
 func TestMultimodalModelAdvanced(t *testing.T) {
 	tests := []struct {
-		name        string
-		description string
 		setup       func() iface.MultimodalModel
 		operation   func(ctx context.Context, model iface.MultimodalModel) error
-		wantErr     bool
-		errContains string
 		validate    func(t *testing.T, err error)
+		name        string
+		description string
+		errContains string
+		wantErr     bool
 	}{
 		{
 			name:        "process_text_only",
@@ -260,7 +260,7 @@ func TestMultimodalModelStreaming(t *testing.T) {
 		outputCount++
 	}
 
-	assert.Greater(t, outputCount, 0, "Should receive at least one output")
+	assert.Positive(t, outputCount, "Should receive at least one output")
 }
 
 // TestMultimodalModelCapabilities tests capability checking.
@@ -558,7 +558,7 @@ func BenchmarkContentNormalizationURL(b *testing.B) {
 	}
 }
 
-// T099: Test coverage for pkg/multimodal/config.go
+// T099: Test coverage for pkg/multimodal/config.go.
 func TestConfigOptions(t *testing.T) {
 	t.Run("WithProvider", func(t *testing.T) {
 		config := &Config{}
@@ -623,8 +623,8 @@ func TestConfigOptions(t *testing.T) {
 
 func TestConfig_Validate(t *testing.T) {
 	tests := []struct {
-		name        string
 		config      *Config
+		name        string
 		shouldError bool
 	}{
 		{
@@ -711,8 +711,8 @@ func TestRoutingConfig_Validate(t *testing.T) {
 	ctx := context.Background()
 
 	tests := []struct {
-		name        string
 		routing     *RoutingConfig
+		name        string
 		shouldError bool
 	}{
 		{
@@ -759,7 +759,7 @@ func TestRoutingConfig_Validate(t *testing.T) {
 	}
 }
 
-// T100: Test coverage for pkg/multimodal/errors.go
+// T100: Test coverage for pkg/multimodal/errors.go.
 func TestMultimodalErrors(t *testing.T) {
 	t.Run("NewMultimodalError", func(t *testing.T) {
 		err := NewMultimodalError("test_op", ErrCodeTimeout, errors.New("timeout occurred"))
@@ -809,8 +809,8 @@ func TestMultimodalErrors(t *testing.T) {
 
 	t.Run("IsRetryableError", func(t *testing.T) {
 		tests := []struct {
-			name      string
 			err       error
+			name      string
 			retryable bool
 		}{
 			{
@@ -879,7 +879,7 @@ func TestMultimodalErrors(t *testing.T) {
 		regularErr := errors.New("regular error")
 		assert.Equal(t, ErrCodeProviderError, GetErrorCode(regularErr))
 
-		assert.Equal(t, "", GetErrorCode(nil))
+		assert.Empty(t, GetErrorCode(nil))
 	})
 
 	t.Run("IsErrorCode", func(t *testing.T) {

@@ -15,24 +15,16 @@ import (
 
 // AdvancedMockTwilioVoice provides a comprehensive mock implementation for testing.
 type AdvancedMockTwilioVoice struct {
-	mock.Mock
-
-	// Configuration
-	name      string
-	callCount int
-	mu        sync.RWMutex
-
-	// Configurable behavior
-	shouldError   bool
-	errorToReturn error
-	simulateDelay time.Duration
-
-	// Health check data
-	healthState     string
 	lastHealthCheck time.Time
-
-	// Session data
-	sessions map[string]vbiface.VoiceSession
+	errorToReturn   error
+	sessions        map[string]vbiface.VoiceSession
+	mock.Mock
+	name          string
+	healthState   string
+	callCount     int
+	simulateDelay time.Duration
+	mu            sync.RWMutex
+	shouldError   bool
 }
 
 // MockTwilioVoiceOption configures the behavior of AdvancedMockTwilioVoice.
@@ -122,6 +114,7 @@ func (m *AdvancedMockTwilioVoice) Stop(ctx context.Context) error {
 func (m *AdvancedMockTwilioVoice) CreateSession(ctx context.Context, config *vbiface.SessionConfig) (vbiface.VoiceSession, error) {
 	m.mu.Lock()
 	m.callCount++
+	callCount := m.callCount
 	m.mu.Unlock()
 
 	if m.simulateDelay > 0 {
@@ -136,11 +129,13 @@ func (m *AdvancedMockTwilioVoice) CreateSession(ctx context.Context, config *vbi
 	}
 
 	// Create and return a mock session
-	sessionID := fmt.Sprintf("mock-session-%d", m.callCount)
+	sessionID := fmt.Sprintf("mock-session-%d", callCount)
 	mockSession := NewMockTwilioVoiceSession(sessionID, config)
 
 	// Store session for GetSession to retrieve
+	m.mu.Lock()
 	m.sessions[sessionID] = mockSession
+	m.mu.Unlock()
 
 	return mockSession, nil
 }
@@ -162,7 +157,9 @@ func (m *AdvancedMockTwilioVoice) GetSession(ctx context.Context, sessionID stri
 		return nil, errors.New("mock get session error")
 	}
 
+	m.mu.RLock()
 	session, exists := m.sessions[sessionID]
+	m.mu.RUnlock()
 	if !exists {
 		return nil, errors.New("session not found")
 	}
@@ -187,10 +184,12 @@ func (m *AdvancedMockTwilioVoice) ListSessions(ctx context.Context) ([]vbiface.V
 		return nil, errors.New("mock list sessions error")
 	}
 
+	m.mu.RLock()
 	sessions := make([]vbiface.VoiceSession, 0, len(m.sessions))
 	for _, session := range m.sessions {
 		sessions = append(sessions, session)
 	}
+	m.mu.RUnlock()
 
 	return sessions, nil
 }
@@ -212,7 +211,9 @@ func (m *AdvancedMockTwilioVoice) CloseSession(ctx context.Context, sessionID st
 		return errors.New("mock close session error")
 	}
 
+	m.mu.Lock()
 	delete(m.sessions, sessionID)
+	m.mu.Unlock()
 	return nil
 }
 
@@ -285,9 +286,9 @@ func (m *AdvancedMockTwilioVoice) GetCallCount() int {
 
 // ConcurrentTestRunner provides utilities for concurrent testing.
 type ConcurrentTestRunner struct {
+	TestFunc      func() error
 	NumGoroutines int
 	TestDuration  time.Duration
-	TestFunc      func() error
 }
 
 // NewConcurrentTestRunner creates a new concurrent test runner.
@@ -341,13 +342,13 @@ func (r *ConcurrentTestRunner) Run() error {
 
 // MockTwilioVoiceSession provides a simple mock implementation of VoiceSession for testing.
 type MockTwilioVoiceSession struct {
-	id                string
 	sessionConfig     *vbiface.SessionConfig
-	state             vbiface.PipelineState
-	persistenceStatus vbiface.PersistenceStatus
 	metadata          map[string]any
 	audioInput        chan []byte
 	audioOutput       chan []byte
+	id                string
+	state             vbiface.PipelineState
+	persistenceStatus vbiface.PersistenceStatus
 	mu                sync.RWMutex
 	active            bool
 }

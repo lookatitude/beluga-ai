@@ -12,7 +12,7 @@ import (
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
 
-// Static base errors for dynamic error wrapping (err113 compliance)
+// Static base errors for dynamic error wrapping (err113 compliance).
 var (
 	errAgentTypeNotRegistered      = errors.New("agent type not registered")
 	errBaseAgentRequiresLLM        = errors.New("base agent requires LLM interface")
@@ -40,7 +40,7 @@ type AgentRegistry struct {
 //	registry := agents.NewAgentRegistry()
 //	registry.Register("base", baseAgentCreator)
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func NewAgentRegistry() *AgentRegistry {
 	return &AgentRegistry{
 		creators: make(map[string]AgentCreatorFunc),
@@ -60,7 +60,7 @@ func NewAgentRegistry() *AgentRegistry {
 //	    return NewCustomAgent(name, llm, tools, config)
 //	})
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -89,7 +89,7 @@ func (r *AgentRegistry) Register(agentType string, creator AgentCreatorFunc) {
 //	    log.Fatal(err)
 //	}
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	r.mu.RLock()
 	creator, exists := r.creators[agentType]
@@ -117,7 +117,7 @@ func (r *AgentRegistry) Create(ctx context.Context, agentType, name string, llm 
 //	types := registry.ListAgentTypes()
 //	fmt.Printf("Available agent types: %v\n", types)
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func (r *AgentRegistry) ListAgentTypes() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -143,7 +143,7 @@ var globalAgentRegistry = NewAgentRegistry()
 //
 //	agents.RegisterAgentType("custom", customAgentCreator)
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func RegisterAgentType(agentType string, creator AgentCreatorFunc) {
 	globalAgentRegistry.Register(agentType, creator)
 }
@@ -167,7 +167,7 @@ func RegisterAgentType(agentType string, creator AgentCreatorFunc) {
 //
 //	agent, err := agents.CreateAgent(ctx, "base", "my-agent", llm, tools, config)
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTools []iface.Tool, config Config) (iface.CompositeAgent, error) {
 	return globalAgentRegistry.Create(ctx, agentType, name, llm, agentTools, config)
 }
@@ -183,7 +183,7 @@ func CreateAgent(ctx context.Context, agentType, name string, llm any, agentTool
 //	types := agents.ListAvailableAgentTypes()
 //	fmt.Printf("Available types: %v\n", types)
 //
-// Example usage can be found in examples/agents/basic/main.go
+// Example usage can be found in examples/agents/basic/main.go.
 func ListAvailableAgentTypes() []string {
 	return globalAgentRegistry.ListAgentTypes()
 }

@@ -18,22 +18,17 @@ import (
 // VapiSession implements the VoiceSession interface for Vapi.
 // Each session maintains independent state with its own mutex for isolation.
 type VapiSession struct {
-	id                   string
 	config               *VapiConfig
 	sessionConfig        *vbiface.SessionConfig
 	pipelineOrchestrator *internal.PipelineOrchestrator
 	httpClient           *http.Client
-	state                vbiface.PipelineState
-	persistenceStatus    vbiface.PersistenceStatus
 	metadata             map[string]any
 	audioOutput          chan []byte
-	mu                   sync.RWMutex // Per-session mutex for state isolation
+	id                   string
+	state                vbiface.PipelineState
+	persistenceStatus    vbiface.PersistenceStatus
+	mu                   sync.RWMutex
 	active               bool
-	// Session isolation: Each session has independent:
-	// - State (state, persistenceStatus, active)
-	// - Resources (pipelineOrchestrator, audioOutput channel, httpClient)
-	// - Configuration (sessionConfig, metadata)
-	// No shared mutable state between sessions
 }
 
 // NewVapiSession creates a new Vapi session.

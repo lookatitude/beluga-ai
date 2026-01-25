@@ -30,6 +30,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -43,21 +44,21 @@ import (
 
 // WeaviateStore implements the VectorStore interface using Weaviate API.
 type WeaviateStore struct {
+	httpClient   *http.Client
 	url          string
 	apiKey       string
 	className    string
-	embeddingDim int
 	name         string
-	httpClient   *http.Client
+	embeddingDim int
 	mu           sync.RWMutex
 }
 
 // Weaviate API request/response structures.
 type weaviateObject struct {
-	ID         string                 `json:"id,omitempty"`
-	Class      string                 `json:"class,omitempty"`
-	Properties map[string]interface{} `json:"properties,omitempty"`
-	Vector     []float32              `json:"vector,omitempty"`
+	ID         string         `json:"id,omitempty"`
+	Class      string         `json:"class,omitempty"`
+	Properties map[string]any `json:"properties,omitempty"`
+	Vector     []float32      `json:"vector,omitempty"`
 }
 
 type weaviateBatchRequest struct {
@@ -69,8 +70,8 @@ type weaviateGraphQLQuery struct {
 }
 
 type weaviateGraphQLResponse struct {
-	Data   map[string]interface{} `json:"data"`
-	Errors []weaviateError        `json:"errors,omitempty"`
+	Data   map[string]any  `json:"data"`
+	Errors []weaviateError `json:"errors,omitempty"`
 }
 
 type weaviateError struct {
@@ -82,11 +83,11 @@ type weaviateGetResponse struct {
 }
 
 type weaviateSearchRequest struct {
-	Query      string                 `json:"query,omitempty"`
-	NearVector *weaviateNearVector    `json:"nearVector,omitempty"`
-	Limit      int                    `json:"limit"`
-	Where      map[string]interface{} `json:"where,omitempty"`
-	Fields     string                 `json:"fields,omitempty"`
+	NearVector *weaviateNearVector `json:"nearVector,omitempty"`
+	Where      map[string]any      `json:"where,omitempty"`
+	Query      string              `json:"query,omitempty"`
+	Fields     string              `json:"fields,omitempty"`
+	Limit      int                 `json:"limit"`
 }
 
 type weaviateNearVector struct {
@@ -129,7 +130,7 @@ type weaviateSearchData struct {
 //	}
 //	store, err := weaviate.NewWeaviateStoreFromConfig(ctx, config)
 //
-// Example usage can be found in examples/rag/simple/main.go
+// Example usage can be found in examples/rag/simple/main.go.
 func NewWeaviateStoreFromConfig(ctx context.Context, config vectorstoresiface.Config) (vectorstores.VectorStore, error) {
 	// Extract weaviate-specific configuration
 	url, _ := config.ProviderConfig["url"].(string)
@@ -175,13 +176,13 @@ func NewWeaviateStoreFromConfig(ctx context.Context, config vectorstoresiface.Co
 func (s *WeaviateStore) ensureClass(ctx context.Context) error {
 	// Check if class exists
 	url := fmt.Sprintf("%s/v1/schema/%s", s.url, s.className)
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
 
 	if s.apiKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.apiKey))
+		req.Header.Set("Authorization", "Bearer "+s.apiKey)
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -206,10 +207,10 @@ func (s *WeaviateStore) ensureClass(ctx context.Context) error {
 
 // createClass creates a new Weaviate class.
 func (s *WeaviateStore) createClass(ctx context.Context) error {
-	classDef := map[string]interface{}{
+	classDef := map[string]any{
 		"class":      s.className,
 		"vectorizer": "none", // We provide vectors ourselves
-		"properties": []map[string]interface{}{
+		"properties": []map[string]any{
 			{
 				"name":     "content",
 				"dataType": []string{"text"},
@@ -222,15 +223,15 @@ func (s *WeaviateStore) createClass(ctx context.Context) error {
 		return err
 	}
 
-	url := fmt.Sprintf("%s/v1/schema", s.url)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	url := s.url + "/v1/schema"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	if s.apiKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.apiKey))
+		req.Header.Set("Authorization", "Bearer "+s.apiKey)
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -297,7 +298,7 @@ func (s *WeaviateStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		ids[i] = id
 
 		// Prepare properties (metadata + content)
-		properties := make(map[string]interface{})
+		properties := make(map[string]any)
 		properties["content"] = doc.GetContent()
 		for k, v := range doc.Metadata {
 			properties[k] = v
@@ -321,15 +322,15 @@ func (s *WeaviateStore) AddDocuments(ctx context.Context, documents []schema.Doc
 		return nil, fmt.Errorf("failed to marshal batch request: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v1/batch/objects", s.url)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	url := s.url + "/v1/batch/objects"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	if s.apiKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.apiKey))
+		req.Header.Set("Authorization", "Bearer "+s.apiKey)
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -358,13 +359,13 @@ func (s *WeaviateStore) DeleteDocuments(ctx context.Context, ids []string, opts 
 	// Delete objects one by one (Weaviate doesn't have batch delete in REST API)
 	for _, id := range ids {
 		url := fmt.Sprintf("%s/v1/objects/%s/%s", s.url, s.className, id)
-		req, err := http.NewRequestWithContext(ctx, "DELETE", url, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodDelete, url, nil)
 		if err != nil {
 			return err
 		}
 
 		if s.apiKey != "" {
-			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.apiKey))
+			req.Header.Set("Authorization", "Bearer "+s.apiKey)
 		}
 
 		resp, err := s.httpClient.Do(req)
@@ -448,15 +449,15 @@ func (s *WeaviateStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		return nil, nil, fmt.Errorf("failed to marshal GraphQL query: %w", err)
 	}
 
-	url := fmt.Sprintf("%s/v1/graphql", s.url)
-	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(bodyBytes))
+	url := s.url + "/v1/graphql"
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(bodyBytes))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 	if s.apiKey != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", s.apiKey))
+		req.Header.Set("Authorization", "Bearer "+s.apiKey)
 	}
 
 	resp, err := s.httpClient.Do(req)
@@ -480,12 +481,12 @@ func (s *WeaviateStore) SimilaritySearch(ctx context.Context, queryVector []floa
 	}
 
 	// Extract results from GraphQL response
-	getData, ok := graphQLResp.Data["Get"].(map[string]interface{})
+	getData, ok := graphQLResp.Data["Get"].(map[string]any)
 	if !ok {
-		return nil, nil, fmt.Errorf("unexpected GraphQL response format")
+		return nil, nil, errors.New("unexpected GraphQL response format")
 	}
 
-	classData, ok := getData[s.className].([]interface{})
+	classData, ok := getData[s.className].([]any)
 	if !ok {
 		return []schema.Document{}, []float32{}, nil
 	}
@@ -495,7 +496,7 @@ func (s *WeaviateStore) SimilaritySearch(ctx context.Context, queryVector []floa
 	scores := make([]float32, 0, len(classData))
 
 	for _, item := range classData {
-		itemMap, ok := item.(map[string]interface{})
+		itemMap, ok := item.(map[string]any)
 		if !ok {
 			continue
 		}
@@ -503,7 +504,7 @@ func (s *WeaviateStore) SimilaritySearch(ctx context.Context, queryVector []floa
 		id, _ := itemMap["_id"].(string)
 		content, _ := itemMap["content"].(string)
 
-		additional, _ := itemMap["_additional"].(map[string]interface{})
+		additional, _ := itemMap["_additional"].(map[string]any)
 		distance, _ := additional["distance"].(float64)
 		score := 1.0 - float32(distance) // Convert distance to similarity score
 
@@ -614,7 +615,7 @@ func vectorToGraphQLArray(vec []float32) string {
 }
 
 // buildWhereClause builds a Weaviate where clause from metadata filters.
-func buildWhereClause(filters map[string]interface{}) string {
+func buildWhereClause(filters map[string]any) string {
 	if len(filters) == 0 {
 		return "{}"
 	}

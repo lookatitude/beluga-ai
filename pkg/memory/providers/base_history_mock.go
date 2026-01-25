@@ -13,16 +13,16 @@ import (
 
 // AdvancedMockBaseChatMessageHistory provides a comprehensive mock implementation for testing BaseChatMessageHistory.
 type AdvancedMockBaseChatMessageHistory struct {
+	errorToReturn error
 	mock.Mock
-	mu                sync.RWMutex
-	callCount         int
-	shouldError       bool
-	errorToReturn     error
 	messages          []schema.Message
+	callCount         int
 	simulateDelay     time.Duration
-	simulateRateLimit bool
 	rateLimitCount    int
 	maxSize           int
+	mu                sync.RWMutex
+	shouldError       bool
+	simulateRateLimit bool
 }
 
 // NewAdvancedMockBaseChatMessageHistory creates a new advanced mock with configurable behavior.

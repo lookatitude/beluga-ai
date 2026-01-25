@@ -2,7 +2,7 @@ package twilio
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 
@@ -16,17 +16,17 @@ import (
 
 // OrchestrationManager manages workflow orchestration for Twilio messaging events.
 type OrchestrationManager struct {
-	orchestrator interface{}            // orchestrationiface.Orchestrator
-	workflows    map[string]interface{} // orchestrationiface.Graph
-	mu           sync.RWMutex
+	orchestrator any
+	workflows    map[string]any
 	provider     *TwilioProvider
+	mu           sync.RWMutex
 }
 
 // NewOrchestrationManager creates a new orchestration manager.
-func NewOrchestrationManager(provider *TwilioProvider, orchestrator interface{}) (*OrchestrationManager, error) {
+func NewOrchestrationManager(provider *TwilioProvider, orchestrator any) (*OrchestrationManager, error) {
 	manager := &OrchestrationManager{
 		orchestrator: orchestrator,
-		workflows:    make(map[string]interface{}),
+		workflows:    make(map[string]any),
 		provider:     provider,
 	}
 
@@ -47,7 +47,7 @@ func (m *OrchestrationManager) createDefaultMessageFlowWorkflow() error {
 			// Process incoming message
 			message, ok := input.(*iface.Message)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			// Get or create session (thread-safe)
@@ -97,7 +97,7 @@ func (m *OrchestrationManager) createDefaultMessageFlowWorkflow() error {
 			// Generate agent response
 			message, ok := input.(*iface.Message)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			// Response generation is handled in session.ProcessMessage
@@ -111,7 +111,7 @@ func (m *OrchestrationManager) createDefaultMessageFlowWorkflow() error {
 			// Send response message
 			message, ok := input.(*iface.Message)
 			if !ok {
-				return nil, fmt.Errorf("invalid input type")
+				return nil, errors.New("invalid input type")
 			}
 
 			// Response sending is handled in session.ProcessMessage
@@ -123,7 +123,7 @@ func (m *OrchestrationManager) createDefaultMessageFlowWorkflow() error {
 	// Note: Full implementation would cast orchestrator to orchestrationiface.Orchestrator
 	orchestrator, _ := m.orchestrator.(orchestrationiface.Orchestrator)
 	if orchestrator == nil {
-		return fmt.Errorf("orchestrator not available")
+		return errors.New("orchestrator not available")
 	}
 	workflow, err := orchestrator.CreateGraph(
 		func(config *orchestrationiface.GraphConfig) error {
@@ -165,7 +165,7 @@ func (m *OrchestrationManager) TriggerMessageFlowWorkflow(ctx context.Context, e
 	m.mu.RUnlock()
 
 	if !exists {
-		err := fmt.Errorf("message flow workflow not found")
+		err := errors.New("message flow workflow not found")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -173,7 +173,7 @@ func (m *OrchestrationManager) TriggerMessageFlowWorkflow(ctx context.Context, e
 
 	workflow, ok := workflowInterface.(orchestrationiface.Graph)
 	if !ok {
-		err := fmt.Errorf("workflow type assertion failed")
+		err := errors.New("workflow type assertion failed")
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		return err
@@ -212,8 +212,8 @@ func (m *OrchestrationManager) startSpan(ctx context.Context, operation string) 
 
 // runnableFunc implements core.Runnable for function-based runnables.
 type runnableFunc struct {
-	name string
 	fn   func(ctx context.Context, input any, options ...core.Option) (any, error)
+	name string
 }
 
 func (r *runnableFunc) Invoke(ctx context.Context, input any, options ...core.Option) (any, error) {
