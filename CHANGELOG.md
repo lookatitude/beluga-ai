@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.9.1](https://github.com/lookatitude/beluga-ai/compare/v1.9.0...v1.9.1) (2026-01-25)
+
+
+### Bug Fixes
+
+* resolve CI test failures and data races ([f2de759](https://github.com/lookatitude/beluga-ai/commit/f2de7597860603bdb2a0151f5eb868eda6f4b735))
+* resolve integration test failures and Amazon Nova streaming issues ([195797b](https://github.com/lookatitude/beluga-ai/commit/195797b97dc8e12248d6fcc42e74ab5911311bbc))
+* resolve MDX compilation errors and website build issues ([45528e1](https://github.com/lookatitude/beluga-ai/commit/45528e1bdce7eb4a7bb8ab5f4a4cda900c89a459))
+* resolve tsconfig.json extends error for Docusaurus ([20398b8](https://github.com/lookatitude/beluga-ai/commit/20398b8d87f343dd3c246811feb8f95b1de3c329))
+
 ## [1.9.0](https://github.com/lookatitude/beluga-ai/compare/v1.8.1...v1.9.0) (2026-01-16)
 
 
