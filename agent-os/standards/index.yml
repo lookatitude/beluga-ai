@@ -1,0 +1,344 @@
+# Agent OS Standards Index
+
+agents:
+  agent-and-planner-layering:
+    description: Planner, Agent, CompositeAgent; Plan returns AgentAction/AgentFinish; factories return CompositeAgent
+  executor-vs-planner:
+    description: ExecutePlan for pre-built steps; Plan for next action; Action.Tool vs Action.Log vs Observation.Output
+  registry-and-agent-creator-func:
+    description: AgentCreatorFunc with llm any and type-assert; Create, ListAgentTypes, IsRegistered; ErrCodeInitialization
+  safety-opt-in-middleware:
+    description: WithEnableSafety; wrap or operation-specific hooks; opt-in for performance, custom checkers, or when not needed
+  streaming-agent:
+    description: StreamExecute, StreamPlan, AgentStreamChunk; optional; first-chunk ~200ms as goal, warn when higher
+  tool-and-tool-registry:
+    description: core.Tool, BaseTool; ToolRegistry in iface; tools subpackage re-exports; reject duplicate tool names
+
+examples:
+  blank-imports:
+    description: Blank imports trigger init() for provider registration; group at end of imports; example controls available providers
+  graceful-fallback:
+    description: os.Stat check for optional resources; fallback to mocks/inline data; print clear message explaining path taken
+  readme-template:
+    description: "Strict template: Description, Prerequisites (table), Usage, Code Structure, Testing, Troubleshooting, Related Examples"
+  three-level-organization:
+    description: Organize by package, learning path (beginner/intermediate/advanced), AND use case; each example in own directory
+
+embeddings:
+  dimension-lookup:
+    description: Hardcoded model→dimension switch; silent fallback to 1536; avoids API call
+
+global:
+  config-duplication:
+    description: Providers duplicate parent config structs to break import cycles; add comment explaining why
+  config-propagation:
+    description: Hierarchical config; parent→sub-package passing; standardized keys; validation at each level
+  internal-vs-providers:
+    description: What goes in internal/ vs providers/; no providers under internal/
+  naming:
+    description: Package and folder naming — lowercase, singular, iface/, allowed abbreviations (llms, stt, tts, vad, rag)
+  provider-subpackage-layout:
+    description: Layout for providers/<name>/ and component/<name>/ — init.go, provider.go, {name}.go, {name}_mock.go; component sub-packages for wrappers
+  required-files:
+    description: Required files per package — iface, config, metrics, errors, test_utils, advanced_test, README; registry/factory for provider packages; wrapper and sub-package requirements
+  subpackage-structure:
+    description: pkg/<parent>/<component> layout; sub-package independence; no parent/sibling imports; full file set required
+  wrapper-package-pattern:
+    description: Wrapper/aggregation packages; facade interfaces; sub-package composition; span aggregation; config embedding
+
+backend:
+  error-codes-const:
+    description: ErrCodeXxx and "snake_case"; config for shared; package-specific in errors.go or iface/errors.go
+  span-aggregation:
+    description: OTEL span aggregation; parent spans contain child spans from sub-packages; unified observability
+  two-tier-factory:
+    description: Two-tier factory for wrappers; facade factory delegates to sub-package registries
+  error-constructors:
+    description: NewXxxError, NewXxxErrorWithMessage, WithField; shortcuts in errors.go or iface/errors.go
+  error-predicates:
+    description: IsXxxError, GetXxxError, GetXxxErrorCode; IsRetryable only when retry is in the contract
+  iface-errors:
+    description: When to use iface/errors.go; what goes there — struct, codes, constructors, predicates
+  op-err-code:
+    description: Main error struct — Op, Err, Code; optional Message; Unwrap; why stable Code
+  factory-signature:
+    description: func(*Config) or func(ctx, *Config); return Interface; when to use ctx
+  provider-not-found:
+    description: Use ErrCodeUnsupportedProvider; wrap descriptive error in package error
+  registry-public-api:
+    description: NewXxx, validation; ListProviders/ListXxx and IsRegistered required
+  registry-provider-naming:
+    description: Lowercase name; register key may differ from providers/ dir
+  registry-shape:
+    description: registry.go at root; GetRegistry, Register, Get/Create; sync.RWMutex
+  otel-only:
+    description: OpenTelemetry only; no Prometheus/StatsD; custom OTEL instruments allowed
+  metrics-go-shape:
+    description: NewMetrics(meter, tracer); take from caller; NoOpMetrics optional; InitMetrics/GetMetrics optional
+  otel-spans:
+    description: tracer.Start; defer span.End(); RecordError and SetStatus on error
+  otel-naming:
+    description: Metrics package.thing; spans package.Operation; attributes snake_case
+
+core:
+  di-container:
+    description: Reflection-based factory resolution; auto singleton caching; OTEL context in logs; NoOp defaults
+  runnable-interface:
+    description: Invoke/Batch/Stream trio; any input/output for composability; Option with Apply(map)
+  traced-runnable:
+    description: Decorator for OTEL tracing; NoOp fallbacks; stream goroutine overhead (make configurable)
+
+chatmodels:
+  map-based-options:
+    description: Apply(&map) with type assertions; avoids import cycles; key names implicitly coupled to types
+  no-compile-checks:
+    description: No var _ Interface = (*Impl)(nil) in root; provider packages must verify own implementations
+  registry-delegation:
+    description: Factory uses registry.CreateProvider; helpful error suggests blank import; same pattern as llms
+  runnable-embedding:
+    description: ChatModel embeds core.Runnable; LLM doesn't; deliberate separation for composability in chains/graphs
+
+config:
+  composite-provider:
+    description: NewCompositeProvider(providers...); default and backups in order; first wins; nil → ErrCodeInvalidParameters
+  config-errors:
+    description: Op/Err/Code; NewConfigError, WrapError; IsConfigError(err, code), AsConfigError
+  loader-options-and-loader:
+    description: LoaderOptions; DefaultLoaderOptions; LoadConfig with fixed provider; LoadFromEnv, LoadFromFile
+  provider-interface:
+    description: Load, UnmarshalKey; GetString/GetInt/GetBool/GetFloat64/IsSet; domain getters; Validate, SetDefaults
+  root-config-and-validation:
+    description: mapstructure/yaml; Config.String redact; ValidationErrors aggregate; ValidateConfig, SetDefaults
+
+documentloaders:
+  lazyload-channel:
+    description: "<-chan any yields Document or error; type assertion required; planned refactoring to idiomatic Go"
+
+documentation:
+  package-comment:
+    description: Package provides...; The package provides; Example usage; one comment; full blocks
+  function-and-type-godoc:
+    description: First sentence; Parameters; Returns; Example vs examples/ reference; error conditions
+  example-references-vs-func-example:
+    description: examples/ runnable and tests; func ExampleX next to code; reference only when implemented there
+  api-doc-generation-gomarkdoc:
+    description: gomarkdoc; recursive pkg/ discovery; frontmatter; MDX; CI and generate-docs.sh
+  godoc-coverage-expectations:
+    description: All exported; New* and interfaces; complex logic in godoc and inline
+  doc-and-godoc-validation:
+    description: CI and make ci-local; frontmatter, non-empty, too-short, details; extra checks beyond regeneration
+
+monitoring:
+  current-provider-selection:
+    description: SetCurrent* required before Create*; explicit choice for multiple active providers; fails if not configured
+  dual-output-logger:
+    description: Stdout (colored) vs file (plain) when not JSON; FATAL calls os.Exit(1); historical format difference
+  multi-provider-shutdown:
+    description: Collect all errors instead of fail-fast; best-effort cleanup; shutdown order loggers→tracers→metrics
+  string-context-keys:
+    description: "context.WithValue with \"trace_id\", \"span_id\" strings; enables cross-package extraction without imports"
+
+messaging:
+  double-check-locking:
+    description: RLock → upgrade to Lock → re-check; for read-heavy workloads with expensive creation; not for simple caches
+  event-routing:
+    description: strings.HasPrefix for prefix-based routing; graceful degradation for unknown events; {resource}.{action} format
+  webhook-retry:
+    description: Exponential backoff (1s, 2s, 4s); 3 retries max ~7s; for transient failures, not permanent errors
+
+makefile:
+  advisory-coverage:
+    description: Coverage check exits 0 even below 80%; metric not gate; matches CI behavior
+  cache-structure:
+    description: .cache/ for test-binaries, bin, go-build, benchmarks; category_name for examples; gitignore
+  ci-local-steps:
+    description: 8-step order matching CI; lint advisory (doesn't block); format/vet/security/tests block
+  react-exclusion:
+    description: pkg/agents/providers/react excluded due to golangci-lint v2.6.2 panic; remove when fixed
+
+llms:
+  config-and-factory-signature:
+    description: Config, ConfigOption, Validate; func(*Config) factory; set config.Provider when empty; no override when set
+  dual-registry-chatmodel-and-llm:
+    description: Separate Register/GetProvider/ListProviders/IsRegistered and RegisterLLM/GetLLM/ListLLMs/IsLLMRegistered; ErrCodeUnsupportedProvider
+  ensure-messages-and-helpers:
+    description: EnsureMessages(string|Message|[]Message); GetSystemAndHumanPromptsFromSchema; GenerateText, StreamText, BatchGenerate, GenerateTextWithTools in llms
+  llm-vs-chatmodel:
+    description: LLM (Invoke, GetModelName, GetProviderName); ChatModel embeds Runnable+LLM, adds Generate, StreamChat, BindTools; when to implement only LLM
+  relation-to-pkg-chatmodels:
+    description: Prefer llms/iface for agents, RAG, new code; pkg/chatmodels for different shapes; use adapter when bridging
+
+multimodal:
+  content-format-normalization:
+    description: base64/url/file_path conversion; url upload not implemented; caller cleanup for temp files
+  embedder-wrappers:
+    description: Embedder/MultimodalEmbedder → vectorstores.Embedder; import cycle avoidance; metadata loss warning
+  pipeline-selection:
+    description: reasoning vs generation auto-selection; multimodal → reasoning, text → generation; explicit selection planned
+  provider-routing:
+    description: auto/manual/fallback strategies; hardcoded multimodal providers list; text fallback behavior
+  streaming-chunks:
+    description: video 1MB, audio 64KB chunks; metadata tracking; stream interruption by input ID
+
+memory:
+  memory-as-single-interface:
+    description: Memory as single public interface; always use Memory; ChatMessageHistory internal/storage only
+  config-enabled-and-noop-memory:
+    description: Config.Enabled false → NoOpMemory (non-nil); nil only when memory optional and not supplied
+  memorytype-factory-and-registry:
+    description: MemoryType; Factory for extensibility; Registry for global Register/Create/List; NewMemory convenience
+  heavy-types-and-direct-constructors:
+    description: Injection via Config/Option for LLM/Retriever/Embedder/VectorStore; direct constructor when missing; clear error
+  internal-vs-providers:
+    description: internal = Memory impls; providers = swappable storage; RAM default short/medium; long-term needs config
+  key-and-formatting-options:
+    description: GetInputOutputKeys, GetBufferString at package level; preferred key names; HumanPrefix/AIPrefix/ReturnMessages optional
+  memory-error-and-is-memory-error:
+    description: MemoryError Op/Err/Code/Message; Code always ErrCode*; providers custom Message; IsMemoryError(err, code)
+
+orchestration:
+  chain-graph-workflow-patterns:
+    description: Chain and Graph embed Runnable; Workflow long-running/async; Activity may differ from Runnable
+  chain-memory-retry-streaming:
+    description: One Load/Save per chain run; RetryExecutor and IsRetryable; use Stream when step supports it
+  errors-in-iface:
+    description: OrchestratorError, helpers in iface/errors.go; IsRetryable; providers may add retry on top
+  graph-dag-entry-exit:
+    description: Infer entry/exit by default; AddNode/AddEdge; max-iterations cycle guard; prefer parallel when enabled
+  orchestrator-and-feature-flags:
+    description: Config.Enabled; ErrInvalidState when disabled or backend not configured; ChainOption/GraphOption/WorkflowOption
+  workflow-and-activity:
+    description: workflowFn any; WorkflowConfig; Container optional; Temporal; ErrInvalidState when not configured
+
+server:
+  server-rest-mcp:
+    description: Server, RESTServer, MCPServer; NewRESTServer, NewMCPServer; delegation to providers/rest and providers/mcp
+  config-rest-mcp-option:
+    description: Config, RESTConfig, MCPConfig; ServerOptions, Option, With*; re-exports in config.go
+  streaming-handler-and-rest-routes:
+    description: StreamingHandler; RegisterHandler resource-based; RegisterHTTPHandler; /health; middleware order
+  mcp-tool-and-resource:
+    description: MCPTool, MCPResource in iface; JSON-RPC over HTTP; ServerName required; ProtocolVersion
+  server-error-and-http-status:
+    description: ServerError, HTTPStatus(); error codes; New* helpers; JSON error response shape
+
+prompts:
+  adapter-types:
+    description: DefaultPromptAdapter (string) vs ChatPromptAdapter ([]Message); ISP compliance; output type at construction
+  prompt-value:
+    description: Intermediate representation; ToString() and ToMessages(); decouples prompt from LLM requirements
+  variable-syntax:
+    description: "{{.variableName}} format; simple ReplaceAll; ValidateVariables and StrictVariableCheck config"
+
+retrievers:
+  api-cost-limits:
+    description: Cap unbounded params (NumQueries max 10, DefaultK 1-100); default when <= 0; comment reasoning
+  dual-factory-pattern:
+    description: Functional options + config struct factories; both populate same internal options; ApplyDefaults/Validate for config
+  graceful-degradation:
+    description: Continue on partial failures in multi-query; partial results useful for search; dedupe by ID with fallback
+  lazy-metrics-init:
+    description: Create Metrics only if EnableMetrics && Meter != nil; optional OTEL; slog.Default() fallback for Logger
+
+rag:
+  loader-and-splitter:
+    description: Load/LazyLoad; Metadata source when meaningful; Splitter methods; NewXxxSplitter(opts)
+  multiquery-retriever:
+    description: Wraps Retriever+LLM; both required; NumQueries default and cap; merge and deduplicate
+  pipeline-flow:
+    description: Typical flow Load→Split→Embed→AddDocuments; variations allowed; core.Option or package Option
+  retriever-and-runnable:
+    description: core.Retriever embeds Runnable; HealthChecker when deps; Invoke/Batch/Stream
+  vectorstore-and-asretriever:
+    description: AddDocuments, SimilaritySearch, SimilaritySearchByQuery; AsRetriever(opts); GetName
+  vectorstore-retriever:
+    description: Wraps VectorStore; global tracer/logger; WithDefaultK, WithScoreThreshold; ErrCodeInvalidConfig
+
+safety:
+  middleware-pattern:
+    description: SafetyMiddleware wraps CompositeAgent; checks inputs["input"] before Plan(); opt-in design
+  risk-scoring:
+    description: Additive scoring (toxicity +0.4, bias +0.2, harmful +0.5); safe if < 0.3; configurability planned
+
+scripts:
+  binary-caching:
+    description: Cache test binaries in .cache/test-binaries; parent_child naming for nested packages; gitignore .cache/
+  color-validation:
+    description: RED/YELLOW/GREEN with emoji; errors exit 1, warnings continue; numbered rules; final summary
+  go-build-ignore:
+    description: "//go:build ignore for standalone scripts; both old and new format; runs with go run"
+  provider-verification:
+    description: Blank imports trigger init(); check registry.IsRegistered(); exit 1 if missing
+
+schema:
+  base-message-and-concretes:
+    description: BaseMessage; GetContent fallback for multimodal; dedicated fields and AdditionalArgs
+  chat-history:
+    description: iface; AddMessage, Messages, Clear required; AddUserMessage/AddAIMessage optional
+  document-and-voicedocument:
+    description: Document implements Message; VoiceDocument embeds Document, override GetContent
+  message-factories:
+    description: NewXxxMessage; return Message or concrete; single factory; OTEL elsewhere
+  message-interface:
+    description: GetType, GetContent, ToolCalls, AdditionalArgs; Message/MessageType/ToolCall in iface
+  message-type-constants:
+    description: RoleHuman, RoleAssistant, RoleSystem, RoleTool, RoleFunction; re-export; prefer iface
+  multimodal-helpers:
+    description: AsXxx, IsXxx; metadata when struct; HasMultimodalContent, ExtractMultimodalData
+  toolcall-and-functioncall:
+    description: ToolCall ID/Type/Function; FunctionCall Name/Arguments; JSON default for Arguments
+
+vectorstores:
+  asretriever-pattern:
+    description: AsRetriever() creates wrapper; options captured but SearchK hardcoded to 5; enables RAG composition
+  batch-operations:
+    description: BatchAddDocuments/BatchSearch; partial success semantics; default batch size 100
+
+voice:
+  backend-and-registry:
+    description: VoiceBackend interface; registry GetRegistry, Register, Create, ListProviders, IsRegistered; ErrCodeProviderNotFound
+  session-and-config:
+    description: VoiceSession; Config (Provider, PipelineType, mode-specific providers); SessionConfig; ValidateConfig/ValidateSessionConfig; backend resolution
+  pipeline-types-and-states:
+    description: PipelineType (stt_tts, s2s); ConnectionState; PipelineState; PersistenceStatus; PipelineConfiguration; CustomProcessor
+  stt-tts-vad-transport-etc:
+    description: Interfaces in voice/iface; subpackage iface aliases; NewProvider, registry, GetProvider; ErrCodeUnsupportedProvider; InitMetrics/GetMetrics
+  s2s:
+    description: S2SProvider (Process, Name); StreamingS2SProvider, StreamingSession; s2s/iface; NewProvider, registry; InitMetrics/GetMetrics
+  session-mode-stt-tts-vs-s2s:
+    description: PipelineType mutual exclusion; require STT+TTS for stt_tts, S2S for s2s; ValidateConfig; ErrCodeInvalidConfig
+
+textsplitters:
+  auto-metadata:
+    description: chunk_index/chunk_total always added; original metadata copied; should be configurable (future)
+  character-fallback:
+    description: When no separator works, split by rune; guarantees chunks <= ChunkSize; edge case for large runes
+  default-separators:
+    description: '"\n\n", "\n", " ", "" hierarchy; paragraph→line→word→character; empty string is ultimate fallback'
+  smart-overlap:
+    description: Try whitespace boundary before byte fallback; semantic coherence and embedding quality; UTF-8 safe
+
+testing:
+  advanced-test:
+    description: advanced_test.go required; broader/edge-case/concurrency tests; complements unit _test.go
+  subpackage-mocks:
+    description: Sub-package-specific mocks; test_utils.go per sub-package; composite mocks in wrapper
+  wrapper-integration:
+    description: Cross-sub-package integration tests; pipeline tests; error propagation; span aggregation verification
+  assertions:
+    description: Prefer testify/assert and require; t.Helper() in validate and helpers
+  concurrency-and-errors:
+    description: Concurrency tests when code is concurrent; one test per error branch or ErrCode
+  env-guards:
+    description: Two-factor guards (API key + explicit flag); SkipIfNoRealProviders, SkipIfShortMode, GetEnvOrSkip
+  local-mock-builders:
+    description: Test-local mocks with fluent With* methods; avoids circular imports; returns self for chaining
+  mock-caching:
+    description: Helper caches mocks by name; mutex-protected maps; Reset() clears all; ensures consistency
+  semaphore-load-test:
+    description: Semaphore channel for rate-limited concurrency; collect all errors before failing; log ops/sec
+  table-driven:
+    description: Table-driven for almost all tests; name, setup, validate, wantErr
+  test-utils:
+    description: Mocks and helpers; only imported by _test.go; coverage exclusions elsewhere
+

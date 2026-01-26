@@ -58,21 +58,21 @@ jobs:
           if [ "${{ github.event_name }}" == "pull_request" ]; then
             # For PRs, check if there are significant differences (not just whitespace)
             # Count non-whitespace-only changes
-            changes=$(git diff --ignore-all-space --ignore-blank-lines --name-only HEAD -- website/docs/api/packages/ 2>/dev/null | wc -l || echo "0")
+            changes=$(git diff --ignore-all-space --ignore-blank-lines --name-only HEAD -- website/docs/api-docs/packages/ 2>/dev/null | wc -l || echo "0")
             if [ "$changes" -gt 0 ]; then
               echo "has_changes=true" >> $GITHUB_OUTPUT
               echo "Detected $changes file(s) with content changes"
-              git diff --stat --ignore-all-space --ignore-blank-lines HEAD -- website/docs/api/packages/ || true
+              git diff --stat --ignore-all-space --ignore-blank-lines HEAD -- website/docs/api-docs/packages/ || true
             else
               echo "has_changes=false" >> $GITHUB_OUTPUT
               echo "No significant content changes detected"
             fi
           else
             # For push events, use standard git status check
-            if [ -n "$(git status --porcelain website/docs/api/packages)" ]; then
+            if [ -n "$(git status --porcelain website/docs/api-docs/packages)" ]; then
               echo "has_changes=true" >> $GITHUB_OUTPUT
               echo "Detected changes in generated documentation files"
-              git status --short website/docs/api/packages/ || true
+              git status --short website/docs/api-docs/packages/ || true
             else
               echo "has_changes=false" >> $GITHUB_OUTPUT
               echo "No changes detected - documentation is up to date"
@@ -84,7 +84,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add website/docs/api/packages/
+          git add website/docs/api-docs/packages/
           git commit -m "docs: auto-generate API documentation [skip ci]" || exit 0
           git push
 

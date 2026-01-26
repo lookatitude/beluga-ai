@@ -173,6 +173,79 @@ graph LR
     Server --> Schema
 ```
 
+### 1.3 Wrapper Package Architecture
+
+Wrapper packages (like `voice` and `orchestration`) aggregate multiple sub-packages into cohesive units. They implement the facade pattern to provide unified entry points while maintaining sub-package independence.
+
+```mermaid
+graph TB
+    subgraph "Voice Wrapper Package"
+        Facade[Voice Facade API]
+        Config[Voice Config]
+        Metrics[Aggregated Metrics]
+        Registry[Facade Registry]
+    end
+
+    subgraph "STT Sub-Package"
+        STTIface[Transcriber Interface]
+        STTReg[STT Registry]
+        STTProviders[STT Providers]
+        STTMetrics[STT Metrics]
+    end
+
+    subgraph "TTS Sub-Package"
+        TTSIface[Speaker Interface]
+        TTSReg[TTS Registry]
+        TTSProviders[TTS Providers]
+        TTSMetrics[TTS Metrics]
+    end
+
+    subgraph "VAD Sub-Package"
+        VADIface[Detector Interface]
+        VADReg[VAD Registry]
+        VADProviders[VAD Providers]
+        VADMetrics[VAD Metrics]
+    end
+
+    subgraph "Session Sub-Package"
+        SessionMgr[Session Manager]
+        SessionState[Session State]
+    end
+
+    Facade --> Config
+    Facade --> Registry
+    Facade --> Metrics
+
+    Registry --> STTReg
+    Registry --> TTSReg
+    Registry --> VADReg
+
+    Config --> STTConfig[STT Config]
+    Config --> TTSConfig[TTS Config]
+    Config --> VADConfig[VAD Config]
+
+    Metrics --> STTMetrics
+    Metrics --> TTSMetrics
+    Metrics --> VADMetrics
+
+    Facade --> SessionMgr
+    SessionMgr --> STTIface
+    SessionMgr --> TTSIface
+    SessionMgr --> VADIface
+
+    STTReg --> STTProviders
+    TTSReg --> TTSProviders
+    VADReg --> VADProviders
+```
+
+**Wrapper Package Characteristics:**
+
+1. **Facade Pattern**: Single entry point (`NewVoiceAgent()`) initializes all sub-packages
+2. **Config Embedding**: Parent config embeds sub-package configs with YAML tags
+3. **Registry Delegation**: Facade registry delegates to sub-package registries
+4. **Span Aggregation**: Parent spans contain child spans from sub-packages
+5. **Independence**: Sub-packages are independently importable and testable
+
 Key changes include:
 - **Modular Package Structure:** The `pkg` directory now houses clearly delineated modules for core functionalities, schema definitions, agents, orchestration, and utilities. This replaces a flatter or less organized structure, making it easier to locate and understand different parts of the framework.
 - **Interface-Driven Design:** Emphasis has been placed on defining clear interfaces for key components like `Agent`, `Tool`, `Scheduler`, `MessageBus`, and `Workflow`. This promotes loose coupling and allows for easier substitution of implementations.

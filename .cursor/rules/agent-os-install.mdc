@@ -1,0 +1,55 @@
+---
+description: Agent OS project installation and sync — when to run project-install, profile beluga, troubleshooting, next steps
+globs: agent-os/**
+alwaysApply: false
+---
+
+# Agent OS Project Installation
+
+Use this when helping with Agent OS setup, `project-install.sh`, `sync-to-profile.sh`, or `agent-os/` in this project.
+
+## When to Run project-install
+
+Run from **project root** (e.g. beluga-ai):
+
+```bash
+~/agent-os/scripts/project-install.sh --profile beluga
+```
+
+- **First-time setup**: Creates `agent-os/` and `agent-os/standards/`, installs standards from the profile, and copies Agent OS commands into the project.
+- **Re-install / refresh**: Use `--profile beluga` (or another profile). If `agent-os/standards/` exists, the script will ask before overwriting. Use `--commands-only` to update only commands and keep existing standards.
+
+## Profile (beluga)
+
+- Profile comes from `~/agent-os/config.yml` (`default_profile`) or `--profile`.
+- This project uses the **beluga** profile.
+- Standards are merged from the profile inheritance chain (e.g. beluga → default when configured). Profiles live under `~/agent-os/profiles/<name>/`.
+
+## Troubleshooting
+
+| Error | Cause | Fix |
+| ----- | ----- | --- |
+| `No standards directory found at agent-os/standards/` | `sync-to-profile.sh` was run before `project-install.sh` | Run `~/agent-os/scripts/project-install.sh --profile beluga` first. |
+| `Cannot install Agent OS in the base installation directory` | Current dir is `~/agent-os` | `cd` into the project (e.g. `beluga-ai`) and run again. |
+| `Profile not found` | `--profile` or `default_profile` points to a missing profile | Create the profile under `~/agent-os/profiles/<name>/` or fix `config.yml`. |
+
+## sync-to-profile
+
+After project-install, you can sync project standards back into a profile:
+
+```bash
+~/agent-os/scripts/sync-to-profile.sh --profile beluga
+# or create a new profile:
+~/agent-os/scripts/sync-to-profile.sh --new-profile beluga --all
+```
+
+Requires `agent-os/standards/` to exist (so project-install must have been run first).
+
+## Next Steps After Install
+
+1. **Discover standards**: Run `/discover-standards` (or the Agent OS `discover-standards` command) to extract patterns from the codebase into `agent-os/standards/`.
+2. **Inject standards**: Use `inject-standards` so the right standards are added to context when building.
+
+## Cursor vs Claude
+
+- `project-install.sh` copies commands to **`.claude/commands/agent-os/`**. For Cursor, you can copy or symlink to **`.cursor/commands/agent-os/`** if you want those commands in Cursor’s command palette.

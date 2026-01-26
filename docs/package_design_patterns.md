@@ -91,7 +91,199 @@ pkg/{package_name}/
 └── README.md                # Package documentation (REQUIRED)
 ```
 
-**✅ All 14 packages now follow this exact structure**
+**✅ All 21 packages now follow this exact structure**
+
+## Package Types
+
+The framework distinguishes between two package types, each with specific structural requirements.
+
+### 3.1 Regular Packages
+
+Regular packages provide focused functionality with optional provider support. They follow the standard package layout and may contain sub-packages for provider implementations.
+
+**Characteristics:**
+- Single primary responsibility
+- Optional provider sub-packages
+- Direct registry for multi-provider scenarios
+- Standard OTEL metrics integration
+
+**Examples:** `llms`, `embeddings`, `memory`, `vectorstores`
+
+### 3.2 Wrapper/Aggregation Packages
+
+Wrapper packages serve as high-level bridges, composing and orchestrating functionality from multiple sub-packages. They provide unified entry points for complex features while hiding implementation details.
+
+**Characteristics:**
+- Aggregate 2+ sub-packages into cohesive units
+- Expose facade interfaces that delegate to sub-components
+- Use dependency injection (DI) to compose sub-packages via functional options
+- Handle cross-sub-package orchestration, error propagation, and observability
+- Implement span aggregation for unified tracing
+
+**Examples:** `voice`, `orchestration`
+
+**Required Facade Pattern:**
+```go
+// Facade interface at package root
+type VoiceAgent interface {
+    StartSession(ctx context.Context, cfg *SessionConfig) (Session, error)
+    ProcessAudio(ctx context.Context, audio []byte) (*ProcessResult, error)
+    Close() error
+}
+
+// Factory function initializes all sub-packages
+func NewVoiceAgent(opts ...VoiceOption) (VoiceAgent, error) {
+    cfg := defaultConfig()
+    for _, opt := range opts {
+        opt(cfg)
+    }
+
+    // Initialize sub-packages from config
+    sttProvider, err := stt.GetRegistry().GetProvider(cfg.STT.Provider, &cfg.STT)
+    if err != nil {
+        return nil, err
+    }
+
+    ttsProvider, err := tts.GetRegistry().GetProvider(cfg.TTS.Provider, &cfg.TTS)
+    if err != nil {
+        return nil, err
+    }
+
+    return &voiceAgent{
+        stt: sttProvider,
+        tts: ttsProvider,
+    }, nil
+}
+```
+
+**Wrapper Package Structure:**
+```
+pkg/{wrapper_package}/
+├── iface/                    # Shared interfaces across sub-packages
+├── {subpackage1}/           # Independent sub-package
+│   ├── iface/               # Sub-package interfaces
+│   ├── providers/           # Sub-package providers
+│   ├── registry.go          # Sub-package registry
+│   └── ...                  # Standard package files
+├── {subpackage2}/           # Another independent sub-package
+├── config.go                # Root config embedding sub-package configs
+├── metrics.go               # Aggregated metrics from sub-packages
+├── errors.go                # Error definitions
+├── registry.go              # Facade registry delegating to sub-package registries
+├── {package_name}.go        # Facade API
+└── README.md                # Documentation
+```
+
+## Sub-Package Architecture
+
+Sub-packages are nested directories treated as independent packages within a parent. They enable logical nesting for related functionality without bloating the parent package.
+
+### 4.1 Sub-Package Naming
+
+**Convention:** `pkg/<parent>/<provider-or-component>`
+
+```
+pkg/voice/stt/              # Speech-to-Text component
+pkg/voice/tts/              # Text-to-Speech component
+pkg/llms/providers/openai/  # OpenAI provider
+pkg/llms/providers/anthropic/ # Anthropic provider
+```
+
+### 4.2 Sub-Package Independence
+
+Sub-packages **MUST** be independently importable and testable:
+
+```go
+// Direct import of sub-package
+import "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+
+// Use without parent package
+transcriber, err := stt.NewDeepgramTranscriber(cfg)
+```
+
+**Requirements:**
+- Own `iface/` directory with interfaces
+- Own `config.go`, `metrics.go`, `errors.go`
+- Own `registry.go` for multi-provider sub-packages
+- Own test files (`test_utils.go`, `advanced_test.go`)
+- No required imports from parent package
+
+### 4.3 Parent-Child Interface Relationships
+
+Parents depend on sub-packages via **interfaces only**, never concrete types:
+
+```go
+// Parent package
+type voiceAgent struct {
+    stt stt.iface.Transcriber  // Interface from sub-package
+    tts tts.iface.Speaker      // Interface from sub-package
+}
+```
+
+### 4.4 Registry Indirection
+
+Parent packages use global registries to discover and instantiate sub-packages dynamically:
+
+```go
+// Parent discovers sub-package providers via registry
+sttProvider, err := stt.GetRegistry().GetProvider(cfg.STT.Provider, &cfg.STT)
+ttsProvider, err := tts.GetRegistry().GetProvider(cfg.TTS.Provider, &cfg.TTS)
+```
+
+**Facade Registry Pattern (for wrappers):**
+```go
+// voice/registry.go - Facade registry
+func GetRegistry() *Registry {
+    return &Registry{
+        STT:       stt.GetRegistry(),
+        TTS:       tts.GetRegistry(),
+        VAD:       vad.GetRegistry(),
+        Transport: transport.GetRegistry(),
+    }
+}
+```
+
+### 4.5 Config Layering
+
+Configuration flows: **Parent → Sub-package → Options → Validation**
+
+```go
+// Parent config embeds sub-package configs
+type Config struct {
+    STT       stt.Config       `yaml:"stt" mapstructure:"stt"`
+    TTS       tts.Config       `yaml:"tts" mapstructure:"tts"`
+    VAD       vad.Config       `yaml:"vad" mapstructure:"vad"`
+    Transport transport.Config `yaml:"transport" mapstructure:"transport"`
+
+    // Root-level options
+    Timeout     time.Duration `yaml:"timeout" validate:"required"`
+    MaxSessions int           `yaml:"max_sessions" validate:"gte=1"`
+}
+
+// Sub-package config
+type stt.Config struct {
+    Provider   string        `yaml:"provider" validate:"required"`
+    APIKey     string        `yaml:"api_key" validate:"required"`
+    Model      string        `yaml:"model"`
+    SampleRate int           `yaml:"sample_rate" default:"16000"`
+    Language   string        `yaml:"language" default:"en-US"`
+}
+```
+
+**Config Propagation:**
+```go
+func NewVoiceAgent(cfg *Config) (*VoiceAgent, error) {
+    // Validate root config
+    if err := validate.Struct(cfg); err != nil {
+        return nil, err
+    }
+
+    // Pass embedded configs to sub-packages
+    sttProvider, err := stt.NewProvider(ctx, cfg.STT.Provider, &cfg.STT)
+    ttsProvider, err := tts.NewProvider(ctx, cfg.TTS.Provider, &cfg.TTS)
+    // ...
+}
+```
 
 ### Package Naming Conventions
 
@@ -192,6 +384,46 @@ func NewProvider(ctx context.Context, name string, config Config) (Interface, er
 
 **✅ Implemented in:** embeddings, memory, agents, vectorstores, and all other multi-provider packages
 
+### Two-Tier Factory Pattern (Wrapper Packages)
+
+Wrapper packages use a two-tier factory that delegates to sub-package registries:
+
+```go
+// Tier 1: Facade factory at wrapper package root
+type VoiceFactory struct {
+    sttRegistry *stt.Registry
+    ttsRegistry *tts.Registry
+    vadRegistry *vad.Registry
+}
+
+func NewVoiceFactory() *VoiceFactory {
+    return &VoiceFactory{
+        sttRegistry: stt.GetRegistry(),
+        ttsRegistry: tts.GetRegistry(),
+        vadRegistry: vad.GetRegistry(),
+    }
+}
+
+// Tier 2: Delegation to sub-package factories
+func (f *VoiceFactory) CreateVoiceAgent(cfg *Config) (VoiceAgent, error) {
+    // Delegate to sub-package registries
+    sttProvider, err := f.sttRegistry.GetProvider(cfg.STT.Provider, &cfg.STT)
+    if err != nil {
+        return nil, fmt.Errorf("stt provider: %w", err)
+    }
+
+    ttsProvider, err := f.ttsRegistry.GetProvider(cfg.TTS.Provider, &cfg.TTS)
+    if err != nil {
+        return nil, fmt.Errorf("tts provider: %w", err)
+    }
+
+    return &voiceAgent{
+        stt: sttProvider,
+        tts: ttsProvider,
+    }, nil
+}
+```
+
 ## Configuration Management
 
 ### Configuration Structs
@@ -244,6 +476,60 @@ func NewLLM(config Config) (*LLM, error) {
     }
     // implementation
 }
+```
+
+### Hierarchical Configuration (Wrapper Packages)
+
+Wrapper packages implement hierarchical configuration with parent-to-sub-package propagation:
+
+```go
+// Root config with embedded sub-package configs
+type VoiceConfig struct {
+    // Sub-package configs with standardized keys
+    STT       stt.Config       `yaml:"stt" mapstructure:"stt"`
+    TTS       tts.Config       `yaml:"tts" mapstructure:"tts"`
+    VAD       vad.Config       `yaml:"vad" mapstructure:"vad"`
+
+    // Root-level shared options
+    SessionTimeout time.Duration `yaml:"session_timeout" default:"5m"`
+    MaxConcurrent  int           `yaml:"max_concurrent" default:"100"`
+}
+
+// Configuration loading with hierarchical validation
+func LoadConfig(v *viper.Viper) (*VoiceConfig, error) {
+    cfg := &VoiceConfig{}
+
+    // Load root config
+    if err := v.UnmarshalKey("voice", cfg); err != nil {
+        return nil, err
+    }
+
+    // Validate root and all embedded configs
+    validate := validator.New()
+    if err := validate.Struct(cfg); err != nil {
+        return nil, fmt.Errorf("config validation: %w", err)
+    }
+
+    return cfg, nil
+}
+```
+
+**YAML Configuration Example:**
+```yaml
+voice:
+  session_timeout: 5m
+  max_concurrent: 100
+
+  stt:
+    provider: deepgram
+    api_key: ${DEEPGRAM_API_KEY}
+    model: nova-2
+    language: en-US
+
+  tts:
+    provider: elevenlabs
+    api_key: ${ELEVENLABS_API_KEY}
+    voice_id: default
 ```
 
 ## Observability and Monitoring ✅ **100% OTEL STANDARDIZATION COMPLETE**
@@ -373,6 +659,57 @@ func NoOpMetrics() *Metrics {
 ```
 
 **✅ Implemented in ALL packages:** orchestration, prompts, server, agents, core, and all others
+
+#### Span Aggregation Pattern (Wrapper Packages)
+
+Wrapper packages aggregate spans from sub-packages into parent traces for unified observability:
+
+```go
+// Wrapper package metrics with span aggregation
+type VoiceMetrics struct {
+    // Root-level metrics
+    sessionsTotal      metric.Int64Counter
+    sessionDuration    metric.Float64Histogram
+    errorsTotal        metric.Int64Counter
+
+    // Sub-package metrics aggregation
+    sttMetrics *stt.Metrics
+    ttsMetrics *tts.Metrics
+    vadMetrics *vad.Metrics
+
+    tracer trace.Tracer
+}
+
+func (m *VoiceMetrics) StartSession(ctx context.Context) (context.Context, trace.Span) {
+    // Create parent span
+    ctx, span := m.tracer.Start(ctx, "voice.session",
+        trace.WithAttributes(
+            attribute.String("component", "voice"),
+        ))
+
+    m.sessionsTotal.Add(ctx, 1)
+
+    // Sub-package operations will create child spans automatically
+    // because they receive the same context
+    return ctx, span
+}
+
+// Sub-package span becomes child of parent
+func (m *STTMetrics) Transcribe(ctx context.Context) (context.Context, trace.Span) {
+    // This span is automatically a child of voice.session
+    ctx, span := m.tracer.Start(ctx, "stt.transcribe")
+    return ctx, span
+}
+```
+
+**Trace Hierarchy Example:**
+```
+voice.session (parent span)
+├── stt.transcribe (child span)
+├── vad.detect (child span)
+├── agent.process (child span)
+└── tts.synthesize (child span)
+```
 
 #### Structured Logging
 - Use structured logging with context
@@ -623,6 +960,98 @@ Critical integration test suites now available:
 
 **✅ Result: All packages now have enterprise-grade testing matching the `llms` package gold standard**
 
+### **Sub-Package Mocks (Wrapper Packages)**
+
+Each sub-package maintains its own `test_utils.go` with specialized mocks:
+
+```go
+// pkg/voice/stt/test_utils.go
+type MockTranscriber struct {
+    mock.Mock
+    transcriptions []TranscriptionResult
+    err            error
+}
+
+func NewMockTranscriber(opts ...MockOption) *MockTranscriber {
+    m := &MockTranscriber{}
+    for _, opt := range opts {
+        opt(m)
+    }
+    return m
+}
+
+func WithMockTranscription(text string, confidence float64) MockOption {
+    return func(m *MockTranscriber) {
+        m.transcriptions = append(m.transcriptions, TranscriptionResult{
+            Text:       text,
+            Confidence: confidence,
+        })
+    }
+}
+
+// Wrapper package test_utils.go composes sub-package mocks
+// pkg/voice/test_utils.go
+type MockVoiceAgent struct {
+    STT *stt.MockTranscriber
+    TTS *tts.MockSpeaker
+    VAD *vad.MockDetector
+}
+
+func NewMockVoiceAgent(opts ...MockVoiceOption) *MockVoiceAgent {
+    return &MockVoiceAgent{
+        STT: stt.NewMockTranscriber(),
+        TTS: tts.NewMockSpeaker(),
+        VAD: vad.NewMockDetector(),
+    }
+}
+```
+
+### **Wrapper Integration Tests**
+
+Cross-sub-package integration tests verify the wrapper orchestration:
+
+```go
+// pkg/voice/advanced_test.go
+func TestVoiceAgentIntegration(t *testing.T) {
+    tests := []struct {
+        name           string
+        sttResponse    string
+        agentResponse  string
+        expectedOutput []byte
+    }{
+        {
+            name:           "full_pipeline",
+            sttResponse:    "hello world",
+            agentResponse:  "Hi there!",
+            expectedOutput: []byte("synthesized audio"),
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // Setup mocks for all sub-packages
+            mockSTT := stt.NewMockTranscriber(
+                stt.WithMockTranscription(tt.sttResponse, 0.95),
+            )
+            mockTTS := tts.NewMockSpeaker(
+                tts.WithMockAudio(tt.expectedOutput),
+            )
+
+            // Create voice agent with mocked sub-packages
+            agent := NewVoiceAgent(
+                WithSTT(mockSTT),
+                WithTTS(mockTTS),
+            )
+
+            // Test full pipeline
+            result, err := agent.ProcessAudio(ctx, testAudio)
+            require.NoError(t, err)
+            assert.Equal(t, tt.expectedOutput, result.Audio)
+        })
+    }
+}
+```
+
 ## Documentation Standards
 
 ### Package Documentation
@@ -713,25 +1142,32 @@ For practical examples of these patterns in action, see:
 
 ## Implementation Status ✅ **100% COMPLETE**
 
-### **All 14 Framework Packages Now Compliant**
+### **All 21 Framework Packages Now Compliant**
 Every package in the framework has been updated to follow these patterns:
 
-| Package | OTEL Metrics | Factory Pattern | Test Suites | Integration Tests | Documentation |
-|---------|-------------|----------------|-------------|------------------|---------------|
-| **core** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **schema** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **config** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **llms** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **chatmodels** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **embeddings** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **vectorstores** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **memory** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **retrievers** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **agents** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **prompts** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **orchestration** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **server** | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **monitoring** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Package | Type | OTEL Metrics | Factory/Registry | Test Suites | Documentation |
+|---------|------|-------------|-----------------|-------------|---------------|
+| **core** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **schema** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **config** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **llms** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **chatmodels** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **embeddings** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **vectorstores** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **memory** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **retrievers** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **agents** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **prompts** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **orchestration** | Wrapper | ✅ | ✅ | ✅ | ✅ |
+| **server** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **monitoring** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **voice** | Wrapper | ✅ | ✅ | ✅ | ✅ |
+| **voice/stt** | Sub-pkg | ✅ | ✅ | ✅ | ✅ |
+| **voice/tts** | Sub-pkg | ✅ | ✅ | ✅ | ✅ |
+| **voice/vad** | Sub-pkg | ✅ | ✅ | ✅ | ✅ |
+| **safety** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **multimodal** | Regular | ✅ | ✅ | ✅ | ✅ |
+| **messaging** | Regular | ✅ | ✅ | ✅ | ✅ |
 
 ### **Framework Quality Metrics**
 - 🔥 **~85 new files** created following these patterns

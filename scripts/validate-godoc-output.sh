@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUTPUT_DIR="${ROOT_DIR}/website/docs/api/packages"
+OUTPUT_DIR="${ROOT_DIR}/website/docs/api-docs/packages"
 
 echo -e "${GREEN}Validating generated godoc output...${NC}"
 
