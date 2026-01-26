@@ -5,7 +5,6 @@ package safety
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"time"
@@ -36,9 +35,6 @@ type SafetyIssue struct {
 	Description string `json:"description"`
 	Severity    string `json:"severity"`
 }
-
-// ErrUnsafe is returned when content fails safety validation.
-var ErrUnsafe = errors.New("content failed safety validation")
 
 // NewSafetyChecker creates a new safety checker with default patterns.
 func NewSafetyChecker() *SafetyChecker {

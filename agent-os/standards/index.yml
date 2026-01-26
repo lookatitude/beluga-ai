@@ -31,18 +31,28 @@ embeddings:
 global:
   config-duplication:
     description: Providers duplicate parent config structs to break import cycles; add comment explaining why
+  config-propagation:
+    description: Hierarchical config; parent→sub-package passing; standardized keys; validation at each level
   internal-vs-providers:
     description: What goes in internal/ vs providers/; no providers under internal/
   naming:
     description: Package and folder naming — lowercase, singular, iface/, allowed abbreviations (llms, stt, tts, vad, rag)
   provider-subpackage-layout:
-    description: Layout for providers/<name>/ — init.go, provider.go, {name}.go, {name}_mock.go
+    description: Layout for providers/<name>/ and component/<name>/ — init.go, provider.go, {name}.go, {name}_mock.go; component sub-packages for wrappers
   required-files:
-    description: Required files per package — iface, config, metrics, errors, test_utils, advanced_test, README; registry/factory for provider packages
+    description: Required files per package — iface, config, metrics, errors, test_utils, advanced_test, README; registry/factory for provider packages; wrapper and sub-package requirements
+  subpackage-structure:
+    description: pkg/<parent>/<component> layout; sub-package independence; no parent/sibling imports; full file set required
+  wrapper-package-pattern:
+    description: Wrapper/aggregation packages; facade interfaces; sub-package composition; span aggregation; config embedding
 
 backend:
   error-codes-const:
     description: ErrCodeXxx and "snake_case"; config for shared; package-specific in errors.go or iface/errors.go
+  span-aggregation:
+    description: OTEL span aggregation; parent spans contain child spans from sub-packages; unified observability
+  two-tier-factory:
+    description: Two-tier factory for wrappers; facade factory delegates to sub-package registries
   error-constructors:
     description: NewXxxError, NewXxxErrorWithMessage, WithField; shortcuts in errors.go or iface/errors.go
   error-predicates:
@@ -311,6 +321,10 @@ textsplitters:
 testing:
   advanced-test:
     description: advanced_test.go required; broader/edge-case/concurrency tests; complements unit _test.go
+  subpackage-mocks:
+    description: Sub-package-specific mocks; test_utils.go per sub-package; composite mocks in wrapper
+  wrapper-integration:
+    description: Cross-sub-package integration tests; pipeline tests; error propagation; span aggregation verification
   assertions:
     description: Prefer testify/assert and require; t.Helper() in validate and helpers
   concurrency-and-errors:
