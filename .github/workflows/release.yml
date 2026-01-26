@@ -193,7 +193,7 @@ jobs:
           echo "Updating website with generated documentation..."
           # Trigger website deployment workflow or build website here
           # For now, we'll just note that docs are ready
-          if [ -d "website/docs/api/packages" ]; then
+          if [ -d "website/docs/api-docs/packages" ]; then
             echo "✅ Documentation ready for website deployment"
             echo "Website will be updated on next push to main or via website_deploy workflow"
           else

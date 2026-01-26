@@ -12,7 +12,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUTPUT_DIR="${ROOT_DIR}/docs/api-docs/packages"
+OUTPUT_DIR="${ROOT_DIR}/website/docs/api-docs/packages"
 MODULE_NAME="github.com/lookatitude/beluga-ai"
 
 echo -e "${GREEN}Generating API documentation...${NC}"
