@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.10.0](https://github.com/lookatitude/beluga-ai/compare/v1.9.1...v1.10.0) (2026-01-26)
+
+
+### Features
+
+* implement package design patterns refactor ([b98f5d9](https://github.com/lookatitude/beluga-ai/commit/b98f5d9ad0a820f4320ac52f878d4d56fc2f50f4))
+
+
+### Bug Fixes
+
+* align doc generation and validation paths ([554e982](https://github.com/lookatitude/beluga-ai/commit/554e982218b8b98f3da91b214e87660054c0cad9))
+
 ## [1.9.1](https://github.com/lookatitude/beluga-ai/compare/v1.9.0...v1.9.1) (2026-01-25)
 
 
