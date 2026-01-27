@@ -343,6 +343,78 @@ func TestAgentPackage(t *testing.T) {
 		assert.Equal(t, 20, builder.GetMaxTurns())
 		assert.Equal(t, "tool_calling", builder.GetAgentType())
 	})
+
+	t.Run("build_and_run_with_mock", func(t *testing.T) {
+		mockLLM := convagent.NewMockLLM()
+		mockLLM.SetResponse("This is the agent response.")
+
+		agent, err := convagent.NewBuilder().
+			WithLLM(mockLLM).
+			WithName("integration-test-agent").
+			WithSystemPrompt("You are a helpful assistant").
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+
+		// Test running the agent
+		response, err := agent.Run(context.Background(), "Hello, agent!")
+		require.NoError(t, err)
+		assert.Equal(t, "This is the agent response.", response)
+		assert.Equal(t, "integration-test-agent", agent.GetName())
+
+		// Cleanup
+		err = agent.Shutdown()
+		require.NoError(t, err)
+	})
+
+	t.Run("build_with_chat_model_and_memory", func(t *testing.T) {
+		mockChatModel := convagent.NewMockChatModel()
+		mockChatModel.SetGenerateResponse("Response with memory")
+
+		agent, err := convagent.NewBuilder().
+			WithChatModel(mockChatModel).
+			WithName("memory-agent").
+			WithBufferMemory(10).
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+		assert.NotNil(t, agent.GetMemory())
+
+		// First message
+		_, err = agent.Run(context.Background(), "First message")
+		require.NoError(t, err)
+
+		// Second message - memory should contain history
+		_, err = agent.Run(context.Background(), "Second message")
+		require.NoError(t, err)
+
+		err = agent.Shutdown()
+		require.NoError(t, err)
+	})
+
+	t.Run("build_with_tools", func(t *testing.T) {
+		mockLLM := convagent.NewMockLLM()
+		mockLLM.SetResponse("Using the tool")
+
+		mockTool := convagent.NewMockTool("calculator", "A calculator tool")
+
+		agent, err := convagent.NewBuilder().
+			WithLLM(mockLLM).
+			WithTool(mockTool).
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+
+		tools := agent.GetTools()
+		assert.Len(t, tools, 1)
+		assert.Equal(t, "calculator", tools[0].Name())
+
+		err = agent.Shutdown()
+		require.NoError(t, err)
+	})
 }
 
 // TestRAGPackage tests the RAG convenience package.
@@ -386,6 +458,73 @@ func TestRAGPackage(t *testing.T) {
 		assert.Contains(t, docPaths, "./docs")
 		assert.Contains(t, docPaths, "./data")
 	})
+
+	t.Run("build_and_search_with_mock", func(t *testing.T) {
+		mockEmbedder := convrag.NewMockEmbedder()
+
+		pipeline, err := convrag.NewBuilder().
+			WithEmbedder(mockEmbedder).
+			WithTopK(3).
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, pipeline)
+
+		// Add documents
+		docs := []convrag.Document{
+			convrag.NewDocument("Machine learning is a subset of AI", nil),
+			convrag.NewDocument("Deep learning uses neural networks", nil),
+			convrag.NewDocument("Natural language processing handles text", nil),
+		}
+		err = pipeline.AddDocumentsRaw(context.Background(), docs)
+		require.NoError(t, err)
+
+		assert.Equal(t, 3, pipeline.GetDocumentCount())
+
+		// Search
+		results, scores, err := pipeline.Search(context.Background(), "AI and machine learning", 2)
+		require.NoError(t, err)
+		assert.LessOrEqual(t, len(results), 2)
+		assert.Equal(t, len(results), len(scores))
+
+		// Clear
+		err = pipeline.Clear(context.Background())
+		require.NoError(t, err)
+		assert.Equal(t, 0, pipeline.GetDocumentCount())
+	})
+
+	t.Run("build_with_llm_and_query", func(t *testing.T) {
+		mockEmbedder := convrag.NewMockEmbedder()
+		mockLLM := convrag.NewMockChatModel()
+		mockLLM.SetGenerateResponse("Based on the context, the answer is...")
+
+		pipeline, err := convrag.NewBuilder().
+			WithEmbedder(mockEmbedder).
+			WithLLM(mockLLM).
+			WithSystemPrompt("You are a helpful RAG assistant").
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, pipeline)
+
+		// Add document
+		docs := []convrag.Document{
+			convrag.NewDocument("Important context information here", nil),
+		}
+		err = pipeline.AddDocumentsRaw(context.Background(), docs)
+		require.NoError(t, err)
+
+		// Query
+		answer, err := pipeline.Query(context.Background(), "What is the context?")
+		require.NoError(t, err)
+		assert.NotEmpty(t, answer)
+
+		// Query with sources
+		answer, sources, err := pipeline.QueryWithSources(context.Background(), "What is the context?")
+		require.NoError(t, err)
+		assert.NotEmpty(t, answer)
+		assert.NotEmpty(t, sources)
+	})
 }
 
 // TestVoiceAgentPackage tests the voice agent convenience package.
@@ -416,6 +555,106 @@ func TestVoiceAgentPackage(t *testing.T) {
 		assert.True(t, builder.IsMemoryEnabled())
 		assert.Equal(t, 100, builder.GetMemorySize())
 		assert.Equal(t, "You are a voice assistant", builder.GetSystemPrompt())
+	})
+
+	t.Run("build_and_process_with_mock", func(t *testing.T) {
+		mockSTT := convvoice.NewMockSTT()
+		mockSTT.SetTranscription("Hello, voice assistant!")
+		mockTTS := convvoice.NewMockTTS()
+		mockTTS.SetGenerateResponse([]byte("synthesized audio"))
+
+		agent, err := convvoice.NewBuilder().
+			WithSTTInstance(mockSTT).
+			WithTTSInstance(mockTTS).
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+
+		// Verify providers are accessible
+		assert.Equal(t, mockSTT, agent.GetSTT())
+		assert.Equal(t, mockTTS, agent.GetTTS())
+		assert.Nil(t, agent.GetVAD())
+
+		// Process audio
+		audioResponse, err := agent.ProcessAudio(context.Background(), []byte("audio input"))
+		require.NoError(t, err)
+		assert.NotEmpty(t, audioResponse)
+
+		// Process text
+		textResponse, err := agent.ProcessText(context.Background(), "Hello!")
+		require.NoError(t, err)
+		assert.NotEmpty(t, textResponse)
+
+		err = agent.Shutdown()
+		require.NoError(t, err)
+	})
+
+	t.Run("build_with_llm_and_vad", func(t *testing.T) {
+		mockSTT := convvoice.NewMockSTT()
+		mockSTT.SetTranscription("What is AI?")
+		mockTTS := convvoice.NewMockTTS()
+		mockTTS.SetGenerateResponse([]byte("AI audio response"))
+		mockVAD := convvoice.NewMockVAD()
+		mockVAD.SetVoiceDetection(true)
+		mockLLM := convvoice.NewMockChatModel()
+		mockLLM.SetGenerateResponse("AI stands for Artificial Intelligence.")
+
+		agent, err := convvoice.NewBuilder().
+			WithSTTInstance(mockSTT).
+			WithTTSInstance(mockTTS).
+			WithVADInstance(mockVAD).
+			WithLLMInstance(mockLLM).
+			WithSystemPrompt("You are a voice assistant").
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+
+		assert.NotNil(t, agent.GetVAD())
+
+		// Process audio - should go through LLM
+		audioResponse, err := agent.ProcessAudio(context.Background(), []byte("voice input"))
+		require.NoError(t, err)
+		assert.NotEmpty(t, audioResponse)
+
+		err = agent.Shutdown()
+		require.NoError(t, err)
+	})
+
+	t.Run("build_and_session_lifecycle", func(t *testing.T) {
+		mockSTT := convvoice.NewMockSTT()
+		mockSTT.SetTranscription("Session audio")
+		mockTTS := convvoice.NewMockTTS()
+		mockTTS.SetGenerateResponse([]byte("session response audio"))
+
+		agent, err := convvoice.NewBuilder().
+			WithSTTInstance(mockSTT).
+			WithTTSInstance(mockTTS).
+			Build(context.Background())
+
+		require.NoError(t, err)
+		require.NotNil(t, agent)
+
+		// Start session
+		session, err := agent.StartSession(context.Background())
+		require.NoError(t, err)
+		require.NotNil(t, session)
+
+		assert.NotEmpty(t, session.ID())
+		assert.True(t, session.IsActive())
+
+		// Send audio
+		err = session.SendAudio(context.Background(), []byte("test audio"))
+		require.NoError(t, err)
+
+		// Stop session
+		err = session.Stop()
+		require.NoError(t, err)
+		assert.False(t, session.IsActive())
+
+		err = agent.Shutdown()
+		require.NoError(t, err)
 	})
 }
 
