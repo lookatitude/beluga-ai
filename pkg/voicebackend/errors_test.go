@@ -109,8 +109,8 @@ func TestWrapError(t *testing.T) {
 		result := WrapError("TestOp", err)
 
 		require.NotNil(t, result)
-		backendErr, ok := result.(*BackendError)
-		require.True(t, ok)
+		var backendErr *BackendError
+		require.True(t, errors.As(result, &backendErr))
 		assert.Equal(t, "TestOp", backendErr.Op)
 		assert.Equal(t, ErrCodePipelineError, backendErr.Code)
 	})
@@ -120,8 +120,8 @@ func TestWrapError(t *testing.T) {
 		result := WrapError("NewOp", original)
 
 		require.NotNil(t, result)
-		backendErr, ok := result.(*BackendError)
-		require.True(t, ok)
+		var backendErr *BackendError
+		require.True(t, errors.As(result, &backendErr))
 		assert.Equal(t, "NewOp", backendErr.Op)
 		assert.Equal(t, ErrCodeConnectionFailed, backendErr.Code)
 	})

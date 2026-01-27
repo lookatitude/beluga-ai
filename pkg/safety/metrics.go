@@ -3,6 +3,7 @@ package safety
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"go.opentelemetry.io/otel"
@@ -174,14 +175,14 @@ func errorType(err error) string {
 	if err == nil {
 		return "none"
 	}
-	switch err {
-	case ErrUnsafe, ErrUnsafeContent:
+	if errors.Is(err, ErrUnsafe) || errors.Is(err, ErrUnsafeContent) {
 		return "unsafe_content"
-	case ErrSafetyCheckFailed:
-		return "check_failed"
-	case ErrHighRiskContent:
-		return "high_risk"
-	default:
-		return "unknown"
 	}
+	if errors.Is(err, ErrSafetyCheckFailed) {
+		return "check_failed"
+	}
+	if errors.Is(err, ErrHighRiskContent) {
+		return "high_risk"
+	}
+	return "unknown"
 }
