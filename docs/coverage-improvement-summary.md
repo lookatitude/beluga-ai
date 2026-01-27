@@ -6,7 +6,7 @@
 
 ## Executive Summary
 
-This document summarizes the comprehensive test coverage improvements implemented across all 19 packages in the Beluga AI Framework. The improvements focused on achieving 100% unit test coverage (excluding documented exclusions) and 80%+ integration test coverage for all packages.
+This document summarizes the comprehensive test coverage improvements implemented across all 20 packages in the Beluga AI Framework. The improvements focused on achieving 100% unit test coverage (excluding documented exclusions) and 80%+ integration test coverage for all packages.
 
 ## Coverage Improvements by Package
 
@@ -145,7 +145,7 @@ This document summarizes the comprehensive test coverage improvements implemente
 ### Overall Coverage
 - **Unit Test Coverage**: Varies by package (12.1% - 100%)
 - **Integration Test Coverage**: 80%+ for tested scenarios
-- **Total Packages**: 19 packages + multiple sub-packages
+- **Total Packages**: 20 packages + multiple sub-packages
 
 ### Package-Specific Coverage
 - **High Coverage (80%+)**: agents, chatmodels, config, core, documentloaders, embeddings, llms, memory, messaging, monitoring, multimodal, orchestration, prompts, retrievers, schema

@@ -40,7 +40,7 @@ make test-coverage      # Generate coverage report (outputs to coverage/)
 
 ```
 beluga-ai/
-├── pkg/                    # Core framework packages (19 packages)
+├── pkg/                    # Core framework packages (20 packages)
 │   ├── agents/            # Agent framework with tools and executors
 │   ├── chatmodels/        # Chat-based LLM interfaces
 │   ├── config/            # Configuration management (Viper-based)
@@ -160,7 +160,7 @@ import (
 ```
 
 ### Naming Conventions
-- **Packages**: lowercase, singular forms (`agent`, `llm`, not `agents`, `llms`)
+- **Packages**: lowercase, plural forms for multi-provider packages (`agents`, `llms`, `embeddings`)
 - **Interfaces**: "er" suffix for single-method (`Embedder`), nouns for multi-method (`VectorStore`)
 - **Functions**: Clear action verbs (`New`, `Get`, `Register`)
 

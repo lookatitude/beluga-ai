@@ -36,7 +36,7 @@ global:
   internal-vs-providers:
     description: What goes in internal/ vs providers/; no providers under internal/
   naming:
-    description: Package and folder naming — lowercase, singular, iface/, allowed abbreviations (llms, stt, tts, vad, rag)
+    description: Package and folder naming — lowercase, plural forms preferred (agents, llms, embeddings), iface/, allowed abbreviations (stt, tts, vad, rag)
   provider-subpackage-layout:
     description: Layout for providers/<name>/ and component/<name>/ — init.go, provider.go, {name}.go, {name}_mock.go; component sub-packages for wrappers
   required-files:

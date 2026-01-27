@@ -2,7 +2,7 @@
 
 This document outlines the design patterns, conventions, and rules that all packages in the Beluga AI Framework **MUST** follow to maintain consistency, extendability, configuration management, and observability. 
 
-**STATUS: All 14 packages now fully comply with these patterns (as of latest commit)**
+**STATUS: All 20 packages now fully comply with these patterns (as of latest commit)**
 
 ## Table of Contents
 
@@ -91,7 +91,7 @@ pkg/{package_name}/
 └── README.md                # Package documentation (REQUIRED)
 ```
 
-**✅ All 21 packages now follow this exact structure**
+**✅ All 20 packages now follow this exact structure**
 
 ## Package Types
 
@@ -289,13 +289,20 @@ func NewVoiceAgent(cfg *Config) (*VoiceAgent, error) {
 
 - Use lowercase, descriptive names: `llms`, `vectorstores`, `embeddings`
 - Avoid abbreviations unless they're widely understood (e.g., `llms` is acceptable)
-- Use singular forms: `agent` not `agents`, `tool` not `tools`
+- Use plural forms for multi-provider packages: `agents`, `llms`, `embeddings`, `vectorstores`
 
-### Internal Package Organization
+### Internal Package Organization (Optional)
+
+The `internal/` directory is **optional** and should only be used when:
+1. Complex base implementations that providers extend (e.g., `agents/internal/base`)
+2. Shared utilities used by multiple providers (e.g., `llms/internal/common`)
+3. Implementation details that should not be part of the public API
+
+**Do NOT create empty internal/ directories.**
 
 ```
 pkg/llms/
-├── internal/
+├── internal/               # OPTIONAL - only when needed
 │   ├── openai/
 │   ├── anthropic/
 │   └── mock/
@@ -310,6 +317,11 @@ pkg/llms/
 ├── llms.go
 └── llms_test.go
 ```
+
+### Mock Location Standard
+
+- **Package-only mocks**: Keep in `test_utils.go` at package root
+- **Cross-package mocks**: May use `internal/mock/` if used by multiple sub-packages
 
 ## Interface Design
 
