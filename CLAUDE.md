@@ -40,7 +40,7 @@ make test-coverage      # Generate coverage report (outputs to coverage/)
 
 ```
 beluga-ai/
-├── pkg/                    # Core framework packages (28 packages)
+├── pkg/                    # Core framework packages (29 packages)
 │   ├── agents/            # Agent framework with tools and executors
 │   ├── audiotransport/    # Audio transport (WebRTC, WebSocket)
 │   ├── chatmodels/        # Chat-based LLM interfaces
@@ -62,6 +62,7 @@ beluga-ai/
 │   ├── server/            # REST and MCP server APIs
 │   ├── stt/               # Speech-to-Text providers
 │   ├── textsplitters/     # Text chunking for RAG
+│   ├── tools/             # Tool implementations (API, shell, gofunc, MCP)
 │   ├── tts/               # Text-to-Speech providers
 │   ├── turndetection/     # Turn detection for conversations
 │   ├── vad/               # Voice Activity Detection

@@ -47,7 +47,7 @@ graph TB
     end
 
     subgraph Components["Supporting Components"]
-        I[Tools - pkg/agents/tools<br>API / Shell / Calculator]
+        I[Tools - pkg/tools<br>API / Shell / Calculator]
         J[Memory - pkg/memory<br>Buffer / VectorStore]
         K[LLMs - pkg/llms<br>OpenAI / Anthropic]
     end
@@ -77,7 +77,7 @@ graph TB
    - Agent executor for plan execution
    - Multiple specialized agents
 
-2. **pkg/agents/tools**
+2. **pkg/tools**
    - API tool for external system integration
    - Shell tool for system operations
    - Calculator tool for computations

@@ -36,7 +36,7 @@ graph TB
     end
 
     subgraph Components["Supporting Components"]
-        C[Tools - pkg/agents/tools<br>API Tool / Calculator / GoFunc]
+        C[Tools - pkg/tools<br>API Tool / Calculator / GoFunc]
         D[Memory - pkg/memory<br>Buffer / VectorStore]
         E[LLMs - pkg/llms<br>OpenAI / Anthropic]
     end
@@ -64,7 +64,7 @@ graph TB
    - ReAct agent for autonomous data analysis
    - Agent executor for plan execution
 
-2. **pkg/agents/tools**
+2. **pkg/tools**
    - API tool for data fetching
    - Calculator tool for statistical operations
    - GoFunc tool for custom data processing

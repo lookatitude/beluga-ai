@@ -11,11 +11,11 @@ Based on analysis of all packages in `pkg/`, the following packages are missing 
 - None - All top-level packages have test_utils.go
 
 ### Sub-Packages Analysis
-- `pkg/agents/tools` - Missing test_utils.go
-- `pkg/agents/tools/api` - Missing test_utils.go
-- `pkg/agents/tools/gofunc` - Missing test_utils.go
-- `pkg/agents/tools/mcp` - Missing test_utils.go
-- `pkg/agents/tools/shell` - Missing test_utils.go
+- `pkg/tools` - Missing test_utils.go
+- `pkg/tools/api` - Missing test_utils.go
+- `pkg/tools/gofunc` - Missing test_utils.go
+- `pkg/tools/mcp` - Missing test_utils.go
+- `pkg/tools/shell` - Missing test_utils.go
 - `pkg/chatmodels/iface` - Missing test_utils.go (interface-only package, may not need)
 - `pkg/chatmodels/registry` - Missing test_utils.go
 - `pkg/config/iface` - Missing test_utils.go (interface-only package, may not need)
@@ -38,11 +38,11 @@ Based on analysis of all packages in `pkg/`, the following packages are missing 
 - None - All top-level packages have advanced_test.go
 
 ### Sub-Packages Analysis
-- `pkg/agents/tools` - Missing advanced_test.go
-- `pkg/agents/tools/api` - Missing advanced_test.go
-- `pkg/agents/tools/gofunc` - Missing advanced_test.go
-- `pkg/agents/tools/mcp` - Missing advanced_test.go
-- `pkg/agents/tools/shell` - Missing advanced_test.go
+- `pkg/tools` - Missing advanced_test.go
+- `pkg/tools/api` - Missing advanced_test.go
+- `pkg/tools/gofunc` - Missing advanced_test.go
+- `pkg/tools/mcp` - Missing advanced_test.go
+- `pkg/tools/shell` - Missing advanced_test.go
 - `pkg/chatmodels/iface` - Missing advanced_test.go (interface-only package, may not need)
 - `pkg/chatmodels/registry` - Missing advanced_test.go
 - `pkg/config/iface` - Missing advanced_test.go (interface-only package, may not need)

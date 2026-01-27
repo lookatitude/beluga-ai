@@ -33,7 +33,7 @@ import (
     "github.com/lookatitude/beluga-ai/pkg/llms"
     "github.com/lookatitude/beluga-ai/pkg/llms/iface"
     "github.com/lookatitude/beluga-ai/pkg/schema"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 var tracer = otel.Tracer("beluga.llms.streaming_tools")

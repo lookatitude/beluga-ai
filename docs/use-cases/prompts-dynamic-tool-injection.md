@@ -139,7 +139,7 @@ import (
     "fmt"
     
     "github.com/lookatitude/beluga-ai/pkg/prompts"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // ToolInstructionInjector injects tool instructions dynamically

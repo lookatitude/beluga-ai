@@ -7,8 +7,8 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools/providers"
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"

@@ -39,7 +39,7 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 )
 ```
@@ -251,7 +251,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 )
 

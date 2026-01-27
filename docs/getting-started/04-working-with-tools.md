@@ -48,7 +48,7 @@ type Tool interface {
 Performs mathematical calculations:
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+import "github.com/lookatitude/beluga-ai/pkg/tools"
 
 calculator := tools.NewCalculatorTool()
 
@@ -73,7 +73,7 @@ result, err := echoTool.Execute(ctx, "Hello, world!")
 Executes shell commands (use with caution):
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/agents/tools/shell"
+import "github.com/lookatitude/beluga-ai/pkg/tools/shell"
 import "time"
 
 shellTool, err := shell.NewShellTool(30 * time.Second)
@@ -93,7 +93,7 @@ result, err := shellTool.Execute(ctx, input)
 Wraps any Go function as a tool:
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/agents/tools/gofunc"
+import "github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
 
 // Define your function
 func myFunction(ctx context.Context, args map[string]any) (string, error) {
@@ -129,7 +129,7 @@ import (
     "os"
 
     "github.com/lookatitude/beluga-ai/pkg/agents"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
@@ -177,7 +177,7 @@ import (
     "encoding/json"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // WeatherTool is a custom tool that provides weather information
@@ -252,7 +252,7 @@ func (w *WeatherTool) Batch(ctx context.Context, inputs []any) ([]any, error) {
 Use a registry to manage and discover tools:
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+import "github.com/lookatitude/beluga-ai/pkg/tools"
 
 // Create registry
 registry := tools.NewInMemoryToolRegistry()
@@ -399,7 +399,7 @@ import (
     "os"
 
     "github.com/lookatitude/beluga-ai/pkg/agents"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
 )
 

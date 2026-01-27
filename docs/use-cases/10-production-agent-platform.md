@@ -40,7 +40,7 @@ graph TB
 
     subgraph Components["Core Components"]
         C1[Agents - pkg/agents<br>ReAct / Base]
-        C2[Tools - pkg/agents/tools<br>API / Shell / Calculator / GoFunc / MCP]
+        C2[Tools - pkg/tools<br>API / Shell / Calculator / GoFunc / MCP]
         C3[Memory - pkg/memory<br>Buffer / Summary / VectorStore]
     end
 
@@ -85,7 +85,7 @@ graph TB
 9. **pkg/memory** - All memory types
 10. **pkg/prompts** - Prompt templates
 11. **pkg/agents** - Agent framework
-12. **pkg/agents/tools** - All tool types
+12. **pkg/tools** - All tool types
 13. **pkg/orchestration** - Chains, graphs, workflows
 14. **pkg/monitoring** - Full observability
 15. **pkg/server** - REST and MCP servers

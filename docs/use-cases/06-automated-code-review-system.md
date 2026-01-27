@@ -36,7 +36,7 @@ graph TB
     end
 
     subgraph Components["Supporting Components"]
-        C[Tools - pkg/agents/tools<br>Shell / API / GoFunc]
+        C[Tools - pkg/tools<br>Shell / API / GoFunc]
         D[Memory - pkg/memory<br>Buffer / VectorStore]
         E[LLMs - pkg/llms<br>OpenAI / Anthropic]
     end
@@ -60,7 +60,7 @@ graph TB
    - ReAct agent for code analysis
    - Agent executor for review workflows
 
-2. **pkg/agents/tools**
+2. **pkg/tools**
    - Shell tool for running code analysis commands
    - API tool for VCS integration
    - GoFunc tool for custom analysis functions

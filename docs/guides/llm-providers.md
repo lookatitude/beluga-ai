@@ -133,7 +133,7 @@ import (
     "fmt"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/core"
     "github.com/lookatitude/beluga-ai/pkg/llms"
     "github.com/lookatitude/beluga-ai/pkg/llms/iface"

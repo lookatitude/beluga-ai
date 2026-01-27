@@ -255,8 +255,8 @@ BindTools(toolsToBind []tools.Tool) ChatModel
 ```go
 import (
     "encoding/json"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools/providers"
     "github.com/lookatitude/beluga-ai/pkg/schema"
 )
 
@@ -303,8 +303,8 @@ import (
     "encoding/json"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools/providers"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools/providers"
     "github.com/lookatitude/beluga-ai/pkg/schema"
 )
 

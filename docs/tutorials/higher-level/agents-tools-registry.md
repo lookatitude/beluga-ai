@@ -1,6 +1,6 @@
 # Agents Tool Registry and Custom Tools
 
-**What you will build:** An agent that uses the **tool registry** and **custom tools** from `pkg/agents/tools`. You'll create tools (embedding `BaseTool` or implementing `Tool`), register them with `InMemoryToolRegistry`, pass them to `NewBaseAgent`, and run `Execute` or `StreamExecute`.
+**What you will build:** An agent that uses the **tool registry** and **custom tools** from `pkg/tools`. You'll create tools (embedding `BaseTool` or implementing `Tool`), register them with `InMemoryToolRegistry`, pass them to `NewBaseAgent`, and run `Execute` or `StreamExecute`.
 
 ## Learning Objectives
 
@@ -25,7 +25,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 type EchoTool struct {

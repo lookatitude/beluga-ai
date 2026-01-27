@@ -51,7 +51,7 @@
 
 | Package | Path | Documentation Status | Notes |
 |---------|------|----------------------|-------|
-| tools | `pkg/agents/tools` | ✅ Documented | Agent tools interfaces |
+| tools | `pkg/tools` | ✅ Documented | Agent tools interfaces |
 
 ## Embedding Provider Packages
 

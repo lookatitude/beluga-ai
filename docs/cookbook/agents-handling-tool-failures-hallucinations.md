@@ -31,7 +31,7 @@ import (
     
     "github.com/lookatitude/beluga-ai/pkg/agents/iface"
     "github.com/lookatitude/beluga-ai/pkg/schema"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 var tracer = otel.Tracer("beluga.agents.tool_handling")

@@ -124,8 +124,8 @@ The system works like this:
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | Support Agent | Handle customer inquiries | pkg/agents (ReAct) |
-| Knowledge Base Tool | Search documentation | pkg/agents/tools |
-| Account Action Tool | Perform account operations | pkg/agents/tools |
+| Knowledge Base Tool | Search documentation | pkg/tools |
+| Account Action Tool | Perform account operations | pkg/tools |
 | Conversation Memory | Maintain context | pkg/memory |
 | Escalation Handler | Route to humans | Custom logic |
 
@@ -142,7 +142,7 @@ import (
     "fmt"
     
     "github.com/lookatitude/beluga-ai/pkg/agents"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
     "github.com/lookatitude/beluga-ai/pkg/memory"
 )

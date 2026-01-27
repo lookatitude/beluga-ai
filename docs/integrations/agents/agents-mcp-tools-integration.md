@@ -27,7 +27,7 @@ go get github.com/lookatitude/beluga-ai
 
 ## Step 2: Create Tools and Registry
 
-Use `pkg/agents/tools` to define tools and `InMemoryToolRegistry`:
+Use `pkg/tools` to define tools and `InMemoryToolRegistry`:
 ```text
 go
 go

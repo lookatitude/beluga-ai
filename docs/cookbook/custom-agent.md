@@ -26,7 +26,7 @@ import (
 
     "github.com/lookatitude/beluga-ai/pkg/agents/iface"
     "github.com/lookatitude/beluga-ai/pkg/agents/providers/react"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
     llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
     "github.com/lookatitude/beluga-ai/pkg/schema"

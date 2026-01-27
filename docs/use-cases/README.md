@@ -345,7 +345,7 @@ Each use case leverages different combinations of Beluga AI components:
 | Memory | `pkg/memory` | Conversation memory management |
 | Prompts | `pkg/prompts` | Prompt templates and rendering |
 | Agents | `pkg/agents` | Agent framework with ReAct support |
-| Tools | `pkg/agents/tools` | Tool registry and implementations |
+| Tools | `pkg/tools` | Tool registry and implementations |
 | Orchestration | `pkg/orchestration` | Chains, graphs, and workflows |
 | Monitoring | `pkg/monitoring` | OpenTelemetry observability |
 | Server | `pkg/server` | REST and MCP server implementations |

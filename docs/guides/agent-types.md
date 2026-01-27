@@ -127,7 +127,7 @@ import (
 
     "github.com/lookatitude/beluga-ai/pkg/agents"
     "github.com/lookatitude/beluga-ai/pkg/agents/providers/react"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
@@ -305,7 +305,7 @@ import (
 
     "github.com/lookatitude/beluga-ai/pkg/agents/providers/planexecute"
     "github.com/lookatitude/beluga-ai/pkg/agents/providers/react"
-    "github.com/lookatitude/beluga-ai/pkg/agents/tools"
+    "github.com/lookatitude/beluga-ai/pkg/tools"
     "github.com/lookatitude/beluga-ai/pkg/llms"
     "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 )
