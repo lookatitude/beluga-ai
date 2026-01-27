@@ -9,19 +9,19 @@ require (
 	github.com/anthropics/anthropic-sdk-go v0.2.0-beta.4
 	github.com/aws/aws-sdk-go-v2 v1.41.1
 	github.com/aws/aws-sdk-go-v2/config v1.32.7
-	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.47.2
+	github.com/aws/aws-sdk-go-v2/service/bedrockruntime v1.48.0
 	github.com/go-playground/validator/v10 v10.30.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jltobler/go-rcon v0.3.0
 	github.com/lib/pq v1.10.9
-	github.com/livekit/protocol v1.43.4
-	github.com/ollama/ollama v0.14.2
+	github.com/livekit/protocol v1.44.0
+	github.com/ollama/ollama v0.15.1
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/twilio/twilio-go v1.29.1
+	github.com/twilio/twilio-go v1.30.0
 	github.com/twitchtv/twirp v8.1.3+incompatible
 	go.opentelemetry.io/otel v1.39.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.39.0
