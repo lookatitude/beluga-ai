@@ -26,10 +26,10 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/providers/planexecute"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
-	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
 )
 
 var (

@@ -9,9 +9,9 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 func main() {

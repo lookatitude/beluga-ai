@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // GoFunctionTool wraps an arbitrary Go function, allowing it to be used as a Tool

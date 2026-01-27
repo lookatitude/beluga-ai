@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

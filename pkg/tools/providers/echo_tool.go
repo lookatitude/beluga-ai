@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // EchoTool is a simple tool that echoes back its input.

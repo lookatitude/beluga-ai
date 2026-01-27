@@ -19,8 +19,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 )
 
 func main() {

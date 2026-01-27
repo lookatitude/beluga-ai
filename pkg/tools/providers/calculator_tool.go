@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/lookatitude/beluga-ai/pkg/config/iface"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // CalculatorTool is a tool that can perform basic arithmetic calculations.

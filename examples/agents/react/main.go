@@ -7,14 +7,14 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/tools"
-	"github.com/lookatitude/beluga-ai/pkg/tools/providers"
 	configiface "github.com/lookatitude/beluga-ai/pkg/config/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	_ "github.com/lookatitude/beluga-ai/pkg/llms/providers/openai"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
+	"github.com/lookatitude/beluga-ai/pkg/tools/providers"
 )
 
 func main() {

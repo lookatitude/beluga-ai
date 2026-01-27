@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 )
 
 // This example demonstrates preemptive generation
