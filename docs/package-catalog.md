@@ -795,10 +795,10 @@ pkg/voicesession
             pkg/turndetection, pkg/audiotransport, pkg/noisereduction,
             pkg/agents, pkg/memory
 
-pkg/voice/providers/twilio
-  └── Uses: pkg/voicebackend, pkg/stt, pkg/tts
-  └── Could Use: pkg/voicesession, pkg/s2s, pkg/vad,
-                 pkg/turndetection, pkg/noisereduction, pkg/audiotransport,
+pkg/voicebackend/providers/twilio
+  └── Uses: pkg/voicebackend, pkg/voicesession, pkg/stt, pkg/tts
+  └── Could Use: pkg/s2s, pkg/vad, pkg/turndetection,
+                 pkg/noisereduction, pkg/audiotransport,
                  pkg/memory, pkg/orchestration
 ```
 
