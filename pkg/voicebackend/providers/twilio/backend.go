@@ -1,14 +1,3 @@
-// Deprecated: This package has been moved to pkg/voicebackend/providers/twilio.
-// Please update your imports to use the new location. This package will be removed
-// in a future release as part of the pkg/voice deprecation (Phase 1 of 3).
-//
-// Migration: Replace imports from
-//
-//	"github.com/lookatitude/beluga-ai/pkg/voice/providers/twilio"
-//
-// with
-//
-//	"github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/twilio"
 package twilio
 
 import (
@@ -17,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/twilio/twilio-go"
 	twiliov2010 "github.com/twilio/twilio-go/rest/api/v2010"
 	"go.opentelemetry.io/otel"

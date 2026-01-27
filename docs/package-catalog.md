@@ -569,6 +569,7 @@
 - `providers/pipecat/`: Pipecat provider
 - `providers/livekit/`: LiveKit provider
 - `providers/cartesia/`: Cartesia provider
+- `providers/twilio/`: Twilio voice provider (bidirectional audio streaming, mu-law codec, webhooks)
 
 **Dependencies**: `pkg/voicesession`, `pkg/stt`, `pkg/tts`, `pkg/s2s`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
 
@@ -588,14 +589,16 @@
 
 ---
 
-### pkg/voice/providers
+### pkg/voice/providers (Deprecated)
 
 **Description**: Provider-specific voice implementations (e.g., Twilio).
+
+**Status**: **DEPRECATED** - Twilio provider has been migrated to `pkg/voicebackend/providers/twilio`. This package will be removed in a future release as part of the pkg/voice deprecation.
 
 **Intent**: Provider-specific implementations that integrate with external voice services.
 
 **Sub-packages**:
-- `twilio/`: Twilio voice provider implementation
+- `twilio/`: Twilio voice provider implementation (**DEPRECATED** - use `pkg/voicebackend/providers/twilio` instead)
 
 **Dependencies**: `pkg/voicebackend`, `pkg/voicesession`, `pkg/stt`, `pkg/tts`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
 

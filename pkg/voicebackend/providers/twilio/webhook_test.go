@@ -1,13 +1,10 @@
-// Deprecated: This package has been moved to pkg/voicebackend/providers/twilio.
-// Please update your imports to use the new location. This package will be removed
-// in a future release as part of the pkg/voice deprecation (Phase 1 of 3).
 package twilio
 
 import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

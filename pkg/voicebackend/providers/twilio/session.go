@@ -1,6 +1,3 @@
-// Deprecated: This package has been moved to pkg/voicebackend/providers/twilio.
-// Please update your imports to use the new location. This package will be removed
-// in a future release as part of the pkg/voice deprecation (Phase 1 of 3).
 package twilio
 
 import (
@@ -13,10 +10,10 @@ import (
 
 	"github.com/google/uuid"
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/stt"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
+	viface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -26,9 +23,9 @@ import (
 type TwilioVoiceSession struct {
 	startTime         time.Time
 	lastActivity      time.Time
-	sttProvider       iface.STTProvider
+	sttProvider       viface.STTProvider
 	agentInstance     agentsiface.Agent
-	ttsProvider       iface.TTSProvider
+	ttsProvider       viface.TTSProvider
 	sessionConfig     *vbiface.SessionConfig
 	audioStream       *AudioStream
 	backend           *TwilioBackend
@@ -56,8 +53,8 @@ func NewTwilioVoiceSession(
 	sessionID := uuid.New().String()
 
 	// Get STT and TTS providers from registry
-	var sttProvider iface.STTProvider
-	var ttsProvider iface.TTSProvider
+	var sttProvider viface.STTProvider
+	var ttsProvider viface.TTSProvider
 
 	ctx := context.Background()
 

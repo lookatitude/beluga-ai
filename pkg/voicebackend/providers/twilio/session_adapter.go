@@ -1,6 +1,3 @@
-// Deprecated: This package has been moved to pkg/voicebackend/providers/twilio.
-// Please update your imports to use the new location. This package will be removed
-// in a future release as part of the pkg/voice deprecation (Phase 1 of 3).
 package twilio
 
 import (
@@ -13,19 +10,18 @@ import (
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/memory"
 	memoryiface "github.com/lookatitude/beluga-ai/pkg/memory/iface"
+	"github.com/lookatitude/beluga-ai/pkg/noisereduction"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	transportiface "github.com/lookatitude/beluga-ai/pkg/voice/transport/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
+	"github.com/lookatitude/beluga-ai/pkg/stt"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	vsiface "github.com/lookatitude/beluga-ai/pkg/voicesession/iface"
+	viface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
@@ -103,13 +99,13 @@ func (t *TwilioTransportAdapter) Close() error {
 	return nil
 }
 
-// TwilioSessionAdapter wraps pkg/voice/session with Twilio-specific audio handling.
+// TwilioSessionAdapter wraps pkg/voicesession with Twilio-specific audio handling.
 // It bridges the session package's VoiceSession interface with Twilio's backend VoiceSession interface.
 type TwilioSessionAdapter struct {
 	startTime    time.Time
 	lastActivity time.Time
-	transport    transportiface.Transport
-	session      sessioniface.VoiceSession
+	transport    viface.Transport
+	session      vsiface.VoiceSession
 	backend      *TwilioBackend
 	audioStream  *AudioStream
 	metadata     map[string]any
@@ -130,7 +126,7 @@ func NewTwilioSessionAdapter(
 	backend *TwilioBackend,
 ) (*TwilioSessionAdapter, error) {
 	// Build session options
-	var opts []session.VoiceOption
+	var opts []voicesession.VoiceOption
 
 	// STT/TTS or S2S
 	if config.S2SProvider != "" {
@@ -138,17 +134,17 @@ func NewTwilioSessionAdapter(
 		if err != nil {
 			return nil, fmt.Errorf("failed to create S2S provider: %w", err)
 		}
-		opts = append(opts, session.WithS2SProvider(s2sProvider))
+		opts = append(opts, voicesession.WithS2SProvider(s2sProvider))
 	} else {
 		sttProvider, ttsProvider, err := createSTTTTSProviders(ctx, config)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create STT/TTS providers: %w", err)
 		}
 		if sttProvider != nil {
-			opts = append(opts, session.WithSTTProvider(sttProvider))
+			opts = append(opts, voicesession.WithSTTProvider(sttProvider))
 		}
 		if ttsProvider != nil {
-			opts = append(opts, session.WithTTSProvider(ttsProvider))
+			opts = append(opts, voicesession.WithTTSProvider(ttsProvider))
 		}
 	}
 
@@ -156,7 +152,7 @@ func NewTwilioSessionAdapter(
 	if config.VADProvider != "" {
 		vadProvider, err := createVADProvider(ctx, config)
 		if err == nil {
-			opts = append(opts, session.WithVADProvider(vadProvider))
+			opts = append(opts, voicesession.WithVADProvider(vadProvider))
 		}
 		// Log warning but continue if VAD creation fails
 	}
@@ -165,7 +161,7 @@ func NewTwilioSessionAdapter(
 	if config.TurnDetectorProvider != "" {
 		turnDetector, err := createTurnDetector(ctx, config)
 		if err == nil {
-			opts = append(opts, session.WithTurnDetector(turnDetector))
+			opts = append(opts, voicesession.WithTurnDetector(turnDetector))
 		}
 		// Log warning but continue if turn detector creation fails
 	}
@@ -174,7 +170,7 @@ func NewTwilioSessionAdapter(
 	if config.NoiseCancellationProvider != "" {
 		noiseCancellation, err := createNoiseCancellation(ctx, config)
 		if err == nil {
-			opts = append(opts, session.WithNoiseCancellation(noiseCancellation))
+			opts = append(opts, voicesession.WithNoiseCancellation(noiseCancellation))
 		}
 		// Log warning but continue if noise cancellation creation fails
 	}
@@ -197,7 +193,7 @@ func NewTwilioSessionAdapter(
 	}
 
 	// Add transport to session options
-	opts = append(opts, session.WithTransport(transportAdapter))
+	opts = append(opts, voicesession.WithTransport(transportAdapter))
 
 	// Agent integration
 	if sessionConfig.AgentInstance != nil {
@@ -207,19 +203,19 @@ func NewTwilioSessionAdapter(
 			agentConfig := &schema.AgentConfig{
 				Name: "twilio-voice-agent",
 			}
-			opts = append(opts, session.WithAgentInstance(streamingAgent, agentConfig))
+			opts = append(opts, voicesession.WithAgentInstance(streamingAgent, agentConfig))
 		} else {
 			// If AgentInstance doesn't implement StreamingAgent, use callback instead
 			if sessionConfig.AgentCallback != nil {
-				opts = append(opts, session.WithAgentCallback(sessionConfig.AgentCallback))
+				opts = append(opts, voicesession.WithAgentCallback(sessionConfig.AgentCallback))
 			}
 		}
 	} else if sessionConfig.AgentCallback != nil {
-		opts = append(opts, session.WithAgentCallback(sessionConfig.AgentCallback))
+		opts = append(opts, voicesession.WithAgentCallback(sessionConfig.AgentCallback))
 	}
 
-	// Create session using session package
-	voiceSession, err := session.NewVoiceSession(ctx, opts...)
+	// Create session using voicesession package
+	voiceSession, err := voicesession.NewVoiceSession(ctx, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create voice session: %w", err)
 	}
@@ -476,8 +472,8 @@ func (a *TwilioSessionAdapter) bridgeAudioStream(ctx context.Context) {
 }
 
 // mapSessionStateToBackendState maps session package state to backend state.
-func mapSessionStateToBackendState(sessionState sessioniface.SessionState) vbiface.PipelineState {
-	// sessioniface.SessionState is an alias to voiceiface.SessionState
+func mapSessionStateToBackendState(sessionState vsiface.SessionState) vbiface.PipelineState {
+	// vsiface.SessionState is an alias to voiceiface.SessionState
 	// Use string comparison since we can't directly compare constants
 	stateStr := string(sessionState)
 	switch stateStr {
@@ -513,9 +509,9 @@ func (a *TwilioSessionAdapter) startSpan(ctx context.Context, operation string) 
 // Provider factory functions
 
 // createSTTTTSProviders creates STT and TTS providers from config.
-func createSTTTTSProviders(ctx context.Context, config *TwilioConfig) (iface.STTProvider, iface.TTSProvider, error) {
-	var sttProvider iface.STTProvider
-	var ttsProvider iface.TTSProvider
+func createSTTTTSProviders(ctx context.Context, config *TwilioConfig) (viface.STTProvider, viface.TTSProvider, error) {
+	var sttProvider viface.STTProvider
+	var ttsProvider viface.TTSProvider
 
 	if config.STTProvider != "" {
 		// Create STT config from provider-specific config
@@ -617,7 +613,7 @@ func createS2SProvider(ctx context.Context, config *TwilioConfig) (s2siface.S2SP
 }
 
 // createVADProvider creates a VAD provider from config.
-func createVADProvider(ctx context.Context, config *TwilioConfig) (iface.VADProvider, error) {
+func createVADProvider(ctx context.Context, config *TwilioConfig) (viface.VADProvider, error) {
 	// Use VAD config if provided directly, otherwise check ProviderConfig
 	var vadProviderConfig map[string]any
 	if config.VADConfig != nil {
@@ -653,7 +649,7 @@ func createVADProvider(ctx context.Context, config *TwilioConfig) (iface.VADProv
 }
 
 // createTurnDetector creates a turn detector from config.
-func createTurnDetector(ctx context.Context, config *TwilioConfig) (iface.TurnDetector, error) {
+func createTurnDetector(ctx context.Context, config *TwilioConfig) (viface.TurnDetector, error) {
 	// Use turn detector config if provided directly, otherwise check ProviderConfig
 	var turnDetectorConfig map[string]any
 	if config.TurnDetectorConfig != nil {
@@ -694,7 +690,7 @@ func createTurnDetector(ctx context.Context, config *TwilioConfig) (iface.TurnDe
 }
 
 // createNoiseCancellation creates a noise cancellation provider from config.
-func createNoiseCancellation(ctx context.Context, config *TwilioConfig) (iface.NoiseCancellation, error) {
+func createNoiseCancellation(ctx context.Context, config *TwilioConfig) (viface.NoiseCancellation, error) {
 	// Use noise cancellation config if provided directly, otherwise check ProviderConfig
 	var noiseCancellationConfig map[string]any
 	if config.NoiseCancellationConfig != nil {
@@ -704,7 +700,7 @@ func createNoiseCancellation(ctx context.Context, config *TwilioConfig) (iface.N
 	}
 
 	// Create noise cancellation config
-	noiseConfig := noise.DefaultConfig()
+	noiseConfig := noisereduction.DefaultConfig()
 	noiseConfig.Provider = config.NoiseCancellationProvider
 
 	// Map provider-specific config to noise cancellation config
@@ -726,8 +722,8 @@ func createNoiseCancellation(ctx context.Context, config *TwilioConfig) (iface.N
 		}
 	}
 
-	// Create noise cancellation provider using noise package
-	provider, err := noise.NewProvider(ctx, config.NoiseCancellationProvider, noiseConfig)
+	// Create noise cancellation provider using noisereduction package
+	provider, err := noisereduction.NewProvider(ctx, config.NoiseCancellationProvider, noiseConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create noise cancellation provider '%s': %w", config.NoiseCancellationProvider, err)
 	}

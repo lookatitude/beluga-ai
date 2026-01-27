@@ -346,7 +346,9 @@ The provider uses a custom `TwilioTransportAdapter` rather than the generic tran
 - Twilio-specific reconnection logic
 - Custom message format (`MediaStreamMessage`)
 
-See [README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/providers/twilio/README.md) for detailed transport evaluation documentation.
+See [README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voicebackend/providers/twilio/README.md) for detailed transport evaluation documentation.
+
+**Note**: The Twilio provider has been migrated from `pkg/voice/providers/twilio` to `pkg/voicebackend/providers/twilio`. Please update your imports accordingly.
 
 ## Related Documentation
 
