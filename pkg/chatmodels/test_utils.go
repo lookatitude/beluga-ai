@@ -829,3 +829,18 @@ func (b *BenchmarkHelper) BenchmarkStreaming(iterations int) (time.Duration, err
 
 	return time.Since(start), nil
 }
+
+// Legacy mock type aliases for backward compatibility.
+// Deprecated: Use AdvancedMockChatModel instead.
+
+// AdvancedMockcomponent is a legacy mock stub.
+// Deprecated: Use AdvancedMockChatModel for comprehensive mock functionality.
+type AdvancedMockcomponent struct {
+	mock.Mock
+}
+
+// NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+// Deprecated: Use NewAdvancedMockChatModel instead.
+func NewAdvancedMockcomponent() *AdvancedMockcomponent {
+	return &AdvancedMockcomponent{}
+}

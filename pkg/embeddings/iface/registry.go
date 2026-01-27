@@ -1,3 +1,6 @@
+// Package iface defines the registry interface for embedder providers.
+// This contains factory types and registry interfaces used by providers
+// to register themselves without importing the main embeddings package.
 package iface
 
 import (
@@ -5,7 +8,7 @@ import (
 )
 
 // EmbedderFactory defines the function signature for creating embedders.
-// This type is used by providers to register themselves.
+// This type is used by providers to register themselves with the registry.
 // The config parameter is `any` to avoid import cycles - providers should
 // assert it to embeddings.Config when implementing.
 type EmbedderFactory func(ctx context.Context, config any) (Embedder, error)

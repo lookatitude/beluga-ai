@@ -1,64 +1,42 @@
-// Package registry provides the internal registry implementation for embeddings.
-// This is separated from the main embeddings package to avoid import cycles
-// when providers need to register themselves.
+// Package registry provides backward compatibility for provider registration.
+// This package delegates to the root embeddings package's registry.
+//
+// Deprecated: Providers should migrate to using embeddings.Register() directly.
+// This package exists for backward compatibility during the migration period.
 package registry
 
 import (
 	"context"
-	"errors"
-	"sync"
 
+	"github.com/lookatitude/beluga-ai/pkg/embeddings"
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
 )
 
-// ProviderRegistry manages embedder provider registration and creation.
-type ProviderRegistry struct {
-	creators map[string]iface.EmbedderFactory
-	mu       sync.RWMutex
-}
-
-// Global instance.
-var globalRegistry = &ProviderRegistry{
-	creators: make(map[string]iface.EmbedderFactory),
-}
+// ProviderRegistry wraps the root embeddings.ProviderRegistry.
+// Deprecated: Use embeddings.ProviderRegistry directly.
+type ProviderRegistry = embeddings.ProviderRegistry
 
 // GetRegistry returns the global provider registry.
+// This delegates to the root embeddings package.
+// Deprecated: Use embeddings.GetRegistry() directly.
 func GetRegistry() *ProviderRegistry {
-	return globalRegistry
+	return embeddings.GetRegistry()
 }
 
 // Register adds a new provider to the registry.
-func (r *ProviderRegistry) Register(name string, creator iface.EmbedderFactory) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.creators[name] = creator
+// Deprecated: Use embeddings.Register() directly.
+func Register(name string, factory iface.EmbedderFactory) {
+	embeddings.Register(name, factory)
 }
 
 // Create creates an embedder using the registered provider.
-func (r *ProviderRegistry) Create(ctx context.Context, name string, config any) (iface.Embedder, error) {
-	r.mu.RLock()
-	creator, exists := r.creators[name]
-	r.mu.RUnlock()
-
-	if !exists {
-		return nil, iface.WrapError(
-			errors.New("provider not found: "+name),
-			iface.ErrCodeProviderNotFound,
-			"provider not found",
-		)
-	}
-
-	return creator(ctx, config)
+// Deprecated: Use embeddings.Create() directly.
+func Create(ctx context.Context, name string, config any) (iface.Embedder, error) {
+	return embeddings.Create(ctx, name, config)
 }
 
 // ListProviders returns all registered provider names.
-func (r *ProviderRegistry) ListProviders() []string {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	providers := make([]string, 0, len(r.creators))
-	for name := range r.creators {
-		providers = append(providers, name)
-	}
-	return providers
+// Deprecated: Use embeddings.ListProviders() directly.
+func ListProviders() []string {
+	return embeddings.ListProviders()
 }

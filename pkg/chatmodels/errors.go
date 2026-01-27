@@ -38,6 +38,7 @@ func (e *ChatModelError) Unwrap() error {
 // Error codes for different types of chat model errors.
 const (
 	ErrCodeConfigInvalid        = "config_invalid"
+	ErrCodeInvalidConfig        = "invalid_config"
 	ErrCodeInitialization       = "initialization_failed"
 	ErrCodeGeneration           = "generation_failed"
 	ErrCodeStreaming            = "streaming_failed"
@@ -48,6 +49,7 @@ const (
 	ErrCodeMaxRetries           = "max_retries_exceeded"
 	ErrCodeInvalidResponse      = "invalid_response"
 	ErrCodeModelNotFound        = "model_not_found"
+	ErrCodeProviderNotFound     = "provider_not_found"
 	ErrCodeProviderNotSupported = "provider_not_supported"
 	ErrCodeAuthentication       = "authentication_failed"
 	ErrCodeQuotaExceeded        = "quota_exceeded"
@@ -71,6 +73,12 @@ func NewChatModelError(op, model, provider, code string, err error) *ChatModelEr
 		Err:    err,
 		Fields: fields,
 	}
+}
+
+// NewProviderNotFoundError creates a new error for provider not found.
+func NewProviderNotFoundError(op, providerName string) *ChatModelError {
+	return NewChatModelError(op, "", providerName, ErrCodeProviderNotFound,
+		fmt.Errorf("provider '%s' not found", providerName))
 }
 
 // WithField adds a context field to the error.

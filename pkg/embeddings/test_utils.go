@@ -45,6 +45,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -778,4 +779,108 @@ func (q *EmbeddingQualityTester) TestSemanticSimilarity(ctx context.Context, sim
 	}
 
 	return totalSimilarity / float32(pairCount), nil
+}
+
+// Legacy mock type aliases for backward compatibility.
+// Deprecated: Use AdvancedMockEmbedder instead.
+
+// EmbeddingsMockcomponent is a legacy mock stub.
+// Deprecated: Use AdvancedMockEmbedder for comprehensive mock functionality.
+type EmbeddingsMockcomponent struct {
+	mock.Mock
+}
+
+// NewEmbeddingsMockcomponent creates a new EmbeddingsMockcomponent.
+// Deprecated: Use NewAdvancedMockEmbedder instead.
+func NewEmbeddingsMockcomponent() *EmbeddingsMockcomponent {
+	return &EmbeddingsMockcomponent{}
+}
+
+// AdvancedMockcomponent is a legacy mock stub.
+// Deprecated: Use AdvancedMockEmbedder for comprehensive mock functionality.
+type AdvancedMockcomponent struct {
+	mock.Mock
+}
+
+// NewAdvancedMockcomponent creates a new AdvancedMockcomponent.
+// Deprecated: Use NewAdvancedMockEmbedder instead.
+func NewAdvancedMockcomponent() *AdvancedMockcomponent {
+	return &AdvancedMockcomponent{}
+}
+
+// Test document helpers from testutils package.
+
+// TestDocuments returns a set of test documents for embedding tests.
+func TestDocuments() []string {
+	return []string{
+		"The quick brown fox jumps over the lazy dog",
+		"Machine learning is a subset of artificial intelligence",
+		"Natural language processing helps computers understand human language",
+		"Vector databases store high-dimensional vectors efficiently",
+		"Semantic search finds content based on meaning rather than keywords",
+	}
+}
+
+// TestQueries returns a set of test queries for embedding tests.
+func TestQueries() []string {
+	return []string{
+		"What is machine learning?",
+		"How do vector databases work?",
+		"What are embeddings?",
+		"Tell me about natural language processing",
+	}
+}
+
+// RandomDocuments generates random test documents.
+func RandomDocuments(count, minWords, maxWords int) []string {
+	documents := make([]string, count)
+
+	words := []string{
+		"the", "quick", "brown", "fox", "jumps", "over", "lazy", "dog",
+		"machine", "learning", "artificial", "intelligence", "natural",
+		"language", "processing", "vector", "database", "semantic",
+		"search", "embedding", "computer", "science", "algorithm",
+		"neural", "network", "deep", "learning", "data", "analysis",
+	}
+
+	for i := 0; i < count; i++ {
+		wordCount := minWords + rand.Intn(maxWords-minWords+1)
+		docWords := make([]string, wordCount)
+		for j := 0; j < wordCount; j++ {
+			docWords[j] = words[rand.Intn(len(words))]
+		}
+		var result strings.Builder
+		for k, w := range docWords {
+			if k > 0 {
+				result.WriteString(" ")
+			}
+			result.WriteString(w)
+		}
+		documents[i] = result.String()
+	}
+
+	return documents
+}
+
+// TestContext returns a context with timeout for testing.
+// Note: The cancel function is not returned to simplify test usage.
+// In production code, always call cancel to avoid context leaks.
+func TestContext() context.Context {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	_ = cancel // Intentionally not returning cancel for simplified test usage
+	return ctx
+}
+
+// TestContextWithCancel returns a cancellable context for testing.
+func TestContextWithCancel() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 30*time.Second)
+}
+
+// PerformanceMetrics holds performance test results.
+type PerformanceMetrics struct {
+	QueriesPerSecond   float64
+	DocumentsPerSecond float64
+	AverageLatency     time.Duration
+	P95Latency         time.Duration
+	ErrorRate          float64
 }

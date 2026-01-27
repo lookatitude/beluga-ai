@@ -34,32 +34,35 @@ type Registry interface {
 	ListProviders() []string
 }
 
-// registry implements the Registry interface.
-// This is an internal implementation that manages provider registration.
-type registry struct {
+// ConfigProvider is an interface for getting the default provider name.
+// This avoids importing the main chatmodels package for registry operations.
+type ConfigProvider interface {
+	GetDefaultProvider() string
+}
+
+// internalRegistry implements the Registry interface.
+// This is used by providers to register themselves.
+type internalRegistry struct {
 	providers map[string]ProviderFactory
 	mu        sync.RWMutex
 }
 
-// Global registry instance for easy access.
+// Global registry instance for provider registration.
 var (
-	globalRegistry *registry
+	globalRegistry *internalRegistry
 	registryOnce   sync.Once
 )
 
 // GetRegistry returns the global registry instance.
-// This follows the standard pattern used across all Beluga AI packages.
-// It uses sync.Once to ensure thread-safe initialization.
+// This is used by providers to register themselves without importing
+// the main chatmodels package.
 //
 // Example:
 //
-//	registry := iface.GetRegistry()
-//	if registry.IsRegistered("openai") {
-//	    model, err := registry.CreateProvider("gpt-4", config, options)
-//	}
+//	iface.GetRegistry().Register("custom", customFactory)
 func GetRegistry() Registry {
 	registryOnce.Do(func() {
-		globalRegistry = &registry{
+		globalRegistry = &internalRegistry{
 			providers: make(map[string]ProviderFactory),
 		}
 	})
@@ -67,14 +70,14 @@ func GetRegistry() Registry {
 }
 
 // Register registers a provider factory function.
-func (r *registry) Register(name string, factory ProviderFactory) {
+func (r *internalRegistry) Register(name string, factory ProviderFactory) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	r.providers[name] = factory
 }
 
 // GetProvider returns a provider factory for the given name.
-func (r *registry) GetProvider(name string) (ProviderFactory, error) {
+func (r *internalRegistry) GetProvider(name string) (ProviderFactory, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -87,7 +90,7 @@ func (r *registry) GetProvider(name string) (ProviderFactory, error) {
 }
 
 // ListProviders returns a list of all registered provider names.
-func (r *registry) ListProviders() []string {
+func (r *internalRegistry) ListProviders() []string {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -99,22 +102,16 @@ func (r *registry) ListProviders() []string {
 }
 
 // IsRegistered checks if a provider is registered.
-func (r *registry) IsRegistered(name string) bool {
+func (r *internalRegistry) IsRegistered(name string) bool {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	_, exists := r.providers[name]
 	return exists
 }
 
-// ConfigProvider is an interface for getting the default provider name.
-// This avoids importing the main chatmodels package for registry operations.
-type ConfigProvider interface {
-	GetDefaultProvider() string
-}
-
 // CreateProvider creates a chat model using the registered provider factory.
 // The config parameter should implement ConfigProvider to provide the provider name.
-func (r *registry) CreateProvider(model string, config any, options *Options) (ChatModel, error) {
+func (r *internalRegistry) CreateProvider(model string, config any, options *Options) (ChatModel, error) {
 	// Extract provider name using the ConfigProvider interface
 	cfgProvider, ok := config.(ConfigProvider)
 	if !ok {

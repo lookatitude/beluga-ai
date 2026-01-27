@@ -6,13 +6,88 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
-
-	// Import providers to register them for tests.
-	// This is now safe because providers use registry/iface instead of importing the main package.
-	// Note: ollama provider is excluded due to security vulnerabilities (requires experimental build tag).
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/embeddings/providers/openai"
 )
+
+// registerTestProviders registers mock providers for testing.
+// This is done directly in the test package to avoid import cycles.
+func init() {
+	// Register a mock provider for testing
+	Register("mock", func(ctx context.Context, config any) (iface.Embedder, error) {
+		return newTestMockEmbedder(config, "mock")
+	})
+
+	// Register a mock openai provider for testing
+	Register("openai", func(ctx context.Context, config any) (iface.Embedder, error) {
+		return newTestOpenAIEmbedder(config)
+	})
+}
+
+// testMockEmbedder is a simple mock embedder for testing.
+type testMockEmbedder struct {
+	dimension int
+}
+
+func newTestMockEmbedder(config any, providerName string) (iface.Embedder, error) {
+	cfg, ok := config.(Config)
+	if !ok {
+		return nil, NewInvalidConfigError("newTestMockEmbedder", "invalid config type", nil)
+	}
+
+	// Check if mock provider is configured and enabled
+	if cfg.Mock == nil || !cfg.Mock.Enabled {
+		return nil, NewProviderDisabledError("newTestMockEmbedder", providerName)
+	}
+
+	dimension := 128
+	if cfg.Mock.Dimension > 0 {
+		dimension = cfg.Mock.Dimension
+	}
+
+	return &testMockEmbedder{dimension: dimension}, nil
+}
+
+func newTestOpenAIEmbedder(config any) (iface.Embedder, error) {
+	cfg, ok := config.(Config)
+	if !ok {
+		return nil, NewInvalidConfigError("newTestOpenAIEmbedder", "invalid config type", nil)
+	}
+
+	// Check if openai provider is configured and enabled
+	if cfg.OpenAI == nil || !cfg.OpenAI.Enabled {
+		return nil, NewProviderDisabledError("newTestOpenAIEmbedder", "openai")
+	}
+
+	// Validate API key for openai
+	if cfg.OpenAI.APIKey == "" {
+		return nil, NewInvalidConfigError("newTestOpenAIEmbedder", "openai API key is required", nil)
+	}
+
+	// Return a test mock embedder with dimension from openai model
+	return &testMockEmbedder{dimension: 1536}, nil // OpenAI ada-002 dimension
+}
+
+func (e *testMockEmbedder) EmbedDocuments(ctx context.Context, texts []string) ([][]float32, error) {
+	embeddings := make([][]float32, len(texts))
+	for i := range texts {
+		embeddings[i] = make([]float32, e.dimension)
+		for j := 0; j < e.dimension; j++ {
+			embeddings[i][j] = float32(j) / float32(e.dimension)
+		}
+	}
+	return embeddings, nil
+}
+
+func (e *testMockEmbedder) EmbedQuery(ctx context.Context, text string) ([]float32, error) {
+	embedding := make([]float32, e.dimension)
+	for j := 0; j < e.dimension; j++ {
+		embedding[j] = float32(j) / float32(e.dimension)
+	}
+	return embedding, nil
+}
+
+func (e *testMockEmbedder) GetDimension(ctx context.Context) (int, error) {
+	return e.dimension, nil
+}
 
 func TestNewEmbedderFactory(t *testing.T) {
 	tests := []struct {

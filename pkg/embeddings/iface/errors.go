@@ -1,3 +1,6 @@
+// Package iface provides error types and codes for embedding operations.
+// This file re-exports error codes and provides convenience functions for creating errors.
+// The actual error type is defined in the root embeddings package.
 package iface
 
 import (
@@ -44,6 +47,7 @@ func WrapError(cause error, code, message string, args ...any) *EmbeddingError {
 }
 
 // Common error codes.
+// These are re-exported from the root embeddings package for convenience.
 const (
 	ErrCodeInvalidConfig     = "invalid_config"
 	ErrCodeProviderNotFound  = "provider_not_found"
@@ -55,26 +59,20 @@ const (
 
 // IsEmbeddingError checks if an error is an EmbeddingError with the given code.
 func IsEmbeddingError(err error, code string) bool {
-	var embErr *EmbeddingError
-	if !AsEmbeddingError(err, &embErr) {
+	if err == nil {
 		return false
 	}
-	return embErr.Code == code
+	var embErr *EmbeddingError
+	if errors.As(err, &embErr) {
+		return embErr.Code == code
+	}
+	return false
 }
 
 // AsEmbeddingError attempts to cast an error to EmbeddingError.
 func AsEmbeddingError(err error, target **EmbeddingError) bool {
-	for err != nil {
-		embErr := &EmbeddingError{}
-		if errors.As(err, &embErr) {
-			*target = embErr
-			return true
-		}
-		if unwrapper, ok := err.(interface{ Unwrap() error }); ok {
-			err = unwrapper.Unwrap()
-		} else {
-			break
-		}
+	if err == nil {
+		return false
 	}
-	return false
+	return errors.As(err, target)
 }
