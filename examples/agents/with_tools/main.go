@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents"
-	"github.com/lookatitude/beluga-ai/pkg/config/iface"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
@@ -107,7 +106,7 @@ func createTools() ([]tools.Tool, error) {
 	var toolList []tools.Tool
 
 	// Create calculator tool
-	calcConfig := iface.ToolConfig{
+	calcConfig := tools.ToolConfig{
 		Name:        "calculator",
 		Description: "Performs basic arithmetic operations (add, subtract, multiply, divide)",
 	}
@@ -118,7 +117,7 @@ func createTools() ([]tools.Tool, error) {
 	toolList = append(toolList, calcTool)
 
 	// Create echo tool
-	echoConfig := iface.ToolConfig{
+	echoConfig := tools.ToolConfig{
 		Name:        "echo",
 		Description: "Echoes back the input text",
 	}

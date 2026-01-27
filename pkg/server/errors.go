@@ -67,3 +67,19 @@ func AsServerError(err error) (*ServerError, bool) {
 	}
 	return nil, false
 }
+
+// GetErrorCode extracts the error code from an error if it's a ServerError.
+func GetErrorCode(err error) (ErrorCode, bool) {
+	if serverErr, ok := AsServerError(err); ok {
+		return ErrorCode(serverErr.Code), true
+	}
+	return "", false
+}
+
+// IsErrorCode checks if an error has a specific error code.
+func IsErrorCode(err error, code ErrorCode) bool {
+	if serverErr, ok := AsServerError(err); ok {
+		return serverErr.Code == string(code)
+	}
+	return false
+}

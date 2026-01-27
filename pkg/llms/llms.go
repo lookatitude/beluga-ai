@@ -11,10 +11,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"

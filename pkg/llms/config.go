@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // Config represents the configuration for LLM providers.

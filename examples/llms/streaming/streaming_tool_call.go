@@ -28,7 +28,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"github.com/lookatitude/beluga-ai/pkg/tools"
-	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
+	"github.com/lookatitude/beluga-ai/pkg/tools/providers/gofunc"
 )
 
 // We define a tracer for observability - this helps debug in production

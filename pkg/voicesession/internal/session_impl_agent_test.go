@@ -10,9 +10,9 @@ import (
 	"time"
 
 	agentsiface "github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 	sessioniface "github.com/lookatitude/beluga-ai/pkg/voicesession/iface"
 	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 	"github.com/stretchr/testify/assert"

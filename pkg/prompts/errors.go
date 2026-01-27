@@ -2,7 +2,11 @@ package prompts
 
 // Re-export error types and functions from iface package for public API
 
-import "github.com/lookatitude/beluga-ai/pkg/prompts/iface"
+import (
+	"errors"
+
+	"github.com/lookatitude/beluga-ai/pkg/prompts/iface"
+)
 
 // Error codes for the prompts package.
 const (
@@ -63,4 +67,35 @@ func NewConfigurationError(op, details string, err error) *PromptError {
 // NewTimeoutError creates a new timeout error.
 func NewTimeoutError(op, timeout string) *PromptError {
 	return iface.NewTimeoutError(op, timeout)
+}
+
+// IsPromptError checks if an error is a PromptError.
+func IsPromptError(err error) bool {
+	var promptErr *PromptError
+	return errors.As(err, &promptErr)
+}
+
+// AsPromptError attempts to convert an error to a PromptError.
+func AsPromptError(err error) (*PromptError, bool) {
+	var promptErr *PromptError
+	if errors.As(err, &promptErr) {
+		return promptErr, true
+	}
+	return nil, false
+}
+
+// GetErrorCode extracts the error code from an error if it's a PromptError.
+func GetErrorCode(err error) (string, bool) {
+	if promptErr, ok := AsPromptError(err); ok {
+		return promptErr.Code, true
+	}
+	return "", false
+}
+
+// IsErrorCode checks if an error has a specific error code.
+func IsErrorCode(err error, code string) bool {
+	if promptErr, ok := AsPromptError(err); ok {
+		return promptErr.Code == code
+	}
+	return false
 }

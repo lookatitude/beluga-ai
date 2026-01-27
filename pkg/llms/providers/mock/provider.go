@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	"github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/llms/internal/common"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // Provider constants.

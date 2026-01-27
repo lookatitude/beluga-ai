@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 )
 
 // mockAgent implements the Agent interface for testing.

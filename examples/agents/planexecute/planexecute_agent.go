@@ -29,7 +29,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/llms"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/tools"
-	"github.com/lookatitude/beluga-ai/pkg/tools/gofunc"
+	"github.com/lookatitude/beluga-ai/pkg/tools/providers/gofunc"
 )
 
 var (

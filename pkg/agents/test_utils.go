@@ -44,10 +44,10 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
-	"github.com/lookatitude/beluga-ai/pkg/agents/tools"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
+	"github.com/lookatitude/beluga-ai/pkg/tools"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
