@@ -27,10 +27,10 @@ The Session package follows the Beluga AI Framework design patterns, providing:
 import (
     "context"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai"
+
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai"
 )
 
 func main() {
@@ -52,10 +52,10 @@ func main() {
     }
     
     // Create and start session
-    voiceSession, err := session.NewVoiceSession(ctx,
-        session.WithSTTProvider(sttProvider),
-        session.WithTTSProvider(ttsProvider),
-        session.WithAgentCallback(agentCallback),
+    voiceSession, err := voicesession.NewVoiceSession(ctx,
+        voicesession.WithSTTProvider(sttProvider),
+        voicesession.WithTTSProvider(ttsProvider),
+        voicesession.WithAgentCallback(agentCallback),
     )
     if err != nil {
         log.Fatal(err)
@@ -111,7 +111,7 @@ The session manages the following states:
 ### Session Configuration
 
 ```go
-config := session.DefaultConfig()
+config := voicesession.DefaultConfig()
 config.SessionID = "custom-session-id"  // Auto-generated if empty
 config.Timeout = 30 * time.Minute        // Session timeout
 config.AutoStart = false                  // Auto-start on creation
@@ -124,18 +124,18 @@ config.RetryDelay = 1 * time.Second
 ### Voice Options
 
 ```go
-voiceSession, err := session.NewVoiceSession(ctx,
-    session.WithSTTProvider(sttProvider),
-    session.WithTTSProvider(ttsProvider),
-    session.WithVADProvider(vadProvider),
-    session.WithTurnDetector(turnDetector),
-    session.WithTransport(transport),
-    session.WithNoiseCancellation(noiseCancellation),
-    session.WithAgentCallback(agentCallback),
-    session.WithOnStateChanged(func(state sessioniface.SessionState) {
+voiceSession, err := voicesession.NewVoiceSession(ctx,
+    voicesession.WithSTTProvider(sttProvider),
+    voicesession.WithTTSProvider(ttsProvider),
+    voicesession.WithVADProvider(vadProvider),
+    voicesession.WithTurnDetector(turnDetector),
+    voicesession.WithTransport(transport),
+    voicesession.WithNoiseCancellation(noiseCancellation),
+    voicesession.WithAgentCallback(agentCallback),
+    voicesession.WithOnStateChanged(func(state sessioniface.SessionState) {
         log.Printf("State changed: %s", state)
     }),
-    session.WithConfig(config),
+    voicesession.WithConfig(config),
 )
 ```
 
@@ -146,7 +146,7 @@ voiceSession, err := session.NewVoiceSession(ctx,
 Automatic error recovery with configurable retry logic:
 
 ```go
-config := session.DefaultConfig()
+config := voicesession.DefaultConfig()
 config.MaxRetries = 3
 config.RetryDelay = 1 * time.Second
 ```
@@ -156,7 +156,7 @@ config.RetryDelay = 1 * time.Second
 Automatic session timeout on inactivity:
 
 ```go
-config := session.DefaultConfig()
+config := voicesession.DefaultConfig()
 config.Timeout = 5 * time.Minute
 ```
 
@@ -213,16 +213,16 @@ The Session package uses structured error handling:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 if err != nil {
-    var sessErr *session.SessionError
+    var sessErr *voicesession.SessionError
     if errors.As(err, &sessErr) {
         switch sessErr.Code {
-        case session.ErrCodeSessionNotActive:
+        case voicesession.ErrCodeSessionNotActive:
             // Session is not active
-        case session.ErrCodeProviderError:
+        case voicesession.ErrCodeProviderError:
             // Provider error
         }
     }

@@ -46,10 +46,10 @@ User Audio → Transport → Noise Cancellation → VAD → STT → Agent → TT
 import (
     "context"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai"
+
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai"
 )
 
 func main() {
@@ -78,10 +78,10 @@ func main() {
     }
     
     // Create and start session
-    voiceSession, err := session.NewVoiceSession(ctx,
-        session.WithSTTProvider(sttProvider),
-        session.WithTTSProvider(ttsProvider),
-        session.WithAgentCallback(agentCallback),
+    voiceSession, err := voicesession.NewVoiceSession(ctx,
+        voicesession.WithSTTProvider(sttProvider),
+        voicesession.WithTTSProvider(ttsProvider),
+        voicesession.WithAgentCallback(agentCallback),
     )
     if err != nil {
         log.Fatal(err)
@@ -198,7 +198,7 @@ reader, err := ttsProvider.StreamGenerate(ctx, text)
 Automatic error recovery with configurable retry logic:
 
 ```go
-config := session.DefaultConfig()
+config := voicesession.DefaultConfig()
 config.MaxRetries = 3
 config.RetryDelay = 1 * time.Second
 ```
@@ -216,7 +216,7 @@ Comprehensive observability with OTEL metrics and tracing:
 Flexible configuration with validation:
 
 ```go
-config := session.DefaultConfig()
+config := voicesession.DefaultConfig()
 config.Timeout = 30 * time.Minute
 config.EnableKeepAlive = true
 config.KeepAliveInterval = 30 * time.Second

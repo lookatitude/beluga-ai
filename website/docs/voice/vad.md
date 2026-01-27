@@ -60,9 +60,9 @@ The VAD package follows the Beluga AI Framework design patterns, providing:
 import (
     "context"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad"
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
+
+    "github.com/lookatitude/beluga-ai/pkg/vad"
+    "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
 )
 
 func main() {
@@ -152,7 +152,7 @@ The VAD package uses structured error handling:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad"
+    "github.com/lookatitude/beluga-ai/pkg/vad"
 )
 
 if err != nil {

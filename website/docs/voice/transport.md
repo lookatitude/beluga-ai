@@ -42,23 +42,23 @@ The Transport package follows the Beluga AI Framework design patterns, providing
 import (
     "context"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/transport"
-    "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/websocket"
+
+    "github.com/lookatitude/beluga-ai/pkg/audiotransport"
+    "github.com/lookatitude/beluga-ai/pkg/audiotransport/providers/websocket"
 )
 
 func main() {
     ctx := context.Background()
     
     // Create Transport provider
-    config := transport.DefaultConfig()
+    config := audiotransport.DefaultConfig()
     config.Provider = "websocket"
     config.URL = "wss://example.com/audio"
     config.SampleRate = 16000
     config.Channels = 1
     config.Codec = "pcm"
     
-    provider, err := transport.NewProvider(ctx, "websocket", config)
+    provider, err := audiotransport.NewProvider(ctx, "websocket", config)
     if err != nil {
         log.Fatal(err)
     }
@@ -112,16 +112,16 @@ The Transport package uses structured error handling:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/transport"
+    "github.com/lookatitude/beluga-ai/pkg/audiotransport"
 )
 
 if err != nil {
-    var transErr *transport.TransportError
+    var transErr *audiotransport.TransportError
     if errors.As(err, &transErr) {
         switch transErr.Code {
-        case transport.ErrCodeConnectionError:
+        case audiotransport.ErrCodeConnectionError:
             // Connection error - may retry
-        case transport.ErrCodeTimeout:
+        case audiotransport.ErrCodeTimeout:
             // Timeout - may retry
         }
     }

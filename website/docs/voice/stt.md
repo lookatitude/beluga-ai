@@ -61,9 +61,9 @@ import (
     "context"
     "os"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
+
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
 )
 
 func main() {
@@ -96,7 +96,7 @@ func main() {
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
 )
 
 // Create provider directly
@@ -197,7 +197,7 @@ The STT package uses structured error handling with error codes:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
 )
 
 if err != nil {
@@ -281,8 +281,8 @@ Providers are automatically registered via `init()` functions. You can also manu
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    sttiface "github.com/lookatitude/beluga-ai/pkg/voice/stt/iface"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    sttiface "github.com/lookatitude/beluga-ai/pkg/stt/iface"
 )
 
 registry := stt.GetRegistry()
@@ -300,7 +300,7 @@ The package includes comprehensive test utilities:
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
 )
 
 // Create mock provider

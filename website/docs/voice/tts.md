@@ -65,9 +65,9 @@ import (
     "context"
     "os"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai"
+
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai"
 )
 
 func main() {
@@ -101,7 +101,7 @@ func main() {
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai"
 )
 
 // Create provider directly
@@ -187,7 +187,7 @@ The TTS package uses structured error handling with error codes:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 if err != nil {

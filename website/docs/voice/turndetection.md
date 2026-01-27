@@ -45,8 +45,8 @@ import (
     "context"
     "time"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+
+    "github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 func main() {
@@ -115,7 +115,7 @@ The Turn Detection package uses structured error handling:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+    "github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 if err != nil {

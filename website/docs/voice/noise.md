@@ -52,21 +52,21 @@ The Noise Cancellation package follows the Beluga AI Framework design patterns, 
 import (
     "context"
     "log"
-    
-    "github.com/lookatitude/beluga-ai/pkg/voice/noise"
+
+    "github.com/lookatitude/beluga-ai/pkg/noisereduction"
 )
 
 func main() {
     ctx := context.Background()
     
     // Create Noise Cancellation provider
-    config := noise.DefaultConfig()
+    config := noisereduction.DefaultConfig()
     config.Provider = "spectral"
     config.NoiseReductionLevel = 0.7
     config.SampleRate = 16000
     config.FrameSize = 512
     
-    provider, err := noise.NewProvider(ctx, "spectral", config)
+    provider, err := noisereduction.NewProvider(ctx, "spectral", config)
     if err != nil {
         log.Fatal(err)
     }
@@ -131,16 +131,16 @@ The Noise Cancellation package uses structured error handling:
 ```go
 import (
     "errors"
-    "github.com/lookatitude/beluga-ai/pkg/voice/noise"
+    "github.com/lookatitude/beluga-ai/pkg/noisereduction"
 )
 
 if err != nil {
-    var noiseErr *noise.NoiseCancellationError
+    var noiseErr *noisereduction.NoiseCancellationError
     if errors.As(err, &noiseErr) {
         switch noiseErr.Code {
-        case noise.ErrCodeFrameSizeError:
+        case noisereduction.ErrCodeFrameSizeError:
             // Invalid frame size - adjust configuration
-        case noise.ErrCodeModelError:
+        case noisereduction.ErrCodeModelError:
             // Model loading/processing error
         }
     }
