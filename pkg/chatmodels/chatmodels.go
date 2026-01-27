@@ -47,7 +47,6 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
-	"github.com/lookatitude/beluga-ai/pkg/chatmodels/registry"
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 	"go.opentelemetry.io/otel"
@@ -137,9 +136,9 @@ func NewChatModel(model string, config *Config, opts ...iface.Option) (iface.Cha
 
 	// Use registry to create provider to avoid import cycles
 	// Provider init() functions will register themselves when imported elsewhere
-	registry := registry.GetRegistry()
-	if registry.IsRegistered(config.DefaultProvider) {
-		return registry.CreateProvider(model, config, options)
+	reg := GetRegistry()
+	if reg.IsRegistered(config.DefaultProvider) {
+		return reg.CreateProvider(model, config, options)
 	}
 
 	// Provider not registered - return error suggesting import

@@ -12,9 +12,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
 
-	// Import providers to register them for tests
-	// This is now safe because providers use registry/iface instead of importing the main package.
-	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
+	// Import providers to register them for tests.
+	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/mock"
 	_ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
 )
 

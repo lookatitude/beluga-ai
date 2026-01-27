@@ -6,12 +6,6 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/chatmodels/iface"
 )
 
-// ConfigProvider is an interface for getting the default provider name.
-// This interface is used by the registry to avoid import cycles.
-type ConfigProvider interface {
-	GetDefaultProvider() string
-}
-
 // Config represents the configuration for the chatmodels package.
 // It includes settings for model behavior, generation parameters, and observability.
 type Config struct {

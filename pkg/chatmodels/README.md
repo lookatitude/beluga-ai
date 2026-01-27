@@ -36,14 +36,15 @@ The package follows SOLID principles and the Beluga AI Framework patterns:
 ```
 pkg/chatmodels/
 ├── iface/              # Interface definitions (ISP compliant)
-│   └── chatmodel.go    # Core chat model interfaces
-├── internal/           # Private implementations
-│   └── mock/          # Mock implementations for testing
+│   ├── chatmodel.go    # Core chat model interfaces
+│   └── registry.go     # Registry and factory interfaces
 ├── providers/         # Provider implementations
+│   ├── mock/          # Mock provider for testing
 │   └── openai/        # OpenAI provider (framework ready)
 ├── config.go          # Configuration management and validation
 ├── errors.go          # Custom error types with proper wrapping
 ├── metrics.go         # OpenTelemetry observability framework
+├── registry.go        # Global provider registry
 ├── chatmodels.go      # Main package API and factory functions
 └── README.md          # This documentation
 ```
@@ -239,7 +240,7 @@ The `chatmodels` package uses a global registry pattern for managing providers. 
 ```go
 // Providers register themselves automatically
 import _ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/openai"
-import _ "github.com/lookatitude/beluga-ai/pkg/chatmodels/internal/mock"
+import _ "github.com/lookatitude/beluga-ai/pkg/chatmodels/providers/mock"
 
 // Access the registry
 registry := chatmodels.GetRegistry()

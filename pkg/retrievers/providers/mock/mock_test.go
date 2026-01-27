@@ -1,5 +1,5 @@
-// Package providers provides tests for retriever provider implementations.
-package providers
+// Package mock provides tests for the mock retriever implementation.
+package mock
 
 import (
 	"context"
