@@ -1,4 +1,8 @@
 // Package audio provides audio format utilities for the voice package.
+//
+// Deprecated: This package has been moved to pkg/voiceutils/audio.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils/audio.
+// This package will be removed in v2.0.
 package audio
 
 import (

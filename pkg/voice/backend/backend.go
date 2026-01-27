@@ -1,6 +1,10 @@
 // Package backend provides interfaces and implementations for Voice Backend operations.
 // Voice backends manage the infrastructure layer for real-time voice interactions,
 // including WebRTC connections, room management, and audio streaming.
+//
+// Deprecated: This package has been moved to pkg/voicebackend.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend.
+// This package will be removed in v2.0.
 package backend
 
 import (

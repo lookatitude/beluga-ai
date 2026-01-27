@@ -1,3 +1,8 @@
+// Package backend provides tracing utilities for voice backend operations.
+//
+// Deprecated: This package has been moved to pkg/voicebackend.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend.
+// This package will be removed in v2.0.
 package backend
 
 import (

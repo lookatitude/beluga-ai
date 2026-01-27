@@ -1,6 +1,10 @@
 // Package iface defines the core interfaces for the voice package.
 // It follows the Interface Segregation Principle by providing small, focused interfaces
 // that serve specific purposes within the voice system.
+//
+// Deprecated: This package has been moved to pkg/voiceutils/iface.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils/iface.
+// This package will be removed in v2.0.
 package iface
 
 import (

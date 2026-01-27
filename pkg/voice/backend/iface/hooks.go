@@ -1,3 +1,8 @@
+// Package iface defines interfaces for voice backend operations.
+//
+// Deprecated: This package has been moved to pkg/voicebackend/iface.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend/iface.
+// This package will be removed in v2.0.
 package iface
 
 import (

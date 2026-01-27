@@ -1,3 +1,8 @@
+// Package cartesia provides the Cartesia voice backend provider.
+//
+// Deprecated: This package has been moved to pkg/voicebackend/providers/cartesia.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/cartesia.
+// This package will be removed in v2.0.
 package cartesia
 
 import (

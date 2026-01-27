@@ -1,3 +1,8 @@
+// Package vapi provides the Vapi voice backend provider.
+//
+// Deprecated: This package has been moved to pkg/voicebackend/providers/vapi.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vapi.
+// This package will be removed in v2.0.
 package vapi
 
 import (

@@ -1,6 +1,10 @@
 // Package internal provides a wrapper around LiveKit SDK that avoids SIP client dependencies.
 // This wrapper only imports the minimal functionality needed (RoomServiceClient) without
 // triggering compilation of the SIP client code that has compatibility issues.
+//
+// Deprecated: This package has been moved to pkg/voicebackend/providers/livekit/internal.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit/internal.
+// This package will be removed in v2.0.
 package internal
 
 import (

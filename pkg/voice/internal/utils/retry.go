@@ -1,4 +1,8 @@
 // Package utils provides shared utilities for the voice package.
+//
+// Deprecated: This package has been moved to pkg/voiceutils/internal/utils.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils/internal/utils.
+// This package will be removed in v2.0.
 package utils
 
 import (

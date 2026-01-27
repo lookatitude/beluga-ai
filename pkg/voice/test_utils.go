@@ -1,5 +1,9 @@
 // Package voice provides advanced test utilities and comprehensive mocks for testing voice implementations.
 // This file contains utilities designed to support both unit tests and integration tests.
+//
+// Deprecated: This package has been moved to pkg/voiceutils.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils.
+// This package will be removed in v2.0.
 package voice
 
 import (

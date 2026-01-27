@@ -575,17 +575,53 @@
 
 ---
 
-### pkg/voiceutils/iface
+### pkg/voiceutils
 
-**Description**: Shared voice interfaces and types for all voice packages.
+**Description**: Shared utilities, interfaces, and buffer management for all voice packages.
 
-**Intent**: Common interfaces and types used across all voice packages to ensure consistency and interoperability.
+**Intent**: Common utilities, interfaces, and types used across all voice packages to ensure consistency, interoperability, and efficient memory management.
 
 **Key Components**:
+- Buffer pool: Memory-efficient audio buffer pooling
 - Shared interfaces: STTProvider, TTSProvider, S2SProvider, VADProvider, etc.
+- Audio utilities: Format conversion, codec handling
 - Common types: Audio formats, session states, pipeline types
+- Test utilities: HTTP and WebSocket mocks
+
+**Sub-packages**:
+- `iface/`: Shared interface definitions (STT, TTS, S2S, VAD, etc.)
+- `audio/`: Audio format utilities (codec, converter, format)
+- `testutils/`: Test utilities (HTTP mock, WebSocket mock)
+- `internal/utils/`: Internal utilities (circuit breaker, rate limiter, retry)
 
 **Dependencies**: `pkg/schema`
+
+---
+
+### pkg/voice (Deprecated)
+
+**Description**: Legacy voice package - now split into specialized packages.
+
+**Status**: **DEPRECATED** - This entire package has been deprecated and will be removed in v2.0. All functionality has been migrated to:
+- `pkg/stt` - Speech-to-Text functionality
+- `pkg/tts` - Text-to-Speech functionality
+- `pkg/vad` - Voice Activity Detection
+- `pkg/s2s` - Speech-to-Speech functionality
+- `pkg/audiotransport` - Audio transport (WebRTC, WebSocket)
+- `pkg/noisereduction` - Noise cancellation
+- `pkg/turndetection` - Turn detection
+- `pkg/voicebackend` - Voice backend providers
+- `pkg/voicesession` - Voice session management
+- `pkg/voiceutils` - Shared utilities and buffer pool
+
+**Intent**: This package previously provided unified voice processing but has been refactored into smaller, focused packages following the Interface Segregation Principle.
+
+**Sub-packages**:
+- `iface/`: Interface definitions (**DEPRECATED** - use `pkg/voiceutils/iface` instead)
+- `backend/`: Voice backend (**DEPRECATED** - use `pkg/voicebackend` instead)
+- `internal/`: Internal utilities (**DEPRECATED** - use `pkg/voiceutils` instead)
+
+**Dependencies**: All new packages listed above
 
 ---
 

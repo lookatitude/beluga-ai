@@ -1,6 +1,21 @@
 // Package voice provides backward-compatible shims for the voice processing packages.
 // All types and functions in this file are deprecated and will be removed in v2.0.
 // Please update your imports to use the new package locations.
+//
+// Deprecated: This entire package has been split into multiple specialized packages.
+// Please update your imports:
+//   - pkg/stt - Speech-to-Text functionality
+//   - pkg/tts - Text-to-Speech functionality
+//   - pkg/vad - Voice Activity Detection
+//   - pkg/s2s - Speech-to-Speech functionality
+//   - pkg/audiotransport - Audio transport (WebRTC, WebSocket)
+//   - pkg/noisereduction - Noise cancellation
+//   - pkg/turndetection - Turn detection
+//   - pkg/voicebackend - Voice backend providers
+//   - pkg/voicesession - Voice session management
+//   - pkg/voiceutils - Shared utilities and buffer pool
+//
+// This package will be removed in v2.0.
 package voice
 
 import (
@@ -116,4 +131,5 @@ var NewVoiceSession = voicesession.NewVoiceSession
 
 // Buffer pool shims - DEPRECATED
 // Use github.com/lookatitude/beluga-ai/pkg/voiceutils instead.
-// Note: GetGlobalBufferPool is defined in buffer_pool.go for backward compatibility
+// Note: GetGlobalBufferPool and BufferPool are defined in buffer_pool.go for backward compatibility.
+// For new code, use github.com/lookatitude/beluga-ai/pkg/voiceutils.GetGlobalBufferPool() instead.

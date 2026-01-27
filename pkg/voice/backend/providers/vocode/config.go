@@ -1,3 +1,8 @@
+// Package vocode provides the Vocode voice backend provider.
+//
+// Deprecated: This package has been moved to pkg/voicebackend/providers/vocode.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vocode.
+// This package will be removed in v2.0.
 package vocode
 
 import (

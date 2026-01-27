@@ -1,5 +1,9 @@
 // Package voice provides OTEL metrics for the voice package.
 // This file aggregates common metrics patterns used across voice sub-packages.
+//
+// Deprecated: This package has been moved to pkg/voiceutils.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils.
+// This package will be removed in v2.0.
 package voice
 
 import (

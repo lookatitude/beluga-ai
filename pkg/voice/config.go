@@ -1,5 +1,9 @@
 // Package voice provides configuration structures for the voice package.
 // This file aggregates common configuration patterns used across voice sub-packages.
+//
+// Deprecated: This package has been moved to pkg/voiceutils.
+// Please update your imports to use github.com/lookatitude/beluga-ai/pkg/voiceutils.
+// This package will be removed in v2.0.
 package voice
 
 // Config represents top-level configuration for voice package components.
