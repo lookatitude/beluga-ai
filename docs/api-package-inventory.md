@@ -39,13 +39,13 @@
 
 | Package | Path | Documentation Status | Notes |
 |---------|------|----------------------|-------|
-| stt | `pkg/voice/stt` | ✅ Documented | Speech-to-Text |
-| tts | `pkg/voice/tts` | ✅ Documented | Text-to-Speech |
-| vad | `pkg/voice/vad` | ✅ Documented | Voice Activity Detection |
-| turndetection | `pkg/voice/turndetection` | ✅ Documented | Turn Detection |
-| transport | `pkg/voice/transport` | ✅ Documented | Transport layer |
-| noise | `pkg/voice/noise` | ✅ Documented | Noise cancellation |
-| session | `pkg/voice/session` | ✅ Documented | Session management |
+| stt | `pkg/stt` | ✅ Documented | Speech-to-Text |
+| tts | `pkg/tts` | ✅ Documented | Text-to-Speech |
+| vad | `pkg/vad` | ✅ Documented | Voice Activity Detection |
+| turndetection | `pkg/turndetection` | ✅ Documented | Turn Detection |
+| transport | `pkg/audiotransport` | ✅ Documented | Transport layer |
+| noise | `pkg/noisereduction` | ✅ Documented | Noise cancellation |
+| session | `pkg/voicesession` | ✅ Documented | Session management |
 
 ## Tools Package
 

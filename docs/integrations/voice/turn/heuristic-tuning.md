@@ -1,6 +1,6 @@
 # Heuristic Turn Detection Tuning
 
-Welcome, colleague! In this guide we'll tune the **heuristic** turn-detection provider (`pkg/voice/turndetection`) using `MinSilenceDuration`, sentence-end markers, question markers, and min/max turn length. You'll see how each option affects behavior and how to verify your setup.
+Welcome, colleague! In this guide we'll tune the **heuristic** turn-detection provider (`pkg/turndetection`) using `MinSilenceDuration`, sentence-end markers, question markers, and min/max turn length. You'll see how each option affects behavior and how to verify your setup.
 
 ## What you will build
 
@@ -36,7 +36,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 func main() {
@@ -134,7 +134,7 @@ go
 
 **Problem**: Heuristic provider not registered.
 
-**Solution**: The `heuristic` package registers itself via `init()`. Ensure you import `github.com/lookatitude/beluga-ai/pkg/voice/turndetection` (and thus the `heuristic` subpackage).
+**Solution**: The `heuristic` package registers itself via `init()`. Ensure you import `github.com/lookatitude/beluga-ai/pkg/turndetection` (and thus the `heuristic` subpackage).
 
 ## Production Considerations
 

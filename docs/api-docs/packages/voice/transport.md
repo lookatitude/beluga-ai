@@ -9,7 +9,7 @@ sidebar_position: 1
 # transport
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/voice/transport"
+import "github.com/lookatitude/beluga-ai/pkg/audiotransport"
 ```
 
 Package transport provides advanced test utilities and comprehensive mocks for testing Transport implementations.
@@ -107,7 +107,7 @@ const (
 ```
 
 <a name="AssertTransportInterface"></a>
-## func [AssertTransportInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L248>)
+## func [AssertTransportInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L248>)
 
 ```go
 func AssertTransportInterface(t *testing.T, transport iface.Transport)
@@ -116,7 +116,7 @@ func AssertTransportInterface(t *testing.T, transport iface.Transport)
 AssertTransportInterface ensures that a type implements the Transport interface.
 
 <a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/transport.go#L34>)
+## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/transport.go#L34>)
 
 ```go
 func InitMetrics(meter metric.Meter, tracer trace.Tracer)
@@ -138,7 +138,7 @@ transport.InitMetrics(meter)
 Example usage can be found in examples/voice/transport/main.go
 
 <a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L91>)
+## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L91>)
 
 ```go
 func IsRetryableError(err error) bool
@@ -147,7 +147,7 @@ func IsRetryableError(err error) bool
 IsRetryableError checks if an error is retryable.
 
 <a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/transport.go#L86>)
+## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/transport.go#L86>)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.Transport, error)
@@ -184,7 +184,7 @@ err = provider.Send(ctx, audioData)
 Example usage can be found in examples/voice/transport/main.go
 
 <a name="AdvancedMockTransport"></a>
-## type [AdvancedMockTransport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L16-L29>)
+## type [AdvancedMockTransport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L16-L29>)
 
 AdvancedMockTransport provides a comprehensive mock implementation for testing.
 
@@ -196,7 +196,7 @@ type AdvancedMockTransport struct {
 ```
 
 <a name="NewAdvancedMockTransport"></a>
-### func [NewAdvancedMockTransport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L32>)
+### func [NewAdvancedMockTransport](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L32>)
 
 ```go
 func NewAdvancedMockTransport(transportName string, opts ...MockOption) *AdvancedMockTransport
@@ -205,7 +205,7 @@ func NewAdvancedMockTransport(transportName string, opts ...MockOption) *Advance
 NewAdvancedMockTransport creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockTransport.Close"></a>
-### func (*AdvancedMockTransport) [Close](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L214>)
+### func (*AdvancedMockTransport) [Close](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L214>)
 
 ```go
 func (m *AdvancedMockTransport) Close() error
@@ -214,7 +214,7 @@ func (m *AdvancedMockTransport) Close() error
 Close implements the Transport interface.
 
 <a name="AdvancedMockTransport.Connect"></a>
-### func (*AdvancedMockTransport) [Connect](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L95>)
+### func (*AdvancedMockTransport) [Connect](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L95>)
 
 ```go
 func (m *AdvancedMockTransport) Connect(ctx context.Context) error
@@ -223,7 +223,7 @@ func (m *AdvancedMockTransport) Connect(ctx context.Context) error
 Connect is a helper method for testing (not part of the interface).
 
 <a name="AdvancedMockTransport.Disconnect"></a>
-### func (*AdvancedMockTransport) [Disconnect](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L125>)
+### func (*AdvancedMockTransport) [Disconnect](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L125>)
 
 ```go
 func (m *AdvancedMockTransport) Disconnect(ctx context.Context) error
@@ -232,7 +232,7 @@ func (m *AdvancedMockTransport) Disconnect(ctx context.Context) error
 Disconnect is a helper method for testing (not part of the interface).
 
 <a name="AdvancedMockTransport.GetCallCount"></a>
-### func (*AdvancedMockTransport) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L241>)
+### func (*AdvancedMockTransport) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L241>)
 
 ```go
 func (m *AdvancedMockTransport) GetCallCount() int
@@ -241,7 +241,7 @@ func (m *AdvancedMockTransport) GetCallCount() int
 GetCallCount returns the number of times methods have been called.
 
 <a name="AdvancedMockTransport.IsConnected"></a>
-### func (*AdvancedMockTransport) [IsConnected](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L234>)
+### func (*AdvancedMockTransport) [IsConnected](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L234>)
 
 ```go
 func (m *AdvancedMockTransport) IsConnected() bool
@@ -250,7 +250,7 @@ func (m *AdvancedMockTransport) IsConnected() bool
 IsConnected is a helper method for testing.
 
 <a name="AdvancedMockTransport.OnAudioReceived"></a>
-### func (*AdvancedMockTransport) [OnAudioReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L207>)
+### func (*AdvancedMockTransport) [OnAudioReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L207>)
 
 ```go
 func (m *AdvancedMockTransport) OnAudioReceived(callback func(audio []byte))
@@ -259,7 +259,7 @@ func (m *AdvancedMockTransport) OnAudioReceived(callback func(audio []byte))
 OnAudioReceived implements the Transport interface.
 
 <a name="AdvancedMockTransport.ReceiveAudio"></a>
-### func (*AdvancedMockTransport) [ReceiveAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L182>)
+### func (*AdvancedMockTransport) [ReceiveAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L182>)
 
 ```go
 func (m *AdvancedMockTransport) ReceiveAudio() <-chan []byte
@@ -268,7 +268,7 @@ func (m *AdvancedMockTransport) ReceiveAudio() <-chan []byte
 ReceiveAudio implements the Transport interface.
 
 <a name="AdvancedMockTransport.SendAudio"></a>
-### func (*AdvancedMockTransport) [SendAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L145>)
+### func (*AdvancedMockTransport) [SendAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L145>)
 
 ```go
 func (m *AdvancedMockTransport) SendAudio(ctx context.Context, audio []byte) error
@@ -277,7 +277,7 @@ func (m *AdvancedMockTransport) SendAudio(ctx context.Context, audio []byte) err
 SendAudio implements the Transport interface.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L12-L29>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L12-L29>)
 
 Config represents the configuration for Transport providers. It includes common settings that apply to all Transport providers.
 
@@ -303,7 +303,7 @@ type Config struct {
 ```
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L86>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L86>)
 
 ```go
 func DefaultConfig() *Config
@@ -312,7 +312,7 @@ func DefaultConfig() *Config
 DefaultConfig returns a default configuration.
 
 <a name="Config.Validate"></a>
-### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L77>)
+### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L77>)
 
 ```go
 func (c *Config) Validate() error
@@ -321,7 +321,7 @@ func (c *Config) Validate() error
 Validate validates the configuration.
 
 <a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L32>)
+## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L32>)
 
 ConfigOption is a functional option for configuring Transport instances.
 
@@ -330,7 +330,7 @@ type ConfigOption func(*Config)
 ```
 
 <a name="WithChannels"></a>
-### func [WithChannels](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L56>)
+### func [WithChannels](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L56>)
 
 ```go
 func WithChannels(channels int) ConfigOption
@@ -339,7 +339,7 @@ func WithChannels(channels int) ConfigOption
 WithChannels sets the number of channels.
 
 <a name="WithCodec"></a>
-### func [WithCodec](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L63>)
+### func [WithCodec](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L63>)
 
 ```go
 func WithCodec(codec string) ConfigOption
@@ -348,7 +348,7 @@ func WithCodec(codec string) ConfigOption
 WithCodec sets the audio codec.
 
 <a name="WithConnectTimeout"></a>
-### func [WithConnectTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L70>)
+### func [WithConnectTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L70>)
 
 ```go
 func WithConnectTimeout(timeout time.Duration) ConfigOption
@@ -357,7 +357,7 @@ func WithConnectTimeout(timeout time.Duration) ConfigOption
 WithConnectTimeout sets the connection timeout.
 
 <a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L35>)
+### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L35>)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -366,7 +366,7 @@ func WithProvider(provider string) ConfigOption
 WithProvider sets the Transport provider.
 
 <a name="WithSampleRate"></a>
-### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L49>)
+### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L49>)
 
 ```go
 func WithSampleRate(sampleRate int) ConfigOption
@@ -375,7 +375,7 @@ func WithSampleRate(sampleRate int) ConfigOption
 WithSampleRate sets the sample rate.
 
 <a name="WithURL"></a>
-### func [WithURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/config.go#L42>)
+### func [WithURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/config.go#L42>)
 
 ```go
 func WithURL(url string) ConfigOption
@@ -384,7 +384,7 @@ func WithURL(url string) ConfigOption
 WithURL sets the connection URL.
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L33-L44>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L33-L44>)
 
 Metrics contains all the metrics for Transport operations.
 
@@ -395,7 +395,7 @@ type Metrics struct {
 ```
 
 <a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/transport.go#L54>)
+### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/transport.go#L54>)
 
 ```go
 func GetMetrics() *Metrics
@@ -419,7 +419,7 @@ if metrics != nil {
 Example usage can be found in examples/voice/transport/main.go
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L47>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L47>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
@@ -428,7 +428,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
 NewMetrics creates a new Metrics instance.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L26>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L26>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -437,7 +437,7 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.DecrementConnections"></a>
-### func (*Metrics) [DecrementConnections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L165>)
+### func (*Metrics) [DecrementConnections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L165>)
 
 ```go
 func (m *Metrics) DecrementConnections(ctx context.Context, provider string)
@@ -446,7 +446,7 @@ func (m *Metrics) DecrementConnections(ctx context.Context, provider string)
 DecrementConnections decrements the active connections counter.
 
 <a name="Metrics.IncrementConnections"></a>
-### func (*Metrics) [IncrementConnections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L154>)
+### func (*Metrics) [IncrementConnections](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L154>)
 
 ```go
 func (m *Metrics) IncrementConnections(ctx context.Context, provider string)
@@ -455,7 +455,7 @@ func (m *Metrics) IncrementConnections(ctx context.Context, provider string)
 IncrementConnections increments the active connections counter.
 
 <a name="Metrics.RecordAudioReceived"></a>
-### func (*Metrics) [RecordAudioReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L121>)
+### func (*Metrics) [RecordAudioReceived](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L121>)
 
 ```go
 func (m *Metrics) RecordAudioReceived(ctx context.Context, provider string, bytes int64)
@@ -464,7 +464,7 @@ func (m *Metrics) RecordAudioReceived(ctx context.Context, provider string, byte
 RecordAudioReceived records audio received.
 
 <a name="Metrics.RecordAudioSent"></a>
-### func (*Metrics) [RecordAudioSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L105>)
+### func (*Metrics) [RecordAudioSent](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L105>)
 
 ```go
 func (m *Metrics) RecordAudioSent(ctx context.Context, provider string, bytes int64)
@@ -473,7 +473,7 @@ func (m *Metrics) RecordAudioSent(ctx context.Context, provider string, bytes in
 RecordAudioSent records audio sent.
 
 <a name="Metrics.RecordConnection"></a>
-### func (*Metrics) [RecordConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L69>)
+### func (*Metrics) [RecordConnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L69>)
 
 ```go
 func (m *Metrics) RecordConnection(ctx context.Context, provider string, duration time.Duration, success bool)
@@ -482,7 +482,7 @@ func (m *Metrics) RecordConnection(ctx context.Context, provider string, duratio
 RecordConnection records a connection operation.
 
 <a name="Metrics.RecordDisconnection"></a>
-### func (*Metrics) [RecordDisconnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L89>)
+### func (*Metrics) [RecordDisconnection](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L89>)
 
 ```go
 func (m *Metrics) RecordDisconnection(ctx context.Context, provider string, duration time.Duration)
@@ -491,7 +491,7 @@ func (m *Metrics) RecordDisconnection(ctx context.Context, provider string, dura
 RecordDisconnection records a disconnection operation.
 
 <a name="Metrics.RecordError"></a>
-### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L137>)
+### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L137>)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -500,7 +500,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 RecordError records an error.
 
 <a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/metrics.go#L14-L22>)
+## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/metrics.go#L14-L22>)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -517,7 +517,7 @@ type MetricsRecorder interface {
 ```
 
 <a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L49>)
+## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L49>)
 
 MockOption configures the behavior of AdvancedMockTransport.
 
@@ -526,7 +526,7 @@ type MockOption func(*AdvancedMockTransport)
 ```
 
 <a name="WithAudioData"></a>
-### func [WithAudioData](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L59>)
+### func [WithAudioData](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L59>)
 
 ```go
 func WithAudioData(data ...[]byte) MockOption
@@ -535,7 +535,7 @@ func WithAudioData(data ...[]byte) MockOption
 WithAudioData sets the audio data to return.
 
 <a name="WithConnected"></a>
-### func [WithConnected](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L88>)
+### func [WithConnected](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L88>)
 
 ```go
 func WithConnected(connected bool) MockOption
@@ -544,7 +544,7 @@ func WithConnected(connected bool) MockOption
 WithConnected sets the connection state.
 
 <a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L66>)
+### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L66>)
 
 ```go
 func WithError(err error) MockOption
@@ -553,7 +553,7 @@ func WithError(err error) MockOption
 WithError configures the mock to return an error.
 
 <a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L81>)
+### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L81>)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -562,7 +562,7 @@ func WithNetworkDelay(enabled bool) MockOption
 WithNetworkDelay enables network delay simulation.
 
 <a name="WithProcessingDelay"></a>
-### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L74>)
+### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L74>)
 
 ```go
 func WithProcessingDelay(delay time.Duration) MockOption
@@ -571,7 +571,7 @@ func WithProcessingDelay(delay time.Duration) MockOption
 WithProcessingDelay sets the delay for processing.
 
 <a name="WithTransportName"></a>
-### func [WithTransportName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/test_utils.go#L52>)
+### func [WithTransportName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/test_utils.go#L52>)
 
 ```go
 func WithTransportName(name string) MockOption
@@ -580,7 +580,7 @@ func WithTransportName(name string) MockOption
 WithTransportName sets the transport name.
 
 <a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L17-L20>)
+## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L17-L20>)
 
 Registry manages Transport provider registration and retrieval.
 
@@ -591,7 +591,7 @@ type Registry struct {
 ```
 
 <a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L23>)
+### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L23>)
 
 ```go
 func GetRegistry() *Registry
@@ -600,7 +600,7 @@ func GetRegistry() *Registry
 GetRegistry returns the global registry instance.
 
 <a name="Registry.GetProvider"></a>
-### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L40>)
+### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L40>)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.Transport, error)
@@ -609,7 +609,7 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.Transport, er
 GetProvider returns a provider instance for the given name.
 
 <a name="Registry.IsRegistered"></a>
-### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L66>)
+### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L66>)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -618,7 +618,7 @@ func (r *Registry) IsRegistered(name string) bool
 IsRegistered checks if a provider is registered.
 
 <a name="Registry.ListProviders"></a>
-### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L54>)
+### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L54>)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -627,7 +627,7 @@ func (r *Registry) ListProviders() []string
 ListProviders returns a list of all registered provider names.
 
 <a name="Registry.Register"></a>
-### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/registry.go#L33>)
+### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/registry.go#L33>)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.Transport, error))
@@ -636,7 +636,7 @@ func (r *Registry) Register(name string, factory func(*Config) (iface.Transport,
 Register registers a provider factory function.
 
 <a name="TransportError"></a>
-## type [TransportError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L36-L42>)
+## type [TransportError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L36-L42>)
 
 TransportError represents an error that occurred during Transport operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -651,7 +651,7 @@ type TransportError struct {
 ```
 
 <a name="NewTransportError"></a>
-### func [NewTransportError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L61>)
+### func [NewTransportError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L61>)
 
 ```go
 func NewTransportError(op, code string, err error) *TransportError
@@ -660,7 +660,7 @@ func NewTransportError(op, code string, err error) *TransportError
 NewTransportError creates a new TransportError.
 
 <a name="NewTransportErrorWithDetails"></a>
-### func [NewTransportErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L80>)
+### func [NewTransportErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L80>)
 
 ```go
 func NewTransportErrorWithDetails(op, code, message string, err error, details map[string]any) *TransportError
@@ -669,7 +669,7 @@ func NewTransportErrorWithDetails(op, code, message string, err error, details m
 NewTransportErrorWithDetails creates a new TransportError with additional details.
 
 <a name="NewTransportErrorWithMessage"></a>
-### func [NewTransportErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L70>)
+### func [NewTransportErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L70>)
 
 ```go
 func NewTransportErrorWithMessage(op, code, message string, err error) *TransportError
@@ -678,7 +678,7 @@ func NewTransportErrorWithMessage(op, code, message string, err error) *Transpor
 NewTransportErrorWithMessage creates a new TransportError with a custom message.
 
 <a name="TransportError.Error"></a>
-### func (*TransportError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L45>)
+### func (*TransportError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L45>)
 
 ```go
 func (e *TransportError) Error() string
@@ -687,7 +687,7 @@ func (e *TransportError) Error() string
 Error implements the error interface.
 
 <a name="TransportError.Unwrap"></a>
-### func (*TransportError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/transport/errors.go#L56>)
+### func (*TransportError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/audiotransport/errors.go#L56>)
 
 ```go
 func (e *TransportError) Unwrap() error

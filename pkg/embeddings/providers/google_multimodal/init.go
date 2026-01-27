@@ -7,7 +7,7 @@ import (
 	"time"
 
 	embeddingsiface "github.com/lookatitude/beluga-ai/pkg/embeddings/iface"
-	"github.com/lookatitude/beluga-ai/pkg/embeddings/registry"
+	"github.com/lookatitude/beluga-ai/pkg/embeddings/internal/registry"
 	"go.opentelemetry.io/otel"
 )
 

@@ -26,7 +26,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 func main() {

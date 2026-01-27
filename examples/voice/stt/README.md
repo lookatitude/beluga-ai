@@ -43,5 +43,5 @@ provider, err := stt.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [STT Package Documentation](../../../pkg/voice/stt/README.md)
+- [STT Package Documentation](../../../pkg/stt/README.md)
 - [Voice Session Example](../simple/main.go)

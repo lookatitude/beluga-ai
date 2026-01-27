@@ -28,10 +28,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	"github.com/lookatitude/beluga-ai/pkg/stt"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 var tracer = otel.Tracer("beluga.voice.session.long_utterances")

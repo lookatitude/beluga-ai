@@ -56,5 +56,5 @@ backend, err := backend.NewBackend(ctx, "livekit", config)
 
 ## See Also
 
-- [Backend Package Documentation](../../../pkg/voice/backend/README.md)
+- [Backend Package Documentation](../../../pkg/voicebackend/README.md)
 - [Voice Session Example](../simple/main.go)

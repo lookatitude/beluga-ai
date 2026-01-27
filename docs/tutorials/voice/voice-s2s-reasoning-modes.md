@@ -37,7 +37,7 @@ If using the OpenAI provider, you can adjust the `reasoning_effort`.
 ```go
 package main
 
-import "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/openai_realtime"
+import "github.com/lookatitude/beluga-ai/pkg/s2s/providers/openai_realtime"
 
 func main() {
     config := &openai_realtime.Config{

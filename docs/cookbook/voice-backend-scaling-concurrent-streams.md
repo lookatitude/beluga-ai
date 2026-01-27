@@ -13,7 +13,7 @@ You need to support many concurrent voice sessions (100+) on a single backend in
 
 ## Solution
 
-Use `pkg/voice/backend` with `MaxConcurrentSessions` and `HealthCheck`. Before creating a session, check `GetActiveSessionCount()` and reject or queue when at capacity. Use a connection/session limiter (e.g. semaphore or middleware) that aligns with `MaxConcurrentSessions`. Emit OTEL metrics for active sessions, rejections, and health. This works because the backend and registry already support multiple providers and config-driven limits; you add application-level enforcement and observability.
+Use `pkg/voicebackend` with `MaxConcurrentSessions` and `HealthCheck`. Before creating a session, check `GetActiveSessionCount()` and reject or queue when at capacity. Use a connection/session limiter (e.g. semaphore or middleware) that aligns with `MaxConcurrentSessions`. Emit OTEL metrics for active sessions, rejections, and health. This works because the backend and registry already support multiple providers and config-driven limits; you add application-level enforcement and observability.
 
 ## Code Example
 ```go
@@ -30,9 +30,9 @@ import (
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
 
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
 )
 
 var (

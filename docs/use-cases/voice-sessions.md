@@ -115,9 +115,9 @@ import (
     "sync"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
     "github.com/lookatitude/beluga-ai/pkg/agents"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"

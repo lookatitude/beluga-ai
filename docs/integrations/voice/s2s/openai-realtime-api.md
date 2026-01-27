@@ -42,8 +42,8 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/openai_realtime"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/providers/openai_realtime"
 )
 
 func main() {
@@ -113,8 +113,8 @@ import (
     "os"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/openai_realtime"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/providers/openai_realtime"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/trace"

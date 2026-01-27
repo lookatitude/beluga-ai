@@ -337,6 +337,6 @@ fallback_providers:
 
 ## Related Documentation
 
-- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)
+- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/s2s/README.md)
 - [Voice Providers Guide](../../guides/voice-providers.md)
-- [Voice Session Package](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/session/README.md)
+- [Voice Session Package](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voicesession/README.md)

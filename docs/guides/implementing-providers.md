@@ -419,8 +419,8 @@ Test embedding generation, dimension retrieval, and error handling.
 ### Step 1: Create Package Structure
 
 ```bash
-mkdir -p pkg/voice/s2s/providers/{provider_name}
-cd pkg/voice/s2s/providers/{provider_name}
+mkdir -p pkg/s2s/providers/{provider_name}
+cd pkg/s2s/providers/{provider_name}
 ```
 
 ### Step 2: Implement Configuration
@@ -455,7 +455,7 @@ Create `init.go`:
 ```go
 package {provider}
 
-import "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+import "github.com/lookatitude/beluga-ai/pkg/s2s"
 
 func init() {
     s2s.GetRegistry().Register("{provider_name}", New{Provider}Provider)
@@ -653,7 +653,7 @@ See existing implementations for reference:
 - **LLM Provider**: `pkg/llms/providers/openai/`
 - **Vector Store**: `pkg/vectorstores/providers/pgvector/`
 - **Embeddings**: `pkg/embeddings/providers/openai/`
-- **S2S Provider**: `pkg/voice/s2s/providers/amazon_nova/` (structure, needs API implementation)
+- **S2S Provider**: `pkg/s2s/providers/amazon_nova/` (structure, needs API implementation)
 
 ---
 

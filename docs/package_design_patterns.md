@@ -183,8 +183,8 @@ Sub-packages are nested directories treated as independent packages within a par
 **Convention:** `pkg/<parent>/<provider-or-component>`
 
 ```
-pkg/voice/stt/              # Speech-to-Text component
-pkg/voice/tts/              # Text-to-Speech component
+pkg/stt/              # Speech-to-Text component
+pkg/tts/              # Text-to-Speech component
 pkg/llms/providers/openai/  # OpenAI provider
 pkg/llms/providers/anthropic/ # Anthropic provider
 ```
@@ -195,7 +195,7 @@ Sub-packages **MUST** be independently importable and testable:
 
 ```go
 // Direct import of sub-package
-import "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+import "github.com/lookatitude/beluga-ai/pkg/stt"
 
 // Use without parent package
 transcriber, err := stt.NewDeepgramTranscriber(cfg)
@@ -977,7 +977,7 @@ Critical integration test suites now available:
 Each sub-package maintains its own `test_utils.go` with specialized mocks:
 
 ```go
-// pkg/voice/stt/test_utils.go
+// pkg/stt/test_utils.go
 type MockTranscriber struct {
     mock.Mock
     transcriptions []TranscriptionResult

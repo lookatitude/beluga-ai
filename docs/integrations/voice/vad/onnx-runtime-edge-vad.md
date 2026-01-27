@@ -1,6 +1,6 @@
 # ONNX Runtime for Edge VAD
 
-Welcome, colleague! In this guide we'll run **Silero VAD** with ONNX Runtime in edge or resource-constrained environments. You'll use `pkg/voice/vad` with the **silero** provider, point `ModelPath` to a Silero ONNX model, and tune for low CPU/memory.
+Welcome, colleague! In this guide we'll run **Silero VAD** with ONNX Runtime in edge or resource-constrained environments. You'll use `pkg/vad` with the **silero** provider, point `ModelPath` to a Silero ONNX model, and tune for low CPU/memory.
 
 ## What you will build
 
@@ -42,8 +42,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
 )
 
 func main() {

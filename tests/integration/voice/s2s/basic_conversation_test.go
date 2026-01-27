@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -28,16 +28,16 @@ func TestBasicConversation(t *testing.T) {
 		)))
 
 	t.Run("create session with S2S provider", func(t *testing.T) {
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithS2SProvider(mockProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithS2SProvider(mockProvider),
 		)
 		require.NoError(t, err)
 		assert.NotNil(t, voiceSession)
 	})
 
 	t.Run("session lifecycle with S2S", func(t *testing.T) {
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithS2SProvider(mockProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithS2SProvider(mockProvider),
 		)
 		require.NoError(t, err)
 
@@ -53,8 +53,8 @@ func TestBasicConversation(t *testing.T) {
 	})
 
 	t.Run("process audio with S2S", func(t *testing.T) {
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithS2SProvider(mockProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithS2SProvider(mockProvider),
 		)
 		require.NoError(t, err)
 
@@ -82,8 +82,8 @@ func TestBasicConversation(t *testing.T) {
 		// Test that latency is acceptable (under 2 seconds for 95% of interactions)
 		startTime := time.Now()
 
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithS2SProvider(mockProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithS2SProvider(mockProvider),
 		)
 		require.NoError(t, err)
 
@@ -115,7 +115,7 @@ func TestS2SProvider_Registry(t *testing.T) {
 		config.Provider = "amazon_nova"
 
 		// Import provider to trigger init() registration
-		_ = "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/amazon_nova"
+		_ = "github.com/lookatitude/beluga-ai/pkg/s2s/providers/amazon_nova"
 
 		registry := s2s.GetRegistry()
 		provider, err := registry.GetProvider("amazon_nova", config)
@@ -148,7 +148,7 @@ func TestS2S_ErrorHandling(t *testing.T) {
 
 	t.Run("session creation without provider", func(t *testing.T) {
 		// Should fail validation - either STT+TTS or S2S required
-		voiceSession, err := session.NewVoiceSession(ctx)
+		voiceSession, err := voicesession.NewVoiceSession(ctx)
 		require.Error(t, err)
 		assert.Nil(t, voiceSession)
 		assert.Contains(t, err.Error(), "required")
@@ -160,10 +160,10 @@ func TestS2S_ErrorHandling(t *testing.T) {
 		mockTTS := &mockTTSProvider{}
 		mockS2S := s2s.NewAdvancedMockS2SProvider("test")
 
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithSTTProvider(mockSTT),
-			session.WithTTSProvider(mockTTS),
-			session.WithS2SProvider(mockS2S),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithSTTProvider(mockSTT),
+			voicesession.WithTTSProvider(mockTTS),
+			voicesession.WithS2SProvider(mockS2S),
 		)
 		require.Error(t, err)
 		assert.Nil(t, voiceSession)

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/lookatitude/beluga-ai/tests/integration/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -39,7 +39,7 @@ func TestVoiceAgentIntegration(t *testing.T) {
 	}
 
 	// Create backend
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	require.NoError(t, err)
 
 	// Start backend
@@ -110,7 +110,7 @@ func TestVoiceAgentLatency(t *testing.T) {
 		LatencyTarget: 2 * time.Second, // FR-009: <2s latency
 	}
 
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)
@@ -185,7 +185,7 @@ func TestConcurrentCalls(t *testing.T) {
 		MaxConcurrentSessions: 100, // SC-003: 100 concurrent calls
 	}
 
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)

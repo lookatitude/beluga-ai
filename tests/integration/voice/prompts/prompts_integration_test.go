@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,10 +27,10 @@ func TestPromptsIntegration(t *testing.T) {
 		return "Prompted response to: " + transcript, nil
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	require.NoError(t, err)
 

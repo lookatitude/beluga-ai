@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func TestScalability100ConcurrentSessions(t *testing.T) {
 		EnableMetrics:         false, // Disable metrics for performance
 	}
 
-	backendInstance, err := backend.NewBackend(ctx, "mock", config)
+	backendInstance, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 	require.NotNil(t, backendInstance)
 
@@ -183,7 +183,7 @@ func TestSessionIsolation(t *testing.T) {
 		RetryDelay:            time.Second,
 	}
 
-	backendInstance, err := backend.NewBackend(ctx, "mock", config)
+	backendInstance, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = backendInstance.Start(ctx)

@@ -7,8 +7,8 @@ import (
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	orchestrationiface "github.com/lookatitude/beluga-ai/pkg/orchestration/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +30,8 @@ func TestS2S_OrchestrationIntegration(t *testing.T) {
 	// Create voice session with S2S provider
 	// Note: Orchestration integration happens through S2SAgentIntegration
 	// which is created when both S2S provider and agent are present
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -67,8 +67,8 @@ func TestS2S_OrchestrationWorkflowTrigger(t *testing.T) {
 	}
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 

@@ -10,8 +10,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,9 +46,9 @@ func TestS2S_LLMsIntegration(t *testing.T) {
 		LLMProviderName: "mock",
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -99,9 +99,9 @@ func TestS2S_LLMsStreaming(t *testing.T) {
 		LLMProviderName: "mock",
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
 	)
 	require.NoError(t, err)
 

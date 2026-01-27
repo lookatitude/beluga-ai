@@ -6,7 +6,7 @@ import (
 	"log"
 
 	// Mock provider not available - remove blank import
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 func main() {

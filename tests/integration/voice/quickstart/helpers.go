@@ -4,7 +4,7 @@ import (
 	"context"
 	"io"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
 )
 
 // Shared mock providers for quickstart tests.

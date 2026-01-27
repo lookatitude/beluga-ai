@@ -46,5 +46,5 @@ provider, err := noise.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [Noise Cancellation Package Documentation](../../../pkg/voice/noise/README.md)
+- [Noise Cancellation Package Documentation](../../../pkg/noisereduction/README.md)
 - [Voice Session Example](../simple/main.go)

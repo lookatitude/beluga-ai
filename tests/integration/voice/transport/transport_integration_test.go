@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/transport"
+	"github.com/lookatitude/beluga-ai/pkg/audiotransport"
 	// Import providers to trigger init() registration.
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/webrtc"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/transport/providers/websocket"
+	_ "github.com/lookatitude/beluga-ai/pkg/audiotransport/providers/webrtc"
+	_ "github.com/lookatitude/beluga-ai/pkg/audiotransport/providers/websocket"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,20 +18,20 @@ func TestTransport_Integration(t *testing.T) {
 	// This test uses mock providers to avoid requiring real connections
 
 	t.Run("provider creation", func(t *testing.T) {
-		config := transport.DefaultConfig()
+		config := audiotransport.DefaultConfig()
 		config.Provider = "webrtc"
 		config.URL = "wss://example.com"
 
 		// Test that provider can be created via registry
-		registry := transport.GetRegistry()
+		registry := audiotransport.GetRegistry()
 		provider, err := registry.GetProvider("webrtc", config)
 		require.NoError(t, err)
 		assert.NotNil(t, provider)
 	})
 
 	t.Run("mock transport send", func(t *testing.T) {
-		mockTransport := transport.NewAdvancedMockTransport("test",
-			transport.WithConnected(true),
+		mockTransport := audiotransport.NewAdvancedMockTransport("test",
+			audiotransport.WithConnected(true),
 		)
 
 		ctx := context.Background()
@@ -42,10 +42,10 @@ func TestTransport_Integration(t *testing.T) {
 	})
 
 	t.Run("mock transport receive", func(t *testing.T) {
-		mockTransport := transport.NewAdvancedMockTransport("test",
-			transport.WithConnected(true),
-			transport.WithAudioData([]byte{1, 2, 3}, []byte{4, 5, 6}),
-			transport.WithProcessingDelay(10*time.Millisecond),
+		mockTransport := audiotransport.NewAdvancedMockTransport("test",
+			audiotransport.WithConnected(true),
+			audiotransport.WithAudioData([]byte{1, 2, 3}, []byte{4, 5, 6}),
+			audiotransport.WithProcessingDelay(10*time.Millisecond),
 		)
 
 		audioCh := mockTransport.ReceiveAudio()
@@ -77,8 +77,8 @@ func TestTransport_Integration(t *testing.T) {
 
 func TestTransport_ErrorHandling(t *testing.T) {
 	t.Run("not connected error", func(t *testing.T) {
-		mockTransport := transport.NewAdvancedMockTransport("test",
-			transport.WithConnected(false),
+		mockTransport := audiotransport.NewAdvancedMockTransport("test",
+			audiotransport.WithConnected(false),
 		)
 
 		ctx := context.Background()
@@ -86,24 +86,24 @@ func TestTransport_ErrorHandling(t *testing.T) {
 
 		err := mockTransport.SendAudio(ctx, audio)
 		require.Error(t, err)
-		assert.False(t, transport.IsRetryableError(err))
+		assert.False(t, audiotransport.IsRetryableError(err))
 	})
 
 	t.Run("connection failed error retry", func(t *testing.T) {
-		mockTransport := transport.NewAdvancedMockTransport("test",
-			transport.WithError(transport.NewTransportError("Connect", transport.ErrCodeConnectionFailed, nil)),
+		mockTransport := audiotransport.NewAdvancedMockTransport("test",
+			audiotransport.WithError(audiotransport.NewTransportError("Connect", audiotransport.ErrCodeConnectionFailed, nil)),
 		)
 
 		ctx := context.Background()
 		err := mockTransport.Connect(ctx)
 		require.Error(t, err)
-		assert.True(t, transport.IsRetryableError(err))
+		assert.True(t, audiotransport.IsRetryableError(err))
 	})
 }
 
 func TestTransport_ConcurrentOperations(t *testing.T) {
-	mockTransport := transport.NewAdvancedMockTransport("test",
-		transport.WithConnected(true),
+	mockTransport := audiotransport.NewAdvancedMockTransport("test",
+		audiotransport.WithConnected(true),
 	)
 
 	ctx := context.Background()

@@ -43,7 +43,7 @@ These packages have providers that import the main package directly, but their t
 - **Risk Level:** Medium - Tests don't import providers, but could in future
 - **Recommendation:** Consider applying the same registry interface pattern proactively
 
-#### Voice Packages (`pkg/voice/stt`, `pkg/voice/tts`, `pkg/voice/vad`, etc.)
+#### Voice Packages (`pkg/stt`, `pkg/tts`, `pkg/vad`, etc.)
 - **Provider Pattern:** Providers import their respective main packages directly
 - **Test Status:** ✅ No cycle (test files don't import providers)
 - **Risk Level:** Low - Voice packages are less likely to need provider imports in tests
@@ -66,14 +66,14 @@ These packages either don't have providers or use a different pattern that doesn
 - `pkg/server` - ✅ Safe - No provider pattern
 
 #### Voice Packages (All Safe)
-- `pkg/voice/stt` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/tts` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/vad` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/s2s` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/transport` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/turndetection` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/noise` - ✅ Safe - Providers import main package, but test files don't import providers
-- `pkg/voice/session` - ✅ Safe - No provider pattern
+- `pkg/stt` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/tts` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/vad` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/s2s` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/audiotransport` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/turndetection` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/noisereduction` - ✅ Safe - Providers import main package, but test files don't import providers
+- `pkg/voicesession` - ✅ Safe - No provider pattern
 
 ## Pattern Analysis
 

@@ -15,7 +15,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -56,10 +56,10 @@ func TestAgentsVoice_Tools_Execution(t *testing.T) {
 	}
 	ttsProvider := &mockStreamingTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent, agentConfig),
 	)
 	require.NoError(t, err)
 

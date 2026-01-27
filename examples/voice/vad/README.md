@@ -48,5 +48,5 @@ provider, err := vad.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [VAD Package Documentation](../../../pkg/voice/vad/README.md)
+- [VAD Package Documentation](../../../pkg/vad/README.md)
 - [Voice Session Example](../simple/main.go)

@@ -9,7 +9,7 @@ sidebar_position: 1
 # tts
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+import "github.com/lookatitude/beluga-ai/pkg/tts"
 ```
 
 Package tts provides advanced test utilities and comprehensive mocks for testing TTS implementations. This file contains utilities designed to support both unit tests and integration tests.
@@ -119,7 +119,7 @@ const (
 ```
 
 <a name="AssertTTSProviderInterface"></a>
-## func [AssertTTSProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L160>)
+## func [AssertTTSProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L160>)
 
 ```go
 func AssertTTSProviderInterface(t *testing.T, provider iface.TTSProvider)
@@ -128,7 +128,7 @@ func AssertTTSProviderInterface(t *testing.T, provider iface.TTSProvider)
 AssertTTSProviderInterface ensures that a type implements the TTSProvider interface.
 
 <a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/tts.go#L34>)
+## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/tts.go#L34>)
 
 ```go
 func InitMetrics(meter metric.Meter, tracer trace.Tracer)
@@ -150,7 +150,7 @@ tts.InitMetrics(meter)
 Example usage can be found in examples/voice/tts/main.go
 
 <a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L105>)
+## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L105>)
 
 ```go
 func IsRetryableError(err error) bool
@@ -159,7 +159,7 @@ func IsRetryableError(err error) bool
 IsRetryableError checks if an error is retryable.
 
 <a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/tts.go#L85>)
+## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/tts.go#L85>)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.TTSProvider, error)
@@ -196,7 +196,7 @@ audio, err := provider.Synthesize(ctx, "Hello, world!")
 Example usage can be found in examples/voice/tts/main.go
 
 <a name="AdvancedMockTTSProvider"></a>
-## type [AdvancedMockTTSProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L20-L31>)
+## type [AdvancedMockTTSProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L20-L31>)
 
 AdvancedMockTTSProvider provides a comprehensive mock implementation for testing.
 
@@ -208,7 +208,7 @@ type AdvancedMockTTSProvider struct {
 ```
 
 <a name="NewAdvancedMockTTSProvider"></a>
-### func [NewAdvancedMockTTSProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L34>)
+### func [NewAdvancedMockTTSProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L34>)
 
 ```go
 func NewAdvancedMockTTSProvider(providerName string, opts ...MockOption) *AdvancedMockTTSProvider
@@ -217,7 +217,7 @@ func NewAdvancedMockTTSProvider(providerName string, opts ...MockOption) *Advanc
 NewAdvancedMockTTSProvider creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockTTSProvider.GenerateSpeech"></a>
-### func (*AdvancedMockTTSProvider) [GenerateSpeech](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L89>)
+### func (*AdvancedMockTTSProvider) [GenerateSpeech](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L89>)
 
 ```go
 func (m *AdvancedMockTTSProvider) GenerateSpeech(ctx context.Context, text string) ([]byte, error)
@@ -226,7 +226,7 @@ func (m *AdvancedMockTTSProvider) GenerateSpeech(ctx context.Context, text strin
 GenerateSpeech implements the TTSProvider interface.
 
 <a name="AdvancedMockTTSProvider.GetCallCount"></a>
-### func (*AdvancedMockTTSProvider) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L153>)
+### func (*AdvancedMockTTSProvider) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L153>)
 
 ```go
 func (m *AdvancedMockTTSProvider) GetCallCount() int
@@ -235,7 +235,7 @@ func (m *AdvancedMockTTSProvider) GetCallCount() int
 GetCallCount returns the number of times GenerateSpeech has been called.
 
 <a name="AdvancedMockTTSProvider.StreamGenerate"></a>
-### func (*AdvancedMockTTSProvider) [StreamGenerate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L125>)
+### func (*AdvancedMockTTSProvider) [StreamGenerate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L125>)
 
 ```go
 func (m *AdvancedMockTTSProvider) StreamGenerate(ctx context.Context, text string) (io.Reader, error)
@@ -244,7 +244,7 @@ func (m *AdvancedMockTTSProvider) StreamGenerate(ctx context.Context, text strin
 StreamGenerate implements the TTSProvider interface.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L12-L34>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L12-L34>)
 
 Config represents the configuration for TTS providers. It includes common settings that apply to all TTS providers.
 
@@ -275,7 +275,7 @@ type Config struct {
 ```
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L133>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L133>)
 
 ```go
 func DefaultConfig() *Config
@@ -284,7 +284,7 @@ func DefaultConfig() *Config
 DefaultConfig returns a default configuration.
 
 <a name="Config.Validate"></a>
-### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L124>)
+### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L124>)
 
 ```go
 func (c *Config) Validate() error
@@ -293,7 +293,7 @@ func (c *Config) Validate() error
 Validate validates the configuration.
 
 <a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L37>)
+## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L37>)
 
 ConfigOption is a functional option for configuring TTS instances.
 
@@ -302,7 +302,7 @@ type ConfigOption func(*Config)
 ```
 
 <a name="WithAPIKey"></a>
-### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L47>)
+### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L47>)
 
 ```go
 func WithAPIKey(apiKey string) ConfigOption
@@ -311,7 +311,7 @@ func WithAPIKey(apiKey string) ConfigOption
 WithAPIKey sets the API key.
 
 <a name="WithBaseURL"></a>
-### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L54>)
+### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L54>)
 
 ```go
 func WithBaseURL(baseURL string) ConfigOption
@@ -320,7 +320,7 @@ func WithBaseURL(baseURL string) ConfigOption
 WithBaseURL sets the base URL.
 
 <a name="WithEnableStreaming"></a>
-### func [WithEnableStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L117>)
+### func [WithEnableStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L117>)
 
 ```go
 func WithEnableStreaming(enable bool) ConfigOption
@@ -329,7 +329,7 @@ func WithEnableStreaming(enable bool) ConfigOption
 WithEnableStreaming sets streaming enablement.
 
 <a name="WithLanguage"></a>
-### func [WithLanguage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L75>)
+### func [WithLanguage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L75>)
 
 ```go
 func WithLanguage(language string) ConfigOption
@@ -338,7 +338,7 @@ func WithLanguage(language string) ConfigOption
 WithLanguage sets the language.
 
 <a name="WithModel"></a>
-### func [WithModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L61>)
+### func [WithModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L61>)
 
 ```go
 func WithModel(model string) ConfigOption
@@ -347,7 +347,7 @@ func WithModel(model string) ConfigOption
 WithModel sets the model.
 
 <a name="WithPitch"></a>
-### func [WithPitch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L89>)
+### func [WithPitch](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L89>)
 
 ```go
 func WithPitch(pitch float64) ConfigOption
@@ -356,7 +356,7 @@ func WithPitch(pitch float64) ConfigOption
 WithPitch sets the pitch.
 
 <a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L40>)
+### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L40>)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -365,7 +365,7 @@ func WithProvider(provider string) ConfigOption
 WithProvider sets the TTS provider.
 
 <a name="WithSampleRate"></a>
-### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L110>)
+### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L110>)
 
 ```go
 func WithSampleRate(sampleRate int) ConfigOption
@@ -374,7 +374,7 @@ func WithSampleRate(sampleRate int) ConfigOption
 WithSampleRate sets the sample rate.
 
 <a name="WithSpeed"></a>
-### func [WithSpeed](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L82>)
+### func [WithSpeed](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L82>)
 
 ```go
 func WithSpeed(speed float64) ConfigOption
@@ -383,7 +383,7 @@ func WithSpeed(speed float64) ConfigOption
 WithSpeed sets the speech speed.
 
 <a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L103>)
+### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L103>)
 
 ```go
 func WithTimeout(timeout time.Duration) ConfigOption
@@ -392,7 +392,7 @@ func WithTimeout(timeout time.Duration) ConfigOption
 WithTimeout sets the timeout.
 
 <a name="WithVoice"></a>
-### func [WithVoice](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L68>)
+### func [WithVoice](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L68>)
 
 ```go
 func WithVoice(voice string) ConfigOption
@@ -401,7 +401,7 @@ func WithVoice(voice string) ConfigOption
 WithVoice sets the voice.
 
 <a name="WithVolume"></a>
-### func [WithVolume](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/config.go#L96>)
+### func [WithVolume](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/config.go#L96>)
 
 ```go
 func WithVolume(volume float64) ConfigOption
@@ -410,7 +410,7 @@ func WithVolume(volume float64) ConfigOption
 WithVolume sets the volume.
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L31-L41>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L31-L41>)
 
 Metrics contains all the metrics for TTS operations.
 
@@ -421,7 +421,7 @@ type Metrics struct {
 ```
 
 <a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/tts.go#L54>)
+### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/tts.go#L54>)
 
 ```go
 func GetMetrics() *Metrics
@@ -445,7 +445,7 @@ if metrics != nil {
 Example usage can be found in examples/voice/tts/main.go
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L44>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L44>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
@@ -454,7 +454,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
 NewMetrics creates a new Metrics instance.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L24>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L24>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -463,7 +463,7 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.DecrementActiveStreams"></a>
-### func (*Metrics) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L139>)
+### func (*Metrics) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L139>)
 
 ```go
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model, voice string)
@@ -472,7 +472,7 @@ func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model, v
 DecrementActiveStreams decrements the active streams counter.
 
 <a name="Metrics.IncrementActiveStreams"></a>
-### func (*Metrics) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L126>)
+### func (*Metrics) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L126>)
 
 ```go
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, voice string)
@@ -481,7 +481,7 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model, v
 IncrementActiveStreams increments the active streams counter.
 
 <a name="Metrics.RecordError"></a>
-### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L86>)
+### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L86>)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, model, voice, errorCode string, duration time.Duration)
@@ -490,7 +490,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, voice, error
 RecordError records an error.
 
 <a name="Metrics.RecordGeneration"></a>
-### func (*Metrics) [RecordGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L65>)
+### func (*Metrics) [RecordGeneration](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L65>)
 
 ```go
 func (m *Metrics) RecordGeneration(ctx context.Context, provider, model, voice string, duration time.Duration)
@@ -499,7 +499,7 @@ func (m *Metrics) RecordGeneration(ctx context.Context, provider, model, voice s
 RecordGeneration records a generation operation.
 
 <a name="Metrics.RecordStreaming"></a>
-### func (*Metrics) [RecordStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L108>)
+### func (*Metrics) [RecordStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L108>)
 
 ```go
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model, voice string, duration time.Duration)
@@ -508,7 +508,7 @@ func (m *Metrics) RecordStreaming(ctx context.Context, provider, model, voice st
 RecordStreaming records a streaming operation.
 
 <a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/metrics.go#L14-L20>)
+## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/metrics.go#L14-L20>)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -523,7 +523,7 @@ type MetricsRecorder interface {
 ```
 
 <a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L50>)
+## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L50>)
 
 MockOption configures the behavior of AdvancedMockTTSProvider.
 
@@ -532,7 +532,7 @@ type MockOption func(*AdvancedMockTTSProvider)
 ```
 
 <a name="WithAudioResponses"></a>
-### func [WithAudioResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L60>)
+### func [WithAudioResponses](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L60>)
 
 ```go
 func WithAudioResponses(audioResponses ...[]byte) MockOption
@@ -541,7 +541,7 @@ func WithAudioResponses(audioResponses ...[]byte) MockOption
 WithAudioResponses sets the audio responses to return.
 
 <a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L67>)
+### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L67>)
 
 ```go
 func WithError(err error) MockOption
@@ -550,7 +550,7 @@ func WithError(err error) MockOption
 WithError configures the mock to return an error.
 
 <a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L82>)
+### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L82>)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -559,7 +559,7 @@ func WithNetworkDelay(enabled bool) MockOption
 WithNetworkDelay enables network delay simulation.
 
 <a name="WithProviderName"></a>
-### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L53>)
+### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L53>)
 
 ```go
 func WithProviderName(name string) MockOption
@@ -568,7 +568,7 @@ func WithProviderName(name string) MockOption
 WithProviderName sets the provider name.
 
 <a name="WithStreamingDelay"></a>
-### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/test_utils.go#L75>)
+### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/test_utils.go#L75>)
 
 ```go
 func WithStreamingDelay(delay time.Duration) MockOption
@@ -577,7 +577,7 @@ func WithStreamingDelay(delay time.Duration) MockOption
 WithStreamingDelay sets the delay between streaming chunks.
 
 <a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L17-L20>)
+## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L17-L20>)
 
 Registry manages TTS provider registration and retrieval.
 
@@ -588,7 +588,7 @@ type Registry struct {
 ```
 
 <a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L23>)
+### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L23>)
 
 ```go
 func GetRegistry() *Registry
@@ -597,7 +597,7 @@ func GetRegistry() *Registry
 GetRegistry returns the global registry instance.
 
 <a name="Registry.GetProvider"></a>
-### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L40>)
+### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L40>)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.TTSProvider, error)
@@ -606,7 +606,7 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.TTSProvider, 
 GetProvider returns a provider instance for the given name.
 
 <a name="Registry.IsRegistered"></a>
-### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L66>)
+### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L66>)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -615,7 +615,7 @@ func (r *Registry) IsRegistered(name string) bool
 IsRegistered checks if a provider is registered.
 
 <a name="Registry.ListProviders"></a>
-### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L54>)
+### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L54>)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -624,7 +624,7 @@ func (r *Registry) ListProviders() []string
 ListProviders returns a list of all registered provider names.
 
 <a name="Registry.Register"></a>
-### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/registry.go#L33>)
+### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/registry.go#L33>)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.TTSProvider, error))
@@ -633,7 +633,7 @@ func (r *Registry) Register(name string, factory func(*Config) (iface.TTSProvide
 Register registers a provider factory function.
 
 <a name="TTSError"></a>
-## type [TTSError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L50-L56>)
+## type [TTSError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L50-L56>)
 
 TTSError represents an error that occurred during TTS operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -648,7 +648,7 @@ type TTSError struct {
 ```
 
 <a name="ErrorFromHTTPStatus"></a>
-### func [ErrorFromHTTPStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L125>)
+### func [ErrorFromHTTPStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L125>)
 
 ```go
 func ErrorFromHTTPStatus(op string, statusCode int, err error) *TTSError
@@ -657,7 +657,7 @@ func ErrorFromHTTPStatus(op string, statusCode int, err error) *TTSError
 ErrorFromHTTPStatus creates a TTSError from an HTTP status code.
 
 <a name="NewTTSError"></a>
-### func [NewTTSError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L75>)
+### func [NewTTSError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L75>)
 
 ```go
 func NewTTSError(op, code string, err error) *TTSError
@@ -666,7 +666,7 @@ func NewTTSError(op, code string, err error) *TTSError
 NewTTSError creates a new TTSError.
 
 <a name="NewTTSErrorWithDetails"></a>
-### func [NewTTSErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L94>)
+### func [NewTTSErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L94>)
 
 ```go
 func NewTTSErrorWithDetails(op, code, message string, err error, details map[string]any) *TTSError
@@ -675,7 +675,7 @@ func NewTTSErrorWithDetails(op, code, message string, err error, details map[str
 NewTTSErrorWithDetails creates a new TTSError with additional details.
 
 <a name="NewTTSErrorWithMessage"></a>
-### func [NewTTSErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L84>)
+### func [NewTTSErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L84>)
 
 ```go
 func NewTTSErrorWithMessage(op, code, message string, err error) *TTSError
@@ -684,7 +684,7 @@ func NewTTSErrorWithMessage(op, code, message string, err error) *TTSError
 NewTTSErrorWithMessage creates a new TTSError with a custom message.
 
 <a name="TTSError.Error"></a>
-### func (*TTSError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L59>)
+### func (*TTSError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L59>)
 
 ```go
 func (e *TTSError) Error() string
@@ -693,7 +693,7 @@ func (e *TTSError) Error() string
 Error implements the error interface.
 
 <a name="TTSError.Unwrap"></a>
-### func (*TTSError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/errors.go#L70>)
+### func (*TTSError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/errors.go#L70>)
 
 ```go
 func (e *TTSError) Unwrap() error

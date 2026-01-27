@@ -26,8 +26,8 @@ VAD decides if a chunk of audio is "Human Speech" or "Background Noise".
 package main
 
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad"
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
+    "github.com/lookatitude/beluga-ai/pkg/vad"
+    "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
 )
 
 func main() {
@@ -45,7 +45,7 @@ func main() {
 Decides when the user is *done* talking.
 
 ```
-import "github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+import "github.com/lookatitude/beluga-ai/pkg/turndetection"
 
 go
 ```go

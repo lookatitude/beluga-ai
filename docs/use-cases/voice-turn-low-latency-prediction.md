@@ -6,7 +6,7 @@ A voice-AI vendor needed to reduce "agent think time"—the delay between when a
 
 **The challenge:** Users perceive >200 ms delay as sluggish. Turn detection must be fast enough to pipeline with STT and LLM so that the first token streams quickly after the user stops talking.
 
-**The solution:** We implemented low-latency turn prediction using Beluga AI's `pkg/voice/turndetection` with tuned heuristic and ONNX providers, `DetectTurnWithSilence` for real-time pipelines, and OTEL instrumentation for latency monitoring.
+**The solution:** We implemented low-latency turn prediction using Beluga AI's `pkg/turndetection` with tuned heuristic and ONNX providers, `DetectTurnWithSilence` for real-time pipelines, and OTEL instrumentation for latency monitoring.
 
 ## Business Context
 
@@ -53,7 +53,7 @@ By implementing low-latency turn prediction:
 
 ### Constraints
 
-- Must use `pkg/voice/turndetection` and existing providers (heuristic, onnx).
+- Must use `pkg/turndetection` and existing providers (heuristic, onnx).
 - ONNX model must be loadable from local path; no external inference service.
 
 ## Architecture Requirements
@@ -100,9 +100,9 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| Turn Detector | Decide when user finished speaking | `pkg/voice/turndetection`, heuristic/onnx |
-| VAD | Compute silence duration | `pkg/voice/vad` |
-| Voice Session | Orchestrate STT, LLM, TTS | `pkg/voice/session` |
+| Turn Detector | Decide when user finished speaking | `pkg/turndetection`, heuristic/onnx |
+| VAD | Compute silence duration | `pkg/vad` |
+| Voice Session | Orchestrate STT, LLM, TTS | `pkg/voicesession` |
 
 ## Implementation
 
@@ -114,8 +114,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
+	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/turndetection/iface"
 )
 
 func setupTurnDetector(ctx context.Context) (turndetectioniface.TurnDetector, error) {

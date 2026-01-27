@@ -6,7 +6,7 @@ import (
 	"log"
 
 	// Mock provider not available - remove blank import
-	"github.com/lookatitude/beluga-ai/pkg/voice/transport"
+	"github.com/lookatitude/beluga-ai/pkg/audiotransport"
 )
 
 func main() {
@@ -17,14 +17,14 @@ func main() {
 
 	// Step 1: Create Transport configuration
 	fmt.Println("\n📋 Step 1: Creating Transport configuration...")
-	config := transport.DefaultConfig()
+	config := audiotransport.DefaultConfig()
 	config.Provider = "mock" // Use mock provider for this example
 	// In production, use: "websocket", "webrtc", etc.
 	fmt.Println("✅ Configuration created")
 
 	// Step 2: Create Transport provider
 	fmt.Println("\n📋 Step 2: Creating Transport provider...")
-	provider, err := transport.NewProvider(ctx, config.Provider, config)
+	provider, err := audiotransport.NewProvider(ctx, config.Provider, config)
 	if err != nil {
 		log.Fatalf("Failed to create Transport provider: %v", err)
 	}

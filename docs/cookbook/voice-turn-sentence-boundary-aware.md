@@ -13,7 +13,7 @@ You need to detect when a user has finished speaking in a voice pipeline using s
 
 ## Solution
 
-Use the **heuristic** turn-detection provider from `pkg/voice/turndetection` with `WithSentenceEndMarkers`, `WithMinTurnLength`, and `WithMaxTurnLength`. Optionally use `DetectTurnWithSilence` when you have VAD-derived silence. This works because the heuristic provider applies configurable rules (sentence ends, turn length) to decide turn completion without requiring an ML model.
+Use the **heuristic** turn-detection provider from `pkg/turndetection` with `WithSentenceEndMarkers`, `WithMinTurnLength`, and `WithMaxTurnLength`. Optionally use `DetectTurnWithSilence` when you have VAD-derived silence. This works because the heuristic provider applies configurable rules (sentence ends, turn length) to decide turn completion without requiring an ML model.
 
 ## Code Example
 ```go
@@ -29,7 +29,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 var tracer = otel.Tracer("beluga.voice.turndetection.recipe")

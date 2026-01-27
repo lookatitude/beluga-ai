@@ -45,8 +45,8 @@ import (
     "context"
     "log"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/backend"
-    vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+    "github.com/lookatitude/beluga-ai/pkg/voicebackend"
+    vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 )
 
 func main() {
@@ -184,7 +184,7 @@ func handleWebhook(w http.ResponseWriter, r *http.Request) {
 ## Integration with Beluga Packages
 
 ### Session Package Integration ✅
-The Twilio provider uses `pkg/voice/session` for session management, providing:
+The Twilio provider uses `pkg/voicesession` for session management, providing:
 - Automatic error recovery with exponential backoff
 - Interruption handling
 - Preemptive generation
@@ -332,7 +332,7 @@ config := &vbiface.Config{
 
 ### Session Adapter Architecture
 
-The Twilio provider uses `TwilioSessionAdapter` which wraps `pkg/voice/session.NewVoiceSession()`:
+The Twilio provider uses `TwilioSessionAdapter` which wraps `pkg/voicesession.NewVoiceSession()`:
 - Handles mu-law ↔ PCM codec conversion
 - Bridges Twilio `AudioStream` to session's `ProcessAudio()`
 - Provides `TwilioTransportAdapter` for audio output

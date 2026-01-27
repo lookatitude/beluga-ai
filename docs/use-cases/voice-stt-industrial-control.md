@@ -123,7 +123,7 @@ The system works like this:
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | Noise Filter | Filter industrial noise | Custom audio processing |
-| STT Provider | Transcribe commands | pkg/voice/stt (noise-resistant) |
+| STT Provider | Transcribe commands | pkg/stt (noise-resistant) |
 | Command Parser | Parse commands | Custom parsing logic |
 | Command Validator | Validate for safety | Custom validation logic |
 | Command Executor | Execute commands | Equipment control API |
@@ -141,7 +141,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
 )
 
 // IndustrialControlSystem implements voice-activated control
@@ -177,7 +177,7 @@ func NewIndustrialControlSystem(ctx context.Context) (*IndustrialControlSystem, 
 ```
 
 **Key decisions:**
-- We chose pkg/voice/stt for command transcription
+- We chose pkg/stt for command transcription
 - Noise-resistant models enable industrial use
 
 For detailed setup instructions, see the [Voice STT Guide](../guides/voice-providers.md).
@@ -320,7 +320,7 @@ func (i *IndustrialControlSystem) ProcessCommandWithSafety(ctx context.Context, 
 
 ### What Worked Well
 
-✅ **Noise-resistant STT** - Using Beluga AI's pkg/voice/stt with noise-resistant models enabled industrial use. Recommendation: Always use noise-resistant models for industrial applications.
+✅ **Noise-resistant STT** - Using Beluga AI's pkg/stt with noise-resistant models enabled industrial use. Recommendation: Always use noise-resistant models for industrial applications.
 
 ✅ **Command Validation** - Comprehensive command validation prevented unsafe operations. Validation is critical for safety.
 

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,13 +18,13 @@ func TestTimeout_E2E(t *testing.T) {
 	ttsProvider := &mockTTSProvider{}
 
 	// Create session with short timeout
-	config := session.DefaultConfig()
+	config := voicesession.DefaultConfig()
 	config.Timeout = 1 * time.Minute // Minimum valid timeout (per validation)
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithConfig(config),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithConfig(config),
 	)
 	require.NoError(t, err)
 

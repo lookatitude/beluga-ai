@@ -11,12 +11,12 @@ type ErrorCode string
 
 // Error codes for the safety package.
 const (
-	ErrCodeUnsafeContent     ErrorCode = "UNSAFE_CONTENT"
-	ErrCodeCheckFailed       ErrorCode = "CHECK_FAILED"
-	ErrCodeHighRisk          ErrorCode = "HIGH_RISK"
-	ErrCodeInvalidConfig     ErrorCode = "INVALID_CONFIG"
-	ErrCodePatternError      ErrorCode = "PATTERN_ERROR"
-	ErrCodeContextCancelled  ErrorCode = "CONTEXT_CANCELLED"
+	ErrCodeUnsafeContent    ErrorCode = "UNSAFE_CONTENT"
+	ErrCodeCheckFailed      ErrorCode = "CHECK_FAILED"
+	ErrCodeHighRisk         ErrorCode = "HIGH_RISK"
+	ErrCodeInvalidConfig    ErrorCode = "INVALID_CONFIG"
+	ErrCodePatternError     ErrorCode = "PATTERN_ERROR"
+	ErrCodeContextCancelled ErrorCode = "CONTEXT_CANCELLED"
 )
 
 // Common safety-related errors.

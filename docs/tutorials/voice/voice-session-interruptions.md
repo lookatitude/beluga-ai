@@ -23,9 +23,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	"github.com/lookatitude/beluga-ai/pkg/stt"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 func main() {

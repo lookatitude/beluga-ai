@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 	// Import providers to trigger init() registration.
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/heuristic"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/onnx"
+	_ "github.com/lookatitude/beluga-ai/pkg/turndetection/providers/heuristic"
+	_ "github.com/lookatitude/beluga-ai/pkg/turndetection/providers/onnx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

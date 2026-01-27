@@ -40,8 +40,9 @@ make test-coverage      # Generate coverage report (outputs to coverage/)
 
 ```
 beluga-ai/
-├── pkg/                    # Core framework packages (20 packages)
+├── pkg/                    # Core framework packages (28 packages)
 │   ├── agents/            # Agent framework with tools and executors
+│   ├── audiotransport/    # Audio transport (WebRTC, WebSocket)
 │   ├── chatmodels/        # Chat-based LLM interfaces
 │   ├── config/            # Configuration management (Viper-based)
 │   ├── core/              # Core utilities (errors, DI, runnable)
@@ -52,14 +53,23 @@ beluga-ai/
 │   ├── messaging/         # Messaging providers (Twilio)
 │   ├── monitoring/        # OpenTelemetry integration
 │   ├── multimodal/        # Multi-modal processing
+│   ├── noisereduction/    # Noise cancellation providers
 │   ├── orchestration/     # Workflow orchestration (chains, graphs)
 │   ├── prompts/           # Prompt template management
 │   ├── retrievers/        # Document retrieval for RAG
+│   ├── s2s/               # Speech-to-Speech providers
 │   ├── schema/            # Core data structures (messages, documents)
 │   ├── server/            # REST and MCP server APIs
+│   ├── stt/               # Speech-to-Text providers
 │   ├── textsplitters/     # Text chunking for RAG
+│   ├── tts/               # Text-to-Speech providers
+│   ├── turndetection/     # Turn detection for conversations
+│   ├── vad/               # Voice Activity Detection
 │   ├── vectorstores/      # Vector database providers
-│   └── voice/             # Complete voice framework (STT, TTS, VAD)
+│   ├── voice/             # DEPRECATED - use individual packages
+│   ├── voicebackend/      # Voice backend integrations (LiveKit, VAPI)
+│   ├── voicesession/      # Voice session management
+│   └── voiceutils/        # Shared voice interfaces and utilities
 │
 ├── examples/               # 64+ runnable examples by category
 ├── tests/                  # Integration testing framework

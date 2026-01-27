@@ -45,5 +45,5 @@ provider, err := tts.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [TTS Package Documentation](../../../pkg/voice/tts/README.md)
+- [TTS Package Documentation](../../../pkg/tts/README.md)
 - [Voice Session Example](../simple/main.go)

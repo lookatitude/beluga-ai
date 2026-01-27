@@ -354,7 +354,7 @@
 
 ## Voice Packages
 
-### pkg/voice/stt
+### pkg/stt
 
 **Description**: Speech-to-Text providers for converting audio to text.
 
@@ -377,7 +377,7 @@
 
 ---
 
-### pkg/voice/tts
+### pkg/tts
 
 **Description**: Text-to-Speech providers for converting text to speech audio.
 
@@ -400,7 +400,7 @@
 
 ---
 
-### pkg/voice/s2s
+### pkg/s2s
 
 **Description**: Speech-to-Speech (end-to-end speech) providers for direct speech conversion.
 
@@ -424,7 +424,7 @@
 
 ---
 
-### pkg/voice/vad
+### pkg/vad
 
 **Description**: Voice Activity Detection for detecting speech in audio streams.
 
@@ -447,7 +447,7 @@
 
 ---
 
-### pkg/voice/turndetection
+### pkg/turndetection
 
 **Description**: Turn Detection for identifying when speakers finish talking.
 
@@ -468,7 +468,7 @@
 
 ---
 
-### pkg/voice/transport
+### pkg/audiotransport
 
 **Description**: Audio transport layer for various protocols.
 
@@ -489,7 +489,7 @@
 
 ---
 
-### pkg/voice/noise
+### pkg/noisereduction
 
 **Description**: Noise cancellation for removing background noise from audio.
 
@@ -511,7 +511,7 @@
 
 ---
 
-### pkg/voice/session
+### pkg/voicesession
 
 **Description**: Complete voice session management with lifecycle, state machine, and audio processing pipeline.
 
@@ -544,11 +544,11 @@
   - `say.go`: TTS playback management
 - `internal/mock/`: Mock implementations
 
-**Dependencies**: `pkg/voice/stt`, `pkg/voice/tts`, `pkg/voice/s2s`, `pkg/voice/vad`, `pkg/voice/turndetection`, `pkg/voice/transport`, `pkg/voice/noise`, `pkg/agents`, `pkg/schema`, `pkg/monitoring`
+**Dependencies**: `pkg/stt`, `pkg/tts`, `pkg/s2s`, `pkg/vad`, `pkg/turndetection`, `pkg/audiotransport`, `pkg/noisereduction`, `pkg/agents`, `pkg/schema`, `pkg/monitoring`
 
 ---
 
-### pkg/voice/backend
+### pkg/voicebackend
 
 **Description**: Voice backend abstraction for provider-agnostic voice operations.
 
@@ -570,11 +570,11 @@
 - `providers/livekit/`: LiveKit provider
 - `providers/cartesia/`: Cartesia provider
 
-**Dependencies**: `pkg/voice/session`, `pkg/voice/stt`, `pkg/voice/tts`, `pkg/voice/s2s`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
+**Dependencies**: `pkg/voicesession`, `pkg/stt`, `pkg/tts`, `pkg/s2s`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
 
 ---
 
-### pkg/voice/iface
+### pkg/voiceutils/iface
 
 **Description**: Shared voice interfaces and types for all voice packages.
 
@@ -597,7 +597,7 @@
 **Sub-packages**:
 - `twilio/`: Twilio voice provider implementation
 
-**Dependencies**: `pkg/voice/backend`, `pkg/voice/session`, `pkg/voice/stt`, `pkg/voice/tts`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
+**Dependencies**: `pkg/voicebackend`, `pkg/voicesession`, `pkg/stt`, `pkg/tts`, `pkg/schema`, `pkg/config`, `pkg/monitoring`
 
 ---
 
@@ -722,15 +722,15 @@ Higher-Level Layer (Depends on Providers)
 └── pkg/server
 
 Voice Layer (Depends on Foundation & Higher-Level)
-├── pkg/voice/stt
-├── pkg/voice/tts
-├── pkg/voice/s2s
-├── pkg/voice/vad
-├── pkg/voice/turndetection
-├── pkg/voice/transport
-├── pkg/voice/noise
-├── pkg/voice/session (depends on all voice packages)
-└── pkg/voice/backend (depends on session)
+├── pkg/stt
+├── pkg/tts
+├── pkg/s2s
+├── pkg/vad
+├── pkg/turndetection
+├── pkg/audiotransport
+├── pkg/noisereduction
+├── pkg/voicesession (depends on all voice packages)
+└── pkg/voicebackend (depends on session)
 
 Messaging Layer (Depends on Foundation & Higher-Level)
 └── pkg/messaging
@@ -748,18 +748,18 @@ Supporting Layer (Depends on Foundation)
 ### Voice Package Relationships
 
 ```
-pkg/voice/backend
-  └── Uses: pkg/voice/session, pkg/voice/stt, pkg/voice/tts, pkg/voice/s2s
+pkg/voicebackend
+  └── Uses: pkg/voicesession, pkg/stt, pkg/tts, pkg/s2s
 
-pkg/voice/session
-  └── Uses: pkg/voice/stt, pkg/voice/tts, pkg/voice/s2s, pkg/voice/vad,
-            pkg/voice/turndetection, pkg/voice/transport, pkg/voice/noise,
+pkg/voicesession
+  └── Uses: pkg/stt, pkg/tts, pkg/s2s, pkg/vad,
+            pkg/turndetection, pkg/audiotransport, pkg/noisereduction,
             pkg/agents, pkg/memory
 
 pkg/voice/providers/twilio
-  └── Uses: pkg/voice/backend, pkg/voice/stt, pkg/voice/tts
-  └── Could Use: pkg/voice/session, pkg/voice/s2s, pkg/voice/vad,
-                 pkg/voice/turndetection, pkg/voice/noise, pkg/voice/transport,
+  └── Uses: pkg/voicebackend, pkg/stt, pkg/tts
+  └── Could Use: pkg/voicesession, pkg/s2s, pkg/vad,
+                 pkg/turndetection, pkg/noisereduction, pkg/audiotransport,
                  pkg/memory, pkg/orchestration
 ```
 
@@ -781,7 +781,7 @@ pkg/llms → pkg/chatmodels → pkg/agents → pkg/orchestration → pkg/server
 
 ### Session Package Integration Pattern
 
-The `pkg/voice/session` package provides a complete voice session management solution that can be used by voice backend providers:
+The `pkg/voicesession` package provides a complete voice session management solution that can be used by voice backend providers:
 
 1. **Lifecycle Management**: Automatic start/stop with state machine
 2. **Audio Processing**: Complete STT → Agent → TTS pipeline
@@ -791,7 +791,7 @@ The `pkg/voice/session` package provides a complete voice session management sol
 
 ### S2S Package Integration Pattern
 
-The `pkg/voice/s2s` package provides speech-to-speech capabilities that can be used as an alternative to STT+TTS:
+The `pkg/s2s` package provides speech-to-speech capabilities that can be used as an alternative to STT+TTS:
 
 1. **Direct Conversion**: Speech-to-speech without intermediate text
 2. **Lower Latency**: Faster than STT+TTS pipeline

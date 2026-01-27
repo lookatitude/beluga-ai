@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 // This example demonstrates multi-provider S2S configuration with automatic fallback.
@@ -68,9 +68,9 @@ func main() {
 	// Step 4: Create voice session with provider manager
 	// Note: We need to use the primary provider for the session,
 	// but the manager handles fallback internally
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(primaryProvider),
-		session.WithConfig(session.DefaultConfig()),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(primaryProvider),
+		voicesession.WithConfig(voicesession.DefaultConfig()),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)

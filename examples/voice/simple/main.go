@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 // This example demonstrates a simple voice agent session
@@ -37,17 +37,17 @@ func main() {
 	}
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)
 	}
 
 	// Start session
-	fmt.Println("Starting voice session...")
+	fmt.Println("Starting voice voicesession...")
 	err = voiceSession.Start(ctx)
 	if err != nil {
 		log.Fatalf("Failed to start session: %v", err)
@@ -76,7 +76,7 @@ func main() {
 	<-ctx.Done()
 
 	// Stop session
-	fmt.Println("Stopping voice session...")
+	fmt.Println("Stopping voice voicesession...")
 	err = voiceSession.Stop(ctx)
 	if err != nil {
 		log.Printf("Error stopping session: %v", err)

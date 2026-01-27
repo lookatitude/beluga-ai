@@ -9,7 +9,7 @@ sidebar_position: 1
 # stt
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+import "github.com/lookatitude/beluga-ai/pkg/stt"
 ```
 
 Package stt provides interfaces and implementations for Speech-to-Text (STT) operations. This package follows the Beluga AI Framework's design patterns for consistency, extensibility, configuration management, and observability.
@@ -117,7 +117,7 @@ const (
 ```
 
 <a name="AssertSTTProviderInterface"></a>
-## func [AssertSTTProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L242>)
+## func [AssertSTTProviderInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L242>)
 
 ```go
 func AssertSTTProviderInterface(t *testing.T, provider iface.STTProvider)
@@ -126,7 +126,7 @@ func AssertSTTProviderInterface(t *testing.T, provider iface.STTProvider)
 AssertSTTProviderInterface ensures that a type implements the STTProvider interface.
 
 <a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/stt.go#L34>)
+## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/stt.go#L34>)
 
 ```go
 func InitMetrics(meter metric.Meter, tracer trace.Tracer)
@@ -148,7 +148,7 @@ stt.InitMetrics(meter)
 Example usage can be found in examples/voice/stt/main.go
 
 <a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L101>)
+## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L101>)
 
 ```go
 func IsRetryableError(err error) bool
@@ -157,7 +157,7 @@ func IsRetryableError(err error) bool
 IsRetryableError checks if an error is retryable.
 
 <a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/stt.go#L85>)
+## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/stt.go#L85>)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.STTProvider, error)
@@ -194,7 +194,7 @@ transcript, err := provider.Transcribe(ctx, audioData)
 Example usage can be found in examples/voice/stt/main.go
 
 <a name="AdvancedMockSTTProvider"></a>
-## type [AdvancedMockSTTProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L18-L30>)
+## type [AdvancedMockSTTProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L18-L30>)
 
 AdvancedMockSTTProvider provides a comprehensive mock implementation for testing.
 
@@ -206,7 +206,7 @@ type AdvancedMockSTTProvider struct {
 ```
 
 <a name="NewAdvancedMockSTTProvider"></a>
-### func [NewAdvancedMockSTTProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L33>)
+### func [NewAdvancedMockSTTProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L33>)
 
 ```go
 func NewAdvancedMockSTTProvider(providerName string, opts ...MockOption) *AdvancedMockSTTProvider
@@ -215,7 +215,7 @@ func NewAdvancedMockSTTProvider(providerName string, opts ...MockOption) *Advanc
 NewAdvancedMockSTTProvider creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockSTTProvider.GetCallCount"></a>
-### func (*AdvancedMockSTTProvider) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L156>)
+### func (*AdvancedMockSTTProvider) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L156>)
 
 ```go
 func (m *AdvancedMockSTTProvider) GetCallCount() int
@@ -224,7 +224,7 @@ func (m *AdvancedMockSTTProvider) GetCallCount() int
 GetCallCount returns the number of times Transcribe has been called.
 
 <a name="AdvancedMockSTTProvider.StartStreaming"></a>
-### func (*AdvancedMockSTTProvider) [StartStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L125>)
+### func (*AdvancedMockSTTProvider) [StartStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L125>)
 
 ```go
 func (m *AdvancedMockSTTProvider) StartStreaming(ctx context.Context) (iface.StreamingSession, error)
@@ -233,7 +233,7 @@ func (m *AdvancedMockSTTProvider) StartStreaming(ctx context.Context) (iface.Str
 StartStreaming implements the STTProvider interface.
 
 <a name="AdvancedMockSTTProvider.Transcribe"></a>
-### func (*AdvancedMockSTTProvider) [Transcribe](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L89>)
+### func (*AdvancedMockSTTProvider) [Transcribe](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L89>)
 
 ```go
 func (m *AdvancedMockSTTProvider) Transcribe(ctx context.Context, audio []byte) (string, error)
@@ -242,7 +242,7 @@ func (m *AdvancedMockSTTProvider) Transcribe(ctx context.Context, audio []byte) 
 Transcribe implements the STTProvider interface.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L12-L29>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L12-L29>)
 
 Config represents the configuration for STT providers. It includes common settings that apply to all STT providers.
 
@@ -268,7 +268,7 @@ type Config struct {
 ```
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L107>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L107>)
 
 ```go
 func DefaultConfig() *Config
@@ -277,7 +277,7 @@ func DefaultConfig() *Config
 DefaultConfig returns a default configuration.
 
 <a name="Config.Validate"></a>
-### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L98>)
+### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L98>)
 
 ```go
 func (c *Config) Validate() error
@@ -286,7 +286,7 @@ func (c *Config) Validate() error
 Validate validates the configuration.
 
 <a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L32>)
+## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L32>)
 
 ConfigOption is a functional option for configuring STT instances.
 
@@ -295,7 +295,7 @@ type ConfigOption func(*Config)
 ```
 
 <a name="WithAPIKey"></a>
-### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L42>)
+### func [WithAPIKey](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L42>)
 
 ```go
 func WithAPIKey(apiKey string) ConfigOption
@@ -304,7 +304,7 @@ func WithAPIKey(apiKey string) ConfigOption
 WithAPIKey sets the API key.
 
 <a name="WithBaseURL"></a>
-### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L49>)
+### func [WithBaseURL](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L49>)
 
 ```go
 func WithBaseURL(baseURL string) ConfigOption
@@ -313,7 +313,7 @@ func WithBaseURL(baseURL string) ConfigOption
 WithBaseURL sets the base URL.
 
 <a name="WithChannels"></a>
-### func [WithChannels](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L84>)
+### func [WithChannels](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L84>)
 
 ```go
 func WithChannels(channels int) ConfigOption
@@ -322,7 +322,7 @@ func WithChannels(channels int) ConfigOption
 WithChannels sets the number of channels.
 
 <a name="WithEnableStreaming"></a>
-### func [WithEnableStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L91>)
+### func [WithEnableStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L91>)
 
 ```go
 func WithEnableStreaming(enable bool) ConfigOption
@@ -331,7 +331,7 @@ func WithEnableStreaming(enable bool) ConfigOption
 WithEnableStreaming sets streaming enablement.
 
 <a name="WithLanguage"></a>
-### func [WithLanguage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L63>)
+### func [WithLanguage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L63>)
 
 ```go
 func WithLanguage(language string) ConfigOption
@@ -340,7 +340,7 @@ func WithLanguage(language string) ConfigOption
 WithLanguage sets the language.
 
 <a name="WithModel"></a>
-### func [WithModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L56>)
+### func [WithModel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L56>)
 
 ```go
 func WithModel(model string) ConfigOption
@@ -349,7 +349,7 @@ func WithModel(model string) ConfigOption
 WithModel sets the model.
 
 <a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L35>)
+### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L35>)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -358,7 +358,7 @@ func WithProvider(provider string) ConfigOption
 WithProvider sets the STT provider.
 
 <a name="WithSampleRate"></a>
-### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L77>)
+### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L77>)
 
 ```go
 func WithSampleRate(sampleRate int) ConfigOption
@@ -367,7 +367,7 @@ func WithSampleRate(sampleRate int) ConfigOption
 WithSampleRate sets the sample rate.
 
 <a name="WithTimeout"></a>
-### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/config.go#L70>)
+### func [WithTimeout](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/config.go#L70>)
 
 ```go
 func WithTimeout(timeout time.Duration) ConfigOption
@@ -376,7 +376,7 @@ func WithTimeout(timeout time.Duration) ConfigOption
 WithTimeout sets the timeout.
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L31-L41>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L31-L41>)
 
 Metrics contains all the metrics for STT operations.
 
@@ -387,7 +387,7 @@ type Metrics struct {
 ```
 
 <a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/stt.go#L54>)
+### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/stt.go#L54>)
 
 ```go
 func GetMetrics() *Metrics
@@ -411,7 +411,7 @@ if metrics != nil {
 Example usage can be found in examples/voice/stt/main.go
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L44>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L44>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
@@ -420,7 +420,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
 NewMetrics creates a new Metrics instance.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L24>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L24>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -429,7 +429,7 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.DecrementActiveStreams"></a>
-### func (*Metrics) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L135>)
+### func (*Metrics) [DecrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L135>)
 
 ```go
 func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model string)
@@ -438,7 +438,7 @@ func (m *Metrics) DecrementActiveStreams(ctx context.Context, provider, model st
 DecrementActiveStreams decrements the active streams counter.
 
 <a name="Metrics.IncrementActiveStreams"></a>
-### func (*Metrics) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L123>)
+### func (*Metrics) [IncrementActiveStreams](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L123>)
 
 ```go
 func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model string)
@@ -447,7 +447,7 @@ func (m *Metrics) IncrementActiveStreams(ctx context.Context, provider, model st
 IncrementActiveStreams increments the active streams counter.
 
 <a name="Metrics.RecordError"></a>
-### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L85>)
+### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L85>)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode string, duration time.Duration)
@@ -456,7 +456,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, model, errorCode st
 RecordError records an error.
 
 <a name="Metrics.RecordStreaming"></a>
-### func (*Metrics) [RecordStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L106>)
+### func (*Metrics) [RecordStreaming](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L106>)
 
 ```go
 func (m *Metrics) RecordStreaming(ctx context.Context, provider, model string, duration time.Duration)
@@ -465,7 +465,7 @@ func (m *Metrics) RecordStreaming(ctx context.Context, provider, model string, d
 RecordStreaming records a streaming operation.
 
 <a name="Metrics.RecordTranscription"></a>
-### func (*Metrics) [RecordTranscription](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L65>)
+### func (*Metrics) [RecordTranscription](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L65>)
 
 ```go
 func (m *Metrics) RecordTranscription(ctx context.Context, provider, model string, duration time.Duration)
@@ -474,7 +474,7 @@ func (m *Metrics) RecordTranscription(ctx context.Context, provider, model strin
 RecordTranscription records a transcription operation.
 
 <a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/metrics.go#L14-L20>)
+## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/metrics.go#L14-L20>)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -489,7 +489,7 @@ type MetricsRecorder interface {
 ```
 
 <a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L50>)
+## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L50>)
 
 MockOption configures the behavior of AdvancedMockSTTProvider.
 
@@ -498,7 +498,7 @@ type MockOption func(*AdvancedMockSTTProvider)
 ```
 
 <a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L67>)
+### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L67>)
 
 ```go
 func WithError(err error) MockOption
@@ -507,7 +507,7 @@ func WithError(err error) MockOption
 WithError configures the mock to return an error.
 
 <a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L82>)
+### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L82>)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -516,7 +516,7 @@ func WithNetworkDelay(enabled bool) MockOption
 WithNetworkDelay enables network delay simulation.
 
 <a name="WithProviderName"></a>
-### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L53>)
+### func [WithProviderName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L53>)
 
 ```go
 func WithProviderName(name string) MockOption
@@ -525,7 +525,7 @@ func WithProviderName(name string) MockOption
 WithProviderName sets the provider name.
 
 <a name="WithStreamingDelay"></a>
-### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L75>)
+### func [WithStreamingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L75>)
 
 ```go
 func WithStreamingDelay(delay time.Duration) MockOption
@@ -534,7 +534,7 @@ func WithStreamingDelay(delay time.Duration) MockOption
 WithStreamingDelay sets the delay between streaming chunks.
 
 <a name="WithTranscriptions"></a>
-### func [WithTranscriptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L60>)
+### func [WithTranscriptions](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L60>)
 
 ```go
 func WithTranscriptions(transcriptions ...string) MockOption
@@ -543,7 +543,7 @@ func WithTranscriptions(transcriptions ...string) MockOption
 WithTranscriptions sets the transcriptions to return.
 
 <a name="MockStreamingSession"></a>
-## type [MockStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L163-L171>)
+## type [MockStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L163-L171>)
 
 MockStreamingSession provides a mock implementation of StreamingSession.
 
@@ -554,7 +554,7 @@ type MockStreamingSession struct {
 ```
 
 <a name="NewMockStreamingSession"></a>
-### func [NewMockStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L174>)
+### func [NewMockStreamingSession](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L174>)
 
 ```go
 func NewMockStreamingSession(ctx context.Context, delay time.Duration, transcriptions []string) *MockStreamingSession
@@ -563,7 +563,7 @@ func NewMockStreamingSession(ctx context.Context, delay time.Duration, transcrip
 NewMockStreamingSession creates a new mock streaming session.
 
 <a name="MockStreamingSession.Close"></a>
-### func (*MockStreamingSession) [Close](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L230>)
+### func (*MockStreamingSession) [Close](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L230>)
 
 ```go
 func (m *MockStreamingSession) Close() error
@@ -572,7 +572,7 @@ func (m *MockStreamingSession) Close() error
 Close implements the StreamingSession interface.
 
 <a name="MockStreamingSession.ReceiveTranscript"></a>
-### func (*MockStreamingSession) [ReceiveTranscript](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L225>)
+### func (*MockStreamingSession) [ReceiveTranscript](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L225>)
 
 ```go
 func (m *MockStreamingSession) ReceiveTranscript() <-chan iface.TranscriptResult
@@ -581,7 +581,7 @@ func (m *MockStreamingSession) ReceiveTranscript() <-chan iface.TranscriptResult
 ReceiveTranscript implements the StreamingSession interface.
 
 <a name="MockStreamingSession.SendAudio"></a>
-### func (*MockStreamingSession) [SendAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/test_utils.go#L214>)
+### func (*MockStreamingSession) [SendAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/test_utils.go#L214>)
 
 ```go
 func (m *MockStreamingSession) SendAudio(ctx context.Context, audio []byte) error
@@ -590,7 +590,7 @@ func (m *MockStreamingSession) SendAudio(ctx context.Context, audio []byte) erro
 SendAudio implements the StreamingSession interface.
 
 <a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L17-L20>)
+## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L17-L20>)
 
 Registry manages STT provider registration and retrieval.
 
@@ -601,7 +601,7 @@ type Registry struct {
 ```
 
 <a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L23>)
+### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L23>)
 
 ```go
 func GetRegistry() *Registry
@@ -610,7 +610,7 @@ func GetRegistry() *Registry
 GetRegistry returns the global registry instance.
 
 <a name="Registry.GetProvider"></a>
-### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L40>)
+### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L40>)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.STTProvider, error)
@@ -619,7 +619,7 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.STTProvider, 
 GetProvider returns a provider instance for the given name.
 
 <a name="Registry.IsRegistered"></a>
-### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L66>)
+### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L66>)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -628,7 +628,7 @@ func (r *Registry) IsRegistered(name string) bool
 IsRegistered checks if a provider is registered.
 
 <a name="Registry.ListProviders"></a>
-### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L54>)
+### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L54>)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -637,7 +637,7 @@ func (r *Registry) ListProviders() []string
 ListProviders returns a list of all registered provider names.
 
 <a name="Registry.Register"></a>
-### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/registry.go#L33>)
+### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/registry.go#L33>)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.STTProvider, error))
@@ -646,7 +646,7 @@ func (r *Registry) Register(name string, factory func(*Config) (iface.STTProvide
 Register registers a provider factory function.
 
 <a name="STTError"></a>
-## type [STTError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L46-L52>)
+## type [STTError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L46-L52>)
 
 STTError represents an error that occurred during STT operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -661,7 +661,7 @@ type STTError struct {
 ```
 
 <a name="ErrorFromHTTPStatus"></a>
-### func [ErrorFromHTTPStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L121>)
+### func [ErrorFromHTTPStatus](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L121>)
 
 ```go
 func ErrorFromHTTPStatus(op string, statusCode int, err error) *STTError
@@ -670,7 +670,7 @@ func ErrorFromHTTPStatus(op string, statusCode int, err error) *STTError
 ErrorFromHTTPStatus creates an STTError from an HTTP status code.
 
 <a name="NewSTTError"></a>
-### func [NewSTTError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L71>)
+### func [NewSTTError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L71>)
 
 ```go
 func NewSTTError(op, code string, err error) *STTError
@@ -679,7 +679,7 @@ func NewSTTError(op, code string, err error) *STTError
 NewSTTError creates a new STTError.
 
 <a name="NewSTTErrorWithDetails"></a>
-### func [NewSTTErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L90>)
+### func [NewSTTErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L90>)
 
 ```go
 func NewSTTErrorWithDetails(op, code, message string, err error, details map[string]any) *STTError
@@ -688,7 +688,7 @@ func NewSTTErrorWithDetails(op, code, message string, err error, details map[str
 NewSTTErrorWithDetails creates a new STTError with additional details.
 
 <a name="NewSTTErrorWithMessage"></a>
-### func [NewSTTErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L80>)
+### func [NewSTTErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L80>)
 
 ```go
 func NewSTTErrorWithMessage(op, code, message string, err error) *STTError
@@ -697,7 +697,7 @@ func NewSTTErrorWithMessage(op, code, message string, err error) *STTError
 NewSTTErrorWithMessage creates a new STTError with a custom message.
 
 <a name="STTError.Error"></a>
-### func (*STTError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L55>)
+### func (*STTError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L55>)
 
 ```go
 func (e *STTError) Error() string
@@ -706,7 +706,7 @@ func (e *STTError) Error() string
 Error implements the error interface.
 
 <a name="STTError.Unwrap"></a>
-### func (*STTError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/errors.go#L66>)
+### func (*STTError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/errors.go#L66>)
 
 ```go
 func (e *STTError) Unwrap() error

@@ -25,7 +25,7 @@ Welcome, colleague! Traditional voice agents use a complex pipeline of STT, LLM,
 
 - AWS Credentials with Bedrock/Nova access
 - Go 1.24+
-- `pkg/voice/s2s` package
+- `pkg/s2s` package
 
 ## What is S2S?
 
@@ -47,8 +47,8 @@ import (
     "context"
     "log"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/amazon_nova"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/providers/amazon_nova"
 )
 
 func main() {

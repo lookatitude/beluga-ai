@@ -643,7 +643,7 @@ type IntegrationTestHelper struct {
 func NewIntegrationTestHelper() *IntegrationTestHelper {
 	return &IntegrationTestHelper{
 		embedders: make(map[string]*AdvancedMockEmbedder),
-		registry:  NewProviderRegistry(),
+		registry:  GetRegistry(),
 	}
 }
 

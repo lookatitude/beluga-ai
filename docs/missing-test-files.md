@@ -24,7 +24,7 @@ Based on analysis of all packages in `pkg/`, the following packages are missing 
 - `pkg/core/utils` - Missing test_utils.go
 - `pkg/documentloaders/iface` - Missing test_utils.go (interface-only package, may not need)
 - `pkg/embeddings/iface` - Missing test_utils.go (interface-only package, may not need)
-- `pkg/embeddings/registry` - Missing test_utils.go
+- `pkg/embeddings/internal/registry` - Missing test_utils.go (internal package)
 - `pkg/llms/iface` - Missing test_utils.go (interface-only package, may not need)
 - `pkg/schema/iface` - Missing test_utils.go (interface-only package, may not need)
 
@@ -51,7 +51,7 @@ Based on analysis of all packages in `pkg/`, the following packages are missing 
 - `pkg/core/utils` - Missing advanced_test.go
 - `pkg/documentloaders/iface` - Missing advanced_test.go (interface-only package, may not need)
 - `pkg/embeddings/iface` - Missing advanced_test.go (interface-only package, may not need)
-- `pkg/embeddings/registry` - Missing advanced_test.go
+- `pkg/embeddings/internal/registry` - Missing advanced_test.go (internal package)
 - `pkg/llms/iface` - Missing advanced_test.go (interface-only package, may not need)
 - `pkg/schema/iface` - Missing advanced_test.go (interface-only package, may not need)
 

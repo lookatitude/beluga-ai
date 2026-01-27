@@ -11,9 +11,9 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -51,10 +51,10 @@ func TestS2S_EndToEnd(t *testing.T) {
 		LLMProviderName: "mock",
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
-		session.WithConfig(session.DefaultConfig()),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
+		voicesession.WithConfig(voicesession.DefaultConfig()),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -63,7 +63,7 @@ func TestS2S_EndToEnd(t *testing.T) {
 	err = voiceSession.Start(ctx)
 	require.NoError(t, err)
 	// Session should be in listening state after start
-	assert.Equal(t, session.SessionState("listening"), voiceSession.GetState())
+	assert.Equal(t, voicesession.SessionState("listening"), voiceSession.GetState())
 
 	// Step 6: Process multiple audio chunks (simulating conversation)
 	audioChunks := [][]byte{
@@ -92,7 +92,7 @@ func TestS2S_EndToEnd(t *testing.T) {
 	err = voiceSession.Stop(ctx)
 	require.NoError(t, err)
 	// Session should be in ended state after stop
-	assert.Equal(t, session.SessionState("ended"), voiceSession.GetState())
+	assert.Equal(t, voicesession.SessionState("ended"), voiceSession.GetState())
 }
 
 // TestS2S_EndToEnd_MultiProvider tests end-to-end flow with multi-provider fallback.
@@ -113,8 +113,8 @@ func TestS2S_EndToEnd_MultiProvider(t *testing.T) {
 
 	// Create voice session with primary provider
 	// Fallback is handled by the manager internally
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(primaryProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(primaryProvider),
 	)
 	require.NoError(t, err)
 
@@ -151,8 +151,8 @@ func TestS2S_EndToEnd_WithFallback(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(failingPrimary),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(failingPrimary),
 	)
 	require.NoError(t, err)
 

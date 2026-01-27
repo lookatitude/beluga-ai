@@ -39,8 +39,8 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
 )
 
 func main() {

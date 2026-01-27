@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/lookatitude/beluga-ai/tests/integration/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -35,7 +35,7 @@ func TestTranscriptionRAG(t *testing.T) {
 		// VectorStore and Embedder would be set from config in full implementation
 	}
 
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)

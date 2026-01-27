@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -22,9 +22,9 @@ func TestProviderSetup_Validation(t *testing.T) {
 	assert.NotNil(t, ttsProvider)
 
 	// Test session creation with providers
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -39,16 +39,16 @@ func TestProviderConfiguration_Validation(t *testing.T) {
 	ctx := context.Background()
 
 	// Test with default config
-	config := session.DefaultConfig()
+	config := voicesession.DefaultConfig()
 	assert.NotNil(t, config)
 
 	sttProvider := &mockSTTProvider{}
 	ttsProvider := &mockTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithConfig(config),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithConfig(config),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)

@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -20,15 +20,15 @@ func TestConfigIntegration(t *testing.T) {
 	ttsProvider := &mockTTSProvider{}
 
 	// Test with custom config
-	config := session.DefaultConfig()
+	config := voicesession.DefaultConfig()
 	config.SessionID = "test-session-123"
 	config.Timeout = 30 * time.Minute
 	config.MaxRetries = 5
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithConfig(config),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithConfig(config),
 	)
 	require.NoError(t, err)
 
@@ -51,13 +51,13 @@ func TestConfigValidation(t *testing.T) {
 	ttsProvider := &mockTTSProvider{}
 
 	// Test invalid config
-	config := session.DefaultConfig()
+	config := voicesession.DefaultConfig()
 	config.Timeout = -1 * time.Second // Invalid timeout
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithConfig(config),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithConfig(config),
 	)
 	// Should either validate and reject or use defaults
 	_ = voiceSession

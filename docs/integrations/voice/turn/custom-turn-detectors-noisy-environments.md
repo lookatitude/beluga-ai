@@ -1,6 +1,6 @@
 # Custom Turn Detectors for Noisy Environments
 
-Welcome, colleague! In this integration guide, we'll tune Beluga AI's `pkg/voice/turndetection` for noisy environments (e.g. contact centers, retail, factory floors). You'll use both heuristic and ONNX providers with adjusted thresholds and silence settings so turn detection stays reliable despite background noise.
+Welcome, colleague! In this integration guide, we'll tune Beluga AI's `pkg/turndetection` for noisy environments (e.g. contact centers, retail, factory floors). You'll use both heuristic and ONNX providers with adjusted thresholds and silence settings so turn detection stays reliable despite background noise.
 
 ## What you will build
 
@@ -39,7 +39,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 func main() {
@@ -118,7 +118,7 @@ Run with real or synthetic noisy audio. Log turn-end events and compare to groun
 
 **Problem**: ONNX provider not linked or model path invalid.
 
-**Solution**: Import `_ "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/providers/onnx"` to register the provider. Set `TURN_MODEL_PATH` to a valid ONNX model file.
+**Solution**: Import `_ "github.com/lookatitude/beluga-ai/pkg/turndetection/providers/onnx"` to register the provider. Set `TURN_MODEL_PATH` to a valid ONNX model file.
 
 ## Production Considerations
 

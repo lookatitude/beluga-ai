@@ -37,8 +37,8 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/elevenlabs"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/elevenlabs"
 )
 
 func main() {

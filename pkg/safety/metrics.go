@@ -14,10 +14,10 @@ import (
 // Metrics holds OTEL metrics for the safety package.
 type Metrics struct {
 	// Counters
-	checksTotal  metric.Int64Counter
-	issuesTotal  metric.Int64Counter
-	errorsTotal  metric.Int64Counter
-	unsafeTotal  metric.Int64Counter
+	checksTotal metric.Int64Counter
+	issuesTotal metric.Int64Counter
+	errorsTotal metric.Int64Counter
+	unsafeTotal metric.Int64Counter
 
 	// Histograms
 	checkDuration metric.Float64Histogram
@@ -185,4 +185,3 @@ func errorType(err error) string {
 		return "unknown"
 	}
 }
-

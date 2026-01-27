@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -126,8 +126,8 @@ func TestMultiProvider_SessionIntegration(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{4, 5, 6}, "fallback1", 150*time.Millisecond)))
 
 	t.Run("session with primary provider", func(t *testing.T) {
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithS2SProvider(primaryProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithS2SProvider(primaryProvider),
 		)
 		require.NoError(t, err)
 		assert.NotNil(t, voiceSession)

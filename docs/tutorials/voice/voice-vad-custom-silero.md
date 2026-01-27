@@ -1,6 +1,6 @@
 # Custom VAD Models with Silero
 
-**What you will build:** A VAD provider using the **silero** implementation in `pkg/voice/vad` with a custom ONNX model path. You'll set `ModelPath`, `Threshold`, and `SampleRate` for Silero-based voice activity detection.
+**What you will build:** A VAD provider using the **silero** implementation in `pkg/vad` with a custom ONNX model path. You'll set `ModelPath`, `Threshold`, and `SampleRate` for Silero-based voice activity detection.
 
 ## Learning Objectives
 
@@ -27,8 +27,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
 )
 
 func main() {

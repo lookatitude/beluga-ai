@@ -280,7 +280,7 @@ This roadmap provides a phased approach to integrating existing Beluga AI packag
 #### Subtasks
 
 1. **Evaluate Transport Package** (0.5 day)
-   - Review `pkg/voice/transport` package capabilities
+   - Review `pkg/audiotransport` package capabilities
    - Check if it can handle Twilio Media Streams protocol
    - Document findings
 
@@ -473,5 +473,5 @@ Week 5-6: Phase 3 (Enhancement)
 
 - [Package Catalog](../docs/package-catalog.md)
 - [Integration Analysis](../docs/twilio-integration-analysis.md)
-- [Session Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/session/README.md)
-- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)
+- [Session Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voicesession/README.md)
+- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/s2s/README.md)

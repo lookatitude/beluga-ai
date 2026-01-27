@@ -18,8 +18,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 func main() {
@@ -69,11 +69,11 @@ func main() {
 	}
 
 	// Create voice session with agent instance
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
-		session.WithConfig(session.DefaultConfig()),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
+		voicesession.WithConfig(voicesession.DefaultConfig()),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)

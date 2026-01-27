@@ -55,7 +55,7 @@ All four providers have:
 ### Files Requiring Implementation
 
 ```
-pkg/voice/s2s/providers/
+pkg/s2s/providers/
 ├── amazon_nova/
 │   ├── provider.go      # Line 105: TODO - API implementation
 │   └── streaming.go     # Line 33: TODO - Streaming connection
@@ -452,7 +452,7 @@ func (m *MockS2SProvider) Process(ctx context.Context, input *internal.AudioInpu
 S2S providers integrate with the voice session package:
 
 ```go
-// pkg/voice/session/session.go
+// pkg/voicesession/session.go
 voiceSession, err := session.NewVoiceSession(ctx,
     session.WithS2SProvider(s2sProvider),
     session.WithAgentInstance(agent, agentConfig),
@@ -464,7 +464,7 @@ voiceSession, err := session.NewVoiceSession(ctx,
 For external reasoning mode:
 
 ```go
-// pkg/voice/session/internal/s2s_agent_integration.go
+// pkg/voicesession/internal/s2s_agent_integration.go
 if opts.S2SProvider != nil && agentIntegration != nil {
     impl.s2sAgentIntegration = NewS2SAgentIntegration(
         opts.S2SProvider,
@@ -584,7 +584,7 @@ For each provider:
 ## Resources
 
 ### Documentation
-- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/voice/s2s/README.md)
+- [S2S Package README](https://github.com/lookatitude/beluga-ai/tree/main/pkg/s2s/README.md)
 - [Provider Implementation Guide](./implementing-providers.md)
 - [Beluga AI Design Patterns](../package_design_patterns.md)
 
@@ -595,9 +595,9 @@ For each provider:
 - [xAI Grok API](https://docs.x.ai)
 
 ### Code References
-- `pkg/voice/s2s/providers/amazon_nova/` - Structure reference
-- `pkg/voice/s2s/iface/` - Interface definitions
-- `pkg/voice/s2s/internal/` - Internal types and utilities
+- `pkg/s2s/providers/amazon_nova/` - Structure reference
+- `pkg/s2s/iface/` - Interface definitions
+- `pkg/s2s/internal/` - Internal types and utilities
 
 ---
 

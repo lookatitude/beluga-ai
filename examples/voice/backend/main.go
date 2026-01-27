@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
 )
 
 func main() {
@@ -44,7 +44,7 @@ func main() {
 
 	// Step 2: Create backend instance
 	fmt.Println("\n📋 Step 2: Creating backend instance...")
-	backendInstance, err := backend.NewBackend(ctx, "livekit", config)
+	backendInstance, err := voicebackend.NewBackend(ctx, "livekit", config)
 	if err != nil {
 		log.Fatalf("Failed to create backend: %v", err)
 	}

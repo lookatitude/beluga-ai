@@ -17,7 +17,7 @@
 | :--- | :--- | :--- |
 | **llms** | `pkg/llms/iface/chat_model.go` | Documentation refers to older interface methods. Latest `ChatModel` extends `core.Runnable` and includes `BindTools(toolsToBind []core.Tool)`. |
 | **agents** | `pkg/agents/iface/agent.go` | Current implementation uses `CompositeAgent` which embeds `core.Runnable`. Docs in `api/packages/agents.md` don't highlight the `Invoke/Stream/Batch` methods as the primary entry points. |
-| **voice** | S2S capabilities | `docs/guides/voice-agents.md` is underdeveloped compared to the recent S2S implementation in `pkg/voice/s2s`. |
+| **voice** | S2S capabilities | `docs/guides/voice-agents.md` is underdeveloped compared to the recent S2S implementation in `pkg/s2s`. |
 
 ### 1.3 Missing Catalog entries
 Following the deep audit, the following packages have been **added** to `docs/package-catalog.md`:

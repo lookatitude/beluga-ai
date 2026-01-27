@@ -76,7 +76,7 @@ func init() {
 
 **Current State:**
 - ✅ `pkg/llms/llms.go`: `InitMetrics(meter)` + `GetMetrics()` pattern
-- ✅ `pkg/voice/s2s/s2s.go`: Same pattern
+- ✅ `pkg/s2s/s2s.go`: Same pattern
 - ❌ `pkg/vectorstores/vectorstores.go`: `SetGlobalMetrics()` pattern
 - ❌ `pkg/memory/memory.go`: `GetGlobalMetrics()` without explicit init
 
@@ -312,7 +312,7 @@ Each retriever should:
 **Status:** Core functionality is implemented. Streaming input needs completion for some providers.
 
 ```
-pkg/voice/s2s/providers/
+pkg/s2s/providers/
 ├── amazon_nova/      # ✅ Process() complete, ⚠️ Streaming input partial
 ├── gemini/           # ✅ Process() complete, ⚠️ Streaming input partial
 ├── grok/             # ✅ Process() complete, ⚠️ Streaming input partial
@@ -338,9 +338,9 @@ pkg/voice/s2s/providers/
 | WebRTC | ❌ Placeholder | Uses energy-based fallback |
 
 **Files Affected:**
-- `pkg/voice/vad/providers/silero/onnx.go` - Line 39: TODO
-- `pkg/voice/vad/providers/rnnoise/provider.go` - Line 180: TODO
-- `pkg/voice/vad/providers/webrtc/provider.go` - Line 154: TODO
+- `pkg/vad/providers/silero/onnx.go` - Line 39: TODO
+- `pkg/vad/providers/rnnoise/provider.go` - Line 180: TODO
+- `pkg/vad/providers/webrtc/provider.go` - Line 154: TODO
 
 ### Noise Cancellation
 
@@ -351,9 +351,9 @@ pkg/voice/s2s/providers/
 | WebRTC | ❌ Placeholder | Returns original audio |
 
 **Files Affected:**
-- `pkg/voice/noise/providers/rnnoise/model.go` - Line 30: TODO
-- `pkg/voice/noise/providers/spectral/fft.go` - Line 49: Placeholder
-- `pkg/voice/noise/providers/webrtc/provider.go` - Line 46: TODO
+- `pkg/noisereduction/providers/rnnoise/model.go` - Line 30: TODO
+- `pkg/noisereduction/providers/spectral/fft.go` - Line 49: Placeholder
+- `pkg/noisereduction/providers/webrtc/provider.go` - Line 46: TODO
 
 ### Transport
 
@@ -363,8 +363,8 @@ pkg/voice/s2s/providers/
 | WebRTC | ❌ Placeholder | Connection not implemented |
 
 **Files Affected:**
-- `pkg/voice/transport/providers/websocket/provider.go` - Line 85: TODO
-- `pkg/voice/transport/providers/webrtc/provider.go` - Line 85: TODO
+- `pkg/audiotransport/providers/websocket/provider.go` - Line 85: TODO
+- `pkg/audiotransport/providers/webrtc/provider.go` - Line 85: TODO
 
 ### Turn Detection
 
@@ -374,8 +374,8 @@ pkg/voice/s2s/providers/
 | Heuristic | ❌ Placeholder | Always returns false |
 
 **Files Affected:**
-- `pkg/voice/turndetection/providers/onnx/provider.go` - Line 121: TODO
-- `pkg/voice/turndetection/providers/heuristic/provider.go` - Line 56: Placeholder
+- `pkg/turndetection/providers/onnx/provider.go` - Line 121: TODO
+- `pkg/turndetection/providers/heuristic/provider.go` - Line 56: Placeholder
 
 ---
 

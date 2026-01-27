@@ -26,8 +26,8 @@ While Beluga AI provides raw STT/TTS, platforms like LiveKit handle:
 package main
 
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/backend"
-    "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
+    "github.com/lookatitude/beluga-ai/pkg/voicebackend"
+    "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
 )
 
 func main() {
@@ -79,7 +79,7 @@ Vapi provides an end-to-end managed voice pipeline. Beluga AI can act as the "Br
 
 
 
-import "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/vapi"
+import "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vapi"
 
 // Vapi calls your webhook with user transcripts
 // You respond with text or audio URLs

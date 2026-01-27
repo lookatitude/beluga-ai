@@ -25,8 +25,8 @@ import (
     "context"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram" // Register
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    _ "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram" // Register
 )
 
 func setupSTT(ctx context.Context) (stt.Provider, error) {
@@ -66,8 +66,8 @@ import (
     "context"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai" // Register
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    _ "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai" // Register
 )
 
 func setupTTS(ctx context.Context) (tts.Provider, error) {
@@ -104,8 +104,8 @@ import (
     "context"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/amazon_nova" // Register
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    _ "github.com/lookatitude/beluga-ai/pkg/s2s/providers/amazon_nova" // Register
 )
 
 func setupS2S(ctx context.Context) (s2s.Provider, error) {
@@ -149,12 +149,12 @@ import (
     "context"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
     // Import all providers you might use
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/google"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/azure"
-    _ "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/openai"
+    _ "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
+    _ "github.com/lookatitude/beluga-ai/pkg/stt/providers/google"
+    _ "github.com/lookatitude/beluga-ai/pkg/stt/providers/azure"
+    _ "github.com/lookatitude/beluga-ai/pkg/stt/providers/openai"
 )
 
 type VoiceConfig struct {
@@ -192,7 +192,7 @@ import (
     "context"
     "fmt"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
 )
 
 type FallbackSTT struct {
@@ -244,9 +244,9 @@ import (
     "testing"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 func TestVoiceAgent(t *testing.T) {
@@ -301,7 +301,7 @@ func TestVoiceAgent(t *testing.T) {
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
 )
 
 func streamingTranscription(ctx context.Context, audioStream <-chan []byte) (<-chan string, error) {
@@ -370,8 +370,8 @@ func streamingTranscription(ctx context.Context, audioStream <-chan []byte) (<-c
 import (
     "context"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 type MultiLanguageVoice struct {
@@ -470,6 +470,6 @@ func (m *MultiLanguageVoice) GetTTSProvider(ctx context.Context, lang string) (t
 - **[Voice Provider Integration Guide](../guides/voice-providers.md)**: Complete provider implementation guide
 - **[Voice Sessions Use Case](../use-cases/voice-sessions.md)**: Real-world voice agent patterns
 - **[LLM Error Handling Cookbook](./llm-error-handling.md)**: Similar error handling patterns
-- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/README.md)**: Detailed STT docs
-- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/README.md)**: Detailed TTS docs
-- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/s2s/README.md)**: Detailed S2S docs
+- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/README.md)**: Detailed STT docs
+- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/README.md)**: Detailed TTS docs
+- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/s2s/README.md)**: Detailed S2S docs

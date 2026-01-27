@@ -184,9 +184,9 @@
   - `pkg/memory` (conversation memory)
   - `pkg/orchestration` (workflow management)
 - **Integration Test Targets**:
-  - `pkg/voice/backend` ↔ `pkg/agents` (agent integration)
-  - `pkg/voice/backend` ↔ `pkg/llms` (LLM integration)
-  - `pkg/voice/s2s` ↔ `pkg/llms` (LLM integration)
+  - `pkg/voicebackend` ↔ `pkg/agents` (agent integration)
+  - `pkg/voicebackend` ↔ `pkg/llms` (LLM integration)
+  - `pkg/s2s` ↔ `pkg/llms` (LLM integration)
 
 ## Summary
 

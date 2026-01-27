@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
+	sessioniface "github.com/lookatitude/beluga-ai/pkg/voicesession/iface"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

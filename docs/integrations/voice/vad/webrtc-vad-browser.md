@@ -1,6 +1,6 @@
 # WebRTC VAD in Browser
 
-Welcome, colleague! In this guide we'll use **WebRTC VAD** with Beluga AI's `pkg/voice/vad` in a browser-oriented architecture. The `webrtc` provider uses WebRTC's built-in VAD logic; you'll run Beluga in a backend and stream audio from the browser, or use a Go-based WebRTC stack that embeds the same VAD logic.
+Welcome, colleague! In this guide we'll use **WebRTC VAD** with Beluga AI's `pkg/vad` in a browser-oriented architecture. The `webrtc` provider uses WebRTC's built-in VAD logic; you'll run Beluga in a backend and stream audio from the browser, or use a Go-based WebRTC stack that embeds the same VAD logic.
 
 ## What you will build
 
@@ -34,8 +34,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/webrtc"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/webrtc"
 )
 
 func main() {
@@ -108,7 +108,7 @@ go
 
 **Problem**: Webrtc provider not registered.
 
-**Solution**: Import `_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/webrtc"` to register the provider.
+**Solution**: Import `_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/webrtc"` to register the provider.
 
 ## Production Considerations
 

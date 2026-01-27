@@ -45,8 +45,8 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/amazon_nova"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/providers/amazon_nova"
 )
 
 func main() {
@@ -116,8 +116,8 @@ import (
     "os"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/providers/amazon_nova"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/providers/amazon_nova"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/trace"

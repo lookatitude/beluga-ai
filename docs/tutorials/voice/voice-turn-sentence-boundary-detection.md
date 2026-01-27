@@ -1,6 +1,6 @@
 # Sentence-Boundary Turn Detection with Heuristic Provider
 
-**What you will build:** A turn detector that identifies when a user has finished speaking using sentence-end markers (e.g. `.`, `!`, `?`), minimum/maximum turn length, and optional question markers. Uses `pkg/voice/turndetection` with the **heuristic** provider.
+**What you will build:** A turn detector that identifies when a user has finished speaking using sentence-end markers (e.g. `.`, `!`, `?`), minimum/maximum turn length, and optional question markers. Uses `pkg/turndetection` with the **heuristic** provider.
 
 ## Learning Objectives
 
@@ -24,7 +24,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
 )
 
 func main() {

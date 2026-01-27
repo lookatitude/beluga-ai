@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,10 +23,10 @@ func TestMultiProvider_E2E(t *testing.T) {
 	}
 
 	// Create session with primary provider
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(primarySTT),
-		session.WithTTSProvider(primaryTTS),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(primarySTT),
+		voicesession.WithTTSProvider(primaryTTS),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	require.NoError(t, err)
 

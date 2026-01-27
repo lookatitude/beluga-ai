@@ -6,7 +6,7 @@ A contact center needed to replace touch-tone IVR with a voice-enabled interacti
 
 **The challenge:** Callers expect instant, accurate routing. Misroutes and long wait times increase abandon rates. The solution had to support multiple languages, dial-in volume spikes, and integration with existing telephony and CRM.
 
-**The solution:** We built a voice-enabled IVR using Beluga AI's `pkg/voice/backend` with STT/TTS pipelines and optional S2S. We used backend providers (e.g. LiveKit, Vapi) for telephony and WebRTC, STT for intent detection, and routing logic to push callers to queues or self-serve flows. OTEL provided visibility into latency and accuracy.
+**The solution:** We built a voice-enabled IVR using Beluga AI's `pkg/voicebackend` with STT/TTS pipelines and optional S2S. We used backend providers (e.g. LiveKit, Vapi) for telephony and WebRTC, STT for intent detection, and routing logic to push callers to queues or self-serve flows. OTEL provided visibility into latency and accuracy.
 
 ## Business Context
 
@@ -54,7 +54,7 @@ By implementing voice-enabled IVR:
 
 ### Constraints
 
-- Use `pkg/voice/backend` and supported providers (LiveKit, Vapi, etc.).
+- Use `pkg/voicebackend` and supported providers (LiveKit, Vapi, etc.).
 - Integrate with existing ACD/telephony; no forklift replacement of entire IVR platform initially.
 
 ## Architecture Requirements
@@ -102,7 +102,7 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| Voice Backend | Sessions, STT/TTS, telephony | `pkg/voice/backend`, LiveKit/Vapi |
+| Voice Backend | Sessions, STT/TTS, telephony | `pkg/voicebackend`, LiveKit/Vapi |
 | Intent Detection | Transcript → intent | App logic or small LLM |
 | Router | Intent → queue or flow | App logic, ACD API |
 | Telephony | SIP/WebRTC, dial-in | Provider-specific |

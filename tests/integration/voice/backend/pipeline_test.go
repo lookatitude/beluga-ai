@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/mock"
 )
 
 // TestPipelineIntegration tests pipeline orchestration integration (T263).
@@ -20,13 +20,13 @@ func TestPipelineIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	// Create backend with mock provider
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.MaxConcurrentSessions = 10
 
-	voiceBackend, err := backend.NewBackend(ctx, "mock", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)
@@ -76,12 +76,12 @@ func TestPipelineS2SLatency(t *testing.T) {
 	ctx := context.Background()
 
 	// Create backend with S2S pipeline
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.S2SProvider = "mock" // Required for s2s pipeline
 	config.LatencyTarget = 300 * time.Millisecond
 
-	voiceBackend, err := backend.NewBackend(ctx, "mock", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)
@@ -130,12 +130,12 @@ func TestPipelineTurnProcessingSuccess(t *testing.T) {
 
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	voiceBackend, err := backend.NewBackend(ctx, "mock", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)
@@ -186,13 +186,13 @@ func TestPipelineConcurrentProcessing(t *testing.T) {
 	t.Skip("Skipping - mock provider ProcessAudio requires actual STT/TTS providers to be registered")
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.MaxConcurrentSessions = 10
 
-	voiceBackend, err := backend.NewBackend(ctx, "mock", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)

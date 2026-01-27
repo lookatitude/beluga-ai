@@ -1,6 +1,6 @@
 # Voice Session Persistence
 
-Welcome, colleague! In this guide we'll integrate **session persistence** with Beluga AI's `pkg/voice/session`: storing session and form state (e.g. conversation context, collected fields) so you can restore after reconnect or deploy restarts.
+Welcome, colleague! In this guide we'll integrate **session persistence** with Beluga AI's `pkg/voicesession`: storing session and form state (e.g. conversation context, collected fields) so you can restore after reconnect or deploy restarts.
 
 ## What you will build
 

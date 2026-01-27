@@ -10,7 +10,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,10 +30,10 @@ func TestAgentsVoice_BackwardCompat_CallbackMode(t *testing.T) {
 	ttsProvider := &mockStreamingTTSProvider{}
 
 	// Create session with callback (backward compatibility)
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, voiceSession)
@@ -82,11 +82,11 @@ func TestAgentsVoice_BackwardCompat_BothModes(t *testing.T) {
 
 	// Create session with both callback and agent instance
 	// Agent instance should take precedence
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentCallback(agentCallback),
-		session.WithAgentInstance(agent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentCallback(agentCallback),
+		voicesession.WithAgentInstance(agent, agentConfig),
 	)
 	require.NoError(t, err)
 	require.NotNil(t, voiceSession)

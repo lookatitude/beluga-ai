@@ -17,8 +17,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 func main() {
@@ -79,10 +79,10 @@ func main() {
 
 	// Step 5: Create voice session with S2S provider and agent
 	// When both S2S provider and agent are present, external reasoning mode is enabled
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
-		session.WithConfig(session.DefaultConfig()),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
+		voicesession.WithConfig(voicesession.DefaultConfig()),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)

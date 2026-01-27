@@ -6,7 +6,7 @@ A healthcare provider needed to collect structured intake data (e.g. symptoms, m
 
 **The challenge:** Users give fragmented answers ("Um, maybe Tuesday... or Wednesday afternoon"), change their mind mid-flow, or go off-topic. The system had to maintain form state across turns, support clarification questions, and persist progress for later resumption.
 
-**The solution:** We implemented multi-turn voice forms using Beluga AI's `pkg/voice/session` with STT, TTS, VAD, and turn detection. Form state (current question, collected fields, validation errors) lived in session context; each turn advanced or reprompted based on user input. We used `OnStateChanged`, `ProcessAudio`, and `Say`/`SayWithOptions` to drive the flow.
+**The solution:** We implemented multi-turn voice forms using Beluga AI's `pkg/voicesession` with STT, TTS, VAD, and turn detection. Form state (current question, collected fields, validation errors) lived in session context; each turn advanced or reprompted based on user input. We used `OnStateChanged`, `ProcessAudio`, and `Say`/`SayWithOptions` to drive the flow.
 
 ## Business Context
 
@@ -52,7 +52,7 @@ By implementing multi-turn voice forms:
 
 ### Constraints
 
-- Use `pkg/voice/session`; no custom voice stack.
+- Use `pkg/voicesession`; no custom voice stack.
 - Form logic (questions, validation) implemented above the session layer.
 
 ## Architecture Requirements
@@ -103,7 +103,7 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| Voice Session | Audio, STT, TTS, VAD, turn detection | `pkg/voice/session` |
+| Voice Session | Audio, STT, TTS, VAD, turn detection | `pkg/voicesession` |
 | Form Orchestrator | Questions, validation, state | App-specific |
 | Form State | Current step, collected fields | App-specific, keyed by session ID |
 

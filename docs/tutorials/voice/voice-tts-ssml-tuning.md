@@ -24,7 +24,7 @@ Welcome, colleague! Plain text-to-speech can often sound robotic and flat. By us
 ## Prerequisites
 
 - Google Cloud or Azure Speech API Key
-- Beluga AI `pkg/voice/tts` package
+- Beluga AI `pkg/tts` package
 
 ## What is SSML?
 
@@ -47,7 +47,7 @@ package main
 
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/google"
+    "github.com/lookatitude/beluga-ai/pkg/tts/providers/google"
 )
 
 func main() {

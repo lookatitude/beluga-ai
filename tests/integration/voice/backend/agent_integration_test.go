@@ -7,10 +7,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/mock"
 )
 
 // TestAgentIntegration tests integration with pkg/agents (T268).
@@ -18,12 +18,12 @@ func TestAgentIntegration(t *testing.T) {
 	t.Skip("Skipping - mock provider ProcessAudio requires actual STT/TTS providers to be registered")
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	voiceBackend, err := backend.NewBackend(ctx, "mock", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)

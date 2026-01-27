@@ -51,7 +51,7 @@ import (
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 func main() {
@@ -109,7 +109,7 @@ import (
     "os"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/trace"

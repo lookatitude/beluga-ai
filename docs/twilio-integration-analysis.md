@@ -9,7 +9,7 @@
 The Twilio voice provider (`pkg/voice/providers/twilio`) currently implements a custom voice session with manual audio processing. This analysis identifies 8 major integration opportunities to leverage existing Beluga AI packages, which would reduce code duplication, improve reliability, and add advanced features.
 
 **Priority 1 (High Impact)**:
-1. **Session Package Integration** - Replace custom session with `pkg/voice/session`
+1. **Session Package Integration** - Replace custom session with `pkg/voicesession`
 2. **S2S Package Integration** - Add speech-to-speech support for lower latency
 
 **Priority 2 (Medium Impact)**:
@@ -115,14 +115,14 @@ func (s *TwilioVoiceSession) ProcessAudio(ctx context.Context, audio []byte) err
 
 ### Proposed Integration
 
-**Approach**: Create an adapter that wraps `pkg/voice/session.NewVoiceSession()` with Twilio-specific audio stream handling.
+**Approach**: Create an adapter that wraps `pkg/voicesession.NewVoiceSession()` with Twilio-specific audio stream handling.
 
 **Implementation**:
 
 ```go
-// TwilioSessionAdapter wraps pkg/voice/session with Twilio-specific audio handling
+// TwilioSessionAdapter wraps pkg/voicesession with Twilio-specific audio handling
 type TwilioSessionAdapter struct {
-    session      sessioniface.VoiceSession  // From pkg/voice/session
+    session      sessioniface.VoiceSession  // From pkg/voicesession
     audioStream  *AudioStream                // Twilio-specific stream
     backend      *TwilioBackend
     mu           sync.RWMutex
@@ -455,7 +455,7 @@ func NewAudioStream(ctx context.Context, streamURL string, ...) (*AudioStream, e
 
 ### Files to Evaluate
 
-- `pkg/voice/transport/providers/websocket/`: Check if it can handle Twilio protocol
+- `pkg/audiotransport/providers/websocket/`: Check if it can handle Twilio protocol
 - `pkg/voice/providers/twilio/streaming.go`: Document custom requirements
 
 ---
@@ -633,8 +633,8 @@ package twilio
 
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
-    sessioniface "github.com/lookatitude/beluga-ai/pkg/voice/session/iface"
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
+    sessioniface "github.com/lookatitude/beluga-ai/pkg/voicesession/iface"
 )
 
 // TwilioSessionAdapter wraps session package with Twilio-specific handling
@@ -895,7 +895,7 @@ if memory != nil {
 
 ✅ **IMPLEMENTATION COMPLETE**: All integration opportunities identified in this analysis have been successfully implemented. The Twilio provider now leverages:
 
-- ✅ **Session Package Integration**: Full integration with `pkg/voice/session` via `TwilioSessionAdapter`
+- ✅ **Session Package Integration**: Full integration with `pkg/voicesession` via `TwilioSessionAdapter`
 - ✅ **S2S Package Integration**: Support for S2S providers (amazon_nova, grok, gemini, openai_realtime)
 - ✅ **VAD Package Integration**: Optional VAD support (silero, energy-based, webrtc, onnx)
 - ✅ **Turn Detection Integration**: Optional turn detection support (silence-based, onnx-based)

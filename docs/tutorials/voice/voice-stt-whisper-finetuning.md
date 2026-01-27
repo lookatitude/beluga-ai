@@ -39,8 +39,8 @@ OpenAI's Whisper allows a "prompt" that the model uses as context for the audio.
 package main
 
 import (
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/openai"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt/providers/openai"
 )
 
 func main() {
@@ -59,7 +59,7 @@ func main() {
 
 Deepgram supports a `Keywords` parameter to boost the probability of specific terms.
 ```text
-import "github.com/lookatitude/beluga-ai/pkg/voice/stt/providers/deepgram"
+import "github.com/lookatitude/beluga-ai/pkg/stt/providers/deepgram"
 go
 func main() {
     config := &deepgram.Config{

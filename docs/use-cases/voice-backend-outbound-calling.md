@@ -6,7 +6,7 @@ A sales-operations team needed to automate outbound calls for appointment remind
 
 **The challenge:** Outbound systems must dial reliably, handle no-answer and busy, play prompts or conduct short conversations, and record outcomes. Low latency and clear audio were critical for consent and survey flows.
 
-**The solution:** We implemented automated outbound calling using Beluga AI's `pkg/voice/backend` with STT/TTS or S2S pipelines. A job scheduler triggered outbound sessions per contact; the backend managed transport and audio. We used `CreateSession` with `SessionConfig`, `AgentCallback` or `AgentInstance` for logic, and provider-specific telephony hooks for dial-out and disposition.
+**The solution:** We implemented automated outbound calling using Beluga AI's `pkg/voicebackend` with STT/TTS or S2S pipelines. A job scheduler triggered outbound sessions per contact; the backend managed transport and audio. We used `CreateSession` with `SessionConfig`, `AgentCallback` or `AgentInstance` for logic, and provider-specific telephony hooks for dial-out and disposition.
 
 ## Business Context
 
@@ -54,7 +54,7 @@ By automating outbound with a voice backend:
 
 ### Constraints
 
-- Use `pkg/voice/backend` and supported providers.
+- Use `pkg/voicebackend` and supported providers.
 - Telephony and dial-out semantics are provider-specific (e.g. LiveKit, Vapi, Twilio); use provider docs and hooks.
 
 ## Architecture Requirements
@@ -101,7 +101,7 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| Voice Backend | Sessions, STT/TTS/S2S, transport | `pkg/voice/backend` |
+| Voice Backend | Sessions, STT/TTS/S2S, transport | `pkg/voicebackend` |
 | Worker | Job consumption, CRM, disposition | App-specific |
 | Telephony | Dial-out, signaling | Provider (LiveKit, Vapi, Twilio, etc.) |
 | Disposition Store | Outcomes, retries | DB or CRM |

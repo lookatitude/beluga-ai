@@ -221,7 +221,7 @@ type TranscriptResult struct {
 #### Step 1: Create the Provider Structure
 
 ```go
-// pkg/voice/stt/providers/myservice/provider.go
+// pkg/stt/providers/myservice/provider.go
 package myservice
 
 import (
@@ -229,8 +229,8 @@ import (
     "sync"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/iface"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt/iface"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
     "go.opentelemetry.io/otel/trace"
@@ -403,13 +403,13 @@ func (s *myStreamingSession) Close() error {
 #### Step 4: Register the Provider
 
 ```go
-// pkg/voice/stt/providers/myservice/init.go
+// pkg/stt/providers/myservice/init.go
 package myservice
 
 import (
     "context"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt/iface"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt/iface"
 )
 
 func init() {
@@ -582,8 +582,8 @@ import (
     "io"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts/iface"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts/iface"
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/attribute"
 )
@@ -888,9 +888,9 @@ import (
     "context"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s/internal"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
+    "github.com/lookatitude/beluga-ai/pkg/s2s/internal"
     "go.opentelemetry.io/otel"
 )
 
@@ -1023,10 +1023,10 @@ type VADConfig struct {
 import (
     "context"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
 )
 
 func main() {
@@ -1668,6 +1668,6 @@ func (p *Provider) CheckHealth() map[string]any {
 - **[Extensibility Guide](./extensibility.md)**: General framework extension patterns
 - **[Voice Backends Cookbook](../cookbook/voice-backends.md)**: Quick recipes for voice configuration
 - **[Voice Sessions Use Case](../use-cases/voice-sessions.md)**: Real-world voice agent implementation
-- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/stt/README.md)**: Detailed STT package docs
-- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/tts/README.md)**: Detailed TTS package docs
-- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/s2s/README.md)**: Detailed S2S package docs
+- **[STT Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/stt/README.md)**: Detailed STT package docs
+- **[TTS Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/tts/README.md)**: Detailed TTS package docs
+- **[S2S Package Documentation](https://github.com/lookatitude/beluga-ai/blob/main/pkg/s2s/README.md)**: Detailed S2S package docs

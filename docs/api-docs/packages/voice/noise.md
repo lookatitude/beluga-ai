@@ -9,7 +9,7 @@ sidebar_position: 1
 # noise
 
 ```go
-import "github.com/lookatitude/beluga-ai/pkg/voice/noise"
+import "github.com/lookatitude/beluga-ai/pkg/noisereduction"
 ```
 
 Package noise provides interfaces and implementations for Noise Cancellation. This package follows the Beluga AI Framework's design patterns for consistency, extensibility, configuration management, and observability.
@@ -95,7 +95,7 @@ const (
 ```
 
 <a name="AssertNoiseCancellationInterface"></a>
-## func [AssertNoiseCancellationInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L216>)
+## func [AssertNoiseCancellationInterface](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L216>)
 
 ```go
 func AssertNoiseCancellationInterface(t *testing.T, cancellation iface.NoiseCancellation)
@@ -104,7 +104,7 @@ func AssertNoiseCancellationInterface(t *testing.T, cancellation iface.NoiseCanc
 AssertNoiseCancellationInterface ensures that a type implements the NoiseCancellation interface.
 
 <a name="InitMetrics"></a>
-## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/noise.go#L34>)
+## func [InitMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/noise.go#L34>)
 
 ```go
 func InitMetrics(meter metric.Meter, tracer trace.Tracer)
@@ -126,7 +126,7 @@ noise.InitMetrics(meter)
 Example usage can be found in examples/voice/noise/main.go
 
 <a name="IsRetryableError"></a>
-## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L88>)
+## func [IsRetryableError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L88>)
 
 ```go
 func IsRetryableError(err error) bool
@@ -135,7 +135,7 @@ func IsRetryableError(err error) bool
 IsRetryableError checks if an error is retryable.
 
 <a name="NewProvider"></a>
-## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/noise.go#L85>)
+## func [NewProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/noise.go#L85>)
 
 ```go
 func NewProvider(ctx context.Context, providerName string, config *Config, opts ...ConfigOption) (iface.NoiseCancellation, error)
@@ -171,7 +171,7 @@ cleanedAudio, err := provider.CancelNoise(ctx, audioData)
 Example usage can be found in examples/voice/noise/main.go
 
 <a name="AdvancedMockNoiseCancellation"></a>
-## type [AdvancedMockNoiseCancellation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L16-L28>)
+## type [AdvancedMockNoiseCancellation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L16-L28>)
 
 AdvancedMockNoiseCancellation provides a comprehensive mock implementation for testing.
 
@@ -183,7 +183,7 @@ type AdvancedMockNoiseCancellation struct {
 ```
 
 <a name="NewAdvancedMockNoiseCancellation"></a>
-### func [NewAdvancedMockNoiseCancellation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L31>)
+### func [NewAdvancedMockNoiseCancellation](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L31>)
 
 ```go
 func NewAdvancedMockNoiseCancellation(cancellationName string, opts ...MockOption) *AdvancedMockNoiseCancellation
@@ -192,7 +192,7 @@ func NewAdvancedMockNoiseCancellation(cancellationName string, opts ...MockOptio
 NewAdvancedMockNoiseCancellation creates a new advanced mock with configurable behavior.
 
 <a name="AdvancedMockNoiseCancellation.GetCallCount"></a>
-### func (*AdvancedMockNoiseCancellation) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L209>)
+### func (*AdvancedMockNoiseCancellation) [GetCallCount](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L209>)
 
 ```go
 func (m *AdvancedMockNoiseCancellation) GetCallCount() int
@@ -201,7 +201,7 @@ func (m *AdvancedMockNoiseCancellation) GetCallCount() int
 GetCallCount returns the number of times Process has been called.
 
 <a name="AdvancedMockNoiseCancellation.Process"></a>
-### func (*AdvancedMockNoiseCancellation) [Process](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L94>)
+### func (*AdvancedMockNoiseCancellation) [Process](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L94>)
 
 ```go
 func (m *AdvancedMockNoiseCancellation) Process(ctx context.Context, audio []byte) ([]byte, error)
@@ -210,7 +210,7 @@ func (m *AdvancedMockNoiseCancellation) Process(ctx context.Context, audio []byt
 Process implements the NoiseCancellation interface.
 
 <a name="AdvancedMockNoiseCancellation.ProcessStream"></a>
-### func (*AdvancedMockNoiseCancellation) [ProcessStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L149>)
+### func (*AdvancedMockNoiseCancellation) [ProcessStream](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L149>)
 
 ```go
 func (m *AdvancedMockNoiseCancellation) ProcessStream(ctx context.Context, audioCh <-chan []byte) (<-chan []byte, error)
@@ -219,7 +219,7 @@ func (m *AdvancedMockNoiseCancellation) ProcessStream(ctx context.Context, audio
 ProcessStream implements the NoiseCancellation interface.
 
 <a name="Config"></a>
-## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L12-L24>)
+## type [Config](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L12-L24>)
 
 Config represents the configuration for Noise Cancellation providers. It includes common settings that apply to all Noise Cancellation providers.
 
@@ -240,7 +240,7 @@ type Config struct {
 ```
 
 <a name="DefaultConfig"></a>
-### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L81>)
+### func [DefaultConfig](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L81>)
 
 ```go
 func DefaultConfig() *Config
@@ -249,7 +249,7 @@ func DefaultConfig() *Config
 DefaultConfig returns a default configuration.
 
 <a name="Config.Validate"></a>
-### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L72>)
+### func (*Config) [Validate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L72>)
 
 ```go
 func (c *Config) Validate() error
@@ -258,7 +258,7 @@ func (c *Config) Validate() error
 Validate validates the configuration.
 
 <a name="ConfigOption"></a>
-## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L27>)
+## type [ConfigOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L27>)
 
 ConfigOption is a functional option for configuring Noise Cancellation instances.
 
@@ -267,7 +267,7 @@ type ConfigOption func(*Config)
 ```
 
 <a name="WithEnableAdaptiveProcessing"></a>
-### func [WithEnableAdaptiveProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L58>)
+### func [WithEnableAdaptiveProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L58>)
 
 ```go
 func WithEnableAdaptiveProcessing(enable bool) ConfigOption
@@ -276,7 +276,7 @@ func WithEnableAdaptiveProcessing(enable bool) ConfigOption
 WithEnableAdaptiveProcessing sets adaptive processing enablement.
 
 <a name="WithFrameSize"></a>
-### func [WithFrameSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L44>)
+### func [WithFrameSize](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L44>)
 
 ```go
 func WithFrameSize(frameSize int) ConfigOption
@@ -285,7 +285,7 @@ func WithFrameSize(frameSize int) ConfigOption
 WithFrameSize sets the frame size.
 
 <a name="WithModelPath"></a>
-### func [WithModelPath](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L65>)
+### func [WithModelPath](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L65>)
 
 ```go
 func WithModelPath(path string) ConfigOption
@@ -294,7 +294,7 @@ func WithModelPath(path string) ConfigOption
 WithModelPath sets the model path.
 
 <a name="WithNoiseReductionLevel"></a>
-### func [WithNoiseReductionLevel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L37>)
+### func [WithNoiseReductionLevel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L37>)
 
 ```go
 func WithNoiseReductionLevel(level float64) ConfigOption
@@ -303,7 +303,7 @@ func WithNoiseReductionLevel(level float64) ConfigOption
 WithNoiseReductionLevel sets the noise reduction level.
 
 <a name="WithProvider"></a>
-### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L30>)
+### func [WithProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L30>)
 
 ```go
 func WithProvider(provider string) ConfigOption
@@ -312,7 +312,7 @@ func WithProvider(provider string) ConfigOption
 WithProvider sets the Noise Cancellation provider.
 
 <a name="WithSampleRate"></a>
-### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/config.go#L51>)
+### func [WithSampleRate](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/config.go#L51>)
 
 ```go
 func WithSampleRate(sampleRate int) ConfigOption
@@ -321,7 +321,7 @@ func WithSampleRate(sampleRate int) ConfigOption
 WithSampleRate sets the sample rate.
 
 <a name="Metrics"></a>
-## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L29-L36>)
+## type [Metrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L29-L36>)
 
 Metrics contains all the metrics for Noise Cancellation operations.
 
@@ -332,7 +332,7 @@ type Metrics struct {
 ```
 
 <a name="GetMetrics"></a>
-### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/noise.go#L54>)
+### func [GetMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/noise.go#L54>)
 
 ```go
 func GetMetrics() *Metrics
@@ -356,7 +356,7 @@ if metrics != nil {
 Example usage can be found in examples/voice/noise/main.go
 
 <a name="NewMetrics"></a>
-### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L39>)
+### func [NewMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L39>)
 
 ```go
 func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
@@ -365,7 +365,7 @@ func NewMetrics(meter metric.Meter, tracer trace.Tracer) *Metrics
 NewMetrics creates a new Metrics instance.
 
 <a name="NoOpMetrics"></a>
-### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L22>)
+### func [NoOpMetrics](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L22>)
 
 ```go
 func NoOpMetrics() *Metrics
@@ -374,7 +374,7 @@ func NoOpMetrics() *Metrics
 NoOpMetrics returns a metrics instance that does nothing. Useful for testing or when metrics are disabled.
 
 <a name="Metrics.IncrementProcessedFrames"></a>
-### func (*Metrics) [IncrementProcessedFrames](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L96>)
+### func (*Metrics) [IncrementProcessedFrames](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L96>)
 
 ```go
 func (m *Metrics) IncrementProcessedFrames(ctx context.Context, provider string)
@@ -383,7 +383,7 @@ func (m *Metrics) IncrementProcessedFrames(ctx context.Context, provider string)
 IncrementProcessedFrames increments the processed frames counter.
 
 <a name="Metrics.RecordError"></a>
-### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L79>)
+### func (*Metrics) [RecordError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L79>)
 
 ```go
 func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, duration time.Duration)
@@ -392,7 +392,7 @@ func (m *Metrics) RecordError(ctx context.Context, provider, errorCode string, d
 RecordError records an error.
 
 <a name="Metrics.RecordProcessing"></a>
-### func (*Metrics) [RecordProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L57>)
+### func (*Metrics) [RecordProcessing](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L57>)
 
 ```go
 func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duration time.Duration, inputSize, outputSize int64)
@@ -401,7 +401,7 @@ func (m *Metrics) RecordProcessing(ctx context.Context, provider string, duratio
 RecordProcessing records a processing operation.
 
 <a name="MetricsRecorder"></a>
-## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/metrics.go#L14-L18>)
+## type [MetricsRecorder](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/metrics.go#L14-L18>)
 
 MetricsRecorder defines the interface for recording metrics.
 
@@ -414,7 +414,7 @@ type MetricsRecorder interface {
 ```
 
 <a name="MockOption"></a>
-## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L48>)
+## type [MockOption](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L48>)
 
 MockOption configures the behavior of AdvancedMockNoiseCancellation.
 
@@ -423,7 +423,7 @@ type MockOption func(*AdvancedMockNoiseCancellation)
 ```
 
 <a name="WithCancellationName"></a>
-### func [WithCancellationName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L51>)
+### func [WithCancellationName](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L51>)
 
 ```go
 func WithCancellationName(name string) MockOption
@@ -432,7 +432,7 @@ func WithCancellationName(name string) MockOption
 WithCancellationName sets the cancellation name.
 
 <a name="WithError"></a>
-### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L65>)
+### func [WithError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L65>)
 
 ```go
 func WithError(err error) MockOption
@@ -441,7 +441,7 @@ func WithError(err error) MockOption
 WithError configures the mock to return an error.
 
 <a name="WithMockNoiseReductionLevel"></a>
-### func [WithMockNoiseReductionLevel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L87>)
+### func [WithMockNoiseReductionLevel](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L87>)
 
 ```go
 func WithMockNoiseReductionLevel(level float64) MockOption
@@ -450,7 +450,7 @@ func WithMockNoiseReductionLevel(level float64) MockOption
 WithMockNoiseReductionLevel sets the noise reduction level for the mock.
 
 <a name="WithNetworkDelay"></a>
-### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L80>)
+### func [WithNetworkDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L80>)
 
 ```go
 func WithNetworkDelay(enabled bool) MockOption
@@ -459,7 +459,7 @@ func WithNetworkDelay(enabled bool) MockOption
 WithNetworkDelay enables network delay simulation.
 
 <a name="WithProcessedAudio"></a>
-### func [WithProcessedAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L58>)
+### func [WithProcessedAudio](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L58>)
 
 ```go
 func WithProcessedAudio(audio ...[]byte) MockOption
@@ -468,7 +468,7 @@ func WithProcessedAudio(audio ...[]byte) MockOption
 WithProcessedAudio sets the processed audio to return.
 
 <a name="WithProcessingDelay"></a>
-### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/test_utils.go#L73>)
+### func [WithProcessingDelay](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/test_utils.go#L73>)
 
 ```go
 func WithProcessingDelay(delay time.Duration) MockOption
@@ -477,7 +477,7 @@ func WithProcessingDelay(delay time.Duration) MockOption
 WithProcessingDelay sets the delay for processing.
 
 <a name="NoiseCancellationError"></a>
-## type [NoiseCancellationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L33-L39>)
+## type [NoiseCancellationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L33-L39>)
 
 NoiseCancellationError represents an error that occurred during Noise Cancellation operations. It includes an operation name, underlying error, and error code for programmatic handling.
 
@@ -492,7 +492,7 @@ type NoiseCancellationError struct {
 ```
 
 <a name="NewNoiseCancellationError"></a>
-### func [NewNoiseCancellationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L58>)
+### func [NewNoiseCancellationError](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L58>)
 
 ```go
 func NewNoiseCancellationError(op, code string, err error) *NoiseCancellationError
@@ -501,7 +501,7 @@ func NewNoiseCancellationError(op, code string, err error) *NoiseCancellationErr
 NewNoiseCancellationError creates a new NoiseCancellationError.
 
 <a name="NewNoiseCancellationErrorWithDetails"></a>
-### func [NewNoiseCancellationErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L77>)
+### func [NewNoiseCancellationErrorWithDetails](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L77>)
 
 ```go
 func NewNoiseCancellationErrorWithDetails(op, code, message string, err error, details map[string]any) *NoiseCancellationError
@@ -510,7 +510,7 @@ func NewNoiseCancellationErrorWithDetails(op, code, message string, err error, d
 NewNoiseCancellationErrorWithDetails creates a new NoiseCancellationError with additional details.
 
 <a name="NewNoiseCancellationErrorWithMessage"></a>
-### func [NewNoiseCancellationErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L67>)
+### func [NewNoiseCancellationErrorWithMessage](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L67>)
 
 ```go
 func NewNoiseCancellationErrorWithMessage(op, code, message string, err error) *NoiseCancellationError
@@ -519,7 +519,7 @@ func NewNoiseCancellationErrorWithMessage(op, code, message string, err error) *
 NewNoiseCancellationErrorWithMessage creates a new NoiseCancellationError with a custom message.
 
 <a name="NoiseCancellationError.Error"></a>
-### func (*NoiseCancellationError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L42>)
+### func (*NoiseCancellationError) [Error](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L42>)
 
 ```go
 func (e *NoiseCancellationError) Error() string
@@ -528,7 +528,7 @@ func (e *NoiseCancellationError) Error() string
 Error implements the error interface.
 
 <a name="NoiseCancellationError.Unwrap"></a>
-### func (*NoiseCancellationError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/errors.go#L53>)
+### func (*NoiseCancellationError) [Unwrap](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/errors.go#L53>)
 
 ```go
 func (e *NoiseCancellationError) Unwrap() error
@@ -537,7 +537,7 @@ func (e *NoiseCancellationError) Unwrap() error
 Unwrap returns the underlying error.
 
 <a name="Registry"></a>
-## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L17-L20>)
+## type [Registry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L17-L20>)
 
 Registry manages Noise Cancellation provider registration and retrieval.
 
@@ -548,7 +548,7 @@ type Registry struct {
 ```
 
 <a name="GetRegistry"></a>
-### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L23>)
+### func [GetRegistry](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L23>)
 
 ```go
 func GetRegistry() *Registry
@@ -557,7 +557,7 @@ func GetRegistry() *Registry
 GetRegistry returns the global registry instance.
 
 <a name="Registry.GetProvider"></a>
-### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L40>)
+### func (*Registry) [GetProvider](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L40>)
 
 ```go
 func (r *Registry) GetProvider(name string, config *Config) (iface.NoiseCancellation, error)
@@ -566,7 +566,7 @@ func (r *Registry) GetProvider(name string, config *Config) (iface.NoiseCancella
 GetProvider returns a provider instance for the given name.
 
 <a name="Registry.IsRegistered"></a>
-### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L66>)
+### func (*Registry) [IsRegistered](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L66>)
 
 ```go
 func (r *Registry) IsRegistered(name string) bool
@@ -575,7 +575,7 @@ func (r *Registry) IsRegistered(name string) bool
 IsRegistered checks if a provider is registered.
 
 <a name="Registry.ListProviders"></a>
-### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L54>)
+### func (*Registry) [ListProviders](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L54>)
 
 ```go
 func (r *Registry) ListProviders() []string
@@ -584,7 +584,7 @@ func (r *Registry) ListProviders() []string
 ListProviders returns a list of all registered provider names.
 
 <a name="Registry.Register"></a>
-### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/voice/noise/registry.go#L33>)
+### func (*Registry) [Register](<https://github.com/lookatitude/beluga-ai/blob/main/pkg/noisereduction/registry.go#L33>)
 
 ```go
 func (r *Registry) Register(name string, factory func(*Config) (iface.NoiseCancellation, error))

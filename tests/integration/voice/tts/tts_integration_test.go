@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
 	// Import providers to trigger init() registration.
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/azure"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/elevenlabs"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/google"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/tts/providers/openai"
+	_ "github.com/lookatitude/beluga-ai/pkg/tts/providers/azure"
+	_ "github.com/lookatitude/beluga-ai/pkg/tts/providers/elevenlabs"
+	_ "github.com/lookatitude/beluga-ai/pkg/tts/providers/google"
+	_ "github.com/lookatitude/beluga-ai/pkg/tts/providers/openai"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

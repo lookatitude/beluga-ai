@@ -9,8 +9,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 )
 
 func main() {
@@ -64,7 +64,7 @@ func main() {
 	}
 
 	// Create backend
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	if err != nil {
 		log.Fatalf("Failed to create voice backend: %v", err)
 	}

@@ -1,0 +1,95 @@
+package internal
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	"github.com/lookatitude/beluga-ai/pkg/tts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestNewTTSIntegration(t *testing.T) {
+	mockProvider := tts.NewAdvancedMockTTSProvider("test")
+	tti := NewTTSIntegration(mockProvider)
+	assert.NotNil(t, tti)
+}
+
+func TestNewTTSIntegration_NilProvider(t *testing.T) {
+	tti := NewTTSIntegration(nil)
+	assert.NotNil(t, tti)
+}
+
+func TestTTSIntegration_GenerateSpeech_Success(t *testing.T) {
+	mockProvider := tts.NewAdvancedMockTTSProvider("test")
+	tti := NewTTSIntegration(mockProvider)
+
+	ctx := context.Background()
+	audio, err := tti.GenerateSpeech(ctx, "Hello, world!")
+	require.NoError(t, err)
+	assert.NotNil(t, audio)
+}
+
+func TestTTSIntegration_GenerateSpeech_NilProvider(t *testing.T) {
+	tti := NewTTSIntegration(nil)
+
+	ctx := context.Background()
+	_, err := tti.GenerateSpeech(ctx, "Hello, world!")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not set")
+}
+
+func TestTTSIntegration_StreamGenerate_Success(t *testing.T) {
+	mockProvider := tts.NewAdvancedMockTTSProvider("test")
+	tti := NewTTSIntegration(mockProvider)
+
+	ctx := context.Background()
+	reader, err := tti.StreamGenerate(ctx, "Hello, world!")
+	require.NoError(t, err)
+	assert.NotNil(t, reader)
+
+	// Read from reader
+	data := make([]byte, 100)
+	n, err := reader.Read(data)
+	require.NoError(t, err)
+	assert.Positive(t, n)
+}
+
+func TestTTSIntegration_StreamGenerate_NilProvider(t *testing.T) {
+	tti := NewTTSIntegration(nil)
+
+	ctx := context.Background()
+	_, err := tti.StreamGenerate(ctx, "Hello, world!")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not set")
+}
+
+func TestTTSIntegration_StreamGenerate_ProviderError(t *testing.T) {
+	mockProvider := tts.NewAdvancedMockTTSProvider("test", tts.WithError(errors.New("TTS error")))
+	tti := NewTTSIntegration(mockProvider)
+
+	ctx := context.Background()
+	_, err := tti.StreamGenerate(ctx, "Hello, world!")
+	require.Error(t, err)
+}
+
+func TestTTSIntegration_ConcurrentAccess(t *testing.T) {
+	mockProvider := tts.NewAdvancedMockTTSProvider("test")
+	tti := NewTTSIntegration(mockProvider)
+
+	done := make(chan bool)
+	for i := 0; i < 10; i++ {
+		ctx := context.Background()
+		go func() {
+			_, _ = tti.GenerateSpeech(ctx, "test")
+			_, _ = tti.StreamGenerate(ctx, "test")
+			done <- true
+		}()
+	}
+
+	// Wait for all goroutines
+	for i := 0; i < 10; i++ {
+		<-done
+	}
+}

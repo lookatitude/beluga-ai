@@ -19,8 +19,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 func main() {
@@ -66,10 +66,10 @@ func main() {
 		go func(id int, ag iface.StreamingAgent) {
 			defer wg.Done()
 
-			voiceSession, err := session.NewVoiceSession(ctx,
-				session.WithSTTProvider(sttProvider),
-				session.WithTTSProvider(ttsProvider),
-				session.WithAgentInstance(ag, &schema.AgentConfig{
+			voiceSession, err := voicesession.NewVoiceSession(ctx,
+				voicesession.WithSTTProvider(sttProvider),
+				voicesession.WithTTSProvider(ttsProvider),
+				voicesession.WithAgentInstance(ag, &schema.AgentConfig{
 					Name:            fmt.Sprintf("agent-%d", id),
 					LLMProviderName: "mock",
 				}),

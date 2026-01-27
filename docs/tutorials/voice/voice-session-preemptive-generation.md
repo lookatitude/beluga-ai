@@ -25,9 +25,9 @@ import (
 	"context"
 	"log"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
-	"github.com/lookatitude/beluga-ai/pkg/voice/stt"
-	"github.com/lookatitude/beluga-ai/pkg/voice/tts"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
+	"github.com/lookatitude/beluga-ai/pkg/stt"
+	"github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 func main() {
@@ -63,7 +63,7 @@ If you use an agent callback or custom pipeline:
 - **Interim handler:** On each interim transcript, optionally call your agent/LLM and store the result (e.g. in a buffer).
 - **Final handler:** On final transcript, either use the preemptive result (if similar or always-use) or generate a new reply from the final.
 
-The session package uses internal `PreemptiveGeneration` and `FinalHandler` for this; see [session README](https://pkg.go.dev/github.com/lookatitude/beluga-ai/pkg/voice/session) and `internal/preemptive.go`. Your integration can follow the same pattern: track last interim, last preemptive reply, and apply your strategy when final arrives.
+The session package uses internal `PreemptiveGeneration` and `FinalHandler` for this; see [session README](https://pkg.go.dev/github.com/lookatitude/beluga-ai/pkg/voicesession) and `internal/preemptive.go`. Your integration can follow the same pattern: track last interim, last preemptive reply, and apply your strategy when final arrives.
 
 ## Step 4: Example Flow
 

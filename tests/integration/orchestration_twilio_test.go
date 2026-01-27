@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/orchestration"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	"github.com/lookatitude/beluga-ai/tests/integration/utils"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -40,7 +40,7 @@ func TestEventDrivenWorkflows(t *testing.T) {
 		Orchestrator: orchestrator,
 	}
 
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", config)
 	require.NoError(t, err)
 
 	err = voiceBackend.Start(ctx)

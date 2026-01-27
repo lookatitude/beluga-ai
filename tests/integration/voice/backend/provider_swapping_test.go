@@ -7,15 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/cartesia"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/pipecat"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/vapi"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/vocode"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/cartesia"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/pipecat"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vapi"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vocode"
 )
 
 // TestProviderSwapping tests that sessions can be created and managed across different providers.
@@ -28,7 +28,7 @@ func TestProviderSwapping(t *testing.T) {
 	for _, providerName := range providers {
 		t.Run(providerName, func(t *testing.T) {
 			// Create backend for this provider
-			config := backend.DefaultConfig()
+			config := voicebackend.DefaultConfig()
 			config.Provider = providerName
 			config.STTProvider = "mock" // Required for stt_tts pipeline
 			config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -53,7 +53,7 @@ func TestProviderSwapping(t *testing.T) {
 			}
 
 			// Create backend
-			voiceBackend, err := backend.NewBackend(ctx, providerName, config)
+			voiceBackend, err := voicebackend.NewBackend(ctx, providerName, config)
 			if err != nil {
 				t.Skipf("Skipping %s provider: %v", providerName, err)
 				return
@@ -109,7 +109,7 @@ func TestProviderSwapping(t *testing.T) {
 
 // TestProviderRegistry tests that all providers are registered correctly.
 func TestProviderRegistry(t *testing.T) {
-	registry := backend.GetRegistry()
+	registry := voicebackend.GetRegistry()
 
 	// Expected providers
 	expectedProviders := []string{"mock", "livekit", "pipecat", "vocode", "vapi", "cartesia"}
@@ -139,12 +139,12 @@ func TestProviderSwappingSameSession(t *testing.T) {
 	}
 
 	// Test with mock provider (most reliable for testing)
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	mockBackend, err := backend.NewBackend(ctx, "mock", config)
+	mockBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = mockBackend.Start(ctx)
@@ -176,7 +176,7 @@ func TestProviderSwappingSameSession(t *testing.T) {
 // TestProviderCapabilities tests that each provider reports correct capabilities.
 func TestProviderCapabilities(t *testing.T) {
 	ctx := context.Background()
-	registry := backend.GetRegistry()
+	registry := voicebackend.GetRegistry()
 
 	providers := []string{"mock", "pipecat", "vocode", "vapi", "cartesia"}
 
@@ -190,7 +190,7 @@ func TestProviderCapabilities(t *testing.T) {
 			}
 
 			// Create a minimal config to get capabilities
-			config := backend.DefaultConfig()
+			config := voicebackend.DefaultConfig()
 			config.Provider = providerName
 			config.STTProvider = "mock" // Required for stt_tts pipeline
 			config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -230,12 +230,12 @@ func TestProviderSwappingHealthCheck(t *testing.T) {
 	ctx := context.Background()
 
 	// Test with mock provider (most reliable)
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	mockBackend, err := backend.NewBackend(ctx, "mock", config)
+	mockBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = mockBackend.Start(ctx)
@@ -256,13 +256,13 @@ func TestProviderSwappingConcurrentSessions(t *testing.T) {
 	ctx := context.Background()
 
 	// Test with mock provider
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "mock"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
 	config.MaxConcurrentSessions = 10
 
-	mockBackend, err := backend.NewBackend(ctx, "mock", config)
+	mockBackend, err := voicebackend.NewBackend(ctx, "mock", config)
 	require.NoError(t, err)
 
 	err = mockBackend.Start(ctx)
@@ -323,7 +323,7 @@ func TestProviderSwappingConfigValidation(t *testing.T) {
 	for _, providerName := range providers {
 		t.Run(providerName, func(t *testing.T) {
 			// Test with invalid config (missing required fields)
-			invalidConfig := backend.DefaultConfig()
+			invalidConfig := voicebackend.DefaultConfig()
 			invalidConfig.Provider = providerName
 			invalidConfig.STTProvider = "mock" // Required for stt_tts pipeline
 			invalidConfig.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -331,7 +331,7 @@ func TestProviderSwappingConfigValidation(t *testing.T) {
 			// Intentionally omit required provider-specific config
 
 			// Try to create backend with invalid config
-			_, err := backend.NewBackend(ctx, providerName, invalidConfig)
+			_, err := voicebackend.NewBackend(ctx, providerName, invalidConfig)
 
 			// Some providers may accept minimal config (like mock), others should fail
 			// This test verifies that validation is working
@@ -354,20 +354,20 @@ func TestProviderSwappingSessionIsolation(t *testing.T) {
 	ctx := context.Background()
 
 	// Create two backends with different providers (mock for both in this test)
-	config1 := backend.DefaultConfig()
+	config1 := voicebackend.DefaultConfig()
 	config1.Provider = "mock"
 	config1.STTProvider = "mock" // Required for stt_tts pipeline
 	config1.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	config2 := backend.DefaultConfig()
+	config2 := voicebackend.DefaultConfig()
 	config2.Provider = "mock"
 	config2.STTProvider = "mock" // Required for stt_tts pipeline
 	config2.TTSProvider = "mock" // Required for stt_tts pipeline
 
-	backend1, err := backend.NewBackend(ctx, "mock", config1)
+	backend1, err := voicebackend.NewBackend(ctx, "mock", config1)
 	require.NoError(t, err)
 
-	backend2, err := backend.NewBackend(ctx, "mock", config2)
+	backend2, err := voicebackend.NewBackend(ctx, "mock", config2)
 	require.NoError(t, err)
 
 	err = backend1.Start(ctx)

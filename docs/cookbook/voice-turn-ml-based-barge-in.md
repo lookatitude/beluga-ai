@@ -13,7 +13,7 @@ You need to support barge-in (user interrupts the agent) using both VAD and turn
 
 ## Solution
 
-Combine `pkg/voice/vad` (speech onset) with `pkg/voice/turndetection` (turn context). Use the **onnx** provider when you have a turn-detection model; otherwise use **heuristic**. On speech onset during playback, call `DetectTurnWithSilence` to distinguish barge-in from end-of-turn, then stop TTS and switch to listening when barge-in is detected. This works because VAD gives you low-latency "user is speaking" and turn detection prevents false barge-in from end-of-turn edge cases.
+Combine `pkg/vad` (speech onset) with `pkg/turndetection` (turn context). Use the **onnx** provider when you have a turn-detection model; otherwise use **heuristic**. On speech onset during playback, call `DetectTurnWithSilence` to distinguish barge-in from end-of-turn, then stop TTS and switch to listening when barge-in is detected. This works because VAD gives you low-latency "user is speaking" and turn detection prevents false barge-in from end-of-turn edge cases.
 
 ## Code Example
 ```go
@@ -31,10 +31,10 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
-	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
+	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/turndetection/iface"
+	vadiface "github.com/lookatitude/beluga-ai/pkg/vad/iface"
 )
 
 var tracer = otel.Tracer("beluga.voice.bargein.recipe")

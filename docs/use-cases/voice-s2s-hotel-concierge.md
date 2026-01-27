@@ -125,7 +125,7 @@ The system works like this:
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| S2S Provider | Handle speech-to-speech | pkg/voice/s2s |
+| S2S Provider | Handle speech-to-speech | pkg/s2s |
 | Conversation Manager | Manage conversation state | Custom state management |
 | Intent Recognizer | Recognize guest intent | Custom intent logic |
 | Action Handler | Execute concierge actions | Custom action logic |
@@ -144,8 +144,8 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-    "github.com/lookatitude/beluga-ai/pkg/voice/session"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 // HotelConcierge implements AI concierge service
@@ -179,7 +179,7 @@ func NewHotelConcierge(ctx context.Context) (*HotelConcierge, error) {
 ```
 
 **Key decisions:**
-- We chose pkg/voice/s2s for real-time speech-to-speech
+- We chose pkg/s2s for real-time speech-to-speech
 - Streaming enables natural conversations
 
 For detailed setup instructions, see the [Voice S2S Guide](../guides/s2s-implementation.md).
@@ -304,7 +304,7 @@ func (h *HotelConcierge) HandleConversationWithMonitoring(ctx context.Context, g
 
 ### What Worked Well
 
-✅ **S2S Package** - Using Beluga AI's pkg/voice/s2s provided real-time speech-to-speech capability. Recommendation: Always use S2S package for voice conversation applications.
+✅ **S2S Package** - Using Beluga AI's pkg/s2s provided real-time speech-to-speech capability. Recommendation: Always use S2S package for voice conversation applications.
 
 ✅ **Streaming Conversations** - Streaming enabled natural, real-time conversations. Streaming is critical for voice applications.
 
@@ -316,7 +316,7 @@ func (h *HotelConcierge) HandleConversationWithMonitoring(ctx context.Context, g
 
 ### Recommendations for Similar Projects
 
-1. **Start with S2S Package** - Use Beluga AI's pkg/voice/s2s from the beginning. It provides speech-to-speech capability.
+1. **Start with S2S Package** - Use Beluga AI's pkg/s2s from the beginning. It provides speech-to-speech capability.
 
 2. **Implement Conversation State** - Conversation state is critical for multi-turn conversations. Implement persistent state.
 

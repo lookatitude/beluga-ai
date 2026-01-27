@@ -5,12 +5,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
 	// Import providers to trigger init() registration.
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/energy"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/rnnoise"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/webrtc"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/energy"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/rnnoise"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/webrtc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

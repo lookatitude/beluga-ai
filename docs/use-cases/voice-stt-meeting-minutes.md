@@ -121,7 +121,7 @@ The system works like this:
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| STT Provider | Transcribe audio | pkg/voice/stt |
+| STT Provider | Transcribe audio | pkg/stt |
 | Speaker Diarization | Identify speakers | Custom diarization logic |
 | Transcript Buffer | Buffer transcripts | Custom buffering logic |
 | Minute Generator | Generate minutes | pkg/llms with summarization |
@@ -140,7 +140,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/stt"
+    "github.com/lookatitude/beluga-ai/pkg/stt"
     "github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
@@ -173,7 +173,7 @@ func NewMeetingMinutesGenerator(ctx context.Context) (*MeetingMinutesGenerator, 
 ```
 
 **Key decisions:**
-- We chose pkg/voice/stt for real-time transcription
+- We chose pkg/stt for real-time transcription
 - Streaming enables live minute generation
 
 For detailed setup instructions, see the [Voice STT Guide](../guides/voice-providers.md).
@@ -332,7 +332,7 @@ func (m *MeetingMinutesGenerator) GenerateMinutesWithMonitoring(ctx context.Cont
 
 ### What Worked Well
 
-✅ **Streaming STT** - Using Beluga AI's pkg/voice/stt with streaming provided real-time transcription. Recommendation: Always use streaming STT for live applications.
+✅ **Streaming STT** - Using Beluga AI's pkg/stt with streaming provided real-time transcription. Recommendation: Always use streaming STT for live applications.
 
 ✅ **LLM Summarization** - LLM-based summarization enabled intelligent minute generation. LLMs are critical for summarization.
 

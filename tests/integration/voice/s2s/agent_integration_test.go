@@ -10,8 +10,8 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/core"
 	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -62,8 +62,8 @@ func TestS2S_AgentIntegration_BuiltIn(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{1, 2, 3}, "test-provider", 100*time.Millisecond)))
 
 	// Create voice session with S2S provider (built-in reasoning)
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -105,9 +105,9 @@ func TestS2S_AgentIntegration_External(t *testing.T) {
 		LLMProviderName: "mock",
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(agent.(agentsiface.StreamingAgent), agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(agent.(agentsiface.StreamingAgent), agentConfig),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -160,9 +160,9 @@ func TestS2S_AgentIntegration_Streaming(t *testing.T) {
 		LLMProviderName: "mock",
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -195,8 +195,8 @@ func TestS2S_AgentIntegration_ReasoningModeSwitch(t *testing.T) {
 	require.NoError(t, err)
 
 	// Test built-in mode
-	voiceSession1, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession1, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession1)
@@ -213,9 +213,9 @@ func TestS2S_AgentIntegration_ReasoningModeSwitch(t *testing.T) {
 		return
 	}
 
-	voiceSession2, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
+	voiceSession2, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession2)
@@ -235,9 +235,9 @@ func TestS2S_AgentIntegration_AgentCallback(t *testing.T) {
 	}
 
 	// Create voice session with S2S provider and agent callback
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -285,9 +285,9 @@ func TestS2S_AgentIntegration_CrossPackage(t *testing.T) {
 		return
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
-		session.WithAgentInstance(streamingAgent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
+		voicesession.WithAgentInstance(streamingAgent, agentConfig),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)

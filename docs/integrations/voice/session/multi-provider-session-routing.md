@@ -1,6 +1,6 @@
 # Multi-Provider Session Routing
 
-Welcome, colleague! In this guide we'll integrate **multi-provider session routing** with Beluga AI voice: choosing STT, TTS, or S2S providers per session (e.g. by tenant, region, or feature flag) and wiring them into `pkg/voice/session`.
+Welcome, colleague! In this guide we'll integrate **multi-provider session routing** with Beluga AI voice: choosing STT, TTS, or S2S providers per session (e.g. by tenant, region, or feature flag) and wiring them into `pkg/voicesession`.
 
 ## What you will build
 
@@ -38,8 +38,8 @@ Decide what drives provider selection. Example:
 
 ## Step 3: Implement a Router
 	import (
-		"github.com/lookatitude/beluga-ai/pkg/voice/iface"
-		s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
+		"github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+		s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
 	)
 
 ```go
@@ -86,8 +86,8 @@ Add VAD and turn detection per route if needed (e.g. same provider for all, or s
 
 ```
 	import (
-		"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-		"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
+		"github.com/lookatitude/beluga-ai/pkg/vad"
+		"github.com/lookatitude/beluga-ai/pkg/turndetection"
 	)
 
 go

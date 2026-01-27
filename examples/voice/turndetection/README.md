@@ -48,5 +48,5 @@ provider, err := turndetection.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [Turn Detection Package Documentation](../../../pkg/voice/turndetection/README.md)
+- [Turn Detection Package Documentation](../../../pkg/turndetection/README.md)
 - [Voice Session Example](../simple/main.go)

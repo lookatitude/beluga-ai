@@ -156,12 +156,12 @@ func TestSafetyCheckerContextCancellation(t *testing.T) {
 
 func TestMockSafetyChecker(t *testing.T) {
 	tests := []struct {
-		name       string
-		mockOpts   []MockOption
-		content    string
-		wantSafe   bool
-		wantErr    bool
-		wantCalls  int
+		name      string
+		mockOpts  []MockOption
+		content   string
+		wantSafe  bool
+		wantErr   bool
+		wantCalls int
 	}{
 		{
 			name:      "default safe",

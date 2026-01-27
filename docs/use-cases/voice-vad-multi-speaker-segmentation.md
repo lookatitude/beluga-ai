@@ -6,7 +6,7 @@ A meeting-assistant product needed to segment audio by speaker (who spoke when) 
 
 **The challenge:** Off-the-shelf VAD detects "speech vs non-speech" but not "which speaker." Building diarization (who spoke when) typically needs additional models (e.g. speaker embedding, clustering) and careful handling of overlap and short turns.
 
-**The solution:** We used Beluga AI's `pkg/voice/vad` for **speech vs non-speech** segmentation, then combined it with a separate diarization layer (speaker embeddings + clustering or a third-party API). VAD provided robust segment boundaries; diarization assigned speaker labels to those segments. We used `ProcessStream` for real-time pipelines and tuned `Threshold` and duration parameters for meeting audio.
+**The solution:** We used Beluga AI's `pkg/vad` for **speech vs non-speech** segmentation, then combined it with a separate diarization layer (speaker embeddings + clustering or a third-party API). VAD provided robust segment boundaries; diarization assigned speaker labels to those segments. We used `ProcessStream` for real-time pipelines and tuned `Threshold` and duration parameters for meeting audio.
 
 ## Business Context
 
@@ -22,7 +22,7 @@ By combining VAD with diarization:
 
 - **Accurate attribution**: Per-speaker timelines for minutes and actions.
 - **Better summaries**: Speaker-aware summaries improved usefulness.
-- **Reusable VAD**: Same `pkg/voice/vad` pipeline for single- and multi-speaker use cases.
+- **Reusable VAD**: Same `pkg/vad` pipeline for single- and multi-speaker use cases.
 
 ### Success Metrics
 
@@ -53,7 +53,7 @@ By combining VAD with diarization:
 
 ### Constraints
 
-- Use `pkg/voice/vad` for VAD; diarization can be custom or third-party.
+- Use `pkg/vad` for VAD; diarization can be custom or third-party.
 - No change to Beluga VAD API; multi-speaker logic lives in app layer.
 
 ## Architecture Requirements
@@ -96,7 +96,7 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| VAD | Speech segmentation | `pkg/voice/vad`, silero/rnnoise |
+| VAD | Speech segmentation | `pkg/vad`, silero/rnnoise |
 | Diarization | Speaker labels | Custom or third-party |
 | Timeline | Segments + labels | App-specific |
 

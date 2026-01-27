@@ -1,31 +1,40 @@
-# Voice Package
+# Voice Package (DEPRECATED)
 
-The Voice package provides a comprehensive framework for building voice-enabled AI agents, supporting speech-to-text (STT), text-to-speech (TTS), voice activity detection (VAD), turn detection, audio transport, noise cancellation, and complete session management.
+> **DEPRECATED**: This package provides backward-compatible shims only.
+> Voice functionality has been refactored into independent top-level packages for better reusability.
+>
+> Please update your imports to use the new package locations listed below.
+> This package will be removed in v2.0.
 
-## Overview
+## Migration Guide
 
-The Voice package follows the Beluga AI Framework design patterns, providing:
-- **Modular Architecture**: Independent packages for each voice functionality
-- **Provider Abstraction**: Multiple provider implementations for each component
-- **Complete Session Management**: Full lifecycle management for voice interactions
-- **Advanced Features**: Error recovery, timeouts, interruption handling, preemptive generation
-- **Streaming Support**: Real-time streaming for STT, TTS, and agent responses
-- **Observability**: OTEL metrics and tracing throughout
-- **Configuration**: Flexible configuration with validation
+| Old Import | New Import |
+|------------|------------|
+| `pkg/voice/stt` | `pkg/stt` |
+| `pkg/voice/tts` | `pkg/tts` |
+| `pkg/voice/vad` | `pkg/vad` |
+| `pkg/voice/s2s` | `pkg/s2s` |
+| `pkg/voice/transport` | `pkg/audiotransport` |
+| `pkg/voice/noise` | `pkg/noisereduction` |
+| `pkg/voice/turndetection` | `pkg/turndetection` |
+| `pkg/voice/backend` | `pkg/voicebackend` |
+| `pkg/voice/session` | `pkg/voicesession` |
+| `pkg/voice/iface` | `pkg/voiceutils/iface` |
 
-## Package Structure
+## New Package Structure
 
 ```
-pkg/voice/
-├── iface/              # Shared interfaces and types
-├── stt/                # Speech-to-Text package
-├── tts/                # Text-to-Speech package
-├── s2s/                # Speech-to-Speech package (end-to-end speech)
-├── vad/                # Voice Activity Detection package
-├── turndetection/      # Turn Detection package
-├── transport/          # Audio Transport package
-├── noise/              # Noise Cancellation package
-└── session/           # Session Management package
+pkg/
+├── stt/                # Speech-to-Text providers
+├── tts/                # Text-to-Speech providers
+├── vad/                # Voice Activity Detection
+├── s2s/                # Speech-to-Speech (end-to-end)
+├── audiotransport/     # Audio Transport (WebRTC, WebSocket)
+├── noisereduction/     # Noise Cancellation
+├── turndetection/      # Turn Detection
+├── voicebackend/       # Voice Backend integrations
+├── voicesession/       # Session Management
+└── voiceutils/         # Shared interfaces and utilities
 ```
 
 ## Quick Start

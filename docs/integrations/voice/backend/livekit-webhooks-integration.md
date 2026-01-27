@@ -4,7 +4,7 @@ Welcome, colleague! In this guide we'll integrate **LiveKit webhooks** with Belu
 
 ## What you will build
 
-You will set up an HTTP endpoint that receives LiveKit webhooks, verify signatures, parse events (e.g. `room_finished`, `participant_joined`), and correlate them with `pkg/voice/backend` sessions. This allows you to track session lifecycle, clean up state, and trigger downstream logic (e.g. disposition, metrics) when calls end.
+You will set up an HTTP endpoint that receives LiveKit webhooks, verify signatures, parse events (e.g. `room_finished`, `participant_joined`), and correlate them with `pkg/voicebackend` sessions. This allows you to track session lifecycle, clean up state, and trigger downstream logic (e.g. disposition, metrics) when calls end.
 
 ## Learning Objectives
 

@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/mock"
 )
 
 // TestLiveKitIntegration tests basic LiveKit provider integration (T261).
@@ -24,7 +24,7 @@ func TestLiveKitIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	// Create LiveKit backend configuration
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "livekit"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -36,7 +36,7 @@ func TestLiveKitIntegration(t *testing.T) {
 	config.LatencyTarget = 500 * time.Millisecond
 
 	// Try to create backend
-	voiceBackend, err := backend.NewBackend(ctx, "livekit", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "livekit", config)
 	if err != nil {
 		t.Skipf("Skipping LiveKit integration test: %v (LiveKit server may not be available)", err)
 		return
@@ -103,7 +103,7 @@ func TestLiveKitEndToEndLatency(t *testing.T) {
 	ctx := context.Background()
 
 	// Create LiveKit backend
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "livekit"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -113,7 +113,7 @@ func TestLiveKitEndToEndLatency(t *testing.T) {
 	config.ProviderConfig["api_secret"] = "test-secret"
 	config.LatencyTarget = 500 * time.Millisecond
 
-	voiceBackend, err := backend.NewBackend(ctx, "livekit", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "livekit", config)
 	if err != nil {
 		t.Skipf("Skipping latency test: %v", err)
 		return
@@ -168,7 +168,7 @@ func TestLiveKitConnectionFailureRecovery(t *testing.T) {
 	ctx := context.Background()
 
 	// Create LiveKit backend with retry configuration
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "livekit"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -179,7 +179,7 @@ func TestLiveKitConnectionFailureRecovery(t *testing.T) {
 	config.MaxRetries = 3
 	config.RetryDelay = 100 * time.Millisecond
 
-	voiceBackend, err := backend.NewBackend(ctx, "livekit", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "livekit", config)
 	if err != nil {
 		t.Skipf("Skipping recovery test: %v", err)
 		return
@@ -229,7 +229,7 @@ func TestLiveKitHealthCheck(t *testing.T) {
 
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "livekit"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -238,7 +238,7 @@ func TestLiveKitHealthCheck(t *testing.T) {
 	config.ProviderConfig["api_key"] = "test-key"
 	config.ProviderConfig["api_secret"] = "test-secret"
 
-	voiceBackend, err := backend.NewBackend(ctx, "livekit", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "livekit", config)
 	if err != nil {
 		t.Skipf("Skipping health check test: %v", err)
 		return

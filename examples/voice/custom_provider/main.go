@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 // This example demonstrates creating a custom provider
@@ -34,10 +34,10 @@ func main() {
 		return fmt.Sprintf("Custom provider response to: %s", transcript), nil
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(customSTT),
-		session.WithTTSProvider(customTTS),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(customSTT),
+		voicesession.WithTTSProvider(customTTS),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)

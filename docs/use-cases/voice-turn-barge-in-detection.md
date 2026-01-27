@@ -6,7 +6,7 @@ A contact-center platform needed voice agents to stop speaking as soon as the us
 
 **The challenge:** Detect "user is speaking again" quickly enough to cancel TTS playback and switch to listening, without false triggers from background noise or echo.
 
-**The solution:** We used Beluga AI's `pkg/voice/turndetection` and `pkg/voice/vad` together: VAD detects speech onset, and turn detection (heuristic + `DetectTurnWithSilence`) distinguishes mid-turn barge-in from end-of-turn. The voice session stops TTS and processes new user input when barge-in is detected.
+**The solution:** We used Beluga AI's `pkg/turndetection` and `pkg/vad` together: VAD detects speech onset, and turn detection (heuristic + `DetectTurnWithSilence`) distinguishes mid-turn barge-in from end-of-turn. The voice session stops TTS and processes new user input when barge-in is detected.
 
 ## Business Context
 
@@ -53,7 +53,7 @@ By implementing barge-in detection:
 
 ### Constraints
 
-- Reuse existing `pkg/voice/vad` and `pkg/voice/turndetection`; no custom signal processing.
+- Reuse existing `pkg/vad` and `pkg/turndetection`; no custom signal processing.
 - Must work with streaming TTS and incremental VAD output.
 
 ## Architecture Requirements
@@ -99,9 +99,9 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| VAD | Detect speech onset | `pkg/voice/vad` |
-| Turn Detector | Context for barge-in vs end-of-turn | `pkg/voice/turndetection` |
-| Voice Session | Orchestrate TTS stop, listen, STT | `pkg/voice/session` |
+| VAD | Detect speech onset | `pkg/vad` |
+| Turn Detector | Context for barge-in vs end-of-turn | `pkg/turndetection` |
+| Voice Session | Orchestrate TTS stop, listen, STT | `pkg/voicesession` |
 
 ## Implementation
 
@@ -113,10 +113,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	"github.com/lookatitude/beluga-ai/pkg/voice/turndetection"
-	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/voice/turndetection/iface"
-	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	"github.com/lookatitude/beluga-ai/pkg/turndetection"
+	turndetectioniface "github.com/lookatitude/beluga-ai/pkg/turndetection/iface"
+	vadiface "github.com/lookatitude/beluga-ai/pkg/vad/iface"
 )
 
 func setupBargeIn(ctx context.Context) (vadiface.VADProvider, turndetectioniface.TurnDetector, error) {

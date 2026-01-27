@@ -124,7 +124,7 @@ The system works like this:
 | Story State Manager | Manage story state | Custom state management |
 | Content Generator | Generate story content | pkg/llms |
 | Character Voice Mapper | Map characters to voices | Custom mapping logic |
-| TTS Provider | Generate speech | pkg/voice/tts |
+| TTS Provider | Generate speech | pkg/tts |
 | Audio Generator | Generate audio streams | Custom audio processing |
 | Story Graph | Define story structure | Custom graph structure |
 
@@ -140,7 +140,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
     "github.com/lookatitude/beluga-ai/pkg/llms"
 )
 
@@ -173,7 +173,7 @@ func NewInteractiveAudiobook(ctx context.Context) (*InteractiveAudiobook, error)
 ```
 
 **Key decisions:**
-- We chose pkg/voice/tts for speech synthesis
+- We chose pkg/tts for speech synthesis
 - Streaming enables real-time generation
 
 For detailed setup instructions, see the [Voice TTS Guide](../guides/voice-providers.md).
@@ -296,7 +296,7 @@ func (i *InteractiveAudiobook) NarrateWithMonitoring(ctx context.Context, userCh
 
 ### What Worked Well
 
-✅ **Streaming TTS** - Using Beluga AI's pkg/voice/tts with streaming provided real-time generation. Recommendation: Always use streaming TTS for interactive applications.
+✅ **Streaming TTS** - Using Beluga AI's pkg/tts with streaming provided real-time generation. Recommendation: Always use streaming TTS for interactive applications.
 
 ✅ **Character Voice Mapping** - Character voice mapping significantly improved engagement. Voice distinction is critical.
 

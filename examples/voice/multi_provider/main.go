@@ -9,8 +9,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
 // This example demonstrates using multiple providers with fallback
@@ -40,16 +40,16 @@ func main() {
 		return fmt.Sprintf("Response from primary provider for: %s", transcript), nil
 	}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentCallback(agentCallback),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentCallback(agentCallback),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)
 	}
 
-	fmt.Println("Starting multi-provider voice session...")
+	fmt.Println("Starting multi-provider voice voicesession...")
 	err = voiceSession.Start(ctx)
 	if err != nil {
 		log.Fatalf("Failed to start session: %v", err)

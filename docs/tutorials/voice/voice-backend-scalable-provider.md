@@ -1,6 +1,6 @@
 # Building a Scalable Voice Provider
 
-**What you will build:** A production-ready voice backend using Beluga AI's `pkg/voice/backend` with a scalable provider (LiveKit, Vapi, Pipecat, Vocode, or Cartesia). You'll use `NewBackend`, `CreateSession`, `SessionConfig`, and pipeline types (STT/TTS or S2S) to support many concurrent sessions.
+**What you will build:** A production-ready voice backend using Beluga AI's `pkg/voicebackend` with a scalable provider (LiveKit, Vapi, Pipecat, Vocode, or Cartesia). You'll use `NewBackend`, `CreateSession`, `SessionConfig`, and pipeline types (STT/TTS or S2S) to support many concurrent sessions.
 
 ## Learning Objectives
 
@@ -27,9 +27,9 @@ import (
 	"os"
 	"time"
 
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/livekit"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/livekit"
 )
 
 func main() {
@@ -98,7 +98,7 @@ go
 
 ## Step 4: Multiple Providers (Vapi, Pipecat, Vocode, Cartesia)
 
-Use the same pattern with `Provider: "vapi"`, `"pipecat"`, `"vocode"`, or `"cartesia"` and their `ProviderConfig` fields. Register providers via `_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/vapi"` etc.
+Use the same pattern with `Provider: "vapi"`, `"pipecat"`, `"vocode"`, or `"cartesia"` and their `ProviderConfig` fields. Register providers via `_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/vapi"` etc.
 
 ## Verification
 

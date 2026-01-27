@@ -6,7 +6,7 @@ A field-service app needed voice activity detection (VAD) in noisy environments 
 
 **The challenge:** Users trigger actions by voice in loud settings. False triggers waste operations and frustrate users; missed triggers make the app seem unresponsive. VAD had to be tunable and, where possible, use robust models (e.g. Silero, RNNoise) rather than energy-only logic.
 
-**The solution:** We implemented noise-resistant VAD using Beluga AI's `pkg/voice/vad` with the **silero** and **rnnoise** providers. We tuned `Threshold`, `MinSpeechDuration`, and `EnablePreprocessing`, and used `ProcessStream` in the real-time pipeline. OTEL metrics tracked sensitivity and error rates for continued tuning.
+**The solution:** We implemented noise-resistant VAD using Beluga AI's `pkg/vad` with the **silero** and **rnnoise** providers. We tuned `Threshold`, `MinSpeechDuration`, and `EnablePreprocessing`, and used `ProcessStream` in the real-time pipeline. OTEL metrics tracked sensitivity and error rates for continued tuning.
 
 ## Business Context
 
@@ -53,7 +53,7 @@ By implementing noise-resistant VAD:
 
 ### Constraints
 
-- Use `pkg/voice/vad`; no custom signal processing.
+- Use `pkg/vad`; no custom signal processing.
 - ONNX model (Silero) must run on target hardware (CPU or edge).
 
 ## Architecture Requirements
@@ -97,7 +97,7 @@ graph TB
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| VAD Provider | Voice activity detection | `pkg/voice/vad`, silero/rnnoise |
+| VAD Provider | Voice activity detection | `pkg/vad`, silero/rnnoise |
 | Preprocessing | Optional normalization | `EnablePreprocessing` |
 | App logic | Use VAD output | Application-specific |
 

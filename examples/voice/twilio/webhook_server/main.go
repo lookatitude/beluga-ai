@@ -13,8 +13,8 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/lookatitude/beluga-ai/pkg/messaging"
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 )
 
 func main() {
@@ -42,7 +42,7 @@ func main() {
 		},
 	}
 
-	voiceBackend, err := backend.NewBackend(ctx, "twilio", voiceConfig)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "twilio", voiceConfig)
 	if err != nil {
 		log.Fatalf("Failed to create voice backend: %v", err)
 	}

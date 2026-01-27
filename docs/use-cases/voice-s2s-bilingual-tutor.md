@@ -122,7 +122,7 @@ The system works like this:
 
 | Component | Purpose | Technology |
 |-----------|---------|------------|
-| S2S Provider | Handle speech-to-speech | pkg/voice/s2s |
+| S2S Provider | Handle speech-to-speech | pkg/s2s |
 | Pronunciation Analyzer | Analyze pronunciation | Custom analysis logic |
 | Feedback Generator | Generate feedback | pkg/llms with feedback prompts |
 | Conversation Manager | Manage conversations | Custom state management |
@@ -141,7 +141,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/s2s"
+    "github.com/lookatitude/beluga-ai/pkg/s2s"
 )
 
 // BilingualTutor implements language learning tutor
@@ -178,7 +178,7 @@ func NewBilingualTutor(ctx context.Context, targetLanguage string) (*BilingualTu
 ```
 
 **Key decisions:**
-- We chose pkg/voice/s2s for real-time conversations
+- We chose pkg/s2s for real-time conversations
 - Pronunciation analysis enables learning
 
 For detailed setup instructions, see the [Voice S2S Guide](../guides/s2s-implementation.md).
@@ -318,7 +318,7 @@ func (b *BilingualTutor) ConductLessonWithMonitoring(ctx context.Context, studen
 
 ### What Worked Well
 
-✅ **S2S Package** - Using Beluga AI's pkg/voice/s2s provided natural, real-time conversations. Recommendation: Always use S2S package for language learning applications.
+✅ **S2S Package** - Using Beluga AI's pkg/s2s provided natural, real-time conversations. Recommendation: Always use S2S package for language learning applications.
 
 ✅ **Pronunciation Analysis** - Pronunciation analysis enabled effective feedback. Analysis is critical for learning.
 
@@ -330,7 +330,7 @@ func (b *BilingualTutor) ConductLessonWithMonitoring(ctx context.Context, studen
 
 ### Recommendations for Similar Projects
 
-1. **Start with S2S Package** - Use Beluga AI's pkg/voice/s2s from the beginning. It provides natural conversations.
+1. **Start with S2S Package** - Use Beluga AI's pkg/s2s from the beginning. It provides natural conversations.
 
 2. **Implement Pronunciation Analysis** - Pronunciation analysis is critical for language learning. Invest in analysis infrastructure.
 

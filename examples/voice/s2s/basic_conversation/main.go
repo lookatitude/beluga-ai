@@ -7,11 +7,11 @@ import (
 	"os"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 )
 
-// This example demonstrates basic S2S (Speech-to-Speech) usage with a voice session.
+// This example demonstrates basic S2S (Speech-to-Speech) usage with a voice voicesession.
 // S2S providers enable end-to-end speech conversations without explicit intermediate text steps.
 //
 // S2S providers convert speech directly to speech without intermediate text representation,
@@ -41,9 +41,9 @@ func main() {
 
 	// Step 3: Create voice session with S2S provider
 	// Note: S2S is an alternative to STT+TTS, so we don't need STT/TTS providers
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(provider),
-		session.WithConfig(session.DefaultConfig()),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(provider),
+		voicesession.WithConfig(voicesession.DefaultConfig()),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create voice session: %v", err)

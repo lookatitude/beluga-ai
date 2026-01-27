@@ -1,0 +1,23 @@
+package iface
+
+import (
+	"context"
+	"io"
+)
+
+// TTSProvider defines the interface for text-to-speech providers.
+// Implementations of this interface will provide access to different
+// TTS services (e.g., OpenAI, Google, Azure, ElevenLabs).
+//
+// TTSProvider follows the Interface Segregation Principle (ISP) by providing
+// focused methods specific to text-to-speech operations.
+type TTSProvider interface {
+	// GenerateSpeech converts text to speech audio.
+	// It takes a context for cancellation and deadline propagation, and text
+	// and returns audio data or an error if the process fails.
+	GenerateSpeech(ctx context.Context, text string) ([]byte, error)
+
+	// StreamGenerate begins a streaming TTS session.
+	// It takes a context and text and returns a reader for streaming audio chunks.
+	StreamGenerate(ctx context.Context, text string) (io.Reader, error)
+}

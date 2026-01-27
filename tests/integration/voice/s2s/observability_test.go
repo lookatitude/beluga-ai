@@ -9,9 +9,9 @@ import (
 	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/s2s"
-	s2siface "github.com/lookatitude/beluga-ai/pkg/voice/s2s/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/s2s"
+	s2siface "github.com/lookatitude/beluga-ai/pkg/s2s/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -30,8 +30,8 @@ func TestS2S_Observability_Metrics(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{1, 2, 3}, "test-provider", 100*time.Millisecond)))
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -64,8 +64,8 @@ func TestS2S_Observability_Tracing(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{1, 2, 3}, "test-provider", 100*time.Millisecond)))
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -97,8 +97,8 @@ func TestS2S_Observability_Logging(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{1, 2, 3}, "test-provider", 100*time.Millisecond)))
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -135,8 +135,8 @@ func TestS2S_Observability_EndToEnd(t *testing.T) {
 		s2s.WithAudioOutputs(s2s.NewAudioOutput([]byte{1, 2, 3}, "test-provider", 100*time.Millisecond)))
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)
@@ -187,8 +187,8 @@ func TestS2S_Observability_ProviderMetrics(t *testing.T) {
 
 	for i, provider := range providers {
 		t.Run(fmt.Sprintf("provider_%d", i), func(t *testing.T) {
-			voiceSession, err := session.NewVoiceSession(ctx,
-				session.WithS2SProvider(provider),
+			voiceSession, err := voicesession.NewVoiceSession(ctx,
+				voicesession.WithS2SProvider(provider),
 			)
 			require.NoError(t, err)
 
@@ -224,8 +224,8 @@ func TestS2S_Observability_ErrorTracking(t *testing.T) {
 		s2s.WithError(s2s.NewS2SError("Process", s2s.ErrCodeNetworkError, nil)))
 
 	// Create voice session
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithS2SProvider(s2sProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithS2SProvider(s2sProvider),
 	)
 	require.NoError(t, err)
 	assert.NotNil(t, voiceSession)

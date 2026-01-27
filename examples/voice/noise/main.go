@@ -6,7 +6,7 @@ import (
 	"log"
 
 	// Mock provider not available - remove blank import
-	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
+	"github.com/lookatitude/beluga-ai/pkg/noisereduction"
 )
 
 func main() {
@@ -17,14 +17,14 @@ func main() {
 
 	// Step 1: Create Noise Cancellation configuration
 	fmt.Println("\n📋 Step 1: Creating Noise Cancellation configuration...")
-	config := noise.DefaultConfig()
+	config := noisereduction.DefaultConfig()
 	config.Provider = "mock" // Use mock provider for this example
 	// In production, use: "rnnoise", etc.
 	fmt.Println("✅ Configuration created")
 
 	// Step 2: Create Noise Cancellation provider
 	fmt.Println("\n📋 Step 2: Creating Noise Cancellation provider...")
-	provider, err := noise.NewProvider(ctx, config.Provider, config)
+	provider, err := noisereduction.NewProvider(ctx, config.Provider, config)
 	if err != nil {
 		log.Fatalf("Failed to create Noise Cancellation provider: %v", err)
 	}

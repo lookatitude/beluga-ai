@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/noise"
+	"github.com/lookatitude/beluga-ai/pkg/noisereduction"
 	// Import providers to trigger init() registration.
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/rnnoise"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/spectral"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/noise/providers/webrtc"
+	_ "github.com/lookatitude/beluga-ai/pkg/noisereduction/providers/rnnoise"
+	_ "github.com/lookatitude/beluga-ai/pkg/noisereduction/providers/spectral"
+	_ "github.com/lookatitude/beluga-ai/pkg/noisereduction/providers/webrtc"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -19,19 +19,19 @@ func TestNoiseCancellation_Integration(t *testing.T) {
 	// This test uses mock providers to avoid requiring real models
 
 	t.Run("provider creation", func(t *testing.T) {
-		config := noise.DefaultConfig()
+		config := noisereduction.DefaultConfig()
 		config.Provider = "spectral"
 
 		// Test that provider can be created via registry
-		registry := noise.GetRegistry()
+		registry := noisereduction.GetRegistry()
 		provider, err := registry.GetProvider("spectral", config)
 		require.NoError(t, err)
 		assert.NotNil(t, provider)
 	})
 
 	t.Run("mock noise cancellation process", func(t *testing.T) {
-		mockNoise := noise.NewAdvancedMockNoiseCancellation("test",
-			noise.WithProcessedAudio([]byte{5, 4, 3, 2, 1}),
+		mockNoise := noisereduction.NewAdvancedMockNoiseCancellation("test",
+			noisereduction.WithProcessedAudio([]byte{5, 4, 3, 2, 1}),
 		)
 
 		ctx := context.Background()
@@ -43,9 +43,9 @@ func TestNoiseCancellation_Integration(t *testing.T) {
 	})
 
 	t.Run("mock noise cancellation stream", func(t *testing.T) {
-		mockNoise := noise.NewAdvancedMockNoiseCancellation("test",
-			noise.WithProcessedAudio([]byte{5, 4, 3}, []byte{2, 1}),
-			noise.WithProcessingDelay(10*time.Millisecond),
+		mockNoise := noisereduction.NewAdvancedMockNoiseCancellation("test",
+			noisereduction.WithProcessedAudio([]byte{5, 4, 3}, []byte{2, 1}),
+			noisereduction.WithProcessingDelay(10*time.Millisecond),
 		)
 
 		ctx := context.Background()
@@ -84,8 +84,8 @@ func TestNoiseCancellation_Integration(t *testing.T) {
 
 func TestNoiseCancellation_ErrorHandling(t *testing.T) {
 	t.Run("processing error", func(t *testing.T) {
-		mockNoise := noise.NewAdvancedMockNoiseCancellation("test",
-			noise.WithError(noise.NewNoiseCancellationError("Process", noise.ErrCodeProcessingError, nil)),
+		mockNoise := noisereduction.NewAdvancedMockNoiseCancellation("test",
+			noisereduction.WithError(noisereduction.NewNoiseCancellationError("Process", noisereduction.ErrCodeProcessingError, nil)),
 		)
 
 		ctx := context.Background()
@@ -94,23 +94,23 @@ func TestNoiseCancellation_ErrorHandling(t *testing.T) {
 		cleaned, err := mockNoise.Process(ctx, audio)
 		require.Error(t, err)
 		assert.Nil(t, cleaned)
-		assert.True(t, noise.IsRetryableError(err))
+		assert.True(t, noisereduction.IsRetryableError(err))
 	})
 
 	t.Run("timeout error retry", func(t *testing.T) {
-		mockNoise := noise.NewAdvancedMockNoiseCancellation("test",
-			noise.WithError(noise.NewNoiseCancellationError("Process", noise.ErrCodeTimeout, nil)),
+		mockNoise := noisereduction.NewAdvancedMockNoiseCancellation("test",
+			noisereduction.WithError(noisereduction.NewNoiseCancellationError("Process", noisereduction.ErrCodeTimeout, nil)),
 		)
 
 		ctx := context.Background()
 		_, err := mockNoise.Process(ctx, []byte{1, 2, 3})
 		require.Error(t, err)
-		assert.True(t, noise.IsRetryableError(err))
+		assert.True(t, noisereduction.IsRetryableError(err))
 	})
 }
 
 func TestNoiseCancellation_ConcurrentOperations(t *testing.T) {
-	mockNoise := noise.NewAdvancedMockNoiseCancellation("test")
+	mockNoise := noisereduction.NewAdvancedMockNoiseCancellation("test")
 
 	ctx := context.Background()
 	audio := []byte{1, 2, 3, 4, 5}

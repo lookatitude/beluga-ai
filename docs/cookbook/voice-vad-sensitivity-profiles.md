@@ -13,7 +13,7 @@ You need different VAD sensitivity settings per environment (e.g. quiet office v
 
 ## Solution
 
-Define **sensitivity profiles** (e.g. `sensitive`, `balanced`, `robust`) as named configs. Each profile sets `Threshold`, `MinSpeechDuration`, `MaxSilenceDuration`, and optionally `EnablePreprocessing`. Create the VAD provider with the chosen profile at runtime. This works because `pkg/voice/vad` accepts `Config` and options; you map profile names to option sets and reuse them across sessions or deployments.
+Define **sensitivity profiles** (e.g. `sensitive`, `balanced`, `robust`) as named configs. Each profile sets `Threshold`, `MinSpeechDuration`, `MaxSilenceDuration`, and optionally `EnablePreprocessing`. Create the VAD provider with the chosen profile at runtime. This works because `pkg/vad` accepts `Config` and options; you map profile names to option sets and reuse them across sessions or deployments.
 
 ## Code Example
 ```go
@@ -28,9 +28,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/vad"
-	vadiface "github.com/lookatitude/beluga-ai/pkg/voice/vad/iface"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/vad/providers/silero"
+	"github.com/lookatitude/beluga-ai/pkg/vad"
+	vadiface "github.com/lookatitude/beluga-ai/pkg/vad/iface"
+	_ "github.com/lookatitude/beluga-ai/pkg/vad/providers/silero"
 )
 
 var tracer = otel.Tracer("beluga.voice.vad.profiles")

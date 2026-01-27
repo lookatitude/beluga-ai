@@ -50,5 +50,5 @@ provider, err := transport.NewProvider(ctx, config.Provider, config)
 
 ## See Also
 
-- [Transport Package Documentation](../../../pkg/voice/transport/README.md)
+- [Transport Package Documentation](../../../pkg/audiotransport/README.md)
 - [Voice Session Example](../simple/main.go)

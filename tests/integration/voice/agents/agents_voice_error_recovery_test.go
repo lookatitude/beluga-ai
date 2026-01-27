@@ -11,7 +11,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -40,10 +40,10 @@ func TestAgentsVoice_ErrorRecovery_LLMError(t *testing.T) {
 	sttProvider := &mockStreamingSTTProvider{}
 	ttsProvider := &mockStreamingTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent, agentConfig),
 	)
 	require.NoError(t, err)
 
@@ -113,7 +113,7 @@ func TestAgentsVoice_ErrorRecovery_SessionCreationError(t *testing.T) {
 	ctx := context.Background()
 
 	// Try to create session with missing required providers
-	_, err := session.NewVoiceSession(ctx)
+	_, err := voicesession.NewVoiceSession(ctx)
 	assert.Error(t, err, "Should error when required providers are missing")
 	assert.Contains(t, err.Error(), "required", "Error should mention required providers")
 }
@@ -149,10 +149,10 @@ func TestAgentsVoice_ErrorRecovery_RecoveryAfterError(t *testing.T) {
 	ttsProvider := &mockStreamingTTSProvider{}
 
 	// Create first session with error LLM
-	session1, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agentError, agentConfig),
+	session1, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agentError, agentConfig),
 	)
 	require.NoError(t, err)
 
@@ -168,10 +168,10 @@ func TestAgentsVoice_ErrorRecovery_RecoveryAfterError(t *testing.T) {
 	agentRecovered, ok := baseAgentRecovered.(iface.StreamingAgent)
 	require.True(t, ok)
 
-	session2, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agentRecovered, agentConfig),
+	session2, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agentRecovered, agentConfig),
 	)
 	require.NoError(t, err)
 

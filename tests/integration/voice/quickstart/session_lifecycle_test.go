@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -17,9 +17,9 @@ func TestSessionLifecycle_Validation(t *testing.T) {
 	sttProvider := &mockSTTProvider{}
 	ttsProvider := &mockTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
 	)
 	require.NoError(t, err)
 
@@ -54,9 +54,9 @@ func TestStateTransitions_Validation(t *testing.T) {
 	sttProvider := &mockSTTProvider{}
 	ttsProvider := &mockTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
 	)
 	require.NoError(t, err)
 

@@ -8,11 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/lookatitude/beluga-ai/pkg/voice/backend"
-	vbiface "github.com/lookatitude/beluga-ai/pkg/voice/backend/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicebackend"
+	vbiface "github.com/lookatitude/beluga-ai/pkg/voicebackend/iface"
 	// Import providers to trigger init() registration
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/mock"
-	_ "github.com/lookatitude/beluga-ai/pkg/voice/backend/providers/pipecat"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/mock"
+	_ "github.com/lookatitude/beluga-ai/pkg/voicebackend/providers/pipecat"
 )
 
 // TestPipecatIntegration tests basic Pipecat provider integration (T262).
@@ -24,7 +24,7 @@ func TestPipecatIntegration(t *testing.T) {
 	ctx := context.Background()
 
 	// Create Pipecat backend configuration
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "pipecat"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -36,7 +36,7 @@ func TestPipecatIntegration(t *testing.T) {
 	config.LatencyTarget = 500 * time.Millisecond
 
 	// Try to create backend
-	voiceBackend, err := backend.NewBackend(ctx, "pipecat", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "pipecat", config)
 	if err != nil {
 		t.Skipf("Skipping Pipecat integration test: %v (Pipecat server may not be available)", err)
 		return
@@ -102,7 +102,7 @@ func TestPipecatHealthCheck(t *testing.T) {
 
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "pipecat"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -111,7 +111,7 @@ func TestPipecatHealthCheck(t *testing.T) {
 	config.ProviderConfig["daily_api_url"] = "https://api.daily.co"
 	config.ProviderConfig["pipecat_server_url"] = "ws://localhost:8080/ws"
 
-	voiceBackend, err := backend.NewBackend(ctx, "pipecat", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "pipecat", config)
 	if err != nil {
 		t.Skipf("Skipping health check test: %v", err)
 		return
@@ -145,7 +145,7 @@ func TestPipecatGracefulShutdown(t *testing.T) {
 
 	ctx := context.Background()
 
-	config := backend.DefaultConfig()
+	config := voicebackend.DefaultConfig()
 	config.Provider = "pipecat"
 	config.STTProvider = "mock" // Required for stt_tts pipeline
 	config.TTSProvider = "mock" // Required for stt_tts pipeline
@@ -154,7 +154,7 @@ func TestPipecatGracefulShutdown(t *testing.T) {
 	config.ProviderConfig["daily_api_url"] = "https://api.daily.co"
 	config.ProviderConfig["pipecat_server_url"] = "ws://localhost:8080/ws"
 
-	voiceBackend, err := backend.NewBackend(ctx, "pipecat", config)
+	voiceBackend, err := voicebackend.NewBackend(ctx, "pipecat", config)
 	if err != nil {
 		t.Skipf("Skipping graceful shutdown test: %v", err)
 		return

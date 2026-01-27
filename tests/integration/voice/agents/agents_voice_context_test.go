@@ -9,7 +9,7 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/agents"
 	"github.com/lookatitude/beluga-ai/pkg/agents/iface"
 	"github.com/lookatitude/beluga-ai/pkg/schema"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,10 +37,10 @@ func TestAgentsVoice_Context_Preservation(t *testing.T) {
 	sttProvider := &mockStreamingSTTProvider{}
 	ttsProvider := &mockStreamingTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent, agentConfig),
 	)
 	require.NoError(t, err)
 
@@ -85,10 +85,10 @@ func TestAgentsVoice_Context_MultipleTurns(t *testing.T) {
 	sttProvider := &mockStreamingSTTProvider{}
 	ttsProvider := &mockStreamingTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent, agentConfig),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent, agentConfig),
 	)
 	require.NoError(t, err)
 
@@ -142,17 +142,17 @@ func TestAgentsVoice_Context_Isolation(t *testing.T) {
 	ttsProvider := &mockStreamingTTSProvider{}
 
 	// Create two separate sessions
-	session1, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent1, agentConfig1),
+	session1, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent1, agentConfig1),
 	)
 	require.NoError(t, err)
 
-	session2, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
-		session.WithAgentInstance(agent2, agentConfig2),
+	session2, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
+		voicesession.WithAgentInstance(agent2, agentConfig2),
 	)
 	require.NoError(t, err)
 

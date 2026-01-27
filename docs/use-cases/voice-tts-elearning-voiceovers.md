@@ -125,7 +125,7 @@ The system works like this:
 | Content Parser | Parse course content | Custom parsing logic |
 | Language Detector | Detect content language | Language detection library |
 | Text Preprocessor | Preprocess text | Custom preprocessing logic |
-| TTS Provider | Generate speech | pkg/voice/tts |
+| TTS Provider | Generate speech | pkg/tts |
 | Voice Selector | Select appropriate voice | Custom selection logic |
 | SSML Processor | Process SSML | Custom SSML logic |
 
@@ -141,7 +141,7 @@ import (
     "context"
     "fmt"
     
-    "github.com/lookatitude/beluga-ai/pkg/voice/tts"
+    "github.com/lookatitude/beluga-ai/pkg/tts"
 )
 
 // VoiceoverGenerator implements localized voiceover generation
@@ -181,7 +181,7 @@ func NewVoiceoverGenerator(ctx context.Context) (*VoiceoverGenerator, error) {
 ```
 
 **Key decisions:**
-- We chose pkg/voice/tts for speech synthesis
+- We chose pkg/tts for speech synthesis
 - Multi-language support enables localization
 
 For detailed setup instructions, see the [Voice TTS Guide](../guides/voice-providers.md).
@@ -316,7 +316,7 @@ func (v *VoiceoverGenerator) GenerateBatchVoiceovers(ctx context.Context, course
 
 ### What Worked Well
 
-✅ **TTS Package** - Using Beluga AI's pkg/voice/tts provided multi-language speech synthesis. Recommendation: Always use TTS package for voiceover generation.
+✅ **TTS Package** - Using Beluga AI's pkg/tts provided multi-language speech synthesis. Recommendation: Always use TTS package for voiceover generation.
 
 ✅ **SSML Processing** - SSML significantly improved pronunciation accuracy. SSML is critical for educational content.
 
@@ -328,7 +328,7 @@ func (v *VoiceoverGenerator) GenerateBatchVoiceovers(ctx context.Context, course
 
 ### Recommendations for Similar Projects
 
-1. **Start with TTS Package** - Use Beluga AI's pkg/voice/tts from the beginning. It provides multi-language support.
+1. **Start with TTS Package** - Use Beluga AI's pkg/tts from the beginning. It provides multi-language support.
 
 2. **Implement SSML** - SSML is critical for pronunciation accuracy. Invest in SSML processing.
 

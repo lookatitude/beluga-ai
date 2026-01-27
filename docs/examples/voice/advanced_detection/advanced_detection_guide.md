@@ -82,7 +82,7 @@ import (
     "sync"
     "time"
 
-    "github.com/lookatitude/beluga-ai/pkg/voice/vad"
+    "github.com/lookatitude/beluga-ai/pkg/vad"
     "github.com/lookatitude/beluga-ai/pkg/voice/turn"
     "github.com/lookatitude/beluga-ai/pkg/voice/denoise"
     "go.opentelemetry.io/otel"

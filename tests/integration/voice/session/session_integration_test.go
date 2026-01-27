@@ -5,8 +5,8 @@ import (
 	"io"
 	"testing"
 
-	voiceiface "github.com/lookatitude/beluga-ai/pkg/voice/iface"
-	"github.com/lookatitude/beluga-ai/pkg/voice/session"
+	voiceiface "github.com/lookatitude/beluga-ai/pkg/voiceutils/iface"
+	"github.com/lookatitude/beluga-ai/pkg/voicesession"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,10 +47,10 @@ func TestSession_Integration(t *testing.T) {
 			return "response", nil
 		}
 
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithSTTProvider(sttProvider),
-			session.WithTTSProvider(ttsProvider),
-			session.WithAgentCallback(agentCallback),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithSTTProvider(sttProvider),
+			voicesession.WithTTSProvider(ttsProvider),
+			voicesession.WithAgentCallback(agentCallback),
 		)
 		require.NoError(t, err)
 		assert.NotNil(t, voiceSession)
@@ -62,9 +62,9 @@ func TestSession_Integration(t *testing.T) {
 		sttProvider := &mockSTTProvider{}
 		ttsProvider := &mockTTSProvider{}
 
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithSTTProvider(sttProvider),
-			session.WithTTSProvider(ttsProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithSTTProvider(sttProvider),
+			voicesession.WithTTSProvider(ttsProvider),
 		)
 		require.NoError(t, err)
 
@@ -85,9 +85,9 @@ func TestSession_Integration(t *testing.T) {
 		sttProvider := &mockSTTProvider{}
 		ttsProvider := &mockTTSProvider{}
 
-		voiceSession, err := session.NewVoiceSession(ctx,
-			session.WithSTTProvider(sttProvider),
-			session.WithTTSProvider(ttsProvider),
+		voiceSession, err := voicesession.NewVoiceSession(ctx,
+			voicesession.WithSTTProvider(sttProvider),
+			voicesession.WithTTSProvider(ttsProvider),
 		)
 		require.NoError(t, err)
 
@@ -106,8 +106,8 @@ func TestSession_ErrorHandling(t *testing.T) {
 	t.Run("start already active session", func(t *testing.T) {
 		ctx := context.Background()
 
-		mockSession := session.NewAdvancedMockSession("test",
-			session.WithActive(true),
+		mockSession := voicesession.NewAdvancedMockSession("test",
+			voicesession.WithActive(true),
 		)
 
 		err := mockSession.Start(ctx)
@@ -117,8 +117,8 @@ func TestSession_ErrorHandling(t *testing.T) {
 	t.Run("stop inactive session", func(t *testing.T) {
 		ctx := context.Background()
 
-		mockSession := session.NewAdvancedMockSession("test",
-			session.WithActive(false),
+		mockSession := voicesession.NewAdvancedMockSession("test",
+			voicesession.WithActive(false),
 		)
 
 		err := mockSession.Stop(ctx)
@@ -132,9 +132,9 @@ func TestSession_StateTransitions(t *testing.T) {
 	sttProvider := &mockSTTProvider{}
 	ttsProvider := &mockTTSProvider{}
 
-	voiceSession, err := session.NewVoiceSession(ctx,
-		session.WithSTTProvider(sttProvider),
-		session.WithTTSProvider(ttsProvider),
+	voiceSession, err := voicesession.NewVoiceSession(ctx,
+		voicesession.WithSTTProvider(sttProvider),
+		voicesession.WithTTSProvider(ttsProvider),
 	)
 	require.NoError(t, err)
 
