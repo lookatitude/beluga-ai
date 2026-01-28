@@ -1,4 +1,4 @@
-package providers
+package base
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func TestBaseChatMessageHistory(t *testing.T) {
 	t.Run("NewBaseChatMessageHistoryWithOptions", func(t *testing.T) {
 		history := NewBaseChatMessageHistory(WithMaxHistorySize(5))
 		assert.NotNil(t, history)
-		assert.Equal(t, 5, history.maxSize)
+		assert.Equal(t, 5, history.GetMaxSize())
 	})
 
 	t.Run("AddAndGetMessages", func(t *testing.T) {
@@ -119,13 +119,13 @@ func TestCompositeChatMessageHistory(t *testing.T) {
 		primary := NewBaseChatMessageHistory()
 		secondary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary, WithSecondaryHistory(secondary))
-		assert.NotNil(t, composite.secondary)
+		assert.NotNil(t, composite.GetSecondary())
 	})
 
 	t.Run("WithMaxSize", func(t *testing.T) {
 		primary := NewBaseChatMessageHistory()
 		composite := NewCompositeChatMessageHistory(primary, WithMaxSize(10))
-		assert.Equal(t, 10, composite.maxSize)
+		assert.Equal(t, 10, composite.GetMaxSize())
 	})
 
 	t.Run("AddAndGetMessages", func(t *testing.T) {

@@ -35,6 +35,7 @@ import (
 	"time"
 
 	"github.com/lookatitude/beluga-ai/pkg/core"
+	llmsiface "github.com/lookatitude/beluga-ai/pkg/llms/iface"
 	"github.com/lookatitude/beluga-ai/pkg/vectorstores"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
@@ -255,6 +256,46 @@ func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Op
 	return newVectorStoreRetrieverInternal(vectorStore, opts), nil
 }
 
+// NewMultiQueryRetriever creates a new MultiQueryRetriever with the given retriever and LLM.
+// The retriever generates multiple query variations using the LLM to improve retrieval results.
+//
+// Parameters:
+//   - retriever: Underlying retriever to use for document retrieval
+//   - llm: Language model for generating query variations
+//   - options: Optional configuration functions
+//
+// Returns:
+//   - *MultiQueryRetriever: A new multi-query retriever instance
+//   - error: Configuration validation errors
+func NewMultiQueryRetriever(retriever core.Retriever, llm llmsiface.ChatModel, options ...Option) (*MultiQueryRetriever, error) {
+	opts := &RetrieverOptions{
+		DefaultK:      3, // Default number of query variations
+		EnableTracing: true,
+		EnableMetrics: true,
+	}
+
+	for _, option := range options {
+		option(opts)
+	}
+
+	// Set up default logger if not provided
+	if opts.Logger == nil {
+		opts.Logger = slog.Default()
+	}
+
+	if retriever == nil {
+		return nil, NewRetrieverErrorWithMessage("NewMultiQueryRetriever", nil, ErrCodeInvalidConfig,
+			"retriever is required")
+	}
+
+	if llm == nil {
+		return nil, NewRetrieverErrorWithMessage("NewMultiQueryRetriever", nil, ErrCodeInvalidConfig,
+			"LLM is required")
+	}
+
+	return newMultiQueryRetrieverInternal(retriever, llm, opts), nil
+}
+
 // NewVectorStoreRetrieverFromConfig creates a VectorStoreRetriever from a configuration struct.
 //
 // Example:
@@ -265,7 +306,7 @@ func NewVectorStoreRetriever(vectorStore vectorstores.VectorStore, options ...Op
 //	    Timeout: 30 * time.Second,
 //	}
 //	retriever, err := retrievers.NewVectorStoreRetrieverFromConfig(vectorStore, config)
-func NewVectorStoreRetrieverFromConfig(vectorStore vectorstores.VectorStore, config VectorStoreRetrieverConfig) (*VectorStoreRetriever, error) {
+func NewVectorStoreRetrieverFromConfig(vs vectorstores.VectorStore, config VectorStoreRetrieverConfig) (*VectorStoreRetriever, error) {
 	// Apply defaults to unset fields
 	config.ApplyDefaults()
 
@@ -284,18 +325,40 @@ func NewVectorStoreRetrieverFromConfig(vectorStore vectorstores.VectorStore, con
 		Logger:         slog.Default(),
 	}
 
-	return newVectorStoreRetrieverInternal(vectorStore, opts), nil
+	return newVectorStoreRetrieverInternal(vs, opts), nil
 }
 
 // GetRetrieverTypes returns a list of available retriever types.
+// Deprecated: Use ListProviders() instead for a dynamic list of registered providers.
 func GetRetrieverTypes() []string {
 	return []string{
 		"vector_store",
-		// Add more retriever types as they are implemented
+		"multi_query",
+		"mock",
 	}
 }
 
 // ValidateRetrieverConfig validates a retriever configuration.
 func ValidateRetrieverConfig(config Config) error {
 	return config.Validate()
+}
+
+// WithScoreThreshold sets the minimum similarity score threshold.
+// Documents with scores below this threshold will be filtered out.
+//
+// Parameters:
+//   - threshold: Minimum score (0.0 to 1.0) for returned documents
+//
+// Returns:
+//   - Option: Configuration option function
+//
+// Example:
+//
+//	retriever, _ := retrievers.NewVectorStoreRetriever(store,
+//	    retrievers.WithScoreThreshold(0.7),
+//	)
+func WithScoreThreshold(threshold float32) Option {
+	return func(opts *RetrieverOptions) {
+		opts.ScoreThreshold = threshold
+	}
 }

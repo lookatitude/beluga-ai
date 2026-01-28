@@ -70,7 +70,7 @@ func TestAdvancedMockRetriever(t *testing.T) {
 			retriever: NewAdvancedMockRetriever("threshold-retriever", "vector_store",
 				WithMockDocuments(CreateTestRetrievalDocuments(10)),
 				WithMockScores([]float32{0.9, 0.8, 0.6, 0.4, 0.3, 0.2, 0.1, 0.05, 0.02, 0.01}),
-				WithScoreThreshold(0.5)),
+				WithMockScoreThreshold(0.5)),
 			query:             "high relevance query",
 			expectedError:     false,
 			expectedCallCount: 1,
@@ -228,7 +228,7 @@ func TestRetrieverConfiguration(t *testing.T) {
 				return NewAdvancedMockRetriever("threshold-test", "vector_store",
 					WithMockDocuments(CreateTestRetrievalDocuments(6)),
 					WithMockScores(scores),
-					WithScoreThreshold(0.5))
+					WithMockScoreThreshold(0.5))
 			},
 			validate: func(t *testing.T, retriever *AdvancedMockRetriever, results []schema.Document) {
 				// Should filter out documents with scores < 0.5 (last 3 documents)

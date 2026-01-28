@@ -99,8 +99,8 @@ func WithMockDefaultK(k int) MockRetrieverOption {
 	}
 }
 
-// WithScoreThreshold sets the minimum similarity score threshold.
-func WithScoreThreshold(threshold float32) MockRetrieverOption {
+// WithMockScoreThreshold sets the minimum similarity score threshold for the mock.
+func WithMockScoreThreshold(threshold float32) MockRetrieverOption {
 	return func(r *AdvancedMockRetriever) {
 		r.scoreThreshold = threshold
 	}
