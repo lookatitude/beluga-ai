@@ -1152,6 +1152,35 @@ For practical examples of these patterns in action, see:
 - **[Cross-Package Patterns](./concepts/patterns/cross-package-patterns.md)** - How patterns work together across packages
 - **[Pattern Decision Guide](./concepts/patterns/pattern-decision-guide.md)** - When to use which pattern
 
+## Intentional Deviations
+
+Some packages intentionally deviate from the standard structure for documented architectural reasons. These deviations are approved and should not be "fixed" as they serve specific purposes.
+
+### config package
+- **Deviation**: No `registry.go`
+- **Rationale**: Configuration is loaded from files and environment variables, not created through provider factories. The config package uses direct factory functions for loading config from various sources (Viper, environment, defaults).
+- **Pattern used**: Factory functions (`LoadConfig`, `LoadFromFile`, `LoadFromEnv`)
+
+### core package
+- **Deviation**: No `{package_name}.go` main file
+- **Rationale**: Utility package containing multiple independent entry points that serve different purposes. There is no single "main" concept for this package.
+- **Entry points**: `di.go` (dependency injection), `runnable.go` (runnable interface), `errors.go` (error utilities)
+
+### schema package
+- **Deviation**: No `registry.go`
+- **Rationale**: Pure data structure definitions package. Contains only type definitions (Message, Document, etc.) with no factory or provider patterns needed.
+- **Pattern used**: Direct struct exports
+
+### voicesession package
+- **Deviation**: No `registry.go`
+- **Rationale**: Single implementation package, not a multi-provider package. Voice session management has one implementation that orchestrates voice sub-packages.
+- **Pattern used**: Direct constructor function (`NewSession`)
+
+### voiceutils package
+- **Deviation**: No main API file
+- **Rationale**: Shared interfaces and utility types package. Exists solely to provide common types imported by other voice packages (stt, tts, vad, etc.) to avoid import cycles.
+- **Pattern used**: Interface definitions and shared types only
+
 ## Implementation Status ✅ **100% COMPLETE**
 
 ### **All 21 Framework Packages Now Compliant**

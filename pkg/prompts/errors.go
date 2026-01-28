@@ -4,6 +4,7 @@ package prompts
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/lookatitude/beluga-ai/pkg/prompts/iface"
 )
@@ -19,6 +20,12 @@ const (
 	ErrCodeAdapterError       = iface.ErrCodeAdapterError
 	ErrCodeConfigurationError = iface.ErrCodeConfigurationError
 	ErrCodeTimeout            = iface.ErrCodeTimeout
+	ErrCodeProviderNotFound   = "provider_not_found"
+)
+
+// Static base errors for dynamic error wrapping (err113 compliance).
+var (
+	ErrProviderNotFound = errors.New("provider not found")
 )
 
 // PromptError represents a custom error type for the prompts package.
@@ -98,4 +105,17 @@ func IsErrorCode(err error, code string) bool {
 		return promptErr.Code == code
 	}
 	return false
+}
+
+// NewProviderNotFoundError creates a new provider not found error.
+func NewProviderNotFoundError(op, providerName string) *PromptError {
+	return &PromptError{
+		Code:    ErrCodeProviderNotFound,
+		Message: fmt.Sprintf("provider '%s' not found in registry", providerName),
+		Op:      op,
+		Err:     ErrProviderNotFound,
+		Context: map[string]any{
+			"provider_name": providerName,
+		},
+	}
 }

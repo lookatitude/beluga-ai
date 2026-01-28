@@ -12,6 +12,18 @@ import (
 	"github.com/lookatitude/beluga-ai/pkg/prompts/iface"
 )
 
+func init() {
+	// Register the mock template engine provider with the global registry.
+	prompts.Register("mock", func(_ context.Context, _ any) (iface.TemplateEngine, error) {
+		return NewMockTemplateEngine(), nil
+	})
+
+	// Register the thread-safe mock template engine provider with the global registry.
+	prompts.Register("mock-threadsafe", func(_ context.Context, _ any) (iface.TemplateEngine, error) {
+		return NewThreadSafeMockTemplateEngine(), nil
+	})
+}
+
 // MockTemplateEngine is a mock implementation of TemplateEngine for testing.
 type MockTemplateEngine struct {
 	Templates map[string]string
