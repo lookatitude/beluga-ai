@@ -106,6 +106,11 @@ The following packages are permitted to deviate from the standard structure for 
 - **Rationale**: Shared interfaces and utility types for other voice packages
 - **Pattern used**: Interface definitions only, imported by other packages
 
+### convenience package
+- **Deviation**: Namespace package with no root-level code files
+- **Rationale**: Aggregation package grouping related convenience sub-packages
+- **Pattern used**: Sub-packages (agent, rag, voiceagent, mock, context, provider) each follow standard structure independently
+
 ## 4. Provider Registration Pattern
 
 Providers must register themselves using `init()` functions:

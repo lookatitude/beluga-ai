@@ -1181,6 +1181,12 @@ Some packages intentionally deviate from the standard structure for documented a
 - **Rationale**: Shared interfaces and utility types package. Exists solely to provide common types imported by other voice packages (stt, tts, vad, etc.) to avoid import cycles.
 - **Pattern used**: Interface definitions and shared types only
 
+### convenience package
+- **Deviation**: Namespace package with no root-level code files
+- **Rationale**: Aggregation package that groups related convenience sub-packages (agent, rag, voiceagent, mock, context, provider). The root directory contains only a README.md. Each sub-package follows the standard structure independently with its own metrics.go, errors.go, test_utils.go, and advanced_test.go.
+- **Pattern used**: Namespace/aggregation pattern where sub-packages are the primary units
+- **Sub-packages**: `agent/`, `rag/`, `voiceagent/`, `mock/`, `context/`, `provider/`
+
 ## Implementation Status ✅ **100% COMPLETE**
 
 ### **All 21 Framework Packages Now Compliant**

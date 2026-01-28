@@ -60,18 +60,23 @@ The following packages fully comply with the naming conventions:
 
 *Intentional deviations documented in standards.md
 
-### Category 2: Non-Compliant - Naming Issues (2 packages)
+### Category 2: Fixed - Naming Issues (5 packages) ✅
 
-| Package | Issue | Current File | Expected File |
-|---------|-------|--------------|---------------|
-| noisereduction | Main file misnamed | noise.go | noisereduction.go |
-| orchestration | Main file misnamed | orchestrator.go | orchestration.go |
+The following naming issues were identified and fixed:
 
-### Category 3: Non-Compliant - Missing Registry (1 package)
+| Package | Issue | Previous File | Fixed File | Status |
+|---------|-------|---------------|------------|--------|
+| noisereduction | Main file misnamed | noise.go | noisereduction.go | ✅ Fixed |
+| orchestration | Main file misnamed | orchestrator.go | orchestration.go | ✅ Fixed |
+| audiotransport | Main file misnamed | transport.go | audiotransport.go | ✅ Fixed |
+| voicebackend | Main file misnamed | backend.go | voicebackend.go | ✅ Fixed |
+| voicesession | Main file misnamed | session.go | voicesession.go | ✅ Fixed |
 
-| Package | Issue | Has Providers | Fix Required |
-|---------|-------|---------------|--------------|
-| prompts | Missing registry.go | Yes (providers/) | Add registry.go |
+### Category 3: Fixed - Missing Registry (1 package) ✅
+
+| Package | Issue | Fix Applied | Status |
+|---------|-------|-------------|--------|
+| prompts | Missing registry.go | Added registry.go and iface/registry.go | ✅ Fixed |
 
 ## Decisions
 
@@ -112,6 +117,11 @@ The following packages fully comply with the naming conventions:
 5. **voiceutils** - No main API file
    - Shared interfaces and utility types only
    - Imported by other voice packages
+
+6. **convenience** - Namespace package with no root-level code
+   - Aggregation package grouping convenience sub-packages
+   - Sub-packages (agent, rag, voiceagent, mock, context, provider) follow standard structure
+   - Root directory contains only README.md
 
 ## Impact Assessment
 
