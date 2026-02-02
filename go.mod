@@ -15,9 +15,9 @@ require (
 	github.com/gorilla/mux v1.8.1
 	github.com/gorilla/websocket v1.5.3
 	github.com/jltobler/go-rcon v0.3.0
-	github.com/lib/pq v1.10.9
+	github.com/lib/pq v1.11.1
 	github.com/livekit/protocol v1.44.0
-	github.com/ollama/ollama v0.15.1
+	github.com/ollama/ollama v0.15.4
 	github.com/sashabaranov/go-openai v1.41.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
