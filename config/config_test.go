@@ -1,0 +1,348 @@
+package config
+
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+type testConfig struct {
+	Host    string `json:"host" default:"localhost" required:"true"`
+	Port    int    `json:"port" default:"8080" min:"1" max:"65535"`
+	Debug   bool   `json:"debug" default:"false"`
+	Workers int    `json:"workers" default:"4" min:"1" max:"100"`
+}
+
+// requiredNoDefaultConfig has a required field with NO default — used to test
+// that missing required fields trigger validation errors.
+type requiredNoDefaultConfig struct {
+	Name    string `json:"name" required:"true"`
+	Timeout int    `json:"timeout" default:"30"`
+}
+
+type nestedConfig struct {
+	App testConfig `json:"app"`
+	Env string     `json:"env" default:"production"`
+}
+
+func TestLoad_JSON(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	data := `{"host": "0.0.0.0", "port": 9090, "debug": true, "workers": 8}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	cfg, err := Load[testConfig](path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Host != "0.0.0.0" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "0.0.0.0")
+	}
+	if cfg.Port != 9090 {
+		t.Errorf("Port = %d, want %d", cfg.Port, 9090)
+	}
+	if !cfg.Debug {
+		t.Error("Debug = false, want true")
+	}
+	if cfg.Workers != 8 {
+		t.Errorf("Workers = %d, want %d", cfg.Workers, 8)
+	}
+}
+
+func TestLoad_Defaults(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	// Only provide host (required). Port and Workers should get defaults.
+	data := `{"host": "myhost"}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	cfg, err := Load[testConfig](path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	if cfg.Host != "myhost" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "myhost")
+	}
+	if cfg.Port != 8080 {
+		t.Errorf("Port = %d, want %d (default)", cfg.Port, 8080)
+	}
+	if cfg.Workers != 4 {
+		t.Errorf("Workers = %d, want %d (default)", cfg.Workers, 4)
+	}
+}
+
+func TestLoad_FileNotFound(t *testing.T) {
+	_, err := Load[testConfig]("/nonexistent/config.json")
+	if err == nil {
+		t.Fatal("Load() expected error for missing file")
+	}
+}
+
+func TestLoad_InvalidJSON(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "bad.json")
+
+	if err := os.WriteFile(path, []byte(`{invalid json}`), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	_, err := Load[testConfig](path)
+	if err == nil {
+		t.Fatal("Load() expected error for invalid JSON")
+	}
+}
+
+func TestLoad_UnsupportedExtension(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.yaml")
+
+	if err := os.WriteFile(path, []byte("host: localhost"), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	_, err := Load[testConfig](path)
+	if err == nil {
+		t.Fatal("Load() expected error for unsupported extension")
+	}
+}
+
+func TestLoad_ValidationFailure_Required(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	// requiredNoDefaultConfig has Name required with no default.
+	// An empty JSON object means Name stays "" → required check fails.
+	data := `{}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	_, err := Load[requiredNoDefaultConfig](path)
+	if err == nil {
+		t.Fatal("Load() expected validation error for missing required field")
+	}
+}
+
+func TestLoad_ValidationFailure_Min(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	// Use a negative value to bypass default (which only applies to zero values).
+	data := `{"host": "localhost", "port": -1}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	_, err := Load[testConfig](path)
+	if err == nil {
+		t.Fatal("Load() expected validation error for port < min")
+	}
+}
+
+func TestLoad_ValidationFailure_Max(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	data := `{"host": "localhost", "port": 99999}`
+	if err := os.WriteFile(path, []byte(data), 0644); err != nil {
+		t.Fatalf("WriteFile error = %v", err)
+	}
+
+	_, err := Load[testConfig](path)
+	if err == nil {
+		t.Fatal("Load() expected validation error for port > max")
+	}
+}
+
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		cfg     testConfig
+		wantErr bool
+	}{
+		{
+			name:    "valid",
+			cfg:     testConfig{Host: "localhost", Port: 8080, Workers: 4},
+			wantErr: false,
+		},
+		{
+			name:    "missing_required",
+			cfg:     testConfig{Host: "", Port: 8080, Workers: 4},
+			wantErr: true,
+		},
+		{
+			name:    "port_below_min",
+			cfg:     testConfig{Host: "localhost", Port: 0, Workers: 4},
+			wantErr: true,
+		},
+		{
+			name:    "port_above_max",
+			cfg:     testConfig{Host: "localhost", Port: 70000, Workers: 4},
+			wantErr: true,
+		},
+		{
+			name:    "workers_below_min",
+			cfg:     testConfig{Host: "localhost", Port: 80, Workers: 0},
+			wantErr: true,
+		},
+		{
+			name:    "workers_above_max",
+			cfg:     testConfig{Host: "localhost", Port: 80, Workers: 200},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := Validate(&tt.cfg)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestValidate_NonStruct(t *testing.T) {
+	n := 42
+	err := Validate(&n)
+	if err == nil {
+		t.Error("Validate() expected error for non-struct")
+	}
+}
+
+func TestMergeEnv(t *testing.T) {
+	cfg := testConfig{Host: "original", Port: 3000, Workers: 2}
+
+	t.Setenv("TEST_HOST", "fromenv")
+	t.Setenv("TEST_PORT", "9999")
+
+	err := MergeEnv(&cfg, "TEST")
+	if err != nil {
+		t.Fatalf("MergeEnv() error = %v", err)
+	}
+
+	if cfg.Host != "fromenv" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "fromenv")
+	}
+	if cfg.Port != 9999 {
+		t.Errorf("Port = %d, want %d", cfg.Port, 9999)
+	}
+	// Workers should remain unchanged (no env var set).
+	if cfg.Workers != 2 {
+		t.Errorf("Workers = %d, want %d (unchanged)", cfg.Workers, 2)
+	}
+}
+
+func TestMergeEnv_Bool(t *testing.T) {
+	cfg := testConfig{Host: "h", Port: 80, Workers: 1}
+
+	t.Setenv("TEST_DEBUG", "true")
+
+	if err := MergeEnv(&cfg, "TEST"); err != nil {
+		t.Fatalf("MergeEnv() error = %v", err)
+	}
+	if !cfg.Debug {
+		t.Error("Debug = false, want true")
+	}
+}
+
+func TestMergeEnv_NonPointer(t *testing.T) {
+	cfg := testConfig{}
+	err := MergeEnv(cfg, "TEST")
+	if err == nil {
+		t.Error("MergeEnv() expected error for non-pointer argument")
+	}
+}
+
+func TestLoadFromEnv(t *testing.T) {
+	t.Setenv("APP_HOST", "envhost")
+	t.Setenv("APP_PORT", "4000")
+	t.Setenv("APP_WORKERS", "16")
+
+	cfg, err := LoadFromEnv[testConfig]("APP")
+	if err != nil {
+		t.Fatalf("LoadFromEnv() error = %v", err)
+	}
+
+	if cfg.Host != "envhost" {
+		t.Errorf("Host = %q, want %q", cfg.Host, "envhost")
+	}
+	if cfg.Port != 4000 {
+		t.Errorf("Port = %d, want %d", cfg.Port, 4000)
+	}
+	if cfg.Workers != 16 {
+		t.Errorf("Workers = %d, want %d", cfg.Workers, 16)
+	}
+}
+
+func TestLoadFromEnv_DefaultsApplied(t *testing.T) {
+	// No env vars set; defaults should be used.
+	// But host is required, so set it.
+	t.Setenv("DEF_HOST", "required-host")
+
+	cfg, err := LoadFromEnv[testConfig]("DEF")
+	if err != nil {
+		t.Fatalf("LoadFromEnv() error = %v", err)
+	}
+
+	if cfg.Port != 8080 {
+		t.Errorf("Port = %d, want %d (default)", cfg.Port, 8080)
+	}
+	if cfg.Workers != 4 {
+		t.Errorf("Workers = %d, want %d (default)", cfg.Workers, 4)
+	}
+}
+
+func TestValidationError_Error(t *testing.T) {
+	ve := &ValidationError{
+		Field:   "port",
+		Message: "value 0 is less than minimum 1",
+	}
+	got := ve.Error()
+	want := `config: validation failed for "port": value 0 is less than minimum 1`
+	if got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
+	}
+}
+
+func TestToEnvName(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"Host", "HOST"},
+		{"Port", "PORT"},
+		{"BaseURL", "BASE_URL"}, // Consecutive uppercase kept together (acronym).
+		{"MaxRetryCount", "MAX_RETRY_COUNT"},
+		{"simple", "SIMPLE"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			got := toEnvName(tt.input)
+			if got != tt.want {
+				t.Errorf("toEnvName(%q) = %q, want %q", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+// isValidationError checks if err's chain contains a *ValidationError.
+func isValidationError(err error, target **ValidationError) bool {
+	if err == nil {
+		return false
+	}
+	// Try to unwrap to find ValidationError.
+	if ve, ok := err.(*ValidationError); ok {
+		*target = ve
+		return true
+	}
+	return false
+}
