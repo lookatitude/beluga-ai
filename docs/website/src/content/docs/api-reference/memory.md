@@ -1,36 +1,27 @@
 ---
-title: Memory Package API
-description: API documentation for the MemGPT-inspired 3-tier memory system.
+title: "Memory Package"
+description: "MemGPT-inspired 3-tier memory: Core, Recall, Archival, graph memory, composite"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/memory"
 ```
 
-Package memory provides the MemGPT-inspired 3-tier memory system: Core (always-in-context), Recall (searchable history), and Archival (vector-based long-term storage), plus Graph memory for entity-relationships.
+Package memory provides the MemGPT-inspired 3-tier memory system for Beluga AI agents.
 
-## Quick Start
+The memory system implements the MemGPT model with three tiers, each serving
+a distinct role in agent cognition:
 
-```go
-// Composite memory with all tiers
-mem := memory.NewComposite(
-    memory.WithCore(core),
-    memory.WithRecall(recall),
-    memory.WithArchival(archival),
-    memory.WithGraph(graphStore),
-)
+- Core: always-in-context persona and human blocks (editable by the agent)
+- Recall: searchable conversation history (message-level persistence)
+- Archival: vector-based long-term storage (embedding + retrieval)
 
-// Save conversation turn
-err := mem.Save(ctx, inputMsg, outputMsg)
-
-// Load relevant context
-msgs, err := mem.Load(ctx, "What did we discuss about Go?")
-
-// Search long-term storage
-docs, err := mem.Search(ctx, "Go best practices", 10)
-```
+Additionally, a graph memory tier provides entity-relationship storage for
+structured knowledge representation via the `GraphStore` interface.
 
 ## Memory Interface
+
+The primary interface is `Memory`, which all tiers implement:
 
 ```go
 type Memory interface {
@@ -41,182 +32,112 @@ type Memory interface {
 }
 ```
 
+## Registry Pattern
+
+The package follows Beluga's standard registry pattern. Providers register
+via init() and are instantiated with `New`:
+
+```go
+mem, err := memory.New("composite", cfg)
+if err != nil {
+    log.Fatal(err)
+}
+err = mem.Save(ctx, input, output)
+msgs, err := mem.Load(ctx, "search query")
+```
+
+Built-in provider names: "core", "recall", "archival", "composite".
+Use `List` to discover all registered providers.
+
 ## Core Memory
 
-Always-in-context persona and human blocks:
+`Core` holds persona and human text blocks that are always included in
+the LLM context window. These blocks are small, high-value information
+the agent needs constant access to. The agent can self-edit these blocks
+if `CoreConfig`.SelfEditable is true:
 
 ```go
 core := memory.NewCore(memory.CoreConfig{
-    PersonaLimit:  2000,
-    HumanLimit:    2000,
-    SelfEditable:  true,
+    PersonaLimit: 2000,
+    HumanLimit:   2000,
+    SelfEditable: true,
 })
-
-// Set persona
-core.SetPersona("You are a helpful Go programming assistant")
-
-// Set human context
-core.SetHuman("The user is learning Go and prefers detailed explanations")
-
-// Convert to messages for LLM context
-msgs := core.ToMessages()
+err := core.SetPersona("I am a helpful assistant")
+msgs := core.ToMessages() // returns system messages for LLM context
 ```
 
 ## Recall Memory
 
-Searchable conversation history:
+`Recall` stores searchable conversation history via a `MessageStore` backend.
+Every message exchanged during agent interactions is persisted:
 
 ```go
-recall := memory.NewRecall(messageStore)
-
-// Save turns
-recall.Save(ctx, inputMsg, outputMsg)
-
-// Load all messages
-msgs, err := recall.Load(ctx, "")
-
-// Search messages
-msgs, err := recall.Load(ctx, "Go concurrency")
+store := inmemory.NewMessageStore()
+recall := memory.NewRecall(store)
+err := recall.Save(ctx, userMsg, aiMsg)
+history, err := recall.Load(ctx, "previous topic")
 ```
 
 ## Archival Memory
 
-Vector-based long-term storage:
+`Archival` provides long-term storage backed by vector embeddings, enabling
+semantic search over historical content. It requires a vector store and
+an embedder:
 
 ```go
 archival, err := memory.NewArchival(memory.ArchivalConfig{
-    VectorStore: vectorStore,
-    Embedder:    embedder,
+    VectorStore: vs,
+    Embedder:    emb,
 })
-
-// Save messages (auto-embedded)
-archival.Save(ctx, inputMsg, outputMsg)
-
-// Semantic search
-docs, err := archival.Search(ctx, "Go error handling patterns", 10)
-```
-
-## Graph Memory
-
-Entity-relationship storage:
-
-```go
-type GraphStore interface {
-    AddEntity(ctx context.Context, entity memory.Entity) error
-    AddRelation(ctx context.Context, from, to, relation string, props map[string]any) error
-    Query(ctx context.Context, query string) ([]memory.GraphResult, error)
-    Neighbors(ctx context.Context, entityID string, depth int) ([]memory.Entity, []memory.Relation, error)
-}
-
-// Add entities
-store.AddEntity(ctx, memory.Entity{
-    ID:   "user-123",
-    Type: "person",
-    Properties: map[string]any{
-        "name": "Alice",
-        "role": "engineer",
-    },
-})
-
-// Add relationships
-store.AddRelation(ctx, "user-123", "project-456", "works_on", nil)
-
-// Query relationships
-results, err := store.Query(ctx, "MATCH (p:person)-[:works_on]->(pr:project) RETURN p, pr")
-
-// Get neighbors
-entities, relations, err := store.Neighbors(ctx, "user-123", 2)
+docs, err := archival.Search(ctx, "relevant topic", 10)
 ```
 
 ## Composite Memory
 
-Combine all tiers:
+`CompositeMemory` combines all tiers into a unified `Memory` implementation.
+Each tier is optional — only configured tiers participate in operations:
 
 ```go
-mem := memory.NewComposite(
-    memory.WithCore(coreMemory),
-    memory.WithRecall(recallMemory),
-    memory.WithArchival(archivalMemory),
-    memory.WithGraph(graphStore),
-)
-
-// Access individual tiers
-core := mem.Core()
-recall := mem.Recall()
-archival := mem.Archival()
-graph := mem.Graph()
-```
-
-## Middleware
-
-Add logging, metrics, etc.:
-
-```go
-wrapped := memory.ApplyMiddleware(mem,
-    memory.WithHooks(memory.Hooks{
-        BeforeSave: func(ctx context.Context, input, output schema.Message) error {
-            log.Printf("Saving turn")
-            return nil
-        },
-        AfterSearch: func(ctx context.Context, query string, k int, docs []schema.Document, err error) {
-            log.Printf("Found %d docs for query: %s", len(docs), query)
-        },
-    }),
-)
-```
-
-## Message Stores
-
-Backend for recall memory:
-
-```go
-type MessageStore interface {
-    Append(ctx context.Context, msg schema.Message) error
-    Search(ctx context.Context, query string, k int) ([]schema.Message, error)
-    All(ctx context.Context) ([]schema.Message, error)
-    Clear(ctx context.Context) error
-}
-```
-
-Implementations: `inmemory`, `redis`, `postgres`, `sqlite`, etc.
-
-## Example: Full Memory Setup
-
-```go
-// Core memory
-core := memory.NewCore(memory.CoreConfig{
-    SelfEditable: true,
-})
-core.SetPersona("Expert Go developer")
-
-// Recall memory
-recallStore := inmemory.NewMessageStore()
-recall := memory.NewRecall(recallStore)
-
-// Archival memory
-embedder, _ := embedding.New("openai", embedCfg)
-vectorStore, _ := vectorstore.New("inmemory", storeCfg)
-archival, _ := memory.NewArchival(memory.ArchivalConfig{
-    VectorStore: vectorStore,
-    Embedder:    embedder,
-})
-
-// Composite
 mem := memory.NewComposite(
     memory.WithCore(core),
     memory.WithRecall(recall),
     memory.WithArchival(archival),
-)
-
-// Use in agent
-agent := agent.New("assistant",
-    agent.WithMemory(mem),
-    agent.WithLLM(model),
+    memory.WithGraph(graphStore),
 )
 ```
 
-## See Also
+## Graph Memory
 
-- [Agent Package](./agent.md) for memory integration
-- [RAG Package](./rag.md) for vector storage
-- [Schema Package](./schema.md) for message types
+The `GraphStore` interface provides entity-relationship storage using
+`Entity` and `Relation` types. Graph stores support adding entities,
+creating relations, executing queries, and neighbor traversal.
+
+## Middleware and Hooks
+
+Memory operations can be wrapped with `Middleware` for cross-cutting concerns
+and observed via `Hooks` callbacks:
+
+```go
+hooked := memory.ApplyMiddleware(mem, memory.WithHooks(memory.Hooks{
+    BeforeSave: func(ctx context.Context, input, output schema.Message) error {
+        log.Println("saving memory")
+        return nil
+    },
+}))
+```
+
+Multiple hooks are merged with `ComposeHooks`. For Before* hooks and OnError,
+the first error returned short-circuits the chain.
+
+## Store Providers
+
+Message and graph store backends are in sub-packages under memory/stores/:
+
+- memory/stores/inmemory — in-memory (development/testing)
+- memory/stores/redis — Redis sorted set
+- memory/stores/postgres — PostgreSQL table
+- memory/stores/sqlite — SQLite table (pure Go, no CGO)
+- memory/stores/mongodb — MongoDB collection
+- memory/stores/neo4j — Neo4j graph database
+- memory/stores/memgraph — Memgraph graph database
+- memory/stores/dragonfly — DragonflyDB (Redis-compatible)

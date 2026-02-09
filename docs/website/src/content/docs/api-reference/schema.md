@@ -1,352 +1,77 @@
 ---
-title: Schema Package API
-description: API documentation for shared message types, multimodal content, and session types.
+title: "Schema Package"
+description: "Shared types: messages, content parts, tool definitions, documents, events, sessions"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/schema"
 ```
 
-Package schema defines the shared types used throughout the Beluga AI framework. It contains message types, multimodal content parts, tool call/result types, document types for RAG, event types for streaming, and session types.
+Package schema defines the shared types used throughout the Beluga AI framework.
 
-This package has zero external dependencies beyond the standard library and contains no business logic — only type definitions and constructors.
+It contains message types for conversations, multimodal content parts,
+tool call and result types, document types for RAG, streaming event types,
+and session types. This package has zero external dependencies beyond the
+standard library and contains no business logic — only type definitions
+and constructors.
 
 ## Messages
 
-### Message Interface
+The `Message` interface represents a single message in a conversation.
+Concrete implementations cover all conversation roles:
 
-All messages implement the `Message` interface:
+- [SystemMessage] — system-level instructions that set model behavior
+- [HumanMessage] — messages from human users
+- [AIMessage] — model-generated responses with optional tool calls and usage stats
+- [ToolMessage] — results from tool executions, correlated by tool call ID
 
-```go
-type Message interface {
-    GetRole() Role
-    GetContent() []ContentPart
-    GetMetadata() map[string]any
-}
-```
-
-### Roles
+Convenience constructors create messages with a single text part:
 
 ```go
-const (
-    RoleSystem Role = "system"  // System instructions
-    RoleHuman  Role = "human"   // User input
-    RoleAI     Role = "ai"      // Model output
-    RoleTool   Role = "tool"    // Tool result
-)
+sys := schema.NewSystemMessage("You are a helpful assistant.")
+msg := schema.NewHumanMessage("What is the weather today?")
+ai  := schema.NewAIMessage("The weather is sunny.")
+tool := schema.NewToolMessage(callID, `{"temp": 72}`)
 ```
 
-### SystemMessage
+## Content Parts
 
-System-level instructions:
+Messages carry multimodal content via the `ContentPart` interface.
+Implementations support text, images, audio, video, and files:
 
-```go
-type SystemMessage struct {
-    Parts    []ContentPart
-    Metadata map[string]any
-}
+- [TextPart] — plain text content
+- [ImagePart] — image data (inline bytes or URL) with MIME type
+- [AudioPart] — audio data with format and sample rate
+- [VideoPart] — video data (inline bytes or URL) with MIME type
+- [FilePart] — generic file attachments with name and MIME type
 
-sys := schema.NewSystemMessage("You are a helpful assistant")
-```
+## Tool Types
 
-### HumanMessage
+`ToolCall` represents a model's request to invoke a tool, carrying the
+tool name and JSON-encoded arguments. `ToolResult` carries the tool's
+output back to the model. `ToolDefinition` describes a tool's interface
+with name, description, and JSON Schema for the model to use.
 
-User input:
+## Documents
 
-```go
-type HumanMessage struct {
-    Parts    []ContentPart
-    Metadata map[string]any
-}
+`Document` is the primary unit for RAG (Retrieval-Augmented Generation)
+pipelines, carrying text content, metadata for filtering, optional
+relevance scores from retrieval, and optional embedding vectors.
 
-msg := schema.NewHumanMessage("Hello, how are you?")
-```
+## Streaming Events
 
-### AIMessage
-
-Model output with tool calls and token usage:
-
-```go
-type AIMessage struct {
-    Parts     []ContentPart
-    ToolCalls []ToolCall
-    Usage     Usage
-    ModelID   string
-    Metadata  map[string]any
-}
-
-resp := schema.NewAIMessage("I'm doing well, thank you!")
-text := resp.Text() // Extract all text content
-```
-
-### ToolMessage
-
-Tool execution result:
-
-```go
-type ToolMessage struct {
-    ToolCallID string
-    Parts      []ContentPart
-    Metadata   map[string]any
-}
-
-result := schema.NewToolMessage(callID, "42")
-```
-
-## Multimodal Content
-
-### ContentPart Interface
-
-All content types implement `ContentPart`:
-
-```go
-type ContentPart interface {
-    PartType() ContentType
-}
-```
-
-### Content Types
-
-```go
-const (
-    ContentText  ContentType = "text"
-    ContentImage ContentType = "image"
-    ContentAudio ContentType = "audio"
-    ContentVideo ContentType = "video"
-    ContentFile  ContentType = "file"
-)
-```
-
-### TextPart
-
-Plain text content:
-
-```go
-type TextPart struct {
-    Text string
-}
-
-part := schema.TextPart{Text: "Hello world"}
-```
-
-### ImagePart
-
-Image data (inline or URL):
-
-```go
-type ImagePart struct {
-    Data     []byte // Raw image bytes (nil if URL provided)
-    MimeType string // "image/png", "image/jpeg", etc.
-    URL      string // Optional URL (empty if Data provided)
-}
-```
-
-### AudioPart
-
-Audio data for speech:
-
-```go
-type AudioPart struct {
-    Data       []byte // Raw audio bytes
-    Format     string // "wav", "mp3", "pcm16", etc.
-    SampleRate int    // 16000, 44100, etc.
-}
-```
-
-### VideoPart
-
-Video data (inline or URL):
-
-```go
-type VideoPart struct {
-    Data     []byte // Raw video bytes (nil if URL provided)
-    MimeType string // "video/mp4", etc.
-    URL      string // Optional URL (empty if Data provided)
-}
-```
-
-### FilePart
-
-Generic file attachment:
-
-```go
-type FilePart struct {
-    Data     []byte // Raw file bytes
-    Name     string // "report.pdf"
-    MimeType string // "application/pdf"
-}
-```
-
-## Tools
-
-### ToolDefinition
-
-Describes a tool's interface for model consumption:
-
-```go
-type ToolDefinition struct {
-    Name        string
-    Description string
-    InputSchema map[string]any // JSON Schema
-}
-```
-
-### ToolCall
-
-Request from model to invoke a tool:
-
-```go
-type ToolCall struct {
-    ID        string // Unique call ID
-    Name      string // Tool name
-    Arguments string // JSON-encoded arguments
-}
-```
-
-### ToolResult
-
-Output from tool execution:
-
-```go
-type ToolResult struct {
-    CallID  string
-    Content []ContentPart
-    IsError bool
-}
-```
-
-## Documents (RAG)
-
-### Document
-
-Unit of content for RAG pipeline:
-
-```go
-type Document struct {
-    ID        string
-    Content   string
-    Metadata  map[string]any
-    Score     float64    // Relevance score from retrieval
-    Embedding []float32  // Optional vector embedding
-}
-```
+`StreamChunk` represents incremental pieces of a streaming model response
+with text deltas, tool call updates, finish reasons, and token usage.
+`AgentEvent` represents discrete events emitted during agent execution
+such as thoughts, tool calls, and handoffs.
 
 ## Sessions
 
-### Session
+`Session` tracks a full conversation as an ordered sequence of `Turn`
+values, each containing an input message, output message, timestamp,
+and metadata. Sessions maintain arbitrary state across turns.
 
-Conversation session with turns and state:
+## Token Usage
 
-```go
-type Session struct {
-    ID        string
-    Turns     []Turn
-    State     map[string]any
-    CreatedAt time.Time
-    UpdatedAt time.Time
-}
-```
-
-### Turn
-
-Single conversational exchange:
-
-```go
-type Turn struct {
-    Input     Message
-    Output    Message
-    Timestamp time.Time
-    Metadata  map[string]any
-}
-```
-
-## Streaming
-
-### StreamChunk
-
-Incremental piece of streaming response:
-
-```go
-type StreamChunk struct {
-    Delta        string      // Text delta
-    ToolCalls    []ToolCall  // Incremental tool calls
-    FinishReason string      // "stop", "tool_calls", "length"
-    Usage        *Usage      // Token usage (may be nil)
-    ModelID      string
-}
-```
-
-## Usage
-
-### Usage
-
-Token consumption tracking:
-
-```go
-type Usage struct {
-    InputTokens  int // Prompt tokens
-    OutputTokens int // Generated tokens
-    TotalTokens  int // Input + output
-    CachedTokens int // Tokens from cache
-}
-```
-
-## Agent Events
-
-### AgentEvent
-
-Event emitted during agent execution:
-
-```go
-type AgentEvent struct {
-    Type      string // "agent_start", "tool_call", "thought", "handoff"
-    AgentID   string
-    Payload   any
-    Timestamp time.Time
-}
-```
-
-## Usage Examples
-
-### Multimodal Messages
-
-```go
-// Text + image message
-msg := &schema.HumanMessage{
-    Parts: []schema.ContentPart{
-        schema.TextPart{Text: "What's in this image?"},
-        schema.ImagePart{
-            Data:     imageBytes,
-            MimeType: "image/png",
-        },
-    },
-}
-```
-
-### Extract Text
-
-```go
-// Extract all text from any message
-text := msg.Text()
-```
-
-### Type Assertions
-
-```go
-for _, part := range msg.GetContent() {
-    switch p := part.(type) {
-    case schema.TextPart:
-        fmt.Println("Text:", p.Text)
-    case schema.ImagePart:
-        fmt.Println("Image size:", len(p.Data))
-    case schema.AudioPart:
-        fmt.Println("Audio format:", p.Format)
-    }
-}
-```
-
-## See Also
-
-- [Core Package](./core.md) for foundational types
-- [LLM Package](./llm.md) for LLM abstraction
-- [RAG Package](./rag.md) for document types
+`Usage` tracks token consumption for model responses, including input
+tokens, output tokens, total tokens, and cached tokens.

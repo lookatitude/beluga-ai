@@ -1,134 +1,89 @@
 ---
-title: Config Package API
-description: API documentation for configuration loading and validation.
+title: "Config Package"
+description: "Configuration loading, validation, environment variables, and hot-reload"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/config"
 ```
 
-Package config provides configuration loading, validation, environment variable merging, and hot-reload watchers.
+Package config provides configuration loading, validation, environment
+variable merging, provider configuration, and file watching for the
+Beluga AI framework.
 
-## Quick Start
+Configuration is loaded from JSON files, environment variables, or both,
+with struct-tag-based defaults and validation. The package also provides
+a file-watching mechanism for hot-reloading configuration at runtime.
 
-### Load from File
+## Loading Configuration
+
+`Load` reads a JSON file and unmarshals it into a typed struct. Defaults
+from struct tags are applied to zero-valued fields, and the result is
+validated:
 
 ```go
 type AppConfig struct {
     Port    int    `json:"port" default:"8080" min:"1" max:"65535"`
     Host    string `json:"host" default:"localhost" required:"true"`
     Debug   bool   `json:"debug" default:"false"`
-    Timeout int    `json:"timeout" default:"30" min:"1"`
 }
 
 cfg, err := config.Load[AppConfig]("config.json")
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
-### Load from Environment
+## Environment Variables
+
+`LoadFromEnv` populates a config struct entirely from environment
+variables. Each exported field maps to PREFIX_FIELDNAME (uppercase):
 
 ```go
 cfg, err := config.LoadFromEnv[AppConfig]("BELUGA")
-// Reads: BELUGA_PORT, BELUGA_HOST, BELUGA_DEBUG, BELUGA_TIMEOUT
+// reads BELUGA_PORT, BELUGA_HOST, BELUGA_DEBUG
 ```
 
-### Merge Environment Overrides
+`MergeEnv` overlays environment variable values onto an existing config,
+only overriding fields with corresponding set variables:
 
 ```go
-cfg, _ := config.Load[AppConfig]("config.json")
-config.MergeEnv(&cfg, "BELUGA") // Override with env vars
-```
-
-## ProviderConfig
-
-Standard configuration for providers:
-
-```go
-type ProviderConfig struct {
-    Provider string                 `json:"provider" required:"true"`
-    APIKey   string                 `json:"api_key"`
-    Model    string                 `json:"model"`
-    BaseURL  string                 `json:"base_url"`
-    Timeout  time.Duration          `json:"timeout" default:"30s"`
-    Options  map[string]any         `json:"options"`
-}
-```
-
-Usage:
-
-```go
-cfg := config.ProviderConfig{
-    Provider: "openai",
-    APIKey:   os.Getenv("OPENAI_API_KEY"),
-    Model:    "gpt-4o",
-    Options: map[string]any{
-        "temperature": 0.7,
-        "max_tokens":  1000,
-    },
-}
-
-// Type-safe option access
-temp, ok := config.GetOption[float64](cfg, "temperature")
+config.MergeEnv(&cfg, "BELUGA")
 ```
 
 ## Validation
 
-### Struct Tags
+`Validate` checks a struct against its field tags:
+
+- required:"true" — field must not be zero-valued
+- min:"N" — numeric fields must be >= N
+- max:"N" — numeric fields must be <= N
+
+Validation errors are returned as [*ValidationError] with the field name
+and descriptive message.
+
+## Provider Configuration
+
+`ProviderConfig` holds common configuration for any external provider
+(LLM, embedding, vector store, etc.), including provider name, API key,
+model identifier, base URL, timeout, and a flexible Options map for
+provider-specific settings. `GetOption` retrieves typed values from the
+Options map:
 
 ```go
-type Config struct {
-    Name  string  `json:"name" required:"true"`
-    Age   int     `json:"age" min:"0" max:"120"`
-    Score float64 `json:"score" min:"0.0" max:"1.0"`
-}
-
-if err := config.Validate(&cfg); err != nil {
-    var valErr *config.ValidationError
-    if errors.As(err, &valErr) {
-        fmt.Printf("Field %s: %s\n", valErr.Field, valErr.Message)
-    }
-}
+temp, ok := config.GetOption[float64](cfg, "temperature")
 ```
 
-### Supported Tags
+## File Watching
 
-- `required:"true"` — Field must not be zero-valued
-- `min:"N"` — Numeric minimum
-- `max:"N"` — Numeric maximum
-- `default:"value"` — Default value if unset
-
-## Hot-Reload
-
-Watch for configuration changes:
+The `Watcher` interface abstracts configuration change detection.
+`FileWatcher` polls a file at regular intervals using SHA-256 content
+hashing, invoking a callback when changes are detected:
 
 ```go
 watcher := config.NewFileWatcher("config.json", 5*time.Second)
-defer watcher.Close()
-
 err := watcher.Watch(ctx, func(newConfig any) {
     data := newConfig.([]byte)
-    var cfg AppConfig
-    json.Unmarshal(data, &cfg)
-    // apply new config
+    // re-parse and apply configuration
 })
 ```
-
-## Example JSON Config
-
-```json
-{
-  "provider": "openai",
-  "api_key": "${OPENAI_API_KEY}",
-  "model": "gpt-4o",
-  "base_url": "https://api.openai.com/v1",
-  "timeout": 30000000000,
-  "options": {
-    "temperature": 0.7,
-    "max_tokens": 1000
-  }
-}
-```
-
-## See Also
-
-- [Core Package](./core.md) for runtime configuration
-- [LLM Package](./llm.md) for provider configuration

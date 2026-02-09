@@ -1,189 +1,136 @@
 ---
-title: LLM Package API
-description: API documentation for the LLM abstraction layer.
+title: "LLM Package"
+description: "ChatModel interface, provider registry, middleware, hooks, structured output, routing"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/llm"
 ```
 
-Package llm provides the LLM abstraction layer with `ChatModel` interface, provider registry, middleware, hooks, structured output, context management, and routing.
+Package llm provides the LLM abstraction layer for the Beluga AI framework.
 
-## Quick Start
+It defines the `ChatModel` interface that all LLM providers implement,
+a provider registry for dynamic instantiation, composable middleware,
+lifecycle hooks, structured output parsing, context window management,
+tokenization, rate limiting, and multi-backend routing.
+
+## ChatModel Interface
+
+The core abstraction is `ChatModel`, which every provider implements:
+
+- Generate sends messages and returns a complete [schema.AIMessage].
+- Stream sends messages and returns an [iter.Seq2] of [schema.StreamChunk] values.
+- BindTools returns a new ChatModel with the given tool definitions included in every request.
+- ModelID returns the underlying model identifier (e.g. "gpt-4o").
+
+## Provider Registry
+
+Providers register themselves via init() so that importing a provider
+package is sufficient to make it available through the registry:
 
 ```go
-import (
-    "github.com/lookatitude/beluga-ai/llm"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
+
+model, err := llm.New("openai", cfg)
+```
+
+Use `Register` to add a provider factory, `New` to create a ChatModel by
+name, and `List` to discover all registered providers.
+
+## Middleware
+
+`Middleware` wraps a ChatModel to add cross-cutting concerns. Built-in
+middleware includes logging, fallback, hooks, and rate limiting:
+
+```go
+model = llm.ApplyMiddleware(model,
+    llm.WithLogging(logger),
+    llm.WithFallback(backup),
+    llm.WithHooks(hooks),
+    llm.WithProviderLimits(limits),
 )
+```
 
-model, err := llm.New("openai", config.ProviderConfig{
-    APIKey: os.Getenv("OPENAI_API_KEY"),
-    Model:  "gpt-4o",
-})
+Middleware is applied right-to-left: the first middleware in the list
+becomes the outermost wrapper and executes first.
 
-// Synchronous
-resp, err := model.Generate(ctx, []schema.Message{
-    schema.NewHumanMessage("Hello!"),
-})
+## Hooks
 
-// Streaming
+`Hooks` provides optional callbacks invoked during LLM operations:
+BeforeGenerate, AfterGenerate, OnStream, OnToolCall, and OnError.
+All fields are optional; nil hooks are skipped. Use `ComposeHooks`
+to merge multiple Hooks into one.
+
+## Structured Output
+
+`StructuredOutput` wraps a ChatModel to produce typed Go values.
+It generates a JSON Schema from the type parameter, instructs the model
+to respond in JSON, parses the response, and retries on parse failures:
+
+```go
+type Sentiment struct {
+    Label string  `json:"label"`
+    Score float64 `json:"score"`
+}
+so := llm.NewStructured[Sentiment](model)
+result, err := so.Generate(ctx, msgs)
+```
+
+## Context Management
+
+`ContextManager` fits a message sequence within a token budget.
+Two strategies are provided: "truncate" (drops oldest non-system messages)
+and "sliding" (keeps the most recent messages that fit). Use
+`NewContextManager` with options to configure:
+
+```go
+cm := llm.NewContextManager(
+    llm.WithContextStrategy("sliding"),
+    llm.WithTokenizer(tokenizer),
+    llm.WithKeepSystemMessages(true),
+)
+fitted, err := cm.Fit(ctx, msgs, 4096)
+```
+
+## Tokenizer
+
+`Tokenizer` provides token counting and encoding/decoding.
+`SimpleTokenizer` is a built-in word-based approximation (1 token per
+4 characters) suitable for budget estimation when a model-specific
+tokenizer is unavailable.
+
+## Routing
+
+`Router` implements ChatModel by delegating to one of several backend
+models chosen by a pluggable `RouterStrategy`. Built-in strategies include
+`RoundRobin` and `FailoverChain`. For automatic retry across models, use
+`FailoverRouter`:
+
+```go
+r := llm.NewRouter(
+    llm.WithModels(modelA, modelB),
+    llm.WithStrategy(&llm.RoundRobin{}),
+)
+```
+
+## Rate Limiting
+
+`WithProviderLimits` returns middleware that enforces requests-per-minute,
+tokens-per-minute, and concurrency limits per provider.
+
+## Generate Options
+
+`GenerateOption` functional options configure individual Generate/Stream
+calls: temperature, max tokens, top-p, stop sequences, response format,
+tool choice, and provider-specific metadata.
+
+## Streaming
+
+Streaming uses iter.Seq2 (Go 1.23+):
+
+```go
 for chunk, err := range model.Stream(ctx, msgs) {
     if err != nil { break }
     fmt.Print(chunk.Delta)
 }
 ```
-
-## ChatModel Interface
-
-```go
-type ChatModel interface {
-    Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error)
-    Stream(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error]
-    BindTools(tools []schema.ToolDefinition) ChatModel
-    ModelID() string
-}
-```
-
-## Generate Options
-
-```go
-resp, err := model.Generate(ctx, msgs,
-    llm.WithTemperature(0.7),
-    llm.WithMaxTokens(1000),
-    llm.WithTopP(0.9),
-    llm.WithStopSequences("END"),
-    llm.WithToolChoice(llm.ToolChoiceRequired),
-    llm.WithResponseFormat(llm.ResponseFormat{Type: "json_object"}),
-)
-```
-
-## Tool Binding
-
-```go
-model = model.BindTools([]schema.ToolDefinition{
-    {Name: "search", Description: "Search the web", InputSchema: ...},
-    {Name: "calculate", Description: "Do math", InputSchema: ...},
-})
-
-resp, err := model.Generate(ctx, msgs)
-if len(resp.ToolCalls) > 0 {
-    // handle tool calls
-}
-```
-
-## Middleware
-
-Wrap models with cross-cutting concerns:
-
-```go
-model = llm.ApplyMiddleware(model,
-    llm.WithLogging(logger),
-    llm.WithFallback(backupModel),
-    llm.WithProviderLimits(llm.ProviderLimits{
-        RPM: 10000,
-        TPM: 1000000,
-    }),
-)
-```
-
-## Hooks
-
-Inject lifecycle callbacks:
-
-```go
-model = llm.WithHooks(model, llm.Hooks{
-    BeforeGenerate: func(ctx context.Context, msgs []schema.Message) error {
-        log.Printf("Generating with %d messages", len(msgs))
-        return nil
-    },
-    AfterGenerate: func(ctx context.Context, resp *schema.AIMessage, err error) {
-        if err == nil {
-            log.Printf("Tokens: %d", resp.Usage.TotalTokens)
-        }
-    },
-    OnStream: func(ctx context.Context, chunk schema.StreamChunk) {
-        // observe streaming
-    },
-})
-```
-
-## Structured Output
-
-Generate typed responses:
-
-```go
-type Response struct {
-    Answer     string   `json:"answer" description:"The answer"`
-    Confidence float64  `json:"confidence" min:"0" max:"1"`
-    Sources    []string `json:"sources"`
-}
-
-structured := llm.NewStructured[Response](model,
-    llm.WithMaxRetries(3),
-)
-
-result, err := structured.Generate(ctx, msgs)
-fmt.Println(result.Answer, result.Confidence)
-```
-
-## Context Management
-
-Fit messages within token budget:
-
-```go
-manager := llm.NewContextManager(
-    llm.WithContextStrategy("sliding"), // or "truncate"
-    llm.WithTokenizer(tokenizer),
-    llm.WithKeepSystemMessages(true),
-)
-
-fitted, err := manager.Fit(ctx, msgs, 4096) // max 4096 tokens
-```
-
-## Router
-
-Route requests across multiple models:
-
-```go
-router := llm.NewRouter(
-    llm.WithModels(model1, model2, model3),
-    llm.WithStrategy(&llm.RoundRobin{}),
-)
-
-// Automatically selects a model
-resp, err := router.Generate(ctx, msgs)
-```
-
-### Failover Router
-
-Automatic failover on retryable errors:
-
-```go
-failover := llm.NewFailoverRouter(primary, backup1, backup2)
-resp, err := failover.Generate(ctx, msgs) // tries in order
-```
-
-## Provider Registry
-
-```go
-// List available providers
-providers := llm.List() // ["openai", "anthropic", "google", ...]
-
-// Create by name
-model, err := llm.New("anthropic", cfg)
-```
-
-## Token Counting
-
-```go
-tokenizer := &llm.SimpleTokenizer{}
-count := tokenizer.Count("Hello world")
-totalTokens := tokenizer.CountMessages(msgs)
-```
-
-## See Also
-
-- [Agent Package](./agent.md) for agent-model integration
-- [Tool Package](./tool.md) for tool binding
-- [Memory Package](./memory.md) for conversation history

@@ -1,37 +1,22 @@
 ---
-title: Agent Package API
-description: API documentation for the agent runtime and planners.
+title: "Agent Package"
+description: "Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/agent"
 ```
 
-Package agent provides the agent runtime with `Agent` interface, `BaseAgent` implementation, `Executor` reasoning loop, pluggable `Planner` implementations, handoffs, and lifecycle hooks.
+Package agent provides the agent runtime for the Beluga AI framework.
 
-## Quick Start
-
-```go
-a := agent.New("assistant",
-    agent.WithLLM(model),
-    agent.WithTools(tools),
-    agent.WithPersona(agent.Persona{
-        Role: "helpful assistant",
-        Goal: "help users write clean code",
-    }),
-)
-
-// Synchronous
-result, err := a.Invoke(ctx, "What is 2+2?")
-
-// Streaming
-for event, err := range a.Stream(ctx, "Explain Go") {
-    if err != nil { break }
-    fmt.Println(event.Text)
-}
-```
+It defines the core `Agent` interface, a composable `BaseAgent` implementation,
+the `Executor` reasoning loop, pluggable `Planner` strategies, agent-to-agent
+`Handoff` transfers, lifecycle `Hooks`, `Middleware`, an `EventBus` for async
+messaging, and `AgentCard` for A2A protocol discovery.
 
 ## Agent Interface
+
+The Agent interface is the primary abstraction for all agents:
 
 ```go
 type Agent interface {
@@ -44,189 +29,165 @@ type Agent interface {
 }
 ```
 
-## BaseAgent
+Agents can be invoked synchronously with Invoke or streamed with Stream.
+Stream returns an iter.Seq2[Event, error] following Go 1.23+ conventions.
 
-Default agent implementation:
+## Creating an Agent
+
+Use `New` with functional options to create a configured `BaseAgent`:
 
 ```go
-agent := agent.New("myagent",
+a := agent.New("assistant",
     agent.WithLLM(model),
-    agent.WithTools(searchTool, calcTool),
+    agent.WithTools(tools),
     agent.WithPersona(agent.Persona{
-        Role:      "senior engineer",
-        Goal:      "write clean, idiomatic Go code",
-        Backstory: "10 years Go experience",
-        Traits:    []string{"concise", "precise"},
+        Role: "senior software engineer",
+        Goal: "help users write clean, idiomatic Go code",
     }),
-    agent.WithPlannerName("react"), // or "reflexion", "tot", "got", etc.
-    agent.WithMaxIterations(10),
-    agent.WithTimeout(2*time.Minute),
+    agent.WithMaxIterations(5),
 )
+
+// Synchronous invocation
+result, err := a.Invoke(ctx, "What is 2+2?")
+if err != nil {
+    log.Fatal(err)
+}
+
+// Streaming invocation
+for event, err := range a.Stream(ctx, "Explain goroutines") {
+    if err != nil {
+        log.Fatal(err)
+    }
+    if event.Type == agent.EventText {
+        fmt.Print(event.Text)
+    }
+}
 ```
 
-## Planners
+## Planner Strategies
 
-### ReAct (default)
-
-Reasoning + Acting pattern:
+The Planner interface defines reasoning strategies. Planners decide what
+actions the agent should take and can replan based on observations:
 
 ```go
-planner := agent.NewReActPlanner(model)
+type Planner interface {
+    Plan(ctx context.Context, state PlannerState) ([]Action, error)
+    Replan(ctx context.Context, state PlannerState) ([]Action, error)
+}
 ```
 
-### Reflexion
+Built-in planner strategies are registered via the planner registry:
 
-Self-reflection with Actor-Evaluator-Reflector:
+- "react" — [ReActPlanner]: Reasoning + Acting. The default strategy.
+  Sends conversation to the LLM and interprets tool calls or text responses.
+- "reflexion" — [ReflexionPlanner]: Actor-Evaluator-Reflector loop.
+  Generates a response, evaluates it, and reflects if below threshold.
+- "self-discover" — [SelfDiscoverPlanner]: SELECT → ADAPT → IMPLEMENT.
+  Discovers task-specific reasoning modules and composes them.
+- "tree-of-thought" — [ToTPlanner]: BFS/DFS tree search over reasoning paths.
+  Generates candidates, evaluates promise, and expands best branches.
+- "graph-of-thought" — [GoTPlanner]: Arbitrary graph topology with merge,
+  split, loop, and aggregate operations over a [ThoughtGraph].
+- "lats" — [LATSPlanner]: Language Agent Tree Search using Monte Carlo
+  Tree Search (MCTS) with UCT selection, expansion, and backpropagation.
+- "moa" — [MoAPlanner]: Mixture of Agents with parallel LLM layers
+  and a final aggregator for synthesis.
+
+Select a planner by name or provide a custom implementation:
 
 ```go
-planner := agent.NewReflexionPlanner(model,
-    agent.WithThreshold(0.7),
-    agent.WithMaxReflections(3),
-)
+// By name (via registry)
+a := agent.New("solver", agent.WithPlannerName("tree-of-thought"))
+
+// Direct planner instance
+a := agent.New("solver", agent.WithPlanner(
+    agent.NewToTPlanner(model,
+        agent.WithBranchFactor(5),
+        agent.WithMaxDepth(3),
+    ),
+))
 ```
 
-### Tree of Thought (ToT)
+## Executor Loop
 
-Explore multiple reasoning paths:
-
-```go
-planner := agent.NewToTPlanner(model,
-    agent.WithMaxDepth(3),
-    agent.WithBranchFactor(3),
-    agent.WithSearchStrategy(agent.StrategyBFS),
-)
-```
-
-### Graph of Thought (GoT)
-
-Arbitrary graph topology with merge/split/loop:
+The `Executor` runs the Plan → Act → Observe reasoning loop. It is
+planner-agnostic: the same loop works for any planner strategy:
 
 ```go
-planner := agent.NewGoTPlanner(model,
-    agent.WithController(controller),
-    agent.WithMaxOperations(20),
-)
-```
-
-### LATS
-
-Language Agent Tree Search with MCTS:
-
-```go
-planner := agent.NewLATSPlanner(model,
-    agent.WithLATSMaxDepth(5),
-    agent.WithExpansionWidth(3),
-    agent.WithExplorationConstant(1.4),
-)
-```
-
-### Mixture of Agents
-
-Multiple LLMs in parallel layers:
-
-```go
-planner := agent.NewMoAPlanner(defaultModel,
-    agent.WithLayers([][]llm.ChatModel{
-        {model1, model2, model3}, // layer 1
-        {model4, model5},          // layer 2
-    }),
-    agent.WithAggregator(aggregatorModel),
-)
-```
-
-### Self-Discover
-
-SELECT → ADAPT → IMPLEMENT reasoning structure:
-
-```go
-planner := agent.NewSelfDiscoverPlanner(model,
-    agent.WithReasoningModules(agent.DefaultReasoningModules),
+executor := agent.NewExecutor(
+    agent.WithExecutorPlanner(planner),
+    agent.WithExecutorMaxIterations(10),
+    agent.WithExecutorTimeout(5 * time.Minute),
 )
 ```
 
 ## Handoffs
 
-Transfer control between agents:
+Handoffs enable agent-to-agent transfers. They are automatically converted
+to tools (transfer_to_{id}) that appear in the LLM's tool list:
 
 ```go
-specialist := agent.New("specialist", ...)
+researcher := agent.New("researcher", agent.WithLLM(model))
+writer := agent.New("writer", agent.WithLLM(model))
 
-generalist := agent.New("generalist",
+manager := agent.New("manager",
+    agent.WithLLM(model),
     agent.WithHandoffs([]agent.Handoff{
-        agent.HandoffTo(specialist, "For complex technical questions"),
+        agent.HandoffTo(researcher, "Hand off research tasks"),
+        agent.HandoffTo(writer, "Hand off writing tasks"),
     }),
 )
-
-// The LLM can now call transfer_to_specialist tool
 ```
 
 ## Hooks
 
-Inject lifecycle callbacks:
+`Hooks` provide lifecycle callbacks invoked at various points during
+execution. All fields are optional; nil hooks are skipped. Hooks are
+composable via `ComposeHooks`:
 
 ```go
-a := agent.New("myagent",
-    agent.WithHooks(agent.Hooks{
-        OnStart: func(ctx context.Context, input string) error {
-            log.Printf("Starting: %s", input)
-            return nil
-        },
-        BeforePlan: func(ctx context.Context, state agent.PlannerState) error {
-            log.Printf("Planning iteration %d", state.Iteration)
-            return nil
-        },
-        OnToolCall: func(ctx context.Context, call agent.ToolCallInfo) error {
-            log.Printf("Calling tool: %s", call.Name)
-            return nil
-        },
-        OnEnd: func(ctx context.Context, result string, err error) {
-            log.Printf("Finished: %v", err)
-        },
-    }),
-)
+hooks := agent.Hooks{
+    OnStart: func(ctx context.Context, input string) error {
+        log.Printf("Agent started with: %s", input)
+        return nil
+    },
+    OnToolCall: func(ctx context.Context, call agent.ToolCallInfo) error {
+        log.Printf("Calling tool: %s", call.Name)
+        return nil
+    },
+}
 ```
 
 ## Middleware
 
-Wrap agents with cross-cutting concerns:
+`Middleware` wraps an Agent to add cross-cutting concerns. Applied via
+`ApplyMiddleware` in reverse order so the first middleware is outermost:
 
 ```go
-wrapped := agent.ApplyMiddleware(a,
-    loggingMiddleware,
-    tracingMiddleware,
-)
+wrapped := agent.ApplyMiddleware(myAgent, tracingMiddleware, loggingMiddleware)
 ```
 
 ## Event Bus
 
-Inter-agent messaging:
+The `EventBus` interface enables agent-to-agent async messaging via
+publish/subscribe. `InMemoryBus` provides an in-process implementation:
 
 ```go
 bus := agent.NewInMemoryBus()
-
-sub, err := bus.Subscribe(ctx, "alerts", func(event agent.AgentEvent) {
-    log.Printf("Alert: %+v", event)
-})
-defer sub.Unsubscribe()
-
-bus.Publish(ctx, "alerts", agent.AgentEvent{
-    Type:     "tool_failed",
-    SourceID: "agent-1",
-    Payload:  errorDetails,
+sub, err := bus.Subscribe(ctx, "updates", func(e agent.AgentEvent) {
+    fmt.Printf("Event from %s: %v\n", e.SourceID, e.Payload)
 })
 ```
 
-## Agent Cards (A2A)
+## Planner Registry
 
-Describe agent capabilities for discovery:
+Custom planners can be registered with `RegisterPlanner` and created
+with `NewPlanner`. Use `ListPlanners` for discovery:
 
 ```go
-card := agent.BuildCard(a)
-// card.Name, card.Description, card.Skills, card.Protocols
+agent.RegisterPlanner("custom", func(cfg agent.PlannerConfig) (agent.Planner, error) {
+    return NewCustomPlanner(cfg.LLM), nil
+})
+
+planners := agent.ListPlanners() // ["custom", "graph-of-thought", "lats", "moa", "react", "reflexion", "self-discover", "tree-of-thought"]
 ```
-
-## See Also
-
-- [LLM Package](./llm.md) for model integration
-- [Tool Package](./tool.md) for tool binding
-- [Memory Package](./memory.md) for conversation history

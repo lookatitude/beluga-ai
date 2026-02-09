@@ -1,37 +1,22 @@
 ---
-title: Tool Package API
-description: API documentation for the tool system and MCP client.
+title: "Tool Package"
+description: "Tool interface, FuncTool, registry, MCP client integration, and middleware"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/tool"
 ```
 
-Package tool provides the `Tool` interface, type-safe `FuncTool` wrapper, thread-safe registry, middleware, hooks, and MCP client for remote tools.
+Package tool provides the tool system for the Beluga AI framework.
 
-## Quick Start
-
-```go
-// Define typed input
-type CalcInput struct {
-    Expression string `json:"expression" description:"Math expression" required:"true"`
-}
-
-// Create FuncTool (auto-generates JSON Schema)
-calc := tool.NewFuncTool("calculate", "Evaluate math expressions",
-    func(ctx context.Context, input CalcInput) (*tool.Result, error) {
-        result := evaluate(input.Expression)
-        return tool.TextResult(fmt.Sprintf("%d", result)), nil
-    },
-)
-
-// Use in agent
-agent := agent.New("assistant",
-    agent.WithTools(calc),
-)
-```
+It defines the `Tool` interface, a type-safe `FuncTool` wrapper using generics,
+a thread-safe tool `Registry`, `Middleware` composition, lifecycle `Hooks`,
+an `MCPClient` for connecting to remote MCP tool servers, and an `MCPRegistry`
+for MCP server discovery.
 
 ## Tool Interface
+
+The Tool interface is the core abstraction for all tools:
 
 ```go
 type Tool interface {
@@ -42,186 +27,112 @@ type Tool interface {
 }
 ```
 
+Tools have a name (used by the LLM to select them), a description (provided
+to the LLM as context), a JSON Schema for input validation, and an Execute
+method that performs the tool's action.
+
 ## FuncTool
 
-Type-safe tool wrapper:
+`FuncTool` wraps a typed Go function as a Tool using generics. It
+automatically generates a JSON Schema from the input struct's field tags:
 
 ```go
 type SearchInput struct {
     Query string `json:"query" description:"Search query" required:"true"`
-    Limit int    `json:"limit" description:"Max results" default:"10" min:"1" max:"100"`
+    Limit int    `json:"limit" description:"Max results" default:"10"`
 }
 
 search := tool.NewFuncTool("search", "Search the web",
     func(ctx context.Context, input SearchInput) (*tool.Result, error) {
-        results := searchWeb(input.Query, input.Limit)
+        results := doSearch(ctx, input.Query, input.Limit)
         return tool.TextResult(results), nil
     },
 )
-
-// Input schema is auto-generated from struct tags
-schema := search.InputSchema()
 ```
 
-## Result Types
-
-```go
-// Text result
-return tool.TextResult("Success")
-
-// Error result
-return tool.ErrorResult(fmt.Errorf("failed"))
-
-// Multimodal result
-return &tool.Result{
-    Content: []schema.ContentPart{
-        schema.TextPart{Text: "Here's the image:"},
-        schema.ImagePart{Data: imgBytes, MimeType: "image/png"},
-    },
-}
-```
+The input struct supports json, description, required, and default tags
+recognized by the internal jsonutil.GenerateSchema function.
 
 ## Registry
 
-Thread-safe tool collection:
+`Registry` is a thread-safe, name-based collection of tools. Tools are
+registered as instances and looked up by name:
 
 ```go
 reg := tool.NewRegistry()
-reg.Add(searchTool)
-reg.Add(calcTool)
+if err := reg.Add(search); err != nil {
+    log.Fatal(err)
+}
 
-// Get by name
 t, err := reg.Get("search")
+names := reg.List()     // sorted tool names
+all := reg.All()        // sorted tool instances
+defs := reg.Definitions() // for LLM binding
+```
 
-// List all
-names := reg.List()
+## Results
 
-// Get all tools
-tools := reg.All()
+`Result` holds multimodal output from tool execution. Content parts support
+text, images, and other types via schema.ContentPart. Convenience constructors:
 
-// Remove
-reg.Remove("search")
+```go
+result := tool.TextResult("The answer is 42")
+errResult := tool.ErrorResult(fmt.Errorf("not found"))
+```
+
+Use `ToDefinition` to convert a Tool to a schema.ToolDefinition for LLM providers.
+
+## MCP Client
+
+`MCPClient` connects to an MCP (Model Context Protocol) server using the
+Streamable HTTP transport. It wraps remote tools as native Tool instances:
+
+```go
+tools, err := tool.FromMCP(ctx, "https://mcp.example.com/tools",
+    tool.WithSessionID("session-1"),
+)
+```
+
+The transport protocol uses POST for requests, GET for notifications,
+DELETE for session termination, and Mcp-Session-Id for session management.
+
+## MCP Registry
+
+`MCPRegistry` provides discovery of MCP servers. The `StaticMCPRegistry`
+implementation is backed by a fixed list of servers:
+
+```go
+registry := tool.NewStaticMCPRegistry(
+    tool.MCPServerInfo{Name: "code-tools", URL: "https://mcp.example.com/code"},
+    tool.MCPServerInfo{Name: "search-tools", URL: "https://mcp.example.com/search"},
+)
+
+servers, err := registry.Search(ctx, "code")
 ```
 
 ## Middleware
 
-Add retry, timeout, etc.:
+`Middleware` wraps a Tool to add cross-cutting behavior. Built-in middleware
+includes `WithTimeout` and `WithRetry`. Applied via `ApplyMiddleware`:
 
 ```go
 wrapped := tool.ApplyMiddleware(myTool,
+    tool.WithTimeout(30 * time.Second),
     tool.WithRetry(3),
-    tool.WithTimeout(5*time.Second),
 )
 ```
 
 ## Hooks
 
-Inject callbacks:
+`Hooks` provide lifecycle callbacks around tool execution. Compose multiple
+hooks with `ComposeHooks`, or wrap a tool with hooks using `WithHooks`:
 
 ```go
-wrapped := tool.WithHooks(myTool, tool.Hooks{
-    BeforeExecute: func(ctx context.Context, toolName string, input map[string]any) error {
-        log.Printf("Calling %s with %+v", toolName, input)
+hooks := tool.Hooks{
+    BeforeExecute: func(ctx context.Context, name string, input map[string]any) error {
+        log.Printf("Executing tool: %s", name)
         return nil
     },
-    AfterExecute: func(ctx context.Context, toolName string, result *tool.Result, err error) {
-        if err != nil {
-            log.Printf("Tool %s failed: %v", toolName, err)
-        }
-    },
-})
-```
-
-## MCP Client
-
-Connect to Model Context Protocol servers:
-
-```go
-// Connect to MCP server
-tools, err := tool.FromMCP(ctx, "http://localhost:8080",
-    tool.WithSessionID("session-123"),
-)
-
-// Use remote tools like local tools
-for _, t := range tools {
-    result, err := t.Execute(ctx, map[string]any{
-        "query": "search term",
-    })
 }
+hooked := tool.WithHooks(myTool, hooks)
 ```
-
-### Manual MCP Client
-
-```go
-client := tool.NewMCPClient("http://localhost:8080",
-    tool.WithSessionID("session-123"),
-)
-
-if err := client.Connect(ctx); err != nil {
-    return err
-}
-defer client.Close(ctx)
-
-tools, err := client.ListTools(ctx)
-result, err := client.ExecuteTool(ctx, "search", map[string]any{
-    "query": "Go programming",
-})
-```
-
-## MCP Registry
-
-Discover MCP servers:
-
-```go
-registry := tool.NewStaticMCPRegistry(
-    tool.MCPServerInfo{
-        Name:      "web-search",
-        URL:       "http://localhost:8080",
-        Transport: "streamable-http",
-        Tools:     []schema.ToolDefinition{...},
-    },
-)
-
-servers, err := registry.Discover(ctx)
-results, err := registry.Search(ctx, "search")
-```
-
-## Convert to ToolDefinition
-
-For LLM tool binding:
-
-```go
-def := tool.ToDefinition(myTool)
-// Returns schema.ToolDefinition
-
-model = model.BindTools([]schema.ToolDefinition{def})
-```
-
-## Example: Multi-Step Tool
-
-```go
-type CodeGenInput struct {
-    Language string `json:"language" required:"true"`
-    Task     string `json:"task" required:"true"`
-}
-
-codegen := tool.NewFuncTool("generate_code", "Generate code",
-    func(ctx context.Context, input CodeGenInput) (*tool.Result, error) {
-        // Generate code
-        code := generateCode(input.Language, input.Task)
-
-        // Test code
-        if err := testCode(code); err != nil {
-            return tool.ErrorResult(err)
-        }
-
-        return tool.TextResult(code), nil
-    },
-)
-```
-
-## See Also
-
-- [Agent Package](./agent.md) for tool usage in agents
-- [Guard Package](./guard.md) for tool input validation
-- [Schema Package](./schema.md) for tool definitions

@@ -546,7 +546,84 @@
     },
     {
       "label": "API Reference",
-      "autogenerate": { "directory": "api-reference" }
+      "items": [
+        { "label": "Overview", "slug": "api-reference" },
+        {
+          "label": "Foundation",
+          "collapsed": true,
+          "items": [
+            { "label": "core", "slug": "api-reference/core" },
+            { "label": "schema", "slug": "api-reference/schema" },
+            { "label": "config", "slug": "api-reference/config" },
+            { "label": "o11y", "slug": "api-reference/o11y" }
+          ]
+        },
+        {
+          "label": "LLM & Agents",
+          "collapsed": true,
+          "items": [
+            { "label": "llm", "slug": "api-reference/llm" },
+            { "label": "LLM Providers", "slug": "api-reference/llm-providers" },
+            { "label": "agent", "slug": "api-reference/agent" },
+            { "label": "Agent Workflows", "slug": "api-reference/agent-workflow" },
+            { "label": "tool", "slug": "api-reference/tool" }
+          ]
+        },
+        {
+          "label": "Memory & RAG",
+          "collapsed": true,
+          "items": [
+            { "label": "memory", "slug": "api-reference/memory" },
+            { "label": "Memory Stores", "slug": "api-reference/memory-stores" },
+            { "label": "Embedding", "slug": "api-reference/rag-embedding" },
+            { "label": "Embedding Providers", "slug": "api-reference/rag-embedding-providers" },
+            { "label": "Vector Store", "slug": "api-reference/rag-vectorstore" },
+            { "label": "Vector Store Providers", "slug": "api-reference/rag-vectorstore-providers" },
+            { "label": "Retriever", "slug": "api-reference/rag-retriever" },
+            { "label": "Document Loaders", "slug": "api-reference/rag-loader" },
+            { "label": "Text Splitters", "slug": "api-reference/rag-splitter" }
+          ]
+        },
+        {
+          "label": "Voice",
+          "collapsed": true,
+          "items": [
+            { "label": "voice", "slug": "api-reference/voice" },
+            { "label": "STT", "slug": "api-reference/voice-stt" },
+            { "label": "TTS", "slug": "api-reference/voice-tts" },
+            { "label": "S2S", "slug": "api-reference/voice-s2s" },
+            { "label": "Transport", "slug": "api-reference/voice-transport" },
+            { "label": "VAD", "slug": "api-reference/voice-vad" }
+          ]
+        },
+        {
+          "label": "Infrastructure",
+          "collapsed": true,
+          "items": [
+            { "label": "guard", "slug": "api-reference/guard" },
+            { "label": "resilience", "slug": "api-reference/resilience" },
+            { "label": "cache", "slug": "api-reference/cache" },
+            { "label": "hitl", "slug": "api-reference/hitl" },
+            { "label": "auth", "slug": "api-reference/auth" },
+            { "label": "eval", "slug": "api-reference/eval" },
+            { "label": "state", "slug": "api-reference/state" },
+            { "label": "prompt", "slug": "api-reference/prompt" },
+            { "label": "orchestration", "slug": "api-reference/orchestration" },
+            { "label": "workflow", "slug": "api-reference/workflow" }
+          ]
+        },
+        {
+          "label": "Protocol & Server",
+          "collapsed": true,
+          "items": [
+            { "label": "protocol", "slug": "api-reference/protocol" },
+            { "label": "MCP", "slug": "api-reference/protocol-mcp" },
+            { "label": "A2A", "slug": "api-reference/protocol-a2a" },
+            { "label": "REST & OpenAI Agents", "slug": "api-reference/protocol-rest" },
+            { "label": "Server Adapters", "slug": "api-reference/server" }
+          ]
+        }
+      ]
     },
     {
       "label": "Reports",

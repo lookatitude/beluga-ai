@@ -1,49 +1,24 @@
 ---
-title: Core Package API
-description: API documentation for the core package providing foundational primitives.
+title: "Core Package"
+description: "Foundation primitives: streams, Runnable, events, errors, lifecycle, multi-tenancy"
 ---
 
 ```go
 import "github.com/lookatitude/beluga-ai/core"
 ```
 
-Package core provides the foundational primitives for the Beluga AI framework: typed event streams, the Runnable execution interface, batch processing, context helpers, multi-tenancy, lifecycle management, and typed errors.
+Package core provides the foundational primitives for the Beluga AI framework.
 
-## Key Types
+It defines the universal execution model, typed event streaming, batch
+processing, lifecycle management, multi-tenancy, context propagation,
+functional options, and structured error handling that all other packages
+build upon.
 
-### Stream
+## Runnable Interface
 
-`Stream[T]` is a pull-based event iterator built on Go 1.23+ `iter.Seq2`:
-
-```go
-type Stream[T any] = iter.Seq2[Event[T], error]
-```
-
-Consumers use range to iterate:
-
-```go
-for event, err := range stream {
-    if err != nil { break }
-    // handle event
-}
-```
-
-### Event
-
-`Event[T]` is the unit of data flowing through the system:
-
-```go
-type Event[T any] struct {
-    Type    EventType      // "data", "tool_call", "tool_result", "handoff", "done", "error"
-    Payload T              // Typed event data
-    Err     error          // Error for "error" events
-    Meta    map[string]any // Trace IDs, latency, token counts, etc.
-}
-```
-
-### Runnable
-
-`Runnable` is the universal execution interface implemented by LLMs, tools, agents, and pipelines:
+Runnable is the universal execution interface. Every component that processes
+input — LLMs, tools, agents, pipelines — implements Runnable. It supports
+both synchronous invocation and streaming:
 
 ```go
 type Runnable interface {
@@ -52,224 +27,92 @@ type Runnable interface {
 }
 ```
 
-### Error
-
-`Error` is a structured error with operation, code, message, and cause:
+Runnables compose via `Pipe` (sequential) and `Parallel` (concurrent):
 
 ```go
-type Error struct {
-    Op      string    // "llm.generate", "tool.execute", etc.
-    Code    ErrorCode // "rate_limit", "timeout", "auth_error", etc.
-    Message string    // Human-readable description
-    Err     error     // Underlying cause
-}
+pipeline := core.Pipe(tokenizer, llm)
+result, err := pipeline.Invoke(ctx, "Hello, world!")
+
+parallel := core.Parallel(agent1, agent2, agent3)
+results, err := parallel.Invoke(ctx, input)
 ```
 
-Error codes:
+## Event Streaming
+
+`Stream` is a pull-based event iterator built on Go 1.23+ [iter.Seq2].
+Events are generic via `Event`, carrying a typed payload, event type,
+optional error, and metadata:
 
 ```go
-const (
-    ErrRateLimit       ErrorCode = "rate_limit"
-    ErrAuth            ErrorCode = "auth_error"
-    ErrTimeout         ErrorCode = "timeout"
-    ErrInvalidInput    ErrorCode = "invalid_input"
-    ErrToolFailed      ErrorCode = "tool_failed"
-    ErrProviderDown    ErrorCode = "provider_unavailable"
-    ErrGuardBlocked    ErrorCode = "guard_blocked"
-    ErrBudgetExhausted ErrorCode = "budget_exhausted"
-)
-```
-
-Check if an error is retryable:
-
-```go
-if core.IsRetryable(err) {
-    // retry the operation
-}
-```
-
-## Context Helpers
-
-### Multi-Tenancy
-
-```go
-ctx = core.WithTenant(ctx, "tenant-123")
-tenantID := core.GetTenant(ctx) // returns TenantID
-```
-
-### Session & Request IDs
-
-```go
-ctx = core.WithSessionID(ctx, "session-456")
-ctx = core.WithRequestID(ctx, "req-789")
-
-sessionID := core.GetSessionID(ctx)
-requestID := core.GetRequestID(ctx)
-```
-
-## Batch Processing
-
-Process multiple inputs concurrently with configurable limits:
-
-```go
-results := core.BatchInvoke(ctx, fn, inputs, core.BatchOptions{
-    MaxConcurrency: 10,
-    Timeout:        5 * time.Second,
-    RetryPolicy:    &core.RetryPolicy{MaxAttempts: 3},
-})
-
-for i, result := range results {
-    if result.Err != nil {
-        log.Printf("Item %d failed: %v", i, result.Err)
-    } else {
-        log.Printf("Item %d: %v", i, result.Value)
+for event, err := range stream {
+    if err != nil { break }
+    switch event.Type {
+    case core.EventData:
+        fmt.Print(event.Payload)
+    case core.EventToolCall:
+        // handle tool invocation
     }
 }
 ```
 
-## Stream Utilities
+Stream utilities include `CollectStream`, `MapStream`, `FilterStream`,
+`MergeStreams`, and `FanOut` for transforming and combining streams.
+`BufferedStream` adds backpressure control between fast producers and
+slow consumers, and `FlowController` provides semaphore-based
+concurrency limiting.
 
-### Collect
+## Batch Processing
 
-Drain a stream into a slice:
-
-```go
-events, err := core.CollectStream(stream)
-```
-
-### Map
-
-Transform stream events:
+`BatchInvoke` executes a function over multiple inputs concurrently with
+configurable concurrency limits, per-item timeouts, and retry policies:
 
 ```go
-mapped := core.MapStream(src, func(event core.Event[T]) (core.Event[U], error) {
-    // transform event
-    return newEvent, nil
+results := core.BatchInvoke(ctx, embedFn, documents, core.BatchOptions{
+    MaxConcurrency: 10,
+    Timeout:        5 * time.Second,
 })
-```
-
-### Filter
-
-Keep only matching events:
-
-```go
-filtered := core.FilterStream(src, func(event core.Event[T]) bool {
-    return event.Type == core.EventData
-})
-```
-
-### Merge
-
-Combine multiple streams:
-
-```go
-merged := core.MergeStreams(ctx, stream1, stream2, stream3)
-```
-
-### Fan-Out
-
-Duplicate a stream to multiple consumers:
-
-```go
-streams := core.FanOut(ctx, source, 3) // 3 independent consumers
-```
-
-### Buffered Stream
-
-Add backpressure buffering:
-
-```go
-buffered := core.NewBufferedStream(ctx, source, 100) // 100-event buffer
-for event, err := range buffered.Iter() {
-    // consume at your own pace
-}
-```
-
-## Composition
-
-### Pipe
-
-Chain two runnables:
-
-```go
-composed := core.Pipe(retriever, llm)
-result, err := composed.Invoke(ctx, "query")
-```
-
-### Parallel
-
-Fan-out to multiple runnables:
-
-```go
-parallel := core.Parallel(model1, model2, model3)
-results, err := parallel.Invoke(ctx, input) // []any with 3 results
 ```
 
 ## Lifecycle Management
 
-### App
-
-Manage component lifecycles:
+The `Lifecycle` interface provides Start/Stop/Health semantics for
+components that require explicit initialization and graceful shutdown.
+`App` manages a set of Lifecycle components, starting them in registration
+order and stopping them in reverse:
 
 ```go
-type Lifecycle interface {
-    Start(ctx context.Context) error
-    Stop(ctx context.Context) error
-    Health() HealthStatus
-}
-
 app := core.NewApp()
-app.Register(dbConn, cacheClient, apiServer)
-
-// Start all in order
+app.Register(dbPool, cacheLayer, httpServer)
 if err := app.Start(ctx); err != nil {
     log.Fatal(err)
 }
+defer app.Shutdown(ctx)
+```
 
-// Stop all in reverse order
-defer app.Shutdown(context.Background())
+## Multi-Tenancy
 
-// Health checks
-statuses := app.HealthCheck()
+`WithTenant` and `GetTenant` store and retrieve a `TenantID` from context,
+enabling tenant-scoped data isolation across all framework operations.
+
+## Context Helpers
+
+`WithSessionID`, `GetSessionID`, `WithRequestID`, and `GetRequestID`
+propagate session and request identifiers through context for correlation
+across distributed traces and logs.
+
+## Structured Errors
+
+`Error` carries an operation name, `ErrorCode`, human-readable message,
+and optional wrapped cause. Error codes like `ErrRateLimit`, `ErrTimeout`,
+and `ErrProviderDown` enable programmatic retry decisions via `IsRetryable`:
+
+```go
+if core.IsRetryable(err) {
+    // safe to retry
+}
 ```
 
 ## Functional Options
 
-Apply options to any configurable type:
-
-```go
-type options struct {
-    timeout time.Duration
-}
-
-core.ApplyOptions(&opts,
-    WithTimeout(30*time.Second),
-    WithRetry(3),
-)
-```
-
-## Flow Control
-
-Manage backpressure:
-
-```go
-fc := core.NewFlowController(10) // max 10 concurrent
-
-// Blocking acquire
-if err := fc.Acquire(ctx); err != nil {
-    return err
-}
-defer fc.Release()
-
-// Non-blocking try
-if fc.TryAcquire() {
-    defer fc.Release()
-    // do work
-}
-```
-
-## See Also
-
-- [Schema Package](./schema.md) for message and content types
-- [LLM Package](./llm.md) for LLM abstraction
-- [Agent Package](./agent.md) for agent runtime
+The `Option` interface and `OptionFunc` adapter implement the functional
+options pattern used throughout the framework for configuration.

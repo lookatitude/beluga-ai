@@ -1,35 +1,80 @@
 ---
-title: API Reference
-description: Complete API documentation for all Beluga AI v2 packages.
+title: "API Reference"
+description: "Complete API documentation for all Beluga AI v2 packages, generated from source."
 ---
 
-This section provides comprehensive API documentation for all exported types, functions, and interfaces in Beluga AI v2.
+Complete API reference for all Beluga AI v2 packages. This documentation is generated from the Go source code doc comments.
 
-## Core Packages
+## Foundation
 
-### Foundation
+| Package | Description |
+|---------|-------------|
+| [Core Package](./core/) | Foundation primitives: streams, Runnable, events, errors, lifecycle, multi-tenancy |
+| [Schema Package](./schema/) | Shared types: messages, content parts, tool definitions, documents, events, sessions |
+| [Config Package](./config/) | Configuration loading, validation, environment variables, and hot-reload |
 
-- **[Core](./core.md)** — Typed event streams, Runnable execution interface, batch processing, context helpers, multi-tenancy, lifecycle management, and typed errors
-- **[Schema](./schema.md)** — Shared message types, multimodal content parts, tool definitions, documents, events, and session types
-- **[Config](./config.md)** — Configuration loading, validation, environment variable merging, and hot-reload watchers
+## LLM & Agents
 
-### LLM & Agents
+| Package | Description |
+|---------|-------------|
+| [LLM Package](./llm/) | ChatModel interface, provider registry, middleware, hooks, structured output, routing |
+| [LLM Providers](./llm-providers/) | All LLM provider implementations: OpenAI, Anthropic, Google, Ollama, Bedrock, and more |
+| [Agent Package](./agent/) | Agent runtime, BaseAgent, Executor, Planner strategies, handoffs, and event bus |
+| [Agent Workflows](./agent-workflow/) | Sequential, Parallel, and Loop workflow agents for multi-agent orchestration |
+| [Tool Package](./tool/) | Tool interface, FuncTool, registry, MCP client integration, and middleware |
 
-- **[LLM](./llm.md)** — ChatModel interface, provider registry, middleware, hooks, structured output, context management, tokenization, and routing
-- **[Agent](./agent.md)** — Agent runtime, BaseAgent, Executor, Planner implementations (ReAct, Reflexion, ToT, GoT, LATS, MoA, Self-Discover), handoffs, and workflows
-- **[Tool](./tool.md)** — Tool interface, FuncTool, registry, MCP client integration, and middleware
+## Memory & RAG
 
-### Memory & RAG
+| Package | Description |
+|---------|-------------|
+| [Memory Package](./memory/) | MemGPT-inspired 3-tier memory: Core, Recall, Archival, graph memory, composite |
+| [Memory Store Providers](./memory-stores/) | Memory store implementations: in-memory, Redis, PostgreSQL, SQLite, MongoDB, Neo4j, Memgraph, Dragonfly |
+| [RAG Embedding](./rag-embedding/) | Embedder interface for converting text to vector embeddings |
+| [Embedding Providers](./rag-embedding-providers/) | Embedding provider implementations: OpenAI, Cohere, Google, Jina, Mistral, Ollama, Voyage, and more |
+| [RAG Vector Store](./rag-vectorstore/) | VectorStore interface for similarity search over document embeddings |
+| [Vector Store Providers](./rag-vectorstore-providers/) | Vector store implementations: pgvector, Pinecone, Qdrant, Weaviate, Milvus, Elasticsearch, and more |
+| [RAG Retriever](./rag-retriever/) | Retriever strategies: Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, Adaptive |
+| [RAG Document Loaders](./rag-loader/) | Document loaders for files, cloud storage, APIs, and web content |
+| [RAG Text Splitters](./rag-splitter/) | Text splitting strategies for chunking documents |
 
-- **[Memory](./memory.md)** — MemGPT-inspired 3-tier memory system (Core, Recall, Archival), graph memory, and composite memory
-- **[RAG](./rag.md)** — Embedder interface, VectorStore interface, Retriever implementations (Vector, Hybrid, HyDE, CRAG, Multi-Query, Ensemble, Rerank, Adaptive)
+## Voice
 
-### Voice & Safety
+| Package | Description |
+|---------|-------------|
+| [Voice Package](./voice/) | Frame-based voice pipeline, VAD, hybrid cascade/S2S switching |
+| [Voice STT](./voice-stt/) | Speech-to-text interface and providers: Deepgram, AssemblyAI, Whisper, Groq, ElevenLabs, Gladia |
+| [Voice TTS](./voice-tts/) | Text-to-speech interface and providers: ElevenLabs, Cartesia, PlayHT, Fish, Groq, LMNT, Smallest |
+| [Voice S2S](./voice-s2s/) | Speech-to-speech interface and providers: OpenAI Realtime, Gemini Live, Nova S2S |
+| [Voice Transport](./voice-transport/) | Transport layer for voice sessions: WebSocket, LiveKit, Daily, Pipecat |
+| [Voice VAD](./voice-vad/) | Voice activity detection providers: Silero, WebRTC |
 
-- **[Voice](./voice.md)** — Frame-based voice pipeline, VAD, STT/TTS/S2S processors, transport layer, hybrid cascade/S2S switching
-- **[Guard](./guard.md)** — Three-stage safety pipeline (input, output, tool), prompt injection detection, PII redaction, content filtering, spotlighting
+## Infrastructure
 
-## Package Design Patterns
+| Package | Description |
+|---------|-------------|
+| [Guard Package](./guard/) | Three-stage safety pipeline: input, output, tool guards with built-in and external providers |
+| [Resilience Package](./resilience/) | Circuit breaker, hedge, retry, and rate limiting patterns |
+| [Cache Package](./cache/) | Exact, semantic, and prompt caching with pluggable backends |
+| [HITL Package](./hitl/) | Human-in-the-loop: confidence-based approval, escalation policies |
+| [Auth Package](./auth/) | RBAC, ABAC, and capability-based security |
+| [Eval Package](./eval/) | Evaluation framework: metrics, runners, and provider integrations |
+| [State Package](./state/) | Shared agent state with watch and notify |
+| [Prompt Package](./prompt/) | Prompt management, templating, and versioning |
+| [Orchestration Package](./orchestration/) | Chain, Graph, Router, Parallel, and Supervisor orchestration patterns |
+| [Workflow Package](./workflow/) | Durable execution engine with provider integrations |
+
+## Protocol & Server
+
+| Package | Description |
+|---------|-------------|
+| [Protocol Package](./protocol/) | Protocol abstractions for MCP, A2A, REST, and OpenAI Agents compatibility |
+| [MCP Protocol](./protocol-mcp/) | Model Context Protocol server/client, SDK, registry, and Composio integration |
+| [A2A Protocol](./protocol-a2a/) | Agent-to-Agent protocol types and SDK implementation |
+| [REST & OpenAI Agents](./protocol-rest/) | REST/SSE API server and OpenAI Agents protocol compatibility |
+| [Server Adapters](./server/) | HTTP framework adapters: Gin, Fiber, Echo, Chi, gRPC, Connect, Huma |
+| [Observability Package](./o11y/) | OpenTelemetry GenAI conventions, tracing, and provider integrations |
+
+## Design Patterns
 
 All extensible packages in Beluga AI v2 follow consistent patterns:
 
@@ -70,80 +115,3 @@ for chunk, err := range model.Stream(ctx, msgs) {
     fmt.Print(chunk.Delta)
 }
 ```
-
-## Import Paths
-
-All packages use the module path `github.com/lookatitude/beluga-ai`:
-
-```go
-import (
-    "github.com/lookatitude/beluga-ai/core"
-    "github.com/lookatitude/beluga-ai/schema"
-    "github.com/lookatitude/beluga-ai/llm"
-    "github.com/lookatitude/beluga-ai/agent"
-    "github.com/lookatitude/beluga-ai/tool"
-    "github.com/lookatitude/beluga-ai/memory"
-    "github.com/lookatitude/beluga-ai/rag/embedding"
-    "github.com/lookatitude/beluga-ai/rag/vectorstore"
-    "github.com/lookatitude/beluga-ai/rag/retriever"
-    "github.com/lookatitude/beluga-ai/voice"
-    "github.com/lookatitude/beluga-ai/guard"
-    "github.com/lookatitude/beluga-ai/config"
-)
-```
-
-## Provider Registration
-
-Import providers with the blank identifier to auto-register:
-
-```go
-import (
-    "github.com/lookatitude/beluga-ai/llm"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-    _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-)
-
-model, err := llm.New("openai", config.ProviderConfig{
-    APIKey: os.Getenv("OPENAI_API_KEY"),
-    Model:  "gpt-4o",
-})
-```
-
-## Error Handling
-
-All errors follow the typed error pattern from `core.Error`:
-
-```go
-_, err := model.Generate(ctx, msgs)
-if err != nil {
-    var coreErr *core.Error
-    if errors.As(err, &coreErr) {
-        if coreErr.Code == core.ErrRateLimit {
-            // handle rate limit
-        }
-        if core.IsRetryable(err) {
-            // retry the operation
-        }
-    }
-}
-```
-
-## Context Propagation
-
-Every public function accepts `context.Context` as its first parameter:
-
-```go
-ctx := context.Background()
-ctx = core.WithTenant(ctx, "tenant-123")
-ctx = core.WithSessionID(ctx, "session-456")
-ctx = core.WithRequestID(ctx, "req-789")
-
-result, err := agent.Invoke(ctx, input)
-```
-
-## Next Steps
-
-- Read the [Core Package Reference](./core.md) for foundational types
-- Explore [LLM Package Reference](./llm.md) for model abstraction
-- Review [Agent Package Reference](./agent.md) for agentic patterns
-- Check [RAG Package Reference](./rag.md) for retrieval-augmented generation
