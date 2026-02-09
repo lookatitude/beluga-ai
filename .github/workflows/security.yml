@@ -264,7 +264,7 @@ jobs:
           echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities." >> SECURITY.md
 
       - name: Commit SECURITY.md
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         with:
           commit_message: "chore(ci): update SECURITY.md [skip ci]"
           file_pattern: SECURITY.md
