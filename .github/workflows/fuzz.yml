@@ -74,7 +74,7 @@ jobs:
 
       - name: Create issue on fuzz failure
         if: failure() && steps.find_targets.outputs.has_targets == 'true'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           script: |
             const failures = '${{ steps.fuzz_run.outputs.fuzz_failures }}' || 'unknown';
