@@ -1,0 +1,18 @@
+---
+title: Agents & Assistants
+description: Use cases for building intelligent agents, multi-agent systems, and conversational assistants.
+sidebar:
+  order: 0
+---
+
+Build intelligent agents with tool use, multi-agent handoffs, memory, and autonomous reasoning using Beluga AI's agent runtime.
+
+| Use Case | Description |
+|----------|-------------|
+| [Multi-Agent Customer Support](./multi-agent-support/) | Build intelligent support with specialized agents, handoffs, and human escalation. |
+| [Autonomous Customer Support](./autonomous-support/) | Build self-service support with ReAct agents, tool integration, and intelligent escalation. |
+| [Conversational AI Assistant](./conversational-ai/) | Build a personalized conversational AI with persistent 3-tier memory. |
+| [Automated Code Review](./code-review-system/) | Build an AI-powered code review agent with git integration and structured feedback. |
+| [Few-Shot SQL Generation](./few-shot-sql/) | Few-shot learning for natural language to SQL query generation. |
+| [Context-aware IDE Extension](./memory-ide-extension/) | Build an IDE extension with project-specific memory that learns from code patterns. |
+| [Dynamic Tool Injection](./dynamic-tool-injection/) | Runtime tool injection for context-aware agent tool selection. |

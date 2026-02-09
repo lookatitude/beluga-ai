@@ -2,16 +2,23 @@
 import MobileMenuFooter from "@astrojs/starlight/components/MobileMenuFooter.astro";
 import SidebarPersister from "@astrojs/starlight/components/SidebarPersister.astro";
 import SidebarSublist from "./SidebarSublist.astro";
+import { flattenSidebar } from "node_modules/@astrojs/starlight/utils/navigation";
 
 let sidebar = Astro.locals.starlightRoute.sidebar;
 
+// Find the top-level section containing the current page
+const activeSection = sidebar.find(
+  (section) =>
+    section.type === "group" &&
+    flattenSidebar(section.entries).some((e) => e.isCurrent)
+);
 
-
-
+// Show only that section's entries (or full sidebar as fallback)
+const filteredSidebar = activeSection ? activeSection.entries : sidebar;
 ---
 
 <SidebarPersister>
-  <SidebarSublist sublist={sidebar}  />
+  <SidebarSublist sublist={filteredSidebar}  />
 </SidebarPersister>
 
 <div class="md:sl-hidden">

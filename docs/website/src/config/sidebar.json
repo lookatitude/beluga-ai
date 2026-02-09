@@ -21,70 +21,33 @@
       "label": "Guides",
       "items": [
         {
-          "label": "[seti:robot] Building Your First Agent",
-          "slug": "guides/first-agent"
+          "label": "Overview",
+          "slug": "guides"
         },
         {
-          "label": "[seti:chat] Working with LLMs",
-          "slug": "guides/working-with-llms"
+          "label": "Foundations",
+          "collapsed": true,
+          "autogenerate": { "directory": "guides/foundations" }
         },
         {
-          "label": "[seti:json] Structured Output",
-          "slug": "guides/structured-output"
+          "label": "Capabilities",
+          "collapsed": true,
+          "autogenerate": { "directory": "guides/capabilities" }
         },
         {
-          "label": "[seti:search] RAG Pipeline",
-          "slug": "guides/rag-pipeline"
-        },
-        {
-          "label": "[document] Document Processing",
-          "slug": "guides/document-processing"
-        },
-        {
-          "label": "[seti:db] Memory System",
-          "slug": "guides/memory-system"
-        },
-        {
-          "label": "[seti:audio] Voice AI Pipeline",
-          "slug": "guides/voice-ai"
-        },
-        {
-          "label": "[seti:image] Multimodal AI",
-          "slug": "guides/multimodal"
-        },
-        {
-          "label": "[seti:wrench] Tools & MCP",
-          "slug": "guides/tools-and-mcp"
-        },
-        {
-          "label": "[seti:flow] Orchestration & Workflows",
-          "slug": "guides/orchestration"
-        },
-        {
-          "label": "[seti:robot] Multi-Agent Systems",
-          "slug": "guides/multi-agent-systems"
-        },
-        {
-          "label": "[seti:code] Prompt Engineering",
-          "slug": "guides/prompt-engineering"
-        },
-        {
-          "label": "[shield] Safety & Guards",
-          "slug": "guides/safety-and-guards"
-        },
-        {
-          "label": "[graph] Observability",
-          "slug": "guides/observability"
-        },
-        {
-          "label": "[seti:docker] Deploying to Production",
-          "slug": "guides/deployment"
+          "label": "Production",
+          "collapsed": true,
+          "autogenerate": { "directory": "guides/production" }
         }
       ]
     },
     {
       "label": "Tutorials",
       "items": [
+        {
+          "label": "Overview",
+          "slug": "tutorials"
+        },
         {
           "label": "Foundation",
           "collapsed": true,
@@ -151,100 +114,48 @@
       "label": "Cookbook",
       "items": [
         {
+          "label": "Overview",
+          "slug": "cookbook"
+        },
+        {
           "label": "[seti:robot] Agent Recipes",
-          "slug": "cookbook/agent-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/agents" }
         },
         {
           "label": "[seti:chat] LLM Recipes",
-          "slug": "cookbook/llm-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/llm" }
         },
         {
           "label": "[seti:search] RAG Recipes",
-          "slug": "cookbook/rag-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/rag" }
         },
         {
           "label": "[seti:db] Memory Recipes",
-          "slug": "cookbook/memory-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/memory" }
         },
         {
           "label": "[seti:audio] Voice Recipes",
-          "slug": "cookbook/voice-recipes"
-        },
-        {
-          "label": "[seti:wrench] Tool Recipes",
-          "slug": "cookbook/tool-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/voice" }
         },
         {
           "label": "[seti:image] Multimodal Recipes",
-          "slug": "cookbook/multimodal-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/multimodal" }
         },
         {
           "label": "[seti:code] Prompt Recipes",
-          "slug": "cookbook/prompt-recipes"
+          "collapsed": true,
+          "autogenerate": { "directory": "cookbook/prompts" }
         },
         {
           "label": "[setting] Infrastructure Recipes",
-          "slug": "cookbook/infrastructure-recipes"
-        },
-        {
-          "label": "Individual Recipes",
           "collapsed": true,
-          "items": [
-            { "label": "Agent Tool Failures", "slug": "cookbook/agents-tool-failures" },
-            { "label": "Parallel Execution", "slug": "cookbook/agents-parallel-execution" },
-            { "label": "Custom Agent Patterns", "slug": "cookbook/custom-agent-patterns" },
-            { "label": "History Trimming", "slug": "cookbook/history-trimming" },
-            { "label": "Streaming Metadata", "slug": "cookbook/streaming-metadata" },
-            { "label": "Streaming Tool Calls", "slug": "cookbook/streaming-tool-calls" },
-            { "label": "Token Counting", "slug": "cookbook/token-counting" },
-            { "label": "LLM Error Handling", "slug": "cookbook/llm-error-handling" },
-            { "label": "Config Hot Reload", "slug": "cookbook/config-hot-reload" },
-            { "label": "Config Secret Masking", "slug": "cookbook/config-secret-masking" },
-            { "label": "Context Timeout", "slug": "cookbook/context-timeout" },
-            { "label": "Global Retry", "slug": "cookbook/global-retry" },
-            { "label": "Document Ingestion", "slug": "cookbook/document-ingestion" },
-            { "label": "Parallel File Loading", "slug": "cookbook/parallel-file-loading" },
-            { "label": "Corrupt Doc Handling", "slug": "cookbook/corrupt-doc-handling" },
-            { "label": "Batch Embeddings", "slug": "cookbook/batch-embeddings" },
-            { "label": "Metadata Clustering", "slug": "cookbook/metadata-clustering" },
-            { "label": "Memory TTL Cleanup", "slug": "cookbook/memory-ttl-cleanup" },
-            { "label": "Memory Context Recovery", "slug": "cookbook/memory-context-recovery" },
-            { "label": "Conversation Expiry", "slug": "cookbook/conversation-expiry" },
-            { "label": "Inbound Media", "slug": "cookbook/inbound-media" },
-            { "label": "S2S Voice Metrics", "slug": "cookbook/s2s-voice-metrics" },
-            { "label": "Trace Aggregation", "slug": "cookbook/trace-aggregation" },
-            { "label": "Capability Fallbacks", "slug": "cookbook/capability-fallbacks" },
-            { "label": "Multiple Images", "slug": "cookbook/multiple-images" },
-            { "label": "Parallel Nodes", "slug": "cookbook/parallel-nodes" },
-            { "label": "Workflow Checkpoints", "slug": "cookbook/workflow-checkpoints" },
-            { "label": "Dynamic Templates", "slug": "cookbook/dynamic-templates" },
-            { "label": "Partial Substitution", "slug": "cookbook/partial-substitution" },
-            { "label": "Parent Document Retrieval", "slug": "cookbook/parent-document-retrieval" },
-            { "label": "Cohere Reranking", "slug": "cookbook/cohere-reranking" },
-            { "label": "Prompt Injection Detection", "slug": "cookbook/prompt-injection-detection" },
-            { "label": "PII Redaction", "slug": "cookbook/pii-redaction" },
-            { "label": "Schema Validation", "slug": "cookbook/schema-validation" },
-            { "label": "Recursive Schemas", "slug": "cookbook/recursive-schemas" },
-            { "label": "Request ID Correlation", "slug": "cookbook/request-id-correlation" },
-            { "label": "Rate Limiting", "slug": "cookbook/rate-limiting" },
-            { "label": "Code Splitting", "slug": "cookbook/code-splitting" },
-            { "label": "Sentence Splitting", "slug": "cookbook/sentence-splitting" },
-            { "label": "Meta Filtering", "slug": "cookbook/meta-filtering" },
-            { "label": "Reindexing Tracking", "slug": "cookbook/reindexing-tracking" },
-            { "label": "Voice Stream Scaling", "slug": "cookbook/voice-stream-scaling" },
-            { "label": "Voice Backends", "slug": "cookbook/voice-backends" },
-            { "label": "Speech Interruption", "slug": "cookbook/speech-interruption" },
-            { "label": "Glass-to-Glass Latency", "slug": "cookbook/glass-to-glass-latency" },
-            { "label": "Long Utterances", "slug": "cookbook/long-utterances" },
-            { "label": "Preemptive Generation", "slug": "cookbook/voice-preemptive-gen" },
-            { "label": "Jitter Buffer", "slug": "cookbook/jitter-buffer" },
-            { "label": "Background Noise", "slug": "cookbook/background-noise" },
-            { "label": "Multi-Speaker Synthesis", "slug": "cookbook/multi-speaker-synthesis" },
-            { "label": "SSML Tuning", "slug": "cookbook/ssml-tuning" },
-            { "label": "ML Barge-In", "slug": "cookbook/ml-barge-in" },
-            { "label": "Sentence Boundary Turns", "slug": "cookbook/sentence-boundary-turns" },
-            { "label": "VAD Sensitivity", "slug": "cookbook/vad-sensitivity" }
-          ]
+          "autogenerate": { "directory": "cookbook/infrastructure" }
         }
       ]
     },
@@ -252,94 +163,58 @@
       "label": "Integrations",
       "items": [
         {
+          "label": "Overview",
+          "slug": "integrations"
+        },
+        {
+          "label": "[seti:robot] Agents & Tools",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/agents" }
+        },
+        {
           "label": "[seti:chat] LLM Providers",
-          "slug": "integrations/llm-providers"
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/llm" }
         },
         {
-          "label": "[seti:vectors] Embedding Providers",
-          "slug": "integrations/embedding-providers"
+          "label": "[seti:vectors] Embeddings & NLP",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/embeddings" }
         },
         {
-          "label": "[seti:db] Vector Stores",
-          "slug": "integrations/vector-stores"
+          "label": "[seti:db] Data & Storage",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/data" }
         },
         {
-          "label": "[document] Document Loaders",
-          "slug": "integrations/document-loaders"
-        },
-        {
-          "label": "[seti:audio] Voice Services",
-          "slug": "integrations/voice-services"
-        },
-        {
-          "label": "[graph] Monitoring & Observability",
-          "slug": "integrations/monitoring"
-        },
-        {
-          "label": "[seti:message] Messaging Platforms",
-          "slug": "integrations/messaging"
+          "label": "[seti:audio] Voice",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/voice" }
         },
         {
           "label": "[seti:config] Infrastructure",
-          "slug": "integrations/infrastructure"
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/infrastructure" }
         },
         {
-          "label": "Deep Dives",
+          "label": "[graph] Observability",
           "collapsed": true,
-          "items": [
-            { "label": "Agent Tools Registry", "slug": "integrations/agents-tools-registry" },
-            { "label": "Agent MCP Integration", "slug": "integrations/agents-mcp-integration" },
-            { "label": "OpenAI Assistants Bridge", "slug": "integrations/openai-assistants-bridge" },
-            { "label": "Mock UI Testing", "slug": "integrations/mock-ui-testing" },
-            { "label": "HashiCorp Vault", "slug": "integrations/vault-connector" },
-            { "label": "Viper Environment", "slug": "integrations/viper-environment" },
-            { "label": "Context Deep Dive", "slug": "integrations/context-deep-dive" },
-            { "label": "Zap & Logrus", "slug": "integrations/zap-logrus" },
-            { "label": "S3 Event Loader", "slug": "integrations/s3-event-loader" },
-            { "label": "Google Drive Scraper", "slug": "integrations/google-drive-scraper" },
-            { "label": "Cohere Multilingual", "slug": "integrations/cohere-multilingual" },
-            { "label": "Ollama Local Embeddings", "slug": "integrations/ollama-local-embeddings" },
-            { "label": "Anthropic Enterprise", "slug": "integrations/anthropic-enterprise" },
-            { "label": "AWS Bedrock", "slug": "integrations/bedrock-integration" },
-            { "label": "MongoDB Persistence", "slug": "integrations/mongodb-persistence" },
-            { "label": "Redis Locking", "slug": "integrations/redis-locking" },
-            { "label": "Slack Webhooks", "slug": "integrations/slack-webhooks" },
-            { "label": "Twilio Conversations", "slug": "integrations/twilio-conversations" },
-            { "label": "Datadog Dashboards", "slug": "integrations/datadog-dashboards" },
-            { "label": "LangSmith Debugging", "slug": "integrations/langsmith-debugging" },
-            { "label": "Vertex AI Vision", "slug": "integrations/vertex-ai-vision" },
-            { "label": "Pixtral Mistral", "slug": "integrations/pixtral-mistral" },
-            { "label": "Kubernetes Scheduler", "slug": "integrations/kubernetes-scheduler" },
-            { "label": "NATS Message Bus", "slug": "integrations/nats-message-bus" },
-            { "label": "LangChain Hub", "slug": "integrations/langchain-hub" },
-            { "label": "Filesystem Templates", "slug": "integrations/filesystem-templates" },
-            { "label": "Elasticsearch Search", "slug": "integrations/elasticsearch-search" },
-            { "label": "Weaviate RAG", "slug": "integrations/weaviate-rag" },
-            { "label": "Safety JSON Reporting", "slug": "integrations/safety-json-reporting" },
-            { "label": "Ethical API Filter", "slug": "integrations/ethical-api-filter" },
-            { "label": "JSON Schema Validation", "slug": "integrations/json-schema-validation" },
-            { "label": "Go Struct Bridge", "slug": "integrations/go-struct-bridge" },
-            { "label": "Auth0 JWT", "slug": "integrations/auth0-jwt" },
-            { "label": "Kubernetes Helm", "slug": "integrations/kubernetes-helm" },
-            { "label": "SpaCy Tokenizer", "slug": "integrations/spacy-tokenizer" },
-            { "label": "Tiktoken BPE", "slug": "integrations/tiktoken-bpe" },
-            { "label": "Pinecone Serverless", "slug": "integrations/pinecone-serverless" },
-            { "label": "Qdrant Cloud", "slug": "integrations/qdrant-cloud" },
-            { "label": "LiveKit Webhooks", "slug": "integrations/livekit-webhooks" },
-            { "label": "Vapi Custom Tools", "slug": "integrations/vapi-custom-tools" },
-            { "label": "Nova Bedrock Streaming", "slug": "integrations/nova-bedrock-streaming" },
-            { "label": "OpenAI Realtime", "slug": "integrations/openai-realtime" },
-            { "label": "Session Routing", "slug": "integrations/session-routing" },
-            { "label": "Session Persistence", "slug": "integrations/session-persistence" },
-            { "label": "Transcribe WebSockets", "slug": "integrations/transcribe-websockets" },
-            { "label": "Deepgram Streams", "slug": "integrations/deepgram-streams" },
-            { "label": "Azure Speech", "slug": "integrations/azure-speech" },
-            { "label": "ElevenLabs Streaming", "slug": "integrations/elevenlabs-streaming" },
-            { "label": "Noisy Turn Detection", "slug": "integrations/noisy-turn-detection" },
-            { "label": "Turn Heuristic Tuning", "slug": "integrations/turn-heuristic-tuning" },
-            { "label": "ONNX Edge VAD", "slug": "integrations/onnx-edge-vad" },
-            { "label": "WebRTC Browser VAD", "slug": "integrations/webrtc-browser-vad" }
-          ]
+          "autogenerate": { "directory": "integrations/observability" }
+        },
+        {
+          "label": "[seti:message] Messaging",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/messaging" }
+        },
+        {
+          "label": "[seti:code] Prompts & Schema",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/prompts" }
+        },
+        {
+          "label": "[shield] Safety & Compliance",
+          "collapsed": true,
+          "autogenerate": { "directory": "integrations/safety" }
         }
       ]
     },
@@ -347,109 +222,58 @@
       "label": "Use Cases",
       "items": [
         {
-          "label": "[seti:search] Enterprise RAG Knowledge Base",
-          "slug": "use-cases/enterprise-rag"
+          "label": "Overview",
+          "slug": "use-cases"
         },
         {
-          "label": "[seti:robot] Multi-Agent Customer Support",
-          "slug": "use-cases/multi-agent-support"
-        },
-        {
-          "label": "[document] Intelligent Document Processing",
-          "slug": "use-cases/document-processing"
-        },
-        {
-          "label": "[graph] Real-Time Data Analysis",
-          "slug": "use-cases/real-time-analysis"
-        },
-        {
-          "label": "[seti:chat] Conversational AI Assistant",
-          "slug": "use-cases/conversational-ai"
-        },
-        {
-          "label": "[seti:audio] Voice AI Applications",
-          "slug": "use-cases/voice-applications"
-        },
-        {
-          "label": "[seti:docker] Production Agent Platform",
-          "slug": "use-cases/production-platform"
-        },
-        {
-          "label": "[seti:code] Automated Code Review",
-          "slug": "use-cases/code-review-system"
-        },
-        {
-          "label": "[seti:package] Batch Processing",
-          "slug": "use-cases/batch-processing"
-        },
-        {
-          "label": "More Use Cases",
+          "label": "[seti:search] Search & RAG",
           "collapsed": true,
-          "items": [
-            { "label": "Workflow Orchestration", "slug": "use-cases/workflow-orchestration" },
-            { "label": "Semantic Search", "slug": "use-cases/semantic-search" },
-            { "label": "LLM Gateway", "slug": "use-cases/llm-gateway" },
-            { "label": "Autonomous Support", "slug": "use-cases/autonomous-support" },
-            { "label": "DevSecOps Auditor", "slug": "use-cases/devsecops-auditor" },
-            { "label": "Cost-Optimized Router", "slug": "use-cases/cost-optimized-router" },
-            { "label": "Model A/B Testing", "slug": "use-cases/model-ab-testing" },
-            { "label": "Dynamic Feature Flags", "slug": "use-cases/dynamic-feature-flags" },
-            { "label": "Multi-Tenant Keys", "slug": "use-cases/multi-tenant-keys" },
-            { "label": "Error Recovery Service", "slug": "use-cases/error-recovery-service" },
-            { "label": "Streaming Proxy", "slug": "use-cases/streaming-proxy" },
-            { "label": "Cloud Doc Sync", "slug": "use-cases/cloud-doc-sync" },
-            { "label": "Legacy Archive", "slug": "use-cases/legacy-archive" },
-            { "label": "Cross-Lingual Retrieval", "slug": "use-cases/cross-lingual-retrieval" },
-            { "label": "Semantic Image Search", "slug": "use-cases/semantic-image-search" },
-            { "label": "Automated Code Generation", "slug": "use-cases/automated-code-generation" },
-            { "label": "Model Benchmarking", "slug": "use-cases/model-benchmarking" },
-            { "label": "Memory IDE Extension", "slug": "use-cases/memory-ide-extension" },
-            { "label": "Patient History", "slug": "use-cases/patient-history" },
-            { "label": "Multi-Channel Hub", "slug": "use-cases/multi-channel-hub" },
-            { "label": "SMS Reminders", "slug": "use-cases/sms-reminders" },
-            { "label": "Monitoring Dashboards", "slug": "use-cases/monitoring-dashboards" },
-            { "label": "PII Leakage Detection", "slug": "use-cases/pii-leakage-detection" },
-            { "label": "Token Cost Attribution", "slug": "use-cases/token-cost-attribution" },
-            { "label": "Audio-Visual Search", "slug": "use-cases/audio-visual-search" },
-            { "label": "Security Camera", "slug": "use-cases/security-camera" },
-            { "label": "Invoice Processor", "slug": "use-cases/invoice-processor" },
-            { "label": "Multi-Stage ETL", "slug": "use-cases/multi-stage-etl" },
-            { "label": "Dynamic Tool Injection", "slug": "use-cases/dynamic-tool-injection" },
-            { "label": "Few-Shot SQL", "slug": "use-cases/few-shot-sql" },
-            { "label": "Multi-Doc Summarizer", "slug": "use-cases/multi-doc-summarizer" },
-            { "label": "Regulatory Search", "slug": "use-cases/regulatory-search" },
-            { "label": "Children Stories Safety", "slug": "use-cases/children-stories-safety" },
-            { "label": "Financial Compliance", "slug": "use-cases/financial-compliance" },
-            { "label": "Legal Entity Extraction", "slug": "use-cases/legal-entity-extraction" },
-            { "label": "Medical Records", "slug": "use-cases/medical-records" },
-            { "label": "Support Gateway", "slug": "use-cases/support-gateway" },
-            { "label": "Search Everything", "slug": "use-cases/search-everything" },
-            { "label": "Scientific Papers", "slug": "use-cases/scientific-papers" },
-            { "label": "RAG Large Repos", "slug": "use-cases/rag-large-repos" },
-            { "label": "Knowledge QA", "slug": "use-cases/knowledge-qa" },
-            { "label": "Recommendation Engine", "slug": "use-cases/recommendation-engine" },
-            { "label": "RAG Strategies", "slug": "use-cases/rag-strategies" },
-            { "label": "Voice IVR", "slug": "use-cases/voice-ivr" },
-            { "label": "Outbound Calling", "slug": "use-cases/outbound-calling" },
-            { "label": "Bilingual Tutor", "slug": "use-cases/bilingual-tutor" },
-            { "label": "Hotel Concierge", "slug": "use-cases/hotel-concierge" },
-            { "label": "Voice Forms", "slug": "use-cases/voice-forms" },
-            { "label": "Voice Sessions Overview", "slug": "use-cases/voice-sessions-overview" },
-            { "label": "Industrial Control", "slug": "use-cases/industrial-control" },
-            { "label": "Meeting Minutes", "slug": "use-cases/meeting-minutes" },
-            { "label": "E-Learning Voiceovers", "slug": "use-cases/elearning-voiceovers" },
-            { "label": "Interactive Audiobooks", "slug": "use-cases/interactive-audiobooks" },
-            { "label": "Barge-In Detection", "slug": "use-cases/barge-in-detection" },
-            { "label": "Low-Latency Prediction", "slug": "use-cases/low-latency-prediction" },
-            { "label": "Multi-Speaker Segmentation", "slug": "use-cases/multi-speaker-segmentation" },
-            { "label": "Noise-Resistant VAD", "slug": "use-cases/noise-resistant-vad" }
-          ]
+          "autogenerate": { "directory": "use-cases/search" }
+        },
+        {
+          "label": "[seti:robot] Agents & Automation",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/agents" }
+        },
+        {
+          "label": "[seti:audio] Voice",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/voice" }
+        },
+        {
+          "label": "[document] Documents",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/documents" }
+        },
+        {
+          "label": "[graph] Analytics & Monitoring",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/analytics" }
+        },
+        {
+          "label": "[shield] Safety & Compliance",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/safety" }
+        },
+        {
+          "label": "[seti:docker] Infrastructure",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/infrastructure" }
+        },
+        {
+          "label": "[seti:message] Messaging",
+          "collapsed": true,
+          "autogenerate": { "directory": "use-cases/messaging" }
         }
       ]
     },
     {
       "label": "Architecture",
       "items": [
+        {
+          "label": "Overview",
+          "slug": "architecture"
+        },
         {
           "label": "[document] Concepts",
           "slug": "architecture/concepts"
@@ -467,6 +291,10 @@
     {
       "label": "Providers",
       "items": [
+        {
+          "label": "Overview",
+          "slug": "providers"
+        },
         {
           "label": "LLM Providers",
           "collapsed": true,
@@ -551,83 +379,42 @@
         {
           "label": "Foundation",
           "collapsed": true,
-          "items": [
-            { "label": "core", "slug": "api-reference/core" },
-            { "label": "schema", "slug": "api-reference/schema" },
-            { "label": "config", "slug": "api-reference/config" },
-            { "label": "o11y", "slug": "api-reference/o11y" }
-          ]
+          "autogenerate": { "directory": "api-reference/foundation" }
         },
         {
           "label": "LLM & Agents",
           "collapsed": true,
-          "items": [
-            { "label": "llm", "slug": "api-reference/llm" },
-            { "label": "LLM Providers", "slug": "api-reference/llm-providers" },
-            { "label": "agent", "slug": "api-reference/agent" },
-            { "label": "Agent Workflows", "slug": "api-reference/agent-workflow" },
-            { "label": "tool", "slug": "api-reference/tool" }
-          ]
+          "autogenerate": { "directory": "api-reference/llm-agents" }
         },
         {
           "label": "Memory & RAG",
           "collapsed": true,
-          "items": [
-            { "label": "memory", "slug": "api-reference/memory" },
-            { "label": "Memory Stores", "slug": "api-reference/memory-stores" },
-            { "label": "Embedding", "slug": "api-reference/rag-embedding" },
-            { "label": "Embedding Providers", "slug": "api-reference/rag-embedding-providers" },
-            { "label": "Vector Store", "slug": "api-reference/rag-vectorstore" },
-            { "label": "Vector Store Providers", "slug": "api-reference/rag-vectorstore-providers" },
-            { "label": "Retriever", "slug": "api-reference/rag-retriever" },
-            { "label": "Document Loaders", "slug": "api-reference/rag-loader" },
-            { "label": "Text Splitters", "slug": "api-reference/rag-splitter" }
-          ]
+          "autogenerate": { "directory": "api-reference/memory-rag" }
         },
         {
           "label": "Voice",
           "collapsed": true,
-          "items": [
-            { "label": "voice", "slug": "api-reference/voice" },
-            { "label": "STT", "slug": "api-reference/voice-stt" },
-            { "label": "TTS", "slug": "api-reference/voice-tts" },
-            { "label": "S2S", "slug": "api-reference/voice-s2s" },
-            { "label": "Transport", "slug": "api-reference/voice-transport" },
-            { "label": "VAD", "slug": "api-reference/voice-vad" }
-          ]
+          "autogenerate": { "directory": "api-reference/voice" }
         },
         {
           "label": "Infrastructure",
           "collapsed": true,
-          "items": [
-            { "label": "guard", "slug": "api-reference/guard" },
-            { "label": "resilience", "slug": "api-reference/resilience" },
-            { "label": "cache", "slug": "api-reference/cache" },
-            { "label": "hitl", "slug": "api-reference/hitl" },
-            { "label": "auth", "slug": "api-reference/auth" },
-            { "label": "eval", "slug": "api-reference/eval" },
-            { "label": "state", "slug": "api-reference/state" },
-            { "label": "prompt", "slug": "api-reference/prompt" },
-            { "label": "orchestration", "slug": "api-reference/orchestration" },
-            { "label": "workflow", "slug": "api-reference/workflow" }
-          ]
+          "autogenerate": { "directory": "api-reference/infrastructure" }
         },
         {
           "label": "Protocol & Server",
           "collapsed": true,
-          "items": [
-            { "label": "protocol", "slug": "api-reference/protocol" },
-            { "label": "MCP", "slug": "api-reference/protocol-mcp" },
-            { "label": "A2A", "slug": "api-reference/protocol-a2a" },
-            { "label": "REST & OpenAI Agents", "slug": "api-reference/protocol-rest" },
-            { "label": "Server Adapters", "slug": "api-reference/server" }
-          ]
+          "autogenerate": { "directory": "api-reference/protocol" }
         }
       ]
     },
     {
       "label": "Reports",
       "items": [
+        {
+          "label": "Overview",
+          "slug": "reports"
+        },
         {
           "label": "[pencil] Changelog",
           "slug": "reports/changelog"
