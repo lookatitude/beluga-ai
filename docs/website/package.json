@@ -23,7 +23,7 @@
     "vite": "^7.2.6"
   },
   "devDependencies": {
-    "astro-vtbot": "^2.1.9",
+    "astro-vtbot": "^2.1.11",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
   }
