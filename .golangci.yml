@@ -1,0 +1,45 @@
+run:
+  timeout: 10m
+  build-tags:
+    - cgo
+    - integration
+
+linters:
+  enable:
+    - gosec
+    - govet
+    - staticcheck
+    - errcheck
+    - ineffassign
+    - unused
+    - gofmt
+    - goimports
+    - misspell
+    - revive
+    - bodyclose
+    - noctx
+    - gocritic
+
+linters-settings:
+  gosec:
+    excludes:
+      - G104 # Unhandled errors (errcheck covers this)
+      - G304 # File path from variable (common in loaders)
+  revive:
+    rules:
+      - name: exported
+        arguments: [checkPrivateReceivers]
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters: [gosec, errcheck, gocritic]
+    - path: internal/testutil/
+      linters: [gosec, errcheck]
+    - path: providers/
+      text: "similar"
+      linters: [dupl]

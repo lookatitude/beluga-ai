@@ -59,6 +59,9 @@ type Loader struct {
 	client  *http.Client
 }
 
+// Compile-time interface check.
+var _ loader.DocumentLoader = (*Loader)(nil)
+
 // New creates a new Unstructured document loader.
 func New(cfg config.ProviderConfig) (*Loader, error) {
 	baseURL := cfg.BaseURL

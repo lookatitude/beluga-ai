@@ -32,6 +32,8 @@ const (
 	defaultModel   = "gpt-4o-realtime-preview"
 )
 
+var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	s2s.Register("openai_realtime", func(cfg s2s.Config) (s2s.S2S, error) {
 		return New(cfg)

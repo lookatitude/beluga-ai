@@ -14,7 +14,7 @@ These are the authoritative references. **Read them before making any architectu
 
 - `docs/concepts.md` — Architecture & design decisions (the "why")
 - `docs/packages.md` — Package layout & interfaces (the "what")
-- `docs/providers.md` — All 107 integrations with priority rankings (the "who")
+- `docs/providers.md` — Provider categories, extension guide, and discovery patterns
 - `docs/architecture.md` — Full architecture document with extensibility patterns (the "how")
 
 ## Go Conventions
@@ -137,20 +137,6 @@ beluga-ai/
 └── internal/     # syncutil, jsonutil, testutil (mocks for all interfaces)
 ```
 
-## Implementation Phases
-
-### Phase 1: Core + LLM + Tool + Agent (Weeks 1-4)
-Packages: `core/`, `schema/`, `config/`, `o11y/`, `llm/` (OpenAI + Anthropic + Groq), `tool/`, `agent/` (ReAct + Reflexion), `memory/` (core + recall), `guard/`, `resilience/`, `cache/`, `prompt/`
-
-### Phase 2: RAG + Voice + Eval (Weeks 5-8)
-Packages: `rag/` (full pipeline, hybrid search, CRAG, HyDE), `voice/` (frame-based, STT/TTS, S2S, LiveKit), `eval/`, additional planners
-
-### Phase 3: Orchestration + Workflows + Protocols (Weeks 9-12)
-Packages: `orchestration/`, `workflow/` (durable execution), `hitl/`, `protocol/` (MCP server, A2A), `auth/`, advanced planners
-
-### Phase 4: Ecosystem (Weeks 13-16)
-All remaining providers, graph memory, GraphRAG, multi-tenancy, dashboard, documentation
-
 ## Key Design Decisions to Enforce
 
 1. **iter.Seq2 for streaming** — NOT channels. Use `iter.Pull()` when pull semantics needed.
@@ -188,18 +174,20 @@ Claude Code has these project skills available for specialized tasks:
 - `go-testing` — Go testing patterns for AI framework components
 - `provider-implementation` — Implementing providers against Beluga's interfaces
 - `streaming-patterns` — Go 1.23 iter.Seq2 streaming and backpressure patterns
+- `doc-writing` — Documentation writing patterns, templates, and enterprise standards
 
 ## Agents Available
 
 Use these specialized sub-agents for focused work:
-- `architect` — High-level design decisions, package structure, interface design
-- `core-implementer` — Implements core/, schema/, config/, o11y/ packages
-- `llm-implementer` — Implements llm/ package, providers, router, structured output
-- `tool-implementer` — Implements tool/ package, MCP client, FuncTool
-- `agent-implementer` — Implements agent/ package, planners, executor, handoffs
-- `rag-implementer` — Implements rag/ package (embedding, vectorstore, retriever, loader, splitter)
-- `voice-implementer` — Implements voice/ package (frame pipeline, STT/TTS/S2S, transport)
-- `protocol-implementer` — Implements protocol/ package (MCP server, A2A, REST)
-- `infra-implementer` — Implements cross-cutting: resilience/, cache/, auth/, hitl/, guard/, workflow/
-- `test-writer` — Writes comprehensive tests, mocks, benchmarks
-- `reviewer` — Reviews code for architecture compliance, Go idioms, correctness
+- `architect` — High-level design decisions, package structure, interface design (skills: go-framework, go-interfaces)
+- `core-implementer` — Implements core/, schema/, config/, o11y/ packages (skills: go-framework, go-interfaces, streaming-patterns)
+- `llm-implementer` — Implements llm/ package, providers, router, structured output (skills: go-interfaces, provider-implementation, streaming-patterns)
+- `tool-implementer` — Implements tool/ package, MCP client, FuncTool (skills: go-interfaces, provider-implementation)
+- `agent-implementer` — Implements agent/ package, planners, executor, handoffs (skills: go-interfaces, go-framework, streaming-patterns)
+- `rag-implementer` — Implements rag/ package: embedding, vectorstore, retriever, loader, splitter (skills: go-interfaces, provider-implementation)
+- `voice-implementer` — Implements voice/ package: frame pipeline, STT/TTS/S2S, transport (skills: go-interfaces, provider-implementation, streaming-patterns)
+- `protocol-implementer` — Implements protocol/ package: MCP server, A2A, REST (skills: go-interfaces, go-framework)
+- `infra-implementer` — Implements cross-cutting: resilience/, cache/, auth/, hitl/, guard/, workflow/ (skills: go-interfaces, go-framework)
+- `test-writer` — Writes comprehensive tests, mocks, benchmarks (skills: go-testing, go-interfaces)
+- `reviewer` — Reviews code for architecture compliance, Go idioms, correctness (skills: go-framework, go-interfaces, go-testing)
+- `doc-writer` — Enterprise documentation, tutorials, API reference, guides (skills: doc-writing, go-framework, go-interfaces)

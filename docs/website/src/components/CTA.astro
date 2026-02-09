@@ -1,0 +1,69 @@
+---
+import { getEntry } from "astro:content";
+import Button from "./user-components/Button.astro";
+import Section from "./Section.astro";
+
+const locale = Astro.currentLocale || "en";
+
+const cta = await getEntry(
+  "ctaSection",
+  `${locale === "en" ? "" : `${locale}/`}call-to-action`
+);
+const { title, description, enable, fill_button, outline_button } =
+  cta?.data ?? {};
+---
+
+{
+  enable && (
+    <div class="cta-container">
+      <Section title={title} description={description}>
+        {fill_button?.enable && (
+          <Button
+            label={fill_button.label || "Get Started"}
+            link={fill_button.link || "/getting-started/introduction/overview/"}
+            variant="primary"
+          />
+        )}
+        {outline_button?.enable && (
+          <Button
+            label={outline_button.label || "Get a live demo"}
+            link={
+              outline_button.link || "/getting-started/introduction/overview/"
+            }
+            variant="outline-primary"
+          />
+        )}
+      </Section>
+    </div>
+  )
+}
+
+<style>
+  /* Ensure background image is visible in light mode */
+  :global([data-theme="light"]) .cta-container {
+    background-blend-mode: multiply;
+    background-color: #f9fafb; /* Light background color */
+  }
+
+  /* Dark mode styling */
+  :global([data-theme="dark"]) .cta-container {
+    background: url("/src/assets/cta-bg.png") no-repeat center;
+    background-size: cover;
+    padding: 1rem;
+    position: relative;
+  }
+
+
+</style>
+
+<script>
+  const ctaContainerButton = document.querySelector(".cta-container a");
+
+  const buttonParent = ctaContainerButton?.parentElement;
+
+  if (buttonParent) {
+    buttonParent.style.display = "flex";
+    buttonParent.style.justifyContent = "center";
+    buttonParent.style.gap = "1rem";
+  }
+</script>

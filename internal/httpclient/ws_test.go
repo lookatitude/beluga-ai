@@ -113,3 +113,102 @@ func TestDialWS_WithHeaders(t *testing.T) {
 
 	assert.Equal(t, "test-value", receivedHeader)
 }
+
+func TestWSReadJSON_MalformedJSON(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		// Send malformed JSON.
+		conn.Write(ctx, websocket.MessageText, []byte("{not valid json"))
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	ws, err := DialWS(context.Background(), wsURL, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	var msg wsTestMsg
+	err = ws.ReadJSON(context.Background(), &msg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestWSReadJSON_ConnectionClosed(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		// Close immediately without sending data.
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	ws, err := DialWS(context.Background(), wsURL, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	var msg wsTestMsg
+	err = ws.ReadJSON(context.Background(), &msg)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "websocket read")
+}
+
+func TestWSWriteJSON_MarshalError(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	ws, err := DialWS(context.Background(), wsURL, nil)
+	require.NoError(t, err)
+	defer ws.Close()
+
+	// Try to marshal something that will fail (channels can't be marshaled).
+	type invalidMsg struct {
+		Channel chan int
+	}
+	err = ws.WriteJSON(context.Background(), invalidMsg{Channel: make(chan int)})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal")
+}
+
+func TestWSWriteJSON_ConnectionClosed(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	ws, err := DialWS(context.Background(), wsURL, nil)
+	require.NoError(t, err)
+
+	// Close the connection.
+	ws.Close()
+
+	// Try to write after close.
+	err = ws.WriteJSON(context.Background(), wsTestMsg{Type: "test", Payload: "data"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "websocket write")
+}
+
+func TestDialWS_InvalidURL(t *testing.T) {
+	_, err := DialWS(context.Background(), "invalid://url", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "websocket dial")
+}
+
+func TestDialWS_ContextCanceled(t *testing.T) {
+	srv := newWSTestServer(t, func(conn *websocket.Conn) {
+		time.Sleep(1 * time.Second)
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // Cancel immediately.
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	_, err := DialWS(ctx, wsURL, nil)
+	require.Error(t, err)
+}

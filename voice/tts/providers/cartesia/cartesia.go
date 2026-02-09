@@ -30,6 +30,8 @@ const (
 	apiVersion     = "2024-06-10"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("cartesia", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

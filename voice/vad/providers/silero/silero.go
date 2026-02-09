@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/binary"
 	"fmt"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -29,6 +30,8 @@ const (
 	defaultThreshold  = 0.5
 	defaultSampleRate = 16000
 )
+
+var _ voice.VAD = (*VAD)(nil) // compile-time interface check
 
 func init() {
 	voice.RegisterVAD("silero", func(cfg map[string]any) (voice.VAD, error) {
@@ -79,9 +82,10 @@ type Config struct {
 // When the ONNX model is not available, it falls back to an energy-based
 // detector with the Silero-calibrated threshold.
 type VAD struct {
-	threshold  float64
-	sampleRate int
+	threshold   float64
+	sampleRate  int
 	wasSpeaking bool
+	mu          sync.Mutex // protects wasSpeaking
 }
 
 // New creates a new Silero VAD. If the ONNX model cannot be loaded,
@@ -114,6 +118,9 @@ func (v *VAD) DetectActivity(_ context.Context, audio []byte) (voice.ActivityRes
 	// Compute normalized energy as speech probability estimate.
 	probability := v.computeSpeechProbability(audio)
 	isSpeech := probability >= v.threshold
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
 
 	var eventType voice.VADEventType
 	switch {

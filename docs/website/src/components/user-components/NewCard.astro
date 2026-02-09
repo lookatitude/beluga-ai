@@ -1,0 +1,98 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+
+const { icon, title, iconColor, size = "large" } = Astro.props;
+---
+
+<article
+  class={`card bg-lightmode-dark dark:bg-dark group ${size === "sm" ? "p-6" : "py-12 px-10"}`}
+>
+  {
+    icon && (
+      <Icon
+        name={icon}
+        class="icon"
+        size={`${size === "sm" ? "1.4rem" : "2rem"}`}
+        color={iconColor}
+      />
+    )
+  }
+  <p class="title mt-11 mb-4">
+    <span set:html={title} />
+  </p>
+  <div class="body"><slot /></div>
+  {
+    size === "sm" ? (
+      ""
+    ) : (
+      <div class="mt-15">
+        <span>
+          <svg
+            class="transition-transform duration-300 group-hover:-rotate-45"
+            width="18"
+            height="18"
+            viewBox="0 0 18 18"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              fill-rule="evenodd"
+              clip-rule="evenodd"
+              d="M10.3209 0.715753L17.3509 7.84376C17.7823 8.28117 17.7823 8.99035 17.3509 9.42776L10.3209 16.5558C9.88952 16.9932 9.1901 16.9932 8.7587 16.5558C8.32731 16.1184 8.32731 15.4092 8.7587 14.9718L13.9029 9.75582H1.10465C0.494569 9.75582 0 9.25435 0 8.63576C0 8.01717 0.494569 7.5157 1.10465 7.5157H13.9029L8.7587 2.29975C8.32731 1.86234 8.32731 1.15316 8.7587 0.715753C9.1901 0.278343 9.88952 0.278343 10.3209 0.715753Z"
+              class="fill-lightmode-light dark:fill-light"
+            />
+          </svg>
+        </span>
+      </div>
+    )
+  }
+</article>
+
+<style>
+  @layer starlight.components {
+    .card {
+      display: flex;
+      /* padding: clamp(1rem, calc(0.125rem + 3vw), 2.5rem); */
+      /* padding: 48px 40px; */
+      flex-direction: column;
+      /* gap: clamp(0.5rem, calc(0.125rem + 1vw), 1rem); */
+      border-radius: 1rem;
+      position: relative;
+      transition: all 0.5s ease;
+      border: 1px solid var(--sl-color-gray-6);
+    }
+   
+    .card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      background: var(--color-primary-gradient);
+      border-radius: inherit;
+      mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .title {
+      font-size: var(--sl-text-h4);
+      color: var(--sl-color-white);
+      line-height: var(--sl-line-height-headings);
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .card .body {
+      margin: 0;
+      font-size: clamp(var(--sl-text-body));
+    }
+  }
+</style>

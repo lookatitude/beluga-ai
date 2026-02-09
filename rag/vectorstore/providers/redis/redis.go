@@ -53,6 +53,9 @@ type Store struct {
 	dimension int
 }
 
+// Compile-time interface check.
+var _ vectorstore.VectorStore = (*Store)(nil)
+
 // Option configures a Store.
 type Option func(*Store)
 
@@ -285,7 +288,6 @@ func parseFTSearchResult(cmd *goredis.Cmd, prefix string, threshold float64) ([]
 				// Skip binary embedding data.
 			default:
 				if v, ok := fieldVal.(string); ok {
-					doc.Metadata[v] = v
 					doc.Metadata[fieldName] = v
 				}
 			}

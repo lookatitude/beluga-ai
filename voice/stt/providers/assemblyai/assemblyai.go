@@ -32,6 +32,8 @@ const (
 	defaultWSURL   = "wss://api.assemblyai.com/v2/realtime/ws"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("assemblyai", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

@@ -73,7 +73,9 @@ func convertHumanMessage(m *schema.HumanMessage) (openai.ChatCompletionMessagePa
 				URL: url,
 			}))
 		default:
-			// Skip unsupported content types for now.
+			// Skip unsupported content types (AudioPart, VideoPart, FilePart).
+			// OpenAI chat completions API only supports text and images.
+			// Audio, video, and file parts are intentionally ignored.
 		}
 	}
 	return openai.UserMessage(parts), nil

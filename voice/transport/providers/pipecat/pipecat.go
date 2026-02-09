@@ -21,6 +21,8 @@ import (
 	"github.com/lookatitude/beluga-ai/voice/transport"
 )
 
+var _ transport.AudioTransport = (*Transport)(nil) // compile-time interface check
+
 func init() {
 	transport.Register("pipecat", func(cfg transport.Config) (transport.AudioTransport, error) {
 		return New(cfg)

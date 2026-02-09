@@ -30,6 +30,8 @@ const (
 	defaultModel   = "whisper-large-v3"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("groq", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

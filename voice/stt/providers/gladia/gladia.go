@@ -32,6 +32,8 @@ const (
 	defaultBaseURL = "https://api.gladia.io/v2"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("gladia", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

@@ -659,10 +659,41 @@ func TestNewWithOptions(t *testing.T) {
 	}
 }
 
+// unsupportedMessage is a custom message type for testing unsupported message handling.
+type unsupportedMessage struct {
+	content string
+}
+
+func (u *unsupportedMessage) GetRole() schema.Role {
+	return "unsupported" // Not one of the standard roles
+}
+func (u *unsupportedMessage) GetContent() []schema.ContentPart {
+	return []schema.ContentPart{schema.TextPart{Text: u.content}}
+}
+func (u *unsupportedMessage) GetMetadata() map[string]any {
+	return nil
+}
+
 func TestConvertMessages_UnsupportedType(t *testing.T) {
-	type badMessage struct{}
-	// We can't use badMessage directly since it doesn't implement schema.Message.
-	// Instead test with a nil message scenario.
+	msgs := []schema.Message{
+		&unsupportedMessage{content: "test"},
+	}
+	_, err := ConvertMessages(msgs)
+	if err == nil {
+		t.Fatal("ConvertMessages() expected error for unsupported message type")
+	}
+	if !containsSubstring(err.Error(), "unsupported message type") {
+		t.Errorf("error message = %q, want to contain %q", err.Error(), "unsupported message type")
+	}
+}
+
+func containsSubstring(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }
 
 func TestStreamError(t *testing.T) {
@@ -812,6 +843,56 @@ func TestResponseFormat(t *testing.T) {
 	}
 	if rf["type"] != "json_object" {
 		t.Errorf("response_format.type = %q, want %q", rf["type"], "json_object")
+	}
+}
+
+func TestResponseFormatJSONSchema(t *testing.T) {
+	var capturedBody map[string]any
+	ts, m := newTestServer(func(w http.ResponseWriter, r *http.Request) {
+		body, _ := io.ReadAll(r.Body)
+		json.Unmarshal(body, &capturedBody)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, chatCompletionResponse(`{"name":"Alice","age":30}`, nil))
+	})
+	defer ts.Close()
+
+	personSchema := map[string]any{
+		"name": "person_schema",
+		"description": "A person object",
+		"strict": true,
+		"type": "object",
+		"properties": map[string]any{
+			"name": map[string]any{"type": "string"},
+			"age":  map[string]any{"type": "number"},
+		},
+		"required": []any{"name", "age"},
+	}
+
+	_, err := m.Generate(context.Background(), []schema.Message{
+		schema.NewHumanMessage("Tell me about a person"),
+	}, llm.WithResponseFormat(llm.ResponseFormat{Type: "json_schema", Schema: personSchema}))
+	if err != nil {
+		t.Fatalf("Generate() error: %v", err)
+	}
+	rf, ok := capturedBody["response_format"].(map[string]any)
+	if !ok {
+		t.Fatal("response_format not found in request")
+	}
+	if rf["type"] != "json_schema" {
+		t.Errorf("response_format.type = %q, want %q", rf["type"], "json_schema")
+	}
+	jsonSchema, ok := rf["json_schema"].(map[string]any)
+	if !ok {
+		t.Fatal("response_format.json_schema not found")
+	}
+	if jsonSchema["name"] != "person_schema" {
+		t.Errorf("json_schema.name = %q, want %q", jsonSchema["name"], "person_schema")
+	}
+	if jsonSchema["description"] != "A person object" {
+		t.Errorf("json_schema.description = %q, want %q", jsonSchema["description"], "A person object")
+	}
+	if jsonSchema["strict"] != true {
+		t.Errorf("json_schema.strict = %v, want true", jsonSchema["strict"])
 	}
 }
 

@@ -1,0 +1,45 @@
+---
+const { href, variant = "primary", className } = Astro.props;
+
+let classes = ''
+
+if (variant === "primary") {
+  classes += ""
+} else if (variant === "text") {
+  classes += "flex items-center gap-2 text-black dark:text-white no-underline "
+} else {
+  classes += ""
+}
+
+---
+
+<a href={href} class={` ${classes} ${className}`}>
+  <slot />
+  <svg
+  class="mt-0!"
+    width="9"
+    height="16"
+    viewBox="0 0 9 16"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    class="link-arrow"
+  >
+    <path
+      d="M1 15L8 8L1 1"
+      class="stroke-black dark:stroke-white"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"></path>
+  </svg>
+</a>
+
+<style>
+  .link-arrow {
+    transition: transform 0.3s ease;
+  }
+  
+  a:hover .link-arrow {
+    transform: translateX(4px);
+   
+  }
+</style>

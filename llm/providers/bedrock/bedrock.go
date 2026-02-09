@@ -49,6 +49,9 @@ type Model struct {
 	tools   []schema.ToolDefinition
 }
 
+// Compile-time interface check.
+var _ llm.ChatModel = (*Model)(nil)
+
 // New creates a new Bedrock ChatModel.
 func New(cfg cfgpkg.ProviderConfig) (*Model, error) {
 	if cfg.Model == "" {

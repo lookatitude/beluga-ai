@@ -46,6 +46,9 @@ type Embedder struct {
 	dims   int
 }
 
+// Compile-time interface check.
+var _ embedding.Embedder = (*Embedder)(nil)
+
 // New creates a new Mistral Embedder from a ProviderConfig.
 func New(cfg config.ProviderConfig) (*Embedder, error) {
 	if cfg.APIKey == "" {

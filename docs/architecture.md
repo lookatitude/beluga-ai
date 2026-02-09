@@ -1,4 +1,4 @@
-# Beluga AI v2 â€” Architecture Redesign
+# Beluga AI v2 — Architecture Redesign
 
 ## Executive Summary
 
@@ -12,7 +12,7 @@ This document proposes a ground-up redesign of the Beluga AI framework, informed
 |---|-----------|-----------|
 | 1 | **Streaming-first** | Every component is a stream processor. Request/response is a degenerate case of streaming. |
 | 2 | **Composition over inheritance** | Small interfaces composed via embedding. No deep hierarchies. |
-| 3 | **Extensible by default** | Every package exposes extension interfaces, a registry, and lifecycle hooks. New providers, reasoning strategies, and agent types are added from application code â€” zero framework changes required. The framework is a host; everything else is a plugin. |
+| 3 | **Extensible by default** | Every package exposes extension interfaces, a registry, and lifecycle hooks. New providers, reasoning strategies, and agent types are added from application code — zero framework changes required. The framework is a host; everything else is a plugin. |
 | 4 | **Protocol-native** | First-class MCP (tool access) and A2A (agent collaboration) support. |
 | 5 | **Modality-agnostic** | Text, audio, video, and structured data flow through the same pipeline abstractions. |
 | 6 | **Minimal core, rich ecosystem** | Core defines contracts; providers are pluggable packages imported by the user. |
@@ -65,7 +65,7 @@ graph TB
         C2["Tools<br/><small>Calc, HTTP, Shell<br/>Code, MCP</small>"]
         C3["Memory<br/><small>Buffer, Window<br/>Summary, Entity<br/>Semantic, Graph</small>"]
         C4["RAG<br/><small>Embed, VectorStore<br/>Retrieve, Rerank<br/>Load, Split</small>"]
-        C5["Voice<br/><small>STT â†’ LLM â†’ TTS<br/>S2S Bidirectional<br/>Hybrid Pipeline</small>"]
+        C5["Voice<br/><small>STT → LLM → TTS<br/>S2S Bidirectional<br/>Hybrid Pipeline</small>"]
         C6["Guard<br/><small>Content, PII<br/>Injection, Custom</small>"]
     end
 
@@ -98,211 +98,211 @@ graph TB
 
 ```
 beluga-ai/
-â”œâ”€â”€ go.mod
-â”‚
-â”œâ”€â”€ core/                    # Foundation â€” zero external deps beyond stdlib + otel
-â”‚   â”œâ”€â”€ stream.go            # Event[T], Stream[T], Fan-in/Fan-out, Pipe()
-â”‚   â”œâ”€â”€ runnable.go          # Runnable interface (Invoke, Stream, Batch)
-â”‚   â”œâ”€â”€ context.go           # Session context, cancel propagation
-â”‚   â”œâ”€â”€ errors.go            # Typed error codes, Is/As helpers
-â”‚   â””â”€â”€ option.go            # Functional options helpers
-â”‚
-â”œâ”€â”€ schema/                  # Shared types â€” no business logic
-â”‚   â”œâ”€â”€ message.go           # Message interface, HumanMsg, AIMsg, SystemMsg, ToolMsg
-â”‚   â”œâ”€â”€ content.go           # ContentPart: Text, Image, Audio, Video, File
-â”‚   â”œâ”€â”€ tool.go              # ToolCall, ToolResult, ToolDefinition
-â”‚   â”œâ”€â”€ document.go          # Document with metadata
-â”‚   â”œâ”€â”€ event.go             # AgentEvent, StreamEvent, LifecycleEvent
-â”‚   â””â”€â”€ session.go           # Session, Turn, ConversationState
-â”‚
-â”œâ”€â”€ config/                  # Configuration loading
-â”‚   â”œâ”€â”€ config.go            # Load, Validate, env + file + struct tags
-â”‚   â””â”€â”€ provider.go          # ProviderConfig base type
-â”‚
-â”œâ”€â”€ o11y/                    # Observability (replaces "monitoring")
-â”‚   â”œâ”€â”€ tracer.go            # OTel tracer wrapper
-â”‚   â”œâ”€â”€ meter.go             # OTel meter wrapper
-â”‚   â”œâ”€â”€ logger.go            # Structured logging (slog)
-â”‚   â””â”€â”€ health.go            # Health checks
-â”‚
-â”œâ”€â”€ llm/                     # LLM abstraction
-â”‚   â”œâ”€â”€ llm.go               # ChatModel interface
-â”‚   â”œâ”€â”€ options.go           # GenerateOptions (temp, max_tokens, tools, etc.)
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List() â€” provider registry
-â”‚   â”œâ”€â”€ hooks.go             # LLM-level hooks (BeforeGenerate, AfterGenerate, etc.)
-â”‚   â”œâ”€â”€ middleware.go         # Retry, rate-limit, cache, logging middleware
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ openai/           # OpenAI + Azure OpenAI
-â”‚       â”œâ”€â”€ anthropic/        # Claude models
-â”‚       â”œâ”€â”€ google/           # Gemini + Vertex AI
-â”‚       â”œâ”€â”€ ollama/           # Local models
-â”‚       â”œâ”€â”€ bedrock/          # AWS Bedrock
-â”‚       â””â”€â”€ groq/             # Fast inference
-â”‚
-â”œâ”€â”€ tool/                    # Tool system
-â”‚   â”œâ”€â”€ tool.go              # Tool interface: Name, Description, Schema, Execute
-â”‚   â”œâ”€â”€ functool.go          # NewFuncTool() â€” wrap any Go function as a Tool
-â”‚   â”œâ”€â”€ registry.go          # ToolRegistry: Add, Get, List, Remove
-â”‚   â”œâ”€â”€ hooks.go             # Tool hooks (BeforeExecute, AfterExecute, OnError)
-â”‚   â”œâ”€â”€ mcp.go               # MCP client â€” discovers & wraps MCP servers as Tools
-â”‚   â”œâ”€â”€ builtin/              # Calculator, HTTP, Shell, Code execution
-â”‚   â””â”€â”€ middleware.go         # Auth, rate-limit, timeout wrappers
-â”‚
-â”œâ”€â”€ memory/                  # Conversation & knowledge memory
-â”‚   â”œâ”€â”€ memory.go            # Memory interface: Save, Load, Search, Clear
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ store.go             # MessageStore interface (backend abstraction)
-â”‚   â”œâ”€â”€ hooks.go             # Memory hooks (BeforeSave, AfterLoad, etc.)
-â”‚   â”œâ”€â”€ middleware.go         # Memory middleware (trace, cache, etc.)
-â”‚   â”œâ”€â”€ buffer.go            # Full-history buffer
-â”‚   â”œâ”€â”€ window.go            # Sliding window (last N turns)
-â”‚   â”œâ”€â”€ summary.go           # LLM-summarised history
-â”‚   â”œâ”€â”€ entity.go            # Entity extraction & tracking
-â”‚   â”œâ”€â”€ semantic.go          # Vector-backed semantic memory
-â”‚   â”œâ”€â”€ composite.go         # CompositeMemory: Working + Episodic + Semantic
-â”‚   â””â”€â”€ stores/
-â”‚       â”œâ”€â”€ inmemory/
-â”‚       â”œâ”€â”€ redis/
-â”‚       â”œâ”€â”€ postgres/
-â”‚       â””â”€â”€ sqlite/
-â”‚
-â”œâ”€â”€ rag/                     # RAG pipeline
-â”‚   â”œâ”€â”€ embedding/
-â”‚   â”‚   â”œâ”€â”€ embedder.go      # Embedder interface
-â”‚   â”‚   â”œâ”€â”€ registry.go      # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go         # BeforeEmbed, AfterEmbed
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ openai/
-â”‚   â”‚       â”œâ”€â”€ google/
-â”‚   â”‚       â”œâ”€â”€ ollama/
-â”‚   â”‚       â””â”€â”€ cohere/
-â”‚   â”œâ”€â”€ vectorstore/
-â”‚   â”‚   â”œâ”€â”€ store.go          # VectorStore interface: Add, Search, Delete
-â”‚   â”‚   â”œâ”€â”€ registry.go       # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go          # BeforeAdd, AfterSearch
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ inmemory/
-â”‚   â”‚       â”œâ”€â”€ pgvector/
-â”‚   â”‚       â”œâ”€â”€ qdrant/
-â”‚   â”‚       â”œâ”€â”€ pinecone/
-â”‚   â”‚       â””â”€â”€ chroma/
-â”‚   â”œâ”€â”€ retriever/
-â”‚   â”‚   â”œâ”€â”€ retriever.go      # Retriever interface
-â”‚   â”‚   â”œâ”€â”€ registry.go       # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go          # BeforeRetrieve, AfterRetrieve, OnRerank
-â”‚   â”‚   â”œâ”€â”€ middleware.go     # Retriever middleware (cache, trace, etc.)
-â”‚   â”‚   â”œâ”€â”€ vector.go         # VectorStoreRetriever
-â”‚   â”‚   â”œâ”€â”€ multiquery.go     # Multi-query expansion
-â”‚   â”‚   â”œâ”€â”€ rerank.go         # Re-ranking retriever
-â”‚   â”‚   â””â”€â”€ ensemble.go       # Ensemble retriever
-â”‚   â”œâ”€â”€ loader/
-â”‚   â”‚   â”œâ”€â”€ loader.go         # DocumentLoader interface
-â”‚   â”‚   â”œâ”€â”€ directory.go
-â”‚   â”‚   â”œâ”€â”€ text.go
-â”‚   â”‚   â””â”€â”€ pdf.go
-â”‚   â””â”€â”€ splitter/
-â”‚       â”œâ”€â”€ splitter.go       # TextSplitter interface
-â”‚       â”œâ”€â”€ recursive.go
-â”‚       â””â”€â”€ markdown.go
-â”‚
-â”œâ”€â”€ agent/                   # Agent runtime
-â”‚   â”œâ”€â”€ agent.go             # Agent interface + BaseAgent embeddable struct
-â”‚   â”œâ”€â”€ base.go              # BaseAgent: ID, Persona, Tools, Children, Card
-â”‚   â”œâ”€â”€ persona.go           # Role, Goal, Backstory (RGB framework)
-â”‚   â”œâ”€â”€ executor.go          # Reasoning loop: delegates to Planner
-â”‚   â”œâ”€â”€ planner.go           # Planner interface + PlannerState + Action types
-â”‚   â”œâ”€â”€ registry.go          # RegisterPlanner(), NewPlanner(), ListPlanners()
-â”‚   â”œâ”€â”€ hooks.go             # Hooks struct + ComposeHooks()
-â”‚   â”œâ”€â”€ middleware.go        # Agent middleware (retry, trace, etc.)
-â”‚   â”œâ”€â”€ react.go             # ReAct planner implementation
-â”‚   â”œâ”€â”€ planexecute.go       # Plan-and-Execute planner implementation
-â”‚   â”œâ”€â”€ reflection.go        # Reflection planner implementation
-â”‚   â”œâ”€â”€ structured.go        # Structured-output agent
-â”‚   â”œâ”€â”€ conversational.go    # Optimised for multi-turn chat
-â”‚   â”œâ”€â”€ handoff.go           # Agent-to-agent handoff within a session
-â”‚   â”œâ”€â”€ card.go              # A2A AgentCard (capability advertisement)
-â”‚   â””â”€â”€ workflow/             # Built-in workflow agents
-â”‚       â”œâ”€â”€ sequential.go    # SequentialAgent
-â”‚       â”œâ”€â”€ parallel.go      # ParallelAgent
-â”‚       â””â”€â”€ loop.go          # LoopAgent
-â”‚
-â”œâ”€â”€ voice/                   # Voice / multimodal pipeline
-â”‚   â”œâ”€â”€ pipeline.go          # VoicePipeline: STT â†’ LLM â†’ TTS (cascading)
-â”‚   â”œâ”€â”€ session.go           # VoiceSession: manages audio state & turns
-â”‚   â”œâ”€â”€ vad.go               # VAD interface
-â”‚   â”œâ”€â”€ stt/
-â”‚   â”‚   â”œâ”€â”€ stt.go           # STT interface (streaming)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ deepgram/
-â”‚   â”‚       â”œâ”€â”€ assemblyai/
-â”‚   â”‚       â””â”€â”€ whisper/
-â”‚   â”œâ”€â”€ tts/
-â”‚   â”‚   â”œâ”€â”€ tts.go           # TTS interface (streaming)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ elevenlabs/
-â”‚   â”‚       â”œâ”€â”€ cartesia/
-â”‚   â”‚       â””â”€â”€ openai/
-â”‚   â”œâ”€â”€ s2s/
-â”‚   â”‚   â”œâ”€â”€ s2s.go           # S2S interface (bidirectional)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ openai_realtime/
-â”‚   â”‚       â”œâ”€â”€ gemini_live/
-â”‚   â”‚       â””â”€â”€ nova/
-â”‚   â””â”€â”€ transport/
-â”‚       â”œâ”€â”€ transport.go      # AudioTransport interface
-â”‚       â”œâ”€â”€ websocket.go
-â”‚       â””â”€â”€ livekit.go        # LiveKit room integration
-â”‚
-â”œâ”€â”€ orchestration/           # Workflow composition
-â”‚   â”œâ”€â”€ node.go              # Node interface (extension point for custom steps)
-â”‚   â”œâ”€â”€ hooks.go             # BeforeStep, AfterStep, OnBranch
-â”‚   â”œâ”€â”€ chain.go             # Sequential pipeline
-â”‚   â”œâ”€â”€ graph.go             # DAG with conditional edges
-â”‚   â”œâ”€â”€ router.go            # Conditional routing (LLM or rule-based)
-â”‚   â”œâ”€â”€ parallel.go          # Fan-out / fan-in
-â”‚   â”œâ”€â”€ workflow.go          # Durable, resumable workflow
-â”‚   â””â”€â”€ supervisor.go        # Multi-agent supervisor pattern
-â”‚
-â”œâ”€â”€ protocol/                # External protocol support
-â”‚   â”œâ”€â”€ mcp/
-â”‚   â”‚   â”œâ”€â”€ server.go        # Expose tools as MCP server
-â”‚   â”‚   â””â”€â”€ client.go        # Connect to MCP servers
-â”‚   â”œâ”€â”€ a2a/
-â”‚   â”‚   â”œâ”€â”€ server.go        # Expose agent as A2A remote agent
-â”‚   â”‚   â”œâ”€â”€ client.go        # Call remote A2A agents
-â”‚   â”‚   â””â”€â”€ card.go          # AgentCard JSON generation
-â”‚   â””â”€â”€ rest/
-â”‚       â””â”€â”€ server.go        # REST/SSE API for agents
-â”‚
-â”œâ”€â”€ guard/                   # Safety & guardrails
-â”‚   â”œâ”€â”€ guard.go             # Guard interface: Check(input) â†’ (ok, reason)
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ content.go           # Content moderation
-â”‚   â”œâ”€â”€ pii.go               # PII detection
-â”‚   â””â”€â”€ injection.go         # Prompt injection detection
-â”‚
-â”œâ”€â”€ server/                  # HTTP framework integration
-â”‚   â”œâ”€â”€ adapter.go           # ServerAdapter interface
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ handler.go           # Standard http.Handler adapter
-â”‚   â”œâ”€â”€ sse.go               # SSE streaming helper
-â”‚   â””â”€â”€ adapters/
-â”‚       â”œâ”€â”€ gin/             # Gin integration
-â”‚       â”œâ”€â”€ fiber/           # Fiber integration
-â”‚       â”œâ”€â”€ echo/            # Echo integration
-â”‚       â”œâ”€â”€ chi/             # Chi integration
-â”‚       â””â”€â”€ grpc/            # gRPC service definitions
-â”‚
-â””â”€â”€ internal/                # Shared internal utilities
-    â”œâ”€â”€ syncutil/             # sync primitives, worker pools
-    â”œâ”€â”€ jsonutil/             # JSON schema generation from Go types
-    â””â”€â”€ testutil/             # Mock providers for every interface, test helpers
-        â”œâ”€â”€ mockllm/          # Mock ChatModel
-        â”œâ”€â”€ mocktool/         # Mock Tool
-        â”œâ”€â”€ mockmemory/       # Mock Memory + MessageStore
-        â”œâ”€â”€ mockembedder/     # Mock Embedder
-        â”œâ”€â”€ mockstore/        # Mock VectorStore
-        â””â”€â”€ helpers.go        # Assertion helpers, stream builders
+├── go.mod
+│
+├── core/                    # Foundation — zero external deps beyond stdlib + otel
+│   ├── stream.go            # Event[T], Stream[T], Fan-in/Fan-out, Pipe()
+│   ├── runnable.go          # Runnable interface (Invoke, Stream, Batch)
+│   ├── context.go           # Session context, cancel propagation
+│   ├── errors.go            # Typed error codes, Is/As helpers
+│   └── option.go            # Functional options helpers
+│
+├── schema/                  # Shared types — no business logic
+│   ├── message.go           # Message interface, HumanMsg, AIMsg, SystemMsg, ToolMsg
+│   ├── content.go           # ContentPart: Text, Image, Audio, Video, File
+│   ├── tool.go              # ToolCall, ToolResult, ToolDefinition
+│   ├── document.go          # Document with metadata
+│   ├── event.go             # AgentEvent, StreamEvent, LifecycleEvent
+│   └── session.go           # Session, Turn, ConversationState
+│
+├── config/                  # Configuration loading
+│   ├── config.go            # Load, Validate, env + file + struct tags
+│   └── provider.go          # ProviderConfig base type
+│
+├── o11y/                    # Observability (replaces "monitoring")
+│   ├── tracer.go            # OTel tracer wrapper
+│   ├── meter.go             # OTel meter wrapper
+│   ├── logger.go            # Structured logging (slog)
+│   └── health.go            # Health checks
+│
+├── llm/                     # LLM abstraction
+│   ├── llm.go               # ChatModel interface
+│   ├── options.go           # GenerateOptions (temp, max_tokens, tools, etc.)
+│   ├── registry.go          # Register(), New(), List() — provider registry
+│   ├── hooks.go             # LLM-level hooks (BeforeGenerate, AfterGenerate, etc.)
+│   ├── middleware.go         # Retry, rate-limit, cache, logging middleware
+│   └── providers/
+│       ├── openai/           # OpenAI + Azure OpenAI
+│       ├── anthropic/        # Claude models
+│       ├── google/           # Gemini + Vertex AI
+│       ├── ollama/           # Local models
+│       ├── bedrock/          # AWS Bedrock
+│       └── groq/             # Fast inference
+│
+├── tool/                    # Tool system
+│   ├── tool.go              # Tool interface: Name, Description, Schema, Execute
+│   ├── functool.go          # NewFuncTool() — wrap any Go function as a Tool
+│   ├── registry.go          # ToolRegistry: Add, Get, List, Remove
+│   ├── hooks.go             # Tool hooks (BeforeExecute, AfterExecute, OnError)
+│   ├── mcp.go               # MCP client — discovers & wraps MCP servers as Tools
+│   ├── builtin/              # Calculator, HTTP, Shell, Code execution
+│   └── middleware.go         # Auth, rate-limit, timeout wrappers
+│
+├── memory/                  # Conversation & knowledge memory
+│   ├── memory.go            # Memory interface: Save, Load, Search, Clear
+│   ├── registry.go          # Register(), New(), List()
+│   ├── store.go             # MessageStore interface (backend abstraction)
+│   ├── hooks.go             # Memory hooks (BeforeSave, AfterLoad, etc.)
+│   ├── middleware.go         # Memory middleware (trace, cache, etc.)
+│   ├── buffer.go            # Full-history buffer
+│   ├── window.go            # Sliding window (last N turns)
+│   ├── summary.go           # LLM-summarised history
+│   ├── entity.go            # Entity extraction & tracking
+│   ├── semantic.go          # Vector-backed semantic memory
+│   ├── composite.go         # CompositeMemory: Working + Episodic + Semantic
+│   └── stores/
+│       ├── inmemory/
+│       ├── redis/
+│       ├── postgres/
+│       └── sqlite/
+│
+├── rag/                     # RAG pipeline
+│   ├── embedding/
+│   │   ├── embedder.go      # Embedder interface
+│   │   ├── registry.go      # Register(), New(), List()
+│   │   ├── hooks.go         # BeforeEmbed, AfterEmbed
+│   │   └── providers/
+│   │       ├── openai/
+│   │       ├── google/
+│   │       ├── ollama/
+│   │       └── cohere/
+│   ├── vectorstore/
+│   │   ├── store.go          # VectorStore interface: Add, Search, Delete
+│   │   ├── registry.go       # Register(), New(), List()
+│   │   ├── hooks.go          # BeforeAdd, AfterSearch
+│   │   └── providers/
+│   │       ├── inmemory/
+│   │       ├── pgvector/
+│   │       ├── qdrant/
+│   │       ├── pinecone/
+│   │       └── chroma/
+│   ├── retriever/
+│   │   ├── retriever.go      # Retriever interface
+│   │   ├── registry.go       # Register(), New(), List()
+│   │   ├── hooks.go          # BeforeRetrieve, AfterRetrieve, OnRerank
+│   │   ├── middleware.go     # Retriever middleware (cache, trace, etc.)
+│   │   ├── vector.go         # VectorStoreRetriever
+│   │   ├── multiquery.go     # Multi-query expansion
+│   │   ├── rerank.go         # Re-ranking retriever
+│   │   └── ensemble.go       # Ensemble retriever
+│   ├── loader/
+│   │   ├── loader.go         # DocumentLoader interface
+│   │   ├── directory.go
+│   │   ├── text.go
+│   │   └── pdf.go
+│   └── splitter/
+│       ├── splitter.go       # TextSplitter interface
+│       ├── recursive.go
+│       └── markdown.go
+│
+├── agent/                   # Agent runtime
+│   ├── agent.go             # Agent interface + BaseAgent embeddable struct
+│   ├── base.go              # BaseAgent: ID, Persona, Tools, Children, Card
+│   ├── persona.go           # Role, Goal, Backstory (RGB framework)
+│   ├── executor.go          # Reasoning loop: delegates to Planner
+│   ├── planner.go           # Planner interface + PlannerState + Action types
+│   ├── registry.go          # RegisterPlanner(), NewPlanner(), ListPlanners()
+│   ├── hooks.go             # Hooks struct + ComposeHooks()
+│   ├── middleware.go        # Agent middleware (retry, trace, etc.)
+│   ├── react.go             # ReAct planner implementation
+│   ├── planexecute.go       # Plan-and-Execute planner implementation
+│   ├── reflection.go        # Reflection planner implementation
+│   ├── structured.go        # Structured-output agent
+│   ├── conversational.go    # Optimised for multi-turn chat
+│   ├── handoff.go           # Agent-to-agent handoff within a session
+│   ├── card.go              # A2A AgentCard (capability advertisement)
+│   └── workflow/             # Built-in workflow agents
+│       ├── sequential.go    # SequentialAgent
+│       ├── parallel.go      # ParallelAgent
+│       └── loop.go          # LoopAgent
+│
+├── voice/                   # Voice / multimodal pipeline
+│   ├── pipeline.go          # VoicePipeline: STT → LLM → TTS (cascading)
+│   ├── session.go           # VoiceSession: manages audio state & turns
+│   ├── vad.go               # VAD interface
+│   ├── stt/
+│   │   ├── stt.go           # STT interface (streaming)
+│   │   └── providers/
+│   │       ├── deepgram/
+│   │       ├── assemblyai/
+│   │       └── whisper/
+│   ├── tts/
+│   │   ├── tts.go           # TTS interface (streaming)
+│   │   └── providers/
+│   │       ├── elevenlabs/
+│   │       ├── cartesia/
+│   │       └── openai/
+│   ├── s2s/
+│   │   ├── s2s.go           # S2S interface (bidirectional)
+│   │   └── providers/
+│   │       ├── openai_realtime/
+│   │       ├── gemini_live/
+│   │       └── nova/
+│   └── transport/
+│       ├── transport.go      # AudioTransport interface
+│       ├── websocket.go
+│       └── livekit.go        # LiveKit room integration
+│
+├── orchestration/           # Workflow composition
+│   ├── node.go              # Node interface (extension point for custom steps)
+│   ├── hooks.go             # BeforeStep, AfterStep, OnBranch
+│   ├── chain.go             # Sequential pipeline
+│   ├── graph.go             # DAG with conditional edges
+│   ├── router.go            # Conditional routing (LLM or rule-based)
+│   ├── parallel.go          # Fan-out / fan-in
+│   ├── workflow.go          # Durable, resumable workflow
+│   └── supervisor.go        # Multi-agent supervisor pattern
+│
+├── protocol/                # External protocol support
+│   ├── mcp/
+│   │   ├── server.go        # Expose tools as MCP server
+│   │   └── client.go        # Connect to MCP servers
+│   ├── a2a/
+│   │   ├── server.go        # Expose agent as A2A remote agent
+│   │   ├── client.go        # Call remote A2A agents
+│   │   └── card.go          # AgentCard JSON generation
+│   └── rest/
+│       └── server.go        # REST/SSE API for agents
+│
+├── guard/                   # Safety & guardrails
+│   ├── guard.go             # Guard interface: Check(input) → (ok, reason)
+│   ├── registry.go          # Register(), New(), List()
+│   ├── content.go           # Content moderation
+│   ├── pii.go               # PII detection
+│   └── injection.go         # Prompt injection detection
+│
+├── server/                  # HTTP framework integration
+│   ├── adapter.go           # ServerAdapter interface
+│   ├── registry.go          # Register(), New(), List()
+│   ├── handler.go           # Standard http.Handler adapter
+│   ├── sse.go               # SSE streaming helper
+│   └── adapters/
+│       ├── gin/             # Gin integration
+│       ├── fiber/           # Fiber integration
+│       ├── echo/            # Echo integration
+│       ├── chi/             # Chi integration
+│       └── grpc/            # gRPC service definitions
+│
+└── internal/                # Shared internal utilities
+    ├── syncutil/             # sync primitives, worker pools
+    ├── jsonutil/             # JSON schema generation from Go types
+    └── testutil/             # Mock providers for every interface, test helpers
+        ├── mockllm/          # Mock ChatModel
+        ├── mocktool/         # Mock Tool
+        ├── mockmemory/       # Mock Memory + MessageStore
+        ├── mockembedder/     # Mock Embedder
+        ├── mockstore/        # Mock VectorStore
+        └── helpers.go        # Assertion helpers, stream builders
 ```
 
 ---
@@ -447,7 +447,7 @@ type Agent interface {
 }
 
 // BaseAgent provides the common foundation for all agent types.
-// Users embed it in custom agents. See Â§9.4 for full custom agent examples.
+// Users embed it in custom agents. See §9.4 for full custom agent examples.
 type BaseAgent struct {
     id       string
     persona  Persona
@@ -465,7 +465,7 @@ type Persona struct {
 }
 
 // Planner defines a pluggable reasoning strategy.
-// See Â§9.3 for the full interface, built-in implementations, and custom examples.
+// See §9.3 for the full interface, built-in implementations, and custom examples.
 type Planner interface {
     Plan(ctx context.Context, state PlannerState) ([]Action, error)
     Replan(ctx context.Context, state PlannerState) ([]Action, error)
@@ -483,14 +483,14 @@ type Planner interface {
 **v2 approach**: The `Stream[T]` type is the primary return from every layer. `Invoke()` is implemented as "stream, collect, return last." This means tool calls arrive as events mid-stream, and the executor can process them without breaking the stream.
 
 ```
-User Audio â”€â”€â–º STT Stream â”€â”€â–º LLM Stream â”€â”€â–º [ToolCall Event] â”€â”€â–º Tool Execute â”€â”€â–º [ToolResult Event] â”€â”€â–º LLM continues â”€â”€â–º TTS Stream â”€â”€â–º Audio out
+User Audio ──► STT Stream ──► LLM Stream ──► [ToolCall Event] ──► Tool Execute ──► [ToolResult Event] ──► LLM continues ──► TTS Stream ──► Audio out
 ```
 
 ### 5.2 Bidirectional Voice Pipeline
 
 Two modes, composable:
 
-**Cascading** (STT â†’ LLM â†’ TTS):
+**Cascading** (STT → LLM → TTS):
 ```go
 pipe := voice.NewPipeline(
     voice.WithSTT(deepgram.New(cfg)),
@@ -638,43 +638,43 @@ type HumanMessage struct {
 
 ## 6. Agent Reasoning Patterns
 
-The executor supports **pluggable reasoning strategies** via the `Planner` interface (see Â§9.3 for the full interface and custom implementation guide). Each strategy is a registered plugin â€” switch strategies by changing a single string, or write your own.
+The executor supports **pluggable reasoning strategies** via the `Planner` interface (see §9.3 for the full interface and custom implementation guide). Each strategy is a registered plugin — switch strategies by changing a single string, or write your own.
 
 ### 6.1 ReAct (default)
 ```
-Think â†’ Act â†’ Observe â†’ (repeat or finish)
+Think → Act → Observe → (repeat or finish)
 ```
 Best for: General-purpose tasks, tool-heavy workflows, most common use cases.
 
 ### 6.2 Plan-and-Execute
 ```
-Plan all steps â†’ Execute each â†’ Re-plan if needed
+Plan all steps → Execute each → Re-plan if needed
 ```
 Best for: Multi-step tasks where upfront planning improves quality. Can use a stronger LLM for planning and a cheaper one for execution.
 
 ### 6.3 Reflection
 ```
-Generate â†’ Evaluate â†’ Critique â†’ Regenerate
+Generate → Evaluate → Critique → Regenerate
 ```
 Best for: Quality-sensitive tasks (writing, code review, analysis). Uses a separate evaluator LLM.
 
 ### 6.4 Router (conditional dispatch)
 ```
-Classify input â†’ Route to specialist agent â†’ Return result
+Classify input → Route to specialist agent → Return result
 ```
 Best for: Multi-domain assistants where different domains need different tools/prompts.
 
 ### 6.5 Supervisor (multi-agent)
 ```
-Supervisor receives task â†’ Delegates to workers â†’ Aggregates results
+Supervisor receives task → Delegates to workers → Aggregates results
 ```
 Best for: Complex tasks requiring multiple specialists to collaborate.
 
 ### 6.6 Custom (user-defined)
 ```
-Implement the Planner interface â†’ Register â†’ Use
+Implement the Planner interface → Register → Use
 ```
-Best for: Domain-specific reasoning (e.g., Tree-of-Thought, Monte Carlo Tree Search, Constitutional AI self-critique, domain-specific state machines). See Â§9.3 for a full example.
+Best for: Domain-specific reasoning (e.g., Tree-of-Thought, Monte Carlo Tree Search, Constitutional AI self-critique, domain-specific state machines). See §9.3 for a full example.
 
 ```go
 executor := agent.NewExecutor(
@@ -683,7 +683,7 @@ executor := agent.NewExecutor(
     // OR: "your-custom-planner" (registered via agent.RegisterPlanner)
     agent.WithMaxIterations(15),
     agent.WithTimeout(2 * time.Minute),
-    agent.WithHooks(myHooks), // lifecycle hooks (see Â§9.5)
+    agent.WithHooks(myHooks), // lifecycle hooks (see §9.5)
 )
 ```
 
@@ -761,7 +761,7 @@ This pattern is applied uniformly across: `llm`, `rag/embedding`, `rag/vectorsto
 
 ## 9. Extensibility Architecture
 
-Extensibility is a first-class architectural concern, not an afterthought. Beluga v2 follows a **host + plugin** model: the framework defines extension contracts (interfaces) and lifecycle hooks at every package boundary. Users extend behavior from their own application code â€” no framework forking, monkey-patching, or pull requests required.
+Extensibility is a first-class architectural concern, not an afterthought. Beluga v2 follows a **host + plugin** model: the framework defines extension contracts (interfaces) and lifecycle hooks at every package boundary. Users extend behavior from their own application code — no framework forking, monkey-patching, or pull requests required.
 
 The extensibility system is built on four interlocking mechanisms:
 
@@ -810,19 +810,19 @@ Every extensible package follows the same structure. This consistency means lear
 
 ```
 <package>/
-â”œâ”€â”€ <interface>.go      # The extension contract (Go interface)
-â”œâ”€â”€ registry.go         # Register(), New(), List()
-â”œâ”€â”€ hooks.go            # Lifecycle hook types
-â”œâ”€â”€ middleware.go        # Middleware type + Apply()
-â””â”€â”€ providers/           # Built-in implementations
-    â”œâ”€â”€ <provider_a>/
-    â””â”€â”€ <provider_b>/
+├── <interface>.go      # The extension contract (Go interface)
+├── registry.go         # Register(), New(), List()
+├── hooks.go            # Lifecycle hook types
+├── middleware.go        # Middleware type + Apply()
+└── providers/           # Built-in implementations
+    ├── <provider_a>/
+    └── <provider_b>/
 ```
 
 **The four components of every extensible package:**
 
 ```go
-// 1. EXTENSION INTERFACE â€” the contract users implement
+// 1. EXTENSION INTERFACE — the contract users implement
 // Kept deliberately small (1-3 methods). Larger surfaces are composed.
 type ChatModel interface {
     Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error)
@@ -831,7 +831,7 @@ type ChatModel interface {
     ModelID() string
 }
 
-// 2. REGISTRY + FACTORY â€” discovery and instantiation
+// 2. REGISTRY + FACTORY — discovery and instantiation
 type Factory func(cfg ProviderConfig) (ChatModel, error)
 
 var registry = make(map[string]Factory)
@@ -844,7 +844,7 @@ func New(name string, cfg ProviderConfig) (ChatModel, error) {
 }
 func List() []string { /* returns sorted keys */ }
 
-// 3. LIFECYCLE HOOKS â€” fine-grained interception
+// 3. LIFECYCLE HOOKS — fine-grained interception
 type Hooks struct {
     BeforeGenerate func(ctx context.Context, msgs []schema.Message) (context.Context, []schema.Message, error)
     AfterGenerate  func(ctx context.Context, resp *schema.AIMessage, err error) (*schema.AIMessage, error)
@@ -852,7 +852,7 @@ type Hooks struct {
     OnError        func(ctx context.Context, err error) error
 }
 
-// 4. MIDDLEWARE â€” composable decorators
+// 4. MIDDLEWARE — composable decorators
 type Middleware func(ChatModel) ChatModel
 
 func ApplyMiddleware(model ChatModel, mws ...Middleware) ChatModel {
@@ -863,7 +863,7 @@ func ApplyMiddleware(model ChatModel, mws ...Middleware) ChatModel {
 }
 ```
 
-### 9.2 Extension Points â€” Complete Map
+### 9.2 Extension Points — Complete Map
 
 Every package in the framework exposes at least one extension interface. The table below is the definitive map of what can be extended and how.
 
@@ -874,20 +874,20 @@ Every package in the framework exposes at least one extension interface. The tab
 | `agent/` | `Planner` | Reasoning loop strategy | `"react"`, `"plan-execute"`, ... | BeforePlan, AfterPlan, BeforeAct, AfterAct, BeforeObserve, AfterObserve, OnIteration, OnFinish |
 | `agent/` | `Agent` (BaseAgent) | Custom agent with full control | Agent ID registry | OnStart, OnTool, OnHandoff, OnError, OnEnd |
 | `memory/` | `Memory` | Conversation memory strategy | `"buffer"`, `"window"`, ... | BeforeSave, AfterSave, BeforeLoad, AfterLoad |
-| `memory/stores/` | `MessageStore` | Persistence backend | `"inmemory"`, `"redis"`, ... | â€” |
-| `rag/embedding/` | `Embedder` | Text â†’ vector | `"openai"`, `"google"`, ... | BeforeEmbed, AfterEmbed |
+| `memory/stores/` | `MessageStore` | Persistence backend | `"inmemory"`, `"redis"`, ... | — |
+| `rag/embedding/` | `Embedder` | Text → vector | `"openai"`, `"google"`, ... | BeforeEmbed, AfterEmbed |
 | `rag/vectorstore/` | `VectorStore` | Vector storage + search | `"pgvector"`, `"qdrant"`, ... | BeforeAdd, AfterSearch |
 | `rag/retriever/` | `Retriever` | Document retrieval strategy | `"vector"`, `"multiquery"`, ... | BeforeRetrieve, AfterRetrieve, OnRerank |
-| `rag/loader/` | `DocumentLoader` | Ingest documents | `"text"`, `"pdf"`, ... | â€” |
-| `rag/splitter/` | `TextSplitter` | Chunk documents | `"recursive"`, `"markdown"`, ... | â€” |
-| `voice/stt/` | `STT` | Speech â†’ text (streaming) | `"deepgram"`, `"assemblyai"`, ... | OnTranscript, OnUtterance |
-| `voice/tts/` | `TTS` | Text â†’ speech (streaming) | `"elevenlabs"`, `"cartesia"`, ... | BeforeSynthesize, OnAudioChunk |
-| `voice/s2s/` | `S2S` | Speech â†” speech (bidirectional) | `"openai_realtime"`, ... | OnTurn, OnInterrupt |
+| `rag/loader/` | `DocumentLoader` | Ingest documents | `"text"`, `"pdf"`, ... | — |
+| `rag/splitter/` | `TextSplitter` | Chunk documents | `"recursive"`, `"markdown"`, ... | — |
+| `voice/stt/` | `STT` | Speech → text (streaming) | `"deepgram"`, `"assemblyai"`, ... | OnTranscript, OnUtterance |
+| `voice/tts/` | `TTS` | Text → speech (streaming) | `"elevenlabs"`, `"cartesia"`, ... | BeforeSynthesize, OnAudioChunk |
+| `voice/s2s/` | `S2S` | Speech ↔ speech (bidirectional) | `"openai_realtime"`, ... | OnTurn, OnInterrupt |
 | `voice/` | `VAD` | Voice activity detection | `"silero"`, `"webrtc"`, ... | OnSpeechStart, OnSpeechEnd |
-| `voice/transport/` | `AudioTransport` | Audio I/O channel | `"websocket"`, `"livekit"`, ... | â€” |
-| `orchestration/` | `Node` | Custom orchestration step | â€” | BeforeStep, AfterStep |
-| `guard/` | `Guard` | Safety check | `"content"`, `"pii"`, ... | â€” |
-| `server/` | `ServerAdapter` | HTTP framework bridge | `"gin"`, `"fiber"`, ... | â€” |
+| `voice/transport/` | `AudioTransport` | Audio I/O channel | `"websocket"`, `"livekit"`, ... | — |
+| `orchestration/` | `Node` | Custom orchestration step | — | BeforeStep, AfterStep |
+| `guard/` | `Guard` | Safety check | `"content"`, `"pii"`, ... | — |
+| `server/` | `ServerAdapter` | HTTP framework bridge | `"gin"`, `"fiber"`, ... | — |
 
 ### 9.3 Custom Reasoning Loops (Planner Interface)
 
@@ -905,10 +905,10 @@ graph LR
     end
 
     subgraph "Pluggable Planners (user-extensible)"
-        P1[ReAct<br/>Thinkâ†’Actâ†’Observe]
-        P2[Plan-and-Execute<br/>Full plan â†’ steps]
-        P3[Reflection<br/>Generateâ†’Critiqueâ†’Refine]
-        P4[Tree-of-Thought<br/>Branchâ†’Evaluateâ†’Prune]
+        P1[ReAct<br/>Think→Act→Observe]
+        P2[Plan-and-Execute<br/>Full plan → steps]
+        P3[Reflection<br/>Generate→Critique→Refine]
+        P4[Tree-of-Thought<br/>Branch→Evaluate→Prune]
         P5[Your Custom Planner<br/>Any reasoning strategy]
     end
 
@@ -1026,7 +1026,7 @@ func (p *TreeOfThoughtPlanner) Replan(ctx context.Context, state agent.PlannerSt
     // ...
 }
 
-// Register at init time â€” framework discovers it automatically
+// Register at init time — framework discovers it automatically
 func init() {
     agent.RegisterPlanner("tree-of-thought", func(cfg agent.PlannerConfig) (agent.Planner, error) {
         return &TreeOfThoughtPlanner{
@@ -1060,7 +1060,7 @@ executor := agent.NewExecutor(
 
 ### 9.4 Custom Agent Types (BaseAgent Pattern)
 
-Beyond custom reasoning loops, users may need entirely custom agent types with bespoke orchestration logic â€” like Google ADK's `BaseAgent`. Beluga v2 supports this via a composable `BaseAgent` struct.
+Beyond custom reasoning loops, users may need entirely custom agent types with bespoke orchestration logic — like Google ADK's `BaseAgent`. Beluga v2 supports this via a composable `BaseAgent` struct.
 
 ```mermaid
 graph TB
@@ -1203,7 +1203,7 @@ func (r *ResearchPipelineAgent) Invoke(ctx context.Context, input any, opts ...c
 }
 
 func (r *ResearchPipelineAgent) Stream(ctx context.Context, input any, opts ...core.Option) (core.Stream[any], error) {
-    // Streaming version â€” emit events as each phase completes
+    // Streaming version — emit events as each phase completes
     // ...
 }
 ```
@@ -1264,7 +1264,7 @@ sequenceDiagram
 // agent/hooks.go
 
 // Hooks defines all lifecycle interception points for an agent.
-// All fields are optional â€” nil hooks are simply skipped.
+// All fields are optional — nil hooks are simply skipped.
 type Hooks struct {
     // Agent lifecycle
     OnStart    func(ctx context.Context, input any) error
@@ -1322,7 +1322,7 @@ costHook := agent.Hooks{
     },
 }
 
-// Guardrail hook â€” block dangerous tool calls
+// Guardrail hook — block dangerous tool calls
 guardrailHook := agent.Hooks{
     OnToolCall: func(ctx context.Context, name string, input map[string]any) (map[string]any, error) {
         if name == "shell_exec" && !isAllowedCommand(input["command"].(string)) {
@@ -1341,12 +1341,12 @@ executor := agent.NewExecutor(
 
 ### 9.6 Middleware Chains
 
-While hooks intercept at specific lifecycle points, middleware wraps the entire interface â€” ideal for cross-cutting concerns like retries, rate limiting, caching, and observability.
+While hooks intercept at specific lifecycle points, middleware wraps the entire interface — ideal for cross-cutting concerns like retries, rate limiting, caching, and observability.
 
 **Every extensible interface supports middleware:**
 
 ```go
-// Pattern: type Middleware func(T) T â€” wraps and returns the same interface
+// Pattern: type Middleware func(T) T — wraps and returns the same interface
 
 // llm/middleware.go
 type Middleware func(ChatModel) ChatModel
@@ -1417,7 +1417,7 @@ func (m *tokenBudgetModel) BindTools(tools []tool.Tool) llm.ChatModel {
 func (m *tokenBudgetModel) ModelID() string { return m.inner.ModelID() }
 ```
 
-### 9.7 Extending Every Package â€” Examples
+### 9.7 Extending Every Package — Examples
 
 Each package can be extended identically. Here is a condensed example for each major package to demonstrate the consistency.
 
@@ -1454,7 +1454,7 @@ type WeatherInput struct {
 
 weatherTool := tool.NewFuncTool("get_weather", "Get current weather", func(ctx context.Context, input WeatherInput) (*tool.ToolResult, error) {
     // call weather API...
-    return tool.TextResult(fmt.Sprintf("72Â°F in %s", input.City)), nil
+    return tool.TextResult(fmt.Sprintf("72°F in %s", input.City)), nil
 })
 
 // 2. Implement the interface directly (full control)
@@ -1487,7 +1487,7 @@ func init() {
 
 **Custom Memory Strategy:**
 ```go
-// myapp/memory/graph_memory.go â€” a knowledge-graph-backed memory
+// myapp/memory/graph_memory.go — a knowledge-graph-backed memory
 package memory
 
 import "github.com/lookatitude/beluga-ai/memory"
@@ -1517,7 +1517,7 @@ func init() {
 
 **Custom Retriever Strategy:**
 ```go
-// myapp/retrievers/hyde.go â€” Hypothetical Document Embedding retriever
+// myapp/retrievers/hyde.go — Hypothetical Document Embedding retriever
 package retrievers
 
 import "github.com/lookatitude/beluga-ai/rag/retriever"
@@ -1550,7 +1550,7 @@ func init() {
 
 **Custom Orchestration Node:**
 ```go
-// myapp/nodes/approval_gate.go â€” human-in-the-loop approval
+// myapp/nodes/approval_gate.go — human-in-the-loop approval
 package nodes
 
 import "github.com/lookatitude/beluga-ai/orchestration"
@@ -1582,7 +1582,7 @@ graph TB
         A1[Custom Providers<br/>Implement Interface]
         A2[Custom Planners<br/>Implement Planner]
         A3[Custom Agents<br/>Embed BaseAgent]
-        A4[Custom Middleware<br/>func T â†’ T]
+        A4[Custom Middleware<br/>func T → T]
         A5[Custom Hooks<br/>Callback functions]
         A6[Custom Tools<br/>FuncTool or Interface]
     end
@@ -1626,9 +1626,9 @@ The extensibility architecture provides the following guarantees:
 | Guarantee | How It's Enforced |
 |-----------|-------------------|
 | **Zero framework changes** | All registration happens via `Register()` + `init()`. No config files to edit, no core code to modify. |
-| **Compile-time safety** | Extension interfaces are Go interfaces â€” the compiler catches missing methods. |
+| **Compile-time safety** | Extension interfaces are Go interfaces — the compiler catches missing methods. |
 | **Runtime discovery** | `List()` on any registry returns all registered implementations. Useful for CLI tooling and validation. |
-| **Middleware composability** | Middleware is `func(T) T` â€” stack any number without ordering issues. Applied outside-in. |
+| **Middleware composability** | Middleware is `func(T) T` — stack any number without ordering issues. Applied outside-in. |
 | **Hook composability** | `ComposeHooks()` chains multiple hook sets. Each hook in the chain receives the output of the previous. |
 | **Observable extensions** | All registry operations emit OTel events. Custom providers automatically inherit the middleware/hook observability stack. |
 | **Testable extensions** | `internal/testutil/` provides mock implementations of every interface for unit testing custom providers. |
@@ -1665,7 +1665,7 @@ o11y.Info(ctx, "tool executed",
 
 ## 11. Middleware / Interceptors
 
-Cross-cutting concerns are handled via middleware wrapping (see Â§9.6 for the pattern and custom middleware guide). Every extensible interface supports the `func(T) T` middleware signature.
+Cross-cutting concerns are handled via middleware wrapping (see §9.6 for the pattern and custom middleware guide). Every extensible interface supports the `func(T) T` middleware signature.
 
 **Built-in middleware across all packages:**
 
@@ -1673,7 +1673,7 @@ Cross-cutting concerns are handled via middleware wrapping (see Â§9.6 for the 
 |---------|-----------|--------------|
 | `llm/` | `WithRetry(n, backoff)` | Exponential backoff retry on transient errors |
 | `llm/` | `WithRateLimit(rps)` | Token-bucket rate limiter |
-| `llm/` | `WithCache(cache, ttl)` | Semantic cache (hash messages â†’ cached response) |
+| `llm/` | `WithCache(cache, ttl)` | Semantic cache (hash messages → cached response) |
 | `llm/` | `WithLogging(logger)` | Structured log of every generate/stream call |
 | `llm/` | `WithMetrics(meter)` | OTel metrics (tokens, latency, errors) |
 | `llm/` | `WithGuardrail(guard)` | Input/output safety checking |
@@ -1686,7 +1686,7 @@ Cross-cutting concerns are handled via middleware wrapping (see Â§9.6 for the 
 | `rag/retriever/` | `WithCache(cache, ttl)` | Cache retrieval results |
 
 ```go
-// Compose middleware (applies outside-in: guardrail â†’ logging â†’ retry â†’ model)
+// Compose middleware (applies outside-in: guardrail → logging → retry → model)
 model := llm.New("openai", cfg)
 model = llm.ApplyMiddleware(model,
     llm.WithRetry(3, time.Second),
@@ -1767,59 +1767,59 @@ func IsRetryable(err error) bool {
 
 ```
 User Input
-    â”‚
-    â–¼
-Memory.Load() â†’ [context messages]
-    â”‚
-    â–¼
+    │
+    ▼
+Memory.Load() → [context messages]
+    │
+    ▼
 LLM.Stream(systemPrompt + memory + userInput)
-    â”‚
-    â”œâ”€â”€ [TextChunk] â†’ accumulate response
-    â”œâ”€â”€ [ToolCall]  â†’ Tool.Execute() â†’ [ToolResult] â†’ feed back to LLM
-    â””â”€â”€ [Done]      â†’ Memory.Save(input, response) â†’ return to user
+    │
+    ├── [TextChunk] → accumulate response
+    ├── [ToolCall]  → Tool.Execute() → [ToolResult] → feed back to LLM
+    └── [Done]      → Memory.Save(input, response) → return to user
 ```
 
 ### 14.2 Voice Agent (Cascading)
 
 ```
-Microphone â†’ LiveKit Room â†’ AudioTransport.AudioIn()
-    â”‚
-    â–¼
+Microphone → LiveKit Room → AudioTransport.AudioIn()
+    │
+    ▼
 VAD (detect speech start/end)
-    â”‚
-    â–¼
-STT.Stream(audioChunks) â†’ text transcript
-    â”‚
-    â–¼
+    │
+    ▼
+STT.Stream(audioChunks) → text transcript
+    │
+    ▼
 LLM.Stream(messages + transcript)
-    â”‚
-    â”œâ”€â”€ [ToolCall] â†’ execute â†’ feed result back
-    â””â”€â”€ [TextChunk] â†’ TTS.Stream(text) â†’ audio chunks
-                                            â”‚
-                                            â–¼
-                              AudioTransport.AudioOut() â†’ LiveKit â†’ Speaker
+    │
+    ├── [ToolCall] → execute → feed result back
+    └── [TextChunk] → TTS.Stream(text) → audio chunks
+                                            │
+                                            ▼
+                              AudioTransport.AudioOut() → LiveKit → Speaker
 ```
 
 ### 14.3 Multi-Agent Research Pipeline
 
 ```
 User: "Compare AWS and GCP pricing for GPU instances"
-    â”‚
-    â–¼
+    │
+    ▼
 Supervisor (router LLM)
-    â”‚
-    â”œâ”€â”€ Delegate to ResearcherAgent("AWS GPU pricing")
-    â”‚       â””â”€â”€ Tools: WebSearch, Calculator
-    â”‚       â””â”€â”€ Returns: structured findings
-    â”‚
-    â”œâ”€â”€ Delegate to ResearcherAgent("GCP GPU pricing")
-    â”‚       â””â”€â”€ Tools: WebSearch, Calculator
-    â”‚       â””â”€â”€ Returns: structured findings
-    â”‚
-    â””â”€â”€ Delegate to WriterAgent(findings1, findings2)
-            â””â”€â”€ Returns: formatted comparison report
-    â”‚
-    â–¼
+    │
+    ├── Delegate to ResearcherAgent("AWS GPU pricing")
+    │       └── Tools: WebSearch, Calculator
+    │       └── Returns: structured findings
+    │
+    ├── Delegate to ResearcherAgent("GCP GPU pricing")
+    │       └── Tools: WebSearch, Calculator
+    │       └── Returns: structured findings
+    │
+    └── Delegate to WriterAgent(findings1, findings2)
+            └── Returns: formatted comparison report
+    │
+    ▼
 User receives comparison report
 ```
 
@@ -1843,33 +1843,3 @@ User receives comparison report
 | `pkg/server` | `protocol/rest/` | Add MCP server, A2A server |
 | `pkg/config` | `config/` | Generics-based `Load[T]()` |
 
----
-
-## 16. Implementation Priority
-
-### Phase 1: Core + LLM + Tool + Agent (Weeks 1-4)
-- `core/`, `schema/`, `config/`, `o11y/`
-- `llm/` with OpenAI + Anthropic providers
-- `tool/` with MCP client
-- `agent/` with ReAct executor
-- `memory/` with buffer + window
-
-### Phase 2: RAG + Voice (Weeks 5-8)
-- `rag/` complete pipeline (embedding, vectorstore, retriever, loader, splitter)
-- `voice/` cascading pipeline (STT + TTS)
-- `voice/s2s/` with OpenAI Realtime
-- `voice/transport/` WebSocket + LiveKit
-
-### Phase 3: Orchestration + Protocols (Weeks 9-12)
-- `orchestration/` chain, graph, supervisor
-- `protocol/mcp/` server (expose tools)
-- `protocol/a2a/` server + client
-- `protocol/rest/` with SSE streaming
-- `guard/` safety layer
-
-### Phase 4: Ecosystem (Weeks 13-16)
-- Additional LLM providers (Google, Ollama, Groq, Bedrock)
-- Additional vector stores (Qdrant, Pinecone, Chroma)
-- Additional voice providers (Deepgram, ElevenLabs, Cartesia)
-- `memory/stores/` Redis, Postgres
-- Advanced retrievers, entity memory, durable workflows

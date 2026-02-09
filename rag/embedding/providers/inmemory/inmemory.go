@@ -33,6 +33,9 @@ type Embedder struct {
 	dims int
 }
 
+// Compile-time interface check.
+var _ embedding.Embedder = (*Embedder)(nil)
+
 // New creates a new in-memory Embedder. The "dimensions" option in
 // cfg.Options controls the vector size (default 128).
 func New(cfg config.ProviderConfig) (*Embedder, error) {

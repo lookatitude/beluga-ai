@@ -263,3 +263,63 @@ func (bs *BufferedStream[T]) Len() int {
 func (bs *BufferedStream[T]) Cap() int {
 	return cap(bs.ch)
 }
+
+// FlowController provides backpressure control for streams. It allows
+// producers to pause/resume based on consumer readiness and can be queried
+// for current buffer state.
+type FlowController interface {
+	// Acquire blocks until capacity is available or ctx is cancelled.
+	Acquire(ctx context.Context) error
+
+	// Release signals that capacity has been freed.
+	Release()
+
+	// TryAcquire attempts to acquire without blocking. Returns true if
+	// successful, false if no capacity is currently available.
+	TryAcquire() bool
+}
+
+// semaphoreFlowController implements FlowController using a semaphore pattern.
+type semaphoreFlowController struct {
+	sem chan struct{}
+}
+
+// NewFlowController creates a FlowController with the given maximum
+// concurrency. maxConcurrency must be at least 1.
+func NewFlowController(maxConcurrency int) FlowController {
+	if maxConcurrency < 1 {
+		maxConcurrency = 1
+	}
+	return &semaphoreFlowController{
+		sem: make(chan struct{}, maxConcurrency),
+	}
+}
+
+// Acquire blocks until capacity is available or ctx is cancelled.
+func (s *semaphoreFlowController) Acquire(ctx context.Context) error {
+	select {
+	case s.sem <- struct{}{}:
+		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+// Release signals that capacity has been freed.
+func (s *semaphoreFlowController) Release() {
+	select {
+	case <-s.sem:
+	default:
+		// Channel is empty; this is a programming error but we don't panic.
+	}
+}
+
+// TryAcquire attempts to acquire without blocking.
+func (s *semaphoreFlowController) TryAcquire() bool {
+	select {
+	case s.sem <- struct{}{}:
+		return true
+	default:
+		return false
+	}
+}

@@ -372,3 +372,92 @@ func TestDoJSON_RetryAfterHeader(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "ok", resp.Name)
 }
+
+func TestDoJSON_RetryOnNetworkError(t *testing.T) {
+	var attempts atomic.Int32
+
+	// Create a server that's stopped after first request, simulating network failure.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		n := attempts.Add(1)
+		if n <= 2 {
+			// Simulate network error by hijacking and closing connection abruptly.
+			hj, ok := w.(http.Hijacker)
+			if !ok {
+				t.Fatal("hijacking not supported")
+			}
+			conn, _, err := hj.Hijack()
+			if err != nil {
+				t.Fatalf("hijack failed: %v", err)
+			}
+			conn.Close()
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(testResponse{Name: "recovered", Value: 3})
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL), WithRetries(3), WithBackoff(1*time.Millisecond))
+	resp, err := DoJSON[testResponse](context.Background(), c, http.MethodGet, "/data", nil)
+	require.NoError(t, err)
+	assert.Equal(t, "recovered", resp.Name)
+	assert.GreaterOrEqual(t, attempts.Load(), int32(3))
+}
+
+func TestDoJSON_NoRetryOnNetworkErrorWhenRetriesDisabled(t *testing.T) {
+	var attempts atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		attempts.Add(1)
+		// Simulate network error by hijacking and closing connection.
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Fatal("hijacking not supported")
+		}
+		conn, _, err := hj.Hijack()
+		if err != nil {
+			t.Fatalf("hijack failed: %v", err)
+		}
+		conn.Close()
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL), WithRetries(0), WithBackoff(1*time.Millisecond))
+	_, err := DoJSON[testResponse](context.Background(), c, http.MethodGet, "/data", nil)
+	require.Error(t, err)
+	assert.Equal(t, int32(1), attempts.Load())
+}
+
+func TestStreamSSEWithBody_POST(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "text/event-stream", r.Header.Get("Accept"))
+		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
+
+		var req testRequest
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&req))
+		assert.Equal(t, "test input", req.Input)
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+
+		flusher, ok := w.(http.Flusher)
+		require.True(t, ok)
+
+		fmt.Fprintln(w, "event: response")
+		fmt.Fprintf(w, "data: received: %s\n", req.Input)
+		fmt.Fprintln(w)
+		flusher.Flush()
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL))
+	var events []SSEEvent
+	for ev, err := range StreamSSEWithBody(context.Background(), c, http.MethodPost, "/stream", testRequest{Input: "test input"}) {
+		require.NoError(t, err)
+		events = append(events, ev)
+	}
+
+	require.Len(t, events, 1)
+	assert.Equal(t, "response", events[0].Event)
+	assert.Equal(t, "received: test input", events[0].Data)
+}

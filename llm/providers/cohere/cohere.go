@@ -45,6 +45,9 @@ type Model struct {
 	tools  []schema.ToolDefinition
 }
 
+// Compile-time interface check.
+var _ llm.ChatModel = (*Model)(nil)
+
 // New creates a new Cohere ChatModel.
 func New(cfg config.ProviderConfig) (*Model, error) {
 	if cfg.APIKey == "" {

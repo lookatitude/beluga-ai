@@ -1,0 +1,28 @@
+{
+  "site": {
+    "title": "Beluga AI",
+    "logo": "/src/assets/logo-light.svg",
+    "logo_darkmode": "/src/assets/logo-dark.svg",
+    "logo_width": "127",
+    "logo_height": "32",
+    "logo_text": "Beluga AI"
+  },
+
+  "settings": {
+    "search": true,
+    "theme_switcher": true
+  },
+
+  "params": {
+    "footer_contact": {
+      "enable": false
+    },
+    "copyright": "Copyright &copy; 2025 <a class=\"text-primary hover:underline no-underline\" href=\"https://github.com/lookatitude\" target=\"_blank\" rel=\"noopener\">Lookatitude</a>. MIT License."
+  },
+
+  "navigation_button": {
+    "enable": true,
+    "label": "Get Started",
+    "link": "/getting-started/overview/"
+  }
+}

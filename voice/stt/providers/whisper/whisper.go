@@ -30,6 +30,8 @@ const (
 	defaultModel   = "whisper-1"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("whisper", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

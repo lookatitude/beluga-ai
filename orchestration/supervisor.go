@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"iter"
 	"strings"
+	"sync"
 	"sync/atomic"
 
 	"github.com/lookatitude/beluga-ai/agent"
@@ -159,15 +160,19 @@ func RoundRobin() StrategyFunc {
 	}
 }
 
-// LoadBalanced returns a strategy that picks the agent with the shortest ID
-// hash modulo call count. This is a simple approximation of load balancing
-// that distributes work across agents.
+// LoadBalanced returns a strategy that picks the agent with the lowest
+// invocation count. This distributes work evenly across agents.
+// Safe for concurrent use.
 func LoadBalanced() StrategyFunc {
+	var mu sync.Mutex
 	counts := make(map[string]*atomic.Int64)
 	return func(_ context.Context, _ any, agents []agent.Agent) (agent.Agent, error) {
 		if len(agents) == 0 {
 			return nil, nil
 		}
+
+		mu.Lock()
+		defer mu.Unlock()
 
 		var best agent.Agent
 		bestCount := int64(1<<63 - 1)

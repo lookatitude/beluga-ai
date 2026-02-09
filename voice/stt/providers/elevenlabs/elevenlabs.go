@@ -30,6 +30,8 @@ const (
 	defaultModel   = "scribe_v1"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("elevenlabs", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

@@ -29,6 +29,8 @@ const (
 	defaultVoice   = "s3://voice-cloning-zero-shot/775ae416-49bb-4fb6-bd45-740f205d3571/jennifersaad/manifest.json"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("playht", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

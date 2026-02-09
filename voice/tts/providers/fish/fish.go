@@ -29,6 +29,8 @@ const (
 	defaultVoice   = "default"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("fish", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

@@ -29,6 +29,8 @@ const (
 	defaultVoice   = "lily"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("lmnt", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

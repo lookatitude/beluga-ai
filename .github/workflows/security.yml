@@ -1,0 +1,270 @@
+name: Security
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 0 * * 0" # Weekly Sunday midnight UTC
+
+permissions:
+  contents: write
+  security-events: write
+
+env:
+  GO_VERSION: "1.25.7"
+
+jobs:
+  snyk:
+    name: Snyk Vulnerability Scan
+    runs-on: ubuntu-latest
+    outputs:
+      snyk_status: ${{ steps.snyk_result.outputs.status }}
+      snyk_vulns: ${{ steps.snyk_result.outputs.vulns }}
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run Snyk
+        id: snyk_scan
+        uses: snyk/actions/golang@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --json-file-output=snyk-report.json
+
+      - name: Parse Snyk results
+        id: snyk_result
+        if: always()
+        run: |
+          if [ "${{ steps.snyk_scan.outcome }}" = "success" ]; then
+            echo "status=clean" >> $GITHUB_OUTPUT
+            echo "vulns=0" >> $GITHUB_OUTPUT
+          else
+            VULNS=$(jq '.vulnerabilities | length // 0' snyk-report.json 2>/dev/null || echo "unknown")
+            echo "status=vulnerabilities-found" >> $GITHUB_OUTPUT
+            echo "vulns=${VULNS}" >> $GITHUB_OUTPUT
+          fi
+
+  trivy:
+    name: Trivy Vulnerability Scan
+    runs-on: ubuntu-latest
+    outputs:
+      trivy_status: ${{ steps.trivy_result.outputs.status }}
+      trivy_findings: ${{ steps.trivy_result.outputs.findings }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "."
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: "trivy-results.sarif"
+          category: "trivy"
+
+      - name: Parse Trivy results
+        id: trivy_result
+        if: always()
+        run: |
+          if [ -f trivy-results.sarif ]; then
+            FINDINGS=$(jq '[.runs[].results[]] | length // 0' trivy-results.sarif 2>/dev/null || echo "0")
+          else
+            FINDINGS=0
+          fi
+          if [ "$FINDINGS" -gt 0 ]; then
+            echo "status=findings-detected" >> $GITHUB_OUTPUT
+          else
+            echo "status=clean" >> $GITHUB_OUTPUT
+          fi
+          echo "findings=${FINDINGS}" >> $GITHUB_OUTPUT
+
+      - name: Upload Trivy SARIF artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-sarif
+          path: trivy-results.sarif
+
+  gitleaks:
+    name: Gitleaks Secret Detection
+    runs-on: ubuntu-latest
+    outputs:
+      gitleaks_status: ${{ steps.gitleaks_result.outputs.status }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        id: gitleaks_scan
+        uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+      - name: Set Gitleaks status
+        id: gitleaks_result
+        if: always()
+        run: |
+          if [ "${{ steps.gitleaks_scan.outcome }}" = "success" ]; then
+            echo "status=clean" >> $GITHUB_OUTPUT
+          else
+            echo "status=secrets-detected" >> $GITHUB_OUTPUT
+          fi
+
+  go-licenses:
+    name: License Compliance
+    runs-on: ubuntu-latest
+    outputs:
+      licenses_status: ${{ steps.licenses_result.outputs.status }}
+      licenses_violations: ${{ steps.licenses_result.outputs.violations }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install go-licenses
+        run: go install github.com/google/go-licenses@latest
+
+      - name: Check license compliance
+        id: license_check
+        continue-on-error: true
+        run: |
+          go-licenses check ./... \
+            --allowed_licenses=MIT,Apache-2.0,BSD-2-Clause,BSD-3-Clause,ISC,MPL-2.0 \
+            2> license-errors.txt || true
+
+      - name: Generate license inventory
+        run: |
+          go-licenses csv ./... > licenses.csv 2>/dev/null || true
+
+      - name: Parse license results
+        id: licenses_result
+        if: always()
+        run: |
+          if [ -s license-errors.txt ]; then
+            VIOLATIONS=$(wc -l < license-errors.txt | tr -d ' ')
+            echo "status=violations-found" >> $GITHUB_OUTPUT
+            echo "violations=${VIOLATIONS}" >> $GITHUB_OUTPUT
+          else
+            echo "status=compliant" >> $GITHUB_OUTPUT
+            echo "violations=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload license inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-inventory
+          path: licenses.csv
+
+  generate-security-report:
+    name: Generate SECURITY.md
+    needs: [snyk, trivy, gitleaks, go-licenses]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Generate SECURITY.md
+        run: |
+          cat > SECURITY.md << 'HEADER'
+          # Security Report
+
+          > Auto-generated by CI security pipeline. Do not edit manually.
+
+          HEADER
+
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+          echo "**Last updated:** ${TIMESTAMP}" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # Snyk section
+          echo "## Dependency Vulnerabilities (Snyk)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          SNYK_STATUS="${{ needs.snyk.outputs.snyk_status }}"
+          SNYK_VULNS="${{ needs.snyk.outputs.snyk_vulns }}"
+          if [ "$SNYK_STATUS" = "clean" ]; then
+            echo "**Status:** No vulnerabilities found" >> SECURITY.md
+          else
+            echo "**Status:** ${SNYK_VULNS:-unknown} vulnerabilities found" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "[View full Snyk report](https://app.snyk.io)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # Trivy section
+          echo "## Dependency & Filesystem Scan (Trivy)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          TRIVY_STATUS="${{ needs.trivy.outputs.trivy_status }}"
+          TRIVY_FINDINGS="${{ needs.trivy.outputs.trivy_findings }}"
+          if [ "$TRIVY_STATUS" = "clean" ]; then
+            echo "**Status:** No findings (CRITICAL/HIGH)" >> SECURITY.md
+          else
+            echo "**Status:** ${TRIVY_FINDINGS:-0} findings detected" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "Results uploaded to [GitHub Security tab](../../security/code-scanning)" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # Gitleaks section
+          echo "## Secret Detection (Gitleaks)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          GITLEAKS_STATUS="${{ needs.gitleaks.outputs.gitleaks_status }}"
+          if [ "$GITLEAKS_STATUS" = "clean" ]; then
+            echo "**Status:** No secrets detected" >> SECURITY.md
+          else
+            echo "**Status:** Potential secrets detected — review required" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+
+          # License compliance section
+          echo "## License Compliance (go-licenses)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          LIC_STATUS="${{ needs.go-licenses.outputs.licenses_status }}"
+          LIC_VIOLATIONS="${{ needs.go-licenses.outputs.licenses_violations }}"
+          if [ "$LIC_STATUS" = "compliant" ]; then
+            echo "**Status:** All dependencies compliant" >> SECURITY.md
+          else
+            echo "**Status:** ${LIC_VIOLATIONS:-0} license violations found" >> SECURITY.md
+          fi
+          echo "" >> SECURITY.md
+          echo "**Allowed licenses:** MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC, MPL-2.0" >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # CodeQL note
+          echo "## Static Analysis (CodeQL)" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "CodeQL runs in a [separate workflow](../../actions/workflows/codeql.yml). Results are available in the [GitHub Security tab](../../security/code-scanning)." >> SECURITY.md
+          echo "" >> SECURITY.md
+
+          # Summary
+          echo "---" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "## Reporting Vulnerabilities" >> SECURITY.md
+          echo "" >> SECURITY.md
+          echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities." >> SECURITY.md
+
+      - name: Commit SECURITY.md
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(ci): update SECURITY.md [skip ci]"
+          file_pattern: SECURITY.md

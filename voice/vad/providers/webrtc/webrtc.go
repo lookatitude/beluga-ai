@@ -14,6 +14,7 @@ import (
 	"context"
 	"encoding/binary"
 	"math"
+	"sync"
 
 	"github.com/lookatitude/beluga-ai/voice"
 )
@@ -22,6 +23,8 @@ const (
 	defaultEnergyThreshold = 1000.0
 	defaultZCRThreshold    = 0.1
 )
+
+var _ voice.VAD = (*VAD)(nil) // compile-time interface check
 
 func init() {
 	voice.RegisterVAD("webrtc", func(cfg map[string]any) (voice.VAD, error) {
@@ -52,6 +55,7 @@ type VAD struct {
 	energyThreshold float64
 	zcrThreshold    float64
 	wasSpeaking     bool
+	mu              sync.Mutex // protects wasSpeaking
 }
 
 // New creates a new WebRTC-style VAD with the given thresholds.
@@ -115,6 +119,9 @@ func (v *VAD) DetectActivity(_ context.Context, audio []byte) (voice.ActivityRes
 	if !zcrBelow {
 		confidence *= 0.5 // reduce confidence for high ZCR (likely noise)
 	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
 
 	var eventType voice.VADEventType
 	switch {

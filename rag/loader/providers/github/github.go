@@ -39,6 +39,9 @@ type Loader struct {
 	ref    string
 }
 
+// Compile-time interface check.
+var _ loader.DocumentLoader = (*Loader)(nil)
+
 // New creates a new GitHub document loader.
 func New(cfg config.ProviderConfig) (*Loader, error) {
 	baseURL := cfg.BaseURL

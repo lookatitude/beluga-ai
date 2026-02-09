@@ -49,6 +49,9 @@ type Store struct {
 	dimension  int
 }
 
+// Compile-time interface check.
+var _ vectorstore.VectorStore = (*Store)(nil)
+
 // Option configures a Store.
 type Option func(*Store)
 

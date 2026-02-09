@@ -19,6 +19,7 @@ import (
 	"sync"
 
 	"github.com/lookatitude/beluga-ai/protocol/mcp"
+	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/lookatitude/beluga-ai/tool"
 )
 
@@ -223,25 +224,16 @@ func (t *remoteTool) Execute(ctx context.Context, input map[string]any) (*tool.R
 		return nil, fmt.Errorf("mcp/registry/execute: %w", err)
 	}
 
-	var parts []any
+	// Convert MCP content items to native ContentParts.
+	var content []schema.ContentPart
 	for _, item := range result.Content {
 		if item.Type == "text" {
-			parts = append(parts, item.Text)
-		}
-	}
-
-	// Build text content from text items.
-	text := ""
-	for _, item := range result.Content {
-		if item.Type == "text" {
-			if text != "" {
-				text += "\n"
-			}
-			text += item.Text
+			content = append(content, schema.TextPart{Text: item.Text})
 		}
 	}
 
 	return &tool.Result{
+		Content: content,
 		IsError: result.IsError,
 	}, nil
 }

@@ -1,0 +1,101 @@
+---
+const { type, question, answer } = Astro.props;
+---
+
+<div
+  class={"accordion " + (type ? "mt-0!" : " show-accordion mt-10")}
+  data-tab={type || ""}
+>
+  <div class="accordion-header">
+    <h4>{question}</h4>
+    <div class="accordion-icon">
+      <svg
+        width="15"
+        height="15"
+        viewBox="0 0 15 15"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          class="vertical-line"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M8.47821 6.52114V0H6.52169V6.52114H0V8.47766H6.52169V15H8.47821V8.47766H15V6.52114H8.47821Z"
+          fill="currentColor"></path>
+        <path
+          class="horizontal-line"
+          fill-rule="evenodd"
+          clip-rule="evenodd"
+          d="M0 6.52114V8.47766H15V6.52114H0Z"
+          fill="currentColor"></path>
+      </svg>
+    </div>
+  </div>
+  <div class="accordion-body">
+    {answer}
+  </div>
+</div>
+
+<style>
+  @layer starlight.components {
+    .accordion {
+      border: 1px solid var(--sl-color-gray-6);
+      padding: 1.5rem 2rem;
+      border-radius: 16px;
+      display: none;
+    }
+    .accordion.show-accordion {
+      display: block;
+    }
+    .accordion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .accordion-header h4 {
+      font-size: 1.22rem !important;
+    }
+    .accordion-icon {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0px !important;
+    }
+    .accordion-icon svg {
+      position: relative;
+    }
+    .accordion-icon .vertical-line {
+      transition: transform 0.5s ease, opacity 0.5s ease;
+      transform-origin: center;
+    }
+    .accordion-icon .horizontal-line {
+      position: absolute;
+      transition: transform 0.5s ease;
+      transform-origin: center;
+    }
+    .accordion.active .accordion-icon .vertical-line {
+      transform: rotate(90deg);
+      opacity: 0;
+    }
+    .accordion.active .accordion-icon .horizontal-line {
+      transform: rotate(180deg);
+    }
+    .accordion-body {
+      margin-top: 0px !important;
+      max-height: 0px;
+      overflow: hidden;
+      transition: all 0.5s ease;
+      opacity: 0;
+    }
+    .accordion.active .accordion-body {
+      margin-top: 16px !important;
+      max-height: max-content;
+      overflow: visible;
+      opacity: 1;
+      transition: all 0.5s ease;
+    }
+  }
+</style>

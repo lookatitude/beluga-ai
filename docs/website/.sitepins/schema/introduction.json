@@ -1,0 +1,22 @@
+{
+  "file": "src/content/docs/getting-started/introduction/Quickstart.md",
+  "name": "introduction",
+  "fileType": "md",
+  "fmType": "yaml",
+  "template": [
+    {
+      "name": "title",
+      "label": "Title",
+      "type": "string",
+      "value": "",
+      "defaultValue": ""
+    },
+    {
+      "name": "description",
+      "label": "Description",
+      "type": "string",
+      "value": "",
+      "defaultValue": ""
+    }
+  ]
+}

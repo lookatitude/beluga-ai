@@ -1,0 +1,100 @@
+{
+  "main": [
+    {
+      "name": "Home",
+      "url": "/"
+    },
+    {
+      "name": "Documentation",
+      "url": "/getting-started/introduction/overview/"
+    },
+    {
+      "name": "Reference",
+      "url": "",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "Configuration",
+          "url": "/reference/configuration/"
+        },
+        {
+          "name": "Plugins Reference",
+          "url": "/reference/plugin/"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "community": {
+      "title": "Join Our Community",
+      "links": [
+        {
+          "name": "GitHub Discussions",
+          "url": "https://github.com/themefisher/dockit/discussions"
+        },
+        {
+          "name": "Discord Community",
+          "url": "/"
+        },
+        {
+          "name": "Twitter Updates",
+          "url": "/"
+        },
+        {
+          "name": "Contributing Guide",
+          "url": "/"
+        }
+      ]
+    },
+    "help_links": {
+      "title": "Helpful Links",
+      "links": [
+        {
+          "name": "Getting Started",
+          "url": "/"
+        },
+        {
+          "name": "Privacy Policy",
+          "url": "/privacy-policy"
+        },
+        {
+          "name": "Terms and Conditions",
+          "url": "/terms-conditions"
+        },
+        {
+          "name": "About Us",
+          "url": "/about"
+        },
+        {
+          "name": "Troubleshooting",
+          "url": "/"
+        }
+      ]
+    },
+    "company": {
+      "title": "Resources",
+      "links": [
+        {
+          "name": "Documentation Hub",
+          "url": "/docs/"
+        },
+        {
+          "name": "Theme Gallery",
+          "url": "/"
+        },
+        {
+          "name": "Best Practices",
+          "url": "/"
+        },
+        {
+          "name": "Performance Tips",
+          "url": "/"
+        },
+        {
+          "name": "Migration Guide",
+          "url": "/"
+        }
+      ]
+    }
+  }
+}

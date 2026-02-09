@@ -30,6 +30,8 @@ const (
 	defaultModel   = "eleven_monolingual_v1"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("elevenlabs", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

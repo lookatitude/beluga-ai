@@ -1,0 +1,84 @@
+---
+import ImageMod from "../ImageMod.astro";
+
+const { title, imageIcon, number, image } = Astro.props;
+---
+
+<div class={`list-card ${image ? 'list-card-wide' : ''}`}>
+  <div class="list-card-header">
+    <div class="flex items-center gap-3">
+      <ImageMod
+        src={imageIcon}
+        alt={title}
+        width={40}
+        height={40}
+        class:list={["w-8", "h-8"]}
+      />
+      <h3 class="text-h5! sm:text-h4! mt-0!">{title}</h3>
+    </div>
+    <span>{number} Articles</span>
+  </div>
+
+  {
+    image ? (
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-0! items-center">
+        <div class="list-body">
+          <slot />
+        </div>
+        <div class="bg-body mt-4 rounded-xl">
+          <ImageMod
+          src={image}
+          alt={title}
+          width={400}
+          height={200}
+          class:list={["w-full", "h-auto", "rounded-lg"]}
+        />
+        </div>
+      </div>
+    ) : (
+      <div class="list-body">
+        <slot />
+      </div>
+    )
+  }
+</div>
+
+<style>
+  @layer starlight.core {
+    .list-card {
+      background: var(--sl-color-black);
+      border: 1px solid var(--sl-color-gray-6);
+      border-radius: 1.3rem;
+      padding: 0.5rem;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .list-card-header {
+      background-color: color-mix(
+        in oklab,
+        var(--sl-color-gray-6) 30%,
+        transparent
+      );
+      display: flex;
+      border-radius: 1rem;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem;
+      margin-bottom: 1rem;
+    }
+    .list-card-header h4 {
+      font-size: 1.4rem !important;
+      margin: 0 !important;
+      font-weight: 500 !important;
+    }
+    .list-card-wide {
+      grid-column: span 2;
+    }
+    @media (max-width: 768px) {
+      .list-card-wide {
+        grid-column: span 1;
+      }
+    }
+  }
+</style>

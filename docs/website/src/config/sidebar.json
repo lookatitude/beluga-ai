@@ -1,0 +1,65 @@
+{
+  "main": [
+    {
+      "label": "Getting Started",
+      "items": [
+        {
+          "label": "[seti:vite] Overview",
+          "slug": "getting-started/overview"
+        },
+        {
+          "label": "[setting] Installation",
+          "slug": "getting-started/installation"
+        }
+      ]
+    },
+    {
+      "label": "Architecture",
+      "items": [
+        {
+          "label": "[document] Concepts",
+          "slug": "architecture/concepts"
+        },
+        {
+          "label": "[seti:plan] Package Layout",
+          "slug": "architecture/packages"
+        },
+        {
+          "label": "[seti:config] Full Architecture",
+          "slug": "architecture/architecture"
+        }
+      ]
+    },
+    {
+      "label": "Providers",
+      "autogenerate": { "directory": "providers" }
+    },
+    {
+      "label": "API Reference",
+      "items": [
+        {
+          "label": "[seti:go] GoDoc",
+          "link": "/godoc/",
+          "attrs": { "target": "_blank" }
+        }
+      ]
+    },
+    {
+      "label": "Reports",
+      "items": [
+        {
+          "label": "[pencil] Changelog",
+          "slug": "reports/changelog"
+        },
+        {
+          "label": "[shield] Security",
+          "slug": "reports/security"
+        },
+        {
+          "label": "[graph] Code Quality",
+          "slug": "reports/code-quality"
+        }
+      ]
+    }
+  ]
+}

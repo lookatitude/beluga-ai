@@ -30,6 +30,8 @@ const (
 	defaultModel   = "lightning"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("smallest", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

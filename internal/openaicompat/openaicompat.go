@@ -18,6 +18,7 @@ import (
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/openai/openai-go"
 	"github.com/openai/openai-go/option"
+	"github.com/openai/openai-go/packages/param"
 	"github.com/openai/openai-go/shared"
 )
 
@@ -28,6 +29,9 @@ type Model struct {
 	tools   []schema.ToolDefinition
 	options []option.RequestOption
 }
+
+// Compile-time interface check.
+var _ llm.ChatModel = (*Model)(nil)
 
 // New creates a new Model from a ProviderConfig.
 // It configures the openai-go client with the provided API key and base URL.
@@ -170,6 +174,30 @@ func applyGenerateOptions(params *openai.ChatCompletionNewParams, opts llm.Gener
 			v := shared.NewResponseFormatTextParam()
 			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
 				OfText: &v,
+			}
+		case "json_schema":
+			// JSON Schema mode for Structured Outputs
+			// Requires: name and schema fields from opts.Format.Schema
+			name, _ := opts.Format.Schema["name"].(string)
+			if name == "" {
+				name = "response_schema"
+			}
+			jsonSchemaParam := shared.ResponseFormatJSONSchemaJSONSchemaParam{
+				Name:   name,
+				Schema: opts.Format.Schema,
+			}
+			// Set optional fields if present in schema
+			if desc, ok := opts.Format.Schema["description"].(string); ok {
+				jsonSchemaParam.Description = param.NewOpt(desc)
+			}
+			if strict, ok := opts.Format.Schema["strict"].(bool); ok {
+				jsonSchemaParam.Strict = param.NewOpt(strict)
+			}
+			v := shared.ResponseFormatJSONSchemaParam{
+				JSONSchema: jsonSchemaParam,
+			}
+			params.ResponseFormat = openai.ChatCompletionNewParamsResponseFormatUnion{
+				OfJSONSchema: &v,
 			}
 		}
 	}

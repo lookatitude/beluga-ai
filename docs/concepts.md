@@ -1,10 +1,10 @@
-# Beluga AI v2 â€” Architecture & Concepts
+# Beluga AI v2 — Architecture & Concepts
 
 ## Executive Summary
 
-Beluga AI v2 is a ground-up redesign of the Beluga AI framework for building agentic AI systems in Go. Informed by the latest advances in agentic AI â€” advanced reasoning strategies (LATS, Reflexion, Graph-of-Thought), multi-agent orchestration (A2A protocol, MCP, handoffs-as-tools), durable execution, frame-based voice pipelines, and hybrid RAG architectures â€” the redesign synthesises production patterns from Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit into a unified, Go-native framework.
+Beluga AI v2 is a ground-up redesign of the Beluga AI framework for building agentic AI systems in Go. Informed by the latest advances in agentic AI — advanced reasoning strategies (LATS, Reflexion, Graph-of-Thought), multi-agent orchestration (A2A protocol, MCP, handoffs-as-tools), durable execution, frame-based voice pipelines, and hybrid RAG architectures — the redesign synthesises production patterns from Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit into a unified, Go-native framework.
 
-The framework is a **host** â€” everything else is a **plugin**. Core defines contracts; providers, reasoning strategies, tools, and agent types are added from application code with zero framework changes required.
+The framework is a **host** — everything else is a **plugin**. Core defines contracts; providers, reasoning strategies, tools, and agent types are added from application code with zero framework changes required.
 
 ---
 
@@ -14,16 +14,16 @@ The framework is a **host** â€” everything else is a **plugin**. Core defin
 |---|-----------|-----------|
 | 1 | **Event-driven & streaming-first** | Every component produces typed event streams, not single responses. Request/response is a degenerate case. Backpressure and flow control are built into the stream abstraction. Uses Go 1.23+ `iter.Seq2[T, error]` as the primary streaming primitive. |
 | 2 | **Composition over inheritance** | Small interfaces composed via embedding. No deep hierarchies. Middleware wraps interfaces; hooks intercept lifecycles. AOP-style callbacks (OnStart, OnEnd, OnError, OnStreamInput, OnStreamOutput) complement wrapping middleware for observability. |
-| 3 | **Extensible by default** | Every package exposes extension interfaces, a registry, and lifecycle hooks. New providers, reasoning strategies, and agent types are added from application code â€” zero framework changes required. |
+| 3 | **Extensible by default** | Every package exposes extension interfaces, a registry, and lifecycle hooks. New providers, reasoning strategies, and agent types are added from application code — zero framework changes required. |
 | 4 | **Protocol-native** | First-class MCP (Streamable HTTP for tool/resource/prompt access) and A2A (protobuf-first agent collaboration) support. Registry-based discovery for both. |
-| 5 | **Modality-agnostic** | Text, audio, video, and structured data flow through the same pipeline abstractions via typed `ContentPart` unions. Voice pipelines use frame-based processing â€” atomic Frames (audio chunks, text, images, control signals) flow through linked FrameProcessors via Go channels. |
+| 5 | **Modality-agnostic** | Text, audio, video, and structured data flow through the same pipeline abstractions via typed `ContentPart` unions. Voice pipelines use frame-based processing — atomic Frames (audio chunks, text, images, control signals) flow through linked FrameProcessors via Go channels. |
 | 6 | **Minimal core, rich ecosystem** | Core defines contracts; providers are pluggable packages imported by the user. |
-| 7 | **Observable by default** | OpenTelemetry GenAI semantic conventions (v1.37+) baked into every boundary â€” model spans (`gen_ai.operation.name`), agent spans (`gen_ai.agent.name`), tool spans (`gen_ai.tool.name`). LLM-specific observability (cost, token usage, prompt versioning) via adapter interface. |
+| 7 | **Observable by default** | OpenTelemetry GenAI semantic conventions (v1.37+) baked into every boundary — model spans (`gen_ai.operation.name`), agent spans (`gen_ai.agent.name`), tool spans (`gen_ai.tool.name`). LLM-specific observability (cost, token usage, prompt versioning) via adapter interface. |
 | 8 | **Context-driven** | `context.Context` carries cancellation, tracing, session, tenant isolation, and auth throughout. |
 | 9 | **Durability-ready** | Agent workflows can optionally be backed by our own durable execution engine to survive crashes, rate limits, and human-in-the-loop delays. Separates deterministic orchestration from non-deterministic activities (LLM calls, tool invocations). |
 | 10 | **Production-hardened** | Circuit breakers, hedged requests, provider-aware rate limiting (RPM, TPM, concurrent), graceful shutdown, multi-tenancy, and capability-based agent sandboxing are first-class architectural concerns. |
 | 11 | **Structured by default** | LLM outputs constrained to typed Go structs via JSON Schema generation, with automatic retry-on-parse-failure. Maps to OpenAI's constrained decoding, Anthropic's strict_tools, and Gemini's controlled generation. |
-| 12 | **Defense-in-depth security** | Guard pipeline (input â†’ output â†’ tool) with Spotlighting for untrusted input isolation. Capability-based permissions with default-deny. Once an agent ingests untrusted input, it cannot trigger consequential actions without explicit authorization. |
+| 12 | **Defense-in-depth security** | Guard pipeline (input → output → tool) with Spotlighting for untrusted input isolation. Capability-based permissions with default-deny. Once an agent ingests untrusted input, it cannot trigger consequential actions without explicit authorization. |
 
 ---
 
@@ -75,7 +75,7 @@ graph TB
         C3["Memory<br/><small>Core, Recall<br/>Archival, Graph<br/>Hybrid Store</small>"]
         C4["RAG<br/><small>Hybrid Search<br/>CRAG, Adaptive<br/>GraphRAG, Rerank</small>"]
         C5["Voice<br/><small>Frame Pipeline<br/>S2S, Hybrid<br/>Semantic VAD</small>"]
-        C6["Guard<br/><small>Input â†’ Output â†’ Tool<br/>Spotlighting<br/>Defense-in-Depth</small>"]
+        C6["Guard<br/><small>Input → Output → Tool<br/>Spotlighting<br/>Defense-in-Depth</small>"]
     end
 
     subgraph CROSS["Cross-Cutting"]
@@ -115,13 +115,13 @@ graph TB
 
 The architecture is organised in seven layers. Data flows downward through typed event streams; each layer only depends on the layers below it:
 
-- **Application Layer** â€” User code, CLI tools, API servers, LiveKit handlers
-- **Agent Runtime** â€” Persona engine, pluggable reasoning loop (Planner interface with 6+ strategies), executor, handoff engine (handoffs-as-tools)
-- **Protocol Gateway** â€” MCP (Streamable HTTP: tools, resources, prompts), A2A (protobuf-first: agent cards, tasks), REST/gRPC/WebSocket/SSE
-- **Pipeline / Orchestration** â€” Chain, Graph (DAG), Durable Workflow, Supervisor, Router, Scatter-Gather, Blackboard
-- **Capability Layer** â€” LLM (router, structured, context manager, prompt cache), Tools (parallel DAG, MCP, dynamic selection), Memory (core/recall/archival/graph), RAG (hybrid search, CRAG, GraphRAG), Voice (frame pipeline, S2S, semantic VAD), Guard (inputâ†’outputâ†’tool pipeline)
-- **Cross-Cutting** â€” Resilience, Cache, Auth, HITL (confidence-based), Evaluation, Sandbox
-- **Foundation** â€” Schema types, Stream primitives (iter.Seq2), Config, Observability (OTel GenAI), Transport
+- **Application Layer** — User code, CLI tools, API servers, LiveKit handlers
+- **Agent Runtime** — Persona engine, pluggable reasoning loop (Planner interface with 6+ strategies), executor, handoff engine (handoffs-as-tools)
+- **Protocol Gateway** — MCP (Streamable HTTP: tools, resources, prompts), A2A (protobuf-first: agent cards, tasks), REST/gRPC/WebSocket/SSE
+- **Pipeline / Orchestration** — Chain, Graph (DAG), Durable Workflow, Supervisor, Router, Scatter-Gather, Blackboard
+- **Capability Layer** — LLM (router, structured, context manager, prompt cache), Tools (parallel DAG, MCP, dynamic selection), Memory (core/recall/archival/graph), RAG (hybrid search, CRAG, GraphRAG), Voice (frame pipeline, S2S, semantic VAD), Guard (input→output→tool pipeline)
+- **Cross-Cutting** — Resilience, Cache, Auth, HITL (confidence-based), Evaluation, Sandbox
+- **Foundation** — Schema types, Stream primitives (iter.Seq2), Config, Observability (OTel GenAI), Transport
 
 ---
 
@@ -131,7 +131,7 @@ The architecture is organised in seven layers. Data flows downward through typed
 
 **v1 problem**: Streaming was bolted on via `<-chan any`. Tool calling during streams was fragile. No backpressure.
 
-**v2 approach**: Following Go 1.23+ idioms (used by Google Genkit Go 1.0), the primary streaming primitive is `iter.Seq2[T, error]` â€” Go's native range-over-func iterator. `Invoke()` is implemented as "stream, collect, return last." Tool calls arrive as events mid-stream. For consumers needing pull semantics, `iter.Pull()` provides stop/next control.
+**v2 approach**: Following Go 1.23+ idioms (used by Google Genkit Go 1.0), the primary streaming primitive is `iter.Seq2[T, error]` — Go's native range-over-func iterator. `Invoke()` is implemented as "stream, collect, return last." Tool calls arrive as events mid-stream. For consumers needing pull semantics, `iter.Pull()` provides stop/next control.
 
 ```go
 // Streaming with range-over-func
@@ -152,20 +152,20 @@ for event, err := range stream {
 The stream abstraction includes **backpressure and flow control** via `BufferedStream[T]`. When a slow consumer (e.g., TTS) can't keep up with a fast producer (e.g., LLM), the buffer absorbs bursts. For graph orchestration, streams auto-concatenate, copy for fan-out, and merge for convergence (following ByteDance Eino's patterns).
 
 ```
-User Audio â”€â”€â–º STT Stream â”€â”€â–º LLM Stream â”€â”€â–º [ToolCall Event] â”€â”€â–º Tool Execute â”€â”€â–º [ToolResult Event] â”€â”€â–º LLM continues â”€â”€â–º TTS Stream â”€â”€â–º Audio out
+User Audio ──► STT Stream ──► LLM Stream ──► [ToolCall Event] ──► Tool Execute ──► [ToolResult Event] ──► LLM continues ──► TTS Stream ──► Audio out
 ```
 
 ### 3.2 Agent Reasoning Patterns (Planner Interface)
 
-The executor supports **pluggable reasoning strategies** via the `Planner` interface. Research shows a clear cost-quality spectrum â€” the framework ships six built-in strategies and supports user-defined custom planners.
+The executor supports **pluggable reasoning strategies** via the `Planner` interface. Research shows a clear cost-quality spectrum — the framework ships six built-in strategies and supports user-defined custom planners.
 
 ```mermaid
 graph LR
     subgraph "Cost-Quality Spectrum"
         direction LR
-        P1["ReAct<br/><small>Baseline workhorse<br/>Thinkâ†’Actâ†’Observe</small>"]
+        P1["ReAct<br/><small>Baseline workhorse<br/>Think→Act→Observe</small>"]
         P2["Reflexion<br/><small>97% AlfWorld<br/>Actor+Evaluator+<br/>Self-Reflection</small>"]
-        P3["Self-Discover<br/><small>10-40Ã— fewer calls<br/>SELECTâ†’ADAPTâ†’<br/>IMPLEMENT</small>"]
+        P3["Self-Discover<br/><small>10-40× fewer calls<br/>SELECT→ADAPT→<br/>IMPLEMENT</small>"]
         P4["Tree-of-Thought<br/><small>74% Game of 24<br/>BFS/DFS branching</small>"]
         P5["Graph-of-Thought<br/><small>62% over ToT<br/>Merge/Split/Loop</small>"]
         P6["LATS<br/><small>92.7% HumanEval<br/>MCTS + ReAct +<br/>Reflexion</small>"]
@@ -173,17 +173,17 @@ graph LR
     P1 --> P2 --> P3 --> P4 --> P5 --> P6
 ```
 
-**ReAct** (default): Think â†’ Act â†’ Observe â†’ repeat or finish. Best for general-purpose tasks.
+**ReAct** (default): Think → Act → Observe → repeat or finish. Best for general-purpose tasks.
 
 **Reflexion**: Three-model architecture (Actor, Evaluator, Self-Reflection). Agents store textual reflections on failures in an episodic memory buffer. Retry-with-enriched-context mirrors Go's error-handling philosophy. Best for quality-sensitive tasks.
 
-**Self-Discover** (Google DeepMind): Two stages â€” SELECT relevant reasoning modules, ADAPT to task, IMPLEMENT as JSON structure. Most compute-efficient: 32% improvement over CoT with 10-40Ã— fewer inference calls. Best for cost-sensitive deployments.
+**Self-Discover** (Google DeepMind): Two stages — SELECT relevant reasoning modules, ADAPT to task, IMPLEMENT as JSON structure. Most compute-efficient: 32% improvement over CoT with 10-40× fewer inference calls. Best for cost-sensitive deployments.
 
 **Tree-of-Thought**: BFS/DFS exploration of reasoning paths, LLM self-evaluates each branch as "sure/maybe/impossible." Configurable `branch_factor` and `max_depth`. Tree expansion maps to goroutines with a shared priority queue. Best for combinatorial problems.
 
 **Graph-of-Thought**: Extends ToT with merge, split, and loop operations over a directed graph of thoughts. Controller/Prompter/Parser/Scorer architecture. Best for tasks requiring non-linear reasoning.
 
-**LATS** (Language Agent Tree Search): Highest-performing strategy. Unifies MCTS with ReAct and Reflexion via six operations â€” selection (UCT), expansion (N candidate actions), LLM evaluation, simulation, backpropagation, verbal reflection on failures. Parallel expansion of N actions maps to goroutines with channel-based collection. Best for complex reasoning tasks where quality justifies cost.
+**LATS** (Language Agent Tree Search): Highest-performing strategy. Unifies MCTS with ReAct and Reflexion via six operations — selection (UCT), expansion (N candidate actions), LLM evaluation, simulation, backpropagation, verbal reflection on failures. Parallel expansion of N actions maps to goroutines with channel-based collection. Best for complex reasoning tasks where quality justifies cost.
 
 **Mixture of Agents (MoA)**: Organises multiple LLMs in layers, each receiving all outputs from the previous layer. Open-source-only MoA scored 65.1% on AlpacaEval 2.0 vs GPT-4 Omni's 57.5%. Model diversity > model quality. Go's goroutines make fan-out/aggregate trivial. Best for tasks where ensemble quality justifies multi-model cost.
 
@@ -213,7 +213,7 @@ type Handoff struct {
     IsEnabled    func(ctx context.Context) bool        // conditional availability
 }
 
-// Agent with handoffs â€” handoffs appear as tools to the LLM
+// Agent with handoffs — handoffs appear as tools to the LLM
 agent := agent.New(
     agent.WithPersona(triagePersona),
     agent.WithLLM(llm),
@@ -250,7 +250,7 @@ sg := orchestration.NewScatterGather(
 )
 ```
 
-**Router** (conditional dispatch): Classify input â†’ route to specialist. LLM-based or rule-based classification.
+**Router** (conditional dispatch): Classify input → route to specialist. LLM-based or rule-based classification.
 
 **Blackboard**: Agents communicate solely through a shared blackboard with public and private spaces. A dedicated conflict-resolver agent handles contradictions. Best for dynamic capability discovery where agents don't know each other.
 
@@ -289,7 +289,7 @@ type FrameProcessor interface {
 
 Three composable pipeline modes:
 
-**Cascading** (STT â†’ LLM â†’ TTS):
+**Cascading** (STT → LLM → TTS):
 ```go
 pipe := voice.NewPipeline(
     voice.WithTransport(livekit.NewTransport(roomURL, token)),
@@ -330,7 +330,7 @@ pipe := voice.NewHybridPipeline(
 
 ### 3.6 LiveKit as Transport
 
-LiveKit is treated as a **transport**, not a framework dependency. LiveKit's server is written in Go, and the Go server SDK provides WebRTC transport â€” but no agent pipeline logic. Beluga fills this gap with a Go-native frame-based pipeline that leverages LiveKit's transport.
+LiveKit is treated as a **transport**, not a framework dependency. LiveKit's server is written in Go, and the Go server SDK provides WebRTC transport — but no agent pipeline logic. Beluga fills this gap with a Go-native frame-based pipeline that leverages LiveKit's transport.
 
 ```go
 transport := livekit.NewTransport(roomURL, token)
@@ -345,7 +345,7 @@ pipe.Run(ctx)
 
 ### 3.7 MCP as First-Class Tool Source
 
-MCP servers are discovered and wrapped as native `tool.Tool` instances. The framework implements the **Streamable HTTP** transport (March 2025 spec) â€” a single HTTP endpoint accepting POST for clientâ†’server, GET for serverâ†’client notifications, DELETE for session termination. Session management via `Mcp-Session-Id` header with `Last-Event-ID` for stream resumability.
+MCP servers are discovered and wrapped as native `tool.Tool` instances. The framework implements the **Streamable HTTP** transport (March 2025 spec) — a single HTTP endpoint accepting POST for client→server, GET for server→client notifications, DELETE for session termination. Session management via `Mcp-Session-Id` header with `Last-Event-ID` for stream resumability.
 
 MCP provides three primitives: **Tools** (executable functions), **Resources** (URI-addressable data), and **Prompts** (templated workflows). The June 2025 spec adds structured tool outputs, OAuth-based authorization, and elicitation (server-initiated user queries).
 
@@ -358,10 +358,10 @@ registry := tool.NewMCPRegistry("https://registry.modelcontextprotocol.io")
 servers, _ := registry.Search(ctx, "file management")
 mcpTools, _ := tool.FromMCP(ctx, servers[0].URL)
 
-// MCP Resources â€” URI-addressable data
+// MCP Resources — URI-addressable data
 resources, _ := tool.ResourcesFromMCP(ctx, serverURL)
 
-// MCP Prompts â€” templated workflows
+// MCP Prompts — templated workflows
 prompts, _ := tool.PromptsFromMCP(ctx, serverURL)
 
 agent := agent.New(
@@ -374,11 +374,11 @@ agent := agent.New(
 
 A2A (Agent-to-Agent) protocol, now a Linux Foundation project with 150+ supporting organisations, uses a protobuf-first three-layer architecture:
 
-1. **Protocol Buffer data model** (`a2a.proto`) â€” canonical types
-2. **Abstract operations** â€” SendMessage, GetTask, CancelTask, SubscribeToTask
-3. **Concrete bindings** â€” JSON-RPC 2.0, gRPC, HTTP+JSON
+1. **Protocol Buffer data model** (`a2a.proto`) — canonical types
+2. **Abstract operations** — SendMessage, GetTask, CancelTask, SubscribeToTask
+3. **Concrete bindings** — JSON-RPC 2.0, gRPC, HTTP+JSON
 
-Core concepts: **Agent Cards** (JSON capability advertisements at well-known URLs, optionally signed), **Tasks** (lifecycle: submitted â†’ working â†’ completed/failed/canceled), **Messages** with typed Parts (text, files, data). `contextId` groups multi-turn interactions; `taskId` tracks individual tasks. Streaming via SSE; webhook-based push for long-running tasks.
+Core concepts: **Agent Cards** (JSON capability advertisements at well-known URLs, optionally signed), **Tasks** (lifecycle: submitted → working → completed/failed/canceled), **Messages** with typed Parts (text, files, data). `contextId` groups multi-turn interactions; `taskId` tracks individual tasks. Streaming via SSE; webhook-based push for long-running tasks.
 
 ```go
 // Expose agent as A2A server (gRPC + JSON-RPC bindings)
@@ -400,7 +400,7 @@ Following the MemGPT/Letta virtual memory model and Mem0's hybrid store pattern,
 | Tier | Implementation | Scope | What It Stores | Persistence |
 |------|---------------|-------|----------------|-------------|
 | **Core** (always in context) | `memory.Core` | Current session | Persona block (agent identity) + Human block (user info). Self-editable via tool calling. Character-limited. | Session |
-| **Recall** (searchable history) | `memory.Recall` | Cross-session | Complete conversation history. Append-only log with full-text search. Not always in context â€” agent searches via `recall_search` tool. | Permanent |
+| **Recall** (searchable history) | `memory.Recall` | Cross-session | Complete conversation history. Append-only log with full-text search. Not always in context — agent searches via `recall_search` tool. | Permanent |
 | **Archival** (long-term knowledge) | `memory.Archival` backed by vector store + graph | Cross-session | Long-term knowledge base. Agent searches via `archival_search` tool. Backed by hybrid store (vector + graph + key-value). | Permanent |
 | **Graph** (relational) | `memory.Graph` | Cross-session | Entity relationships via triplets. Conflict detection and resolution for knowledge evolution. | Permanent |
 
@@ -465,7 +465,7 @@ result, err := structured.Generate(ctx, msgs) // result is typed AnalysisResult
 
 ### 3.12 LLM Gateway / Router Layer
 
-A `Router` implements `ChatModel` and routes across multiple backends using pluggable strategies. Inspired by RouteLLM (ICLR 2025), which achieves 2Ã— cost reduction without quality loss by learning routing from preference data.
+A `Router` implements `ChatModel` and routes across multiple backends using pluggable strategies. Inspired by RouteLLM (ICLR 2025), which achieves 2× cost reduction without quality loss by learning routing from preference data.
 
 ```go
 router := llm.NewRouter(
@@ -473,7 +473,7 @@ router := llm.NewRouter(
     llm.WithStrategy(llm.CostOptimized{QualityThreshold: 0.9}),
     llm.WithFallbacks(ollamaModel),
 )
-// Router implements ChatModel â€” use anywhere a model is expected
+// Router implements ChatModel — use anywhere a model is expected
 agent := agent.New(agent.WithLLM(router))
 ```
 
@@ -504,7 +504,7 @@ estimatedCost := tokenizer.EstimateCost(count, model.PricingInfo())
 
 ### 3.15 Prompt Cache Optimization
 
-Prompt caching saves up to 90% on cached tokens. The framework enforces optimal ordering for cache hit rates: **static content first** (system prompt â†’ tool definitions â†’ static documents â†’ dynamic user content). The `PromptBuilder` ensures this ordering automatically.
+Prompt caching saves up to 90% on cached tokens. The framework enforces optimal ordering for cache hit rates: **static content first** (system prompt → tool definitions → static documents → dynamic user content). The `PromptBuilder` ensures this ordering automatically.
 
 ```go
 builder := prompt.NewBuilder(
@@ -520,10 +520,10 @@ msgs := builder.Build()
 
 ### 3.16 Parallel Tool Execution (DAG)
 
-Inspired by LLMCompiler (ICML 2024), the tool executor analyses tool call dependencies and executes independent tools in parallel. Achieves 1.8Ã— latency speedup. Dynamic tool selection filters irrelevant tools before sending to the LLM, improving accuracy and efficiency.
+Inspired by LLMCompiler (ICML 2024), the tool executor analyses tool call dependencies and executes independent tools in parallel. Achieves 1.8× latency speedup. Dynamic tool selection filters irrelevant tools before sending to the LLM, improving accuracy and efficiency.
 
 ```go
-// Automatic parallel execution â€” framework analyses dependencies
+// Automatic parallel execution — framework analyses dependencies
 agent := agent.New(
     agent.WithLLM(llm),
     agent.WithTools(tools),
@@ -533,7 +533,7 @@ agent := agent.New(
     }),
 )
 
-// Dynamic tool selection â€” only send relevant tools to LLM
+// Dynamic tool selection — only send relevant tools to LLM
 agent := agent.New(
     agent.WithToolSelector(agent.RelevanceSelector{
         Embedder:  embedder,
@@ -558,14 +558,14 @@ sequenceDiagram
     User->>Workflow: Start agent task
     Workflow->>LLM: Plan (call LLM)
     LLM-->>Workflow: Actions: [search, analyze]
-    Note over Workflow: Event log persisted âœ“
+    Note over Workflow: Event log persisted ✓
 
     Workflow->>Tool: Execute search tool
     Tool-->>Workflow: Results
-    Note over Workflow: Event log persisted âœ“
+    Note over Workflow: Event log persisted ✓
 
     rect rgb(255, 220, 220)
-        Note over Workflow: âš¡ CRASH / RESTART âš¡
+        Note over Workflow: ⚡ CRASH / RESTART ⚡
     end
 
     Note over Workflow: Replay from event log<br/>(no re-execution)
@@ -586,7 +586,7 @@ sequenceDiagram
 // Simple (no durability)
 result, _ := agent.Invoke(ctx, "Research competitor pricing")
 
-// Durable â€” same agent, wrapped in workflow
+// Durable — same agent, wrapped in workflow
 handle, _ := workflow.Execute(ctx, workflow.Options{
     ID: "research-pricing-" + uuid.New().String(),
     RetryPolicy: workflow.RetryPolicy{
@@ -631,11 +631,11 @@ hitl := hitl.NewManager(
 )
 ```
 
-Every human decision (approve/edit/reject) is logged for feedback loops â€” these become training data and threshold-tuning signals.
+Every human decision (approve/edit/reject) is logged for feedback loops — these become training data and threshold-tuning signals.
 
 ### 3.19 Guard Pipeline (Defense-in-Depth)
 
-The guard system implements a three-stage pipeline â€” input guards (before LLM), output guards (after LLM), and tool guards (before tool execution). This follows the OWASP-recommended defense-in-depth pattern.
+The guard system implements a three-stage pipeline — input guards (before LLM), output guards (after LLM), and tool guards (before tool execution). This follows the OWASP-recommended defense-in-depth pattern.
 
 **Spotlighting** isolates untrusted input by marking it with delimiters so the LLM treats it as data, not instructions. Once an agent ingests untrusted input, it cannot trigger consequential actions without explicit authorization.
 
@@ -785,15 +785,15 @@ app.Shutdown(ctx)
 
 ## 4. RAG Architecture
 
-The RAG pipeline defaults to **hybrid search** combining dense vector search (semantic), BM25 sparse search (keyword precision), and optional graph traversal (multi-hop reasoning). Results are fused via Reciprocal Rank Fusion (RRF) with k=60. A three-stage pipeline â€” BM25 retrieves ~200 candidates, dense retrieval adds ~100, cross-encoder reranker selects top 10 â€” achieves best quality.
+The RAG pipeline defaults to **hybrid search** combining dense vector search (semantic), BM25 sparse search (keyword precision), and optional graph traversal (multi-hop reasoning). Results are fused via Reciprocal Rank Fusion (RRF) with k=60. A three-stage pipeline — BM25 retrieves ~200 candidates, dense retrieval adds ~100, cross-encoder reranker selects top 10 — achieves best quality.
 
 ### 4.1 Advanced Retrieval Strategies
 
 **Corrective RAG (CRAG)**: Retrieval evaluator scores document relevance on a -1 to 1 scale. Below configurable threshold triggers web search with query rewriting. Prevents low-quality retrieval from polluting LLM context.
 
-**Adaptive RAG**: Query complexity classifier routes queries: no retrieval â†’ single-step â†’ multi-step. Avoids unnecessary retrieval for simple factual questions.
+**Adaptive RAG**: Query complexity classifier routes queries: no retrieval → single-step → multi-step. Avoids unnecessary retrieval for simple factual questions.
 
-**SEAL-RAG**: Fixed-budget replacement policy â€” swaps low-utility passages rather than appending. Prevents context dilution. +3 to +13 percentage point accuracy improvement over standard RAG.
+**SEAL-RAG**: Fixed-budget replacement policy — swaps low-utility passages rather than appending. Prevents context dilution. +3 to +13 percentage point accuracy improvement over standard RAG.
 
 **HyDE** (Hypothetical Document Embedding): Generates a hypothetical answer, embeds it, and searches for similar real documents. Bridges the query-document semantic gap.
 
@@ -894,9 +894,9 @@ Every package follows the same four-component structure: Extension Interface, Re
 | `memory/` | `Memory` | `"core"`, `"recall"`, ... | BeforeSave, AfterSave, BeforeLoad, AfterLoad |
 | `rag/retriever/` | `Retriever` | `"hybrid"`, `"crag"`, ... | BeforeRetrieve, AfterRetrieve, OnRerank |
 | `voice/` | `FrameProcessor` | Named processors | OnFrame, OnSpeechStart, OnSpeechEnd |
-| `guard/` | `Guard` | `"injection"`, `"pii"`, ... | â€” |
+| `guard/` | `Guard` | `"injection"`, `"pii"`, ... | — |
 | `workflow/` | `DurableExecutor` | `"default"`, ... | BeforeActivity, AfterActivity, OnSignal |
-| `orchestration/` | `Node` | â€” | BeforeStep, AfterStep |
+| `orchestration/` | `Node` | — | BeforeStep, AfterStep |
 
 ```go
 // Provider registration pattern (uniform across all packages)
@@ -962,67 +962,67 @@ cfg, err := config.Load[AppConfig]("config.yaml")
 
 ```
 User Input
-    â”‚
-    â–¼
-Guard.Input() â†’ [injection check, spotlighting]
-    â”‚
-    â–¼
-ContextManager.Fit() â†’ [budget-managed messages]
-    â”‚
-    â–¼
-Memory.Core() + Memory.Recall() â†’ [context messages]
-    â”‚
-    â–¼
-PromptBuilder.Build() â†’ [cache-optimized message ordering]
-    â”‚
-    â–¼
+    │
+    ▼
+Guard.Input() → [injection check, spotlighting]
+    │
+    ▼
+ContextManager.Fit() → [budget-managed messages]
+    │
+    ▼
+Memory.Core() + Memory.Recall() → [context messages]
+    │
+    ▼
+PromptBuilder.Build() → [cache-optimized message ordering]
+    │
+    ▼
 LLM.Stream(messages)
-    â”‚
-    â”œâ”€â”€ [TextChunk] â†’ Guard.Output() â†’ accumulate response
-    â”œâ”€â”€ [ToolCall]  â†’ Guard.Tool() â†’ HITL.Check() â†’ Tool.Execute() â†’ [ToolResult] â†’ feed back
-    â””â”€â”€ [Done]      â†’ Memory.Save(input, response) â†’ return to user
+    │
+    ├── [TextChunk] → Guard.Output() → accumulate response
+    ├── [ToolCall]  → Guard.Tool() → HITL.Check() → Tool.Execute() → [ToolResult] → feed back
+    └── [Done]      → Memory.Save(input, response) → return to user
 ```
 
 ### 10.2 Voice Agent (Frame-Based Cascading)
 
 ```
-Microphone â†’ LiveKit Room â†’ AudioTransport.AudioIn()
-    â”‚
-    â–¼
-[AudioFrame] â†’ VAD FrameProcessor (Silero + semantic turn detection)
-    â”‚
-    â–¼
-[AudioFrame] â†’ STT FrameProcessor â†’ [TextFrame]
-    â”‚
-    â–¼
-[TextFrame] â†’ LLM FrameProcessor â†’ [TextFrame + ToolCallFrame]
-    â”‚
-    â”œâ”€â”€ [ToolCallFrame] â†’ Tool Execute â†’ feed result back
-    â””â”€â”€ [TextFrame] â†’ TTS FrameProcessor â†’ [AudioFrame]
-                                              â”‚
-                                              â–¼
-                              AudioTransport.AudioOut() â†’ LiveKit â†’ Speaker
+Microphone → LiveKit Room → AudioTransport.AudioIn()
+    │
+    ▼
+[AudioFrame] → VAD FrameProcessor (Silero + semantic turn detection)
+    │
+    ▼
+[AudioFrame] → STT FrameProcessor → [TextFrame]
+    │
+    ▼
+[TextFrame] → LLM FrameProcessor → [TextFrame + ToolCallFrame]
+    │
+    ├── [ToolCallFrame] → Tool Execute → feed result back
+    └── [TextFrame] → TTS FrameProcessor → [AudioFrame]
+                                              │
+                                              ▼
+                              AudioTransport.AudioOut() → LiveKit → Speaker
 ```
 
 ### 10.3 Multi-Agent with Handoffs
 
 ```
 User: "I need help with my recent order"
-    â”‚
-    â–¼
+    │
+    ▼
 TriageAgent (has handoffs as tools)
-    â”‚
-    â”œâ”€â”€ LLM decides: use transfer_to_order_agent tool
-    â”‚       â””â”€â”€ Context filtered via InputFilter
-    â”‚       â””â”€â”€ "Transferred to OrderAgent. Adopt persona immediately."
-    â”‚
-    â–¼
+    │
+    ├── LLM decides: use transfer_to_order_agent tool
+    │       └── Context filtered via InputFilter
+    │       └── "Transferred to OrderAgent. Adopt persona immediately."
+    │
+    ▼
 OrderAgent (has handoffs to billing, shipping)
-    â”‚
-    â”œâ”€â”€ LLM decides: issue is billing-related
-    â”‚       â””â”€â”€ use transfer_to_billing_agent tool
-    â”‚
-    â–¼
+    │
+    ├── LLM decides: issue is billing-related
+    │       └── use transfer_to_billing_agent tool
+    │
+    ▼
 BillingAgent (handles resolution)
 ```
 
@@ -1030,45 +1030,45 @@ BillingAgent (handles resolution)
 
 ```
 User: "Compare AWS and GCP GPU pricing"
-    â”‚
-    â–¼
+    │
+    ▼
 Scatter-Gather Orchestrator
-    â”‚
-    â”œâ”€â”€parallelâ”€â”€ ResearcherAgent("AWS GPU pricing")
-    â”‚                â””â”€â”€ Tools: WebSearch, Calculator
-    â”‚
-    â”œâ”€â”€parallelâ”€â”€ ResearcherAgent("GCP GPU pricing")
-    â”‚                â””â”€â”€ Tools: WebSearch, Calculator
-    â”‚
-    â””â”€â”€ Aggregator (WriterAgent)
-            â””â”€â”€ Consolidates parallel results â†’ formatted report
+    │
+    ├──parallel── ResearcherAgent("AWS GPU pricing")
+    │                └── Tools: WebSearch, Calculator
+    │
+    ├──parallel── ResearcherAgent("GCP GPU pricing")
+    │                └── Tools: WebSearch, Calculator
+    │
+    └── Aggregator (WriterAgent)
+            └── Consolidates parallel results → formatted report
 ```
 
 ### 10.5 Durable Agent Workflow
 
 ```
 User: "Research and create quarterly investor report"
-    â”‚
-    â–¼
+    │
+    ▼
 Durable Workflow starts (event log persisted)
-    â”‚
-    â”œâ”€â”€ Activity: LLM.Plan() â†’ [research, extract, verify, write]
-    â”‚   Event log persisted âœ“
-    â”‚
-    â”œâ”€â”€ Activity: Tool.Execute("web_search") Ã— 5 (parallel)
-    â”‚   Event log persisted âœ“
-    â”‚
-    â”œâ”€â”€ Activity: LLM.Extract(sources) â†’ claims
-    â”‚   Event log persisted âœ“
-    â”‚
-    â”œâ”€â”€ Signal: Request human approval (confidence-based)
-    â”‚   Workflow paused (can wait hours/days)
-    â”‚   Human approves via API/Slack/email
-    â”‚
-    â”œâ”€â”€ Activity: LLM.Finalize(approved_draft)
-    â”‚   Event log persisted âœ“
-    â”‚
-    â””â”€â”€ Return: final report
+    │
+    ├── Activity: LLM.Plan() → [research, extract, verify, write]
+    │   Event log persisted ✓
+    │
+    ├── Activity: Tool.Execute("web_search") × 5 (parallel)
+    │   Event log persisted ✓
+    │
+    ├── Activity: LLM.Extract(sources) → claims
+    │   Event log persisted ✓
+    │
+    ├── Signal: Request human approval (confidence-based)
+    │   Workflow paused (can wait hours/days)
+    │   Human approves via API/Slack/email
+    │
+    ├── Activity: LLM.Finalize(approved_draft)
+    │   Event log persisted ✓
+    │
+    └── Return: final report
 ```
 
 ---
@@ -1090,69 +1090,13 @@ Durable Workflow starts (event log persisted)
 | `pkg/monitoring` | `o11y/` | OTel GenAI semantic conventions (gen_ai.* attributes). Adapter interface |
 | `pkg/server` | `protocol/rest/` | Add MCP server (Streamable HTTP), A2A server (protobuf + gRPC) |
 | `pkg/config` | `config/` | Generics-based `Load[T]()`, hot-reload |
-| â€” (new) | `workflow/` | Own durable execution engine with event log, activities, signals |
-| â€” (new) | `resilience/` | Circuit breaker, hedge, adaptive retry, provider-aware rate limiting |
-| â€” (new) | `cache/` | Semantic + exact-match + prompt cache optimization |
-| â€” (new) | `hitl/` | Confidence-based approval policies, notification dispatching |
-| â€” (new) | `auth/` | Capability-based security, RBAC, ABAC |
-| â€” (new) | `sandbox/` | Agent sandboxing with network policy, resource limits |
-| â€” (new) | `eval/` | Evaluation framework with CI/CD quality gates |
-| â€” (new) | `state/` | Shared agent state with reactive Watch |
-| â€” (new) | `prompt/` | Prompt management, versioning, cache-optimized builder |
-| â€” (new) | `guard/` | Three-stage guard pipeline, Spotlighting, prompt injection detection |
-
----
-
-## 12. Implementation Priority
-
-### Phase 1: Core + LLM + Tool + Agent (Weeks 1-4)
-- `core/`, `schema/`, `config/`, `o11y/` â€” iter.Seq2 streaming, Frame types, OTel GenAI
-- `llm/` with OpenAI + Anthropic + Groq providers
-- `llm/router.go` â€” LLM gateway/routing with learned routing
-- `llm/structured.go` â€” structured output with constrained decoding
-- `llm/context.go` â€” context window management (6 strategies)
-- `llm/tokenizer.go` â€” token counting
-- `tool/` with MCP client (Streamable HTTP) + FuncTool + parallel DAG execution
-- `agent/` with ReAct + Reflexion planners, handoffs-as-tools, BaseAgent
-- `memory/` with core + recall (MemGPT model)
-- `guard/` â€” input/output/tool guard pipeline, prompt injection detection
-- `resilience/` â€” retry, circuit breaker, provider-aware rate limiting
-- `cache/` with in-memory provider
-- `prompt/` â€” cache-optimized builder
-
-### Phase 2: RAG + Voice + Evaluation (Weeks 5-8)
-- `rag/` complete pipeline with hybrid search default (vector + BM25 + RRF)
-- Advanced retrievers: CRAG, Adaptive RAG, HyDE, SEAL-RAG
-- Contextual retrieval ingestion pipeline
-- `voice/` frame-based cascading pipeline
-- `voice/s2s/` with OpenAI Realtime
-- `voice/transport/` WebSocket + LiveKit
-- Silero VAD + semantic turn detection
-- `eval/` evaluation framework
-- `agent/` â€” Self-Discover, Tree-of-Thought planners
-
-### Phase 3: Orchestration + Workflows + Protocols (Weeks 9-12)
-- `orchestration/` â€” all 5 patterns (supervisor, hierarchical, scatter-gather, router, blackboard)
-- `workflow/` â€” durable execution engine with event log
-- `hitl/` â€” confidence-based approval policies
-- `protocol/mcp/` server (Streamable HTTP) + registry discovery
-- `protocol/a2a/` server + client (protobuf + gRPC)
-- `protocol/rest/` with SSE streaming
-- `auth/` â€” capability-based security
-- `sandbox/` â€” agent sandboxing
-- `agent/` â€” GoT, LATS, MoA planners
-
-### Phase 4: Ecosystem + Production Hardening (Weeks 13-16)
-- Additional LLM providers: Google, Ollama, Bedrock, Mistral, DeepSeek, xAI, Together, Fireworks, Cohere
-- Additional embedding providers: Voyage, Jina
-- Additional vector stores: Qdrant, Pinecone, ChromaDB, Weaviate, Milvus, Elasticsearch
-- Additional voice providers: AssemblyAI, PlayHT, Fish Audio, LMNT
-- `memory/archival.go` â€” full archival + graph memory + hybrid store
-- GraphRAG retriever
-- `memory/stores/` Redis, Postgres, DragonflyDB, Neo4j
-- `state/` shared agent state
-- Observability adapters (Langfuse, Phoenix)
-- Built-in development dashboard
-- Multi-tenancy support
-- Graceful shutdown / lifecycle management
-- Documentation + examples for all packages
+| — (new) | `workflow/` | Own durable execution engine with event log, activities, signals |
+| — (new) | `resilience/` | Circuit breaker, hedge, adaptive retry, provider-aware rate limiting |
+| — (new) | `cache/` | Semantic + exact-match + prompt cache optimization |
+| — (new) | `hitl/` | Confidence-based approval policies, notification dispatching |
+| — (new) | `auth/` | Capability-based security, RBAC, ABAC |
+| — (new) | `sandbox/` | Agent sandboxing with network policy, resource limits |
+| — (new) | `eval/` | Evaluation framework with CI/CD quality gates |
+| — (new) | `state/` | Shared agent state with reactive Watch |
+| — (new) | `prompt/` | Prompt management, versioning, cache-optimized builder |
+| — (new) | `guard/` | Three-stage guard pipeline, Spotlighting, prompt injection detection |

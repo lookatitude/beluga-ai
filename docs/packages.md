@@ -1,360 +1,360 @@
-# Beluga AI v2 â€” Package Architecture
+# Beluga AI v2 — Package Architecture
 
 ## 1. Module / Package Layout
 
 ```
 beluga-ai/
-â”œâ”€â”€ go.mod
-â”‚
-â”œâ”€â”€ core/                    # Foundation â€” zero external deps beyond stdlib + otel
-â”‚   â”œâ”€â”€ stream.go            # Event[T], Stream[T], Fan-in/Fan-out, Pipe()
-â”‚   â”œâ”€â”€ runnable.go          # Runnable interface (Invoke, Stream, Batch)
-â”‚   â”œâ”€â”€ batch.go             # BatchInvoke[I,O] with concurrency control
-â”‚   â”œâ”€â”€ context.go           # Session context, cancel propagation, tenant
-â”‚   â”œâ”€â”€ tenant.go            # TenantID, WithTenant(), GetTenant()
-â”‚   â”œâ”€â”€ lifecycle.go         # Lifecycle interface (Start, Stop, Health), App struct
-â”‚   â”œâ”€â”€ errors.go            # Typed error codes, Is/As helpers, IsRetryable()
-â”‚   â””â”€â”€ option.go            # Functional options helpers
-â”‚
-â”œâ”€â”€ schema/                  # Shared types â€” no business logic
-â”‚   â”œâ”€â”€ message.go           # Message interface, HumanMsg, AIMsg, SystemMsg, ToolMsg
-â”‚   â”œâ”€â”€ content.go           # ContentPart: Text, Image, Audio, Video, File
-â”‚   â”œâ”€â”€ tool.go              # ToolCall, ToolResult, ToolDefinition
-â”‚   â”œâ”€â”€ document.go          # Document with metadata
-â”‚   â”œâ”€â”€ event.go             # AgentEvent, StreamEvent, LifecycleEvent
-â”‚   â””â”€â”€ session.go           # Session, Turn, ConversationState
-â”‚
-â”œâ”€â”€ config/                  # Configuration loading
-â”‚   â”œâ”€â”€ config.go            # Load[T], Validate, env + file + struct tags
-â”‚   â”œâ”€â”€ provider.go          # ProviderConfig base type
-â”‚   â””â”€â”€ watch.go             # Watcher interface, hot-reload (fsnotify, Consul, etcd, K8s)
-â”‚
-â”œâ”€â”€ o11y/                    # Observability
-â”‚   â”œâ”€â”€ tracer.go            # OTel tracer wrapper
-â”‚   â”œâ”€â”€ meter.go             # OTel meter wrapper
-â”‚   â”œâ”€â”€ logger.go            # Structured logging (slog)
-â”‚   â”œâ”€â”€ health.go            # Health checks
-â”‚   â”œâ”€â”€ exporter.go          # TraceExporter interface (LLM-specific: prompts, tokens, cost)
-â”‚   â”œâ”€â”€ dashboard/           # Built-in dev telemetry dashboard
-â”‚   â”‚   â””â”€â”€ dashboard.go     # Embedded web UI: traces, costs, tool calls, prompt playground
-â”‚   â””â”€â”€ adapters/
-â”‚       â”œâ”€â”€ langfuse/        # Langfuse trace exporter
-â”‚       â””â”€â”€ phoenix/         # Arize Phoenix trace exporter
-â”‚
-â”œâ”€â”€ llm/                     # LLM abstraction
-â”‚   â”œâ”€â”€ llm.go               # ChatModel interface
-â”‚   â”œâ”€â”€ options.go           # GenerateOptions (temp, max_tokens, tools, response_format, etc.)
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List() â€” provider registry
-â”‚   â”œâ”€â”€ hooks.go             # LLM-level hooks (BeforeGenerate, AfterGenerate, etc.)
-â”‚   â”œâ”€â”€ middleware.go         # Retry, rate-limit, cache, logging, guardrail, fallback middleware
-â”‚   â”œâ”€â”€ router.go            # LLM Router: routes across backends with pluggable strategies
-â”‚   â”œâ”€â”€ structured.go        # StructuredOutput[T]: JSON Schema from Go structs, parse + validate + retry
-â”‚   â”œâ”€â”€ context.go           # ContextManager: fit messages within token budget (Truncate, Summarize, Semantic, Adaptive)
-â”‚   â”œâ”€â”€ tokenizer.go         # Tokenizer interface: Count, CountMessages, Encode, Decode (tiktoken, SentencePiece)
-â”‚   â”œâ”€â”€ ratelimit.go         # ProviderLimits: RPM, TPM, MaxConcurrent, CooldownOnRetry
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ openai/           # OpenAI + Azure OpenAI (GPT-4o, GPT-4.1, o1, o3)
-â”‚       â”œâ”€â”€ anthropic/        # Claude models (Opus 4, Sonnet 4.5, Haiku 4.5)
-â”‚       â”œâ”€â”€ google/           # Gemini + Vertex AI (2.5 Pro, 2.5 Flash, Gemini 3)
-â”‚       â”œâ”€â”€ ollama/           # Local models
-â”‚       â”œâ”€â”€ bedrock/          # AWS Bedrock (multi-model gateway)
-â”‚       â”œâ”€â”€ groq/             # Ultra-fast inference (LPU)
-â”‚       â”œâ”€â”€ mistral/          # Mistral AI (Large, Medium, Codestral)
-â”‚       â”œâ”€â”€ deepseek/         # DeepSeek (V3, R1, Coder V2)
-â”‚       â”œâ”€â”€ xai/              # xAI Grok (3, 3.5)
-â”‚       â”œâ”€â”€ cohere/           # Cohere (Command R+)
-â”‚       â”œâ”€â”€ together/         # Together AI (200+ models)
-â”‚       â””â”€â”€ fireworks/        # Fireworks AI (FireAttention)
-â”‚
-â”œâ”€â”€ tool/                    # Tool system
-â”‚   â”œâ”€â”€ tool.go              # Tool interface: Name, Description, Schema, Execute
-â”‚   â”œâ”€â”€ functool.go          # NewFuncTool() â€” wrap any Go function as a Tool
-â”‚   â”œâ”€â”€ registry.go          # ToolRegistry: Add, Get, List, Remove
-â”‚   â”œâ”€â”€ hooks.go             # Tool hooks (BeforeExecute, AfterExecute, OnError)
-â”‚   â”œâ”€â”€ mcp.go               # MCP client â€” discovers & wraps MCP servers as Tools
-â”‚   â”œâ”€â”€ mcp_registry.go      # MCPRegistry: Search, Discover MCP servers from registries
-â”‚   â”œâ”€â”€ middleware.go         # Auth, rate-limit, timeout wrappers
-â”‚   â””â”€â”€ builtin/             # Calculator, HTTP, Shell, Code execution
-â”‚
-â”œâ”€â”€ memory/                  # Conversation & knowledge memory
-â”‚   â”œâ”€â”€ memory.go            # Memory interface: Save, Load, Search, Clear
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ store.go             # MessageStore interface (backend abstraction)
-â”‚   â”œâ”€â”€ hooks.go             # Memory hooks (BeforeSave, AfterLoad, etc.)
-â”‚   â”œâ”€â”€ middleware.go         # Memory middleware (trace, cache, TTL)
-â”‚   â”œâ”€â”€ buffer.go            # Full-history buffer
-â”‚   â”œâ”€â”€ window.go            # Sliding window (last N turns)
-â”‚   â”œâ”€â”€ summary.go           # LLM-summarised history
-â”‚   â”œâ”€â”€ entity.go            # Entity extraction & tracking
-â”‚   â”œâ”€â”€ semantic.go          # Vector-backed semantic memory
-â”‚   â”œâ”€â”€ graph.go             # Knowledge graph memory (Neo4j/Memgraph/Cayley)
-â”‚   â”œâ”€â”€ composite.go         # CompositeMemory: Working + Episodic + Semantic + Graph
-â”‚   â””â”€â”€ stores/
-â”‚       â”œâ”€â”€ inmemory/
-â”‚       â”œâ”€â”€ redis/
-â”‚       â”œâ”€â”€ postgres/
-â”‚       â”œâ”€â”€ sqlite/
-â”‚       â”œâ”€â”€ neo4j/            # Graph memory backend
-â”‚       â”œâ”€â”€ memgraph/         # In-memory graph database
-â”‚       â””â”€â”€ dragonfly/        # Redis-compatible, 25x faster
-â”‚
-â”œâ”€â”€ rag/                     # RAG pipeline
-â”‚   â”œâ”€â”€ embedding/
-â”‚   â”‚   â”œâ”€â”€ embedder.go      # Embedder interface
-â”‚   â”‚   â”œâ”€â”€ registry.go      # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go         # BeforeEmbed, AfterEmbed
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ openai/       # text-embedding-3-large
-â”‚   â”‚       â”œâ”€â”€ google/       # text-embedding-005
-â”‚   â”‚       â”œâ”€â”€ ollama/       # nomic-embed, mxbai
-â”‚   â”‚       â”œâ”€â”€ cohere/       # Embed V4, V3
-â”‚   â”‚       â”œâ”€â”€ voyage/       # voyage-3-large (top MTEB)
-â”‚   â”‚       â””â”€â”€ jina/         # jina-embeddings-v3
-â”‚   â”œâ”€â”€ vectorstore/
-â”‚   â”‚   â”œâ”€â”€ store.go          # VectorStore interface: Add, Search, Delete
-â”‚   â”‚   â”œâ”€â”€ registry.go       # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go          # BeforeAdd, AfterSearch
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ inmemory/
-â”‚   â”‚       â”œâ”€â”€ pgvector/     # PostgreSQL (471 QPS at 99% recall on 50M vectors)
-â”‚   â”‚       â”œâ”€â”€ qdrant/       # Rust-based, best real-time perf
-â”‚   â”‚       â”œâ”€â”€ pinecone/     # Fully managed, serverless
-â”‚   â”‚       â”œâ”€â”€ chroma/       # Developer-friendly
-â”‚   â”‚       â”œâ”€â”€ weaviate/     # Best hybrid search (vector + BM25 + metadata)
-â”‚   â”‚       â”œâ”€â”€ milvus/       # Enterprise scale, GPU-accelerated
-â”‚   â”‚       â”œâ”€â”€ turbopuffer/  # S3-based serverless, 10x cheaper
-â”‚   â”‚       â”œâ”€â”€ redis/        # RediSearch â€” ultra-low latency
-â”‚   â”‚       â”œâ”€â”€ elasticsearch/ # Mature text + vector hybrid
-â”‚   â”‚       â””â”€â”€ sqlitevec/    # Embedded, edge/mobile/CLI
-â”‚   â”œâ”€â”€ retriever/
-â”‚   â”‚   â”œâ”€â”€ retriever.go      # Retriever interface
-â”‚   â”‚   â”œâ”€â”€ registry.go       # Register(), New(), List()
-â”‚   â”‚   â”œâ”€â”€ hooks.go          # BeforeRetrieve, AfterRetrieve, OnRerank
-â”‚   â”‚   â”œâ”€â”€ middleware.go     # Retriever middleware (cache, trace, etc.)
-â”‚   â”‚   â”œâ”€â”€ vector.go         # VectorStoreRetriever
-â”‚   â”‚   â”œâ”€â”€ multiquery.go     # Multi-query expansion
-â”‚   â”‚   â”œâ”€â”€ rerank.go         # Re-ranking retriever
-â”‚   â”‚   â”œâ”€â”€ ensemble.go       # Ensemble retriever
-â”‚   â”‚   â””â”€â”€ hyde.go           # Hypothetical Document Embedding retriever
-â”‚   â”œâ”€â”€ loader/
-â”‚   â”‚   â”œâ”€â”€ loader.go         # DocumentLoader interface
-â”‚   â”‚   â”œâ”€â”€ pipeline.go       # LoaderPipeline: chain loaders + transformers
-â”‚   â”‚   â”œâ”€â”€ text.go
-â”‚   â”‚   â”œâ”€â”€ pdf.go            # PDF with table extraction
-â”‚   â”‚   â”œâ”€â”€ html.go           # HTML with boilerplate removal
-â”‚   â”‚   â”œâ”€â”€ web.go            # Web crawler (Firecrawl, Colly)
-â”‚   â”‚   â”œâ”€â”€ csv.go
-â”‚   â”‚   â”œâ”€â”€ json.go
-â”‚   â”‚   â”œâ”€â”€ docx.go           # Word documents
-â”‚   â”‚   â”œâ”€â”€ pptx.go           # PowerPoint
-â”‚   â”‚   â”œâ”€â”€ xlsx.go           # Excel
-â”‚   â”‚   â”œâ”€â”€ markdown.go
-â”‚   â”‚   â”œâ”€â”€ code.go           # Source code with AST awareness
-â”‚   â”‚   â”œâ”€â”€ confluence.go     # Confluence wiki pages
-â”‚   â”‚   â”œâ”€â”€ notion.go         # Notion databases/pages
-â”‚   â”‚   â”œâ”€â”€ github.go         # Repos, issues, PRs
-â”‚   â”‚   â”œâ”€â”€ s3.go             # AWS S3
-â”‚   â”‚   â”œâ”€â”€ gcs.go            # Google Cloud Storage
-â”‚   â”‚   â””â”€â”€ ocr.go            # OCR via Tesseract or Google Vision
-â”‚   â””â”€â”€ splitter/
-â”‚       â”œâ”€â”€ splitter.go       # TextSplitter interface
-â”‚       â”œâ”€â”€ recursive.go
-â”‚       â””â”€â”€ markdown.go
-â”‚
-â”œâ”€â”€ agent/                   # Agent runtime
-â”‚   â”œâ”€â”€ agent.go             # Agent interface + BaseAgent embeddable struct
-â”‚   â”œâ”€â”€ base.go              # BaseAgent: ID, Persona, Tools, Children, Card
-â”‚   â”œâ”€â”€ persona.go           # Role, Goal, Backstory (RGB framework)
-â”‚   â”œâ”€â”€ executor.go          # Reasoning loop: delegates to Planner
-â”‚   â”œâ”€â”€ planner.go           # Planner interface + PlannerState + Action types
-â”‚   â”œâ”€â”€ registry.go          # RegisterPlanner(), NewPlanner(), ListPlanners()
-â”‚   â”œâ”€â”€ hooks.go             # Hooks struct + ComposeHooks()
-â”‚   â”œâ”€â”€ middleware.go         # Agent middleware (retry, trace, etc.)
-â”‚   â”œâ”€â”€ bus.go               # EventBus: agent-to-agent async messaging (in-memory, NATS, Redis)
-â”‚   â”œâ”€â”€ react.go             # ReAct planner implementation
-â”‚   â”œâ”€â”€ planexecute.go       # Plan-and-Execute planner implementation
-â”‚   â”œâ”€â”€ reflection.go        # Reflection planner implementation
-â”‚   â”œâ”€â”€ structured.go        # Structured-output agent
-â”‚   â”œâ”€â”€ conversational.go    # Optimised for multi-turn chat
-â”‚   â”œâ”€â”€ handoff.go           # Agent-to-agent handoff within a session
-â”‚   â”œâ”€â”€ card.go              # A2A AgentCard (capability advertisement)
-â”‚   â””â”€â”€ workflow/             # Built-in workflow agents
-â”‚       â”œâ”€â”€ sequential.go    # SequentialAgent
-â”‚       â”œâ”€â”€ parallel.go      # ParallelAgent
-â”‚       â””â”€â”€ loop.go          # LoopAgent
-â”‚
-â”œâ”€â”€ voice/                   # Voice / multimodal pipeline
-â”‚   â”œâ”€â”€ pipeline.go          # VoicePipeline: STT â†’ LLM â†’ TTS (cascading)
-â”‚   â”œâ”€â”€ hybrid.go            # HybridPipeline: S2S + cascade with switch policy
-â”‚   â”œâ”€â”€ session.go           # VoiceSession: manages audio state & turns
-â”‚   â”œâ”€â”€ vad.go               # VAD interface
-â”‚   â”œâ”€â”€ stt/
-â”‚   â”‚   â”œâ”€â”€ stt.go           # STT interface (streaming)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ deepgram/     # Nova-3, Nova-3 Medical, Flux
-â”‚   â”‚       â”œâ”€â”€ assemblyai/   # Slam-1 SLM
-â”‚   â”‚       â”œâ”€â”€ whisper/      # OpenAI Whisper / GPT-4o Transcribe
-â”‚   â”‚       â”œâ”€â”€ elevenlabs/   # Scribe v2
-â”‚   â”‚       â”œâ”€â”€ groq/         # Whisper on LPU (200x realtime)
-â”‚   â”‚       â””â”€â”€ gladia/       # Solaria-1 (100 languages)
-â”‚   â”œâ”€â”€ tts/
-â”‚   â”‚   â”œâ”€â”€ tts.go           # TTS interface (streaming)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ elevenlabs/   # Highest quality TTS
-â”‚   â”‚       â”œâ”€â”€ cartesia/     # Sonic â€” ultra-low latency
-â”‚   â”‚       â”œâ”€â”€ openai/       # OpenAI TTS
-â”‚   â”‚       â”œâ”€â”€ playht/       # PlayDialog, Play3.0-mini
-â”‚   â”‚       â”œâ”€â”€ groq/         # PlayAI TTS on LPU
-â”‚   â”‚       â”œâ”€â”€ fish/         # Fish-Speech (multilingual)
-â”‚   â”‚       â”œâ”€â”€ lmnt/         # Low-latency conversational
-â”‚   â”‚       â””â”€â”€ smallest/     # Ultra-low cost, voice cloning
-â”‚   â”œâ”€â”€ s2s/
-â”‚   â”‚   â”œâ”€â”€ s2s.go           # S2S interface (bidirectional)
-â”‚   â”‚   â””â”€â”€ providers/
-â”‚   â”‚       â”œâ”€â”€ openai_realtime/ # GPT-4o native voice-to-voice
-â”‚   â”‚       â”œâ”€â”€ gemini_live/    # Google bidirectional voice
-â”‚   â”‚       â””â”€â”€ nova/           # Amazon Nova S2S
-â”‚   â””â”€â”€ transport/
-â”‚       â”œâ”€â”€ transport.go      # AudioTransport interface
-â”‚       â”œâ”€â”€ websocket.go
-â”‚       â”œâ”€â”€ livekit.go        # LiveKit room integration
-â”‚       â””â”€â”€ daily.go          # Daily.co transport
-â”‚
-â”œâ”€â”€ orchestration/           # Workflow composition
-â”‚   â”œâ”€â”€ node.go              # Node interface (extension point for custom steps)
-â”‚   â”œâ”€â”€ hooks.go             # BeforeStep, AfterStep, OnBranch
-â”‚   â”œâ”€â”€ chain.go             # Sequential pipeline
-â”‚   â”œâ”€â”€ graph.go             # DAG with conditional edges
-â”‚   â”œâ”€â”€ router.go            # Conditional routing (LLM or rule-based)
-â”‚   â”œâ”€â”€ parallel.go          # Fan-out / fan-in
-â”‚   â”œâ”€â”€ workflow.go          # In-process workflow (non-durable)
-â”‚   â””â”€â”€ supervisor.go        # Multi-agent supervisor pattern
-â”‚
-â”œâ”€â”€ workflow/                # Durable workflow execution
-â”‚   â”œâ”€â”€ executor.go          # DurableExecutor interface
-â”‚   â”œâ”€â”€ activity.go          # LLMActivity, ToolActivity, HumanActivity wrappers
-â”‚   â”œâ”€â”€ state.go             # WorkflowState: checkpoint, metadata, history
-â”‚   â”œâ”€â”€ signal.go            # Signal types for HITL, inter-workflow communication
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ hooks.go             # BeforeActivity, AfterActivity, OnSignal, OnRetry
-â”‚   â”œâ”€â”€ middleware.go         # Workflow-level middleware
-â”‚   â”œâ”€â”€ config.go            # RetryPolicy, Timeouts, TaskQueues
-â”‚   â”œâ”€â”€ patterns/            # Pre-built workflow patterns
-â”‚   â”‚   â”œâ”€â”€ agent_loop.go    # ReAct/Plan-Execute as durable workflow
-â”‚   â”‚   â”œâ”€â”€ research.go      # Multi-source research pipeline
-â”‚   â”‚   â”œâ”€â”€ approval.go      # Human approval workflow
-â”‚   â”‚   â”œâ”€â”€ scheduled.go     # Periodic/ambient agent
-â”‚   â”‚   â””â”€â”€ saga.go          # Saga pattern with compensating actions
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ temporal/         # Temporal Go SDK integration
-â”‚       â”‚   â”œâ”€â”€ executor.go   # TemporalExecutor implements DurableExecutor
-â”‚       â”‚   â”œâ”€â”€ worker.go     # Activity worker setup
-â”‚       â”‚   â”œâ”€â”€ activities.go # Activity implementations
-â”‚       â”‚   â””â”€â”€ converter.go  # Payload codec (encryption, compression)
-â”‚       â”œâ”€â”€ inmemory/         # In-process (dev/test, no durability)
-â”‚       â””â”€â”€ nats/             # NATS JetStream (lightweight alternative)
-â”‚
-â”œâ”€â”€ protocol/                # External protocol support
-â”‚   â”œâ”€â”€ mcp/
-â”‚   â”‚   â”œâ”€â”€ server.go        # Expose tools as MCP server
-â”‚   â”‚   â””â”€â”€ client.go        # Connect to MCP servers
-â”‚   â”œâ”€â”€ a2a/
-â”‚   â”‚   â”œâ”€â”€ server.go        # Expose agent as A2A remote agent
-â”‚   â”‚   â”œâ”€â”€ client.go        # Call remote A2A agents
-â”‚   â”‚   â””â”€â”€ card.go          # AgentCard JSON generation
-â”‚   â””â”€â”€ rest/
-â”‚       â””â”€â”€ server.go        # REST/SSE API for agents
-â”‚
-â”œâ”€â”€ guard/                   # Safety & guardrails
-â”‚   â”œâ”€â”€ guard.go             # Guard interface: Check(input) â†’ (ok, reason)
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ content.go           # Content moderation
-â”‚   â”œâ”€â”€ pii.go               # PII detection
-â”‚   â”œâ”€â”€ injection.go         # Prompt injection detection
-â”‚   â””â”€â”€ adapters/
-â”‚       â”œâ”€â”€ nemo/            # NVIDIA NeMo Guardrails integration
-â”‚       â”œâ”€â”€ guardrailsai/    # Guardrails AI Validator Hub
-â”‚       â”œâ”€â”€ llmguard/        # LLM Guard scanners
-â”‚       â””â”€â”€ lakera/          # Lakera prompt injection API
-â”‚
-â”œâ”€â”€ eval/                    # Evaluation framework
-â”‚   â”œâ”€â”€ eval.go              # Metric interface, EvalSample, EvalReport
-â”‚   â”œâ”€â”€ runner.go            # EvalRunner: parallel execution, reporting
-â”‚   â”œâ”€â”€ dataset.go           # Dataset management (load, save, augment)
-â”‚   â””â”€â”€ metrics/
-â”‚       â”œâ”€â”€ faithfulness.go   # Output grounded in retrieved context?
-â”‚       â”œâ”€â”€ relevance.go      # Output answers the question?
-â”‚       â”œâ”€â”€ hallucination.go  # Output contains fabricated facts?
-â”‚       â”œâ”€â”€ toxicity.go       # Output contains harmful content?
-â”‚       â”œâ”€â”€ latency.go        # End-to-end timing
-â”‚       â””â”€â”€ cost.go           # Token cost per interaction
-â”‚
-â”œâ”€â”€ cache/                   # Caching layer
-â”‚   â”œâ”€â”€ cache.go             # Cache interface: Get, Set, GetSemantic
-â”‚   â”œâ”€â”€ semantic.go          # Embedding-based similarity cache
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ inmemory/         # LRU cache
-â”‚       â”œâ”€â”€ redis/
-â”‚       â””â”€â”€ dragonfly/        # Redis-compatible, 25x faster
-â”‚
-â”œâ”€â”€ hitl/                    # Human-in-the-loop
-â”‚   â”œâ”€â”€ hitl.go              # InteractionRequest, InteractionResponse, InteractionType
-â”‚   â”œâ”€â”€ approval.go          # Approval workflow primitives
-â”‚   â”œâ”€â”€ feedback.go          # Feedback collection
-â”‚   â””â”€â”€ notification.go      # Notification dispatching (Slack, email, webhook)
-â”‚
-â”œâ”€â”€ auth/                    # Agent authentication & authorization
-â”‚   â”œâ”€â”€ auth.go              # Permission, Policy interface
-â”‚   â”œâ”€â”€ rbac.go              # Role-based access control
-â”‚   â”œâ”€â”€ abac.go              # Attribute-based access control
-â”‚   â””â”€â”€ opa.go               # Open Policy Agent integration
-â”‚
-â”œâ”€â”€ resilience/              # Production resilience patterns
-â”‚   â”œâ”€â”€ circuitbreaker.go    # Stop calling failing provider after N failures
-â”‚   â”œâ”€â”€ hedge.go             # Send to multiple providers, use first response
-â”‚   â”œâ”€â”€ retry.go             # Exponential backoff with jitter, retryable errors
-â”‚   â””â”€â”€ ratelimit.go         # Provider-aware: RPM, TPM, MaxConcurrent
-â”‚
-â”œâ”€â”€ state/                   # Shared agent state
-â”‚   â”œâ”€â”€ state.go             # Store interface: Get, Set, Delete, Watch
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ inmemory/
-â”‚       â”œâ”€â”€ redis/
-â”‚       â””â”€â”€ postgres/
-â”‚
-â”œâ”€â”€ prompt/                  # Prompt management & versioning
-â”‚   â”œâ”€â”€ template.go          # Template: Name, Version, Content, Variables
-â”‚   â”œâ”€â”€ manager.go           # PromptManager interface: Get, Render, List
-â”‚   â””â”€â”€ providers/
-â”‚       â”œâ”€â”€ file/             # YAML-based prompt templates
-â”‚       â”œâ”€â”€ db/               # Database-backed
-â”‚       â””â”€â”€ langfuse/         # Langfuse-synced prompt management
-â”‚
-â”œâ”€â”€ server/                  # HTTP framework integration
-â”‚   â”œâ”€â”€ adapter.go           # ServerAdapter interface
-â”‚   â”œâ”€â”€ registry.go          # Register(), New(), List()
-â”‚   â”œâ”€â”€ handler.go           # Standard http.Handler adapter
-â”‚   â”œâ”€â”€ sse.go               # SSE streaming helper
-â”‚   â””â”€â”€ adapters/
-â”‚       â”œâ”€â”€ gin/              # Gin integration
-â”‚       â”œâ”€â”€ fiber/            # Fiber integration
-â”‚       â”œâ”€â”€ echo/             # Echo integration
-â”‚       â”œâ”€â”€ chi/              # Chi integration
-â”‚       â”œâ”€â”€ grpc/             # gRPC service definitions
-â”‚       â”œâ”€â”€ connectgo/        # Connect-Go (gRPC-compatible with HTTP/1.1)
-â”‚       â””â”€â”€ huma/             # Huma (auto-generated OpenAPI)
-â”‚
-â””â”€â”€ internal/                # Shared internal utilities
-    â”œâ”€â”€ syncutil/             # sync primitives, worker pools
-    â”œâ”€â”€ jsonutil/             # JSON schema generation from Go types
-    â””â”€â”€ testutil/             # Mock providers for every interface, test helpers
-        â”œâ”€â”€ mockllm/          # Mock ChatModel
-        â”œâ”€â”€ mocktool/         # Mock Tool
-        â”œâ”€â”€ mockmemory/       # Mock Memory + MessageStore
-        â”œâ”€â”€ mockembedder/     # Mock Embedder
-        â”œâ”€â”€ mockstore/        # Mock VectorStore
-        â”œâ”€â”€ mockworkflow/     # Mock DurableExecutor
-        â””â”€â”€ helpers.go        # Assertion helpers, stream builders
+├── go.mod
+│
+├── core/                    # Foundation — zero external deps beyond stdlib + otel
+│   ├── stream.go            # Event[T], Stream[T], Fan-in/Fan-out, Pipe()
+│   ├── runnable.go          # Runnable interface (Invoke, Stream, Batch)
+│   ├── batch.go             # BatchInvoke[I,O] with concurrency control
+│   ├── context.go           # Session context, cancel propagation, tenant
+│   ├── tenant.go            # TenantID, WithTenant(), GetTenant()
+│   ├── lifecycle.go         # Lifecycle interface (Start, Stop, Health), App struct
+│   ├── errors.go            # Typed error codes, Is/As helpers, IsRetryable()
+│   └── option.go            # Functional options helpers
+│
+├── schema/                  # Shared types — no business logic
+│   ├── message.go           # Message interface, HumanMsg, AIMsg, SystemMsg, ToolMsg
+│   ├── content.go           # ContentPart: Text, Image, Audio, Video, File
+│   ├── tool.go              # ToolCall, ToolResult, ToolDefinition
+│   ├── document.go          # Document with metadata
+│   ├── event.go             # AgentEvent, StreamEvent, LifecycleEvent
+│   └── session.go           # Session, Turn, ConversationState
+│
+├── config/                  # Configuration loading
+│   ├── config.go            # Load[T], Validate, env + file + struct tags
+│   ├── provider.go          # ProviderConfig base type
+│   └── watch.go             # Watcher interface, hot-reload (fsnotify, Consul, etcd, K8s)
+│
+├── o11y/                    # Observability
+│   ├── tracer.go            # OTel tracer wrapper
+│   ├── meter.go             # OTel meter wrapper
+│   ├── logger.go            # Structured logging (slog)
+│   ├── health.go            # Health checks
+│   ├── exporter.go          # TraceExporter interface (LLM-specific: prompts, tokens, cost)
+│   ├── dashboard/           # Built-in dev telemetry dashboard
+│   │   └── dashboard.go     # Embedded web UI: traces, costs, tool calls, prompt playground
+│   └── adapters/
+│       ├── langfuse/        # Langfuse trace exporter
+│       └── phoenix/         # Arize Phoenix trace exporter
+│
+├── llm/                     # LLM abstraction
+│   ├── llm.go               # ChatModel interface
+│   ├── options.go           # GenerateOptions (temp, max_tokens, tools, response_format, etc.)
+│   ├── registry.go          # Register(), New(), List() — provider registry
+│   ├── hooks.go             # LLM-level hooks (BeforeGenerate, AfterGenerate, etc.)
+│   ├── middleware.go         # Retry, rate-limit, cache, logging, guardrail, fallback middleware
+│   ├── router.go            # LLM Router: routes across backends with pluggable strategies
+│   ├── structured.go        # StructuredOutput[T]: JSON Schema from Go structs, parse + validate + retry
+│   ├── context.go           # ContextManager: fit messages within token budget (Truncate, Summarize, Semantic, Adaptive)
+│   ├── tokenizer.go         # Tokenizer interface: Count, CountMessages, Encode, Decode (tiktoken, SentencePiece)
+│   ├── ratelimit.go         # ProviderLimits: RPM, TPM, MaxConcurrent, CooldownOnRetry
+│   └── providers/
+│       ├── openai/           # OpenAI + Azure OpenAI (GPT-4o, GPT-4.1, o1, o3)
+│       ├── anthropic/        # Claude models (Opus 4, Sonnet 4.5, Haiku 4.5)
+│       ├── google/           # Gemini + Vertex AI (2.5 Pro, 2.5 Flash, Gemini 3)
+│       ├── ollama/           # Local models
+│       ├── bedrock/          # AWS Bedrock (multi-model gateway)
+│       ├── groq/             # Ultra-fast inference (LPU)
+│       ├── mistral/          # Mistral AI (Large, Medium, Codestral)
+│       ├── deepseek/         # DeepSeek (V3, R1, Coder V2)
+│       ├── xai/              # xAI Grok (3, 3.5)
+│       ├── cohere/           # Cohere (Command R+)
+│       ├── together/         # Together AI (200+ models)
+│       └── fireworks/        # Fireworks AI (FireAttention)
+│
+├── tool/                    # Tool system
+│   ├── tool.go              # Tool interface: Name, Description, Schema, Execute
+│   ├── functool.go          # NewFuncTool() — wrap any Go function as a Tool
+│   ├── registry.go          # ToolRegistry: Add, Get, List, Remove
+│   ├── hooks.go             # Tool hooks (BeforeExecute, AfterExecute, OnError)
+│   ├── mcp.go               # MCP client — discovers & wraps MCP servers as Tools
+│   ├── mcp_registry.go      # MCPRegistry: Search, Discover MCP servers from registries
+│   ├── middleware.go         # Auth, rate-limit, timeout wrappers
+│   └── builtin/             # Calculator, HTTP, Shell, Code execution
+│
+├── memory/                  # Conversation & knowledge memory
+│   ├── memory.go            # Memory interface: Save, Load, Search, Clear
+│   ├── registry.go          # Register(), New(), List()
+│   ├── store.go             # MessageStore interface (backend abstraction)
+│   ├── hooks.go             # Memory hooks (BeforeSave, AfterLoad, etc.)
+│   ├── middleware.go         # Memory middleware (trace, cache, TTL)
+│   ├── buffer.go            # Full-history buffer
+│   ├── window.go            # Sliding window (last N turns)
+│   ├── summary.go           # LLM-summarised history
+│   ├── entity.go            # Entity extraction & tracking
+│   ├── semantic.go          # Vector-backed semantic memory
+│   ├── graph.go             # Knowledge graph memory (Neo4j/Memgraph/Cayley)
+│   ├── composite.go         # CompositeMemory: Working + Episodic + Semantic + Graph
+│   └── stores/
+│       ├── inmemory/
+│       ├── redis/
+│       ├── postgres/
+│       ├── sqlite/
+│       ├── neo4j/            # Graph memory backend
+│       ├── memgraph/         # In-memory graph database
+│       └── dragonfly/        # Redis-compatible, 25x faster
+│
+├── rag/                     # RAG pipeline
+│   ├── embedding/
+│   │   ├── embedder.go      # Embedder interface
+│   │   ├── registry.go      # Register(), New(), List()
+│   │   ├── hooks.go         # BeforeEmbed, AfterEmbed
+│   │   └── providers/
+│   │       ├── openai/       # text-embedding-3-large
+│   │       ├── google/       # text-embedding-005
+│   │       ├── ollama/       # nomic-embed, mxbai
+│   │       ├── cohere/       # Embed V4, V3
+│   │       ├── voyage/       # voyage-3-large (top MTEB)
+│   │       └── jina/         # jina-embeddings-v3
+│   ├── vectorstore/
+│   │   ├── store.go          # VectorStore interface: Add, Search, Delete
+│   │   ├── registry.go       # Register(), New(), List()
+│   │   ├── hooks.go          # BeforeAdd, AfterSearch
+│   │   └── providers/
+│   │       ├── inmemory/
+│   │       ├── pgvector/     # PostgreSQL (471 QPS at 99% recall on 50M vectors)
+│   │       ├── qdrant/       # Rust-based, best real-time perf
+│   │       ├── pinecone/     # Fully managed, serverless
+│   │       ├── chroma/       # Developer-friendly
+│   │       ├── weaviate/     # Best hybrid search (vector + BM25 + metadata)
+│   │       ├── milvus/       # Enterprise scale, GPU-accelerated
+│   │       ├── turbopuffer/  # S3-based serverless, 10x cheaper
+│   │       ├── redis/        # RediSearch — ultra-low latency
+│   │       ├── elasticsearch/ # Mature text + vector hybrid
+│   │       └── sqlitevec/    # Embedded, edge/mobile/CLI
+│   ├── retriever/
+│   │   ├── retriever.go      # Retriever interface
+│   │   ├── registry.go       # Register(), New(), List()
+│   │   ├── hooks.go          # BeforeRetrieve, AfterRetrieve, OnRerank
+│   │   ├── middleware.go     # Retriever middleware (cache, trace, etc.)
+│   │   ├── vector.go         # VectorStoreRetriever
+│   │   ├── multiquery.go     # Multi-query expansion
+│   │   ├── rerank.go         # Re-ranking retriever
+│   │   ├── ensemble.go       # Ensemble retriever
+│   │   └── hyde.go           # Hypothetical Document Embedding retriever
+│   ├── loader/
+│   │   ├── loader.go         # DocumentLoader interface
+│   │   ├── pipeline.go       # LoaderPipeline: chain loaders + transformers
+│   │   ├── text.go
+│   │   ├── pdf.go            # PDF with table extraction
+│   │   ├── html.go           # HTML with boilerplate removal
+│   │   ├── web.go            # Web crawler (Firecrawl, Colly)
+│   │   ├── csv.go
+│   │   ├── json.go
+│   │   ├── docx.go           # Word documents
+│   │   ├── pptx.go           # PowerPoint
+│   │   ├── xlsx.go           # Excel
+│   │   ├── markdown.go
+│   │   ├── code.go           # Source code with AST awareness
+│   │   ├── confluence.go     # Confluence wiki pages
+│   │   ├── notion.go         # Notion databases/pages
+│   │   ├── github.go         # Repos, issues, PRs
+│   │   ├── s3.go             # AWS S3
+│   │   ├── gcs.go            # Google Cloud Storage
+│   │   └── ocr.go            # OCR via Tesseract or Google Vision
+│   └── splitter/
+│       ├── splitter.go       # TextSplitter interface
+│       ├── recursive.go
+│       └── markdown.go
+│
+├── agent/                   # Agent runtime
+│   ├── agent.go             # Agent interface + BaseAgent embeddable struct
+│   ├── base.go              # BaseAgent: ID, Persona, Tools, Children, Card
+│   ├── persona.go           # Role, Goal, Backstory (RGB framework)
+│   ├── executor.go          # Reasoning loop: delegates to Planner
+│   ├── planner.go           # Planner interface + PlannerState + Action types
+│   ├── registry.go          # RegisterPlanner(), NewPlanner(), ListPlanners()
+│   ├── hooks.go             # Hooks struct + ComposeHooks()
+│   ├── middleware.go         # Agent middleware (retry, trace, etc.)
+│   ├── bus.go               # EventBus: agent-to-agent async messaging (in-memory, NATS, Redis)
+│   ├── react.go             # ReAct planner implementation
+│   ├── planexecute.go       # Plan-and-Execute planner implementation
+│   ├── reflection.go        # Reflection planner implementation
+│   ├── structured.go        # Structured-output agent
+│   ├── conversational.go    # Optimised for multi-turn chat
+│   ├── handoff.go           # Agent-to-agent handoff within a session
+│   ├── card.go              # A2A AgentCard (capability advertisement)
+│   └── workflow/             # Built-in workflow agents
+│       ├── sequential.go    # SequentialAgent
+│       ├── parallel.go      # ParallelAgent
+│       └── loop.go          # LoopAgent
+│
+├── voice/                   # Voice / multimodal pipeline
+│   ├── pipeline.go          # VoicePipeline: STT → LLM → TTS (cascading)
+│   ├── hybrid.go            # HybridPipeline: S2S + cascade with switch policy
+│   ├── session.go           # VoiceSession: manages audio state & turns
+│   ├── vad.go               # VAD interface
+│   ├── stt/
+│   │   ├── stt.go           # STT interface (streaming)
+│   │   └── providers/
+│   │       ├── deepgram/     # Nova-3, Nova-3 Medical, Flux
+│   │       ├── assemblyai/   # Slam-1 SLM
+│   │       ├── whisper/      # OpenAI Whisper / GPT-4o Transcribe
+│   │       ├── elevenlabs/   # Scribe v2
+│   │       ├── groq/         # Whisper on LPU (200x realtime)
+│   │       └── gladia/       # Solaria-1 (100 languages)
+│   ├── tts/
+│   │   ├── tts.go           # TTS interface (streaming)
+│   │   └── providers/
+│   │       ├── elevenlabs/   # Highest quality TTS
+│   │       ├── cartesia/     # Sonic — ultra-low latency
+│   │       ├── openai/       # OpenAI TTS
+│   │       ├── playht/       # PlayDialog, Play3.0-mini
+│   │       ├── groq/         # PlayAI TTS on LPU
+│   │       ├── fish/         # Fish-Speech (multilingual)
+│   │       ├── lmnt/         # Low-latency conversational
+│   │       └── smallest/     # Ultra-low cost, voice cloning
+│   ├── s2s/
+│   │   ├── s2s.go           # S2S interface (bidirectional)
+│   │   └── providers/
+│   │       ├── openai_realtime/ # GPT-4o native voice-to-voice
+│   │       ├── gemini_live/    # Google bidirectional voice
+│   │       └── nova/           # Amazon Nova S2S
+│   └── transport/
+│       ├── transport.go      # AudioTransport interface
+│       ├── websocket.go
+│       ├── livekit.go        # LiveKit room integration
+│       └── daily.go          # Daily.co transport
+│
+├── orchestration/           # Workflow composition
+│   ├── node.go              # Node interface (extension point for custom steps)
+│   ├── hooks.go             # BeforeStep, AfterStep, OnBranch
+│   ├── chain.go             # Sequential pipeline
+│   ├── graph.go             # DAG with conditional edges
+│   ├── router.go            # Conditional routing (LLM or rule-based)
+│   ├── parallel.go          # Fan-out / fan-in
+│   ├── workflow.go          # In-process workflow (non-durable)
+│   └── supervisor.go        # Multi-agent supervisor pattern
+│
+├── workflow/                # Durable workflow execution
+│   ├── executor.go          # DurableExecutor interface
+│   ├── activity.go          # LLMActivity, ToolActivity, HumanActivity wrappers
+│   ├── state.go             # WorkflowState: checkpoint, metadata, history
+│   ├── signal.go            # Signal types for HITL, inter-workflow communication
+│   ├── registry.go          # Register(), New(), List()
+│   ├── hooks.go             # BeforeActivity, AfterActivity, OnSignal, OnRetry
+│   ├── middleware.go         # Workflow-level middleware
+│   ├── config.go            # RetryPolicy, Timeouts, TaskQueues
+│   ├── patterns/            # Pre-built workflow patterns
+│   │   ├── agent_loop.go    # ReAct/Plan-Execute as durable workflow
+│   │   ├── research.go      # Multi-source research pipeline
+│   │   ├── approval.go      # Human approval workflow
+│   │   ├── scheduled.go     # Periodic/ambient agent
+│   │   └── saga.go          # Saga pattern with compensating actions
+│   └── providers/
+│       ├── temporal/         # Temporal Go SDK integration
+│       │   ├── executor.go   # TemporalExecutor implements DurableExecutor
+│       │   ├── worker.go     # Activity worker setup
+│       │   ├── activities.go # Activity implementations
+│       │   └── converter.go  # Payload codec (encryption, compression)
+│       ├── inmemory/         # In-process (dev/test, no durability)
+│       └── nats/             # NATS JetStream (lightweight alternative)
+│
+├── protocol/                # External protocol support
+│   ├── mcp/
+│   │   ├── server.go        # Expose tools as MCP server
+│   │   └── client.go        # Connect to MCP servers
+│   ├── a2a/
+│   │   ├── server.go        # Expose agent as A2A remote agent
+│   │   ├── client.go        # Call remote A2A agents
+│   │   └── card.go          # AgentCard JSON generation
+│   └── rest/
+│       └── server.go        # REST/SSE API for agents
+│
+├── guard/                   # Safety & guardrails
+│   ├── guard.go             # Guard interface: Check(input) → (ok, reason)
+│   ├── registry.go          # Register(), New(), List()
+│   ├── content.go           # Content moderation
+│   ├── pii.go               # PII detection
+│   ├── injection.go         # Prompt injection detection
+│   └── adapters/
+│       ├── nemo/            # NVIDIA NeMo Guardrails integration
+│       ├── guardrailsai/    # Guardrails AI Validator Hub
+│       ├── llmguard/        # LLM Guard scanners
+│       └── lakera/          # Lakera prompt injection API
+│
+├── eval/                    # Evaluation framework
+│   ├── eval.go              # Metric interface, EvalSample, EvalReport
+│   ├── runner.go            # EvalRunner: parallel execution, reporting
+│   ├── dataset.go           # Dataset management (load, save, augment)
+│   └── metrics/
+│       ├── faithfulness.go   # Output grounded in retrieved context?
+│       ├── relevance.go      # Output answers the question?
+│       ├── hallucination.go  # Output contains fabricated facts?
+│       ├── toxicity.go       # Output contains harmful content?
+│       ├── latency.go        # End-to-end timing
+│       └── cost.go           # Token cost per interaction
+│
+├── cache/                   # Caching layer
+│   ├── cache.go             # Cache interface: Get, Set, GetSemantic
+│   ├── semantic.go          # Embedding-based similarity cache
+│   └── providers/
+│       ├── inmemory/         # LRU cache
+│       ├── redis/
+│       └── dragonfly/        # Redis-compatible, 25x faster
+│
+├── hitl/                    # Human-in-the-loop
+│   ├── hitl.go              # InteractionRequest, InteractionResponse, InteractionType
+│   ├── approval.go          # Approval workflow primitives
+│   ├── feedback.go          # Feedback collection
+│   └── notification.go      # Notification dispatching (Slack, email, webhook)
+│
+├── auth/                    # Agent authentication & authorization
+│   ├── auth.go              # Permission, Policy interface
+│   ├── rbac.go              # Role-based access control
+│   ├── abac.go              # Attribute-based access control
+│   └── opa.go               # Open Policy Agent integration
+│
+├── resilience/              # Production resilience patterns
+│   ├── circuitbreaker.go    # Stop calling failing provider after N failures
+│   ├── hedge.go             # Send to multiple providers, use first response
+│   ├── retry.go             # Exponential backoff with jitter, retryable errors
+│   └── ratelimit.go         # Provider-aware: RPM, TPM, MaxConcurrent
+│
+├── state/                   # Shared agent state
+│   ├── state.go             # Store interface: Get, Set, Delete, Watch
+│   └── providers/
+│       ├── inmemory/
+│       ├── redis/
+│       └── postgres/
+│
+├── prompt/                  # Prompt management & versioning
+│   ├── template.go          # Template: Name, Version, Content, Variables
+│   ├── manager.go           # PromptManager interface: Get, Render, List
+│   └── providers/
+│       ├── file/             # YAML-based prompt templates
+│       ├── db/               # Database-backed
+│       └── langfuse/         # Langfuse-synced prompt management
+│
+├── server/                  # HTTP framework integration
+│   ├── adapter.go           # ServerAdapter interface
+│   ├── registry.go          # Register(), New(), List()
+│   ├── handler.go           # Standard http.Handler adapter
+│   ├── sse.go               # SSE streaming helper
+│   └── adapters/
+│       ├── gin/              # Gin integration
+│       ├── fiber/            # Fiber integration
+│       ├── echo/             # Echo integration
+│       ├── chi/              # Chi integration
+│       ├── grpc/             # gRPC service definitions
+│       ├── connectgo/        # Connect-Go (gRPC-compatible with HTTP/1.1)
+│       └── huma/             # Huma (auto-generated OpenAPI)
+│
+└── internal/                # Shared internal utilities
+    ├── syncutil/             # sync primitives, worker pools
+    ├── jsonutil/             # JSON schema generation from Go types
+    └── testutil/             # Mock providers for every interface, test helpers
+        ├── mockllm/          # Mock ChatModel
+        ├── mocktool/         # Mock Tool
+        ├── mockmemory/       # Mock Memory + MessageStore
+        ├── mockembedder/     # Mock Embedder
+        ├── mockstore/        # Mock VectorStore
+        ├── mockworkflow/     # Mock DurableExecutor
+        └── helpers.go        # Assertion helpers, stream builders
 ```
 
 ---
@@ -529,7 +529,7 @@ type Router struct {
     fallbacks []ChatModel
 }
 
-// Router implements ChatModel â€” use anywhere a model is expected
+// Router implements ChatModel — use anywhere a model is expected
 func (r *Router) Generate(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) (*schema.AIMessage, error) { ... }
 ```
 
@@ -606,7 +606,7 @@ type WeatherInput struct {
 
 weatherTool := tool.NewFuncTool("get_weather", "Get current weather",
     func(ctx context.Context, input WeatherInput) (*tool.ToolResult, error) {
-        return tool.TextResult(fmt.Sprintf("72Â°F in %s", input.City)), nil
+        return tool.TextResult(fmt.Sprintf("72°F in %s", input.City)), nil
     },
 )
 ```
@@ -1317,3 +1317,47 @@ func (a *ApprovalGate) Invoke(ctx context.Context, input any, opts ...core.Optio
     return input, nil
 }
 ```
+
+---
+
+## 16. Creating a New Package
+
+Every extensible package in Beluga follows the universal extension contract: a small interface, a registry, lifecycle hooks, and middleware support. Use this as a template when adding new packages.
+
+### Directory Structure
+
+```
+<package>/
+├── <interface>.go     # Extension contract (Go interface + types)
+├── registry.go        # Register(), New(), List()
+├── hooks.go           # Lifecycle hook types + ComposeHooks()
+├── middleware.go       # Middleware type + ApplyMiddleware()
+├── <interface>_test.go
+├── registry_test.go
+├── hooks_test.go
+├── middleware_test.go
+└── providers/         # Built-in implementations
+    ├── <provider_a>/
+    │   ├── <provider_a>.go
+    │   ├── <provider_a>_test.go
+    │   └── testdata/
+    └── <provider_b>/
+```
+
+### Checklist
+
+1. **Define a small interface** (1-4 methods). First parameter is always `context.Context`.
+2. **Add a registry** with `Register()`, `New()`, `List()`. Use `sync.RWMutex` for thread safety.
+3. **Add hooks** with optional function fields. Implement `ComposeHooks()` for chaining.
+4. **Add middleware** as `func(Interface) Interface`. Implement `ApplyMiddleware()` (right-to-left application).
+5. **Add compile-time check**: `var _ Interface = (*Impl)(nil)`
+6. **Write tests** for all exported functions. Use table-driven tests. Test error paths and context cancellation.
+7. **Create providers** under `providers/` using the `init()` registration pattern.
+
+### Cross-References
+
+- **Skill: `go-framework`** — Registry, factory, lifecycle, and options patterns with code examples
+- **Skill: `go-interfaces`** — Interface design rules, hooks, middleware, and composition patterns
+- **Skill: `go-testing`** — Table-driven tests, stream testing, mock patterns, benchmarks
+- **Skill: `provider-implementation`** — Provider checklist, file structure, error mapping, testing with recorded responses
+- **Doc: `docs/providers.md`** — Provider categories and how to add new providers

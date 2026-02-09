@@ -30,6 +30,9 @@ type Adapter struct {
 	mu     sync.RWMutex
 }
 
+// Compile-time interface check.
+var _ server.ServerAdapter = (*Adapter)(nil)
+
 // New creates a new Chi adapter with the given configuration.
 func New(cfg server.Config) *Adapter {
 	return &Adapter{

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"iter"
 	"net/http"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/tool"
@@ -173,10 +174,15 @@ func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Optio
 		return "", fmt.Errorf("a2a/invoke: %w", err)
 	}
 
-	// Poll until terminal state.
+	// Poll until terminal state with exponential backoff.
+	delay := 100 * time.Millisecond
+	const maxDelay = 5 * time.Second
+
 	for {
-		if ctx.Err() != nil {
+		select {
+		case <-ctx.Done():
 			return "", ctx.Err()
+		case <-time.After(delay):
 		}
 
 		task, err = a.client.GetTask(ctx, task.ID)
@@ -192,7 +198,12 @@ func (a *remoteAgent) Invoke(ctx context.Context, input string, _ ...agent.Optio
 		case StatusCanceled:
 			return "", fmt.Errorf("a2a/invoke: task canceled")
 		}
-		// Continue polling for submitted/working.
+
+		// Exponential backoff, capped at maxDelay.
+		delay = delay * 2
+		if delay > maxDelay {
+			delay = maxDelay
+		}
 	}
 }
 

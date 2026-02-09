@@ -1,0 +1,30 @@
+version: 2
+
+builds:
+  - skip: true # Library — no binary builds
+
+changelog:
+  sort: asc
+  use: github
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\([[:word:]]+\))?\!?:.*$'
+    - title: "Bug Fixes"
+      regexp: '^.*?fix(\([[:word:]]+\))?\!?:.*$'
+    - title: "Documentation"
+      regexp: '^.*?docs(\([[:word:]]+\))?\!?:.*$'
+    - title: "Others"
+      order: 999
+  filters:
+    exclude:
+      - "^test:"
+      - "^chore:"
+      - "merge"
+
+release:
+  github:
+    owner: lookatitude
+    name: beluga-ai
+  draft: false
+  prerelease: auto
+  name_template: "v{{ .Version }}"

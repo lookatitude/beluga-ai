@@ -7,12 +7,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"iter"
 	"math"
 	"math/rand/v2"
+	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -141,6 +144,46 @@ func isRetryable(statusCode int) bool {
 	return statusCode == http.StatusTooManyRequests || statusCode == http.StatusServiceUnavailable
 }
 
+// isNetworkError returns true if the error is a temporary or timeout network error.
+func isNetworkError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	// Unwrap url.Error if present (HTTP client wraps errors in url.Error).
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		err = urlErr.Err
+	}
+
+	// Check for net.Error interface (Temporary/Timeout).
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return netErr.Temporary() || netErr.Timeout()
+	}
+
+	// Check for net.OpError (connection refused, DNS failures, etc.).
+	var opErr *net.OpError
+	if errors.As(err, &opErr) {
+		return true
+	}
+
+	// Check for EOF and unexpected EOF (connection closed unexpectedly).
+	if errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF) {
+		return true
+	}
+
+	// Check for "connection reset by peer" and similar errors.
+	errStr := err.Error()
+	if strings.Contains(errStr, "connection reset") ||
+	   strings.Contains(errStr, "broken pipe") ||
+	   strings.Contains(errStr, "connection refused") {
+		return true
+	}
+
+	return false
+}
+
 // retryDelay computes the delay for a retry attempt, respecting Retry-After headers.
 func retryDelay(resp *http.Response, baseBackoff time.Duration, attempt int) time.Duration {
 	if resp != nil {
@@ -158,13 +201,23 @@ func retryDelay(resp *http.Response, baseBackoff time.Duration, attempt int) tim
 }
 
 // DoJSON sends an HTTP request and decodes the JSON response into T.
-// It retries on 429/503 with exponential backoff.
+// It retries on 429/503 and network errors with exponential backoff.
 func DoJSON[T any](ctx context.Context, c *Client, method, path string, body any) (T, error) {
 	var zero T
 
 	for attempt := range c.retries + 1 {
 		resp, err := c.Do(ctx, method, path, body, nil)
 		if err != nil {
+			// Retry on network/transport errors (connection refused, timeout, DNS failures).
+			if isNetworkError(err) && attempt < c.retries {
+				delay := retryDelay(nil, c.backoff, attempt)
+				select {
+				case <-ctx.Done():
+					return zero, ctx.Err()
+				case <-time.After(delay):
+					continue
+				}
+			}
 			return zero, err
 		}
 
@@ -222,10 +275,16 @@ type SSEEvent struct {
 	Retry int
 }
 
-// StreamSSE opens an SSE connection and returns an iterator of events.
+// StreamSSE opens an SSE connection using GET and returns an iterator of events.
 func StreamSSE(ctx context.Context, c *Client, path string) iter.Seq2[SSEEvent, error] {
+	return StreamSSEWithBody(ctx, c, http.MethodGet, path, nil)
+}
+
+// StreamSSEWithBody opens an SSE connection with the specified method and optional body.
+// Many LLM providers require POST for SSE streaming.
+func StreamSSEWithBody(ctx context.Context, c *Client, method, path string, body any) iter.Seq2[SSEEvent, error] {
 	return func(yield func(SSEEvent, error) bool) {
-		resp, err := c.Do(ctx, http.MethodGet, path, nil, map[string]string{
+		resp, err := c.Do(ctx, method, path, body, map[string]string{
 			"Accept":        "text/event-stream",
 			"Cache-Control": "no-cache",
 		})

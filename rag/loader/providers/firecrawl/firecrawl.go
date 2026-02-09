@@ -35,6 +35,9 @@ type Loader struct {
 	client *fc.FirecrawlApp
 }
 
+// Compile-time interface check.
+var _ loader.DocumentLoader = (*Loader)(nil)
+
 // New creates a new Firecrawl document loader.
 func New(cfg config.ProviderConfig) (*Loader, error) {
 	apiURL := cfg.BaseURL

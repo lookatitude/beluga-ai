@@ -49,6 +49,9 @@ type Embedder struct {
 	dims   int
 }
 
+// Compile-time interface check.
+var _ embedding.Embedder = (*Embedder)(nil)
+
 // New creates a new Jina AI Embedder from a ProviderConfig.
 func New(cfg config.ProviderConfig) (*Embedder, error) {
 	model := cfg.Model

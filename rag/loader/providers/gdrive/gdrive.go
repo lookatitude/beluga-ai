@@ -39,6 +39,9 @@ type Loader struct {
 	client *httpclient.Client
 }
 
+// Compile-time interface check.
+var _ loader.DocumentLoader = (*Loader)(nil)
+
 // New creates a new Google Drive document loader.
 func New(cfg config.ProviderConfig) (*Loader, error) {
 	if cfg.APIKey == "" {

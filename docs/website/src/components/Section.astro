@@ -1,0 +1,14 @@
+---
+const { title, description } = Astro.props;
+---
+
+<section class="section">
+  <div class="text-center mb-16">
+    {title && <h2 class="section-title mb-4" set:html={(title)} />}
+    {description && <p class="section-description" set:html={description} />}
+  </div>
+
+  <div>
+    <slot />
+  </div>
+</section>

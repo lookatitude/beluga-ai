@@ -39,6 +39,9 @@ type Store struct {
 	entries map[string]entry
 }
 
+// Compile-time interface check.
+var _ vectorstore.VectorStore = (*Store)(nil)
+
 // New creates a new empty in-memory Store.
 func New() *Store {
 	return &Store{

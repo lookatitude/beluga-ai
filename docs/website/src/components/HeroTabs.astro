@@ -1,0 +1,391 @@
+---
+
+---
+
+<div class="hero-tabs-container">
+  <div class="hero-tabs-items" style="display: none;">
+    <slot />
+  </div>
+  <div class="hero-tabs-nav"></div>
+  <div class="hero-tabs-content"></div>
+</div>
+
+<style>
+  .hero-tabs-nav {
+    border-top: 2px solid var(--sl-color-gray-6);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  @media (min-width: 768px) {
+    .hero-tabs-nav {
+      flex-direction: row;
+      justify-content: center;
+      align-items: stretch;
+    }
+  }
+</style>
+
+<script>
+  interface TabElements {
+    container: Element | null;
+    tabsItemsContainer: Element | null;
+    tabsNavContainer: Element | null;
+    tabsContentContainer: Element | null;
+    tabButtons: NodeListOf<Element> | null;
+    tabNavs: NodeListOf<Element> | null;
+    tabContents: NodeListOf<Element> | null;
+  }
+
+  class HeroTabs implements TabElements {
+    container: Element | null;
+    tabsItemsContainer: Element | null;
+    tabsNavContainer: Element | null;
+    tabsContentContainer: Element | null;
+    tabButtons: NodeListOf<Element> | null = null;
+    tabNavs: NodeListOf<Element> | null = null;
+    tabContents: NodeListOf<Element> | null = null;
+    private activeTabNumber: number = 1;
+
+    constructor() {
+      this.container = document.querySelector(".hero-tabs-container");
+      this.tabsItemsContainer = document.querySelector(".hero-tabs-items");
+      this.tabsNavContainer = document.querySelector(".hero-tabs-nav");
+      this.tabsContentContainer = document.querySelector(".hero-tabs-content");
+
+      this.injectCSS();
+      this.init();
+    }
+
+    private injectCSS(): void {
+      const style = document.createElement("style");
+      style.textContent = `
+        .hero-tabs-nav .hero-tab-nav {
+          flex: 1;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          overflow: hidden;
+          margin: 0 !important;
+          opacity: 0.6;
+        }
+
+        .hero-tabs-nav .hero-tab-nav[data-active="true"] {
+          transform: translateY(-2px);
+          opacity: 1;
+        }
+
+        .hero-tabs-nav .tab-button {
+          width: 100%;
+          border: none;
+          padding: 1.5rem 0;
+          color: var(--sl-color-text);
+          background: transparent;
+          cursor: pointer;
+          display: flex;
+          gap: 1rem;
+          transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .hero-tabs-nav .tab-button:hover {
+          background: var(--sl-color-gray-7);
+        }
+
+        .hero-tabs-nav .hero-tab-nav[data-active="true"] .tab-button::before {
+          content: "";
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          background: var(--color-primary-gradient);
+        }
+
+        .hero-tabs-nav .tab-number {
+          font-size: 1.1rem;
+          background: var(--sl-color-black);
+          color: var(--sl-color-light);
+          width: 2rem;
+          height: 2rem;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          transition: all 0.3s ease;
+        }
+
+        .hero-tabs-nav .tab-content {
+          text-align: left;
+          flex-grow: 1;
+        }
+
+        .hero-tabs-nav .tab-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin: 0 0 0.5rem 0;
+          transition: all 0.3s ease;
+        }
+
+        .hero-tabs-nav .tab-subtitle {
+          font-size: 0.875rem;
+          opacity: 0.9;
+          margin: 0;
+          line-height: 1.4;
+          transition: all 0.3s ease;
+        }
+
+        .hero-tabs-content {
+          position: relative;
+          
+          overflow: hidden;
+          background-color: var(--sl-color-black);
+          margin-top: 3.5rem;
+          padding: 0.6rem;
+        }
+        
+        .hero-tabs-content .hero-tab-content {
+         
+          width: 100%;
+          height: 100%;
+          display: none;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem;
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+          margin-top:0px;
+        }
+
+        .hero-tabs-content .hero-tab-content[data-active="true"] {
+          display: flex !important;
+        }
+
+        .hero-tabs-content .tab-image-container {
+          width: 100%;
+          position: relative;
+        }
+
+        .hero-tabs-content .tab-image {
+          width: 100%;
+          height: 100%;
+          object-fit: contain;
+          transition: transform 0.3s ease;
+        }
+
+        @media (max-width: 767px) {
+          .hero-tabs-nav .tab-button { padding: 1rem; }
+          .hero-tabs-nav .tab-number { font-size: 1rem; }
+          .hero-tabs-nav .tab-title { font-size: 1.125rem; }
+          .hero-tabs-nav .tab-subtitle { font-size: 0.8rem; }
+          .hero-tabs-content { min-height: 300px; }
+          .hero-tabs-content .hero-tab-content { padding: 1rem; }
+        }
+          @media (max-width: 560px) {
+          .hero-tabs-content { min-height: auto; }
+
+        }
+
+      `;
+
+      document.head.appendChild(style);
+    }
+
+    private init(): void {
+      if (!this.container || !this.tabsItemsContainer) return;
+      setTimeout(() => this.setupTabs(), 500);
+    }
+
+    private setupTabs(): void {
+      const tabItems =
+        this.tabsItemsContainer?.querySelectorAll(".hero-tab-item");
+      if (!tabItems || tabItems.length === 0) return;
+
+      tabItems.forEach((item, index) => {
+        const navElement = item.querySelector(".hero-tab-nav");
+        const contentElement = item.querySelector(".hero-tab-content");
+
+        if (
+          navElement &&
+          contentElement &&
+          this.tabsNavContainer &&
+          this.tabsContentContainer
+        ) {
+          const navClone = navElement.cloneNode(true) as Element;
+          const contentClone = contentElement.cloneNode(true) as Element;
+
+          const isActive = index === 0;
+          navClone.setAttribute("data-active", isActive.toString());
+          contentClone.setAttribute("data-active", isActive.toString());
+
+          this.tabsNavContainer.appendChild(navClone);
+          this.tabsContentContainer.appendChild(contentClone);
+        }
+      });
+
+      setTimeout(() => {
+        this.bindEvents();
+        this.initializeVisibility();
+      }, 100);
+    }
+
+    private initializeVisibility(): void {
+      if (!this.tabsContentContainer) return;
+
+      this.tabContents =
+        this.tabsContentContainer.querySelectorAll(".hero-tab-content");
+      this.tabContents.forEach((content) => {
+        (content as HTMLElement).style.display = "none";
+      });
+
+      const firstContent = this.tabsContentContainer.querySelector(
+        `[data-panel="1"]`
+      ) as HTMLElement;
+      if (firstContent) {
+        firstContent.style.display = "flex";
+      }
+    }
+
+    private bindEvents(): void {
+      if (!this.tabsNavContainer || !this.tabsContentContainer) return;
+
+      this.tabButtons = this.tabsNavContainer.querySelectorAll(".tab-button");
+      this.tabNavs = this.tabsNavContainer.querySelectorAll(".hero-tab-nav");
+      this.tabContents =
+        this.tabsContentContainer.querySelectorAll(".hero-tab-content");
+
+      if (this.tabButtons.length === 0) return;
+
+      this.tabButtons.forEach((button) => {
+        button.addEventListener("click", (e) => {
+          e.preventDefault();
+          const tabNumber = parseInt(
+            (button as HTMLElement).dataset.tab || "1"
+          );
+          this.switchTab(tabNumber);
+        });
+
+        button.addEventListener("keydown", (e) => {
+          const key = (e as KeyboardEvent).key;
+          if (key === "Enter" || key === " ") {
+            e.preventDefault();
+            const tabNumber = parseInt(
+              (button as HTMLElement).dataset.tab || "1"
+            );
+            this.switchTab(tabNumber);
+          }
+        });
+      });
+
+      this.addKeyboardNavigation();
+      this.addEntranceAnimations();
+    }
+
+    private switchTab(tabNumber: number): void {
+      if (tabNumber === this.activeTabNumber) return;
+
+      this.deactivateCurrentTab();
+      this.activateTab(tabNumber);
+      this.activeTabNumber = tabNumber;
+
+      this.container?.dispatchEvent(
+        new CustomEvent("tabChanged", { detail: { activeTab: tabNumber } })
+      );
+    }
+
+    private deactivateCurrentTab(): void {
+      this.tabNavs?.forEach((nav) => {
+        nav.setAttribute("data-active", "false");
+        nav.classList.remove("active");
+      });
+
+      this.tabContents?.forEach((content) => {
+        content.setAttribute("data-active", "false");
+        content.classList.remove("active", "fade-in");
+        (content as HTMLElement).style.display = "none";
+      });
+    }
+
+    private activateTab(tabNumber: number): void {
+      const targetNav = this.tabsNavContainer
+        ?.querySelector(`[data-tab="${tabNumber}"]`)
+        ?.closest(".hero-tab-nav");
+      if (targetNav) {
+        targetNav.setAttribute("data-active", "true");
+        targetNav.classList.add("active");
+      }
+
+      const targetContent = this.tabsContentContainer?.querySelector(
+        `[data-panel="${tabNumber}"]`
+      ) as HTMLElement;
+      if (targetContent) {
+        targetContent.style.display = "flex";
+        targetContent.setAttribute("data-active", "true");
+        targetContent.classList.add("active", "fade-in");
+      }
+
+      const targetButton = this.tabsNavContainer?.querySelector(
+        `[data-tab="${tabNumber}"]`
+      ) as HTMLElement;
+      targetButton?.focus();
+    }
+
+    private addKeyboardNavigation(): void {
+      document.addEventListener("keydown", (e) => {
+        if (!this.container?.contains(document.activeElement)) return;
+
+        let newTabNumber = this.activeTabNumber;
+        const maxTabs = this.tabButtons?.length || 0;
+
+        switch (e.key) {
+          case "ArrowRight":
+          case "ArrowDown":
+            e.preventDefault();
+            newTabNumber =
+              this.activeTabNumber < maxTabs ? this.activeTabNumber + 1 : 1;
+            break;
+          case "ArrowLeft":
+          case "ArrowUp":
+            e.preventDefault();
+            newTabNumber =
+              this.activeTabNumber > 1 ? this.activeTabNumber - 1 : maxTabs;
+            break;
+          case "Home":
+            e.preventDefault();
+            newTabNumber = 1;
+            break;
+          case "End":
+            e.preventDefault();
+            newTabNumber = maxTabs;
+            break;
+        }
+
+        if (newTabNumber !== this.activeTabNumber) {
+          this.switchTab(newTabNumber);
+        }
+      });
+    }
+
+    private addEntranceAnimations(): void {
+      this.tabNavs?.forEach((nav, index) => {
+        setTimeout(() => nav.classList.add("animate-in"), index * 100);
+      });
+    }
+
+    public goToTab(tabNumber: number): void {
+      const maxTabs = this.tabButtons?.length || 0;
+      if (tabNumber >= 1 && tabNumber <= maxTabs) {
+        this.switchTab(tabNumber);
+      }
+    }
+
+    public getActiveTab(): number {
+      return this.activeTabNumber;
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const heroTabs = new HeroTabs();
+    (window as any).heroTabs = heroTabs;
+  });
+</script>

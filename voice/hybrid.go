@@ -177,13 +177,33 @@ func (h *HybridPipeline) UpdateState(toolCalls, turnCount int) {
 	h.state.TurnCount = turnCount
 }
 
-// runS2S runs the S2S processor. This is a stub that will be expanded when
-// S2S transport integration is complete.
+// runS2S runs the S2S processor. The S2S processor handles its own
+// bidirectional audio transport (WebRTC/WebSocket) and doesn't use the
+// cascade transport system.
 func (h *HybridPipeline) runS2S(ctx context.Context) error {
-	_ = ctx
-	// S2S processors manage their own transport (WebRTC/WebSocket).
-	// Full implementation will delegate to h.config.S2S.Process().
-	return fmt.Errorf("voice: S2S pipeline not yet implemented")
+	if h.config.Session == nil {
+		return fmt.Errorf("voice: S2S pipeline requires a session")
+	}
+
+	// S2S processors are self-contained FrameProcessors that manage their
+	// own transport. Create dummy channels since S2S doesn't use the
+	// cascade transport pattern.
+	in := make(chan Frame)
+	out := make(chan Frame)
+
+	// Close input immediately - S2S manages its own audio I/O.
+	close(in)
+
+	// Drain output in case the processor produces any frames.
+	go func() {
+		for range out {
+			// Discard - S2S handles its own output transport
+		}
+	}()
+
+	// Run the S2S processor. It will manage its own WebSocket/WebRTC
+	// connection internally and handle audio I/O.
+	return h.config.S2S.Process(ctx, in, out)
 }
 
 // runCascade delegates to the cascade pipeline.

@@ -1,0 +1,28 @@
+version: 2
+updates:
+  - package-ecosystem: "gomod"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 10
+    labels: ["dependencies", "go"]
+    groups:
+      aws-sdk:
+        patterns: ["github.com/aws/*"]
+      otel:
+        patterns: ["go.opentelemetry.io/*"]
+      google:
+        patterns: ["cloud.google.com/*", "google.golang.org/*"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "ci"]
+
+  - package-ecosystem: "npm"
+    directory: "/docs/website"
+    schedule:
+      interval: "weekly"
+    labels: ["dependencies", "docs"]

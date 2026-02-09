@@ -37,6 +37,9 @@ type Model struct {
 	tools  []schema.ToolDefinition
 }
 
+// Compile-time interface check.
+var _ llm.ChatModel = (*Model)(nil)
+
 // New creates a new Google Gemini ChatModel.
 func New(cfg config.ProviderConfig) (*Model, error) {
 	return NewWithHTTPClient(cfg, nil)

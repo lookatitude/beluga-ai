@@ -1,0 +1,100 @@
+{
+  "main": [
+    {
+      "name": "Accueil",
+      "url": "/"
+    },
+    {
+      "name": "Documentation",
+      "url": "/fr/getting-started/introduction/overview/"
+    },
+    {
+      "name": "Référence",
+      "url": "",
+      "hasChildren": true,
+      "children": [
+        {
+          "name": "Configuration",
+          "url": "/fr/reference/configuration/"
+        },
+        {
+          "name": "Référence des plugins",
+          "url": "/fr/reference/plugin/"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "community": {
+      "title": "Rejoignez notre communauté",
+      "links": [
+        {
+          "name": "Discussions GitHub",
+          "url": "https://github.com/themefisher/dockit/discussions"
+        },
+        {
+          "name": "Communauté Discord",
+          "url": "/"
+        },
+        {
+          "name": "Mises à jour Twitter",
+          "url": "/"
+        },
+        {
+          "name": "Guide de contribution",
+          "url": "/"
+        }
+      ]
+    },
+    "help_links": {
+      "title": "Liens utiles",
+      "links": [
+        {
+          "name": "Commencer",
+          "url": "/"
+        },
+        {
+          "name": "Référence API",
+          "url": "/"
+        },
+        {
+          "name": "Exemples et démos",
+          "url": "/"
+        },
+        {
+          "name": "Personnalisation du thème",
+          "url": "/"
+        },
+        {
+          "name": "Dépannage",
+          "url": "/"
+        }
+      ]
+    },
+    "company": {
+      "title": "Ressources",
+      "links": [
+        {
+          "name": "Centre de documentation",
+          "url": "/docs/"
+        },
+        {
+          "name": "Galerie de thèmes",
+          "url": "/"
+        },
+        {
+          "name": "Bonnes pratiques",
+          "url": "/"
+        },
+        {
+          "name": "Conseils de performance",
+          "url": "/"
+        },
+        {
+          "name": "Guide de migration",
+          "url": "/"
+        }
+      ]
+    }
+  }
+}

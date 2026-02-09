@@ -47,6 +47,9 @@ type Executor struct {
 	mu        sync.RWMutex
 }
 
+// Compile-time interface check.
+var _ workflow.DurableExecutor = (*Executor)(nil)
+
 // NewExecutor creates a new Temporal-backed DurableExecutor.
 func NewExecutor(cfg Config) (*Executor, error) {
 	if cfg.Client == nil {
@@ -150,6 +153,9 @@ type temporalHandle struct {
 	id     string
 	runID  string
 }
+
+// Compile-time interface check.
+var _ workflow.WorkflowHandle = (*temporalHandle)(nil)
 
 func (h *temporalHandle) ID() string    { return h.id }
 func (h *temporalHandle) RunID() string { return h.runID }

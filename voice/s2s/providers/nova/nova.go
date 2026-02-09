@@ -33,6 +33,8 @@ const (
 	defaultBaseURL = "wss://bedrock-runtime.%s.amazonaws.com/model/%s/converse-stream"
 )
 
+var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	s2s.Register("nova", func(cfg s2s.Config) (s2s.S2S, error) {
 		return New(cfg)

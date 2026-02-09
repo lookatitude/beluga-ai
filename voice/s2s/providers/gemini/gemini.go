@@ -31,6 +31,8 @@ const (
 	defaultModel   = "gemini-2.0-flash-exp"
 )
 
+var _ s2s.S2S = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	s2s.Register("gemini_live", func(cfg s2s.Config) (s2s.S2S, error) {
 		return New(cfg)

@@ -411,3 +411,156 @@ func TestFanOut(t *testing.T) {
 		}
 	}
 }
+
+func TestFlowController(t *testing.T) {
+	t.Run("basic_acquire_release", func(t *testing.T) {
+		fc := NewFlowController(2)
+		ctx := context.Background()
+
+		// Acquire twice should succeed.
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("first Acquire() error = %v", err)
+		}
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("second Acquire() error = %v", err)
+		}
+
+		// Release twice to free capacity.
+		fc.Release()
+		fc.Release()
+
+		// Acquire again should work.
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("third Acquire() error = %v", err)
+		}
+		fc.Release()
+	})
+
+	t.Run("try_acquire_when_full", func(t *testing.T) {
+		fc := NewFlowController(1)
+		ctx := context.Background()
+
+		// First acquire should succeed.
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("Acquire() error = %v", err)
+		}
+
+		// TryAcquire should fail when full.
+		if ok := fc.TryAcquire(); ok {
+			t.Error("TryAcquire() = true, want false (flow controller is full)")
+		}
+
+		// After release, TryAcquire should succeed.
+		fc.Release()
+		if ok := fc.TryAcquire(); !ok {
+			t.Error("TryAcquire() = false, want true (capacity available)")
+		}
+
+		fc.Release()
+	})
+
+	t.Run("try_acquire_when_available", func(t *testing.T) {
+		fc := NewFlowController(3)
+
+		// TryAcquire should succeed when capacity is available.
+		if ok := fc.TryAcquire(); !ok {
+			t.Error("TryAcquire() = false, want true")
+		}
+		if ok := fc.TryAcquire(); !ok {
+			t.Error("TryAcquire() = false, want true")
+		}
+
+		fc.Release()
+		fc.Release()
+	})
+
+	t.Run("context_cancellation_during_acquire", func(t *testing.T) {
+		fc := NewFlowController(1)
+		ctx, cancel := context.WithCancel(context.Background())
+
+		// Fill the controller.
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("Acquire() error = %v", err)
+		}
+
+		// Start a goroutine that tries to acquire (will block).
+		errCh := make(chan error, 1)
+		go func() {
+			errCh <- fc.Acquire(ctx)
+		}()
+
+		// Cancel the context.
+		cancel()
+
+		// The blocked acquire should return context.Canceled.
+		err := <-errCh
+		if err != context.Canceled {
+			t.Errorf("Acquire() error = %v, want context.Canceled", err)
+		}
+
+		fc.Release()
+	})
+
+	t.Run("concurrency_safety", func(t *testing.T) {
+		fc := NewFlowController(10)
+		ctx := context.Background()
+
+		const goroutines = 20
+		const opsPerGoroutine = 50
+
+		// Launch multiple goroutines that acquire and release concurrently.
+		errCh := make(chan error, goroutines)
+		for i := 0; i < goroutines; i++ {
+			go func() {
+				for j := 0; j < opsPerGoroutine; j++ {
+					if err := fc.Acquire(ctx); err != nil {
+						errCh <- err
+						return
+					}
+					// Simulate some work.
+					fc.Release()
+				}
+				errCh <- nil
+			}()
+		}
+
+		// Wait for all goroutines to complete.
+		for i := 0; i < goroutines; i++ {
+			if err := <-errCh; err != nil {
+				t.Errorf("goroutine error: %v", err)
+			}
+		}
+	})
+
+	t.Run("max_concurrency_clamped_to_1", func(t *testing.T) {
+		fc := NewFlowController(0)
+		ctx := context.Background()
+
+		// Should allow at least 1 acquisition.
+		if err := fc.Acquire(ctx); err != nil {
+			t.Fatalf("Acquire() error = %v (maxConcurrency should be clamped to 1)", err)
+		}
+
+		// Second acquire should block (but we use TryAcquire to test).
+		if ok := fc.TryAcquire(); ok {
+			t.Error("TryAcquire() = true, want false (maxConcurrency=1)")
+			fc.Release()
+		}
+
+		fc.Release()
+	})
+
+	t.Run("multiple_release_doesnt_panic", func(t *testing.T) {
+		fc := NewFlowController(1)
+
+		// Release without acquire should not panic (graceful handling).
+		defer func() {
+			if r := recover(); r != nil {
+				t.Errorf("Release() panicked: %v", r)
+			}
+		}()
+
+		fc.Release()
+		fc.Release()
+	})
+}

@@ -32,6 +32,8 @@ const (
 	defaultModel   = "nova-2"
 )
 
+var _ stt.STT = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	stt.Register("deepgram", func(cfg stt.Config) (stt.STT, error) {
 		return New(cfg)

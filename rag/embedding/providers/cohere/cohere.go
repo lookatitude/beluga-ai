@@ -50,6 +50,9 @@ type Embedder struct {
 	inputType string
 }
 
+// Compile-time interface check.
+var _ embedding.Embedder = (*Embedder)(nil)
+
 // New creates a new Cohere Embedder from a ProviderConfig.
 func New(cfg config.ProviderConfig) (*Embedder, error) {
 	model := cfg.Model

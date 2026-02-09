@@ -1,0 +1,89 @@
+name: Fuzzing
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # Nightly at 2am UTC
+  workflow_dispatch:
+    inputs:
+      fuzz_time:
+        description: "Fuzz duration per target (e.g. 5m, 30m)"
+        required: false
+        default: "5m"
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  GO_VERSION: "1.25.7"
+
+jobs:
+  fuzz:
+    name: Go Native Fuzzing
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Find fuzz targets
+        id: find_targets
+        run: |
+          TARGETS=$(grep -r "func Fuzz" --include="*_test.go" -l . 2>/dev/null || true)
+          if [ -z "$TARGETS" ]; then
+            echo "No fuzz targets found"
+            echo "has_targets=false" >> $GITHUB_OUTPUT
+          else
+            echo "Found fuzz targets:"
+            echo "$TARGETS"
+            echo "has_targets=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run fuzz tests
+        if: steps.find_targets.outputs.has_targets == 'true'
+        id: fuzz_run
+        continue-on-error: true
+        run: |
+          FUZZ_TIME="${{ github.event.inputs.fuzz_time || '5m' }}"
+          FAILED=0
+
+          for dir in $(grep -r "func Fuzz" --include="*_test.go" -l . | xargs -I{} dirname {} | sort -u); do
+            echo "=== Fuzzing $dir ==="
+            for target in $(grep -h "func Fuzz" "$dir"/*_test.go 2>/dev/null | sed 's/func \(Fuzz[a-zA-Z0-9_]*\).*/\1/'); do
+              echo "--- Target: $target ---"
+              if ! go test "./$dir" -fuzz="^${target}$" -fuzztime="$FUZZ_TIME" -race 2>&1; then
+                FAILED=$((FAILED + 1))
+                echo "FAILED: $dir/$target"
+              fi
+            done
+          done
+
+          if [ "$FAILED" -gt 0 ]; then
+            echo "fuzz_failures=$FAILED" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+      - name: Upload fuzz corpus on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fuzz-corpus
+          path: "**/testdata/fuzz/**"
+
+      - name: Create issue on fuzz failure
+        if: failure() && steps.find_targets.outputs.has_targets == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failures = '${{ steps.fuzz_run.outputs.fuzz_failures }}' || 'unknown';
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Fuzz testing failure: ${failures} target(s) crashed`,
+              body: `Nightly fuzz testing detected ${failures} crash(es).\n\n` +
+                    `**Run:** ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\n` +
+                    `Please investigate the fuzz corpus artifact for reproduction steps.`,
+              labels: ['bug', 'fuzzing']
+            });

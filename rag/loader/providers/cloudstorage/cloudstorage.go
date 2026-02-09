@@ -44,6 +44,9 @@ type Loader struct {
 	region     string
 }
 
+// Compile-time interface check.
+var _ loader.DocumentLoader = (*Loader)(nil)
+
 // New creates a new cloud storage document loader.
 func New(cfg config.ProviderConfig) (*Loader, error) {
 	timeout := cfg.Timeout

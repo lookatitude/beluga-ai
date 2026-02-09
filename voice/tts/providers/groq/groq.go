@@ -30,6 +30,8 @@ const (
 	defaultModel   = "playai-tts"
 )
 
+var _ tts.TTS = (*Engine)(nil) // compile-time interface check
+
 func init() {
 	tts.Register("groq", func(cfg tts.Config) (tts.TTS, error) {
 		return New(cfg)

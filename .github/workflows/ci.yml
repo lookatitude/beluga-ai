@@ -1,0 +1,274 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.25.7"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    outputs:
+      lint_status: ${{ steps.lint_result.outputs.status }}
+      lint_issues_count: ${{ steps.lint_result.outputs.issues_count }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        id: golangci
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --out-format=json > lint-report.json || true
+
+      - name: Parse lint results
+        id: lint_result
+        if: always()
+        run: |
+          if [ -f lint-report.json ]; then
+            ISSUES=$(jq '.Issues | length // 0' lint-report.json 2>/dev/null || echo "0")
+          else
+            ISSUES=0
+          fi
+          if [ "${{ steps.golangci.outcome }}" = "success" ]; then
+            echo "status=passing" >> $GITHUB_OUTPUT
+          else
+            echo "status=failing" >> $GITHUB_OUTPUT
+          fi
+          echo "issues_count=${ISSUES}" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build all packages
+        run: go build ./...
+
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+  test:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      test_status: ${{ steps.test_result.outputs.status }}
+      test_count: ${{ steps.test_result.outputs.test_count }}
+      coverage_pct: ${{ steps.test_result.outputs.coverage_pct }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run tests with coverage
+        id: run_tests
+        run: |
+          go test -race -coverprofile=coverage.out -covermode=atomic -json ./... > test-output.json 2>&1 || true
+
+      - name: Parse test results
+        id: test_result
+        if: always()
+        run: |
+          # Count tests
+          TEST_COUNT=$(grep -c '"Test":' test-output.json 2>/dev/null | head -1 || echo "0")
+          PASS_COUNT=$(grep -c '"Action":"pass"' test-output.json 2>/dev/null || echo "0")
+          FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || echo "0")
+
+          # Get coverage percentage
+          if [ -f coverage.out ]; then
+            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          else
+            COVERAGE="0"
+          fi
+
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "status=failing" >> $GITHUB_OUTPUT
+          else
+            echo "status=passing" >> $GITHUB_OUTPUT
+          fi
+          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
+          echo "coverage_pct=${COVERAGE}" >> $GITHUB_OUTPUT
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.json
+
+  integration-test:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      integration_status: ${{ steps.integration_result.outputs.status }}
+      integration_count: ${{ steps.integration_result.outputs.test_count }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run integration tests
+        id: run_integration
+        run: |
+          go test -race -tags integration -json ./... > integration-output.json 2>&1 || true
+
+      - name: Parse integration results
+        id: integration_result
+        if: always()
+        run: |
+          TEST_COUNT=$(grep -c '"Test":' integration-output.json 2>/dev/null | head -1 || echo "0")
+          FAIL_COUNT=$(grep -c '"Action":"fail"' integration-output.json 2>/dev/null || echo "0")
+
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "status=failing" >> $GITHUB_OUTPUT
+          else
+            echo "status=passing" >> $GITHUB_OUTPUT
+          fi
+          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v5
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  generate-quality-report:
+    name: Generate CODE-QUALITY.md
+    needs: [lint, test, integration-test]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+        continue-on-error: true
+
+      - name: Generate CODE-QUALITY.md
+        run: |
+          cat > CODE-QUALITY.md << 'HEADER'
+          # Code Quality Report
+
+          > Auto-generated by CI pipeline. Do not edit manually.
+
+          HEADER
+
+          TIMESTAMP=$(date -u '+%Y-%m-%d %H:%M UTC')
+          echo "**Last updated:** ${TIMESTAMP}" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+
+          # Linting section
+          echo "## Linting" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          LINT_STATUS="${{ needs.lint.outputs.lint_status }}"
+          LINT_ISSUES="${{ needs.lint.outputs.lint_issues_count }}"
+          if [ "$LINT_STATUS" = "passing" ]; then
+            echo "**Status:** Passing" >> CODE-QUALITY.md
+          else
+            echo "**Status:** Failing" >> CODE-QUALITY.md
+          fi
+          echo "**Issues found:** ${LINT_ISSUES:-0}" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          echo "**Linters enabled:** gosec, govet, staticcheck, errcheck, ineffassign, unused, gofmt, goimports, misspell, revive, bodyclose, noctx, gocritic" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+
+          # Unit tests section
+          echo "## Unit Tests" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          TEST_STATUS="${{ needs.test.outputs.test_status }}"
+          TEST_COUNT="${{ needs.test.outputs.test_count }}"
+          COVERAGE="${{ needs.test.outputs.coverage_pct }}"
+          if [ "$TEST_STATUS" = "passing" ]; then
+            echo "**Status:** Passing" >> CODE-QUALITY.md
+          else
+            echo "**Status:** Failing" >> CODE-QUALITY.md
+          fi
+          echo "**Total tests:** ${TEST_COUNT:-0}" >> CODE-QUALITY.md
+          echo "**Coverage:** ${COVERAGE:-0}%" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+
+          # Integration tests section
+          echo "## Integration Tests" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          INT_STATUS="${{ needs.integration-test.outputs.integration_status }}"
+          INT_COUNT="${{ needs.integration-test.outputs.integration_count }}"
+          if [ "$INT_STATUS" = "passing" ]; then
+            echo "**Status:** Passing" >> CODE-QUALITY.md
+          else
+            echo "**Status:** Failing" >> CODE-QUALITY.md
+          fi
+          echo "**Total tests:** ${INT_COUNT:-0}" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+
+          # Build checks section
+          echo "## Build Checks" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          echo "| Check | Status |" >> CODE-QUALITY.md
+          echo "|-------|--------|" >> CODE-QUALITY.md
+          echo "| go vet | Passing |" >> CODE-QUALITY.md
+          echo "| go build | Passing |" >> CODE-QUALITY.md
+          echo "| go mod tidy | Clean |" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+
+          # SonarCloud link
+          echo "## SonarCloud" >> CODE-QUALITY.md
+          echo "" >> CODE-QUALITY.md
+          echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)" >> CODE-QUALITY.md
+
+      - name: Commit CODE-QUALITY.md
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(ci): update CODE-QUALITY.md [skip ci]"
+          file_pattern: CODE-QUALITY.md

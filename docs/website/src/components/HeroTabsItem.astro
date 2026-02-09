@@ -1,0 +1,45 @@
+---
+import { Image } from "astro:assets";
+import ImageMod from "./ImageMod.astro";
+
+interface Props {
+  title: string;
+  subtitle: string;
+  number: number;
+  image: string;
+  imageAlt: string;
+  isActive?: boolean;
+}
+
+const {
+  title,
+  subtitle,
+  number,
+  image,
+  imageAlt,
+  isActive = false,
+} = Astro.props;
+---
+
+<div class="hero-tab-item">
+  <div class="hero-tab-nav" data-active={isActive}>
+    <button class="tab-button" data-tab={number}>
+      <span class="tab-number">{number}</span>
+      <div class="tab-content">
+        <h3 class="tab-title">{title}</h3>
+        <p class="tab-subtitle">{subtitle}</p>
+      </div>
+    </button>
+  </div>
+
+  <div class="hero-tab-content" data-panel={number} data-active={isActive}>
+    <ImageMod
+      src={image}
+      alt={imageAlt}
+      class="tab-image w-full"
+      height={1400}
+      width={2000}
+    />
+
+  </div>
+</div>
