@@ -6,93 +6,81 @@
     },
     {
       "name": "Documentation",
-      "url": "/fr/getting-started/introduction/overview/"
+      "url": "/getting-started/overview/"
     },
     {
-      "name": "Référence",
+      "name": "Guides",
       "url": "",
       "hasChildren": true,
       "children": [
         {
-          "name": "Configuration",
-          "url": "/fr/reference/configuration/"
+          "name": "Commencer",
+          "url": "/getting-started/quick-start/"
         },
         {
-          "name": "Référence des plugins",
-          "url": "/fr/reference/plugin/"
+          "name": "Premier Agent",
+          "url": "/guides/first-agent/"
         }
       ]
     }
   ],
   "footer": {
     "community": {
-      "title": "Rejoignez notre communauté",
+      "title": "Communauté",
       "links": [
         {
           "name": "Discussions GitHub",
-          "url": "https://github.com/themefisher/dockit/discussions"
+          "url": "https://github.com/lookatitude/beluga-ai/discussions"
         },
         {
-          "name": "Communauté Discord",
-          "url": "/"
-        },
-        {
-          "name": "Mises à jour Twitter",
-          "url": "/"
+          "name": "Issues GitHub",
+          "url": "https://github.com/lookatitude/beluga-ai/issues"
         },
         {
           "name": "Guide de contribution",
-          "url": "/"
+          "url": "https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md"
         }
       ]
     },
     "help_links": {
-      "title": "Liens utiles",
+      "title": "Ressources",
       "links": [
         {
           "name": "Commencer",
-          "url": "/"
+          "url": "/getting-started/overview/"
         },
         {
-          "name": "Référence API",
-          "url": "/"
+          "name": "Guides",
+          "url": "/guides/first-agent/"
         },
         {
-          "name": "Exemples et démos",
-          "url": "/"
+          "name": "Cookbook",
+          "url": "/cookbook/agent-recipes/"
         },
         {
-          "name": "Personnalisation du thème",
-          "url": "/"
-        },
-        {
-          "name": "Dépannage",
-          "url": "/"
+          "name": "Cas d'usage",
+          "url": "/use-cases/enterprise-rag/"
         }
       ]
     },
     "company": {
-      "title": "Ressources",
+      "title": "Documentation",
       "links": [
         {
-          "name": "Centre de documentation",
-          "url": "/docs/"
+          "name": "Architecture",
+          "url": "/architecture/concepts/"
         },
         {
-          "name": "Galerie de thèmes",
-          "url": "/"
+          "name": "Fournisseurs",
+          "url": "/providers/"
         },
         {
-          "name": "Bonnes pratiques",
-          "url": "/"
+          "name": "Intégrations",
+          "url": "/integrations/llm-providers/"
         },
         {
-          "name": "Conseils de performance",
-          "url": "/"
-        },
-        {
-          "name": "Guide de migration",
-          "url": "/"
+          "name": "Référence API",
+          "url": "/api-reference/"
         }
       ]
     }

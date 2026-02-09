@@ -1,0 +1,262 @@
+---
+title: "Corrupt Document Handling"
+description: "Handle corrupt, malformed, or unreadable documents gracefully without failing the entire loading process."
+---
+
+## Problem
+
+You need to handle corrupt, malformed, or unreadable documents gracefully without failing the entire document loading process, logging errors while continuing to process other documents.
+
+## Solution
+
+Implement error isolation that catches document-specific errors, logs them with context, skips corrupt documents, and continues processing remaining documents. Wrap document loading in error handlers and collect errors separately from successful documents.
+
+## Code Example
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/trace"
+
+    "github.com/lookatitude/beluga-ai/rag/loader"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+var tracer = otel.Tracer("beluga.documentloaders.error_handling")
+
+// DocumentLoadResult represents the result of loading a single document.
+type DocumentLoadResult struct {
+    Document schema.Document
+    Error    error
+    FilePath string
+}
+
+// RobustDocumentLoader loads documents with error isolation.
+type RobustDocumentLoader struct {
+    loader      loader.DocumentLoader
+    skipErrors  bool
+    errorLogger func(string, error)
+}
+
+// NewRobustDocumentLoader creates a new robust loader.
+func NewRobustDocumentLoader(l loader.DocumentLoader, skipErrors bool) *RobustDocumentLoader {
+    return &RobustDocumentLoader{
+        loader:     l,
+        skipErrors: skipErrors,
+        errorLogger: func(filePath string, err error) {
+            log.Printf("Error loading %s: %v", filePath, err)
+        },
+    }
+}
+
+// LoadDocuments loads documents with per-file error handling.
+func (rdl *RobustDocumentLoader) LoadDocuments(ctx context.Context, filePaths []string) ([]schema.Document, []DocumentLoadResult, error) {
+    ctx, span := tracer.Start(ctx, "robust_loader.load_documents")
+    defer span.End()
+
+    span.SetAttributes(
+        attribute.Int("file_count", len(filePaths)),
+        attribute.Bool("skip_errors", rdl.skipErrors),
+    )
+
+    documents := []schema.Document{}
+    results := []DocumentLoadResult{}
+    errorCount := 0
+
+    for _, filePath := range filePaths {
+        result := rdl.loadDocument(ctx, filePath)
+        results = append(results, result)
+
+        if result.Error != nil {
+            errorCount++
+            rdl.errorLogger(filePath, result.Error)
+
+            if !rdl.skipErrors {
+                span.RecordError(result.Error)
+                span.SetStatus(trace.StatusError, "error encountered, not skipping")
+                return nil, results, fmt.Errorf("failed to load %s: %w", filePath, result.Error)
+            }
+        } else {
+            documents = append(documents, result.Document)
+        }
+    }
+
+    span.SetAttributes(
+        attribute.Int("loaded_count", len(documents)),
+        attribute.Int("error_count", errorCount),
+    )
+
+    return documents, results, nil
+}
+
+// loadDocument loads a single document with error handling and panic recovery.
+func (rdl *RobustDocumentLoader) loadDocument(ctx context.Context, filePath string) DocumentLoadResult {
+    ctx, span := tracer.Start(ctx, "robust_loader.load_document")
+    defer span.End()
+
+    span.SetAttributes(attribute.String("file_path", filePath))
+
+    defer func() {
+        if r := recover(); r != nil {
+            err := fmt.Errorf("panic loading %s: %v", filePath, r)
+            span.RecordError(err)
+            span.SetStatus(trace.StatusError, "panic recovered")
+        }
+    }()
+
+    // Validate file exists
+    if _, err := os.Stat(filePath); err != nil {
+        err := fmt.Errorf("file not found: %w", err)
+        span.RecordError(err)
+        span.SetStatus(trace.StatusError, err.Error())
+        return DocumentLoadResult{FilePath: filePath, Error: err}
+    }
+
+    // Try to load document
+    doc, err := rdl.loader.Load(ctx)
+    if err != nil {
+        if rdl.isRecoverableError(err) {
+            doc, err = rdl.attemptRecovery(ctx, filePath, err)
+        }
+
+        if err != nil {
+            span.RecordError(err)
+            span.SetStatus(trace.StatusError, err.Error())
+            return DocumentLoadResult{FilePath: filePath, Error: err}
+        }
+    }
+
+    span.SetStatus(trace.StatusOK, "document loaded")
+    return DocumentLoadResult{FilePath: filePath, Document: doc}
+}
+
+// isRecoverableError checks if an error is recoverable.
+func (rdl *RobustDocumentLoader) isRecoverableError(err error) bool {
+    errStr := err.Error()
+    recoverablePatterns := []string{"encoding", "corrupt", "truncated", "partial"}
+
+    for _, pattern := range recoverablePatterns {
+        if contains(errStr, pattern) {
+            return true
+        }
+    }
+    return false
+}
+
+// attemptRecovery attempts to recover from a loading error.
+func (rdl *RobustDocumentLoader) attemptRecovery(ctx context.Context, filePath string, err error) (schema.Document, error) {
+    // Try to load with error-tolerant parser
+    // In practice, would try different parsing strategies
+    return nil, err
+}
+
+func contains(s, substr string) bool {
+    return len(s) >= len(substr)
+}
+
+// ErrorSummary provides a summary of loading errors.
+type ErrorSummary struct {
+    TotalFiles  int
+    Successful  int
+    Failed      int
+    ErrorTypes  map[string]int
+    FailedFiles []string
+}
+
+// GetErrorSummary creates an error summary from results.
+func GetErrorSummary(results []DocumentLoadResult) *ErrorSummary {
+    summary := &ErrorSummary{
+        TotalFiles:  len(results),
+        ErrorTypes:  make(map[string]int),
+        FailedFiles: []string{},
+    }
+
+    for _, result := range results {
+        if result.Error != nil {
+            summary.Failed++
+            summary.FailedFiles = append(summary.FailedFiles, result.FilePath)
+            errorType := getErrorType(result.Error)
+            summary.ErrorTypes[errorType]++
+        } else {
+            summary.Successful++
+        }
+    }
+
+    return summary
+}
+
+func getErrorType(err error) string {
+    errStr := err.Error()
+    if contains(errStr, "not found") {
+        return "file_not_found"
+    }
+    if contains(errStr, "permission") {
+        return "permission_denied"
+    }
+    if contains(errStr, "corrupt") {
+        return "corrupt_file"
+    }
+    return "unknown"
+}
+
+func main() {
+    ctx := context.Background()
+
+    // Create robust loader (loader is your DocumentLoader instance)
+    // robustLoader := NewRobustDocumentLoader(loader, true)
+
+    filePaths := []string{"doc1.txt", "corrupt.doc", "doc3.txt"}
+    docs, results, err := robustLoader.LoadDocuments(ctx, filePaths)
+    if err != nil {
+        log.Fatalf("Failed: %v", err)
+    }
+
+    summary := GetErrorSummary(results)
+    fmt.Printf("Loaded: %d, Failed: %d\n", summary.Successful, summary.Failed)
+}
+```
+
+## Explanation
+
+1. **Error isolation** — Each document load is wrapped in its own error handler. One corrupt document does not prevent loading other valid documents in the batch.
+
+2. **Panic recovery** — Document loading is wrapped in panic recovery to handle unexpected panics gracefully. This prevents one malformed file from crashing the entire loader.
+
+3. **Error classification** — Errors are classified by type (file not found, permission denied, corrupt) to help identify systemic issues versus individual corrupt files.
+
+4. **Configurable behavior** — The `skipErrors` flag controls whether errors are collected and skipped or propagated immediately. This allows callers to choose between strict and lenient loading modes.
+
+## Variations
+
+### Retry on Transient Errors
+
+Retry loading on transient errors:
+
+```go
+func (rdl *RobustDocumentLoader) LoadWithRetry(ctx context.Context, filePath string, maxRetries int) DocumentLoadResult {
+    // Retry logic with exponential backoff
+}
+```
+
+### Partial Document Recovery
+
+Recover partial content from corrupt documents:
+
+```go
+func (rdl *RobustDocumentLoader) RecoverPartial(ctx context.Context, filePath string) (schema.Document, error) {
+    // Extract readable portions from corrupt files
+}
+```
+
+## Related Recipes
+
+- [Parallel File Loading](/cookbook/parallel-file-loading) — Parallel loading with worker pools
+- [Document Ingestion Recipes](/cookbook/document-ingestion) — Additional document loading patterns

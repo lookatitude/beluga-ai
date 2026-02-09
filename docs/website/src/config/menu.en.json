@@ -6,93 +6,81 @@
     },
     {
       "name": "Documentation",
-      "url": "/getting-started/introduction/overview/"
+      "url": "/getting-started/overview/"
     },
     {
-      "name": "Reference",
+      "name": "Guides",
       "url": "",
       "hasChildren": true,
       "children": [
         {
-          "name": "Configuration",
-          "url": "/reference/configuration/"
+          "name": "Getting Started",
+          "url": "/getting-started/quick-start/"
         },
         {
-          "name": "Plugins Reference",
-          "url": "/reference/plugin/"
+          "name": "Build Your First Agent",
+          "url": "/guides/first-agent/"
         }
       ]
     }
   ],
   "footer": {
     "community": {
-      "title": "Join Our Community",
+      "title": "Community",
       "links": [
         {
           "name": "GitHub Discussions",
-          "url": "https://github.com/themefisher/dockit/discussions"
+          "url": "https://github.com/lookatitude/beluga-ai/discussions"
         },
         {
-          "name": "Discord Community",
-          "url": "/"
-        },
-        {
-          "name": "Twitter Updates",
-          "url": "/"
+          "name": "GitHub Issues",
+          "url": "https://github.com/lookatitude/beluga-ai/issues"
         },
         {
           "name": "Contributing Guide",
-          "url": "/"
+          "url": "https://github.com/lookatitude/beluga-ai/blob/main/CONTRIBUTING.md"
         }
       ]
     },
     "help_links": {
-      "title": "Helpful Links",
+      "title": "Resources",
       "links": [
         {
           "name": "Getting Started",
-          "url": "/"
+          "url": "/getting-started/overview/"
         },
         {
-          "name": "Privacy Policy",
-          "url": "/privacy-policy"
+          "name": "Guides",
+          "url": "/guides/first-agent/"
         },
         {
-          "name": "Terms and Conditions",
-          "url": "/terms-conditions"
+          "name": "Cookbook",
+          "url": "/cookbook/agent-recipes/"
         },
         {
-          "name": "About Us",
-          "url": "/about"
-        },
-        {
-          "name": "Troubleshooting",
-          "url": "/"
+          "name": "Use Cases",
+          "url": "/use-cases/enterprise-rag/"
         }
       ]
     },
     "company": {
-      "title": "Resources",
+      "title": "Documentation",
       "links": [
         {
-          "name": "Documentation Hub",
-          "url": "/docs/"
+          "name": "Architecture",
+          "url": "/architecture/concepts/"
         },
         {
-          "name": "Theme Gallery",
-          "url": "/"
+          "name": "Providers",
+          "url": "/providers/"
         },
         {
-          "name": "Best Practices",
-          "url": "/"
+          "name": "Integrations",
+          "url": "/integrations/llm-providers/"
         },
         {
-          "name": "Performance Tips",
-          "url": "/"
-        },
-        {
-          "name": "Migration Guide",
-          "url": "/"
+          "name": "API Reference",
+          "url": "/api-reference/"
         }
       ]
     }

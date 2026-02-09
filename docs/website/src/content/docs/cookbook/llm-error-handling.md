@@ -1,0 +1,211 @@
+---
+title: "LLM Error Handling"
+description: "Handle rate limits, timeouts, and API errors with retry logic and exponential backoff."
+---
+
+## Problem
+
+You are calling an LLM API and need to handle rate limits, timeouts, and API errors gracefully without crashing your application or losing user requests.
+
+## Solution
+
+Implement a layered error handling strategy with retry logic, exponential backoff, and proper error classification. Transient errors are retried automatically while permanent errors fail fast with clear messages.
+
+## Code Example
+
+```go
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"log"
+	"math/rand"
+	"strings"
+	"time"
+
+	"github.com/lookatitude/beluga-ai/core"
+	"github.com/lookatitude/beluga-ai/llm"
+	"github.com/lookatitude/beluga-ai/schema"
+)
+
+// RetryConfig configures retry behavior for LLM calls.
+type RetryConfig struct {
+	MaxRetries     int
+	InitialBackoff time.Duration
+	MaxBackoff     time.Duration
+	BackoffFactor  float64
+	Jitter         float64
+}
+
+var DefaultRetryConfig = RetryConfig{
+	MaxRetries:     3,
+	InitialBackoff: 1 * time.Second,
+	MaxBackoff:     30 * time.Second,
+	BackoffFactor:  2.0,
+	Jitter:         0.1,
+}
+
+// LLMClient wraps an LLM with retry and error handling.
+type LLMClient struct {
+	model  llm.ChatModel
+	config RetryConfig
+}
+
+func NewLLMClient(model llm.ChatModel, config RetryConfig) *LLMClient {
+	return &LLMClient{model: model, config: config}
+}
+
+// GenerateWithRetry calls the LLM with automatic retry on transient errors.
+func (c *LLMClient) GenerateWithRetry(ctx context.Context, messages []schema.Message) (schema.Message, error) {
+	var lastErr error
+	backoff := c.config.InitialBackoff
+
+	for attempt := 0; attempt <= c.config.MaxRetries; attempt++ {
+		if ctx.Err() != nil {
+			return nil, fmt.Errorf("context cancelled before attempt %d: %w", attempt, ctx.Err())
+		}
+
+		response, err := c.model.Generate(ctx, messages)
+		if err == nil {
+			return response, nil
+		}
+
+		lastErr = err
+
+		if !isRetryable(err) {
+			return nil, fmt.Errorf("permanent error (not retrying): %w", err)
+		}
+
+		if attempt < c.config.MaxRetries {
+			jitteredBackoff := c.calculateBackoff(backoff)
+			log.Printf("LLM call failed (attempt %d/%d): %v. Retrying in %v",
+				attempt+1, c.config.MaxRetries+1, err, jitteredBackoff)
+
+			select {
+			case <-ctx.Done():
+				return nil, fmt.Errorf("context cancelled during backoff: %w", ctx.Err())
+			case <-time.After(jitteredBackoff):
+			}
+
+			backoff = time.Duration(float64(backoff) * c.config.BackoffFactor)
+			if backoff > c.config.MaxBackoff {
+				backoff = c.config.MaxBackoff
+			}
+		}
+	}
+
+	return nil, fmt.Errorf("max retries (%d) exceeded: %w", c.config.MaxRetries, lastErr)
+}
+
+func (c *LLMClient) calculateBackoff(base time.Duration) time.Duration {
+	if c.config.Jitter == 0 {
+		return base
+	}
+	jitter := float64(base) * c.config.Jitter * (rand.Float64()*2 - 1)
+	return time.Duration(float64(base) + jitter)
+}
+
+func isRetryable(err error) bool {
+	if core.IsRetryable(err) {
+		return true
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		return false
+	}
+
+	errMsg := strings.ToLower(err.Error())
+	retryablePatterns := []string{
+		"rate limit", "429", "too many requests",
+		"temporarily unavailable", "service unavailable", "503",
+		"connection reset", "connection refused", "timeout",
+	}
+	for _, pattern := range retryablePatterns {
+		if strings.Contains(errMsg, pattern) {
+			return true
+		}
+	}
+	return false
+}
+
+func main() {
+	ctx := context.Background()
+
+	model, err := llm.New("openai", llm.ProviderConfig{
+		APIKey: "your-api-key",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create LLM: %v", err)
+	}
+
+	client := NewLLMClient(model, DefaultRetryConfig)
+
+	messages := []schema.Message{
+		schema.NewHumanMessage("Hello, how are you?"),
+	}
+
+	response, err := client.GenerateWithRetry(ctx, messages)
+	if err != nil {
+		log.Fatalf("LLM call failed: %v", err)
+	}
+
+	fmt.Printf("Response: %s\n", response.GetContent())
+}
+```
+
+## Explanation
+
+1. **Error classification** -- The `isRetryable` function checks Beluga AI's error types using `core.IsRetryable()`. Rate limits and server errors are retried; authentication errors and client errors are not. This avoids wasting time on errors that will never succeed.
+
+2. **Exponential backoff with jitter** -- The backoff doubles each time (1s, 2s, 4s...) but never exceeds `MaxBackoff`. Random jitter prevents multiple clients from retrying simultaneously, which would cause another rate limit spike.
+
+3. **Context awareness** -- The function checks `ctx.Err()` before each attempt and during backoff waits. This respects timeouts and cancellations from the calling code.
+
+**Key insight:** Always classify errors before retrying. Retrying authentication errors wastes API calls and delays the real fix.
+
+## Variations
+
+### Circuit Breaker Pattern
+
+If experiencing sustained failures, add a circuit breaker to stop retrying entirely:
+
+```go
+type CircuitBreaker struct {
+	failures    int
+	lastFailure time.Time
+	threshold   int
+	resetAfter  time.Duration
+}
+
+func (cb *CircuitBreaker) Allow() bool {
+	if cb.failures >= cb.threshold {
+		if time.Since(cb.lastFailure) < cb.resetAfter {
+			return false // Circuit is open
+		}
+		cb.failures = 0 // Reset after cooldown
+	}
+	return true
+}
+```
+
+### Fallback Response
+
+For non-critical features, provide a fallback when the LLM is unavailable:
+
+```go
+func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.Message, fallback string) string {
+	response, err := c.GenerateWithRetry(ctx, messages)
+	if err != nil {
+		log.Printf("LLM failed, using fallback: %v", err)
+		return fallback
+	}
+	return response.GetContent()
+}
+```
+
+## Related Recipes
+
+- **[Custom Agent Patterns](./custom-agent-patterns)** -- Use error handling in custom agents
+- **[Global Retry Wrappers](./global-retry)** -- Framework-level retry strategies
+- **[Context Timeout Management](./context-timeout)** -- Timeout handling for operations

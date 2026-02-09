@@ -1,14 +1,14 @@
 ---
 title: |
-  Ready to explore <span class='light-text'>Dockit experience? </span>
-description: Discover tips, resources, and guidance to maximize experience with our documentation.
+  Ready to build <span class='light-text'>production AI agents?</span>
+description: Get started with Beluga AI in minutes. Comprehensive guides, recipes, and real-world examples to accelerate your development.
 enable: true
 fill_button:
   enable: true
   label: Get Started
-  link: /getting-started/introduction/overview/
+  link: /getting-started/overview/
 outline_button:
   enable: true
-  label: View Docs
-  link: /getting-started/introduction/overview/
+  label: View Guides
+  link: /guides/first-agent/
 ---

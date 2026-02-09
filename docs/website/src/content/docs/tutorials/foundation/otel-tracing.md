@@ -1,0 +1,179 @@
+---
+title: OpenTelemetry Tracing
+description: Implement distributed tracing in Beluga AI applications using OpenTelemetry and the GenAI semantic conventions.
+---
+
+Metrics tell you what happened (error rate increased). Traces tell you why (Agent A called Tool B, which timed out calling API C). In complex AI workflows with multiple LLM calls, tool invocations, and retrieval steps, distributed tracing is essential for debugging and performance analysis.
+
+Beluga AI uses the OpenTelemetry GenAI semantic conventions (`gen_ai.*` attribute namespace) for LLM observability.
+
+## What You Will Build
+
+An instrumented application with OpenTelemetry tracing, including custom spans, automatic LLM instrumentation, and Jaeger visualization.
+
+## Prerequisites
+
+- Go 1.23+
+- Docker (for running Jaeger)
+
+## Step 1: Install Dependencies
+
+```bash
+go get go.opentelemetry.io/otel
+go get go.opentelemetry.io/otel/sdk
+go get go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
+```
+
+## Step 2: Initialize the Tracer Provider
+
+Set up an OTLP exporter that sends traces to a collector (Jaeger, Grafana Tempo, etc.):
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "go.opentelemetry.io/otel"
+    "go.opentelemetry.io/otel/attribute"
+    "go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
+    "go.opentelemetry.io/otel/sdk/resource"
+    sdktrace "go.opentelemetry.io/otel/sdk/trace"
+    semconv "go.opentelemetry.io/otel/semconv/v1.26.0"
+)
+
+func initTracer(ctx context.Context) (*sdktrace.TracerProvider, error) {
+    exporter, err := otlptracehttp.New(ctx,
+        otlptracehttp.WithEndpoint("localhost:4318"),
+        otlptracehttp.WithInsecure(),
+    )
+    if err != nil {
+        return nil, fmt.Errorf("create exporter: %w", err)
+    }
+
+    res, err := resource.New(ctx,
+        resource.WithAttributes(
+            semconv.ServiceName("beluga-agent"),
+            semconv.ServiceVersion("1.0.0"),
+        ),
+    )
+    if err != nil {
+        return nil, fmt.Errorf("create resource: %w", err)
+    }
+
+    tp := sdktrace.NewTracerProvider(
+        sdktrace.WithBatcher(exporter),
+        sdktrace.WithResource(res),
+    )
+
+    otel.SetTracerProvider(tp)
+    return tp, nil
+}
+```
+
+## Step 3: Instrument Your Application
+
+Create a root span and pass the context through your pipeline. Beluga AI components automatically create child spans when they receive a traced context:
+
+```go
+func main() {
+    ctx := context.Background()
+
+    tp, err := initTracer(ctx)
+    if err != nil {
+        log.Fatalf("init tracer: %v", err)
+    }
+    defer func() {
+        if err := tp.Shutdown(ctx); err != nil {
+            log.Printf("shutdown tracer: %v", err)
+        }
+    }()
+
+    tracer := otel.Tracer("main")
+
+    // Create root span for the entire workflow
+    ctx, span := tracer.Start(ctx, "agent-workflow")
+    defer span.End()
+
+    // Pass ctx to Beluga AI components — they attach child spans automatically
+    if err := runPipeline(ctx); err != nil {
+        span.RecordError(err)
+        log.Printf("pipeline error: %v", err)
+    }
+}
+```
+
+## Step 4: Add Custom Spans
+
+Instrument your own logic with custom spans and attributes:
+
+```go
+func processDocument(ctx context.Context, docID string) error {
+    tracer := otel.Tracer("document-processor")
+    ctx, span := tracer.Start(ctx, "process-document")
+    defer span.End()
+
+    // Add attributes for filtering and analysis
+    span.SetAttributes(
+        attribute.String("document.id", docID),
+        attribute.String("document.type", "pdf"),
+    )
+
+    // Step 1: Parse
+    ctx, parseSpan := tracer.Start(ctx, "parse-document")
+    // ... parsing logic ...
+    parseSpan.End()
+
+    // Step 2: Embed
+    ctx, embedSpan := tracer.Start(ctx, "embed-document")
+    // ... embedding logic ...
+    embedSpan.AddEvent("embedding-complete", trace.WithAttributes(
+        attribute.Int("dimensions", 1536),
+    ))
+    embedSpan.End()
+
+    return nil
+}
+```
+
+## Step 5: GenAI Semantic Conventions
+
+Beluga AI's `o11y` package uses the OpenTelemetry GenAI conventions. Key attributes include:
+
+| Attribute | Description |
+|:---|:---|
+| `gen_ai.system` | Provider name (openai, anthropic, etc.) |
+| `gen_ai.request.model` | Model ID (gpt-4o, claude-3-opus, etc.) |
+| `gen_ai.request.temperature` | Sampling temperature |
+| `gen_ai.request.max_tokens` | Max token limit |
+| `gen_ai.usage.input_tokens` | Prompt token count |
+| `gen_ai.usage.output_tokens` | Completion token count |
+| `gen_ai.response.finish_reason` | Stop reason (stop, length, tool_calls) |
+
+## Step 6: Run Jaeger
+
+Start Jaeger to collect and visualize traces:
+
+```bash
+docker run -d --name jaeger \
+  -p 16686:16686 \
+  -p 4317:4317 \
+  -p 4318:4318 \
+  jaegertracing/all-in-one:latest
+```
+
+Access the Jaeger UI at `http://localhost:16686`. Select the `beluga-agent` service to view traces.
+
+## Verification
+
+1. Run your instrumented application.
+2. Open the Jaeger UI at `http://localhost:16686`.
+3. Select the `beluga-agent` service.
+4. Find traces and inspect the span timeline — verify parent-child relationships across LLM calls, tool executions, and retrieval steps.
+
+## Next Steps
+
+- [Prometheus and Grafana](/tutorials/foundation/prometheus-grafana) — Metrics visualization
+- [Health Checks](/tutorials/foundation/health-checks) — Component health monitoring

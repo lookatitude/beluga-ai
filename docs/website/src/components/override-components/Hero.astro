@@ -21,6 +21,11 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
 <div
   class="hero flex flex-col items-center mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-35"
 >
+  {!is404 && (
+    <div class="hero-logo mb-6">
+      <img src="/beluga-logo.svg" alt="Beluga AI" class="hero-logo-img" />
+    </div>
+  )}
   {title && <h1 set:html={title} class="mb-8 text-center rounded-2xl" />}
   {tagline && <p set:html={tagline} class="text-xl text-center" />}
 
@@ -88,11 +93,25 @@ const is404 = Astro.locals.starlightRoute?.id === "404";
       background: color-mix(in srgb, var(--sl-color-white) 15%, transparent);
     }
 
+    .hero-logo {
+      display: flex;
+      justify-content: center;
+    }
+    .hero-logo-img {
+      width: 180px;
+      height: 180px;
+      filter: drop-shadow(0 0 30px rgba(215, 109, 119, 0.3));
+    }
+
     @media (max-width: 940px) {
       h1 {
         font-size: 3.5rem !important;
         line-height: 3.5rem !important;
         letter-spacing: -2px;
+      }
+      .hero-logo-img {
+        width: 120px;
+        height: 120px;
       }
       .search-container {
         width: 100%;
