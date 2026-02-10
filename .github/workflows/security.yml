@@ -9,7 +9,7 @@ on:
     - cron: "0 0 * * 0" # Weekly Sunday midnight UTC
 
 permissions:
-  contents: write
+  contents: read
   security-events: write
 
 env:
@@ -181,6 +181,9 @@ jobs:
     needs: [snyk, trivy, gitleaks, go-licenses]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
@@ -263,8 +266,12 @@ jobs:
           echo "" >> SECURITY.md
           echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities." >> SECURITY.md
 
-      - name: Commit SECURITY.md
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Create PR for SECURITY.md
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          commit_message: "chore(ci): update SECURITY.md [skip ci]"
-          file_pattern: SECURITY.md
+          commit-message: "chore(ci): update SECURITY.md"
+          branch: ci/update-security-md
+          title: "chore(ci): update SECURITY.md"
+          body: "Auto-generated security report update from CI pipeline."
+          add-paths: SECURITY.md
+          delete-branch: true

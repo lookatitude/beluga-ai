@@ -45,7 +45,21 @@ jobs:
           # Start pkgsite server in background
           pkgsite -http=:8080 . &
           PKGSITE_PID=$!
-          sleep 5
+
+          # Wait for pkgsite to be ready (poll every 1s, up to 60s)
+          echo "Waiting for pkgsite to start..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
+              echo "pkgsite ready after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 60 ]; then
+              echo "ERROR: pkgsite failed to start after 60s"
+              kill $PKGSITE_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
 
           # Mirror the local documentation
           wget --mirror --convert-links --adjust-extension \
@@ -53,15 +67,21 @@ jobs:
             --directory-prefix=godoc-output \
             --no-host-directories \
             --reject="robots.txt" \
-            "http://localhost:8080/github.com/lookatitude/beluga-ai" 2>/dev/null || true
+            --tries=3 --retry-connrefused \
+            "http://localhost:8080/github.com/lookatitude/beluga-ai" 2>&1 || true
 
           kill $PKGSITE_PID 2>/dev/null || true
+
+          # Verify output
+          FILE_COUNT=$(find godoc-output -type f | wc -l)
+          echo "Generated ${FILE_COUNT} godoc files"
 
       - name: Upload godoc artifact
         uses: actions/upload-artifact@v4
         with:
           name: godoc
           path: godoc-output/
+          if-no-files-found: warn
 
   build-website:
     name: Build Website
@@ -78,6 +98,7 @@ jobs:
 
       - name: Download godoc artifact
         uses: actions/download-artifact@v4
+        continue-on-error: true
         with:
           name: godoc
           path: docs/website/public/godoc/

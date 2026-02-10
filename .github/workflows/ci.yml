@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
+  contents: read
 
 env:
   GO_VERSION: "1.25.7"
@@ -187,6 +187,9 @@ jobs:
     needs: [lint, test, integration-test]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
@@ -267,8 +270,12 @@ jobs:
           echo "" >> CODE-QUALITY.md
           echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)" >> CODE-QUALITY.md
 
-      - name: Commit CODE-QUALITY.md
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Create PR for CODE-QUALITY.md
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
-          commit_message: "chore(ci): update CODE-QUALITY.md [skip ci]"
-          file_pattern: CODE-QUALITY.md
+          commit-message: "chore(ci): update CODE-QUALITY.md"
+          branch: ci/update-code-quality-md
+          title: "chore(ci): update CODE-QUALITY.md"
+          body: "Auto-generated code quality report update from CI pipeline."
+          add-paths: CODE-QUALITY.md
+          delete-branch: true
