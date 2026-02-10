@@ -39,7 +39,7 @@ require (
 	go.temporal.io/sdk v1.39.0
 	google.golang.org/genai v1.45.0
 	google.golang.org/grpc v1.78.0
-	modernc.org/sqlite v1.44.3
+	modernc.org/sqlite v1.45.0
 )
 
 require (
