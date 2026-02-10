@@ -11,6 +11,7 @@ on:
 permissions:
   contents: write
   security-events: write
+  pull-requests: write
 
 env:
   GO_VERSION: "1.25.7"
@@ -263,8 +264,12 @@ jobs:
           echo "" >> SECURITY.md
           echo "If you discover a security vulnerability, please report it responsibly by emailing security@lookatitude.com. Do not open public issues for security vulnerabilities." >> SECURITY.md
 
-      - name: Commit SECURITY.md
-        uses: stefanzweifel/git-auto-commit-action@v7
+      - name: Create PR for SECURITY.md
+        uses: peter-evans/create-pull-request@v7
         with:
-          commit_message: "chore(ci): update SECURITY.md [skip ci]"
-          file_pattern: SECURITY.md
+          commit-message: "chore(ci): update SECURITY.md"
+          branch: ci/update-security-md
+          title: "chore(ci): update SECURITY.md"
+          body: "Auto-generated security report update from CI pipeline."
+          add-paths: SECURITY.md
+          delete-branch: true

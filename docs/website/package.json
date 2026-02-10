@@ -26,5 +26,21 @@
     "astro-vtbot": "^2.1.11",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "devalue": "5.6.2",
+    "diff": "5.2.2",
+    "h3": "1.15.5",
+    "mdast-util-to-hast": "13.2.1",
+    "js-yaml": "4.1.1",
+    "lodash-es": "4.17.23"
+  },
+  "resolutions": {
+    "devalue": "5.6.2",
+    "diff": "5.2.2",
+    "h3": "1.15.5",
+    "mdast-util-to-hast": "13.2.1",
+    "js-yaml": "4.1.1",
+    "lodash-es": "4.17.23"
   }
 }
