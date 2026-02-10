@@ -1,15 +1,3 @@
-// Package fish provides the Fish Audio TTS provider for the Beluga AI voice
-// pipeline. It uses the Fish Audio Text-to-Speech API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/fish"
-//
-//	engine, err := tts.New("fish", tts.Config{
-//	    Voice: "default",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello!")
 package fish
 
 import (

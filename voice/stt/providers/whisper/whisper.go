@@ -1,15 +1,3 @@
-// Package whisper provides the OpenAI Whisper STT provider for the Beluga AI
-// voice pipeline. It uses the OpenAI Audio Transcriptions API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/whisper"
-//
-//	engine, err := stt.New("whisper", stt.Config{
-//	    Model: "whisper-1",
-//	    Extra: map[string]any{"api_key": "sk-..."},
-//	})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package whisper
 
 import (

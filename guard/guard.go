@@ -1,24 +1,3 @@
-// Package guard provides a three-stage safety pipeline for the Beluga AI
-// framework. It validates content at three points: input (user messages),
-// output (model responses), and tool (tool call arguments). Each stage runs
-// a configurable set of Guard implementations that can block, modify, or
-// allow content to pass through.
-//
-// Built-in guards include prompt injection detection, PII redaction, content
-// moderation, and spotlighting (untrusted input isolation). Custom guards
-// are registered via the Registry pattern and composed into a Pipeline.
-//
-// Usage:
-//
-//	p := guard.NewPipeline(
-//	    guard.Input(guard.NewPromptInjectionDetector()),
-//	    guard.Output(guard.NewPIIRedactor(guard.DefaultPIIPatterns...)),
-//	    guard.Tool(guard.NewContentFilter()),
-//	)
-//	result, err := p.ValidateInput(ctx, userMessage)
-//	if !result.Allowed {
-//	    // handle blocked content
-//	}
 package guard
 
 import "context"

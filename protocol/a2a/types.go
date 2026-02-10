@@ -1,17 +1,3 @@
-// Package a2a implements the Agent-to-Agent (A2A) protocol for multi-agent
-// collaboration. It provides an A2A server that exposes a Beluga agent as a
-// remote agent with an Agent Card, task lifecycle management, and HTTP endpoints.
-//
-// Usage:
-//
-//	// Expose an agent via A2A
-//	card := a2a.AgentCard{Name: "my-agent", Endpoint: "http://localhost:9090"}
-//	srv := a2a.NewServer(myAgent, card)
-//	srv.Serve(ctx, ":9090")
-//
-//	// Connect to a remote A2A agent
-//	remote, err := a2a.NewRemoteAgent("http://localhost:9090")
-//	result, err := remote.Invoke(ctx, "Hello")
 package a2a
 
 // TaskStatus represents the lifecycle state of an A2A task.

@@ -1,15 +1,3 @@
-// Package elevenlabs provides the ElevenLabs TTS provider for the Beluga AI
-// voice pipeline. It uses the ElevenLabs Text-to-Speech API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/elevenlabs"
-//
-//	engine, err := tts.New("elevenlabs", tts.Config{
-//	    Voice: "rachel",
-//	    Extra: map[string]any{"api_key": "xi-..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello, world!")
 package elevenlabs
 
 import (

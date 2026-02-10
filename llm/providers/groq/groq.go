@@ -1,15 +1,3 @@
-// Package groq provides the Groq LLM provider for the Beluga AI framework.
-// Groq exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with Groq's base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/groq"
-//
-//	model, err := llm.New("groq", config.ProviderConfig{
-//	    Model:  "llama-3.3-70b-versatile",
-//	    APIKey: "gsk_...",
-//	})
 package groq
 
 import (

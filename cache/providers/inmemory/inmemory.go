@@ -1,19 +1,3 @@
-// Package inmemory provides an in-memory LRU cache implementation for the
-// Beluga AI framework. It registers itself under the name "inmemory" in the
-// cache registry.
-//
-// The cache uses a doubly-linked list combined with a hash map for O(1) get,
-// set, and eviction. Entries expire lazily on access based on their TTL.
-// When MaxSize is reached, the least-recently-used entry is evicted.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/cache/providers/inmemory"
-//
-//	c, _ := cache.New("inmemory", cache.Config{
-//	    TTL:     5 * time.Minute,
-//	    MaxSize: 1000,
-//	})
 package inmemory
 
 import (

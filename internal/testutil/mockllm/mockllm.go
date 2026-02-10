@@ -1,6 +1,3 @@
-// Package mockllm provides a mock ChatModel implementation for testing.
-// It allows test authors to configure canned responses, errors, and streaming
-// chunks, and tracks call history for assertions.
 package mockllm
 
 import (

@@ -1,16 +1,3 @@
-// Package nats provides a NATS JetStream KV-backed WorkflowStore implementation
-// for durable workflow state persistence. It uses NATS Key-Value stores for
-// reliable, distributed workflow state management.
-//
-// Usage:
-//
-//	import "github.com/lookatitude/beluga-ai/workflow/providers/nats"
-//
-//	store, err := nats.New(nats.Config{
-//	    URL:    "nats://localhost:4222",
-//	    Bucket: "workflows",
-//	})
-//	defer store.Close()
 package nats
 
 import (

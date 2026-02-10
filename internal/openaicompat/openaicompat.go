@@ -1,11 +1,3 @@
-// Package openaicompat provides a shared ChatModel implementation for providers
-// that use OpenAI-compatible APIs. This includes OpenAI itself, as well as providers
-// like Groq, Together, Fireworks, xAI, DeepSeek, and others that expose the same
-// REST endpoint format.
-//
-// Providers create a Model by calling New with their specific base URL and API key,
-// then register it in the llm registry. This avoids duplicating the same conversion
-// and streaming logic across 12+ provider packages.
 package openaicompat
 
 import (

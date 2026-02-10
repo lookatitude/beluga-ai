@@ -1,9 +1,3 @@
-// Package schema defines the shared types used throughout the Beluga AI framework.
-// It contains message types, multimodal content parts, tool call/result types,
-// document types for RAG, event types for streaming, and session types.
-//
-// This package has zero external dependencies beyond the standard library and
-// contains no business logic — only type definitions and constructors.
 package schema
 
 // ContentType identifies the kind of content in a ContentPart.

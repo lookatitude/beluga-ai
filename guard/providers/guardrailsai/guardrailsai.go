@@ -1,20 +1,3 @@
-// Package guardrailsai provides a Guardrails AI guard implementation for the
-// Beluga AI safety pipeline. It implements the guard.Guard interface and sends
-// content validation requests to a Guardrails AI API endpoint.
-//
-// Guardrails AI provides validators for PII detection, toxicity, hallucination,
-// prompt injection, and custom rules defined via RAIL specifications.
-//
-// Usage:
-//
-//	g, err := guardrailsai.New(
-//	    guardrailsai.WithBaseURL("http://localhost:8000"),
-//	    guardrailsai.WithGuardName("my-guard"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	result, err := g.Validate(ctx, input)
 package guardrailsai
 
 import (

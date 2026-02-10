@@ -1,15 +1,3 @@
-// Package openrouter provides the OpenRouter LLM provider for the Beluga AI framework.
-// OpenRouter exposes an OpenAI-compatible API that routes to many different model
-// providers, so this is a thin wrapper around the shared openaicompat package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/openrouter"
-//
-//	model, err := llm.New("openrouter", config.ProviderConfig{
-//	    Model:  "anthropic/claude-sonnet-4-5-20250929",
-//	    APIKey: "sk-or-...",
-//	})
 package openrouter
 
 import (

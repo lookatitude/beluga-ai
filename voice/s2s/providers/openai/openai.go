@@ -1,17 +1,3 @@
-// Package openai provides the OpenAI Realtime S2S provider for the Beluga AI
-// voice pipeline. It uses the OpenAI Realtime API via WebSocket for
-// bidirectional audio streaming.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/openai"
-//
-//	engine, err := s2s.New("openai_realtime", s2s.Config{
-//	    Voice: "alloy",
-//	    Model: "gpt-4o-realtime-preview",
-//	    Extra: map[string]any{"api_key": "sk-..."},
-//	})
-//	session, err := engine.Start(ctx)
 package openai
 
 import (

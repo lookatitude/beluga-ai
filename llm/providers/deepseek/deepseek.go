@@ -1,15 +1,3 @@
-// Package deepseek provides the DeepSeek LLM provider for the Beluga AI framework.
-// DeepSeek exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with DeepSeek's base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/deepseek"
-//
-//	model, err := llm.New("deepseek", config.ProviderConfig{
-//	    Model:  "deepseek-chat",
-//	    APIKey: "sk-...",
-//	})
 package deepseek
 
 import (

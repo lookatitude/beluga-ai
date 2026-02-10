@@ -1,14 +1,3 @@
-// Package anthropic provides the Anthropic (Claude) LLM provider for the Beluga AI framework.
-// It implements the llm.ChatModel interface using the anthropic-sdk-go SDK.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/anthropic"
-//
-//	model, err := llm.New("anthropic", config.ProviderConfig{
-//	    Model:  "claude-sonnet-4-5-20250929",
-//	    APIKey: "sk-ant-...",
-//	})
 package anthropic
 
 import (

@@ -1,15 +1,3 @@
-// Package sqlite provides a SQLite-backed implementation of memory.MessageStore.
-// Messages are stored in a table with columns for role, content (JSON), metadata
-// (JSON), and created_at timestamp. This uses the pure-Go modernc.org/sqlite
-// driver (no CGO required).
-//
-// Usage:
-//
-//	import _ "modernc.org/sqlite"
-//
-//	db, _ := sql.Open("sqlite", ":memory:")
-//	store, _ := sqlite.New(sqlite.Config{DB: db})
-//	store.EnsureTable(ctx)
 package sqlite
 
 import (

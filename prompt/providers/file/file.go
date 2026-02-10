@@ -1,6 +1,3 @@
-// Package file provides a filesystem-based PromptManager that loads prompt
-// templates from a directory of JSON files. Each JSON file represents a single
-// template version with name, version, content, and variables fields.
 package file
 
 import (

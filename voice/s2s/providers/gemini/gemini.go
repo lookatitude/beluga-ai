@@ -1,16 +1,3 @@
-// Package gemini provides the Gemini Live S2S provider for the Beluga AI voice
-// pipeline. It uses the Google Gemini Live API via WebSocket for bidirectional
-// audio streaming.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/gemini"
-//
-//	engine, err := s2s.New("gemini_live", s2s.Config{
-//	    Model: "gemini-2.0-flash-exp",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	session, err := engine.Start(ctx)
 package gemini
 
 import (

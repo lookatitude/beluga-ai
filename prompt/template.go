@@ -1,7 +1,3 @@
-// Package prompt provides prompt template management and cache-optimized prompt
-// building for the Beluga AI framework. It supports template rendering with
-// Go's text/template syntax, versioned template management via pluggable
-// providers, and a builder that orders prompt content for optimal LLM cache hits.
 package prompt
 
 import (

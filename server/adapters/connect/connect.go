@@ -1,14 +1,3 @@
-// Package connect provides a Connect-Go based ServerAdapter for the Beluga AI
-// server package. Connect-Go enables HTTP/1.1 + protobuf communication that is
-// compatible with gRPC, gRPC-Web, and Connect protocol clients.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/connect"
-//
-//	adapter, err := server.New("connect", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package connect
 
 import (

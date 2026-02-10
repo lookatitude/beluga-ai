@@ -1,15 +1,3 @@
-// Package dapr provides a Dapr state store-backed WorkflowStore implementation
-// for the Beluga AI workflow engine. It uses Dapr's state management API for
-// persisting workflow state.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/workflow/providers/dapr"
-//
-//	store, err := dapr.New(dapr.Config{
-//	    Client:    daprClient,
-//	    StoreName: "statestore",
-//	})
 package dapr
 
 import (

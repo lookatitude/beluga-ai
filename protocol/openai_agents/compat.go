@@ -1,14 +1,3 @@
-// Package openai_agents provides a compatibility layer between Beluga AI agents
-// and the OpenAI Agents SDK format. It converts Beluga agents, tools, and
-// handoffs into the OpenAI Agents SDK wire format for interoperability.
-//
-// This allows Beluga agents to be exposed via an API compatible with the OpenAI
-// Agents SDK, enabling clients built for that SDK to interact with Beluga agents.
-//
-// Usage:
-//
-//	agentDef := openai_agents.FromAgent(belugaAgent)
-//	jsonBytes, _ := json.Marshal(agentDef)
 package openai_agents
 
 import (

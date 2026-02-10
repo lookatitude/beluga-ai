@@ -1,12 +1,3 @@
-// Package inmemory provides an in-memory VectorStore for testing and
-// small-scale use. It uses linear scan with cosine similarity for search
-// and is safe for concurrent use.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/inmemory"
-//
-//	store, err := vectorstore.New("inmemory", config.ProviderConfig{})
 package inmemory
 
 import (

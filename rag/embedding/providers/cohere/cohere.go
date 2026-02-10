@@ -1,14 +1,3 @@
-// Package cohere provides a Cohere embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the Cohere Embed API
-// via the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/cohere"
-//
-//	emb, err := embedding.New("cohere", config.ProviderConfig{
-//	    APIKey: "...",
-//	})
 package cohere
 
 import (

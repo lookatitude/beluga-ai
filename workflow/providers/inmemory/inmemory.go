@@ -1,5 +1,3 @@
-// Package inmemory provides an in-memory WorkflowStore for development and testing.
-// It does not provide durable persistence across process restarts.
 package inmemory
 
 import (

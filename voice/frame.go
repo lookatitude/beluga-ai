@@ -1,27 +1,3 @@
-// Package voice provides the voice and multimodal pipeline for the Beluga AI
-// framework. It implements a frame-based processing model inspired by Pipecat
-// where atomic Frames (audio chunks, text fragments, images, control signals)
-// flow through linked FrameProcessors via Go channels.
-//
-// Three composable pipeline modes are supported:
-//
-//   - Cascading: STT → LLM → TTS (each a FrameProcessor goroutine)
-//   - S2S: Native audio-in/audio-out (OpenAI Realtime, Gemini Live)
-//   - Hybrid: S2S default, fallback to cascade for complex tool use
-//
-// Usage:
-//
-//	pipe := voice.NewPipeline(
-//	    voice.WithTransport(transport),
-//	    voice.WithVAD(vad),
-//	    voice.WithSTT(stt),
-//	    voice.WithLLM(model),
-//	    voice.WithTTS(tts),
-//	)
-//	pipe.Run(ctx)
-//
-// Target latency budget: transport <50ms, VAD <1ms, STT <200ms,
-// LLM TTFT <300ms, TTS TTFB <200ms, return <50ms = <800ms E2E.
 package voice
 
 // FrameType identifies the kind of data carried by a Frame.

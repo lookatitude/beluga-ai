@@ -1,16 +1,3 @@
-// Package confluence provides a DocumentLoader that loads pages from Atlassian
-// Confluence via its REST API. It implements the loader.DocumentLoader interface.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/loader/providers/confluence"
-//
-//	l, err := loader.New("confluence", config.ProviderConfig{
-//	    APIKey:  "your-api-token",
-//	    BaseURL: "https://your-domain.atlassian.net/wiki",
-//	    Options: map[string]any{"user": "user@example.com"},
-//	})
-//	docs, err := l.Load(ctx, "12345")
 package confluence
 
 import (

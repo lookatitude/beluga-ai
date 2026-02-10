@@ -1,14 +1,3 @@
-// Package jina provides a Jina AI embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the Jina Embeddings API
-// via the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/jina"
-//
-//	emb, err := embedding.New("jina", config.ProviderConfig{
-//	    APIKey: "...",
-//	})
 package jina
 
 import (

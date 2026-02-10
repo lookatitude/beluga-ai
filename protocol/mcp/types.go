@@ -1,16 +1,3 @@
-// Package mcp implements the Model Context Protocol (MCP) for tool and resource
-// sharing between AI systems. It supports the Streamable HTTP transport per the
-// March 2025 MCP specification, using a single HTTP endpoint for JSON-RPC messages.
-//
-// Usage:
-//
-//	// Create an MCP server exposing Beluga tools
-//	srv := mcp.NewServer("my-server", "1.0.0")
-//	srv.AddTool(myTool)
-//	srv.Serve(ctx, ":8080")
-//
-//	// Connect to a remote MCP server and use its tools locally
-//	tools, err := mcp.FromMCP(ctx, "http://localhost:8080/mcp")
 package mcp
 
 // Request is a JSON-RPC 2.0 request message.

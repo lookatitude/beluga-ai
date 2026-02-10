@@ -1,19 +1,3 @@
-// Package opik provides an Opik trace exporter for the Beluga AI observability
-// system. It implements the o11y.TraceExporter interface and sends LLM call
-// data to Opik via its HTTP tracing API.
-//
-// Opik (by Comet) provides LLM experiment tracking, tracing, and evaluation.
-//
-// Usage:
-//
-//	exporter, err := opik.New(
-//	    opik.WithAPIKey("opik-..."),
-//	    opik.WithWorkspace("my-workspace"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	err = exporter.ExportLLMCall(ctx, data)
 package opik
 
 import (

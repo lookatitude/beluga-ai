@@ -1,16 +1,3 @@
-// Package assemblyai provides the AssemblyAI STT provider for the Beluga AI
-// voice pipeline. It uses the AssemblyAI Transcription API for batch
-// transcription and WebSocket API for real-time streaming.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/assemblyai"
-//
-//	engine, err := stt.New("assemblyai", stt.Config{
-//	    Language: "en",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package assemblyai
 
 import (

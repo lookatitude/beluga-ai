@@ -1,14 +1,3 @@
-// Package mistral provides the Mistral AI LLM provider for the Beluga AI framework.
-// It uses the official Mistral Go SDK to communicate with the Mistral API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/mistral"
-//
-//	model, err := llm.New("mistral", config.ProviderConfig{
-//	    Model:  "mistral-large-latest",
-//	    APIKey: "...",
-//	})
 package mistral
 
 import (

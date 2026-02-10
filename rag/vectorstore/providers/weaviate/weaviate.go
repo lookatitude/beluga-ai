@@ -1,17 +1,3 @@
-// Package weaviate provides a VectorStore backed by the Weaviate vector database.
-// It communicates with Weaviate via its REST API using the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/weaviate"
-//
-//	store, err := vectorstore.New("weaviate", config.ProviderConfig{
-//	    BaseURL: "http://localhost:8080",
-//	    APIKey:  "optional-api-key",
-//	    Options: map[string]any{
-//	        "class": "Document",
-//	    },
-//	})
 package weaviate
 
 import (

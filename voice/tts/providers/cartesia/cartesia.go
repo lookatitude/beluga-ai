@@ -1,15 +1,3 @@
-// Package cartesia provides the Cartesia TTS provider for the Beluga AI voice
-// pipeline. It uses the Cartesia Text-to-Speech API via direct HTTP.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/cartesia"
-//
-//	engine, err := tts.New("cartesia", tts.Config{
-//	    Voice: "a0e99841-438c-4a64-b679-ae501e7d6091",
-//	    Extra: map[string]any{"api_key": "sk-..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello, world!")
 package cartesia
 
 import (

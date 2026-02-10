@@ -1,16 +1,3 @@
-// Package kafka provides a Kafka-backed WorkflowStore implementation for the
-// Beluga AI workflow engine. Workflow state is stored as JSON messages in a
-// Kafka compacted topic, where the workflow ID serves as the message key.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/workflow/providers/kafka"
-//
-//	store, err := kafka.New(kafka.Config{
-//	    Brokers: []string{"localhost:9092"},
-//	    Topic:   "beluga-workflows",
-//	})
-//	defer store.Close()
 package kafka
 
 import (

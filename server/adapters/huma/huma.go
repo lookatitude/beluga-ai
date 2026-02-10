@@ -1,14 +1,3 @@
-// Package huma provides a Huma-based ServerAdapter for the Beluga AI server package.
-// Huma is an OpenAPI-first framework that wraps standard net/http with automatic
-// documentation generation.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/huma"
-//
-//	adapter, err := server.New("huma", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package huma
 
 import (

@@ -1,19 +1,3 @@
-// Package composio provides a Composio MCP integration for the Beluga AI
-// protocol layer. It connects to the Composio API for tool discovery and
-// execution, wrapping Composio tools as native tool.Tool instances.
-//
-// Composio provides access to hundreds of integrations and actions through
-// its unified API, which can be consumed as MCP-compatible tools.
-//
-// Usage:
-//
-//	client, err := composio.New(
-//	    composio.WithAPIKey("cmp-..."),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	tools, err := client.ListTools(ctx)
 package composio
 
 import (

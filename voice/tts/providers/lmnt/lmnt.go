@@ -1,15 +1,3 @@
-// Package lmnt provides the LMNT TTS provider for the Beluga AI voice pipeline.
-// It uses the LMNT Text-to-Speech API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/lmnt"
-//
-//	engine, err := tts.New("lmnt", tts.Config{
-//	    Voice: "lily",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello!")
 package lmnt
 
 import (

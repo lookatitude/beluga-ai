@@ -1,15 +1,3 @@
-// Package bedrock provides the AWS Bedrock LLM provider for the Beluga AI framework.
-// It implements the llm.ChatModel interface using the AWS SDK v2 Bedrock Runtime
-// Converse API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/bedrock"
-//
-//	model, err := llm.New("bedrock", config.ProviderConfig{
-//	    Model: "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
-//	    Options: map[string]any{"region": "us-east-1"},
-//	})
 package bedrock
 
 import (

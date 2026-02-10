@@ -1,25 +1,3 @@
-// Package hitl provides human-in-the-loop interaction management for the
-// Beluga AI framework. It supports approval workflows, feedback collection,
-// and confidence-based auto-approval policies.
-//
-// The package implements a Manager interface that routes interaction requests
-// through configurable ApprovalPolicy rules. Policies can auto-approve
-// low-risk, high-confidence actions while escalating uncertain or dangerous
-// operations to human reviewers.
-//
-// Usage:
-//
-//	mgr := hitl.NewManager(
-//	    hitl.WithTimeout(30 * time.Second),
-//	    hitl.WithNotifier(hitl.NewLogNotifier(slog.Default())),
-//	)
-//	mgr.AddPolicy(hitl.ApprovalPolicy{
-//	    Name:          "read-only-auto",
-//	    ToolPattern:   "get_*",
-//	    MinConfidence: 0.5,
-//	    MaxRiskLevel:  hitl.RiskReadOnly,
-//	})
-//	resp, err := mgr.RequestInteraction(ctx, req)
 package hitl
 
 import (

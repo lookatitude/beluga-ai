@@ -1,15 +1,3 @@
-// Package together provides the Together AI LLM provider for the Beluga AI framework.
-// Together AI exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with Together's base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/together"
-//
-//	model, err := llm.New("together", config.ProviderConfig{
-//	    Model:  "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
-//	    APIKey: "...",
-//	})
 package together
 
 import (

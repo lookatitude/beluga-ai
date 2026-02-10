@@ -1,14 +1,3 @@
-// Package elevenlabs provides the ElevenLabs Scribe STT provider for the
-// Beluga AI voice pipeline. It uses the ElevenLabs Speech-to-Text API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/elevenlabs"
-//
-//	engine, err := stt.New("elevenlabs", stt.Config{
-//	    Extra: map[string]any{"api_key": "xi-..."},
-//	})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package elevenlabs
 
 import (

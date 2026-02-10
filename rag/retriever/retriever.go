@@ -1,16 +1,3 @@
-// Package retriever provides the Retriever interface and implementations for
-// the RAG pipeline. Retrievers search for relevant documents given a query,
-// supporting strategies like vector search, hybrid search (BM25 + dense),
-// HyDE, CRAG, multi-query expansion, and ensemble fusion.
-//
-// The package follows Beluga's registry pattern — implementations register via
-// init() and are instantiated with New:
-//
-//	r, err := retriever.New("vector", cfg)
-//	docs, err := r.Retrieve(ctx, "what is Go?", retriever.WithTopK(10))
-//
-// Middleware and hooks allow cross-cutting concerns such as caching, tracing,
-// and re-ranking to be layered around any Retriever.
 package retriever
 
 import (

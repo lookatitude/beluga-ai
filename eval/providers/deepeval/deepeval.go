@@ -1,20 +1,3 @@
-// Package deepeval provides a DeepEval evaluation metric for the Beluga AI
-// eval framework. It implements the eval.Metric interface and sends evaluation
-// requests to a DeepEval API endpoint.
-//
-// DeepEval provides LLM evaluation metrics including faithfulness, answer
-// relevancy, contextual precision, hallucination, and bias.
-//
-// Usage:
-//
-//	metric, err := deepeval.New(
-//	    deepeval.WithBaseURL("http://localhost:8080"),
-//	    deepeval.WithMetricName("faithfulness"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	score, err := metric.Score(ctx, sample)
 package deepeval
 
 import (

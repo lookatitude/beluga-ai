@@ -1,18 +1,3 @@
-// Package auth provides capability-based authorization for the Beluga AI
-// framework. It implements RBAC, ABAC, and composite policy patterns with a
-// default-deny security model. Every authorization check is explicit — if no
-// policy grants access, the request is denied.
-//
-// Policies are registered via the standard Registry pattern and composed using
-// CompositePolicy with configurable combination modes (allow-if-any,
-// allow-if-all, deny-if-any).
-//
-// Usage:
-//
-//	rbac := auth.NewRBACPolicy("main")
-//	rbac.AddRole(auth.Role{Name: "admin", Permissions: []auth.Permission{auth.PermToolExec}})
-//	rbac.AssignRole("alice", "admin")
-//	allowed, err := rbac.Authorize(ctx, "alice", auth.PermToolExec, "calculator")
 package auth
 
 import (

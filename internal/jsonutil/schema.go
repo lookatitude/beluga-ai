@@ -1,5 +1,3 @@
-// Package jsonutil provides JSON utilities for the Beluga AI framework,
-// including JSON Schema generation from Go struct types via reflection.
 package jsonutil
 
 import (

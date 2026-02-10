@@ -1,22 +1,3 @@
-// Package memory provides the MemGPT-inspired 3-tier memory system for Beluga AI agents.
-//
-// The three tiers follow the MemGPT model:
-//   - Core: always-in-context persona and human blocks (editable by the agent)
-//   - Recall: searchable conversation history (message-level persistence)
-//   - Archival: vector-based long-term storage (embedding + retrieval)
-//
-// Additionally, a graph memory tier provides entity-relationship storage for
-// structured knowledge representation.
-//
-// The package follows Beluga's registry pattern — providers register via init()
-// and are instantiated with New:
-//
-//	mem, err := memory.New("composite", cfg)
-//	err = mem.Save(ctx, input, output)
-//	msgs, err := mem.Load(ctx, "search query")
-//
-// A CompositeMemory combines all tiers into a unified Memory implementation
-// that delegates to the appropriate tier based on the operation.
 package memory
 
 import (

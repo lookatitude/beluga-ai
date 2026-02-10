@@ -1,14 +1,3 @@
-// Package google provides the Google Gemini LLM provider for the Beluga AI framework.
-// It implements the llm.ChatModel interface using the google.golang.org/genai SDK.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/google"
-//
-//	model, err := llm.New("google", config.ProviderConfig{
-//	    Model:  "gemini-2.5-flash",
-//	    APIKey: "...",
-//	})
 package google
 
 import (

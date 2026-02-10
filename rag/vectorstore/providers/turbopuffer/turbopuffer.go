@@ -1,16 +1,3 @@
-// Package turbopuffer provides a VectorStore backed by the Turbopuffer
-// serverless vector database. It communicates with Turbopuffer via its REST API.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/turbopuffer"
-//
-//	store, err := vectorstore.New("turbopuffer", config.ProviderConfig{
-//	    APIKey: "...",
-//	    Options: map[string]any{
-//	        "namespace": "my_namespace",
-//	    },
-//	})
 package turbopuffer
 
 import (

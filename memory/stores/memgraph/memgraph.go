@@ -1,17 +1,3 @@
-// Package memgraph provides a Memgraph-backed GraphStore implementation for the
-// Beluga AI memory system. Memgraph uses the Bolt protocol (same as Neo4j),
-// so this implementation uses the Neo4j Go driver with Cypher queries.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/memory/stores/memgraph"
-//
-//	store, err := memgraph.New(memgraph.Config{
-//	    URI:      "bolt://localhost:7687",
-//	    Username: "",
-//	    Password: "",
-//	})
-//	defer store.Close(ctx)
 package memgraph
 
 import (

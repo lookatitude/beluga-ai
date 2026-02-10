@@ -1,16 +1,3 @@
-// Package gladia provides the Gladia STT provider for the Beluga AI voice
-// pipeline. It uses the Gladia API for batch transcription and WebSocket
-// streaming for real-time transcription.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/gladia"
-//
-//	engine, err := stt.New("gladia", stt.Config{
-//	    Language: "en",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package gladia
 
 import (

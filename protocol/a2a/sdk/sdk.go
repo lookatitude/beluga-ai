@@ -1,20 +1,3 @@
-// Package sdk provides integration between the official A2A Go SDK
-// (github.com/a2aproject/a2a-go) and Beluga's A2A protocol layer.
-// It bridges Beluga's agent.Agent interface with the SDK's server and client,
-// enabling exposure of Beluga agents as A2A remote agents and consumption
-// of remote A2A agents as Beluga agents.
-//
-// Usage:
-//
-//	// Server: expose a Beluga agent via the A2A SDK
-//	handler, card := sdk.NewServer(myAgent, sdk.ServerConfig{
-//	    Name:    "my-agent",
-//	    Version: "1.0.0",
-//	    URL:     "http://localhost:9090",
-//	})
-//
-//	// Client: connect to a remote A2A agent
-//	remote, err := sdk.NewRemoteAgent(ctx, "http://remote-agent:9090")
 package sdk
 
 import (

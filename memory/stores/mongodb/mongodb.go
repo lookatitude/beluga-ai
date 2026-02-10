@@ -1,14 +1,3 @@
-// Package mongodb provides a MongoDB-backed implementation of memory.MessageStore.
-// Messages are stored as BSON documents in a MongoDB collection with a sequence
-// field for chronological ordering.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/memory/stores/mongodb"
-//
-//	store, err := mongodb.New(mongodb.Config{
-//	    Collection: client.Database("beluga").Collection("messages"),
-//	})
 package mongodb
 
 import (

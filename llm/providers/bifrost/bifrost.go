@@ -1,17 +1,3 @@
-// Package bifrost provides a ChatModel backed by a Bifrost gateway.
-// Bifrost is an OpenAI-compatible proxy that routes requests to multiple
-// LLM providers with load balancing and failover. This provider is a thin
-// wrapper around the shared openaicompat package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/bifrost"
-//
-//	model, err := llm.New("bifrost", config.ProviderConfig{
-//	    Model:   "gpt-4o",
-//	    APIKey:  "sk-...",
-//	    BaseURL: "http://localhost:8080/v1",
-//	})
 package bifrost
 
 import (
