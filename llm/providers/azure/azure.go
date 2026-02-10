@@ -1,18 +1,3 @@
-// Package azure provides the Azure OpenAI LLM provider for the Beluga AI framework.
-// Azure OpenAI uses a different authentication scheme (api-key header) and URL
-// structure (per-deployment endpoints with api-version query param) compared to
-// the standard OpenAI API, but the request/response format is otherwise identical.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/azure"
-//
-//	model, err := llm.New("azure", config.ProviderConfig{
-//	    Model:   "gpt-4o",
-//	    APIKey:  "...",
-//	    BaseURL: "https://myresource.openai.azure.com/openai/deployments/my-gpt4o",
-//	    Options: map[string]any{"api_version": "2024-10-21"},
-//	})
 package azure
 
 import (

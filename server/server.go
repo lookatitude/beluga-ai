@@ -1,16 +1,3 @@
-// Package server provides HTTP framework adapters for serving Beluga AI agents.
-// It defines a ServerAdapter interface backed by a registry of implementations,
-// and ships a built-in stdlib net/http adapter. Framework-specific adapters
-// (gin, fiber, echo, chi, grpc, connect-go) are planned for Phase 4.
-//
-// Usage:
-//
-//	adapter := server.NewStdlibAdapter(server.Config{
-//	    ReadTimeout:  10 * time.Second,
-//	    WriteTimeout: 30 * time.Second,
-//	})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package server
 
 import (

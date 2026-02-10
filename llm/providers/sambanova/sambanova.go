@@ -1,15 +1,3 @@
-// Package sambanova provides the SambaNova LLM provider for the Beluga AI framework.
-// SambaNova exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with SambaNova's base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/sambanova"
-//
-//	model, err := llm.New("sambanova", config.ProviderConfig{
-//	    Model:  "Meta-Llama-3.3-70B-Instruct",
-//	    APIKey: "sn-...",
-//	})
 package sambanova
 
 import (

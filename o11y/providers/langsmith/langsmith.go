@@ -1,17 +1,3 @@
-// Package langsmith provides a LangSmith trace exporter for the Beluga AI
-// observability system. It implements the o11y.TraceExporter interface and
-// sends LLM call data to LangSmith via its HTTP runs API.
-//
-// Usage:
-//
-//	exporter, err := langsmith.New(
-//	    langsmith.WithAPIKey("lsv2_..."),
-//	    langsmith.WithProject("my-project"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	err = exporter.ExportLLMCall(ctx, data)
 package langsmith
 
 import (

@@ -1,19 +1,3 @@
-// Package splitter provides text splitting capabilities for the RAG pipeline.
-// It defines the TextSplitter interface for dividing text content into smaller
-// chunks suitable for embedding and retrieval.
-//
-// Built-in splitters:
-//   - "recursive"  — Recursive character splitter with configurable separators
-//   - "markdown"   — Markdown-aware splitter that respects heading hierarchy
-//   - "token"      — Token-based splitter using an llm.Tokenizer
-//
-// Usage:
-//
-//	s, err := splitter.New("recursive", config.ProviderConfig{
-//	    Options: map[string]any{"chunk_size": 1000, "chunk_overlap": 200},
-//	})
-//	if err != nil { ... }
-//	chunks, err := s.Split(ctx, longText)
 package splitter
 
 import (

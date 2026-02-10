@@ -1,19 +1,3 @@
-// Package llmguard provides an LLM Guard API guard implementation for the
-// Beluga AI safety pipeline. It implements the guard.Guard interface and sends
-// content validation requests to an LLM Guard API endpoint.
-//
-// LLM Guard provides prompt injection detection, toxicity filtering, and
-// sensitive data detection via its REST API.
-//
-// Usage:
-//
-//	g, err := llmguard.New(
-//	    llmguard.WithBaseURL("http://localhost:8000"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	result, err := g.Validate(ctx, input)
 package llmguard
 
 import (

@@ -1,26 +1,3 @@
-// Package llm provides the LLM abstraction layer for the Beluga AI framework.
-// It defines the ChatModel interface that all LLM providers implement, a
-// provider registry for dynamic instantiation, composable middleware,
-// lifecycle hooks, structured output parsing, context window management,
-// tokenization, rate limiting, and an LLM router for multi-backend routing.
-//
-// Providers register themselves via init() so that importing a provider
-// package is sufficient to make it available through the registry:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-//
-//	model, err := llm.New("openai", cfg)
-//
-// Middleware wraps ChatModel to add cross-cutting concerns:
-//
-//	model = llm.ApplyMiddleware(model, llm.WithLogging(logger), llm.WithFallback(backup))
-//
-// Streaming uses iter.Seq2 (Go 1.23+):
-//
-//	for chunk, err := range model.Stream(ctx, msgs) {
-//	    if err != nil { break }
-//	    fmt.Print(chunk.Delta)
-//	}
 package llm
 
 import (

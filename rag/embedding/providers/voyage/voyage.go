@@ -1,14 +1,3 @@
-// Package voyage provides a Voyage AI embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the Voyage Embed API
-// via the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/voyage"
-//
-//	emb, err := embedding.New("voyage", config.ProviderConfig{
-//	    APIKey: "...",
-//	})
 package voyage
 
 import (

@@ -1,7 +1,3 @@
-// Package metrics provides built-in evaluation metrics for the Beluga AI
-// eval framework. It includes LLM-as-judge metrics (faithfulness, relevance,
-// hallucination), keyword-based checks (toxicity), and metadata-based metrics
-// (latency, cost).
 package metrics
 
 import (

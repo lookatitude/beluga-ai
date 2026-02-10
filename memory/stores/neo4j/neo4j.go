@@ -1,18 +1,3 @@
-// Package neo4j provides a Neo4j-backed GraphStore implementation for the
-// Beluga AI memory system. It uses Cypher queries for graph operations and
-// supports the full GraphStore interface including entity management,
-// relationship creation, querying, and neighbor traversal.
-//
-// Usage:
-//
-//	import "github.com/lookatitude/beluga-ai/memory/stores/neo4j"
-//
-//	store, err := neo4j.New(neo4j.Config{
-//	    URI:      "neo4j://localhost:7687",
-//	    Username: "neo4j",
-//	    Password: "password",
-//	})
-//	defer store.Close(ctx)
 package neo4j
 
 import (

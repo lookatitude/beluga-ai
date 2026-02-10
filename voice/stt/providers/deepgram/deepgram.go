@@ -1,13 +1,3 @@
-// Package deepgram provides the Deepgram STT provider for the Beluga AI
-// voice pipeline. It uses the Deepgram HTTP API for batch transcription and
-// WebSocket API for streaming.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
-//
-//	engine, err := stt.New("deepgram", stt.Config{Language: "en", Model: "nova-2"})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package deepgram
 
 import (

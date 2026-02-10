@@ -1,18 +1,3 @@
-// Package temporal provides a Temporal-backed DurableExecutor and WorkflowStore
-// for the Beluga workflow engine. It maps Beluga workflows to Temporal workflows,
-// and Beluga activities to Temporal activities.
-//
-// Usage:
-//
-//	executor, err := temporal.NewExecutor(temporal.Config{
-//	    Client:    temporalClient,
-//	    TaskQueue: "beluga-workflows",
-//	})
-//
-//	handle, err := executor.Execute(ctx, myWorkflow, workflow.WorkflowOptions{
-//	    ID: "order-123",
-//	})
-//	result, err := handle.Result(ctx)
 package temporal
 
 import (

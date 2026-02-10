@@ -1,15 +1,3 @@
-// Package daily provides the Daily.co transport provider for the Beluga AI
-// voice pipeline. It implements the AudioTransport interface for bidirectional
-// audio I/O through Daily.co rooms.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/daily"
-//
-//	t, err := transport.New("daily", transport.Config{
-//	    URL:   "https://myapp.daily.co/room",
-//	    Token: "...",
-//	})
 package daily
 
 import (

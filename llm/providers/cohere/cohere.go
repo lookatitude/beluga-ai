@@ -1,18 +1,3 @@
-// Package cohere provides the Cohere LLM provider for the Beluga AI framework.
-// It uses the official Cohere Go SDK (v2) to communicate with the Cohere API.
-//
-// Cohere uses a different message format than OpenAI: the last user message is
-// the "message" field, system messages go into "preamble", and prior messages
-// become "chat_history". This provider handles all the mapping transparently.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/cohere"
-//
-//	model, err := llm.New("cohere", config.ProviderConfig{
-//	    Model:  "command-r-plus",
-//	    APIKey: "...",
-//	})
 package cohere
 
 import (

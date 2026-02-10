@@ -1,12 +1,3 @@
-// Package chi provides a Chi-based ServerAdapter for the Beluga AI server package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/chi"
-//
-//	adapter, err := server.New("chi", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package chi
 
 import (

@@ -1,20 +1,3 @@
-// Package ragas provides RAGAS (Retrieval Augmented Generation Assessment)
-// evaluation metrics for the Beluga AI eval framework. It implements the
-// eval.Metric interface and sends evaluation requests to a RAGAS API endpoint.
-//
-// RAGAS provides metrics for evaluating RAG pipelines including faithfulness,
-// answer relevancy, context precision, and context recall.
-//
-// Usage:
-//
-//	metric, err := ragas.New(
-//	    ragas.WithBaseURL("http://localhost:8080"),
-//	    ragas.WithMetricName("faithfulness"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	score, err := metric.Score(ctx, sample)
 package ragas
 
 import (

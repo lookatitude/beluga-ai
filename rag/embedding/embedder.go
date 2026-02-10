@@ -1,16 +1,3 @@
-// Package embedding provides the Embedder interface and registry for
-// converting text into vector embeddings. Embedders are the first stage of
-// the RAG pipeline, producing dense vector representations for similarity
-// search.
-//
-// The package follows Beluga's registry pattern — providers register via
-// init() and are instantiated with New:
-//
-//	emb, err := embedding.New("openai", cfg)
-//	vectors, err := emb.Embed(ctx, []string{"hello world"})
-//
-// Middleware and hooks allow cross-cutting concerns such as logging, caching,
-// and tracing to be layered around any Embedder.
 package embedding
 
 import "context"

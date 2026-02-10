@@ -1,18 +1,3 @@
-// Package lakera provides a Lakera Guard API guard implementation for the
-// Beluga AI safety pipeline. It implements the guard.Guard interface and sends
-// content validation requests to the Lakera Guard API endpoint.
-//
-// Lakera Guard detects prompt injections, jailbreaks, PII, and harmful content.
-//
-// Usage:
-//
-//	g, err := lakera.New(
-//	    lakera.WithAPIKey("lk-..."),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	result, err := g.Validate(ctx, input)
 package lakera
 
 import (

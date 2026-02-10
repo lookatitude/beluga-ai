@@ -1,5 +1,3 @@
-// Package httpclient provides a shared HTTP client with retry, SSE streaming,
-// and typed JSON helpers used by providers without dedicated Go SDKs.
 package httpclient
 
 import (

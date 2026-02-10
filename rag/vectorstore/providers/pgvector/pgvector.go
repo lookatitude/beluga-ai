@@ -1,18 +1,3 @@
-// Package pgvector provides a VectorStore backed by PostgreSQL with the
-// pgvector extension. It uses pgx for connection management and supports
-// cosine, dot-product, and Euclidean distance strategies.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/pgvector"
-//
-//	store, err := vectorstore.New("pgvector", config.ProviderConfig{
-//	    BaseURL: "postgres://user:pass@localhost:5432/db",
-//	    Options: map[string]any{
-//	        "table":     "documents",
-//	        "dimension": float64(1536),
-//	    },
-//	})
 package pgvector
 
 import (

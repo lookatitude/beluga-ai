@@ -1,21 +1,3 @@
-// Package braintrust provides a Braintrust evaluation metric for the Beluga AI
-// eval framework. It implements the eval.Metric interface and sends evaluation
-// requests to the Braintrust API.
-//
-// Braintrust provides evaluation scoring for LLM outputs including
-// factuality, relevance, and custom scoring functions.
-//
-// Usage:
-//
-//	metric, err := braintrust.New(
-//	    braintrust.WithAPIKey("bt-..."),
-//	    braintrust.WithProjectName("my-project"),
-//	    braintrust.WithMetricName("factuality"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	score, err := metric.Score(ctx, sample)
 package braintrust
 
 import (

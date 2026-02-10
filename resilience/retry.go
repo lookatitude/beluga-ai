@@ -1,6 +1,3 @@
-// Package resilience provides fault-tolerance primitives for the Beluga AI
-// framework: retry with exponential backoff, circuit breakers, hedged requests,
-// and provider-aware rate limiting.
 package resilience
 
 import (

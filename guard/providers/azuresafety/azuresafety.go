@@ -1,20 +1,3 @@
-// Package azuresafety provides an Azure Content Safety guard implementation for
-// the Beluga AI safety pipeline. It implements the guard.Guard interface and
-// sends content validation requests to the Azure Content Safety API.
-//
-// Azure Content Safety provides text moderation across categories including
-// Hate, SelfHarm, Sexual, and Violence with configurable severity thresholds.
-//
-// Usage:
-//
-//	g, err := azuresafety.New(
-//	    azuresafety.WithEndpoint("https://myinstance.cognitiveservices.azure.com"),
-//	    azuresafety.WithAPIKey("key-..."),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	result, err := g.Validate(ctx, input)
 package azuresafety
 
 import (

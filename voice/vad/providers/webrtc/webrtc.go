@@ -1,13 +1,3 @@
-// Package webrtc provides a pure Go WebRTC-style VAD (Voice Activity Detection)
-// provider for the Beluga AI voice pipeline. It uses energy and zero-crossing
-// rate analysis on 16-bit PCM audio to detect speech.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/vad/providers/webrtc"
-//
-//	vad, err := voice.NewVAD("webrtc", map[string]any{"threshold": 1500.0})
-//	result, err := vad.DetectActivity(ctx, audioPCM)
 package webrtc
 
 import (

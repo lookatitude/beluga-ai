@@ -1,6 +1,3 @@
-// Package workflow provides deterministic workflow agents that orchestrate
-// child agents without LLM reasoning. SequentialAgent, ParallelAgent, and
-// LoopAgent compose child agents in common patterns.
 package workflow
 
 import (

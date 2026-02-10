@@ -1,6 +1,3 @@
-// Package mocktool provides a mock Tool implementation for testing.
-// It allows test authors to configure a tool's name, description, input schema,
-// and execution behavior, and tracks call history for assertions.
 package mocktool
 
 import (

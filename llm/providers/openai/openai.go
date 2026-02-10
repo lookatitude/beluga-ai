@@ -1,15 +1,3 @@
-// Package openai provides the OpenAI LLM provider for the Beluga AI framework.
-// It implements the llm.ChatModel interface using the openai-go SDK via the
-// shared openaicompat package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
-//
-//	model, err := llm.New("openai", config.ProviderConfig{
-//	    Model:  "gpt-4o",
-//	    APIKey: "sk-...",
-//	})
 package openai
 
 import (

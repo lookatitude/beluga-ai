@@ -1,19 +1,3 @@
-// Package redis provides a VectorStore backed by Redis with the RediSearch module.
-// It uses Redis hashes to store documents and RediSearch's vector similarity
-// search for retrieval.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/redis"
-//
-//	store, err := vectorstore.New("redis", config.ProviderConfig{
-//	    BaseURL: "localhost:6379",
-//	    Options: map[string]any{
-//	        "index":     "idx:documents",
-//	        "prefix":    "doc:",
-//	        "dimension": float64(1536),
-//	    },
-//	})
 package redis
 
 import (

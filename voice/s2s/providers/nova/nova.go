@@ -1,16 +1,3 @@
-// Package nova provides the Amazon Nova S2S provider for the Beluga AI voice
-// pipeline. It uses the AWS Bedrock Runtime API for bidirectional audio
-// streaming with Amazon Nova Sonic.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/nova"
-//
-//	engine, err := s2s.New("nova", s2s.Config{
-//	    Model: "amazon.nova-sonic-v1:0",
-//	    Extra: map[string]any{"region": "us-east-1"},
-//	})
-//	session, err := engine.Start(ctx)
 package nova
 
 import (

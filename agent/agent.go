@@ -1,24 +1,3 @@
-// Package agent provides the agent runtime for the Beluga AI framework.
-// It defines the Agent interface, a composable BaseAgent, the Executor
-// reasoning loop, pluggable Planners (ReAct, Reflexion), handoffs-as-tools,
-// lifecycle hooks, middleware, an event bus, and deterministic workflow agents.
-//
-// Usage:
-//
-//	a := agent.New("assistant",
-//	    agent.WithLLM(model),
-//	    agent.WithTools(tools),
-//	    agent.WithPersona(agent.Persona{Role: "helpful assistant"}),
-//	)
-//
-//	// Synchronous
-//	result, err := a.Invoke(ctx, "What is 2+2?")
-//
-//	// Streaming
-//	for event, err := range a.Stream(ctx, "What is 2+2?") {
-//	    if err != nil { break }
-//	    fmt.Println(event.Text)
-//	}
 package agent
 
 import (

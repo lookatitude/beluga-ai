@@ -1,15 +1,3 @@
-// Package groq provides the Groq TTS provider for the Beluga AI voice pipeline.
-// It uses the Groq TTS endpoint (OpenAI-compatible API).
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/groq"
-//
-//	engine, err := tts.New("groq", tts.Config{
-//	    Voice: "aura-asteria-en",
-//	    Extra: map[string]any{"api_key": "gsk-..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello!")
 package groq
 
 import (

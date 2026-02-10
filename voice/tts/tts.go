@@ -1,22 +1,3 @@
-// Package tts provides the text-to-speech (TTS) interface and provider registry
-// for the Beluga AI voice pipeline. Providers implement the TTS interface and
-// register themselves via init() for discovery.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/elevenlabs"
-//
-//	engine, err := tts.New("elevenlabs", tts.Config{Voice: "rachel"})
-//	audio, err := engine.Synthesize(ctx, "Hello, world!")
-//
-//	// Streaming:
-//	for chunk, err := range engine.SynthesizeStream(ctx, textStream) {
-//	    if err != nil { break }
-//	    transport.Send(chunk)
-//	}
-//
-//	// As FrameProcessor in a voice pipeline:
-//	processor := tts.AsFrameProcessor(engine, 24000)
 package tts
 
 import (

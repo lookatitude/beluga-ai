@@ -1,6 +1,3 @@
-// Package testutil provides test helpers and mock implementations for the
-// Beluga AI framework. It includes assertion helpers, stream collectors, and
-// mock implementations of core interfaces (ChatModel, Tool, Memory).
 package testutil
 
 import (

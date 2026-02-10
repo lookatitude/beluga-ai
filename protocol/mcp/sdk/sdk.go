@@ -1,17 +1,3 @@
-// Package sdk provides integration between the official MCP Go SDK
-// (github.com/modelcontextprotocol/go-sdk) and Beluga's MCP protocol layer.
-// It bridges Beluga's tool.Tool interface with the SDK's server and client,
-// enabling exposure of Beluga tools via the official MCP SDK and consumption
-// of remote MCP tools as native Beluga tools.
-//
-// Usage:
-//
-//	// Create a server wrapping Beluga tools
-//	srv := sdk.NewServer("my-server", "1.0.0", myTool1, myTool2)
-//
-//	// Create a client connecting to a remote MCP server
-//	client, session, err := sdk.NewClient(ctx, transport)
-//	tools, err := sdk.FromSession(ctx, session)
 package sdk
 
 import (

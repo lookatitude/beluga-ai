@@ -1,6 +1,3 @@
-// Package core provides the foundational primitives for the Beluga AI framework:
-// typed event streams, the Runnable execution interface, batch processing,
-// context helpers, multi-tenancy, lifecycle management, and typed errors.
 package core
 
 import (

@@ -1,15 +1,3 @@
-// Package mistral provides an Embedder backed by the Mistral AI embeddings API.
-// It implements the embedding.Embedder interface using Mistral's embed endpoint
-// via the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/mistral"
-//
-//	emb, err := embedding.New("mistral", config.ProviderConfig{
-//	    APIKey: "...",
-//	    Model:  "mistral-embed",
-//	})
 package mistral
 
 import (

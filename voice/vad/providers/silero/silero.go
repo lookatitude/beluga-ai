@@ -1,20 +1,5 @@
 //go:build cgo
 
-// Package silero provides the Silero VAD (Voice Activity Detection) provider
-// for the Beluga AI voice pipeline. It uses the Silero VAD ONNX model via
-// the silero-vad-go library for high-accuracy speech detection.
-//
-// This package requires CGO and the ONNX Runtime library.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/vad/providers/silero"
-//
-//	vad, err := voice.NewVAD("silero", map[string]any{
-//	    "threshold":  0.5,
-//	    "model_path": "/path/to/silero_vad.onnx",
-//	})
-//	result, err := vad.DetectActivity(ctx, audioPCM)
 package silero
 
 import (

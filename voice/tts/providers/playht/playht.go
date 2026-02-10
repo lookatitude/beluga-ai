@@ -1,15 +1,3 @@
-// Package playht provides the PlayHT TTS provider for the Beluga AI voice
-// pipeline. It uses the PlayHT Text-to-Speech API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/playht"
-//
-//	engine, err := tts.New("playht", tts.Config{
-//	    Voice: "s3://voice-cloning-zero-shot/...",
-//	    Extra: map[string]any{"api_key": "...", "user_id": "..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello!")
 package playht
 
 import (

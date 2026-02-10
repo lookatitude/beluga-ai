@@ -1,14 +1,3 @@
-// Package google provides a Google AI embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the internal httpclient
-// to call the Google AI Gemini embedding API.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/google"
-//
-//	emb, err := embedding.New("google", config.ProviderConfig{
-//	    APIKey: "...",
-//	})
 package google
 
 import (

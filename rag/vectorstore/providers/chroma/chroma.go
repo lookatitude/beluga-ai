@@ -1,18 +1,3 @@
-// Package chroma provides a VectorStore backed by ChromaDB. It communicates
-// with ChromaDB via its HTTP REST API.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/chroma"
-//
-//	store, err := vectorstore.New("chroma", config.ProviderConfig{
-//	    BaseURL: "http://localhost:8000",
-//	    Options: map[string]any{
-//	        "collection": "my_collection",
-//	        "tenant":     "default_tenant",
-//	        "database":   "default_database",
-//	    },
-//	})
 package chroma
 
 import (

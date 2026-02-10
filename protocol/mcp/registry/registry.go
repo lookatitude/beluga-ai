@@ -1,16 +1,3 @@
-// Package registry provides MCP server discovery and tool aggregation for the
-// Beluga AI framework. It discovers MCP servers from registry endpoints or
-// static configuration, lists their available tools, and makes them accessible
-// as native tool.Tool instances.
-//
-// Usage:
-//
-//	reg := registry.New()
-//	reg.AddServer("search", "http://localhost:8081/mcp")
-//	reg.AddServer("code", "http://localhost:8082/mcp")
-//
-//	tools, err := reg.DiscoverTools(ctx)
-//	// tools contains all tools from all registered MCP servers
 package registry
 
 import (

@@ -1,6 +1,3 @@
-// Package mockstore provides a mock VectorStore implementation for testing.
-// It allows test authors to configure canned search results, errors, and
-// tracks call history for assertions.
 package mockstore
 
 import (

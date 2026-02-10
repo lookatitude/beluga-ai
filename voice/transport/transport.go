@@ -1,21 +1,3 @@
-// Package transport provides the audio transport interface and registry for the
-// Beluga AI voice pipeline. Transports handle bidirectional audio I/O between
-// clients and the voice pipeline, abstracting the underlying protocol
-// (WebSocket, LiveKit, Daily, etc.).
-//
-// LiveKit is treated as a transport, not a framework dependency. LiveKit's
-// server provides WebRTC transport, while Beluga handles all STT/LLM/TTS
-// processing through the frame-based pipeline.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport"
-//
-//	t, err := transport.New("websocket", transport.Config{URL: "ws://..."})
-//	frames, _ := t.Recv(ctx)
-//	for frame := range frames {
-//	    // process incoming audio frame
-//	}
 package transport
 
 import (

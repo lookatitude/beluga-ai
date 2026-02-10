@@ -1,14 +1,3 @@
-// Package workflow provides a durable execution engine for the Beluga AI framework.
-// It enables reliable, long-running workflows with activity execution, signal handling,
-// retry policies, and event-sourced state persistence.
-//
-// Usage:
-//
-//	executor := workflow.NewExecutor(workflow.WithStore(store))
-//	handle, err := executor.Execute(ctx, myWorkflow, workflow.WorkflowOptions{
-//	    ID: "order-123",
-//	})
-//	result, err := handle.Result(ctx)
 package workflow
 
 import (

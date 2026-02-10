@@ -1,14 +1,3 @@
-// Package inngest provides an Inngest-backed WorkflowStore implementation
-// for the Beluga AI workflow engine. It stores workflow state using
-// Inngest's event-driven durable execution platform via its HTTP API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/workflow/providers/inngest"
-//
-//	store, err := inngest.New(inngest.Config{
-//	    BaseURL: "http://localhost:8288",
-//	})
 package inngest
 
 import (

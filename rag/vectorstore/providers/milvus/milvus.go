@@ -1,17 +1,3 @@
-// Package milvus provides a VectorStore backed by the Milvus vector database.
-// It communicates with Milvus via its REST API for broad compatibility.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/milvus"
-//
-//	store, err := vectorstore.New("milvus", config.ProviderConfig{
-//	    BaseURL: "http://localhost:19530",
-//	    Options: map[string]any{
-//	        "collection": "documents",
-//	        "dimension":  float64(1536),
-//	    },
-//	})
 package milvus
 
 import (

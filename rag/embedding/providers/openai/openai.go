@@ -1,13 +1,3 @@
-// Package openai provides an OpenAI embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the openai-go SDK.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/openai"
-//
-//	emb, err := embedding.New("openai", config.ProviderConfig{
-//	    APIKey: "sk-...",
-//	})
 package openai
 
 import (

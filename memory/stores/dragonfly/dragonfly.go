@@ -1,14 +1,3 @@
-// Package dragonfly provides a DragonflyDB-backed implementation of memory.MessageStore.
-// DragonflyDB is fully Redis-compatible, so this implementation uses the same
-// go-redis client library and sorted set storage approach as the Redis store.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/memory/stores/dragonfly"
-//
-//	store, err := dragonfly.New(dragonfly.Config{
-//	    Client: redisClient, // go-redis client pointed at DragonflyDB
-//	})
 package dragonfly
 
 import (

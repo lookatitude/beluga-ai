@@ -1,5 +1,3 @@
-// Package mockmemory provides a mock Memory implementation for testing.
-// It stores messages in-memory and tracks all method calls for assertions.
 package mockmemory
 
 import (

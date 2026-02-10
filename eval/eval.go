@@ -1,17 +1,3 @@
-// Package eval provides an evaluation framework for measuring the quality of
-// AI-generated outputs. It defines a Metric interface for scoring individual
-// samples, an EvalRunner for parallel metric execution across datasets, and
-// built-in metrics covering faithfulness, relevance, hallucination detection,
-// toxicity, latency, and cost.
-//
-// Basic usage:
-//
-//	runner := eval.NewRunner(
-//	    eval.WithMetrics(metrics.NewToxicity(), metrics.NewLatency()),
-//	    eval.WithDataset(samples),
-//	    eval.WithParallel(4),
-//	)
-//	report, err := runner.Run(ctx)
 package eval
 
 import (
