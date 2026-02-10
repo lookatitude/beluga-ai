@@ -1,0 +1,85 @@
+name: Feature Request
+description: Suggest a new feature or enhancement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for your feature suggestion! Please describe your idea in detail.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is this related to a frustration?
+      placeholder: "I'm always frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like. Include API sketches if applicable.
+      placeholder: |
+        I'd like a new function/method that...
+
+        ```go
+        // Example API
+        func NewFeature(ctx context.Context, opts ...Option) (*Result, error) {
+        ```
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Describe any alternative solutions or workarounds you've considered.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Target Package
+      description: Which package would this feature belong to?
+      options:
+        - core/
+        - schema/
+        - config/
+        - o11y/
+        - llm/
+        - tool/
+        - memory/
+        - rag/
+        - agent/
+        - voice/
+        - orchestration/
+        - workflow/
+        - protocol/
+        - guard/
+        - resilience/
+        - cache/
+        - hitl/
+        - auth/
+        - eval/
+        - state/
+        - prompt/
+        - server/
+        - New package
+        - Not sure
+
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe the real-world use case for this feature.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to submit a PR for this feature

@@ -122,13 +122,16 @@ Every provider follows the same pattern regardless of category. See the `provide
 ```go
 package myprovider
 
-import "github.com/lookatitude/beluga-ai/llm"
+import (
+    "github.com/lookatitude/beluga-ai/config"
+    "github.com/lookatitude/beluga-ai/llm"
+)
 
 var _ llm.ChatModel = (*Model)(nil) // compile-time check
 
 type Model struct { /* ... */ }
 
-func New(cfg llm.ProviderConfig) (*Model, error) {
+func New(cfg config.ProviderConfig) (*Model, error) {
     // Validate config, create client
     return &Model{/* ... */}, nil
 }
@@ -138,7 +141,7 @@ func New(cfg llm.ProviderConfig) (*Model, error) {
 
 ```go
 func init() {
-    llm.Register("myprovider", func(cfg llm.ProviderConfig) (llm.ChatModel, error) {
+    llm.Register("myprovider", func(cfg config.ProviderConfig) (llm.ChatModel, error) {
         return New(cfg)
     })
 }
@@ -150,7 +153,7 @@ func init() {
 func (m *Model) mapError(op string, err error) error {
     code := core.ErrProviderDown
     // Map HTTP status codes or provider errors to ErrorCode
-    return &core.Error{Op: op, Code: code, Err: err}
+    return core.NewError(op, code, "provider error", err)
 }
 ```
 
@@ -164,7 +167,7 @@ func TestGenerate(t *testing.T) {
     }))
     defer server.Close()
 
-    model, err := New(llm.ProviderConfig{APIKey: "test", BaseURL: server.URL})
+    model, err := New(config.ProviderConfig{APIKey: "test", BaseURL: server.URL})
     require.NoError(t, err)
     // ... test the provider
 }
@@ -226,20 +229,21 @@ import (
 
 | Category | Package | Interface | Count |
 |----------|---------|-----------|-------|
-| LLM | `llm/providers/` | `ChatModel` | 20+ |
-| Embedding | `rag/embedding/providers/` | `Embedder` | 8+ |
-| Vector Store | `rag/vectorstore/providers/` | `VectorStore` | 12+ |
-| Voice STT | `voice/stt/providers/` | `STT` | 6+ |
-| Voice TTS | `voice/tts/providers/` | `TTS` | 7+ |
-| Voice S2S | `voice/s2s/providers/` | `S2S` | 3+ |
-| Voice VAD | `voice/vad/providers/` | VAD | 2+ |
-| Voice Transport | `voice/transport/providers/` | `AudioTransport` | 3+ |
-| Memory Stores | `memory/stores/` | `MessageStore` | 7+ |
-| Document Loaders | `rag/loader/providers/` | `DocumentLoader` | 8+ |
-| Guardrails | `guard/providers/` | `Guard` | 5+ |
-| Eval/Observability | `eval/providers/` | Various | 7+ |
-| Workflow | `workflow/providers/` | `DurableExecutor` | 5+ |
-| HTTP Adapters | `server/adapters/` | `ServerAdapter` | 7+ |
-| Protocols | `protocol/*/providers/` | Various | 5+ |
+| LLM | `llm/providers/` | `ChatModel` | 23 |
+| Embedding | `rag/embedding/providers/` | `Embedder` | 9 |
+| Vector Store | `rag/vectorstore/providers/` | `VectorStore` | 13 |
+| Voice STT | `voice/stt/providers/` | `STT` | 6 |
+| Voice TTS | `voice/tts/providers/` | `TTS` | 7 |
+| Voice S2S | `voice/s2s/providers/` | `S2S` | 3 |
+| Voice VAD | `voice/vad/providers/` | `VAD` | 2 |
+| Voice Transport | `voice/transport/providers/` | `AudioTransport` | 3 |
+| Memory Stores | `memory/stores/` | `Memory` | 8 |
+| Document Loaders | `rag/loader/providers/` | `DocumentLoader` | 12 |
+| Guardrails | `guard/providers/` | `Guard` | 5 |
+| Eval | `eval/providers/` | `Metric` | 3 |
+| Observability | `o11y/providers/` | `TraceExporter` | 4 |
+| Workflow | `workflow/providers/` | `DurableExecutor` | 6 |
+| HTTP Adapters | `server/adapters/` | `ServerAdapter` | 7 |
+| Protocol MCP | `protocol/mcp/providers/` | Various | 1 |
 
 Use `ls <package>/providers/` or the registry `List()` function to see the current set of available providers.

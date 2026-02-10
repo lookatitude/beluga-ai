@@ -1,0 +1,95 @@
+# Type labels
+- name: bug
+  color: "d73a4a"
+  description: "Something isn't working"
+- name: enhancement
+  color: "a2eeef"
+  description: "New feature or request"
+- name: documentation
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+- name: question
+  color: "d876e3"
+  description: "Further information is requested"
+- name: good first issue
+  color: "7057ff"
+  description: "Good for newcomers"
+- name: help wanted
+  color: "008672"
+  description: "Extra attention is needed"
+
+# Priority labels
+- name: "priority: critical"
+  color: "b60205"
+  description: "Needs immediate attention"
+- name: "priority: high"
+  color: "d93f0b"
+  description: "Important and should be addressed soon"
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Should be addressed in the near future"
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Nice to have, not urgent"
+
+# Status labels
+- name: triage
+  color: "ededed"
+  description: "Needs triage and categorization"
+- name: stale
+  color: "ededed"
+  description: "Marked as inactive"
+- name: "work-in-progress"
+  color: "fef2c0"
+  description: "Work in progress"
+- name: pinned
+  color: "006b75"
+  description: "Pinned issue, won't be auto-closed"
+
+# Package labels
+- name: "pkg: core"
+  color: "c5def5"
+  description: "Related to core/ package"
+- name: "pkg: llm"
+  color: "c5def5"
+  description: "Related to llm/ package"
+- name: "pkg: agent"
+  color: "c5def5"
+  description: "Related to agent/ package"
+- name: "pkg: rag"
+  color: "c5def5"
+  description: "Related to rag/ package"
+- name: "pkg: voice"
+  color: "c5def5"
+  description: "Related to voice/ package"
+- name: "pkg: tool"
+  color: "c5def5"
+  description: "Related to tool/ package"
+- name: "pkg: memory"
+  color: "c5def5"
+  description: "Related to memory/ package"
+- name: "pkg: protocol"
+  color: "c5def5"
+  description: "Related to protocol/ package"
+
+# CI labels
+- name: dependencies
+  color: "0366d6"
+  description: "Dependency updates"
+- name: ci
+  color: "bfdadc"
+  description: "CI/CD related changes"
+- name: go
+  color: "00ADD8"
+  description: "Go language specific"
+- name: docs
+  color: "0075ca"
+  description: "Documentation site"
+- name: security
+  color: "ee0701"
+  description: "Security related"
+
+# Fuzzing
+- name: fuzzing
+  color: "ff7619"
+  description: "Found by fuzz testing"

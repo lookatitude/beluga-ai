@@ -166,28 +166,57 @@ beluga-ai/
 - No circular imports — dependency flows downward through layers
 - Prefer stdlib where possible (e.g., `slog` for logging, `net/http` for transports)
 
-## Skills Available
+## Personas
 
-Claude Code has these project skills available for specialized tasks:
-- `go-framework` — Go framework design patterns and idiomatic structure
-- `go-interfaces` — Designing Go interfaces with the registry/middleware/hooks pattern
-- `go-testing` — Go testing patterns for AI framework components
-- `provider-implementation` — Implementing providers against Beluga's interfaces
-- `streaming-patterns` — Go 1.23 iter.Seq2 streaming and backpressure patterns
-- `doc-writing` — Documentation writing patterns, templates, and enterprise standards
+| Persona | Role | Agent(s) |
+|---------|------|----------|
+| **Architect** | Oversee architecture, define patterns, create plans, delegate to Team lead | `architect` |
+| **Researcher** | Research topics, gather info, return structured findings to Architect | `researcher` |
+| **Team lead** | Break plans into tasks, run develop/test/review loops per task | `team-lead` |
+| **Developer** | Go + distributed systems + AI; implement and test per framework patterns | `core-implementer`, `llm-implementer`, `agent-implementer`, `rag-implementer`, `voice-implementer`, `tool-implementer`, `protocol-implementer`, `infra-implementer` |
+| **Test developer** | Same as Developer; write tests implementations must pass | `test-writer` |
+| **Reviewer** | Same as Developer; review code, provide suggestions | `reviewer` |
+| **Doc writer** | Write package docs, tutorials, API reference | `doc-writer` |
 
-## Agents Available
+### Task to Persona Mapping
 
-Use these specialized sub-agents for focused work:
-- `architect` — High-level design decisions, package structure, interface design (skills: go-framework, go-interfaces)
-- `core-implementer` — Implements core/, schema/, config/, o11y/ packages (skills: go-framework, go-interfaces, streaming-patterns)
-- `llm-implementer` — Implements llm/ package, providers, router, structured output (skills: go-interfaces, provider-implementation, streaming-patterns)
-- `tool-implementer` — Implements tool/ package, MCP client, FuncTool (skills: go-interfaces, provider-implementation)
-- `agent-implementer` — Implements agent/ package, planners, executor, handoffs (skills: go-interfaces, go-framework, streaming-patterns)
-- `rag-implementer` — Implements rag/ package: embedding, vectorstore, retriever, loader, splitter (skills: go-interfaces, provider-implementation)
-- `voice-implementer` — Implements voice/ package: frame pipeline, STT/TTS/S2S, transport (skills: go-interfaces, provider-implementation, streaming-patterns)
-- `protocol-implementer` — Implements protocol/ package: MCP server, A2A, REST (skills: go-interfaces, go-framework)
-- `infra-implementer` — Implements cross-cutting: resilience/, cache/, auth/, hitl/, guard/, workflow/ (skills: go-interfaces, go-framework)
-- `test-writer` — Writes comprehensive tests, mocks, benchmarks (skills: go-testing, go-interfaces)
-- `reviewer` — Reviews code for architecture compliance, Go idioms, correctness (skills: go-framework, go-interfaces, go-testing)
-- `doc-writer` — Enterprise documentation, tutorials, API reference, guides (skills: doc-writing, go-framework, go-interfaces)
+- Design / architecture / patterns --> **Architect** (`architect`)
+- Research / gather info --> **Researcher** (`researcher`)
+- Break plan into tasks, manage develop/test/review loop --> **Team lead** (`team-lead`)
+- Implement core, schema, config, o11y --> **Developer** (`core-implementer`)
+- Implement llm, providers, router --> **Developer** (`llm-implementer`)
+- Implement agent, planners, handoffs --> **Developer** (`agent-implementer`)
+- Implement rag pipeline --> **Developer** (`rag-implementer`)
+- Implement voice pipeline --> **Developer** (`voice-implementer`)
+- Implement tool system, MCP client --> **Developer** (`tool-implementer`)
+- Implement protocols, server adapters --> **Developer** (`protocol-implementer`)
+- Implement guard, resilience, cache, auth, workflow, eval, state, prompt --> **Developer** (`infra-implementer`)
+- Write tests / mocks / benchmarks --> **Test developer** (`test-writer`)
+- Review code --> **Reviewer** (`reviewer`)
+- Write documentation --> **Doc writer** (`doc-writer`)
+
+### Workflow
+
+```
+Architect -> (optionally) Researcher -> Architect produces plan -> Team lead breaks into tasks
+-> Per task: Developer implements -> Test developer writes tests -> Reviewer reviews
+-> If pass: next task. If fail: iterate. -> All tasks done: conclude.
+```
+
+## Skills
+
+- `go-framework` — Package structure, registries, lifecycle, functional options
+- `go-interfaces` — Interface design, hooks, middleware, extension contract
+- `go-testing` — Table-driven tests, stream testing, mocks, benchmarks
+- `provider-implementation` — Provider registration, error mapping, streaming, testing
+- `streaming-patterns` — iter.Seq2, composition, backpressure, context cancellation
+- `doc-writing` — Documentation structure, examples, enterprise standards
+
+## Patterns (quick reference)
+
+- **Registry**: `Register()` + `New()` + `List()` in every extensible package. See `go-framework` skill.
+- **Middleware**: `func(T) T` — composable, applied outside-in. See `go-interfaces` skill.
+- **Hooks**: Optional function fields, nil = skip, composable via `ComposeHooks()`. See `go-interfaces` skill.
+- **Streaming**: `iter.Seq2[T, error]` for public API, never channels. See `streaming-patterns` skill.
+- **Options**: `WithX()` functional options for configuration. See `go-framework` skill.
+- **Errors**: `core.Error` with Op/Code/Message/Err. Check `IsRetryable()`. See CLAUDE.md conventions.

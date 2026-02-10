@@ -1,40 +1,34 @@
 ---
 name: review
-description: Review code against Beluga AI v2 architecture docs. Checks for compliance with design decisions, Go idioms, and testing coverage.
+description: Review code against Beluga AI v2 architecture and Go idioms.
 ---
 
 Review the specified code (or recent changes) against Beluga AI v2 architecture.
 
 ## Steps
 
-1. Read `docs/concepts.md` for design decisions
-2. Identify which packages are affected
-3. Check each file against:
+1. Read `docs/concepts.md` for the relevant package.
+2. Check against:
 
-### Architecture Compliance
+### Architecture
+
 - iter.Seq2 for streaming (not channels)
 - Registry pattern (Register/New/List)
-- Middleware pattern (func(T) T)
-- Hooks pattern (optional, composable)
-- Small interfaces (≤4 methods)
-- context.Context first parameter
-- Functional options WithX()
-- Zero external deps in core/schema
-- No circular imports
+- Middleware `func(T) T`
+- Hooks (optional, composable)
+- Small interfaces (<= 4 methods)
+- context.Context first, functional options WithX()
+- Zero external deps in core/schema, no circular imports
 - Typed errors with ErrorCode
 
 ### Go Idioms
-- Error wrapping with %w
-- Goroutine leak prevention
-- Race condition safety
-- Resource cleanup with defer
-- Doc comments on exports
+
+- Error wrapping %w, goroutine leak prevention, race safety
+- Resource cleanup with defer, doc comments on exports
 - Compile-time interface checks
 
 ### Testing
-- Tests exist for all exports
-- Error paths tested
-- Context cancellation tested for streams
-- Mocks in internal/testutil/
 
-Report findings as: **Critical** / **Warning** / **Suggestion**
+- Tests for all exports, error paths, context cancellation for streams
+
+3. Report: **Critical** / **Warning** / **Suggestion**.

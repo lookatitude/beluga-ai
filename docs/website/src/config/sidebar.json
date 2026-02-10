@@ -428,6 +428,35 @@
           "slug": "reports/code-quality"
         }
       ]
+    },
+    {
+      "label": "Contributing",
+      "items": [
+        {
+          "label": "Overview",
+          "slug": "contributing"
+        },
+        {
+          "label": "[setting] Development Setup",
+          "slug": "contributing/development-setup"
+        },
+        {
+          "label": "[seti:code] Code Style",
+          "slug": "contributing/code-style"
+        },
+        {
+          "label": "[seti:test] Testing",
+          "slug": "contributing/testing"
+        },
+        {
+          "label": "[seti:git] Pull Requests",
+          "slug": "contributing/pull-requests"
+        },
+        {
+          "label": "[rocket] Releases",
+          "slug": "contributing/releases"
+        }
+      ]
     }
   ]
 }

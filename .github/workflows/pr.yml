@@ -1,0 +1,45 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - ".github/**"
+      - ".claude/**"
+      - "docs/website/**"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  ci:
+    name: CI Checks
+    uses: ./.github/workflows/_ci-checks.yml
+
+  security:
+    name: Security Checks
+    uses: ./.github/workflows/_security-checks.yml
+    secrets:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+
+  sonarcloud:
+    name: SonarCloud Analysis
+    needs: ci
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Download coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v7
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

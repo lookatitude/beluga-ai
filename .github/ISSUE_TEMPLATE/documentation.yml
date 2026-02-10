@@ -1,0 +1,52 @@
+name: Documentation Improvement
+description: Suggest improvements to documentation
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Help us improve the documentation! Please describe what needs to be updated or added.
+
+  - type: input
+    id: page
+    attributes:
+      label: Page or Section
+      description: Which documentation page or section is this about?
+      placeholder: "https://beluga-ai.dev/guides/... or package godoc"
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type of Improvement
+      options:
+        - Missing documentation
+        - Incorrect information
+        - Unclear explanation
+        - Missing code example
+        - Broken link
+        - Typo or grammar
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the documentation improvement needed.
+    validations:
+      required: true
+
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested Content
+      description: If you have specific wording or content to suggest, include it here.
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I would be willing to submit a PR for this improvement

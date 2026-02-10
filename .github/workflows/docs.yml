@@ -4,11 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "docs/**"
-      - "**/*.go"
-      - "CHANGELOG.md"
-      - "SECURITY.md"
-      - "CODE-QUALITY.md"
+      - "docs/website/**"
   workflow_dispatch:
 
 permissions:
@@ -42,11 +38,9 @@ jobs:
         run: |
           mkdir -p godoc-output
 
-          # Start pkgsite server in background
           pkgsite -http=:8080 . &
           PKGSITE_PID=$!
 
-          # Wait for pkgsite to be ready (poll every 1s, up to 60s)
           echo "Waiting for pkgsite to start..."
           for i in $(seq 1 60); do
             if curl -sf http://localhost:8080/ > /dev/null 2>&1; then
@@ -61,7 +55,6 @@ jobs:
             sleep 1
           done
 
-          # Mirror the local documentation (exclude query-string URLs)
           wget --mirror --convert-links --adjust-extension \
             --page-requisites --no-parent \
             --directory-prefix=godoc-output \
@@ -73,10 +66,8 @@ jobs:
 
           kill $PKGSITE_PID 2>/dev/null || true
 
-          # Remove any files with characters invalid for artifact upload
           find godoc-output -name '*[?*:<>"|]*' -delete 2>/dev/null || true
 
-          # Verify output
           FILE_COUNT=$(find godoc-output -type f | wc -l)
           echo "Generated ${FILE_COUNT} godoc files"
 
@@ -112,12 +103,10 @@ jobs:
         run: |
           mkdir -p src/content/docs/reports
 
-          # Copy and inject frontmatter for each report file
           for f in CHANGELOG.md SECURITY.md CODE-QUALITY.md; do
             if [ -f "../../$f" ]; then
               slug=$(basename "$f" .md | tr '[:upper:]' '[:lower:]' | tr '_' '-')
 
-              # Map slugs to human-readable titles
               case "$slug" in
                 changelog) title="Changelog" ;;
                 security) title="Security" ;;
