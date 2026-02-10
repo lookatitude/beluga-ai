@@ -269,7 +269,7 @@ jobs:
           echo "Full analysis available at [SonarCloud Dashboard](https://sonarcloud.io/project/overview?id=lookatitude_beluga-ai)" >> CODE-QUALITY.md
 
       - name: Create PR for CODE-QUALITY.md
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7
         with:
           commit-message: "chore(ci): update CODE-QUALITY.md"
           branch: ci/update-code-quality-md
