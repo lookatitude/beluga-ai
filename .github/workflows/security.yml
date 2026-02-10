@@ -9,9 +9,8 @@ on:
     - cron: "0 0 * * 0" # Weekly Sunday midnight UTC
 
 permissions:
-  contents: write
+  contents: read
   security-events: write
-  pull-requests: write
 
 env:
   GO_VERSION: "1.25.7"
@@ -182,6 +181,9 @@ jobs:
     needs: [snyk, trivy, gitleaks, go-licenses]
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && always()
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
