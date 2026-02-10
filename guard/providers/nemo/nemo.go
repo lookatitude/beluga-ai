@@ -1,20 +1,3 @@
-// Package nemo provides an NVIDIA NeMo Guardrails guard implementation for the
-// Beluga AI safety pipeline. It implements the guard.Guard interface and sends
-// content validation requests to a NeMo Guardrails API endpoint.
-//
-// NeMo Guardrails can be configured to check for topic safety, jailbreak
-// detection, fact-checking, and more via Colang configurations.
-//
-// Usage:
-//
-//	g, err := nemo.New(
-//	    nemo.WithBaseURL("http://localhost:8080"),
-//	    nemo.WithConfigID("my-config"),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	result, err := g.Validate(ctx, input)
 package nemo
 
 import (

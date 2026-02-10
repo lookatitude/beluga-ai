@@ -1,9 +1,3 @@
-// Package postgres provides a PostgreSQL-backed implementation of
-// memory.MessageStore. Messages are stored in a table with columns for role,
-// content (JSON), metadata (JSON), and created_at timestamp. Search uses
-// case-insensitive ILIKE queries on the content column.
-//
-// This implementation uses github.com/jackc/pgx/v5 as the PostgreSQL driver.
 package postgres
 
 import (

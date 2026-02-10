@@ -1,10 +1,3 @@
-// Package redis provides a Redis-backed implementation of memory.MessageStore.
-// Messages are stored as JSON in a Redis sorted set, scored by insertion
-// timestamp, providing natural chronological ordering. Search uses
-// case-insensitive substring matching on text content parts.
-//
-// This implementation requires a Redis server (v5.0+) and uses
-// github.com/redis/go-redis/v9 as the client library.
 package redis
 
 import (

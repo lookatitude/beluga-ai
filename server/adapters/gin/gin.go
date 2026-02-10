@@ -1,12 +1,3 @@
-// Package gin provides a Gin-based ServerAdapter for the Beluga AI server package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/gin"
-//
-//	adapter, err := server.New("gin", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package gin
 
 import (

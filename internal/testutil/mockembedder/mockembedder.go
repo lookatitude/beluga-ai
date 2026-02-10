@@ -1,6 +1,3 @@
-// Package mockembedder provides a mock Embedder implementation for testing.
-// It allows test authors to configure canned embeddings, errors, and
-// dimensions, and tracks call history for assertions.
 package mockembedder
 
 import (

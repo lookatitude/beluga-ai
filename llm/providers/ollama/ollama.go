@@ -1,15 +1,3 @@
-// Package ollama provides the Ollama LLM provider for the Beluga AI framework.
-// Ollama exposes an OpenAI-compatible API, so this provider uses the shared
-// openaicompat package with Ollama's local base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/ollama"
-//
-//	model, err := llm.New("ollama", config.ProviderConfig{
-//	    Model:   "llama3.2",
-//	    BaseURL: "http://localhost:11434/v1",
-//	})
 package ollama
 
 import (

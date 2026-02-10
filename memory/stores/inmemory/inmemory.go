@@ -1,7 +1,3 @@
-// Package inmemory provides in-memory implementations of the memory store
-// interfaces. These implementations are suitable for development, testing,
-// and short-lived agent sessions. Data is not persisted across process
-// restarts.
 package inmemory
 
 import (

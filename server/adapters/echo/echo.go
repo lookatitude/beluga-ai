@@ -1,12 +1,3 @@
-// Package echo provides an Echo-based ServerAdapter for the Beluga AI server package.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/echo"
-//
-//	adapter, err := server.New("echo", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":8080")
 package echo
 
 import (

@@ -1,14 +1,3 @@
-// Package pipecat provides the Pipecat transport provider for the Beluga AI
-// voice pipeline. It implements the AudioTransport interface for bidirectional
-// audio I/O through a Pipecat server over WebSocket.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/pipecat"
-//
-//	t, err := transport.New("pipecat", transport.Config{
-//	    URL: "ws://localhost:8765",
-//	})
 package pipecat
 
 import (

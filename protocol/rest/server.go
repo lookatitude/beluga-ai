@@ -1,14 +1,3 @@
-// Package rest provides a REST/SSE API server for exposing Beluga agents over HTTP.
-// It supports both synchronous invocation and streaming via Server-Sent Events.
-//
-// Usage:
-//
-//	srv := rest.NewServer()
-//	srv.RegisterAgent("assistant", myAgent)
-//	srv.Serve(ctx, ":8080")
-//
-//	// POST /assistant/invoke  -> {"result": "..."}
-//	// POST /assistant/stream  -> SSE stream of events
 package rest
 
 import (

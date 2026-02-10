@@ -1,14 +1,3 @@
-// Package ollama provides an Ollama embeddings provider for the Beluga AI framework.
-// It implements the embedding.Embedder interface using the Ollama REST API
-// via the internal httpclient.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/embedding/providers/ollama"
-//
-//	emb, err := embedding.New("ollama", config.ProviderConfig{
-//	    BaseURL: "http://localhost:11434",
-//	})
 package ollama
 
 import (

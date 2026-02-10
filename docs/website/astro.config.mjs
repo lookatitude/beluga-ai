@@ -2,6 +2,7 @@
 import { defineConfig } from "astro/config";
 import starlight from "@astrojs/starlight";
 import { viewTransitions } from "astro-vtbot/starlight-view-transitions";
+import rehypeMermaid from "./src/lib/rehype-mermaid.mjs";
 
 import tailwindcss from "@tailwindcss/vite";
 import config from "./src/config/config.json" assert { type: "json" };
@@ -12,7 +13,7 @@ import sidebar from "./src/config/sidebar.json";
 import { fileURLToPath } from "url";
 
 const { site } = config;
-const { title, logo, logo_darkmode } = site;
+const { title } = site;
 
 export const locales = locals
 
@@ -22,14 +23,12 @@ export default defineConfig({
   image: {
     service: { entrypoint: "astro/assets/services/noop" },
   },
+  markdown: {
+    rehypePlugins: [rehypeMermaid],
+  },
   integrations: [
     starlight({
       title,
-      logo: {
-        light: logo,
-        dark: logo_darkmode,
-        alt: "DocKit Logo",
-      },
       // @ts-ignore
       social: social.main || [],
       locales,
@@ -45,10 +44,10 @@ export default defineConfig({
         ContentPanel: "./src/components/override-components/ContentPanel.astro",
         Pagination: "./src/components/override-components/Pagination.astro",
         Sidebar: "./src/components/override-components/Sidebar.astro",
-        
-        
+
+
       },
-      
+
     }),
   ],
   vite: {

@@ -1,21 +1,3 @@
-// Package loader provides document loading capabilities for the RAG pipeline.
-// It defines the DocumentLoader interface for reading content from various
-// sources (files, URLs, APIs) and converting them into schema.Document slices.
-//
-// The package includes a registry for loader implementations and a pipeline
-// for chaining loaders with transformers.
-//
-// Built-in loaders:
-//   - "text" — Plain text files
-//   - "json" — JSON files with configurable path extraction
-//   - "csv"  — CSV files (one document per row)
-//   - "markdown" — Markdown files
-//
-// Usage:
-//
-//	loader, err := loader.New("text", config.ProviderConfig{})
-//	if err != nil { ... }
-//	docs, err := loader.Load(ctx, "/path/to/file.txt")
 package loader
 
 import (

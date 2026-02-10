@@ -1,19 +1,3 @@
-// Package livekit provides the LiveKit transport provider for the Beluga AI
-// voice pipeline. It implements the AudioTransport interface for bidirectional
-// audio I/O through LiveKit rooms.
-//
-// LiveKit is treated as a TRANSPORT, not a framework dependency. LiveKit
-// provides WebRTC transport while Beluga handles all STT/LLM/TTS processing.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/transport/providers/livekit"
-//
-//	t, err := transport.New("livekit", transport.Config{
-//	    URL:   "wss://myapp.livekit.cloud",
-//	    Token: "...",
-//	    Extra: map[string]any{"room": "my-room"},
-//	})
 package livekit
 
 import (

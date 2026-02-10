@@ -1,18 +1,3 @@
-// Package elasticsearch provides a VectorStore backed by Elasticsearch's kNN search.
-// It uses Elasticsearch's dense_vector field type and approximate kNN search.
-//
-// Registration:
-//
-//	import _ "github.com/lookatitude/beluga-ai/rag/vectorstore/providers/elasticsearch"
-//
-//	store, err := vectorstore.New("elasticsearch", config.ProviderConfig{
-//	    BaseURL: "http://localhost:9200",
-//	    APIKey:  "optional-api-key",
-//	    Options: map[string]any{
-//	        "index":     "documents",
-//	        "dimension": float64(1536),
-//	    },
-//	})
 package elasticsearch
 
 import (

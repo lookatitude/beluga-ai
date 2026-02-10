@@ -1,6 +1,3 @@
-// Package syncutil provides concurrency utilities for the Beluga AI framework.
-// It includes a worker pool for bounded parallel execution and a semaphore
-// for concurrency limiting.
 package syncutil
 
 import (

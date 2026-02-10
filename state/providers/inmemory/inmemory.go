@@ -1,11 +1,3 @@
-// Package inmemory provides an in-memory implementation of the state.Store
-// interface. It is intended for development and testing.
-//
-// Example:
-//
-//	store := inmemory.New()
-//	defer store.Close()
-//	_ = store.Set(ctx, "key", "value")
 package inmemory
 
 import (

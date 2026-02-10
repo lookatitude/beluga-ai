@@ -1,15 +1,3 @@
-// Package smallest provides the Smallest.ai TTS provider for the Beluga AI
-// voice pipeline. It uses the Smallest.ai Text-to-Speech API.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/tts/providers/smallest"
-//
-//	engine, err := tts.New("smallest", tts.Config{
-//	    Voice: "emily",
-//	    Extra: map[string]any{"api_key": "..."},
-//	})
-//	audio, err := engine.Synthesize(ctx, "Hello!")
 package smallest
 
 import (

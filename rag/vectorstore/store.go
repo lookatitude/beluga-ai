@@ -1,17 +1,3 @@
-// Package vectorstore provides the VectorStore interface and registry for
-// storing and searching document embeddings. VectorStores are the storage
-// backend for the RAG pipeline, supporting similarity search over embedded
-// documents.
-//
-// The package follows Beluga's registry pattern — providers register via
-// init() and are instantiated with New:
-//
-//	store, err := vectorstore.New("inmemory", cfg)
-//	err = store.Add(ctx, docs, embeddings)
-//	results, err := store.Search(ctx, queryVec, 10, vectorstore.WithThreshold(0.7))
-//
-// Search behaviour is configurable via functional options: filter by metadata,
-// set a minimum similarity threshold, or select a distance strategy.
 package vectorstore
 
 import (

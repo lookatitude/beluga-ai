@@ -1,25 +1,3 @@
-// Package s2s provides the speech-to-speech (S2S) interface and provider
-// registry for the Beluga AI voice pipeline. S2S providers handle native
-// audio-in/audio-out via their own transport (WebRTC, WebSocket), bypassing
-// the STT → LLM → TTS cascade for lower latency.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/s2s/providers/openai_realtime"
-//
-//	engine, err := s2s.New("openai_realtime", s2s.Config{Voice: "alloy"})
-//	session, err := engine.Start(ctx)
-//	defer session.Close()
-//
-//	session.SendAudio(ctx, audioChunk)
-//	for event := range session.Recv() {
-//	    switch event.Type {
-//	    case s2s.EventAudioOutput:
-//	        playAudio(event.Audio)
-//	    case s2s.EventToolCall:
-//	        handleToolCall(event.ToolCall)
-//	    }
-//	}
 package s2s
 
 import (

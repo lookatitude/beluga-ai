@@ -1,15 +1,3 @@
-// Package cerebras provides the Cerebras LLM provider for the Beluga AI framework.
-// Cerebras exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with Cerebras' base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/cerebras"
-//
-//	model, err := llm.New("cerebras", config.ProviderConfig{
-//	    Model:  "llama-3.3-70b",
-//	    APIKey: "csk-...",
-//	})
 package cerebras
 
 import (

@@ -1,25 +1,3 @@
-// Package tool provides the tool system for the Beluga AI framework.
-// It defines the Tool interface, a type-safe FuncTool wrapper using generics,
-// a thread-safe tool registry, middleware composition, hooks for lifecycle
-// management, and an MCP client for connecting to remote tool servers.
-//
-// Usage:
-//
-//	// Define a typed input struct
-//	type CalcInput struct {
-//	    Expression string `json:"expression" description:"Math expression" required:"true"`
-//	}
-//
-//	// Create a FuncTool that auto-generates JSON Schema
-//	calc := tool.NewFuncTool("calculate", "Evaluate math expressions",
-//	    func(ctx context.Context, input CalcInput) (*tool.Result, error) {
-//	        return tool.TextResult("42"), nil
-//	    },
-//	)
-//
-//	// Add to a registry
-//	reg := tool.NewRegistry()
-//	reg.Add(calc)
 package tool
 
 import (

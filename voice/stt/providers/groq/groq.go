@@ -1,15 +1,3 @@
-// Package groq provides the Groq STT provider for the Beluga AI voice pipeline.
-// It uses the Groq Whisper endpoint (OpenAI-compatible API) for transcription.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/groq"
-//
-//	engine, err := stt.New("groq", stt.Config{
-//	    Model: "whisper-large-v3",
-//	    Extra: map[string]any{"api_key": "gsk-..."},
-//	})
-//	text, err := engine.Transcribe(ctx, audioBytes)
 package groq
 
 import (

@@ -1,6 +1,3 @@
-// Package o11y provides observability primitives for the Beluga AI framework:
-// OpenTelemetry-based tracing and metrics using GenAI semantic conventions,
-// structured logging via slog, health checks, and LLM-specific trace exporting.
 package o11y
 
 import (

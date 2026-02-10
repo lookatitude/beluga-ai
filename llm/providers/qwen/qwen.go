@@ -1,15 +1,3 @@
-// Package qwen provides the Alibaba Qwen LLM provider for the Beluga AI framework.
-// Qwen exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with Qwen's base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/qwen"
-//
-//	model, err := llm.New("qwen", config.ProviderConfig{
-//	    Model:  "qwen-plus",
-//	    APIKey: "sk-...",
-//	})
 package qwen
 
 import (

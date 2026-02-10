@@ -1,18 +1,3 @@
-// Package state provides shared agent state with key-value storage,
-// change notifications via Watch, and scoping by agent/session/global.
-//
-// The package follows the standard Beluga registry pattern: providers
-// register via init() and are created with New(name, cfg).
-//
-// Example:
-//
-//	store, err := state.New("inmemory", state.Config{})
-//	if err != nil { ... }
-//	defer store.Close()
-//
-//	_ = store.Set(ctx, state.ScopedKey(state.ScopeAgent, "counter"), 42)
-//	val, _ := store.Get(ctx, state.ScopedKey(state.ScopeAgent, "counter"))
-//	fmt.Println(val) // 42
 package state
 
 import (

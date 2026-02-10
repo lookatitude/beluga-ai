@@ -1,6 +1,3 @@
-// Package mockworkflow provides a mock WorkflowStore implementation for testing.
-// It allows test authors to store and retrieve workflow states in-memory and
-// tracks call history for assertions.
 package mockworkflow
 
 import (

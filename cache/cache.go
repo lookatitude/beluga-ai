@@ -1,25 +1,3 @@
-// Package cache provides exact and semantic caching for the Beluga AI framework.
-// It defines the Cache interface for key-value storage with TTL support, a registry
-// for pluggable cache backends, and a SemanticCache wrapper for embedding-based
-// similarity lookups.
-//
-// Usage:
-//
-//	// Import the in-memory provider for auto-registration
-//	import _ "github.com/lookatitude/beluga-ai/cache/providers/inmemory"
-//
-//	// Create a cache from the registry
-//	c, err := cache.New("inmemory", cache.Config{
-//	    TTL:     5 * time.Minute,
-//	    MaxSize: 1000,
-//	})
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//
-//	// Store and retrieve values
-//	_ = c.Set(ctx, "key", "value", 10*time.Minute)
-//	val, ok, err := c.Get(ctx, "key")
 package cache
 
 import (

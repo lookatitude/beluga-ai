@@ -1,22 +1,3 @@
-// Package stt provides the speech-to-text (STT) interface and provider registry
-// for the Beluga AI voice pipeline. Providers implement the STT interface and
-// register themselves via init() for discovery.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/voice/stt/providers/deepgram"
-//
-//	engine, err := stt.New("deepgram", stt.Config{Language: "en"})
-//	text, err := engine.Transcribe(ctx, audioBytes)
-//
-//	// Streaming:
-//	for event, err := range engine.TranscribeStream(ctx, audioStream) {
-//	    if err != nil { break }
-//	    fmt.Printf("[%v] %s (final=%v)\n", event.Timestamp, event.Text, event.IsFinal)
-//	}
-//
-//	// As FrameProcessor in a voice pipeline:
-//	processor := stt.AsFrameProcessor(engine)
 package stt
 
 import (

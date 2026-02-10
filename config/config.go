@@ -1,27 +1,3 @@
-// Package config provides configuration loading, validation, and environment
-// variable merging for the Beluga AI framework.
-//
-// It supports loading configuration from JSON files, environment variables,
-// and struct tag-based validation. Struct tags control defaults and validation:
-//
-//	type AppConfig struct {
-//	    Port    int    `json:"port" default:"8080" min:"1" max:"65535"`
-//	    Host    string `json:"host" default:"localhost" required:"true"`
-//	    Debug   bool   `json:"debug" default:"false"`
-//	}
-//
-// Loading from a file:
-//
-//	cfg, err := config.Load[AppConfig]("config.json")
-//
-// Loading from environment variables:
-//
-//	cfg, err := config.LoadFromEnv[AppConfig]("BELUGA")
-//	// reads BELUGA_PORT, BELUGA_HOST, BELUGA_DEBUG
-//
-// Merging environment overrides onto an existing config:
-//
-//	config.MergeEnv(&cfg, "BELUGA")
 package config
 
 import (

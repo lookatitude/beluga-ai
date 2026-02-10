@@ -1,14 +1,3 @@
-// Package grpc provides a gRPC-based ServerAdapter for the Beluga AI server package.
-// It exposes agents via unary (Invoke) and server-streaming (Stream) RPCs using
-// JSON encoding over gRPC (no .proto file required).
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/server/adapters/grpc"
-//
-//	adapter, err := server.New("grpc", server.Config{})
-//	adapter.RegisterAgent("/chat", myAgent)
-//	adapter.Serve(ctx, ":50051")
 package grpc
 
 import (

@@ -1,18 +1,3 @@
-// Package langfuse provides a Langfuse trace exporter for the Beluga AI
-// observability system. It implements the o11y.TraceExporter interface and
-// sends LLM call data to a Langfuse instance via its HTTP ingestion API.
-//
-// Usage:
-//
-//	exporter, err := langfuse.New(
-//	    langfuse.WithBaseURL("https://cloud.langfuse.com"),
-//	    langfuse.WithPublicKey("pk-..."),
-//	    langfuse.WithSecretKey("sk-..."),
-//	)
-//	if err != nil {
-//	    log.Fatal(err)
-//	}
-//	err = exporter.ExportLLMCall(ctx, data)
 package langfuse
 
 import (

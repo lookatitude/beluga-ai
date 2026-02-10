@@ -1,15 +1,3 @@
-// Package fireworks provides the Fireworks AI LLM provider for the Beluga AI framework.
-// Fireworks AI exposes an OpenAI-compatible API, so this provider is a thin wrapper
-// around the shared openaicompat package with Fireworks' base URL.
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/fireworks"
-//
-//	model, err := llm.New("fireworks", config.ProviderConfig{
-//	    Model:  "accounts/fireworks/models/llama-v3p1-70b-instruct",
-//	    APIKey: "fw_...",
-//	})
 package fireworks
 
 import (

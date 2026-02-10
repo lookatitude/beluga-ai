@@ -1,20 +1,3 @@
-// Package llama provides a Meta Llama model provider for the Beluga AI framework.
-// Since Meta does not offer a direct API, this provider delegates to one of the
-// available hosting providers that serve Llama models: Together, Fireworks, Groq,
-// SambaNova, Cerebras, or Ollama.
-//
-// The backend can be selected via the "backend" option in ProviderConfig.Options.
-// If not specified, it defaults to "together".
-//
-// Usage:
-//
-//	import _ "github.com/lookatitude/beluga-ai/llm/providers/llama"
-//
-//	model, err := llm.New("llama", config.ProviderConfig{
-//	    Model:  "meta-llama/Llama-3.3-70B-Instruct",
-//	    APIKey: "...",
-//	    Options: map[string]any{"backend": "together"},
-//	})
 package llama
 
 import (
