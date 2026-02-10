@@ -1,0 +1,29 @@
+# Default owners for everything
+* @lookatitude/beluga-maintainers
+
+# Core packages
+/core/ @lookatitude/beluga-maintainers
+/schema/ @lookatitude/beluga-maintainers
+
+# LLM and agents
+/llm/ @lookatitude/beluga-maintainers
+/agent/ @lookatitude/beluga-maintainers
+/tool/ @lookatitude/beluga-maintainers
+
+# RAG pipeline
+/rag/ @lookatitude/beluga-maintainers
+
+# Voice pipeline
+/voice/ @lookatitude/beluga-maintainers
+
+# Infrastructure
+/resilience/ @lookatitude/beluga-maintainers
+/guard/ @lookatitude/beluga-maintainers
+/cache/ @lookatitude/beluga-maintainers
+/auth/ @lookatitude/beluga-maintainers
+
+# CI/CD and workflows
+/.github/ @lookatitude/beluga-maintainers
+
+# Documentation
+/docs/ @lookatitude/beluga-maintainers

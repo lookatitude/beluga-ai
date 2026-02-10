@@ -1,0 +1,177 @@
+name: CI Checks
+
+on:
+  workflow_call:
+    outputs:
+      lint_status:
+        description: "Lint status (passing/failing)"
+        value: ${{ jobs.lint.outputs.lint_status }}
+      lint_issues_count:
+        description: "Number of lint issues"
+        value: ${{ jobs.lint.outputs.lint_issues_count }}
+      test_status:
+        description: "Test status (passing/failing)"
+        value: ${{ jobs.test.outputs.test_status }}
+      test_count:
+        description: "Total test count"
+        value: ${{ jobs.test.outputs.test_count }}
+      coverage_pct:
+        description: "Coverage percentage"
+        value: ${{ jobs.test.outputs.coverage_pct }}
+      integration_status:
+        description: "Integration test status"
+        value: ${{ jobs.integration-test.outputs.integration_status }}
+      integration_count:
+        description: "Integration test count"
+        value: ${{ jobs.integration-test.outputs.integration_count }}
+
+env:
+  GO_VERSION: "1.25.7"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    outputs:
+      lint_status: ${{ steps.lint_result.outputs.status }}
+      lint_issues_count: ${{ steps.lint_result.outputs.issues_count }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run golangci-lint
+        id: golangci
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: latest
+          args: --out-format=json > lint-report.json || true
+
+      - name: Parse lint results
+        id: lint_result
+        if: always()
+        run: |
+          if [ -f lint-report.json ]; then
+            ISSUES=$(jq '.Issues | length // 0' lint-report.json 2>/dev/null || echo "0")
+          else
+            ISSUES=0
+          fi
+          if [ "${{ steps.golangci.outcome }}" = "success" ]; then
+            echo "status=passing" >> $GITHUB_OUTPUT
+          else
+            echo "status=failing" >> $GITHUB_OUTPUT
+          fi
+          echo "issues_count=${ISSUES}" >> $GITHUB_OUTPUT
+
+  build:
+    name: Build
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Build all packages
+        run: go build ./...
+
+      - name: Check go mod tidy
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+
+  test:
+    name: Unit Tests
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      test_status: ${{ steps.test_result.outputs.status }}
+      test_count: ${{ steps.test_result.outputs.test_count }}
+      coverage_pct: ${{ steps.test_result.outputs.coverage_pct }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run tests with coverage
+        id: run_tests
+        run: |
+          go test -race -coverprofile=coverage.out -covermode=atomic -json ./... > test-output.json 2>&1 || true
+
+      - name: Parse test results
+        id: test_result
+        if: always()
+        run: |
+          TEST_COUNT=$(grep -c '"Test":' test-output.json 2>/dev/null | head -1 || echo "0")
+          PASS_COUNT=$(grep -c '"Action":"pass"' test-output.json 2>/dev/null || echo "0")
+          FAIL_COUNT=$(grep -c '"Action":"fail"' test-output.json 2>/dev/null || echo "0")
+
+          if [ -f coverage.out ]; then
+            COVERAGE=$(go tool cover -func=coverage.out | grep total | awk '{print $3}' | tr -d '%')
+          else
+            COVERAGE="0"
+          fi
+
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "status=failing" >> $GITHUB_OUTPUT
+          else
+            echo "status=passing" >> $GITHUB_OUTPUT
+          fi
+          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
+          echo "coverage_pct=${COVERAGE}" >> $GITHUB_OUTPUT
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.out
+
+      - name: Upload test output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-output
+          path: test-output.json
+
+  integration-test:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    outputs:
+      integration_status: ${{ steps.integration_result.outputs.status }}
+      integration_count: ${{ steps.integration_result.outputs.test_count }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Run integration tests
+        id: run_integration
+        run: |
+          go test -race -tags integration -json ./... > integration-output.json 2>&1 || true
+
+      - name: Parse integration results
+        id: integration_result
+        if: always()
+        run: |
+          TEST_COUNT=$(grep -c '"Test":' integration-output.json 2>/dev/null | head -1 || echo "0")
+          FAIL_COUNT=$(grep -c '"Action":"fail"' integration-output.json 2>/dev/null || echo "0")
+
+          if [ "$FAIL_COUNT" -gt 0 ]; then
+            echo "status=failing" >> $GITHUB_OUTPUT
+          else
+            echo "status=passing" >> $GITHUB_OUTPUT
+          fi
+          echo "test_count=${TEST_COUNT}" >> $GITHUB_OUTPUT
