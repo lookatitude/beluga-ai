@@ -275,3 +275,177 @@ func TestBuildIDFilter(t *testing.T) {
 	assert.Contains(t, filter, `"c"`)
 	assert.Contains(t, filter, "id in [")
 }
+
+func TestStore_Search_NestedArrayFormat(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		// Milvus can return nested array format.
+		resp := map[string]any{
+			"code": 0,
+			"data": []any{
+				[]any{
+					map[string]any{
+						"id":       "doc1",
+						"content":  "hello",
+						"distance": 0.1,
+					},
+					map[string]any{
+						"id":       "doc2",
+						"content":  "world",
+						"distance": 0.2,
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	assert.Equal(t, "doc1", results[0].ID)
+	assert.Equal(t, "doc2", results[1].ID)
+}
+
+func TestStore_Search_NoDataField(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{"code": 0}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	assert.Len(t, results, 0)
+}
+
+func TestStore_Search_InvalidDataType(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"code": 0,
+			"data": "not an array",
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	assert.Len(t, results, 0)
+}
+
+func TestStore_Search_WithThreshold(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"code": 0,
+			"data": []any{
+				map[string]any{
+					"id":       "doc1",
+					"content":  "hello",
+					"distance": 0.05, // score will be 0.95
+				},
+				map[string]any{
+					"id":       "doc2",
+					"content":  "world",
+					"distance": 0.6, // score will be 0.4
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithThreshold(0.5))
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test that the init() registered factory works.
+	store, err := vectorstore.New("milvus", config.ProviderConfig{
+		BaseURL: "http://localhost:19530",
+		APIKey:  "test-key",
+		Options: map[string]any{
+			"collection": "test_col",
+			"dimension":  float64(256),
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	// Verify it's actually a Milvus store.
+	milvusStore, ok := store.(*Store)
+	require.True(t, ok)
+	assert.Equal(t, "http://localhost:19530", milvusStore.baseURL)
+	assert.Equal(t, "test-key", milvusStore.apiKey)
+	assert.Equal(t, "test_col", milvusStore.collection)
+	assert.Equal(t, 256, milvusStore.dimension)
+}
+
+func TestStore_Search_SkipInvalidItems(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"code": 0,
+			"data": []any{
+				"invalid string item",
+				map[string]any{
+					"id":       "doc1",
+					"content":  "hello",
+					"distance": 0.1,
+				},
+				[]any{"invalid nested string"},
+				[]any{
+					map[string]any{
+						"id":       "doc2",
+						"content":  "world",
+						"distance": 0.2,
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 2)
+	assert.Equal(t, "doc1", results[0].ID)
+	assert.Equal(t, "doc2", results[1].ID)
+}
+
+func TestStore_Search_MultipleFilters(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		resp := map[string]any{"code": 0, "data": []any{}}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	filter := map[string]any{"category": "A", "status": "active"}
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(filter))
+	require.NoError(t, err)
+
+	f, ok := receivedBody["filter"]
+	require.True(t, ok, "filter should be in request body")
+	filterStr := f.(string)
+	assert.Contains(t, filterStr, "category")
+	assert.Contains(t, filterStr, "status")
+	assert.Contains(t, filterStr, " and ")
+}

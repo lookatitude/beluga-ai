@@ -166,3 +166,22 @@ func TestLoad_ContextCancelled(t *testing.T) {
 		t.Errorf("expected nil docs for empty markdown, got %d", len(docs))
 	}
 }
+
+func TestNew_InvalidURL(t *testing.T) {
+	// Test that New handles invalid base URL gracefully.
+	// The firecrawl SDK doesn't actually validate URLs in constructor,
+	// so this just tests that we can create a loader with an unusual base URL.
+	l, err := New(config.ProviderConfig{
+		APIKey:  "fc-test",
+		BaseURL: "://invalid-url",
+	})
+	// The firecrawl SDK may or may not return an error for invalid URLs
+	// during construction. If it doesn't, the error will occur during Load.
+	if err != nil {
+		// Expected - invalid URL should fail
+		return
+	}
+	if l == nil {
+		t.Fatal("expected non-nil loader or error")
+	}
+}

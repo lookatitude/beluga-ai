@@ -3,6 +3,7 @@ package whisper
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -139,6 +140,26 @@ func TestTranscribe(t *testing.T) {
 		assert.Contains(t, err.Error(), "401")
 	})
 
+	t.Run("invalid json response", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.Write([]byte(`{invalid json`))
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		_, err = e.Transcribe(context.Background(), []byte("audio"))
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "decode response")
+	})
+
 	t.Run("context cancelled", func(t *testing.T) {
 		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			time.Sleep(100 * time.Millisecond)
@@ -221,6 +242,108 @@ func TestTranscribeStream(t *testing.T) {
 		}
 		assert.True(t, gotErr)
 	})
+
+	t.Run("audio stream error", func(t *testing.T) {
+		e, err := New(stt.Config{
+			Extra: map[string]any{"api_key": "sk-test"},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield(nil, fmt.Errorf("audio read error"))
+		}
+
+		var gotErr error
+		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+		assert.Contains(t, gotErr.Error(), "audio read error")
+	})
+
+	t.Run("context cancelled", func(t *testing.T) {
+		e, err := New(stt.Config{
+			Extra: map[string]any{"api_key": "sk-test"},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithCancel(context.Background())
+		cancel()
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield([]byte("chunk"), nil)
+		}
+
+		var gotErr error
+		for _, err := range e.TranscribeStream(ctx, audioStream) {
+			if err != nil {
+				gotErr = err
+				break
+			}
+		}
+		require.Error(t, gotErr)
+		assert.ErrorIs(t, gotErr, context.Canceled)
+	})
+
+	t.Run("empty text skipped", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(whisperResponse{Text: ""})
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			yield([]byte("chunk"), nil)
+		}
+
+		var count int
+		for range e.TranscribeStream(context.Background(), audioStream) {
+			count++
+		}
+		assert.Equal(t, 0, count)
+	})
+
+	t.Run("early consumer break", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(whisperResponse{Text: "text"})
+		}))
+		defer srv.Close()
+
+		e, err := New(stt.Config{
+			Extra: map[string]any{
+				"api_key":  "sk-test",
+				"base_url": srv.URL,
+			},
+		})
+		require.NoError(t, err)
+
+		audioStream := func(yield func([]byte, error) bool) {
+			if !yield([]byte("chunk1"), nil) {
+				return
+			}
+			yield([]byte("chunk2"), nil)
+		}
+
+		count := 0
+		for _, err := range e.TranscribeStream(context.Background(), audioStream) {
+			require.NoError(t, err)
+			count++
+			break
+		}
+		assert.Equal(t, 1, count)
+	})
 }
 
 func TestRegistry(t *testing.T) {
@@ -234,5 +357,19 @@ func TestRegistry(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected 'whisper' in registered providers: %v", names)
+	})
+
+	t.Run("new via registry", func(t *testing.T) {
+		engine, err := stt.New("whisper", stt.Config{
+			Extra: map[string]any{"api_key": "sk-test"},
+		})
+		require.NoError(t, err)
+		assert.NotNil(t, engine)
+	})
+
+	t.Run("new via registry error", func(t *testing.T) {
+		_, err := stt.New("whisper", stt.Config{})
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "api_key is required")
 	})
 }

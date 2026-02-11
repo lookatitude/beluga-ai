@@ -1,11 +1,16 @@
 package httpclient
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -425,6 +430,205 @@ func TestDoJSON_NoRetryOnNetworkErrorWhenRetriesDisabled(t *testing.T) {
 	_, err := DoJSON[testResponse](context.Background(), c, http.MethodGet, "/data", nil)
 	require.Error(t, err)
 	assert.Equal(t, int32(1), attempts.Load())
+}
+
+func TestIsNetworkError(t *testing.T) {
+	tests := []struct {
+		name string
+		err  error
+		want bool
+	}{
+		{"nil error", nil, false},
+		{"EOF", io.EOF, true},
+		{"unexpected EOF", io.ErrUnexpectedEOF, true},
+		// net.OpError implements net.Error, so it's caught by the net.Error check.
+		// With a non-temporary inner error, Temporary()/Timeout() returns false.
+		{"net.OpError non-temp", &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("refused")}, false},
+		// With a temporary inner error, the net.Error check returns true.
+		{"net.OpError with temp", &net.OpError{Op: "dial", Net: "tcp", Err: &testNetError{temporary: true}}, true},
+		// url.Error unwrapping then net.Error check.
+		{"url.Error wrapping temp OpError", &url.Error{Op: "Get", URL: "http://x", Err: &net.OpError{Op: "dial", Net: "tcp", Err: &testNetError{timeout: true}}}, true},
+		{"connection reset string", errors.New("read: connection reset by peer"), true},
+		{"broken pipe string", errors.New("write: broken pipe"), true},
+		{"connection refused string", errors.New("dial: connection refused"), true},
+		{"non-network error", errors.New("something else"), false},
+		{"context canceled", context.Canceled, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := isNetworkError(tt.err)
+			assert.Equal(t, tt.want, got, "isNetworkError(%v)", tt.err)
+		})
+	}
+}
+
+func TestIsNetworkError_NetError(t *testing.T) {
+	// Test net.Error interface with Temporary/Timeout.
+	t.Run("timeout error", func(t *testing.T) {
+		err := &testNetError{timeout: true}
+		assert.True(t, isNetworkError(err))
+	})
+	t.Run("temporary error", func(t *testing.T) {
+		err := &testNetError{temporary: true}
+		assert.True(t, isNetworkError(err))
+	})
+	t.Run("non-temporary non-timeout net.Error", func(t *testing.T) {
+		err := &testNetError{}
+		assert.False(t, isNetworkError(err))
+	})
+	t.Run("url.Error wrapping net.Error", func(t *testing.T) {
+		err := &url.Error{Op: "Get", URL: "http://x", Err: &testNetError{timeout: true}}
+		assert.True(t, isNetworkError(err))
+	})
+}
+
+// testNetError implements net.Error for testing.
+type testNetError struct {
+	timeout   bool
+	temporary bool
+}
+
+func (e *testNetError) Error() string   { return "test net error" }
+func (e *testNetError) Timeout() bool   { return e.timeout }
+func (e *testNetError) Temporary() bool { return e.temporary }
+
+func TestDo_MarshalError(t *testing.T) {
+	c := New(WithBaseURL("http://localhost"))
+	// Channels cannot be JSON marshaled.
+	_, err := c.Do(context.Background(), http.MethodPost, "/test", make(chan int), nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal body")
+}
+
+func TestDoJSON_InvalidJSONResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("not valid json"))
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL))
+	_, err := DoJSON[testResponse](context.Background(), c, http.MethodGet, "/data", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "decode response")
+}
+
+func TestStreamSSEWithBody_DoError(t *testing.T) {
+	// Client with unreachable base URL to trigger Do() error.
+	c := New(WithBaseURL("http://127.0.0.1:1"))
+	for _, err := range StreamSSEWithBody(context.Background(), c, http.MethodGet, "/stream", nil) {
+		require.Error(t, err)
+		break
+	}
+}
+
+func TestStreamSSEWithBody_ScannerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			return
+		}
+
+		// Send one valid event.
+		fmt.Fprintln(w, "data: hello")
+		fmt.Fprintln(w)
+		flusher.Flush()
+
+		// Write an oversized line to trigger scanner buffer error.
+		huge := make([]byte, bufio.MaxScanTokenSize+1)
+		for i := range huge {
+			huge[i] = 'x'
+		}
+		w.Write(huge)
+		flusher.Flush()
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL))
+	var events []SSEEvent
+	var lastErr error
+	for ev, err := range StreamSSEWithBody(context.Background(), c, http.MethodPost, "/stream", nil) {
+		if err != nil {
+			lastErr = err
+			break
+		}
+		events = append(events, ev)
+	}
+	assert.Len(t, events, 1)
+	require.Error(t, lastErr)
+	assert.Contains(t, lastErr.Error(), "sse scan")
+}
+
+func TestStreamSSEWithBody_FinalEventNoTrailingNewline(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+
+		// Write an event without trailing empty line — stream ends abruptly.
+		fmt.Fprint(w, "event: final\ndata: last\n")
+	}))
+	defer srv.Close()
+
+	c := New(WithBaseURL(srv.URL))
+	var events []SSEEvent
+	for ev, err := range StreamSSEWithBody(context.Background(), c, http.MethodGet, "/stream", nil) {
+		require.NoError(t, err)
+		events = append(events, ev)
+	}
+	require.Len(t, events, 1)
+	assert.Equal(t, "final", events[0].Event)
+	assert.Equal(t, "last", events[0].Data)
+}
+
+func TestStreamSSEWithBody_ContextCancelDuringScan(t *testing.T) {
+	started := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			return
+		}
+		close(started)
+
+		// Keep sending events slowly.
+		for i := range 1000 {
+			select {
+			case <-r.Context().Done():
+				return
+			default:
+			}
+			fmt.Fprintf(w, "data: event-%d\n\n", i)
+			flusher.Flush()
+			time.Sleep(50 * time.Millisecond)
+		}
+	}))
+	defer srv.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	c := New(WithBaseURL(srv.URL))
+	var count int
+	var gotCtxErr bool
+	for _, err := range StreamSSEWithBody(ctx, c, http.MethodGet, "/stream", nil) {
+		if err != nil {
+			if errors.Is(err, context.Canceled) {
+				gotCtxErr = true
+			}
+			break
+		}
+		count++
+		if count >= 2 {
+			cancel()
+		}
+	}
+	assert.GreaterOrEqual(t, count, 2)
+	assert.True(t, gotCtxErr, "expected context.Canceled error")
 }
 
 func TestStreamSSEWithBody_POST(t *testing.T) {

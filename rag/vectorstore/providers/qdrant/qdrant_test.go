@@ -295,3 +295,112 @@ func TestNewFromConfig(t *testing.T) {
 	assert.Equal(t, "my_col", store.collection)
 	assert.Equal(t, 768, store.dimension)
 }
+
+func TestStore_EnsureCollection(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		assert.Contains(t, r.URL.Path, "/collections/test_col")
+
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"result":true,"status":"ok"}`))
+	})
+	defer srv.Close()
+
+	err := store.EnsureCollection(context.Background())
+	require.NoError(t, err)
+
+	vectors := receivedBody["vectors"].(map[string]any)
+	assert.Equal(t, float64(3), vectors["size"])
+	assert.Equal(t, "Cosine", vectors["distance"])
+}
+
+func TestStore_EnsureCollection_ServerError(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusConflict)
+		w.Write([]byte(`{"status":{"error":"already exists"}}`))
+	})
+	defer srv.Close()
+
+	err := store.EnsureCollection(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "409")
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test that the init() registered factory works.
+	store, err := vectorstore.New("qdrant", config.ProviderConfig{
+		BaseURL: "http://localhost:6333",
+		APIKey:  "test-key",
+		Options: map[string]any{
+			"collection": "test_col",
+			"dimension":  float64(128),
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	// Verify it's actually a Qdrant store.
+	qdrantStore, ok := store.(*Store)
+	require.True(t, ok)
+	assert.Equal(t, "http://localhost:6333", qdrantStore.baseURL)
+	assert.Equal(t, "test-key", qdrantStore.apiKey)
+	assert.Equal(t, "test_col", qdrantStore.collection)
+	assert.Equal(t, 128, qdrantStore.dimension)
+}
+
+func TestStore_Search_NoContentInPayload(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"result": []map[string]any{
+				{
+					"id":      "doc1",
+					"score":   0.95,
+					"payload": map[string]any{"category": "A"},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "", results[0].Content)
+	assert.Equal(t, "A", results[0].Metadata["category"])
+}
+
+func TestStore_Search_NumericID(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"result": []map[string]any{
+				{
+					"id":      float64(12345),
+					"score":   0.95,
+					"payload": map[string]any{"content": "test"},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "12345", results[0].ID)
+}

@@ -285,3 +285,295 @@ func TestUUIDFromID(t *testing.T) {
 	// Should be valid UUID format: 8-4-4-4-12 hex chars.
 	assert.Regexp(t, `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`, uuid1)
 }
+
+func TestUUIDFromID_ShortID(t *testing.T) {
+	// Short IDs that would produce hex strings < 32 chars need padding.
+	uuid := uuidFromID("a")
+	assert.Regexp(t, `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`, uuid)
+}
+
+func TestUUIDFromID_EmptyID(t *testing.T) {
+	uuid := uuidFromID("")
+	assert.Regexp(t, `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`, uuid)
+}
+
+func TestUUIDFromID_LongID(t *testing.T) {
+	// Long IDs should be truncated to 32 hex chars.
+	uuid := uuidFromID("this-is-a-very-long-document-id-that-exceeds-32-chars")
+	assert.Regexp(t, `^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`, uuid)
+}
+
+func TestJoinStrings(t *testing.T) {
+	tests := []struct {
+		name   string
+		strs   []string
+		sep    string
+		expect string
+	}{
+		{"empty", nil, ",", ""},
+		{"single", []string{"a"}, ",", "a"},
+		{"multiple", []string{"a", "b", "c"}, ",", "a,b,c"},
+		{"custom separator", []string{"x", "y"}, " | ", "x | y"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expect, joinStrings(tt.strs, tt.sep))
+		})
+	}
+}
+
+func TestStore_Search_WithSingleFilter(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		query := body["query"].(string)
+		// Single filter should use direct where clause without And operator.
+		assert.Contains(t, query, "where:")
+		assert.NotContains(t, query, "operator:And")
+
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []map[string]any{
+						{
+							"content":    "filtered result",
+							"_beluga_id": "doc1",
+							"_additional": map[string]any{
+								"id":       "uuid-1",
+								"distance": 0.1,
+							},
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(map[string]any{"category": "A"}))
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestStore_Search_WithMultipleFilters(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		query := body["query"].(string)
+		// Multiple filters should use And operator.
+		assert.Contains(t, query, "operator:And")
+
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []any{},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithFilter(map[string]any{"category": "A", "source": "web"}))
+	require.NoError(t, err)
+}
+
+func TestStore_Search_WithThreshold(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]any
+		json.NewDecoder(r.Body).Decode(&body)
+		query := body["query"].(string)
+		assert.Contains(t, query, "distance:")
+
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []map[string]any{
+						{
+							"content":    "high score",
+							"_beluga_id": "doc1",
+							"_additional": map[string]any{
+								"id":       "uuid-1",
+								"distance": 0.05,
+							},
+						},
+						{
+							"content":    "low score",
+							"_beluga_id": "doc2",
+							"_additional": map[string]any{
+								"id":       "uuid-2",
+								"distance": 0.8,
+							},
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5,
+		vectorstore.WithThreshold(0.5))
+	require.NoError(t, err)
+
+	// Only doc1 passes threshold (score 0.95 >= 0.5).
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`not json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestStore_Search_MissingData(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{"other": "stuff"})
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing data")
+}
+
+func TestStore_Search_MissingGet(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]any{
+			"data": map[string]any{"Other": "stuff"},
+		})
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "missing Get")
+}
+
+func TestStore_Search_NonMapItem(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []any{"not-a-map", 42},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	assert.Len(t, results, 0)
+}
+
+func TestStore_Search_FallbackToAdditionalID(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []map[string]any{
+						{
+							"content": "no beluga id",
+							"_additional": map[string]any{
+								"id":       "fallback-uuid",
+								"distance": 0.1,
+							},
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "fallback-uuid", results[0].ID)
+}
+
+func TestStore_Search_ExtraPropertiesAsMetadata(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		resp := map[string]any{
+			"data": map[string]any{
+				"Get": map[string]any{
+					"TestDoc": []map[string]any{
+						{
+							"content":    "test",
+							"_beluga_id": "doc1",
+							"category":   "science",
+							"rating":     float64(5),
+							"_additional": map[string]any{
+								"id":       "uuid-1",
+								"distance": 0.0,
+							},
+						},
+					},
+				},
+			},
+		}
+		json.NewEncoder(w).Encode(resp)
+	})
+	defer srv.Close()
+
+	results, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "science", results[0].Metadata["category"])
+	assert.Equal(t, float64(5), results[0].Metadata["rating"])
+}
+
+func TestDoJSON_NilBody(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodDelete, r.Method)
+		w.WriteHeader(http.StatusNoContent)
+	})
+	defer srv.Close()
+
+	_, err := store.doJSON(context.Background(), http.MethodDelete, "/v1/objects/TestDoc/some-id", nil)
+	require.NoError(t, err)
+}
+
+func TestDoJSON_MarshalError(t *testing.T) {
+	store := New("http://localhost:8080")
+	// Pass an un-marshalable value (channel) to trigger json.Marshal error.
+	_, err := store.doJSON(context.Background(), http.MethodPost, "/test", map[string]any{
+		"bad": make(chan int),
+	})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "marshal request")
+}
+
+func TestDoJSON_InvalidMethod(t *testing.T) {
+	store := New("http://localhost:8080")
+	// Invalid HTTP method triggers NewRequestWithContext error.
+	_, err := store.doJSON(context.Background(), "INVALID METHOD\n", "/test", nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "create request")
+}
+
+func TestRegistry_FactoryCreatesStore(t *testing.T) {
+	store, err := vectorstore.New("weaviate", config.ProviderConfig{
+		BaseURL: "http://localhost:8080",
+		APIKey:  "key",
+		Options: map[string]any{
+			"class": "MyDoc",
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+}

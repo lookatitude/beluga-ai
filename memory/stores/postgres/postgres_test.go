@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -305,5 +306,141 @@ func TestCustomTable(t *testing.T) {
 
 	err = store.Append(ctx, schema.NewHumanMessage("hello"))
 	require.NoError(t, err)
+	require.NoError(t, mock.ExpectationsWereMet())
+}
+
+func TestAppend_Error(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectExec("INSERT INTO messages").
+		WithArgs("human", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnError(fmt.Errorf("connection refused"))
+
+	err := store.Append(ctx, schema.NewHumanMessage("hello"))
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "postgres: append:")
+}
+
+func TestSearch_Error(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages WHERE").
+		WithArgs("%hello%", 10).
+		WillReturnError(fmt.Errorf("query failed"))
+
+	_, err := store.Search(ctx, "hello", 10)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "postgres: search:")
+}
+
+func TestAll_Error(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages ORDER BY").
+		WillReturnError(fmt.Errorf("query failed"))
+
+	_, err := store.All(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "postgres: all:")
+}
+
+func TestClear_Error(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectExec("DELETE FROM messages").
+		WillReturnError(fmt.Errorf("delete failed"))
+
+	err := store.Clear(ctx)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "postgres: clear:")
+}
+
+func TestScanMessages_UnknownRole(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	rows := pgxmock.NewRows([]string{"role", "content", "metadata"}).
+		AddRow("observer", makeContentJSON("hello"), makeMetadataJSON(nil))
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages ORDER BY").
+		WillReturnRows(rows)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	// Unknown role defaults to HumanMessage.
+	assert.Equal(t, schema.RoleHuman, msgs[0].GetRole())
+}
+
+func TestScanMessages_NilMetadata(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	rows := pgxmock.NewRows([]string{"role", "content", "metadata"}).
+		AddRow("human", makeContentJSON("hello"), []byte("null"))
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages ORDER BY").
+		WillReturnRows(rows)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	assert.Nil(t, msgs[0].GetMetadata())
+}
+
+func TestScanMessages_EmptyMetadata(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	rows := pgxmock.NewRows([]string{"role", "content", "metadata"}).
+		AddRow("human", makeContentJSON("hello"), []byte{})
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages ORDER BY").
+		WillReturnRows(rows)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	assert.Nil(t, msgs[0].GetMetadata())
+}
+
+func TestEnsureTable_Error(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectExec("CREATE TABLE IF NOT EXISTS messages").
+		WillReturnError(fmt.Errorf("permission denied"))
+
+	err := store.EnsureTable(ctx)
+	assert.Error(t, err)
+}
+
+func TestAppendToolMessage_Roundtrip(t *testing.T) {
+	ctx := context.Background()
+	store, mock := newTestStore(t)
+
+	mock.ExpectExec("INSERT INTO messages").
+		WithArgs("tool", pgxmock.AnyArg(), pgxmock.AnyArg()).
+		WillReturnResult(pgconn.NewCommandTag("INSERT 0 1"))
+
+	err := store.Append(ctx, schema.NewToolMessage("tc1", "result data"))
+	require.NoError(t, err)
+
+	rows := pgxmock.NewRows([]string{"role", "content", "metadata"}).
+		AddRow("tool", makeToolContentJSON("result data", "tc1"), makeMetadataJSON(nil))
+
+	mock.ExpectQuery("SELECT role, content, metadata FROM messages ORDER BY").
+		WillReturnRows(rows)
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	require.Len(t, msgs, 1)
+	toolMsg, ok := msgs[0].(*schema.ToolMessage)
+	require.True(t, ok)
+	assert.Equal(t, "tc1", toolMsg.ToolCallID)
 	require.NoError(t, mock.ExpectationsWereMet())
 }

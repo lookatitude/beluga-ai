@@ -289,6 +289,422 @@ func TestInterrupt(t *testing.T) {
 	require.NoError(t, err)
 }
 
+func TestSendText(t *testing.T) {
+	srv := newWSServer(t, func(conn *websocket.Conn) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Read setup.
+		conn.Read(ctx)
+
+		// Read text message.
+		_, data, err := conn.Read(ctx)
+		if err != nil {
+			return
+		}
+		var msg map[string]any
+		json.Unmarshal(data, &msg)
+		assert.Equal(t, "inputText", msg["type"])
+		content := msg["content"].([]any)
+		require.Len(t, content, 1)
+		first := content[0].(map[string]any)
+		assert.Equal(t, "hello nova", first["text"])
+
+		conn.Close(websocket.StatusNormalClosure, "")
+	})
+	defer srv.Close()
+
+	wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+	e, err := New(s2s.Config{
+		Extra: map[string]any{"base_url": wsURL},
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	session, err := e.Start(ctx)
+	require.NoError(t, err)
+	defer session.Close()
+
+	err = session.SendText(ctx, "hello nova")
+	require.NoError(t, err)
+}
+
+func TestStartWithOptions(t *testing.T) {
+	t.Run("with instructions and tools", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			// Read setup and verify it contains instructions and tools.
+			_, data, err := conn.Read(ctx)
+			if err != nil {
+				return
+			}
+			var msg map[string]any
+			json.Unmarshal(data, &msg)
+			assert.Equal(t, "sessionStart", msg["type"])
+
+			// Verify instructions.
+			system := msg["system"].([]any)
+			require.Len(t, system, 1)
+			first := system[0].(map[string]any)
+			assert.Equal(t, "You are a helpful assistant", first["text"])
+
+			// Verify tool config.
+			toolConfig := msg["toolConfig"].(map[string]any)
+			tools := toolConfig["tools"].([]any)
+			require.Len(t, tools, 1)
+			toolSpec := tools[0].(map[string]any)["toolSpec"].(map[string]any)
+			assert.Equal(t, "get_weather", toolSpec["name"])
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx,
+			s2s.WithInstructions("You are a helpful assistant"),
+			s2s.WithTools([]schema.ToolDefinition{
+				{
+					Name:        "get_weather",
+					Description: "Get weather for a city",
+					InputSchema: map[string]any{
+						"type": "object",
+						"properties": map[string]any{
+							"city": map[string]any{"type": "string"},
+						},
+					},
+				},
+			}),
+		)
+		require.NoError(t, err)
+		defer session.Close()
+	})
+}
+
+func TestReadLoopEvents(t *testing.T) {
+	t.Run("text output in contentBlockDelta", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			// Send text delta.
+			event := novaServerEvent{
+				Type: "contentBlockDelta",
+				Text: "Hello from Nova",
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventTextOutput, event.Type)
+			assert.Equal(t, "Hello from Nova", event.Text)
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for text event")
+		}
+	})
+
+	t.Run("input transcript", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			event := novaServerEvent{
+				Type:       "inputTranscript",
+				Transcript: "user said hello",
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventTranscript, event.Type)
+			assert.Equal(t, "user said hello", event.Text)
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for transcript event")
+		}
+	})
+
+	t.Run("error event", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			event := novaServerEvent{
+				Type:  "error",
+				Error: &novaError{Message: "rate limit exceeded"},
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "rate limit exceeded")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for error event")
+		}
+	})
+
+	t.Run("error event with nil error field", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			event := novaServerEvent{
+				Type: "error",
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "unknown error")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for error event")
+		}
+	})
+
+	t.Run("messageStop event", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			event := novaServerEvent{Type: "messageStop"}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventTurnEnd, event.Type)
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for messageStop event")
+		}
+	})
+
+	t.Run("connection error emits error event", func(t *testing.T) {
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			// Close abruptly without normal closure.
+			conn.Close(websocket.StatusInternalError, "server crash")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		select {
+		case event := <-session.Recv():
+			assert.Equal(t, s2s.EventError, event.Type)
+			assert.Contains(t, event.Error.Error(), "nova: read:")
+		case <-time.After(3 * time.Second):
+			t.Fatal("timeout waiting for connection error event")
+		}
+	})
+
+	t.Run("audio and text in same contentBlockDelta", func(t *testing.T) {
+		audioData := []byte("pcm-data")
+		encodedAudio := base64.StdEncoding.EncodeToString(audioData)
+
+		srv := newWSServer(t, func(conn *websocket.Conn) {
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			conn.Read(ctx) // setup
+
+			// Send event with both audio and text.
+			event := novaServerEvent{
+				Type:       "contentBlockDelta",
+				AudioChunk: encodedAudio,
+				Text:       "caption text",
+			}
+			data, _ := json.Marshal(event)
+			conn.Write(ctx, websocket.MessageText, data)
+
+			time.Sleep(100 * time.Millisecond)
+			conn.Close(websocket.StatusNormalClosure, "")
+		})
+		defer srv.Close()
+
+		wsURL := "ws" + strings.TrimPrefix(srv.URL, "http")
+		e, err := New(s2s.Config{
+			Extra: map[string]any{"base_url": wsURL},
+		})
+		require.NoError(t, err)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		session, err := e.Start(ctx)
+		require.NoError(t, err)
+		defer session.Close()
+
+		var events []s2s.SessionEvent
+		timeout := time.After(3 * time.Second)
+		for {
+			select {
+			case event, ok := <-session.Recv():
+				if !ok {
+					goto done
+				}
+				events = append(events, event)
+				if len(events) >= 2 {
+					goto done
+				}
+			case <-timeout:
+				goto done
+			}
+		}
+	done:
+		require.Len(t, events, 2)
+		assert.Equal(t, s2s.EventAudioOutput, events[0].Type)
+		assert.Equal(t, audioData, events[0].Audio)
+		assert.Equal(t, s2s.EventTextOutput, events[1].Type)
+		assert.Equal(t, "caption text", events[1].Text)
+	})
+}
+
+func TestStartDialError(t *testing.T) {
+	e, err := New(s2s.Config{
+		Extra: map[string]any{"base_url": "ws://127.0.0.1:1"},
+	})
+	require.NoError(t, err)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	_, err = e.Start(ctx)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "nova: websocket dial:")
+}
+
 func TestRegistry(t *testing.T) {
 	t.Run("registered as nova", func(t *testing.T) {
 		names := s2s.List()
@@ -300,5 +716,19 @@ func TestRegistry(t *testing.T) {
 			}
 		}
 		assert.True(t, found, "expected 'nova' in registered providers: %v", names)
+	})
+
+	t.Run("duplicate registration panics", func(t *testing.T) {
+		assert.Panics(t, func() {
+			s2s.Register("nova", func(cfg s2s.Config) (s2s.S2S, error) {
+				return nil, nil
+			})
+		})
+	})
+
+	t.Run("factory creates engine", func(t *testing.T) {
+		engine, err := s2s.New("nova", s2s.Config{})
+		require.NoError(t, err)
+		assert.NotNil(t, engine)
 	})
 }

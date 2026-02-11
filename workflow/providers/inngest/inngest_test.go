@@ -3,6 +3,7 @@ package inngest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -272,4 +273,276 @@ func TestJSONRoundTrip(t *testing.T) {
 
 func TestInterfaceCompliance(t *testing.T) {
 	var _ workflow.WorkflowStore = (*Store)(nil)
+}
+
+func TestSave_WithEventKey(t *testing.T) {
+	srv := mockServer()
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL:  srv.URL,
+		EventKey: "test-event-key",
+		Client:   srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	ctx := context.Background()
+	err = store.Save(ctx, workflow.WorkflowState{
+		WorkflowID: "wf-auth",
+		Status:     workflow.StatusRunning,
+	})
+	if err != nil {
+		t.Fatalf("Save with event key: %v", err)
+	}
+
+	// Verify it's loadable.
+	loaded, err := store.Load(ctx, "wf-auth")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if loaded == nil {
+		t.Fatal("expected non-nil state")
+	}
+}
+
+func TestSave_ServerError(t *testing.T) {
+	// Create a server that returns 500 for PUT.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL: srv.URL,
+		Client:  srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	err = store.Save(context.Background(), workflow.WorkflowState{WorkflowID: "wf-1"})
+	if err == nil {
+		t.Fatal("expected error for server 500")
+	}
+}
+
+func TestSave_RequestError(t *testing.T) {
+	store, err := New(Config{
+		BaseURL: "http://invalid-host-that-does-not-exist:99999",
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	err = store.Save(context.Background(), workflow.WorkflowState{WorkflowID: "wf-1"})
+	if err == nil {
+		t.Fatal("expected error for unreachable server")
+	}
+}
+
+func TestLoad_ServerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL: srv.URL,
+		Client:  srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	loaded, err := store.Load(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error for server 500")
+	}
+	if loaded != nil {
+		t.Error("expected nil for error response")
+	}
+}
+
+func TestLoad_InvalidJSON(t *testing.T) {
+	// Return invalid JSON from the server.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{bad json}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL: srv.URL,
+		Client:  srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	loaded, err := store.Load(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error for invalid JSON")
+	}
+	if loaded != nil {
+		t.Error("expected nil for decode error")
+	}
+}
+
+func TestLoad_WithEventKey(t *testing.T) {
+	srv := mockServer()
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL:  srv.URL,
+		EventKey: "test-key",
+		Client:   srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	ctx := context.Background()
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-key", Status: workflow.StatusRunning})
+
+	loaded, err := store.Load(ctx, "wf-key")
+	if err != nil {
+		t.Fatalf("Load: %v", err)
+	}
+	if loaded == nil {
+		t.Fatal("expected non-nil state")
+	}
+}
+
+func TestDelete_WithEventKey(t *testing.T) {
+	srv := mockServer()
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL:  srv.URL,
+		EventKey: "test-key",
+		Client:   srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	ctx := context.Background()
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-del"})
+	err = store.Delete(ctx, "wf-del")
+	if err != nil {
+		t.Fatalf("Delete: %v", err)
+	}
+}
+
+func TestDelete_ServerError(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusInternalServerError)
+	}))
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL: srv.URL,
+		Client:  srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	err = store.Delete(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error for server 500")
+	}
+}
+
+func TestDelete_NotFound(t *testing.T) {
+	// Server that returns 404 for DELETE.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	t.Cleanup(srv.Close)
+
+	store, err := New(Config{
+		BaseURL: srv.URL,
+		Client:  srv.Client(),
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	// 404 should NOT be an error for delete.
+	err = store.Delete(context.Background(), "wf-nonexistent")
+	if err != nil {
+		t.Fatalf("Delete 404 should not error: %v", err)
+	}
+}
+
+func TestList_WithLimit(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
+
+	for i := 0; i < 5; i++ {
+		store.Save(ctx, workflow.WorkflowState{
+			WorkflowID: fmt.Sprintf("wf-%d", i),
+			Status:     workflow.StatusRunning,
+		})
+	}
+
+	results, err := store.List(ctx, workflow.WorkflowFilter{Limit: 2})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(results) > 2 {
+		t.Errorf("expected at most 2 results, got %d", len(results))
+	}
+}
+
+func TestList_StatusFilter(t *testing.T) {
+	store, _ := newTestStore(t)
+	ctx := context.Background()
+
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-1", Status: workflow.StatusCompleted})
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-2", Status: workflow.StatusRunning})
+	store.Save(ctx, workflow.WorkflowState{WorkflowID: "wf-3", Status: workflow.StatusCompleted})
+
+	completed, err := store.List(ctx, workflow.WorkflowFilter{Status: workflow.StatusCompleted})
+	if err != nil {
+		t.Fatalf("List: %v", err)
+	}
+	if len(completed) != 2 {
+		t.Errorf("expected 2 completed workflows, got %d", len(completed))
+	}
+}
+
+func TestDelete_RequestError(t *testing.T) {
+	store, err := New(Config{
+		BaseURL: "http://invalid-host-that-does-not-exist:99999",
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	err = store.Delete(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error for unreachable server")
+	}
+}
+
+func TestLoad_RequestError(t *testing.T) {
+	store, err := New(Config{
+		BaseURL: "http://invalid-host-that-does-not-exist:99999",
+	})
+	if err != nil {
+		t.Fatalf("New: %v", err)
+	}
+
+	loaded, err := store.Load(context.Background(), "wf-1")
+	if err == nil {
+		t.Fatal("expected error for unreachable server")
+	}
+	if loaded != nil {
+		t.Error("expected nil for request error")
+	}
 }

@@ -254,3 +254,65 @@ func TestEmbed_MultipleResults(t *testing.T) {
 	assert.InDelta(t, float32(0.3), vecs[1][0], 0.001)
 	assert.InDelta(t, float32(0.5), vecs[2][0], 0.001)
 }
+
+func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		fmt.Fprint(w, `{"error":{"message":"Service temporarily unavailable","type":"server_error"}}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "sk-test",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestNew_NoAPIKey(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		BaseURL: "https://api.openai.com/v1",
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "sk-test",
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestEmbed_OutOfBoundsIndex(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		resp := map[string]any{
+			"object": "list",
+			"data": []map[string]any{
+				{"object": "embedding", "index": 0, "embedding": []float64{0.1, 0.2}},
+				{"object": "embedding", "index": 99, "embedding": []float64{0.3, 0.4}},
+			},
+			"model": "text-embedding-3-small",
+			"usage": map[string]any{"prompt_tokens": 8, "total_tokens": 8},
+		}
+		b, _ := json.Marshal(resp)
+		fmt.Fprint(w, string(b))
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "sk-test",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	vecs, err := emb.Embed(context.Background(), []string{"first", "second"})
+	require.NoError(t, err)
+	require.Len(t, vecs, 2)
+	assert.NotNil(t, vecs[0])
+}

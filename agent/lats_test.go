@@ -525,3 +525,29 @@ func TestLATSPlanner_Registry_CreationFailsWithoutLLM(t *testing.T) {
 func TestLATSPlanner_ImplementsPlanner(t *testing.T) {
 	var _ Planner = (*LATSPlanner)(nil)
 }
+
+// TestLATSPlanner_Registry_CreationWithExtra tests registry creation with extra options.
+func TestLATSPlanner_Registry_CreationWithExtra(t *testing.T) {
+	model := &testLLM{}
+	p, err := NewPlanner("lats", PlannerConfig{
+		LLM: model,
+		Extra: map[string]any{
+			"expansion_width":       5,
+			"max_depth":             10,
+			"exploration_constant":  2.5,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewPlanner error: %v", err)
+	}
+	lats := p.(*LATSPlanner)
+	if lats.expansionWidth != 5 {
+		t.Errorf("expansionWidth = %d, want 5", lats.expansionWidth)
+	}
+	if lats.maxDepth != 10 {
+		t.Errorf("maxDepth = %d, want 10", lats.maxDepth)
+	}
+	if lats.explorationConstant != 2.5 {
+		t.Errorf("explorationConstant = %f, want 2.5", lats.explorationConstant)
+	}
+}

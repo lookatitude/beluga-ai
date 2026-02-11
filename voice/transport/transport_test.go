@@ -284,3 +284,169 @@ func TestMockAudioTransport_CloseError(t *testing.T) {
 	err := transport.Close()
 	require.Error(t, err)
 }
+
+// --- WebSocketTransport tests ---
+
+func TestWebSocketTransport_NewDefault(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+
+	assert.Equal(t, "ws://localhost:9000", ws.url)
+	assert.Equal(t, 16000, ws.config.sampleRate)
+	assert.Equal(t, 1, ws.config.channels)
+	assert.False(t, ws.closed)
+}
+
+func TestWebSocketTransport_NewWithOptions(t *testing.T) {
+	ws := NewWebSocketTransport("ws://example.com/audio",
+		WithWSSampleRate(44100),
+		WithWSChannels(2),
+	)
+
+	assert.Equal(t, "ws://example.com/audio", ws.url)
+	assert.Equal(t, 44100, ws.config.sampleRate)
+	assert.Equal(t, 2, ws.config.channels)
+}
+
+func TestWebSocketTransport_Recv(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+
+	ch, err := ws.Recv(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, ch)
+
+	// The stub implementation closes the channel immediately, so range should exit.
+	var frames []voice.Frame
+	for f := range ch {
+		frames = append(frames, f)
+	}
+	assert.Empty(t, frames)
+}
+
+func TestWebSocketTransport_RecvClosed(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+	require.NoError(t, ws.Close())
+
+	ch, err := ws.Recv(context.Background())
+	require.Error(t, err)
+	assert.Nil(t, ch)
+	assert.Contains(t, err.Error(), "closed")
+}
+
+func TestWebSocketTransport_Send(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+
+	err := ws.Send(context.Background(), voice.NewAudioFrame([]byte{0x01, 0x02}, 16000))
+	require.NoError(t, err)
+
+	err = ws.Send(context.Background(), voice.NewTextFrame("hello"))
+	require.NoError(t, err)
+}
+
+func TestWebSocketTransport_SendClosed(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+	require.NoError(t, ws.Close())
+
+	err := ws.Send(context.Background(), voice.NewAudioFrame([]byte{0x01}, 16000))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "closed")
+}
+
+func TestWebSocketTransport_AudioOut(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+
+	writer := ws.AudioOut()
+	assert.Equal(t, io.Discard, writer)
+}
+
+func TestWebSocketTransport_Close(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+	assert.False(t, ws.closed)
+
+	err := ws.Close()
+	require.NoError(t, err)
+	assert.True(t, ws.closed)
+}
+
+func TestWebSocketTransport_CloseIdempotent(t *testing.T) {
+	ws := NewWebSocketTransport("ws://localhost:9000")
+
+	err := ws.Close()
+	require.NoError(t, err)
+	assert.True(t, ws.closed)
+
+	// Closing again should not error.
+	err = ws.Close()
+	require.NoError(t, err)
+	assert.True(t, ws.closed)
+}
+
+// --- Registry panic tests ---
+
+func TestRegistry_PanicEmptyName(t *testing.T) {
+	assert.Panics(t, func() {
+		Register("", func(cfg Config) (AudioTransport, error) {
+			return nil, nil
+		})
+	})
+}
+
+func TestRegistry_PanicNilFactory(t *testing.T) {
+	assert.Panics(t, func() {
+		Register("nil-factory-test", nil)
+	})
+}
+
+func TestRegistry_PanicDuplicate(t *testing.T) {
+	// "websocket" is already registered via init() in websocket.go.
+	assert.Panics(t, func() {
+		Register("websocket", func(cfg Config) (AudioTransport, error) {
+			return nil, nil
+		})
+	})
+}
+
+// --- WebSocket registry integration test ---
+
+func TestWebSocketTransport_RegistryIntegration(t *testing.T) {
+	// "websocket" is registered in websocket.go init().
+	names := List()
+	assert.Contains(t, names, "websocket")
+
+	// Create a WebSocket transport via the registry with config options.
+	transport, err := New("websocket", Config{
+		URL:        "ws://integration-test:8080",
+		SampleRate: 48000,
+		Channels:   2,
+	})
+	require.NoError(t, err)
+	require.NotNil(t, transport)
+	defer transport.Close()
+
+	// Verify it's a *WebSocketTransport with the expected config.
+	ws, ok := transport.(*WebSocketTransport)
+	require.True(t, ok, "expected *WebSocketTransport from registry")
+	assert.Equal(t, "ws://integration-test:8080", ws.url)
+	assert.Equal(t, 48000, ws.config.sampleRate)
+	assert.Equal(t, 2, ws.config.channels)
+
+	// Verify the interface methods work.
+	ch, err := transport.Recv(context.Background())
+	require.NoError(t, err)
+	require.NotNil(t, ch)
+
+	err = transport.Send(context.Background(), voice.NewTextFrame("test"))
+	require.NoError(t, err)
+
+	writer := transport.AudioOut()
+	assert.Equal(t, io.Discard, writer)
+
+	err = transport.Close()
+	require.NoError(t, err)
+
+	// After close, Send and Recv should fail.
+	_, err = transport.Recv(context.Background())
+	require.Error(t, err)
+
+	err = transport.Send(context.Background(), voice.NewTextFrame("fail"))
+	require.Error(t, err)
+}

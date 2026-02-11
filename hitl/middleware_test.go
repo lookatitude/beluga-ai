@@ -2,6 +2,7 @@ package hitl
 
 import (
 	"context"
+	"fmt"
 	"testing"
 	"time"
 )
@@ -166,4 +167,136 @@ func TestWithHooks_Reject(t *testing.T) {
 	if !rejected {
 		t.Error("expected OnReject hook to be called")
 	}
+}
+
+func TestWithHooks_OnRequestError(t *testing.T) {
+	hooks := Hooks{
+		OnRequest: func(_ context.Context, _ InteractionRequest) error {
+			return fmt.Errorf("blocked by middleware hook")
+		},
+	}
+
+	base := NewManager(WithTimeout(5 * time.Second))
+	wrapped := ApplyMiddleware(base, WithHooks(hooks))
+
+	resp, err := wrapped.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "mw-blocked",
+		ToolName: "test",
+	})
+	if err == nil {
+		t.Fatal("expected error from OnRequest hook")
+	}
+	if resp != nil {
+		t.Error("expected nil response for error")
+	}
+}
+
+func TestWithHooks_OnErrorSuppress(t *testing.T) {
+	hooks := Hooks{
+		OnError: func(_ context.Context, err error) error {
+			return nil // suppress the error
+		},
+	}
+
+	base := NewManager(WithTimeout(50 * time.Millisecond))
+	wrapped := ApplyMiddleware(base, WithHooks(hooks))
+
+	// This will timeout, and OnError will suppress the error.
+	resp, err := wrapped.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "mw-suppress",
+		ToolName: "test",
+	})
+
+	// Error should be suppressed (OnError returns nil).
+	if err != nil {
+		t.Fatalf("expected no error (suppressed), got %v", err)
+	}
+	// resp may be nil when error was suppressed.
+	_ = resp
+}
+
+func TestWithHooks_OnErrorReplace(t *testing.T) {
+	hooks := Hooks{
+		OnError: func(_ context.Context, err error) error {
+			return fmt.Errorf("replaced: %w", err)
+		},
+	}
+
+	base := NewManager(WithTimeout(50 * time.Millisecond))
+	wrapped := ApplyMiddleware(base, WithHooks(hooks))
+
+	_, err := wrapped.RequestInteraction(context.Background(), InteractionRequest{
+		ID:       "mw-replace",
+		ToolName: "test",
+	})
+
+	if err == nil {
+		t.Fatal("expected error")
+	}
+	if !contains(err.Error(), "replaced") {
+		t.Errorf("expected replaced error, got %v", err)
+	}
+}
+
+func TestWithHooks_DelegateRespond(t *testing.T) {
+	base := NewManager(WithTimeout(5 * time.Second))
+	wrapped := ApplyMiddleware(base, WithHooks(Hooks{}))
+
+	// Respond to nonexistent request should fail.
+	err := wrapped.Respond(context.Background(), "nonexistent", InteractionResponse{Decision: DecisionApprove})
+	if err == nil {
+		t.Fatal("expected error for nonexistent request")
+	}
+}
+
+func TestWithHooks_AutoApprovePassThrough(t *testing.T) {
+	var approveCount int
+	hooks := Hooks{
+		OnApprove: func(_ context.Context, _ InteractionRequest, _ InteractionResponse) {
+			approveCount++
+		},
+	}
+
+	base := NewManager()
+	base.AddPolicy(ApprovalPolicy{
+		ToolPattern:   "*",
+		MinConfidence: 0.0,
+		MaxRiskLevel:  RiskIrreversible,
+	})
+
+	wrapped := ApplyMiddleware(base, WithHooks(hooks))
+
+	// This will auto-approve from the base manager.
+	// The hookedManager should see the approve decision and call OnApprove.
+	resp, err := wrapped.RequestInteraction(context.Background(), InteractionRequest{
+		ToolName:   "any",
+		Confidence: 0.5,
+		RiskLevel:  RiskReadOnly,
+	})
+	if err != nil {
+		t.Fatalf("RequestInteraction: %v", err)
+	}
+	if resp == nil {
+		t.Fatal("expected non-nil response")
+	}
+	if resp.Decision != DecisionApprove {
+		t.Errorf("expected approve, got %s", resp.Decision)
+	}
+	if approveCount != 1 {
+		t.Errorf("expected OnApprove called once, got %d", approveCount)
+	}
+}
+
+// contains is a helper to check if s contains substr.
+func contains(s, substr string) bool {
+	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsHelper(s, substr))
+}
+
+func containsHelper(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
 }

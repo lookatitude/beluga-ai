@@ -2,6 +2,8 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"testing"
 
 	sdkmcp "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -202,4 +204,187 @@ func TestSdkToolInterface(t *testing.T) {
 	assert.Equal(t, "test-tool", st.Name())
 	assert.Equal(t, "A test tool", st.Description())
 	assert.Equal(t, map[string]any{"type": "object"}, st.InputSchema())
+}
+
+func TestRegisterTool_NilSchema(t *testing.T) {
+	mt := &mockTool{
+		name:   "nil-schema",
+		desc:   "Tool with nil schema",
+		schema: nil,
+	}
+
+	srv := NewServer("test", "1.0.0", mt)
+	require.NotNil(t, srv)
+
+	// Verify the tool works via round-trip.
+	srvTransport, clientTransport := sdkmcp.NewInMemoryTransports()
+	ctx := context.Background()
+
+	go srv.Run(ctx, srvTransport)
+
+	_, session, err := NewClient(ctx, clientTransport)
+	require.NoError(t, err)
+	defer session.Close()
+
+	tools, err := FromSession(ctx, session)
+	require.NoError(t, err)
+	require.Len(t, tools, 1)
+	assert.Equal(t, "nil-schema", tools[0].Name())
+}
+
+func TestRegisterTool_SchemaWithoutType(t *testing.T) {
+	mt := &mockTool{
+		name:   "no-type",
+		desc:   "Tool with schema missing type",
+		schema: map[string]any{"properties": map[string]any{"name": map[string]any{"type": "string"}}},
+	}
+
+	srv := NewServer("test", "1.0.0", mt)
+	require.NotNil(t, srv)
+
+	srvTransport, clientTransport := sdkmcp.NewInMemoryTransports()
+	ctx := context.Background()
+
+	go srv.Run(ctx, srvTransport)
+
+	_, session, err := NewClient(ctx, clientTransport)
+	require.NoError(t, err)
+	defer session.Close()
+
+	tools, err := FromSession(ctx, session)
+	require.NoError(t, err)
+	require.Len(t, tools, 1)
+}
+
+func TestRegisterTool_ExecuteError(t *testing.T) {
+	mt := &mockTool{
+		name:   "fail",
+		desc:   "Tool that returns error",
+		schema: map[string]any{"type": "object"},
+		execFn: func(ctx context.Context, input map[string]any) (*tool.Result, error) {
+			return nil, fmt.Errorf("execution failed")
+		},
+	}
+
+	srv := NewServer("test", "1.0.0", mt)
+	srvTransport, clientTransport := sdkmcp.NewInMemoryTransports()
+	ctx := context.Background()
+
+	go srv.Run(ctx, srvTransport)
+
+	_, session, err := NewClient(ctx, clientTransport)
+	require.NoError(t, err)
+	defer session.Close()
+
+	tools, err := FromSession(ctx, session)
+	require.NoError(t, err)
+	require.Len(t, tools, 1)
+
+	result, err := tools[0].Execute(ctx, nil)
+	require.NoError(t, err) // MCP wraps tool errors in result, not Go error.
+	assert.True(t, result.IsError)
+}
+
+func TestExtractArgs_NilRequest(t *testing.T) {
+	args, err := extractArgs(nil)
+	assert.NoError(t, err)
+	assert.Nil(t, args)
+}
+
+func TestExtractArgs_NilParams(t *testing.T) {
+	args, err := extractArgs(&sdkmcp.CallToolRequest{})
+	assert.NoError(t, err)
+	assert.Nil(t, args)
+}
+
+func TestExtractArgs_WithArguments(t *testing.T) {
+	rawArgs, _ := json.Marshal(map[string]any{"key": "value"})
+	req := &sdkmcp.CallToolRequest{
+		Params: &sdkmcp.CallToolParamsRaw{
+			Name:      "test",
+			Arguments: rawArgs,
+		},
+	}
+	args, err := extractArgs(req)
+	assert.NoError(t, err)
+	assert.Equal(t, "value", args["key"])
+}
+
+func TestToInputSchema_Struct(t *testing.T) {
+	// Test with a struct that needs marshal/unmarshal to become map[string]any.
+	type testSchema struct {
+		Type       string `json:"type"`
+		Properties any    `json:"properties"`
+	}
+	s := testSchema{Type: "object", Properties: map[string]any{"x": 1}}
+
+	result := toInputSchema(s)
+	assert.NotNil(t, result)
+	assert.Equal(t, "object", result["type"])
+}
+
+func TestToInputSchema_UnmarshalableToMap(t *testing.T) {
+	// A channel can't be marshaled by json.
+	ch := make(chan int)
+	result := toInputSchema(ch)
+	assert.Nil(t, result)
+}
+
+func TestToSDKResult_NonTextContent(t *testing.T) {
+	// Use a content part that is NOT TextPart.
+	result := &tool.Result{
+		Content: []schema.ContentPart{
+			schema.ImagePart{URL: "http://example.com/img.png"},
+			schema.TextPart{Text: "hello"},
+		},
+		IsError: false,
+	}
+
+	sdkResult := toSDKResult(result)
+	// Only TextPart should be converted; ImagePart is skipped.
+	assert.Len(t, sdkResult.Content, 1)
+}
+
+func TestSdkTool_Execute_SessionClosed(t *testing.T) {
+	mt := &mockTool{
+		name:   "test",
+		desc:   "Test tool",
+		schema: map[string]any{"type": "object"},
+	}
+
+	srv := NewServer("test", "1.0.0", mt)
+	srvTransport, clientTransport := sdkmcp.NewInMemoryTransports()
+	ctx := context.Background()
+
+	go srv.Run(ctx, srvTransport)
+
+	_, session, err := NewClient(ctx, clientTransport)
+	require.NoError(t, err)
+
+	tools, err := FromSession(ctx, session)
+	require.NoError(t, err)
+	require.Len(t, tools, 1)
+
+	// Close the session, then try to execute — should return error.
+	session.Close()
+
+	_, err = tools[0].Execute(ctx, nil)
+	assert.Error(t, err)
+}
+
+func TestFromSDKResult_NonTextContent(t *testing.T) {
+	sdkResult := &sdkmcp.CallToolResult{
+		Content: []sdkmcp.Content{
+			&sdkmcp.ImageContent{Data: []byte("base64data")},
+			&sdkmcp.TextContent{Text: "test"},
+		},
+		IsError: false,
+	}
+
+	result := fromSDKResult(sdkResult)
+	// Only TextContent should be converted; ImageContent is skipped.
+	assert.Len(t, result.Content, 1)
+	tp, ok := result.Content[0].(schema.TextPart)
+	require.True(t, ok)
+	assert.Equal(t, "test", tp.Text)
 }

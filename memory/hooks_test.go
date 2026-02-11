@@ -343,3 +343,104 @@ func TestComposeHooks_PartialNilHooks(t *testing.T) {
 		}
 	}
 }
+
+// TestComposeHooks_OnError_AllReturnNil tests that when all OnError hooks
+// return nil, the final composed OnError returns the original error.
+// This covers the missing path in hooks.go lines 124-129 where no hook
+// returns a non-nil error.
+func TestComposeHooks_OnError_AllReturnNil(t *testing.T) {
+	originalErr := errors.New("original error")
+	var calls []string
+
+	h1 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h1.OnError")
+			return nil // Don't modify
+		},
+	}
+
+	h2 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h2.OnError")
+			return nil // Don't modify
+		},
+	}
+
+	h3 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h3.OnError")
+			return nil // Don't modify
+		},
+	}
+
+	composed := ComposeHooks(h1, h2, h3)
+	ctx := context.Background()
+
+	// All hooks return nil, so the original error should be returned at line 129
+	err := composed.OnError(ctx, originalErr)
+	if err != originalErr {
+		t.Errorf("expected original error, got %v", err)
+	}
+
+	// All three hooks should have been called
+	expected := []string{"h1.OnError", "h2.OnError", "h3.OnError"}
+	if len(calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(calls), calls)
+	}
+
+	for i, want := range expected {
+		if calls[i] != want {
+			t.Errorf("call %d: expected %q, got %q", i, want, calls[i])
+		}
+	}
+}
+
+// TestComposeHooks_OnError_ShortCircuit tests that OnError short-circuits
+// when a hook returns a non-nil error (the first non-nil return).
+func TestComposeHooks_OnError_ShortCircuit(t *testing.T) {
+	originalErr := errors.New("original error")
+	modifiedErr := errors.New("modified by h2")
+	var calls []string
+
+	h1 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h1.OnError")
+			return nil // Pass through
+		},
+	}
+
+	h2 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h2.OnError")
+			return modifiedErr // Short-circuit here
+		},
+	}
+
+	h3 := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			calls = append(calls, "h3.OnError")
+			return errors.New("should not be returned")
+		},
+	}
+
+	composed := ComposeHooks(h1, h2, h3)
+	ctx := context.Background()
+
+	// h2 returns non-nil, should short-circuit at line 125
+	err := composed.OnError(ctx, originalErr)
+	if err != modifiedErr {
+		t.Errorf("expected modified error from h2, got %v", err)
+	}
+
+	// Only h1 and h2 should be called (h3 should not run)
+	expected := []string{"h1.OnError", "h2.OnError"}
+	if len(calls) != len(expected) {
+		t.Fatalf("expected %d calls, got %d: %v", len(expected), len(calls), calls)
+	}
+
+	for i, want := range expected {
+		if calls[i] != want {
+			t.Errorf("call %d: expected %q, got %q", i, want, calls[i])
+		}
+	}
+}

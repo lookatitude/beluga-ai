@@ -572,12 +572,152 @@ func TestGoTPlanner_Registry_Creation(t *testing.T) {
 	}
 }
 
+// TestGoTPlanner_Registry_CreationWithExtra tests registry creation with extra options.
+func TestGoTPlanner_Registry_CreationWithExtra(t *testing.T) {
+	model := &testLLM{}
+	customCtrl := NewDefaultController(WithGenerateCount(5))
+	p, err := NewPlanner("graph-of-thought", PlannerConfig{
+		LLM: model,
+		Extra: map[string]any{
+			"controller":      customCtrl,
+			"max_operations": 15,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewPlanner error: %v", err)
+	}
+	got := p.(*GoTPlanner)
+	if got.maxOperations != 15 {
+		t.Errorf("maxOperations = %d, want 15", got.maxOperations)
+	}
+	if got.controller != customCtrl {
+		t.Error("controller should be the custom controller")
+	}
+}
+
 func TestGoTPlanner_ImplementsPlanner(t *testing.T) {
 	var _ Planner = (*GoTPlanner)(nil)
 }
 
 func TestController_ImplementedByDefaultController(t *testing.T) {
 	var _ Controller = (*DefaultController)(nil)
+}
+
+// TestGoTPlanner_opLoop_EmptyNodeIDs tests opLoop with no node IDs.
+func TestGoTPlanner_opLoop_EmptyNodeIDs(t *testing.T) {
+	model := &testLLM{}
+	p := NewGoTPlanner(model)
+	g := NewThoughtGraph()
+
+	op := &Operation{Type: OpLoop, NodeIDs: []string{}}
+	err := p.executeOperation(context.Background(), "test", g, op)
+	if err != nil {
+		t.Fatalf("executeOperation error: %v", err)
+	}
+	if len(g.Nodes) != 0 {
+		t.Errorf("expected 0 nodes after opLoop with empty IDs, got %d", len(g.Nodes))
+	}
+}
+
+// TestGoTPlanner_opLoop_NonexistentNode tests opLoop with non-existent node.
+func TestGoTPlanner_opLoop_NonexistentNode(t *testing.T) {
+	model := &testLLM{}
+	p := NewGoTPlanner(model)
+	g := NewThoughtGraph()
+
+	op := &Operation{Type: OpLoop, NodeIDs: []string{"nonexistent"}}
+	err := p.executeOperation(context.Background(), "test", g, op)
+	if err != nil {
+		t.Fatalf("executeOperation error: %v", err)
+	}
+	if len(g.Nodes) != 0 {
+		t.Errorf("expected 0 nodes after opLoop with nonexistent node, got %d", len(g.Nodes))
+	}
+}
+
+// TestGoTPlanner_opSplit_EmptyNodeIDs tests opSplit with no node IDs.
+func TestGoTPlanner_opSplit_EmptyNodeIDs(t *testing.T) {
+	model := &testLLM{}
+	p := NewGoTPlanner(model)
+	g := NewThoughtGraph()
+
+	op := &Operation{Type: OpSplit, NodeIDs: []string{}}
+	err := p.executeOperation(context.Background(), "test", g, op)
+	if err != nil {
+		t.Fatalf("executeOperation error: %v", err)
+	}
+	if len(g.Nodes) != 0 {
+		t.Errorf("expected 0 nodes after opSplit with empty IDs, got %d", len(g.Nodes))
+	}
+}
+
+// TestGoTPlanner_opSplit_NonexistentNode tests opSplit with non-existent node.
+func TestGoTPlanner_opSplit_NonexistentNode(t *testing.T) {
+	model := &testLLM{}
+	p := NewGoTPlanner(model)
+	g := NewThoughtGraph()
+
+	op := &Operation{Type: OpSplit, NodeIDs: []string{"nonexistent"}}
+	err := p.executeOperation(context.Background(), "test", g, op)
+	if err != nil {
+		t.Fatalf("executeOperation error: %v", err)
+	}
+	if len(g.Nodes) != 0 {
+		t.Errorf("expected 0 nodes after opSplit with nonexistent node, got %d", len(g.Nodes))
+	}
+}
+
+// TestGoTPlanner_Plan_OperationExecutionError tests Plan when operation execution fails.
+func TestGoTPlanner_Plan_OperationExecutionError(t *testing.T) {
+	model := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return nil, errors.New("LLM failed")
+		},
+	}
+
+	ctrl := &funcController{
+		nextFn: func(g *ThoughtGraph) (*Operation, error) {
+			// Return generate operation that will fail
+			return &Operation{
+				Type: OpGenerate,
+				Args: map[string]any{"count": 2},
+			}, nil
+		},
+	}
+
+	p := NewGoTPlanner(model, WithController(ctrl))
+	state := PlannerState{
+		Input:    "test",
+		Messages: []schema.Message{schema.NewHumanMessage("test")},
+	}
+
+	_, err := p.Plan(context.Background(), state)
+	if err == nil {
+		t.Fatal("expected error from operation execution failure")
+	}
+}
+
+// TestGoTPlanner_synthesizeFromGraph_LLMError tests synthesize error path.
+func TestGoTPlanner_synthesizeFromGraph_LLMError(t *testing.T) {
+	model := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return nil, errors.New("synthesis failed")
+		},
+	}
+
+	p := NewGoTPlanner(model)
+	g := NewThoughtGraph()
+	g.AddNode("leaf thought", nil)
+
+	state := PlannerState{
+		Input:    "test",
+		Messages: []schema.Message{schema.NewHumanMessage("test")},
+	}
+
+	_, err := p.synthesizeFromGraph(context.Background(), state, g)
+	if err == nil {
+		t.Fatal("expected error from synthesis LLM failure")
+	}
 }
 
 // funcController is a test controller that uses a function

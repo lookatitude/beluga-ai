@@ -326,3 +326,62 @@ func TestStore_Search_PipelineStructure(t *testing.T) {
 	assert.Equal(t, float64(10), vectorSearch["limit"])
 	assert.Equal(t, float64(100), vectorSearch["numCandidates"])
 }
+
+func TestStore_Search_InvalidJSON(t *testing.T) {
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{invalid json`))
+	})
+	defer srv.Close()
+
+	_, err := store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unmarshal")
+}
+
+func TestRegistry_Factory(t *testing.T) {
+	// Test that the init() registered factory works.
+	store, err := vectorstore.New("mongodb", config.ProviderConfig{
+		BaseURL: "http://localhost:8080",
+		APIKey:  "test-key",
+		Options: map[string]any{
+			"database":   "test_db",
+			"collection": "test_col",
+			"index":      "test_idx",
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+
+	// Verify it's actually a MongoDB store.
+	mongoStore, ok := store.(*Store)
+	require.True(t, ok)
+	assert.Equal(t, "http://localhost:8080", mongoStore.baseURL)
+	assert.Equal(t, "test-key", mongoStore.apiKey)
+	assert.Equal(t, "test_db", mongoStore.database)
+	assert.Equal(t, "test_col", mongoStore.collection)
+	assert.Equal(t, "test_idx", mongoStore.index)
+}
+
+func TestStore_Add_WithNilMetadata(t *testing.T) {
+	var receivedBody map[string]any
+	srv, store := newTestServer(t, func(w http.ResponseWriter, r *http.Request) {
+		json.NewDecoder(r.Body).Decode(&receivedBody)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`{"insertedIds":["doc1"]}`))
+	})
+	defer srv.Close()
+
+	docs := []schema.Document{
+		{ID: "doc1", Content: "hello", Metadata: nil},
+	}
+	embeddings := [][]float32{{0.1, 0.2, 0.3}}
+
+	err := store.Add(context.Background(), docs, embeddings)
+	require.NoError(t, err)
+
+	documents := receivedBody["documents"].([]any)
+	doc := documents[0].(map[string]any)
+	_, hasMetadata := doc["metadata"]
+	assert.False(t, hasMetadata, "nil metadata should not be included")
+}

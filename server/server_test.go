@@ -3,8 +3,10 @@ package server
 import (
 	"context"
 	"iter"
+	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/lookatitude/beluga-ai/agent"
 	"github.com/lookatitude/beluga-ai/tool"
@@ -132,5 +134,104 @@ func TestStdlibAdapter_Shutdown_NoServer(t *testing.T) {
 	adapter := NewStdlibAdapter(Config{})
 	if err := adapter.Shutdown(context.Background()); err != nil {
 		t.Fatalf("unexpected error shutting down unstarted adapter: %v", err)
+	}
+}
+
+func TestStdlibAdapter_ServeAndShutdown(t *testing.T) {
+	adapter := NewStdlibAdapter(Config{})
+
+	// Register a simple health handler instead of agent (to avoid routing issues).
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("ok"))
+	})
+	if err := adapter.RegisterHandler("/health", handler); err != nil {
+		t.Fatalf("RegisterHandler: %v", err)
+	}
+
+	// Get a random port.
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to get random port: %v", err)
+	}
+	addr := lis.Addr().String()
+	lis.Close()
+
+	// Start server in goroutine.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- adapter.Serve(ctx, addr)
+	}()
+
+	// Wait for server to start (give it some time to bind).
+	time.Sleep(100 * time.Millisecond)
+
+	// Make a request to verify server is running.
+	client := &http.Client{Timeout: 2 * time.Second}
+	resp, err := client.Get("http://" + addr + "/health")
+	if err != nil {
+		t.Fatalf("request failed: %v", err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+
+	// Cancel context to trigger shutdown.
+	cancel()
+
+	// Wait for Serve to return (should get context.Canceled).
+	select {
+	case err := <-errCh:
+		if err != context.Canceled {
+			t.Fatalf("expected context.Canceled, got: %v", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("server did not shutdown in time")
+	}
+}
+
+func TestStdlibAdapter_Serve_ListenError(t *testing.T) {
+	adapter := NewStdlibAdapter(Config{})
+	// Use an invalid address to trigger listen error.
+	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+	defer cancel()
+
+	err := adapter.Serve(ctx, "invalid-address")
+	if err == nil {
+		t.Fatal("expected error for invalid address")
+	}
+	if err == context.Canceled || err == context.DeadlineExceeded {
+		t.Fatal("should have gotten listen error, not context error")
+	}
+}
+
+func TestStdlibAdapter_Shutdown_WithRunningServer(t *testing.T) {
+	adapter := NewStdlibAdapter(Config{})
+
+	// Get a random port.
+	lis, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to get random port: %v", err)
+	}
+	addr := lis.Addr().String()
+	lis.Close()
+
+	// Start server in background.
+	ctx := context.Background()
+	go adapter.Serve(ctx, addr)
+
+	// Wait for server to start.
+	time.Sleep(50 * time.Millisecond)
+
+	// Shutdown the server explicitly.
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	defer cancel()
+
+	if err := adapter.Shutdown(shutdownCtx); err != nil {
+		t.Fatalf("Shutdown error: %v", err)
 	}
 }

@@ -5,9 +5,11 @@ package sqlitevec
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"strings"
 	"testing"
 
+	"github.com/lookatitude/beluga-ai/config"
 	"github.com/lookatitude/beluga-ai/rag/vectorstore"
 	"github.com/lookatitude/beluga-ai/schema"
 	"github.com/stretchr/testify/assert"
@@ -287,4 +289,253 @@ func TestMatchesFilter(t *testing.T) {
 			assert.Equal(t, tt.expected, matchesFilter(tt.meta, tt.filter))
 		})
 	}
+}
+
+func TestNewFromConfig(t *testing.T) {
+	store, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: ":memory:",
+		Options: map[string]any{
+			"table":     "my_docs",
+			"dimension": float64(128),
+		},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, store)
+	assert.Equal(t, "my_docs", store.table)
+	assert.Equal(t, 128, store.dimension)
+}
+
+func TestNewFromConfig_MissingBaseURL(t *testing.T) {
+	_, err := NewFromConfig(config.ProviderConfig{})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "base_url")
+}
+
+func TestNewFromConfig_Defaults(t *testing.T) {
+	store, err := NewFromConfig(config.ProviderConfig{
+		BaseURL: ":memory:",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "documents", store.table)
+	assert.Equal(t, 1536, store.dimension)
+}
+
+// mockDB implements the DB interface for testing error paths.
+type mockDB struct {
+	execFn  func(ctx context.Context, query string, args ...any) (sql.Result, error)
+	queryFn func(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
+func (m *mockDB) ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error) {
+	if m.execFn != nil {
+		return m.execFn(ctx, query, args...)
+	}
+	return nil, nil
+}
+
+func (m *mockDB) QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	if m.queryFn != nil {
+		return m.queryFn(ctx, query, args...)
+	}
+	return nil, nil
+}
+
+func TestStore_EnsureTable_MetadataTableError(t *testing.T) {
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			if strings.Contains(query, "CREATE TABLE IF NOT EXISTS") && !strings.Contains(query, "VIRTUAL") {
+				return nil, errors.New("metadata table error")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.EnsureTable(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "create metadata table")
+}
+
+func TestStore_EnsureTable_VecTableError(t *testing.T) {
+	callCount := 0
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			callCount++
+			if callCount == 2 { // Second call = vec table
+				return nil, errors.New("vec table error")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.EnsureTable(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "create vec table")
+}
+
+func TestStore_Add_MetadataInsertError(t *testing.T) {
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			if strings.Contains(query, "INSERT OR REPLACE") {
+				return nil, errors.New("insert failed")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.Add(context.Background(),
+		[]schema.Document{{ID: "doc1", Content: "test"}},
+		[][]float32{{0.1, 0.2, 0.3}},
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "insert metadata")
+}
+
+func TestStore_Add_DeleteOldEmbeddingError(t *testing.T) {
+	callCount := 0
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			callCount++
+			if strings.Contains(query, "DELETE FROM vec_") {
+				return nil, errors.New("delete old embedding failed")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.Add(context.Background(),
+		[]schema.Document{{ID: "doc1", Content: "test"}},
+		[][]float32{{0.1, 0.2, 0.3}},
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "delete old embedding")
+}
+
+func TestStore_Add_InsertEmbeddingError(t *testing.T) {
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			if strings.Contains(query, "INSERT INTO vec_") {
+				return nil, errors.New("insert embedding failed")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.Add(context.Background(),
+		[]schema.Document{{ID: "doc1", Content: "test"}},
+		[][]float32{{0.1, 0.2, 0.3}},
+	)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "insert embedding")
+}
+
+func TestStore_Search_QueryError(t *testing.T) {
+	mock := &mockDB{
+		queryFn: func(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+			return nil, errors.New("query failed")
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	_, err = store.Search(context.Background(), []float32{0.1, 0.2, 0.3}, 5)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "sqlitevec: search")
+}
+
+func TestStore_Delete_MetadataDeleteError(t *testing.T) {
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			if strings.Contains(query, "DELETE FROM documents") {
+				return nil, errors.New("metadata delete failed")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.Delete(context.Background(), []string{"doc1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "delete metadata")
+}
+
+func TestStore_Delete_VecDeleteError(t *testing.T) {
+	callCount := 0
+	mock := &mockDB{
+		execFn: func(ctx context.Context, query string, args ...any) (sql.Result, error) {
+			callCount++
+			if callCount == 2 { // Second call = vec delete
+				return nil, errors.New("vec delete failed")
+			}
+			return nil, nil
+		},
+	}
+	store, err := New(WithDB(mock), WithDimension(3))
+	require.NoError(t, err)
+
+	err = store.Delete(context.Background(), []string{"doc1"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "delete embeddings")
+}
+
+func TestStore_Delete_MultipleIDs(t *testing.T) {
+	store := newTestStore(t)
+	ctx := context.Background()
+
+	// Add multiple docs.
+	err := store.Add(ctx,
+		[]schema.Document{
+			{ID: "d1", Content: "one"},
+			{ID: "d2", Content: "two"},
+			{ID: "d3", Content: "three"},
+		},
+		[][]float32{
+			{1.0, 0.0, 0.0},
+			{0.0, 1.0, 0.0},
+			{0.0, 0.0, 1.0},
+		},
+	)
+	require.NoError(t, err)
+
+	// Delete two at once.
+	err = store.Delete(ctx, []string{"d1", "d3"})
+	require.NoError(t, err)
+
+	// Only d2 should remain.
+	results, err := store.Search(ctx, []float32{0.0, 1.0, 0.0}, 10)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "d2", results[0].ID)
+}
+
+func TestStore_Add_NilMetadata(t *testing.T) {
+	store := newTestStore(t)
+	ctx := context.Background()
+
+	// Add doc without metadata (nil).
+	err := store.Add(ctx,
+		[]schema.Document{{ID: "doc1", Content: "no meta"}},
+		[][]float32{{1.0, 0.0, 0.0}},
+	)
+	require.NoError(t, err)
+
+	results, err := store.Search(ctx, []float32{1.0, 0.0, 0.0}, 1)
+	require.NoError(t, err)
+	require.Len(t, results, 1)
+	assert.Equal(t, "doc1", results[0].ID)
+}
+
+func TestRegistry_FactoryCreatesStore(t *testing.T) {
+	names := vectorstore.List()
+	assert.Contains(t, names, "sqlitevec")
 }

@@ -269,6 +269,49 @@ func TestHooksCompose_ErrorShortCircuits(t *testing.T) {
 	}
 }
 
+func TestHooksCompose_NilHooks(t *testing.T) {
+	// Test that ComposeHooks handles nil hooks gracefully.
+	h1 := Hooks{
+		BeforeRetrieve: func(_ context.Context, _ string) error {
+			return nil
+		},
+	}
+	h2 := Hooks{} // All nil hooks
+
+	composed := ComposeHooks(h1, h2)
+	err := composed.BeforeRetrieve(context.Background(), "test")
+	if err != nil {
+		t.Errorf("expected nil error, got %v", err)
+	}
+
+	// AfterRetrieve should also work with nil hooks.
+	composed.AfterRetrieve(context.Background(), nil, nil)
+
+	// OnRerank should also work with nil hooks.
+	composed.OnRerank(context.Background(), "query", nil, nil)
+}
+
+func TestNew_FactoryError(t *testing.T) {
+	// Register a factory that returns an error.
+	expectedErr := errors.New("factory error")
+	Register("error-retriever", func(cfg config.ProviderConfig) (Retriever, error) {
+		return nil, expectedErr
+	})
+	defer func() {
+		registryMu.Lock()
+		delete(registry, "error-retriever")
+		registryMu.Unlock()
+	}()
+
+	_, err := New("error-retriever", config.ProviderConfig{})
+	if err == nil {
+		t.Fatal("expected error from factory")
+	}
+	if !errors.Is(err, expectedErr) {
+		t.Errorf("expected factory error, got %v", err)
+	}
+}
+
 func TestMiddleware_WithHooks(t *testing.T) {
 	inner := &mockRetriever{docs: makeDocs("d1")}
 	var beforeCalled, afterCalled bool

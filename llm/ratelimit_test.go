@@ -299,3 +299,31 @@ func TestProviderLimits_ZeroValues(t *testing.T) {
 		t.Error("expected zero CooldownOnRetry")
 	}
 }
+
+// TestWithProviderLimits_Stream_Error tests rateLimitedModel.Stream error path.
+func TestWithProviderLimits_Stream_Error(t *testing.T) {
+	base := &stubModel{
+		id: "base",
+		streamFn: func(ctx context.Context, msgs []schema.Message, opts ...GenerateOption) iter.Seq2[schema.StreamChunk, error] {
+			return func(yield func(schema.StreamChunk, error) bool) {
+				yield(schema.StreamChunk{}, errors.New("stream error"))
+			}
+		},
+	}
+	mw := WithProviderLimits(ProviderLimits{MaxConcurrent: 2})
+	wrapped := mw(base)
+
+	var gotErr error
+	for _, err := range wrapped.Stream(context.Background(), nil) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Fatal("expected error from stream")
+	}
+	if gotErr.Error() != "stream error" {
+		t.Errorf("unexpected error: %v", gotErr)
+	}
+}

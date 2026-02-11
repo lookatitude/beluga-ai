@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/lookatitude/beluga-ai/memory"
+	"github.com/stretchr/testify/assert"
 )
 
 // mockRunner implements sessionRunner for testing.
@@ -420,4 +421,291 @@ func TestNodeID_Fallback(t *testing.T) {
 
 func TestInterfaceCompliance(t *testing.T) {
 	var _ memory.GraphStore = (*GraphStore)(nil)
+}
+
+func TestGetString_NonStringValue(t *testing.T) {
+	props := map[string]any{"id": 42}
+	result := getString(props, "id")
+	assert.Equal(t, "", result)
+}
+
+func TestGetString_MissingKey(t *testing.T) {
+	props := map[string]any{"name": "Alice"}
+	result := getString(props, "id")
+	assert.Equal(t, "", result)
+}
+
+func TestRelToRelation_WithExtraProps(t *testing.T) {
+	rel := relWrapper{
+		elementID:      "r1",
+		startElementID: "n1",
+		endElementID:   "n2",
+		props:          map[string]any{"type": "knows", "since": "2024", "weight": 0.9},
+	}
+	r := relToRelation(rel)
+	assert.Equal(t, "knows", r.Type)
+	assert.Equal(t, "n1", r.From)
+	assert.Equal(t, "n2", r.To)
+	assert.Equal(t, "2024", r.Properties["since"])
+	assert.Equal(t, 0.9, r.Properties["weight"])
+	// "type" should not be in properties.
+	_, hasType := r.Properties["type"]
+	assert.False(t, hasType)
+}
+
+func TestRelToRelation_EmptyProps(t *testing.T) {
+	rel := relWrapper{
+		elementID:      "r1",
+		startElementID: "n1",
+		endElementID:   "n2",
+		props:          map[string]any{},
+	}
+	r := relToRelation(rel)
+	assert.Equal(t, "", r.Type)
+	assert.Empty(t, r.Properties)
+}
+
+func TestExtractFromList_WithNodes(t *testing.T) {
+	list := []any{
+		nodeWrapper{
+			elementID: "n1",
+			props:     map[string]any{"id": "alice", "type": "person", "name": "Alice"},
+		},
+		nodeWrapper{
+			elementID: "n2",
+			props:     map[string]any{"id": "bob", "type": "person", "name": "Bob"},
+		},
+	}
+	var entities []memory.Entity
+	var relations []memory.Relation
+	entitySeen := make(map[string]bool)
+	relSeen := make(map[string]bool)
+
+	extractFromList(list, &entities, &relations, entitySeen, relSeen)
+
+	assert.Len(t, entities, 2)
+	assert.Len(t, relations, 0)
+	assert.Equal(t, "alice", entities[0].ID)
+	assert.Equal(t, "bob", entities[1].ID)
+}
+
+func TestExtractFromList_Dedup(t *testing.T) {
+	list := []any{
+		nodeWrapper{elementID: "n1", props: map[string]any{"id": "alice", "type": "person"}},
+		nodeWrapper{elementID: "n1", props: map[string]any{"id": "alice", "type": "person"}},
+		relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+		relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+	}
+	var entities []memory.Entity
+	var relations []memory.Relation
+	entitySeen := make(map[string]bool)
+	relSeen := make(map[string]bool)
+
+	extractFromList(list, &entities, &relations, entitySeen, relSeen)
+
+	assert.Len(t, entities, 1)
+	assert.Len(t, relations, 1)
+}
+
+func TestExtractFromList_MixedTypes(t *testing.T) {
+	list := []any{
+		nodeWrapper{elementID: "n1", props: map[string]any{"id": "alice", "type": "person"}},
+		relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+		"some other value", // ignored
+		42,                 // ignored
+	}
+	var entities []memory.Entity
+	var relations []memory.Relation
+	entitySeen := make(map[string]bool)
+	relSeen := make(map[string]bool)
+
+	extractFromList(list, &entities, &relations, entitySeen, relSeen)
+
+	assert.Len(t, entities, 1)
+	assert.Len(t, relations, 1)
+}
+
+func TestQuery_WithListValues(t *testing.T) {
+	runner := &mockRunner{
+		readData: []record{
+			{values: []any{
+				[]any{
+					nodeWrapper{elementID: "n1", props: map[string]any{"id": "alice", "type": "person"}},
+					relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+					nodeWrapper{elementID: "n2", props: map[string]any{"id": "bob", "type": "person"}},
+				},
+			}},
+		},
+	}
+	store := newWithRunner(runner)
+
+	results, err := store.Query(context.Background(), "MATCH p=(a)-[r]->(b) RETURN p")
+	assert.NoError(t, err)
+	assert.Len(t, results, 1)
+	assert.Len(t, results[0].Entities, 2)
+	assert.Len(t, results[0].Relations, 1)
+}
+
+func TestNeighbors_WithNodeInList(t *testing.T) {
+	runner := &mockRunner{
+		readData: []record{
+			{values: []any{
+				nodeWrapper{
+					elementID: "n2",
+					props:     map[string]any{"id": "bob", "type": "person"},
+				},
+				[]any{
+					relWrapper{
+						elementID:      "r1",
+						startElementID: "n1",
+						endElementID:   "n2",
+						props:          map[string]any{"type": "knows"},
+					},
+					nodeWrapper{
+						elementID: "n3",
+						props:     map[string]any{"id": "carol", "type": "person"},
+					},
+				},
+			}},
+		},
+	}
+	store := newWithRunner(runner)
+
+	entities, relations, err := store.Neighbors(context.Background(), "alice", 2)
+	assert.NoError(t, err)
+	assert.Len(t, entities, 2) // bob + carol
+	assert.Len(t, relations, 1)
+}
+
+func TestNeighbors_NegativeDepth(t *testing.T) {
+	store, _ := newMockStore()
+	// Negative depth should default to 1.
+	_, _, err := store.Neighbors(context.Background(), "alice", -5)
+	assert.NoError(t, err)
+}
+
+func TestNeighbors_DuplicateDedup(t *testing.T) {
+	runner := &mockRunner{
+		readData: []record{
+			{values: []any{
+				nodeWrapper{elementID: "n2", props: map[string]any{"id": "bob", "type": "person"}},
+				[]any{
+					relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+				},
+			}},
+			{values: []any{
+				nodeWrapper{elementID: "n2", props: map[string]any{"id": "bob", "type": "person"}},
+				[]any{
+					relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+				},
+			}},
+		},
+	}
+	store := newWithRunner(runner)
+
+	entities, relations, err := store.Neighbors(context.Background(), "alice", 1)
+	assert.NoError(t, err)
+	assert.Len(t, entities, 1, "duplicate entities should be deduped")
+	assert.Len(t, relations, 1, "duplicate relations should be deduped")
+}
+
+func TestQuery_DuplicateRelDedup(t *testing.T) {
+	runner := &mockRunner{
+		readData: []record{
+			{values: []any{
+				relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+			}},
+			{values: []any{
+				relWrapper{elementID: "r1", startElementID: "n1", endElementID: "n2", props: map[string]any{"type": "knows"}},
+			}},
+		},
+	}
+	store := newWithRunner(runner)
+
+	results, err := store.Query(context.Background(), "MATCH ()-[r]->() RETURN r")
+	assert.NoError(t, err)
+	assert.Len(t, results[0].Relations, 1, "duplicate relations should be deduped")
+}
+
+func TestNodeToEntity_EmptyProps(t *testing.T) {
+	node := nodeWrapper{
+		elementID: "n1",
+		props:     map[string]any{},
+	}
+	entity := nodeToEntity(node)
+	assert.Equal(t, "", entity.ID)
+	assert.Equal(t, "", entity.Type)
+	assert.Empty(t, entity.Properties)
+}
+
+func TestSanitizeProps_Int64(t *testing.T) {
+	props := map[string]any{
+		"count": int64(100),
+	}
+	result := sanitizeProps(props)
+	assert.Equal(t, int64(100), result["count"])
+}
+
+func TestNodeID_NilProps(t *testing.T) {
+	node := nodeWrapper{
+		elementID: "elem-1",
+		props:     nil,
+	}
+	assert.Equal(t, "elem-1", nodeID(node))
+}
+
+func TestGetString_NilProps(t *testing.T) {
+	result := getString(nil, "key")
+	assert.Equal(t, "", result)
+}
+
+func TestNew_CreatesStore(t *testing.T) {
+	// NewDriverWithContext doesn't connect eagerly, so this tests the constructor.
+	store, err := New(Config{
+		URI:      "bolt://localhost:7687",
+		Username: "neo4j",
+		Password: "test",
+		Database: "memgraph",
+	})
+	assert.NoError(t, err)
+	assert.NotNil(t, store)
+	// Close the driver to clean up.
+	_ = store.Close(context.Background())
+}
+
+func TestNew_InvalidURI(t *testing.T) {
+	_, err := New(Config{
+		URI:      "://invalid",
+		Username: "neo4j",
+		Password: "test",
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "memgraph: create driver:")
+}
+
+func TestNeighbors_DirectRelWrapper(t *testing.T) {
+	runner := &mockRunner{
+		readData: []record{
+			{values: []any{
+				nodeWrapper{
+					elementID: "n2",
+					props:     map[string]any{"id": "bob", "type": "person"},
+				},
+				relWrapper{
+					elementID:      "r1",
+					startElementID: "n1",
+					endElementID:   "n2",
+					props:          map[string]any{"type": "knows"},
+				},
+			}},
+		},
+	}
+	store := newWithRunner(runner)
+
+	entities, relations, err := store.Neighbors(context.Background(), "alice", 1)
+	assert.NoError(t, err)
+	assert.Len(t, entities, 1)
+	assert.Len(t, relations, 1)
+	assert.Equal(t, "bob", entities[0].ID)
+	assert.Equal(t, "knows", relations[0].Type)
 }

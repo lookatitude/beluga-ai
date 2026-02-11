@@ -116,3 +116,45 @@ func TestSessionTurnWithToolCalls(t *testing.T) {
 		t.Errorf("ToolCalls = %d, want 2", len(last.ToolCalls))
 	}
 }
+
+func TestValidTransitionUnknownFromState(t *testing.T) {
+	// An unknown "from" state should reject all transitions (except to idle).
+	unknownState := SessionState("unknown")
+
+	// unknown → listening should fail.
+	s := &VoiceSession{State: unknownState}
+	err := s.Transition(StateListening)
+	if err == nil {
+		t.Error("expected error for unknown→listening transition")
+	}
+
+	// unknown → speaking should fail.
+	s2 := &VoiceSession{State: unknownState}
+	err2 := s2.Transition(StateSpeaking)
+	if err2 == nil {
+		t.Error("expected error for unknown→speaking transition")
+	}
+
+	// unknown → idle should succeed (any→idle is always allowed).
+	s3 := &VoiceSession{State: unknownState}
+	err3 := s3.Transition(StateIdle)
+	if err3 != nil {
+		t.Errorf("unknown→idle should succeed, got error: %v", err3)
+	}
+}
+
+func TestValidTransitionSameState(t *testing.T) {
+	// speaking → speaking should be invalid.
+	s := &VoiceSession{State: StateSpeaking}
+	err := s.Transition(StateSpeaking)
+	if err == nil {
+		t.Error("expected error for speaking→speaking")
+	}
+
+	// listening → listening should be invalid.
+	s2 := &VoiceSession{State: StateListening}
+	err2 := s2.Transition(StateListening)
+	if err2 == nil {
+		t.Error("expected error for listening→listening")
+	}
+}

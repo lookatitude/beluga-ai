@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -122,3 +123,57 @@ type noFlushWriter struct{}
 func (w *noFlushWriter) Header() http.Header         { return http.Header{} }
 func (w *noFlushWriter) Write(b []byte) (int, error)  { return len(b), nil }
 func (w *noFlushWriter) WriteHeader(statusCode int)    {}
+
+// errWriter implements http.ResponseWriter and http.Flusher but returns error on Write.
+type errWriter struct {
+	header http.Header
+}
+
+func (w *errWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = http.Header{}
+	}
+	return w.header
+}
+
+func (w *errWriter) Write(b []byte) (int, error) {
+	return 0, fmt.Errorf("write error")
+}
+
+func (w *errWriter) WriteHeader(statusCode int) {}
+
+func (w *errWriter) Flush() {}
+
+func TestSSEWriter_WriteEvent_Error(t *testing.T) {
+	w := &errWriter{}
+	sw, err := NewSSEWriter(w)
+	if err != nil {
+		t.Fatalf("NewSSEWriter: %v", err)
+	}
+
+	// WriteEvent should fail on write.
+	err = sw.WriteEvent(SSEEvent{Data: "test"})
+	if err == nil {
+		t.Fatal("expected error from WriteEvent when Write fails")
+	}
+	if !strings.Contains(err.Error(), "write error") {
+		t.Errorf("expected error to mention 'write error', got: %v", err)
+	}
+}
+
+func TestSSEWriter_WriteHeartbeat_Error(t *testing.T) {
+	w := &errWriter{}
+	sw, err := NewSSEWriter(w)
+	if err != nil {
+		t.Fatalf("NewSSEWriter: %v", err)
+	}
+
+	// WriteHeartbeat should fail on write.
+	err = sw.WriteHeartbeat()
+	if err == nil {
+		t.Fatal("expected error from WriteHeartbeat when Write fails")
+	}
+	if !strings.Contains(err.Error(), "write error") {
+		t.Errorf("expected error to mention 'write error', got: %v", err)
+	}
+}

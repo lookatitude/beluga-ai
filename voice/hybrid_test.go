@@ -161,3 +161,117 @@ func TestHybridPipelineOptions(t *testing.T) {
 		t.Error("Session not set")
 	}
 }
+
+func TestHybridPipelineRunS2SWithSession(t *testing.T) {
+	// S2S with session set should run the S2S processor successfully.
+	session := NewSession("s2s-test")
+	hp := NewHybridPipeline(
+		WithS2S(passThroughProcessor),
+		WithHybridSession(session),
+	)
+
+	err := hp.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if hp.CurrentMode() != ModeS2S {
+		t.Errorf("CurrentMode() = %q, want %q", hp.CurrentMode(), ModeS2S)
+	}
+}
+
+func TestHybridPipelineRunS2SNoSession(t *testing.T) {
+	// S2S without session should return "requires a session" error.
+	hp := NewHybridPipeline(
+		WithS2S(passThroughProcessor),
+		// No session
+	)
+
+	err := hp.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error for S2S without session")
+	}
+	if err.Error() != "voice: S2S pipeline requires a session" {
+		t.Errorf("Run() error = %q, want session required error", err)
+	}
+}
+
+func TestHybridPipelineRunCascadeNotConfigured(t *testing.T) {
+	// Force cascade mode but no cascade configured → error.
+	hp := NewHybridPipeline(
+		WithS2S(passThroughProcessor),
+		// Force switch to cascade immediately.
+		WithSwitchPolicy(SwitchPolicyFunc(func(_ context.Context, _ PipelineState) bool {
+			return true
+		})),
+	)
+
+	err := hp.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error when cascade not configured")
+	}
+	if err.Error() != "voice: cascade pipeline not configured" {
+		t.Errorf("Run() error = %q, want cascade not configured error", err)
+	}
+}
+
+func TestHybridPipelineUnknownMode(t *testing.T) {
+	// Force an unknown pipeline mode to hit the default case.
+	hp := NewHybridPipeline(
+		WithS2S(passThroughProcessor),
+	)
+	// Manually set an invalid mode.
+	hp.state.CurrentMode = PipelineMode("invalid_mode")
+
+	err := hp.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error for unknown mode")
+	}
+	expected := `voice: unknown pipeline mode "invalid_mode"`
+	if err.Error() != expected {
+		t.Errorf("Run() error = %q, want %q", err, expected)
+	}
+}
+
+func TestHybridPipelineFallbackToCascadeNotConfigured(t *testing.T) {
+	// S2S is nil, default mode is S2S → falls to runCascade → cascade is nil → error.
+	hp := NewHybridPipeline(
+		// No S2S, no cascade.
+		WithSwitchPolicy(nil), // Disable switch policy.
+	)
+
+	err := hp.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error")
+	}
+	// With nil policy and nil S2S, it hits the first check and returns
+	// "requires at least one of S2S or cascade".
+}
+
+func TestHybridPipelineCascadeModeDirectly(t *testing.T) {
+	// Start in cascade mode explicitly by switching policy.
+	transport := &mockTransport{
+		frames: []Frame{NewTextFrame("cascade-direct")},
+	}
+	cascade := NewPipeline(
+		WithTransport(transport),
+		WithSTT(passThroughProcessor),
+	)
+
+	hp := NewHybridPipeline(
+		WithS2S(passThroughProcessor),
+		WithCascade(cascade),
+	)
+	// Force the mode to cascade.
+	hp.state.CurrentMode = ModeCascade
+
+	err := hp.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if hp.CurrentMode() != ModeCascade {
+		t.Errorf("CurrentMode() = %q, want %q", hp.CurrentMode(), ModeCascade)
+	}
+	if len(transport.sent) != 1 {
+		t.Fatalf("sent %d frames, want 1", len(transport.sent))
+	}
+}

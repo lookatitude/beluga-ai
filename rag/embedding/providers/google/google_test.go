@@ -241,3 +241,45 @@ func TestEmbed_APIKeyInURL(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "my-api-key", receivedKey)
 }
+
+func TestEmbedSingle_ErrorFromEmbed(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		fmt.Fprint(w, `{"error":{"message":"Internal server error"}}`)
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.EmbedSingle(context.Background(), "hello")
+	assert.Error(t, err)
+}
+
+func TestNew_CustomTimeout(t *testing.T) {
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		Timeout: 30000000000,
+	})
+	require.NoError(t, err)
+	assert.NotNil(t, emb)
+}
+
+func TestEmbed_InvalidJSONResponse(t *testing.T) {
+	ts := mockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, "invalid json")
+	})
+
+	emb, err := New(config.ProviderConfig{
+		APIKey:  "test-key",
+		BaseURL: ts.URL,
+	})
+	require.NoError(t, err)
+
+	_, err = emb.Embed(context.Background(), []string{"hello"})
+	assert.Error(t, err)
+}

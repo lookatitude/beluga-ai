@@ -206,6 +206,61 @@ func TestWithHooks_OnErrorSuppresses(t *testing.T) {
 	assert.NoError(t, err, "OnError returning nil should suppress error")
 }
 
+func TestWithHooks_OnError_SetError(t *testing.T) {
+	originalErr := errors.New("set failed")
+	var capturedErr error
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			capturedErr = err
+			return nil // suppress the error
+		},
+	}
+
+	errStore := &errorStore{err: originalErr}
+	wrapped := ApplyMiddleware(errStore, WithHooks(hooks))
+
+	err := wrapped.Set(context.Background(), "k", "v")
+	assert.NoError(t, err, "OnError returning nil should suppress Set error")
+	assert.ErrorIs(t, capturedErr, originalErr, "OnError should receive the original error")
+}
+
+func TestWithHooks_OnError_DeleteError(t *testing.T) {
+	originalErr := errors.New("delete failed")
+	var capturedErr error
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			capturedErr = err
+			return nil // suppress the error
+		},
+	}
+
+	errStore := &errorStore{err: originalErr}
+	wrapped := ApplyMiddleware(errStore, WithHooks(hooks))
+
+	err := wrapped.Delete(context.Background(), "k")
+	assert.NoError(t, err, "OnError returning nil should suppress Delete error")
+	assert.ErrorIs(t, capturedErr, originalErr, "OnError should receive the original error")
+}
+
+func TestWithHooks_OnError_WatchError(t *testing.T) {
+	originalErr := errors.New("watch failed")
+	var capturedErr error
+	hooks := Hooks{
+		OnError: func(ctx context.Context, err error) error {
+			capturedErr = err
+			return nil // suppress the error
+		},
+	}
+
+	errStore := &errorStore{err: originalErr}
+	wrapped := ApplyMiddleware(errStore, WithHooks(hooks))
+
+	ch, err := wrapped.Watch(context.Background(), "k")
+	assert.NoError(t, err, "OnError returning nil should suppress Watch error")
+	assert.Nil(t, ch, "channel should remain nil when Watch fails")
+	assert.ErrorIs(t, capturedErr, originalErr, "OnError should receive the original error")
+}
+
 func TestWithHooks_ClosePassesThrough(t *testing.T) {
 	hooks := Hooks{}
 	base := newMockStore()

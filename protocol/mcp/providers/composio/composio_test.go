@@ -150,4 +150,74 @@ func TestExecute(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, result.IsError)
 	})
+
+	t.Run("execution failure no error message", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Path == "/api/v1/actions" {
+				resp := actionsResponse{
+					Items: []actionInfo{{Name: "fail_action", Description: "Fail"}},
+				}
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(resp)
+				return
+			}
+
+			resp := executeResponse{
+				Successful: false,
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(resp)
+		}))
+		defer srv.Close()
+
+		c, err := New(WithBaseURL(srv.URL), WithAPIKey("cmp-test"))
+		require.NoError(t, err)
+
+		tools, err := c.ListTools(context.Background())
+		require.NoError(t, err)
+
+		result, err := tools[0].Execute(context.Background(), nil)
+		require.NoError(t, err)
+		assert.True(t, result.IsError)
+	})
+
+	t.Run("connection error", func(t *testing.T) {
+		c, err := New(WithBaseURL("http://127.0.0.1:1"), WithAPIKey("cmp-test"))
+		require.NoError(t, err)
+
+		ct := &composioTool{
+			client: c,
+			info:   actionInfo{Name: "test"},
+		}
+
+		_, err = ct.Execute(context.Background(), nil)
+		assert.Error(t, err)
+	})
+}
+
+func TestComposioTool_Description(t *testing.T) {
+	t.Run("with description", func(t *testing.T) {
+		ct := &composioTool{info: actionInfo{Description: "A description", DisplayName: "Display"}}
+		assert.Equal(t, "A description", ct.Description())
+	})
+
+	t.Run("fallback to display name", func(t *testing.T) {
+		ct := &composioTool{info: actionInfo{Description: "", DisplayName: "Display Name"}}
+		assert.Equal(t, "Display Name", ct.Description())
+	})
+}
+
+func TestComposioTool_InputSchema(t *testing.T) {
+	t.Run("with parameters", func(t *testing.T) {
+		params := map[string]any{"type": "object", "properties": map[string]any{"key": map[string]any{"type": "string"}}}
+		ct := &composioTool{info: actionInfo{Parameters: params}}
+		assert.Equal(t, params, ct.InputSchema())
+	})
+
+	t.Run("nil parameters", func(t *testing.T) {
+		ct := &composioTool{info: actionInfo{Parameters: nil}}
+		schema := ct.InputSchema()
+		assert.NotNil(t, schema)
+		assert.Equal(t, "object", schema["type"])
+	})
 }

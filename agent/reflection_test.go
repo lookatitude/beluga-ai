@@ -431,6 +431,37 @@ func TestReflexionPlanner_ImplementsPlanner(t *testing.T) {
 	var _ Planner = (*ReflexionPlanner)(nil)
 }
 
+// TestReflexionPlanner_Replan tests Replan() specifically.
+func TestReflexionPlanner_Replan(t *testing.T) {
+	actor := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("replanned response"), nil
+		},
+	}
+	evaluator := &testLLM{
+		generateFn: func(ctx context.Context, msgs []schema.Message) (*schema.AIMessage, error) {
+			return schema.NewAIMessage("0.9"), nil
+		},
+	}
+
+	p := NewReflexionPlanner(actor, WithEvaluator(evaluator))
+	state := PlannerState{
+		Input:    "replan test",
+		Messages: []schema.Message{schema.NewHumanMessage("replan test")},
+	}
+
+	actions, err := p.Replan(context.Background(), state)
+	if err != nil {
+		t.Fatalf("Replan error: %v", err)
+	}
+	if len(actions) != 1 {
+		t.Fatalf("expected 1 action, got %d", len(actions))
+	}
+	if actions[0].Message != "replanned response" {
+		t.Errorf("message = %q, want %q", actions[0].Message, "replanned response")
+	}
+}
+
 // reflexionTestLLM is a ChatModel for reflexion tests that allows tracking
 // separate actor and evaluator calls.
 type reflexionTestLLM struct {

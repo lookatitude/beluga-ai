@@ -452,6 +452,32 @@ func TestToTPlanner_Registry_Creation(t *testing.T) {
 	}
 }
 
+// TestToTPlanner_Registry_CreationWithExtra tests registry creation with extra options.
+func TestToTPlanner_Registry_CreationWithExtra(t *testing.T) {
+	model := &testLLM{}
+	p, err := NewPlanner("tree-of-thought", PlannerConfig{
+		LLM: model,
+		Extra: map[string]any{
+			"branch_factor": 5,
+			"max_depth":     10,
+			"strategy":      StrategyDFS,
+		},
+	})
+	if err != nil {
+		t.Fatalf("NewPlanner error: %v", err)
+	}
+	tot := p.(*ToTPlanner)
+	if tot.branchFactor != 5 {
+		t.Errorf("branchFactor = %d, want 5", tot.branchFactor)
+	}
+	if tot.maxDepth != 10 {
+		t.Errorf("maxDepth = %d, want 10", tot.maxDepth)
+	}
+	if tot.strategy != StrategyDFS {
+		t.Errorf("strategy = %q, want %q", tot.strategy, StrategyDFS)
+	}
+}
+
 func TestToTPlanner_Registry_CreationFailsWithoutLLM(t *testing.T) {
 	_, err := NewPlanner("tree-of-thought", PlannerConfig{})
 	if err == nil {

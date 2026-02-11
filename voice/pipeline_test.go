@@ -3,7 +3,10 @@ package voice
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
+
+	"github.com/lookatitude/beluga-ai/schema"
 )
 
 // mockTransport implements Transport for testing.
@@ -232,3 +235,354 @@ func TestComposeHooksNilFields(t *testing.T) {
 		t.Error("OnError should pass through error by default")
 	}
 }
+
+// --- Additional mock types for coverage ---
+
+// errorTransport returns an error from Recv.
+type errorTransport struct {
+	recvErr error
+}
+
+func (e *errorTransport) Recv(_ context.Context) (<-chan Frame, error) {
+	return nil, e.recvErr
+}
+
+func (e *errorTransport) Send(_ context.Context, _ Frame) error { return nil }
+func (e *errorTransport) Close() error                          { return nil }
+
+// sendErrorTransport succeeds on Recv but returns an error from Send.
+type sendErrorTransport struct {
+	frames  []Frame
+	sendErr error
+}
+
+func (s *sendErrorTransport) Recv(_ context.Context) (<-chan Frame, error) {
+	ch := make(chan Frame, len(s.frames))
+	for _, f := range s.frames {
+		ch <- f
+	}
+	close(ch)
+	return ch, nil
+}
+
+func (s *sendErrorTransport) Send(_ context.Context, _ Frame) error {
+	return s.sendErr
+}
+
+func (s *sendErrorTransport) Close() error { return nil }
+
+// errorVAD always returns an error from DetectActivity.
+type errorVAD struct {
+	err error
+}
+
+func (v *errorVAD) DetectActivity(_ context.Context, _ []byte) (ActivityResult, error) {
+	return ActivityResult{}, v.err
+}
+
+// --- Events tests ---
+
+func TestPipelineEventsError(t *testing.T) {
+	// Pipeline with no transport → Run() fails → Events yields the error.
+	p := NewPipeline(WithSTT(passThroughProcessor))
+
+	var gotErr error
+	for _, err := range p.Events(context.Background()) {
+		if err != nil {
+			gotErr = err
+			break
+		}
+	}
+	if gotErr == nil {
+		t.Error("Events() should yield an error when pipeline fails")
+	}
+}
+
+func TestPipelineEventsSuccess(t *testing.T) {
+	// Pipeline succeeds → Events yields nothing (no error).
+	transport := &mockTransport{
+		frames: []Frame{NewTextFrame("hello")},
+	}
+	p := NewPipeline(
+		WithTransport(transport),
+		WithSTT(passThroughProcessor),
+	)
+
+	var count int
+	for _, err := range p.Events(context.Background()) {
+		_ = err
+		count++
+	}
+	if count != 0 {
+		t.Errorf("Events() yielded %d items, want 0 for successful pipeline", count)
+	}
+}
+
+// --- Transport error path tests ---
+
+func TestPipelineRunTransportRecvError(t *testing.T) {
+	recvErr := fmt.Errorf("connection refused")
+	p := NewPipeline(
+		WithTransport(&errorTransport{recvErr: recvErr}),
+		WithSTT(passThroughProcessor),
+	)
+
+	err := p.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error when Recv fails")
+	}
+	if !errors.Is(err, recvErr) {
+		// Wrapped error check
+		if err.Error() != "voice: transport recv: connection refused" {
+			t.Errorf("Run() error = %q, want wrapped recv error", err)
+		}
+	}
+}
+
+func TestPipelineRunTransportSendError(t *testing.T) {
+	sendErr := fmt.Errorf("write broken pipe")
+	p := NewPipeline(
+		WithTransport(&sendErrorTransport{
+			frames:  []Frame{NewTextFrame("hello")},
+			sendErr: sendErr,
+		}),
+		WithSTT(passThroughProcessor),
+	)
+
+	err := p.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error when Send fails")
+	}
+}
+
+// --- VAD processor additional tests ---
+
+func TestPipelineVADNonAudioPassThrough(t *testing.T) {
+	// Non-audio frames should pass through VAD unchanged.
+	transport := &mockTransport{
+		frames: []Frame{
+			NewTextFrame("text-frame"),
+			NewControlFrame(SignalStart),
+		},
+	}
+
+	p := NewPipeline(
+		WithTransport(transport),
+		WithVAD(NewEnergyVAD(EnergyVADConfig{Threshold: 500})),
+		WithSTT(passThroughProcessor),
+	)
+
+	err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	if len(transport.sent) != 2 {
+		t.Fatalf("sent %d frames, want 2", len(transport.sent))
+	}
+	if transport.sent[0].Type != FrameText {
+		t.Errorf("sent[0].Type = %q, want %q", transport.sent[0].Type, FrameText)
+	}
+	if transport.sent[0].Text() != "text-frame" {
+		t.Errorf("sent[0].Text() = %q, want %q", transport.sent[0].Text(), "text-frame")
+	}
+	if transport.sent[1].Type != FrameControl {
+		t.Errorf("sent[1].Type = %q, want %q", transport.sent[1].Type, FrameControl)
+	}
+}
+
+func TestPipelineVADErrorOnErrorHookSuppresses(t *testing.T) {
+	// VAD returns error, OnError hook returns nil → error is suppressed, continue.
+	vadErr := fmt.Errorf("vad processing failed")
+	transport := &mockTransport{
+		frames: []Frame{
+			NewAudioFrame(generatePCM(480, 100), 16000),
+			NewTextFrame("after-error"), // non-audio, should pass through
+		},
+	}
+
+	var hookCalled bool
+	p := NewPipeline(
+		WithTransport(transport),
+		WithVAD(&errorVAD{err: vadErr}),
+		WithSTT(passThroughProcessor),
+		WithHooks(Hooks{
+			OnError: func(_ context.Context, err error) error {
+				hookCalled = true
+				return nil // suppress error
+			},
+		}),
+	)
+
+	err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if !hookCalled {
+		t.Error("OnError hook was not called")
+	}
+	// The text frame should have passed through.
+	if len(transport.sent) != 1 {
+		t.Fatalf("sent %d frames, want 1 (text only)", len(transport.sent))
+	}
+	if transport.sent[0].Text() != "after-error" {
+		t.Errorf("sent[0].Text() = %q, want %q", transport.sent[0].Text(), "after-error")
+	}
+}
+
+func TestPipelineVADErrorOnErrorHookPropagates(t *testing.T) {
+	// VAD returns error, OnError hook returns non-nil → propagates as fatal error.
+	vadErr := fmt.Errorf("vad failure")
+	hookErr := fmt.Errorf("fatal: vad failure")
+	transport := &mockTransport{
+		frames: []Frame{
+			NewAudioFrame(generatePCM(480, 100), 16000),
+		},
+	}
+
+	p := NewPipeline(
+		WithTransport(transport),
+		WithVAD(&errorVAD{err: vadErr}),
+		WithSTT(passThroughProcessor),
+		WithHooks(Hooks{
+			OnError: func(_ context.Context, _ error) error {
+				return hookErr
+			},
+		}),
+	)
+
+	err := p.Run(context.Background())
+	if err == nil {
+		t.Fatal("Run() should return error when OnError hook propagates")
+	}
+	if !errors.Is(err, hookErr) {
+		t.Errorf("Run() error = %v, want %v", err, hookErr)
+	}
+}
+
+func TestPipelineVADErrorNoHook(t *testing.T) {
+	// VAD returns error but no OnError hook → error is silently skipped, continue.
+	vadErr := fmt.Errorf("vad processing failed")
+	transport := &mockTransport{
+		frames: []Frame{
+			NewAudioFrame(generatePCM(480, 100), 16000),
+			NewTextFrame("pass-through"),
+		},
+	}
+
+	p := NewPipeline(
+		WithTransport(transport),
+		WithVAD(&errorVAD{err: vadErr}),
+		WithSTT(passThroughProcessor),
+		// No hooks set
+	)
+
+	err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	// Text frame should still pass through.
+	if len(transport.sent) != 1 {
+		t.Fatalf("sent %d frames, want 1", len(transport.sent))
+	}
+}
+
+func TestPipelineVADContextCancel(t *testing.T) {
+	// Cancel context during VAD processing.
+	ctx, cancel := context.WithCancel(context.Background())
+
+	// Create a transport that blocks until context is cancelled.
+	blockingRecv := make(chan Frame)
+	blockTransport := &mockTransport{}
+	// Override Recv to return a blocking channel.
+	bt := &blockingTransport{recv: blockingRecv}
+
+	p := NewPipeline(
+		WithTransport(bt),
+		WithVAD(NewEnergyVAD(EnergyVADConfig{Threshold: 500})),
+		WithSTT(passThroughProcessor),
+	)
+	_ = blockTransport // unused
+
+	done := make(chan error, 1)
+	go func() {
+		done <- p.Run(ctx)
+	}()
+
+	cancel()
+	err := <-done
+	if err == nil {
+		t.Error("Run() should return error on context cancel")
+	}
+}
+
+// blockingTransport provides a transport that uses a provided channel.
+type blockingTransport struct {
+	recv chan Frame
+	sent []Frame
+}
+
+func (b *blockingTransport) Recv(_ context.Context) (<-chan Frame, error) {
+	return b.recv, nil
+}
+
+func (b *blockingTransport) Send(_ context.Context, frame Frame) error {
+	b.sent = append(b.sent, frame)
+	return nil
+}
+
+func (b *blockingTransport) Close() error { return nil }
+
+func TestPipelineVADSpeechFiltersSilence(t *testing.T) {
+	// Verify that audio frames with no speech are NOT forwarded.
+	quietAudio := generatePCM(480, 10) // Below threshold
+	transport := &mockTransport{
+		frames: []Frame{
+			NewAudioFrame(quietAudio, 16000),
+		},
+	}
+
+	p := NewPipeline(
+		WithTransport(transport),
+		WithVAD(NewEnergyVAD(EnergyVADConfig{Threshold: 500})),
+		WithSTT(passThroughProcessor),
+	)
+
+	err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+
+	// Quiet audio should be filtered; nothing sent through transport.
+	if len(transport.sent) != 0 {
+		t.Errorf("sent %d frames, want 0 (silence filtered)", len(transport.sent))
+	}
+}
+
+func TestPipelineMultipleProcessors(t *testing.T) {
+	// Test with STT + LLM + TTS all as pass-through.
+	transport := &mockTransport{
+		frames: []Frame{NewTextFrame("input")},
+	}
+
+	p := NewPipeline(
+		WithTransport(transport),
+		WithSTT(passThroughProcessor),
+		WithLLM(passThroughProcessor),
+		WithTTS(passThroughProcessor),
+	)
+
+	err := p.Run(context.Background())
+	if err != nil {
+		t.Fatalf("Run() error = %v", err)
+	}
+	if len(transport.sent) != 1 {
+		t.Fatalf("sent %d frames, want 1", len(transport.sent))
+	}
+	if transport.sent[0].Text() != "input" {
+		t.Errorf("sent[0].Text() = %q, want %q", transport.sent[0].Text(), "input")
+	}
+}
+
+// Silence the unused import warning for schema.
+var _ schema.AgentEvent

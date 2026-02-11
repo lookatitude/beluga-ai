@@ -245,6 +245,90 @@ func TestSearchOrder(t *testing.T) {
 	assert.Contains(t, textOf(results[2]), "three")
 }
 
+func TestAll_SkipsInvalidJSON(t *testing.T) {
+	ctx := context.Background()
+	store, mr := newTestStore(t)
+
+	// Append a valid message.
+	err := store.Append(ctx, schema.NewHumanMessage("valid"))
+	require.NoError(t, err)
+
+	// Insert invalid JSON directly into the sorted set.
+	mr.ZAdd(store.key, 999, "not valid json")
+
+	msgs, err := store.All(ctx)
+	require.NoError(t, err)
+	// Only the valid message should be returned; the invalid one is skipped.
+	assert.Len(t, msgs, 1)
+	assert.Contains(t, textOf(msgs[0]), "valid")
+}
+
+func TestSearch_SkipsInvalidJSON(t *testing.T) {
+	ctx := context.Background()
+	store, mr := newTestStore(t)
+
+	err := store.Append(ctx, schema.NewHumanMessage("hello world"))
+	require.NoError(t, err)
+
+	// Insert invalid JSON directly.
+	mr.ZAdd(store.key, 999, "not valid json")
+
+	results, err := store.Search(ctx, "hello", 10)
+	require.NoError(t, err)
+	assert.Len(t, results, 1)
+}
+
+func TestUnmarshalMessage_DefaultRole(t *testing.T) {
+	data := []byte(`{"role":"observer","parts":[{"type":"text","text":"hello"}]}`)
+	msg, err := unmarshalMessage(data)
+	require.NoError(t, err)
+	// Unknown role defaults to HumanMessage.
+	assert.Equal(t, schema.RoleHuman, msg.GetRole())
+}
+
+func TestUnmarshalMessage_InvalidJSON(t *testing.T) {
+	_, err := unmarshalMessage([]byte("not json"))
+	assert.Error(t, err)
+}
+
+func TestUnmarshalMessage_AllRoles(t *testing.T) {
+	tests := []struct {
+		name string
+		role string
+		want schema.Role
+	}{
+		{"system", "system", schema.RoleSystem},
+		{"human", "human", schema.RoleHuman},
+		{"ai", "ai", schema.RoleAI},
+		{"tool", "tool", schema.RoleTool},
+		{"unknown", "observer", schema.RoleHuman},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			data := []byte(`{"role":"` + tt.role + `","parts":[{"type":"text","text":"hi"}]}`)
+			msg, err := unmarshalMessage(data)
+			require.NoError(t, err)
+			assert.Equal(t, tt.want, msg.GetRole())
+		})
+	}
+}
+
+func TestMarshalMessage_SystemMessage(t *testing.T) {
+	data, err := marshalMessage(schema.NewSystemMessage("be helpful"))
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `"role":"system"`)
+}
+
+func TestContainsText_NoMatch(t *testing.T) {
+	msg := schema.NewHumanMessage("hello world")
+	assert.False(t, containsText(msg, "xyz"))
+}
+
+func TestContainsText_EmptyParts(t *testing.T) {
+	msg := &schema.HumanMessage{Parts: []schema.ContentPart{}}
+	assert.False(t, containsText(msg, "any"))
+}
+
 func textOf(msg schema.Message) string {
 	var parts []string
 	for _, p := range msg.GetContent() {

@@ -192,6 +192,62 @@ func TestChain_Stream_ErrorPropagation(t *testing.T) {
 	t.Fatal("expected at least one stream result")
 }
 
+func TestChain_Stream_LastStepError(t *testing.T) {
+	errBoom := errors.New("boom")
+	step1 := newStep(func(input any) (any, error) { return input, nil })
+	step2 := &mockRunnable{
+		invokeFn: func(_ context.Context, input any, _ ...core.Option) (any, error) {
+			return input, nil
+		},
+		streamFn: func(_ context.Context, _ any, _ ...core.Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				yield(nil, errBoom)
+			}
+		},
+	}
+	c := Chain(step1, step2)
+
+	for _, err := range c.Stream(context.Background(), "x") {
+		if err == nil {
+			t.Fatal("expected error")
+		}
+		if !errors.Is(err, errBoom) {
+			t.Fatalf("expected boom error, got %v", err)
+		}
+		return
+	}
+	t.Fatal("expected at least one stream result")
+}
+
+func TestChain_Stream_ConsumerBreak(t *testing.T) {
+	step := &mockRunnable{
+		streamFn: func(_ context.Context, _ any, _ ...core.Option) iter.Seq2[any, error] {
+			return func(yield func(any, error) bool) {
+				for i := 0; i < 10; i++ {
+					if !yield(i, nil) {
+						return
+					}
+				}
+			}
+		},
+	}
+	c := Chain(step)
+
+	count := 0
+	for _, err := range c.Stream(context.Background(), "x") {
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		count++
+		if count >= 3 {
+			break
+		}
+	}
+	if count != 3 {
+		t.Fatalf("expected 3 events before break, got %d", count)
+	}
+}
+
 func TestChain_ContextCancellation(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancel immediately.

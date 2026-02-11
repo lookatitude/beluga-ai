@@ -12,15 +12,33 @@ import (
 
 // mockMessageStore is a test double for MessageStore.
 type mockMessageStore struct {
-	msgs []schema.Message
+	msgs      []schema.Message
+	appendErr error
+	searchErr error
+	allErr    error
+	clearErr  error
+	// appendCount tracks how many times Append has been called
+	appendCount int
+	// appendErrorOn specifies which Append call should error (1-based)
+	appendErrorOn int
 }
 
 func (m *mockMessageStore) Append(_ context.Context, msg schema.Message) error {
+	m.appendCount++
+	if m.appendErrorOn > 0 && m.appendCount == m.appendErrorOn {
+		return m.appendErr
+	}
+	if m.appendErr != nil && m.appendErrorOn == 0 {
+		return m.appendErr
+	}
 	m.msgs = append(m.msgs, msg)
 	return nil
 }
 
 func (m *mockMessageStore) Search(_ context.Context, query string, k int) ([]schema.Message, error) {
+	if m.searchErr != nil {
+		return nil, m.searchErr
+	}
 	var results []schema.Message
 	for _, msg := range m.msgs {
 		if matchesQuery(msg, query) {
@@ -34,12 +52,18 @@ func (m *mockMessageStore) Search(_ context.Context, query string, k int) ([]sch
 }
 
 func (m *mockMessageStore) All(_ context.Context) ([]schema.Message, error) {
+	if m.allErr != nil {
+		return nil, m.allErr
+	}
 	cp := make([]schema.Message, len(m.msgs))
 	copy(cp, m.msgs)
 	return cp, nil
 }
 
 func (m *mockMessageStore) Clear(_ context.Context) error {
+	if m.clearErr != nil {
+		return m.clearErr
+	}
 	m.msgs = nil
 	return nil
 }
@@ -185,4 +209,26 @@ func TestInlineMessageStore(t *testing.T) {
 		require.NoError(t, err)
 		assert.Nil(t, store.msgs)
 	})
+}
+
+// TestRecall_Save_AppendInputError tests the error path when the first Append
+// (input message) fails. This covers the missing line 45-46 in recall.go.
+func TestRecall_Save_AppendInputError(t *testing.T) {
+	ctx := context.Background()
+	store := &mockMessageStore{
+		appendErr:     assert.AnError,
+		appendErrorOn: 1, // Fail on first Append (input)
+	}
+	recall := NewRecall(store)
+
+	input := schema.NewHumanMessage("hello")
+	output := schema.NewAIMessage("hi")
+
+	err := recall.Save(ctx, input, output)
+	require.Error(t, err)
+	assert.Equal(t, assert.AnError, err)
+
+	// Verify only one Append was attempted (the input that failed)
+	assert.Equal(t, 1, store.appendCount)
+	assert.Empty(t, store.msgs)
 }
