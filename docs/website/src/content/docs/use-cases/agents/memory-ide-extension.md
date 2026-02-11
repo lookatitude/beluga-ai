@@ -3,11 +3,15 @@ title: Context-aware IDE Extension
 description: Build an IDE extension with project-specific memory that learns from code patterns and maintains context across sessions.
 ---
 
-Developers waste significant time repeatedly explaining project context to AI assistants that have no memory across sessions. Generic suggestions lack project-specific understanding, reducing productivity and causing frustration. A context-aware IDE extension uses persistent memory to understand project patterns, maintain conversation history, and provide intelligent assistance grounded in the actual codebase.
+Developers waste significant time repeatedly explaining project context to AI assistants that have no memory across sessions. Every new conversation starts from zero: "We use React with TypeScript, our API is in Go, the database is PostgreSQL, and we follow this naming convention..." This repeated context-setting costs 5-10 minutes per session and produces generic suggestions that miss project-specific patterns, naming conventions, and architectural decisions.
+
+A context-aware IDE extension uses persistent memory to understand project patterns, maintain conversation history, and provide intelligent assistance grounded in the actual codebase. The key insight is using vector-backed memory: code is embedded into a semantic vector space where similarity search retrieves the most relevant code context for each developer query, rather than relying on keyword matching or fixed context windows.
 
 ## Solution Architecture
 
 Beluga AI provides memory abstractions for storing and retrieving context, vector stores for semantic code search, and embedding models for understanding code semantics. The system indexes code changes incrementally, retrieves relevant context for developer queries, and maintains conversation history across sessions.
+
+The architecture uses vector memory (not buffer or window memory) because code context retrieval is fundamentally a semantic search problem. A developer asking "how do we handle authentication?" needs code from auth-related files regardless of when those files were last edited. Vector similarity search finds semantically relevant code across the entire project, while buffer memory would only recall the most recent interactions.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -31,7 +35,7 @@ Beluga AI provides memory abstractions for storing and retrieving context, vecto
 
 ### Project Memory Setup
 
-The context manager maintains project-specific memory with semantic indexing:
+The context manager maintains project-specific memory with semantic indexing. Each project gets its own namespace in the vector store, providing isolation between projects. The `text-embedding-3-small` model is chosen for IDE performance — it produces embeddings fast enough for real-time indexing without blocking the editor, while still providing sufficient semantic quality for code retrieval.
 
 ```go
 package main
@@ -95,7 +99,7 @@ func (m *IDEContextManager) GetProjectMemory(ctx context.Context, projectID stri
 
 ### Code Indexing
 
-Index code changes incrementally for semantic search:
+Index code changes incrementally for semantic search. Each file is embedded and stored with metadata (project ID, file path, type, timestamp) that enables filtered retrieval — when the developer queries a specific project, only that project's code is searched.
 
 ```go
 func (m *IDEContextManager) IndexCode(ctx context.Context, projectID, filePath, code string) error {

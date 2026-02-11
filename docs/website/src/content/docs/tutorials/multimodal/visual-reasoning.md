@@ -3,7 +3,7 @@ title: Visual Reasoning with Multimodal Models
 description: Analyze images and extract information using multimodal LLMs with Beluga AI's ContentPart system for URL-based and base64-encoded image input.
 ---
 
-Modern AI models can "see" and reason about images alongside text. Beluga AI's `schema.ContentPart` system provides a unified interface for sending multimodal content to any provider that supports vision capabilities. This tutorial demonstrates how to build a visual reasoning pipeline using image parts.
+Modern AI models can "see" and reason about images alongside text. Beluga AI's `schema.ContentPart` system provides a unified interface for sending multimodal content to any provider that supports vision capabilities. The `ContentPart` interface is the foundation of Beluga AI's multimodal design -- `TextPart`, `ImagePart`, and `AudioPart` all implement it, which means a single `HumanMessage` can carry any combination of media types. Provider implementations handle the encoding details (base64 for raw bytes, URL references for remote images) transparently, so your application code stays provider-agnostic.
 
 ## What You Will Build
 
@@ -18,7 +18,7 @@ A visual analysis pipeline that sends images (both URL-based and base64-encoded)
 
 ### Multimodal Content Parts
 
-Every message in Beluga AI contains a slice of `ContentPart` values. The `schema` package provides typed parts for different media:
+Every message in Beluga AI contains a slice of `ContentPart` values. The `schema` package provides typed parts for different media. `ImagePart` supports two modes: URL-based (the provider fetches the image from the URL) and data-based (raw bytes are base64-encoded and sent inline). URL-based is more efficient for large images because the provider downloads them directly, while data-based is necessary for local files or private images that the provider cannot reach.
 
 ```go
 import "github.com/lookatitude/beluga-ai/schema"
@@ -41,7 +41,7 @@ imageBytes := schema.ImagePart{
 
 ### Messages with Mixed Content
 
-A `HumanMessage` can contain both text and image parts:
+A `HumanMessage` can contain both text and image parts. The text part provides the instruction and the image part provides the visual data. This separation allows the same image to be analyzed with different questions without re-uploading -- just change the text part and reuse the image part.
 
 ```go
 msg := &schema.HumanMessage{
@@ -53,6 +53,8 @@ msg := &schema.HumanMessage{
 ```
 
 ## Step 1: Initialize a Vision-Capable Model
+
+Create a vision-capable model via the registry pattern. GPT-4o is used here because it supports both URL and base64 image input with strong visual reasoning capabilities. The same `llm.ChatModel` interface applies -- you can switch to Gemini or Claude without changing the visual analysis code.
 
 ```go
 package main
@@ -90,7 +92,7 @@ func main() {
 
 ## Step 2: Analyze an Image from URL
 
-Send an image URL alongside a text question:
+Send an image URL alongside a text question. URL-based image input is the preferred approach when the image is publicly accessible because the provider fetches it directly, avoiding the overhead of base64 encoding (which increases payload size by approximately 33%). The `MimeType` field helps the provider handle the image correctly, though most providers can auto-detect the format.
 
 ```go
 func analyzeImageURL(ctx context.Context, model llm.ChatModel) {
@@ -118,7 +120,7 @@ func analyzeImageURL(ctx context.Context, model llm.ChatModel) {
 
 ## Step 3: Analyze a Local Image (Base64)
 
-Load a local image file and send it as raw bytes:
+Load a local image file and send it as raw bytes. The provider implementation handles base64 encoding transparently -- your code works with `[]byte` from `os.ReadFile` directly. This approach is necessary for local files, screenshots, or images from private sources that the provider API cannot fetch via URL.
 
 ```go
 func analyzeLocalImage(ctx context.Context, model llm.ChatModel) {
@@ -152,7 +154,7 @@ func analyzeLocalImage(ctx context.Context, model llm.ChatModel) {
 
 ## Step 4: Compare Multiple Images
 
-Send multiple images in a single message for comparison:
+Send multiple images in a single message for comparison. The `Parts` slice can contain any number of `ImagePart` values, and the model will reason about all of them in relation to the text prompt. This is useful for before/after comparisons, version comparisons, or any task where the model needs to see multiple images simultaneously to produce a meaningful analysis.
 
 ```go
 func compareImages(ctx context.Context, model llm.ChatModel) {
@@ -184,7 +186,7 @@ func compareImages(ctx context.Context, model llm.ChatModel) {
 
 ## Step 5: Build a Receipt Scanner
 
-Combine visual reasoning with structured output extraction:
+Combine visual reasoning with structured output extraction. The system message instructs the model to return JSON with specific fields, creating a structured extraction pipeline from unstructured image data. For production use, consider combining this with the `llm.StructuredOutput` facility to validate the JSON against a Go struct schema, ensuring the model's output conforms to the expected format.
 
 ```go
 func scanReceipt(ctx context.Context, model llm.ChatModel, imagePath string) {
@@ -223,7 +225,7 @@ func scanReceipt(ctx context.Context, model llm.ChatModel, imagePath string) {
 
 ## Step 6: Streaming Visual Analysis
 
-Stream the analysis for large or complex images:
+Stream the analysis for large or complex images. Streaming uses `iter.Seq2[StreamChunk, error]`, Beluga AI's standard streaming pattern, providing real-time output as the model processes the visual content. This is particularly useful for detailed image descriptions where the output is long and the user benefits from seeing partial results immediately.
 
 ```go
 func streamAnalysis(ctx context.Context, model llm.ChatModel) {

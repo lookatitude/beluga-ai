@@ -5,6 +5,8 @@ description: Generate text embeddings using Voyage AI's specialized embedding mo
 
 The Voyage AI embedding provider implements the `embedding.Embedder` interface using the Voyage Embed API. Voyage models are optimized for retrieval tasks and support input type differentiation for asymmetric search.
 
+Choose Voyage embeddings when retrieval quality is critical, especially for code search (`voyage-code-2`) or when you need asymmetric document/query embeddings. Voyage models consistently rank highly on retrieval benchmarks and offer specialized models for code, legal, and financial domains.
+
 ## Installation
 
 ```bash

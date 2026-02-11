@@ -3,11 +3,13 @@ title: Long-term Patient History Tracker
 description: Maintain comprehensive patient history across visits and providers with persistent memory and semantic retrieval.
 ---
 
-Healthcare providers struggle with fragmented patient records scattered across systems, causing information loss, duplicate tests, and poor care coordination. Providers lack complete patient context when making treatment decisions. A long-term patient history tracker uses persistent memory with semantic search to maintain comprehensive history, enable context-aware care, and improve coordination across providers.
+A physician treating a patient for chest pain needs to know about the patient's cardiac history, current medications, allergies, and recent lab results — information that may be scattered across an EHR system, specialist referral notes, pharmacy records, and previous hospital visits. Searching through these systems manually takes 10-15 minutes per patient, and critical context is still missed because keyword search cannot find semantically related information (searching "heart problems" won't surface a note about "mitral valve prolapse"). Studies show that 60-70% of relevant patient history is not surfaced during clinical encounters, contributing to an estimated 12 million diagnostic errors annually in the US.
+
+The challenge is not just storage but retrieval: a patient's 20-year medical history might contain thousands of entries, but only a handful are relevant to any given clinical question. Traditional database queries require knowing exactly what to search for, but clinical reasoning often starts with vague queries like "any previous respiratory issues" that require semantic understanding.
 
 ## Solution Architecture
 
-Beluga AI provides persistent memory abstractions for long-term storage, vector stores for semantic retrieval of patient history, and access control for HIPAA compliance. The system stores patient interactions persistently, indexes them semantically, and retrieves relevant history based on clinical queries.
+Beluga AI's memory package combined with vector stores enables semantic retrieval of patient history. The architecture uses the MemGPT-inspired memory model: interactions are stored persistently in a vector store (archival memory) and indexed using embeddings for semantic search, while recent context stays in working memory for active conversations. This design means a query like "cardiac history" retrieves relevant entries even if the original notes used terms like "MI", "STEMI", or "troponin elevation". Access control integrates at the retrieval layer to enforce HIPAA requirements — every query is filtered by patient-provider authorization before results are returned.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -87,7 +89,7 @@ func NewPatientHistoryTracker(ctx context.Context) (*PatientHistoryTracker, erro
 
 ### Recording Interactions
 
-Store patient interactions with metadata for filtering and compliance:
+Each interaction is stored with both an embedding (for semantic search) and structured metadata (for exact filtering by patient ID, type, and provider). This dual indexing is important because clinical queries combine semantic intent ("cardiac history") with exact constraints ("for patient P-12345 only"):
 
 ```go
 type PatientInteraction struct {

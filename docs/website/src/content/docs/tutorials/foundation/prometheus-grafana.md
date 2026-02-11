@@ -3,7 +3,7 @@ title: Prometheus and Grafana Setup
 description: Export Beluga AI metrics to Prometheus and visualize them in Grafana dashboards.
 ---
 
-Observability is essential for production AI applications. While traces show individual request flows, metrics provide aggregate visibility — request rates, error rates, token consumption, and latency distributions. Beluga AI's observability layer is built on OpenTelemetry, making it straightforward to export metrics to Prometheus and visualize them in Grafana.
+Observability is essential for production AI applications. While traces show individual request flows, metrics provide aggregate visibility — request rates, error rates, token consumption, and latency distributions. These aggregate views reveal patterns that traces alone cannot: gradual latency degradation, increasing error rates from a specific provider, or token consumption trends that affect cost forecasting. Beluga AI's observability layer is built on OpenTelemetry, making it straightforward to export metrics to Prometheus and visualize them in Grafana.
 
 ## What You Will Build
 
@@ -17,14 +17,18 @@ A metrics pipeline that exports Beluga AI metrics to Prometheus and displays the
 
 ## The Metrics Pipeline
 
+The pipeline follows the standard OpenTelemetry architecture, where each layer has a single responsibility:
+
 1. **Instrumentation** — Your code records metrics via OpenTelemetry meters
 2. **SDK** — The OTel SDK aggregates metrics in memory
 3. **Exporter** — An HTTP handler exposes metrics at `/metrics`
 4. **Scraper** — Prometheus polls `/metrics` on a configured interval
 
+This pull-based model (Prometheus scrapes your application) is preferred for production because it decouples metric collection from application performance — if Prometheus is temporarily unavailable, your application is unaffected.
+
 ## Step 1: Set Up the Prometheus Exporter
 
-Use the OpenTelemetry Prometheus exporter to serve metrics over HTTP:
+The Prometheus exporter bridges OpenTelemetry's metric API to Prometheus's text exposition format. It registers as a `metric.Reader` with the OTel SDK and serves collected metrics on an HTTP endpoint. The separate metrics port (`:2222`) isolates metrics traffic from application traffic, which is a common practice for security and load balancing.
 
 ```go
 package main
@@ -68,7 +72,7 @@ func setupMetrics() error {
 
 ## Step 2: Record Custom Metrics
 
-Use the OpenTelemetry meter API to record application-specific metrics:
+Use the OpenTelemetry meter API to record application-specific metrics. Counters track cumulative totals (total requests, total errors), while histograms capture distributions (latency percentiles). The meter name (`"beluga-agent"`) groups related metrics and appears as a prefix in Prometheus, making it easy to filter dashboards to your application's metrics.
 
 ```go
 import (
@@ -113,7 +117,7 @@ func recordMetrics(ctx context.Context) error {
 
 ## Step 3: Configure Prometheus
 
-Create a `prometheus.yml` file:
+Create a `prometheus.yml` file. The `scrape_interval` of 15 seconds is a good default — shorter intervals increase storage cost, while longer intervals reduce alerting responsiveness.
 
 ```yaml
 global:
@@ -151,7 +155,7 @@ Configure the data source:
 
 ## Step 5: Useful PromQL Queries
 
-Create dashboards with these queries:
+Create dashboards with these queries. Each query targets a specific operational concern for AI applications:
 
 | Metric | PromQL |
 |:---|:---|
@@ -159,6 +163,8 @@ Create dashboards with these queries:
 | P95 latency | `histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m]))` |
 | Error rate | `rate(llm_requests_total{status="error"}[1m])` |
 | Token usage | `sum(rate(llm_tokens_total[5m])) by (model)` |
+
+The P95 latency query is particularly important for AI applications because LLM response times have high variance — a model might respond in 500ms for simple queries but take 10 seconds for complex reasoning. Monitoring the 95th percentile surfaces these slow requests that affect user experience.
 
 ## Cardinality Guidelines
 

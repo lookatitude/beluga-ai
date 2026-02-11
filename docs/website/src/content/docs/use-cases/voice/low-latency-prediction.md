@@ -3,7 +3,9 @@ title: Low-Latency Turn Prediction
 description: Reduce voice agent response delay with tuned turn-end detection using heuristic and ONNX providers.
 ---
 
-Voice AI vendors face a critical challenge: the delay between when a user stops speaking and when the system decides to respond. Fixed silence windows (800ms) feel sluggish, while shorter windows cause premature interruptions. Low-latency turn prediction uses Beluga AI's turn detection with tuned heuristic and ONNX providers to achieve sub-100ms turn decisions with less than 5% false turn-end rate.
+Voice AI vendors face a critical challenge: the delay between when a user stops speaking and when the system decides to respond. This "endpointing" decision directly impacts perceived responsiveness — every 100ms of unnecessary waiting adds to the user's sense of lag. Fixed silence windows (800ms) feel sluggish, while shorter windows cause premature interruptions that cut off users mid-thought. The fundamental tension is between responsiveness (respond quickly) and accuracy (wait long enough to be sure the user is done).
+
+Low-latency turn prediction uses Beluga AI's turn detection with tuned heuristic and ONNX providers to achieve sub-100ms turn decisions with less than 5% false turn-end rate. The system offers two detection strategies — heuristic for rapid deployment and ONNX model-based for production accuracy — both accessed through the same `FrameProcessor` interface.
 
 ## Solution Architecture
 
@@ -23,11 +25,13 @@ graph TB
 
 The voice pipeline provides audio chunks and ongoing silence duration (from VAD). The turn detector uses this combined signal to decide when the user has finished speaking. On turn-end, the session triggers the STT, LLM, and TTS pipeline.
 
+The turn detector consumes VAD output rather than raw audio because silence duration is the primary signal for turn-end detection. By placing the turn detector after VAD in the frame pipeline, it receives pre-computed speech/silence boundaries without duplicating that work. This layered approach also means the turn detector can be swapped (heuristic to ONNX) without changing the upstream VAD configuration.
+
 ## Implementation
 
 ### Heuristic Turn Detector
 
-Start with heuristic detection for rapid iteration without model dependencies:
+Start with heuristic detection for rapid iteration without model dependencies. The heuristic approach combines silence duration, word count, and punctuation signals — all available without a dedicated ML model. This makes it deployable immediately and tunable through configuration rather than retraining.
 
 ```go
 package main
@@ -51,7 +55,7 @@ func setupHeuristicTurnDetector(ctx context.Context) voice.FrameProcessor {
 
 ### ONNX Turn Detector for Production
 
-Upgrade to ONNX model-based detection for better accuracy in varied environments:
+Upgrade to ONNX model-based detection for better accuracy in varied environments. The ONNX provider runs a trained turn-prediction model that captures patterns the heuristic cannot (prosody, speech rate changes, semantic cues). Both providers implement the same `FrameProcessor` interface, so switching from heuristic to ONNX is a configuration change, not a code change.
 
 ```go
 func setupONNXTurnDetector(ctx context.Context, modelPath string) voice.FrameProcessor {

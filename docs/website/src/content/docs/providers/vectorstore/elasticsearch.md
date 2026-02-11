@@ -5,6 +5,8 @@ description: Vector store using Elasticsearch's kNN search with dense_vector fie
 
 The Elasticsearch provider implements the `vectorstore.VectorStore` interface using Elasticsearch's approximate kNN search with `dense_vector` fields. It uses the bulk API for efficient batch operations.
 
+Choose Elasticsearch when you need both full-text search and vector similarity search in the same engine. If your organization already runs Elasticsearch for logging, analytics, or text search, adding vector search avoids introducing a separate system. Elasticsearch's kNN search integrates with its existing query DSL for combined keyword and vector queries.
+
 ## Installation
 
 ```bash

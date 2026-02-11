@@ -5,6 +5,8 @@ description: "Integration guide for Cerebras wafer-scale inference with Beluga A
 
 The Cerebras provider connects Beluga AI to Cerebras' inference platform, which uses wafer-scale engine (WSE) hardware for extremely fast inference. Cerebras exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose Cerebras when you need the fastest possible inference for Llama models. Cerebras' wafer-scale hardware delivers extremely high tokens-per-second rates, making it particularly suited for latency-critical applications and high-throughput processing of open-source models.
+
 ## Installation
 
 ```bash
@@ -128,9 +130,9 @@ model, err := cerebras.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID          | Description              |
-|-------------------|--------------------------|
-| `llama-3.3-70b`  | Llama 3.3 70B            |
-| `llama-3.1-8b`   | Llama 3.1 8B             |
+| Model ID          | Description                                |
+|-------------------|--------------------------------------------|
+| `llama-3.3-70b`  | Llama 3.3 70B -- highest quality available |
+| `llama-3.1-8b`   | Llama 3.1 8B -- ultra-fast small model     |
 
 Refer to [Cerebras' documentation](https://inference-docs.cerebras.ai/introduction) for the latest model list.

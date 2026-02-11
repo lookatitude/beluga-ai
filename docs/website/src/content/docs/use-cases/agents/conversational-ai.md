@@ -3,15 +3,19 @@ title: Conversational AI Assistant
 description: Build a personalized conversational AI with persistent 3-tier memory using Beluga AI's MemGPT-inspired architecture.
 ---
 
-Traditional chatbots lose context between sessions, forcing users to repeat themselves. They cannot learn preferences, recall past interactions, or build a relationship over time. A conversational AI assistant with persistent memory solves this by maintaining three tiers of memory: core context always in the prompt, searchable conversation history, and long-term archival storage backed by vector search.
+Traditional chatbots lose context between sessions, forcing users to repeat themselves. Every interaction starts from scratch — the assistant does not remember the user's name, preferences, past questions, or the decisions made in previous conversations. This creates a frustrating experience that feels more like filling out a form than talking to an intelligent assistant.
+
+The fundamental challenge is that LLM context windows are finite. You cannot simply concatenate all past conversations into the prompt — it would quickly exceed token limits and degrade response quality. A conversational AI assistant with persistent memory solves this by maintaining three tiers of memory, inspired by the MemGPT architecture: core context always in the prompt, searchable conversation history, and long-term archival storage backed by vector search. This tiered approach keeps the most important information always available while making everything else retrievable on demand.
 
 ## Solution Architecture
 
-Beluga AI implements a MemGPT-inspired 3-tier memory system:
+Beluga AI implements a MemGPT-inspired 3-tier memory system. The three tiers map to different access patterns and latency requirements:
 
-- **Core memory**: Always present in the context window. Contains the persona definition and key facts about the user. Self-editable — the agent can update its understanding of the user over time.
-- **Recall memory**: Searchable conversation history. Stores full messages and retrieves relevant past exchanges by semantic similarity.
-- **Archival memory**: Long-term vector storage for facts, preferences, and knowledge extracted from conversations.
+- **Core memory**: Always present in the context window. Contains the persona definition and key facts about the user. Self-editable — the agent can update its understanding of the user over time. This tier occupies a fixed budget of the context window (typically 2-4K tokens) and is optimized for prompt cache hits by placing it first in the message sequence.
+- **Recall memory**: Searchable conversation history. Stores full messages and retrieves relevant past exchanges by semantic similarity. This tier handles the "what did we discuss last time?" use case without loading all past conversations into context.
+- **Archival memory**: Long-term vector storage for facts, preferences, and knowledge extracted from conversations. This tier handles the "what do I know about this user?" use case, retrieving specific facts across potentially thousands of past interactions.
+
+The MemGPT pattern is chosen over simpler approaches (buffer memory, window memory) because it explicitly manages the tradeoff between context window size and information availability. Buffer memory loses old context, window memory loses specific facts — MemGPT's three tiers ensure nothing important is lost while keeping the context window lean.
 
 ```
 ┌──────────────────────────────────────┐
@@ -123,7 +127,7 @@ func NewConversationAssistant(ctx context.Context) (*ConversationAssistant, erro
 
 ## Conversation Flow
 
-Each turn assembles context from all three memory tiers, generates a response, and saves the exchange back into memory.
+Each turn assembles context from all three memory tiers, generates a response, and saves the exchange back into memory. The context assembly order matters: core memory goes first to maximize prompt cache hits (static content first, per Beluga AI's prompt cache optimization pattern), then recall memory, then archival results. This ordering means the persona and user facts — which rarely change — can be cached across requests.
 
 ```go
 func (ca *ConversationAssistant) Chat(ctx context.Context, userMessage string) (string, error) {
@@ -185,7 +189,7 @@ func (ca *ConversationAssistant) buildContext(ctx context.Context, query string)
 
 ## Self-Updating Memory
 
-The assistant can update its core memory as it learns about the user:
+The assistant can update its core memory as it learns about the user. This self-updating capability is the key differentiator of the MemGPT pattern: the agent uses structured output (`llm.NewStructured[Facts]`) to extract facts from each exchange, then stores them in archival memory and promotes fundamental facts to core memory. Over time, the assistant builds a rich understanding of the user without any manual configuration.
 
 ```go
 func (ca *ConversationAssistant) archiveIfRelevant(ctx context.Context, userMsg, response string) {

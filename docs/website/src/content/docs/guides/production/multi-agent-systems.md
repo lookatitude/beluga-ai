@@ -1,9 +1,11 @@
 ---
 title: Building Multi-Agent Systems
-description: Learn how to coordinate multiple specialized agents using handoffs, supervisor patterns, and event-driven communication.
+description: Coordinate multiple specialized agents using handoffs, supervisor patterns, event-driven communication, and shared memory for collaborative problem-solving.
 ---
 
-Single agents solve focused problems, but complex tasks require teams of specialized agents working together. Beluga AI provides patterns for building multi-agent systems that coordinate seamlessly.
+Single agents work well for focused, self-contained problems. But real-world tasks often require different types of expertise working together: a researcher gathers information, a writer drafts content, a reviewer checks quality. Multi-agent systems model this natural division of labor, letting each agent specialize while the system coordinates their collaboration.
+
+Beluga AI provides three coordination patterns that address different tradeoffs between control, flexibility, and coupling. Choosing the right pattern depends on whether you need deterministic routing, dynamic goal decomposition, or fully decoupled event-driven communication.
 
 ## What You'll Learn
 
@@ -17,12 +19,14 @@ This guide covers:
 
 ## When to Use Multi-Agent Systems
 
+A single agent with tools can handle many tasks, but multi-agent architectures become necessary when the problem naturally decomposes into distinct areas of expertise. Rather than overloading one agent with a massive system prompt and dozens of tools, you can give each agent a focused role with its own prompt and toolset, which improves both reliability and maintainability.
+
 Multi-agent architectures excel at:
 - **Complex workflows** requiring different specialized skills (research + writing + review)
-- **Parallel execution** where agents can work simultaneously
-- **Domain separation** where each agent has distinct expertise
-- **Scalability** when workload can be distributed
-- **Human-like teams** that mirror organizational structures (PM, Dev, QA)
+- **Parallel execution** where agents can work simultaneously on independent subtasks
+- **Domain separation** where each agent has distinct expertise and a focused tool set
+- **Scalability** when workload can be distributed across agents with different resource profiles
+- **Human-like teams** that mirror organizational structures (PM, Dev, QA) for intuitive decomposition
 
 ## Prerequisites
 
@@ -33,11 +37,13 @@ Before starting this guide:
 
 ## Agent Coordination Patterns
 
-Beluga AI supports three primary multi-agent patterns:
+Beluga AI supports three primary multi-agent patterns, each suited to different coordination needs:
 
 ### Pattern 1: Handoffs (Router)
 
-A routing agent classifies requests and transfers control to specialist agents.
+The handoff pattern uses a routing agent that classifies incoming requests and transfers control to the appropriate specialist. This is the simplest multi-agent pattern and works well when request types map cleanly to specific agents.
+
+Handoffs are implemented as tools because the LLM already understands how to call tools. By representing agent transfers as `transfer_to_{name}` tool calls, the model can decide when and where to route a conversation using the same mechanism it uses for any other tool. This means no new concepts or special-purpose routing logic is needed.
 
 ```mermaid
 graph LR
@@ -47,11 +53,13 @@ graph LR
     Router -->|documentation| TechWriter[Tech Writer Agent]
 ```
 
-**Use when:** You have distinct request types that map to specific agents.
+**Use when:** You have distinct request types that map to specific agents, and classification is straightforward.
 
 ### Pattern 2: Supervisor (Manager)
 
-A supervisor agent breaks down goals into tasks and delegates to worker agents.
+The supervisor pattern models how a project manager works: it receives a complex goal, breaks it into concrete tasks, delegates each task to a specialist worker, and synthesizes the results into a coherent response. This pattern is essential when a single request requires multiple steps with dependencies between them.
+
+The supervisor uses LLM reasoning to create the task plan, which means it can adapt to novel goals without hardcoded routing rules. The tradeoff is higher latency and token usage, since the planning step itself requires an LLM call.
 
 ```mermaid
 graph TD
@@ -65,11 +73,13 @@ graph TD
     Supervisor -->|Final Result| User
 ```
 
-**Use when:** Complex goals require decomposition and sequential/parallel execution.
+**Use when:** Complex goals require decomposition into subtasks with dependencies, and execution order matters.
 
 ### Pattern 3: Event Bus (Autonomous)
 
-Agents listen for events and react autonomously without central coordination.
+The event bus pattern decouples agents entirely. Instead of one agent calling another directly, agents publish events and subscribe to event types they care about. This enables fully asynchronous, reactive workflows where agents operate independently.
+
+The tradeoff is coordination complexity: since no central agent orchestrates the workflow, you need careful event schema design to avoid missed events, circular triggers, or race conditions. Event-driven systems work best for monitoring, CI/CD pipelines, and other scenarios where agents react to state changes rather than following a predetermined plan.
 
 ```mermaid
 graph TD
@@ -81,11 +91,13 @@ graph TD
     EventBus -->|NewCodeEvent| Agent3
 ```
 
-**Use when:** Agents need loose coupling and asynchronous communication.
+**Use when:** Agents need loose coupling, asynchronous communication, and independent operation without central coordination.
 
 ## Implementing Agent Handoffs
 
-Handoffs transfer control from one agent to another. The receiving agent gets context from the sender.
+Handoffs transfer control from one agent to another. The receiving agent gets the conversation context from the sender, allowing it to continue the interaction seamlessly. The following example demonstrates a manual router that classifies requests and dispatches to specialist agents.
+
+In Beluga v2, agents are created with `agent.New()` and configured through functional options. The LLM is initialized through the registry pattern with `llm.New()`, which looks up the registered provider by name.
 
 ```go
 package main
@@ -94,59 +106,66 @@ import (
     "context"
     "fmt"
     "log"
+    "os"
+    "strings"
 
-    "github.com/lookatitude/beluga-ai/pkg/agents"
-    "github.com/lookatitude/beluga-ai/pkg/llms"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/agent"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/schema"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
-// Create specialized agents
-func CreateAgents(ctx context.Context, llm llms.LLM) map[string]*agents.Agent {
+// Create specialized agents with distinct roles and tool sets.
+// Each agent has a focused system prompt that defines its expertise,
+// preventing the confusion that arises from overloading a single agent.
+func CreateAgents(ctx context.Context, model llm.ChatModel) map[string]agent.Agent {
     // Developer Agent
-    devAgent := agents.NewAgent(
+    devAgent := agent.New(
         "developer",
-        agents.WithLLM(llm),
-        agents.WithSystemPrompt("You are an expert Go developer. Write clean, idiomatic code with proper error handling."),
-        agents.WithTools([]schema.Tool{
+        agent.WithLLM(model),
+        agent.WithSystemPrompt("You are an expert Go developer. Write clean, idiomatic code with proper error handling."),
+        agent.WithTools([]schema.Tool{
             createCodeSearchTool(),
             createRunTestsTool(),
         }),
     )
 
     // QA Agent
-    qaAgent := agents.NewAgent(
+    qaAgent := agent.New(
         "qa",
-        agents.WithLLM(llm),
-        agents.WithSystemPrompt("You are a QA engineer. Review code for bugs, security issues, and best practices."),
-        agents.WithTools([]schema.Tool{
+        agent.WithLLM(model),
+        agent.WithSystemPrompt("You are a QA engineer. Review code for bugs, security issues, and best practices."),
+        agent.WithTools([]schema.Tool{
             createStaticAnalysisTool(),
             createSecurityScanTool(),
         }),
     )
 
     // Tech Writer Agent
-    writerAgent := agents.NewAgent(
+    writerAgent := agent.New(
         "tech_writer",
-        agents.WithLLM(llm),
-        agents.WithSystemPrompt("You are a technical writer. Create clear, concise documentation."),
+        agent.WithLLM(model),
+        agent.WithSystemPrompt("You are a technical writer. Create clear, concise documentation."),
     )
 
-    return map[string]*agents.Agent{
+    return map[string]agent.Agent{
         "dev":    devAgent,
         "qa":     qaAgent,
         "writer": writerAgent,
     }
 }
 
-// Router Agent classifies and hands off
+// RouterAgent classifies incoming requests using the LLM and dispatches
+// to the appropriate specialist. This pattern keeps routing logic simple
+// while allowing the LLM to handle ambiguous or overlapping categories.
 type RouterAgent struct {
-    classifier llms.LLM
-    agents     map[string]*agents.Agent
+    classifier llm.ChatModel
+    agents     map[string]agent.Agent
 }
 
-func NewRouterAgent(llm llms.LLM, agents map[string]*agents.Agent) *RouterAgent {
+func NewRouterAgent(model llm.ChatModel, agents map[string]agent.Agent) *RouterAgent {
     return &RouterAgent{
-        classifier: llm,
+        classifier: model,
         agents:     agents,
     }
 }
@@ -159,17 +178,17 @@ func (r *RouterAgent) Route(ctx context.Context, request string) (string, error)
     }
 
     // Hand off to appropriate agent
-    agent, ok := r.agents[category]
+    a, ok := r.agents[category]
     if !ok {
         return "", fmt.Errorf("no agent for category: %s", category)
     }
 
-    response, err := agent.Run(ctx, request)
+    resp, err := a.Invoke(ctx, request)
     if err != nil {
         return "", fmt.Errorf("agent execution failed: %w", err)
     }
 
-    return response, nil
+    return resp.Text(), nil
 }
 
 func (r *RouterAgent) classifyRequest(ctx context.Context, request string) (string, error) {
@@ -183,37 +202,35 @@ Respond with only the category name.`),
         schema.NewHumanMessage(request),
     }
 
-    response, err := r.classifier.Generate(ctx, messages,
-        llms.WithTemperature(0.0),
-        llms.WithMaxTokens(10),
+    resp, err := r.classifier.Generate(ctx, messages,
+        llm.WithTemperature(0.0),
+        llm.WithMaxTokens(10),
     )
     if err != nil {
         return "", err
     }
 
-    return strings.TrimSpace(response.Content), nil
+    return strings.TrimSpace(resp.Text()), nil
 }
 
 func main() {
     ctx := context.Background()
 
-    // Setup LLM
-    config := llms.NewConfig(
-        llms.WithProvider("openai"),
-        llms.WithModelName("gpt-4o"),
-        llms.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    )
-    factory := llms.NewFactory()
-    llm, err := factory.CreateLLM("openai", config)
+    // Initialize the LLM through the registry pattern. The openai provider
+    // was registered via its init() function in the blank import above.
+    model, err := llm.New("openai", llm.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
+    })
     if err != nil {
         log.Fatal(err)
     }
 
     // Create specialist agents
-    specialists := CreateAgents(ctx, llm)
+    specialists := CreateAgents(ctx, model)
 
     // Create router
-    router := NewRouterAgent(llm, specialists)
+    router := NewRouterAgent(model, specialists)
 
     // Route requests
     requests := []string{
@@ -236,13 +253,14 @@ func main() {
 
 ## Building a Supervisor Agent
 
-A supervisor decomposes complex goals into subtasks and delegates to workers.
+The supervisor pattern is the most powerful multi-agent coordination model. It mirrors how effective project managers work: decompose a complex goal into concrete tasks, identify dependencies between them, delegate each task to the right specialist, and synthesize individual results into a coherent final output.
+
+This pattern uses LLM reasoning for planning, which means the supervisor can handle novel goals without predefined routing rules. The tradeoff is additional latency from the planning step, but for complex tasks this is typically a worthwhile investment since it produces better-coordinated results than ad-hoc routing.
 
 ```go
 type SupervisorAgent struct {
-    planner llms.LLM
-    workers map[string]*agents.Agent
-    memory  *memory.ConversationMemory
+    planner llm.ChatModel
+    workers map[string]agent.Agent
 }
 
 type Task struct {
@@ -254,11 +272,10 @@ type Task struct {
     Result      string
 }
 
-func NewSupervisorAgent(llm llms.LLM, workers map[string]*agents.Agent) *SupervisorAgent {
+func NewSupervisorAgent(model llm.ChatModel, workers map[string]agent.Agent) *SupervisorAgent {
     return &SupervisorAgent{
-        planner: llm,
+        planner: model,
         workers: workers,
-        memory:  memory.NewConversationMemory(),
     }
 }
 
@@ -294,8 +311,8 @@ Output format: JSON array of tasks with id, type, description, dependencies`),
         schema.NewHumanMessage(fmt.Sprintf("Goal: %s\n\nCreate a task plan:", goal)),
     }
 
-    response, err := s.planner.Generate(ctx, messages,
-        llms.WithTemperature(0.3),
+    resp, err := s.planner.Generate(ctx, messages,
+        llm.WithTemperature(0.3),
     )
     if err != nil {
         return nil, err
@@ -303,7 +320,7 @@ Output format: JSON array of tasks with id, type, description, dependencies`),
 
     // Parse task plan from JSON
     var tasks []Task
-    if err := json.Unmarshal([]byte(response.Content), &tasks); err != nil {
+    if err := json.Unmarshal([]byte(resp.Text()), &tasks); err != nil {
         return nil, fmt.Errorf("parse plan: %w", err)
     }
 
@@ -347,17 +364,17 @@ func (s *SupervisorAgent) executeTasks(ctx context.Context, tasks []Task) (map[s
             }
 
             // Build context from previous results
-            context := s.buildTaskContext(task, results)
+            taskCtx := s.buildTaskContext(task, results)
 
-            result, err := worker.Run(ctx, context)
+            resp, err := worker.Invoke(ctx, taskCtx)
             if err != nil {
                 task.Status = "failed"
                 return nil, fmt.Errorf("task %s failed: %w", task.ID, err)
             }
 
-            task.Result = result
+            task.Result = resp.Text()
             task.Status = "complete"
-            results[task.ID] = result
+            results[task.ID] = resp.Text()
             completed[task.ID] = true
             progress = true
 
@@ -411,26 +428,29 @@ func (s *SupervisorAgent) synthesizeResults(ctx context.Context, goal string, re
         )),
     }
 
-    response, err := s.planner.Generate(ctx, messages)
+    resp, err := s.planner.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return resp.Text(), nil
 }
 ```
 
 ## Shared State and Memory
 
-Agents can share state through common memory systems.
+When agents collaborate on a task, they need shared context to avoid duplicating work and to build on each other's findings. Beluga's memory system supports this by allowing multiple agents to read from and write to the same memory store. Changes made by one agent become immediately visible to all other agents sharing that store.
+
+This is particularly important in supervisor workflows where a research agent's findings inform a coding agent's implementation, or in long-running conversations where context from early interactions needs to persist across agent handoffs.
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/memory"
-    "github.com/lookatitude/beluga-ai/pkg/memory/stores"
+    "github.com/lookatitude/beluga-ai/memory"
+    "github.com/lookatitude/beluga-ai/memory/stores"
 )
 
-// Create shared memory store
+// Create shared memory store backed by Redis for persistence
+// across restarts and horizontal scaling.
 func CreateSharedMemory() (*memory.CoreMemory, error) {
     store := stores.NewRedisStore(&stores.RedisConfig{
         Addr: "localhost:6379",
@@ -442,18 +462,20 @@ func CreateSharedMemory() (*memory.CoreMemory, error) {
     ), nil
 }
 
-// Agents share the same memory instance
-func SetupAgentsWithSharedMemory(ctx context.Context, llm llms.LLM) {
+// Both agents receive the same memory instance, so conversation
+// history and context are shared. The dev agent can see what the
+// QA agent discussed, and vice versa.
+func SetupAgentsWithSharedMemory(ctx context.Context, model llm.ChatModel) {
     sharedMem, _ := CreateSharedMemory()
 
-    devAgent := agents.NewAgent("dev",
-        agents.WithLLM(llm),
-        agents.WithMemory(sharedMem),
+    devAgent := agent.New("dev",
+        agent.WithLLM(model),
+        agent.WithMemory(sharedMem),
     )
 
-    qaAgent := agents.NewAgent("qa",
-        agents.WithLLM(llm),
-        agents.WithMemory(sharedMem), // Same memory instance
+    qaAgent := agent.New("qa",
+        agent.WithLLM(model),
+        agent.WithMemory(sharedMem), // Same memory instance
     )
 
     // Both agents can see each other's conversation history
@@ -462,7 +484,11 @@ func SetupAgentsWithSharedMemory(ctx context.Context, llm llms.LLM) {
 
 ## Event-Driven Communication
 
-Use an event bus for loose coupling between agents.
+The event bus pattern provides the loosest coupling between agents. Instead of direct calls, agents publish events to named topics and subscribe to the topics they care about. This enables reactive architectures where agents respond to state changes autonomously.
+
+The key tradeoff with event-driven communication is between flexibility and predictability. You gain the ability to add new agents without modifying existing ones (just subscribe to the relevant topics), but you lose the explicit control flow that handoffs and supervisors provide. Event ordering, duplicate delivery, and backpressure all become concerns that must be handled in your event bus implementation.
+
+The buffered channel in the `Subscribe` method below provides basic backpressure: if a subscriber falls behind, new events are dropped rather than blocking the publisher. For production systems, consider a persistent message broker like NATS or Redis Streams.
 
 ```go
 type EventBus struct {
@@ -507,13 +533,13 @@ func (eb *EventBus) Publish(event Event) {
 
 // Agent that publishes events
 type EventPublishingAgent struct {
-    *agents.Agent
+    *agent.BaseAgent
     bus *EventBus
 }
 
 func (a *EventPublishingAgent) Run(ctx context.Context, input string) (string, error) {
     // Do work
-    result, err := a.Agent.Run(ctx, input)
+    resp, err := a.BaseAgent.Invoke(ctx, input)
     if err != nil {
         return "", err
     }
@@ -521,16 +547,18 @@ func (a *EventPublishingAgent) Run(ctx context.Context, input string) (string, e
     // Publish completion event
     a.bus.Publish(Event{
         Type:      "task.completed",
-        AgentID:   a.ID(),
-        Payload:   result,
+        AgentID:   a.Name(),
+        Payload:   resp.Text(),
         Timestamp: time.Now(),
     })
 
-    return result, nil
+    return resp.Text(), nil
 }
 
-// Agent that reacts to events
-func StartReactiveAgent(ctx context.Context, agent *agents.Agent, bus *EventBus) {
+// Agent that reacts to events. This goroutine listens for task completion
+// events and triggers follow-up processing. The context controls the
+// listener's lifetime.
+func StartReactiveAgent(ctx context.Context, a agent.Agent, bus *EventBus) {
     events := bus.Subscribe("task.completed")
 
     go func() {
@@ -540,11 +568,10 @@ func StartReactiveAgent(ctx context.Context, agent *agents.Agent, bus *EventBus)
                 return
             case event := <-events:
                 // React to event
-                fmt.Printf("Agent %s reacting to event from %s\n",
-                    agent.ID(), event.AgentID)
+                fmt.Printf("Agent reacting to event from %s\n", event.AgentID)
 
-                result, _ := agent.Run(ctx, fmt.Sprintf("Process: %v", event.Payload))
-                fmt.Printf("Reaction result: %s\n", result)
+                resp, _ := a.Invoke(ctx, fmt.Sprintf("Process: %v", event.Payload))
+                fmt.Printf("Reaction result: %s\n", resp.Text())
             }
         }
     }()
@@ -553,7 +580,9 @@ func StartReactiveAgent(ctx context.Context, agent *agents.Agent, bus *EventBus)
 
 ## Error Handling and Conflict Resolution
 
-Multi-agent systems need robust error handling.
+Multi-agent systems amplify the error-handling challenges of single agents. When one agent in a pipeline fails, the system must decide whether to retry, skip, or abort the entire workflow. When multiple agents produce conflicting outputs, the system needs a strategy to resolve the disagreement.
+
+Beluga uses typed errors with `IsRetryable()` checks to distinguish transient failures (network timeouts, rate limits) from permanent ones (invalid input, missing permissions). This distinction is critical for multi-agent systems because retrying a permanently failing task wastes tokens and time, while giving up on a transiently failing task loses work unnecessarily.
 
 ```go
 type AgentError struct {
@@ -592,8 +621,10 @@ func (s *SupervisorAgent) ExecuteWithErrorHandling(ctx context.Context, goal str
     return "", fmt.Errorf("execution failed after %d attempts", maxRetries)
 }
 
-// Conflict resolution when agents disagree
-func ResolveConflict(ctx context.Context, arbiter llms.LLM, responses []string) (string, error) {
+// Conflict resolution when agents disagree. An arbiter LLM evaluates
+// multiple responses and either selects the best one or synthesizes
+// a better answer from the combined inputs.
+func ResolveConflict(ctx context.Context, arbiter llm.ChatModel, responses []string) (string, error) {
     var responseList strings.Builder
     for i, resp := range responses {
         responseList.WriteString(fmt.Sprintf("\nAgent %d: %s\n", i+1, resp))
@@ -609,17 +640,19 @@ func ResolveConflict(ctx context.Context, arbiter llms.LLM, responses []string) 
         return "", err
     }
 
-    return resolution.Content, nil
+    return resolution.Text(), nil
 }
 ```
 
 ## Monitoring and Debugging
 
-Observability is critical in multi-agent systems.
+Observability is critical in multi-agent systems because failures can cascade across agent boundaries in ways that are difficult to diagnose from logs alone. Distributed tracing connects the full execution path: from the initial user request, through the supervisor's planning step, into each worker agent's execution, and back through result synthesis.
+
+By annotating each agent's work as a child span of the supervisor's span, you can see the entire workflow in a single trace view. This makes it straightforward to identify which agent failed, how long each step took, and whether dependency ordering caused unnecessary serialization.
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/o11y"
+    "github.com/lookatitude/beluga-ai/o11y"
     "go.opentelemetry.io/otel/trace"
 )
 
@@ -674,21 +707,21 @@ func (s *SupervisorAgent) ExecuteWithTracing(ctx context.Context, goal string) (
 
 ## Production Best Practices
 
-When deploying multi-agent systems:
+When deploying multi-agent systems, the complexity of coordination means that problems which are minor in single-agent setups can become critical failures:
 
-1. **Define clear responsibilities** for each agent to avoid overlap
-2. **Implement timeouts** to prevent hung agents from blocking the system
-3. **Use circuit breakers** to isolate failing agents
-4. **Monitor agent performance** and adjust delegation strategies
-5. **Version agent prompts** to track behavior changes
-6. **Test handoff scenarios** thoroughly
-7. **Implement graceful degradation** when agents fail
-8. **Log all agent interactions** for debugging
+1. **Define clear responsibilities** for each agent to avoid overlap. Ambiguous boundaries lead to duplicated work or dropped tasks.
+2. **Implement timeouts** on every agent invocation to prevent hung agents from blocking the entire pipeline.
+3. **Use circuit breakers** to isolate failing agents. If one specialist consistently fails, the system should degrade gracefully rather than retrying indefinitely.
+4. **Monitor agent performance** individually. Track latency, token usage, and error rates per agent to identify bottlenecks.
+5. **Version agent prompts** so you can correlate behavior changes with prompt updates.
+6. **Test handoff scenarios** thoroughly, including edge cases where classification is ambiguous or the target agent is unavailable.
+7. **Implement graceful degradation** so the system can provide partial results when some agents fail rather than returning nothing.
+8. **Log all agent interactions** with trace correlation so you can reconstruct the full workflow during debugging.
 
 ## Next Steps
 
 Now that you understand multi-agent systems:
-- Learn about [Orchestration & Workflows](/guides/orchestration) for complex coordination
-- Explore [Memory System](/guides/memory-system) for advanced shared state
-- Read [Observability](/guides/observability) for monitoring agent teams
-- Check out [Agent Recipes](/cookbook/agent-recipes) for real-world patterns
+- Learn about [Orchestration & Workflows](/guides/production/orchestration/) for deterministic and durable workflow patterns
+- Explore [Memory System](/guides/memory-system/) for advanced shared state across agents
+- Read [Observability](/guides/production/observability/) for monitoring agent teams with distributed tracing
+- Check [Safety & Guards](/guides/production/safety-and-guards/) for protecting multi-agent pipelines

@@ -1,9 +1,9 @@
 ---
 title: "Document Ingestion Recipes"
-description: "Common patterns and recipes for loading, splitting, and processing documents in Beluga AI."
+description: "Common patterns for loading, splitting, and processing documents in Beluga AI RAG pipelines, from basic directory loading to complete ingestion pipelines."
 ---
 
-Common patterns and recipes for loading and processing documents in Beluga AI.
+Document ingestion is the first stage of any RAG pipeline: getting documents from their source format into chunks that can be embedded and stored. The quality of ingestion directly affects retrieval quality downstream. Poorly split documents produce poor embeddings; missing metadata means no filtering capability; sequential loading wastes time on large collections.
 
 ## Problem
 
@@ -11,13 +11,13 @@ You need to load documents from various sources, split them into chunks, and pre
 
 ## Solution
 
-Use Beluga AI's document loaders and text splitters to build composable ingestion pipelines. Combine directory loading, extension filtering, concurrency, and type-aware splitting to handle diverse document sources efficiently.
+Use Beluga AI's document loaders and text splitters to build composable ingestion pipelines. The framework provides `DocumentLoader` and `TextSplitter` interfaces with multiple implementations, each configurable via the `WithX()` functional options pattern. Combine directory loading, extension filtering, concurrency, and type-aware splitting to handle diverse document sources efficiently.
 
 ## Code Example
 
 ### Basic Directory Loading
 
-Load all text files from a directory:
+Load all text files from a directory. The `WithExtensions` option filters by file type, avoiding binary files that would produce garbage chunks:
 
 ```go
 loader, err := documentloaders.NewDirectoryLoader(
@@ -35,7 +35,7 @@ if err != nil {
 
 ### Recursive Loading with Depth Limit
 
-Limit directory traversal depth:
+Limit directory traversal depth to avoid accidentally traversing deep dependency trees (e.g., `node_modules` or `.git` directories):
 
 ```go
 loader, err := documentloaders.NewDirectoryLoader(
@@ -54,7 +54,7 @@ if err != nil {
 
 ### Filtering by File Size
 
-Skip files larger than a threshold:
+Skip files larger than a threshold. Very large files (logs, data dumps) can overwhelm the splitter and produce too many chunks. Setting a size limit keeps ingestion predictable:
 
 ```go
 loader, err := documentloaders.NewDirectoryLoader(
@@ -72,7 +72,7 @@ if err != nil {
 
 ### Concurrent Loading
 
-Use multiple workers for faster loading:
+Use multiple workers for faster loading. Document loading is I/O-bound, so concurrency significantly improves throughput on large directories by overlapping disk reads:
 
 ```go
 loader, err := documentloaders.NewDirectoryLoader(
@@ -90,7 +90,7 @@ if err != nil {
 
 ### Lazy Loading for Large Datasets
 
-Stream documents one at a time:
+Stream documents one at a time to avoid loading the entire collection into memory at once. This is important when the total document size exceeds available RAM:
 
 ```go
 ch, err := loader.LazyLoad(ctx)
@@ -111,7 +111,7 @@ for item := range ch {
 
 ### Basic Text Splitting
 
-Split documents into chunks:
+Split documents into chunks. The `RecursiveCharacterTextSplitter` tries increasingly fine-grained separators (paragraphs, then sentences, then words) to find the best split point near the target size:
 
 ```go
 splitter, err := textsplitters.NewRecursiveCharacterTextSplitter(
@@ -129,7 +129,7 @@ if err != nil {
 
 ### Markdown-Aware Splitting
 
-Preserve markdown structure:
+Preserve markdown structure by splitting at heading boundaries. This ensures each chunk corresponds to a logical section, making retrieval results more coherent and preserving the document's organizational hierarchy in the chunk metadata:
 
 ```go
 splitter, err := textsplitters.NewMarkdownTextSplitter(
@@ -147,7 +147,7 @@ if err != nil {
 
 ### Token-Based Splitting
 
-Use token counting for accurate chunk sizing:
+Use token counting for accurate chunk sizing. Character counts are a poor proxy for tokens because different words have different tokenization lengths. When your embedding model has a strict token limit, counting tokens directly prevents truncation errors:
 
 ```go
 tokenizer := func(text string) int {
@@ -170,7 +170,7 @@ if err != nil {
 
 ### Complete Ingestion Pipeline
 
-Load, split, and prepare for RAG:
+Load, split, and prepare for RAG. This three-stage pipeline (load, split, embed/store) is the standard pattern for document ingestion:
 
 ```go
 // 1. Load
@@ -205,7 +205,7 @@ if err != nil {
 
 ### Loading Multiple Sources
 
-Combine documents from different sources:
+Combine documents from different sources into a single collection for uniform splitting and embedding. This is common when your knowledge base spans multiple directories, individual files, or external sources:
 
 ```go
 var allDocs []schema.Document
@@ -245,15 +245,15 @@ if err != nil {
 
 ## Explanation
 
-These recipes demonstrate the core document ingestion patterns:
+These recipes demonstrate the core document ingestion patterns in Beluga AI:
 
-1. **Directory loading** — Use `NewDirectoryLoader` with functional options to control file discovery. Options like `WithExtensions`, `WithMaxDepth`, and `WithMaxFileSize` allow fine-grained control over which files are loaded.
+1. **Directory loading with functional options** -- Use `NewDirectoryLoader` with `WithX()` options to control file discovery. Options like `WithExtensions`, `WithMaxDepth`, and `WithMaxFileSize` allow fine-grained control over which files are loaded. This follows Beluga AI's standard functional options pattern for configuration.
 
-2. **Concurrent loading** — For large datasets, `WithConcurrency` distributes file loading across multiple goroutines. This significantly improves throughput for I/O-bound loading.
+2. **Concurrent loading** -- For large datasets, `WithConcurrency` distributes file loading across multiple goroutines. This significantly improves throughput for I/O-bound loading because Go's goroutine scheduler efficiently multiplexes concurrent reads.
 
-3. **Type-aware splitting** — Different document types benefit from different splitting strategies. Markdown documents should use `MarkdownTextSplitter` to preserve heading structure, while plain text uses `RecursiveCharacterTextSplitter`.
+3. **Type-aware splitting** -- Different document types benefit from different splitting strategies. Markdown documents should use `MarkdownTextSplitter` to preserve heading structure (which becomes metadata), while plain text uses `RecursiveCharacterTextSplitter`. Code files benefit from the language-aware `CodeSplitter`. Choosing the right splitter for each content type is one of the highest-leverage decisions in a RAG pipeline.
 
-4. **Token-based sizing** — When embedding models have token limits, use a length function that counts tokens rather than characters for accurate chunk sizing.
+4. **Token-based sizing** -- When embedding models have token limits (most do), use a length function that counts tokens rather than characters for accurate chunk sizing. This prevents silent truncation where the embedding model only sees part of each chunk, degrading embedding quality without any error signal.
 
 ## Variations
 
@@ -332,7 +332,7 @@ for _, chunk := range chunks {
 
 ### Batch Processing
 
-Process documents in batches:
+Process documents in batches to control memory usage:
 
 ```go
 const batchSize = 100
@@ -355,7 +355,7 @@ for i := 0; i < len(docs); i += batchSize {
 
 ### Registry Pattern
 
-Create loaders dynamically using the registry:
+Create loaders dynamically using the registry, which allows selecting the loader type from configuration without hardcoding the implementation:
 
 ```go
 registry := documentloaders.GetRegistry()
@@ -376,7 +376,7 @@ if err != nil {
 
 ## Related Recipes
 
-- [Parallel File Loading](/cookbook/parallel-file-loading) — Parallel directory traversal with worker pools
-- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) — Graceful error handling for corrupt documents
-- [Sentence-Aware Splitting](/cookbook/sentence-splitting) — Sentence-boundary-aware text splitting
-- [Code Splitting](/cookbook/code-splitting) — Tree-sitter-based code splitting
+- [Parallel File Loading](/cookbook/parallel-file-loading) -- Parallel directory traversal with worker pools
+- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) -- Graceful error handling for corrupt documents
+- [Sentence-Aware Splitting](/cookbook/sentence-splitting) -- Sentence-boundary-aware text splitting
+- [Code Splitting](/cookbook/code-splitting) -- Tree-sitter-based code splitting

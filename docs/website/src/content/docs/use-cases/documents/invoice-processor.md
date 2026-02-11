@@ -3,11 +3,15 @@ title: High-Availability Invoice Processor
 description: Process thousands of invoices daily with automated extraction, validation, approval workflows, and accounting integration.
 ---
 
-Financial services companies process thousands of invoices daily, each requiring data extraction, validation, approval routing, and accounting system integration. Manual processing causes delays, errors, and cash flow issues. Automated invoice processing using Beluga AI's orchestration capabilities reduces processing time by 90%, achieves 95%+ accuracy, and ensures 99.9% uptime with resilient workflows.
+Financial services companies process thousands of invoices daily, each requiring data extraction, validation, approval routing, and accounting system integration. Manual processing is not just slow — it introduces systematic errors: misread amounts delay payments, missed due dates incur penalties, and inconsistent approval routing creates compliance gaps. When invoice volume spikes at month-end or quarter-close, the manual process becomes a bottleneck that directly impacts cash flow and vendor relationships.
+
+The challenge goes beyond OCR and extraction. Invoices arrive in varied formats from hundreds of vendors, each with different layouts. Extracted data must be validated against business rules (line items must sum to total, dates must be valid, vendor must exist in the system). Approval routing depends on amount thresholds and business unit, and the entire process must be auditable for compliance.
+
+Automated invoice processing using Beluga AI's orchestration capabilities chains these stages into a single resilient workflow with checkpointing, so no invoice is lost even if the system restarts mid-processing.
 
 ## Solution Architecture
 
-Beluga AI's `orchestration/` package coordinates multi-stage workflows with checkpointing for recovery. The pipeline extracts invoice data using LLMs with OCR, validates extracted fields, routes through approval workflows, and integrates with accounting systems. Checkpointing ensures no invoices are lost during failures.
+Beluga AI's `orchestration/` package coordinates multi-stage workflows with checkpointing for recovery. The pipeline uses a sequential workflow (`NewSequentialWorkflow`) where each stage is a `core.Runnable` — parse, extract, validate, approve, integrate. This design makes each stage independently testable and replaceable. Checkpointing saves state between stages so a failure in approval routing doesn't require re-extracting data from the PDF.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -98,7 +102,7 @@ func (p *InvoiceProcessor) ProcessInvoice(ctx context.Context, invoiceData []byt
 
 ## Data Extraction with LLM
 
-Extract structured invoice data using LLM with schema enforcement:
+Traditional OCR extracts text but doesn't understand document structure — it can't distinguish a vendor name from an address, or a line item total from the invoice total. LLM-based extraction understands document semantics and maps them to structured fields. Using `llm.WithResponseFormat("json_object")` constrains the response to valid JSON, ensuring the output can be reliably parsed into the `InvoiceData` struct:
 
 ```go
 type InvoiceData struct {

@@ -3,7 +3,7 @@ title: Omni-Channel Messaging Gateway
 description: Build a unified messaging gateway that handles messages from WhatsApp, SMS, and Slack through a single agent interface with shared conversation history.
 ---
 
-Users communicate across multiple channels -- WhatsApp, SMS, Slack, and more. Building a separate bot for each channel creates maintenance overhead and inconsistent experiences. This tutorial shows how to build a unified messaging gateway that routes messages to the correct provider while sharing agent logic and conversation history across all channels.
+Users communicate across multiple channels -- WhatsApp, SMS, Slack, and more. Building a separate bot for each channel creates maintenance overhead and inconsistent experiences. A unified messaging gateway solves this by normalizing incoming messages from different providers into a common format, routing them through a single AI agent, and dispatching responses back through the correct channel. This architecture follows the same interface-first design used throughout Beluga AI: define a `ChannelProvider` interface, and each messaging platform becomes a pluggable implementation.
 
 ## What You Will Build
 
@@ -26,7 +26,7 @@ Slack    --> |                  |                  |
 
 ## Step 1: Define the Gateway Interface
 
-Create a provider-agnostic messaging interface:
+Create a provider-agnostic messaging interface. The `NormalizedMessage` struct decouples your agent logic from any specific messaging platform's payload format. The `UserID` field is a canonical identifier (such as a phone number) that remains the same regardless of which channel the user contacts from -- this is what enables cross-channel conversation continuity. The `ChannelProvider` interface has only two methods (`Send` and `Channel`), keeping the contract minimal for new provider implementations.
 
 ```go
 package main
@@ -63,7 +63,7 @@ type ChannelProvider interface {
 
 ## Step 2: Build the Gateway
 
-The gateway maps channel names to providers and routes responses:
+The gateway maps channel names to providers and routes responses. The `providers` map uses the channel name as the key, enabling O(1) lookup when routing responses back to the correct provider. The `sessions` map is keyed by canonical user ID (not by channel), which means a user who starts a conversation on SMS and continues on WhatsApp shares the same conversation history. The `sync.RWMutex` protects the sessions map because multiple webhook handlers may process messages concurrently.
 
 ```go
 // Gateway handles messages from multiple channels.
@@ -89,7 +89,7 @@ func (g *Gateway) RegisterProvider(p ChannelProvider) {
 
 ## Step 3: Normalize Incoming Messages
 
-Different providers send data in different formats. Normalize them into a common structure:
+Different providers send data in different formats. Twilio sends form-encoded webhook payloads; Slack sends JSON; other providers have their own conventions. The normalization layer translates each provider's format into the common `NormalizedMessage` struct, isolating the rest of the gateway from provider-specific parsing logic. The channel is inferred from the sender address format -- Twilio prefixes WhatsApp numbers with `whatsapp:`, making it easy to distinguish from SMS on the same webhook endpoint.
 
 ```go
 // normalizeFromTwilio parses a Twilio webhook into a NormalizedMessage.
@@ -125,7 +125,7 @@ func normalizeFromTwilio(r *http.Request) (NormalizedMessage, error) {
 
 ## Step 4: Process and Route Messages
 
-Process messages through the shared agent and route responses:
+Process messages through the shared agent and route responses. The conversation history is loaded and updated under a mutex lock because multiple webhook handlers may be processing messages from the same user concurrently (for example, if the user sends two messages in quick succession). The system prompt is prepended fresh on each call rather than stored in history, keeping the history clean and allowing the prompt to be updated without invalidating existing sessions. The response is routed back through the original channel using the `RawFrom` address, ensuring the reply reaches the user on the same platform they used.
 
 ```go
 func (g *Gateway) ProcessMessage(ctx context.Context, msg NormalizedMessage) error {
@@ -171,7 +171,7 @@ func (g *Gateway) ProcessMessage(ctx context.Context, msg NormalizedMessage) err
 
 ## Step 5: Create Webhook Handlers
 
-Set up HTTP handlers for each incoming channel:
+Set up HTTP handlers for each incoming channel. The handler returns HTTP 200 immediately and processes the message asynchronously in a goroutine. This is important for webhook-based integrations because most providers (Twilio, Slack) expect a quick response to the webhook request and will retry if the response is slow. The goroutine uses `context.Background()` rather than `r.Context()` because the processing must continue after the HTTP response is sent -- `r.Context()` is cancelled when the handler returns.
 
 ```go
 func (g *Gateway) HandleTwilio(w http.ResponseWriter, r *http.Request) {
@@ -235,9 +235,9 @@ func main() {
 
 ## Shared Memory Across Channels
 
-The gateway uses the canonical user ID (phone number) to key conversation history. This means a user who starts a conversation on SMS and continues on WhatsApp sees a seamless experience.
+The gateway uses the canonical user ID (phone number) to key conversation history. This means a user who starts a conversation on SMS and continues on WhatsApp sees a seamless experience -- the agent remembers what was discussed regardless of which channel the user switches to.
 
-For production deployments, replace the in-memory `sessions` map with a persistent store:
+For production deployments, replace the in-memory `sessions` map with a persistent store. The `memory` package provides ready-made store implementations (Redis, PostgreSQL, SQLite) that support the same session-keyed access pattern with TTL-based expiration and concurrent access safety.
 
 ```go
 // Use Redis or PostgreSQL for production session storage.

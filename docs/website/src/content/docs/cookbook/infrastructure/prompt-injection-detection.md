@@ -7,11 +7,23 @@ description: "Detect and mitigate prompt injection attacks using regex-based pat
 
 ## Problem
 
-You need to detect and mitigate prompt injection attacks where malicious users try to override system instructions by injecting commands like "ignore previous instructions" or "you are now a different assistant".
+Prompt injection attacks exploit the fact that LLMs treat instructions and user input as a single continuous text stream. An attacker can craft input that tricks the model into ignoring system instructions or executing attacker-controlled instructions. Common patterns include "ignore previous instructions", "you are now a different assistant", or "system: [malicious instruction]".
+
+These attacks pose real security risks. An attacker might extract sensitive information from the system prompt, bypass safety guardrails, or cause the agent to perform unauthorized actions. The challenge is that prompt injections can take many forms, and LLMs themselves have no built-in ability to distinguish between legitimate user input and injection attempts.
+
+The problem is compounded by the creative nature of attacks. Simple blacklists fail because attackers vary capitalization, use synonyms, or embed instructions in seemingly innocent text. You need detection that handles common patterns while remaining fast enough to run on every request.
 
 ## Solution
 
-Implement regex-based detection that scans input for common prompt injection patterns, sanitizes or blocks suspicious inputs, and logs attempted attacks for monitoring. This works because prompt injections often follow predictable patterns that can be detected with regular expressions.
+Regex-based detection provides a first line of defense by scanning input for known injection patterns. The approach works because most prompt injections follow recognizable linguistic patterns. Phrases like "ignore previous instructions" or "you are now" rarely appear in legitimate user input, making them reliable indicators of attack attempts.
+
+The detection system uses case-insensitive regex patterns that match common variations. The `(?i)` flag handles capitalization variations, while flexible spacing patterns catch attempts to evade detection by adding extra spaces. Patterns target both direct instruction attempts and system prompt manipulation markers.
+
+When an injection is detected, you have two mitigation options. Sanitization replaces suspicious patterns with escaped versions, preserving the input while neutralizing the attack. This is useful when you want to maintain conversation context but remove malicious instructions. Blocking rejects the input entirely, providing stronger security at the cost of potentially blocking legitimate edge cases.
+
+The wrapper pattern is key to this design. By wrapping operations with safety checks, you add protection without modifying core agent logic. This makes it easy to enable detection selectively, adjust patterns based on observed attacks, or disable detection entirely for trusted inputs.
+
+The important caveat is that regex detection alone is insufficient for comprehensive protection. Sophisticated attackers can craft injections that evade pattern matching. Combine regex with other techniques like input validation, output filtering, and LLM-based detection for defense in depth.
 
 ## Code Example
 
@@ -192,13 +204,13 @@ func main() {
 
 ## Explanation
 
-1. **Pattern matching** — Regex patterns detect common injection attempts, covering variations like "ignore previous instructions", "you are now", and system prompt markers.
+1. **Pattern matching targets linguistic markers** — Prompt injections typically contain explicit instruction phrases that legitimate user input does not. Patterns like "ignore previous instructions" are strong signals of malicious intent because benign users rarely phrase requests that way. By targeting these linguistic markers, you catch the majority of basic injection attempts with low false positive rates.
 
-2. **Case-insensitive detection** — Patterns use the `(?i)` flag for case-insensitive matching, since attackers often vary capitalization to evade detection.
+2. **Case-insensitive matching handles evasion** — Attackers commonly vary capitalization to evade simple string matching ("Ignore", "IGNORE", "iGnOrE"). The `(?i)` flag makes patterns case-insensitive, closing this evasion path. This demonstrates a key principle in security: anticipate simple evasion techniques and address them upfront.
 
-3. **Sanitization vs blocking** — Two options are provided: sanitize (escape) or block detected injections. Sanitization preserves input while neutralizing attacks, while blocking provides stronger security.
+3. **Sanitization versus blocking reflects security tradeoffs** — Sanitization preserves input context by escaping suspicious patterns, allowing the conversation to continue while neutralizing the attack. This provides a better user experience when false positives occur. Blocking provides stronger security by rejecting suspicious input entirely, but risks frustrating legitimate users who happen to use flagged phrases. Choose based on your security requirements and risk tolerance.
 
-> **Key insight:** Use regex as a first line of defense, but combine with other techniques (input validation, output filtering) for comprehensive protection. Regex alone isn't sufficient for all attacks.
+4. **Wrapper pattern separates security from logic** — The `SafetyWrapper` function demonstrates how to add security checks transparently. Your agent code remains unchanged; you wrap operations at composition time. This separation makes security policies easy to adjust, test independently, and enable selectively for different contexts. It also avoids coupling agents to specific security implementations.
 
 ## Testing
 

@@ -3,11 +3,13 @@ title: Real-time PII Leakage Detection
 description: Detect and prevent Personally Identifiable Information leakage in LLM requests and responses for HIPAA and GDPR compliance.
 ---
 
-Healthcare AI platforms and GDPR-compliant systems must prevent Personally Identifiable Information (PII) from reaching LLM providers. Undetected PII in requests causes compliance violations, exposes customer data, and creates legal liability. Real-time PII detection using Beluga AI's guard pipeline intercepts and blocks requests containing sensitive information before they leave the system.
+When a healthcare chatbot sends a patient's Social Security number to an LLM provider's API, the organization faces a HIPAA violation with penalties up to $1.8M per incident, mandatory breach notification to affected individuals, and potential loss of healthcare contracts. GDPR violations carry fines up to 4% of global annual revenue. The risk is not hypothetical — users routinely include PII in natural language queries ("My SSN is 123-45-6789, can you check my claim status?"), and without interception, this data reaches third-party servers where it may be logged, cached, or used for model training.
+
+The challenge compounds with LLM responses: even if input is clean, the model might hallucinate PII patterns or echo back sensitive data from its context window. Both directions — request and response — require scanning, and the scanning must happen at the framework level rather than relying on application developers to remember to sanitize every call.
 
 ## Solution Architecture
 
-Beluga AI's `guard/` package implements a three-stage pipeline: input guards scan requests before LLM calls, output guards scan responses before returning to users, and tool guards scan tool execution parameters. PII detection uses pattern matching for known formats and optional ML classification for edge cases.
+Beluga AI's `guard/` package implements a three-stage pipeline designed specifically for this bidirectional threat: input guards scan requests before LLM calls, output guards scan responses before returning to users, and tool guards scan tool execution parameters. This three-stage architecture is essential because PII can enter the system at any point — user input, tool results, or LLM responses. Pattern matching handles structured PII (SSNs, credit cards, phone numbers) with high confidence, while optional ML classification catches unstructured PII (names mentioned in free text) that regex alone would miss.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

@@ -3,11 +3,15 @@ title: Multi-Document Summarizer
 description: RAG-based multi-document summarization with 92% information retention and 87% time savings.
 ---
 
-Legal research platforms need to automatically summarize multiple related documents to help lawyers quickly understand complex legal matters. Manual summarization consumes 4-6 hours per document set with inconsistent quality and 30-40% information loss. RAG-based multi-document summarization automates this process with 90%+ information retention and 85% time savings.
+Legal research requires synthesizing information across dozens of related documents — case law, contracts, regulatory filings, correspondence — to build a complete picture of a legal matter. Manual summarization takes 4-6 hours per document set, and quality depends on the analyst's stamina and domain expertise. Critical details buried in the 15th document of a 30-document set are routinely missed, leading to 30-40% information loss and incomplete legal analysis.
+
+The challenge is not summarizing individual documents but synthesizing across them: identifying common themes, contradictions between sources, and unique insights that only emerge from cross-document analysis. A simple "summarize each document" approach misses these cross-document relationships.
+
+RAG-based multi-document summarization retrieves relevant documents using semantic search, extracts key information from each, synthesizes findings across the set, and generates a comprehensive summary with source citations — preserving the cross-referencing that makes legal analysis valuable.
 
 ## Solution Architecture
 
-Beluga AI's retriever package combined with LLM-based summarization enables multi-document synthesis. The system retrieves relevant documents, extracts key information, synthesizes across documents, and generates comprehensive summaries with source citations.
+Beluga AI's retriever package with hybrid search (vector + BM25 + RRF fusion) finds the most relevant documents for a given query. The summarizer then applies a three-stage process: extraction, synthesis, and generation. Each stage uses a separate LLM call with a focused prompt, which produces better results than trying to do everything in a single prompt with a massive context window.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -257,7 +261,7 @@ type Summary struct {
 
 ## Hierarchical Summarization
 
-For large document sets, use hierarchical summarization to handle context limits:
+LLMs have finite context windows — even models with 128K+ token limits degrade in accuracy on very long inputs. For large document sets that exceed context capacity, hierarchical summarization processes documents in batches, generates intermediate summaries, then synthesizes those summaries into a final result. This map-reduce approach scales to arbitrarily large document sets while maintaining summary quality:
 
 ```go
 func (m *MultiDocumentSummarizer) SummarizeLargeSet(

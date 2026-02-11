@@ -5,11 +5,13 @@ description: "Track custom metrics specific to Speech-to-Speech voice operations
 
 ## Problem
 
-You need to track custom metrics specific to S2S (Speech-to-Speech) voice operations that are not covered by standard framework metrics, such as audio buffer sizes, voice activity detection events, or speaker turn transitions.
+Standard observability metrics cover general system health (CPU, memory, request latency) but miss domain-specific concerns critical to voice applications. Audio buffer sizes determine memory usage and latency characteristics. Voice activity detection events indicate how often users speak versus system downtime. Speaker turn transitions measure conversation flow and detect issues like premature interruptions or delayed responses. Glass-to-glass latency spans multiple services and requires end-to-end timing that standard HTTP metrics cannot capture. Without these voice-specific metrics, you cannot diagnose problems like "VAD triggers too frequently in noisy environments" or "latency increases after 10 concurrent sessions." Custom metrics provide visibility into voice system behavior that enables performance tuning, capacity planning, and anomaly detection.
 
 ## Solution
 
-Use OpenTelemetry's metric API to register custom metrics and record voice-specific events. Define domain-specific counters and histograms with consistent attribute names while maintaining OTel compatibility for observability tooling.
+Use OpenTelemetry's metric API to define domain-specific counters and histograms that track voice pipeline behavior. Counters accumulate totals for discrete events (VAD triggers, speaker turns, audio chunks processed). Histograms capture distributions for continuous measurements (buffer sizes, latency, silence duration). Consistent attribute naming (session_id, event_type, speaker) enables filtering and aggregation in observability tools. Metrics follow OTel conventions (voice.s2s.* namespace, SI units, descriptive names) for compatibility with Grafana, Datadog, and other platforms.
+
+This approach extends Beluga's OTel GenAI conventions to voice-specific concerns. Just as LLM operations emit gen_ai.* metrics for token counts and model calls, voice operations emit voice.* metrics for audio processing. Recording metrics in hot paths (per audio chunk, per VAD event) provides granular visibility without requiring sampling or approximation. OpenTelemetry's efficient metric collection ensures low overhead even at high cardinality.
 
 ## Code Example
 
@@ -192,21 +194,23 @@ func main() {
 }
 ```
 
+The code demonstrates metric registration at startup and recording in hot paths. Each metric includes a clear description and appropriate unit (bytes, seconds), making them self-documenting in observability dashboards. Attributes provide filtering dimensions (session_id, event_type) for drilling down into specific problems.
+
 ## Explanation
 
-1. **Custom metric registration** — Metrics are created with descriptive names following OTel conventions (`voice.s2s.*`). Each metric has a clear description and appropriate unit. This makes metrics discoverable in observability tools like Grafana and Datadog.
+1. **Custom metric registration** -- Metrics use descriptive names following OTel conventions (voice.s2s.* namespace, _total suffix for counters, _seconds suffix for time measurements). The description field explains what the metric measures, appearing as documentation in observability tools. Unit specifications (By for bytes, s for seconds) enable automatic unit conversion and proper axis labeling in dashboards. This consistency makes metrics discoverable: engineers unfamiliar with the codebase can find relevant metrics by browsing the voice.s2s.* namespace in Grafana or Datadog.
 
-2. **Structured attributes** — Attributes like `session_id` and `event_type` provide context. This allows filtering and grouping metrics by session, speaker, or event type in dashboards.
+2. **Structured attributes** -- Attributes like session_id and event_type provide query dimensions. Session IDs enable per-conversation analysis: "show glass-to-glass latency for session X" or "count VAD events per session." Event types distinguish different VAD states (start/end/silence), allowing queries like "count speech-start events per minute" to measure traffic patterns. Attributes should be low-cardinality (dozens of values, not thousands) to avoid metric explosion. Use session IDs as attributes but avoid user IDs or arbitrary strings that create unbounded cardinality.
 
-3. **Metric types** — Counters track cumulative totals (VAD events, speaker turns, audio chunks). Histograms track distributions (buffer sizes, latency, silence duration). Choose the type that matches the query pattern.
+3. **Metric types** -- Counters track cumulative totals that only increase: VAD events count, speaker turns count, audio chunks processed count. These answer "how many" questions and support rate calculations (events per second). Histograms track distributions of values: buffer sizes, latency, silence duration. These answer "what's typical" and "what's the 99th percentile" questions, critical for SLOs and capacity planning. Choose the metric type based on your query pattern: if you need totals or rates, use counters; if you need distributions or percentiles, use histograms.
 
-4. **Consistent naming** — All metrics use the `voice.s2s.*` prefix, and attributes use consistent names across related metrics. This enables queries like "show all metrics for session X" in observability platforms.
+4. **Consistent naming** -- All metrics share the voice.s2s.* prefix, making it easy to find related metrics in dashboards or metric browsers. Attributes use consistent names (session_id, not sessionID or SessionID) across all metrics, enabling joins and correlations. This naming discipline pays off when building dashboards: queries like "select all metrics where session_id=X" work because every metric uses the same attribute name. Follow the pattern for new metrics to maintain discoverability.
 
 ## Variations
 
 ### Metric Aggregation
 
-Aggregate metrics per time window:
+Aggregate metrics per time window using a wrapper that accumulates values and flushes periodically. This reduces metric volume for high-throughput systems where per-event recording creates too many data points.
 
 ```go
 type AggregatedVoiceMetrics struct {
@@ -217,7 +221,7 @@ type AggregatedVoiceMetrics struct {
 
 ### Conditional Metrics
 
-Only record metrics when enabled:
+Only record metrics when observability is enabled, avoiding overhead in performance-critical paths during development or testing.
 
 ```go
 func (vm *VoiceMetrics) RecordAudioChunkIfEnabled(ctx context.Context, enabled bool, chunkSize int64, sessionID string) {

@@ -1,15 +1,17 @@
 ---
 title: "Metadata-Aware Embedding Clusters"
-description: "Cluster embeddings while preserving metadata constraints to create semantically and domain-coherent groups."
+description: "Cluster embeddings while preserving metadata constraints to create semantically and domain-coherent groups for improved retrieval organization."
 ---
 
 ## Problem
 
 You need to cluster embeddings while preserving and utilizing metadata (categories, tags, timestamps) to create more meaningful clusters that respect domain boundaries and improve retrieval quality.
 
+Pure embedding-based clustering groups documents by semantic similarity alone, but this can produce misleading clusters. The word "Python" in a programming tutorial and "Python" in a wildlife documentary produce similar embeddings, yet they belong to completely different domains. Metadata like categories, tags, and timestamps provides domain context that embeddings lack. Incorporating this metadata as clustering constraints produces groups that are both semantically coherent and domain-appropriate.
+
 ## Solution
 
-Implement clustering algorithms that incorporate metadata as constraints or features, allowing you to create clusters that are both semantically similar and metadata-coherent. Combining embedding similarity with metadata constraints produces clusters that are more useful for real-world applications.
+Implement clustering algorithms that incorporate metadata as constraints or features, allowing you to create clusters that are both semantically similar and metadata-coherent. The approach uses a weighted combination of embedding similarity and metadata overlap, where the `metadataWeight` parameter controls the balance. This produces clusters that are more useful for real-world applications like topic-based navigation, duplicate detection, and retrieval pre-filtering.
 
 ## Code Example
 
@@ -313,13 +315,13 @@ func main() {
 
 ## Explanation
 
-1. **Combined similarity metric** — Embedding similarity is combined with metadata similarity using a configurable weight parameter. This balances semantic similarity with domain constraints (e.g., keep documents from the same category together).
+1. **Combined similarity metric** -- Embedding similarity is combined with metadata similarity using a configurable weight parameter (`metadataWeight`). A weight of 0.0 produces pure embedding-based clustering, while 1.0 would cluster purely by metadata. A typical value of 0.2-0.4 adds domain awareness while keeping semantic similarity as the primary signal. This balance ensures that documents are grouped by meaning while respecting domain boundaries.
 
-2. **Metadata aggregation** — Metadata from cluster members is aggregated to create cluster-level metadata. This helps identify what each cluster represents (e.g., "tech documents from Q4").
+2. **Metadata aggregation** -- After clustering, metadata from cluster members is aggregated using majority voting (most common value per key). This creates cluster-level metadata that describes what each cluster represents (e.g., "category: tech, quarter: Q4"). Cluster metadata is useful for labeling, navigation, and as pre-filtering criteria for retrieval.
 
-3. **Minimum cluster size** — Clusters below a minimum size are filtered out. This prevents creating too many tiny clusters that are not useful for retrieval.
+3. **Minimum cluster size** -- Clusters below a minimum size are filtered out. Small clusters often represent noise or outlier documents that don't share meaningful commonalities. Filtering them prevents creating too many tiny clusters that add complexity without improving retrieval.
 
-4. **Domain boundary respect** — A document about "Python" in the "programming" category should not cluster with "Python" the snake in the "animals" category, even if embeddings are similar. The metadata weight prevents this.
+4. **Domain boundary respect** -- The metadata similarity component prevents semantically similar but domain-different documents from clustering together. A document about "Python" in the "programming" category should not cluster with "Python" the snake in the "animals" category, even if their embeddings are similar. The metadata weight provides the domain signal that embeddings lack.
 
 ## Variations
 
@@ -345,5 +347,5 @@ func (mac *MetadataAwareClusterer) FindOptimalK(ctx context.Context, docs []Docu
 
 ## Related Recipes
 
-- [Batch Embedding Optimization](/cookbook/batch-embeddings) — Optimize batch embedding operations
-- [Advanced Metadata Filtering](/cookbook/meta-filtering) — Filter vector store results with metadata
+- [Batch Embedding Optimization](/cookbook/batch-embeddings) -- Optimize batch embedding operations
+- [Advanced Metadata Filtering](/cookbook/meta-filtering) -- Filter vector store results with metadata

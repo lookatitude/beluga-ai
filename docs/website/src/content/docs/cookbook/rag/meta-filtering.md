@@ -1,15 +1,17 @@
 ---
 title: "Advanced Metadata Filtering"
-description: "Build complex metadata filters for vector searches with date ranges, categories, and AND/OR logic."
+description: "Build complex metadata filters for vector searches with date ranges, categories, and AND/OR logic using a fluent builder API."
 ---
 
 ## Problem
 
 You need to perform complex metadata filtering on vector searches, such as filtering by date ranges, multiple categories, numeric comparisons, or combining multiple filter conditions with AND/OR logic.
 
+Vector similarity search returns the most semantically similar documents, but production applications need additional constraints. Access control filters prevent unauthorized information disclosure. Date range filters ensure freshness for time-sensitive queries. Category filters narrow results to a specific domain. Without metadata filtering, you must over-fetch from the vector store and filter in application code, which wastes bandwidth and increases latency. Native vector store filtering is more efficient because it prunes candidates before computing similarity scores.
+
 ## Solution
 
-Implement a metadata filter builder that supports complex query conditions, type-aware filtering, and efficient execution. Use a fluent API to compose filters, with native vectorstore filtering where possible and post-filtering as a fallback for unsupported operators.
+Implement a metadata filter builder that supports complex query conditions, type-aware filtering, and efficient execution. The fluent API (method chaining) makes filter construction readable and composable. Where possible, pass filters to the vector store for native execution; for operators the store doesn't support natively, apply post-filtering as a fallback. This layered approach gives you full filter expressiveness regardless of backend capabilities.
 
 ## Code Example
 
@@ -149,13 +151,11 @@ func main() {
 
 ## Explanation
 
-1. **Fluent builder pattern** -- Method chaining makes filter construction readable and allows composing filters incrementally. Each method returns the builder for continued chaining.
+1. **Fluent builder pattern** -- Method chaining (`Equals(...).DateRange(...).In(...)`) makes filter construction readable and allows composing filters incrementally. Each method returns the builder for continued chaining. This pattern is ergonomic for callers who need to build filters conditionally (e.g., add a date filter only if the user specified a date range).
 
-2. **Operator support** -- Multiple operators (equals, not-equals, in, range) cover most filtering needs. The vectorstore may support some natively, while others require post-filtering.
+2. **Operator support** -- Multiple operators (equals, not-equals, in, range) cover most filtering needs. The operator set is extensible: add new condition types by adding methods to the builder. Different vector stores support different operators natively, so the builder creates a portable representation that can be translated to backend-specific query syntax.
 
-3. **Post-filtering fallback** -- The `MatchesDocument` method provides client-side filtering for operators the vectorstore does not support natively, ensuring all filter types work regardless of backend.
-
-**Key insight:** Use native vectorstore filtering for performance, but provide post-filtering as a fallback for complex conditions. This gives you flexibility without sacrificing functionality.
+3. **Post-filtering fallback** -- The `MatchesDocument` method provides client-side filtering for operators the vector store does not support natively. This ensures all filter types work regardless of backend. For example, pgvector supports equality and range natively, but may not support regex matching. The builder can express regex filters, and `MatchesDocument` applies them after retrieval.
 
 ## Variations
 

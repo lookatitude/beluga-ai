@@ -3,6 +3,8 @@ title: Custom Tools and Tool Registry
 description: Build custom tools and manage them with the tool registry for use in Beluga AI agents, including FuncTool, manual Tool implementations, and registry patterns.
 ---
 
+Tools give agents the ability to take actions beyond text generation -- querying databases, calling APIs, running calculations, or interacting with external systems. Without tools, an agent can only reason about information already in its context; with tools, it can retrieve live data and modify external state.
+
 Beluga AI provides a composable tool system that lets you define custom tools, register them in a thread-safe registry, and pass them to agents for execution. Tools implement the `tool.Tool` interface and are created either manually or with the type-safe `FuncTool` generic wrapper.
 
 ## Overview

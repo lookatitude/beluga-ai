@@ -5,6 +5,8 @@ description: "Integration guide for Fireworks AI's fast inference with Beluga AI
 
 The Fireworks AI provider connects Beluga AI to Fireworks' inference platform, which specializes in fast, cost-effective serving of open-source models. Fireworks exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose Fireworks AI when you need fast inference for open-source models with competitive per-token pricing. Fireworks supports custom model deployments and fine-tuned models alongside its hosted catalog, making it suitable for production workloads that require both speed and cost efficiency.
+
 ## Installation
 
 ```bash

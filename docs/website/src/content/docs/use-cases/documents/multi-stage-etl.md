@@ -3,11 +3,15 @@ title: Multi-Stage ETL with AI
 description: Build complex ETL pipelines with AI-powered data enrichment, quality checks, and intelligent routing.
 ---
 
-Data analytics companies need ETL pipelines that extract from multiple sources, transform with AI enrichment, validate data quality, and load to various destinations. Manual ETL processes are slow, inconsistent, and cannot handle unstructured data. AI-powered ETL using Beluga AI's orchestration capabilities reduces processing time by 85%, achieves 90%+ data quality, and enables intelligent transformation of unstructured data.
+Traditional ETL pipelines handle structured data well — mapping columns, applying transformations, loading to warehouses. But modern data includes unstructured text fields (customer feedback, support tickets, product descriptions) that need semantic understanding for enrichment. A customer's free-text feedback contains sentiment, topics, and intent that rule-based transforms cannot reliably extract.
+
+AI-powered ETL adds an enrichment stage where LLMs analyze unstructured fields, classify records, score data quality, and suggest normalizations. This turns ETL from a mechanical data-moving exercise into an intelligent pipeline that improves data quality as it processes.
+
+The challenge is integrating LLM calls into ETL without sacrificing throughput. LLM calls are orders of magnitude slower than database operations, so the pipeline must process records in parallel, handle LLM failures gracefully (falling back to original data rather than blocking the pipeline), and maintain quality gates to prevent bad data from reaching the warehouse.
 
 ## Solution Architecture
 
-Beluga AI's `orchestration/` package coordinates multi-stage ETL workflows. The pipeline extracts from multiple sources, transforms data using AI for enrichment and normalization, validates quality with LLM-based checks, and loads to destinations. Parallel processing and checkpointing ensure performance and reliability.
+Beluga AI's `orchestration/` package coordinates multi-stage ETL workflows using sequential workflows for dependent stages and parallel execution within stages. Each stage is a `core.Runnable` — extract, transform, enrich (LLM), quality check, load — making the pipeline testable and composable. The AI enrichment stage uses `llm.WithResponseFormat("json_object")` for structured output, ensuring LLM responses parse reliably into enrichment records.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -234,7 +238,7 @@ func (s *QualityCheckStage) passesQualityCheck(record Record) bool {
 
 ## Parallel Stage Processing
 
-Process independent stages in parallel for better performance:
+LLM enrichment and rule-based quality checks operate on the same data but are independent — neither needs the other's output. Running them in parallel with `sync.WaitGroup` halves the processing time for these stages. Bounded concurrency via semaphore channels prevents overwhelming the LLM provider with concurrent requests:
 
 ```go
 // ParallelETLPipeline processes stages in parallel where possible

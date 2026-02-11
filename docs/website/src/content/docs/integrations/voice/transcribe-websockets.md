@@ -3,7 +3,7 @@ title: Amazon Transcribe WebSockets
 description: Integrate AWS Transcribe for real-time streaming speech-to-text via WebSocket with Beluga AI.
 ---
 
-AWS Transcribe provides real-time speech transcription via WebSocket with automatic language detection and speaker identification. This guide covers integrating AWS Transcribe as an STT provider within Beluga AI.
+For organizations already operating within the AWS ecosystem, AWS Transcribe provides real-time speech transcription that integrates natively with IAM, CloudWatch, and other AWS services. Its automatic language detection and speaker diarization capabilities make it well suited for multi-speaker, multi-language scenarios such as contact center transcription. This guide covers integrating AWS Transcribe as an STT provider within Beluga AI.
 
 ## Overview
 

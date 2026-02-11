@@ -14,6 +14,7 @@ const currentLocal = Astro.currentLocale || "en";
 ---
 
 <footer>
+  <div class="footer-gradient-divider"></div>
   <div class="container">
     <div class="top-footer">
       {
@@ -110,7 +111,16 @@ const currentLocal = Astro.currentLocale || "en";
       }
     </div>
     <div class="bottom-footer">
-      <p set:html={markdownify(config?.params?.copyright)} />
+      <div class="bottom-footer-left">
+        <p set:html={markdownify(config?.params?.copyright)} />
+        <span class="built-with-go">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3.2 6.4C3.2 6.4 3 6.4 3 6.2C3 6 3.2 6 3.2 6H4.6C4.6 6 4.8 6 4.8 6.2C4.8 6.4 4.6 6.4 4.6 6.4H3.2Z" fill="currentColor"/>
+            <path d="M8 2C4.7 2 2 4.7 2 8C2 11.3 4.7 14 8 14C11.3 14 14 11.3 14 8C14 4.7 11.3 2 8 2ZM8 12.8C5.4 12.8 3.2 10.6 3.2 8C3.2 5.4 5.4 3.2 8 3.2C8.6 3.2 9.2 3.3 9.7 3.5L9 4.2C8.7 4.1 8.3 4 8 4C5.8 4 4 5.8 4 8C4 10.2 5.8 12 8 12C10.2 12 12 10.2 12 8C12 7.3 11.8 6.7 11.4 6.1L12 5.5C12.6 6.2 12.8 7.1 12.8 8C12.8 10.6 10.6 12.8 8 12.8Z" fill="currentColor"/>
+          </svg>
+          Built with Go
+        </span>
+      </div>
       <a href={currentLocal + "/privacy-policy"}
         >{Astro.locals.t("footer.privacy", "Privacy Policy")}</a
       >
@@ -120,6 +130,13 @@ const currentLocal = Astro.currentLocale || "en";
 
 <style>
   @layer starlight.core {
+    /* Gradient divider at top of footer */
+    .footer-gradient-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #3a1c71, #D76D77, #ffca7b, transparent);
+      opacity: 0.6;
+    }
+
     .top-footer {
       border-bottom: 1px solid var(--sl-color-gray-6);
       padding: 60px 0;
@@ -138,15 +155,33 @@ const currentLocal = Astro.currentLocale || "en";
     .top-footer ul li {
       margin-bottom: 1.2rem;
     }
+
+    /* Link hover with underline slide-in */
     .top-footer ul li a {
       color: var(--sl-color-text);
       text-decoration: none;
       font-size: 1rem;
       transition: color 0.3s ease;
+      position: relative;
+      display: inline-block;
+    }
+    .top-footer ul li a::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--color-primary, #D76D77);
+      transition: width 0.3s ease;
     }
     .top-footer ul li a:hover {
       color: var(--color-primary);
     }
+    .top-footer ul li a:hover::after {
+      width: 100%;
+    }
+
     .mail-form {
       border: 1px solid var(--sl-color-gray-6);
       display: flex;
@@ -200,14 +235,66 @@ const currentLocal = Astro.currentLocale || "en";
       flex-wrap: wrap;
       gap: 1rem;
     }
-    .bottom-footer a {
+    .bottom-footer-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .built-with-go {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.8rem;
+      color: color-mix(in srgb, var(--sl-color-text) 60%, transparent);
+      background: color-mix(in srgb, var(--sl-color-white) 5%, transparent);
+      border: 1px solid color-mix(in srgb, var(--sl-color-white) 8%, transparent);
+      padding: 0.2rem 0.6rem;
+      border-radius: 9999px;
+    }
+
+    /* Bottom footer link hover with underline slide-in */
+    .bottom-footer > a {
       color: var(--sl-color-text);
       text-decoration: none;
       transition: color 0.3s ease;
+      position: relative;
+    }
+    .bottom-footer > a::after {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--color-primary, #D76D77);
+      transition: width 0.3s ease;
+    }
+    .bottom-footer > a:hover {
+      color: var(--color-primary);
+    }
+    .bottom-footer > a:hover::after {
+      width: 100%;
     }
 
-    .bottom-footer a:hover {
-      color: var(--color-primary);
+    /* Mobile stacking improvements */
+    @media (max-width: 640px) {
+      .top-footer {
+        grid-template-columns: 1fr;
+        padding: 40px 0;
+        gap: 2.5rem;
+      }
+      .top-footer h4 {
+        margin-bottom: 1.5rem;
+      }
+      .bottom-footer {
+        flex-direction: column;
+        text-align: center;
+        padding: 24px 0;
+      }
+      .bottom-footer-left {
+        flex-direction: column;
+      }
     }
   }
 </style>

@@ -3,11 +3,15 @@ title: Multi-Agent Customer Support
 description: Build an intelligent customer support system with specialized agents, handoffs, and human escalation using Beluga AI.
 ---
 
-Customer support teams face diverse inquiries requiring different expertise — billing disputes, technical troubleshooting, account management, and general questions. A single monolithic chatbot struggles with this breadth. Multi-agent systems solve this by routing each inquiry to a specialized agent that has the right tools and context for the job, with seamless handoffs between agents when issues cross domains.
+Customer support teams face diverse inquiries requiring different expertise — billing disputes, technical troubleshooting, account management, and general questions. A single monolithic chatbot struggles with this breadth because it must carry tools, instructions, and context for every possible domain in a single prompt. This leads to tool confusion (the agent picks the wrong tool), context dilution (important domain instructions get lost in a sea of generic instructions), and poor specialization (jack of all trades, master of none).
+
+Multi-agent systems solve this by routing each inquiry to a specialized agent that has the right tools and context for the job, with seamless handoffs between agents when issues cross domains. Each specialist agent has a focused persona, a curated tool set, and domain-specific instructions — keeping its context lean and its tool selection accurate.
 
 ## Solution Architecture
 
-Beluga AI's agent system models handoffs as tools. When a triage agent determines that an inquiry requires billing expertise, it calls a `transfer_to_billing` tool, which transparently transfers the conversation to the billing agent. Each specialized agent has its own persona, tools, and LLM configuration optimized for its domain.
+Beluga AI's agent system models handoffs as tools — this is a core architectural decision. When a triage agent determines that an inquiry requires billing expertise, it calls a `transfer_to_billing` tool, which transparently transfers the conversation to the billing agent. The handoffs-as-tools pattern is chosen over explicit routing logic because it lets the LLM reason about when to transfer using the same mechanism it uses for any other action. The triage agent does not need special routing code; it simply has `transfer_to_*` tools alongside its other capabilities, and the LLM decides when to use them based on conversation context.
+
+Each specialized agent has its own persona, tools, and LLM configuration optimized for its domain.
 
 ```
                     ┌─────────────────┐
@@ -39,7 +43,7 @@ Beluga AI's agent system models handoffs as tools. When a triage agent determine
 
 ## Building Specialized Agents
 
-Each agent has a focused persona, a curated set of tools, and domain-specific instructions.
+Each agent has a focused persona, a curated set of tools, and domain-specific instructions. The `agent.Persona` struct defines the agent's role, goal, and backstory — providing the LLM with clear behavioral guidance. Tools are registered using `tool.NewFuncTool` with typed inputs (via struct tags and JSON schema generation), ensuring the LLM generates correctly structured tool calls.
 
 ```go
 package main
@@ -119,7 +123,7 @@ type InvoiceInput struct {
 
 ## Handoffs as Tools
 
-Beluga AI implements agent transfers as tools. When you register child agents, Beluga automatically generates `transfer_to_{agent_id}` tools that the parent agent can call to hand off the conversation.
+Beluga AI implements agent transfers as tools. When you register child agents via `agent.WithChildren()`, Beluga automatically generates `transfer_to_{agent_id}` tools that the parent agent can call to hand off the conversation. This automatic tool generation means adding a new specialist agent is a one-line change — register it as a child and the handoff tool appears automatically.
 
 ```go
 func createTriageAgent(ctx context.Context) (agent.Agent, error) {
@@ -194,7 +198,7 @@ func handleInquiry(ctx context.Context, triageAgent agent.Agent, inquiry string)
 
 ## Human-in-the-Loop Escalation
 
-Not every issue can be resolved by AI. Beluga AI's HITL (Human-in-the-Loop) system provides confidence-based escalation. When an agent's confidence is low or the action carries high risk, the system routes to a human reviewer.
+Not every issue can be resolved by AI. Beluga AI's HITL (Human-in-the-Loop) system provides confidence-based escalation using a policy-based approval mechanism. Policies match tool names against patterns (e.g., `process_refund` requires explicit approval, `lookup_*` is auto-approved) and evaluate risk levels. This declarative approach means escalation rules are auditable and configurable without code changes — operations teams can adjust thresholds and policies based on observed outcomes.
 
 ```go
 import (
@@ -299,7 +303,7 @@ span.SetAttributes(
 
 ### Safety Guards
 
-Use Beluga AI's guard pipeline to screen agent inputs and outputs:
+Use Beluga AI's 3-stage guard pipeline to screen agent inputs, outputs, and tool calls. The guard pipeline is always input guards first, then output guards, then tool guards — this ordering ensures that malicious inputs are caught before they reach the LLM, PII is caught before it reaches the user, and tool calls are validated before they execute.
 
 ```go
 import "github.com/lookatitude/beluga-ai/guard"

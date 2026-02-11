@@ -11,6 +11,14 @@ You need to handle tool calls that arrive during streaming LLM responses, execut
 
 Implement a streaming tool handler that processes tool call chunks as they arrive, executes tools concurrently, and streams tool results back into the response stream. This works because Beluga AI's streaming interface provides tool call chunks incrementally, allowing you to start tool execution before the stream completes.
 
+## Why This Matters
+
+LLM tool calls during streaming present a latency optimization opportunity that most implementations miss. In a typical non-streaming flow, the application waits for the complete LLM response, parses out tool calls, executes them sequentially, and then sends results back. This serial approach wastes time because the LLM often signals a tool call early in its response (sometimes in the first few chunks), but execution doesn't start until the entire response is received.
+
+By processing tool call chunks incrementally, you can start executing tools as soon as the tool call arguments are complete, potentially saving hundreds of milliseconds or more. When the LLM requests multiple tools, concurrent execution via goroutines compounds this advantage -- three tool calls that each take 200ms complete in 200ms total instead of 600ms.
+
+The implementation handles a subtle challenge: tool call arguments arrive split across multiple chunks. The `toolCallBuffer` accumulates these fragments until a chunk is marked as `Complete`, at which point the full tool call is dispatched. This buffering is necessary because JSON arguments may be split at arbitrary byte boundaries by the streaming protocol. The `activeTools` map with `context.CancelFunc` values enables cancellation of in-flight tool executions when the parent context is cancelled, preventing resource leaks in timeout scenarios.
+
 ## Code Example
 
 ```go
@@ -210,13 +218,13 @@ func main() {
 
 ## Explanation
 
-1. **Incremental tool call collection** — Tool call chunks are accumulated as they arrive. Tool calls may be split across multiple chunks, so the arguments are buffered until a chunk marked as complete is received.
+1. **Incremental tool call collection** -- Tool call chunks are accumulated as they arrive. Tool calls may be split across multiple chunks because the streaming protocol fragments JSON arguments at arbitrary byte boundaries. The `toolCallBuffer` accumulates these fragments until a chunk marked as `Complete` is received, at which point the full tool call is assembled and dispatched.
 
-2. **Concurrent tool execution** — Tools are executed in separate goroutines as soon as they're detected. This allows multiple tools to run in parallel, significantly reducing total execution time.
+2. **Concurrent tool execution** -- Tools are executed in separate goroutines as soon as they're detected. This allows multiple tools to run in parallel, reducing total execution time from the sum of all tool durations to the maximum of any single tool duration. The `resultsCh` channel collects results from all concurrent executions in a thread-safe manner.
 
-3. **Streaming results** — Tool results are sent to the output channel as they complete, allowing the user to see results incrementally rather than waiting for all tools to finish.
+3. **Streaming results** -- Tool results are sent to the output channel as they complete, allowing downstream consumers to process results incrementally rather than waiting for all tools to finish. The `sendToolResults` method collects exactly the expected number of results, ensuring all tool executions are accounted for before the output channel closes.
 
-Start tool execution as soon as you have enough information, not when the stream completes. This reduces perceived latency and improves user experience.
+4. **OTel instrumentation** -- Each tool execution gets its own span with the tool name as an attribute. This creates a trace tree showing the streaming response span as the parent with individual tool execution spans as children, making it straightforward to identify which tools are slow or failing in production.
 
 ## Testing
 

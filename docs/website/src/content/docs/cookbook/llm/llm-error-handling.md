@@ -11,6 +11,12 @@ You are calling an LLM API and need to handle rate limits, timeouts, and API err
 
 Implement a layered error handling strategy with retry logic, exponential backoff, and proper error classification. Transient errors are retried automatically while permanent errors fail fast with clear messages.
 
+## Why This Matters
+
+LLM APIs are external services with well-known failure modes: rate limits (HTTP 429), server errors (HTTP 5xx), and network timeouts. Each failure type requires a different response strategy. Retrying an authentication error (HTTP 401) wastes API calls and delays the real fix. Not retrying a rate limit error drops a request that would succeed after a brief wait.
+
+Beluga AI's `core.IsRetryable()` function provides the first layer of error classification by inspecting the error's `ErrorCode`. This recipe adds a second layer by pattern-matching on error messages for cases where the error isn't wrapped in Beluga's error types (e.g., raw HTTP errors from provider SDKs). Exponential backoff with jitter prevents the thundering herd problem -- when many clients hit a rate limit simultaneously, jitter ensures they don't all retry at the same time and trigger another rate limit.
+
 ## Code Example
 
 ```go
@@ -156,19 +162,19 @@ func main() {
 
 ## Explanation
 
-1. **Error classification** -- The `isRetryable` function checks Beluga AI's error types using `core.IsRetryable()`. Rate limits and server errors are retried; authentication errors and client errors are not. This avoids wasting time on errors that will never succeed.
+1. **Error classification** -- The `isRetryable` function checks Beluga AI's error types using `core.IsRetryable()` first, then falls back to pattern matching on error messages. Rate limits and server errors are retried; authentication errors and client errors are not. This two-layer approach handles both framework-wrapped errors and raw provider SDK errors.
 
-2. **Exponential backoff with jitter** -- The backoff doubles each time (1s, 2s, 4s...) but never exceeds `MaxBackoff`. Random jitter prevents multiple clients from retrying simultaneously, which would cause another rate limit spike.
+2. **Exponential backoff with jitter** -- The backoff doubles each time (1s, 2s, 4s...) but never exceeds `MaxBackoff`. Random jitter (controlled by the `Jitter` config parameter) prevents multiple clients from retrying simultaneously, which would cause another rate limit spike. The jitter range is +-10% of the backoff by default.
 
-3. **Context awareness** -- The function checks `ctx.Err()` before each attempt and during backoff waits. This respects timeouts and cancellations from the calling code.
+3. **Context awareness** -- The function checks `ctx.Err()` before each attempt and during backoff waits using `select`. This respects timeouts and cancellations from the calling code, preventing wasted retries when the caller has already given up.
 
-**Key insight:** Always classify errors before retrying. Retrying authentication errors wastes API calls and delays the real fix.
+4. **MaxBackoff cap** -- Without a cap, exponential backoff grows unbounded (1s, 2s, 4s, 8s, 16s, 32s, 64s...). The `MaxBackoff` of 30 seconds ensures the wait never becomes unreasonable, even after many retries.
 
 ## Variations
 
 ### Circuit Breaker Pattern
 
-If experiencing sustained failures, add a circuit breaker to stop retrying entirely:
+If experiencing sustained failures, add a circuit breaker to stop retrying entirely and fail fast:
 
 ```go
 type CircuitBreaker struct {
@@ -191,7 +197,7 @@ func (cb *CircuitBreaker) Allow() bool {
 
 ### Fallback Response
 
-For non-critical features, provide a fallback when the LLM is unavailable:
+For non-critical features, provide a cached or template fallback when the LLM is unavailable:
 
 ```go
 func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.Message, fallback string) string {
@@ -206,6 +212,6 @@ func (c *LLMClient) GenerateWithFallback(ctx context.Context, messages []schema.
 
 ## Related Recipes
 
-- **[Custom Agent Patterns](./custom-agent-patterns)** -- Use error handling in custom agents
-- **[Global Retry Wrappers](./global-retry)** -- Framework-level retry strategies
-- **[Context Timeout Management](./context-timeout)** -- Timeout handling for operations
+- **[Custom Agent Patterns](/cookbook/agents/custom-agent-patterns)** -- Use error handling in custom agents
+- **[Global Retry Wrappers](/cookbook/llm/global-retry)** -- Framework-level retry strategies
+- **[Context Timeout Management](/cookbook/infrastructure/context-timeout)** -- Timeout handling for operations

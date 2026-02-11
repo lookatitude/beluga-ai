@@ -5,6 +5,8 @@ description: "Integration guide for Meta's Llama models with Beluga AI."
 
 The Llama provider is a meta-provider that enables running Meta's Llama models through any of several hosting backends. Since Meta does not offer a direct inference API, this provider delegates to Together AI, Fireworks AI, Groq, SambaNova, Cerebras, or Ollama depending on the selected backend.
 
+Use the Llama provider when you want to standardize your code around Llama models while retaining flexibility to switch between hosting backends. This lets you optimize for cost, speed, or locality (via Ollama) without changing your application code -- only the backend configuration changes.
+
 ## Installation
 
 ```bash

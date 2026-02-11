@@ -5,11 +5,17 @@ description: "Aggregate and correlate traces from multiple agents to see complet
 
 ## Problem
 
-You need to aggregate and correlate traces from multiple agents working together in a multi-agent system, so you can see the complete end-to-end flow across agent boundaries and identify bottlenecks or failures in agent coordination.
+Multi-agent systems present a unique observability challenge. When multiple agents collaborate to solve a task, each agent generates its own spans and traces. Without proper correlation, these traces appear as disconnected operations in your observability backend, making it nearly impossible to understand the complete flow of a multi-agent interaction.
+
+This becomes critical when debugging production issues. If a user request involves three agents, and one agent fails or performs slowly, you need to see the entire agent-to-agent communication chain to identify which agent introduced the bottleneck. Without trace aggregation, you're left examining individual agent logs and manually reconstructing the interaction timeline.
 
 ## Solution
 
-Implement trace aggregation that collects spans from multiple agents, correlates them by trace ID and parent-child relationships, and provides aggregated views of multi-agent workflows. OpenTelemetry uses trace IDs to link related spans, and you can propagate these IDs through agent-to-agent communication.
+Trace aggregation solves this by treating multi-agent workflows as a single distributed trace. The approach uses OpenTelemetry's trace ID propagation to link spans across agent boundaries. When a coordinator agent invokes a worker agent, it propagates the trace context, ensuring all operations share the same trace ID. This creates a unified view where you can see agent handoffs, measure cross-agent latency, and identify coordination bottlenecks.
+
+The aggregator acts as a centralized collector that receives span information from all participating agents, maintains parent-child relationships between spans, and computes aggregate metrics like total duration and agent count. This design separates trace collection from trace export, allowing you to batch exports and reduce observability overhead.
+
+The key insight is that trace IDs naturally propagate through context, so you don't need to modify agent implementations. The aggregator wrapper intercepts operations, extracts trace context, and records spans transparently.
 
 ## Code Example
 
@@ -275,13 +281,13 @@ func main() {
 
 ## Explanation
 
-1. **Trace correlation** — A single trace ID is used across all agents. Each agent's spans are linked to this trace, allowing you to see the complete flow. The trace ID propagates through context, ensuring all agent operations are correlated.
+1. **Trace correlation via shared IDs** — OpenTelemetry trace IDs provide a natural correlation mechanism across distributed operations. By ensuring all agents use the same trace ID, you create a unified trace that observability tools can render as a single flamegraph. This eliminates the need for custom correlation logic at the application layer.
 
-2. **Span hierarchy** — Parent-child relationships between spans are maintained. This creates a tree structure showing how agents call each other, making it straightforward to identify which agent triggered which operation.
+2. **Parent-child span relationships** — The aggregator maintains a span hierarchy that reflects the actual agent call graph. When agent A invokes agent B, the span from B becomes a child of A's span. This relationship is critical for understanding causality. If agent B fails, you can trace back through parent spans to see exactly what inputs led to the failure.
 
-3. **Aggregated metrics** — Aggregate metrics like total duration and agent count are computed. This provides high-level insights into multi-agent performance without needing to query individual spans.
+3. **Aggregated metrics for high-level insights** — Computing metrics like total duration and agent count at the trace level provides immediate answers to common questions: How long did this multi-agent interaction take? How many agents were involved? These metrics are expensive to compute by querying individual spans, so pre-computing them during aggregation improves dashboard performance.
 
-4. **Agent wrapper** — The `AgentTraceWrapper` function transparently adds trace aggregation to any agent operation. This avoids scattering tracing code throughout agent implementations.
+4. **Transparent wrapper pattern** — The `AgentTraceWrapper` function demonstrates a key design principle: observability should not require modifying core agent logic. By wrapping agent operations, you inject trace aggregation without coupling agents to the aggregation system. This makes it easy to enable or disable aggregation, or swap to a different aggregator implementation, without touching agent code.
 
 ## Variations
 

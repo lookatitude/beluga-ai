@@ -3,7 +3,7 @@ title: Integrating with LiveKit and Vapi
 description: Connect Beluga AI to production voice platforms like LiveKit and Vapi for WebRTC networking, room management, and scalable audio delivery.
 ---
 
-Production voice applications require infrastructure for WebRTC networking, STUN/TURN servers, jitter buffering, and room management. Platforms like LiveKit and Vapi handle this infrastructure, allowing Beluga AI to focus on the intelligence layer. This tutorial demonstrates how to connect Beluga's voice backend to these platforms.
+Production voice applications require infrastructure for WebRTC networking, STUN/TURN servers, jitter buffering, and room management. Building this infrastructure from scratch is a multi-month effort that is tangential to the core value of your voice agent. Platforms like LiveKit and Vapi handle this infrastructure, allowing Beluga AI to focus on the intelligence layer -- STT, LLM reasoning, TTS, and conversation management. This tutorial demonstrates how to connect Beluga's voice backend to these platforms.
 
 ## What You Will Build
 
@@ -16,18 +16,18 @@ A voice agent that connects to a LiveKit room or Vapi endpoint, processes partic
 
 ## Why Third-Party Backends?
 
-While Beluga provides STT, TTS, and S2S capabilities, production voice applications need:
+While Beluga provides STT, TTS, and S2S capabilities, production voice applications need additional infrastructure that is outside the scope of an AI framework:
 
-- **WebRTC Networking** -- STUN/TURN servers, ICE candidates, jitter buffers
-- **Room Management** -- Multiple participants, track subscriptions, media routing
-- **Global Edge Networks** -- Low-latency audio delivery across regions
-- **Recording and Monitoring** -- Session recording, quality metrics, debugging tools
+- **WebRTC Networking** -- STUN/TURN servers, ICE candidates, jitter buffers. These handle NAT traversal, firewall bypass, and packet reordering that are required for real-time audio over the internet.
+- **Room Management** -- Multiple participants, track subscriptions, media routing. Managing who hears whom and how audio is mixed requires a dedicated media server.
+- **Global Edge Networks** -- Low-latency audio delivery across regions. Edge servers reduce the round-trip time between the user and the nearest processing node.
+- **Recording and Monitoring** -- Session recording, quality metrics, debugging tools. Operational visibility is essential for diagnosing audio quality issues in production.
 
-Beluga's backend package integrates with these platforms so your agent logic remains the same regardless of the transport layer.
+Beluga's backend package integrates with these platforms so your agent logic remains the same regardless of the transport layer. You can switch from LiveKit to Vapi by changing the provider name without rewriting your agent callback or pipeline configuration.
 
 ## Step 1: Configure the LiveKit Backend
 
-Create a voice backend using the LiveKit provider.
+Create a voice backend using the LiveKit provider. The backend uses Beluga's standard registry pattern -- the blank import registers the `"livekit"` factory, and `backend.NewBackend` creates a configured instance. The `vbiface.Config` struct centralizes all backend settings including provider credentials, pipeline type, concurrency limits, and observability flags.
 
 ```go
 package main
@@ -78,7 +78,7 @@ func main() {
 
 ## Step 2: Create a Session
 
-Each voice session represents one participant interaction in the room.
+Each voice session represents one participant interaction in the room. The `AgentCallback` is the integration point between the backend infrastructure and your application logic -- it receives the transcribed text and returns the agent's response. This separation means your agent logic is transport-agnostic: the same callback works with LiveKit, Vapi, or any other backend provider.
 
 ```go
 	sessionCfg := &vbiface.SessionConfig{
@@ -103,11 +103,11 @@ Each voice session represents one participant interaction in the room.
 	defer session.Stop(ctx)
 ```
 
-The `AgentCallback` receives transcribed text from the participant and returns the agent's response. For S2S pipelines, the callback is optional since the S2S model handles the full audio-to-audio flow.
+For S2S pipelines, the callback is optional since the S2S model handles the full audio-to-audio flow. The callback is primarily used with STT/TTS pipelines where the application needs to process the transcribed text before generating a response.
 
 ## Step 3: Handle Audio Events
 
-The session provides methods to receive participant audio and send agent audio back.
+The session provides methods to receive participant audio and send agent audio back. The backend orchestrator handles the full pipeline flow: incoming audio goes through noise cancellation, VAD, and STT; the transcript is passed to the agent callback; and the response is synthesized and sent back. You only need to bridge the session's audio channel with your transport layer.
 
 ```go
 	// Process incoming audio from the participant
@@ -120,11 +120,9 @@ The session provides methods to receive participant audio and send agent audio b
 	}()
 ```
 
-For STT/TTS pipelines, the backend orchestrator handles the full flow: incoming audio goes through noise cancellation, VAD, and STT; the transcript is passed to the agent callback; and the response is synthesized and sent back.
-
 ## Step 4: Vapi Integration
 
-Vapi provides a managed voice pipeline where Beluga acts as the "brain" (LLM) behind a Vapi call. Vapi handles the telephony, STT, and TTS; your application provides the response logic.
+Vapi provides a managed voice pipeline where Beluga acts as the "brain" (LLM) behind a Vapi call. In this model, Vapi handles the telephony, STT, and TTS; your application provides only the response logic. This architecture is useful when you want telephony support (PSTN, SIP) without managing telephony infrastructure, or when Vapi's built-in STT/TTS selection meets your needs and you want to minimize the components you operate.
 
 ```go
 package main

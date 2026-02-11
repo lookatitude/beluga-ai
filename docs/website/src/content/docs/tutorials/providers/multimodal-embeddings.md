@@ -3,7 +3,7 @@ title: Multimodal Embeddings
 description: Generate embeddings for text and images in a shared vector space using Beluga AI's embedding providers.
 ---
 
-Traditional search is limited to text matching. Multimodal embeddings project text, images, and other modalities into the same high-dimensional vector space, enabling cross-modal retrieval — search a product catalog of images using text queries, or find documents that relate to an uploaded photo.
+Traditional search is limited to text matching. Multimodal embeddings project text, images, and other modalities into the same high-dimensional vector space, enabling cross-modal retrieval — search a product catalog of images using text queries, or find documents that relate to an uploaded photo. This shared representation works because embedding models learn to map semantically similar content to nearby points in vector space, regardless of the original modality.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A multimodal embedding pipeline that embeds both text and images into a shared v
 
 ## The Embedder Interface
 
-Beluga AI's embedding interface in the `rag/embedding` package:
+Beluga AI's embedding interface in the `rag/embedding` package separates document embedding from query embedding. This split exists because some embedding models use different strategies for documents versus queries — for example, adding a "query: " prefix for retrieval-optimized models. The interface follows the same registry pattern as LLM providers, so embedding providers are created with `embedding.New()` and discovered with `embedding.List()`.
 
 ```go
 type Embedder interface {
@@ -74,7 +74,7 @@ func main() {
 
 ## Step 2: Embed Queries
 
-Use `EmbedQuery` for search queries, which may use a different embedding strategy optimized for retrieval:
+Use `EmbedQuery` for search queries, which may use a different embedding strategy optimized for retrieval. The distinction between `EmbedDocuments` and `EmbedQuery` matters because asymmetric embedding models produce better retrieval results when they can distinguish between the content being indexed and the question being asked about it.
 
 ```go
 queryVector, err := embedder.EmbedQuery(ctx, "dog playing outside")
@@ -87,7 +87,7 @@ fmt.Printf("Query vector: %d dimensions\n", len(queryVector))
 
 ## Step 3: Batch Processing for Performance
 
-Embedding one document at a time is slow. Process documents in batches:
+Embedding one document at a time is slow because each call incurs HTTP round-trip overhead. Processing documents in batches amortizes this overhead and takes advantage of the embedding model's ability to process multiple inputs in a single forward pass. The batch size should balance throughput against API rate limits and memory constraints.
 
 ```go
 func batchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string, batchSize int) ([][]float32, error) {
@@ -113,7 +113,7 @@ func batchEmbed(ctx context.Context, embedder embedding.Embedder, texts []string
 
 ## Step 4: Compute Cosine Similarity
 
-Compare vectors to find semantic matches:
+Compare vectors to find semantic matches. Cosine similarity measures the angle between two vectors, producing a value between -1 and 1 where 1 means identical direction (maximum similarity). This metric is preferred over Euclidean distance for embeddings because it is invariant to vector magnitude — two vectors pointing in the same direction are similar regardless of their length.
 
 ```go
 import "math"
@@ -156,7 +156,7 @@ for i, docVec := range vectors {
 | Google text-embedding-004 | 768 | Multimodal, cross-language |
 | Ollama nomic-embed-text | 768 | Local, privacy-sensitive, free |
 
-Always use the same model for both document indexing and query embedding. Mixing models produces incompatible vector spaces.
+Always use the same model for both document indexing and query embedding. Mixing models produces incompatible vector spaces because each model learns a different mapping from text to vectors.
 
 ## Verification
 

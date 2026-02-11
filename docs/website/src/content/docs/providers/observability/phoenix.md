@@ -5,6 +5,8 @@ description: "Export LLM traces to Phoenix for OpenTelemetry-native observabilit
 
 The Phoenix provider exports LLM call data to [Phoenix](https://phoenix.arize.com/), Arize AI's open-source LLM observability platform. It implements the `o11y.TraceExporter` interface and sends OTel-compatible span data through the Phoenix traces API.
 
+Choose Phoenix when you want a local-first, OTel-native observability tool for development and debugging. Phoenix runs locally with no API keys required, making it ideal for rapid iteration. It uses OpenTelemetry-compatible span formats, aligning with Beluga's OTel GenAI conventions. For production observability with team features, consider [Langfuse](/providers/observability/langfuse) or [LangSmith](/providers/observability/langsmith).
+
 ## Installation
 
 ```bash

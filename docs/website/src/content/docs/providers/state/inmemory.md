@@ -5,6 +5,8 @@ description: In-process state store for development, testing, and single-process
 
 The In-Memory provider implements the `state.Store` interface using a Go map with read-write mutex protection. It supports the full `Store` contract including `Watch` for real-time change notifications. State does not persist across process restarts.
 
+Choose the In-Memory state store for development, testing, and single-process agent deployments. It supports the full `Store` contract including `Watch` for reactive change notifications, scoped keys, and middleware hooks. No external dependencies are required.
+
 ## Installation
 
 ```bash

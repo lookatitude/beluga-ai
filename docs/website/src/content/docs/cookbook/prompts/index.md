@@ -5,11 +5,13 @@ sidebar:
   order: 0
 ---
 
-This cookbook provides production-ready prompt patterns. Each recipe includes complete implementations with error handling.
+Prompt engineering in LLM applications is more than writing good instructions. It involves structuring message sequences, managing template variables, selecting relevant examples, optimizing for provider caching, and adapting prompts to runtime conditions. These recipes provide production patterns for each of these concerns, with implementations that handle the edge cases that emerge at scale: missing variables, unbounded example lists, cache invalidation, and conditional logic.
+
+Each recipe is self-contained with full imports and error handling, designed to be composed with Beluga AI's `schema.Message` types and LLM interfaces.
 
 ## Dynamic Message Chain Templates
 
-Build conversation chains dynamically based on context.
+LLM APIs accept message arrays, not single strings, and the composition of that array determines the model's behavior. A static template works for simple cases, but production applications need to build message chains dynamically: adding few-shot examples based on input similarity, injecting retrieved documents as context, and conditioning system instructions on user attributes. The `MessageChainBuilder` pattern provides a fluent API for constructing these chains programmatically, with the chain builder pattern ensuring messages are added in the correct order (system first, then examples, then context, then the user query).
 
 ```go
 package main
@@ -20,8 +22,8 @@ import (
     "text/template"
     "bytes"
 
-    "github.com/lookatitude/beluga-ai/pkg/schema"
-    "github.com/lookatitude/beluga-ai/pkg/llms"
+    "github.com/lookatitude/beluga-ai/schema"
+    "github.com/lookatitude/beluga-ai/llm"
 )
 
 type MessageChainBuilder struct {
@@ -98,7 +100,7 @@ func renderTemplate(tmpl string, data interface{}) string {
 }
 
 // Usage example: SQL query generator
-func GenerateSQLQuery(ctx context.Context, llm llms.LLM, userQuery string, schema string) (string, error) {
+func GenerateSQLQuery(ctx context.Context, model llm.ChatModel, userQuery string, dbSchema string) (string, error) {
     builder := NewMessageChainBuilder().
         AddSystem(`You are an expert SQL developer.
 Database schema:
@@ -109,7 +111,7 @@ Rules:
 - Include comments
 - Use proper indentation
 - Handle edge cases`, map[string]interface{}{
-            "Schema": schema,
+            "Schema": dbSchema,
         }).
         AddFewShot([]FewShotExample{
             {
@@ -137,18 +139,18 @@ ORDER BY order_count DESC;`,
 
     messages := builder.Build()
 
-    response, err := llm.Generate(ctx, messages)
+    response, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return response.GetContent(), nil
 }
 ```
 
 ## Partial Variable Substitution
 
-Build prompts incrementally with partial template rendering.
+In many applications, prompt variables become available at different times: the user role is known at session start, the retrieved documents arrive after a search, and the user query comes last. Rather than blocking until all variables are available, partial substitution lets you fill in variables incrementally and inspect the prompt's current state at any point. This is particularly useful for debugging (you can see exactly what the prompt looks like with only some variables filled) and for streaming scenarios where data arrives progressively.
 
 ```go
 type PartialTemplate struct {
@@ -250,20 +252,20 @@ Question: {{.Question}}`)
 
 ## Few-Shot Learning with Dynamic Examples
 
-Select relevant examples based on input similarity.
+Static few-shot examples work when your use case is narrow, but they break down when the input domain is broad. A SQL generation prompt with examples about date queries won't help much when the user asks about aggregations. Dynamic example selection solves this by embedding both the user query and example inputs into vector space, then selecting the most similar examples. This ensures the model sees examples that are structurally similar to the current task, improving output quality without increasing the total number of examples (and therefore tokens) in the prompt.
 
 ```go
 import (
-    "github.com/lookatitude/beluga-ai/pkg/embeddings"
+    "github.com/lookatitude/beluga-ai/rag/embedding"
 )
 
 type ExampleSelector struct {
     examples  []FewShotExample
-    embedder  embeddings.Embedder
+    embedder  embedding.Embedder
     cache     map[string][]float32
 }
 
-func NewExampleSelector(embedder embeddings.Embedder) *ExampleSelector {
+func NewExampleSelector(embedder embedding.Embedder) *ExampleSelector {
     return &ExampleSelector{
         examples: make([]FewShotExample, 0),
         embedder: embedder,
@@ -343,8 +345,8 @@ func cosineSimilarity(a, b []float32) float64 {
 // Usage: Dynamic SQL query generation
 func GenerateSQLWithDynamicExamples(
     ctx context.Context,
-    llm llms.LLM,
-    embedder embeddings.Embedder,
+    model llm.ChatModel,
+    embedder embedding.Embedder,
     query string,
 ) (string, error) {
     selector := NewExampleSelector(embedder)
@@ -377,18 +379,18 @@ func GenerateSQLWithDynamicExamples(
 
     messages := builder.Build()
 
-    response, err := llm.Generate(ctx, messages)
+    response, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return response.GetContent(), nil
 }
 ```
 
 ## Prompt Caching Optimization
 
-Structure prompts to maximize cache hits and minimize costs.
+LLM providers like Anthropic and OpenAI offer prompt caching, where repeated prefix content is served from cache at reduced cost and latency. The key to maximizing cache hits is message ordering: static content (system instructions, tool definitions) must come first, semi-dynamic content (retrieved documents, session context) in the middle, and fully dynamic content (the user query) last. If you interleave static and dynamic content, the cache breaks at the first dynamic token and everything after it is recomputed. The `CachedPromptBuilder` enforces this ordering structurally, making cache-optimal prompts the default rather than requiring discipline from every caller.
 
 ```go
 type CachedPromptBuilder struct {
@@ -440,7 +442,7 @@ func (cpb *CachedPromptBuilder) Build() []schema.Message {
 // Usage: RAG with optimal caching
 func RAGWithCaching(
     ctx context.Context,
-    llm llms.LLM,
+    model llm.ChatModel,
     systemInstructions string, // Static - cache forever
     retrievedDocs []string,    // Dynamic - cache for session
     userQuery string,          // Dynamic - no cache
@@ -460,18 +462,18 @@ func RAGWithCaching(
 
     messages := builder.Build()
 
-    response, err := llm.Generate(ctx, messages)
+    response, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return response.GetContent(), nil
 }
 ```
 
 ## Conditional Prompt Sections
 
-Include prompt sections based on runtime conditions.
+Production prompts often need to adapt to runtime conditions: premium customers get different instructions than free-tier users, peak hours call for concise responses, and active support issues require empathy language. Hardcoding these variations as separate prompt templates leads to a combinatorial explosion (2 tiers x 2 issue states x 2 time states = 8 templates). The `ConditionalPromptBuilder` avoids this by treating each variation as an independent section with a condition function and a priority. Sections are included only when their condition is true and ordered by priority, composing the final prompt dynamically from its constituent parts.
 
 ```go
 type ConditionalPromptBuilder struct {
@@ -528,7 +530,7 @@ func (cpb *ConditionalPromptBuilder) Build() string {
 // Usage: Adaptive customer support
 func AdaptiveSupport(
     ctx context.Context,
-    llm llms.LLM,
+    model llm.ChatModel,
     customerTier string,
     hasActiveIssue bool,
     isPeakHours bool,
@@ -570,18 +572,18 @@ func AdaptiveSupport(
         schema.NewHumanMessage("How do I reset my password?"),
     }
 
-    response, err := llm.Generate(ctx, messages)
+    response, err := model.Generate(ctx, messages)
     if err != nil {
         return "", err
     }
 
-    return response.Content, nil
+    return response.GetContent(), nil
 }
 ```
 
 ## Prompt Template Library
 
-Manage reusable prompt templates with versioning.
+As your application grows, prompts accumulate across features, teams, and deployment environments. Without a central registry, prompts are duplicated, versioning happens informally (if at all), and A/B testing requires code changes. The `PromptLibrary` provides a registry pattern (following Beluga AI's `Register()` + `Get()` convention) with version support, variable validation, and template rendering. Versioning is explicit (e.g., "code_review@2.0"), making it safe to evolve prompts without breaking existing consumers that pin to a specific version.
 
 ```go
 type PromptTemplate struct {
@@ -738,6 +740,6 @@ When engineering prompts:
 
 ## Next Steps
 
-- Learn about [Prompt Management](/guides/prompt-engineering) for production patterns
-- Explore [LLM Recipes](/cookbook/llm-recipes) for advanced generation
-- Read [Agent Recipes](/cookbook/agent-recipes) for agentic prompts
+- Learn about [Prompt Engineering](/guides/foundations/prompt-engineering) for production patterns
+- Explore [LLM Recipes](/cookbook/llm) for advanced generation
+- Read [Agent Recipes](/cookbook/agents) for agentic prompts

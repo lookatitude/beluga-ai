@@ -5,6 +5,8 @@ description: "Fish Audio TTS provider for open-source voice synthesis."
 
 Fish Audio provides text-to-speech synthesis with support for voice cloning via reference IDs. The Beluga AI provider uses the Fish Audio v1 API for synthesis, producing audio output in configurable formats.
 
+Choose Fish Audio when you want an open-source-friendly TTS option with voice cloning capabilities. Fish Audio's reference ID system allows you to use community-shared voices or create your own cloned voices. For the most polished commercial voice quality, consider [ElevenLabs](/providers/voice/elevenlabs).
+
 ## Installation
 
 ```go

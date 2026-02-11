@@ -5,6 +5,8 @@ description: Load files from GitHub repositories via the Contents API.
 
 The GitHub loader implements the `loader.DocumentLoader` interface for loading files from GitHub repositories. It uses the GitHub Contents API to fetch file content, with support for branch/tag/SHA references.
 
+Choose GitHub when you need to load source code, documentation, or configuration files from GitHub repositories into a RAG pipeline. The loader supports branch/tag/SHA references and works with both GitHub.com and GitHub Enterprise. For loading from other platforms, consider [Confluence](/providers/loader/confluence) or [Notion](/providers/loader/notion).
+
 ## Installation
 
 ```bash

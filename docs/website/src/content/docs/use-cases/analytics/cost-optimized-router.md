@@ -3,11 +3,15 @@ title: Cost-Optimized Chat Router
 description: Reduce LLM costs by 35%+ with intelligent request classification and cost-quality routing.
 ---
 
-High-volume applications using LLMs face 40-50% higher costs than necessary when routing all requests to expensive models regardless of complexity. Simple queries like "What are your hours?" don't need GPT-4, while complex reasoning tasks benefit from more capable models. A cost-optimized router classifies requests by complexity and routes to the most cost-effective model that meets quality requirements.
+LLM pricing varies by 10-15x between model tiers — GPT-3.5 Turbo costs $0.002 per 1K tokens while GPT-4 costs $0.03. When every request routes to the most expensive model, simple factual lookups consume the same budget as complex multi-step reasoning. For high-volume applications processing thousands of requests daily, this uniform routing inflates costs by 40-50% with no quality benefit for the majority of requests.
+
+The insight is that request complexity follows a power law distribution: 60-70% of requests are simple (FAQ lookups, status checks, basic formatting), 20-25% are medium complexity, and only 10-15% require the reasoning capabilities of frontier models. Matching model capability to request complexity captures most of the quality benefit at a fraction of the cost.
+
+A cost-optimized router classifies incoming requests by complexity, routes each to the cheapest model that meets quality requirements, validates response quality, and automatically falls back to more capable models when the initial response is insufficient.
 
 ## Solution Architecture
 
-Beluga AI's LLM package provides a unified interface across providers, making it straightforward to implement intelligent routing. The router classifies request complexity, selects the appropriate model from a cost-quality matrix, validates response quality, and falls back to better models when needed.
+Beluga AI's unified `llm.ChatModel` interface means all providers share the same Generate/Stream API, so the router can swap between models transparently. The classifier examines request patterns (keyword matching, message length, conversation history) to determine complexity, the router selects from a cost-quality matrix, and a quality checker validates the response before returning it — triggering fallback escalation if quality falls below the complexity-specific threshold.
 
 ```mermaid
 graph TB

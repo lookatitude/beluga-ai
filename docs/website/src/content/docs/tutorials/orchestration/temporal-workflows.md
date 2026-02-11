@@ -3,7 +3,7 @@ title: Long-Running Workflows with Durable Execution
 description: Build durable, long-running agent workflows that survive process restarts using the workflow package and optional Temporal integration.
 ---
 
-Standard agents run in memory. If the process restarts, the agent's state is lost. For workflows that span hours or days, require human approval signals, or need reliable retries, the `workflow` package provides a durable execution engine with event-sourced state persistence.
+Standard agents run in memory. If the process restarts, the agent's state is lost -- including any work it has already completed. For workflows that span hours or days, require human approval signals, or need reliable retries across failures, the `workflow` package provides a durable execution engine with event-sourced state persistence. Beluga AI owns its durable execution engine rather than depending on Temporal by default, but provides Temporal as a provider option for production deployments that need distributed execution and advanced features.
 
 ## What You Will Build
 
@@ -18,7 +18,7 @@ A research workflow that executes an agent as an activity, waits for a human app
 
 ### Durable Execution
 
-The `workflow` package defines a `DurableExecutor` interface for executing workflows that persist their state. The built-in executor uses event sourcing, but Temporal can be used as a provider for production deployments.
+The `workflow` package defines a `DurableExecutor` interface that follows Beluga AI's registry pattern -- `workflow.New()` creates an executor by name ("default" for the built-in engine, "temporal" for the Temporal provider). The built-in executor uses event sourcing to persist workflow state: every activity completion, signal receipt, and state transition is recorded as an event. On restart, the executor replays the event log to reconstruct the workflow's state without re-executing completed activities.
 
 ```go
 import "github.com/lookatitude/beluga-ai/workflow"
@@ -34,7 +34,7 @@ type DurableExecutor interface {
 
 ### Activities
 
-An `ActivityFunc` performs a unit of work within a workflow. Activities can have retry policies and timeouts:
+An `ActivityFunc` performs a unit of work within a workflow. Activities are the boundary between deterministic workflow logic and non-deterministic side effects (API calls, LLM invocations, database writes). By wrapping side effects in activities, the workflow engine knows which operations need to be re-executed on replay and which can be skipped because their results were already recorded.
 
 ```go
 type ActivityFunc func(ctx context.Context, input any) (any, error)
@@ -42,7 +42,7 @@ type ActivityFunc func(ctx context.Context, input any) (any, error)
 
 ## Step 1: Define Activities
 
-Wrap your AI logic as workflow activities:
+Each activity encapsulates a unit of AI work. The research activity would call an LLM agent in production; the report activity generates the final output. Activities can have retry policies (for transient failures like rate limits) and timeouts (to bound execution time for slow operations). These are configured per-activity rather than globally, because different operations have different reliability characteristics.
 
 ```go
 package main
@@ -71,7 +71,9 @@ func reportActivity(ctx context.Context, input any) (any, error) {
 
 ## Step 2: Define the Workflow
 
-A `WorkflowFunc` receives a `WorkflowContext` for deterministic execution. Use it to execute activities and wait for signals:
+A `WorkflowFunc` receives a `WorkflowContext` for deterministic execution. The `WorkflowContext` provides methods for executing activities, waiting for signals, and sleeping -- all of which are recorded in the event log for durability. The workflow itself must be deterministic: given the same inputs and signals, it must produce the same sequence of activity calls. This is why you use `ctx.ExecuteActivity()` rather than calling functions directly -- the context tracks which activities have already completed during replay.
+
+The `WaitForSignal` call pauses the workflow until an external signal arrives or the timeout expires. This is how human-in-the-loop approval works: the workflow suspends, a human reviews the research findings, and sends an approval or rejection signal. During the wait, the workflow's state is persisted, so a process restart will resume the wait where it left off.
 
 ```go
 func researchWorkflow(ctx workflow.WorkflowContext, input any) (any, error) {
@@ -114,7 +116,7 @@ func researchWorkflow(ctx workflow.WorkflowContext, input any) (any, error) {
 
 ## Step 3: Execute the Workflow
 
-Create a `DurableExecutor` and start the workflow:
+The `WorkflowOptions` include a unique ID for the workflow instance, which serves as the correlation key for signals, queries, and cancellation. The timeout bounds the total workflow duration, providing a safety net for workflows that might otherwise run indefinitely waiting for signals that never arrive.
 
 ```go
 func main() {
@@ -144,7 +146,7 @@ func main() {
 
 ## Step 4: Send Signals
 
-External systems or humans send signals to running workflows to approve, reject, or provide data:
+External systems or humans send signals to running workflows to provide data, approve actions, or trigger transitions. The signal name ("approval") must match what the workflow is waiting for in its `WaitForSignal` call. In a production system, this would be called from an API handler when a human clicks "Approve" in a review dashboard.
 
 ```go
 func approveWorkflow(ctx context.Context, executor workflow.DurableExecutor, workflowID string) error {
@@ -157,7 +159,7 @@ func approveWorkflow(ctx context.Context, executor workflow.DurableExecutor, wor
 
 ## Step 5: Retrieve Results
 
-The `WorkflowHandle` blocks until the workflow completes:
+The `WorkflowHandle` blocks until the workflow completes, providing a synchronous API for waiting on asynchronous workflows. The `Status()` method reports the current state (running, completed, failed, timed out), and `Result()` returns the final output.
 
 ```go
 func waitForResult(ctx context.Context, handle workflow.WorkflowHandle) {
@@ -174,7 +176,7 @@ func waitForResult(ctx context.Context, handle workflow.WorkflowHandle) {
 
 ## Using Temporal as a Provider
 
-For production deployments requiring distributed execution, persistent storage, and advanced features, use the Temporal provider:
+For production deployments requiring distributed execution across multiple workers, persistent storage with a database backend, and advanced features like visibility queries and workflow versioning, use the Temporal provider. The provider wraps your `WorkflowFunc` and `ActivityFunc` types into native Temporal workflows and activities, handling serialization, retries, and signal routing transparently. Your workflow code does not change -- only the provider name and configuration.
 
 ```go
 import _ "github.com/lookatitude/beluga-ai/workflow/providers/temporal"

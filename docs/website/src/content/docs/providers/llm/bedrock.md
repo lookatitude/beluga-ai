@@ -5,6 +5,8 @@ description: "Integration guide for AWS Bedrock models with Beluga AI."
 
 The AWS Bedrock provider connects Beluga AI to Amazon Bedrock's multi-provider model catalog using the AWS SDK v2 Converse API. It supports models from Anthropic, Meta, Mistral, Cohere, Amazon, and others through a unified interface with native AWS authentication.
 
+Choose Bedrock when you need AWS-native integration with IAM roles, VPC endpoints, and CloudTrail auditing. Bedrock consolidates access to models from multiple providers under a single billing and governance layer, which simplifies procurement and compliance in AWS-centric environments.
+
 ## Installation
 
 ```bash

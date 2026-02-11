@@ -5,6 +5,8 @@ description: "Integration guide for Mistral AI models with Beluga AI."
 
 The Mistral provider connects Beluga AI to Mistral AI's models using the `mistral-go` SDK. It supports chat completions, streaming, tool calling, and JSON mode.
 
+Choose Mistral when you need competitive model quality with European data residency (hosted in EU). Mistral Large offers strong reasoning and multilingual capabilities, while Codestral specializes in code generation. Mistral also offers efficient open-weight models that can be self-hosted.
+
 ## Installation
 
 ```bash

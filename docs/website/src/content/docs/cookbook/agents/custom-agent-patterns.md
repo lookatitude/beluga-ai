@@ -9,7 +9,15 @@ You need to add custom logic to an agent without modifying framework code. For e
 
 ## Solution
 
-Use composition to wrap or extend the base agent. Beluga AI's agent system is designed for extension — embed the base agent and add your custom behavior around it.
+Use composition to wrap or extend the base agent. Beluga AI's agent system is designed for extension -- embed the base agent and add your custom behavior around it.
+
+## Why This Matters
+
+Every production agent eventually needs behavior that the framework doesn't provide out of the box: input sanitization, output formatting, custom metrics, audit logging, or domain-specific validation. The question is whether you modify the framework code, fork it, or compose around it.
+
+Beluga AI is designed for the composition approach. By wrapping `agent.Agent` with a custom struct, you can intercept every stage of the agent lifecycle without touching framework internals. This follows Go's "accept interfaces, return structs" principle -- your `CustomAgent` accepts any implementation of `agent.Agent` and adds behavior around it. The functional options pattern (`WithInputFilter`, `WithOutputFilter`, `WithThoughtCallback`) keeps the API clean and extensible: adding new options doesn't change existing code or break callers.
+
+The filter chain pattern used here (input filters applied in order, output filters applied in order) creates a processing pipeline that is easy to reason about and test. Each filter is a pure function that transforms data, making unit testing straightforward.
 
 ## Code Example
 
@@ -265,15 +273,13 @@ func main() {
 
 ## Explanation
 
-1. **Composition over inheritance** — The `CustomAgent` wraps `agent.Agent` rather than extending a struct. This works with any agent type (ReAct, PlanExecute, or future types) without modification.
+1. **Composition over inheritance** -- The `CustomAgent` wraps `agent.Agent` rather than extending a struct. This works with any agent type (ReAct, PlanExecute, or future types) without modification, because it depends on the interface, not a specific implementation.
 
-2. **Filter chains** — The chain of responsibility pattern is used for both inputs and outputs. Filters are applied in order, enabling complex processing pipelines.
+2. **Filter chains** -- The chain of responsibility pattern is used for both inputs and outputs. Filters are applied in order, enabling complex processing pipelines. Each filter receives the output of the previous filter, so you can stack sanitization, enrichment, and validation independently.
 
-3. **Callbacks for observability** — The `onThought` and `onAction` callbacks let you hook into the agent's decision-making process without modifying the agent itself. This is useful for debugging or building UIs.
+3. **Callbacks for observability** -- The `onThought` and `onAction` callbacks let you hook into the agent's decision-making process without modifying the agent itself. This is useful for building debug UIs, recording agent trajectories, or feeding data into monitoring systems.
 
-4. **Functional options pattern** — `CustomAgentOption` functions configure the agent. This makes the API clean and extensible — adding new options doesn't change existing code.
-
-By wrapping rather than modifying, you can add custom behavior to any agent in the framework without forking or waiting for upstream changes.
+4. **Functional options pattern** -- `CustomAgentOption` functions configure the agent at construction time. This follows Beluga AI's `WithX()` convention and makes the API clean and extensible -- adding new options doesn't change existing code or break callers.
 
 ## Testing
 
@@ -339,7 +345,7 @@ func TestCustomAgent_CallbacksAreCalled(t *testing.T) {
 
 ### Logging Agent
 
-Create a version that logs all interactions:
+Create a version that logs all interactions for debugging and audit trails:
 
 ```go
 func NewLoggingAgent(base agent.Agent, logger *log.Logger) *CustomAgent {
@@ -358,7 +364,7 @@ func NewLoggingAgent(base agent.Agent, logger *log.Logger) *CustomAgent {
 
 ### Rate-Limited Agent
 
-Add rate limiting to prevent API abuse:
+Add rate limiting to prevent API abuse when the agent makes many tool calls in rapid succession:
 
 ```go
 func NewRateLimitedAgent(base agent.Agent, rps float64) *CustomAgent {
@@ -377,4 +383,4 @@ func NewRateLimitedAgent(base agent.Agent, rps float64) *CustomAgent {
 
 ## Related Recipes
 
-- **[LLM Error Handling](./llm-error-handling)** — Handle errors in your custom agent
+- **[LLM Error Handling](/cookbook/llm/llm-error-handling)** -- Handle errors in your custom agent

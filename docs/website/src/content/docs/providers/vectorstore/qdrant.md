@@ -5,6 +5,8 @@ description: High-performance vector store using Qdrant's HTTP REST API.
 
 The Qdrant provider implements the `vectorstore.VectorStore` interface using Qdrant's HTTP REST API. It avoids gRPC dependencies for broad compatibility while supporting cosine, dot-product, and Euclidean distance strategies.
 
+Choose Qdrant when you need a purpose-built vector database with strong performance characteristics and flexible deployment options. Qdrant can run self-hosted via Docker for development or in production on Qdrant Cloud. It supports payload-based filtering, rich data types, and HNSW indexing for fast approximate nearest-neighbor search.
+
 ## Installation
 
 ```bash

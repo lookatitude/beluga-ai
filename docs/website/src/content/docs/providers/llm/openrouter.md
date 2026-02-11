@@ -5,7 +5,7 @@ description: "Integration guide for OpenRouter's multi-provider routing with Bel
 
 The OpenRouter provider connects Beluga AI to [OpenRouter](https://openrouter.ai), a unified gateway that routes requests to many different model providers (OpenAI, Anthropic, Google, Meta, Mistral, and more). OpenRouter exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
-OpenRouter is useful when you want to access models from multiple providers through a single API key and endpoint.
+Choose OpenRouter when you want to compare models across providers without managing separate API keys, or when you need access to niche models not available through other providers. OpenRouter's single API key simplifies billing and model switching during development and evaluation.
 
 ## Installation
 

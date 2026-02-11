@@ -1,0 +1,100 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+
+interface Props {
+  type?: "tip" | "warning" | "info" | "note";
+  title?: string;
+}
+
+const icons = {
+  tip: "approve-check",
+  warning: "warning",
+  info: "information",
+  note: "pencil",
+} as const;
+
+const defaultTitles = {
+  tip: "Tip",
+  warning: "Warning",
+  info: "Info",
+  note: "Note",
+} as const;
+
+const { type = "note", title } = Astro.props;
+const resolvedTitle = title || defaultTitles[type];
+---
+
+<div class={`callout callout-${type}`} role="note">
+  <div class="callout-header">
+    <Icon name={icons[type]} class="callout-icon" size="1.2rem" />
+    <span class="callout-title">{resolvedTitle}</span>
+  </div>
+  <div class="callout-content">
+    <slot />
+  </div>
+</div>
+
+<style>
+  @layer starlight.components {
+    .callout {
+      --callout-color: var(--color-primary);
+      border-left: 4px solid var(--callout-color);
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      background: color-mix(in srgb, var(--callout-color) 8%, transparent);
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+    }
+
+    .callout-tip {
+      --callout-color: #22c55e;
+    }
+    .callout-warning {
+      --callout-color: #f59e0b;
+    }
+    .callout-info {
+      --callout-color: #3b82f6;
+    }
+    .callout-note {
+      --callout-color: var(--color-primary);
+    }
+
+    .callout-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .callout-icon {
+      color: var(--callout-color);
+      flex-shrink: 0;
+    }
+
+    .callout-title {
+      font-weight: 600;
+      font-size: var(--sl-text-sm);
+      color: var(--callout-color);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .callout-content {
+      font-size: var(--sl-text-body);
+      color: var(--sl-color-gray-2);
+    }
+
+    .callout-content :global(p:last-child) {
+      margin-bottom: 0;
+    }
+
+    :root[data-theme="light"] .callout {
+      background: color-mix(in srgb, var(--callout-color) 6%, white);
+      box-shadow: 0 1px 3px rgb(0 0 0 / 0.05);
+    }
+
+    :root[data-theme="light"] .callout-content {
+      color: var(--sl-color-gray-3);
+    }
+  }
+</style>

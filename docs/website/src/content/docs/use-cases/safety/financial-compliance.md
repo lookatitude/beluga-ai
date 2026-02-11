@@ -3,11 +3,13 @@ title: Financial Advice Compliance Firewall
 description: Automated regulatory compliance checking achieves 98.5% compliance rate with zero violations.
 ---
 
-Fintech platforms need to ensure all AI-generated financial advice complies with SEC and FINRA regulations before delivery to users. Manual compliance review causes 4-6 hour delays, with 10-15% of advice requiring modification due to compliance issues. Automated compliance checking enables real-time validation, regulatory rule enforcement, and 98%+ compliance rate.
+Financial services AI faces a unique regulatory challenge: SEC Rule 2111 (suitability) and FINRA Rule 2210 (communications) impose strict requirements on investment advice that LLMs have no inherent awareness of. An LLM might generate "guaranteed 10% returns" — language that is factually plausible but legally prohibited because it implies certainty about future performance. A single compliance violation can trigger regulatory investigation, fines exceeding $1M, and reputational damage that takes years to recover from.
+
+Manual compliance review creates a 4-6 hour bottleneck between advice generation and delivery, during which market conditions may change and make the advice stale. More critically, human reviewers checking hundreds of AI-generated responses per day experience fatigue-related errors, missing subtle violations like missing risk disclaimers or implied guarantees buried in otherwise compliant text.
 
 ## Solution Architecture
 
-Beluga AI's guard package combined with regulatory rule engines enables compliance validation. The system checks advice against regulatory rules, validates investment recommendations, verifies required disclaimers, and blocks non-compliant content before delivery.
+Beluga AI's `guard/` package implements compliance validation as a pipeline of specialized checkers, each targeting a specific regulatory requirement. This decomposition matters because financial regulations are not monolithic — SEC rules about guaranteed returns, FINRA rules about suitability disclosures, and disclaimer requirements each have distinct detection patterns and severity levels. Running them as independent guards means each can be updated, tested, and audited separately when regulations change, without touching unrelated compliance logic.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -183,7 +185,7 @@ type ComplianceIssue struct {
 
 ## Regulatory Rule Engine
 
-Implement a rule engine for checking regulatory requirements:
+Each regulatory rule is self-contained with an ID, severity classification, and a check function. This structure enables audit trails that reference specific rule IDs (critical for regulatory examinations), severity-based prioritization of violations, and independent rule updates when regulations change:
 
 ```go
 type RegulatoryRuleEngine struct {

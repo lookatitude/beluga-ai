@@ -3,7 +3,9 @@ title: Document Loader Integrations
 description: Load documents from filesystems, cloud storage, databases, and APIs.
 ---
 
-Beluga AI supports multiple document loaders for ingesting content from various sources. This guide covers available integrations and how to implement custom loaders.
+Before documents can be embedded and searched, they need to be loaded from wherever they live -- local filesystems, cloud storage buckets, databases, APIs, or SaaS platforms. Document loaders handle this ingestion step, converting source data into Beluga AI's `schema.Document` type with content and metadata preserved.
+
+This guide covers the available loader integrations and shows how to implement custom loaders for specialized sources.
 
 ## Available Loaders
 

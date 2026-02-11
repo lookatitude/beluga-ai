@@ -5,6 +5,8 @@ description: Programmable safety guardrails using NVIDIA NeMo Guardrails.
 
 The NeMo Guardrails provider implements the `guard.Guard` interface using [NVIDIA NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails). NeMo Guardrails provides programmable safety controls via Colang configurations, supporting topic safety enforcement, jailbreak detection, fact-checking, and custom conversational rules.
 
+Choose NeMo Guardrails when you need programmable, conversation-level safety controls defined via Colang configurations. NeMo excels at topic safety enforcement, keeping agents on-task, and applying custom conversational rules beyond simple content classification. It can also provide alternative safe responses when content is blocked. For simpler content-level moderation, consider [Azure Content Safety](/providers/guard/azuresafety) or [LLM Guard](/providers/guard/llmguard).
+
 ## Installation
 
 ```bash

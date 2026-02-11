@@ -1,0 +1,74 @@
+---
+interface Props {
+  // no props, children are step items
+}
+---
+
+<div class="steps-container">
+  <slot />
+</div>
+
+<style>
+  @layer starlight.components {
+    .steps-container {
+      counter-reset: step-counter;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      padding-left: 3.5rem;
+      margin: 1.5rem 0;
+    }
+
+    .steps-container > :global(*) {
+      counter-increment: step-counter;
+      position: relative;
+      padding-bottom: 1.5rem;
+      margin-top: 0 !important;
+    }
+
+    /* Step number circle */
+    .steps-container > :global(*)::before {
+      content: counter(step-counter);
+      position: absolute;
+      left: -3.5rem;
+      top: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--color-primary-gradient);
+      color: #fff;
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      line-height: 1;
+    }
+
+    /* Vertical connecting line */
+    .steps-container > :global(*)::after {
+      content: "";
+      position: absolute;
+      left: calc(-3.5rem + 0.9375rem);
+      top: 2rem;
+      bottom: 0;
+      width: 2px;
+      background: var(--sl-color-gray-6);
+    }
+
+    /* Hide line on last child */
+    .steps-container > :global(*:last-child)::after {
+      display: none;
+    }
+
+    .steps-container > :global(*:last-child) {
+      padding-bottom: 0;
+    }
+
+    :root[data-theme="light"] .steps-container > :global(*)::after {
+      background: var(--sl-color-gray-5);
+    }
+  }
+</style>

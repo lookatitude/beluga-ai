@@ -3,7 +3,7 @@ title: Cloning Voices with ElevenLabs
 description: Configure ElevenLabs for high-fidelity voice synthesis with cloned voices, stability tuning, and streaming TTS.
 ---
 
-ElevenLabs provides high-fidelity voice synthesis with support for cloned voices, fine-grained voice settings, and streaming audio generation. This tutorial demonstrates how to configure the ElevenLabs TTS provider, adjust voice characteristics, and implement streaming synthesis for low-latency audio output.
+ElevenLabs provides high-fidelity voice synthesis with support for cloned voices, fine-grained voice settings, and streaming audio generation. Voice cloning creates a synthetic voice that closely matches a real person's voice characteristics, which is valuable for brand consistency, personalization, and accessibility applications. This tutorial demonstrates how to configure the ElevenLabs TTS provider, adjust voice characteristics for cloned voice fidelity, and implement streaming synthesis for low-latency audio output.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A text-to-speech pipeline using ElevenLabs that generates speech with a cloned o
 
 ## Step 1: Configure the ElevenLabs Provider
 
-Create a TTS provider using the registry with your Voice ID and model selection.
+Create a TTS provider using the registry with your Voice ID and model selection. The blank import triggers the ElevenLabs provider's `init()` function, which registers its factory with the TTS registry. The `WithVoice` option takes the Voice ID from ElevenLabs -- this is not a voice name but a unique identifier that maps to a specific voice profile, including cloned voices you have created in the Voice Lab.
 
 ```go
 package main
@@ -46,11 +46,11 @@ func main() {
 }
 ```
 
-The `eleven_multilingual_v2` model provides high-quality multilingual synthesis. For English-only applications, `eleven_monolingual_v1` offers slightly lower latency.
+The `eleven_multilingual_v2` model provides high-quality multilingual synthesis with support for 29 languages. For English-only applications, `eleven_monolingual_v1` offers slightly lower latency because it does not need to resolve language ambiguity in the input text.
 
 ## Step 2: Voice Settings for Clone Fidelity
 
-ElevenLabs exposes stability and similarity controls that determine how closely the generated speech matches the original voice profile. Pass these via provider-specific configuration.
+ElevenLabs exposes stability and similarity controls that determine how closely the generated speech matches the original voice profile. These settings are critical for cloned voices because they control the balance between natural variation (which makes speech sound more human) and fidelity to the original recording (which makes it sound more like the target speaker). Pass these via provider-specific configuration.
 
 ```go
 	provider, err := tts.NewProvider(ctx, "elevenlabs", &tts.Config{
@@ -72,14 +72,14 @@ ElevenLabs exposes stability and similarity controls that determine how closely 
 
 | Setting           | Range     | Effect                                      |
 |-------------------|-----------|----------------------------------------------|
-| `stability`       | 0.0 - 1.0 | Lower values add natural variation; higher values produce consistent output |
-| `similarity_boost`| 0.0 - 1.0 | How closely the output matches the original voice sample |
-| `style`           | 0.0 - 1.0 | Exaggeration of the voice's style characteristics |
-| `use_speaker_boost` | bool    | Enhances clarity, recommended for cloned voices |
+| `stability`       | 0.0 - 1.0 | Lower values add natural variation; higher values produce consistent output. For conversational agents, 0.3-0.6 sounds more natural. For narration, 0.7-0.9 sounds more professional. |
+| `similarity_boost`| 0.0 - 1.0 | How closely the output matches the original voice sample. Higher values are essential for cloned voices where speaker identity matters. |
+| `style`           | 0.0 - 1.0 | Exaggeration of the voice's style characteristics. Use sparingly -- values above 0.5 can sound unnatural. |
+| `use_speaker_boost` | bool    | Enhances clarity, recommended for cloned voices where the training data may have imperfect recording quality. |
 
 ## Step 3: Generate Full Audio
 
-For non-streaming use cases, generate the complete audio buffer at once.
+For non-streaming use cases (offline generation, batch processing, pre-recorded messages), generate the complete audio buffer at once. This approach is simpler but introduces latency equal to the full synthesis time, making it unsuitable for real-time voice agents.
 
 ```go
 	audio, err := provider.GenerateSpeech(ctx, "Welcome to the future of voice agents.")
@@ -96,7 +96,7 @@ For non-streaming use cases, generate the complete audio buffer at once.
 
 ## Step 4: Streaming Synthesis
 
-For voice applications where time-to-first-byte matters, use streaming synthesis. Audio chunks arrive as they are generated, allowing playback to begin before the full response is ready.
+For voice applications where time-to-first-byte matters, use streaming synthesis. Audio chunks arrive as they are generated, allowing playback to begin before the full response is ready. This is the preferred approach for real-time voice agents because it reduces perceived latency from seconds to hundreds of milliseconds -- the user hears the beginning of the response while the rest is still being synthesized.
 
 ```go
 	streamProvider, err := tts.NewProvider(ctx, "elevenlabs", tts.DefaultConfig(),
@@ -128,7 +128,7 @@ For voice applications where time-to-first-byte matters, use streaming synthesis
 	}
 ```
 
-Streaming synthesis reduces perceived latency from seconds to hundreds of milliseconds, which is critical for interactive voice agents.
+Streaming synthesis reduces perceived latency from seconds to hundreds of milliseconds, which is critical for interactive voice agents where users expect near-immediate responses.
 
 ## Architecture
 

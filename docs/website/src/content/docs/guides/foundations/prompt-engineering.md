@@ -3,37 +3,39 @@ title: Prompt Management & Engineering
 description: Master prompt design, templating, versioning, and optimization for production AI systems.
 ---
 
-Prompts are the programming interface to language models. Well-engineered prompts produce consistent, high-quality responses. Beluga AI's prompt system provides templates, versioning, and cache optimization for production deployments.
+Prompts are the programming interface to language models. The difference between a mediocre AI feature and a reliable one often comes down to prompt design — how you structure instructions, provide examples, and order content for cache efficiency. Beluga AI's `prompt` package provides three tools for production prompt management: `Template` for parameterized prompt rendering, `PromptManager` for versioned template storage and retrieval, and `Builder` for assembling message sequences in cache-optimal order.
 
 ## What You'll Learn
 
 This guide covers:
 - Designing effective prompts and system messages
-- Using the PromptManager and template system
+- Using the `PromptManager` and template system
+- Building cache-optimized message sequences with `Builder`
 - Creating reusable persona libraries
 - Few-shot learning patterns
 - Prompt versioning and A/B testing
-- Cache optimization strategies
 
 ## When Prompt Engineering Matters
 
-Invest in prompt engineering when:
-- **Consistency is critical** across many requests
-- **Multiple agents** need to share prompts
-- **Non-technical teams** need to update AI behavior
-- **Testing variations** to optimize quality
-- **Minimizing costs** through prompt caching
+For simple, one-off interactions, inline string prompts work fine. Invest in the prompt management system when:
+- **Consistency is critical** — multiple agents or endpoints share the same prompt logic, and a change must propagate everywhere
+- **Non-technical teams** need to update AI behavior without modifying Go code
+- **Testing variations** — you want to A/B test prompt versions with metrics tracking
+- **Minimizing costs** — prompt caching can reduce token costs significantly, but requires careful content ordering
+- **Audit and compliance** — you need to track which prompt version produced each response
 
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/working-with-llms)
+- Complete [Working with LLMs](/guides/foundations/working-with-llms/)
 - Understand Go templates (`text/template`)
 - Familiarity with JSON and YAML
 
 ## The PromptManager
 
-Beluga AI's prompt system separates prompt logic from data through templates.
+The `PromptManager` interface separates prompt content from application code. Templates are stored in an external source (filesystem, database, or custom backend), loaded by name and version, and rendered with variables at runtime. This separation means prompt authors can iterate on wording without redeploying the application, and prompt changes are tracked independently of code changes.
+
+The `prompt/providers/file` package implements `PromptManager` for filesystem-backed templates, making it easy to version prompts alongside your code in git.
 
 ```go
 package main
@@ -43,32 +45,21 @@ import (
     "fmt"
     "log"
 
-    "github.com/lookatitude/beluga-ai/pkg/prompts"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/prompt"
+    "github.com/lookatitude/beluga-ai/prompt/providers/file"
 )
 
 func main() {
     ctx := context.Background()
 
-    // Create a prompt manager
-    manager, err := prompts.NewPromptManager(
-        prompts.WithConfig(prompts.DefaultConfig()),
-    )
+    // Load templates from a directory
+    manager, err := file.New("./prompts")
     if err != nil {
         log.Fatal(err)
     }
 
-    // Create a template
-    template, err := manager.CreateStringPrompt(
-        "greeting",
-        "Hello {{.Name}}! Welcome to {{.Service}}.",
-    )
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Format with variables
-    result, err := template.Format(ctx, map[string]interface{}{
+    // Render a template by name with variables
+    messages, err := manager.Render("greeting", map[string]any{
         "Name":    "Alice",
         "Service": "Beluga AI",
     })
@@ -76,23 +67,21 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println(result.ToString())
-    // Output: Hello Alice! Welcome to Beluga AI.
+    // messages is []schema.Message, ready to send to a ChatModel
+    fmt.Println(messages)
 }
 ```
 
-## Building Message Templates
+## Template Syntax
 
-Most LLMs expect structured conversations with system, user, and assistant messages.
+Templates use Go's `text/template` syntax, which provides conditionals, loops, and variable substitution. This is a deliberate choice over custom template languages — Go developers already know the syntax, and the standard library template engine is well-tested and performant.
 
 ```go
-// Create a chat template
-func CreateCustomerSupportTemplate() (*prompts.ChatPrompt, error) {
-    manager, _ := prompts.NewPromptManager()
+// Template file: prompts/customer_support.tmpl
+// Version: 1.0
 
-    return manager.CreateChatPrompt(
-        "customer_support",
-        prompts.WithSystemTemplate(`You are a customer support agent for {{.Company}}.
+// System message template with conditionals and loops
+systemTemplate := `You are a customer support agent for {{.Company}}.
 
 Guidelines:
 - Be polite and empathetic
@@ -100,41 +89,53 @@ Guidelines:
 - If unsure, escalate to human support
 - Keep responses under 3 paragraphs
 
-Company policies:
+{{if .Policies}}Company policies:
 {{range .Policies}}- {{.}}
-{{end}}`),
-        prompts.WithUserTemplate("Customer inquiry: {{.Question}}"),
-    )
-}
+{{end}}{{end}}`
+```
 
-func HandleSupportRequest(ctx context.Context, question string) ([]schema.Message, error) {
-    template, err := CreateCustomerSupportTemplate()
-    if err != nil {
-        return nil, err
-    }
+## Building Cache-Optimized Prompts with Builder
 
-    variables := map[string]interface{}{
-        "Company": "Beluga AI",
-        "Policies": []string{
-            "30-day refund policy",
-            "24/7 support availability",
-            "Data privacy guaranteed",
-        },
-        "Question": question,
-    }
+LLM providers cache prompt prefixes to avoid reprocessing repeated content. The `prompt.Builder` enforces a message ordering that maximizes cache hit rates by placing the most static content first and the most dynamic content last. This ordering can significantly reduce both latency and cost for high-volume applications.
 
-    messages, err := template.Format(ctx, variables)
-    if err != nil {
-        return nil, err
-    }
+The builder organizes content into six ordered slots:
 
-    return messages, nil
-}
+1. **System prompt** — most static, rarely changes across requests
+2. **Tool definitions** — semi-static, change only when tools are added or removed
+3. **Static context** — reference documents, retrieved knowledge, deployment-specific content
+4. **Cache breakpoint** — explicit marker where the cached prefix ends
+5. **Dynamic context** — conversation history, session-specific messages
+6. **User input** — always changes, placed last
+
+This ordering is not arbitrary. Each slot is ordered by decreasing stability: the system prompt is identical across all requests, tool definitions change only on code deployment, static context changes per deployment or retrieval cycle, and user input is unique per request. By placing stable content first, the LLM provider can cache and reuse the maximum prefix length.
+
+```go
+import (
+    "github.com/lookatitude/beluga-ai/prompt"
+    "github.com/lookatitude/beluga-ai/schema"
+)
+
+msgs := prompt.NewBuilder(
+    prompt.WithSystemPrompt("You are an expert Go developer."),
+    prompt.WithToolDefinitions(tools),
+    prompt.WithStaticContext([]string{
+        "Go style guide: use gofmt, prefer short variable names...",
+        "Project conventions: all errors must be wrapped with fmt.Errorf...",
+    }),
+    prompt.WithCacheBreakpoint(),
+    prompt.WithDynamicContext(conversationHistory),
+    prompt.WithUserInput(schema.NewHumanMessage("Review this function for bugs.")),
+).Build()
+
+// msgs is []schema.Message in cache-optimal order
+resp, err := model.Generate(ctx, msgs)
 ```
 
 ## Creating Reusable Personas
 
-Personas define consistent agent behavior across your application.
+When multiple agents share similar behavioral patterns, define personas as reusable templates. This approach centralizes behavior definitions so changes propagate consistently. The Persona struct in the `agent` package uses a Role-Goal-Backstory framework, but for prompt-level personas you can use templates with variables for customization points.
+
+The example below defines a persona library as a map of templates. Each persona specifies not just the system prompt text but also recommended generation parameters (temperature, max tokens) that match the persona's purpose — a code reviewer needs low temperature for precision, while a creative writer needs high temperature for variety.
 
 ```go
 type Persona struct {
@@ -203,14 +204,13 @@ Always cite specific data points.`,
     },
 }
 
-// Get persona and create system message
-func GetPersonaMessage(personaName string, variables map[string]interface{}) (schema.Message, error) {
+// Render persona template with variables
+func GetPersonaMessage(personaName string, variables map[string]any) (schema.Message, error) {
     persona, ok := PersonaLibrary[personaName]
     if !ok {
         return nil, fmt.Errorf("unknown persona: %s", personaName)
     }
 
-    // Apply template
     tmpl, err := template.New(persona.Name).Parse(persona.SystemPrompt)
     if err != nil {
         return nil, err
@@ -223,37 +223,13 @@ func GetPersonaMessage(personaName string, variables map[string]interface{}) (sc
 
     return schema.NewSystemMessage(buf.String()), nil
 }
-
-// Usage
-func main() {
-    ctx := context.Background()
-
-    // Get code reviewer persona
-    sysMsg, err := GetPersonaMessage("code_reviewer", map[string]interface{}{
-        "Language": "Go",
-    })
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    messages := []schema.Message{
-        sysMsg,
-        schema.NewHumanMessage("Review this code: func add(a, b int) { return a + b }"),
-    }
-
-    // Generate with persona
-    config := llms.NewConfig(
-        llms.WithProvider("openai"),
-        llms.WithTemperature(PersonaLibrary["code_reviewer"].Temperature),
-        llms.WithMaxTokens(PersonaLibrary["code_reviewer"].MaxTokens),
-    )
-    // ... generate response
-}
 ```
 
 ## Few-Shot Learning
 
-Few-shot prompts teach models by example.
+Few-shot prompts teach the model by example rather than by instruction. This is effective when the desired behavior is hard to describe in words but easy to demonstrate through input-output pairs. The model learns the pattern from the examples and applies it to the new input. For classification tasks, 3-5 examples typically provide sufficient signal. For more complex generation tasks, you may need more examples or a combination of instructions and examples.
+
+In Beluga's message-based API, few-shot examples are naturally represented as alternating `HumanMessage` and `AIMessage` pairs in the conversation history, placed between the system prompt and the actual user input.
 
 ```go
 type FewShotExample struct {
@@ -281,8 +257,8 @@ func CreateFewShotPrompt(task string, examples []FewShotExample, newInput string
     return prompt.String()
 }
 
-// Example: Sentiment classification
-func ClassifySentimentFewShot(ctx context.Context, llm llms.LLM, text string) (string, error) {
+// Example: Sentiment classification with few-shot examples
+func ClassifySentimentFewShot(ctx context.Context, model llm.ChatModel, text string) (string, error) {
     examples := []FewShotExample{
         {
             Input:  "This product is amazing! Best purchase ever.",
@@ -308,21 +284,21 @@ func ClassifySentimentFewShot(ctx context.Context, llm llms.LLM, text string) (s
         schema.NewHumanMessage(prompt),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithTemperature(0.0),
-        llms.WithMaxTokens(10),
+    resp, err := model.Generate(ctx, messages,
+        llm.WithTemperature(0.0),
+        llm.WithMaxTokens(10),
     )
     if err != nil {
         return "", err
     }
 
-    return strings.TrimSpace(response.Content), nil
+    return strings.TrimSpace(resp.Text()), nil
 }
 ```
 
 ## Dynamic Prompt Building
 
-Build prompts dynamically based on context.
+When prompts need to be assembled from multiple sources at runtime — system instructions, constraints, context documents, few-shot examples, and user input — a builder pattern keeps the assembly logic organized and composable. Each `With` method adds content to a specific section, and `Build` assembles them into a properly ordered message sequence. This pattern is complementary to `prompt.Builder`: use `prompt.Builder` when you need cache-optimal slot ordering, and a custom builder when you need flexible content assembly.
 
 ```go
 type PromptBuilder struct {
@@ -441,7 +417,7 @@ func main() {
 
 ## Prompt Versioning
 
-Version prompts for tracking and A/B testing.
+Versioning prompts is essential for reproducibility and safe iteration. When a prompt change degrades output quality, you need to know which version caused the regression and roll back to the previous one. The pattern below shows a thread-safe prompt registry that stores multiple versions of each prompt and supports "latest" lookups. In production, back this with a database or the filesystem-based `PromptManager` rather than an in-memory map.
 
 ```go
 type VersionedPrompt struct {
@@ -535,29 +511,9 @@ func (pr *PromptRegistry) ListVersions(name string) []string {
     sort.Strings(result)
     return result
 }
-
-// Load prompts from YAML file
-func LoadPromptsFromYAML(filename string) (*PromptRegistry, error) {
-    data, err := os.ReadFile(filename)
-    if err != nil {
-        return nil, err
-    }
-
-    var prompts []VersionedPrompt
-    if err := yaml.Unmarshal(data, &prompts); err != nil {
-        return nil, err
-    }
-
-    registry := NewPromptRegistry()
-    for _, prompt := range prompts {
-        registry.Register(prompt)
-    }
-
-    return registry, nil
-}
 ```
 
-Example `prompts.yaml`:
+Prompts can be loaded from YAML files, making them easy to version in git alongside your code:
 
 ```yaml
 - id: code-review-v1
@@ -584,43 +540,9 @@ Example `prompts.yaml`:
   created_at: 2025-02-01T00:00:00Z
 ```
 
-## Prompt Caching Optimization
-
-Order prompts to maximize cache hits and reduce costs.
-
-```go
-// Optimal prompt structure for caching:
-// 1. Static system instructions (cached)
-// 2. Static examples (cached)
-// 3. Dynamic context (partially cached)
-// 4. User query (not cached)
-
-func BuildCacheOptimizedPrompt(staticContext, dynamicContext, userQuery string) []schema.Message {
-    return []schema.Message{
-        // Static content first - fully cacheable
-        schema.NewSystemMessage(`You are an expert assistant.
-
-Guidelines:
-- Be precise and helpful
-- Cite sources when possible
-- Format code in markdown blocks`),
-
-        // Few-shot examples - static and cacheable
-        schema.NewHumanMessage("What is Go's error handling pattern?"),
-        schema.NewAIMessage("Go uses explicit error returns: if err != nil { return err }"),
-
-        // Dynamic but slowly changing context - partially cacheable
-        schema.NewSystemMessage(fmt.Sprintf("Current context:\n%s", dynamicContext)),
-
-        // User query - never cached
-        schema.NewHumanMessage(userQuery),
-    }
-}
-```
-
 ## A/B Testing Prompts
 
-Compare prompt versions to optimize quality.
+Prompt A/B testing lets you compare two versions quantitatively before committing to a rollout. The pattern below randomly assigns each request to variant A or B, tracks metrics for each variant, and provides a simple scoring function to determine the winner. In production, integrate this with your observability system to collect metrics automatically via LLM hooks.
 
 ```go
 type ABTest struct {
@@ -671,21 +593,20 @@ func (test *ABTest) GetWinner() string {
 
 When engineering prompts for production:
 
-1. **Separate prompts from code** using templates and registries
-2. **Version all prompts** to track behavior changes
-3. **Test systematically** with diverse inputs
-4. **Monitor metrics** (latency, tokens, success rate)
-5. **Use static content first** for cache optimization
-6. **Validate inputs** before template substitution
-7. **Document prompt intent** and design decisions
-8. **Implement gradual rollouts** for prompt changes
-9. **Track prompt lineage** for debugging
-10. **Store prompts in version control** or a database
+1. **Separate prompts from code** — use `PromptManager` or YAML files so prompt changes do not require code deploys
+2. **Version all prompts** — track which version produced each response for debugging and compliance
+3. **Use `prompt.Builder` for cache optimization** — place static content first, dynamic content last
+4. **Test systematically** — use the `eval` package to measure prompt quality across diverse inputs
+5. **Monitor token usage** — track input and output tokens per prompt version to detect bloat
+6. **Validate template variables** — ensure all required variables are provided before rendering to avoid template errors at runtime
+7. **Document prompt intent** — describe what each prompt is designed to achieve and what assumptions it makes
+8. **Implement gradual rollouts** — use A/B testing to validate prompt changes before full deployment
+9. **Keep prompts focused** — one prompt per task; avoid multi-purpose prompts that are hard to optimize
+10. **Store prompts in version control** — treat prompts as code artifacts with the same review and deployment rigor
 
 ## Next Steps
 
 Now that you understand prompt engineering:
-- Learn about [Structured Output](/guides/structured-output) for typed responses
-- Explore [Multi-Agent Systems](/guides/multi-agent-systems) for persona coordination
-- Read [RAG Pipeline](/guides/rag-pipeline) for context-aware prompts
-- Check out [Prompt Recipes](/cookbook/prompt-recipes) for advanced patterns
+- Learn about [Structured Output](/guides/foundations/structured-output/) for typed responses
+- Explore [Working with LLMs](/guides/foundations/working-with-llms/) for model configuration
+- Read [Building Your First Agent](/guides/foundations/first-agent/) for using prompts with agents

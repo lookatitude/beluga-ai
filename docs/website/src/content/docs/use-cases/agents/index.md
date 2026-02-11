@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-Build intelligent agents with tool use, multi-agent handoffs, memory, and autonomous reasoning using Beluga AI's agent runtime.
+Build intelligent agents with tool use, multi-agent handoffs, memory, and autonomous reasoning using Beluga AI's agent runtime. These use cases demonstrate core agent patterns: ReAct for autonomous reasoning-and-action loops, handoffs-as-tools for multi-agent coordination, MemGPT 3-tier memory for persistent context, and the guard pipeline for safety. Each agent uses the registry pattern (`agent.New()`) and functional options for configuration.
 
 | Use Case | Description |
 |----------|-------------|

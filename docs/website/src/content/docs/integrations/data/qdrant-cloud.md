@@ -3,7 +3,9 @@ title: Qdrant Cloud
 description: Integrate Qdrant Cloud managed clusters with Beluga AI for high-performance vector storage and similarity search.
 ---
 
-Qdrant Cloud provides managed, scalable vector storage with high-performance similarity search. This guide covers configuring Beluga AI to use Qdrant Cloud clusters for vector storage, enabling production-ready RAG applications with managed infrastructure.
+Self-hosted vector databases require capacity planning, index tuning, and operational maintenance. Qdrant Cloud eliminates this by providing fully managed clusters with automatic scaling, backups, and monitoring. Qdrant is built specifically for vector search (unlike general-purpose databases with vector extensions), which means it provides advanced features like payload-based filtering, multi-vector support, and quantization out of the box.
+
+Choose Qdrant Cloud when you need a dedicated vector database with rich filtering capabilities, want managed infrastructure with no operational overhead, or need HNSW-based approximate nearest neighbor search that scales with your data.
 
 ## Overview
 

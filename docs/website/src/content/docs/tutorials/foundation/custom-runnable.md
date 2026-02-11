@@ -3,7 +3,9 @@ title: Building a Custom Runnable
 description: Implement the core Runnable interface to create reusable, composable components for the Beluga AI pipeline.
 ---
 
-The `core.Runnable` interface is the universal execution abstraction in Beluga AI. Every component that processes input — LLMs, tools, agents, pipelines — implements `Runnable`. By building custom runnables, you create first-class components that plug into composition, streaming, and observability without additional glue code.
+The `core.Runnable` interface is the universal execution abstraction in Beluga AI. Every component that processes input — LLMs, tools, agents, pipelines — implements `Runnable`. This uniformity exists because composition depends on a shared contract: `Pipe` can chain any two runnables, `Parallel` can fan out to any set of runnables, and middleware can wrap any runnable. Without a common interface, each composition pattern would need special-case handling for every component type.
+
+By building custom runnables, you create first-class components that plug into composition, streaming, and observability without additional glue code.
 
 ## What You Will Build
 
@@ -30,11 +32,11 @@ type Runnable interface {
 }
 ```
 
-Streaming in Beluga AI v2 uses `iter.Seq2[T, error]` (Go 1.23+), not channels. Consumers iterate with a standard `for range` loop.
+Beluga AI v2 uses `iter.Seq2[T, error]` (Go 1.23+) for streaming rather than channels. This design choice avoids the resource leak risks inherent in channel-based APIs (forgotten closes, goroutine leaks) and supports cooperative cancellation through the `yield` return value. Consumers iterate with a standard `for range` loop, which aligns with idiomatic Go patterns.
 
 ## Step 1: Define the Component
 
-Create a struct that holds any configuration or state your component requires.
+Create a struct that holds any configuration or state your component requires. Following Beluga AI's convention, the constructor uses the `New` prefix and accepts configuration as parameters.
 
 ```go
 package main
@@ -61,7 +63,7 @@ func NewKeywordSentiment(defaultSentiment string) *KeywordSentiment {
 
 ## Step 2: Implement Invoke
 
-`Invoke` handles synchronous, single-input execution. Validate the input type at the entry point and return clear errors for mismatches.
+`Invoke` handles synchronous, single-input execution. Since the `Runnable` interface uses `any` for input and output types (to enable heterogeneous composition), you must validate the input type at the entry point. Returning a descriptive error for type mismatches is important because these errors surface at composition time, where the developer needs to understand which component received unexpected input.
 
 ```go
 func (k *KeywordSentiment) Invoke(ctx context.Context, input any, opts ...core.Option) (any, error) {
@@ -84,7 +86,7 @@ func (k *KeywordSentiment) Invoke(ctx context.Context, input any, opts ...core.O
 
 ## Step 3: Implement Stream
 
-`Stream` returns an `iter.Seq2[any, error]` — a pull-based iterator. For a component that produces a single result, emit the result once and return. For components that produce multiple values (like an LLM generating tokens), yield each value in sequence.
+`Stream` returns an `iter.Seq2[any, error]` — a pull-based iterator. For a component that produces a single result, emit the result once and return. For components that produce multiple values (like an LLM generating tokens), yield each value in sequence. The common pattern for single-result components is to delegate to `Invoke` and yield the result, which keeps the synchronous and streaming paths consistent.
 
 ```go
 func (k *KeywordSentiment) Stream(ctx context.Context, input any, opts ...core.Option) iter.Seq2[any, error] {
@@ -129,7 +131,7 @@ func main() {
 
 ## Composition with Pipe
 
-The primary benefit of implementing `Runnable` is composition. Use `core.Pipe` to chain runnables sequentially:
+The primary benefit of implementing `Runnable` is composition. `core.Pipe` chains runnables sequentially, passing the output of one as the input to the next. This works because all runnables share the same `(any, error)` signature — the composition infrastructure does not need to know the concrete types flowing through the pipeline.
 
 ```go
 // Pipe the sentiment analyzer's output into another runnable
@@ -143,7 +145,7 @@ if err != nil {
 fmt.Println(result)
 ```
 
-Use `core.Parallel` to fan out to multiple runnables concurrently:
+Use `core.Parallel` to fan out to multiple runnables concurrently. Parallel execution is safe because each runnable receives its own copy of the input and produces independent output — there is no shared mutable state between branches.
 
 ```go
 // Run multiple analyzers in parallel
@@ -162,7 +164,7 @@ fmt.Println(results) // []any{"POSITIVE", "POSITIVE"}
 
 ## Stream Utilities
 
-Beluga AI provides utility functions for working with streams:
+Beluga AI provides utility functions for working with streams. These utilities compose with `iter.Seq2` iterators, enabling functional-style data processing without allocating intermediate collections.
 
 ```go
 // Collect all stream values into a slice

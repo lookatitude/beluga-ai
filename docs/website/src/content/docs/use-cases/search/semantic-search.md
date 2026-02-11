@@ -3,11 +3,13 @@ title: Semantic Search and Recommendations
 description: Build intelligent search and recommendation engines with vector embeddings, similarity search, and personalized recommendations.
 ---
 
-Traditional keyword-based search fails to understand user intent and semantic relationships. Users struggle to find relevant content when they don't know exact keywords, and recommendation systems based solely on metadata miss deeper content meaning. Beluga AI provides a complete semantic search and recommendation pipeline using vector embeddings for meaning-based retrieval at scale.
+Traditional keyword-based search fails to understand user intent and semantic relationships. A user searching for "affordable running shoes" will miss products described as "budget-friendly jogging footwear" because the terms do not overlap, even though the intent is identical. Similarly, recommendation systems based solely on purchase history and metadata (category, price range) miss deeper content relationships — they cannot understand that a customer who bought a hiking backpack might want trail-running shoes.
+
+Beluga AI provides a complete semantic search and recommendation pipeline using vector embeddings for meaning-based retrieval at scale. Vector embeddings map both queries and content into a shared semantic space where similarity is measured by meaning rather than term overlap. This approach handles synonyms, paraphrases, and conceptual relationships without explicit synonym dictionaries or ontology engineering.
 
 ## Solution Architecture
 
-Beluga AI's RAG pipeline provides everything needed for semantic search: embedders convert text to vectors, vector stores index embeddings for fast similarity search, and retrievers implement advanced strategies. The same infrastructure powers both search and personalized recommendations.
+Beluga AI's RAG pipeline provides everything needed for semantic search: embedders convert text to vectors, vector stores index embeddings for fast similarity search, and retrievers implement advanced strategies. The same infrastructure powers both search and personalized recommendations — the difference is only in what gets embedded (content for search, user profiles for recommendations) and how queries are constructed.
 
 ```mermaid
 graph TB

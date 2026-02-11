@@ -5,6 +5,8 @@ description: "Integration guide for running local models with Ollama and Beluga 
 
 The Ollama provider connects Beluga AI to locally-hosted models via [Ollama](https://ollama.ai). Ollama serves an OpenAI-compatible API on `localhost`, making it straightforward to run open-source models without any cloud dependency or API key.
 
+Choose Ollama for local development, offline environments, or when data privacy requires that no data leaves your machine. Ollama is also the fastest way to prototype with open-source models without setting up cloud accounts or managing API keys.
+
 ## Installation
 
 ```bash

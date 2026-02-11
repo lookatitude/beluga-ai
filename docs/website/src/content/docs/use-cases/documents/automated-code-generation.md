@@ -3,11 +3,13 @@ title: Automated Code Generation Pipeline
 description: Generate production-ready code from natural language descriptions using LLMs with pattern enforcement and automated testing.
 ---
 
-Development teams spend significant time writing boilerplate code, repetitive patterns, and standard implementations. Manual code generation leads to inconsistencies, errors, and reduced productivity. An automated code generation pipeline uses LLMs to generate production-ready code from descriptions, enforce coding patterns, and automatically generate tests, dramatically improving developer efficiency.
+Development teams spend 15-20% of their time writing boilerplate — repository implementations, factory methods, API handlers, data transfer objects. This code follows known patterns but still requires manual effort, and inconsistencies creep in as different developers interpret patterns differently. The result is a codebase where the same pattern is implemented three different ways across three teams, making maintenance harder and onboarding slower.
+
+An automated code generation pipeline addresses this by encoding patterns as prompt templates and using LLMs to generate implementations that conform to those patterns. Unlike simple code snippets or IDE templates, LLM-based generation adapts the pattern to specific requirements — a repository for users looks different from one for orders, even though both follow the same pattern.
 
 ## Solution Architecture
 
-Beluga AI provides LLM integration with structured output, prompt templates for pattern enforcement, and tool integration for code validation. The system analyzes requirements, selects appropriate patterns, generates code using LLMs, validates the output, and creates accompanying tests.
+Beluga AI provides LLM integration with structured output, the `prompt/` package for template management, and `iter.Seq2` streaming for real-time code generation feedback. The system selects the appropriate pattern, populates the prompt template with request-specific context, generates code using the LLM, validates the output with language-specific tooling, and generates accompanying tests.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -250,7 +252,7 @@ func (g *CodeGenerator) formatCode(ctx context.Context, code, language string) (
 
 ### Streaming Generation
 
-Stream code generation for better user experience:
+For interactive use cases (IDE integrations, developer portals), streaming provides immediate feedback as code is generated. The generator uses Beluga AI's `iter.Seq2[string, error]` pattern, yielding chunks as the LLM produces them rather than waiting for the full response:
 
 ```go
 import "iter"

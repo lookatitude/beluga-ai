@@ -5,6 +5,8 @@ description: "AssemblyAI STT provider for real-time and async speech-to-text tra
 
 AssemblyAI provides speech-to-text transcription with both asynchronous batch processing and real-time WebSocket streaming. The Beluga AI provider uses AssemblyAI's upload-and-poll workflow for batch transcription and the real-time WebSocket API for streaming, delivering word-level timing, speaker labels, and automatic punctuation.
 
+Choose AssemblyAI when you need both real-time streaming and high-quality async batch transcription from a single provider. Its upload-and-poll batch workflow is well-suited for pre-recorded audio processing, while WebSocket streaming handles live audio. For the lowest streaming latency, also evaluate [Deepgram](/providers/voice/deepgram).
+
 ## Installation
 
 ```go

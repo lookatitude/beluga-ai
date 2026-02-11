@@ -5,9 +5,11 @@ description: "Pluggable provider architecture: categories, discovery, and how to
 
 Beluga follows a pluggable provider architecture. Every extensible package (LLM, embedding, vector store, voice, etc.) uses the same registry pattern, making it straightforward to add new integrations. This document describes the provider categories, how to discover available providers, and how to add new ones.
 
+The provider system is designed around a core principle: application code should never depend directly on provider implementations. Instead, providers register themselves via `init()` and are consumed through abstract interfaces. This means swapping from OpenAI to Anthropic, or from pgvector to Pinecone, requires changing an import and a string — not rewriting application logic.
+
 ## Provider Categories
 
-Each category maps to a package with a well-defined interface. Providers register via `init()` and are discovered through the registry's `List()` function.
+Each category maps to a package with a well-defined interface. Providers register via `init()` and are discovered through the registry's `List()` function. The categories are organized by the capability they provide, and each has its own independent registry — this means importing an LLM provider does not pull in vector store or voice dependencies.
 
 ### LLM Providers
 **Package**: `llm/providers/`
@@ -106,7 +108,7 @@ Each category maps to a package with a well-defined interface. Providers registe
 
 ## How to Add a Provider
 
-Every provider follows the same pattern regardless of category. See the [Full Architecture](/architecture/architecture/) for detailed templates.
+Every provider follows the same pattern regardless of category. Whether you're adding an LLM, embedding model, vector store, voice transport, or workflow engine, the steps are identical: implement the interface, register via `init()`, map errors, and write tests. This uniformity is deliberate — it means that experience adding one type of provider directly transfers to any other category. See the [Full Architecture](/architecture/architecture/) for detailed templates.
 
 ### Step 1: Create the provider package
 
@@ -150,6 +152,8 @@ func init() {
 
 ### Step 4: Map errors to core.Error
 
+Error mapping is critical: it translates provider-specific error types into the framework's unified error model. This enables generic retry middleware to work across all providers — it checks `IsRetryable()` on `core.Error` without knowing which provider produced the error.
+
 ```go
 func (m *Model) mapError(op string, err error) error {
     code := core.ErrProviderDown
@@ -188,6 +192,8 @@ func TestGenerate(t *testing.T) {
 ---
 
 ## Discovering Available Providers
+
+The registry pattern supports runtime discovery through the `List()` function and filesystem discovery through the conventional directory structure. This is useful for building admin UIs, health dashboards, and configuration validation that needs to verify which providers are available in a given deployment.
 
 ### From code
 

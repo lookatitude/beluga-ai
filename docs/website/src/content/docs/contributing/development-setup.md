@@ -3,11 +3,11 @@ title: Development Setup
 description: Set up your local development environment for Beluga AI
 ---
 
-This guide walks you through setting up a local development environment for contributing to Beluga AI.
+This guide walks you through setting up a local development environment for contributing to Beluga AI. The setup is straightforward — Beluga is a standard Go module with no custom build tools beyond the standard Go toolchain and an optional Makefile for common tasks.
 
 ## Prerequisites
 
-Before you begin, make sure you have the following installed:
+Before you begin, make sure you have the following installed. Go 1.23+ is required because Beluga uses `iter.Seq2` (range-over-func iterators) for all streaming APIs — earlier versions will fail to compile:
 
 | Tool | Version | Required | Notes |
 |---|---|---|---|
@@ -53,7 +53,7 @@ go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 ## Building
 
-Build the entire project to verify your setup:
+Build the entire project to verify your setup. A successful build confirms that your Go version is compatible and all dependencies resolve correctly:
 
 ```bash
 # Using Make (recommended)
@@ -82,7 +82,7 @@ See the [Testing Guide](/contributing/testing/) for more details on writing and 
 make lint
 ```
 
-The linter checks are the same ones that run in CI, so fix any issues before opening a PR.
+The linter checks are the same ones that run in CI, so fix any issues before opening a PR. Running the linter locally avoids wasted CI cycles and gives you faster feedback.
 
 ## IDE Setup
 
@@ -114,7 +114,7 @@ The linter checks are the same ones that run in CI, so fix any issues before ope
 
 ## Project Structure
 
-Beluga AI follows a flat package layout with no `pkg/` prefix. Here's a high-level overview:
+Beluga AI follows a flat package layout with no `pkg/` prefix. This keeps import paths short (`github.com/lookatitude/beluga-ai/llm` rather than `github.com/lookatitude/beluga-ai/pkg/llm`) and aligns with Go conventions for library modules. Here's a high-level overview:
 
 ```
 beluga-ai/

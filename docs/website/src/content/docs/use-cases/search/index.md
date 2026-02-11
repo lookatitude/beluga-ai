@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-Build production search and retrieval systems with hybrid search, vector embeddings, and semantic retrieval using Beluga AI's RAG pipeline.
+Build production search and retrieval systems with hybrid search, vector embeddings, and semantic retrieval using Beluga AI's RAG pipeline. These use cases demonstrate Beluga AI's default hybrid search approach (Vector + BM25 + RRF fusion), advanced retrieval strategies (CRAG, HyDE, multi-strategy), and the composable RAG pipeline with pluggable loaders, splitters, embedders, and vector stores.
 
 | Use Case | Description |
 |----------|-------------|

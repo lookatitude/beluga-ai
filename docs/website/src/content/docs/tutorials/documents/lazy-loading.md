@@ -3,7 +3,7 @@ title: Lazy-Loading Large Document Collections
 description: Process massive document collections with constant memory usage using the RAG loader pipeline and streaming patterns.
 ---
 
-Loading 10,000 documents into a single Go slice is manageable. Loading a million documents at once will exhaust memory. The `rag/loader` package supports pipeline-based document loading with transformers that process documents incrementally, keeping memory usage flat regardless of collection size.
+Loading 10,000 documents into a single Go slice is manageable. Loading a million documents at once will exhaust memory. The `rag/loader` package supports pipeline-based document loading with transformers that process documents incrementally, keeping memory usage flat regardless of collection size. This pipeline approach follows the same composition pattern used throughout Beluga AI -- small, focused components (loaders, transformers) are chained together, and each component processes one document at a time rather than buffering the entire collection.
 
 ## What You Will Build
 
@@ -18,7 +18,7 @@ A document ingestion pipeline that loads files from a directory, applies metadat
 
 ### DocumentLoader Interface
 
-Every loader implements the `DocumentLoader` interface:
+Every loader implements the `DocumentLoader` interface. This is the same interface-first pattern used across Beluga AI: define a minimal contract, then provide implementations via the registry pattern (`loader.New("text", ...)`, `loader.New("json", ...)`, etc.). Custom loaders for proprietary formats implement the same interface and integrate into the same pipeline.
 
 ```go
 import "github.com/lookatitude/beluga-ai/rag/loader"
@@ -30,7 +30,7 @@ type DocumentLoader interface {
 
 ### LoaderPipeline
 
-The `LoaderPipeline` chains loaders and transformers. Each transformer processes documents incrementally:
+The `LoaderPipeline` chains loaders and transformers. Each transformer processes documents incrementally, enabling enrichment (adding metadata), filtering (removing unwanted documents), or transformation (modifying content) without requiring a second pass over the data. The pipeline is configured with functional options (`WithLoader`, `WithTransformer`), following Beluga AI's standard configuration pattern.
 
 ```go
 pipeline := loader.NewPipeline(
@@ -41,7 +41,7 @@ pipeline := loader.NewPipeline(
 
 ### Document Structure
 
-Documents carry content, metadata, and optional embeddings:
+Documents carry content, metadata, and optional embeddings. The `Metadata` map uses `map[string]any` for flexibility -- different file types contribute different metadata (file size, author, page count), and downstream components (splitters, retrievers) can use these fields for filtering and ranking.
 
 ```go
 import "github.com/lookatitude/beluga-ai/schema"
@@ -55,7 +55,7 @@ doc := schema.Document{
 
 ## Step 1: Basic Document Loading
 
-Load documents using a registered loader:
+Load documents using a registered loader. The `loader.New` call uses the registry pattern to create a loader by name, enabling configuration-driven loader selection without hardcoding specific implementations.
 
 ```go
 package main
@@ -95,7 +95,7 @@ func main() {
 
 ## Step 2: Build a Loading Pipeline
 
-Chain loaders with transformers for metadata enrichment:
+Chain loaders with transformers for metadata enrichment. The `TransformerFunc` adapter converts a plain function into a transformer, following Go's standard pattern of using function types as interface adapters (similar to `http.HandlerFunc`). The enricher adds computed metadata (ingestion timestamp, word count) to each document without modifying the original content, providing useful fields for downstream filtering and analytics.
 
 ```go
 func buildPipeline() *loader.LoaderPipeline {
@@ -125,7 +125,7 @@ func buildPipeline() *loader.LoaderPipeline {
 
 ## Step 3: Process Files in a Directory
 
-Iterate over files in a directory and load each through the pipeline:
+Iterate over files in a directory and load each through the pipeline. The `filepath.WalkDir` function provides recursive directory traversal, and the extension filter ensures only supported file types are processed. Each file is loaded independently, which means a failure on one file does not prevent the rest from being processed -- though in this example, errors are propagated immediately. For production use, consider logging errors and continuing with the next file.
 
 ```go
 import (
@@ -172,7 +172,7 @@ func loadDirectory(ctx context.Context, pipeline *loader.LoaderPipeline, dirPath
 
 ## Step 4: Parallel Processing with Worker Pool
 
-Speed up loading by processing files concurrently with a bounded worker pool:
+Speed up loading by processing files concurrently with a bounded worker pool. The worker count controls the degree of parallelism -- too few workers underutilize available I/O bandwidth, while too many can overwhelm the file system or exhaust file descriptor limits. The channel-based work distribution ensures each file is processed exactly once, and the `sync.Mutex` protects the shared `allDocs` slice from concurrent append races.
 
 ```go
 import "sync"
@@ -232,7 +232,7 @@ func loadDirectoryParallel(ctx context.Context, dirPath string, workers int) ([]
 
 ## Step 5: Rate-Limited Embedding
 
-When indexing documents to a vector store, respect embedding API rate limits:
+When indexing documents to a vector store, respect embedding API rate limits. The `rate.NewLimiter` from `golang.org/x/time/rate` provides a token bucket rate limiter that blocks until a token is available. This is essential when calling external embedding APIs (OpenAI, Cohere) that enforce request-per-second limits -- exceeding the rate results in 429 errors and wasted retries. The limiter is configured once and shared across all embedding calls, ensuring the aggregate rate stays within bounds.
 
 ```go
 import "golang.org/x/time/rate"
@@ -254,7 +254,7 @@ func indexWithRateLimit(ctx context.Context, docs []schema.Document, embedFn fun
 
 ## Step 6: Checkpointing for Crash Recovery
 
-For large ingestion jobs, track processed files to resume after crashes:
+For large ingestion jobs, track processed files to resume after crashes. The `Checkpoint` struct maintains a set of processed file paths protected by a mutex. In production, you would persist this set to disk or a database so that a process restart can skip already-processed files rather than re-ingesting the entire collection. This is particularly important for million-document ingestion jobs that may take hours to complete.
 
 ```go
 type Checkpoint struct {

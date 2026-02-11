@@ -3,7 +3,9 @@ title: RAG Strategies
 description: A practical comparison of RAG retrieval strategies to help you select the best approach for your application.
 ---
 
-Choosing the right retrieval strategy is one of the most impactful decisions in a RAG (Retrieval-Augmented Generation) system. The wrong strategy leads to irrelevant documents, wrong answers, and frustrated users. This guide compares different RAG strategies available in Beluga AI, explains when each excels, and provides implementation examples to help you make informed decisions.
+Choosing the right retrieval strategy is one of the most impactful decisions in a RAG (Retrieval-Augmented Generation) system. The retrieval step determines what context the LLM sees — if retrieval returns irrelevant documents, the LLM generates answers grounded in wrong information, which is worse than no answer at all. The wrong strategy leads to irrelevant documents, wrong answers, and frustrated users.
+
+This guide compares different RAG strategies available in Beluga AI, explains when each excels, and provides implementation examples to help you make informed decisions. Beluga AI defaults to hybrid search (Vector + BM25 + RRF fusion) because it provides the best general-purpose accuracy, but specific use cases benefit from more specialized strategies like CRAG (self-correcting retrieval) or HyDE (hypothetical document generation).
 
 ## Why Strategy Matters
 

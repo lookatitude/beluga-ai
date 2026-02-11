@@ -3,7 +3,7 @@ title: Preemptive Generation Strategies
 description: Reduce perceived latency by generating agent replies from interim STT transcripts before the user finishes speaking.
 ---
 
-Preemptive generation uses interim (partial) STT transcripts to begin generating a response before the user finishes speaking. When the final transcript arrives, the preemptive response can be used immediately if it matches the user's intent, reducing perceived latency by hundreds of milliseconds.
+Preemptive generation uses interim (partial) STT transcripts to begin generating a response before the user finishes speaking. The core idea is that most of a sentence's meaning is established in the first few words -- "What is the weather in" almost certainly ends with a location -- so starting generation early produces a usable response by the time the final transcript arrives. When the final transcript confirms the interim, the preemptive response can be used immediately, reducing perceived latency by hundreds of milliseconds.
 
 ## What You Will Build
 
@@ -17,14 +17,14 @@ A voice session that processes interim STT results to speculatively generate res
 
 ## The Latency Problem
 
-In a standard pipeline, the agent waits for the final transcript before generating a response:
+In a standard pipeline, the agent waits for the final transcript before generating a response. This means the LLM processing and TTS synthesis happen sequentially after the user finishes speaking, creating a noticeable gap:
 
 ```
 User speaks ──▶ Silence detected ──▶ Final transcript ──▶ LLM ──▶ TTS ──▶ Audio
                                      ▲ latency starts here
 ```
 
-With preemptive generation, the agent starts the LLM call during the user's speech:
+With preemptive generation, the agent starts the LLM call during the user's speech, overlapping generation with the remaining speech. If the interim and final transcripts are sufficiently similar, the preemptive response is ready before the user finishes:
 
 ```
 User speaks ──▶ Interim transcript ──▶ LLM (preemptive) ──▶ Buffer
@@ -37,7 +37,7 @@ User speaks ──▶ Interim transcript ──▶ LLM (preemptive) ──▶ Bu
 
 ## Step 1: Session with Streaming STT
 
-Create a voice session with a streaming-capable STT provider.
+Create a voice session with a streaming-capable STT provider. Streaming STT is essential for preemptive generation because batch STT only produces a single final transcript after the entire audio is processed, providing no interim results to act on.
 
 ```go
 package main
@@ -86,11 +86,11 @@ func main() {
 
 ## Step 2: Preemptive Generation Strategies
 
-There are three strategies for handling preemptive responses:
+There are three strategies for handling preemptive responses. The choice depends on your tolerance for incorrect responses versus your latency requirements:
 
 ### Use-If-Similar
 
-Generate from the interim transcript. When the final arrives, compare the two. If they are sufficiently similar (high word overlap), use the preemptive response.
+Generate from the interim transcript. When the final arrives, compare the two. If they are sufficiently similar (high word overlap), use the preemptive response. This is the safest strategy that still provides latency benefits.
 
 ```go
 // PreemptiveStrategy determines how to handle preemptive responses.
@@ -119,7 +119,7 @@ const (
 
 ## Step 3: Implement the Preemptive Handler
 
-Track interim transcripts, preemptive responses, and apply the strategy when the final transcript arrives.
+The handler tracks interim transcripts, preemptive responses, and applies the chosen strategy when the final transcript arrives. The `isSimilar` method uses word overlap as a simple but effective similarity metric -- if 80% or more of the words match, the transcripts are considered equivalent for generation purposes.
 
 ```go
 import "strings"
@@ -215,7 +215,7 @@ func (h *PreemptiveHandler) reset() {
 
 ## Step 4: Wire into the Voice Pipeline
 
-Integrate the preemptive handler with your STT streaming session.
+Integrate the preemptive handler with your STT streaming session. The handler receives both interim and final transcript results and decides which response to use. The `IsFinal` flag from the STT provider distinguishes between partial results (which trigger preemptive generation) and confirmed results (which trigger the strategy comparison).
 
 ```go
 	handler := NewPreemptiveHandler(UseIfSimilar, 0.8, func(ctx context.Context, transcript string) (string, error) {

@@ -3,11 +3,15 @@ title: Tool Recipes
 description: Practical recipes for building, composing, and integrating tools.
 ---
 
+Beluga AI's tool system is designed around a small `Tool` interface with three composability mechanisms: the `FuncTool` constructor for wrapping Go functions, middleware (`func(Tool) Tool`) for cross-cutting concerns, and hooks for lightweight lifecycle callbacks. These recipes cover the most common tool patterns you will encounter in production, from wrapping business logic to connecting to remote MCP servers.
+
 ## Wrap Any Go Function as a Tool
 
 **Problem:** You have an existing Go function and want to expose it to the LLM as a callable tool, complete with auto-generated JSON Schema.
 
 **Solution:** Use `tool.NewFuncTool` with a typed input struct. Tags on the struct fields generate the schema automatically.
+
+The `FuncTool` constructor bridges the gap between typed Go code and the untyped JSON world of LLM tool calling. When you define a struct with `json`, `description`, and `required` tags, Beluga AI generates a JSON Schema at construction time that the LLM uses to understand what arguments the tool accepts. This approach is safer than defining schemas manually because the schema and the handler always stay in sync -- if you add a field to the struct, it automatically appears in the schema.
 
 ```go
 package main
@@ -34,7 +38,7 @@ func main() {
 	// NewFuncTool generates JSON Schema from WeatherInput at construction time.
 	weather := tool.NewFuncTool("get_weather", "Get current weather and forecast for a city",
 		func(ctx context.Context, input WeatherInput) (*tool.Result, error) {
-			// Your business logic here — call a weather API, database, etc.
+			// Your business logic here -- call a weather API, database, etc.
 			forecast := fmt.Sprintf("Weather in %s: 22°%s, sunny, %d-day forecast",
 				input.City,
 				map[string]string{"celsius": "C", "fahrenheit": "F"}[input.Units],
@@ -69,10 +73,10 @@ func main() {
 ```
 
 **Supported struct tags:**
-- `json:"name"` — Field name in the schema
-- `description:"..."` — Field description for the LLM
-- `required:"true"` — Marks the field as required
-- `default:"value"` — Default value hint
+- `json:"name"` -- Field name in the schema
+- `description:"..."` -- Field description for the LLM (helps the model understand when and how to use each parameter)
+- `required:"true"` -- Marks the field as required (the LLM must provide it)
+- `default:"value"` -- Default value hint (used when the LLM omits the field)
 
 ---
 
@@ -81,6 +85,8 @@ func main() {
 **Problem:** You want to use tools hosted on remote MCP (Model Context Protocol) servers without implementing them locally.
 
 **Solution:** Use `tool.NewMCPClient` to connect to an MCP server and `tool.FromMCP` to import its tools.
+
+MCP is a standardized protocol for exposing tools to LLM-powered applications. Instead of implementing every tool locally, you can connect to MCP servers that host tools as services. This is particularly useful for tools that require specialized infrastructure (databases, search engines, APIs) or when tools are maintained by separate teams. The MCP client handles connection management, tool discovery, argument serialization, and result parsing transparently.
 
 ```go
 package main
@@ -157,6 +163,8 @@ if err != nil {
 **Problem:** You need to add cross-cutting concerns (logging, authorization, rate limiting) to tool execution without modifying each tool.
 
 **Solution:** Use `tool.Middleware` and `tool.ApplyMiddleware` to wrap tools.
+
+Middleware follows Beluga AI's `func(T) T` pattern: a function that takes a `Tool` and returns a new `Tool` with added behavior. This is the same approach used for LLM middleware and agent middleware throughout the framework, creating a consistent extension model. Middleware is applied right-to-left by `ApplyMiddleware`, so the first middleware in the list becomes the outermost wrapper. In the example below, auth checks run first (outermost), then logging wraps the actual execution (innermost).
 
 ```go
 package main
@@ -265,6 +273,8 @@ func main() {
 
 **Solution:** Use `tool.WithHooks` for lightweight lifecycle callbacks.
 
+Hooks and middleware serve different purposes. Middleware wraps the entire tool interface and is suited for structural changes (authorization, caching, protocol adaptation). Hooks are lightweight callbacks on specific lifecycle events and are suited for cross-cutting concerns that don't change the tool's behavior (logging, metrics, validation). You can compose multiple hook sets with `tool.ComposeHooks`, and nil hook fields are simply skipped at zero cost.
+
 ```go
 package main
 
@@ -334,6 +344,8 @@ func main() {
 **Problem:** Available tools should change based on the conversation state, user permissions, or agent context. You can't define all tools at agent creation time.
 
 **Solution:** Use a dynamic registry that resolves tools at execution time.
+
+Static tool sets work for simple agents, but production systems often need tools that vary per request. An admin user might have access to destructive operations that a regular user should never see. A conversation about billing might need payment tools that aren't relevant during technical support. A dynamic registry backed by `sync.RWMutex` allows safe concurrent access from multiple goroutines while tools are added or removed at runtime.
 
 ```go
 package main
@@ -439,6 +451,8 @@ func main() {
 
 **Solution:** Use `tool.StaticMCPRegistry` for fixed server lists, or implement `tool.MCPRegistry` for dynamic discovery.
 
+When your application connects to multiple MCP servers, you need a way to discover which server provides which tool. The `StaticMCPRegistry` holds a fixed list of servers and supports search by name. For more dynamic environments (service meshes, Kubernetes), implement the `MCPRegistry` interface with custom discovery logic.
+
 ```go
 package main
 
@@ -501,6 +515,8 @@ func main() {
 
 **Solution:** Use `tool.ErrorResult` for domain errors and Go errors for infrastructure failures.
 
+This distinction matters because the two error types require different handling. Infrastructure errors (network timeouts, connection refused) are transient and should be retried. Domain errors (resource not found, permission denied) are permanent and the LLM should know about them so it can adjust its approach. Returning infrastructure errors as Go `error` values triggers retry middleware and error hooks. Returning domain errors via `tool.ErrorResult` produces a `ToolMessage` with `IsError: true` that the LLM sees as a tool result and can reason about.
+
 ```go
 package main
 
@@ -520,7 +536,7 @@ func main() {
 
 	deleteTool := tool.NewFuncTool("delete_resource", "Delete a resource by ID",
 		func(ctx context.Context, input DeleteInput) (*tool.Result, error) {
-			// Infrastructure errors — return Go error.
+			// Infrastructure errors -- return Go error.
 			// These trigger retry logic and error hooks.
 			resp, err := http.Get("https://api.example.com/resources/" + input.ID)
 			if err != nil {
@@ -528,7 +544,7 @@ func main() {
 			}
 			defer resp.Body.Close()
 
-			// Domain errors — return ErrorResult.
+			// Domain errors -- return ErrorResult.
 			// The LLM sees this as a tool result and can react accordingly.
 			switch resp.StatusCode {
 			case http.StatusNotFound:
@@ -547,13 +563,13 @@ func main() {
 		"id": "res-123",
 	})
 	if err != nil {
-		// Infrastructure error — log and possibly retry.
+		// Infrastructure error -- log and possibly retry.
 		slog.Error("tool infrastructure error", "error", err)
 		return
 	}
 
 	if result.IsError {
-		// Domain error — the LLM will see this and adapt.
+		// Domain error -- the LLM will see this and adapt.
 		fmt.Println("Tool reported an error (LLM will see this):")
 	} else {
 		fmt.Println("Tool succeeded:")
@@ -569,6 +585,8 @@ func main() {
 **Problem:** You want a centralized place to register, discover, and look up tools by name.
 
 **Solution:** Use `tool.Registry`, which provides thread-safe tool management.
+
+The registry pattern (`Register()` + `New()` + `List()`) is used throughout Beluga AI for all extensible types: LLM providers, memory stores, vector stores, and tools. The tool registry follows this same convention, providing a consistent API for tool management. Thread safety via `sync.RWMutex` allows registering tools during initialization (typically in `init()` functions) while concurrent agents look up tools at execution time.
 
 ```go
 package main
@@ -604,7 +622,7 @@ func main() {
 
 	// Look up a specific tool.
 	if t, ok := reg.Get("calculate"); ok {
-		fmt.Printf("Found: %s — %s\n", t.Name(), t.Description())
+		fmt.Printf("Found: %s -- %s\n", t.Name(), t.Description())
 	}
 
 	// List all registered tools.

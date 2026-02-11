@@ -3,7 +3,11 @@ title: Barge-In Detection for Voice Agents
 description: Enable users to interrupt voice agents mid-speech with low-latency barge-in detection using VAD and turn detection.
 ---
 
-Contact center voice agents that play out entire pre-generated responses without allowing interruption frustrate callers and fragment conversations. Barge-in detection lets the system recognize when a user starts speaking during agent playback, immediately stopping TTS output and switching to listening mode. This use case combines Beluga AI's VAD for speech onset detection with turn detection for context-aware barge-in decisions.
+Contact center voice agents that play out entire pre-generated responses without allowing interruption frustrate callers and fragment conversations. Users expect the same turn-taking dynamics they experience in human dialogue: the ability to interrupt when they already know the answer, correct a misunderstanding mid-sentence, or signal urgency. Without barge-in support, agents force callers to wait through irrelevant speech, increasing handle times and driving down satisfaction scores.
+
+Barge-in detection lets the system recognize when a user starts speaking during agent playback, immediately stopping TTS output and switching to listening mode. The core challenge is distinguishing genuine interruptions from false triggers caused by background noise, acoustic echo from the agent's own speaker output, or brief vocalizations like "uh-huh" that don't represent a turn change.
+
+This use case combines Beluga AI's VAD for speech onset detection with turn detection for context-aware barge-in decisions. Separating these two concerns — raw speech detection and turn-level intent — allows each component to be tuned independently, avoiding the fragile coupling that occurs when a single model tries to handle both.
 
 ## Solution Architecture
 
@@ -22,9 +26,13 @@ graph TB
 
 During agent playback, VAD processes microphone input. When speech onset is detected, turn-detection logic distinguishes between a genuine barge-in (user interrupting) and end-of-turn behavior, avoiding false triggers from background noise or echo.
 
+The architecture separates VAD from turn-level decision-making because each requires different tuning tradeoffs. VAD operates on raw audio frames with low latency requirements (under 30ms per frame), optimizing for recall — it should catch every potential speech onset. Turn detection then applies contextual heuristics to filter false positives, optimizing for precision. This two-stage design means you can adjust barge-in sensitivity without retraining or reconfiguring the VAD model.
+
 ## Implementation
 
 ### VAD and Turn Detector Setup
+
+The VAD is configured with a short `MinSpeechDuration` (100ms) to detect speech onset as quickly as possible. In playback scenarios, speed matters more than filtering out brief noises — false positives are handled by the turn detection layer downstream, not by the VAD itself.
 
 ```go
 package main
@@ -48,7 +56,7 @@ func setupBargeInDetection(ctx context.Context) (voice.FrameProcessor, error) {
 
 ### Barge-In Logic
 
-During the session playback loop, the barge-in logic monitors for speech onset and decides whether to interrupt:
+During the session playback loop, the barge-in logic monitors for speech onset and decides whether to interrupt. The key insight is using silence duration since the last detected speech as a lightweight heuristic: if the user was already speaking recently and the VAD fires again, this is likely a continuation or interruption rather than a new turn. This avoids the latency cost of running a full turn-prediction model on every VAD event.
 
 ```go
 // In the session processing loop, while playing TTS audio:
@@ -77,7 +85,7 @@ func checkBargeIn(ctx context.Context, vadResult bool, lastSpeechAt time.Time, m
 
 ### Session Integration
 
-Wire barge-in logic into the voice session's state machine:
+Wire barge-in logic into the voice session's state machine. The session uses a simple three-state model (Listening, Processing, Responding) where barge-in triggers an immediate transition from Responding back to Listening. This state machine approach ensures that audio routing (microphone to STT vs. TTS to speaker) changes atomically with the state transition, preventing audio from being sent to both paths simultaneously.
 
 ```go
 type SessionState string

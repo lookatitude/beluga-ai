@@ -5,6 +5,8 @@ description: PostgreSQL-based vector store using the pgvector extension.
 
 The pgvector provider implements the `vectorstore.VectorStore` interface using PostgreSQL with the [pgvector](https://github.com/pgvector/pgvector) extension. It uses `pgx` for connection management and supports cosine, dot-product, and Euclidean distance strategies.
 
+Choose pgvector when you already operate PostgreSQL and want to add vector search without introducing a separate database. This avoids the operational overhead of managing a dedicated vector database while keeping your vectors co-located with relational data. pgvector supports HNSW and IVFFlat indexing for production-scale deployments.
+
 ## Installation
 
 ```bash

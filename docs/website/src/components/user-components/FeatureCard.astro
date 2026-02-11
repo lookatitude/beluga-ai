@@ -1,0 +1,103 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+
+interface Props {
+  title: string;
+  icon?: string;
+  iconColor?: string;
+  href?: string;
+}
+
+const { title, icon, iconColor, href } = Astro.props;
+const Tag = href ? "a" : "div";
+---
+
+<Tag class="feature-card group" {...(href ? { href } : {})}>
+  {
+    icon && (
+      <div class="feature-card-icon">
+        <Icon name={icon} size="1.6rem" color={iconColor} />
+      </div>
+    )
+  }
+  <h3 class="feature-card-title">{title}</h3>
+  <div class="feature-card-body">
+    <slot />
+  </div>
+</Tag>
+
+<style>
+  @layer starlight.components {
+    .feature-card {
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      background: color-mix(in srgb, var(--sl-color-gray-6) 40%, transparent);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--sl-color-gray-6);
+      position: relative;
+      transition:
+        transform 0.3s ease,
+        border-color 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .feature-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      padding: 1px;
+      background: var(--color-primary-gradient);
+      border-radius: inherit;
+      mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .feature-card:hover::before {
+      opacity: 0.6;
+    }
+
+    .feature-card:hover {
+      transform: scale(1.02);
+    }
+
+    .feature-card-icon {
+      margin-bottom: 0.75rem;
+      opacity: 0.9;
+    }
+
+    .feature-card-title {
+      font-size: var(--sl-text-h4);
+      color: var(--sl-color-white);
+      line-height: var(--sl-line-height-headings);
+      margin: 0 0 0.5rem;
+      font-weight: 600;
+    }
+
+    .feature-card-body {
+      font-size: var(--sl-text-body);
+      color: var(--sl-color-gray-2);
+      margin: 0;
+    }
+
+    .feature-card-body :global(p:last-child) {
+      margin-bottom: 0;
+    }
+
+    :root[data-theme="light"] .feature-card {
+      background: color-mix(in srgb, var(--sl-color-gray-7) 60%, white);
+    }
+
+    :root[data-theme="light"] .feature-card-body {
+      color: var(--sl-color-gray-3);
+    }
+  }
+</style>

@@ -3,7 +3,7 @@ title: NATS Message Bus
 description: Integrate NATS messaging with Beluga AI for high-performance distributed agent coordination using pub/sub and request/reply patterns.
 ---
 
-NATS is a high-performance messaging system for distributed applications. This guide covers using NATS with Beluga AI for inter-agent communication, event-driven orchestration, and scalable multi-agent coordination.
+When your system grows beyond a single agent, you need a way for agents to communicate without tight coupling. NATS provides sub-millisecond messaging with minimal operational overhead -- no broker clusters to manage for core pub/sub, and JetStream adds persistence when you need guaranteed delivery. This makes NATS the natural choice for distributed agent coordination, event-driven orchestration, and scalable multi-agent architectures. This guide covers using NATS with Beluga AI for inter-agent communication and scalable multi-agent coordination.
 
 ## Overview
 

@@ -5,6 +5,8 @@ description: Generate text embeddings using Mistral AI's embedding model.
 
 The Mistral embedding provider implements the `embedding.Embedder` interface using the Mistral AI embeddings API. It provides high-quality embeddings through the `mistral-embed` model.
 
+Choose Mistral embeddings when you are already using Mistral for LLM inference and want to consolidate your provider stack under a single API key and billing account. The `mistral-embed` model delivers solid retrieval quality with 1024-dimensional vectors.
+
 ## Installation
 
 ```bash

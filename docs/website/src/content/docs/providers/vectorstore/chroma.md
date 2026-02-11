@@ -5,6 +5,8 @@ description: Vector store using ChromaDB's HTTP REST API.
 
 The ChromaDB provider implements the `vectorstore.VectorStore` interface using ChromaDB's REST API. ChromaDB is an open-source embedding database with a simple API, supporting multi-tenant deployments.
 
+Choose ChromaDB for its simplicity and ease of setup. ChromaDB is straightforward to run locally with Docker and requires minimal configuration, making it a good choice for prototyping and small-to-medium workloads. Its multi-tenant support (tenants and databases) allows data isolation without separate deployments.
+
 ## Installation
 
 ```bash

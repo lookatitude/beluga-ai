@@ -5,6 +5,8 @@ description: "Integration guide for Bifrost LLM gateway with Beluga AI."
 
 The Bifrost provider connects Beluga AI to a [Bifrost](https://github.com/maxthomas/bifrost) gateway. Bifrost is an OpenAI-compatible proxy that routes requests to multiple LLM providers with load balancing and failover. This provider is a thin wrapper that points to your Bifrost deployment endpoint.
 
+Choose Bifrost when you need infrastructure-level load balancing and automatic failover across multiple LLM providers. Bifrost is a lightweight Go-native gateway, making it a good fit for self-hosted deployments where you want provider redundancy without the overhead of a full proxy like LiteLLM.
+
 ## Installation
 
 ```bash

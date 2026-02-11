@@ -1,15 +1,17 @@
 ---
 title: Multimodal Recipes
-description: Practical patterns for working with images, audio, and video in AI applications.
+description: Practical patterns for working with images, audio, and video in AI applications, including preprocessing, provider fallbacks, and batch classification.
 sidebar:
   order: 0
 ---
 
-This cookbook provides battle-tested recipes for multimodal AI applications. Each recipe is copy-paste ready with complete error handling.
+Multimodal AI extends LLM capabilities beyond text to process images, audio, and video. Working with multimodal inputs introduces challenges that text-only applications do not face: varying file sizes and formats, provider-specific capability differences, cost optimization through preprocessing, and the need for fallback strategies when a model does not support a required modality. These recipes provide production-tested patterns for handling these challenges.
+
+Each recipe is copy-paste ready with complete error handling. The patterns follow Beluga AI's standard conventions: `context.Context` as the first parameter, explicit error returns, and functional options for configuration.
 
 ## Processing Multiple Images Per Prompt
 
-Analyze multiple images in a single LLM call for comparison, synthesis, or batch processing.
+Analyze multiple images in a single LLM call for comparison, synthesis, or batch processing. This is useful for product comparison, document verification, or visual quality assessment where the model needs to see all images together to make relative judgments.
 
 ```go
 package main
@@ -84,7 +86,7 @@ func main() {
 
 ## Capability-Based Provider Fallbacks
 
-Automatically fall back to providers that support required capabilities.
+Not all LLM providers support the same modalities. GPT-4o handles images but not audio natively. Gemini supports images, audio, and video. Claude supports images but not video. When building multimodal applications that need to work across providers, you need a routing layer that matches requests to capable models and falls back gracefully when the primary model cannot handle a given input type.
 
 ```go
 type ProviderCapabilities struct {
@@ -220,7 +222,7 @@ func getProviderType(modelName string) string {
 
 ## Image Preprocessing Pipeline
 
-Optimize images before sending to vision models to reduce costs and improve accuracy.
+Sending raw, high-resolution images to vision models wastes tokens and money. A 4000x3000 photo may cost 10x more tokens than a resized 1000x750 version, with minimal quality difference for most analysis tasks. Preprocessing (resize, compress, format conversion) reduces API costs and improves response latency while preserving sufficient visual information for the model.
 
 ```go
 import (
@@ -334,7 +336,7 @@ func AnalyzeImageOptimized(ctx context.Context, llm llms.LLM, imagePath string) 
 
 ## Video Frame Analysis
 
-Extract and analyze key frames from video files.
+Video models are expensive and not universally supported. A practical alternative is to extract key frames at regular intervals and analyze them as individual images. This approach works with any vision model and provides a structured timeline of what happens in the video. The frame extraction interval controls the tradeoff between coverage and API cost.
 
 ```go
 import (
@@ -438,7 +440,7 @@ func cleanupFrames(framePaths []string) {
 
 ## Audio Segmentation
 
-Split long audio files into segments for processing.
+Long audio files exceed most STT and LLM input limits. Splitting audio into segments at natural boundaries (silence, fixed intervals) allows processing files of any length. Each segment is transcribed independently, then results are concatenated. The segment duration should match the model's maximum input length while being short enough to produce timely results.
 
 ```go
 type AudioSegmenter struct {
@@ -529,7 +531,7 @@ func cleanupSegments(segments []string) {
 
 ## Batch Image Classification
 
-Classify multiple images efficiently with rate limiting.
+Classify multiple images efficiently with rate limiting. Batch classification is common in content moderation, product categorization, and media library organization. The rate limiter prevents API throttling, while concurrent processing maximizes throughput within the rate limit.
 
 ```go
 type ImageClassifier struct {
@@ -645,16 +647,16 @@ func contains(slice []string, item string) bool {
 
 When working with multimodal AI:
 
-1. **Preprocess images** - resize and compress before API calls
-2. **Use appropriate formats** - JPEG for photos, PNG for screenshots
-3. **Batch similar requests** - group images by type for efficiency
-4. **Implement fallbacks** - have backup providers for capabilities
-5. **Cache results** - identical images get identical analyses
-6. **Monitor costs** - multimodal tokens are expensive
-7. **Handle rate limits** - use token buckets and backoff
-8. **Validate inputs** - check file sizes and formats
-9. **Extract key frames** - don't analyze every video frame
-10. **Segment long audio** - break into manageable chunks
+1. **Preprocess images** -- Resize and compress before API calls to reduce token costs and latency
+2. **Use appropriate formats** -- JPEG for photos (lossy compression is fine), PNG for screenshots and diagrams (lossless preserves text)
+3. **Batch similar requests** -- Group images by type for efficiency, using rate limiters to stay within provider limits
+4. **Implement fallbacks** -- Have backup providers for capabilities; not all models support all modalities
+5. **Cache results** -- Identical images produce identical analyses; cache by content hash to avoid duplicate API calls
+6. **Monitor costs** -- Multimodal tokens are significantly more expensive than text tokens; track usage per request type
+7. **Handle rate limits** -- Use token buckets and exponential backoff; multimodal endpoints often have stricter rate limits
+8. **Validate inputs** -- Check file sizes, formats, and dimensions before sending to prevent API errors
+9. **Extract key frames** -- For video, analyze representative frames rather than every frame to control costs
+10. **Segment long audio** -- Break audio into manageable chunks that fit within model input limits
 
 ## Next Steps
 

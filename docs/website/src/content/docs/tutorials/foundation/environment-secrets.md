@@ -3,7 +3,7 @@ title: Environment and Secret Management
 description: Load configuration from files and environment variables using Beluga AI's config package.
 ---
 
-The `config` package provides type-safe configuration loading from JSON files, environment variable overrides, and struct tag-based validation. This approach follows the 12-Factor App methodology — defaults in files, secrets in environment variables.
+The `config` package provides type-safe configuration loading from JSON files, environment variable overrides, and struct tag-based validation. This approach follows the [12-Factor App methodology](https://12factor.net/config) — defaults in files, secrets in environment variables. The 12-Factor pattern matters for AI applications because LLM providers, vector databases, and embedding services each require API keys and connection strings that vary across environments. Hardcoding these values creates security risks and makes deployment inflexible.
 
 ## What You Will Build
 
@@ -22,9 +22,11 @@ When loading configuration, Beluga AI follows this hierarchy (highest wins):
 2. **Configuration file** — JSON defaults
 3. **Struct tag defaults** — Go code defaults
 
+This ordering is intentional. Environment variables take highest priority because they are the standard mechanism for injecting secrets in container orchestrators (Kubernetes, ECS, Cloud Run). Configuration files provide sensible defaults that work across most environments. Struct tag defaults serve as the final fallback, ensuring the application can start even without a configuration file — useful for local development and testing.
+
 ## Step 1: Define a Configuration Struct
 
-Use struct tags to specify JSON keys, defaults, and validation rules:
+Use struct tags to specify JSON keys, defaults, and validation rules. Beluga AI's config package uses struct tags rather than external schema files because Go's type system can then enforce constraints at compile time while the tags handle runtime validation. This keeps configuration and code co-located, reducing the risk of drift between schema definitions and actual usage.
 
 ```go
 package main
@@ -57,7 +59,7 @@ Supported struct tags:
 
 ## Step 2: Load from a JSON File
 
-Create a `config.json` file with non-sensitive defaults:
+Create a `config.json` file with non-sensitive defaults. The JSON file should contain values that are safe to commit to version control — host addresses, model names, log levels — but never API keys or database passwords.
 
 ```json
 {
@@ -71,7 +73,7 @@ Create a `config.json` file with non-sensitive defaults:
 }
 ```
 
-Load it with `config.Load`:
+Load it with `config.Load`. The generic type parameter `[AppConfig]` enables the loader to apply validation and defaults using the struct tag metadata specific to your configuration type.
 
 ```go
 func main() {
@@ -90,7 +92,7 @@ func main() {
 
 ## Step 3: Override with Environment Variables
 
-Use `config.MergeEnv` to overlay environment variable values onto an existing configuration:
+Use `config.MergeEnv` to overlay environment variable values onto an existing configuration. This two-phase approach — load from file first, then merge environment variables — allows you to see which values came from the file and which were overridden by the environment, making debugging easier in production.
 
 ```go
 func main() {
@@ -117,11 +119,11 @@ export BELUGA_LLM_API_KEY="sk-..."
 export BELUGA_PORT="9090"
 ```
 
-Nested structs use underscores for the path: the `LLM.APIKey` field maps to `BELUGA_LLM_API_KEY`.
+Nested structs use underscores for the path: the `LLM.APIKey` field maps to `BELUGA_LLM_API_KEY`. The prefix requirement prevents collisions with other applications sharing the same environment.
 
 ## Step 4: Load Entirely from Environment
 
-For container deployments where no config file exists, load the entire configuration from environment variables:
+For container deployments where no config file exists, load the entire configuration from environment variables. This is the preferred approach for Kubernetes deployments where ConfigMaps and Secrets inject all values as environment variables and mounting a JSON file adds unnecessary complexity.
 
 ```go
 func main() {
@@ -138,7 +140,7 @@ This applies struct tag defaults first, then overlays any set environment variab
 
 ## Step 5: Validation
 
-Validation runs automatically during `Load` and `LoadFromEnv`. You can also validate manually:
+Validation runs automatically during `Load` and `LoadFromEnv`. You can also validate manually, which is useful when constructing configuration programmatically in tests or when receiving configuration from an external source like a secrets manager.
 
 ```go
 cfg := AppConfig{

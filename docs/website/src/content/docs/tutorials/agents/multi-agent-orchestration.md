@@ -3,11 +3,11 @@ title: Multi-Agent Orchestration
 description: Coordinate multiple specialized agents using router (handoff) and supervisor (manager) patterns.
 ---
 
-Complex tasks often require multiple specialized agents working together. A coding agent, a testing agent, and a review agent can collaborate on software development. A researcher, analyst, and writer can produce a report. This tutorial covers two orchestration patterns: routing (handoffs) and supervision (management).
+Complex tasks often require multiple specialized agents working together. A coding agent, a testing agent, and a review agent can collaborate on software development. A researcher, analyst, and writer can produce a report. Rather than building one monolithic agent that tries to do everything, multi-agent orchestration divides work among specialists -- each with a focused system prompt, dedicated tools, and potentially a different model optimized for their role. This tutorial covers two orchestration patterns: **routing** (handoffs) dispatches requests to the right specialist, and **supervision** (management) decomposes goals into steps and delegates to sub-agents.
 
 ## What You Will Build
 
-Two orchestration patterns — a router that dispatches queries to the right specialist, and a supervisor that decomposes goals into steps and delegates to sub-agents.
+Two orchestration patterns -- a router that dispatches queries to the right specialist, and a supervisor that decomposes goals into steps and delegates to sub-agents.
 
 ## Prerequisites
 
@@ -16,7 +16,9 @@ Two orchestration patterns — a router that dispatches queries to the right spe
 
 ## Pattern 1: Router (Handoff)
 
-A classifier agent determines which specialist should handle the request:
+The router pattern uses a classifier agent to determine which specialist should handle the request. This is the simplest form of multi-agent orchestration. In Beluga AI's agent package, handoffs are implemented as tools -- agent transfers auto-generate `transfer_to_{name}` tools that the model can invoke. Here we implement a manual version to show the underlying mechanics.
+
+The classifier uses `temperature: 0` to ensure deterministic routing. Since the classifier's only job is to output a category name, it does not need creative or varied responses -- consistency is what matters for reliable routing.
 
 ```mermaid
 graph TD
@@ -88,7 +90,7 @@ func routeRequest(ctx context.Context, classifier llm.ChatModel, specialists map
 
 ### Create Specialists
 
-Each specialist has a dedicated system prompt and potentially a different model:
+Each specialist has a dedicated system prompt and potentially a different model. In production, you would typically use a more capable (and expensive) model for complex tasks like coding, and a faster model for simpler tasks like classification. The map structure allows you to reuse models across categories when the same model is appropriate for multiple roles -- the key differentiator becomes the system prompt rather than the model itself.
 
 ```go
 func createSpecialists(ctx context.Context) (map[string]llm.ChatModel, error) {
@@ -119,7 +121,9 @@ func createSpecialists(ctx context.Context) (map[string]llm.ChatModel, error) {
 
 ## Pattern 2: Supervisor (Manager)
 
-A manager agent creates a plan and delegates steps to sub-agents, aggregating results:
+The supervisor pattern goes beyond simple routing. A manager agent creates a structured plan (as JSON), then executes each step by delegating to the appropriate sub-agent. Each step receives the accumulated context from previous steps, enabling later agents to build on earlier work. This pattern is more powerful than routing because it handles multi-step tasks where the output of one agent feeds into the next.
+
+The manager uses `json_object` response format to ensure the plan is machine-parseable. The accumulated context string grows with each step, giving each subsequent agent full visibility into what has already been accomplished. Finally, the manager synthesizes all step results into a coherent output -- this is important because individual step results may be fragmented or use inconsistent terminology.
 
 ```go
 type Step struct {
@@ -192,7 +196,7 @@ Respond in JSON format: [{"agent": "researcher", "task": "..."}]`),
 
 ## Shared State Between Agents
 
-Pass accumulated context through the conversation or use a shared state store:
+When agents need to share structured data beyond the conversation context (such as intermediate computation results, configuration values, or cross-cutting metadata), a thread-safe shared state store provides a clean solution. The `sync.RWMutex` allows concurrent reads from multiple agents while serializing writes, which is important when agents run in parallel goroutines. Beluga AI's `state` package provides a more full-featured version of this pattern with `Watch` support for reactive updates.
 
 ```go
 // Shared state via a simple map
@@ -226,5 +230,5 @@ Input: "Build a URL shortener in Go." Verify the agents interact and produce a c
 
 ## Next Steps
 
-- [Tools Registry](/tutorials/agents/tools-registry) — Build a reusable tool library for agents
-- [Model Switching](/tutorials/agents/model-switching) — Implement fallback chains
+- [Tools Registry](/tutorials/agents/tools-registry) -- Build a reusable tool library for agents
+- [Model Switching](/tutorials/agents/model-switching) -- Implement fallback chains

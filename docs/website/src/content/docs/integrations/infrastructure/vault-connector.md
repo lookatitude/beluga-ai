@@ -3,7 +3,7 @@ title: HashiCorp Vault Connector
 description: Integrate HashiCorp Vault for secure secret management with Beluga AI, including API key retrieval, caching, and OpenTelemetry tracing.
 ---
 
-Beluga AI applications frequently manage sensitive credentials such as LLM API keys, database passwords, and service tokens. HashiCorp Vault provides a centralized secrets engine that keeps these values out of source code and environment files. This guide shows how to build a Vault connector that retrieves secrets on demand and integrates with the Beluga AI configuration layer.
+AI applications manage an unusually high number of API keys -- one per LLM provider, embedding service, vector store, and external tool. Hardcoding or environment-variable-managing this many secrets quickly becomes a security and operational liability. HashiCorp Vault provides centralized secrets management with audit logging, automatic rotation, and fine-grained access policies, keeping credentials out of source code, CI pipelines, and environment files. This guide shows how to build a Vault connector that retrieves secrets on demand and integrates with the Beluga AI configuration layer.
 
 ## Prerequisites
 

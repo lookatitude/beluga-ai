@@ -5,7 +5,9 @@ sidebar:
   order: 0
 ---
 
-Beluga AI provides a unified `VectorStore` interface for storing document embeddings and performing similarity search. All vector store providers register via `init()` and support the same Add, Search, and Delete operations.
+Vector stores are the persistence layer for RAG applications. They store document embeddings and provide fast similarity search to find relevant content for a given query. The choice of vector store depends on your existing infrastructure, scale requirements, and operational preferences -- from adding an extension to your existing PostgreSQL database to using a dedicated managed service.
+
+Beluga AI provides a unified `VectorStore` interface for storing document embeddings and performing similarity search. All vector store providers register via `init()` and support the same Add, Search, and Delete operations, so you can switch between backends without changing your application logic.
 
 ## Provider Overview
 

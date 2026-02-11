@@ -3,7 +3,7 @@ title: Package Layout
 description: "Every package in the framework, its interfaces, dependencies, and how they work together."
 ---
 
-Beluga AI v2 is organized into layered packages with strict dependency rules. This document describes every package, its interfaces, how packages depend on each other, and how they work together to build agentic AI systems.
+Beluga AI v2 is organized into layered packages with strict dependency rules. This document describes every package, its interfaces, how packages depend on each other, and how they work together to build agentic AI systems. The package layout follows a flat structure with no `pkg/` prefix — packages live at the repository root, which keeps import paths short and aligns with Go conventions for library modules.
 
 ## Module
 
@@ -124,9 +124,11 @@ beluga-ai/
 
 ## Foundation Layer
 
+The foundation layer provides the types and utilities that every other package depends on. It has zero external dependencies beyond the Go standard library and OpenTelemetry, which ensures that these shared types never introduce transitive dependency conflicts.
+
 ### core/
 
-The foundation of the framework. Zero external dependencies beyond stdlib + OTel.
+The foundation of the framework. Zero external dependencies beyond stdlib + OTel. This package defines the primitive abstractions — streams, runnables, lifecycle management, and error types — that all other packages build upon.
 
 **Key types**:
 
@@ -164,7 +166,7 @@ type Lifecycle interface {
 
 ### schema/
 
-Shared types used by all packages. Zero external dependencies.
+Shared types used by all packages. Zero external dependencies. These types form the common vocabulary of the framework — when an LLM produces a message, a tool returns a result, or an agent emits an event, they all use types from this package. Keeping schema dependency-free ensures these types can be imported by any package without pulling in unwanted transitive dependencies.
 
 | Type | Purpose |
 |------|---------|
@@ -206,9 +208,11 @@ Providers: `langsmith`, `langfuse`, `phoenix`, `opik`.
 
 ## Capability Layer
 
+The capability layer provides the core AI primitives: LLM inference, tool execution, memory, retrieval, agents, and voice. Each package defines a small interface, provides a registry for provider discovery, and supports middleware and hooks for extensibility. These packages import from the foundation layer but never from each other in a circular way.
+
 ### llm/
 
-The LLM abstraction layer. 23 providers.
+The LLM abstraction layer. 23 providers. This is the most heavily used package in the framework — nearly every other capability depends on it.
 
 **ChatModel interface** (the most important interface in the framework):
 
@@ -238,7 +242,7 @@ type ChatModel interface {
 
 ### tool/
 
-The tool system. Tools are instances, not factories.
+The tool system. Tools are instances, not factories. This distinction from the provider registries reflects how tools are used: providers are created from configuration at startup, while tools often carry runtime state (database connections, API clients) and may be added or removed dynamically during agent execution.
 
 **Tool interface**:
 
@@ -266,7 +270,7 @@ type Tool interface {
 
 ### memory/
 
-Three-tier memory system inspired by MemGPT.
+Three-tier memory system inspired by MemGPT. The tiered design reflects the reality that different types of information have different access patterns: persona context must always be in the prompt (core), recent conversation history benefits from fast keyword search (recall), and long-term knowledge requires vector similarity (archival) or structured graph traversal (graph).
 
 **Memory interface**:
 
@@ -295,7 +299,7 @@ type Memory interface {
 
 ### rag/
 
-The RAG pipeline. 5 subpackages with independent registries.
+The RAG pipeline. 5 subpackages with independent registries. The pipeline is decomposed into discrete stages — loading, splitting, embedding, storing, and retrieving — each with its own interface and provider ecosystem. This decomposition means you can swap any stage independently: use a different embedding provider without changing your vector store, or add a new retrieval strategy without modifying how documents are loaded.
 
 ```mermaid
 graph LR
@@ -328,7 +332,7 @@ Each subpackage has its own `Register()`, `New()`, `List()`.
 
 ### agent/
 
-The agent runtime. Planner-agnostic executor with pluggable reasoning strategies.
+The agent runtime. Planner-agnostic executor with pluggable reasoning strategies. The separation of planner (decides what to do) from executor (does it) is the key architectural decision: it allows different reasoning approaches to be swapped without changing how tools are called, events are streamed, or handoffs are managed.
 
 **Agent interface**:
 
@@ -413,9 +417,11 @@ graph TB
 
 ## Infrastructure Layer
 
+Infrastructure packages provide cross-cutting concerns that apply to multiple capability packages: safety guards, resilience patterns, caching, authentication, human-in-the-loop approval, evaluation, shared state, and prompt management. These packages import from both the foundation and capability layers, and they are applied via middleware or hooks rather than being embedded in capability code.
+
 ### guard/
 
-Three-stage safety pipeline.
+Three-stage safety pipeline. Guards are applied at the agent level, so they protect all LLM interactions and tool executions uniformly.
 
 ```go
 type Guard interface {
@@ -475,9 +481,11 @@ Implementations: RBAC, ABAC, Composite. OPA integration.
 
 ## Protocol Layer
 
+Protocol packages handle communication with external systems: exposing Beluga agents as network services and consuming remote tools and agents. These packages sit at the top of the dependency hierarchy, importing from capability and infrastructure layers.
+
 ### protocol/mcp/
 
-MCP (Model Context Protocol) server and client.
+MCP (Model Context Protocol) server and client. MCP is the standard protocol for discovering and calling tools across process boundaries.
 
 - **Server**: Expose Beluga tools as MCP resources via Streamable HTTP
 - **Client**: Connect to external MCP servers, wrap remote tools as native `tool.Tool`
@@ -519,9 +527,11 @@ Adapters: gin, chi, echo, fiber, huma, grpc, connect.
 
 ## Internal Utilities
 
+Internal packages provide shared infrastructure that is not part of the public API. Placing these in `internal/` ensures they cannot be imported by external code, giving the framework freedom to change their APIs without breaking compatibility.
+
 ### internal/testutil/
 
-Mock implementations for testing:
+Mock implementations for testing. Every public interface in the framework has a corresponding mock here, ensuring consistent test patterns across all packages:
 - `MockChatModel` — configurable LLM responses
 - `MockEmbedder` — fixed vector outputs
 - `MockTool` — configurable tool execution
@@ -543,9 +553,11 @@ Sync utilities (pools, concurrent helpers).
 
 ### internal/openaicompat/
 
-OpenAI API compatibility layer for providers that use OpenAI-compatible APIs.
+OpenAI API compatibility layer for providers that use OpenAI-compatible APIs. Many LLM providers (Groq, Together, Fireworks, OpenRouter, and others) expose OpenAI-compatible endpoints. Rather than duplicating HTTP request/response handling across 12+ providers, this shared layer handles the common protocol, and each provider package adds only its registration and provider-specific error mapping.
 
 ## How Packages Work Together
+
+The following sequence diagrams show how packages collaborate at runtime. These interactions are the practical manifestation of the layered architecture: foundation types flow through the entire stack, capability packages call each other through interfaces, and the agent runtime orchestrates everything.
 
 ### Agent executing a tool
 

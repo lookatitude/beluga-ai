@@ -5,11 +5,13 @@ description: "Control emphasis, pauses, and prosody in TTS output with SSML mark
 
 ## Problem
 
-You need to control emphasis, pauses, and intonation in text-to-speech output to make speech sound more natural and convey meaning effectively.
+You need to control emphasis, pauses, and intonation in text-to-speech output to make speech sound more natural and convey meaning effectively. Flat, monotone TTS output fails to communicate emotion, urgency, or sentence structure. Users interpret speech differently based on prosody, and without proper emphasis or pacing, TTS sounds robotic and difficult to understand. This becomes critical for applications like voice assistants, audiobooks, or customer service bots where user engagement depends on natural-sounding speech.
 
 ## Solution
 
-Implement SSML (Speech Synthesis Markup Language) processing that inserts emphasis tags, pause breaks, and prosody controls into text before TTS synthesis. TTS providers support SSML, allowing fine-grained control over speech output.
+Implement SSML (Speech Synthesis Markup Language) processing that inserts emphasis tags, pause breaks, and prosody controls into text before TTS synthesis. TTS providers support SSML, allowing fine-grained control over speech output. The strategy here is to detect emphasis cues in the source text (quotation marks, capitalization, markdown bold) and translate them into SSML tags that the TTS engine understands. Similarly, punctuation marks map to natural pause durations, recreating the rhythm of human speech.
+
+This approach separates content generation from prosody tuning. Your agent generates plain text with emphasis markers, and the SSML processor applies voice-specific tuning without changing the agent's output logic. This makes it easy to adjust prosody across different TTS providers or voices without retraining or modifying upstream components.
 
 ## Code Example
 
@@ -149,13 +151,13 @@ func main() {
 
 ## Explanation
 
-1. **Emphasis detection** -- Important words are detected by pattern (quoted text, ALL CAPS, markdown bold) and wrapped in SSML emphasis tags with appropriate levels.
+1. **Emphasis detection** -- Important words are detected by pattern (quoted text, ALL CAPS, markdown bold) and wrapped in SSML emphasis tags with appropriate levels. This design leverages existing text conventions rather than requiring explicit markup from the agent. Quoted text receives moderate emphasis because it often represents reported speech or key terms. ALL CAPS signals strong emphasis (though use sparingly to avoid sounding aggressive). The regex patterns are applied sequentially to avoid nested tags, which many TTS engines reject.
 
-2. **Pause insertion** -- Pause breaks are added after punctuation marks. Longer pauses after sentences (500ms), shorter after commas (250ms), creating natural rhythm.
+2. **Pause insertion** -- Pause breaks are added after punctuation marks. Longer pauses after sentences (500ms), shorter after commas (250ms), creating natural rhythm. This mimics human speech pacing, where sentence boundaries receive longer pauses for comprehension, while mid-sentence commas provide brief breathing room. The durations here are conservative defaults; tune them per voice and speaking rate. Without pauses, TTS rushes through text, making it hard for listeners to parse sentence structure.
 
-3. **Prosody control** -- Rate, pitch, and volume can be controlled using SSML prosody tags, allowing fine-tuning of speech characteristics per segment.
+3. **Prosody control** -- Rate, pitch, and volume can be controlled using SSML prosody tags, allowing fine-tuning of speech characteristics per segment. Prosody adjustments let you shift tone dynamically: slow down for emphasis, raise pitch for questions, lower volume for asides. This is particularly valuable for multi-turn dialogues where the agent's mood or urgency changes. The functional option pattern (`SetProsody`) allows selective application without cluttering the main processor.
 
-**Key insight:** Use SSML strategically to enhance naturalness. Too much SSML sounds robotic; too little sounds monotone. Balance is key.
+**Key insight:** Use SSML strategically to enhance naturalness. Too much SSML sounds robotic; too little sounds monotone. Balance is key. Over-tagging with emphasis makes every word sound urgent, which dilutes actual importance. Over-pausing creates awkward silence. Start with conservative defaults and tune based on user feedback or A/B testing. SSML is a tool for subtle correction, not a replacement for well-written prompts.
 
 ## Variations
 

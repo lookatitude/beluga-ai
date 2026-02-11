@@ -1,15 +1,17 @@
 ---
 title: "Parallel File Loading"
-description: "Efficiently load documents from large directory structures using parallel file walking with worker pools."
+description: "Efficiently load documents from large directory structures using parallel file walking with worker pools and bounded concurrency."
 ---
 
 ## Problem
 
 You need to load documents from large directory structures efficiently, but sequential file walking is too slow for directories with thousands of files.
 
+Sequential file loading is strictly I/O-bound: the CPU sits idle while waiting for each file read to complete. For a directory with 10,000 files where each read takes 5ms, sequential loading takes 50 seconds. Parallel loading with 10 workers reduces this to roughly 5 seconds. The key challenge is balancing concurrency against resource limits: too many concurrent reads can exhaust file descriptors (typically limited to 1024 on Linux) or saturate disk I/O bandwidth on spinning disks.
+
 ## Solution
 
-Implement parallel file walking that uses multiple goroutines to traverse directories concurrently, processes files in parallel, and collects results efficiently. This works because file system operations can be parallelized, and worker pools balance concurrency with resource usage.
+Implement parallel file walking that uses a producer-consumer pattern: one goroutine discovers files by walking the directory tree, and a pool of worker goroutines processes files concurrently. The worker pool size controls parallelism, and channels coordinate between discovery and processing. This architecture separates concerns (discovery vs. processing) and scales well because adding workers increases throughput linearly until the I/O subsystem saturates.
 
 ## Code Example
 
@@ -237,19 +239,19 @@ func main() {
 
 ## Explanation
 
-1. **Worker pool pattern** — A pool of worker goroutines pulls file paths from a channel and processes them in parallel. This balances concurrency with resource usage, preventing file descriptor exhaustion.
+1. **Worker pool pattern** -- A pool of worker goroutines pulls file paths from a shared channel and processes them in parallel. The pool size directly controls concurrency: 10 workers means at most 10 files are being read simultaneously. This balances throughput against resource usage, preventing file descriptor exhaustion that would occur with unbounded goroutine creation.
 
-2. **Separate discovery and processing** — File discovery (walking the directory tree) runs in a separate goroutine from file processing. This allows both to happen concurrently, maximizing throughput on large directory trees.
+2. **Separate discovery and processing** -- File discovery (walking the directory tree) runs in a dedicated goroutine, feeding paths into a channel that workers consume. This decouples the speed of directory traversal from file processing. The buffered channel (`workers*2` capacity) provides backpressure: if workers are busy, discovery naturally slows down rather than accumulating unbounded work.
 
-3. **Error isolation** — Errors from individual files do not stop the entire walk. Errors are collected separately and returned alongside successfully loaded documents, allowing callers to decide how to handle partial failures.
+3. **Error isolation** -- Errors from individual files do not stop the entire walk. Each error is collected separately via the error channel and returned alongside successfully loaded documents. This allows callers to decide how to handle partial failures (e.g., log and continue, or retry specific files).
 
-4. **Context cancellation** — All goroutines respect context cancellation. If the parent context is cancelled (e.g., timeout), workers and discovery stop promptly.
+4. **Context cancellation** -- All goroutines check `ctx.Done()` in their select statements. If the parent context is cancelled (e.g., timeout, user cancellation), workers, discovery, and collection all stop promptly without leaving orphaned goroutines.
 
 ## Variations
 
 ### Rate Limiting
 
-Add rate limiting to prevent overwhelming the file system:
+Add rate limiting to prevent overwhelming the file system on shared infrastructure:
 
 ```go
 type RateLimitedWalker struct {
@@ -259,7 +261,7 @@ type RateLimitedWalker struct {
 
 ### Progress Tracking
 
-Track progress of file processing:
+Track progress of file processing for user feedback:
 
 ```go
 type ProgressTracker struct {
@@ -270,5 +272,5 @@ type ProgressTracker struct {
 
 ## Related Recipes
 
-- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) — Handle errors gracefully during document loading
-- [Document Ingestion Recipes](/cookbook/document-ingestion) — Additional document loading patterns
+- [Corrupt Document Handling](/cookbook/corrupt-doc-handling) -- Handle errors gracefully during document loading
+- [Document Ingestion Recipes](/cookbook/document-ingestion) -- Additional document loading patterns

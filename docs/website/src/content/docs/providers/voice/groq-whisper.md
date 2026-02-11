@@ -5,6 +5,8 @@ description: "Groq STT and TTS provider for ultra-fast voice processing on LPU h
 
 Groq provides both speech-to-text (via Whisper models) and text-to-speech through its OpenAI-compatible API, running on specialized LPU hardware for ultra-fast inference. Beluga AI registers `"groq"` in both the STT and TTS registries.
 
+Choose Groq when you need the fastest possible batch transcription — Groq's LPU hardware delivers Whisper inference significantly faster than CPU-based alternatives. The provider does not support real-time streaming, so it works best for batch or buffered transcription where all audio is available upfront. For real-time streaming, use [Deepgram](/providers/voice/deepgram) or [AssemblyAI](/providers/voice/assemblyai) instead.
+
 ## Installation
 
 ```go

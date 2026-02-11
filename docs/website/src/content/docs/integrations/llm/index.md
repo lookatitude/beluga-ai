@@ -5,7 +5,9 @@ sidebar:
   order: 0
 ---
 
-Beluga AI supports 22 LLM providers through a unified `ChatModel` interface. All providers register via `init()` and are created through the same registry pattern, so switching between providers requires changing only an import path and a configuration struct.
+Choosing an LLM provider involves tradeoffs between cost, latency, capability, data residency, and vendor lock-in. Beluga AI supports 22 LLM providers through a unified `ChatModel` interface so you can evaluate these tradeoffs without rewriting application code. All providers register via `init()` and are created through the same registry pattern -- switching between providers requires changing only an import path and a configuration struct.
+
+This design also enables multi-provider strategies: route complex queries to Claude or GPT-4o while sending simpler tasks to faster, cheaper models like Groq or local Ollama instances.
 
 ## Provider Overview
 

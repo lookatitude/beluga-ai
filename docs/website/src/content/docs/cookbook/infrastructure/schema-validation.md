@@ -7,11 +7,13 @@ description: "Add custom validation rules to schema operations with composable, 
 
 ## Problem
 
-You need to add custom validation rules to schema operations (messages, documents, agent I/O) that go beyond the built-in validation, such as business-specific constraints, content filtering, or domain-specific checks.
+You need to add custom validation rules to schema operations (messages, documents, agent I/O) that go beyond the built-in validation, such as business-specific constraints, content filtering, or domain-specific checks. Standard schema validation handles structural concerns—required fields, type checking, format validation—but cannot enforce application-specific rules. For example, you might need to validate that user messages don't exceed token limits for your chosen model, that tool call parameters match business logic constraints (like date ranges or enum values), that agent responses don't contain prohibited content for your compliance requirements, or that RAG documents meet quality thresholds before indexing. These domain-specific validations cannot be hardcoded into the framework because they vary by application. You need a way to plug in custom validation logic without modifying Beluga's core schema package.
 
 ## Solution
 
-Create a validation middleware that wraps schema operations and applies custom validation rules. This works because Beluga AI's schema package uses the validator pattern and provides hooks for custom validation through `SchemaValidationConfig` with `CustomValidationRules`.
+Create a validation middleware that wraps schema operations and applies custom validation rules. This works because Beluga AI's schema package uses the validator pattern and provides hooks for custom validation through `SchemaValidationConfig` with `CustomValidationRules`. The design follows the strategy pattern: validation logic is encapsulated in small, independent functions that each validate one concern. These functions are composed together through a registry, allowing you to mix and match validation rules per operation. The validator is stateless—it doesn't maintain mutable state between validations, making it thread-safe and testable. This approach integrates with Beluga's middleware pattern and OpenTelemetry tracing, providing observability into which validation rules pass or fail.
+
+The key design choice is separating validation rules from validation orchestration. Rules are simple functions that return an error if validation fails. The orchestrator (CustomValidator) manages the rule registry and applies rules in sequence. This separation allows rules to be tested independently, reused across validators, and composed dynamically based on context. The strategy pattern makes validation extensible: adding new rules doesn't require modifying existing code, just registering new functions.
 
 ## Code Example
 
@@ -131,13 +133,13 @@ func main() {
 
 ## Explanation
 
-1. **CustomValidator structure** — Validation rules are separated from the validation logic, allowing multiple rules to be registered and applied in sequence. Each rule is independent and can be tested separately.
+1. **CustomValidator structure** — Validation rules are separated from the validation logic, allowing multiple rules to be registered and applied in sequence. Each rule is independent and can be tested separately. This matters because validation requirements evolve over time: you might start with just length checks, then add content filtering, then add business logic validation. By separating rules from the orchestration logic, you can add new rules without modifying the validator itself. Each rule is self-contained—it either passes or returns an error—making them easy to test in isolation. The registry pattern (map of rules) allows dynamic composition: different validators can have different rule sets, and rules can be enabled or disabled based on configuration.
 
-2. **ValidationRule function type** — A function type is used for rules, making it easy to create reusable validation functions. This follows the strategy pattern, allowing different validation strategies to be plugged in.
+2. **ValidationRule function type** — A function type is used for rules, making it easy to create reusable validation functions. This follows the strategy pattern, allowing different validation strategies to be plugged in. This matters because validation logic is highly variable: some rules are simple (length checks), others are complex (calling external services for PII detection), and some are domain-specific (validating against business rules). By using a function type, you can create rules in multiple ways: inline lambdas for simple checks, factory functions that return configured validators (like ContentLengthRule(maxLength)), or methods on structs for stateful validators. The function signature includes context.Context, enabling rules to perform async operations, check deadlines, or access request-scoped values.
 
-3. **OTel tracing integration** — The validator creates spans for each validation operation, recording which rules pass or fail. This is important because validation failures in production need to be traceable for debugging.
+3. **OTel tracing integration** — The validator creates spans for each validation operation, recording which rules pass or fail. This is important because validation failures in production need to be traceable for debugging. This matters because when validation fails in production, you need to understand why. Was it a single rule that failed, or multiple? Which input triggered the failure? How often does this rule fail? OpenTelemetry tracing provides this observability: each validation creates a span, rule failures are recorded as errors, and attributes capture which rule failed and why. This makes it possible to monitor validation health, identify problematic rules, and debug validation issues without reproducing them locally.
 
-> **Key insight:** Keep validation rules stateless and composable. Each rule should validate one concern, making it easy to combine rules and test them independently.
+Keep validation rules stateless and composable. Each rule should validate one concern, making it easy to combine rules and test them independently.
 
 ## Testing
 

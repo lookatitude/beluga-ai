@@ -5,6 +5,8 @@ description: "Gladia STT provider for real-time and batch speech-to-text with la
 
 Gladia provides speech-to-text transcription with automatic language detection, real-time WebSocket streaming, and asynchronous batch processing. The Beluga AI provider uses Gladia's v2 API for both batch (upload, create transcription, poll) and real-time (live WebSocket) workflows.
 
+Choose Gladia when automatic language detection is important — for example, in multilingual contact centers or global applications where the input language is not known in advance. Gladia detects the language on the fly without requiring the caller to specify it upfront.
+
 ## Installation
 
 ```go

@@ -5,7 +5,7 @@ description: System requirements, installation steps, and provider setup for Bel
 
 ## System Requirements
 
-- **Go 1.23+** — Beluga AI uses `iter.Seq2[T, error]` for streaming, which requires Go 1.23 or later
+- **Go 1.23+** — Beluga AI uses `iter.Seq2[T, error]` (range-over-func iterators) for all streaming APIs. This feature was introduced in Go 1.23, so earlier versions will not compile the framework.
 - **Git** — For version control and `go get` operations
 
 Verify your Go version:
@@ -23,11 +23,11 @@ Add Beluga AI to your Go project:
 go get github.com/lookatitude/beluga-ai@latest
 ```
 
-This installs the core framework. LLM providers, vector stores, and other integrations are separate packages — you only import what you need.
+This installs the core framework: foundation types (`core/`, `schema/`), configuration, and the abstract interfaces for LLM, tools, memory, and other capabilities. LLM providers, vector stores, and other integrations are separate packages — you only import what you need. This separation keeps your binary small and avoids pulling in SDK dependencies for providers you don't use.
 
 ## Provider Setup
 
-Beluga AI uses a registry pattern: import a provider package and it registers itself via `init()`. You then create instances through the unified `llm.New()` factory.
+Beluga AI uses a registry pattern inspired by Go's standard library (`database/sql`, `image`): import a provider package with a blank identifier (`_`) and it registers itself via `init()`. You then create instances through the unified `llm.New()` factory. This decouples your application code from specific provider implementations — the same `llm.New("openai", cfg)` call works regardless of which providers are imported, and you can swap providers by changing an import line.
 
 ### OpenAI
 
@@ -160,7 +160,7 @@ model, err := llm.New("groq", config.ProviderConfig{
 
 ## Environment Variables
 
-Beluga AI reads provider credentials from environment variables. Set the relevant variables for your providers:
+Beluga AI reads provider credentials from environment variables, following the twelve-factor app methodology. This keeps secrets out of source code and makes it straightforward to configure different providers across development, staging, and production environments. Set the relevant variables for your providers:
 
 ```bash
 # LLM Providers
@@ -181,7 +181,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 export AWS_REGION="us-east-1"
 ```
 
-You can also use the `config` package to load settings from a JSON file with environment variable overrides:
+For more structured configuration, you can use the `config` package to load settings from a JSON file with environment variable overrides. This is useful for managing multiple provider configurations and non-secret settings alongside your deployment configuration:
 
 ```go
 type AppConfig struct {
@@ -195,7 +195,7 @@ config.MergeEnv(&cfg, "BELUGA")
 
 ## Verifying Your Installation
 
-Create a simple program to verify everything works:
+Create a simple program to verify that the framework is installed correctly and your provider credentials work. This program creates an LLM instance, sends a single message, and prints the response — if you see output from the model, everything is configured properly:
 
 ```go
 package main
@@ -244,7 +244,7 @@ If you see a response from the model, your installation is working.
 
 ## Optional Dependencies
 
-Some packages require additional system dependencies:
+Most of Beluga AI is pure Go and requires no system-level dependencies beyond the Go toolchain. However, some packages that interface with native libraries or external services require additional setup:
 
 ### CGO-Dependent Packages
 
@@ -289,9 +289,9 @@ Go support is built in. For integration tests, add `-tags=integration` to your r
 
 ### General Tips
 
-- Run `go mod tidy` after adding new provider imports to clean up dependencies
-- Use `go vet ./...` to catch common issues
-- Beluga AI's interfaces are small (1-4 methods) — your IDE's autocomplete will surface them quickly
+- Run `go mod tidy` after adding new provider imports to clean up dependencies and remove unused modules
+- Use `go vet ./...` to catch common issues early — the same checks run in Beluga's CI pipeline
+- Beluga AI's interfaces are deliberately small (1-4 methods), so your IDE's autocomplete will surface the full API surface quickly. If you see an interface with more methods than expected, it may be a composite — check for embedded interfaces
 
 ## Next Steps
 

@@ -1,0 +1,60 @@
+---
+import { Icon } from "@astrojs/starlight/components";
+
+interface Props {
+  value: string;
+  label: string;
+  icon?: string;
+}
+
+const { value, label, icon } = Astro.props;
+---
+
+<div class="stat-badge">
+  {icon && <Icon name={icon} class="stat-badge-icon" size="1.4rem" />}
+  <span class="stat-badge-value">{value}</span>
+  <span class="stat-badge-label">{label}</span>
+</div>
+
+<style>
+  @layer starlight.components {
+    .stat-badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.75rem 1.25rem;
+    }
+
+    .stat-badge-icon {
+      color: var(--sl-color-gray-3);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-badge-value {
+      font-size: clamp(1.5rem, 3vw, 2.25rem);
+      font-weight: 800;
+      line-height: 1.1;
+      background: var(--color-primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .stat-badge-label {
+      font-size: var(--sl-text-sm);
+      color: var(--sl-color-gray-3);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    :root[data-theme="light"] .stat-badge-icon {
+      color: var(--sl-color-gray-4);
+    }
+
+    :root[data-theme="light"] .stat-badge-label {
+      color: var(--sl-color-gray-4);
+    }
+  }
+</style>

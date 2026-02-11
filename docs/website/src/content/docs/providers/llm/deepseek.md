@@ -5,6 +5,8 @@ description: "Integration guide for DeepSeek models with Beluga AI."
 
 The DeepSeek provider connects Beluga AI to DeepSeek's inference platform. DeepSeek exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output. DeepSeek is known for its DeepSeek-V3 and DeepSeek-R1 reasoning models.
 
+Choose DeepSeek for strong reasoning and coding tasks at competitive prices. The DeepSeek-R1 model provides chain-of-thought reasoning similar to OpenAI's o-series, while DeepSeek-V3 offers general-purpose chat with strong benchmark performance relative to its cost.
+
 ## Installation
 
 ```bash
@@ -128,9 +130,9 @@ model, err := deepseek.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID           | Description                         |
-|--------------------|-------------------------------------|
-| `deepseek-chat`    | DeepSeek V3 general chat model      |
-| `deepseek-reasoner`| DeepSeek R1 reasoning model         |
+| Model ID           | Description                                           |
+|--------------------|-------------------------------------------------------|
+| `deepseek-chat`    | DeepSeek V3 -- general chat, strong coding            |
+| `deepseek-reasoner`| DeepSeek R1 -- chain-of-thought reasoning model       |
 
 Refer to [DeepSeek's documentation](https://platform.deepseek.com/api-docs) for the latest model list.

@@ -5,6 +5,8 @@ description: Generate text embeddings using Google's Gemini embedding models.
 
 The Google embedding provider implements the `embedding.Embedder` interface using the Google AI Gemini embedding API. It uses the batch `batchEmbedContents` endpoint for efficient multi-text embedding.
 
+Choose Google embeddings when you are already using the Gemini LLM provider and want to unify your API key and billing, or when you need multilingual embeddings through Google's `text-multilingual-embedding-002` model. The batch endpoint provides efficient processing for large document sets.
+
 ## Installation
 
 ```bash

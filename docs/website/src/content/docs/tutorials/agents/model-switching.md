@@ -3,11 +3,11 @@ title: Model Switching and Fallbacks
 description: Implement reliability fallbacks and cost-optimizing routing across multiple LLM providers.
 ---
 
-Relying on a single LLM provider creates a single point of failure. Rate limits, outages, and cost spikes can all disrupt your application. Beluga AI provides built-in middleware for fallback chains and a Router for intelligent multi-model dispatching.
+Relying on a single LLM provider creates a single point of failure. Rate limits, outages, and cost spikes can all disrupt your application. Beluga AI addresses this through two mechanisms: **middleware** for wrapping models with fallback behavior, and **routers** for intelligent multi-model dispatching. Both follow the framework's composability principle -- middleware uses the `func(ChatModel) ChatModel` pattern, and routers implement the `ChatModel` interface themselves, meaning they can be used anywhere a single model is expected.
 
 ## What You Will Build
 
-Three model switching strategies — reliability fallbacks, cost-optimizing routing, and the built-in `FailoverRouter` for automatic multi-model failover.
+Three model switching strategies -- reliability fallbacks, cost-optimizing routing, and the built-in `FailoverRouter` for automatic multi-model failover.
 
 ## Prerequisites
 
@@ -16,7 +16,9 @@ Three model switching strategies — reliability fallbacks, cost-optimizing rout
 
 ## Pattern 1: Fallback Middleware
 
-Use `llm.WithFallback` to automatically switch to a backup model on retryable errors:
+The `WithFallback` middleware wraps a primary model and intercepts errors. When the primary model returns a **retryable** error (rate limits, server errors, timeouts), the middleware transparently re-sends the same request to the backup model. Non-retryable errors (invalid API key, malformed request, unsupported parameters) are returned immediately because retrying them with a different provider would not help. This distinction between retryable and non-retryable errors is enforced by Beluga AI's `core.Error` type, which carries an `IsRetryable()` flag set by each provider's error mapping logic.
+
+The `ApplyMiddleware` function applies middleware right-to-left, making the last middleware in the list the outermost wrapper. Here, `WithFallback` is the only middleware, so it wraps the primary model directly.
 
 ```go
 package main
@@ -74,7 +76,7 @@ The fallback triggers on retryable errors (rate limits, server errors). Non-retr
 
 ## Pattern 2: FailoverRouter
 
-The `FailoverRouter` tries models in order, moving to the next on retryable errors:
+The `FailoverRouter` extends the fallback concept to an ordered list of models. It tries each model in sequence, advancing to the next on retryable errors. This is useful when you have more than two providers and want a clear priority order -- for example, your preferred model first, a cross-provider backup second, and a fast/cheap model as a last resort. The router implements `ChatModel`, so it is transparent to calling code.
 
 ```go
 func main() {
@@ -113,7 +115,7 @@ func main() {
 
 ## Pattern 3: Round-Robin Load Balancing
 
-Distribute load evenly across models:
+When you have multiple providers with similar capabilities and want to distribute load evenly (to avoid hitting rate limits on any single provider, or to compare quality across providers), round-robin routing sends each successive request to the next model in rotation. The `Router` type accepts a `Strategy` interface, making it pluggable -- round-robin is the default, but you can implement custom strategies for weighted routing, latency-based selection, or any other criterion.
 
 ```go
 router := llm.NewRouter(
@@ -130,7 +132,7 @@ for i := 0; i < 6; i++ {
 
 ## Pattern 4: Cost-Optimizing Router
 
-Route simple queries to cheaper models, complex queries to more capable ones:
+Not all queries need the most capable model. Simple factual questions ("What is 2+2?") can be handled by fast, inexpensive models, while complex reasoning tasks need more capable ones. A cost-optimizing router uses a cheap classifier model to assess query complexity, then routes to the appropriate tier. The classifier itself should be the cheapest available model since it runs on every request. The `Select` method implements the `Strategy` interface, making it composable with the `Router` type.
 
 ```go
 // ComplexityRouter routes based on input complexity
@@ -177,11 +179,11 @@ router := llm.NewRouter(
 
 ## Verification
 
-1. Mock a rate limit error on the primary model — verify the fallback triggers.
-2. Send 10 requests through a round-robin router — verify even distribution.
-3. Send both "What is 2+2?" (simple) and "Design a microservices architecture" (complex) — verify the cost router selects appropriate models.
+1. Mock a rate limit error on the primary model -- verify the fallback triggers.
+2. Send 10 requests through a round-robin router -- verify even distribution.
+3. Send both "What is 2+2?" (simple) and "Design a microservices architecture" (complex) -- verify the cost router selects appropriate models.
 
 ## Next Steps
 
-- [Multi-provider Chat](/tutorials/agents/multi-provider) — Unified interface across providers
-- [Advanced Inference](/tutorials/providers/advanced-inference) — Per-call generation options
+- [Multi-provider Chat](/tutorials/agents/multi-provider) -- Unified interface across providers
+- [Advanced Inference](/tutorials/providers/advanced-inference) -- Per-call generation options

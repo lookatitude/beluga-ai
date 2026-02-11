@@ -3,11 +3,15 @@ title: Autonomous Customer Support
 description: Build self-service support systems with ReAct agents, tool integration, and intelligent escalation.
 ---
 
-Customer support teams handle thousands of repetitive inquiries that could be automated. Human agents spend 80% of their time on simple issues, causing high costs, slow response times, and limited availability. An autonomous support system handles common inquiries without human intervention, reducing costs by 60% while improving response times from hours to seconds.
+Customer support teams handle thousands of repetitive inquiries that could be automated. The economics are stark: human agents spend 80% of their time on simple, repeatable issues (password resets, billing questions, status checks), while complex issues that genuinely need human judgment wait in queue. This creates a lose-lose: high costs for simple work and slow response times for complex work.
+
+An autonomous support system handles common inquiries without human intervention, reducing costs by 60% while improving response times from hours to seconds. The key design decision is using a ReAct (Reasoning + Action) agent rather than a simple intent-classification chatbot. ReAct agents can chain multiple tool calls with reasoning steps — "the customer needs a refund, let me first check their order status, then verify the refund policy, then process the refund" — handling multi-step resolution paths that rule-based systems cannot express.
 
 ## Solution Architecture
 
-Beluga AI's ReAct agents combine reasoning and action to autonomously resolve customer inquiries. Agents access tools for knowledge base search and account operations, maintain conversation context through memory, and escalate complex issues to humans when needed. The system learns from resolved tickets to improve over time.
+Beluga AI's ReAct agents combine reasoning and action to autonomously resolve customer inquiries. The ReAct pattern is chosen over simpler approaches (intent classification, decision trees) because support inquiries are open-ended — the agent needs to decide which tools to use, in what order, based on the specific situation. A decision tree cannot anticipate every combination of customer state, request type, and system condition.
+
+Agents access tools for knowledge base search and account operations, maintain conversation context through memory, and escalate complex issues to humans when confidence is low. The escalation mechanism ensures the system fails safely rather than giving incorrect answers.
 
 ```mermaid
 graph TB
@@ -27,7 +31,7 @@ graph TB
 
 ## Support Agent Implementation
 
-Create a ReAct agent with tools for autonomous resolution:
+Create a ReAct agent with tools for autonomous resolution. The agent is configured with three tools (knowledge base search, account actions, documentation lookup) and a buffer memory for conversation context. The `MaxIterations` limit of 10 prevents the agent from entering infinite reasoning loops on queries it cannot resolve, forcing escalation instead.
 
 ```go
 package main
@@ -226,7 +230,7 @@ func needsEscalation(response string) bool {
 
 ## Confidence-Based Escalation
 
-Implement intelligent escalation based on confidence scoring:
+Implement intelligent escalation based on confidence scoring. The confidence model is intentionally simple: it measures what fraction of tool calls succeeded and gives a bonus for knowledge base hits. This heuristic avoids the overhead of training a dedicated confidence model while providing a useful signal for escalation decisions. The threshold (0.7) can be tuned per deployment based on the cost of false escalations versus incorrect answers.
 
 ```go
 type EscalationHandler struct {
@@ -289,7 +293,7 @@ func (h *EscalationHandler) Escalate(ctx context.Context, customerID string, inq
 
 ## Streaming Responses
 
-Stream agent reasoning and responses for better UX:
+Stream agent reasoning and responses for better UX. Beluga AI's `iter.Seq2` streaming pattern allows the UI to show the agent's thought process (tool calls, reasoning steps) in real time rather than waiting for the full response. This transparency builds user trust — customers can see the agent is actively working on their issue rather than staring at a spinner.
 
 ```go
 func (a *AutonomousSupportAgent) HandleInquiryStream(ctx context.Context, customerID string, inquiry string) iter.Seq2[string, error] {

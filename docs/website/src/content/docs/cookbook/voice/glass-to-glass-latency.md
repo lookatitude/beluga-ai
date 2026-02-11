@@ -5,11 +5,15 @@ description: "Optimize end-to-end voice latency with streaming STT, LLM, and TTS
 
 ## Problem
 
-You need to minimize end-to-end latency in speech-to-speech systems (from user speaks to AI responds), requiring optimization at every stage: STT, LLM processing, and TTS.
+End-to-end latency in speech-to-speech systems determines whether conversations feel natural or frustratingly slow. Glass-to-glass latency spans from the moment a user stops speaking until they hear the AI's response, encompassing STT transcription, LLM processing, and TTS synthesis. Each stage introduces delays: STT waits for complete utterances, LLMs process entire inputs before generating responses, and TTS synthesizes full texts before playback begins. Users expect sub-second response times similar to human conversations, where response latencies beyond 300-500ms feel sluggish. Reducing this latency requires optimizing every pipeline stage and eliminating sequential processing wherever possible.
 
 ## Solution
 
-Implement latency optimization using streaming at every pipeline stage, parallel processing between stages, and minimal buffering. Start processing audio chunks as they arrive and begin TTS before the complete LLM response is ready.
+Minimize latency by streaming at every pipeline stage and processing stages in parallel rather than sequentially. Streaming STT produces partial transcripts as audio arrives rather than waiting for silence. Streaming LLMs generate token-by-token responses as soon as they have sufficient context from partial transcripts. Streaming TTS begins synthesizing audio from the first few LLM tokens rather than waiting for complete sentences. Pipeline parallelism means all stages run concurrently via goroutines, with each stage consuming data as it becomes available from the previous stage.
+
+This architecture eliminates wait times between stages. The LLM starts processing while STT is still receiving audio. TTS begins synthesis while the LLM is still generating. Users hear responses before the full interaction completes, dramatically reducing perceived latency. Minimal buffering further reduces delays by transmitting data as soon as it is ready rather than batching into larger chunks.
+
+The key architectural decision is choosing stream-everywhere over batch-and-wait patterns. Every interface uses streaming (Beluga's `iter.Seq2[T, error]`), every goroutine processes data immediately, and buffer sizes remain small to minimize queueing delays.
 
 ## Code Example
 
@@ -149,25 +153,27 @@ func main() {
 }
 ```
 
+The code uses channels to connect pipeline stages, with each stage processing data as it arrives. Streaming flags control whether each component uses streaming or batch mode, allowing you to measure latency impact per stage. Buffer sizes control how much data queues between stages: small buffers minimize latency but may cause backpressure under load.
+
 ## Explanation
 
-1. **Streaming at every stage** -- STT, LLM, and TTS all use streaming mode. Processing starts as soon as data arrives rather than waiting for complete input.
+1. **Streaming at every stage** -- Each component (STT, LLM, TTS) uses streaming mode, producing partial results as soon as data arrives. This eliminates the wait-for-completion pattern where each stage must finish before the next begins. Streaming STT emits partial transcripts after each audio chunk. Streaming LLMs generate tokens incrementally. Streaming TTS synthesizes audio sentence-by-sentence or even word-by-word. The cumulative latency reduction is substantial: instead of waiting seconds for complete STT + LLM + TTS, you wait milliseconds for the first partial results to flow through all stages.
 
-2. **Pipeline parallelism** -- All stages run concurrently via goroutines, with each stage processing data as it becomes available from the previous stage. This maximizes throughput and minimizes idle time.
+2. **Pipeline parallelism** -- All stages run concurrently in separate goroutines, connected by channels. This parallelism means the LLM processes the first few words of a transcript while STT is still transcribing later words. TTS synthesizes audio for the beginning of a response while the LLM is still generating the end. Each stage operates at maximum throughput because it never waits idle for upstream stages to complete. This pattern is fundamental to Beluga's frame-based voice architecture, where FrameProcessor components compose into concurrent pipelines.
 
-3. **Minimal buffering** -- Small channel buffers minimize latency. Larger buffers reduce latency spikes but increase baseline latency.
+3. **Minimal buffering** -- Small channel buffers (10 items) ensure data flows immediately rather than accumulating. Larger buffers smooth over latency spikes and network jitter but increase baseline latency because data queues rather than processing immediately. The optimal buffer size balances latency and robustness: too small and you get backpressure stalls, too large and you add unnecessary delay. Start with 10-item buffers and adjust based on your throughput requirements and tolerance for latency variance.
 
-**Key insight:** Stream everywhere and minimize buffering. Start TTS as soon as you have the first words of the LLM response, not after the complete response is ready.
+**Key insight:** Stream everywhere and minimize buffering. The fastest speech-to-speech systems start TTS synthesis as soon as they have the first few tokens of an LLM response, not after the complete response is ready. This incremental processing pattern reduces perceived latency by 50-80% compared to batch-and-wait architectures. Measure glass-to-glass latency using OpenTelemetry traces to identify bottlenecks in your specific configuration.
 
 ## Variations
 
 ### Predictive Prefetching
 
-Predict likely responses and pre-generate audio before the final transcript arrives to further reduce latency.
+Predict likely responses and pre-generate audio before the final transcript arrives to further reduce latency. Use n-gram models or lightweight LLMs to predict common continuations and speculatively synthesize audio that may be needed.
 
 ### Adaptive Buffering
 
-Adjust buffer size based on network conditions. Increase buffers when latency is high to smooth delivery.
+Adjust buffer size based on network conditions. Increase buffers when latency is high to smooth delivery, decrease when latency is low to minimize queueing delay. Monitor channel length metrics to detect when buffers fill.
 
 ## Related Recipes
 

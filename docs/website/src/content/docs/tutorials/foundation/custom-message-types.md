@@ -3,7 +3,7 @@ title: Custom Message Types
 description: Extend Beluga AI's schema with custom message types for structured enterprise data in conversation flows.
 ---
 
-Standard message types (`HumanMessage`, `AIMessage`, `SystemMessage`) handle text well, but enterprise applications often need to pass structured data — customer profiles, transaction records, compliance events — through AI pipelines. Custom message types maintain type safety while passing this data alongside standard conversation messages.
+Standard message types (`HumanMessage`, `AIMessage`, `SystemMessage`) handle text well, but enterprise applications often need to pass structured data — customer profiles, transaction records, compliance events — through AI pipelines. Custom message types maintain type safety while passing this data alongside standard conversation messages. The `schema.Message` interface is deliberately minimal (three methods) so that any Go struct can implement it, enabling domain-specific data to participate in the conversation without serialization hacks or loss of type information.
 
 ## What You Will Build
 
@@ -26,7 +26,7 @@ type Message interface {
 }
 ```
 
-Messages carry multimodal content parts (`TextPart`, `ImagePart`, `AudioPart`, etc.) and arbitrary metadata. The role constants are:
+Messages carry multimodal content parts (`TextPart`, `ImagePart`, `AudioPart`, etc.) and arbitrary metadata. The `ContentPart` slice design allows a single message to carry mixed modalities — for example, a text explanation alongside an image. The role determines how the LLM interprets the message's content.
 
 | Role | Constant | Purpose |
 |:---|:---|:---|
@@ -37,7 +37,7 @@ Messages carry multimodal content parts (`TextPart`, `ImagePart`, `AudioPart`, e
 
 ## Step 1: Define the Custom Message
 
-Create a message type that carries structured transaction data:
+Create a message type that carries structured transaction data. The compile-time interface check (`var _ schema.Message = (*TransactionMessage)(nil)`) is a Beluga AI convention that catches missing method implementations at build time rather than at runtime when the message is first used in a pipeline.
 
 ```go
 package main
@@ -79,7 +79,7 @@ func NewTransactionMessage(data TransactionData) *TransactionMessage {
 
 ## Step 2: Implement the Message Interface
 
-The `GetContent` method must return `[]schema.ContentPart`. For structured data, create a `TextPart` with a formatted representation that the LLM can read:
+The `GetContent` method must return `[]schema.ContentPart`. For structured data, create a `TextPart` with a formatted representation that the LLM can read. The choice of `RoleSystem` for the role means the LLM treats this data as context rather than as user input or model output, which prevents the model from treating transaction data as a conversational turn.
 
 ```go
 func (m *TransactionMessage) GetRole() schema.Role {
@@ -105,7 +105,7 @@ func (m *TransactionMessage) GetMetadata() map[string]any {
 
 ## Step 3: Use Custom Messages in a Conversation
 
-Custom messages integrate into standard `[]schema.Message` slices:
+Custom messages integrate into standard `[]schema.Message` slices. Because all message types satisfy the same interface, the LLM provider does not need to know about your custom types — it calls `GetRole()` and `GetContent()` on each message regardless of its concrete type.
 
 ```go
 func main() {
@@ -138,7 +138,7 @@ The LLM sees the `TextPart` content from `GetContent()` for the custom message, 
 
 ## Step 4: JSON Content for Structured Parsing
 
-For cases where the LLM should receive structured JSON data instead of formatted text, return JSON in the content part:
+For cases where the LLM should receive structured JSON data instead of formatted text, return JSON in the content part. This is useful when the LLM needs to extract specific fields from the data — JSON is a well-understood format that models parse reliably.
 
 ```go
 import "encoding/json"
@@ -154,7 +154,7 @@ func (m *TransactionMessage) GetContent() []schema.ContentPart {
 
 ## Step 5: Multimodal Custom Messages
 
-Custom messages can carry multiple content parts including images, audio, and files:
+Custom messages can carry multiple content parts including images, audio, and files. The `ContentPart` slice naturally supports this — add a `TextPart` for the readable summary and additional parts for binary data. This approach is useful for report messages that combine narrative text with charts or visualizations.
 
 ```go
 type ReportMessage struct {

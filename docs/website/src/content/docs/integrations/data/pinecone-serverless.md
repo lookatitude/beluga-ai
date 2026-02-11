@@ -3,7 +3,9 @@ title: Pinecone Serverless
 description: Integrate Pinecone Serverless with Beluga AI for fully managed, auto-scaling vector storage with pay-per-use pricing.
 ---
 
-Pinecone Serverless provides fully managed, auto-scaling vector storage with pay-per-use pricing. This guide covers configuring Beluga AI to use Pinecone Serverless for vector storage and similarity search, enabling scalable RAG applications without infrastructure management.
+Traditional vector databases require provisioning pods, managing replicas, and predicting capacity. Pinecone Serverless removes this operational complexity entirely -- indexes scale automatically based on usage, and you pay only for the operations you perform. This makes it well suited for applications with unpredictable traffic patterns or teams that want to focus on application logic rather than infrastructure management.
+
+Choose Pinecone Serverless when you want zero-ops vector storage, pay-per-use pricing, and do not need the advanced filtering capabilities of databases like Qdrant.
 
 ## Overview
 

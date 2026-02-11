@@ -3,7 +3,7 @@ title: Deepgram Live Streams
 description: Integrate Deepgram for real-time speech-to-text with WebSocket streaming in Beluga AI.
 ---
 
-Deepgram provides high-accuracy, low-latency speech-to-text with WebSocket streaming and interim results. This guide covers integrating the Deepgram STT provider with Beluga AI for live transcription.
+Deepgram is the default STT choice for real-time voice applications that prioritize low latency. Its Nova-2 model consistently delivers sub-300ms transcription with high accuracy, and interim results let your agent begin processing before the speaker finishes. Deepgram also supports punctuation, speaker diarization, and 36+ languages out of the box. This guide covers integrating the Deepgram STT provider with Beluga AI for live transcription.
 
 ## Overview
 

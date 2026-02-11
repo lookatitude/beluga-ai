@@ -1,13 +1,17 @@
 ---
 title: Safety & Guards
-description: Implement input validation, output filtering, PII redaction, and human-in-the-loop approval workflows.
+description: Implement defense-in-depth safety with a three-stage guard pipeline for input validation, output filtering, PII redaction, and human-in-the-loop approval workflows.
 ---
 
-The `guard` and `hitl` packages provide a comprehensive safety layer for AI applications. Guards validate content at three pipeline stages, while human-in-the-loop (HITL) enables confidence-based approval workflows for high-risk actions.
+AI applications face safety challenges at every stage of the request lifecycle. Malicious users may attempt prompt injection to override system instructions. Models may produce responses containing personally identifiable information (PII) or harmful content. Tool calls may target sensitive operations that require human oversight. The `guard` and `hitl` packages provide a comprehensive safety layer that addresses each of these concerns at the appropriate pipeline stage.
 
 ## Three-Stage Guard Pipeline
 
-Guards validate content at three points in the agent lifecycle:
+The guard system uses a defense-in-depth strategy with three validation stages, each positioned at a critical boundary in the agent lifecycle. This three-stage approach ensures that unsafe content is caught as early as possible while still providing defense at later stages for content that passes through.
+
+- **Input guards** run before the LLM call, catching prompt injection attempts and invalid input before they consume tokens or influence model behavior.
+- **Output guards** run after the LLM responds, validating and sanitizing the response before it reaches the user. This is where PII redaction and content filtering happen.
+- **Tool guards** run before tool execution, validating arguments and confirming that the requested operation is safe to perform.
 
 ```mermaid
 graph LR
@@ -17,11 +21,13 @@ graph LR
 
 | Stage | Validates | Purpose |
 |-------|-----------|---------|
-| **Input** | User messages | Block prompt injection, validate input |
-| **Output** | Model responses | Redact PII, filter harmful content |
-| **Tool** | Tool arguments | Validate before execution |
+| **Input** | User messages | Block prompt injection, validate format, enforce length limits |
+| **Output** | Model responses | Redact PII, filter harmful content, enforce compliance rules |
+| **Tool** | Tool arguments | Validate parameters, check permissions, confirm destructive operations |
 
 ## The Guard Interface
+
+Every guard implements the same interface, which makes guards composable and interchangeable. You can combine built-in guards with custom domain-specific guards in the same pipeline, and they all participate in the same validation flow.
 
 ```go
 type Guard interface {
@@ -30,7 +36,7 @@ type Guard interface {
 }
 ```
 
-`GuardResult` indicates whether content is allowed, optionally provides a modified version, and explains blocking reasons:
+`GuardResult` indicates whether content is allowed, optionally provides a modified version (for redaction), and explains blocking reasons for auditability:
 
 ```go
 type GuardResult struct {
@@ -42,6 +48,8 @@ type GuardResult struct {
 ```
 
 ## Building a Guard Pipeline
+
+The pipeline constructor accepts guards grouped by stage. Guards within each stage execute in order, and the first guard that blocks content short-circuits the remaining guards in that stage. This ordering matters: place the cheapest, most common checks first to avoid unnecessary work.
 
 ```go
 import "github.com/lookatitude/beluga-ai/guard"
@@ -80,7 +88,7 @@ if result.Modified != "" {
 
 ### Prompt Injection Detection
 
-Detects attempts to override system instructions:
+Prompt injection is the most common attack vector against LLM applications. Attackers embed instructions in user input that attempt to override the system prompt, causing the model to ignore its original instructions. The injection detector analyzes input for known patterns and returns a confidence score. Content above the threshold is blocked.
 
 ```go
 injectionGuard := guard.NewPromptInjectionDetector(
@@ -98,7 +106,9 @@ if !result.Allowed {
 
 ### PII Redaction
 
-Automatically redact personally identifiable information from model responses:
+Models may inadvertently include PII in their responses, either by echoing user-provided data or generating plausible-looking personal information. The PII redactor scans output for patterns matching common PII types and replaces them with redaction markers.
+
+Pattern ordering matters in PII detection. Credit card patterns are evaluated before phone number patterns because a 16-digit credit card number could partially match a phone number regex, leading to incomplete redaction. By checking credit cards first, the more specific pattern matches before the broader one has a chance to produce a false partial match.
 
 ```go
 piiGuard := guard.NewPIIRedactor(
@@ -119,7 +129,7 @@ fmt.Println(result.Modified)
 
 ### Content Moderation
 
-Filter harmful or inappropriate content:
+The content filter checks for harmful or inappropriate content across configurable categories. It uses a scoring model to evaluate content and blocks responses that exceed the threshold for any category.
 
 ```go
 contentGuard := guard.NewContentFilter(
@@ -130,7 +140,7 @@ contentGuard := guard.NewContentFilter(
 
 ### Spotlighting
 
-Isolate untrusted input to prevent indirect prompt injection:
+Indirect prompt injection occurs when untrusted external content (retrieved documents, tool outputs, user-provided files) contains embedded instructions. Spotlighting wraps untrusted content in explicit delimiters so the model can distinguish between system instructions and external data, reducing the effectiveness of injection attempts embedded in retrieved content.
 
 ```go
 spotlight := guard.NewSpotlighter(guard.SpotlightConfig{
@@ -140,7 +150,7 @@ spotlight := guard.NewSpotlighter(guard.SpotlightConfig{
 
 ## Custom Guards
 
-Implement the `Guard` interface for domain-specific validation:
+Guards follow the same interface as every other extensible component in Beluga: implement the interface, and the pipeline accepts it alongside built-in guards. This makes it straightforward to add domain-specific validation rules, compliance checks, or business logic without modifying the framework.
 
 ```go
 type ComplianceGuard struct {
@@ -172,9 +182,11 @@ pipeline := guard.NewPipeline(
 
 ## Human-in-the-Loop (HITL)
 
-The `hitl` package manages approval workflows where human judgment is required:
+Not every safety decision can be automated. The `hitl` package manages approval workflows for actions where human judgment is required, such as deleting production data, sending external communications, or executing financial transactions. The system evaluates each action against configurable policies to determine whether it can be auto-approved or requires explicit human confirmation.
 
 ### Setting Up a Manager
+
+The HITL manager coordinates approval requests, manages timeouts for pending decisions, and notifies reviewers through configurable channels.
 
 ```go
 import "github.com/lookatitude/beluga-ai/hitl"
@@ -187,7 +199,7 @@ mgr := hitl.NewManager(
 
 ### Defining Approval Policies
 
-Policies determine which actions need human approval:
+Policies determine which actions need human approval based on the tool being called, the model's confidence score, and the risk level of the operation. Policies are evaluated in order, and the first matching policy wins. This means you should order policies from most specific to most general, placing your auto-approve rules for safe operations before the catch-all rules for dangerous ones.
 
 ```go
 // Auto-approve read-only operations with high confidence
@@ -218,6 +230,8 @@ Policies are evaluated in order — the first matching policy wins.
 
 ### Risk Levels
 
+Risk levels form a hierarchy that maps to increasingly cautious approval thresholds. Lower-risk operations can be auto-approved with lower confidence, while higher-risk operations demand either very high confidence or explicit human approval.
+
 | Level | Value | Description |
 |-------|-------|-------------|
 | `RiskReadOnly` | `"read_only"` | Read-only operations, minimal risk |
@@ -225,6 +239,8 @@ Policies are evaluated in order — the first matching policy wins.
 | `RiskIrreversible` | `"irreversible"` | Cannot be undone, highest risk |
 
 ### Checking Auto-Approval
+
+Before requesting human review, the manager checks whether an action matches any auto-approve policy. This avoids unnecessary human interruptions for safe, high-confidence operations.
 
 ```go
 autoApproved, err := mgr.ShouldApprove(ctx,
@@ -241,6 +257,8 @@ if autoApproved {
 ```
 
 ### Requesting Human Interaction
+
+When auto-approval is not granted, the manager creates an interaction request that is delivered to a human reviewer. The reviewer can approve, reject, or modify the proposed action. A timeout ensures that pending requests do not block the system indefinitely.
 
 ```go
 resp, err := mgr.RequestInteraction(ctx, hitl.InteractionRequest{
@@ -271,6 +289,8 @@ case hitl.DecisionModify:
 
 ### Interaction Types
 
+The HITL system supports multiple interaction types beyond simple approval gates, enabling workflows where the human reviewer provides feedback, additional information, or data annotations.
+
 | Type | Purpose |
 |------|---------|
 | `TypeApproval` | Yes/no/modify decision on an action |
@@ -279,6 +299,8 @@ case hitl.DecisionModify:
 | `TypeAnnotation` | Request data annotation |
 
 ## Integrating Guards with Agents
+
+Guards integrate with agents through the hooks system. By attaching guard validation to the `OnStart` hook, every user message is validated before it reaches the LLM. This approach follows the middleware composition pattern used throughout Beluga: guards are applied as wrappers around existing behavior, not as modifications to the agent itself.
 
 ```go
 // Create a guarded agent pipeline
@@ -305,6 +327,8 @@ a := agent.New("safe-assistant",
 ```
 
 ## Integrating HITL with Tool Execution
+
+The HITL system integrates naturally with the tool system through wrapper tools. The `ApprovedTool` pattern wraps any existing tool with an approval check, transparently adding human oversight without modifying the original tool implementation. This keeps safety concerns separated from business logic.
 
 ```go
 type ApprovedTool struct {
@@ -342,5 +366,5 @@ func (t *ApprovedTool) Execute(ctx context.Context, input map[string]any) (*tool
 
 - [Building Your First Agent](/guides/first-agent/) — Agent fundamentals
 - [Tools & MCP](/guides/tools-and-mcp/) — Tool system and execution
-- [Monitoring & Observability](/guides/observability/) — Audit guard decisions
-- [Deploying to Production](/guides/deployment/) — Production safety configuration
+- [Monitoring & Observability](/guides/production/observability/) — Audit guard decisions with distributed tracing
+- [Deploying to Production](/guides/production/deployment/) — Production safety configuration and resilience

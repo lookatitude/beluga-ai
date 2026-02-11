@@ -5,11 +5,25 @@ description: "Implement fine-grained per-operation timeouts with graceful handli
 
 ## Problem
 
-You need fine-grained control over timeouts for different operations in a `Runnable` chain, with the ability to set per-operation timeouts, cascade timeouts through nested operations, and handle timeout errors gracefully without losing partial work.
+Different operations in an agent workflow have vastly different time requirements. An LLM generation call might need 10 seconds, an embedding operation 2 seconds, and a vector search 500 milliseconds. Applying a single timeout to the entire workflow leads to two problems.
+
+First, a short timeout causes fast operations to fail when slow operations timeout, losing partial work. If your workflow generates embeddings, performs retrieval, and then calls an LLM, and the LLM times out, you've wasted the embedding and retrieval work. Second, a long timeout allows slow operations to block indefinitely. If embedding hangs, the entire workflow waits for the long timeout instead of failing fast.
+
+The challenge is providing per-operation timeouts while propagating parent timeouts to child operations. When a parent operation has 5 seconds remaining, child operations should respect that limit even if their configured timeout is 10 seconds. This requires timeout hierarchies and deadline propagation.
+
+Additionally, abrupt timeout cancellation can leave resources in an inconsistent state. A database transaction might timeout mid-write, a file mid-upload, or an LLM call mid-generation. You need graceful timeout handling that allows cleanup before terminating operations.
 
 ## Solution
 
-Implement a timeout manager that creates operation-specific contexts with appropriate deadlines, tracks timeout hierarchies, and provides timeout-aware error handling. This works because Go's `context` package supports deadline propagation, allowing you to set different timeouts at different levels of your call stack.
+Per-operation timeout management solves this by assigning different timeouts based on operation type. The timeout manager maintains a registry of operation timeouts, allowing you to configure LLM calls, embeddings, retrievals, and tool calls independently. This configuration happens once at startup and applies uniformly across all agent executions.
+
+The timeout wrapper creates operation-specific contexts with appropriate deadlines. When an operation starts, it checks the configured timeout for that operation type and creates a context with that deadline. The goroutine pattern allows the operation to run while the wrapper monitors for timeout, completion, or errors.
+
+Graceful timeout handling adds a grace period after timeout. When an operation times out, instead of immediately returning the error, the wrapper waits briefly for cleanup to complete. This is not a timeout extension; the operation has already been canceled via context. The grace period simply allows goroutines time to notice the cancellation and clean up resources.
+
+Deadline propagation ensures child operations respect parent timeouts. Before creating an operation-specific timeout, check if the parent context has a deadline. If the parent deadline is sooner than the operation timeout, use the parent deadline instead. This ensures that when a parent operation times out, all child operations also terminate.
+
+Batch timeout distribution divides the total timeout across items in a batch. If you have 10 items and a 5-second timeout, each item gets 500 milliseconds. This ensures the entire batch completes within the timeout while giving each item a fair share. The minimum per-item timeout prevents division from creating impractically short timeouts for large batches.
 
 ## Code Example
 
@@ -236,13 +250,13 @@ func main() {
 
 ## Explanation
 
-1. **Per-operation timeouts** — Different timeouts are allowed for different operations. An LLM call might need 10 seconds, while an embedding operation only needs 2 seconds. This prevents slow operations from blocking fast ones.
+1. **Per-operation timeouts optimize resource usage** — By assigning operation-specific timeouts, you allow fast operations to fail quickly while giving slow operations adequate time. This improves overall system responsiveness because failures propagate immediately for operations that should be fast, rather than waiting for a global timeout. Each operation gets exactly the time it needs, no more and no less.
 
-2. **Graceful timeout handling** — When a timeout occurs, a grace period is provided for cleanup. This is important because abruptly canceling operations can leave resources in an inconsistent state.
+2. **Graceful timeout handling prevents resource leaks** — The grace period after timeout allows goroutines time to notice context cancellation and clean up. Without this, you might leave database connections open, temporary files undeleted, or memory unreleased. The grace period is not for continuing work; the operation has already been canceled. It's purely for cleanup to complete safely.
 
-3. **Batch timeout distribution** — For batch operations, the total timeout is divided across items. This ensures the entire batch completes within the timeout while giving each item a fair share.
+3. **Batch timeout distribution ensures fairness** — Dividing timeout across batch items guarantees the entire batch completes within the timeout while giving each item equal opportunity. Without this, early items might consume most of the timeout, causing later items to fail immediately. The per-item minimum prevents impractically short timeouts that guarantee failure.
 
-Always propagate context timeouts through your call stack. If a parent operation times out, child operations should also respect that timeout to avoid wasted work.
+4. **Deadline propagation maintains timeout hierarchies** — When a parent operation times out, child operations must also terminate to avoid wasted work. By checking parent deadlines before setting operation-specific timeouts, you ensure that child operations respect parent limits. This prevents the situation where a parent times out but child operations continue executing, consuming resources for work that will be discarded.
 
 ## Testing
 

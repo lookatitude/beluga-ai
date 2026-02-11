@@ -3,11 +3,13 @@ title: Medical Record Standardization
 description: Transform medical records from multiple hospital systems into standardized HL7 FHIR format using Beluga AI's schema validation.
 ---
 
-Healthcare networks often operate multiple hospital systems using incompatible data formats and coding systems. This fragmentation causes significant data loss during patient transfers, prevents effective care coordination, and creates compliance risks. A medical record standardization system uses schema validation to ensure data quality and enable seamless interoperability across healthcare systems.
+A healthcare network acquiring a new hospital inherits decades of patient records in proprietary formats — HL7 v2 messages with custom segments, CDA documents with non-standard extensions, even flat files with institution-specific codes. When a patient transfers between facilities, their allergy list might use ICD-9 codes at one hospital and SNOMED CT at another, making automated cross-referencing impossible. Studies show that 18-25% of critical patient data is lost during inter-system transfers, leading to duplicate tests (costing $210B annually in the US), missed drug interactions, and delayed diagnoses.
+
+The interoperability problem is not just format conversion — it requires semantic mapping between coding systems that evolved independently. An ICD-9 diagnosis code "250.00" (Type II diabetes) must map to ICD-10 "E11.9", but the mapping is not always one-to-one, and errors in code translation can change the clinical meaning of a record.
 
 ## Solution Architecture
 
-Beluga AI's schema validation package provides strict validation against HL7 FHIR schemas, ensuring medical records conform to industry standards. The transformation pipeline detects input formats, parses legacy systems, maps medical codes to standard terminologies, and validates the output against FHIR schemas before storage.
+Beluga AI's schema validation provides strict enforcement of HL7 FHIR output schemas, catching data quality issues at transformation time rather than downstream in clinical systems. The pipeline architecture separates format detection, parsing, code mapping, and FHIR transformation into distinct stages. This separation matters because each stage has different failure modes — parsing failures indicate format issues, code mapping failures indicate terminology gaps, and validation failures indicate incomplete or inconsistent transformations. OpenTelemetry tracing across stages enables operators to identify exactly where data quality breaks down.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

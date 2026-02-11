@@ -3,7 +3,7 @@ title: Advanced Inference Options
 description: Fine-tune LLM generation with temperature, sampling, penalties, and response format controls.
 ---
 
-Default LLM settings work for general queries, but specific tasks require tuning. Code generation needs low temperature for determinism. Creative writing benefits from higher temperature for variety. Beluga AI v2 provides per-call `GenerateOption` functions that control these parameters across all providers through a unified API.
+Default LLM settings work for general queries, but specific tasks require tuning. Code generation needs low temperature for determinism. Creative writing benefits from higher temperature for variety. Beluga AI v2 provides per-call `GenerateOption` functions that control these parameters across all providers through a unified API. This functional options pattern (`WithX()`) means you specify only the parameters you want to change — unset options use provider defaults, and the same option functions work regardless of which LLM provider is active.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ Configurations for different use cases — deterministic code generation, creati
 
 ## Generate Options
 
-Options are applied per-call to `Generate` or `Stream`:
+Options are applied per-call to `Generate` or `Stream`. This per-call design is intentional — it allows the same model instance to serve different use cases without creating separate model objects. A single model can generate deterministic code in one call and creative prose in the next.
 
 ```go
 resp, err := model.Generate(ctx, msgs,
@@ -29,7 +29,7 @@ All options are collected into a `GenerateOptions` struct that providers read to
 
 ## Step 1: Temperature and TopP
 
-Temperature controls randomness. TopP (nucleus sampling) restricts the token pool to the top cumulative probability mass.
+Temperature controls randomness in token selection. At temperature 0, the model always picks the most likely token (greedy decoding). Higher temperatures flatten the probability distribution, making less likely tokens more probable. TopP (nucleus sampling) takes a different approach: it restricts the token pool to the smallest set whose cumulative probability exceeds the threshold, then samples from that set.
 
 ```go
 package main
@@ -91,7 +91,7 @@ Temperature guidelines:
 
 ## Step 2: Max Tokens and Stop Sequences
 
-Control output length and stopping conditions:
+Control output length and stopping conditions. `MaxTokens` prevents runaway generation that wastes tokens and cost. Stop sequences tell the model to halt when it produces specific text, which is useful for constraining output format — for example, stopping at a code fence closing to avoid the model appending explanatory text after a code block.
 
 ```go
 // Limit response to 100 tokens
@@ -107,7 +107,7 @@ resp, err = model.Generate(ctx, msgs,
 
 ## Step 3: Structured JSON Output
 
-Force the model to produce valid JSON using `ResponseFormat`:
+Force the model to produce valid JSON using `ResponseFormat`. JSON mode guarantees syntactically valid JSON output, eliminating the need for error-prone parsing of free-text responses. JSON Schema mode goes further by constraining the output to match a specific schema, which is how Beluga AI's structured output feature ensures type-safe responses.
 
 ```go
 // JSON mode — model returns valid JSON
@@ -140,7 +140,7 @@ resp, err = model.Generate(ctx, msgs,
 
 ## Step 4: Tool Choice Control
 
-When tools are bound to a model, control how the model selects them:
+When tools are bound to a model, control how the model selects them. Tool choice is important for agents that need predictable behavior — `ToolChoiceRequired` forces the model to call at least one tool (useful in tool-use loops), while `ToolChoiceNone` prevents tool calls when you want a natural language response even though tools are available.
 
 ```go
 // Let the model decide (default)
@@ -158,7 +158,7 @@ resp, err = model.Generate(ctx, msgs, llm.WithSpecificTool("calculator"))
 
 ## Step 5: Provider-Specific Options
 
-Use `WithMetadata` for options that are specific to a particular provider:
+Use `WithMetadata` for options that are specific to a particular provider. The metadata map passes through to the provider's API request builder, allowing access to provider-specific features without requiring the core option set to account for every possible parameter across all providers.
 
 ```go
 resp, err := model.Generate(ctx, msgs,

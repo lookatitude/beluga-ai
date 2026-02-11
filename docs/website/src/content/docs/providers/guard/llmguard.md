@@ -5,6 +5,8 @@ description: Prompt and output scanning using LLM Guard.
 
 The LLM Guard provider implements the `guard.Guard` interface using the [LLM Guard](https://llm-guard.com/) API. LLM Guard is an open-source toolkit that provides prompt injection detection, toxicity filtering, and sensitive data detection through a collection of configurable scanners.
 
+Choose LLM Guard when you need a self-hosted, open-source safety solution with no external API dependencies. LLM Guard runs locally and provides both prompt and output scanning with configurable scanners. It also supports content sanitization (e.g., masking sensitive data in outputs). For a cloud-hosted prompt injection specialist, consider [Lakera Guard](/providers/guard/lakera). For programmable conversational rules, consider [NeMo Guardrails](/providers/guard/nemo).
+
 ## Installation
 
 ```bash

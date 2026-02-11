@@ -5,6 +5,8 @@ description: "Integration guide for Groq's ultra-fast inference with Beluga AI."
 
 The Groq provider connects Beluga AI to Groq's inference platform, which uses custom LPU (Language Processing Unit) hardware for extremely fast token generation. Groq exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose Groq when inference latency is your primary concern. Groq's LPU hardware delivers the fastest token generation available, making it well-suited for interactive applications, real-time agents, and latency-sensitive pipelines. Groq hosts popular open-source models including Llama and Mixtral.
+
 ## Installation
 
 ```bash
@@ -145,11 +147,11 @@ model, err := groq.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID                    | Description                  |
-|-----------------------------|------------------------------|
-| `llama-3.3-70b-versatile`  | Llama 3.3 70B                |
-| `llama-3.1-8b-instant`     | Fast Llama 3.1 8B            |
-| `mixtral-8x7b-32768`       | Mixtral 8x7B                 |
-| `gemma2-9b-it`             | Gemma 2 9B                   |
+| Model ID                    | Description                                  |
+|-----------------------------|----------------------------------------------|
+| `llama-3.3-70b-versatile`  | Llama 3.3 70B -- best quality on Groq        |
+| `llama-3.1-8b-instant`     | Llama 3.1 8B -- fastest, lowest latency      |
+| `mixtral-8x7b-32768`       | Mixtral 8x7B -- 32K context, MoE model       |
+| `gemma2-9b-it`             | Gemma 2 9B -- compact, instruction-tuned     |
 
 Refer to [Groq's documentation](https://console.groq.com/docs/models) for the latest model list.

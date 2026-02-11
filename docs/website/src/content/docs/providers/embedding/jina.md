@@ -5,6 +5,8 @@ description: Generate text embeddings using Jina AI's embedding models.
 
 The Jina AI embedding provider implements the `embedding.Embedder` interface using the Jina Embeddings API. It supports Jina's multilingual embedding models with native batch processing and token usage reporting.
 
+Choose Jina embeddings when you need language-specific models (German, Chinese, and others) or when the v3 model's strong retrieval performance on benchmarks matters for your use case. Jina specializes in search and retrieval, so its models are tuned for similarity search quality.
+
 ## Installation
 
 ```bash

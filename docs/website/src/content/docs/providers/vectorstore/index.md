@@ -5,6 +5,8 @@ description: Overview of all vector store providers available in Beluga AI v2.
 
 Beluga AI v2 provides a unified `vectorstore.VectorStore` interface for storing and searching document embeddings. All providers register via `init()` and are instantiated through the global registry.
 
+The unified interface means your RAG pipeline works identically across all 13 vector store backends. Start with the in-memory store for development, switch to pgvector or ChromaDB for local testing, and deploy to Pinecone or Qdrant in production -- all without changing your application code.
+
 ## Interface
 
 ```go
@@ -114,13 +116,14 @@ hooks := vectorstore.Hooks{
 
 ## Choosing a Provider
 
-| Use Case | Recommended Provider |
-|---|---|
-| Testing and development | [In-Memory](/providers/vectorstore/inmemory) |
-| Existing PostgreSQL deployment | [pgvector](/providers/vectorstore/pgvector) |
-| Embedded/edge applications | [SQLite-vec](/providers/vectorstore/sqlitevec) |
-| Managed cloud with zero ops | [Pinecone](/providers/vectorstore/pinecone), [Turbopuffer](/providers/vectorstore/turbopuffer) |
-| Full-text + vector search | [Elasticsearch](/providers/vectorstore/elasticsearch), [Weaviate](/providers/vectorstore/weaviate) |
-| High-performance self-hosted | [Qdrant](/providers/vectorstore/qdrant), [Milvus](/providers/vectorstore/milvus) |
-| Existing Redis infrastructure | [Redis](/providers/vectorstore/redis) |
-| Existing MongoDB Atlas | [MongoDB Atlas](/providers/vectorstore/mongodb) |
+| Use Case | Recommended Provider | Why |
+|---|---|---|
+| Testing and development | [In-Memory](/providers/vectorstore/inmemory) | No setup required, deterministic |
+| Existing PostgreSQL deployment | [pgvector](/providers/vectorstore/pgvector) | Vectors co-located with relational data |
+| Embedded/edge applications | [SQLite-vec](/providers/vectorstore/sqlitevec) | File-based, no server needed |
+| Managed cloud with zero ops | [Pinecone](/providers/vectorstore/pinecone), [Turbopuffer](/providers/vectorstore/turbopuffer) | Automatic scaling, no infrastructure |
+| Full-text + vector search | [Elasticsearch](/providers/vectorstore/elasticsearch), [Weaviate](/providers/vectorstore/weaviate) | Combined keyword and semantic queries |
+| High-performance self-hosted | [Qdrant](/providers/vectorstore/qdrant), [Milvus](/providers/vectorstore/milvus) | Purpose-built for vector workloads at scale |
+| Existing Redis infrastructure | [Redis](/providers/vectorstore/redis) | Low-latency, reuses existing deployment |
+| Existing MongoDB Atlas | [MongoDB Atlas](/providers/vectorstore/mongodb) | Vector search integrated with document DB |
+| Production search engine | [Vespa](/providers/vectorstore/vespa) | Real-time indexing, custom ranking models |

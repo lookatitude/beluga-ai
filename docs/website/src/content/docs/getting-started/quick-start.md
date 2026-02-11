@@ -3,7 +3,7 @@ title: Quick Start
 description: Build your first AI agent with Beluga AI v2 in 5 minutes — from installation to a working agent with tools and memory.
 ---
 
-This guide walks you through building a working AI agent with tools and streaming in under 5 minutes. By the end, you'll have an agent that can answer questions and use tools to perform actions.
+This guide walks you through building a working AI agent with tools and streaming in under 5 minutes. Each step introduces a core concept — LLM calls, streaming, agents, tools, and multi-tool composition — so by the end, you'll understand the fundamental building blocks of Beluga AI and have a working agent that reasons about which tools to call and how to use their results.
 
 ## Prerequisites
 
@@ -31,7 +31,9 @@ export OPENAI_API_KEY="sk-..."
 
 ## Step 4: Create a Simple Chat
 
-Create `main.go` with a direct LLM call to verify everything works:
+Before building agents, verify that the LLM connection works with a direct call. This is the simplest possible interaction: create a model, send messages, get a response. The `llm.New()` factory looks up the `"openai"` provider in the registry (registered by the blank import above) and returns a `ChatModel` instance.
+
+Create `main.go`:
 
 ```go
 package main
@@ -79,7 +81,7 @@ go mod tidy && go run main.go
 
 ## Step 5: Stream the Response
 
-Replace the `Generate` call with streaming to see tokens arrive in real time:
+In production, users expect to see responses as they're generated rather than waiting for the complete answer. Beluga's streaming uses `iter.Seq2[schema.StreamChunk, error]` — Go 1.23+ range-over-func iterators that you consume with a standard `for` loop. Each chunk contains a `Delta` with the incremental text. Replace the `Generate` call with streaming to see tokens arrive in real time:
 
 ```go
 package main
@@ -125,7 +127,9 @@ func main() {
 
 ## Step 6: Build an Agent with Tools
 
-Now let's build a proper agent. Agents combine an LLM, a persona, and tools into a reasoning loop that can decide when to call tools and how to use their results.
+Direct LLM calls are useful for simple tasks, but agents add autonomous reasoning. An agent combines an LLM, a persona, and tools into a reasoning loop (ReAct by default) that decides when to call tools and how to incorporate their results into a final answer.
+
+The key concept here is `FuncTool`: it wraps a Go function as a tool by auto-generating JSON Schema from the input struct's tags. The LLM sees the tool's name, description, and parameter schema, then decides whether and how to call it.
 
 ```go
 package main
@@ -212,6 +216,8 @@ The agent's reasoning loop (ReAct by default) will:
 
 ## Step 7: Stream Agent Events
 
+Agent streaming goes beyond LLM token streaming. Each event in the agent's stream represents a step in the reasoning loop — text generation, tool calls, tool results, and handoffs. This gives your application full visibility into what the agent is doing and why, which is essential for building responsive UIs and debugging agent behavior.
+
 For real-time feedback, use `Stream` instead of `Invoke` to see each step of the reasoning loop:
 
 ```go
@@ -235,7 +241,7 @@ fmt.Println()
 
 ## Step 8: Add Multiple Tools
 
-Agents become powerful when they have access to multiple tools. The LLM decides which tool to use based on the user's input:
+Agents become powerful when they have access to multiple tools. The LLM sees all available tools in its context and decides which one to call — or whether to call any at all — based on the user's input. Each tool is independent: define the input struct, write the handler function, and the framework handles schema generation, serialization, and result routing.
 
 ```go
 type WeatherInput struct {

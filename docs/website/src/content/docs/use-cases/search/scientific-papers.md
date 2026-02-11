@@ -3,7 +3,9 @@ title: Scientific Paper Processing
 description: Process scientific papers with academic-aware text splitting that preserves equations, citations, and section structure using Beluga AI's splitter package.
 ---
 
-Research institutions need to index thousands of scientific papers for literature search systems. Standard text splitting breaks mathematical equations, splits citations from context, and loses section hierarchy, leading to poor retrieval accuracy. Academic-aware splitting respects paper structure, preserves equations and citations, and maintains semantic boundaries to enable accurate search across large paper collections.
+Research institutions need to index thousands of scientific papers for literature search systems. Scientific papers have unique structural properties that standard text splitters destroy: mathematical equations contain special characters that get split mid-expression (turning `E = mc^2` into two meaningless fragments), citations like "[Smith et al., 2023]" get separated from the claims they support, and section hierarchy (Abstract, Methods, Results) provides critical retrieval context that flat chunking discards.
+
+Academic-aware splitting respects paper structure, preserves equations and citations, and maintains semantic boundaries to enable accurate search across large paper collections. The key technique is placeholder protection: equations and citations are temporarily replaced with unique placeholders before splitting, then restored afterward. This ensures the splitter never sees or breaks these special constructs.
 
 ## Solution Architecture
 

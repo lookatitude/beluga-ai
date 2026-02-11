@@ -5,6 +5,8 @@ description: "Smallest AI TTS provider for lightning-fast voice synthesis."
 
 Smallest AI provides lightning-fast text-to-speech synthesis with low-latency models optimized for real-time applications. The Beluga AI provider uses the Smallest AI v1 API for synthesis, supporting configurable voice, model, and speed settings.
 
+Choose Smallest AI when you want a lightweight TTS option with fast synthesis speeds and simple voice/model configuration. The lightning model is optimized for low-latency synthesis with minimal setup. For broader voice variety or voice cloning, consider [ElevenLabs](/providers/voice/elevenlabs) or [PlayHT](/providers/voice/playht).
+
 ## Installation
 
 ```go

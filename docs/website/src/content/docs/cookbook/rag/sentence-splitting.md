@@ -1,15 +1,17 @@
 ---
 title: "Sentence-Boundary Aware Splitting"
-description: "Split text into chunks while preserving sentence boundaries for higher-quality RAG retrieval."
+description: "Split text into chunks while preserving sentence boundaries for higher-quality embeddings and more coherent RAG retrieval results."
 ---
 
 ## Problem
 
 You need to split text into chunks while preserving sentence boundaries, avoiding splits in the middle of sentences which lose context and create confusing chunks for RAG retrieval.
 
+Each chunk in a RAG pipeline becomes an independent unit for embedding and retrieval. When a chunk starts or ends mid-sentence, the embedding captures an incomplete thought. This degrades retrieval quality because the chunk's semantic representation is muddled, and it degrades generation quality because the LLM receives partial sentences that are harder to interpret. Sentences are natural semantic units -- they express complete ideas -- making them the ideal split boundary for prose text.
+
 ## Solution
 
-Implement sentence-aware splitting that detects sentence boundaries using regex patterns, splits only at those boundaries, and merges sentences into appropriately sized chunks. Sentences are natural semantic units, and splitting between them preserves meaning.
+Implement sentence-aware splitting that detects sentence boundaries using regex patterns, splits only at those boundaries, and merges sentences into appropriately sized chunks. The splitting process first identifies all sentence boundaries, then greedily groups consecutive sentences into chunks that stay within the size limit. This produces chunks where every sentence is complete, maximizing semantic coherence per chunk.
 
 ## Code Example
 
@@ -135,13 +137,11 @@ func main() {
 
 ## Explanation
 
-1. **Sentence detection** -- A regex pattern matches sentence endings (periods, exclamation marks, question marks followed by whitespace). This identifies natural break points in the text.
+1. **Sentence detection** -- A regex pattern matches sentence endings (periods, exclamation marks, question marks followed by whitespace). This identifies natural break points in the text where one complete thought ends and another begins. The pattern requires trailing whitespace to avoid matching abbreviations like "Dr." or "U.S." in most cases.
 
-2. **Boundary preservation** -- Text is split only at detected sentence boundaries, never in the middle of sentences. This preserves semantic meaning in each chunk.
+2. **Boundary preservation** -- Text is split only at detected sentence boundaries, never in the middle of sentences. This ensures each chunk contains complete thoughts, producing embeddings that capture coherent semantics rather than fragments.
 
-3. **Size-aware merging** -- Sentences are merged into chunks that respect the configured size limit. Short sentences are grouped together; long sentences may stand alone.
-
-**Key insight:** Always split at sentence boundaries. Mid-sentence splits lose context and create confusing chunks that degrade RAG retrieval quality.
+3. **Size-aware merging** -- Sentences are greedily merged into chunks that respect the configured size limit. Short sentences are grouped together to avoid creating too many tiny chunks; long sentences may stand alone if they exceed the overlap threshold. This balances chunk count against chunk quality.
 
 ## Variations
 

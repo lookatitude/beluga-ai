@@ -5,6 +5,8 @@ description: Generate text embeddings using Cohere's Embed API with input type c
 
 The Cohere embedding provider implements the `embedding.Embedder` interface using Cohere's v2 Embed API. It supports input type differentiation between documents and queries, which is critical for asymmetric search scenarios.
 
+Choose Cohere embeddings when building search systems that benefit from asymmetric retrieval (different embeddings for documents vs. queries). Cohere also offers multilingual models that embed 100+ languages into a shared vector space, making them ideal for cross-language search applications.
+
 ## Installation
 
 ```bash

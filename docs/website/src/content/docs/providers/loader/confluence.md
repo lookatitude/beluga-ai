@@ -5,6 +5,8 @@ description: Load wiki pages from Atlassian Confluence via the REST API.
 
 The Confluence loader implements the `loader.DocumentLoader` interface for loading pages from Atlassian Confluence. It fetches page content via the Confluence REST API and extracts plain text from the HTML storage representation.
 
+Choose Confluence when your organization's knowledge base lives in Atlassian Confluence and you want to feed wiki pages into a RAG pipeline. The loader supports both Atlassian Cloud (Basic auth) and Data Center/Server (Bearer token) authentication. For other knowledge platforms, consider [Notion](/providers/loader/notion) or [Google Drive](/providers/loader/gdrive).
+
 ## Installation
 
 ```bash

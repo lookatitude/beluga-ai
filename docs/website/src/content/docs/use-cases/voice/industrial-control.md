@@ -3,7 +3,11 @@ title: Voice-Activated Industrial Control
 description: Implement hands-free voice commands for industrial equipment with noise-resistant STT and safety validation.
 ---
 
-Manufacturing environments require hands-free equipment control for worker safety. Standard voice recognition achieves only 60-70% accuracy in industrial noise levels, making it unreliable for safety-critical operations. Using Beluga AI's STT pipeline with noise-resistant models and multi-layer command validation, this system achieves 96% command accuracy with zero safety incidents.
+Manufacturing environments require hands-free equipment control for worker safety — operators handling materials, wearing gloves, or positioned near moving equipment cannot safely interact with touchscreens or physical controls. Standard voice recognition achieves only 60-70% accuracy at industrial noise levels (85-100+ dB), making it unreliable for safety-critical operations where a misrecognized "start" versus "stop" command could cause equipment damage or injury.
+
+The challenge is not just transcription accuracy but the entire command pipeline: recognizing speech in noise, mapping natural language to a constrained set of valid commands, and validating that each command is safe to execute in the current equipment state. A single layer of defense is insufficient — the system must fail safe at every stage.
+
+Using Beluga AI's STT pipeline with noise-resistant models and multi-layer command validation, this system achieves 96% command accuracy with zero safety incidents.
 
 ## Solution Architecture
 
@@ -24,9 +28,13 @@ graph TB
 
 Voice commands flow through noise filtering, STT transcription, command parsing against a known vocabulary, safety validation, and finally execution with audible confirmation. Emergency stop commands bypass normal validation and execute immediately.
 
+The multi-stage pipeline is deliberate: each stage acts as a filter that reduces ambiguity before the next stage processes it. Noise filtering improves STT accuracy, command parsing constrains free-text to known actions, and safety validation ensures no command violates operational constraints. This defense-in-depth approach means that even if STT produces an incorrect transcription, the command parser and safety validator provide additional layers of protection before any equipment state changes.
+
 ## Implementation
 
 ### Noise-Resistant STT Setup
+
+The controller wraps three components: an STT engine for transcription, a command validator for safety rules, and a command executor for equipment control. The `ProcessCommand` method chains these in sequence, with early returns at each validation stage. Deepgram is chosen for its strong performance in noisy environments, though the STT registry pattern allows swapping providers without changing the command pipeline.
 
 ```go
 package main
@@ -114,6 +122,8 @@ type Command struct {
 ```
 
 ### Safety Validation
+
+The validator applies a chain of safety rules, where every rule must pass for a command to execute. The one exception is `emergency_stop`, which bypasses all rules — when a worker says "emergency stop," latency from validation checks is unacceptable. This rule-based approach over ML-based safety classification is intentional: safety rules must be auditable, deterministic, and explainable for regulatory compliance.
 
 ```go
 type CommandValidator struct {

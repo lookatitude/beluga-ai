@@ -3,11 +3,13 @@ title: Legal Entity Extraction System
 description: Schema-validated entity extraction achieves 98.5% accuracy with 91% reduction in processing time.
 ---
 
-Legal technology firms need to automate entity extraction from thousands of legal documents daily. Manual extraction consumes 40+ hours weekly with a 15-20% error rate, causing compliance risks and delayed case processing. Schema-validated entity extraction automates this process with 98%+ accuracy and 90% time savings.
+Legal due diligence for a single M&A transaction requires extracting entities — companies, individuals, dates, monetary amounts, jurisdictions — from thousands of contracts, filings, and correspondence. A paralegal team manually processing 500 documents per day achieves 80-85% extraction accuracy, but the 15-20% error rate means critical entities (a subsidiary name, a contract expiration date, a liability cap) are missed or misclassified. These errors create compliance risk: a missed entity in a regulatory filing can result in sanctions, and an incorrectly extracted date in a contract review can invalidate legal arguments.
+
+The challenge with LLM-based extraction is that raw LLM output is unstructured text — the model might return entities in varying formats, omit confidence scores, or hallucinate entities that do not exist in the source document. Without schema validation, downstream systems cannot trust the extraction output, and the automation provides no reliability guarantee over manual extraction.
 
 ## Solution Architecture
 
-Beluga AI's schema package combined with LLM-based extraction enables structured entity identification. The system parses documents, extracts entities using the LLM, validates against schemas, and outputs structured JSON with validated entities.
+Beluga AI combines LLM extraction with schema validation to guarantee structured, type-safe output. The LLM handles the semantic complexity of identifying entities in legal language (understanding that "Acme Corp., a Delaware corporation" is a company entity, not three separate entities), while schema validation enforces data quality constraints that the LLM alone cannot guarantee — valid entity types, non-empty values, confidence score ranges, and type-specific format validation for dates and monetary amounts.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

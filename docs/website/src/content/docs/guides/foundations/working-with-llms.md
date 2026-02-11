@@ -3,9 +3,13 @@ title: Working with LLMs
 description: Configure language models, stream responses, use structured output, and build multi-provider setups.
 ---
 
-The `llm` package provides a unified interface for interacting with language models. Every provider — from OpenAI to Ollama — implements the same `ChatModel` interface, making it straightforward to switch providers, add middleware, and build multi-model architectures.
+The `llm` package provides a unified interface for interacting with language models. Every provider — from OpenAI to Ollama — implements the same `ChatModel` interface, making it straightforward to switch providers, add middleware, and build multi-model architectures. This abstraction is the foundation of Beluga's provider-agnostic design: your application code depends on `ChatModel`, not on any specific provider SDK.
 
 ## The ChatModel Interface
+
+The `ChatModel` interface defines four methods that capture the complete lifecycle of LLM interaction. `Generate` handles synchronous request-response patterns. `Stream` returns an `iter.Seq2[schema.StreamChunk, error]` iterator for real-time token delivery. `BindTools` returns a new model instance with tool definitions attached — it uses an immutable copy pattern so the original model is never modified. `ModelID` provides the underlying model identifier for logging and routing decisions.
+
+This interface is deliberately small. A small interface is easier to implement (each new provider only needs four methods), easier to wrap (middleware composes cleanly), and easier to test (mocks are straightforward).
 
 ```go
 type ChatModel interface {
@@ -25,7 +29,7 @@ type ChatModel interface {
 
 ## Provider Setup
 
-Providers register themselves via `init()`. Import the provider package, then use `llm.New()`:
+Providers register themselves via `init()` — import the provider package with a blank identifier, and it becomes available through `llm.New()`. This is Beluga's registry pattern: each provider calls `llm.Register()` in its `init()` function, mapping a string name to a factory function. The advantage of this approach is zero configuration boilerplate — you declare which providers you want by importing them, and the registry handles the rest. There is no central configuration file to maintain or provider list to keep in sync.
 
 ### OpenAI
 
@@ -76,6 +80,8 @@ model, err := llm.New("ollama", llm.ProviderConfig{
 
 ### Available Providers
 
+Beluga ships with 20 provider packages. Most providers that expose an OpenAI-compatible API share the same internal HTTP client (`internal/openaicompat/`), which means adding a new compatible provider requires minimal code. Use `llm.List()` to discover all registered providers at runtime — this is useful for building UIs that let users select their preferred model.
+
 | Provider | Import Path | Config Notes |
 |----------|-------------|-------------|
 | OpenAI | `llm/providers/openai` | `APIKey`, `Model` |
@@ -99,9 +105,9 @@ model, err := llm.New("ollama", llm.ProviderConfig{
 | LiteLLM | `llm/providers/litellm` | `BaseURL`, `Model` |
 | Bifrost | `llm/providers/bifrost` | `BaseURL`, `Model` |
 
-Use `llm.List()` to discover all registered providers at runtime.
-
 ## Basic Generation
+
+The simplest interaction pattern sends a list of messages to the model and receives a complete response. Messages are typed — `SystemMessage` sets the model's behavior, `HumanMessage` carries user input, and `AIMessage` represents the model's response. The response includes both the generated text and token usage metadata, which is essential for cost tracking and context window management.
 
 ```go
 ctx := context.Background()
@@ -122,7 +128,7 @@ fmt.Printf("Tokens: %d input, %d output\n", resp.Usage.InputTokens, resp.Usage.O
 
 ## Generation Options
 
-Control model behavior with functional options:
+Functional options control model behavior on a per-request basis. This pattern is preferable to configuration structs because options are composable, optional, and self-documenting — each option function name describes exactly what it controls. Default values are set by the provider, so you only specify what you want to override.
 
 ```go
 resp, err := model.Generate(ctx, msgs,
@@ -145,7 +151,7 @@ resp, err := model.Generate(ctx, msgs,
 
 ## Streaming
 
-Stream responses using Go 1.23 iterators:
+Streaming delivers tokens as they are generated, reducing perceived latency from seconds to milliseconds for the first visible output. Beluga uses Go 1.23 `iter.Seq2` iterators for streaming instead of channels. This design avoids common channel pitfalls — goroutine leaks when consumers abandon a stream, buffer sizing decisions, and the question of who is responsible for closing the channel. With `iter.Seq2`, the stream is consumed with a standard `for range` loop and cleans up automatically when the loop exits, whether by completion or `break`.
 
 ```go
 for chunk, err := range model.Stream(ctx, msgs) {
@@ -157,7 +163,7 @@ for chunk, err := range model.Stream(ctx, msgs) {
 }
 ```
 
-The `StreamChunk` contains:
+The `StreamChunk` carries incremental data for each token delivery: the new text delta, any partial tool call data, and a finish reason on the final chunk.
 
 ```go
 type StreamChunk struct {
@@ -169,7 +175,9 @@ type StreamChunk struct {
 
 ## Structured Output
 
-Parse LLM responses into typed Go structs:
+When you need the model to return data in a specific format rather than free-form text, use `StructuredOutput`. It derives a JSON Schema from a Go type parameter, instructs the model to respond in JSON conforming to that schema, parses the response, and automatically retries if parsing fails. The retry mechanism includes the parse error in the conversation context so the model can self-correct.
+
+This approach is more robust than manually writing JSON schemas because the schema stays in sync with your Go type — if you add a field to the struct, the schema updates automatically.
 
 ```go
 type Sentiment struct {
@@ -202,7 +210,7 @@ structured := llm.NewStructured[Sentiment](model,
 
 ## Tool Binding
 
-Attach tool definitions so the LLM can request tool calls:
+Tool binding tells the model what external functions it can call. You provide a list of tool definitions (name, description, and JSON Schema for parameters), and the model decides when and how to invoke them. `BindTools` returns a new `ChatModel` instance — the original is not modified. This immutability is important because it means you can safely bind different tool sets to the same base model for different use cases without interference.
 
 ```go
 tools := []schema.ToolDefinition{
@@ -231,11 +239,11 @@ for _, tc := range resp.ToolCalls {
 }
 ```
 
-`BindTools` returns a new `ChatModel` — the original is not modified.
-
 ## Middleware
 
-Middleware wraps `ChatModel` to add cross-cutting behavior. Apply multiple middlewares with `ApplyMiddleware`:
+Middleware wraps `ChatModel` to add cross-cutting behavior — logging, metrics, fallback, caching — without modifying the model implementation. The middleware signature is `func(ChatModel) ChatModel`: it takes a model in, returns a wrapped model out. This pattern composes naturally because the wrapped model satisfies the same interface as the original, so middleware can stack to any depth.
+
+`ApplyMiddleware` applies middleware in right-to-left order internally so that the first middleware in your list executes first (outermost wrapper). This means the order you write matches the order of execution, which is the intuitive behavior.
 
 ```go
 import "log/slog"
@@ -254,8 +262,6 @@ model = llm.ApplyMiddleware(model,
 )
 ```
 
-Middleware is applied left-to-right in execution order. The first middleware in the list executes first (outermost wrapper).
-
 ### Built-in Middleware
 
 | Middleware | Purpose |
@@ -265,6 +271,8 @@ Middleware is applied left-to-right in execution order. The first middleware in 
 | `WithHooks(hooks)` | Attach lifecycle callbacks |
 
 ### Writing Custom Middleware
+
+To create custom middleware, implement a struct that embeds or delegates to the `next` model for all four `ChatModel` methods. Add your custom logic around the delegation calls. The example below shows a metrics middleware that records latency and error counts for every `Generate` call.
 
 ```go
 func WithMetrics(collector MetricsCollector) llm.Middleware {
@@ -293,7 +301,9 @@ func (m *metricsModel) Generate(ctx context.Context, msgs []schema.Message, opts
 
 ## Hooks
 
-Hooks provide lifecycle callbacks without implementing the full `ChatModel` interface:
+Hooks provide lifecycle callbacks at specific points in the generation process without requiring you to implement the full `ChatModel` interface. This makes hooks lighter-weight than middleware — use hooks when you need to observe or validate, and middleware when you need to transform behavior.
+
+All hook fields are optional. Setting a field to `nil` means it is skipped with zero overhead. The `OnError` hook can transform or suppress errors: return `nil` to suppress, return the error to propagate, or return a different error to replace it. Hooks compose with `ComposeHooks`, which merges multiple hook structs so that each callback runs in sequence.
 
 ```go
 hooks := llm.Hooks{
@@ -322,9 +332,11 @@ combined := llm.ComposeHooks(loggingHooks, metricsHooks, auditHooks)
 
 ## Multi-Provider Routing
 
+Production systems often need to distribute requests across multiple LLM providers for load balancing, cost optimization, or failover. Beluga's `Router` implements the `ChatModel` interface, so it is a drop-in replacement for any single model — your application code does not need to know whether it is talking to one model or a routing layer.
+
 ### Round-Robin Router
 
-Distribute load across multiple providers:
+Round-robin distributes requests evenly across providers. This is useful for load balancing when multiple providers offer equivalent capabilities, or for staying within per-provider rate limits.
 
 ```go
 openai, err := llm.New("openai", llm.ProviderConfig{
@@ -348,7 +360,7 @@ resp, err := router.Generate(ctx, msgs)
 
 ### Failover Router
 
-Automatic failover when a provider is down:
+Failover automatically switches to a backup provider when the primary returns a retryable error (network timeout, rate limit, server error). This provides high availability without requiring your application code to handle provider-specific failure modes.
 
 ```go
 primary, _ := llm.New("openai", llm.ProviderConfig{Model: "gpt-4o"})
@@ -362,7 +374,7 @@ resp, err := failover.Generate(ctx, msgs)
 
 ### Custom Routing Strategy
 
-Implement `RouterStrategy` for custom selection logic:
+Implement `RouterStrategy` for custom selection logic. The strategy receives the full list of available models and the current message list, giving it enough context to make informed routing decisions — for example, routing based on message length, content type, or cost constraints.
 
 ```go
 type CostAwareStrategy struct{}
@@ -387,7 +399,7 @@ router := llm.NewRouter(
 
 ## Context Manager
 
-Manage conversation history within token limits:
+Long conversations can exceed a model's context window. The `ContextManager` wraps a `ChatModel` and automatically manages conversation history to stay within a token budget. When the conversation exceeds the limit, the configured strategy determines what to remove — truncation drops the oldest messages, while summarization condenses earlier messages into a summary. Because `ContextManager` implements `ChatModel`, it is transparent to the rest of your application.
 
 ```go
 contextMgr := llm.NewContextManager(model,
@@ -401,7 +413,8 @@ resp, err := contextMgr.Generate(ctx, longConversation)
 
 ## Next Steps
 
-- [Building Your First Agent](/guides/first-agent/) — Use ChatModel inside an agent
+- [Building Your First Agent](/guides/foundations/first-agent/) — Use ChatModel inside an agent
+- [Structured Output](/guides/foundations/structured-output/) — Deep dive into typed LLM responses
 - [Tools & MCP](/guides/tools-and-mcp/) — Tool binding and MCP integration
 - [RAG Pipeline](/guides/rag-pipeline/) — Retrieval-augmented generation
 - [Monitoring & Observability](/guides/observability/) — Track LLM usage and performance

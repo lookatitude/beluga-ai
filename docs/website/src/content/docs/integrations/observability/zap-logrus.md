@@ -3,7 +3,7 @@ title: Zap and Logrus Logger Providers
 description: Integrate structured logging with Zap or Logrus in Beluga AI applications for production-grade observability and trace correlation.
 ---
 
-Beluga AI uses Go's standard `log/slog` package internally, but production deployments often require advanced logging libraries for performance, structured output, or integration with existing infrastructure. This guide shows how to integrate Uber's Zap and Sirupsen's Logrus as logger providers, including context-aware logging with OpenTelemetry trace correlation.
+Go's standard `slog` package covers basic logging needs, but production AI applications often require more: Zap's near-zero-allocation performance for high-throughput agent pipelines, Logrus's ecosystem of hooks for log routing, or integration with an existing logging stack that your team already knows. This guide shows how to integrate Uber's Zap and Sirupsen's Logrus as logger providers, including context-aware logging with OpenTelemetry trace correlation so you can follow a single request from HTTP handler through agent execution and LLM call.
 
 ## Prerequisites
 

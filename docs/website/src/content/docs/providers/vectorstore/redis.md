@@ -5,6 +5,8 @@ description: Vector store using Redis with the RediSearch module for vector simi
 
 The Redis provider implements the `vectorstore.VectorStore` interface using Redis hashes with the RediSearch module for vector similarity search. It stores documents as Redis hashes and leverages RediSearch's KNN vector search capabilities.
 
+Choose Redis when you already have Redis in your infrastructure stack and want to add vector search without introducing a new database. Redis provides low-latency search suitable for real-time applications, and the RediSearch module adds full-text search alongside vector similarity for hybrid queries.
+
 ## Installation
 
 ```bash

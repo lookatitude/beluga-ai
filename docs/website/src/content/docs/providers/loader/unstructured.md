@@ -5,6 +5,8 @@ description: Extract structured content from documents using the Unstructured.io
 
 The Unstructured loader implements the `loader.DocumentLoader` interface using the [Unstructured.io](https://unstructured.io) API to extract structured content from a wide range of file types (PDFs, DOCX, images, HTML, and more). It uploads files to the Unstructured partition API and returns the extracted elements as a single consolidated document.
 
+Choose Unstructured when you need to process a wide variety of document formats (PDFs, DOCX, images with OCR, emails, and more) through a single loader. Unstructured provides element-level extraction with metadata about document structure. It can be self-hosted via Docker for data privacy. For Markdown-focused document conversion, consider [Docling](/providers/loader/docling). For web scraping, consider [Firecrawl](/providers/loader/firecrawl).
+
 ## Installation
 
 ```bash

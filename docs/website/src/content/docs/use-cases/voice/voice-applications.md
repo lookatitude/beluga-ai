@@ -3,11 +3,15 @@ title: Voice AI Applications
 description: Build voice-enabled applications with STT, TTS, S2S, and frame-based pipelines using Beluga AI's voice system.
 ---
 
-Voice interfaces enable natural, hands-free interaction with AI systems. Beluga AI provides a frame-based voice pipeline that composes STT (speech-to-text), TTS (text-to-speech), S2S (speech-to-speech), VAD (voice activity detection), and transport layers into flexible processing chains. This architecture supports use cases from real-time concierge services to meeting transcription and interactive voice forms.
+Voice interfaces enable natural, hands-free interaction with AI systems. Unlike text-based interfaces that require a screen and keyboard, voice reaches users in situations where their hands and eyes are occupied — driving, cooking, operating equipment, or navigating a physical environment. The technical challenge is that voice processing involves multiple interdependent stages (audio capture, speech detection, transcription, response generation, synthesis) that must coordinate with sub-second latency to feel conversational.
+
+Beluga AI provides a frame-based voice pipeline that composes STT (speech-to-text), TTS (text-to-speech), S2S (speech-to-speech), VAD (voice activity detection), and transport layers into flexible processing chains. The frame-based design was chosen over monolithic pipeline architectures because it allows each stage to be developed, tested, and swapped independently. A hotel concierge and a meeting transcription system share the same VAD and STT components but differ in downstream processing — the frame model makes this composition natural without framework-level abstraction leaks.
 
 ## Voice Pipeline Architecture
 
 Beluga AI's voice system is built around the `FrameProcessor` interface. Each component (STT, TTS, VAD, turn detector) is a frame processor that reads frames from an input channel and writes processed frames to an output channel. Frame processors compose into pipelines using `voice.Chain()`.
+
+This composable design follows the Unix pipe philosophy: each processor does one thing well, and complex behavior emerges from composition rather than configuration. You can insert a noise filter before VAD, add logging between stages, or swap a Deepgram STT for Whisper without touching any other component in the chain.
 
 ```
 ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐    ┌─────────┐
@@ -54,7 +58,7 @@ endOfTurn := voice.NewControlFrame("end_of_turn")
 
 ## Use Case 1: Real-Time AI Concierge
 
-A hotel concierge that handles guest inquiries, makes reservations, and provides information through natural voice conversations. Uses S2S (speech-to-speech) for the lowest possible latency.
+A hotel concierge that handles guest inquiries, makes reservations, and provides information through natural voice conversations. Uses S2S (speech-to-speech) for the lowest possible latency — S2S processes audio end-to-end without separate STT/TTS stages, reducing the number of network round-trips and eliminating text as an intermediate representation.
 
 ```go
 package main
@@ -152,7 +156,7 @@ type InfoInput struct {
 
 ## Use Case 2: Meeting Transcription
 
-A live meeting minutes generator that transcribes audio in real time, identifies speakers, and generates structured summaries.
+A live meeting minutes generator that transcribes audio in real time, identifies speakers, and generates structured summaries. This use case chooses STT over S2S because the output is text (transcript and minutes), not audio — there is no need for speech synthesis on the output side.
 
 ```go
 import (
@@ -224,7 +228,7 @@ func generateMinutes(ctx context.Context, transcript string) (string, error) {
 
 ## Use Case 3: Voice Forms
 
-Collect structured data through natural voice conversations. The form orchestrator manages state across turns, validates answers, and supports corrections.
+Collect structured data through natural voice conversations. The form orchestrator manages state across turns, validates answers, and supports corrections. This use case separates STT and TTS (rather than using S2S) because the form logic needs to inspect and validate the transcribed text between speech input and speech output — a step that requires text as an intermediate representation.
 
 ```go
 import (
@@ -311,7 +315,7 @@ func (f *VoiceForm) Run(ctx context.Context, audioIn iter.Seq2[[]byte, error]) (
 
 ## Use Case 4: Interactive Audiobooks
 
-Dynamic narration with character voices and branching storylines:
+Dynamic narration with character voices and branching storylines. This is a TTS-only use case — the story text is pre-authored and the system synthesizes it with character-appropriate voices. STT is not needed because user choices come from the UI, not from speech.
 
 ```go
 import (
@@ -346,7 +350,7 @@ func narrateScene(ctx context.Context, engine tts.TTS, scene Scene) error {
 
 ## Building a Full Voice Pipeline
 
-Compose multiple frame processors into a complete voice pipeline:
+Compose multiple frame processors into a complete voice pipeline. The `voice.Chain()` function connects processors in sequence — each processor's output channel becomes the next processor's input channel. This chain-of-responsibility pattern means adding or removing stages is a one-line change.
 
 ```go
 func buildVoicePipeline(ctx context.Context) (voice.FrameProcessor, error) {

@@ -3,11 +3,11 @@ title: Large-Scale Batch Processing
 description: Process thousands of documents or records with AI using parallel execution, rate limiting, and comprehensive error handling.
 ---
 
-Processing large volumes of data with AI requires more than just calling an LLM in a loop. This use case demonstrates how to build a production-grade batch processing system that handles rate limits, tracks progress, and ensures reliability.
+Processing large volumes of data with AI requires more than calling an LLM in a loop. A sequential approach hits rate limits within minutes, has no recovery when individual items fail, and provides no visibility into progress. Production batch processing must coordinate concurrent workers, respect provider rate limits, handle transient failures with retries, and report progress in real time — all while maximizing throughput within API constraints.
 
 ## Business Problem
 
-A customer support team needs to process 1,000+ support tickets daily, generating AI-powered responses for each. Manual processing takes 5-10 minutes per ticket, requiring 20+ agents and resulting in 4-8 hour response times.
+A customer support team needs to process 1,000+ support tickets daily, generating AI-powered responses for each. Manual processing takes 5-10 minutes per ticket, requiring 20+ agents and resulting in 4-8 hour response times. The team cannot scale by hiring — response quality varies between agents, and training new agents takes weeks.
 
 ### Challenges
 
@@ -56,6 +56,8 @@ graph LR
 
 ### Batch Processor Core
 
+The processor uses Go's concurrency primitives — goroutines for workers, channels for work distribution, and `atomic.Int64` for lock-free metric counters. The token bucket rate limiter (`golang.org/x/time/rate`) shapes request rate to stay within provider limits, and OpenTelemetry counters and histograms provide real-time throughput and latency visibility.
+
 ```go
 package main
 
@@ -70,8 +72,8 @@ import (
     "go.opentelemetry.io/otel"
     "go.opentelemetry.io/otel/metric"
 
-    "github.com/lookatitude/beluga-ai/pkg/llms"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/schema"
 )
 
 type BatchConfig struct {

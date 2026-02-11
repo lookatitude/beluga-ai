@@ -1,15 +1,17 @@
 ---
 title: "Reindexing Status Tracking"
-description: "Track progress, errors, and completion of vector store reindexing operations."
+description: "Track progress, errors, and completion of vector store reindexing operations for operational visibility and failure recovery."
 ---
 
 ## Problem
 
 You need to track the status of reindexing operations in your vector store (progress, errors, completion) so users can monitor long-running jobs and handle failures gracefully.
 
+Reindexing a vector store is a long-running, stateful operation that may process thousands or millions of documents over minutes to hours. Without progress tracking, operators have no way to distinguish a slow job from a stuck one, no visibility into which documents failed, and no ability to resume after a partial failure. In production, transient errors (network timeouts, rate limits, temporary database unavailability) are expected during long operations, so the tracking system must handle partial failures gracefully.
+
 ## Solution
 
-Implement a reindexing tracker that monitors operations, stores status with progress updates, and provides status queries. Reindexing is a long-running operation that needs visibility and recovery mechanisms.
+Implement a reindexing tracker that manages job lifecycle (pending, running, completed, failed, cancelled), provides real-time progress updates, and records per-batch failure details. The tracker runs the actual reindexing in a background goroutine, allowing callers to query progress asynchronously. This separation of concerns means the reindexing logic doesn't need to know about progress reporting, and the progress API doesn't need to know about document processing.
 
 ## Code Example
 
@@ -189,19 +191,19 @@ func main() {
 
 ## Explanation
 
-1. **Status tracking** -- Multiple status states (pending, running, completed, failed, cancelled) give users clear visibility into reindexing jobs.
+1. **Status state machine** -- Jobs progress through well-defined states: pending, running, completed, failed, or cancelled. Each state transition is explicit and protected by a mutex. The state machine makes it easy for monitoring systems to categorize jobs (e.g., alert on "failed" status, dashboard for "running" jobs with progress bars).
 
-2. **Progress updates** -- Progress is updated as documents are processed in batches. Users can monitor how far along the operation is.
+2. **Progress updates** -- Progress is updated as each batch completes, providing a continuous progress signal. The percentage calculation (`processed / total`) gives operators an accurate estimate of remaining time. Progress is updated under the write lock to ensure consistency between the processed count and the progress percentage.
 
-3. **Error handling** -- If reindexing fails, the error is captured and the job marked as failed. Users can inspect the error and decide whether to retry.
+3. **Cancellation support** -- Running jobs can be cancelled via `CancelReindex`, which sets the status to cancelled and records the completion time. In a production implementation, the execute goroutine would check for cancellation via context and stop processing new batches.
 
-**Key insight:** Always provide progress updates for long-running operations. Users need to know the system is working and approximately how long remains.
+4. **Thread-safe access** -- All job state is protected by `sync.RWMutex`. Status queries use read locks (`RLock`) for concurrent read access, while mutations use write locks (`Lock`). This ensures safe concurrent access from the monitoring goroutine and the processing goroutine.
 
 ## Variations
 
 ### Persistent Storage
 
-Store job status in a database for durability across restarts:
+Store job status in a database for durability across process restarts:
 
 ```go
 type PersistentReindexTracker struct {

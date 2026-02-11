@@ -3,7 +3,7 @@ title: Fine-tuning Whisper for Industry Terms
 description: Improve STT accuracy for specialized vocabulary using Whisper prompts and Deepgram keyword boosting.
 ---
 
-Standard speech-to-text models frequently misrecognize domain-specific terminology. This tutorial demonstrates two approaches to improving accuracy: using Whisper's prompt parameter to provide contextual vocabulary, and using Deepgram's keyword boosting to increase the probability of specific terms.
+Standard speech-to-text models frequently misrecognize domain-specific terminology because they are trained on general speech corpora that underrepresent technical vocabulary. This tutorial demonstrates two approaches to improving accuracy: using Whisper's prompt parameter to provide contextual vocabulary, and using Deepgram's keyword boosting to increase the probability of specific terms. Both approaches work without model retraining and can be applied at configuration time.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A vocabulary-aware STT configuration that correctly transcribes technical and in
 
 ## The Problem: Vocabulary Mismatch
 
-Standard STT models are trained on general speech. They often produce incorrect transcriptions for domain-specific terms:
+Standard STT models are trained on general speech. When they encounter domain-specific terms, they approximate the closest-sounding common words. This produces transcription errors that propagate through the rest of your pipeline -- if the STT layer transcribes "Cooper Netties" instead of "Kubernetes," no amount of downstream processing can recover the original intent:
 
 | Spoken Term    | Typical Misrecognition |
 |---------------|----------------------|
@@ -27,7 +27,7 @@ Standard STT models are trained on general speech. They often produce incorrect 
 
 ## Step 1: Whisper Prompt-Based Guidance
 
-OpenAI's Whisper API accepts a `Prompt` parameter that provides the model with vocabulary context. The prompt is not a system instruction; it is treated as prior transcript text that biases the model toward expected terms.
+OpenAI's Whisper API accepts a `Prompt` parameter that provides the model with vocabulary context. Unlike a system instruction, the prompt is treated as prior transcript text that biases the model toward expected terms. By including the exact spelling of your domain terms in the prompt, you shift the model's probability distribution to favor those terms when it encounters similar-sounding audio.
 
 ```go
 package main
@@ -65,7 +65,7 @@ func main() {
 }
 ```
 
-To pass the prompt for vocabulary guidance, use provider-specific configuration:
+To pass the prompt for vocabulary guidance, use provider-specific configuration. The `ProviderSpecific` map allows passing options that are unique to a particular provider without polluting the shared `stt.Config` interface:
 
 ```go
 	provider, err := stt.NewProvider(ctx, "openai", &stt.Config{
@@ -83,7 +83,7 @@ The prompt should contain the exact spelling of terms you expect. The model uses
 
 ## Step 2: Deepgram Keyword Boosting
 
-Deepgram's API supports a `Keywords` parameter that explicitly boosts the probability of specific terms during recognition. Each keyword can include a numeric boost level.
+Deepgram's API supports a `Keywords` parameter that explicitly boosts the probability of specific terms during recognition. This approach is more precise than prompt-based guidance because each keyword receives an individual boost level, allowing you to weight terms by their importance or by how frequently they are misrecognized. Each keyword can include a numeric boost value after a colon.
 
 ```go
 package main
@@ -122,11 +122,11 @@ func main() {
 }
 ```
 
-The boost value after the colon controls intensity. Values above 1.0 increase recognition probability; the default is 1.0.
+The boost value after the colon controls intensity. Values above 1.0 increase recognition probability; the default is 1.0. Higher boost values make the model more likely to select that term, but excessively high values can cause false positives where the model forces the keyword even when the speaker said something different.
 
 ## Step 3: Vocabulary-Aware Wrapper
 
-For applications that serve multiple domains, create a wrapper that selects the appropriate vocabulary context based on the active conversation.
+For applications that serve multiple domains, create a wrapper that selects the appropriate vocabulary context based on the active conversation. This pattern keeps the domain-specific configuration separate from the STT pipeline logic, making it straightforward to add new industries without modifying the core transcription flow.
 
 ```go
 // IndustrySTT wraps an STT provider with domain-specific vocabulary context.
@@ -161,7 +161,7 @@ func (s *IndustrySTT) ProviderFor(ctx context.Context, industry string) (stt.STT
 
 ## Step 4: Post-Processing Correction
 
-When the model still misrecognizes terms despite prompting, apply a post-processing step that uses an LLM to correct known vocabulary in the transcript.
+When the model still misrecognizes terms despite prompting, apply a post-processing step that uses an LLM to correct known vocabulary in the transcript. This is a fallback strategy for cases where acoustic similarity is too high for the STT model to disambiguate. The LLM has access to the vocabulary list and can use semantic context to correct errors that the STT model cannot resolve from audio alone.
 
 ```go
 // CorrectTranscript uses an LLM to fix misrecognized domain terms.
@@ -184,7 +184,7 @@ func CorrectTranscript(ctx context.Context, model llm.ChatModel, raw string, ter
 }
 ```
 
-This approach adds latency and should only be used when high accuracy is required and the vocabulary is not adequately handled by prompt-based guidance.
+This approach adds latency from the LLM call and should only be used when high accuracy is required and the vocabulary is not adequately handled by prompt-based guidance. For real-time voice applications, consider running the correction asynchronously and using the uncorrected transcript for initial response generation.
 
 ## Verification
 

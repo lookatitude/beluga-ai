@@ -5,11 +5,15 @@ sidebar:
   order: 0
 ---
 
+Beluga AI's voice system is built around the **FrameProcessor** interface, a composable, frame-based pipeline architecture. Each processor handles a single concern (noise reduction, VAD, STT, LLM, TTS) and processors chain together via channels. This design lets you insert, remove, or reorder processing stages without rewriting the pipeline, and it mirrors how real-time audio systems work in production: small, focused units connected by typed data streams.
+
+The recipes in this section cover common voice engineering challenges. Each recipe demonstrates a self-contained pattern that you can adapt for your use case.
+
 ## Scale Concurrent Voice Streams
 
 **Problem:** You need to handle hundreds of simultaneous voice sessions without degrading latency or exhausting resources.
 
-**Solution:** Use a session pool with bounded concurrency and per-session resource limits.
+**Solution:** Use a session pool with bounded concurrency and per-session resource limits. Voice sessions are resource-intensive (each holds STT/TTS connections, audio buffers, and agent state), so unbounded creation leads to memory exhaustion and cascading latency spikes. A pool with a semaphore-based processing limit ensures graceful degradation under load rather than catastrophic failure.
 
 ```go
 package main
@@ -106,7 +110,7 @@ func main() {
 
 **Problem:** The user starts speaking while the agent is still generating audio. You need to immediately stop TTS output and start processing the new input.
 
-**Solution:** Use control frames to signal interruptions through the pipeline.
+**Solution:** Use control frames to signal interruptions through the pipeline. In Beluga AI's frame-based architecture, control frames propagate through the same channel as audio and text frames but carry metadata that triggers special behavior in downstream processors. This approach keeps the interrupt signal in-band with the data stream, avoiding race conditions between separate signal and data paths.
 
 ```go
 package main
@@ -193,7 +197,7 @@ func main() {
 
 **Problem:** End-to-end voice latency exceeds 1 second, making the interaction feel unnatural. The target budget is under 800ms.
 
-**Solution:** Optimize each pipeline stage and use preemptive generation.
+**Solution:** Optimize each pipeline stage and use preemptive generation. Glass-to-glass latency (the time from when the user stops speaking to when they hear the agent's response) is the single most important quality metric for voice agents. Research shows that latency above 800ms feels noticeably unnatural, while below 500ms feels conversational. The key is measuring each stage independently so you can identify and address bottlenecks.
 
 ```go
 package main
@@ -302,7 +306,7 @@ func main() {
 
 **Problem:** Users sometimes speak for 30+ seconds, causing STT buffers to overflow or timeout.
 
-**Solution:** Chunk long audio into segments at natural boundaries (pauses) and process incrementally.
+**Solution:** Chunk long audio into segments at natural boundaries (pauses) and process incrementally. Most STT providers have internal buffer limits (typically 10-15 seconds), and sending a single 30-second audio blob results in timeouts or truncation. By segmenting at silence boundaries, each chunk stays within provider limits while preserving sentence integrity. The `SignalEndOfUtterance` control frame tells downstream processors that a complete thought has been delivered.
 
 ```go
 package main
@@ -397,7 +401,7 @@ func main() {
 
 **Problem:** Waiting for the complete LLM response before starting TTS adds latency. You want TTS to start as soon as the first sentence is available.
 
-**Solution:** Stream LLM output and feed complete sentences to TTS incrementally.
+**Solution:** Stream LLM output and feed complete sentences to TTS incrementally. This technique, sometimes called "sentence-level pipelining," overlaps LLM generation with TTS synthesis. Instead of waiting for the full response (which could take 2-3 seconds for a long answer), TTS begins synthesizing the first sentence while the LLM is still producing subsequent sentences. The result is that the user hears the start of the response much sooner, dramatically reducing perceived latency.
 
 ```go
 package main
@@ -493,7 +497,7 @@ func main() {
 
 **Problem:** Audio packets arrive at irregular intervals due to network jitter, causing STT input to be choppy or contain gaps.
 
-**Solution:** Buffer incoming audio and deliver it at a steady rate to the STT processor.
+**Solution:** Buffer incoming audio and deliver it at a steady rate to the STT processor. Network jitter is an inherent property of real-time audio delivery over the internet: packets that were sent at regular 20ms intervals arrive with variable spacing (sometimes bunched together, sometimes with gaps). Without a jitter buffer, these irregularities pass directly to the STT processor, causing transcription errors and audio artifacts. The buffer introduces a small, controlled delay to smooth out arrival times.
 
 ```go
 package main
@@ -568,7 +572,7 @@ func main() {
 
 **Problem:** Background noise causes false-positive speech detection and degrades STT accuracy.
 
-**Solution:** Add a noise gate FrameProcessor before VAD that filters low-energy audio.
+**Solution:** Add a noise gate FrameProcessor before VAD that filters low-energy audio. The noise gate is a signal processing technique borrowed from audio engineering: audio below a threshold energy level is silently dropped. By placing this processor before VAD in the pipeline chain, you prevent ambient noise from triggering voice activity detection and improve the signal-to-noise ratio of audio reaching the STT provider. The RMS (root mean square) calculation provides a reliable measure of audio energy that works across different microphone gains and environments.
 
 ```go
 package main
@@ -652,7 +656,7 @@ func main() {
 
 **Problem:** Your application involves multiple AI characters speaking in a conversation. Each needs a distinct voice.
 
-**Solution:** Route TTS requests to different voice configurations based on speaker identity.
+**Solution:** Route TTS requests to different voice configurations based on speaker identity. This router sits between the LLM output and TTS in the pipeline, inspecting frame metadata to determine which speaker is talking and dispatching to the appropriate TTS processor. A fallback processor handles cases where the speaker ID is unknown, ensuring the pipeline never silently drops frames.
 
 ```go
 package main
@@ -730,7 +734,7 @@ func main() {
 
 **Problem:** TTS output sounds robotic. You need fine control over emphasis, pauses, and prosody.
 
-**Solution:** Transform text frames into SSML-annotated text before sending to TTS.
+**Solution:** Transform text frames into SSML-annotated text before sending to TTS. SSML (Speech Synthesis Markup Language) is a W3C standard that most TTS providers support for fine-grained speech control. By inserting an SSML annotator as a FrameProcessor between the LLM output and TTS, you can automatically add natural pauses after sentences, emphasize important words, and control speaking rate without modifying the LLM prompt or TTS configuration.
 
 ```go
 package main
@@ -801,7 +805,7 @@ func main() {
 
 **Problem:** Different environments need different VAD sensitivity. A quiet office needs high sensitivity; a noisy call center needs lower sensitivity to avoid false triggers.
 
-**Solution:** Configure VAD with environment-specific profiles.
+**Solution:** Configure VAD with environment-specific profiles. Voice Activity Detection sensitivity is a fundamental trade-off: too sensitive and background noise triggers false positives, too aggressive and soft-spoken users get cut off. Rather than tuning a single set of magic numbers, defining named profiles lets you switch behavior based on detected environment, user preference, or deployment context. This approach also makes A/B testing straightforward since each profile is a discrete, testable configuration.
 
 ```go
 package main
@@ -881,7 +885,7 @@ func main() {
 
 **Problem:** You need to monitor and respond to pipeline events (speech start/end, transcripts, errors) without modifying processor code.
 
-**Solution:** Use `voice.Hooks` and `voice.ComposeHooks` for event callbacks.
+**Solution:** Use `voice.Hooks` and `voice.ComposeHooks` for event callbacks. Beluga AI follows the hooks pattern consistently across all packages: optional function fields where `nil` means "skip this hook." This lets you layer observability, error handling, and business logic onto the voice pipeline without touching processor implementations. `ComposeHooks` merges multiple hook sets into one, so monitoring and error handling can be defined independently and combined at configuration time.
 
 ```go
 package main

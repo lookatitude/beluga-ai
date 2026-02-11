@@ -3,11 +3,13 @@ title: SMS Appointment Reminder System
 description: Automate appointment reminders with two-way SMS communication and intelligent response handling to reduce no-shows.
 ---
 
-Healthcare providers waste hours daily making manual reminder calls while experiencing high no-show rates. Manual processes cannot scale, and there is no way to handle patient responses or rescheduling requests. An SMS appointment reminder system automates reminders, enables two-way communication, and intelligently handles confirmations and rescheduling, dramatically reducing no-shows and staff workload.
+Appointment no-shows cost the US healthcare system $150B annually, with individual practices losing $200-500 per missed slot. Manual reminder calls — still the primary method at many practices — consume 2-3 staff hours daily, reach only 60-70% of patients (due to unanswered calls and voicemail), and provide no mechanism for patients to confirm, reschedule, or cancel without calling back during business hours. The result is a 25-30% no-show rate that disrupts scheduling, wastes provider time, and delays care for other patients.
+
+SMS reminders address reachability (95%+ open rates within 3 minutes), but one-way SMS without response handling creates its own problems: patients who want to reschedule still need to call the office, and staff still spend time processing those calls manually.
 
 ## Solution Architecture
 
-Beluga AI provides messaging abstractions for SMS delivery, agent capabilities for intelligent response handling, and tool integration for appointment system coordination. The system schedules reminders automatically, sends SMS at optimal times, processes patient responses, and handles rescheduling requests without manual intervention.
+Beluga AI's server package provides messaging backend abstractions that decouple the reminder logic from the SMS provider (Twilio, Vonage, etc.), enabling provider switching without rewriting application code. The two-way communication architecture uses intent parsing to handle patient responses — confirmations, rescheduling requests, and cancellations — without human intervention for common cases. The scheduler component manages reminder timing (typically 24 hours before appointments) and handles edge cases like same-day appointments that need immediate reminders.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

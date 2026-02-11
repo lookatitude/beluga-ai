@@ -3,7 +3,7 @@ title: Vapi Custom Tools
 description: Integrate Vapi custom tools with Beluga AI agents to extend voice conversations with backend logic, APIs, and agent capabilities.
 ---
 
-Vapi custom tools allow voice assistants to call your backend during a conversation. This guide covers implementing HTTP endpoints that Vapi invokes as custom tools, connecting them to Beluga AI agents and logic, and returning structured results for the voice pipeline to consume.
+Vapi is a popular hosted voice AI platform. When your Vapi assistant needs to perform actions beyond conversation -- looking up orders, booking appointments, or querying databases -- it calls out to your backend via HTTP. By connecting these custom tool endpoints to Beluga AI agents, you combine Vapi's managed telephony and voice handling with the full power of Beluga AI's agent runtime, tools, and memory system. This guide covers implementing HTTP endpoints that Vapi invokes as custom tools, connecting them to Beluga AI agents and logic, and returning structured results for the voice pipeline to consume.
 
 ## Overview
 

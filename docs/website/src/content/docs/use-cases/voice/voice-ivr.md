@@ -3,7 +3,9 @@ title: Voice-Enabled IVR System
 description: Replace touch-tone IVR with voice-enabled interactive voice response using Beluga AI's voice pipeline.
 ---
 
-Contact centers with touch-tone IVR systems face high abandonment rates from deep menu trees and frequent mis-presses. A voice-enabled IVR lets callers speak their intent directly, reducing routing time and improving caller satisfaction. This use case demonstrates building a voice-enabled IVR using Beluga AI's voice pipeline with STT for intent detection and TTS for prompts.
+Contact centers with touch-tone IVR systems face high abandonment rates from deep menu trees and frequent mis-presses. Callers navigate through "press 1 for billing, press 2 for support" hierarchies that assume the caller knows which department handles their issue — they often do not, leading to misroutes, transfers, and repeat navigation. Each additional menu level compounds the abandonment problem.
+
+A voice-enabled IVR lets callers speak their intent directly ("I need to dispute a charge"), collapsing multi-level menu trees into a single interaction. This use case demonstrates building a voice-enabled IVR using Beluga AI's frame-based voice pipeline with STT for intent detection and TTS for prompts. The frame pipeline approach is chosen because each stage (audio input, transcription, intent classification, response synthesis) can be tested and deployed independently, and the telephony transport layer can be swapped without changing the intent logic.
 
 ## Solution Architecture
 
@@ -22,9 +24,13 @@ graph TB
 
 The system processes caller audio through a frame-based pipeline: STT transcribes the caller's speech, intent detection maps the transcript to a routing decision, and TTS plays confirmation prompts back through the telephony transport.
 
+The intent processor sits between STT and TTS as a custom frame processor, demonstrating the composability of Beluga AI's frame pipeline. This architecture means you can upgrade the intent detection logic (from keyword matching to LLM-based) without modifying the STT or TTS stages.
+
 ## Implementation
 
 ### Voice Pipeline Setup
+
+The pipeline chains three frame processors: STT for transcription, a custom intent processor for routing logic, and TTS for spoken confirmations. Using `voice.Chain()` connects them so that text frames from STT flow into the intent processor, and text frames from the intent processor flow into TTS for synthesis.
 
 ```go
 package main
@@ -67,6 +73,8 @@ func buildIVRPipeline(ctx context.Context) (voice.FrameProcessor, error) {
 ```
 
 ### Intent Detection and Routing
+
+The intent processor implements `FrameProcessorFunc`, Beluga AI's adapter for turning a plain function into a frame processor. It passes through non-text frames unchanged and only processes text frames — this pattern ensures audio and control frames propagate correctly through the pipeline. The intent detection uses keyword matching for simplicity and determinism, though it can be replaced with an LLM-based classifier for more nuanced intent recognition.
 
 ```go
 func intentProcessor() voice.FrameProcessor {

@@ -3,7 +3,7 @@ title: In-memory Vector Store
 description: Use the in-memory vector store for rapid RAG prototyping with zero external dependencies.
 ---
 
-Spinning up PostgreSQL with pgvector or a hosted vector database is necessary for production, but it slows down development when you need to test retrieval logic quickly. The in-memory vector store provides zero-dependency semantic search that runs entirely in RAM — ideal for prototyping, testing, and CI/CD pipelines.
+Spinning up PostgreSQL with pgvector or a hosted vector database is necessary for production, but it slows down development when you need to test retrieval logic quickly. The in-memory vector store provides zero-dependency semantic search that runs entirely in RAM — ideal for prototyping, testing, and CI/CD pipelines. Because it implements the same `VectorStore` interface as pgvector, Pinecone, and other production stores, code written against it migrates to production with a one-line configuration change.
 
 ## What You Will Build
 
@@ -15,6 +15,8 @@ A local semantic search engine using the in-memory vector store, including docum
 - A configured embedding provider (or a mock for zero-latency testing)
 
 ## Step 1: Initialize the Store
+
+Both the embedder and vector store are created through their respective registries using `New()`. The blank imports trigger `init()` registration for each provider. The in-memory store requires no configuration (`config.ProviderConfig{}`) because it has no external dependencies — no connection strings, no table names, no credentials.
 
 ```go
 package main
@@ -54,7 +56,7 @@ func main() {
 
 ## Step 2: Add Documents
 
-Create `schema.Document` objects with content and metadata, then add them to the store:
+Create `schema.Document` objects with content and metadata, then add them to the store. Each document carries an embedding vector alongside its text content and metadata. The metadata fields (`source`, `topic`) enable filtering at query time, which narrows the search space before vector comparison and improves both relevance and performance.
 
 ```go
     // Define documents
@@ -94,7 +96,7 @@ Create `schema.Document` objects with content and metadata, then add them to the
 
 ## Step 3: Similarity Search
 
-Search for documents similar to a query:
+Search for documents similar to a query. The store computes cosine similarity between the query vector and all stored document vectors, returning the top-k results ranked by score. The `2` parameter limits results to the two most similar documents, which controls both response size and relevance — returning too many results dilutes the quality of context provided to the LLM.
 
 ```go
     query := "marine mammals in cold waters"
@@ -116,7 +118,7 @@ Search for documents similar to a query:
 
 ## Step 4: Metadata Filtering
 
-Filter results by metadata before the vector comparison:
+Filter results by metadata before the vector comparison. Metadata filtering is applied as a pre-filter that narrows the candidate set before similarity ranking. This is useful in multi-tenant applications where each tenant's documents should only match queries from that tenant, or when you need to restrict search to a specific document category.
 
 ```go
     // Search only within "programming" topic documents
@@ -141,7 +143,7 @@ Filter results by metadata before the vector comparison:
 
 ## Migrating to Production
 
-Switching from in-memory to pgvector is a one-line change — replace the provider name and configuration:
+Switching from in-memory to pgvector is a one-line change — replace the provider name and configuration. This seamless migration is possible because both providers implement the identical `VectorStore` interface. All application code — document insertion, similarity search, metadata filtering — remains unchanged.
 
 ```go
 // Development

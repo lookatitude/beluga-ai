@@ -3,7 +3,7 @@ title: Adding a New LLM Provider
 description: Implement the ChatModel interface and register a custom LLM provider with Beluga AI's registry.
 ---
 
-Beluga AI supports major LLM providers out of the box, but the AI landscape evolves rapidly. By implementing the `ChatModel` interface and registering your provider, you create a first-class citizen that works seamlessly with agents, middleware, routing, and structured output — all without modifying framework code.
+Beluga AI supports major LLM providers out of the box, but the AI landscape evolves rapidly. By implementing the `ChatModel` interface and registering your provider, you create a first-class citizen that works seamlessly with agents, middleware, routing, and structured output — all without modifying framework code. This extensibility is possible because Beluga AI uses the registry pattern (`Register()` + `New()` + `List()`) for all provider types. Your custom provider plugs into the same infrastructure that powers the built-in OpenAI, Anthropic, and Google providers.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A custom LLM provider that implements `ChatModel`, registers with the provider r
 
 ## The ChatModel Interface
 
-Every LLM provider implements this interface:
+Every LLM provider implements this interface. The four methods cover the complete lifecycle of LLM interaction: `Generate` for synchronous requests, `Stream` for real-time token streaming, `BindTools` for tool-use capabilities, and `ModelID` for identification in logging and routing.
 
 ```go
 type ChatModel interface {
@@ -29,7 +29,7 @@ type ChatModel interface {
 
 ## Step 1: Define the Provider
 
-Create a package for your provider under `llm/providers/`:
+Create a package for your provider under `llm/providers/`. The compile-time interface check (`var _ llm.ChatModel = (*Model)(nil)`) ensures your implementation satisfies all four methods at build time. The constructor follows Beluga AI's convention of accepting `config.ProviderConfig` (a `map[string]any`) for configuration, which allows the registry to pass provider-specific settings without requiring a shared configuration type.
 
 ```go
 package mycustom
@@ -77,7 +77,7 @@ func New(cfg config.ProviderConfig) (*Model, error) {
 
 ## Step 2: Implement Generate
 
-Convert Beluga AI messages to your API format, call the API, and convert the response back:
+Convert Beluga AI messages to your API format, call the API, and convert the response back. The conversion layer is the core of any provider implementation — it bridges between Beluga AI's unified message types and the provider's wire format. Always map both text content and tool calls in the response, as agents depend on tool call data to execute the tool-use loop.
 
 ```go
 func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) (*schema.AIMessage, error) {
@@ -120,7 +120,7 @@ func (m *Model) Generate(ctx context.Context, msgs []schema.Message, opts ...llm
 
 ## Step 3: Implement Stream
 
-Return an `iter.Seq2[schema.StreamChunk, error]` iterator. If your API supports server-sent events (SSE), consume them and yield chunks:
+Return an `iter.Seq2[schema.StreamChunk, error]` iterator. Beluga AI uses `iter.Seq2` rather than channels for streaming because it avoids goroutine leaks and supports cooperative cancellation — if the consumer stops iterating (the `yield` call returns `false`), the producer can clean up immediately. If your API supports server-sent events (SSE), consume them and yield chunks.
 
 ```go
 func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
@@ -154,7 +154,7 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 }
 ```
 
-If your API does not support streaming, implement `Stream` by calling `Generate` and yielding the full response as a single chunk:
+If your API does not support streaming, implement `Stream` by calling `Generate` and yielding the full response as a single chunk. This ensures your provider works with streaming consumers even without native streaming support.
 
 ```go
 func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.GenerateOption) iter.Seq2[schema.StreamChunk, error] {
@@ -174,6 +174,8 @@ func (m *Model) Stream(ctx context.Context, msgs []schema.Message, opts ...llm.G
 
 ## Step 4: Implement BindTools and ModelID
 
+`BindTools` returns a new model instance with the tool definitions attached — it does not modify the original. This immutability is important because it allows safe concurrent use of the same base model with different tool sets. An agent can bind one set of tools while another agent binds a different set, without interference.
+
 ```go
 func (m *Model) BindTools(tools []schema.ToolDefinition) llm.ChatModel {
     return &Model{
@@ -189,11 +191,9 @@ func (m *Model) ModelID() string {
 }
 ```
 
-`BindTools` returns a new model instance — it does not modify the original. This allows safe concurrent use of the same base model with different tool sets.
-
 ## Step 5: Register with the Registry
 
-Register your provider in an `init()` function so it becomes available through `llm.New`:
+Register your provider in an `init()` function so it becomes available through `llm.New`. The registry pattern is how Beluga AI achieves extensibility without modification — new providers register themselves at import time, and consumers discover them through the `New()` factory and `List()` discovery functions. This pattern is used identically across all extensible packages (embedding, vectorstore, STT, TTS, etc.).
 
 ```go
 func init() {
@@ -205,7 +205,7 @@ func init() {
 
 ## Step 6: Use Your Provider
 
-Import the provider package for its `init()` side effect, then create instances through the registry:
+Import the provider package for its `init()` side effect, then create instances through the registry. The blank import (`import _ "path/to/mycustom"`) triggers `init()` registration without creating an explicit dependency on the provider's exported types, which keeps application code decoupled from specific providers.
 
 ```go
 package main

@@ -3,7 +3,7 @@ title: Building a Scalable Voice Backend
 description: Deploy a production-ready voice backend with concurrent session management, health checks, and pipeline configuration.
 ---
 
-Production voice applications must handle many concurrent sessions with predictable latency, graceful degradation, and operational visibility. This tutorial demonstrates how to build a scalable voice backend using Beluga's backend package with session management, health monitoring, and configurable STT/TTS or S2S pipelines.
+Production voice applications must handle many concurrent sessions with predictable latency, graceful degradation, and operational visibility. A single voice agent serving one user at a time works for prototyping, but production deployments need session isolation, concurrency limits, health monitoring, and the ability to drain sessions during deployments. This tutorial demonstrates how to build a scalable voice backend using Beluga's backend package with session management, health monitoring, and configurable STT/TTS or S2S pipelines.
 
 ## What You Will Build
 
@@ -17,7 +17,7 @@ A production-ready voice backend that supports concurrent sessions, configurable
 
 ## Step 1: Configure the Backend
 
-Use `vbiface.Config` to define the backend provider, pipeline type, concurrency limits, and observability settings.
+Use `vbiface.Config` to define the backend provider, pipeline type, concurrency limits, and observability settings. The `MaxConcurrentSessions` limit protects the backend from overload -- each voice session consumes memory for audio buffers, a WebSocket connection, and potentially an S2S provider session. Setting this limit ensures the backend degrades gracefully under load rather than accepting sessions it cannot serve with acceptable latency.
 
 ```go
 package main
@@ -68,6 +68,8 @@ func main() {
 
 ### Pipeline Types
 
+The pipeline type determines how audio is processed. The choice between STT/TTS and S2S depends on whether you need text as an intermediate representation (for logging, guardrails, or custom LLM processing) or whether end-to-end audio processing with lower latency is more important:
+
 | Type             | Constant                     | Description                          |
 |-----------------|------------------------------|--------------------------------------|
 | STT + TTS       | `vbiface.PipelineTypeSTTTTS` | Traditional transcribe-process-synthesize |
@@ -87,7 +89,7 @@ For STT/TTS pipelines, also set `STTProvider` and `TTSProvider`:
 
 ## Step 2: Create Sessions
 
-Each voice session represents one user interaction. Sessions are created with a `SessionConfig` that specifies the user, transport, and processing pipeline.
+Each voice session represents one user interaction. Sessions are created with a `SessionConfig` that specifies the user, transport, and processing pipeline. The `AgentCallback` receives transcribed text and returns the agent's response, keeping your application logic decoupled from the transport and pipeline implementation.
 
 ```go
 	sessionCfg := &vbiface.SessionConfig{
@@ -112,7 +114,7 @@ Each voice session represents one user interaction. Sessions are created with a 
 
 ## Step 3: Health Checks and Capacity Management
 
-Before creating new sessions, verify the backend is healthy and has capacity.
+Before creating new sessions, verify the backend is healthy and has capacity. This pattern is essential for production deployments behind a load balancer: the health check endpoint tells the load balancer whether this instance can accept new connections, and the capacity check prevents overcommitting resources.
 
 ```go
 // acceptSession checks backend health and capacity before creating a session.
@@ -139,7 +141,7 @@ func acceptSession(ctx context.Context, be vbiface.VoiceBackend, cfg *vbiface.Se
 
 ## Step 4: Session Lifecycle Management
 
-Track and manage active sessions for operational visibility.
+Track and manage active sessions for operational visibility. Session lifecycle management is important for debugging (which sessions are active and in what state), capacity planning (how many sessions does this instance typically handle), and graceful shutdown (drain existing sessions before terminating the process).
 
 ```go
 // listActiveSessions returns all active sessions with their state.
@@ -167,7 +169,7 @@ func closeSession(ctx context.Context, be vbiface.VoiceBackend, sessionID string
 
 ## Step 5: Multiple Provider Support
 
-The backend registry supports multiple providers. Register additional providers via blank imports and switch between them by changing the `Provider` field.
+The backend registry supports multiple providers. Register additional providers via blank imports and switch between them by changing the `Provider` field. This makes it straightforward to test with one provider locally and deploy with another in production, or to offer different providers to different tenants.
 
 ```go
 import (

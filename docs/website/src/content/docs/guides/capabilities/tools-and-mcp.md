@@ -1,11 +1,15 @@
 ---
 title: Tools & MCP
-description: Create tools for agents, build tool registries, and connect to MCP servers for remote tool discovery.
+description: Create typed Go tools for agents, organize them in registries, and connect to MCP servers for runtime tool discovery and interoperability.
 ---
 
-The `tool` package provides the tool system that lets agents interact with the outside world. Define tools as typed Go functions, organize them in registries, and connect to remote tool servers via the Model Context Protocol (MCP).
+LLMs generate text, but to be useful in production systems they need to take actions — query databases, call APIs, read files, send notifications. Tools bridge this gap by giving agents typed, validated functions they can invoke. The LLM sees a tool's name, description, and JSON Schema, decides when to call it, and the framework handles argument parsing, execution, and result delivery.
+
+The `tool` package provides the complete tool system: define tools as typed Go functions with automatic schema generation, organize them in registries, add cross-cutting behavior with middleware, and connect to remote tool servers via the [Model Context Protocol (MCP)](https://modelcontextprotocol.io) for runtime discovery.
 
 ## The Tool Interface
+
+The `Tool` interface is intentionally minimal — four methods that capture everything an LLM needs to discover and invoke a tool. The `InputSchema` returns a JSON Schema that the LLM uses to generate valid arguments, and `Execute` runs the tool with those arguments. This interface is the foundation for all tool types: local functions, MCP remote tools, and agent handoffs.
 
 ```go
 type Tool interface {
@@ -25,7 +29,7 @@ type Tool interface {
 
 ## Creating Tools with FuncTool
 
-`FuncTool` wraps any typed Go function as a `Tool`, automatically generating the JSON Schema from struct tags:
+Writing JSON Schema by hand is tedious and error-prone — every field needs a type, description, and validation rules, and any mismatch between the schema and your code causes runtime failures. `FuncTool` eliminates this by deriving the JSON Schema automatically from Go struct tags. You define a typed input struct with `json`, `description`, `required`, and `default` tags, and the framework generates a correct schema at construction time. This approach leverages Go's type system for compile-time safety while producing the JSON Schema that LLMs need for argument generation.
 
 ```go
 import "github.com/lookatitude/beluga-ai/tool"
@@ -78,7 +82,7 @@ return &tool.Result{
 
 ## Tool Registry
 
-Organize tools into registries for modular management:
+As the number of tools grows, you need a way to organize, discover, and manage them. The tool registry groups tools into named collections that can be passed to agents, exposed via MCP servers, or composed from multiple sources. Registries support listing, lookup by name, and bulk middleware application.
 
 ```go
 reg := tool.NewRegistry()
@@ -103,7 +107,7 @@ a := agent.New("assistant",
 
 ## Tool Middleware
 
-Wrap tools with cross-cutting behavior:
+Tool middleware follows the same `func(T) T` composable pattern used for LLM middleware and memory middleware throughout Beluga AI. This consistency means you already know the pattern: each middleware wraps a `Tool`, intercepts `Execute` calls, and delegates to the next layer. Common use cases include logging, timeout enforcement, rate limiting, and metrics collection. Middleware can be applied to individual tools or to all tools in a registry at once.
 
 ```go
 // Logging middleware
@@ -124,6 +128,8 @@ reg.ApplyMiddleware(loggingMiddleware)
 
 ### Writing Custom Middleware
 
+Custom middleware follows a closure pattern: the outer function captures configuration, and the inner function wraps the tool. The `MiddlewareFunc` helper creates a tool that delegates `Name`, `Description`, and `InputSchema` to the wrapped tool while intercepting `Execute`. This example demonstrates a rate limiter that uses Go's `rate.Limiter` to throttle tool calls.
+
 ```go
 func RateLimitMiddleware(rps int) tool.Middleware {
 	limiter := rate.NewLimiter(rate.Limit(rps), rps)
@@ -140,7 +146,7 @@ func RateLimitMiddleware(rps int) tool.Middleware {
 
 ## Tool Hooks
 
-Monitor tool execution lifecycle:
+Tool hooks provide lifecycle observation without wrapping. Unlike middleware, which changes execution behavior, hooks are for monitoring and auditing. `BeforeExecute` runs before every tool call (return an error to abort), `AfterExecute` runs after completion regardless of outcome, and `OnError` runs when execution fails. All hook fields are optional — nil hooks are skipped.
 
 ```go
 hooks := tool.Hooks{
@@ -160,7 +166,9 @@ hooks := tool.Hooks{
 
 ## MCP Client
 
-Connect to remote tool servers using the [Model Context Protocol](https://modelcontextprotocol.io):
+The [Model Context Protocol (MCP)](https://modelcontextprotocol.io) is an open standard that enables agents to discover and invoke tools hosted on remote servers. This is significant because it decouples tool implementation from agent implementation: a tool server can be written in any language and deployed independently, and agents discover available tools at runtime through the protocol's `ListTools` endpoint. MCP uses Streamable HTTP transport for reliable, bidirectional communication.
+
+Connect to a remote MCP server:
 
 ```go
 import "github.com/lookatitude/beluga-ai/protocol/mcp"
@@ -194,6 +202,8 @@ a := agent.New("mcp-agent",
 
 ### MCP with Multiple Servers
 
+In production, tools often span multiple services: a file operations server, a database query server, a notification server. MCP clients can connect to multiple servers simultaneously, and their tools can be combined into a single tool set for the agent. This architecture scales horizontally — each MCP server is an independent microservice.
+
 ```go
 // Connect to multiple MCP servers
 filesClient, err := mcp.NewClient(mcp.ClientConfig{
@@ -219,7 +229,7 @@ a := agent.New("multi-mcp",
 
 ## MCP Server
 
-Expose your tools as an MCP server:
+You can also expose your Go tools as an MCP server, making them available to any MCP-compatible agent or application. This is useful for building reusable tool services that multiple agents or teams can share. The server handles protocol negotiation, tool discovery, argument validation, and result serialization.
 
 ```go
 import "github.com/lookatitude/beluga-ai/protocol/mcp"
@@ -241,7 +251,11 @@ if err := server.ListenAndServe(":3001"); err != nil {
 
 ## Building Complex Tools
 
+The `FuncTool` pattern scales to tools of any complexity. The following examples demonstrate common production patterns: a database query tool that returns structured results, and an HTTP API tool that wraps internal services. Both follow the same struct-tag-driven schema generation and typed function signature.
+
 ### Database Query Tool
+
+This tool executes read-only SQL queries against a database. The input struct captures the query and parameters, and the function handles row scanning and JSON serialization. Returning an `ErrorResult` (instead of a Go error) reports the problem to the LLM without terminating the agent loop, allowing the LLM to try a different query.
 
 ```go
 type QueryInput struct {
@@ -271,6 +285,8 @@ queryTool := tool.NewFuncTool("query_db", "Execute a read-only SQL query",
 
 ### HTTP API Tool
 
+This tool wraps an internal HTTP API, giving the agent access to existing services without exposing raw HTTP details. The LLM specifies an endpoint, method, and body, and the tool handles HTTP mechanics.
+
 ```go
 type APIInput struct {
 	Endpoint string            `json:"endpoint" description:"API endpoint path" required:"true"`
@@ -290,6 +306,8 @@ apiTool := tool.NewFuncTool("call_api", "Call an internal API endpoint",
 ```
 
 ## Using Tools with Agents
+
+Once tools are defined, passing them to an agent is a single option. The agent's LLM decides when to call tools based on the user's request and the tool descriptions. The framework handles the tool-call loop: the LLM generates tool-call requests, the framework executes them, and the results are fed back to the LLM for the next response.
 
 ```go
 a := agent.New("assistant",

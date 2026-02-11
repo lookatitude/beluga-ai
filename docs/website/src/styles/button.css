@@ -2,9 +2,37 @@
   @apply inline-block no-underline  px-5 py-2 font-medium capitalize transition;
 }
 
+/* Focus-visible for all buttons */
+.btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .btn-primary {
   background: var(--color-primary-gradient);
   @apply text-white hover:brightness-105 rounded-xl py-3;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.btn-primary:hover {
+  transform: scale(1.02);
+}
+
+/* Ghost button variant */
+.btn-ghost {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--sl-color-white);
+  @apply rounded-xl py-3;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+.btn-ghost:hover {
+  border-color: color-mix(in srgb, var(--sl-color-white) 20%, transparent);
+  background: color-mix(in srgb, var(--sl-color-white) 5%, transparent);
+}
+
+/* Small button variant */
+.btn-sm {
+  @apply px-3 py-1.5 text-sm rounded-lg;
 }
 .btn-outline-primary {
   @apply relative rounded-xl py-3 px-6 border-none text-lightmode-text dark:text-text  hover:text-text! dark:hover:text-text;

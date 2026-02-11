@@ -5,6 +5,8 @@ description: "Integration guide for Azure OpenAI Service with Beluga AI."
 
 The Azure OpenAI provider connects Beluga AI to OpenAI models hosted on Microsoft Azure. It uses the same OpenAI-compatible API format with Azure-specific authentication (api-key header) and URL structure (per-deployment endpoints with api-version query parameter).
 
+Choose Azure OpenAI when your organization requires enterprise compliance controls, Azure Active Directory integration, virtual network isolation, or data residency guarantees. Azure provides the same OpenAI models with enterprise-grade SLAs and private networking.
+
 ## Installation
 
 ```bash

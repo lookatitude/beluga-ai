@@ -5,7 +5,7 @@ description: Integrate Slack webhooks with Beluga AI agents to receive and respo
 
 ## Overview
 
-This guide walks through integrating Slack webhooks with Beluga AI, enabling AI agents to receive messages from Slack workspaces and send intelligent responses. The integration uses Slack's Events API for incoming messages and the Web API for outbound replies, with full OpenTelemetry instrumentation for observability.
+Slack is where most engineering and operations teams already communicate. By connecting a Beluga AI agent to Slack, your team can query knowledge bases, trigger workflows, and get AI-generated summaries without leaving their primary communication tool. This is particularly valuable for internal support bots, on-call assistants, and DevOps automation. This guide walks through integrating Slack webhooks with Beluga AI, enabling AI agents to receive messages from Slack workspaces and send intelligent responses, with full OpenTelemetry instrumentation for observability.
 
 ## Prerequisites
 

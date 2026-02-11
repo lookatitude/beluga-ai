@@ -1,13 +1,15 @@
 ---
 title: Monitoring & Observability
-description: Instrument AI applications with OpenTelemetry tracing, metrics, structured logging, and health checks.
+description: Instrument AI applications with OpenTelemetry GenAI semantic conventions for distributed tracing, token usage metrics, structured logging with trace correlation, and health checks.
 ---
 
-The `o11y` package provides production-grade observability using OpenTelemetry GenAI semantic conventions. Trace every LLM call, track token usage, monitor latency, and export telemetry to any OpenTelemetry-compatible backend.
+AI applications are harder to observe than traditional services because their behavior depends on probabilistic model outputs, context windows that change with each request, and external provider latency that varies significantly. The `o11y` package provides production-grade observability built on OpenTelemetry, using the GenAI semantic conventions that define a standard vocabulary for AI-specific telemetry.
+
+Beluga uses OpenTelemetry because it is the industry-standard, vendor-neutral observability framework. All major backends (Jaeger, Grafana Tempo, Datadog, Honeycomb) understand OTel's trace, metric, and log formats, so you can switch backends without changing instrumentation code. The GenAI semantic conventions (`gen_ai.*` attributes) extend this with AI-specific metadata like model names, token counts, and operation types, enabling powerful queries such as "show me all calls to gpt-4o that took longer than 5 seconds" or "what is the average token cost per agent per hour."
 
 ## Setup
 
-Initialize tracing and metrics at application startup:
+Initialize tracing and metrics at application startup. The shutdown function returned by `InitTracer` flushes any buffered spans before the process exits, ensuring that in-flight traces are not lost during shutdown.
 
 ```go
 import (
@@ -47,9 +49,11 @@ func main() {
 
 ## Distributed Tracing
 
+Distributed tracing captures the full lifecycle of a request as it flows through agents, LLM calls, tool executions, and guard validations. Each operation creates a span, and spans are linked through parent-child relationships to form a trace tree. This structure lets you see not just that a request failed, but exactly where in the pipeline it failed and what happened before the failure.
+
 ### Creating Spans
 
-Use `o11y.StartSpan` to trace GenAI operations:
+Use `o11y.StartSpan` to create spans with GenAI semantic attributes. These attributes provide structured metadata that backends can index and query, which is far more useful than unstructured log messages for diagnosing production issues.
 
 ```go
 ctx, span := o11y.StartSpan(ctx, "llm.generate", o11y.Attrs{
@@ -77,6 +81,8 @@ span.SetStatus(o11y.StatusOK, "")
 
 ### GenAI Attribute Constants
 
+These constants follow the OpenTelemetry GenAI semantic conventions, ensuring that all telemetry backends interpret your AI-specific metadata consistently. Using standardized attribute names means dashboards, alerts, and queries work across different observability platforms without translation.
+
 | Constant | Key | Description |
 |----------|-----|-------------|
 | `AttrAgentName` | `gen_ai.agent.name` | Agent performing the operation |
@@ -90,7 +96,7 @@ span.SetStatus(o11y.StatusOK, "")
 
 ### Automatic Tracing with LLM Hooks
 
-Use LLM hooks to trace every call automatically:
+Rather than manually instrumenting every LLM call, you can attach tracing through LLM hooks. Hooks are optional callback functions that execute before and after each LLM operation. The `BeforeGenerate` hook creates a span, and `AfterGenerate` records the response metadata. This approach instruments all LLM calls uniformly without modifying individual call sites.
 
 ```go
 tracingHooks := llm.Hooks{
@@ -114,9 +120,11 @@ model = llm.ApplyMiddleware(model, llm.WithHooks(tracingHooks))
 
 ## Metrics
 
+Metrics provide aggregate views of system behavior over time. While traces show individual request paths, metrics answer operational questions: What is our token consumption rate? What is P95 latency for LLM calls? How much are we spending per hour? These aggregates are essential for capacity planning, cost management, and alerting.
+
 ### Built-in Metrics
 
-The `o11y` package provides pre-defined GenAI metrics:
+The `o11y` package provides pre-defined metric recording functions aligned with the GenAI semantic conventions. Each function records a data point associated with the current span context, enabling metrics to be correlated with traces.
 
 ```go
 // Record token usage
@@ -137,6 +145,8 @@ o11y.Histogram(ctx, "beluga.retriever.latency_ms", 125.0)
 
 ### Pre-defined Metric Instruments
 
+These instruments follow the OpenTelemetry GenAI metric naming conventions. Using standardized names means that community dashboards and alerting templates work out of the box.
+
 | Metric | Type | Unit | Description |
 |--------|------|------|-------------|
 | `gen_ai.client.token.usage` | Counter | `{token}` | Input tokens consumed |
@@ -146,7 +156,7 @@ o11y.Histogram(ctx, "beluga.retriever.latency_ms", 125.0)
 
 ### Prometheus Integration
 
-Export metrics to Prometheus:
+Prometheus is a common choice for metrics in Kubernetes environments. The following setup exports Beluga's OTel metrics in Prometheus format, making them available to existing Prometheus/Grafana infrastructure.
 
 ```go
 import (
@@ -174,7 +184,7 @@ http.ListenAndServe(":9090", nil)
 
 ## Structured Logging
 
-Use Go's `slog` for structured logging throughout the framework:
+Structured logging with Go's `slog` package provides machine-parseable log output that integrates with log aggregation systems. Unlike unstructured text logs, structured logs can be filtered, grouped, and analyzed programmatically, which is essential when debugging production issues across multiple service instances.
 
 ```go
 import "github.com/lookatitude/beluga-ai/o11y"
@@ -190,6 +200,8 @@ model = llm.ApplyMiddleware(model, llm.WithLogging(logger))
 
 ### Log Levels for AI Operations
 
+Each log level serves a specific purpose in AI operations. Keeping to these conventions makes it easier to filter relevant information during debugging without being overwhelmed by noise.
+
 | Level | Usage |
 |-------|-------|
 | `DEBUG` | Raw LLM requests/responses, tool input/output |
@@ -198,6 +210,8 @@ model = llm.ApplyMiddleware(model, llm.WithLogging(logger))
 | `ERROR` | Failed operations, guard blocks, timeout errors |
 
 ### Correlating Logs with Traces
+
+When a span is active in the context, the logger automatically includes `trace_id` and `span_id` fields in every log entry. This trace correlation is what links logs, metrics, and traces together for a single request: you can start from an error log, find the trace ID, and navigate to the full distributed trace to see exactly what happened across every service and LLM call in that request's lifecycle.
 
 ```go
 // Logger automatically includes trace context when spans are active
@@ -212,7 +226,9 @@ logger.InfoContext(ctx, "llm.generate.complete",
 
 ## Health Checks
 
-Monitor application health with built-in health check endpoints:
+Health check endpoints enable container orchestrators (Kubernetes, ECS) and load balancers to monitor application health and route traffic away from unhealthy instances. Beluga provides two standard endpoints that follow Kubernetes conventions: a liveness probe (is the process alive?) and a readiness probe (are all dependencies healthy?).
+
+The readiness check is particularly important for AI services because LLM provider outages are common and may not cause the process to crash. Without a readiness check, traffic continues flowing to instances that cannot serve requests because their LLM provider is down.
 
 ```go
 import "github.com/lookatitude/beluga-ai/o11y"
@@ -243,6 +259,8 @@ http.HandleFunc("/readyz", health.ReadinessHandler())    // Full dependency chec
 
 ### Health Check Response Format
 
+The response includes per-dependency status and latency, making it straightforward to identify which dependency is causing readiness failures.
+
 ```json
 {
   "status": "healthy",
@@ -256,7 +274,7 @@ http.HandleFunc("/readyz", health.ReadinessHandler())    // Full dependency chec
 
 ## LLM-Specific Exporters
 
-Export traces to LLM observability platforms:
+In addition to general-purpose OTel backends, Beluga supports exporters for LLM-specific observability platforms that provide specialized views for prompt analysis, token usage trends, and model evaluation. These platforms use the same OTel data but present it through AI-focused dashboards.
 
 ```go
 import (
@@ -276,7 +294,7 @@ import (
 
 ## Grafana Dashboard
 
-Set up a Grafana dashboard for monitoring:
+A well-configured Grafana dashboard provides at-a-glance visibility into the four key dimensions of an AI service: token consumption (cost), operation latency (user experience), error rate (reliability), and throughput (capacity).
 
 ### Key Panels
 
@@ -288,6 +306,8 @@ Set up a Grafana dashboard for monitoring:
 | Cost | `sum(increase(gen_ai_client_estimated_cost_total[1h]))` | Hourly cost |
 
 ### Alerting Rules
+
+Alerting rules should target the metrics that most directly impact users and budget. High latency degrades user experience, while runaway token usage can cause unexpected cost spikes.
 
 ```yaml
 groups:
@@ -312,7 +332,7 @@ groups:
 
 ## Next Steps
 
-- [Working with LLMs](/guides/working-with-llms/) — LLM middleware and hooks
-- [Safety & Guards](/guides/safety-and-guards/) — Monitor guard decisions
-- [Deploying to Production](/guides/deployment/) — Production observability setup
-- [RAG Pipeline](/guides/rag-pipeline/) — Trace retrieval performance
+- [Working with LLMs](/guides/working-with-llms/) — LLM middleware and hooks for automatic instrumentation
+- [Safety & Guards](/guides/production/safety-and-guards/) — Monitor and audit guard decisions
+- [Deploying to Production](/guides/production/deployment/) — Production observability setup with container orchestration
+- [RAG Pipeline](/guides/rag-pipeline/) — Trace retrieval performance and embedding latency

@@ -3,7 +3,11 @@ title: Live Meeting Minutes Generator
 description: Automatically generate structured meeting minutes from live audio with real-time transcription and LLM summarization.
 ---
 
-Manual meeting minutes take 1-2 hours to create, miss 20-30% of key points, and have 4-6 hour delays before sharing. An automated system using Beluga AI's STT pipeline with speaker diarization and LLM-based summarization generates structured minutes in real time with 96% completeness and immediate availability.
+Manual meeting minutes take 1-2 hours to create, miss 20-30% of key points, and have 4-6 hour delays before sharing. The person taking notes must simultaneously listen, decide what matters, and write — a cognitive multitasking problem that inevitably drops information. Critical decisions, action item assignments, and dissenting opinions are the most likely casualties because they require contextual judgment to capture accurately.
+
+The delay compounds the problem: by the time minutes circulate, participants have already moved on, and corrections require re-engaging everyone's attention. Incorrect or missing action items lead to dropped work and accountability gaps.
+
+An automated system using Beluga AI's STT pipeline with speaker diarization and LLM-based summarization generates structured minutes in real time with 96% completeness and immediate availability.
 
 ## Solution Architecture
 
@@ -20,9 +24,13 @@ graph TB
 
 The STT provider transcribes meeting audio in real time with speaker diarization. The transcript buffer accumulates segments, and at meeting end (or at intervals), the LLM summarizer generates structured minutes with key discussion points, decisions, and action items.
 
+The pipeline is split into two distinct phases — transcription and summarization — rather than attempting real-time summarization of partial transcripts. This separation exists because LLM summarization quality degrades significantly on fragmented input. Complete transcript segments with speaker attribution produce dramatically better structured output than incremental updates. The buffered approach also means the STT and LLM components can be optimized independently: STT for latency and accuracy, LLM for output structure and completeness.
+
 ## Implementation
 
 ### Real-Time Transcription
+
+The transcription function consumes a streaming audio source (`iter.Seq2[[]byte, error]`) and produces a complete transcript. Deepgram is used here for its strong diarization capabilities (speaker identification), which is essential for meeting minutes — knowing who said what transforms a raw transcript into an attributable record. The `IsFinal` flag filters out interim results, ensuring only confirmed transcriptions enter the buffer.
 
 ```go
 package main
@@ -70,6 +78,8 @@ func transcribeMeeting(ctx context.Context, audioStream iter.Seq2[[]byte, error]
 ```
 
 ### Meeting Minutes Generation
+
+The summarization step sends the complete transcript to an LLM with a structured prompt that explicitly requests attendees, key discussion points, decisions, and action items with owners. This structured prompting is critical — without explicit output guidance, the LLM tends to produce narrative summaries that are harder to act on than itemized lists.
 
 ```go
 func generateMinutes(ctx context.Context, transcript string) (string, error) {

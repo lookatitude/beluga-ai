@@ -3,11 +3,15 @@ title: High-Availability Streaming Proxy
 description: Build a resilient streaming proxy with connection pooling, automatic failover, and health monitoring for 99.99% uptime.
 ---
 
-A cloud services provider needed to build a resilient streaming proxy for LLM responses that could handle high traffic volumes, provide automatic failover, and maintain low latency. Direct LLM connections experienced 5-10% failure rates during peak traffic, causing user-facing errors and requiring manual intervention for recovery. A high-availability streaming proxy with connection pooling, automatic failover, and health monitoring ensures 99.99% uptime.
+Streaming LLM responses directly from providers works for prototypes, but production systems face compounding reliability challenges at scale. Each client connection is a long-lived HTTP stream, vulnerable to network interruptions, provider-side timeouts, and rate limit rejections. At peak traffic, a cloud services provider observed 5-10% failure rates on direct connections — each failure breaks the user's real-time streaming experience and requires a full page reload or manual retry.
+
+The problem is amplified by the nature of streaming: unlike request-response calls, a failed stream means the user has already seen partial output. Reconnecting to the same provider may return a different response, creating an inconsistent experience. Without connection management, each request opens a new TCP connection, adding latency and exhausting connection limits.
+
+A high-availability streaming proxy solves these problems by sitting between clients and providers, managing connection lifecycle, monitoring provider health, and transparently failing over to backup providers when the primary degrades.
 
 ## Solution Architecture
 
-Beluga AI's core package provides the foundation for building high-availability services. The streaming proxy implements connection pooling for efficient resource usage, health monitoring for automatic failover, and load balancing for distributing requests across multiple connections.
+Beluga AI's streaming pattern (`iter.Seq2[schema.StreamChunk, error]`) provides a composable foundation for building proxy layers. The streaming proxy implements connection pooling to amortize TCP setup costs, health monitoring to detect degraded providers before they affect users, and automatic failover to route traffic to healthy providers without client-side changes.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -30,7 +34,7 @@ Beluga AI's core package provides the foundation for building high-availability 
 
 ## Streaming Proxy Implementation
 
-The proxy manages connections and routes requests to healthy providers.
+The proxy manages connections and routes requests to healthy providers. It implements `llm.ChatModel`'s `Stream` method using `iter.Seq2`, making it composable with any Beluga AI component that accepts a model — middleware, agents, and orchestration chains all work transparently through the proxy.
 
 ```go
 package main
@@ -125,7 +129,7 @@ func (p *StreamingProxy) selectProvider(ctx context.Context) llm.ChatModel {
 
 ## Connection Pool
 
-The connection pool manages reusable connections for performance.
+Opening a new TCP connection per request adds 50-150ms of latency and risks exhausting OS-level connection limits under load. The connection pool pre-allocates and reuses connections, reducing per-request overhead to near zero. When the pool is exhausted, callers block with context-aware timeouts rather than failing immediately — this applies backpressure naturally without dropping requests.
 
 ```go
 type Connection struct {
@@ -194,7 +198,7 @@ func (cp *ConnectionPool) Release(conn *Connection) {
 
 ## Health Monitoring
 
-The health monitor tracks provider availability and triggers failover.
+Reactive failover — waiting for a user request to fail before switching providers — adds latency to the worst-case path. Active health monitoring probes providers on a background ticker, detecting degradation before user traffic is affected. The monitor uses a simple failure counter with a threshold: three consecutive failures marks a provider unhealthy. This avoids flapping on single transient errors while responding quickly to genuine outages.
 
 ```go
 type HealthMonitor struct {

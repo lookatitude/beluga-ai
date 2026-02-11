@@ -3,7 +3,9 @@ title: Google Vertex AI Vision
 description: Integrate Google Vertex AI with Beluga AI for enterprise-grade multimodal processing using Gemini models, including text, image, audio, and video understanding.
 ---
 
-Google Vertex AI provides enterprise-grade multimodal capabilities through Gemini models. This guide covers configuring Beluga AI to use Vertex AI for vision-language understanding, enabling text, image, audio, and video processing with full Google Cloud integration.
+Organizations already invested in Google Cloud often need their AI workloads to run within the same security perimeter -- VPC Service Controls, IAM policies, audit logging, and CMEK encryption. Vertex AI provides Gemini model access through Google Cloud's managed platform, giving you enterprise controls that the public Gemini API does not offer.
+
+Choose Vertex AI over the public Gemini API when you need data residency guarantees, network isolation via VPC, or when your security team requires IAM-based access control rather than API keys.
 
 ## Overview
 

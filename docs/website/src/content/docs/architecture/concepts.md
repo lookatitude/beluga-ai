@@ -5,21 +5,23 @@ description: "Architectural vision, design principles, and key decisions behind 
 
 Beluga AI v2 is a Go-native framework for building production agentic AI systems. It targets teams building enterprise applications that require extensibility, observability, type safety, and performance — without sacrificing developer ergonomics.
 
-The framework draws from production patterns in Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit, unifying them into a single coherent Go library with streaming-first design, protocol interoperability (MCP + A2A), and pluggable everything.
+The framework draws from production patterns in Google ADK, OpenAI Agents SDK, LangGraph, ByteDance Eino, and LiveKit, unifying them into a single coherent Go library with streaming-first design, protocol interoperability (MCP + A2A), and pluggable everything. Each of these frameworks solves a subset of the agentic AI problem well; Beluga's contribution is combining their best ideas into a single system where the patterns are consistent and the boundaries are clean.
 
 ## Design Principles
 
+These principles are not aspirational guidelines — they are enforced constraints that shape every API in the framework. Each one addresses a specific failure mode observed in production agentic systems.
+
 ### 1. Streaming First
 
-Every component produces results as `iter.Seq2[T, error]` — Go 1.23+ push-based iterators. Synchronous `Invoke()` is a convenience wrapper that collects the stream. This ensures low time-to-first-token for LLM responses, real-time event propagation through agent pipelines, and natural backpressure without goroutine overhead.
+Every component produces results as `iter.Seq2[T, error]` — Go 1.23+ push-based iterators. Synchronous `Invoke()` is a convenience wrapper that collects the stream. This ensures low time-to-first-token for LLM responses, real-time event propagation through agent pipelines, and natural backpressure without goroutine overhead. The key insight is that request/response is a degenerate case of streaming (collect all events and return the last one), while the reverse is not true — retrofitting streaming onto a request/response API requires fundamental architectural changes.
 
 ### 2. Interface-Driven, Small Contracts
 
-Every extensible component is defined by a Go interface with 1-4 methods. Implementations are concrete structs returned by factory functions. This enables compile-time verification, easy mocking for tests, and ad-hoc polymorphism through type assertions for optional capabilities.
+Every extensible component is defined by a Go interface with 1-4 methods. Implementations are concrete structs returned by factory functions. This enables compile-time verification, easy mocking for tests, and ad-hoc polymorphism through type assertions for optional capabilities. The 1-4 method constraint is the key discipline: it forces interface designers to identify the minimal contract that captures the abstraction, rather than the maximal set of operations a component might support. When an interface needs growth, the answer is type assertions for optional capabilities, not expanding the core contract that every provider must implement.
 
 ### 3. Registry + Init Registration
 
-Every extensible package (LLM, embedding, vectorstore, STT, TTS, etc.) uses the same pattern: a global registry with `Register()`, `New()`, and `List()`. Providers self-register in `init()`. Users import providers with blank identifiers. This is the standard Go pattern used by `database/sql`, `image`, and Terraform.
+Every extensible package (LLM, embedding, vectorstore, STT, TTS, etc.) uses the same pattern: a global registry with `Register()`, `New()`, and `List()`. Providers self-register in `init()`. Users import providers with blank identifiers. This is the standard Go pattern used by `database/sql`, `image`, and Terraform. The consistency across all 19 registries means that understanding one teaches you the pattern for all of them — the same three functions, the same import mechanism, the same discovery API.
 
 ### 4. Composition Over Inheritance
 
@@ -35,7 +37,7 @@ All errors are `core.Error` with an operation name, error code, human-readable m
 
 ### 7. Zero External Dependencies in Foundation
 
-`core/` and `schema/` depend only on the Go standard library and OpenTelemetry. This guarantees stability, fast compilation, and no transitive dependency conflicts for users who only need the core types.
+`core/` and `schema/` depend only on the Go standard library and OpenTelemetry. This guarantees stability, fast compilation, and no transitive dependency conflicts for users who only need the core types. This constraint is especially important in a framework with 100+ providers: if the foundation types pulled in any provider SDK, every user would inherit those dependencies. By keeping the foundation clean, provider dependencies stay isolated in their own packages.
 
 ### 8. Pluggable Everything via Providers
 
@@ -50,6 +52,8 @@ OpenTelemetry is integrated at the framework level using `gen_ai.*` semantic con
 Agents can expose and consume capabilities via MCP (Model Context Protocol) and A2A (Agent-to-Agent protocol). MCP uses Streamable HTTP transport. A2A uses protobuf-generated types with JSON-RPC and gRPC bindings. Agents are not locked into a single communication pattern.
 
 ## High-Level Architecture
+
+The architecture is organized into four layers with strict dependency rules. The layering ensures that foundation types are stable and dependency-free, capability packages add AI primitives on top, infrastructure provides cross-cutting concerns, and protocol packages handle external communication. Dependencies flow strictly downward — no package ever imports from a layer above it.
 
 ```mermaid
 graph TB
@@ -97,6 +101,8 @@ graph TB
 **Dependency flow is strictly downward**: Foundation has zero knowledge of upper layers. Capability packages import foundation. Infrastructure and protocol packages import both.
 
 ## Key Design Decisions
+
+Each decision below was made after evaluating alternatives and studying how other frameworks handle the same problem. The "Rationale" sections explain not just what was chosen, but why the alternatives were rejected.
 
 ### Decision 1: `iter.Seq2[T, error]` for Streaming
 
@@ -241,6 +247,8 @@ graph LR
 
 ## Data Flow Examples
 
+These diagrams show how packages collaborate at runtime. Each example traces a request from user input through the framework layers and back, illustrating how the abstract interfaces connect in practice.
+
 ### Text Chat
 
 ```mermaid
@@ -304,6 +312,8 @@ graph LR
 ```
 
 ## Framework Comparison
+
+This comparison highlights where Beluga differs from other agentic frameworks. The key differentiators are Go-native streaming with `iter.Seq2`, the pluggable planner architecture, built-in voice pipeline support, and dual protocol support (MCP + A2A).
 
 | Feature | Beluga AI v2 | Google ADK | OpenAI SDK | LangGraph | Eino |
 |---------|-------------|------------|------------|-----------|------|

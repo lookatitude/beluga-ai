@@ -3,7 +3,9 @@ title: Regulatory Policy Search Engine
 description: Hybrid semantic search achieves 92% relevance for regulatory policy discovery with zero compliance violations.
 ---
 
-Financial services compliance teams need to search across thousands of regulatory policies to ensure compliance with constantly changing regulations. Traditional keyword search achieves only 50-60% relevance and misses 20-30% of relevant policies, causing compliance risks. Hybrid semantic search combines vector and keyword retrieval to achieve 90%+ relevance with comprehensive policy discovery.
+Financial services compliance teams need to search across thousands of regulatory policies to ensure compliance with constantly changing regulations. The stakes are high: a missed policy can result in regulatory fines, audit failures, and reputational damage. Traditional keyword search achieves only 50-60% relevance because regulatory language is dense and varied — the same concept ("customer due diligence") appears under different terms across jurisdictions ("KYC requirements," "enhanced verification procedures," "client identification protocols"), and keyword search misses these semantic relationships.
+
+Hybrid semantic search combines vector and keyword retrieval to achieve 90%+ relevance with comprehensive policy discovery. Hybrid search is essential here because regulatory searches have both semantic intent (find policies about customer verification) and exact-term requirements (find policies mentioning "Section 314(b)" or "BSA/AML"). Neither vector search nor keyword search alone satisfies both needs.
 
 ## Solution Architecture
 

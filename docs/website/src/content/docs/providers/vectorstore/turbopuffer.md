@@ -5,6 +5,8 @@ description: Serverless vector store using Turbopuffer's REST API.
 
 The Turbopuffer provider implements the `vectorstore.VectorStore` interface using the Turbopuffer serverless vector database. Turbopuffer offers a simple API with automatic scaling and supports cosine, dot-product, and Euclidean distance metrics.
 
+Choose Turbopuffer when you want a serverless vector database with minimal configuration and pay-per-use pricing. Turbopuffer automatically scales storage and compute, with no capacity planning required. Its simple namespace-based data model makes it easy to isolate data across tenants or environments.
+
 ## Installation
 
 ```bash

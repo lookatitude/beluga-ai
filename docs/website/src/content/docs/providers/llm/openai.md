@@ -5,6 +5,8 @@ description: "Integration guide for OpenAI models with Beluga AI."
 
 The OpenAI provider connects Beluga AI to OpenAI's GPT and o-series models through the official `openai-go` SDK. It supports chat completions, streaming, tool calling, structured output, and vision.
 
+Choose OpenAI when you need the broadest ecosystem support, the most mature tool-calling implementation, or access to both GPT and o-series reasoning models. OpenAI is a strong default for general-purpose applications and has the widest third-party tooling compatibility.
+
 ## Installation
 
 ```bash

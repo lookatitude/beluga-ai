@@ -3,7 +3,7 @@ title: Event-Driven Agents with Message Bus
 description: Build event-driven AI architectures where agents react to system events asynchronously using publish-subscribe patterns.
 ---
 
-Standard chains are synchronous and tightly coupled. Event-driven architectures decouple producers from consumers, enabling asynchronous processing, parallel reactions to the same event, and clean separation of concerns. The `agent` package's `EventBus` provides publish-subscribe messaging for coordinating agents.
+Standard chains are synchronous and tightly coupled -- the caller waits for each step to complete before proceeding. Event-driven architectures decouple producers from consumers, enabling asynchronous processing, parallel reactions to the same event, and clean separation of concerns. Instead of wiring agents together with direct function calls, agents subscribe to named topics and react independently when events are published. This pattern is particularly valuable when multiple systems need to respond to the same trigger (audit logging, notifications, downstream processing) without creating a dependency web.
 
 ## What You Will Build
 
@@ -18,7 +18,7 @@ An event-driven system where a main agent publishes events and multiple subscrib
 
 ### Publish-Subscribe Pattern
 
-The EventBus allows agents to communicate through named topics without direct dependencies. Producers publish events; subscribers receive them asynchronously:
+The EventBus allows agents to communicate through named topics without direct dependencies. Producers publish events to topics; subscribers registered on those topics receive them asynchronously. This is the same decoupling principle behind message queues like NATS and Kafka, but implemented in-process for agent coordination. The key benefit is that publishers do not need to know who is listening -- you can add or remove subscribers without modifying the publisher code.
 
 ```go
 import "github.com/lookatitude/beluga-ai/agent"
@@ -39,7 +39,7 @@ bus.Publish(ctx, agent.Event{
 
 ### Event Types
 
-Events carry a topic name, a payload, and optional metadata:
+Events carry a topic name (used for routing to subscribers), a payload (the actual data), and optional metadata (for cross-cutting concerns like user IDs and session tracking):
 
 ```go
 type Event struct {
@@ -50,6 +50,8 @@ type Event struct {
 ```
 
 ## Step 1: Initialize the Event Bus
+
+The event bus is created once and shared across all agents. Subscribers must be registered before events are published, since the bus does not buffer events for late subscribers. The `sync.WaitGroup` ensures the main goroutine waits for all subscribers to finish processing before exiting -- in a long-running server, you would typically not need this since the process stays alive.
 
 ```go
 package main
@@ -92,7 +94,7 @@ func main() {
 
 ## Step 2: Build an Audit Logger Subscriber
 
-Create a subscriber that logs every user query for compliance:
+Audit logging is a classic use case for the pub-sub pattern. Every user query needs to be logged for compliance, but the logging logic should not be mixed into the main agent's processing path. By subscribing to the `user.query` topic, the audit logger receives every query without the main agent needing to know about it.
 
 ```go
 func registerAuditLogger(bus *agent.EventBus, wg *sync.WaitGroup) {
@@ -106,7 +108,7 @@ func registerAuditLogger(bus *agent.EventBus, wg *sync.WaitGroup) {
 
 ## Step 3: Build a Notification Subscriber
 
-Create a subscriber that sends notifications for specific events:
+Multiple subscribers can listen to the same topic. Each subscriber runs independently -- if the audit logger is slow, it does not block the notification subscriber. This isolation is a key advantage over synchronous middleware chains where a slow handler delays the entire pipeline.
 
 ```go
 func registerNotifier(bus *agent.EventBus, wg *sync.WaitGroup) {
@@ -120,7 +122,7 @@ func registerNotifier(bus *agent.EventBus, wg *sync.WaitGroup) {
 
 ## Step 4: Cross-Agent Communication
 
-Agents can publish their own completion events, allowing other agents to react:
+Agents can publish their own events after completing work, creating event chains where one agent's output triggers another agent's input. This enables reactive pipelines: the research agent completes its work and publishes a `research.complete` event, which the email agent picks up to send a summary. Neither agent needs to know about the other -- they are connected only through the topic namespace.
 
 ```go
 func registerResearchAgent(bus *agent.EventBus) {
@@ -151,7 +153,7 @@ func registerEmailAgent(bus *agent.EventBus) {
 
 ## Step 5: Error Handling and Resilience
 
-Wrap subscriber logic with error handling to prevent one subscriber from affecting others:
+In a multi-subscriber system, one failing subscriber should not bring down the others. Wrapping subscriber logic with error handling ensures that failures are logged and contained rather than propagated. In production, you would also add metrics (count of failed handlers per topic) and potentially dead-letter queues for events that consistently fail processing.
 
 ```go
 func safeSubscribe(bus *agent.EventBus, topic string, handler func(context.Context, agent.Event) error) {

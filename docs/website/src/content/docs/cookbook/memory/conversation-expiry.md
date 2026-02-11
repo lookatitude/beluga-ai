@@ -7,9 +7,11 @@ description: "Automatically expire and clean up inactive conversations to free r
 
 You need to automatically expire and clean up inactive conversations after a period of inactivity, freeing resources and ensuring users start fresh conversations after long gaps.
 
+In production multi-tenant systems, conversations accumulate over time. Each active conversation holds memory, state, and potentially database connections or cache entries. Without expiry, these resources grow monotonically. More importantly, when a user returns after hours or days, resuming an old conversation with stale context produces worse results than starting fresh. Expiry enforces a natural conversation lifecycle: active conversations stay alive, inactive ones are cleaned up, and returning users get a clean slate.
+
 ## Solution
 
-Implement conversation expiry that tracks last activity time per conversation, periodically checks for expired conversations, and cleans up resources (memory, context, state) for expired conversations. Track activity timestamps and run background cleanup processes.
+Implement conversation expiry that tracks last activity time per conversation, periodically checks for expired conversations, and cleans up resources (memory, context, state) for expired conversations. Activity timestamps are updated on each interaction, resetting the expiry timer. A background cleanup loop handles expiration without blocking request handlers. Thread safety is ensured with `sync.RWMutex` for concurrent access from request handlers and the cleanup goroutine.
 
 ## Code Example
 
@@ -203,19 +205,19 @@ func main() {
 
 ## Explanation
 
-1. **Activity tracking** — Last activity time is tracked and the expiry timer resets on each activity. This keeps active conversations alive while allowing inactive ones to expire naturally.
+1. **Activity tracking** -- Last activity time is tracked per conversation, and the expiry timer resets on each activity (`UpdateActivity`). This keeps active conversations alive indefinitely while allowing inactive ones to expire naturally. The sliding expiry window adapts to usage patterns without requiring explicit session management from callers.
 
-2. **Periodic cleanup** — A background goroutine periodically checks for expired conversations. This ensures cleanup happens automatically without blocking request handlers.
+2. **Periodic cleanup** -- A background goroutine periodically checks for expired conversations at a configurable interval. This ensures cleanup happens automatically without blocking request handlers. The cleanup interval should be shorter than the TTL to prevent expired conversations from lingering too long, but long enough to avoid excessive lock contention.
 
-3. **Resource cleanup** — When conversations expire, associated resources (memory, context, state) are cleaned up. This prevents resource leaks from accumulated dead conversations.
+3. **Resource cleanup** -- When conversations expire, associated resources (memory stores, context objects, cached state) are cleaned up via `cleanupConversation`. This prevents resource leaks from accumulated dead conversations. In production, this would also clear the conversation's memory store entries and release any held connections.
 
-4. **Thread safety** — All operations use `sync.RWMutex` for safe concurrent access. Read operations (like `IsExpired`) use read locks, while mutations use write locks.
+4. **Thread safety** -- All operations use `sync.RWMutex` for safe concurrent access. Read operations (like `IsExpired`) use read locks, allowing multiple concurrent reads. Mutations (register, update, cleanup) use write locks to ensure consistency. This matches Go's concurrent programming best practices.
 
 ## Variations
 
 ### Activity-Based Extension
 
-Extend expiry only on meaningful activity:
+Extend expiry only on meaningful activity (messages, not heartbeats):
 
 ```go
 func (cem *ConversationExpiryManager) UpdateActivityIfMeaningful(ctx context.Context, conversationID string, activityType string) {
@@ -225,7 +227,7 @@ func (cem *ConversationExpiryManager) UpdateActivityIfMeaningful(ctx context.Con
 
 ### Gradual Expiry
 
-Expire conversations gradually with warning before removal:
+Expire conversations gradually with a warning before removal:
 
 ```go
 type ConversationState struct {
@@ -235,5 +237,5 @@ type ConversationState struct {
 
 ## Related Recipes
 
-- [Handling Inbound Media](/cookbook/inbound-media) — Handle media attachments in conversations
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) — Memory expiration strategies
+- [Handling Inbound Media](/cookbook/inbound-media) -- Handle media attachments in conversations
+- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Memory expiration strategies

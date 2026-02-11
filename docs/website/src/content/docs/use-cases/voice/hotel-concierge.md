@@ -3,7 +3,9 @@ title: Real-Time AI Hotel Concierge
 description: Build a 24/7 AI concierge service with natural voice conversations using Beluga AI's S2S pipeline.
 ---
 
-Luxury hotel chains spend $50K+ per month per hotel on human concierge services with limited availability (business hours only) and long wait times during peak demand. An AI concierge using speech-to-speech (S2S) provides 24/7 natural voice interactions, handles reservations and guest inquiries, and scales to unlimited concurrent guests with sub-2-second response times.
+Luxury hotel chains spend $50K+ per month per hotel on human concierge services with limited availability (business hours only) and long wait times during peak demand. Guest satisfaction drops sharply when concierge wait times exceed 3 minutes, but staffing for peak demand means significant idle time during off-peak hours. The core business problem is that concierge labor costs scale linearly with availability, while guest demand is highly variable.
+
+An AI concierge using speech-to-speech (S2S) provides 24/7 natural voice interactions, handles reservations and guest inquiries, and scales to unlimited concurrent guests with sub-2-second response times. S2S is chosen over separate STT+TTS because hospitality interactions demand natural, conversational pacing — guests expect the same responsiveness from a voice AI as from a human at the front desk.
 
 ## Solution Architecture
 
@@ -27,9 +29,13 @@ graph TB
 
 The concierge uses Beluga AI's S2S provider for real-time speech-to-speech. Tool functions connect to hotel systems for reservations, information lookup, and recommendations. Conversation memory maintains context across multi-turn interactions.
 
+The tool-based integration approach is deliberate: rather than training a custom model on hotel-specific knowledge, the system gives the S2S model access to hotel systems through well-defined tool functions. This means hotel information stays in the source systems (PMS, reservation database, knowledge base) and is always current — no retraining needed when hours change or new amenities are added.
+
 ## Implementation
 
 ### Concierge Setup
+
+The concierge is built by creating an S2S session with tool definitions for hotel operations. Beluga AI's `tool.NewFuncTool` creates type-safe tools from Go functions with automatic JSON schema generation from the struct tags. The event loop processes three event types: audio output (stream to guest), tool calls (execute against hotel systems), and transcripts (log for quality assurance).
 
 ```go
 package main

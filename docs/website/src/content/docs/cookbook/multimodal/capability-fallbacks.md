@@ -1,6 +1,6 @@
 ---
 title: "Capability-based Fallbacks"
-description: "Route multimodal requests to appropriate models based on capability detection with automatic fallback."
+description: "Route multimodal requests to appropriate models based on capability detection with automatic fallback when primary models lack required features."
 ---
 
 # Capability-based Fallbacks
@@ -9,9 +9,11 @@ description: "Route multimodal requests to appropriate models based on capabilit
 
 You need to handle cases where a multimodal model doesn't support certain capabilities (e.g., video processing, specific image formats), requiring fallback to alternative models or simplified processing.
 
+The multimodal LLM landscape is fragmented: GPT-4o handles images but not audio natively, Gemini supports images, audio, and video, Claude supports images but not video. When building applications that accept diverse media types, hardcoding a single provider creates brittleness. If your primary model adds audio support tomorrow, or your fallback model drops video support, your application breaks. Capability-based routing decouples the application from specific provider limitations, automatically adapting to the available model ecosystem.
+
 ## Solution
 
-Implement capability detection that checks model capabilities, routes requests to appropriate models based on capabilities, and provides fallbacks when capabilities are unavailable. This works because you can query model capabilities and route requests accordingly.
+Implement capability detection that checks model capabilities against request requirements, routes requests to the most appropriate model, and provides fallbacks when the primary model cannot handle the input. Models are registered with their capabilities, and the router selects the first model in priority order that satisfies all requirements. If no model fully supports the request, fallback strategies (format conversion, simplified processing) can be applied.
 
 ## Code Example
 
@@ -204,13 +206,13 @@ func main() {
 
 ## Explanation
 
-1. **Capability registration** — Each model's capabilities are registered with the router, allowing it to match requests to appropriate models.
+1. **Capability registration** -- Each model's capabilities (supported modalities, formats, size limits) are registered with the router. This creates a declarative capability map that can be updated as providers evolve. When a provider adds new capabilities, you update the registration without changing routing logic.
 
-2. **Fallback ordering** — Models are tried in preference order until one that supports the request is found.
+2. **Fallback ordering** -- Models are tried in preference order (set by registration order) until one that supports all request requirements is found. This allows you to prefer faster or cheaper models while falling back to more capable ones when needed. The priority order reflects your cost/quality/latency tradeoffs.
 
-3. **Graceful degradation** — If no model fully supports the request, fallback models with partial support can be used (e.g., convert video to images).
+3. **Graceful degradation** -- If no model fully supports the request, the `findFallbackModel` method can implement degradation strategies. For example, convert video to a series of images and process with an image-capable model, or extract audio from video and transcribe separately. This ensures the system provides the best possible result rather than failing outright.
 
-> **Key insight:** Always have fallbacks. Even if primary models don't support a capability, you can often find alternative approaches (simplified processing, format conversion, etc.).
+> **Key insight:** Always have fallbacks. Even if primary models don't support a capability, you can often find alternative approaches (simplified processing, format conversion, modality extraction) that provide useful results.
 
 ## Testing
 
@@ -229,7 +231,7 @@ func TestCapabilityRouter_RoutesCorrectly(t *testing.T) {
 
 ### Dynamic Capability Detection
 
-Detect capabilities at runtime:
+Detect capabilities at runtime by probing the model:
 
 ```go
 func (cr *CapabilityRouter) DetectCapabilities(ctx context.Context, modelID string) (*ModelCapabilities, error) {
@@ -239,7 +241,7 @@ func (cr *CapabilityRouter) DetectCapabilities(ctx context.Context, modelID stri
 
 ### Capability Negotiation
 
-Negotiate best capability match:
+Negotiate the best capability match when no model fully satisfies requirements:
 
 ```go
 func (cr *CapabilityRouter) NegotiateBestMatch(ctx context.Context, requirements *CapabilityRequirements) (string, error) {
@@ -249,5 +251,5 @@ func (cr *CapabilityRouter) NegotiateBestMatch(ctx context.Context, requirements
 
 ## Related Recipes
 
-- [Processing Multiple Images per Prompt](/cookbook/multiple-images) — Process multiple images
-- [LLMs Package Guide](/guides/llm-providers) — For a deeper understanding of multimodal
+- [Processing Multiple Images per Prompt](/cookbook/multiple-images) -- Process multiple images
+- [LLMs Package Guide](/guides/llm-providers) -- For a deeper understanding of multimodal

@@ -5,7 +5,9 @@ sidebar:
   order: 0
 ---
 
-Beluga AI provides a frame-based voice pipeline with separate registries for speech-to-text (STT), text-to-speech (TTS), speech-to-speech (S2S), voice activity detection (VAD), and real-time transport. Each category follows the standard registry pattern.
+Voice AI enables natural, hands-free interactions through spoken language. Whether you are building a customer support phone agent, a voice-controlled assistant, or a real-time conversation system, the voice pipeline handles the full audio lifecycle: capturing speech, converting it to text for your agent, and synthesizing spoken responses.
+
+Beluga AI provides a frame-based voice pipeline with separate registries for speech-to-text (STT), text-to-speech (TTS), speech-to-speech (S2S), voice activity detection (VAD), and real-time transport. Each category follows the standard registry pattern, so you can swap providers without changing your application logic.
 
 ## Architecture Overview
 

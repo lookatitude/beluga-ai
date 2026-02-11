@@ -3,11 +3,15 @@ title: Dynamic Feature Flagging System
 description: Implement hot-reloadable feature flags for gradual rollouts, A/B testing, and instant toggles without deployments.
 ---
 
-A SaaS platform needed to implement dynamic feature flags to enable gradual rollouts, A/B testing, and instant feature toggles without deployments. Feature flags required code changes and deployments, causing 2-4 hour delays to disable problematic features and preventing safe gradual rollouts. An automated feature flagging system enables instant feature toggles, gradual rollouts, and A/B testing without deployments.
+Deploying new AI features (a new model, a different prompt strategy, an updated guard rule) carries risk. If a new model produces poor responses for a specific customer segment, the fix requires a code change, CI/CD pipeline, and deployment — a 2-4 hour window where affected users see degraded quality. For AI features specifically, this delay is worse than for traditional features because LLM behavior is harder to predict in production than in testing.
+
+Feature flags decouple deployment from activation. Ship the new model behind a flag, enable it for 5% of traffic, monitor quality metrics, then gradually increase — or instantly disable if metrics degrade. No deployment needed for any of these operations.
+
+Beluga AI's `config/` package provides the foundation: hot-reloadable configuration with file system watching, so flag changes propagate to all instances within seconds.
 
 ## Solution Architecture
 
-Beluga AI's configuration package provides hot-reloadable configuration management with validation. The feature flag manager loads flag configurations, watches for changes, and enables instant updates without application restarts. Flag evaluation uses in-memory caching for sub-millisecond checks while supporting percentage-based rollouts and user segmentation.
+The feature flag manager builds on Beluga AI's `config/` package for hot-reload support with validation. Flag configurations load into an in-memory cache for sub-millisecond evaluation on the request path. The `config.Watch()` mechanism detects file changes and triggers reloads without application restarts. Percentage-based rollouts use deterministic user ID hashing so the same user always sees the same variant — critical for consistent user experience and valid A/B comparisons.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

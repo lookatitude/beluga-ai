@@ -3,7 +3,9 @@ title: MongoDB Context Persistence
 description: Use MongoDB as a persistent store for Beluga AI's memory system, enabling long-term conversation history and multi-session context management.
 ---
 
-Beluga AI includes a built-in MongoDB message store (`memory/stores/mongodb`) that persists conversation messages as BSON documents with chronological ordering. This guide covers configuring MongoDB as a backend for the memory system and using it in production deployments.
+In-memory conversation history is lost when a process restarts, which means agents lose context between deployments, scaling events, or crashes. MongoDB persistence solves this by storing conversation messages durably, enabling agents to maintain long-term context across sessions and process lifecycles.
+
+Choose MongoDB for memory persistence when your organization already operates MongoDB infrastructure, when you need flexible schema for varied message metadata, or when you want managed cloud persistence via MongoDB Atlas.
 
 ## Overview
 

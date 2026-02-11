@@ -5,6 +5,8 @@ description: "Export LLM traces to LangSmith for observability and debugging."
 
 The LangSmith provider exports LLM call data to [LangSmith](https://smith.langchain.com/), LangChain's platform for debugging, testing, and monitoring LLM applications. It implements the `o11y.TraceExporter` interface and sends run data through the LangSmith batch API.
 
+Choose LangSmith when you want a managed platform with strong debugging and testing capabilities for LLM applications. LangSmith organizes traces into projects and provides detailed run inspection with inputs, outputs, and token usage. For an open-source self-hostable alternative, consider [Langfuse](/providers/observability/langfuse). For workspace-level analytics, consider [Opik](/providers/observability/opik).
+
 ## Installation
 
 ```bash

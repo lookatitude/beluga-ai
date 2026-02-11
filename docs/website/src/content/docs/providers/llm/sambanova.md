@@ -5,6 +5,8 @@ description: "Integration guide for SambaNova's high-throughput inference with B
 
 The SambaNova provider connects Beluga AI to SambaNova's inference platform, which provides high-throughput inference on custom RDU (Reconfigurable Dataflow Unit) hardware. SambaNova exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose SambaNova when you need high-throughput batch inference or consistent low-latency serving of large open-source models. SambaNova's custom RDU hardware is optimized for sustained throughput, making it well-suited for production workloads with predictable high-volume traffic.
+
 ## Installation
 
 ```bash
@@ -128,10 +130,10 @@ model, err := sambanova.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID                         | Description              |
-|----------------------------------|--------------------------|
-| `Meta-Llama-3.3-70B-Instruct`  | Llama 3.3 70B            |
-| `Meta-Llama-3.1-8B-Instruct`   | Llama 3.1 8B             |
-| `Meta-Llama-3.1-405B-Instruct` | Llama 3.1 405B           |
+| Model ID                         | Description                                       |
+|----------------------------------|---------------------------------------------------|
+| `Meta-Llama-3.3-70B-Instruct`  | Llama 3.3 70B -- best quality/speed tradeoff      |
+| `Meta-Llama-3.1-8B-Instruct`   | Llama 3.1 8B -- fastest, lowest cost              |
+| `Meta-Llama-3.1-405B-Instruct` | Llama 3.1 405B -- most capable, highest throughput|
 
 Refer to [SambaNova's documentation](https://community.sambanova.ai/docs) for the latest model list.

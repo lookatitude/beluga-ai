@@ -5,7 +5,9 @@ sidebar:
   order: 0
 ---
 
-Beluga AI provides a unified `Embedder` interface for converting text into vector embeddings. All embedding providers register via `init()` and follow the same registry pattern used across the framework.
+Embeddings convert text into numerical vectors that capture semantic meaning, enabling similarity search, clustering, and retrieval-augmented generation (RAG). The choice of embedding provider affects retrieval quality, latency, cost, and data privacy -- there is no single best option for all use cases.
+
+Beluga AI provides a unified `Embedder` interface for converting text into vector embeddings. All embedding providers register via `init()` and follow the same registry pattern used across the framework, so you can evaluate different providers without changing your pipeline code.
 
 ## Provider Overview
 

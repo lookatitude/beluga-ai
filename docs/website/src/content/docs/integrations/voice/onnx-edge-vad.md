@@ -3,7 +3,7 @@ title: ONNX Runtime Edge VAD
 description: Run Silero VAD with ONNX Runtime on edge devices for voice activity detection in Beluga AI.
 ---
 
-Silero VAD with ONNX Runtime enables voice activity detection on edge and resource-constrained devices such as Raspberry Pi or embedded systems. This guide covers configuring the Silero VAD provider for low-resource environments.
+Running VAD on the edge eliminates the network round-trip for speech detection, which reduces latency and keeps audio data local for privacy-sensitive deployments. Silero VAD with ONNX Runtime enables voice activity detection on resource-constrained devices such as Raspberry Pi, embedded gateways, and kiosk hardware. Choose this approach when you need offline-capable VAD or when sending raw audio to a cloud service is not acceptable. This guide covers configuring the Silero VAD provider for low-resource environments.
 
 ## Overview
 

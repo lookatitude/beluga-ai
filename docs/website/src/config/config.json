@@ -1,8 +1,8 @@
 {
   "site": {
     "title": "Beluga AI",
-    "logo": "",
-    "logo_darkmode": "",
+    "logo": "assets/logo-light.svg",
+    "logo_darkmode": "assets/logo-dark.svg",
     "logo_width": "127",
     "logo_height": "32",
     "logo_text": "Beluga AI"
@@ -17,7 +17,7 @@
     "footer_contact": {
       "enable": false
     },
-    "copyright": "Copyright &copy; 2025 <a class=\"text-primary hover:underline no-underline\" href=\"https://github.com/lookatitude\" target=\"_blank\" rel=\"noopener\">Lookatitude</a>. MIT License."
+    "copyright": "Copyright &copy; 2026 <a class=\"text-primary hover:underline no-underline\" href=\"https://lookatitude.com\" target=\"_blank\" rel=\"noopener\">Lookatitude</a>. MIT License."
   },
 
   "navigation_button": {

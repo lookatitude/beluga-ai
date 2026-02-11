@@ -5,6 +5,8 @@ description: "Access SaaS integrations as tools via the Composio API."
 
 The Composio provider connects Beluga AI to the [Composio](https://composio.dev/) platform, which provides access to 250+ SaaS integrations (Gmail, Slack, GitHub, Jira, and more) as callable tools. It implements tool discovery and execution through the Composio REST API, returning tools as native `tool.Tool` instances.
 
+Choose Composio when you want to give agents access to SaaS integrations (Gmail, Slack, GitHub, Jira, and more) without building custom tool implementations. Composio handles authentication and API mapping for 250+ services, returning tools that implement Beluga's `tool.Tool` interface and can be passed directly to agents.
+
 ## Installation
 
 ```bash

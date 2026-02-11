@@ -1,15 +1,17 @@
 ---
 title: "Advanced Code Splitting with Tree-sitter"
-description: "Split code files intelligently while preserving functions, classes, and logical structure."
+description: "Split code files intelligently while preserving functions, classes, and logical structure for higher-quality RAG retrieval over codebases."
 ---
 
 ## Problem
 
 You need to split code files into chunks for RAG indexing while preserving code structure, keeping functions, classes, and logical blocks together rather than splitting at arbitrary character boundaries.
 
+When indexing source code for retrieval, character-based splitting produces chunks that start mid-function or end mid-class, creating fragments that are semantically meaningless in isolation. An embedding of "the last 30 lines of function A plus the first 20 lines of function B" captures neither function's intent well. This degrades both retrieval precision (wrong chunks match queries) and generation quality (the LLM receives incomplete code context).
+
 ## Solution
 
-Use AST parsing (such as tree-sitter) to parse code into an abstract syntax tree, identify logical code boundaries (functions, classes, methods), and split along those boundaries. Splitting at structural boundaries preserves semantic meaning and produces higher-quality chunks for retrieval.
+Use AST parsing (such as tree-sitter) to parse code into an abstract syntax tree, identify logical code boundaries (functions, classes, methods), and split along those boundaries. AST-based splitting treats the code as structured data rather than plain text, producing chunks where each one represents a complete logical unit. This approach is language-aware: it knows that a Go function ends at its closing brace, a Python class ends at the next unindented line, and a JavaScript module boundary matters.
 
 ## Code Example
 
@@ -152,13 +154,11 @@ func function2() {
 
 ## Explanation
 
-1. **AST-based parsing** -- The code is parsed into an abstract syntax tree, which preserves structure and identifies logical boundaries rather than splitting at arbitrary character positions.
+1. **AST-based parsing** -- The code is parsed into an abstract syntax tree, which identifies logical boundaries (function declarations, class definitions, method receivers) rather than splitting at arbitrary character positions. This is the key difference from text-based splitting: the splitter understands the code's structure, not just its characters.
 
-2. **Structure-aware splitting** -- Splits occur at function, class, and method boundaries. Related code stays together, producing chunks that are semantically coherent.
+2. **Structure-aware splitting** -- Splits occur at function, class, and method boundaries. Related code stays together, producing chunks that are semantically coherent. A chunk containing a complete function is far more useful for retrieval than one containing the end of one function and the start of another.
 
-3. **Intelligent merging** -- Small blocks are merged into appropriately sized chunks while large blocks can be split. Overlap ensures context continuity across chunk boundaries.
-
-**Key insight:** Use AST parsing for code splitting. Structure-aware splitting produces higher-quality chunks for RAG and maintains code readability.
+3. **Intelligent merging** -- Small blocks (short utility functions, constants) are merged into appropriately sized chunks to avoid creating too many tiny chunks, while large blocks (long functions) can stand alone. The overlap ensures context continuity for cases where adjacent functions are closely related. The minimum chunk size prevents degenerate single-line chunks.
 
 ## Variations
 

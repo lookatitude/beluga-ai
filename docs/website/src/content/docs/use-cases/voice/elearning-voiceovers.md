@@ -3,7 +3,11 @@ title: Localized E-Learning Voiceovers
 description: Generate multi-language voiceovers for educational content at scale using Beluga AI's TTS pipeline.
 ---
 
-E-learning platforms serving global audiences face high voiceover production costs ($500-800 per course), long turnaround times (2-3 weeks), and limited language support (3-4 languages). Using Beluga AI's TTS pipeline with multi-language support and SSML processing, voiceovers can be generated for 22+ languages at 91% lower cost with consistent quality.
+E-learning platforms serving global audiences face three compounding constraints: high voiceover production costs ($500-800 per course per language), long turnaround times (2-3 weeks per recording cycle), and limited language support (typically 3-4 languages). These constraints interact — adding a new language multiplies both cost and time, creating a scaling bottleneck that limits student reach to a fraction of the potential audience.
+
+The production pipeline itself is the problem. Human voiceover requires voice talent scheduling, studio booking, recording, editing, and quality review — for every language, for every course update. When course content changes, the entire recording pipeline restarts.
+
+Using Beluga AI's TTS pipeline with multi-language support and SSML processing, voiceovers can be generated for 22+ languages at 91% lower cost with consistent quality. The key is treating voiceover generation as a batch data processing problem rather than a creative production workflow.
 
 ## Solution Architecture
 
@@ -21,9 +25,13 @@ graph TB
 
 Course content is parsed into sections, preprocessed with SSML markup for pronunciation accuracy, and synthesized using language-appropriate voices. Batch processing generates voiceovers for multiple courses and languages in parallel.
 
+The pipeline is structured as a linear flow (parse, detect language, preprocess, apply SSML, synthesize) because each stage has a single clear dependency on the previous stage's output. SSML preprocessing is critical for educational content — technical terms, acronyms, and proper nouns require explicit pronunciation guidance that the TTS model cannot reliably infer from text alone.
+
 ## Implementation
 
 ### Multi-Language TTS Setup
+
+The generator wraps a single TTS engine instance and selects voices per language. Using a single engine with per-request voice selection (via functional options) avoids the overhead of maintaining separate engine instances for each language. The `selectVoice` function maps language codes to appropriate voices, providing a centralized place to manage voice assignments across all supported languages.
 
 ```go
 package main
@@ -85,6 +93,8 @@ func selectVoice(language string) string {
 ```
 
 ### Batch Processing
+
+Batch processing generates voiceovers for all sections across all languages concurrently. The implementation uses a semaphore pattern (buffered channel) to limit concurrency to 10 simultaneous TTS calls, staying within provider rate limits while maximizing throughput. A mutex protects the shared results slice since goroutines append to it concurrently.
 
 ```go
 func (g *VoiceoverGenerator) GenerateBatch(ctx context.Context, sections []CourseSection, languages []string) ([]Voiceover, error) {

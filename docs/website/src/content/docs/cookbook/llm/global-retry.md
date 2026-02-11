@@ -9,7 +9,15 @@ You need to add retry logic with exponential backoff to any `Runnable` component
 
 ## Solution
 
-Create a retry wrapper that implements the `Runnable` interface and wraps any other `Runnable` with configurable retry logic. This works because Beluga AI's `Runnable` interface allows composition — you can wrap any runnable with additional behavior without changing the underlying implementation.
+Create a retry wrapper that implements the `Runnable` interface and wraps any other `Runnable` with configurable retry logic. This works because Beluga AI's `Runnable` interface allows composition -- you can wrap any runnable with additional behavior without changing the underlying implementation.
+
+## Why This Matters
+
+Individual retry logic per component leads to code duplication and inconsistent behavior. A database retriever, an LLM call, and a tool execution all need retry handling, but the retry mechanics (backoff, jitter, classification) are identical. The `RetryRunnable` wrapper extracts this cross-cutting concern into a single, testable component that can wrap any `Runnable` in the framework.
+
+This follows Beluga AI's middleware pattern (`func(T) T`), but at the `Runnable` level rather than the `ChatModel` level. The wrapper implements all three `Runnable` methods (`Invoke`, `Batch`, `Stream`), so it's transparent to callers -- they don't know retry logic is applied. This transparency is important because it means you can add or remove retry behavior through configuration rather than code changes.
+
+The OpenTelemetry instrumentation in this wrapper is particularly valuable in production: spans record each retry attempt, the backoff duration, and whether the error was classified as retryable. This data helps you tune retry parameters based on actual failure patterns rather than guesswork.
 
 ## Code Example
 
@@ -233,13 +241,13 @@ func main() {
 
 ## Explanation
 
-1. **Runnable interface implementation** — `RetryRunnable` implements all three `Runnable` methods (`Invoke`, `Batch`, `Stream`). This allows it to wrap any runnable transparently — the caller doesn't need to know retry logic is applied.
+1. **Runnable interface implementation** -- `RetryRunnable` implements all three `Runnable` methods (`Invoke`, `Batch`, `Stream`). This allows it to wrap any runnable transparently -- the caller doesn't need to know retry logic is applied. This is the decorator pattern applied to Go interfaces.
 
-2. **Exponential backoff with jitter** — The backoff doubles each attempt (1s, 2s, 4s) but never exceeds `MaxBackoff`. Jitter adds randomness to prevent multiple clients from retrying simultaneously, which would cause another rate limit.
+2. **Exponential backoff with jitter** -- The backoff doubles each attempt (1s, 2s, 4s) but never exceeds `MaxBackoff`. Jitter adds randomness (+-10% by default) to prevent multiple clients from retrying simultaneously, which would cause another rate limit cascade.
 
-3. **Context awareness** — `ctx.Err()` is checked before each attempt and during backoff. This ensures timeouts and cancellations from the calling code are respected, preventing wasted retries.
+3. **Context awareness** -- `ctx.Err()` is checked before each attempt and during backoff via `select`. This ensures timeouts and cancellations from the calling code are respected, preventing wasted retries when the upstream has already given up.
 
-Retry wrappers should be composable. You can wrap a retry wrapper with tracing, or wrap multiple layers for different retry strategies per component type.
+4. **Stream retry** -- Stream creation is retried, but once the stream is established, data is forwarded without retry. This is intentional: retrying individual stream chunks would produce duplicate data, while retrying stream creation handles the common case of transient connection failures.
 
 ## Testing
 
@@ -283,7 +291,7 @@ func TestRetryRunnable_SuccessAfterRetries(t *testing.T) {
 
 ### Per-Operation Retry Configuration
 
-Allow different retry configs per operation:
+Allow different retry configs per operation type, useful when LLM calls need more retries than tool calls:
 
 ```go
 type RetryRunnableWithOptions struct {
@@ -295,7 +303,7 @@ type RetryRunnableWithOptions struct {
 
 ### Circuit Breaker Integration
 
-Combine with circuit breaker pattern:
+Combine with a circuit breaker to stop retrying entirely during sustained outages:
 
 ```go
 type CircuitBreakerRunnable struct {
@@ -306,5 +314,5 @@ type CircuitBreakerRunnable struct {
 
 ## Related Recipes
 
-- **[Context Timeout Management](./context-timeout)** — Advanced timeout handling
-- **[LLM Error Handling](./llm-error-handling)** — LLM-specific error handling with retries
+- **[Context Timeout Management](/cookbook/infrastructure/context-timeout)** -- Advanced timeout handling
+- **[LLM Error Handling](/cookbook/llm/llm-error-handling)** -- LLM-specific error handling with retries

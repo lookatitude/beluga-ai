@@ -3,7 +3,7 @@ title: Voice Session Persistence
 description: Store and restore voice session state for reconnection and restart recovery in Beluga AI.
 ---
 
-Voice session persistence enables saving session state (conversation context, form progress, collected fields) so sessions can survive connection drops, reconnections, and service restarts. This guide covers implementing a persistence layer for Beluga AI voice sessions.
+Phone calls drop, WebSocket connections reset, and services restart during rolling deployments. Without persistence, users must start their conversation from scratch after any interruption. Voice session persistence saves session state -- conversation context, form progress, collected fields -- to an external store so sessions resume exactly where they left off. This is essential for multi-turn voice forms, long-running support calls, and any deployment that requires high availability. This guide covers implementing a persistence layer for Beluga AI voice sessions.
 
 ## Overview
 

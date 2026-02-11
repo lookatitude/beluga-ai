@@ -1,22 +1,25 @@
 ---
 title: Structured Output with LLMs
-description: Learn how to extract typed, structured data from LLM responses using JSON schemas and Go struct binding.
+description: Extract typed, structured data from LLM responses using JSON schemas and Go generics.
 ---
 
-Language models generate unstructured text by default, but production systems require typed, validated responses. Beluga AI provides structured output capabilities that let you extract data in predictable formats from your LLM calls.
+Language models generate unstructured text by default, but production systems require typed, validated responses. Beluga AI's `StructuredOutput[T]` generic type bridges this gap: it derives a JSON Schema from any Go struct, instructs the model to respond in conformant JSON, parses the response into a typed value, and retries with self-correction feedback when parsing fails. This eliminates the manual schema writing, parsing boilerplate, and error recovery that structured extraction normally requires.
 
 ## What You'll Learn
 
 This guide covers:
-- Using structured output with LLMs to get typed responses
-- Defining JSON schemas for validation
-- Binding responses directly to Go structs
-- Handling structured output with streaming
-- Error handling and fallback strategies
+- Using `llm.NewStructured[T]` to get typed responses from any provider
+- How JSON schemas are auto-generated from Go struct tags
+- Nested structures and complex types
+- Classification patterns with enums
+- Streaming structured output with `iter.Seq2`
+- Error handling, validation, and fallback strategies
 
 ## When to Use Structured Output
 
-Structured output is essential when:
+Structured output is essential when your application needs to process the model's response programmatically rather than display it as text. Without structured output, you would need to write fragile regex or string parsing logic to extract data from free-form text. With structured output, the model's response is guaranteed to conform to a schema and deserialize directly into a Go type.
+
+Common use cases include:
 - **Extracting data** from documents (invoices, receipts, forms)
 - **Building tool calls** where the LLM needs to return function parameters
 - **Generating JSON** for APIs or database records
@@ -26,26 +29,26 @@ Structured output is essential when:
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/working-with-llms)
+- Complete [Working with LLMs](/guides/foundations/working-with-llms/)
 - Understand Go struct tags and JSON marshaling
 - Have an LLM provider configured (OpenAI, Anthropic, etc.)
 
 ## Basic Structured Output
 
-The simplest way to get structured output is using the `StructuredOutput` option when generating completions.
+The `llm.NewStructured[T]` generic constructor creates a `StructuredOutput[T]` that wraps any `ChatModel`. It uses Go's reflection to generate a JSON Schema from the type parameter `T`, then passes that schema to the model as a response format constraint. The `Generate` method returns a value of type `T` directly — no manual JSON parsing needed. If the model produces invalid JSON, the wrapper automatically retries by appending the parse error to the conversation, giving the model a chance to self-correct.
 
 ```go
 package main
 
 import (
     "context"
-    "encoding/json"
     "fmt"
     "log"
     "os"
 
-    "github.com/lookatitude/beluga-ai/pkg/llms"
-    "github.com/lookatitude/beluga-ai/pkg/schema"
+    "github.com/lookatitude/beluga-ai/llm"
+    "github.com/lookatitude/beluga-ai/schema"
+    _ "github.com/lookatitude/beluga-ai/llm/providers/openai"
 )
 
 // Define the structure you want
@@ -59,47 +62,25 @@ type Person struct {
 func main() {
     ctx := context.Background()
 
-    // Create LLM instance
-    config := llms.NewConfig(
-        llms.WithProvider("openai"),
-        llms.WithModelName("gpt-4o"),
-        llms.WithAPIKey(os.Getenv("OPENAI_API_KEY")),
-    )
-
-    factory := llms.NewFactory()
-    llm, err := factory.CreateLLM("openai", config)
+    // Create LLM instance using the registry pattern
+    model, err := llm.New("openai", llm.ProviderConfig{
+        APIKey: os.Getenv("OPENAI_API_KEY"),
+        Model:  "gpt-4o",
+    })
     if err != nil {
         log.Fatal(err)
     }
 
-    // Define your schema
-    schemaJSON := `{
-        "type": "object",
-        "properties": {
-            "name": {"type": "string", "description": "Full name"},
-            "age": {"type": "integer", "description": "Age in years"},
-            "email": {"type": "string", "description": "Email address"},
-            "city": {"type": "string", "description": "City of residence"}
-        },
-        "required": ["name", "age"]
-    }`
+    // Create a typed structured output wrapper
+    structured := llm.NewStructured[Person](model)
 
-    // Generate with structured output
+    // Generate — returns Person directly, not raw text
     messages := []schema.Message{
         schema.NewHumanMessage("Extract information: John Doe is 32 years old and lives in Seattle. His email is john@example.com"),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-        llms.WithTemperature(0.0), // Use deterministic output
-    )
+    person, err := structured.Generate(ctx, messages)
     if err != nil {
-        log.Fatal(err)
-    }
-
-    // Parse the response
-    var person Person
-    if err := json.Unmarshal([]byte(response.Content), &person); err != nil {
         log.Fatal(err)
     }
 
@@ -108,41 +89,20 @@ func main() {
 }
 ```
 
-## Auto-Generating Schemas from Go Structs
+## Schema Generation from Go Structs
 
-Manually writing JSON schemas is tedious. Use struct tags to auto-generate them.
+`StructuredOutput[T]` generates JSON schemas automatically from Go struct tags using the `internal/jsonutil` package. The `json` tag controls field names, `jsonschema` tags control validation constraints (required, description, minimum, maximum, enum), and nested structs produce nested schema objects. This approach eliminates schema drift — if you add, rename, or remove a struct field, the schema updates automatically at compile time.
 
-```go
-import "github.com/invopop/jsonschema"
-
-// GenerateSchema creates a JSON schema from a Go struct
-func GenerateSchema[T any]() (string, error) {
-    reflector := &jsonschema.Reflector{
-        AllowAdditionalProperties: false,
-        RequiredFromJSONSchemaTags: true,
-    }
-
-    var example T
-    schema := reflector.Reflect(example)
-
-    schemaBytes, err := json.Marshal(schema)
-    if err != nil {
-        return "", err
-    }
-
-    return string(schemaBytes), nil
-}
-
-// Usage
-schemaJSON, err := GenerateSchema[Person]()
-if err != nil {
-    log.Fatal(err)
-}
-```
+Standard `jsonschema` tag directives include:
+- `required` — marks the field as required in the schema
+- `description=...` — adds a description the model uses to understand the field's purpose
+- `enum=a|b|c` — restricts values to a predefined set
+- `minimum=N`, `maximum=N` — numeric range constraints
+- `minItems=N` — minimum array length for slice fields
 
 ## Complex Nested Structures
 
-Structured output supports nested objects and arrays.
+Structured output handles nested objects and arrays. This is useful for extracting hierarchical data like invoices, where a single document contains a vendor object, an array of line items, and scalar totals. Each nested struct generates its own sub-schema, and the model produces a single JSON object that maps to the entire Go type hierarchy.
 
 ```go
 type Invoice struct {
@@ -166,40 +126,22 @@ type LineItem struct {
     Amount      float64 `json:"amount" jsonschema:"required,minimum=0"`
 }
 
-func ExtractInvoice(ctx context.Context, llm llms.LLM, imageData []byte) (*Invoice, error) {
-    // Generate schema
-    schemaJSON, err := GenerateSchema[Invoice]()
-    if err != nil {
-        return nil, fmt.Errorf("generate schema: %w", err)
-    }
+func ExtractInvoice(ctx context.Context, model llm.ChatModel, imageData []byte) (Invoice, error) {
+    structured := llm.NewStructured[Invoice](model)
 
-    // Create multimodal message with image
     messages := []schema.Message{
         schema.NewSystemMessage("You are an expert at extracting structured data from invoices."),
         schema.NewHumanMessage("Extract all information from this invoice."),
         // Add image content part here
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-        llms.WithTemperature(0.0),
-    )
-    if err != nil {
-        return nil, fmt.Errorf("generate: %w", err)
-    }
-
-    var invoice Invoice
-    if err := json.Unmarshal([]byte(response.Content), &invoice); err != nil {
-        return nil, fmt.Errorf("unmarshal: %w", err)
-    }
-
-    return &invoice, nil
+    return structured.Generate(ctx, messages)
 }
 ```
 
 ## Classification with Enums
 
-Use structured output for classification tasks with predefined categories.
+Structured output is well-suited for classification tasks where the model must choose from predefined categories. By using a Go string type with an `enum` constraint in the schema, the model is restricted to valid labels. The `confidence` field with `minimum=0,maximum=1` constraints ensures the model reports a properly bounded confidence score. Combined with a `reasoning` field, this pattern produces auditable classification results.
 
 ```go
 type SentimentAnalysis struct {
@@ -216,64 +158,48 @@ const (
     SentimentNeutral  Sentiment = "neutral"
 )
 
-func AnalyzeSentiment(ctx context.Context, llm llms.LLM, text string) (*SentimentAnalysis, error) {
-    schemaJSON, err := GenerateSchema[SentimentAnalysis]()
-    if err != nil {
-        return nil, err
-    }
+func AnalyzeSentiment(ctx context.Context, model llm.ChatModel, text string) (SentimentAnalysis, error) {
+    structured := llm.NewStructured[SentimentAnalysis](model)
 
     messages := []schema.Message{
         schema.NewSystemMessage("Analyze the sentiment of user reviews."),
         schema.NewHumanMessage(fmt.Sprintf("Review: %s", text)),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
-    if err != nil {
-        return nil, err
-    }
-
-    var analysis SentimentAnalysis
-    if err := json.Unmarshal([]byte(response.Content), &analysis); err != nil {
-        return nil, err
-    }
-
-    return &analysis, nil
+    return structured.Generate(ctx, messages)
 }
 ```
 
 ## Streaming Structured Output
 
-Some providers support streaming structured output token-by-token. This is useful for real-time UI updates.
+Some providers support streaming structured output token-by-token. This is useful for real-time UI updates where you want to show extraction progress as fields are populated. Because JSON is generated left-to-right, partial parsing can reveal completed fields before the full response arrives. Note that streaming structured output uses the model's `Stream` method directly with a response format option, rather than the `StructuredOutput` wrapper.
 
 ```go
-func StreamStructuredOutput(ctx context.Context, llm llms.LLM) error {
-    schemaJSON, _ := GenerateSchema[Person]()
+func StreamStructuredOutput(ctx context.Context, model llm.ChatModel) error {
+    // Use StructuredOutput to get the schema, then stream with the model directly
+    s := llm.NewStructured[Person](model)
+    schemaMap := s.Schema()
 
     messages := []schema.Message{
         schema.NewHumanMessage("Extract: Sarah Chen, 28, lives in Tokyo, sarah.chen@example.com"),
     }
 
-    stream, err := llm.Stream(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
-    if err != nil {
-        return err
-    }
-
     var buffer strings.Builder
-    for chunk := range stream {
-        if chunk.Error != nil {
-            return chunk.Error
+    for chunk, err := range model.Stream(ctx, messages,
+        llm.WithResponseFormat(llm.ResponseFormat{
+            Type:   "json_schema",
+            Schema: schemaMap,
+        }),
+    ) {
+        if err != nil {
+            return err
         }
 
-        buffer.WriteString(chunk.Content)
+        buffer.WriteString(chunk.Delta)
 
-        // Try to parse partial JSON
+        // Try to parse partial JSON as fields complete
         var person Person
         if err := json.Unmarshal([]byte(buffer.String()), &person); err == nil {
-            // Valid JSON so far
             fmt.Printf("Progress: %+v\n", person)
         }
     }
@@ -284,96 +210,59 @@ func StreamStructuredOutput(ctx context.Context, llm llms.LLM) error {
 
 ## Error Handling and Validation
 
-Always validate structured output against your schema and business rules.
+`StructuredOutput[T]` handles JSON parse failures automatically through its retry mechanism, but production systems should also validate the extracted data against business rules. Schema validation ensures the JSON structure is correct, while business validation catches semantically invalid values (negative ages, impossible dates, missing cross-references). Layer both types of validation for defense in depth.
 
 ```go
-import "github.com/xeipuuv/gojsonschema"
-
-func ValidateStructuredOutput(schemaJSON, responseJSON string) error {
-    schemaLoader := gojsonschema.NewStringLoader(schemaJSON)
-    documentLoader := gojsonschema.NewStringLoader(responseJSON)
-
-    result, err := gojsonschema.Validate(schemaLoader, documentLoader)
-    if err != nil {
-        return fmt.Errorf("validation error: %w", err)
-    }
-
-    if !result.Valid() {
-        var errMsgs []string
-        for _, desc := range result.Errors() {
-            errMsgs = append(errMsgs, desc.String())
-        }
-        return fmt.Errorf("schema validation failed: %s", strings.Join(errMsgs, "; "))
-    }
-
-    return nil
-}
-
-func ExtractWithValidation(ctx context.Context, llm llms.LLM, text string) (*Person, error) {
-    schemaJSON, _ := GenerateSchema[Person]()
+func ExtractWithValidation(ctx context.Context, model llm.ChatModel, text string) (Person, error) {
+    structured := llm.NewStructured[Person](model,
+        llm.WithMaxRetries(3),
+    )
 
     messages := []schema.Message{
         schema.NewHumanMessage(text),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
+    person, err := structured.Generate(ctx, messages)
     if err != nil {
-        return nil, fmt.Errorf("generate: %w", err)
-    }
-
-    // Validate against schema
-    if err := ValidateStructuredOutput(schemaJSON, response.Content); err != nil {
-        return nil, fmt.Errorf("invalid output: %w", err)
-    }
-
-    var person Person
-    if err := json.Unmarshal([]byte(response.Content), &person); err != nil {
-        return nil, fmt.Errorf("unmarshal: %w", err)
+        return Person{}, fmt.Errorf("generate: %w", err)
     }
 
     // Business rule validation
     if person.Age < 0 || person.Age > 150 {
-        return nil, fmt.Errorf("invalid age: %d", person.Age)
+        return Person{}, fmt.Errorf("invalid age: %d", person.Age)
     }
 
-    return &person, nil
+    if person.Name == "" {
+        return Person{}, fmt.Errorf("name is required")
+    }
+
+    return person, nil
 }
 ```
 
 ## Fallback Strategies
 
-Not all providers support structured output natively. Implement fallback strategies.
+Not all providers support native JSON Schema response formats. When working with a provider that lacks native support, implement a fallback strategy that uses prompt engineering to request JSON output, then parses the result manually. This two-tier approach lets you use native structured output where available for reliability, and fall back to prompt-based extraction otherwise.
 
 ```go
-func ExtractWithFallback(ctx context.Context, llm llms.LLM, text string) (*Person, error) {
-    schemaJSON, _ := GenerateSchema[Person]()
-
+func ExtractWithFallback(ctx context.Context, model llm.ChatModel, text string) (Person, error) {
     // Try native structured output first
+    structured := llm.NewStructured[Person](model)
+
     messages := []schema.Message{
         schema.NewHumanMessage(text),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithStructuredOutput(schemaJSON),
-    )
-
-    if err != nil {
-        // Fallback: Use prompt engineering
-        return extractWithPromptEngineering(ctx, llm, text)
+    person, err := structured.Generate(ctx, messages)
+    if err == nil {
+        return person, nil
     }
 
-    var person Person
-    if err := json.Unmarshal([]byte(response.Content), &person); err != nil {
-        // Fallback if parsing fails
-        return extractWithPromptEngineering(ctx, llm, text)
-    }
-
-    return &person, nil
+    // Fallback: Use prompt engineering for providers without native support
+    return extractWithPromptEngineering(ctx, model, text)
 }
 
-func extractWithPromptEngineering(ctx context.Context, llm llms.LLM, text string) (*Person, error) {
+func extractWithPromptEngineering(ctx context.Context, model llm.ChatModel, text string) (Person, error) {
     messages := []schema.Message{
         schema.NewSystemMessage("You are a data extraction expert. Always respond with valid JSON only."),
         schema.NewHumanMessage(fmt.Sprintf(
@@ -382,22 +271,22 @@ func extractWithPromptEngineering(ctx context.Context, llm llms.LLM, text string
         )),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithTemperature(0.0),
+    resp, err := model.Generate(ctx, messages,
+        llm.WithTemperature(0.0),
     )
     if err != nil {
-        return nil, err
+        return Person{}, err
     }
 
     // Extract JSON from response (may have markdown code blocks)
-    jsonStr := extractJSON(response.Content)
+    jsonStr := extractJSON(resp.Text())
 
     var person Person
     if err := json.Unmarshal([]byte(jsonStr), &person); err != nil {
-        return nil, fmt.Errorf("fallback parsing failed: %w", err)
+        return Person{}, fmt.Errorf("fallback parsing failed: %w", err)
     }
 
-    return &person, nil
+    return person, nil
 }
 
 func extractJSON(text string) string {
@@ -409,124 +298,69 @@ func extractJSON(text string) string {
 }
 ```
 
-## Provider-Specific Features
+## Tool Binding as Structured Output
 
-Different providers have varying levels of structured output support.
-
-### OpenAI Function Calling
-
-OpenAI's function calling is a form of structured output.
+An alternative approach to structured output is using tool binding. When you define a tool with a specific parameter schema and force the model to call it, the tool call arguments are guaranteed to match the schema. This technique works across all providers that support function calling, even those without native JSON Schema response formats. It is the same mechanism the agent runtime uses to get structured parameters for tool invocations.
 
 ```go
-func ExtractWithFunctionCalling(ctx context.Context, llm llms.LLM, text string) (*Person, error) {
-    // Define function schema
-    functionSchema := schema.Tool{
-        Name:        "extract_person",
-        Description: "Extract person information from text",
-        Parameters: map[string]interface{}{
-            "type": "object",
-            "properties": map[string]interface{}{
-                "name":  map[string]string{"type": "string"},
-                "age":   map[string]string{"type": "integer"},
-                "email": map[string]string{"type": "string"},
-                "city":  map[string]string{"type": "string"},
+func ExtractWithToolBinding(ctx context.Context, model llm.ChatModel, text string) (Person, error) {
+    tools := []schema.ToolDefinition{
+        {
+            Name:        "extract_person",
+            Description: "Extract person information from text",
+            InputSchema: map[string]any{
+                "type": "object",
+                "properties": map[string]any{
+                    "name":  map[string]any{"type": "string", "description": "Full name"},
+                    "age":   map[string]any{"type": "integer", "description": "Age in years"},
+                    "email": map[string]any{"type": "string", "description": "Email address"},
+                    "city":  map[string]any{"type": "string", "description": "City of residence"},
+                },
+                "required": []string{"name", "age"},
             },
-            "required": []string{"name", "age"},
         },
     }
+
+    modelWithTools := model.BindTools(tools)
 
     messages := []schema.Message{
         schema.NewHumanMessage(text),
     }
 
-    response, err := llm.Generate(ctx, messages,
-        llms.WithTools([]schema.Tool{functionSchema}),
-        llms.WithToolChoice("extract_person"),
+    resp, err := modelWithTools.Generate(ctx, messages,
+        llm.WithSpecificTool("extract_person"),
     )
     if err != nil {
-        return nil, err
+        return Person{}, err
     }
 
-    // Parse tool call arguments
     var person Person
-    if len(response.ToolCalls) > 0 {
-        if err := json.Unmarshal([]byte(response.ToolCalls[0].Arguments), &person); err != nil {
-            return nil, err
+    if len(resp.ToolCalls) > 0 {
+        if err := json.Unmarshal([]byte(resp.ToolCalls[0].Arguments), &person); err != nil {
+            return Person{}, fmt.Errorf("parse tool call: %w", err)
         }
     }
 
-    return &person, nil
+    return person, nil
 }
-```
-
-### Anthropic Structured Output
-
-Anthropic models support JSON mode and schema validation.
-
-```go
-config := llms.NewConfig(
-    llms.WithProvider("anthropic"),
-    llms.WithModelName("claude-3-5-sonnet-20241022"),
-    llms.WithAPIKey(os.Getenv("ANTHROPIC_API_KEY")),
-    llms.WithExtraOptions(map[string]interface{}{
-        "json_mode": true,
-    }),
-)
 ```
 
 ## Production Best Practices
 
 When using structured output in production:
 
-1. **Always validate schemas** before making LLM calls
-2. **Set temperature to 0.0** for deterministic extraction
-3. **Implement retry logic** with exponential backoff
-4. **Monitor schema compliance** using observability hooks
-5. **Version your schemas** and track changes
-6. **Cache schema generation** for frequently used types
-7. **Test with edge cases** (missing fields, malformed data)
-8. **Log validation failures** for continuous improvement
-
-```go
-type StructuredOutputConfig struct {
-    MaxRetries       int
-    ValidationStrict bool
-    CacheSchemas     bool
-    LogFailures      bool
-}
-
-func ExtractWithRetry(
-    ctx context.Context,
-    llm llms.LLM,
-    text string,
-    config StructuredOutputConfig,
-) (*Person, error) {
-    var lastErr error
-
-    for i := 0; i < config.MaxRetries; i++ {
-        person, err := ExtractWithValidation(ctx, llm, text)
-        if err == nil {
-            return person, nil
-        }
-
-        lastErr = err
-
-        if config.LogFailures {
-            log.Printf("Extraction attempt %d failed: %v", i+1, err)
-        }
-
-        // Exponential backoff
-        time.Sleep(time.Duration(math.Pow(2, float64(i))) * time.Second)
-    }
-
-    return nil, fmt.Errorf("extraction failed after %d retries: %w", config.MaxRetries, lastErr)
-}
-```
+1. **Set temperature to 0.0** for deterministic extraction — higher temperatures increase the chance of malformed JSON
+2. **Configure retries** via `llm.WithMaxRetries()` — the default of 2 retries handles most transient parse failures
+3. **Validate beyond the schema** — check business rules, cross-field consistency, and value ranges after extraction
+4. **Monitor parse failure rates** — a sudden increase in retries may indicate a model regression or prompt degradation
+5. **Version your struct types** — schema changes can silently break extraction if the model sees a different schema than expected
+6. **Use descriptive field tags** — the `description` in `jsonschema` tags gives the model crucial context about what each field should contain
+7. **Test with edge cases** — empty strings, missing optional fields, Unicode text, and extremely long values
+8. **Prefer `NewStructured[T]` over manual schemas** — auto-generated schemas stay in sync with your types and reduce maintenance burden
 
 ## Next Steps
 
 Now that you understand structured output:
-- Learn about [Multi-Agent Systems](/guides/multi-agent-systems) for coordinated extraction
-- Explore [Document Processing](/guides/document-processing) for batch extraction
-- Read [Prompt Engineering](/guides/prompt-engineering) for better extraction prompts
-- Check out [LLM Recipes](/cookbook/llm-recipes) for real-world examples
+- Learn about [Prompt Engineering](/guides/foundations/prompt-engineering/) for better extraction prompts
+- Explore [Working with LLMs](/guides/foundations/working-with-llms/) for provider-specific capabilities
+- Read [Tools & MCP](/guides/tools-and-mcp/) for tool-based structured extraction patterns

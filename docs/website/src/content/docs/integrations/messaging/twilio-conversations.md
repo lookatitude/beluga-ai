@@ -5,7 +5,7 @@ description: Integrate Twilio Conversations API with Beluga AI for multi-channel
 
 ## Overview
 
-This guide covers integrating Twilio Conversations API with Beluga AI to build multi-channel AI messaging experiences. Twilio Conversations provides a unified API for SMS, WhatsApp, chat, and other messaging channels, allowing a single Beluga AI agent to serve users across all of them.
+Customers reach out through SMS, WhatsApp, and web chat -- often switching between channels mid-conversation. Twilio Conversations unifies these channels behind a single API, so one Beluga AI agent handles all of them without channel-specific logic. This reduces development effort and ensures consistent AI behavior regardless of how a customer contacts you. This guide covers integrating Twilio Conversations API with Beluga AI to build multi-channel AI messaging experiences.
 
 ## Prerequisites
 

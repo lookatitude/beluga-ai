@@ -1,15 +1,17 @@
 ---
 title: "Memory TTL and Cleanup Strategies"
-description: "Automatically expire and clean up old conversation memory using TTL policies for bounded growth and privacy compliance."
+description: "Automatically expire and clean up old conversation memory using TTL policies for bounded growth, privacy compliance, and resource efficiency."
 ---
 
 ## Problem
 
 You need to automatically expire and clean up old conversation memory based on time-to-live (TTL) policies, preventing memory from growing unbounded and ensuring privacy compliance by removing stale data.
 
+Memory systems without TTL enforcement face three problems. First, storage costs grow linearly with time as entries accumulate. Second, search performance degrades as the number of entries increases, because more candidates must be evaluated. Third, privacy regulations (GDPR, CCPA) may require automatic data deletion after a retention period. TTL-based cleanup addresses all three concerns: it bounds storage growth, keeps search sets manageable, and provides automatic compliance with data retention policies.
+
 ## Solution
 
-Implement a TTL-based cleanup system that tracks memory creation times, periodically checks for expired entries, and removes them while preserving recent and important context. Associate timestamps with memory entries and run background cleanup processes.
+Implement a TTL-based cleanup system that tracks memory creation times, periodically checks for expired entries, and removes them while preserving recent and important context. Each memory entry is tagged with a creation timestamp and an expiration time. A background goroutine periodically scans entries and removes expired ones. Priority-based TTL extension allows important sessions (e.g., active support conversations) to live longer than default sessions.
 
 ## Code Example
 
@@ -247,19 +249,19 @@ func main() {
 
 ## Explanation
 
-1. **TTL tracking** — Each memory entry is associated with a creation time and an expiration time. This allows automatic identification and removal of stale entries.
+1. **TTL tracking** -- Each memory entry is associated with a creation time and an expiration time. When entries are loaded, the wrapper checks the TTL before returning data. Expired entries are treated as non-existent, ensuring stale data is never served. This provides automatic data lifecycle management without requiring callers to manage expiration themselves.
 
-2. **Periodic cleanup** — A background goroutine periodically checks for expired entries and removes them. This prevents memory from growing unbounded over time.
+2. **Periodic cleanup** -- A background goroutine periodically scans all entries and removes expired ones. This prevents the entry map from growing unbounded even if entries are never accessed (and thus never checked lazily). The cleanup interval should balance between responsiveness (removing expired entries promptly) and overhead (lock contention from frequent scans).
 
-3. **Access-based extension** — When entries are accessed, their last-accessed timestamp is updated. This information can be used to extend TTL for frequently-used sessions.
+3. **Access-based timestamps** -- When entries are accessed, their `AccessedAt` timestamp is updated. This information can be used for more sophisticated TTL policies, such as extending the TTL for frequently-accessed sessions or implementing LRU-style eviction. The access tracking adds minimal overhead since it piggybacks on the existing lock acquisition.
 
-4. **Priority-based TTL** — High-priority sessions (e.g., active support conversations) can have their TTL extended automatically. This balances memory efficiency with preserving valuable context.
+4. **Priority-based TTL** -- High-priority sessions (e.g., active support conversations, VIP users) can have their TTL extended automatically via `SetPriority`. Each priority level adds one hour to the expiration time. This balances memory efficiency with preserving valuable context for important interactions.
 
 ## Variations
 
 ### Lazy Expiration
 
-Check expiration only on access instead of running a background cleanup:
+Check expiration only on access instead of running a background cleanup, reducing overhead for small deployments:
 
 ```go
 func (tmw *TTLMemoryWrapper) LoadWithLazyExpiration(ctx context.Context, inputs map[string]interface{}) (map[string]interface{}, error) {
@@ -269,7 +271,7 @@ func (tmw *TTLMemoryWrapper) LoadWithLazyExpiration(ctx context.Context, inputs 
 
 ### Gradual Expiration
 
-Gradually reduce priority instead of hard expiration:
+Gradually reduce priority instead of hard expiration, preserving summaries of expired conversations:
 
 ```go
 func (tmw *TTLMemoryWrapper) GradualExpiration(ctx context.Context) {
@@ -279,5 +281,5 @@ func (tmw *TTLMemoryWrapper) GradualExpiration(ctx context.Context) {
 
 ## Related Recipes
 
-- [Window-Based Context Recovery](/cookbook/memory-context-recovery) — Recover context from sliding windows
-- [Conversation Expiry Logic](/cookbook/conversation-expiry) — Expire inactive conversations
+- [Window-Based Context Recovery](/cookbook/memory-context-recovery) -- Recover context from sliding windows
+- [Conversation Expiry Logic](/cookbook/conversation-expiry) -- Expire inactive conversations

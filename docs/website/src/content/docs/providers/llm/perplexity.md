@@ -5,6 +5,8 @@ description: "Integration guide for Perplexity's search-augmented models with Be
 
 The Perplexity provider connects Beluga AI to Perplexity's search-augmented language models. Perplexity models combine LLM reasoning with real-time web search, making them well-suited for tasks requiring up-to-date information. Perplexity exposes an OpenAI-compatible API, so this provider supports all standard features including streaming.
 
+Choose Perplexity when your application needs answers grounded in current web data without building a separate search pipeline. This is particularly useful for research assistants, news analysis, and any task where the model's training data cutoff is a limitation.
+
 ## Installation
 
 ```bash

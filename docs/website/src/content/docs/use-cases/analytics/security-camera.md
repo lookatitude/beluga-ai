@@ -3,11 +3,15 @@ title: Security Camera Event Analysis
 description: Analyze video feeds from security cameras in real-time to detect events, identify threats, and generate alerts.
 ---
 
-Security monitoring requires continuous analysis of video feeds to detect threats, unauthorized access, and unusual activity. Manual monitoring is expensive, scales poorly, and suffers from human fatigue. AI-powered video analysis using Beluga AI's multimodal capabilities automates event detection, reduces costs by 90%, and provides consistent 24/7 monitoring.
+Security camera networks generate massive volumes of video — a facility with 100 cameras at 30fps produces 260,000 frames per minute. Human operators monitoring these feeds suffer from attention fatigue after 20-30 minutes, missing critical events during exactly the periods when threats are most likely. Scaling manual monitoring linearly with camera count is economically unsustainable.
+
+Traditional computer vision (motion detection, object recognition) catches basic events but cannot understand context: a person entering through a door is normal, but the same person entering through a window at 3 AM is a threat. Vision-capable LLMs bridge this gap by understanding scene context, human behavior patterns, and situational risk — the same capabilities that make them useful for image understanding in other domains.
+
+The challenge is cost and latency. Analyzing every frame with an LLM at $0.01 per image would cost $2,600 per minute for 100 cameras. Frame sampling, motion pre-filtering, and priority-based analysis rates make LLM-powered video analysis economically viable.
 
 ## Solution Architecture
 
-Beluga AI processes video streams by extracting frames, analyzing them with vision-capable LLMs, detecting security events, and generating alerts. The system handles hundreds of camera feeds simultaneously with frame sampling and parallel processing.
+Beluga AI's multimodal support (via `schema.ImagePart`) sends frames to vision-capable LLMs for contextual analysis. The system samples frames at configurable intervals (2-60 seconds depending on camera priority), pre-filters with lightweight motion detection to skip static scenes, and processes multiple camera feeds in parallel using goroutines with bounded concurrency.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐

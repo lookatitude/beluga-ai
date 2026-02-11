@@ -5,6 +5,8 @@ description: "Integration guide for xAI's Grok models with Beluga AI."
 
 The xAI provider connects Beluga AI to xAI's Grok family of models. xAI exposes an OpenAI-compatible API, so this provider supports all standard features including streaming, tool calling, and structured output.
 
+Choose xAI when you want access to Grok models, which offer strong reasoning and conversational capabilities. Grok-3 is competitive with frontier models from other providers and provides large context windows for extended conversations.
+
 ## Installation
 
 ```bash
@@ -128,10 +130,10 @@ model, err := xai.New(config.ProviderConfig{
 
 ## Available Models
 
-| Model ID       | Description                    |
-|----------------|--------------------------------|
-| `grok-3`       | Most capable Grok model        |
-| `grok-3-mini`  | Fast, efficient Grok model     |
-| `grok-2`       | Previous generation model      |
+| Model ID       | Description                                  |
+|----------------|----------------------------------------------|
+| `grok-3`       | Most capable Grok model, large context       |
+| `grok-3-mini`  | Fast, cost-effective with strong reasoning   |
+| `grok-2`       | Previous generation, still capable           |
 
 Refer to [xAI's documentation](https://docs.x.ai/docs) for the latest model list.

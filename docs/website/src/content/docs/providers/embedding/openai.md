@@ -5,6 +5,8 @@ description: Generate text embeddings using OpenAI's embedding models.
 
 The OpenAI embedding provider implements the `embedding.Embedder` interface using the official `openai-go` SDK. It supports all OpenAI embedding models including the latest `text-embedding-3` family with configurable dimensions.
 
+Choose OpenAI embeddings for the best general-purpose quality-to-cost ratio. The `text-embedding-3-small` model offers strong retrieval performance at low cost, while `text-embedding-3-large` provides higher quality with configurable dimension reduction for storage optimization.
+
 ## Installation
 
 ```bash

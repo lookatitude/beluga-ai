@@ -3,11 +3,15 @@ title: Automated Code Review
 description: Build an AI-powered code review agent with git integration, static analysis, and structured feedback using Beluga AI.
 ---
 
-Code review is essential for maintaining quality but time-consuming and inconsistent. An AI-powered code review agent can analyze pull requests automatically, running static analysis tools, identifying bugs and security issues, and generating structured feedback. Human reviewers then focus on architecture and design decisions rather than catching syntax errors and style violations.
+Code review is essential for maintaining quality but time-consuming and inconsistent. Human reviewers spend significant time on mechanical checks (style violations, lint errors, missing error handling) that leave less capacity for the high-value work: evaluating architecture decisions, spotting logic errors, and assessing security implications. Review quality also varies by reviewer fatigue, domain expertise, and time pressure.
+
+An AI-powered code review agent automates the mechanical layer: running static analysis tools, identifying common bug patterns, checking for security issues, and generating structured feedback. Human reviewers then focus on architecture and design decisions — the work that requires understanding the broader system context. The agent uses a ReAct pattern because code review is inherently multi-step: fetch the diff, identify changed files, run appropriate linters per language, analyze the code, and synthesize findings into a structured report.
 
 ## Solution Architecture
 
 The code review agent uses Beluga AI's tool system to interact with git repositories and static analysis tools. It fetches the diff, runs linters, analyzes the code with an LLM, and posts structured review comments. Safety guards ensure the agent's suggestions are constructive and accurate.
+
+The tool-based approach (rather than a monolithic review script) allows the agent to reason about which tools to use based on the specific changes. A PR that only modifies Go files does not need ESLint; a PR that touches security-sensitive code triggers additional analysis. The ReAct loop handles this conditional logic naturally.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -37,7 +41,7 @@ The code review agent uses Beluga AI's tool system to interact with git reposito
 
 ## Building the Review Agent
 
-Define tools for git operations and code analysis, then create an agent that uses them to review pull requests.
+Define tools for git operations and code analysis, then create an agent that uses them to review pull requests. Each tool is created with `tool.NewFuncTool` using typed input structs, which auto-generates JSON schemas from struct tags. The agent's persona is set to "Senior Code Reviewer" with explicit instructions to be constructive — this prompt engineering is critical for producing useful review output rather than pedantic criticism.
 
 ```go
 package main
@@ -159,7 +163,7 @@ func createReviewAgent(ctx context.Context) (agent.Agent, error) {
 
 ## Structured Review Output
 
-Use structured output to produce machine-readable review comments:
+Use structured output to produce machine-readable review comments. The two-step approach — first run the agent for free-form analysis, then use `llm.NewStructured[ReviewReport]` to format the output — separates the reasoning step from the structuring step. This produces better results than asking the agent to both analyze and format simultaneously, because the LLM can focus entirely on code analysis in the first step and entirely on structuring in the second.
 
 ```go
 type ReviewReport struct {
@@ -301,7 +305,7 @@ func postReviewComment(ctx context.Context, repo string, prNumber int, report Re
 
 ## Safety Guards for Code Review
 
-Guard the agent's output to ensure reviews are constructive and accurate:
+Guard the agent's output to ensure reviews are constructive and accurate. Beluga AI's guard pipeline provides output guards that screen the agent's responses before they are posted. The tone guard catches harsh or personal language, and the security guard prevents the agent from suggesting code patterns that could introduce vulnerabilities. These guards implement the output stage of Beluga AI's 3-stage guard pipeline (Input, Output, Tool).
 
 ```go
 import "github.com/lookatitude/beluga-ai/guard"

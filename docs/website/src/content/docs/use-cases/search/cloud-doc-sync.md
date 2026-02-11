@@ -3,7 +3,9 @@ title: Automated Cloud Document Sync
 description: Maintain real-time RAG knowledge bases by automatically syncing documents from cloud storage with change detection.
 ---
 
-A technology company needed to maintain a real-time knowledge base by automatically syncing documents from cloud storage (S3, GCS, Azure Blob) into their RAG system. Manual document ingestion led to 3-5 day delays, 15-20% stale data in RAG indexes, and missed updates from 50+ cloud buckets. An automated cloud sync system with change detection enables near real-time RAG updates with less than 5 minute latency.
+A technology company needed to maintain a real-time knowledge base by automatically syncing documents from cloud storage (S3, GCS, Azure Blob) into their RAG system. The core problem is that RAG systems are only as good as their indexed data — stale embeddings from outdated documents produce wrong answers with high confidence, which is more damaging than no answer at all. Manual document ingestion led to 3-5 day delays, 15-20% stale data in RAG indexes, and missed updates from 50+ cloud buckets.
+
+An automated cloud sync system with change detection enables near real-time RAG updates with less than 5 minute latency. The system uses ETag-based change detection rather than re-indexing everything, which means only modified documents are re-processed through the embedding pipeline. This incremental approach keeps costs proportional to change volume, not total document count.
 
 ## Solution Architecture
 

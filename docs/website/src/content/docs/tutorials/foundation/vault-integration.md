@@ -3,7 +3,7 @@ title: Vault and Secrets Manager Integration
 description: Integrate HashiCorp Vault or other secrets managers with Beluga AI for production-grade secret management.
 ---
 
-Environment variables are better than hardcoded secrets, but they have limitations: they are visible in process lists, difficult to rotate dynamically, and lack fine-grained access control. Secrets managers like HashiCorp Vault solve these issues with dynamic secrets, audit logging, and automated rotation.
+Environment variables are better than hardcoded secrets, but they have limitations: they are visible in process lists, difficult to rotate dynamically, and lack fine-grained access control. In AI applications, these limitations are amplified because a single service may consume API keys from multiple LLM providers, embedding services, and vector databases — each with different rotation schedules and access policies. Secrets managers like HashiCorp Vault solve these issues with dynamic secrets, audit logging, and automated rotation.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A secrets provider interface and Vault implementation that loads API keys and cr
 
 ## Step 1: Define a Secret Provider Interface
 
-Create an abstraction that decouples your application from any specific secrets backend:
+Create an abstraction that decouples your application from any specific secrets backend. This interface follows Beluga AI's interface-first design principle — define the contract, then implement it for specific backends. The two-parameter design (`path` and `key`) maps naturally to Vault's path-based secret organization but is general enough to work with AWS Secrets Manager, GCP Secret Manager, or Azure Key Vault.
 
 ```go
 package main
@@ -35,7 +35,7 @@ type SecretProvider interface {
 
 ## Step 2: Implement the Vault Provider
 
-Use the Vault API client to fetch secrets from a KV v2 secrets engine:
+Use the Vault API client to fetch secrets from a KV v2 secrets engine. The KV v2 engine is the recommended choice for static secrets like API keys because it provides versioning and soft-delete capabilities. The implementation handles the KV v2 data nesting (`secret.Data["data"]`) which is a common source of confusion when working with Vault directly.
 
 ```go
 import "github.com/hashicorp/vault/api"
@@ -83,7 +83,7 @@ func (v *VaultProvider) GetSecret(ctx context.Context, path string, key string) 
 
 ## Step 3: Populate Configuration from Vault
 
-Fetch secrets at startup and populate the configuration struct:
+Fetch secrets at startup and populate the configuration struct. This approach combines file-based configuration for non-sensitive values with Vault for secrets, which keeps the separation of concerns clean: the config file describes the application's shape, while Vault provides the sensitive values. The final `config.Validate` call ensures the complete configuration is valid after all sources have been merged.
 
 ```go
 import "github.com/lookatitude/beluga-ai/config"
@@ -126,7 +126,7 @@ func loadConfigWithVault(ctx context.Context, vault SecretProvider) (AppConfig, 
 
 ## Step 4: Dynamic Secret Refresh
 
-For secrets that rotate (database credentials, temporary tokens), fetch them on demand:
+For secrets that rotate (database credentials, temporary tokens), fetch them on demand rather than caching them at startup. This per-request approach ensures your application always uses current credentials, which is critical when Vault's database secret engine issues short-lived credentials with automatic rotation. The trade-off is additional latency per request, which can be mitigated with short-lived local caching if needed.
 
 ```go
 type DynamicConfig struct {

@@ -3,11 +3,15 @@ title: Error Recovery Service for LLMs
 description: Implement robust error recovery with retry strategies, circuit breakers, and exponential backoff for 99.9% success rates.
 ---
 
-An enterprise AI platform needed to implement robust error recovery for LLM operations to handle transient failures, rate limits, and provider outages gracefully. LLM operations had a 3-5% failure rate due to rate limits, timeouts, and provider issues, causing user-facing errors and requiring manual intervention for recovery. An error recovery service with intelligent retries, circuit breakers, and exponential backoff achieves 99.9% success rate even during provider issues.
+LLM providers are external services subject to rate limits, transient network failures, and periodic outages. For an enterprise AI platform handling thousands of requests per hour, even a 3-5% failure rate translates to hundreds of user-facing errors daily, each requiring manual investigation and retry. The cost compounds: support tickets pile up, SLA commitments are missed, and engineering time is diverted from feature work to firefighting.
+
+The fundamental challenge is that LLM failures are not uniform. Rate limit errors (HTTP 429) signal temporary throttling and resolve with backoff. Timeout errors suggest provider load and benefit from retry. Authentication errors are permanent and should fail immediately. A naive retry-everything approach wastes resources and delays permanent failures, while no retries at all exposes users to every transient glitch.
+
+An error recovery service with intelligent retries, circuit breakers, and exponential backoff achieves 99.9% success rate even during provider issues by classifying errors and applying the right recovery strategy for each.
 
 ## Solution Architecture
 
-Beluga AI's core package provides the foundation for building resilient LLM operations. The error recovery service wraps LLM calls with retry logic, circuit breakers, and fallback mechanisms. Error analysis determines retryability, and exponential backoff prevents overwhelming failed providers.
+Beluga AI's `core/` package provides typed errors with `IsRetryable()` checks that distinguish transient from permanent failures. The error recovery service wraps LLM calls with retry logic, circuit breakers, and fallback mechanisms. Error analysis determines retryability, exponential backoff prevents thundering herd effects on recovering providers, and circuit breakers short-circuit requests when a provider is consistently failing — redirecting traffic to fallback providers instead of accumulating timeouts.
 
 ```
 ┌──────────────┐    ┌──────────────┐    ┌──────────────┐
@@ -25,7 +29,7 @@ Beluga AI's core package provides the foundation for building resilient LLM oper
 
 ## Error Recovery Service
 
-The recovery service wraps LLM providers with error handling and automatic retries.
+The recovery service wraps LLM providers with error handling and automatic retries. It implements `llm.ChatModel`, so it can be used as a drop-in replacement anywhere a model is expected. This composability is intentional — resilience becomes a transparent layer rather than requiring callers to change their code.
 
 ```go
 package main
@@ -77,7 +81,7 @@ func (e *ErrorRecoveryService) Generate(ctx context.Context, msgs []schema.Messa
 
 ## Retry Logic with Exponential Backoff
 
-The retry manager implements exponential backoff with jitter to prevent thundering herd.
+The retry manager implements exponential backoff with jitter. Fixed-interval retries cause synchronized retry storms — when many clients fail at the same time, they all retry at the same time, amplifying the load spike that caused the original failure. Exponential backoff spreads retries over increasing intervals, and jitter randomizes the exact timing so clients naturally desynchronize.
 
 ```go
 type RetryManager struct {
@@ -157,7 +161,7 @@ func (e *ErrorRecoveryService) executeWithRetry(
 
 ## Error Classification
 
-The error analyzer determines which errors should trigger retries.
+Retrying every error wastes time and resources. Authentication failures, invalid request formats, and content policy violations will never succeed on retry. The error analyzer classifies errors into retryable (rate limits, timeouts, network issues, server errors) and permanent categories, so the service fails fast on unrecoverable errors while persisting through transient ones.
 
 ```go
 func (e *ErrorRecoveryService) isRetryable(err error) bool {
@@ -196,7 +200,7 @@ func (e *ErrorRecoveryService) isRateLimitError(err error) bool {
 
 ## Circuit Breaker
 
-The circuit breaker prevents cascading failures by failing fast when the provider is consistently unavailable.
+When a provider is down, retrying every request accumulates timeouts and delays all callers. The circuit breaker pattern prevents this cascading failure: after a threshold of consecutive failures, the breaker "opens" and immediately routes requests to the fallback provider without waiting for the primary to time out. After a cooldown period, the breaker enters "half-open" state and probes the primary with a single request — if it succeeds, the breaker closes and normal traffic resumes.
 
 ```go
 type CircuitBreaker struct {
@@ -262,7 +266,7 @@ func (cb *CircuitBreaker) State() string {
 
 ## Streaming with Error Recovery
 
-The recovery service also supports streaming operations:
+Streaming introduces a complication: partial responses may have already been yielded to the caller before an error occurs mid-stream. The recovery service handles this by retrying from the beginning on retryable errors — the caller receives a fresh stream from the retry attempt. For non-retryable errors, the error is yielded immediately. This follows Beluga AI's `iter.Seq2[T, error]` streaming pattern where errors are part of the iteration sequence.
 
 ```go
 func (e *ErrorRecoveryService) Stream(

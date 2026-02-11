@@ -5,7 +5,7 @@ sidebar:
   order: 0
 ---
 
-Guides for building and integrating agent tools, connecting to MCP servers, bridging external APIs, and testing agent behavior.
+Agents are only as capable as the tools they can use. This section covers creating custom tools, exposing them over the Model Context Protocol (MCP) for IDE and bot consumption, bridging external APIs like OpenAI Assistants into Beluga's unified interface, and testing agent behavior deterministically without live API calls.
 
 | Guide | Description |
 |-------|-------------|

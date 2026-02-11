@@ -5,6 +5,8 @@ description: Production-grade durable execution using Temporal for distributed w
 
 The Temporal provider implements both the `workflow.DurableExecutor` and `workflow.WorkflowStore` interfaces using [Temporal](https://temporal.io). Temporal is a distributed, durable execution platform that provides workflow orchestration with fault tolerance, signal handling, activity execution, and replay-based recovery. This provider maps Beluga workflow concepts directly to Temporal primitives.
 
+Choose Temporal when you need production-grade durable execution with full workflow orchestration: activity retries, signal-based human-in-the-loop, deterministic replay for recovery, and distributed task queues. Temporal is the right choice for long-running, mission-critical workflows where fault tolerance is essential. For lightweight development and testing, use the [In-Memory](/providers/workflow/inmemory) store instead.
+
 This is the only provider that registers into the `workflow.DurableExecutor` registry via `init()`, making it available through `workflow.New("temporal", cfg)`.
 
 ## Installation

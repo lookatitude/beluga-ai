@@ -5,6 +5,8 @@ sidebar:
   order: 0
 ---
 
+Users expect to interact with AI assistants through the channels they already use -- Slack for internal teams, WhatsApp for customers, SMS for notifications. Messaging integrations let your Beluga AI agents meet users where they are instead of requiring a separate web interface. Because Beluga AI handles the agent logic and messaging platforms handle delivery, you get reliable message transport with rich AI capabilities.
+
 Beluga AI agents can serve conversations across messaging platforms by combining the `protocol` package (for HTTP/SSE endpoints) with the `server` package (for framework adapters). This page covers common patterns for connecting to Twilio, Slack, and custom messaging backends.
 
 ## Architecture

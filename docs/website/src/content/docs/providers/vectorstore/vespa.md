@@ -5,6 +5,8 @@ description: Vector store using the Vespa search engine's nearest neighbor capab
 
 The Vespa provider implements the `vectorstore.VectorStore` interface using Vespa's document and search APIs. Vespa is a production-grade search engine that supports real-time vector similarity search with YQL queries, combining keyword and vector search capabilities.
 
+Choose Vespa when you need a production-grade search engine that combines vector search with structured queries, ranking, and real-time indexing. Vespa excels at large-scale deployments with complex ranking models and is well-suited for applications that need both keyword and semantic search with custom ranking logic.
+
 ## Installation
 
 ```bash

@@ -5,11 +5,15 @@ sidebar:
   order: 0
 ---
 
+Infrastructure is what separates a demo from a production system. These recipes cover the cross-cutting concerns that every agentic AI application needs: configuration management that doesn't require downtime, safety guards that protect against prompt injection and PII leakage, resilience patterns that handle provider outages gracefully, and observability that lets you debug multi-agent workflows across service boundaries.
+
+Each recipe is self-contained and uses Beluga AI's standard patterns (functional options, registry, hooks, middleware) so the pieces compose naturally.
+
 ## Hot Reload Configuration in Production
 
 **Problem:** You need to update configuration (feature flags, model parameters, rate limits) without restarting the service.
 
-**Solution:** Use `config.FileWatcher` to poll for changes and apply updates via callbacks.
+**Solution:** Use `config.FileWatcher` to poll for changes and apply updates via callbacks. In AI systems, configuration changes are frequent (switching models, adjusting temperature, updating rate limits) and downtime is unacceptable for always-on agents. The validate-before-apply pattern ensures that a malformed config file never replaces a working configuration, and `sync.RWMutex` allows concurrent readers while config updates are applied atomically.
 
 ```go
 package main
@@ -124,7 +128,7 @@ func main() {
 
 **Problem:** Configuration and request payloads may contain API keys, tokens, and passwords that must not appear in logs.
 
-**Solution:** Recursively mask sensitive fields before logging.
+**Solution:** Recursively mask sensitive fields before logging. AI applications typically hold multiple provider API keys (OpenAI, Anthropic, vector stores, etc.), and these secrets flow through config loading, error messages, and debug logging. A single leaked key in a log aggregation system can lead to unauthorized API usage. This approach masks at the logging boundary rather than in the config itself, keeping the original values intact for actual provider calls while ensuring no secret reaches a log sink.
 
 ```go
 package main
@@ -190,7 +194,7 @@ func main() {
 
 **Problem:** Different operations need different timeout budgets. A single context deadline doesn't work when you have sequential LLM call, tool execution, and memory save steps.
 
-**Solution:** Create per-operation contexts with individual deadlines from a shared budget.
+**Solution:** Create per-operation contexts with individual deadlines from a shared budget. In a typical agent turn, the LLM call consumes the majority of time (60-70%), tool execution takes a variable amount, and memory persistence should use whatever remains. A flat timeout either gives too much time to fast operations or starves slow ones. The budget pattern allocates fractions of remaining time, adapting dynamically as earlier steps complete faster or slower than expected.
 
 ```go
 package main
@@ -274,7 +278,7 @@ func main() {
 
 **Problem:** You want to add retry logic to any function call without modifying the function itself.
 
-**Solution:** Use the generic `resilience.Retry` function with a configurable policy.
+**Solution:** Use the generic `resilience.Retry` function with a configurable policy. LLM providers experience transient failures (rate limits, timeouts, 5xx errors) that often succeed on retry. The retry wrapper is generic over `[T any]`, so it works with any return type without type assertions. Exponential backoff with jitter prevents thundering herd problems when many clients retry simultaneously, and the `RetryableErrors` filter ensures only transient errors are retried while permanent failures (invalid API key, malformed request) fail immediately.
 
 ```go
 package main
@@ -339,7 +343,7 @@ func main() {
 
 **Problem:** User input may contain prompt injection attempts that try to override system instructions.
 
-**Solution:** Use the `guard` package to detect and block injection patterns before they reach the LLM.
+**Solution:** Use the `guard` package to detect and block injection patterns before they reach the LLM. Prompt injection is the most common attack vector against LLM applications: attackers embed instructions like "ignore all previous instructions" within seemingly normal input. Beluga AI's guard pipeline follows a 3-stage model (input guards, output guards, tool guards) so injection detection runs as the first stage before any LLM processing occurs. The functional options pattern (`WithPattern`) lets you add domain-specific patterns without modifying the detector itself.
 
 ```go
 package main
@@ -397,7 +401,7 @@ func main() {
 
 **Problem:** Agent conversations may contain personally identifiable information (emails, phone numbers, SSNs) that must be redacted before logging or storage.
 
-**Solution:** Use the `guard.PIIRedactor` to detect and replace PII patterns.
+**Solution:** Use the `guard.PIIRedactor` to detect and replace PII patterns. Privacy regulations (GDPR, CCPA, HIPAA) require that PII is not stored in logs, and AI conversations routinely contain user-provided personal data. The PII redactor runs as an output guard in Beluga AI's 3-stage guard pipeline, scanning agent responses before they reach logs or external systems. Pattern ordering matters: credit card patterns must match before phone patterns to avoid partial matches on digit sequences.
 
 ```go
 package main
@@ -459,7 +463,7 @@ redactor := guard.NewPIIRedactor(
 
 **Problem:** You need different safety checks at different stages: input validation, output filtering, and tool call verification.
 
-**Solution:** Compose a three-stage guard pipeline using the `guard` package.
+**Solution:** Compose a three-stage guard pipeline using the `guard` package. Beluga AI enforces a strict 3-stage guard architecture because different threats apply at different points in the agent lifecycle. Input guards catch prompt injection and malformed requests before they reach the LLM. Output guards redact PII and filter harmful content before responses reach users. Tool guards validate that tool call arguments don't contain injection attempts that could compromise external systems. Each stage runs independently, so a PII redactor in the output stage doesn't interfere with injection detection in the input stage.
 
 ```go
 package main
@@ -512,7 +516,7 @@ func main() {
 
 **Problem:** In a distributed system, you need to trace requests across multiple services and correlate logs from different agents.
 
-**Solution:** Use context propagation with `o11y.StartSpan` to create correlated trace spans.
+**Solution:** Use context propagation with `o11y.StartSpan` to create correlated trace spans. When a user request flows through a triage agent, then to a specialist agent, then to tool calls, you need a single trace ID that links all of these operations. Beluga AI's observability layer uses OpenTelemetry's `gen_ai.*` attribute namespace, so spans automatically carry agent name, model, token counts, and tool information. Context propagation through Go's `context.Context` ensures that child spans are automatically linked to their parent without manual ID passing.
 
 ```go
 package main
@@ -569,7 +573,7 @@ func main() {
 
 **Problem:** You have multiple tenants/projects sharing LLM resources and need to enforce per-project rate limits.
 
-**Solution:** Use a rate limiter keyed by project ID.
+**Solution:** Use a rate limiter keyed by project ID. In multi-tenant AI platforms, a single project making excessive requests can exhaust shared provider quotas and degrade service for everyone. Per-project rate limiting isolates tenants from each other using fixed-window counters. The window resets automatically, and the thread-safe design (`sync.Mutex`) ensures correct counting under concurrent access from multiple request-handling goroutines.
 
 ```go
 package main
@@ -656,7 +660,7 @@ func main() {
 
 **Problem:** Your orchestration graph has independent nodes that can run in parallel to reduce total execution time.
 
-**Solution:** Use the `orchestration.Scatter` pattern for fan-out/fan-in execution.
+**Solution:** Use the `orchestration.Scatter` pattern for fan-out/fan-in execution. When an agent needs to gather information from multiple sources (search, database, API), running these operations sequentially wastes time since they have no dependencies on each other. `Scatter` implements the fan-out/fan-in pattern: all nodes receive the same input, execute concurrently, and their results are collected into a slice. This is a common pattern in RAG pipelines where you want to query multiple retrievers in parallel.
 
 ```go
 package main
@@ -707,7 +711,7 @@ func main() {
 
 **Problem:** You need a workflow where the next step depends on the result of the current step (e.g., routing to different handlers based on classification).
 
-**Solution:** Use `orchestration.Graph` with conditional edges.
+**Solution:** Use `orchestration.Graph` with conditional edges. Many agent workflows require dynamic routing: a classifier determines whether a request is billing, technical, or general, and the workflow routes to the appropriate specialist. `orchestration.Graph` models this as a directed graph where edges have condition functions that evaluate the output of the source node. Only edges whose conditions return `true` are followed, enabling data-driven workflow execution without if/else chains in application code.
 
 ```go
 package main
@@ -783,7 +787,7 @@ func main() {
 
 **Problem:** You need prompt templates that adapt based on user role, feature flags, or conversation context.
 
-**Solution:** Use `prompt.Builder` with conditional message inclusion for cache-optimal ordering.
+**Solution:** Use `prompt.Builder` with conditional message inclusion for cache-optimal ordering. LLM providers like Anthropic support prompt caching, where the prefix of a prompt that matches a previous request is served from cache. `prompt.Builder` orders messages to maximize cache hits: system prompt and static context (which rarely change) come first, followed by a cache breakpoint, then dynamic context and user input. This means the expensive static portion is cached across requests, significantly reducing latency and token costs.
 
 ```go
 package main
@@ -835,7 +839,7 @@ func truncate(s string, max int) string {
 
 **Problem:** You need to send multiple images to a vision-capable LLM for comparison, analysis, or document processing.
 
-**Solution:** Use `schema.ImagePart` content parts in messages.
+**Solution:** Use `schema.ImagePart` content parts in messages. Beluga AI's `schema.ContentPart` interface supports mixed-content messages where text and images coexist in a single message. This is essential for tasks like comparing two versions of a document, analyzing multiple screenshots, or processing multi-page forms. The `Detail` field controls resolution: "high" for detailed analysis (architecture diagrams, text-heavy images) and "low" for quick classification tasks, trading accuracy for token cost.
 
 ```go
 package main
@@ -894,7 +898,7 @@ func main() {
 
 **Problem:** In a multi-agent system, you need to correlate traces from the triage agent, specialist agents, and tool calls into a unified view.
 
-**Solution:** Propagate trace context through the agent chain and use `o11y` spans to create a connected trace.
+**Solution:** Propagate trace context through the agent chain and use `o11y` spans to create a connected trace. OpenTelemetry's context propagation means that when you pass `ctx` from a parent span to a child operation, the child span is automatically linked as a descendant. In Beluga AI's multi-agent workflows, this creates a trace tree: request at the root, agent invocations as branches, and tool calls as leaves. The `gen_ai.*` attributes (token counts, model name, operation type) attached to each span make it possible to answer questions like "which agent consumed the most tokens?" directly from your observability platform.
 
 ```go
 package main
@@ -965,7 +969,7 @@ func main() {
 
 **Problem:** When an LLM provider goes down, continued requests waste time and resources. You need automatic protection against cascading failures.
 
-**Solution:** Use `resilience.CircuitBreaker` to detect failures and short-circuit requests.
+**Solution:** Use `resilience.CircuitBreaker` to detect failures and short-circuit requests. Without a circuit breaker, every request to a down provider waits for the full timeout before failing, consuming goroutines, connections, and user patience. The circuit breaker tracks consecutive failures and, after hitting the threshold, immediately returns `ErrCircuitOpen` for subsequent requests without attempting the call. After a reset timeout, it allows a single probe request through to check if the provider has recovered. This pattern is critical for multi-provider setups where you want to fail over quickly to a backup provider.
 
 ```go
 package main

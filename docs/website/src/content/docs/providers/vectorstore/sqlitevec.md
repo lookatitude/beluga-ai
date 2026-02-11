@@ -5,6 +5,8 @@ description: Embedded vector store using SQLite with the sqlite-vec extension.
 
 The SQLite-vec provider implements the `vectorstore.VectorStore` interface using SQLite with the [sqlite-vec](https://github.com/asg017/sqlite-vec) extension. It provides an embedded, zero-dependency vector store suitable for edge deployments and local applications.
 
+Choose SQLite-vec when you need an embedded vector store with no external server dependencies. It is ideal for edge deployments, CLI tools, desktop applications, and scenarios where a file-based database is preferable to a network service. The tradeoff is that it requires CGO and has lower throughput than server-based alternatives.
+
 **Note:** This provider requires CGO and the sqlite-vec extension.
 
 ## Installation

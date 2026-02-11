@@ -3,7 +3,7 @@ title: Building an MCP Tool Server
 description: Expose Beluga AI tools to external agents and IDEs via the Model Context Protocol using Streamable HTTP transport.
 ---
 
-The Model Context Protocol (MCP) is an open standard for how AI models interact with external tools and context. Instead of building custom integrations for every platform, build one MCP server that makes your Go tools available to Claude Desktop, Cursor, and any MCP-compatible client.
+The Model Context Protocol (MCP) is an open standard for how AI models interact with external tools and context. Instead of building custom integrations for every platform, build one MCP server that makes your Go tools available to Claude Desktop, Cursor, and any MCP-compatible client. This approach follows the same principle as Beluga AI's registry pattern -- define capabilities once, expose them through a standard interface, and let clients discover them dynamically.
 
 ## What You Will Build
 
@@ -18,11 +18,11 @@ An MCP server that exposes Beluga `Tool` implementations, MCP resources, and pro
 
 ### MCP Server
 
-The `protocol/mcp` package provides `MCPServer`, which processes JSON-RPC 2.0 requests at a single HTTP endpoint. It exposes three capabilities:
+The `protocol/mcp` package provides `MCPServer`, which processes JSON-RPC 2.0 requests at a single HTTP endpoint. JSON-RPC was chosen because the MCP specification requires it -- using a single endpoint with method-based dispatch simplifies deployment and firewall configuration compared to REST-style multiple endpoints. The server exposes three capability types:
 
-- **Tools** -- Callable functions the model can invoke
-- **Resources** -- Read-only context data
-- **Prompts** -- Reusable prompt templates
+- **Tools** -- Callable functions the model can invoke. These map directly to Beluga's `tool.Tool` interface, so any tool you build for agent use is automatically MCP-compatible.
+- **Resources** -- Read-only context data such as database schemas, API documentation, or configuration files. Resources give models access to reference material without tool execution.
+- **Prompts** -- Reusable prompt templates with parameterized arguments. Clients can list available prompts and fill in arguments, enabling consistent prompt engineering across tools.
 
 ```go
 import "github.com/lookatitude/beluga-ai/protocol/mcp"
@@ -32,7 +32,7 @@ server := mcp.NewServer("my-tools", "1.0.0")
 
 ## Step 1: Define Tools
 
-Create tools using the `tool.FuncTool` pattern with typed input structs:
+Create tools using the `tool.FuncTool` pattern with typed input structs. The `FuncTool` uses Go's reflection to automatically generate a JSON Schema from the struct's field tags (`json`, `description`, `required`). This schema is returned to MCP clients via the `tools/list` method, enabling models to understand the tool's input format without manual schema authoring. The typed input struct approach eliminates runtime type assertion errors because the framework handles deserialization before calling your function.
 
 ```go
 package main
@@ -81,7 +81,7 @@ func main() {
 
 ## Step 2: Create the MCP Server
 
-Register tools with the MCP server:
+Register tools with the MCP server. The `AddTool` method accepts any value implementing the `tool.Tool` interface, which means tools built for agent use work without modification. The server internally maps each tool's `Name()` to its `Schema()` for the `tools/list` response and delegates to `Execute()` for `tools/call` requests.
 
 ```go
 func buildServer() *mcp.MCPServer {
@@ -116,7 +116,7 @@ func buildServer() *mcp.MCPServer {
 
 ## Step 3: Add Resources
 
-Resources provide read-only context to the model. Register them for documentation, schemas, or configuration:
+Resources provide read-only context to the model. Unlike tools, resources are not callable -- they are static data that the client can fetch to augment the model's context window. This is useful for providing database schemas, API documentation, or configuration details that help the model make better tool calls. Resources use URIs for identification, following the MCP specification's resource addressing scheme.
 
 ```go
 func addResources(server *mcp.MCPServer) {
@@ -138,7 +138,7 @@ func addResources(server *mcp.MCPServer) {
 
 ## Step 4: Add Prompt Templates
 
-Register reusable prompt templates that clients can use:
+Register reusable prompt templates that clients can use. Prompt templates enable consistent prompt engineering across different clients -- rather than each client constructing its own prompt, it can list available templates and fill in the arguments. The `Required` field on arguments tells the client which parameters must be provided, paralleling the `required` tag on `FuncTool` input structs.
 
 ```go
 func addPrompts(server *mcp.MCPServer) {
@@ -155,7 +155,7 @@ func addPrompts(server *mcp.MCPServer) {
 
 ## Step 5: Serve via HTTP
 
-Start the MCP server on an HTTP endpoint:
+Start the MCP server on an HTTP endpoint. The `Serve` method binds to the given address and handles the MCP protocol lifecycle, including capability negotiation during the `initialize` handshake. The server uses Streamable HTTP transport (protocol version `2025-03-26`), which supports both request-response and server-initiated events over a single HTTP connection.
 
 ```go
 func main() {
@@ -174,7 +174,7 @@ func main() {
 }
 ```
 
-Alternatively, use the server as an `http.Handler` with your own HTTP server or router:
+Alternatively, use the server as an `http.Handler` with your own HTTP server or router. This is useful when you want to add custom middleware (authentication, CORS, rate limiting) or serve additional endpoints alongside the MCP endpoint.
 
 ```go
 func main() {

@@ -3,7 +3,7 @@ title: Building a WhatsApp Support Bot
 description: Build an automated WhatsApp support bot using Beluga AI agents with Twilio integration, conversation state management, and webhook handling.
 ---
 
-WhatsApp is one of the most widely used channels for customer support. This tutorial demonstrates how to build a WhatsApp bot that receives messages via Twilio webhooks, processes them with a Beluga AI agent, and sends formatted replies. The pattern shown here applies to any webhook-based messaging platform.
+WhatsApp is one of the most widely used channels for customer support. This tutorial demonstrates how to build a WhatsApp bot that receives messages via Twilio webhooks, processes them with a Beluga AI agent, and sends formatted replies. The pattern shown here applies to any webhook-based messaging platform -- the core architecture (webhook handler, async processing, per-user state, outbound API call) is the same regardless of the messaging provider.
 
 ## What You Will Build
 
@@ -26,6 +26,8 @@ User (WhatsApp) --> Twilio --> Webhook Handler --> Agent --> LLM
 ```
 
 ## Step 1: Define the Bot Server
+
+The `BotServer` struct holds the LLM model (created via the registry pattern), Twilio credentials, and per-user conversation state. The `sessions` map stores message history keyed by the sender's WhatsApp address, enabling multi-turn conversations. The `sync.RWMutex` protects concurrent access to the sessions map because Go's `net/http` server handles requests in parallel goroutines, and multiple users may be sending messages simultaneously.
 
 ```go
 package main
@@ -70,7 +72,7 @@ func NewBotServer(model llm.ChatModel) *BotServer {
 
 ## Step 2: Handle Incoming Webhooks
 
-Parse the incoming Twilio webhook payload and extract the message:
+Parse the incoming Twilio webhook payload and extract the message. Twilio sends webhook data as form-encoded POST requests with fields like `From` (sender address) and `Body` (message text). The handler returns HTTP 200 immediately and processes the message asynchronously in a goroutine -- this is critical because Twilio expects a fast response to webhooks and will retry the delivery if the response is slow, which would cause duplicate processing. The goroutine uses `context.Background()` instead of `r.Context()` because `r.Context()` is cancelled when the HTTP handler returns, but the LLM call must continue after the response is sent.
 
 ```go
 // IncomingMessage represents a parsed Twilio webhook payload.
@@ -111,7 +113,9 @@ func (s *BotServer) HandleWebhook(w http.ResponseWriter, r *http.Request) {
 
 ## Step 3: Process Messages with the Agent
 
-Maintain conversation history per user and generate responses:
+Maintain conversation history per user and generate responses. The history is loaded under a mutex lock, appended with the new message, and saved back -- this ensures consistent state even when the same user sends multiple messages in quick succession. The system prompt is prepended to the message list on each call rather than stored in history, which keeps the history clean and allows the system prompt to be updated without invalidating existing sessions.
+
+The error handling follows a graceful degradation pattern: if the LLM call fails, the bot sends a friendly error message rather than silently dropping the conversation. This ensures the user always receives a response.
 
 ```go
 func (s *BotServer) processMessage(ctx context.Context, msg IncomingMessage) {
@@ -155,7 +159,7 @@ func (s *BotServer) processMessage(ctx context.Context, msg IncomingMessage) {
 
 ## Step 4: Send Replies via Twilio
 
-Send the response back through the Twilio WhatsApp API:
+Send the response back through the Twilio WhatsApp API. The Twilio Messages API accepts form-encoded POST requests with basic authentication using the account SID and auth token. The `context.Context` is threaded through to support cancellation if the server is shutting down.
 
 ```go
 func (s *BotServer) sendReply(ctx context.Context, to, body string) error {
@@ -181,6 +185,8 @@ func (s *BotServer) sendReply(ctx context.Context, to, body string) error {
 ```
 
 ## Step 5: Run the Server
+
+The main function creates the model via Beluga AI's registry pattern (`llm.New("openai", ...)`), which resolves the provider by name and passes the configuration through. The `gpt-4o-mini` model is a good choice for messaging bots because it balances quality with cost and latency -- chat-style interactions need fast responses, and the smaller model keeps per-message costs low for high-volume support scenarios.
 
 ```go
 func main() {

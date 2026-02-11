@@ -3,11 +3,13 @@ title: DevSecOps Policy Auditor
 description: Automate security and compliance policy auditing with agent-based scanning, real-time violation detection, and continuous compliance monitoring.
 ---
 
-Manual security audits take weeks, miss 20-30% of violations, and can't keep up with rapid infrastructure changes. Financial services and regulated industries need continuous compliance monitoring with real-time detection and consistent enforcement. A DevSecOps policy auditor automates infrastructure scanning, code analysis, and configuration checking, reducing audit time from weeks to hours while achieving 95%+ violation detection.
+Infrastructure changes in a modern cloud environment happen faster than manual audits can keep up. A team deploying 50+ times per day through CI/CD pipelines can introduce misconfigurations — an S3 bucket without encryption, a security group with port 22 open to 0.0.0.0/0, a Kubernetes pod running as root — that traditional quarterly audits only discover weeks later. By then, the misconfiguration has been live in production, potentially exposing sensitive data or creating attack vectors. Manual audits also suffer from inconsistency: different auditors interpret policies differently, leading to 20-30% of violations being missed depending on who performs the review.
+
+For regulated industries (financial services under SOC 2, healthcare under HIPAA, payments under PCI DSS), continuous compliance is not optional — gaps between audits represent periods of unknown risk that regulators increasingly view as insufficient controls.
 
 ## Solution Architecture
 
-Beluga AI's ReAct agents orchestrate comprehensive policy audits using specialized tools for infrastructure scanning, code analysis, and configuration checking. The policy engine loads version-controlled policies, agents execute scans with reasoning about priorities, and violations trigger immediate alerts. Remediation tracking ensures fixes are implemented.
+Beluga AI's ReAct agents bring reasoning capabilities to policy auditing. Unlike static scanning tools that apply fixed rules, a ReAct agent can prioritize which resources to scan first (critical production infrastructure before staging), correlate findings across domains (a code secret combined with an open network port is more severe than either alone), and adapt scanning depth based on findings. The agent orchestrates specialized tools — infrastructure scanners, static code analyzers, and configuration checkers — through `tool.NewFuncTool`, reasoning about which tools to invoke and in what order based on the audit scope. Policies are version-controlled in Git, so compliance rules evolve alongside the infrastructure they govern.
 
 ```mermaid
 graph TB
@@ -211,7 +213,7 @@ func loadPoliciesFromGit() map[string]Policy {
 
 ## Audit Execution
 
-Run comprehensive audits with the agent:
+The agent receives an audit scope and policy set, then autonomously decides which tools to invoke and in what order. This is more powerful than running all scanners in parallel because the agent can adapt — if the infrastructure scan reveals an unencrypted S3 bucket, the agent can prioritize code analysis for that bucket's access patterns, correlating findings that static tools would report independently:
 
 ```go
 type AuditScope struct {
