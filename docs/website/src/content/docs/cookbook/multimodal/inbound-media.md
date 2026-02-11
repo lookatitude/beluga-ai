@@ -1,15 +1,17 @@
 ---
 title: "Handling Inbound Media"
-description: "Handle inbound media attachments from messaging platforms by downloading, processing, and cleaning up media files."
+description: "Handle inbound media attachments from messaging platforms by downloading, processing, and cleaning up media files with proper lifecycle management."
 ---
 
 ## Problem
 
 You need to handle inbound media attachments (images, audio, video) sent via messaging platforms like Twilio, which provide MediaSIDs (media identifiers) that need to be downloaded and processed.
 
+Messaging platforms do not embed media inline -- they provide URLs or identifiers (MediaSIDs) that point to media stored on their servers. Your application must download the media, determine its type, route it to the appropriate processor (vision model for images, STT for audio), and clean up temporary files after processing. Without proper lifecycle management, temporary media files accumulate on disk, and without type-based routing, media is either processed incorrectly or not at all.
+
 ## Solution
 
-Implement a media handler that receives MediaSIDs, downloads media files from the messaging platform, stores them temporarily, processes them with appropriate services (vision models, audio transcription), and cleans up after processing. Messaging platforms provide APIs to download media using MediaSIDs.
+Implement a media handler that receives MediaSIDs, downloads media files from the messaging platform API, stores them temporarily for processing, routes them to appropriate processors based on MIME type, and schedules cleanup after processing completes. The handler uses `http.NewRequestWithContext` to propagate cancellation and deadlines through the download operation, ensuring downloads are cancelled if the parent request times out.
 
 ## Code Example
 
@@ -168,19 +170,19 @@ func main() {
 
 ## Explanation
 
-1. **Media download** — Media is downloaded using the platform-provided URL. The MediaSID serves as a unique identifier for temporary file naming and tracking.
+1. **Media download with context** -- Media is downloaded using `http.NewRequestWithContext`, which propagates the parent context's cancellation and deadlines. If the caller's context expires (e.g., a 30-second request timeout), the download is cancelled rather than running indefinitely. The MediaSID serves as a unique identifier for temporary file naming, preventing collisions when processing concurrent requests.
 
-2. **Type-based processing** — Media is routed to appropriate processors based on MIME type. Images go to vision models, audio to STT providers, and so on. This allows extensible media handling.
+2. **Type-based routing** -- Media is routed to appropriate processors based on MIME type using a switch statement. Images go to vision models, audio to STT providers, and so on. This allows extensible media handling: adding a new media type requires only a new case in the switch and a corresponding processor. The MIME type is typically provided by the messaging platform in the webhook payload.
 
-3. **Automatic cleanup** — Temporary files are scheduled for cleanup after processing. This prevents disk space issues while allowing sufficient time for processing to complete.
+3. **Automatic cleanup** -- Temporary files are scheduled for cleanup after processing. The `cleanupDelay` provides a buffer for cases where the file is still being read by the processor or needs to be retained for retry. A goroutine handles the delayed deletion without blocking the response to the messaging platform.
 
-4. **Context propagation** — HTTP requests use `http.NewRequestWithContext` to propagate cancellation and deadlines through the download operation.
+4. **Context propagation** -- Every operation accepts `context.Context` as its first parameter, following Beluga AI's conventions. This ensures that cancellation, deadlines, and tracing propagate through the entire download-process-cleanup pipeline. OTel spans provide visibility into each stage for debugging latency issues.
 
 ## Variations
 
 ### Streaming Processing
 
-Process media as it downloads:
+Process media as it downloads for lower latency:
 
 ```go
 func (mh *MediaHandler) StreamProcess(ctx context.Context, mediaSID string, mediaURL string) (<-chan interface{}, error) {
@@ -200,5 +202,5 @@ type CachedMediaHandler struct {
 
 ## Related Recipes
 
-- [Conversation Expiry Logic](/cookbook/conversation-expiry) — Manage conversation lifecycle
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) — Automatic resource cleanup strategies
+- [Conversation Expiry Logic](/cookbook/conversation-expiry) -- Manage conversation lifecycle
+- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Automatic resource cleanup strategies

@@ -11,6 +11,14 @@ You need to stream LLM responses while preserving and forwarding metadata (token
 
 Implement a streaming wrapper that extracts and forwards metadata from streaming chunks, allowing downstream consumers to track token usage, model information, and completion status in real-time. This works because Beluga AI's streaming interface provides chunks with metadata, and you can extract and forward this information.
 
+## Why This Matters
+
+Streaming responses create a fundamental tension between responsiveness and observability. When you consume a stream chunk by chunk, the metadata embedded in each chunk (token counts, finish reasons, tool call indicators) gets discarded unless you actively extract it. In a non-streaming call, this metadata arrives with the complete response and is easy to capture. In a streaming call, it arrives incrementally and must be accumulated.
+
+This matters for three reasons. First, cost tracking: LLM APIs charge per token, and knowing exact token counts per request lets you attribute costs to users, features, or tenants. Without extraction, you lose this data. Second, operational monitoring: finish reasons tell you whether a response completed normally, hit a length limit, or was filtered by safety checks. Missing this signal means you cannot distinguish between a successful response and a truncated one. Third, downstream decision-making: some consumers need to know whether tool calls are present in the stream before the stream completes, so they can start preparing tool execution in parallel.
+
+The `sync.RWMutex` in the extractor is not incidental. Because metadata is accumulated in a goroutine (the stream consumer) and read from the main goroutine (via `GetAccumulatedMetadata()`), the mutex prevents data races. The buffered output channel (`make(chan ChunkWithMetadata, 10)`) absorbs bursts from fast producers without blocking the stream consumer goroutine, which would otherwise stall the entire stream. OpenTelemetry spans record the final accumulated metadata, making it available in your tracing backend for cost analysis and debugging.
+
 ## Code Example
 
 ```go
@@ -189,13 +197,13 @@ func main() {
 
 ## Explanation
 
-1. **Metadata extraction** — Each chunk is inspected for metadata (finish reason, tool calls, etc.). This metadata provides context about the streaming response beyond just the text.
+1. **Metadata extraction** -- Each chunk is inspected for metadata (finish reason, tool calls, etc.). This metadata provides context about the streaming response beyond just the text content. The `extractMetadata` method creates a per-chunk metadata map that captures transient signals like tool call counts and finish reasons that would otherwise be lost as the stream progresses.
 
-2. **Accumulation** — Metadata is accumulated across chunks (like total token count). This gives a complete picture of the streaming operation when it completes.
+2. **Accumulation with thread safety** -- Metadata is accumulated across chunks using a `sync.RWMutex`-protected map. Total token count grows incrementally, and the model name and finish reason are captured as they appear. The `RWMutex` allows concurrent reads from `GetAccumulatedMetadata()` without blocking the stream consumer goroutine, which holds a write lock only briefly when updating the map.
 
-3. **Real-time forwarding** — Metadata is forwarded with each chunk, allowing downstream consumers to track progress and make decisions in real-time.
+3. **Real-time forwarding** -- Metadata is forwarded with each chunk via the `ChunkWithMetadata` struct, allowing downstream consumers to track progress and make decisions in real-time. For example, a UI component could display a running token count, or a rate limiter could throttle based on accumulated usage before the stream completes.
 
-Preserve metadata during streaming. It contains valuable information about token usage, completion status, and model behavior that is useful for monitoring and cost tracking.
+4. **OTel span enrichment** -- Final accumulated metadata is recorded on the OTel span after the stream completes. This makes token usage and model information queryable in your tracing backend, enabling dashboards that correlate cost with latency, user, or feature.
 
 ## Testing
 

@@ -3,7 +3,7 @@ title: Configuring S2S Reasoning Modes
 description: Tune Speech-to-Speech models for different interaction styles by configuring reasoning depth, latency targets, and dynamic mode switching.
 ---
 
-Speech-to-Speech models can be configured to optimize for different interaction patterns. A fast concierge needs immediate responses, while a patient tutor benefits from deeper reasoning. This tutorial demonstrates how to configure reasoning modes, optimize latency, and switch modes dynamically based on user intent.
+Speech-to-Speech models can be configured to optimize for different interaction patterns. A fast concierge needs immediate responses, while a patient tutor benefits from deeper reasoning. The key insight is that reasoning depth and latency are directly correlated -- more internal reasoning produces more nuanced responses but delays the start of audio output. This tutorial demonstrates how to configure reasoning modes, optimize latency, and switch modes dynamically based on user intent.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ An S2S voice system that supports multiple interaction modes (fast concierge, ba
 
 ## The Tradeoff: Speed vs. Thought
 
-S2S models have internal reasoning steps that affect response quality and latency. More reasoning produces more nuanced and accurate responses, but increases the time before audio output begins.
+S2S models have internal reasoning steps that affect response quality and latency. More reasoning produces more nuanced and accurate responses, but increases the time before audio output begins. Understanding this tradeoff is essential for designing conversational experiences: a customer asking "What time do you close?" expects a near-instant response, while a student asking "Why does gravity bend light?" benefits from a considered explanation.
 
 | Mode     | Latency    | Use Case                              |
 |----------|------------|---------------------------------------|
@@ -26,7 +26,7 @@ S2S models have internal reasoning steps that affect response quality and latenc
 
 ## Step 1: Configure Reasoning Mode
 
-Use the `WithReasoningMode` and `WithLatencyTarget` options when creating the provider.
+Use the `WithReasoningMode` and `WithLatencyTarget` options when creating the provider. These functional options follow Beluga's standard `WithX()` configuration pattern, allowing you to compose provider settings cleanly without a monolithic config struct.
 
 ```go
 package main
@@ -57,7 +57,7 @@ func main() {
 }
 ```
 
-The `ReasoningMode` controls how the model processes input:
+The `ReasoningMode` controls how the model processes input. The built-in mode keeps reasoning inside the S2S model for the lowest latency. The external mode is useful when you need a more powerful text-based LLM (like Claude or GPT-4) to handle complex reasoning, with the S2S model handling only the audio conversion:
 
 | Mode         | Description                                            |
 |-------------|--------------------------------------------------------|
@@ -66,7 +66,7 @@ The `ReasoningMode` controls how the model processes input:
 
 ## Step 2: System Prompts for Interaction Style
 
-S2S models respond to system-level instructions that shape their behavior, just as LLMs do. Shorter, more directive prompts produce faster responses.
+S2S models respond to system-level instructions that shape their behavior, just as text-based LLMs do. The prompt design matters more for S2S because it directly affects response length, which determines how long the user hears audio. Shorter, more directive prompts produce faster responses because the model generates fewer tokens internally before producing audio output.
 
 ```go
 const (
@@ -77,7 +77,7 @@ const (
 )
 ```
 
-Pass the prompt as part of the conversation context when starting a session:
+Pass the prompt as part of the conversation context when starting a session. The `Preferences` map provides a flexible way to pass provider-specific settings without changing the core session interface:
 
 ```go
 	conversationCtx := &s2s.ConversationContext{
@@ -99,11 +99,11 @@ Pass the prompt as part of the conversation context when starting a session:
 
 ## Step 3: Latency Optimization
 
-To achieve glass-to-glass (microphone to speaker) latency under one second:
+To achieve glass-to-glass (microphone to speaker) latency under one second, you need to minimize delay at every stage of the pipeline. Each of these optimizations targets a specific source of latency:
 
-1. **Reduce chunk size**: Send 20ms audio frames (640 bytes at 16kHz mono).
-2. **Use server-side VAD**: Let the S2S model handle voice activity detection natively.
-3. **Set low latency target**: Configure the provider for speed over depth.
+1. **Reduce chunk size**: Send 20ms audio frames (640 bytes at 16kHz mono). Smaller frames mean the model receives input sooner, reducing the time before it can begin generating a response.
+2. **Use server-side VAD**: Let the S2S model handle voice activity detection natively. Server-side VAD avoids the round-trip delay of client-side detection followed by a separate signal to the server.
+3. **Set low latency target**: Configure the provider for speed over depth, accepting shorter, less reasoned responses in exchange for faster delivery.
 
 ```go
 	provider, err := s2s.NewProvider(ctx, "openai_realtime", &s2s.Config{
@@ -123,7 +123,7 @@ To achieve glass-to-glass (microphone to speaker) latency under one second:
 
 ## Step 4: Dynamic Mode Switching
 
-Switch reasoning modes at runtime based on detected user intent or conversation context.
+Switch reasoning modes at runtime based on detected user intent or conversation context. This pattern is valuable for applications that serve multiple interaction styles within a single session -- for example, a virtual assistant that handles both quick factual queries and in-depth explanations. The mode map centralizes configuration for each style, making it straightforward to add new modes or adjust existing ones.
 
 ```go
 // ModeConfig holds the configuration for an interaction mode.

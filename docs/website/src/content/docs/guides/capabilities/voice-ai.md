@@ -3,7 +3,9 @@ title: Voice AI Pipeline
 description: Build real-time voice applications with frame-based processing, STT, TTS, S2S, and transport layers.
 ---
 
-The `voice` package provides a frame-based processing pipeline for building real-time voice AI applications. Audio frames flow through linked processors — STT, LLM, TTS — connected by Go channels, targeting sub-800ms end-to-end latency.
+Voice AI transforms how users interact with agents — from typing and reading to speaking and listening. Building real-time voice applications requires careful architecture: audio data must flow through speech recognition, language model processing, and speech synthesis with minimal latency, while handling interruptions, silence detection, and transport-layer concerns like WebSocket connections and WebRTC media.
+
+The `voice` package provides a **frame-based processing pipeline** for building these applications. The frame-based design, inspired by production systems like LiveKit Agents and Pipecat, treats audio as a stream of discrete frames flowing through linked processors. Each processor is a goroutine connected by buffered channels, enabling concurrent processing where STT, LLM, and TTS stages operate simultaneously on different parts of the audio stream. The target is sub-800ms end-to-end latency from user speech to agent response.
 
 ## Architecture
 
@@ -12,19 +14,21 @@ graph LR
   A["Transport\n(WebSocket / LiveKit)"] --> B[VAD] --> C[STT] --> D[LLM] --> E[TTS] --> F["Transport\n(audio out)"]
 ```
 
-Three pipeline modes:
+Three pipeline modes offer different trade-offs between latency and capability:
 
 | Mode | Flow | Latency | Use Case |
 |------|------|---------|----------|
-| **Cascading** | STT → LLM → TTS | ~800ms | Full control, tool use |
-| **S2S** | Audio → Model → Audio | ~300ms | Low latency, native multimodal |
-| **Hybrid** | S2S default, cascade fallback | ~300-800ms | Best of both worlds |
+| **Cascading** | STT → LLM → TTS | ~800ms | Full control, tool use, any LLM |
+| **S2S** | Audio → Model → Audio | ~300ms | Ultra-low latency, native multimodal models only |
+| **Hybrid** | S2S default, cascade fallback | ~300-800ms | Low latency by default, falls back to cascade when tools are needed |
+
+**Cascading** converts speech to text, processes with any LLM, and synthesizes audio — the most flexible mode that works with all providers and supports tool use. **S2S** (Speech-to-Speech) uses models with native audio input/output (like GPT-4o Realtime) for the lowest possible latency, but limits you to S2S-capable models and does not support tool calls. **Hybrid** gets the best of both: S2S speed for conversational turns, with automatic cascade fallback when the agent needs to invoke tools.
 
 ## Core Concepts
 
 ### Frames
 
-Frames are the atomic data unit flowing through the pipeline:
+Frames are the atomic data unit flowing through the pipeline. Rather than passing entire audio files or complete transcripts, the pipeline operates on small, typed frames that represent discrete chunks of data. This frame-based approach enables low-latency streaming: TTS can begin synthesizing audio before the LLM has finished generating its full response, because each text frame is processed independently as it arrives.
 
 ```go
 // Frame types
@@ -41,7 +45,7 @@ controlFrame := voice.NewControlFrame(voice.SignalInterrupt)
 
 ### Frame Processors
 
-Every pipeline stage implements `FrameProcessor`:
+Every pipeline stage implements the `FrameProcessor` interface — a single method that reads frames from an input channel, processes them, and writes results to an output channel. This uniform interface means all processors — VAD, STT, LLM, TTS, custom logic — are interchangeable and composable. A processor can filter frames, transform them, or generate new frames.
 
 ```go
 type FrameProcessor interface {
@@ -49,11 +53,11 @@ type FrameProcessor interface {
 }
 ```
 
-Processors read from `in`, process frames, and write to `out`. They run as goroutines connected by buffered channels.
+Processors run as goroutines connected by buffered channels, enabling concurrent processing across pipeline stages.
 
 ### Chaining Processors
 
-Build pipelines by chaining processors:
+The `Chain` function links processors into a pipeline where the output channel of one stage becomes the input channel of the next. This declarative composition makes it easy to reconfigure the pipeline — add a new processing stage, remove one, or swap implementations — without modifying other stages.
 
 ```go
 pipeline := voice.Chain(
@@ -69,7 +73,7 @@ err := pipeline.Process(ctx, audioIn, audioOut)
 
 ## Speech-to-Text (STT)
 
-Convert audio to text with batch or streaming transcription:
+STT converts audio input into text that an LLM can process. Beluga AI supports both batch transcription (for pre-recorded audio) and streaming transcription (for real-time applications where interim results are displayed as the user speaks). Every STT provider follows the registry pattern: import with a blank identifier, create with `stt.New()`, and use as a standalone engine or as a `FrameProcessor` in a pipeline.
 
 ```go
 import (
@@ -121,7 +125,7 @@ sttProcessor := stt.AsFrameProcessor(engine, stt.WithLanguage("en-US"))
 
 ## Text-to-Speech (TTS)
 
-Convert text to natural-sounding audio:
+TTS converts the LLM's text response into audio that the user hears. For real-time applications, streaming synthesis is essential: it begins generating audio as soon as the first text tokens arrive from the LLM, rather than waiting for the complete response. This pipelining is what makes sub-second response times possible — TTS starts synthesizing while the LLM is still generating.
 
 ```go
 import (
@@ -169,7 +173,7 @@ ttsProcessor := tts.AsFrameProcessor(engine, tts.WithVoice("rachel"))
 
 ## Speech-to-Speech (S2S)
 
-Native audio-in/audio-out models for ultra-low latency:
+Speech-to-Speech models process audio natively — they take audio input and produce audio output without an intermediate text stage. This eliminates the latency of separate STT and TTS steps, achieving response times as low as 300ms. The trade-off is that S2S models are currently available from fewer providers and do not support text-based tool calls. Use S2S when latency is the primary concern and tool use is not required.
 
 ```go
 import (
@@ -204,7 +208,7 @@ for outFrame, err := range engine.Process(ctx, audioInStream) {
 
 ## Voice Activity Detection (VAD)
 
-Detect when users are speaking:
+VAD determines when the user is speaking and when they have stopped. This is critical for turn-taking: the pipeline should only process audio that contains speech, and it should detect end-of-utterance to trigger LLM processing. VAD also enables interruption handling — if the user starts speaking while the agent is responding, VAD detects the new speech and can signal the pipeline to stop the current output.
 
 ```go
 import "github.com/lookatitude/beluga-ai/voice"
@@ -226,7 +230,7 @@ vad := voice.NewVAD(voice.VADConfig{
 
 ## Transport Layer
 
-Connect voice pipelines to the outside world:
+The transport layer handles the connection between the voice pipeline and the end user. It manages audio encoding/decoding, network protocols, and session lifecycle. Transports are pluggable providers, so the same pipeline logic works whether the user connects via a WebSocket from a browser, a WebRTC session through LiveKit, or a telephony integration through Daily.
 
 ```go
 import (
@@ -261,7 +265,7 @@ lk, err := transport.New("livekit", transport.ProviderConfig{
 
 ## Hybrid Pipeline
 
-Combine S2S for speed with cascade fallback for tool use:
+The hybrid pipeline provides the best balance of latency and capability. It uses S2S for normal conversational turns (achieving ~300ms latency) and automatically falls back to the cascading pipeline when the agent needs to invoke tools. This switching is transparent to the user — they experience fast responses for conversation and slightly longer responses when the agent is performing actions.
 
 ```go
 hybrid := voice.NewHybridPipeline(voice.HybridConfig{
@@ -274,6 +278,8 @@ hybrid := voice.NewHybridPipeline(voice.HybridConfig{
 ```
 
 ## Complete Voice Agent Example
+
+The following example assembles a complete voice agent: Deepgram for STT, ElevenLabs for TTS, OpenAI for the LLM, Silero for VAD, and a WebSocket transport for browser connectivity. The pipeline processes audio in real-time: the user speaks into a browser, audio frames flow through VAD to STT to LLM to TTS, and synthesized audio is streamed back to the browser.
 
 ```go
 package main
@@ -350,6 +356,8 @@ func main() {
 ```
 
 ## Latency Budget
+
+Real-time voice applications have strict latency requirements — users perceive delays beyond ~1 second as unnatural. The following budget allocates time across pipeline stages. When optimizing, focus on the stages with the largest budgets (STT, LLM TTFT, TTS TTFB) as they offer the most room for improvement. Choosing providers with low-latency modes and deploying in regions close to your users are the highest-impact optimizations.
 
 | Stage | Target | Description |
 |-------|--------|-------------|

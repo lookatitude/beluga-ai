@@ -1,42 +1,46 @@
 ---
 title: Multimodal AI (Vision & Audio)
-description: Learn how to process images, audio, and video with multimodal language models.
+description: Process images, audio, and video with multimodal language models for document intelligence, visual Q&A, and content analysis.
 ---
 
-Modern AI models can understand more than text. Multimodal models process images, audio, and video, enabling applications like document scanning, video analysis, and audio intelligence. Beluga AI provides unified interfaces for multimodal AI across providers.
+Text-only AI systems miss the vast majority of real-world information. Business documents arrive as PDFs and scanned images. Customer interactions include voice recordings. Operational data lives in charts, diagrams, and dashboards. Multimodal models bridge this gap by processing images, audio, and video alongside text, enabling AI systems that work with information in its native format rather than requiring manual transcription.
+
+Beluga AI provides unified interfaces for multimodal AI across providers. The same `schema.Message` type that carries text content also carries image and audio content parts, so you can mix modalities in a single request using the same `Generate` and `Stream` APIs you already know. Provider differences (image detail levels, audio format support, safety settings) are handled through provider-specific options without changing the core API.
 
 ## What You'll Learn
 
 This guide covers:
-- Working with vision models for image analysis
-- Processing audio for transcription and intelligence
-- Combining text, image, and audio in single requests
-- Provider-specific multimodal capabilities
-- Building multimodal RAG systems
-- Production patterns for multimodal AI
+- Working with vision models for image analysis and document intelligence
+- Processing audio for transcription and structured insight extraction
+- Combining text, image, and audio in single multi-turn requests
+- Provider-specific multimodal capabilities and their trade-offs
+- Building multimodal RAG systems that index non-text content
+- Production patterns for cost, latency, and reliability
 
 ## When to Use Multimodal AI
 
-Multimodal capabilities enable:
-- **Document intelligence** (receipts, invoices, forms, IDs)
-- **Visual Q&A** (charts, diagrams, screenshots)
-- **Video analysis** (surveillance, content moderation, accessibility)
-- **Audio intelligence** (meeting summaries, sentiment analysis)
-- **Accessibility** (image descriptions, audio transcriptions)
-- **Multimodal search** (find images by description, find audio by content)
+Multimodal capabilities are the right choice when your data is not purely textual:
+- **Document intelligence** — extracting structured data from receipts, invoices, forms, and ID cards without OCR pipelines
+- **Visual Q&A** — answering questions about charts, diagrams, screenshots, and UI mockups
+- **Video analysis** — content moderation, surveillance monitoring, and accessibility captioning
+- **Audio intelligence** — meeting summarization, call center analytics, and sentiment analysis
+- **Accessibility** — generating image descriptions and audio transcriptions automatically
+- **Multimodal search** — finding images by description or audio recordings by spoken content
 
 ## Prerequisites
 
 Before starting this guide:
-- Complete [Working with LLMs](/guides/working-with-llms)
-- Understand `schema.Message` and content parts
-- Have a multimodal-capable provider (OpenAI GPT-4o, Anthropic Claude 3, Google Gemini)
+- Complete [Working with LLMs](/guides/working-with-llms) to understand the ChatModel interface and message types
+- Understand `schema.Message` and content parts (TextPart, ImagePart, AudioPart)
+- Have access to a multimodal-capable provider (OpenAI GPT-4o, Anthropic Claude 3, Google Gemini)
 
 ## Vision: Image Analysis
 
+Vision-capable models accept images as content parts alongside text prompts. The model sees the image and the text together, enabling tasks like description, classification, OCR, diagram interpretation, and visual reasoning. Images can be provided as raw bytes (base64-encoded automatically) or as URLs that the provider fetches directly.
+
 ### Basic Image Analysis
 
-Analyze images using vision-capable models.
+The following example reads an image file, creates a multimodal message with both text and image content parts, and sends it to a vision-capable model for description.
 
 ```go
 package main
@@ -101,7 +105,7 @@ func main() {
 
 ### Image URLs
 
-Use image URLs instead of embedding raw bytes.
+When images are accessible via URL, passing the URL instead of raw bytes avoids base64 encoding overhead and reduces request payload size. The provider fetches the image server-side, which is faster for large images and avoids the ~33% size increase from base64 encoding.
 
 ```go
 func AnalyzeImageURL(ctx context.Context, llm llms.LLM, imageURL string) (string, error) {
@@ -123,7 +127,7 @@ func AnalyzeImageURL(ctx context.Context, llm llms.LLM, imageURL string) (string
 
 ### Multiple Images
 
-Analyze multiple images in a single request.
+You can include multiple images in a single message for comparison, batch analysis, or multi-page document processing. The model sees all images simultaneously and can reason about relationships between them.
 
 ```go
 func CompareImages(ctx context.Context, llm llms.LLM, image1Path, image2Path string) (string, error) {
@@ -149,7 +153,7 @@ func CompareImages(ctx context.Context, llm llms.LLM, image1Path, image2Path str
 
 ## Document Intelligence
 
-Extract structured data from documents using vision.
+One of the most valuable applications of vision models is extracting structured data from document images. Instead of building complex OCR and template-matching pipelines, you can send a document image to a vision model with a structured output schema, and the model extracts fields directly. This approach is more robust than traditional OCR for varied layouts and handles handwriting, stamps, and non-standard formatting that rule-based systems struggle with.
 
 ```go
 type Receipt struct {
@@ -197,7 +201,7 @@ func ExtractReceipt(ctx context.Context, llm llms.LLM, receiptImage []byte) (*Re
 
 ### ID Card Verification
 
-Extract and verify information from ID cards.
+Identity document processing combines structured data extraction with visual authenticity checks. The model extracts fields (name, ID number, dates) and can assess whether the document appears authentic based on visual cues like consistent fonts, proper security features, and alignment.
 
 ```go
 type IDCard struct {
@@ -254,9 +258,11 @@ func VerifyID(ctx context.Context, llm llms.LLM, idImage []byte) (*IDCard, bool,
 
 ## Audio Processing
 
+Audio-capable models (such as Google Gemini) can process audio files directly, enabling analysis that goes beyond simple transcription. The model hears tone, pacing, background noise, and speaker dynamics, making it possible to extract structured insights like sentiment, key decisions, and action items from recordings.
+
 ### Audio Transcription with Analysis
 
-Process audio beyond simple transcription.
+This example sends an audio recording to a model that supports native audio input. The model processes the audio end-to-end and returns a structured summary rather than a raw transcript.
 
 ```go
 func AnalyzeAudio(ctx context.Context, llm llms.LLM, audioPath string) (string, error) {
@@ -296,7 +302,7 @@ func AnalyzeAudio(ctx context.Context, llm llms.LLM, audioPath string) (string, 
 
 ### Meeting Intelligence
 
-Extract structured insights from meetings.
+Combining audio processing with structured output produces a powerful meeting analysis pipeline. The model listens to the recording and extracts attendees, topics, decisions, and action items into a typed Go struct. This eliminates the manual work of meeting note-taking and ensures consistent output format for downstream automation.
 
 ```go
 type MeetingSummary struct {
@@ -344,7 +350,7 @@ func SummarizeMeeting(ctx context.Context, llm llms.LLM, audioData []byte) (*Mee
 
 ## Combining Multiple Modalities
 
-Process text, images, and audio together.
+Some tasks require reasoning across multiple modalities simultaneously. Video analysis, for example, involves both visual frames and audio tracks. Multimodal models can process text, images, and audio in a single request, reasoning about the relationships between them — such as correlating what is shown on screen with what is being discussed in the audio.
 
 ```go
 func AnalyzeVideoFrame(ctx context.Context, llm llms.LLM, frame []byte, audioSegment []byte, timestamp time.Duration) (string, error) {
@@ -367,7 +373,7 @@ func AnalyzeVideoFrame(ctx context.Context, llm llms.LLM, frame []byte, audioSeg
 
 ## Multimodal RAG
 
-Build RAG systems that index images and audio.
+Standard RAG pipelines index text documents. But images and audio contain valuable information that text-only systems miss. Multimodal RAG solves this by using a vision or audio model to generate text descriptions of non-text content, then embedding and indexing those descriptions alongside regular text documents. At query time, a text query retrieves relevant results from all modalities — the user searches with words and finds images, audio, and text.
 
 ```go
 import (
@@ -493,9 +499,11 @@ func SearchMultimodal(
 
 ## Provider-Specific Features
 
+Different providers have different strengths for multimodal tasks. Choosing the right provider depends on your specific modality requirements, accuracy needs, and latency constraints. The following sections highlight the key configuration options for each major provider.
+
 ### OpenAI GPT-4o
 
-Best for high-quality image analysis with fine details.
+GPT-4o offers high-quality image analysis with configurable detail levels. The `detail` parameter controls the resolution at which the model processes images: `low` is fast and cheap (suitable for thumbnails and simple images), `high` enables fine-grained OCR and detailed analysis, and `auto` lets the model decide.
 
 ```go
 config := llms.NewConfig(
@@ -509,7 +517,7 @@ config := llms.NewConfig(
 
 ### Anthropic Claude 3
 
-Excellent for document understanding and complex reasoning.
+Claude 3 excels at document understanding and complex visual reasoning tasks. It handles dense text in images well and supports long output generation, making it suitable for detailed document analysis and multi-step visual reasoning.
 
 ```go
 config := llms.NewConfig(
@@ -521,7 +529,7 @@ config := llms.NewConfig(
 
 ### Google Gemini
 
-Best for audio processing and long context.
+Gemini offers native audio processing (not available from OpenAI or Anthropic via their standard chat APIs) and an exceptionally long context window. This makes it the preferred choice for audio analysis tasks and for processing very large documents or multiple images in a single request.
 
 ```go
 config := llms.NewConfig(
@@ -537,7 +545,7 @@ config := llms.NewConfig(
 
 ## Error Handling
 
-Handle multimodal-specific errors.
+Multimodal API calls are more failure-prone than text-only calls: images may exceed size limits, audio formats may be unsupported, or a specific provider may be temporarily unavailable. A robust strategy uses provider fallback — trying a secondary provider when the primary fails. Beluga AI's router can automate this, but the manual pattern below shows the underlying logic.
 
 ```go
 func AnalyzeImageWithFallback(ctx context.Context, imagePath string) (string, error) {
@@ -593,7 +601,7 @@ func tryProvider(ctx context.Context, provider, model string, imageData []byte) 
 
 ## Production Best Practices
 
-When using multimodal AI in production:
+Multimodal AI in production involves higher costs and latency compared to text-only workloads. Images and audio consume significantly more tokens, API calls take longer to process, and input validation is more complex. The following practices help manage these challenges:
 
 1. **Optimize image sizes** - resize images to reduce costs and latency
 2. **Use URLs when possible** - avoid base64 encoding overhead

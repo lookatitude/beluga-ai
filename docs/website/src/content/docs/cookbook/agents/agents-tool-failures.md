@@ -11,6 +11,12 @@ You need to handle cases where agents call tools that don't exist, provide inval
 
 Implement a robust tool execution wrapper that validates tool calls, handles errors gracefully, provides feedback to the agent about failures, and allows the agent to retry with corrected tool calls. This works because Beluga AI's agent system supports tool result messages that can inform the agent about failures, enabling self-correction.
 
+## Why This Matters
+
+In agentic systems, tool execution failures are inevitable. Network requests time out, external APIs go down, and LLMs occasionally generate malformed tool calls. The critical insight is that failures should produce structured feedback rather than crash the agent loop. When an agent receives a clear error message explaining what went wrong ("tool 'search' not found, available tools: [get_weather, calculate]"), it can self-correct on the next iteration. Without this feedback loop, the agent either crashes or enters an infinite retry cycle.
+
+This recipe implements three layers of defense: existence validation (does the tool exist?), argument validation (are the arguments well-formed?), and execution retry (is the failure transient?). Each layer uses Beluga AI's `core.IsRetryable()` to distinguish between transient errors that should be retried and permanent errors that require a different approach. OpenTelemetry spans provide observability into which layer caught the problem, making debugging straightforward in production.
+
 ## Code Example
 
 ```go
@@ -227,13 +233,13 @@ func main() {
 
 ## Explanation
 
-1. **Tool existence validation** — The handler checks if the tool exists before attempting execution. If it doesn't, it returns a helpful error message listing available tools. This helps the agent self-correct by knowing what tools are actually available.
+1. **Tool existence validation** -- The handler checks if the tool exists before attempting execution. If it doesn't, it returns a helpful error message listing available tools. This helps the agent self-correct by knowing what tools are actually available. Listing available tools in the error message is important because it gives the LLM the information it needs to choose a valid tool on its next attempt.
 
-2. **Argument validation** — Arguments are validated before execution. Invalid arguments return descriptive errors that help the agent understand what went wrong and how to fix it.
+2. **Argument validation** -- Arguments are validated against the tool's schema before execution. Invalid arguments return descriptive errors that help the agent understand what went wrong and how to fix it. This prevents wasted API calls to external services with malformed data.
 
-3. **Error message format** — Tool errors are returned as `ToolMessage` objects with structured JSON. This allows the agent to parse errors programmatically and adjust its behavior accordingly.
+3. **Retry with backoff** -- Transient failures (timeouts, connection issues) are retried automatically. The `isRetryableError` function classifies errors so that permanent failures like authentication errors fail fast rather than consuming retry budget.
 
-Always return structured error messages that the agent can understand and act upon. Generic errors like "failed" don't help the agent learn and self-correct.
+4. **Structured error format** -- Tool errors are returned as `ToolMessage` objects with structured JSON containing an error type and human-readable message. This allows the agent to parse errors programmatically and adjust its behavior accordingly, rather than trying to extract meaning from unstructured error text.
 
 ## Testing
 
@@ -279,5 +285,5 @@ type CachedToolHandler struct {
 
 ## Related Recipes
 
-- **[Streaming Tool Calls](./streaming-tool-calls)** — Handle tools in streaming
-- **[Parallel Step Execution](./agents-parallel-execution)** — Execute steps in parallel
+- **[Streaming Tool Calls](/cookbook/llm/streaming-tool-calls)** -- Handle tools in streaming
+- **[Parallel Step Execution](/cookbook/agents/agents-parallel-execution)** -- Execute steps in parallel

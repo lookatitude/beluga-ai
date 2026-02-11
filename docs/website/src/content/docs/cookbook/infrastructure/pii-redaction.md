@@ -7,11 +7,13 @@ description: "Redact personally identifiable information from logs to comply wit
 
 ## Problem
 
-You need to redact personally identifiable information (PII) from logs to comply with privacy regulations (GDPR, CCPA) while maintaining useful logging for debugging and monitoring.
+You need to redact personally identifiable information (PII) from logs to comply with privacy regulations (GDPR, CCPA) while maintaining useful logging for debugging and monitoring. This is a critical challenge for AI systems that process user data: logs are essential for debugging production issues, but exposing PII in logs creates compliance and security risks. Privacy regulations require minimizing PII exposure, but overly aggressive redaction makes logs useless for debugging. The challenge is striking the right balance: redact sensitive data (emails, phone numbers, SSNs, credit cards, IP addresses) while preserving enough context to diagnose issues. You need to handle both structured logs (JSON fields) and unstructured text (error messages, user inputs) where PII might appear anywhere. Additionally, redaction must be automatic and fail-safe—relying on developers to manually redact PII is error-prone and doesn't scale.
 
 ## Solution
 
-Implement a PII redactor that uses regex patterns to detect PII (emails, phone numbers, SSNs, credit cards), replaces them with redacted placeholders, and maintains a redaction audit trail. This works because PII follows predictable patterns that can be detected and replaced.
+Implement a PII redactor that uses regex patterns to detect PII (emails, phone numbers, SSNs, credit cards), replaces them with redacted placeholders, and maintains a redaction audit trail. This works because PII follows predictable patterns that can be detected and replaced. The design uses regex patterns for common PII types, configurable redaction strategies (full redaction vs. partial masking), and an audit trail that logs what was redacted without logging the actual PII. The key insight is that complete removal of PII is often unnecessary and counterproductive—partial redaction (like showing the domain for emails or last 4 digits for credit cards) preserves debugging utility while protecting sensitive data. The redactor integrates with Beluga's logging infrastructure and OpenTelemetry tracing, ensuring all logs are automatically sanitized before emission.
+
+Pattern ordering matters: the credit_card pattern must be checked before the phone pattern to avoid false positives where a credit card number is partially matched as phone numbers. Phone regex requires separators to avoid matching arbitrary digit sequences. The redactor is designed to be conservative: it may occasionally over-redact (false positives) but should never under-redact (false negatives), prioritizing compliance over debugging convenience.
 
 ## Code Example
 
@@ -221,13 +223,13 @@ func main() {
 
 ## Explanation
 
-1. **Pattern-based detection** — Regex patterns target specific PII types (email, phone, SSN, etc.), providing broad coverage of common personally identifiable information.
+1. **Pattern-based detection** — Regex patterns target specific PII types (email, phone, SSN, etc.), providing broad coverage of common personally identifiable information. This matters because PII appears in predictable formats: emails follow RFC 5322, phone numbers follow regional formatting rules, SSNs have fixed structure in the US. Regex patterns exploit these predictable formats to detect PII without requiring machine learning models or external services. This approach is fast (regex matching is highly optimized), deterministic (same input always produces same output), and privacy-preserving (detection happens locally without sending data to external APIs). The trade-off is that regex patterns are format-specific and may miss PII in unusual formats or produce false positives on data that looks like PII but isn't.
 
-2. **Structure preservation** — Some structure is preserved in redacted output (like domain for emails, last 4 digits for credit cards). This helps with debugging while protecting PII.
+2. **Structure preservation** — Some structure is preserved in redacted output (like domain for emails, last 4 digits for credit cards). This helps with debugging while protecting PII. This matters because logs are useless if they're completely redacted. Preserving structure provides enough context to debug issues: showing email domains helps identify misconfigured mail servers, showing last 4 digits of credit cards helps verify payment processing flow, and showing phone area codes helps debug geographic routing. The key insight is that structure and format often contain useful debugging information while the specific values are sensitive. By redacting values but preserving structure, you maintain debugging utility while complying with privacy regulations that focus on protecting individual identifiers, not aggregate patterns.
 
-3. **Audit trail** — The count and type of PII redactions are tracked and logged, helping monitor what's being processed and ensuring compliance.
+3. **Audit trail** — The count and type of PII redactions are tracked and logged, helping monitor what's being processed and ensuring compliance. This matters because you need visibility into PII processing for compliance audits and security monitoring. The audit trail answers critical questions: Is PII appearing in logs unexpectedly (indicating a bug)? What types of PII are users submitting (informing feature design)? Are redaction patterns catching all PII (validating regex patterns)? The counts map provides this visibility without logging the actual PII, satisfying compliance requirements. This data can be aggregated across logs to detect anomalies—like a sudden spike in SSN detections suggesting a data breach or a new feature leaking sensitive data.
 
-> **Key insight:** Balance between complete redaction and preserving useful information for debugging. Sometimes partial redaction (like showing last 4 digits) is acceptable and useful.
+Balance between complete redaction and preserving useful information for debugging. Sometimes partial redaction (like showing last 4 digits) is acceptable and useful.
 
 ## Testing
 

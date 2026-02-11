@@ -3,7 +3,7 @@ title: Deploying Agents as a REST API
 description: Expose Beluga AI agents as a production-ready REST API with streaming Server-Sent Events, concurrent request handling, and Docker deployment.
 ---
 
-Having a capable agent is step one; making it accessible to users is step two. The `server` package provides HTTP framework adapters, while the `protocol` package handles REST/SSE transport. This tutorial shows how to wrap agents in HTTP handlers with both synchronous and streaming responses.
+Having a capable agent is step one; making it accessible to users is step two. The `server` package provides HTTP framework adapters, while the `protocol` package handles REST/SSE transport. This tutorial shows how to wrap agents in HTTP handlers with both synchronous and streaming responses. The synchronous endpoint suits simple request-response clients, while the SSE endpoint provides real-time token streaming for chat UIs where users expect to see the response appear progressively.
 
 ## What You Will Build
 
@@ -15,6 +15,8 @@ A REST API server that exposes an agent via two endpoints: a synchronous `/chat`
 - Basic Go HTTP knowledge
 
 ## Step 1: Define Request and Response Types
+
+The request and response types are simple JSON-serializable structs. The `SessionID` field is optional -- when provided, it enables conversation continuity across requests by allowing the server to load and maintain per-session message history. Keeping the API surface minimal makes it easier for clients to integrate.
 
 ```go
 package main
@@ -46,7 +48,7 @@ type ChatResponse struct {
 
 ## Step 2: Create the HTTP Handler (Synchronous)
 
-Wrap the LLM `Generate` call in an HTTP handler:
+Wrap the LLM `Generate` call in an HTTP handler. The handler uses `r.Context()` for the LLM call, which means client disconnections automatically cancel in-flight LLM requests -- this prevents wasting tokens on responses nobody will read. Each HTTP request is handled in its own goroutine by Go's `net/http` server, so concurrent requests are naturally supported without additional synchronization at this level.
 
 ```go
 type Server struct {
@@ -83,7 +85,9 @@ func (s *Server) HandleChat(w http.ResponseWriter, r *http.Request) {
 
 ## Step 3: Streaming with Server-Sent Events
 
-Streaming provides a better user experience. Use SSE to stream response chunks:
+Streaming provides a better user experience for chat interfaces because users see the response forming in real time rather than waiting for the entire generation to complete. SSE is the right transport for this because it works over standard HTTP, passes through proxies and load balancers without special configuration, and is natively supported by browser `EventSource` APIs.
+
+The streaming handler uses `model.Stream()` which returns an `iter.Seq2[StreamChunk, error]` -- Beluga AI's standard streaming pattern. Each chunk's `Delta` field contains the incremental text, which is written as an SSE `data` event and flushed immediately. The `http.Flusher` interface check ensures the underlying `ResponseWriter` supports streaming; most Go HTTP servers do, but reverse proxies may buffer unless configured otherwise.
 
 ```go
 func (s *Server) HandleStream(w http.ResponseWriter, r *http.Request) {
@@ -130,7 +134,7 @@ func (s *Server) HandleStream(w http.ResponseWriter, r *http.Request) {
 
 ## Step 4: Middleware for Auth and Logging
 
-Add standard HTTP middleware for authentication and request logging:
+Add standard HTTP middleware for authentication and request logging. These follow Go's idiomatic `func(http.Handler) http.Handler` middleware pattern, which composes naturally with `net/http` and third-party routers. The logging middleware uses `slog` (Go's structured logging package), consistent with Beluga AI's observability approach. The auth middleware uses a simple bearer token check -- in production, you would replace this with JWT validation or an API gateway.
 
 ```go
 func loggingMiddleware(next http.Handler) http.Handler {
@@ -159,6 +163,8 @@ func authMiddleware(apiKey string) func(http.Handler) http.Handler {
 ```
 
 ## Step 5: Wire It Together
+
+The main function creates the model via the registry pattern (`llm.New("openai", ...)`), wires the handlers, and applies middleware. The health endpoint is important for container orchestration -- Kubernetes and Docker Compose use it to determine when the service is ready to receive traffic.
 
 ```go
 func main() {
@@ -197,7 +203,7 @@ func main() {
 
 ## Step 6: Docker Deployment
 
-Create a multi-stage `Dockerfile` for a minimal production image:
+Create a multi-stage `Dockerfile` for a minimal production image. The multi-stage build compiles the Go binary in a full SDK image, then copies only the binary into a minimal Alpine image. `CGO_ENABLED=0` produces a statically linked binary that runs without libc dependencies. The `ca-certificates` package is required for HTTPS calls to LLM provider APIs.
 
 ```dockerfile
 FROM golang:1.23-alpine AS builder

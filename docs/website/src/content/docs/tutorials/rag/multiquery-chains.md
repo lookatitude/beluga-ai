@@ -3,7 +3,7 @@ title: Multi-query Retrieval Chains
 description: Improve RAG recall by generating multiple search queries from a single user question using LLM query expansion.
 ---
 
-Users rarely use the same terminology as your documentation. When a user asks "How do I add a helper?" but your docs describe "middleware implementation," vector search may miss the connection. Multi-query retrieval uses an LLM to generate multiple query variations, capturing different angles and synonyms to improve recall.
+Users rarely use the same terminology as your documentation. When a user asks "How do I add a helper?" but your docs describe "middleware implementation," vector search may miss the connection because the embeddings for these phrases may not be close enough in the vector space. Multi-query retrieval addresses this vocabulary mismatch by using an LLM to generate multiple query variations from a single user question, each capturing a different angle or using different terminology. This is a form of query expansion -- a well-established information retrieval technique adapted for the LLM era.
 
 ## What You Will Build
 
@@ -23,11 +23,11 @@ Generated variations:
 2. "Implementing middleware patterns"
 3. "Extending functionality with wrappers"
 
-Each variation searches a different part of the semantic space, capturing more relevant documents.
+Each variation searches a different part of the semantic space, capturing more relevant documents. The original query might only match documents that mention "helper," but the expanded queries also find documents about middleware and wrappers -- which may be exactly what the user needs.
 
 ## Step 1: Query Generation
 
-Use an LLM to generate diverse search queries:
+The LLM generates diverse search queries by rephrasing the original question from different angles. A temperature of 0.7 encourages variety in the generated queries -- too low and the queries will be near-duplicates, too high and they may drift off-topic. The `maxTokens` limit keeps the response focused since we only need short query strings, not full paragraphs.
 
 ```go
 package main
@@ -73,7 +73,7 @@ Output one query per line, with no numbering or bullets.`, numQueries)),
 
 ## Step 2: Multi-query Retriever
 
-Retrieve documents for each query variation and deduplicate:
+The retriever wraps a base retriever with query expansion logic. It generates variations, then retrieves documents for each variation separately and combines the results. The original query is always included alongside the generated variations to ensure that exact matches are not lost -- if the user's terminology does happen to match the documentation, we still want to capture those results.
 
 ```go
 // Retriever searches for relevant documents.
@@ -123,7 +123,7 @@ func (m *MultiQueryRetriever) Retrieve(ctx context.Context, query string, topK i
 
 ## Step 3: Deduplication
 
-Remove duplicate documents based on content or ID:
+When the same document appears in results for multiple query variations (which is a good sign -- it means the document is relevant from multiple angles), deduplication ensures it appears only once in the final result set. Documents are deduplicated by ID when available, falling back to content comparison. The order of the input slice is preserved, so documents that appear earlier (from higher-priority queries) take precedence.
 
 ```go
 func deduplicateDocs(docs []schema.Document, maxDocs int) []schema.Document {
@@ -153,7 +153,7 @@ func deduplicateDocs(docs []schema.Document, maxDocs int) []schema.Document {
 
 ## Step 4: Parallel Retrieval
 
-For better latency, retrieve for all queries concurrently:
+Sequential retrieval for N query variations takes N times the latency of a single retrieval. Since each query is independent, you can run all retrievals concurrently using goroutines. The `sync.Mutex` protects the shared `allDocs` slice from concurrent append operations, and the `firstErr` pattern ensures that a failure in any one query is reported to the caller. This pattern mirrors how Beluga AI's hybrid search runs vector and keyword searches in parallel.
 
 ```go
 import "sync"
@@ -197,6 +197,8 @@ func (m *MultiQueryRetriever) RetrieveParallel(ctx context.Context, query string
 
 ## Step 5: Integration with RAG
 
+The multi-query retriever is a drop-in replacement for any standard retriever. Here it feeds into a standard RAG pattern: retrieve relevant documents, format them as context, and pass them to the LLM alongside the user's question. The retrieved documents are concatenated with separator markers so the model can distinguish between different source documents.
+
 ```go
 func main() {
     ctx := context.Background()
@@ -238,10 +240,10 @@ func main() {
 ## Verification
 
 1. Ask a vague question ("How do I add a helper?").
-2. Log the generated query variations — verify they cover different angles.
+2. Log the generated query variations -- verify they cover different angles.
 3. Verify that at least one generated query matches the terminology in your documentation.
 
 ## Next Steps
 
-- [Hybrid Search](/tutorials/rag/hybrid-search) — Combine with keyword search for even better recall
-- [Fine-tuning Embeddings](/tutorials/providers/finetuning-embeddings) — Optimize the embedding model
+- [Hybrid Search](/tutorials/rag/hybrid-search) -- Combine with keyword search for even better recall
+- [Fine-tuning Embeddings](/tutorials/providers/finetuning-embeddings) -- Optimize the embedding model

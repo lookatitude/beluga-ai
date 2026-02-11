@@ -11,6 +11,14 @@ You need to count tokens in LLM requests for cost tracking and rate limiting, bu
 
 Implement asynchronous token counting with caching and estimation for non-critical paths. This works because you can count tokens in parallel with the LLM request, cache counts for repeated inputs, and use fast estimation algorithms when exact counts aren't needed.
 
+## Why This Matters
+
+Token counting is a necessary evil in LLM applications. You need it for cost tracking, rate limiting, context window management, and billing, but accurate token counting requires running the model's tokenizer, which can add 5-50ms of latency per request depending on input size. At 1000 requests per second, that overhead becomes significant.
+
+The solution is to recognize that not all token counts need to be exact at the same time. Rate limiting needs a fast estimate immediately (is this request roughly within budget?), while billing needs exact counts eventually (how many tokens did we actually use?). By separating these concerns, you can use a character-ratio estimator (approximately 4 characters per token for English text) for immediate decisions and compute exact counts asynchronously in the background.
+
+The caching layer addresses a pattern common in production: system prompts, few-shot examples, and template prefixes repeat across requests. Caching their token counts eliminates redundant computation for the most common inputs. The `sync.RWMutex` protects the cache for concurrent access, using a read lock for cache hits (the hot path) and a write lock only when inserting new entries. The OTel spans distinguish between cached, estimated, and exact counts, which is valuable for monitoring cache hit rates and tuning the estimation ratio for your specific model and language distribution.
+
 ## Code Example
 
 ```go
@@ -219,13 +227,13 @@ func main() {
 
 ## Explanation
 
-1. **Caching** — Token counts are cached by text content. Repeated inputs (like common prompts) are counted once and cached, eliminating redundant counting. This is important because many applications reuse the same prompts or system messages.
+1. **Cache-first lookup** -- Token counts are cached by text content using a `sync.RWMutex`-protected map. The read lock is acquired first for cache lookups (the common case), avoiding write lock contention. Repeated inputs like system prompts, few-shot examples, and template prefixes are counted once and served from cache thereafter, eliminating the most common source of redundant computation.
 
-2. **Estimation fallback** — When exact counts aren't required (e.g., for rate limiting), fast estimation is used. The exact count is computed asynchronously and cached for future use. This gives immediate results without blocking.
+2. **Estimation with async backfill** -- When exact counts aren't required (e.g., for rate limiting or pre-flight checks), the `FastEstimator` returns immediately using a character-to-token ratio. Meanwhile, a background goroutine computes the exact count and caches it for future use. This means the first request uses an estimate, but all subsequent requests for the same text get an exact cached count without any computation.
 
-3. **Async counting** — For non-blocking scenarios, async counting returns an estimated count immediately and the exact count later. This allows your application to proceed while accurate counts are computed in the background.
+3. **Async counting channel** -- The `CountTokensAsync` method returns a channel that delivers two results: an immediate estimate followed by the exact count. Consumers can use the estimate for fast decisions (like rate limiting) and the exact count for accurate operations (like billing). The channel is buffered with capacity 1 to prevent the goroutine from blocking if the consumer only reads one result.
 
-Use estimation for rate limiting and caching for exact counts. Most use cases don't need exact counts immediately — they can be computed asynchronously and used for billing or analytics later.
+4. **Model-specific estimation** -- The `FastEstimator` function accepts a model name and returns a tuned ratio. Different models tokenize differently (GPT-4 and Claude use roughly 4 characters per token for English, but this varies by language), so the ratio can be customized per model for better estimation accuracy.
 
 ## Testing
 

@@ -3,7 +3,7 @@ title: DAG-Based Workflow Orchestration
 description: Build directed acyclic graph workflows with conditional branching, parallel execution, and state management using the orchestration package.
 ---
 
-Complex AI workflows rarely follow a straight line. They branch on conditions, fan out to parallel workers, and converge results. The `orchestration` package provides a `Graph` type for building directed acyclic graphs (DAGs) of `core.Runnable` nodes connected by conditional edges.
+Complex AI workflows rarely follow a straight line. They branch on conditions, fan out to parallel workers, and converge results. The `orchestration` package provides a `Graph` type for building directed acyclic graphs (DAGs) of `core.Runnable` nodes connected by conditional edges. Unlike event-driven architectures where the execution path emerges at runtime, DAGs define the full topology upfront -- every possible path through the graph is visible in the code. This makes them easier to test, debug, and reason about for deterministic workflows where the branching logic is known at build time.
 
 ## What You Will Build
 
@@ -18,7 +18,7 @@ A multi-step data processing pipeline that loads data, branches to different ana
 
 ### Graph Structure
 
-A `Graph` is composed of named nodes (each a `core.Runnable`) connected by directed `Edge` values. Traversal starts at a configured entry node and follows matching edges until a terminal node is reached.
+A `Graph` is composed of named nodes (each a `core.Runnable`) connected by directed `Edge` values. Traversal starts at a configured entry node and follows matching edges until a terminal node (one with no outgoing edges) is reached. The graph itself implements `core.Runnable`, which means it can be embedded as a node inside another graph -- enabling hierarchical composition of complex workflows.
 
 ```go
 import "github.com/lookatitude/beluga-ai/orchestration"
@@ -34,11 +34,11 @@ edge := orchestration.Edge{
 
 ### Conditional Branching
 
-When multiple edges leave a node, the first edge whose `Condition` returns `true` is taken. This enables if/else routing through the graph.
+When multiple edges leave a node, the first edge whose `Condition` returns `true` is taken. This enables if/else routing through the graph. Conditions are evaluated against the output of the source node, so branching decisions are data-driven rather than hardcoded.
 
 ## Step 1: Define Runnable Nodes
 
-Each node in the graph is a `core.Runnable`. Here we define simple processing steps:
+Each node in the graph is a `core.Runnable` -- the same interface used throughout the framework for composable processing steps. The `runnableFunc` wrapper adapts a plain function into a `Runnable`, implementing both `Invoke` (synchronous) and `Stream` (iterator-based) methods. The streaming implementation produces a single result, which is sufficient for most graph nodes; nodes that need true streaming (such as LLM generation) would implement a full streaming producer.
 
 ```go
 package main
@@ -76,7 +76,9 @@ func wrap(fn func(ctx context.Context, input any) (any, error)) core.Runnable {
 
 ## Step 2: Build the Graph
 
-Create a graph with nodes for loading, analyzing, and summarizing data:
+Graph construction follows a builder pattern: add nodes, add edges (with optional conditions), and set the entry point. The conditional edges create branching logic -- here, positive sentiment routes to a summary node while other sentiments route to a detailed analysis node. Each edge's condition function receives the output of the source node, enabling data-driven routing decisions.
+
+The error handling on every `AddNode` and `AddEdge` call is important: the graph validates that node names are unique and that edges reference existing nodes, catching configuration errors at build time rather than at runtime.
 
 ```go
 func buildPipeline() (*orchestration.Graph, error) {
@@ -153,7 +155,7 @@ func buildPipeline() (*orchestration.Graph, error) {
 
 ## Step 3: Execute the Graph
 
-The graph implements `Invoke` and `Stream` from `core.Runnable`:
+Since the graph implements `core.Runnable`, execution uses the same `Invoke` method as any other runnable component. The graph traverses from the entry node, evaluating edge conditions at each step, until it reaches a terminal node. The output of the terminal node becomes the output of the entire graph.
 
 ```go
 func main() {
@@ -177,7 +179,7 @@ func main() {
 
 ## Step 4: Parallel Execution with ScatterGather
 
-For fan-out/fan-in patterns, use `ScatterGather` to run multiple workers concurrently and aggregate results:
+For fan-out/fan-in patterns where multiple independent analyses need to run concurrently, `ScatterGather` distributes the same input to multiple workers and collects their results. The aggregator function receives all worker results and combines them into a single output. This is more efficient than sequential execution because all workers run in parallel goroutines, and it provides cleaner composition than manually managing goroutines and WaitGroups.
 
 ```go
 func buildParallelPipeline() core.Runnable {
@@ -221,7 +223,7 @@ func main() {
 
 ## Step 5: Composing Chains with Graphs
 
-Use `orchestration.Chain` to compose sequential steps, and embed the chain as a node in a graph:
+`Chain` creates a sequential pipeline of runnables where each step's output becomes the next step's input. Since chains implement `core.Runnable`, they can be embedded as nodes inside a graph -- this enables a powerful composition model where a graph node performs multiple sequential transformations internally. Here, the preprocessing chain normalizes the input before the analysis node processes it.
 
 ```go
 func buildComposedPipeline() (*orchestration.Graph, error) {
@@ -257,7 +259,7 @@ func buildComposedPipeline() (*orchestration.Graph, error) {
 
 ## Streaming Graph Traversal
 
-The graph supports streaming via `iter.Seq2`. The terminal node (the last node with no outgoing edges) is streamed rather than invoked:
+The graph supports streaming via `iter.Seq2`, consistent with Beluga AI's streaming-first design. When streaming, the terminal node (the last node with no outgoing edges) produces an iterator rather than a single result, enabling real-time output for LLM-backed nodes within the graph.
 
 ```go
 ctx := context.Background()

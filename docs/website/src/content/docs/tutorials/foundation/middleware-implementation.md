@@ -3,7 +3,7 @@ title: Middleware Implementation
 description: Build composable middleware for LLM calls using the ChatModel wrapping pattern in Beluga AI.
 ---
 
-Middleware in Beluga AI wraps a `ChatModel` to add cross-cutting behavior — logging, validation, error handling, rate limiting — without modifying the underlying model. This pattern is the standard extension mechanism used throughout the framework.
+Middleware in Beluga AI wraps a `ChatModel` to add cross-cutting behavior — logging, validation, error handling, rate limiting — without modifying the underlying model. The pattern uses the `func(ChatModel) ChatModel` signature, which makes middleware composable: each layer receives the next handler and returns a new handler that includes the additional behavior. This is the same decorator pattern used in HTTP middleware (`func(http.Handler) http.Handler`), adapted for LLM interactions.
 
 ## What You Will Build
 
@@ -23,7 +23,7 @@ In Beluga AI v2, middleware is a function that takes a `ChatModel` and returns a
 type Middleware func(ChatModel) ChatModel
 ```
 
-Middleware is applied with `ApplyMiddleware`, which wraps the model in reverse order so that the first middleware in the list executes first (outermost):
+Middleware is applied with `ApplyMiddleware`, which wraps the model in reverse order so that the first middleware in the list executes first (outermost). The right-to-left application order is necessary because wrapping is additive — wrapping model `M` with middleware `A` then `B` produces `B(A(M))`, where `B` is outermost. By iterating right-to-left, the first middleware listed becomes the outermost wrapper.
 
 ```go
 model = llm.ApplyMiddleware(model,
@@ -35,7 +35,7 @@ model = llm.ApplyMiddleware(model,
 
 ## Step 1: Logging Middleware
 
-Create middleware that logs `Generate` and `Stream` calls using Go's standard `slog` logger.
+Create middleware that logs `Generate` and `Stream` calls using Go's standard `slog` logger. The middleware struct holds a reference to the `next` model in the chain and the logger instance. Each method calls the next model's corresponding method, wrapping it with logging before and after. This demonstrates the core middleware pattern: intercept, delegate, observe.
 
 ```go
 package main
@@ -105,7 +105,7 @@ Beluga AI also provides a built-in `llm.WithLogging(logger)` middleware that fol
 
 ## Step 2: Validation Middleware
 
-Middleware that rejects empty message lists before they reach the provider, saving API calls and cost.
+Middleware that rejects empty message lists before they reach the provider, saving API calls and cost. Validation middleware belongs at the outermost layer because rejecting invalid input early avoids unnecessary work in inner layers (logging, retrying, etc.). The `Stream` method returns a single-element error iterator rather than calling the underlying stream, since there is no valid stream to produce.
 
 ```go
 func ValidationMiddleware() llm.Middleware {
@@ -143,7 +143,7 @@ func (m *validationModel) ModelID() string { return m.next.ModelID() }
 
 ## Step 3: Applying Middleware
 
-Compose multiple middleware layers using `llm.ApplyMiddleware`:
+Compose multiple middleware layers using `llm.ApplyMiddleware`. The order matters: `ApplyMiddleware` applies right-to-left so the first middleware in the list becomes the outermost wrapper. In the example below, validation runs first (rejecting bad input before it reaches the logger), then logging wraps the validated call.
 
 ```go
 import "log/slog"
@@ -191,7 +191,7 @@ Beluga AI v2 ships with several middleware out of the box:
 
 ## Using Hooks Middleware
 
-The hooks middleware provides fine-grained lifecycle callbacks:
+The hooks middleware provides fine-grained lifecycle callbacks without requiring a full middleware implementation. Hooks are optional function fields — any `nil` hook is simply skipped, which eliminates the need for no-op implementations. The `OnError` hook can return `nil` to suppress an error, or return a different error to transform it.
 
 ```go
 hooks := llm.Hooks{
@@ -215,7 +215,7 @@ hooks := llm.Hooks{
 model = llm.ApplyMiddleware(base, llm.WithHooks(hooks))
 ```
 
-Compose multiple hooks with `llm.ComposeHooks`:
+Compose multiple hooks with `llm.ComposeHooks`. The composed hooks execute in order — each `BeforeGenerate` runs in sequence, and `OnError` short-circuits if any hook returns a non-nil error.
 
 ```go
 combined := llm.ComposeHooks(loggingHooks, metricsHooks, auditHooks)

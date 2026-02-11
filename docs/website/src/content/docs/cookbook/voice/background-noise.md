@@ -5,11 +5,13 @@ description: "Preprocess audio with noise reduction, normalization, and filterin
 
 ## Problem
 
-You need to improve speech-to-text accuracy in noisy environments by preprocessing audio to reduce background noise before sending it to the STT service.
+Background noise degrades speech-to-text accuracy because STT models trained on clean audio struggle to distinguish speech from ambient sounds like traffic, HVAC systems, keyboard typing, or multiple speakers. This problem compounds in production environments where users operate in uncontrolled acoustic conditions. Without preprocessing, the STT service receives corrupted signals that lead to transcription errors, misunderstood commands, and poor user experiences. The challenge is particularly acute in real-time voice applications where you cannot ask users to repeat themselves or manually correct transcriptions.
 
 ## Solution
 
-Implement audio preprocessing that applies noise gating, normalization, and filtering to improve signal quality. Clean audio signals produce better transcription results, and preprocessing enhances the signal-to-noise ratio before the STT provider processes the audio.
+Audio preprocessing transforms noisy input into cleaner signals before the STT provider processes them. This approach is more effective than post-processing transcription errors because it addresses the root cause: poor signal quality. The solution applies three complementary techniques. Noise gating removes audio below a volume threshold, eliminating constant background hum and ambient noise quieter than typical speech. Normalization ensures consistent volume levels, preventing quiet speech from being lost and loud bursts from overwhelming the signal. Filtering targets specific frequency ranges, using high-pass filters to remove low-frequency rumble and band-pass filters to isolate speech frequencies (300Hz-3400Hz).
+
+This preprocessing pipeline runs before the STT provider receives audio, meaning you improve the input signal quality rather than trying to compensate for poor transcription results. Clean signals produce better transcriptions, higher confidence scores, and more reliable downstream processing.
 
 ## Code Example
 
@@ -159,25 +161,27 @@ func main() {
 }
 ```
 
+The code demonstrates preprocessing as a composable stage in the voice pipeline. The `AudioPreprocessor` applies each technique conditionally, allowing you to enable or disable stages based on environment characteristics. The `NoisySTTWrapper` shows how preprocessing integrates with existing STT providers using Beluga's FrameProcessor pattern, where each stage transforms audio before passing it to the next component.
+
 ## Explanation
 
-1. **Noise gating** -- Audio below a threshold is removed, eliminating background noise quieter than speech and improving signal quality.
+1. **Noise gating** -- Zeroing audio samples below a threshold eliminates constant background noise like air conditioning, computer fans, or distant traffic. The gate acts as a dynamic filter that passes speech-level signals while blocking quieter ambient sounds. This improves the signal-to-noise ratio before the STT provider processes the audio. The threshold must be tuned per environment: too high and you clip quiet speech, too low and noise leaks through. Start at 0.1 and adjust based on transcription quality metrics.
 
-2. **Normalization** -- Audio levels are normalized to ensure consistent volume, helping the STT service process audio more effectively.
+2. **Normalization** -- STT models expect audio at consistent volume levels. Users speak at varying distances from microphones, creating signals that range from barely audible to clipping. Normalization scales audio to use the full dynamic range (0-32767 for 16-bit audio), ensuring quiet speakers are audible and loud speakers do not distort. This step is particularly important when combining audio from multiple sources or users, as it creates consistent input regardless of recording conditions.
 
-3. **Filtering** -- High-pass filters remove low-frequency noise while band-pass filters can focus on speech frequencies (300Hz-3400Hz).
+3. **Filtering** -- Speech occupies specific frequency ranges (300Hz-3400Hz for telephone-quality speech, 80Hz-14kHz for wideband). High-pass filters remove low-frequency noise like rumble or handling bumps, while band-pass filters isolate speech frequencies and reject everything else. Filtering is more computationally intensive than gating or normalization but provides cleaner results when noise and speech overlap in volume but differ in frequency. Use frequency-domain filtering (FFT-based) for better results than time-domain approaches.
 
-**Key insight:** Preprocess audio before STT, not after. Clean input produces better results than trying to fix transcription errors caused by noise.
+**Key insight:** Preprocess audio before STT, not after. Fixing transcription errors caused by noise is harder than preventing those errors by cleaning the input signal. The STT model cannot reconstruct information lost to noise, but it can accurately transcribe clean audio. Invest processing time in signal cleanup rather than error correction.
 
 ## Variations
 
 ### Adaptive Noise Gate
 
-Adjust the noise gate threshold dynamically based on ambient noise level analysis.
+Adjust the noise gate threshold dynamically based on ambient noise level analysis. Measure noise floor during non-speech periods and set the gate threshold 10-15dB above that level to account for environment changes.
 
 ### Spectral Subtraction
 
-Use spectral subtraction to remove noise in the frequency domain for more sophisticated noise reduction.
+Use spectral subtraction to remove noise in the frequency domain for more sophisticated noise reduction. This technique estimates the noise spectrum during silence and subtracts it from the speech spectrum during active speech, preserving speech quality better than simple gating.
 
 ## Related Recipes
 

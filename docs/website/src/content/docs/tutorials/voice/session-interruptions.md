@@ -3,7 +3,7 @@ title: Voice Session Interruptions
 description: Implement barge-in detection and playback cancellation so users can interrupt a speaking agent naturally.
 ---
 
-In natural conversation, speakers interrupt each other. A voice agent that cannot be interrupted feels unresponsive and frustrating. This tutorial demonstrates how to configure a voice session that detects user speech during agent playback and cancels the current response to switch back to listening mode.
+In natural conversation, speakers interrupt each other. A voice agent that cannot be interrupted feels unresponsive and frustrating -- users expect to be able to cut in with a correction or follow-up without waiting for the agent to finish its entire response. This tutorial demonstrates how to configure a voice session that detects user speech during agent playback and cancels the current response to switch back to listening mode. The approach uses Beluga's session state machine and VAD integration to create a responsive barge-in experience.
 
 ## What You Will Build
 
@@ -16,6 +16,8 @@ A voice session with interrupt support that allows users to barge in while the a
 - Completion of [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) is recommended
 
 ## Step 1: Create a Session with STT and TTS
+
+The voice session orchestrates STT, TTS, and VAD providers into a unified pipeline. By passing providers as functional options, you can swap implementations without changing the session logic. This design follows Beluga's composability principle -- each component is independent and pluggable.
 
 ```go
 package main
@@ -66,7 +68,7 @@ func main() {
 
 ## Step 2: Speak with Interruption Support
 
-Use `SayWithOptions` with `AllowInterruptions: true` to enable barge-in. The returned `SayHandle` provides methods to cancel playback and wait for completion.
+Use `SayWithOptions` with `AllowInterruptions: true` to enable barge-in. The returned `SayHandle` provides methods to cancel playback and wait for completion. The handle pattern decouples the initiation of speech from its lifecycle management, allowing you to start playback, register interruption callbacks, and wait for completion in separate parts of your code.
 
 ```go
 	opts := session.SayOptions{AllowInterruptions: true}
@@ -90,7 +92,7 @@ The `SayHandle` interface provides:
 
 ## Step 3: React to State Changes
 
-Register a state change callback to detect when the session transitions from `speaking` to `listening`. When this happens during active playback, cancel the current `SayHandle`.
+Register a state change callback to detect when the session transitions from `speaking` to `listening`. The session state machine manages transitions automatically -- when VAD detects user speech during the `speaking` state, the session transitions to `listening` and fires the callback. This callback is the integration point where your application cancels the current `SayHandle` and prepares to process the new user input.
 
 ```go
 	var currentHandle session.SayHandle
@@ -115,7 +117,7 @@ Register a state change callback to detect when the session transitions from `sp
 
 ## Step 4: Complete Interruption Flow
 
-Combine speaking, state monitoring, and handle management into a complete interruption-aware conversation loop.
+Combine speaking, state monitoring, and handle management into a complete interruption-aware conversation loop. The `agentSpeak` function stores the handle for the state change callback to access, then blocks until either the utterance completes normally or the user interrupts. Treating interruption as a normal event (returning `nil`) rather than an error ensures the conversation loop continues naturally.
 
 ```go
 func agentSpeak(ctx context.Context, sess session.VoiceSession, text string) error {
@@ -142,7 +144,7 @@ func agentSpeak(ctx context.Context, sess session.VoiceSession, text string) err
 
 ## Step 5: Add VAD for Robust Detection
 
-For more reliable interruption detection, add a VAD provider to the session. VAD detects user speech at the audio level, which is faster and more reliable than waiting for STT to produce a transcript.
+For more reliable interruption detection, add a VAD provider to the session. VAD detects user speech at the audio level, which is faster and more reliable than waiting for STT to produce a transcript. This matters for interruptions because STT needs several hundred milliseconds of audio to generate even a partial transcript, while VAD can detect speech onset in a single audio frame (typically 20-30ms). The faster detection means the agent stops speaking sooner, creating a more natural interaction.
 
 ```go
 import (
@@ -177,7 +179,7 @@ func main() {
 
 ## Session State Machine
 
-The voice session transitions between these states:
+The voice session transitions between these states. The state machine enforces valid transitions and prevents race conditions -- for example, the session cannot transition from `initial` directly to `speaking`, which would bypass the listening phase:
 
 ```
  initial ──▶ listening ──▶ processing ──▶ speaking ──▶ listening
@@ -186,7 +188,7 @@ The voice session transitions between these states:
                  └────────────────────────────────────────┘
 ```
 
-When `AllowInterruptions` is enabled and the user speaks during the `speaking` state, the session transitions directly to `listening`, triggering the `OnStateChanged` callback.
+When `AllowInterruptions` is enabled and the user speaks during the `speaking` state, the session transitions directly to `listening`, triggering the `OnStateChanged` callback. This shortcut transition is the mechanism that enables barge-in.
 
 ## Verification
 

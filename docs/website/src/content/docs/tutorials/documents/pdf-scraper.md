@@ -3,7 +3,7 @@ title: Directory and PDF Recursive Scraper
 description: Ingest entire directories of files including nested folders and PDFs using document loader pipelines with custom format handlers and metadata enrichment.
 ---
 
-Manually uploading files one by one does not scale. To build a production knowledge base, you need to point your ingestion pipeline at a directory and have it recursively process everything from Markdown to PDFs. The `rag/loader` package provides loaders for common file formats and a pipeline for chaining them with transformers.
+Manually uploading files one by one does not scale. To build a production knowledge base, you need to point your ingestion pipeline at a directory and have it recursively process everything from Markdown to PDFs. The `rag/loader` package provides loaders for common file formats and a pipeline for chaining them with transformers. The format-dispatch pattern shown here -- mapping file extensions to registered loaders -- enables the scraper to handle new formats by adding a single entry to the loader map, without modifying the traversal or enrichment logic.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A directory scraper that recursively loads files of different formats, handles P
 
 ## Step 1: Basic Directory Loading
 
-Load all text and Markdown files from a directory tree:
+Load all text and Markdown files from a directory tree. Each file extension is mapped to a loader created via the registry pattern (`loader.New("text", ...)`, `loader.New("markdown", ...)`). The `filepath.WalkDir` function provides recursive traversal, and the extension-to-loader map dispatches each file to the correct parser. Files with unrecognized extensions are silently skipped, making the scraper safe to point at directories containing mixed content (images, binaries, source code) alongside documents.
 
 ```go
 package main
@@ -79,7 +79,7 @@ func loadDirectory(ctx context.Context, rootDir string) ([]schema.Document, erro
 
 ## Step 2: Implement a Custom PDF Loader
 
-Create a custom loader for PDF files. This example shows the pattern -- use your preferred PDF library for the actual text extraction:
+Create a custom loader for PDF files. The `PDFLoader` implements the same `DocumentLoader` interface as built-in loaders, which means it plugs into the extension-to-loader map and the `LoaderPipeline` without any special handling. The pattern shown here -- implementing the interface with a placeholder and noting where to add the real parsing library -- is the recommended approach for custom format support. The metadata includes the source path and format, enabling downstream components to filter or prioritize documents by type.
 
 ```go
 // PDFLoader extracts text from PDF files.
@@ -117,7 +117,7 @@ func (l *PDFLoader) Load(ctx context.Context, source string) ([]schema.Document,
 
 ## Step 3: Filter Unwanted Files
 
-Exclude directories and files that should not be indexed:
+Exclude directories and files that should not be indexed. The filter function checks for hidden files (dotfiles), common non-content directories (`node_modules`, `vendor`, `.git`), and other paths that would add noise to the knowledge base without providing useful content. Returning `filepath.SkipDir` for directories prevents the entire subtree from being traversed, which is important for performance -- a `node_modules` directory can contain thousands of files that would slow down the scan without contributing any useful documents.
 
 ```go
 // shouldSkip returns true for files and directories that should not be loaded.
@@ -167,7 +167,7 @@ err = filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) erro
 
 ## Step 4: Automatic Metadata Enrichment
 
-Add file system metadata to every loaded document:
+Add file system metadata to every loaded document. This enrichment step adds fields that are useful for filtering, sorting, and deduplication downstream: `file_size` enables filtering out empty or suspiciously large files, `last_modified` supports freshness-based ranking in retrieval, and `directory` enables scoping searches to specific parts of the file tree. The enrichment is applied after loading, not during, which keeps the loader implementations simple and the enrichment logic reusable across different loader types.
 
 ```go
 func enrichMetadata(docs []schema.Document) []schema.Document {
@@ -193,7 +193,7 @@ func enrichMetadata(docs []schema.Document) []schema.Document {
 
 ## Step 5: Use the Pipeline
 
-Combine loaders and transformers using `LoaderPipeline`:
+Combine loaders and transformers using `LoaderPipeline`. The pipeline's functional options (`WithLoader`, `WithTransformer`) follow Beluga AI's standard configuration pattern. The `TransformerFunc` adapter converts a plain function into a pipeline-compatible transformer, similar to how `http.HandlerFunc` adapts a function into an `http.Handler`.
 
 ```go
 func buildIngestionPipeline() *loader.LoaderPipeline {
@@ -221,7 +221,7 @@ func buildIngestionPipeline() *loader.LoaderPipeline {
 
 ## Step 6: Full Directory Scraper
 
-Combine all components into a complete scraper:
+Combine all components into a complete scraper. The scraper uses a continue-on-error strategy (`return nil` after logging the error) rather than fail-fast, because a single corrupt file should not prevent the rest of the directory from being indexed. The metadata enrichment runs as a post-processing step after all files are loaded, adding file system metadata to the complete document collection.
 
 ```go
 func scrapeDirectory(ctx context.Context, rootDir string) ([]schema.Document, error) {

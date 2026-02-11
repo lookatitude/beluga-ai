@@ -1,13 +1,15 @@
 ---
 title: Deploying to Production
-description: Deploy AI agents as REST APIs with HTTP adapters, resilience patterns, configuration management, and container orchestration.
+description: Deploy AI agents as production-grade HTTP services with framework-agnostic server adapters, resilience patterns, configuration hot-reload, and container orchestration.
 ---
 
-Deploy Beluga agents as production-grade HTTP services with built-in resilience, configuration hot-reload, multi-tenant support, and container-ready architecture.
+Deploy Beluga agents as production-grade HTTP services with built-in resilience, configuration hot-reload, multi-tenant support, and container-ready architecture. The deployment patterns described here separate your agent logic from the HTTP framework, resilience policies, and infrastructure concerns, so each layer can be changed independently.
 
 ## HTTP Server Adapters
 
-The `server` package provides the `ServerAdapter` interface for exposing agents over HTTP:
+The `server` package provides the `ServerAdapter` interface that decouples agent logic from HTTP frameworks. This means the same agent works with `net/http`, Gin, Fiber, Echo, Chi, gRPC, or Connect without changing a single line of agent code. You choose the HTTP framework that matches your team's preferences and existing infrastructure, and the adapter handles the translation between HTTP requests and agent invocations.
+
+This pattern follows the same design philosophy as the rest of Beluga: interfaces define the contract, implementations are swappable via the registry, and your application code depends only on the interface.
 
 ```go
 type ServerAdapter interface {
@@ -19,6 +21,8 @@ type ServerAdapter interface {
 ```
 
 ### Basic REST API
+
+The following example creates a complete HTTP service from an agent. The adapter automatically generates two endpoints for each registered agent: a synchronous invocation endpoint and a streaming endpoint using Server-Sent Events (SSE).
 
 ```go
 import (
@@ -70,6 +74,8 @@ This creates two endpoints:
 
 ### Framework Adapters
 
+Each adapter follows the same `ServerAdapter` interface, so switching frameworks requires only changing the import and constructor call. The adapter handles framework-specific routing, middleware integration, and response writing.
+
 | Adapter | Import Path | Framework |
 |---------|-------------|-----------|
 | `stdlib` | Built-in | `net/http` (default) |
@@ -91,11 +97,11 @@ adapter, err := server.New("gin", server.Config{
 
 ## Resilience Patterns
 
-The `resilience` package provides production resilience primitives:
+The `resilience` package provides production resilience primitives that protect your application from the failure modes common in AI services: provider outages, rate limiting, high tail latency, and traffic spikes. Each pattern addresses a specific failure mode, and they compose together as LLM middleware.
 
 ### Circuit Breaker
 
-Prevent cascading failures when downstream services are unhealthy:
+When a downstream service (like an LLM provider) is failing, continuing to send requests wastes resources and increases latency. The circuit breaker pattern monitors failure rates and "opens" the circuit after a threshold is reached, immediately failing subsequent requests instead of waiting for timeouts. After a cooldown period, the circuit enters a half-open state and allows a limited number of test requests through. If those succeed, the circuit closes and normal operation resumes.
 
 ```go
 import "github.com/lookatitude/beluga-ai/resilience"
@@ -113,7 +119,7 @@ result, err := cb.Execute(ctx, func(ctx context.Context) (string, error) {
 
 ### Retry with Backoff
 
-Retry failed operations with exponential backoff:
+Transient failures (network blips, temporary rate limits, provider-side errors) often resolve on their own within seconds. The retry pattern re-attempts failed operations with exponential backoff and jitter, which avoids thundering herd problems where all retries hit the provider simultaneously. The `IsRetryable` function from the `core` package ensures that only transient errors are retried; permanent failures (invalid API key, malformed request) fail immediately.
 
 ```go
 retrier := resilience.NewRetrier(resilience.RetrierConfig{
@@ -136,7 +142,7 @@ result, err := retrier.Execute(ctx, func(ctx context.Context) (string, error) {
 
 ### Hedge Requests
 
-Send duplicate requests and return the fastest response:
+LLM providers occasionally exhibit high tail latency: most requests complete in under a second, but a small percentage take 10 seconds or more. The hedge pattern addresses this by sending a duplicate request after a delay. Whichever request completes first wins, and the slower one is canceled. This dramatically reduces P99 latency at the cost of slightly higher average request volume.
 
 ```go
 hedger := resilience.NewHedger(resilience.HedgerConfig{
@@ -155,7 +161,7 @@ result, err := hedger.Execute(ctx, func(ctx context.Context) (string, error) {
 
 ### Rate Limiting
 
-Control request throughput:
+Rate limiting protects downstream services from being overwhelmed by traffic spikes. This is especially important with LLM providers that enforce per-minute or per-second token limits, where exceeding the limit results in errors or temporary bans. The token bucket algorithm allows short bursts while enforcing a sustained rate over time.
 
 ```go
 limiter := resilience.NewRateLimiter(resilience.RateLimiterConfig{
@@ -171,6 +177,8 @@ if err != nil {
 
 ### Combining Resilience Patterns
 
+Resilience patterns compose as LLM middleware using the standard `ApplyMiddleware` function. The composition order matters: middleware applies right-to-left, so the last middleware in the list becomes the outermost wrapper. In the example below, the execution order for each request is: rate limit check, then retry with backoff, then circuit breaker check, then the actual LLM call.
+
 ```go
 // Compose resilience: rate limit → retry → circuit breaker → call
 model = llm.ApplyMiddleware(model,
@@ -184,7 +192,7 @@ model = llm.ApplyMiddleware(model,
 
 ## Configuration Management
 
-The `config` package supports loading configuration from files and environment variables with hot-reload:
+The `config` package supports loading configuration from files and environment variables with hot-reload capability. Environment variables override file values, following the twelve-factor app methodology. Hot-reload watches the configuration file for changes and invokes a callback when the configuration updates, enabling runtime adjustments without restarting the service.
 
 ```go
 import "github.com/lookatitude/beluga-ai/config"
@@ -216,6 +224,8 @@ defer watcher.Close()
 
 ## Docker Deployment
 
+The multi-stage Dockerfile below produces a minimal container image with only the compiled binary and CA certificates. The `CGO_ENABLED=0` flag ensures a fully static binary that does not depend on system libraries, making it portable across Linux distributions.
+
 ### Dockerfile
 
 ```dockerfile
@@ -234,6 +244,8 @@ ENTRYPOINT ["/agent"]
 ```
 
 ### Docker Compose
+
+This compose file sets up the agent alongside Redis (for memory/cache) and an OpenTelemetry Collector (for trace and metric export). The health check ensures that the container orchestrator restarts the agent if it becomes unresponsive.
 
 ```yaml
 version: "3.9"
@@ -264,6 +276,8 @@ services:
 ```
 
 ## Kubernetes Deployment
+
+The Kubernetes manifests below deploy the agent with horizontal scaling, secrets management, resource limits, and health probes. The liveness probe detects process hangs, while the readiness probe ensures traffic is only routed to instances with healthy dependencies (LLM provider, vector store, cache).
 
 ```yaml
 apiVersion: apps/v1
@@ -328,7 +342,7 @@ spec:
 
 ## Multi-Tenant Setup
 
-Isolate tenants using context-based routing:
+Multi-tenant deployments serve multiple customers from the same service instance. Beluga supports tenant isolation through context-based routing, where each request carries a tenant identifier that flows through the entire pipeline. This identifier can be used to select tenant-specific models, apply per-tenant rate limits, and isolate memory stores.
 
 ```go
 import "github.com/lookatitude/beluga-ai/core"
@@ -351,7 +365,7 @@ func tenantMiddleware(next http.Handler) http.Handler {
 
 ## Graceful Shutdown
 
-Handle signals for clean shutdown:
+Production services must handle shutdown signals cleanly to avoid dropping in-flight requests or losing buffered telemetry data. The pattern below uses Go's `signal.NotifyContext` to create a context that cancels on SIGINT or SIGTERM, giving the server time to finish active requests before the process exits. The tracer shutdown flushes any buffered spans to the exporter.
 
 ```go
 func main() {
@@ -377,6 +391,8 @@ func main() {
 
 ## Production Checklist
 
+This checklist covers the essential configuration for a production Beluga deployment. Each item maps to patterns described in the guides linked below.
+
 | Category | Item |
 |----------|------|
 | **Security** | API keys in environment variables or secrets manager |
@@ -388,14 +404,14 @@ func main() {
 | **Observability** | OpenTelemetry tracing enabled |
 | **Observability** | Prometheus metrics exported |
 | **Observability** | Health check endpoints exposed |
-| **Observability** | Structured JSON logging |
+| **Observability** | Structured JSON logging with trace correlation |
 | **Infrastructure** | Horizontal scaling via replicas |
 | **Infrastructure** | Resource limits configured |
 | **Infrastructure** | Graceful shutdown handling |
 
 ## Next Steps
 
-- [Monitoring & Observability](/guides/observability/) — Production monitoring setup
-- [Safety & Guards](/guides/safety-and-guards/) — Production safety configuration
-- [Working with LLMs](/guides/working-with-llms/) — Multi-provider resilience
-- [Memory System](/guides/memory-system/) — Production memory backends
+- [Monitoring & Observability](/guides/production/observability/) — Production monitoring setup with distributed tracing
+- [Safety & Guards](/guides/production/safety-and-guards/) — Production safety configuration and guard pipelines
+- [Working with LLMs](/guides/working-with-llms/) — Multi-provider resilience and fallback strategies
+- [Memory System](/guides/memory-system/) — Production memory backends with Redis and PostgreSQL

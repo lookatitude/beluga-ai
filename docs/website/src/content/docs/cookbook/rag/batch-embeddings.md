@@ -1,15 +1,17 @@
 ---
 title: "Batch Embedding Optimization"
-description: "Optimize embedding operations with intelligent batching, concurrency control, and rate limiting."
+description: "Optimize embedding operations with intelligent batching, concurrency control, and rate limiting to maximize throughput while staying within provider limits."
 ---
 
 ## Problem
 
 You need to embed large numbers of documents efficiently, but making individual API calls for each document is slow and expensive. You want to batch embeddings to reduce API calls and improve throughput.
 
+Embedding APIs have significant per-request overhead: TLS handshake, request serialization, server-side batch setup, and response deserialization. When embedding 10,000 documents one at a time, this overhead dominates total latency -- often 50-100ms per call regardless of input size. Batching amortizes this overhead across many inputs, reducing total wall-clock time by an order of magnitude. Additionally, embedding providers often price by token count rather than API calls, so batching doesn't increase cost but dramatically improves throughput.
+
 ## Solution
 
-Implement intelligent batching that groups documents into optimal batch sizes, handles rate limits, and processes batches concurrently. Most embedding providers support batch operations, and batching reduces API overhead while staying within provider limits.
+Implement intelligent batching that groups documents into optimal batch sizes, handles rate limits, and processes batches concurrently. Most embedding providers support batch operations (e.g., OpenAI allows up to 2048 inputs per batch), and batching reduces API overhead while staying within provider limits. The combination of batching and concurrent processing creates a pipeline that saturates available bandwidth without overwhelming the provider.
 
 ## Code Example
 
@@ -209,19 +211,19 @@ func main() {
 
 ## Explanation
 
-1. **Intelligent batching** — Documents are split into optimal batch sizes. Most providers have limits (e.g., 100 documents per batch), so the batcher respects those limits while maximizing throughput.
+1. **Intelligent batching** -- Documents are split into optimal batch sizes matching provider limits. Most providers have per-request limits (e.g., 100 documents per batch for OpenAI), so the batcher respects those limits while maximizing throughput per API call. This reduces total API calls from N to N/batch_size.
 
-2. **Concurrent processing** — Multiple batches are processed concurrently using a semaphore to limit parallelism. This prevents overwhelming the API while still utilizing available bandwidth.
+2. **Concurrent processing** -- Multiple batches are processed concurrently using a semaphore to limit parallelism. The semaphore pattern prevents overwhelming the API with too many simultaneous requests while still utilizing available bandwidth. The concurrency level should match the provider's rate limit headroom.
 
-3. **Rate limiting** — A token bucket rate limiter respects API rate limits. This prevents hitting rate limit errors while maintaining good throughput.
+3. **Rate limiting** -- A token bucket rate limiter respects API rate limits by controlling how frequently new requests can be issued. The refill rate determines sustained throughput, while the bucket size allows short bursts. This prevents 429 (rate limit) errors while maintaining good throughput.
 
-4. **Result ordering** — Despite concurrent processing, results maintain their original ordering by writing directly to indexed positions in the results slice.
+4. **Result ordering** -- Despite concurrent processing, results maintain their original ordering by writing directly to indexed positions in the results slice. Each goroutine writes to a disjoint range of the output slice, so no synchronization is needed for writes. This avoids a post-processing sort step.
 
 ## Variations
 
 ### Adaptive Batch Sizing
 
-Adjust batch size based on document length:
+Adjust batch size based on document length to stay within token limits:
 
 ```go
 func (be *BatchEmbedder) calculateOptimalBatchSize(texts []string) int {
@@ -241,5 +243,5 @@ func (be *BatchEmbedder) embedBatchWithRetry(ctx context.Context, texts []string
 
 ## Related Recipes
 
-- [Metadata-Aware Clustering](/cookbook/metadata-clustering) — Cluster embeddings with metadata constraints
-- [Advanced Metadata Filtering](/cookbook/meta-filtering) — Filter vector store results with metadata
+- [Metadata-Aware Clustering](/cookbook/metadata-clustering) -- Cluster embeddings with metadata constraints
+- [Advanced Metadata Filtering](/cookbook/meta-filtering) -- Filter vector store results with metadata

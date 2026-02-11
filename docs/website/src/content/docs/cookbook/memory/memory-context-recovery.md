@@ -1,15 +1,17 @@
 ---
 title: "Window-Based Context Recovery"
-description: "Recover conversation context from sliding windows of recent messages when memory systems fail or sessions resume."
+description: "Recover conversation context from sliding windows of recent messages when memory systems fail or sessions resume after interruption."
 ---
 
 ## Problem
 
 You need to recover conversation context from a sliding window of recent messages when memory systems fail or when resuming a conversation, ensuring continuity without losing important recent context.
 
+Memory systems can fail: Redis goes down, database connections drop, or the process restarts. When the primary memory store is unavailable, the agent loses all conversation context, leading to confused responses that ignore everything discussed previously. Window-based context recovery provides a resilience layer: even if the persistent memory fails, the agent can reconstruct enough context from recent message windows to maintain conversational coherence. Additionally, when resuming long conversations, loading the full history is wasteful -- a windowed summary of older context plus recent messages provides sufficient context at lower cost.
+
 ## Solution
 
-Implement a window-based context recovery system that maintains a sliding window of recent messages, tracks context snapshots, and can reconstruct conversation state from these windows. Recent messages contain the most relevant context, and maintaining a window provides resilience against memory failures.
+Implement a window-based context recovery system that maintains a sliding window of recent messages, tracks context snapshots, and can reconstruct conversation state from these windows. Messages are organized into fixed-size windows. When a window fills, it is summarized and a new window begins. Recovery first attempts the persistent memory store, then falls back to reconstructing context from windows. Recent windows contain full messages for maximum fidelity, while older windows are represented by summaries.
 
 ## Code Example
 
@@ -221,19 +223,19 @@ func main() {
 
 ## Explanation
 
-1. **Sliding windows** — Messages are organized into windows of a fixed size. When a window fills up, it is finalized and a new window is started. This creates a structured history that can be recovered efficiently.
+1. **Sliding windows** -- Messages are organized into fixed-size windows. When a window fills up, it is finalized (summarized) and a new window starts. This creates a structured history where older context is compressed into summaries while recent context retains full message detail. The window size controls the granularity of summarization: smaller windows produce more frequent summaries, larger windows retain more raw messages.
 
-2. **Summary creation** — When windows are finalized, summaries are created. This preserves context without storing every single message, making recovery more efficient for older conversation history.
+2. **Summary creation** -- When windows are finalized, summaries are generated to compress the full message content into a compact representation. In production, you would use the LLM itself to create these summaries (see the Memory Compression recipe). The summary preserves the essential context without storing every message, making recovery more efficient for older conversation history.
 
-3. **Layered recovery** — The system first tries to recover from persistent memory, then falls back to windows. This provides multiple levels of resilience against different failure modes.
+3. **Layered recovery** -- The system uses a fallback strategy: first try the persistent memory store (Redis, PostgreSQL, etc.), then fall back to window-based recovery if persistent memory is unavailable. This provides multiple levels of resilience: the persistent store handles normal operation, and windows handle failure scenarios. The layered approach means a Redis outage degrades gracefully rather than causing total context loss.
 
-4. **Recent message priority** — The most recent window always contains full messages (not summaries), ensuring that the immediately relevant context is preserved in full detail.
+4. **Recent message priority** -- The most recent window always contains full messages (not summaries), ensuring that the immediately relevant context is preserved in complete detail. Older windows contribute summaries, which use fewer tokens while preserving the key facts and decisions from earlier in the conversation.
 
 ## Variations
 
 ### Time-Based Windows
 
-Create windows based on time instead of message count:
+Create windows based on time instead of message count, which is useful for conversations with long idle periods:
 
 ```go
 type TimeBasedWindow struct {
@@ -243,7 +245,7 @@ type TimeBasedWindow struct {
 
 ### Compression
 
-Compress old windows to save space:
+Compress old windows to save memory:
 
 ```go
 func (wcr *WindowContextRecovery) CompressOldWindows(ctx context.Context) error {
@@ -253,5 +255,5 @@ func (wcr *WindowContextRecovery) CompressOldWindows(ctx context.Context) error 
 
 ## Related Recipes
 
-- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) — Implement memory expiration
-- [History Trimming](/cookbook/history-trimming) — Trim conversation history intelligently
+- [Memory TTL and Cleanup](/cookbook/memory-ttl-cleanup) -- Implement memory expiration
+- [History Trimming](/cookbook/history-trimming) -- Trim conversation history intelligently

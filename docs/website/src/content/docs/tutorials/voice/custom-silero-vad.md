@@ -3,7 +3,7 @@ title: Custom VAD with Silero Models
 description: Configure Silero VAD with custom ONNX models for precise voice activity detection in streaming and batch processing.
 ---
 
-Silero VAD is a neural network-based voice activity detector that runs locally using ONNX Runtime. It provides more accurate speech detection than energy-based methods, especially in noisy environments. This tutorial demonstrates how to configure Silero VAD with custom model paths, tune thresholds, and integrate with streaming audio pipelines.
+Silero VAD is a neural network-based voice activity detector that runs locally using ONNX Runtime. Unlike energy-based VAD methods that rely on volume thresholds -- and therefore trigger on any loud noise like keyboard typing or door closing -- neural VAD analyzes spectral features of the audio to distinguish human speech from non-speech sounds. This makes it significantly more accurate in real-world environments. This tutorial demonstrates how to configure Silero VAD with custom model paths, tune thresholds, and integrate with streaming audio pipelines.
 
 ## What You Will Build
 
@@ -16,6 +16,8 @@ A voice activity detection system using Silero's ONNX model that classifies audi
 - Completion of [Sensitivity Tuning](/tutorials/voice/sensitivity-tuning) is recommended
 
 ## Step 1: Create a Silero VAD Provider
+
+The VAD provider follows Beluga's standard registry pattern. The `FrameSize` option controls how many audio samples are processed per inference call. A frame size of 512 samples at 16kHz represents 32ms of audio, which is the standard frame duration for real-time speech processing. Smaller frames provide faster detection at the cost of slightly lower accuracy per frame.
 
 ```go
 package main
@@ -72,9 +74,11 @@ func main() {
 | `MaxSilenceDuration` | 500ms   | Maximum silence within speech before marking end     |
 | `EnablePreprocessing`| false   | Apply preprocessing (normalization) before inference |
 
+The `MinSpeechDuration` parameter prevents single-frame false positives from triggering speech detection. By requiring multiple consecutive frames of detected speech, the provider filters out transient noise spikes that happen to exceed the confidence threshold.
+
 ## Step 2: Real-Time Streaming Detection
 
-For continuous audio processing, use `ProcessStream` to feed audio frames through a channel and receive VAD results in real time.
+For continuous audio processing, use `ProcessStream` to feed audio frames through a channel and receive VAD results in real time. The channel-based API is used here instead of `iter.Seq2` because VAD processing is inherently bidirectional: your application sends audio frames concurrently with receiving results, and both directions operate at their own pace.
 
 ```go
 	audioCh := make(chan []byte, 8)
@@ -103,7 +107,7 @@ For continuous audio processing, use `ProcessStream` to feed audio frames throug
 	close(audioCh) // Signal end of audio
 ```
 
-The `VADResult` struct provides:
+The `VADResult` struct provides both the binary detection result and the underlying confidence score, allowing your application to implement custom thresholding logic if needed:
 
 | Field        | Type      | Description                              |
 |-------------|-----------|------------------------------------------|
@@ -113,7 +117,7 @@ The `VADResult` struct provides:
 
 ## Step 3: Threshold Tuning by Environment
 
-The threshold determines how confidently the model must classify a frame as speech before reporting it. Adjust based on your deployment environment.
+The threshold determines how confidently the model must classify a frame as speech before reporting it. The right threshold depends on your deployment environment because background noise characteristics vary significantly. A quiet office has occasional low-frequency HVAC noise, while a call center has continuous speech from adjacent operators.
 
 ```go
 	// Quiet environment: lower threshold captures softer speech
@@ -143,7 +147,7 @@ The threshold determines how confidently the model must classify a frame as spee
 
 ## Step 4: Combine with Noise Cancellation
 
-For the best results in noisy environments, apply noise cancellation before VAD processing.
+For the best results in noisy environments, apply noise cancellation before VAD processing. This two-stage approach -- clean the audio, then detect speech -- is more effective than raising the VAD threshold alone, because noise cancellation removes the noise signal entirely rather than requiring the model to classify through it.
 
 ```go
 import (

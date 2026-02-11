@@ -1,15 +1,17 @@
 ---
 title: "Corrupt Document Handling"
-description: "Handle corrupt, malformed, or unreadable documents gracefully without failing the entire loading process."
+description: "Handle corrupt, malformed, or unreadable documents gracefully without failing the entire ingestion pipeline."
 ---
 
 ## Problem
 
 You need to handle corrupt, malformed, or unreadable documents gracefully without failing the entire document loading process, logging errors while continuing to process other documents.
 
+In production document pipelines, data quality is never perfect. Files may be truncated from incomplete uploads, encoded with unexpected character sets, contain binary data disguised by a text extension, or simply be empty. When processing hundreds or thousands of files, encountering a few corrupt documents is the norm rather than the exception. A naive pipeline that returns the first error and stops leaves all subsequent valid documents unprocessed.
+
 ## Solution
 
-Implement error isolation that catches document-specific errors, logs them with context, skips corrupt documents, and continues processing remaining documents. Wrap document loading in error handlers and collect errors separately from successful documents.
+Implement error isolation that catches document-specific errors, logs them with context for debugging, skips corrupt documents, and continues processing remaining documents. The wrapper pattern lets you add resilience to any existing `DocumentLoader` without modifying it. This follows the middleware pattern (`func(T) T`) common in Beluga AI: wrap the inner loader with additional behavior while preserving the same interface.
 
 ## Code Example
 
@@ -226,19 +228,19 @@ func main() {
 
 ## Explanation
 
-1. **Error isolation** — Each document load is wrapped in its own error handler. One corrupt document does not prevent loading other valid documents in the batch.
+1. **Error isolation** -- Each document load is wrapped in its own error handler with independent success/failure tracking. One corrupt document does not prevent loading other valid documents in the batch. The `DocumentLoadResult` struct captures per-file outcomes, giving callers full visibility into what succeeded and what failed.
 
-2. **Panic recovery** — Document loading is wrapped in panic recovery to handle unexpected panics gracefully. This prevents one malformed file from crashing the entire loader.
+2. **Panic recovery** -- Document loading is wrapped in `defer/recover` to handle unexpected panics from third-party parsers or malformed input that triggers nil pointer dereferences. Without this, one pathological file can crash the entire process. This is defense-in-depth: the error handling catches expected failures, while panic recovery catches unexpected ones.
 
-3. **Error classification** — Errors are classified by type (file not found, permission denied, corrupt) to help identify systemic issues versus individual corrupt files.
+3. **Error classification** -- Errors are classified by type (file not found, permission denied, corrupt) using the `ErrorSummary` struct. This helps identify systemic issues (e.g., "90% of failures are permission denied" suggests a misconfigured directory) versus random corruption. Error classification informs whether to retry, skip, or alert.
 
-4. **Configurable behavior** — The `skipErrors` flag controls whether errors are collected and skipped or propagated immediately. This allows callers to choose between strict and lenient loading modes.
+4. **Configurable behavior** -- The `skipErrors` flag controls whether errors are collected and skipped or propagated immediately. Strict mode (`skipErrors=false`) is useful during development to catch issues early; lenient mode (`skipErrors=true`) is appropriate for production batch ingestion where partial success is preferable to total failure.
 
 ## Variations
 
 ### Retry on Transient Errors
 
-Retry loading on transient errors:
+Retry loading on transient errors like temporary permission issues or filesystem glitches:
 
 ```go
 func (rdl *RobustDocumentLoader) LoadWithRetry(ctx context.Context, filePath string, maxRetries int) DocumentLoadResult {
@@ -248,7 +250,7 @@ func (rdl *RobustDocumentLoader) LoadWithRetry(ctx context.Context, filePath str
 
 ### Partial Document Recovery
 
-Recover partial content from corrupt documents:
+Recover partial content from corrupt documents where possible:
 
 ```go
 func (rdl *RobustDocumentLoader) RecoverPartial(ctx context.Context, filePath string) (schema.Document, error) {
@@ -258,5 +260,5 @@ func (rdl *RobustDocumentLoader) RecoverPartial(ctx context.Context, filePath st
 
 ## Related Recipes
 
-- [Parallel File Loading](/cookbook/parallel-file-loading) — Parallel loading with worker pools
-- [Document Ingestion Recipes](/cookbook/document-ingestion) — Additional document loading patterns
+- [Parallel File Loading](/cookbook/parallel-file-loading) -- Parallel loading with worker pools
+- [Document Ingestion Recipes](/cookbook/document-ingestion) -- Additional document loading patterns

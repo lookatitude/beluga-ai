@@ -3,7 +3,7 @@ title: VAD and Turn Detection Sensitivity Tuning
 description: Optimize Voice Activity Detection and turn detection thresholds to balance responsiveness against false triggers in voice applications.
 ---
 
-Voice Activity Detection (VAD) determines whether an audio frame contains speech, and turn detection determines when the user has finished speaking. Tuning these thresholds is critical: too sensitive and the agent reacts to background noise; too slow and users experience uncomfortable pauses. This tutorial demonstrates how to configure both systems for natural conversational flow.
+Voice Activity Detection (VAD) determines whether an audio frame contains speech, and turn detection determines when the user has finished speaking. These two systems work together to create the turn-taking rhythm of a conversation. Tuning their thresholds is critical: too sensitive and the agent reacts to background noise or interrupts the user mid-sentence; too conservative and users experience uncomfortable pauses while they wait for the agent to respond. This tutorial demonstrates how to configure both systems for natural conversational flow.
 
 ## What You Will Build
 
@@ -17,11 +17,15 @@ A tuned VAD and turn detection configuration that correctly distinguishes speech
 
 ## The Challenge: Natural Conversation Flow
 
-If VAD is too sensitive, the agent interrupts when the user breathes, clears their throat, or a door closes. If VAD is too conservative, the agent misses the start of speech. Similarly, if turn detection triggers too quickly, the agent responds mid-sentence; if too slowly, it creates awkward pauses.
+If VAD is too sensitive, the agent interrupts when the user breathes, clears their throat, or a door closes. If VAD is too conservative, the agent misses the start of speech and the user must repeat themselves. Similarly, if turn detection triggers too quickly, the agent responds mid-sentence because it mistook a natural pause for the end of an utterance; if too slowly, it creates awkward silences that make users wonder whether the agent is still listening.
+
+The goal is to find the threshold values that match your deployment environment and conversation style.
 
 ## Step 1: Configure VAD
 
-VAD classifies each audio frame as speech or non-speech. The Silero VAD provider uses an ONNX neural network model for classification.
+VAD classifies each audio frame as speech or non-speech. The Silero VAD provider uses an ONNX neural network model for classification, which is more accurate than energy-based methods because it learns spectral features specific to human speech rather than relying on volume alone.
+
+The key parameters interact with each other: `Threshold` controls per-frame sensitivity, `MinSpeechDuration` requires sustained detection before triggering, and `MaxSilenceDuration` determines how long silence can persist within speech before marking the end. Adjusting any one parameter affects the behavior of the others.
 
 ```go
 package main
@@ -73,7 +77,9 @@ func main() {
 
 ## Step 2: Configure Turn Detection
 
-Turn detection determines when the user has finished their utterance and the agent should respond.
+Turn detection determines when the user has finished their utterance and the agent should respond. While VAD tells you whether someone is currently speaking, turn detection tells you whether they are done speaking. This distinction matters because natural speech includes pauses (thinking, breathing, mid-sentence hesitation) that VAD correctly detects as silence but that do not indicate the end of a turn.
+
+The heuristic provider combines silence duration with transcript analysis to make this determination.
 
 ```go
 import (
@@ -102,7 +108,7 @@ func setupTurnDetection(ctx context.Context) {
 }
 ```
 
-For real-time pipelines, combine audio analysis with measured silence duration:
+For real-time pipelines, combine audio analysis with measured silence duration. The `DetectTurnWithSilence` method accepts an externally measured silence duration, which is typically provided by your VAD component. This allows the turn detector to make decisions based on actual measured silence rather than estimating it from the audio frames it receives.
 
 ```go
 	silenceDuration := 500 * time.Millisecond
@@ -118,7 +124,7 @@ For real-time pipelines, combine audio analysis with measured silence duration:
 
 ## Step 3: Interruption Handling
 
-When the agent is speaking and VAD detects user speech, the agent should stop immediately. This creates the natural "barge-in" experience users expect.
+When the agent is speaking and VAD detects user speech, the agent should stop immediately. This creates the natural "barge-in" experience users expect. The interruption detection should be more sensitive than normal speech detection because the cost of missing an interruption (user feels ignored) is higher than the cost of a false positive (agent briefly pauses).
 
 ```go
 // handleInterruption stops agent playback when the user starts speaking.
@@ -145,7 +151,7 @@ func handleInterruption(ctx context.Context, vadProvider vad.VADProvider, sessio
 
 ## Step 4: Environment-Specific Tuning
 
-Different environments require different sensitivity levels. A quiet office needs lower thresholds than a busy call center.
+Different environments require different sensitivity levels. A quiet office needs lower thresholds than a busy call center because the noise floor is different. Rather than tuning parameters individually each time, define environment profiles that encapsulate the complete tuning for a deployment scenario. This makes it straightforward to deploy the same application in different environments.
 
 ```go
 // EnvironmentProfile holds tuned VAD parameters for a specific environment.

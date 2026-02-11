@@ -5,11 +5,15 @@ sidebar:
   order: 0
 ---
 
+These recipes address the core challenges of working with LLMs in production: managing context windows, handling streaming responses, dealing with transient errors, routing between providers, and extracting structured data. Each recipe builds on Beluga AI's LLM abstraction layer -- the `ChatModel` interface, middleware composition, and hooks -- so the patterns work consistently across all providers (OpenAI, Anthropic, Google, Ollama, and others).
+
 ## Trim Chat History to Fit Context Windows
 
 **Problem:** Conversation history grows beyond the model's context window, causing failures or truncated responses.
 
 **Solution:** Use `llm.ContextManager` with a truncation or sliding window strategy.
+
+Every LLM has a fixed context window (4K, 8K, 128K tokens). As conversations grow, you must decide which messages to keep and which to discard. The wrong strategy loses critical context; the right one preserves system instructions and recent messages while discarding older, less relevant history. Beluga AI's `ContextManager` provides two strategies: `truncate` (drop oldest messages first) and `sliding` (maintain a fixed-size window of recent messages). Both strategies preserve system messages by default because they contain instructions that the model needs throughout the conversation.
 
 ```go
 package main
@@ -57,7 +61,7 @@ func main() {
 }
 ```
 
-**Sliding window strategy** keeps a fixed window of recent messages:
+**Sliding window strategy** keeps a fixed window of recent messages, discarding everything older:
 
 ```go
 cm := llm.NewContextManager(
@@ -73,6 +77,8 @@ cm := llm.NewContextManager(
 **Problem:** You need to stream LLM responses while tracking token usage, model info, and timing.
 
 **Solution:** Use `model.Stream()` and inspect `schema.StreamChunk` fields for metadata.
+
+Streaming responses is critical for perceived responsiveness, but you also need metadata (token counts, finish reasons, timing) for cost tracking and debugging. Beluga AI's streaming interface provides both: text deltas arrive as they're generated, while metadata fields like `FinishReason` and tool calls appear on specific chunks. The `iter.Seq2[StreamChunk, error]` pattern lets you process chunks with a simple `for range` loop, and errors propagate naturally through the second return value.
 
 ```go
 package main
@@ -148,6 +154,8 @@ func main() {
 
 **Solution:** Collect tool call fragments, then execute when complete.
 
+Tool calls in streaming responses arrive in fragments: the first chunk might contain the tool name and ID, while subsequent chunks contain pieces of the arguments JSON. You cannot execute a tool until you have the complete arguments. This recipe accumulates tool call fragments by ID, and when the stream's `FinishReason` is `"tool_calls"`, all accumulated calls are executed. This pattern lets the agent loop continue with tool results while keeping the streaming experience smooth for the user.
+
 ```go
 package main
 
@@ -165,7 +173,7 @@ import (
 // StreamingToolHandler accumulates tool calls from streaming chunks.
 type StreamingToolHandler struct {
 	registry *tool.Registry
-	pending  map[string]*schema.ToolCall // id → accumulated call
+	pending  map[string]*schema.ToolCall // id -> accumulated call
 }
 
 func NewStreamingToolHandler(reg *tool.Registry) *StreamingToolHandler {
@@ -181,7 +189,7 @@ func (h *StreamingToolHandler) HandleChunk(ctx context.Context, chunk schema.Str
 
 	for _, tc := range chunk.ToolCalls {
 		if tc.ID != "" {
-			// New tool call — store it.
+			// New tool call -- store it.
 			h.pending[tc.ID] = &tc
 		}
 	}
@@ -273,6 +281,8 @@ func main() {
 
 **Solution:** Use the `llm.Tokenizer` interface and compose it with hooks for lazy counting.
 
+Accurate token counting requires a tokenizer specific to the model being used (different models tokenize text differently). However, running a full tokenizer on every request adds latency that is disproportionate to the value it provides. This recipe uses hooks to count tokens inline with LLM calls -- the hook fires before and after each generation, counting tokens when they're already in memory. For most use cases, the `SimpleTokenizer` (whitespace-based estimation) is sufficient; switch to a provider-specific tokenizer only when you need exact counts for billing.
+
 ```go
 package main
 
@@ -329,14 +339,14 @@ func main() {
 
 	// After several requests:
 	input, output := tracker.Stats()
-	fmt.Printf("Total tokens — Input: %d, Output: %d\n", input, output)
+	fmt.Printf("Total tokens -- Input: %d, Output: %d\n", input, output)
 }
 ```
 
 **Key decisions:**
 - `SimpleTokenizer` splits on whitespace (~4 chars/token heuristic). For accurate counts, use a provider-specific tokenizer.
-- `atomic.Int64` ensures thread-safe counting with zero contention.
-- Hooks run inline but counting is cheap compared to network latency.
+- `atomic.Int64` ensures thread-safe counting with zero contention, which is important when multiple goroutines share a single tracker.
+- Hooks run inline but counting is cheap compared to network latency, so the overhead is negligible.
 
 ---
 
@@ -345,6 +355,8 @@ func main() {
 **Problem:** LLM API calls fail intermittently due to rate limits, timeouts, or provider outages. You need automatic retry with intelligent backoff.
 
 **Solution:** Combine `resilience.Retry` with `core.IsRetryable` to handle transient failures.
+
+LLM APIs are external services that fail in predictable ways: rate limits (HTTP 429), server errors (HTTP 5xx), and network timeouts. The key to robust error handling is classifying errors before deciding how to respond. Retrying an authentication error wastes API calls and delays the real fix, while not retrying a rate limit error means dropping a valid request. Beluga AI's `core.IsRetryable()` function checks the error's `ErrorCode` against known retryable categories, and the `resilience.RetryPolicy` handles exponential backoff with jitter to prevent thundering herd problems when many clients retry simultaneously.
 
 ```go
 package main
@@ -414,6 +426,8 @@ func main() {
 
 **Solution:** Use `llm.Router` with a `FallbackStrategy`.
 
+Provider outages are inevitable. A fallback chain ensures your application stays available even when a single provider goes down. The `llm.Router` with `FallbackStrategy` tries providers in order, moving to the next only when the current one returns an error. This is different from a load balancer -- it has a clear preference order (primary, secondary, tertiary) and only uses fallbacks when necessary. This matters for cost optimization: you might prefer a cheaper provider as primary and use a more expensive one only as a backup.
+
 ```go
 package main
 
@@ -478,6 +492,8 @@ func main() {
 
 **Solution:** Use the default `RoundRobin` strategy with the router.
 
+When you have multiple API keys for the same provider, or multiple providers with similar capabilities, round-robin distribution prevents any single key from hitting rate limits. The `RoundRobin` strategy rotates through models on each call, spreading the load evenly. This is the default router strategy because it provides the simplest form of load balancing without requiring health checking or latency measurement.
+
 ```go
 package main
 
@@ -508,7 +524,7 @@ func main() {
 		models = append(models, m)
 	}
 
-	// RoundRobin is the default strategy — rotates through models.
+	// RoundRobin is the default strategy -- rotates through models.
 	router := llm.NewRouter(llm.WithModels(models...))
 
 	msgs := []schema.Message{
@@ -534,6 +550,8 @@ func main() {
 **Problem:** You need to add logging, caching, rate limiting, and other cross-cutting concerns to LLM calls without modifying provider code.
 
 **Solution:** Compose middleware using `llm.ApplyMiddleware`.
+
+Middleware follows the `func(ChatModel) ChatModel` pattern: each middleware wraps the model and adds behavior around `Generate` and `Stream` calls. `ApplyMiddleware` applies middleware right-to-left, so the first argument becomes the outermost wrapper. In the example below, logging runs first (outermost), then hooks fire before/after the actual model call (innermost). This layering is important because you want logging to capture hook errors, not the other way around.
 
 ```go
 package main
@@ -571,7 +589,7 @@ func main() {
 		}),
 	)
 
-	// Use the wrapped model as normal — middleware is transparent.
+	// Use the wrapped model as normal -- middleware is transparent.
 	resp, _ := model.Generate(context.Background(), []schema.Message{
 		&schema.HumanMessage{Content: "Hello!"},
 	})
@@ -582,9 +600,9 @@ func main() {
 ```
 
 **Key decisions:**
-- Middleware is `func(ChatModel) ChatModel` — simple to write and compose.
-- `ApplyMiddleware` applies right-to-left so the first argument is outermost.
-- Each middleware wraps both `Generate` and `Stream` transparently.
+- Middleware is `func(ChatModel) ChatModel` -- simple to write and compose. Any function matching this signature is a valid middleware.
+- `ApplyMiddleware` applies right-to-left so the first argument is outermost. This matches the visual reading order: what you see first is what runs first.
+- Each middleware wraps both `Generate` and `Stream` transparently, so streaming gets the same cross-cutting behavior as non-streaming calls.
 
 ---
 
@@ -593,6 +611,8 @@ func main() {
 **Problem:** You need the LLM to return data in a specific Go struct format, not free-form text.
 
 **Solution:** Use `llm.StructuredOutput` to constrain the model's response to a JSON schema derived from a Go type.
+
+Free-form text is difficult to parse reliably. Structured output solves this by constraining the model to produce JSON that matches a schema derived from your Go struct. The `llm.StructuredOutput[T]` generic function handles schema generation, model instruction, response parsing, and type validation in a single call. This is more reliable than parsing text with regex because the model is instructed at the API level to produce valid JSON matching the schema, and the response is deserialized into your typed struct with proper error handling.
 
 ```go
 package main

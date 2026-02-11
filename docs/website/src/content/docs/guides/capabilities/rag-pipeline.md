@@ -3,7 +3,9 @@ title: RAG Pipeline
 description: Build retrieval-augmented generation pipelines with document loading, embeddings, vector stores, and advanced retrieval strategies.
 ---
 
-The `rag/` package provides a complete pipeline for retrieval-augmented generation. Load documents, split them into chunks, embed them as vectors, store them in a vector database, and retrieve relevant context at query time.
+Language models generate answers from their training data, but they cannot access your private documents, recent data, or domain-specific knowledge. Retrieval-Augmented Generation (RAG) solves this by fetching relevant documents at query time and injecting them into the LLM's context window. The model then generates answers grounded in your actual data rather than relying on potentially outdated or hallucinated information.
+
+The `rag/` package provides a complete, modular pipeline for building RAG systems. Each stage — loading, splitting, embedding, storing, and retrieving — is a separate package with its own interface, registry, and providers. This decomposition lets you swap any component independently: change your vector database without touching your embedding logic, or upgrade your retrieval strategy without modifying your document pipeline.
 
 ## Pipeline Architecture
 
@@ -29,6 +31,8 @@ Each stage is a separate package with its own interface, registry, and providers
 | `rag/retriever` | `Retriever` | Find relevant documents |
 
 ## Document Loading
+
+The first step in any RAG pipeline is getting your data into a structured format. Document loaders read content from various sources — files, URLs, APIs — and produce `schema.Document` values with both content and metadata. The registry pattern means you can add new loader types (databases, cloud storage, custom APIs) without modifying existing code.
 
 Load documents from various sources:
 
@@ -61,7 +65,7 @@ if err != nil {
 
 ### Document Transformers
 
-Enrich documents after loading:
+After loading, you often need to enrich documents with additional metadata for filtering and auditing. Transformers let you add source attribution, timestamps, or any custom metadata before documents enter the splitting stage. This metadata is preserved through splitting and stored alongside embeddings, enabling filtered searches later.
 
 ```go
 // Add metadata to every document
@@ -76,6 +80,10 @@ addSource := loader.TransformerFunc(func(ctx context.Context, doc schema.Documen
 ```
 
 ## Text Splitting
+
+Embedding models have token limits — typically 512 to 8192 tokens depending on the model. Documents that exceed these limits must be split into smaller chunks. But splitting is not just about fitting token budgets: smaller, focused chunks improve retrieval precision because each chunk's embedding captures a narrower semantic meaning, making it easier to match against specific queries.
+
+The `chunk_overlap` parameter controls how many characters overlap between adjacent chunks. Overlap prevents information loss at split boundaries — without it, a sentence that spans two chunks would be cut in half, and neither chunk would contain the complete thought. An overlap of 10-20% of the chunk size is typically sufficient to preserve context.
 
 Split documents into chunks optimized for embedding:
 
@@ -113,6 +121,8 @@ chunkedDocs, err := s.SplitDocuments(ctx, docs)
 | `token` | Token-based boundaries | Precise token-budget chunks |
 
 ## Embeddings
+
+Embeddings convert text into dense vector representations where semantically similar texts are close together in vector space. This is the core mechanism that enables semantic search — finding documents by meaning rather than exact keyword matches. The embedding model you choose affects both the quality of retrieval and the dimensionality (and therefore storage cost) of your vectors.
 
 Convert text to vector representations:
 
@@ -155,6 +165,8 @@ fmt.Println("Dimensions:", embedder.Dimensions())
 | In-Memory | `rag/embedding/providers/inmemory` | Test/dev (random vectors) |
 
 ## Vector Store
+
+Vector stores persist embeddings and support efficient similarity search over them. When a query arrives, it is embedded using the same model, and the vector store finds the nearest neighbors — the documents most semantically similar to the query. Different backends offer different trade-offs between latency, scalability, filtering capabilities, and operational complexity.
 
 Store and search embeddings:
 
@@ -210,7 +222,7 @@ results, err := store.Search(ctx, queryVec, 10,
 
 ## Retriever
 
-The `Retriever` interface abstracts search over one or more backends:
+The `Retriever` interface abstracts the search step, decoupling your application from specific vector store implementations and search strategies. Retrievers can combine multiple backends, apply reranking, or implement advanced strategies like CRAG and HyDE. This abstraction is where the most impactful RAG quality improvements happen — choosing the right retrieval strategy often matters more than choosing the right embedding model.
 
 ```go
 import "github.com/lookatitude/beluga-ai/rag/retriever"
@@ -235,7 +247,7 @@ docs, err := r.Retrieve(ctx, "What is quantum computing?",
 
 ### Hybrid Search (Recommended)
 
-Hybrid search combines dense vector similarity with BM25 keyword matching using Reciprocal Rank Fusion (RRF):
+Pure vector search excels at finding semantically similar content but can miss documents that contain the exact keywords a user is looking for. Conversely, BM25 keyword matching finds exact term matches but misses paraphrases and synonyms. Hybrid search combines both signals using Reciprocal Rank Fusion (RRF), which merges the ranked results from each method into a single list. This is the recommended default because it handles both precise keyword queries ("error code 404") and conceptual queries ("how to handle missing pages") effectively.
 
 ```go
 hybridRetriever, err := retriever.New("hybrid", retriever.ProviderConfig{
@@ -254,7 +266,7 @@ docs, err := hybridRetriever.Retrieve(ctx, "Go concurrency patterns",
 
 ### CRAG (Corrective RAG)
 
-CRAG grades retrieved documents for relevance and triggers web search when local results are insufficient:
+A fundamental problem with naive RAG is that retrieved documents may be irrelevant to the query. When an LLM receives irrelevant context, it often generates plausible-sounding but incorrect answers — a form of hallucination. Corrective RAG addresses this by using an LLM to grade each retrieved document for relevance before passing it to the generation step. Documents below the confidence threshold are discarded, and if too few relevant documents remain, CRAG can trigger a web search as a fallback. This quality-gating step significantly reduces hallucination in production systems.
 
 ```go
 cragRetriever, err := retriever.New("crag", retriever.ProviderConfig{
@@ -268,7 +280,7 @@ cragRetriever, err := retriever.New("crag", retriever.ProviderConfig{
 
 ### HyDE (Hypothetical Document Embeddings)
 
-HyDE generates a hypothetical answer before searching, improving retrieval for questions where direct embedding similarity is weak:
+Short or vague user queries often produce poor embeddings because there is not enough semantic content to capture the user's intent. For example, the query "auth" generates a very different embedding than a paragraph explaining authentication flows. HyDE solves this by first asking an LLM to generate a hypothetical document that would answer the query, then embedding that hypothetical answer instead of the raw query. The hypothetical document's embedding is much closer in vector space to the actual relevant documents, dramatically improving recall for sparse-data domains and terse queries.
 
 ```go
 hydeRetriever, err := retriever.New("hyde", retriever.ProviderConfig{
@@ -281,6 +293,8 @@ hydeRetriever, err := retriever.New("hyde", retriever.ProviderConfig{
 ```
 
 ## Complete Pipeline Example
+
+The following example demonstrates the full RAG pipeline from end to end: loading a text file, splitting it into chunks, embedding the chunks, storing them in an in-memory vector database, retrieving relevant context for a query, and generating an answer with an LLM. In production, you would replace the in-memory store with a persistent backend like pgvector or Pinecone.
 
 ```go
 package main
@@ -397,7 +411,7 @@ func main() {
 
 ## Retriever Hooks
 
-Monitor and audit retrieval operations:
+Beluga AI uses the hooks pattern across all subsystems for lifecycle observation without wrapping. Retriever hooks let you log queries, measure latency, audit which documents were retrieved, and track reranking behavior. Hooks are optional function fields — any nil hook is simply skipped, so you only pay for the observation you need.
 
 ```go
 hooks := retriever.Hooks{

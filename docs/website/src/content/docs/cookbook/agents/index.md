@@ -5,11 +5,15 @@ sidebar:
   order: 0
 ---
 
+Beluga AI's agent system is built on a composition-first architecture: a small `Agent` interface, a `BaseAgent` that handles common behavior, and workflow agents that orchestrate multi-agent pipelines. These recipes demonstrate production patterns for tool handling, parallel execution, handoffs, streaming, and memory integration. Each recipe solves a specific problem you will encounter when building agentic systems, with complete code you can adapt to your use case.
+
 ## Handle Tool Failures Gracefully
 
 **Problem:** An agent calls a tool that fails or returns an error, and you need to handle this without crashing the agent loop.
 
 **Solution:** Use tool middleware with retry logic and hooks to intercept errors before they propagate.
+
+Tool failures in agentic systems are fundamentally different from regular application errors. When a tool fails, the agent needs actionable feedback to decide its next step: should it retry, try a different tool, or inform the user? Beluga AI addresses this through two complementary mechanisms. The middleware pattern (`tool.ApplyMiddleware`) wraps tools with cross-cutting behavior like retries, while hooks (`tool.WithHooks`) provide lightweight lifecycle callbacks for logging, error transformation, and metrics. This layered approach means transient failures are retried automatically, while permanent failures are converted into messages the LLM can reason about.
 
 ```go
 package main
@@ -68,9 +72,9 @@ func main() {
 ```
 
 **Key decisions:**
-- `tool.WithRetry(3)` retries up to 3 times with exponential backoff for retryable errors.
-- `OnError` hooks let you log, transform, or suppress errors before they reach the agent.
-- Non-retryable errors get a user-friendly message instead of raw stack traces.
+- `tool.WithRetry(3)` retries up to 3 times with exponential backoff for retryable errors. This handles transient network failures and rate limits without requiring agent intervention.
+- `OnError` hooks let you log, transform, or suppress errors before they reach the agent. The hook distinguishes between retryable and permanent errors because these require fundamentally different responses.
+- Non-retryable errors get a user-friendly message instead of raw stack traces. The agent sees this as a tool result and can respond to the user appropriately.
 
 ---
 
@@ -79,6 +83,8 @@ func main() {
 **Problem:** The LLM generates tool calls with invalid arguments or calls nonexistent tools, causing runtime errors.
 
 **Solution:** Validate tool calls before execution using agent hooks and input schema validation.
+
+LLMs occasionally hallucinate tool names or produce arguments that don't match the expected schema. Without validation, these malformed calls reach the tool execution layer and produce cryptic errors that the agent cannot recover from. The `OnToolCall` hook intercepts every tool call before execution, giving you a chance to validate the call against the registry. When validation fails, the error is returned to the LLM as context, enabling it to self-correct and retry with valid arguments. This pattern is especially valuable during development when prompts and schemas are still being refined.
 
 ```go
 package main
@@ -169,6 +175,8 @@ func main() {
 
 **Solution:** Use the `workflow.ParallelAgent` to fan out work to multiple agents simultaneously.
 
+Many agentic workflows contain steps that are independent of each other: researching different aspects of a topic, generating content while fact-checking, or querying multiple data sources. Running these sequentially wastes time when the steps have no data dependencies. The `workflow.ParallelAgent` leverages Go's concurrency model to run all child agents simultaneously, collecting their results when all complete. This pattern is the agent-level equivalent of `sync.WaitGroup` -- it launches goroutines for each child agent and waits for all to finish, returning an aggregated result or the first error encountered.
+
 ```go
 package main
 
@@ -222,9 +230,9 @@ func main() {
 ```
 
 **Key decisions:**
-- Each child agent receives the same input and runs independently.
-- Results are aggregated after all agents complete (or the first error is returned).
-- Use `workflow.SequentialAgent` instead when steps depend on each other.
+- Each child agent receives the same input and runs independently. This is a fan-out pattern where the same prompt is processed from different perspectives.
+- Results are aggregated after all agents complete (or the first error is returned). Use `workflow.WithContinueOnError()` if you want partial results even when some agents fail.
+- Use `workflow.SequentialAgent` instead when steps depend on each other -- for example, when a writer needs the researcher's output before drafting.
 
 ---
 
@@ -233,6 +241,8 @@ func main() {
 **Problem:** The `BaseAgent` doesn't fit your use case, and you need specialized behavior such as custom reasoning loops or domain-specific logic.
 
 **Solution:** Implement the `Agent` interface directly, embedding `BaseAgent` for shared functionality.
+
+Beluga AI follows Go's composition-over-inheritance principle. Rather than providing a deep class hierarchy, it offers a small `Agent` interface and a `BaseAgent` with common functionality. When you need custom behavior -- like a multi-pass review loop, a domain-specific reasoning chain, or a custom decision tree -- you embed `BaseAgent` and override `Invoke` and `Stream`. This gives you full control over the agent's execution logic while inheriting identity, persona, tool management, and child agent tracking from the base. The multi-pass pattern shown here is effective because each pass focuses on a different aspect, producing more thorough results than a single prompt.
 
 ```go
 package main
@@ -327,9 +337,9 @@ func main() {
 ```
 
 **Key decisions:**
-- Embed `*agent.BaseAgent` to inherit `ID()`, `Persona()`, `Tools()`, and `Children()`.
-- Override `Invoke` and `Stream` for custom behavior.
-- The multi-pass pattern is a common way to get thorough results from a single agent.
+- Embed `*agent.BaseAgent` to inherit `ID()`, `Persona()`, `Tools()`, and `Children()`. This avoids reimplementing boilerplate that every agent needs.
+- Override `Invoke` and `Stream` for custom behavior. The base agent's implementations serve as a fallback when custom logic isn't needed for a particular method.
+- The multi-pass pattern is a common way to get thorough results from a single agent. Each pass builds on previous findings, catching issues that were missed in earlier passes.
 
 ---
 
@@ -338,6 +348,8 @@ func main() {
 **Problem:** You need specialized agents that can transfer control to each other based on the conversation topic.
 
 **Solution:** Use handoffs-as-tools. Beluga automatically generates `transfer_to_{id}` tools from handoff declarations.
+
+Agent handoffs solve a fundamental challenge in multi-agent systems: routing conversations to the right specialist without a centralized dispatcher. Beluga AI implements handoffs as tools because this approach leverages the LLM's existing tool-calling capability. When you declare a handoff, the framework generates a `transfer_to_{agent_id}` tool that the LLM can call when it determines the conversation should be handled by a different agent. This design is elegant because it requires no special routing logic -- the LLM itself decides when to hand off based on its understanding of the conversation context and the handoff descriptions you provide.
 
 ```go
 package main
@@ -393,6 +405,8 @@ func main() {
 
 **Advanced handoffs with filters and callbacks:**
 
+Handoffs support input transformation, lifecycle hooks, and conditional availability. The `InputFilter` lets you enrich the context passed to the target agent, `OnHandoff` runs side effects like logging or metric recording, and `IsEnabled` gates the handoff based on runtime conditions such as maintenance windows or feature flags.
+
 ```go
 // Handoff with input transformation and lifecycle hooks.
 handoff := agent.Handoff{
@@ -422,6 +436,8 @@ handoff := agent.Handoff{
 **Problem:** You need to display agent responses in real-time as they are generated, including tool calls and handoff events.
 
 **Solution:** Use `agent.Stream()` and handle each `EventType` appropriately.
+
+Streaming is essential for interactive applications because it eliminates the perception of waiting. Beluga AI uses Go 1.23's `iter.Seq2[T, error]` pattern for streaming, which provides a clean `for range` loop syntax and built-in error propagation. The agent emits typed events during execution: text chunks as they are generated, tool call and result events for visibility into agent reasoning, handoff notifications when control transfers, and completion or error events. Your UI code switches on the event type and renders each one appropriately, giving users real-time insight into what the agent is doing.
 
 ```go
 package main
@@ -488,6 +504,8 @@ func main() {
 
 **Solution:** Use `workflow.SequentialAgent` to chain agents into a pipeline.
 
+Sequential workflows model processes where each step depends on the previous step's output. A researcher gathers facts, a writer drafts content from those facts, and an editor polishes the result. The `SequentialAgent` chains these agents so each one receives the output of its predecessor as input. This is the agent equivalent of Unix pipes: data flows through a series of transformations, with each agent adding value. The pattern is particularly effective for content generation, data processing, and multi-stage analysis where quality improves with each refinement step.
+
 ```go
 package main
 
@@ -527,7 +545,7 @@ func main() {
 		}),
 	)
 
-	// Chain them: researcher → writer → editor.
+	// Chain them: researcher -> writer -> editor.
 	pipeline := workflow.NewSequentialAgent("content-pipeline",
 		researcher, writer, editor,
 	)
@@ -548,6 +566,8 @@ func main() {
 **Problem:** You need an agent to repeatedly refine its output until a quality threshold is met.
 
 **Solution:** Use `workflow.LoopAgent` with a termination condition.
+
+Some tasks require iterative improvement rather than a single-shot response. Code review, essay writing, and data cleaning all benefit from multiple passes. The `LoopAgent` runs a child agent repeatedly, feeding each iteration's output back as input to the next. The loop continues until either a termination condition is met (such as the output containing an "APPROVED" marker) or a maximum iteration count is reached. The maximum iteration limit is a safety mechanism that prevents runaway loops when the termination condition is never satisfied, which can happen if the agent produces inconsistent output across iterations.
 
 ```go
 package main
@@ -598,6 +618,8 @@ func main() {
 
 **Solution:** Attach a memory instance to the agent and use the `WithMemory` option.
 
+Stateless agents treat every interaction as independent, which limits their usefulness for ongoing conversations. Beluga AI's memory system follows the MemGPT 3-tier model: core memory (always in context), recall memory (searchable conversation history), and archival memory (vector-indexed long-term storage). By attaching memory to an agent with `agent.WithMemory`, previous conversations are automatically retrieved and included in the context window. The memory store is pluggable through the registry pattern -- use `inmemory` for development, then switch to `redis`, `postgres`, or `sqlite` in production by changing a single configuration string.
+
 ```go
 package main
 
@@ -630,7 +652,7 @@ func main() {
 		agent.WithMemory(mem),
 	)
 
-	// First conversation — agent learns a preference.
+	// First conversation -- agent learns a preference.
 	result, err := a.Invoke(ctx, "My favorite programming language is Go")
 	if err != nil {
 		slog.Error("first invoke failed", "error", err)
@@ -638,7 +660,7 @@ func main() {
 	}
 	fmt.Println("Turn 1:", result)
 
-	// Second conversation — agent recalls the preference.
+	// Second conversation -- agent recalls the preference.
 	result, err = a.Invoke(ctx, "What's my favorite language?")
 	if err != nil {
 		slog.Error("second invoke failed", "error", err)

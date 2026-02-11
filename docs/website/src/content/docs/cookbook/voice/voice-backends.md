@@ -5,15 +5,19 @@ description: "Configure and switch between STT, TTS, and S2S voice backends with
 
 ## Problem
 
-You are building a voice agent and need to choose the right voice backend, configure providers with proper settings, switch between providers without code changes, and handle fallback when a provider is unavailable.
+You are building a voice agent and need to choose the right voice backend, configure providers with proper settings, switch between providers without code changes, and handle fallback when a provider is unavailable. Voice systems are complex multi-provider stacks: you might use Deepgram for STT, OpenAI for TTS, and LiveKit for transport. Each provider has unique configuration parameters, API authentication schemes, and operational characteristics. Hardcoding provider choices into application logic makes it difficult to test alternatives, respond to outages, or optimize costs by switching providers based on usage patterns.
+
+The challenge is decoupling provider selection from application logic. You want to configure providers via environment variables or config files, swap providers without code changes, and implement fallback chains when a primary provider fails. This requires a consistent abstraction layer across heterogeneous providers, where the application code interacts with interfaces rather than concrete provider types.
 
 ## Solution
 
-Beluga AI's voice system uses a consistent registry pattern across all voice backends. You can switch providers through configuration, implement automatic fallback, and test with mocks without changing application code.
+Beluga AI's voice system uses a consistent registry pattern across all voice backends. You can switch providers through configuration, implement automatic fallback, and test with mocks without changing application code. The registry pattern works by having each provider package register itself in an `init()` function, making it available for lookup by name. The application calls `NewProvider(name, config)` with a provider name string, and the registry returns the appropriate implementation. This design follows Go's `database/sql` driver pattern and Beluga's core extensibility model.
+
+The reasoning behind this approach is operational flexibility. By standardizing on `Register` + `New` + `List`, you gain several benefits: provider selection becomes a runtime configuration parameter (not a compile-time dependency), testing becomes easier (register a mock provider in test `init()`), and fallback chains can iterate through the registry without hardcoding provider names. The functional options pattern (`WithAPIKey`, `WithModel`) provides type-safe configuration that adapts to each provider's unique parameters while maintaining a common interface.
 
 ## Recipe 1: Configure STT Provider
 
-Set up Deepgram for real-time speech-to-text:
+Set up Deepgram for real-time speech-to-text. Deepgram is chosen here for its low-latency WebSocket API and high accuracy on conversational speech. The configuration specifies `EnableStreaming` because real-time applications require incremental transcription rather than batch processing. The `nova-2` model balances accuracy and speed for general-purpose use.
 
 ```go
 package main
@@ -42,7 +46,7 @@ func setupSTT(ctx context.Context) (stt.Provider, error) {
 
 ## Recipe 2: Configure TTS Provider
 
-Set up OpenAI for text-to-speech:
+Set up OpenAI for text-to-speech. OpenAI's TTS API provides good voice quality with straightforward pricing and no complex voice licensing. The `tts-1-hd` model offers higher fidelity than `tts-1`, which matters for applications where users listen for extended periods. The `Speed` parameter allows tuning playback rate for different use cases (faster for summaries, slower for instructions).
 
 ```go
 import (
@@ -68,7 +72,7 @@ func setupTTS(ctx context.Context) (tts.Provider, error) {
 
 ## Recipe 3: Configure S2S Provider
 
-Set up Amazon Nova for end-to-end speech conversations:
+Set up Amazon Nova for end-to-end speech conversations. Speech-to-speech (S2S) providers eliminate the STT → LLM → TTS pipeline by handling the entire conversation flow internally, reducing latency and preserving prosody. Nova's `LatencyTarget: "low"` configuration prioritizes responsiveness over maximum quality, suitable for interactive agents. The `ReasoningMode: "built-in"` means Nova uses its internal conversation model rather than requiring external LLM integration.
 
 ```go
 import (
@@ -96,7 +100,7 @@ func setupS2S(ctx context.Context) (s2s.Provider, error) {
 
 ## Recipe 4: Switch Providers via Configuration
 
-Switch providers based on environment variables without code changes:
+Switch providers based on environment variables without code changes. This pattern externalizes provider selection, making it easy to compare providers during development or switch providers in production without redeployment. The `VoiceConfig` struct uses struct tags (`yaml`, `env`) to support both configuration files and environment variable overrides, following twelve-factor app principles.
 
 ```go
 import (
@@ -126,7 +130,7 @@ func setupSTTFromConfig(ctx context.Context, cfg VoiceConfig) (stt.Provider, err
 
 ## Recipe 5: Implement Provider Fallback
 
-Automatic fallback if the primary provider fails:
+Automatic fallback if the primary provider fails. This pattern implements resilience through redundancy. When the primary provider fails (due to API outages, quota limits, or network issues), the fallback chain automatically tries alternative providers. The warning log helps with post-incident analysis to understand which providers failed and when. This approach trades increased cost (calling multiple providers) for higher availability.
 
 ```go
 import (

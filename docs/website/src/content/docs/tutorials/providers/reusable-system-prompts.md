@@ -3,7 +3,7 @@ title: Reusable System Prompts
 description: Build a library of versioned, reusable system prompts to define consistent agent personas.
 ---
 
-A persona is a set of instructions that defines an agent's tone, expertise, and constraints. Hardcoding these strings in every agent is unmaintainable. A prompt registry with versioning allows consistent behavior across agents while enabling non-technical team members to update prompts without changing Go code.
+A persona is a set of instructions that defines an agent's tone, expertise, and constraints. Hardcoding these strings in every agent is unmaintainable — when a persona needs updating, you must find and change every occurrence. A prompt registry with versioning allows consistent behavior across agents while enabling non-technical team members to update prompts without changing Go code. This separation of prompt content from application logic also supports A/B testing of different persona versions in production.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A prompt registry with persona definitions, template variable support, versionin
 
 ## Step 1: Define Personas
 
-Create structured persona definitions with template support:
+Create structured persona definitions with template support. Each persona uses Go's `text/template` syntax for variable substitution, which separates the prompt structure (owned by prompt engineers) from the runtime data (owned by application code). The `Variables` field documents which template variables the persona expects, serving as a contract between prompt authors and developers.
 
 ```go
 package main
@@ -63,7 +63,7 @@ var SupportAgent = Persona{
 
 ## Step 2: Create a System Message from a Persona
 
-Compile the template and produce a `schema.Message`:
+Compile the template and produce a `schema.Message`. The template is compiled and executed in a single method call, which ensures that template syntax errors surface immediately rather than being silently ignored. The resulting `*schema.SystemMessage` integrates directly into any `[]schema.Message` conversation.
 
 ```go
 func (p Persona) CreateSystemMessage(vars map[string]any) (*schema.SystemMessage, error) {
@@ -83,7 +83,7 @@ func (p Persona) CreateSystemMessage(vars map[string]any) (*schema.SystemMessage
 
 ## Step 3: Build a Persona Registry
 
-Centralize persona management with lookup and discovery:
+Centralize persona management with lookup and discovery. This follows Beluga AI's registry pattern (`Register()` + `Get()` + `List()`), which provides a consistent API for managing extensible collections. The registry centralizes persona definitions so that agents reference personas by name rather than embedding prompt text directly.
 
 ```go
 type PersonaRegistry struct {
@@ -119,7 +119,7 @@ func (r *PersonaRegistry) List() []string {
 
 ## Step 4: Use with an LLM
 
-Integrate personas into LLM conversations:
+Integrate personas into LLM conversations. The persona generates a system message that sets the model's behavior, which is then combined with the user's query in a standard message slice. This keeps the persona definition separate from the conversation logic — the same persona can be used across different agents and conversation flows.
 
 ```go
 import (
@@ -168,7 +168,7 @@ func main() {
 
 ## Step 5: Prompt Versioning
 
-Support multiple versions of the same persona for A/B testing and gradual rollouts:
+Support multiple versions of the same persona for A/B testing and gradual rollouts. The versioned registry uses a nested map (`name -> version -> Persona`) to store multiple versions of each persona independently. This enables comparing different prompt strategies in production without affecting the registry's lookup API.
 
 ```go
 type VersionedRegistry struct {
@@ -197,7 +197,7 @@ func (r *VersionedRegistry) Get(name, version string) (Persona, error) {
 
 ## Step 6: Load Personas from Configuration
 
-Store personas in JSON files for non-developer editing:
+Store personas in JSON files for non-developer editing. Externalizing prompt content into JSON files enables prompt engineers to iterate on persona definitions without requiring Go builds or code reviews for text changes. The application loads these files at startup, making prompt updates a configuration change rather than a code change.
 
 ```json
 {

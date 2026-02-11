@@ -3,11 +3,11 @@ title: Building a Research Agent
 description: Build an autonomous research agent that decomposes questions, searches for information, and synthesizes reports.
 ---
 
-A research agent goes beyond simple chat — it breaks down complex questions into search queries, retrieves information from multiple sources, and synthesizes a comprehensive report. This tutorial demonstrates building an agent with a reasoning loop, tool integration, and streaming progress output.
+A research agent goes beyond simple chat -- it breaks down complex questions into search queries, retrieves information from multiple sources, and synthesizes a comprehensive report. This is an example of the **ReAct (Reason + Act) pattern**, where the model alternates between reasoning about what to do next and executing actions via tools. The agent loop continues until the model decides it has gathered enough information to produce a final answer, at which point it responds without any tool calls. This self-terminating behavior is what makes the agent autonomous rather than requiring explicit orchestration.
 
 ## What You Will Build
 
-An autonomous research agent using the ReAct (Reason + Act) pattern that searches for information, analyzes findings, and produces a structured report with citations.
+An autonomous research agent using the ReAct pattern that searches for information, analyzes findings, and produces a structured report with citations.
 
 ## Prerequisites
 
@@ -16,7 +16,7 @@ An autonomous research agent using the ReAct (Reason + Act) pattern that searche
 
 ## Step 1: Define the Tools
 
-A research agent needs tools for search, web scraping, and computation:
+Tools are the agent's interface to the external world. Each tool has two components: a `schema.ToolDefinition` that tells the model what the tool does and what arguments it accepts (via JSON Schema), and an execution function that performs the actual work. The model never calls the execution function directly -- it generates a tool call with arguments, and your code dispatches it. This separation between tool description and tool execution is what makes the system provider-agnostic: the same tool definitions work with any LLM that supports function calling.
 
 ```go
 package main
@@ -67,6 +67,8 @@ var calculatorTool = schema.ToolDefinition{
 
 ## Step 2: Define the Researcher Persona
 
+The system prompt shapes the agent's behavior within the ReAct loop. By instructing the model to break down questions into specific search queries and to refine queries when results are insufficient, you are encoding a research methodology into the agent's reasoning. The model will follow these instructions when deciding which tool to call next and how to interpret results. A well-crafted persona prompt is often the difference between an agent that makes one search and stops, and one that iterates until it has comprehensive coverage of a topic.
+
 ```go
 const researcherPrompt = `You are a Senior Research Analyst.
 Your goal is to answer the user's question comprehensively.
@@ -83,7 +85,11 @@ Always search multiple angles before concluding. If initial results are insuffic
 
 ## Step 3: Build the Agent Loop
 
-Implement a ReAct-style reasoning loop that alternates between thinking and acting:
+The agent loop is the core of the ReAct pattern. Each iteration: (1) send the full conversation history to the model, (2) check if the response contains tool calls, and (3) if so, execute them and append results to the history. The loop terminates when the model responds with plain text and no tool calls, signaling that it has gathered enough information to answer.
+
+The `maxIterations` bound is a safety mechanism. Without it, a model that keeps generating tool calls (due to ambiguous instructions or hallucinated tools) would loop indefinitely. In production, you would also monitor token usage per iteration and set timeouts via context cancellation.
+
+Note how the entire conversation history -- including all tool calls and their results -- is sent to the model on every iteration. This gives the model full visibility into what it has already tried, preventing redundant searches and enabling it to build on previous findings.
 
 ```go
 func runResearchAgent(ctx context.Context, model llm.ChatModel, question string) (string, error) {
@@ -149,7 +155,7 @@ func executeTool(ctx context.Context, tc schema.ToolCall) (string, error) {
 
 ## Step 4: Streaming Progress
 
-Use `Stream` to show progress to the user in real-time:
+In a synchronous agent loop, the user sees nothing until the final response is ready. For long research tasks that involve multiple tool calls, this creates a poor experience. The `Stream` method returns an `iter.Seq2[schema.StreamChunk, error]` iterator that delivers tokens as they are generated, giving users real-time visibility into the agent's reasoning and progress. You accumulate the streamed chunks into a complete response, then check for tool calls just as you would with the synchronous `Generate` method.
 
 ```go
 func runResearchAgentStreaming(ctx context.Context, model llm.ChatModel, question string) error {
@@ -239,5 +245,5 @@ Run the agent with a complex question. Verify it:
 
 ## Next Steps
 
-- [Multi-Agent Orchestration](/tutorials/agents/multi-agent-orchestration) — Coordinate teams of agents
-- [Tools Registry](/tutorials/agents/tools-registry) — Build a reusable tool library
+- [Multi-Agent Orchestration](/tutorials/agents/multi-agent-orchestration) -- Coordinate teams of agents
+- [Tools Registry](/tutorials/agents/tools-registry) -- Build a reusable tool library

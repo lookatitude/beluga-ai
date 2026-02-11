@@ -13,6 +13,14 @@ You need to substitute variables in a prompt template incrementally as data beco
 
 Implement a partial substitution system that allows replacing variables one at a time, tracks which variables have been substituted, and can complete the substitution when all variables are available. This works because prompt templates use placeholders that can be replaced independently.
 
+## Why This Matters
+
+Standard Go `text/template` requires all variables to be present at render time. If any variable is missing, the template either errors or produces empty strings (depending on the `missingkey` option). This is fine for simple cases, but production prompt construction often involves variables that arrive at different times from different sources: the user's role from authentication middleware, retrieved documents from a RAG pipeline, and the user's query from the HTTP request.
+
+Partial substitution decouples variable availability from template rendering. You can fill in variables as they arrive, inspect the template's current state at any point (useful for debugging), and check which variables are still missing before sending the prompt to the LLM. The `Complete()` method with defaults provides a safety net: if some variables never arrive (e.g., a retrieval step times out), the template can still be rendered with fallback values rather than failing entirely.
+
+The OTel instrumentation in each method is deliberate. Tracking which variables are substituted and when, along with the value length, creates a trace that shows the prompt construction timeline. This is valuable for diagnosing cases where prompts are unexpectedly empty or malformed -- you can see exactly which variable was missing or had an unexpected value.
+
 ## Code Example
 
 ```go
@@ -182,13 +190,13 @@ func main() {
 
 ## Explanation
 
-1. **Incremental substitution** — Variables are substituted one at a time. Each substitution updates the template state, allowing prompts to be built incrementally as data arrives.
+1. **Variable extraction at construction time** -- The constructor parses the template once using a regex to find all `{{.VarName}}` placeholders, building the `remainingVars` list. This upfront parsing means `GetRemainingVariables()` is a constant-time lookup rather than re-parsing the template on every call. The `seen` map prevents duplicate entries when a variable appears multiple times in the template.
 
-2. **State tracking** — The system tracks which variables have been substituted and which remain, allowing you to check completion status and see what's still needed.
+2. **Incremental substitution with validation** -- Each `Substitute()` call verifies the variable exists in the template before storing it. This catches typos early (substituting "userName" when the template uses "name") rather than silently producing a prompt with unresolved placeholders. The substitution is stored in a map and applied lazily when `GetCurrentPrompt()` is called, which means multiple substitutions don't trigger redundant string replacements.
 
-3. **Completion with defaults** — When all variables aren't available, the template can be completed with default values, useful for fallback scenarios.
+3. **Completion with defaults as safety net** -- The `Complete()` method iterates over remaining variables and fills them from a defaults map. If any variable has neither a substitution nor a default, it returns an error rather than producing an incomplete prompt. This fail-fast behavior prevents sending malformed prompts to the LLM, which would waste tokens and produce confusing responses.
 
-> **Key insight:** Partial substitution enables streaming and dynamic prompt building. You can start showing a prompt to users even before all data is available.
+4. **OTel instrumentation** -- Each substitution and completion operation gets its own span with attributes for the variable name, value length, substituted count, and remaining count. This creates a traceable timeline of prompt construction that is valuable for debugging prompts that produce unexpected LLM responses.
 
 ## Testing
 
@@ -230,5 +238,5 @@ func (ppt *PartialPromptTemplate) Merge(other *PartialPromptTemplate) *PartialPr
 
 ## Related Recipes
 
-- [Dynamic Message Chain Templates](/cookbook/dynamic-templates) — Build message chains dynamically
-- [LLMs Streaming Tool Logic Handler](/cookbook/llms-streaming-tool-logic-handler) — Streaming patterns
+- **[Dynamic Message Chain Templates](/cookbook/prompts/dynamic-templates)** -- Build message chains dynamically
+- **[Streaming Tool Calls](/cookbook/llm/streaming-tool-calls)** -- Streaming patterns

@@ -3,7 +3,7 @@ title: Semantic Splitting for Better Embeddings
 description: Create chunks based on meaning by detecting topic transitions using embedding similarity, producing semantically coherent chunks optimized for retrieval.
 ---
 
-Even structural splitting can be arbitrary if a single section covers two distinct topics. Semantic splitting uses embedding similarity to detect where one topic ends and another begins, producing chunks that are optimized for retrieval quality.
+Even structural splitting can be arbitrary if a single section covers two distinct topics. A Markdown section titled "Background" might discuss both the problem statement and the historical context -- these are different topics that would produce better embeddings as separate chunks. Semantic splitting uses embedding similarity to detect where one topic ends and another begins, producing chunks that are optimized for retrieval quality because each chunk focuses on a single coherent idea.
 
 ## What You Will Build
 
@@ -24,9 +24,11 @@ A semantic splitting pipeline that divides text into sentences, embeds each sent
 4. When similarity drops below a threshold, start a new chunk
 5. Group consecutive sentences into coherent chunks
 
+The key insight is that consecutive sentences about the same topic produce similar embeddings. When the topic changes, the embedding vectors shift direction, and cosine similarity drops. By detecting these drops, the splitter identifies natural topic boundaries in the text.
+
 ### Threshold Tuning
 
-The breakpoint threshold controls chunk granularity:
+The breakpoint threshold controls chunk granularity. A higher threshold is more sensitive to topic shifts and produces smaller, more specific chunks. A lower threshold is more tolerant and produces larger chunks that may span related subtopics. The right threshold depends on your content type and retrieval requirements.
 
 | Threshold | Effect |
 |-----------|--------|
@@ -35,6 +37,8 @@ The breakpoint threshold controls chunk granularity:
 | 0.70 (low) | Fewer, larger chunks with more context |
 
 ## Step 1: Set Up the Embedding Model
+
+Create an embedding model via the registry pattern. The `text-embedding-3-small` model is a good default because it balances embedding quality with cost and speed. Semantic splitting requires embedding every sentence, so the embedding cost scales linearly with document length -- a cheaper model keeps the splitting step affordable for large document collections.
 
 ```go
 package main
@@ -72,7 +76,7 @@ func main() {
 
 ## Step 2: Implement Sentence Splitting
 
-Break text into individual sentences for embedding:
+Break text into individual sentences for embedding. Sentence-level granularity is the right unit for semantic splitting because sentences are the smallest unit that typically carries a complete idea. Splitting at the word or phrase level would produce embeddings that are too noisy for reliable similarity comparison.
 
 ```go
 // splitSentences breaks text into sentences using basic heuristics.
@@ -106,6 +110,8 @@ func splitSentences(text string) []string {
 
 ## Step 3: Calculate Cosine Similarity
 
+Cosine similarity measures the angle between two embedding vectors, producing a value between -1 and 1. A value near 1 means the vectors point in the same direction (similar meaning), while a value near 0 means they are orthogonal (unrelated topics). This metric is preferred over Euclidean distance for comparing embeddings because it is invariant to vector magnitude -- two sentences about the same topic will have high cosine similarity regardless of their length.
+
 ```go
 // cosineSimilarity computes the cosine similarity between two vectors.
 func cosineSimilarity(a, b []float32) float64 {
@@ -130,7 +136,7 @@ func cosineSimilarity(a, b []float32) float64 {
 
 ## Step 4: Build the Semantic Splitter
 
-Combine embedding and similarity to detect topic boundaries:
+Combine embedding and similarity to detect topic boundaries. The splitter embeds all sentences in a single batch call (`EmbedStrings`) rather than one at a time, which is more efficient because embedding APIs support batch input and amortize the network round-trip cost. The loop compares each consecutive pair of sentence embeddings, and when similarity drops below the threshold, a new chunk begins. This linear scan is O(n) in the number of sentences, making it efficient even for long documents.
 
 ```go
 // SemanticSplitter splits text based on embedding similarity between sentences.
@@ -185,6 +191,8 @@ func (s *SemanticSplitter) Split(ctx context.Context, text string) ([]string, er
 
 ## Step 5: Use the Semantic Splitter
 
+The example text below transitions from astronomy to zoology mid-paragraph. A character-based splitter would not detect this boundary, but the semantic splitter identifies the topic change because the embedding vectors for "sun" sentences are dissimilar from "cats" sentences.
+
 ```go
 func demonstrateSemanticSplit(ctx context.Context, embedder embedding.Embedder) {
     splitter := NewSemanticSplitter(embedder, 0.85)
@@ -212,7 +220,7 @@ func demonstrateSemanticSplit(ctx context.Context, embedder embedding.Embedder) 
 
 ## Step 6: Combine Structural and Semantic Splitting
 
-For best results, apply Markdown splitting first (for structure), then semantic splitting for any oversized sections:
+For best results, apply Markdown splitting first (for structure), then semantic splitting for any oversized sections. This two-pass approach uses each method's strengths: structural splitting respects document organization (headings, sections), while semantic splitting handles cases where a single section covers multiple topics. The generous initial chunk size (3000 characters) ensures the Markdown splitter preserves large sections intact, leaving the semantic splitter to subdivide only where topic changes are detected.
 
 ```go
 import "github.com/lookatitude/beluga-ai/rag/splitter"

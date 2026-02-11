@@ -3,7 +3,7 @@ title: ML-Based Turn Prediction with ONNX
 description: Use an ONNX neural network model for accurate, context-aware turn-end detection in voice applications.
 ---
 
-Machine learning-based turn prediction uses a trained neural network to determine when a user has finished speaking, offering more nuanced detection than rule-based heuristics. This tutorial demonstrates how to configure the ONNX turn detection provider with a custom model for production voice applications.
+Machine learning-based turn prediction uses a trained neural network to determine when a user has finished speaking, offering more nuanced detection than rule-based heuristics. While heuristic detection relies on silence duration and punctuation -- signals that are easy to compute but miss conversational nuance -- ML models learn patterns from real conversations: trailing intonation, filler words, breathing patterns, and prosodic cues that indicate turn boundaries. This tutorial demonstrates how to configure the ONNX turn detection provider with a custom model for production voice applications.
 
 ## What You Will Build
 
@@ -24,7 +24,11 @@ ML-based turn detection is appropriate when:
 - Heuristic rules produce too many false positives or false negatives
 - You need to distinguish intentional pauses from end-of-turn silence
 
+For simpler use cases with structured speech (commands, short queries), the heuristic provider in [Sentence-Boundary Turn Detection](/tutorials/voice/sentence-boundary) is sufficient and avoids the complexity of model management.
+
 ## Step 1: Configure the ONNX Provider
+
+The ONNX provider uses Beluga's standard registry pattern -- the blank import registers the `"onnx"` factory, and `turndetection.NewProvider` creates a configured instance. The functional options control the model file path and detection parameters. The `Threshold` option is the primary tuning knob: it determines the confidence level at which the model's prediction is accepted as a turn boundary.
 
 ```go
 package main
@@ -83,7 +87,7 @@ func main() {
 
 ## Step 2: Combined Detection with Silence Duration
 
-For real-time pipelines where you measure silence duration externally, pass it to `DetectTurnWithSilence` for combined inference.
+For real-time pipelines where you measure silence duration externally (for example, from your VAD provider), pass it to `DetectTurnWithSilence` for combined inference. This approach is more accurate than relying on the model alone because it fuses two independent signals: the model's acoustic analysis and the measured silence duration. The model may be uncertain about a turn boundary, but if the measured silence exceeds the minimum threshold, the combined signal is strong enough to trigger.
 
 ```go
 	silence := 400 * time.Millisecond
@@ -97,17 +101,15 @@ For real-time pipelines where you measure silence duration externally, pass it t
 	}
 ```
 
-The ONNX provider combines the model's confidence score with the measured silence duration. If both the model confidence exceeds the threshold and the silence exceeds `MinSilenceDuration`, the turn is considered complete.
+The ONNX provider combines the model's confidence score with the measured silence duration. If both the model confidence exceeds the threshold and the silence exceeds `MinSilenceDuration`, the turn is considered complete. This dual-condition approach reduces false positives from either signal alone.
 
 ## Step 3: Threshold Tuning
 
-The threshold controls the sensitivity of the model's predictions:
+The threshold controls the sensitivity of the model's predictions. Tuning it is an application-specific decision that depends on how your users interact with the agent and what the cost of a wrong prediction is:
 
-- **Lower threshold (0.3-0.4)**: More aggressive detection, responds faster but may trigger on mid-sentence pauses.
+- **Lower threshold (0.3-0.4)**: More aggressive detection, responds faster but may trigger on mid-sentence pauses. Use this for fast-paced interactions where responsiveness matters more than accuracy, such as customer service bots handling simple queries.
 - **Default threshold (0.5)**: Balanced detection for general conversation.
-- **Higher threshold (0.6-0.8)**: Conservative detection, waits longer but avoids false triggers.
-
-Tune the threshold based on your application:
+- **Higher threshold (0.6-0.8)**: Conservative detection, waits longer but avoids false triggers. Use this for applications where premature responses are disruptive, such as tutoring or therapy contexts.
 
 ```go
 	// For a fast-paced customer service bot
@@ -127,7 +129,7 @@ Tune the threshold based on your application:
 
 ## Step 4: Model Selection
 
-The ONNX provider works with any compatible turn-detection model. When selecting a model, consider:
+The ONNX provider works with any compatible turn-detection model. The ONNX Runtime format is chosen because it provides cross-platform inference without requiring a specific ML framework at runtime. When selecting a model, consider these factors:
 
 | Factor          | Guidance                                        |
 |----------------|--------------------------------------------------|

@@ -11,6 +11,14 @@ You need to manage conversation history that grows beyond token limits, intellig
 
 Implement a history trimming strategy that prioritizes recent messages, preserves system messages and summaries, and uses semantic similarity to keep the most relevant historical context. This works because you can analyze message importance, create summaries of trimmed content, and maintain a sliding window of recent messages.
 
+## Why This Matters
+
+Every LLM has a finite context window, and conversation history grows without bound. Without management, a chatbot that works perfectly for 10 exchanges will fail silently on exchange 50 when the history exceeds the model's token limit. The naive solution -- truncating from the beginning -- loses the system prompt and early context that may be critical to the conversation's purpose.
+
+The three-tier trimming strategy in this recipe addresses this by categorizing messages into system messages (always preserved), recent messages (preserved as the active conversation window), and old messages (candidates for summarization or removal). System messages contain the agent's instructions and personality, so losing them changes behavior. Recent messages contain the immediate conversational context that the user expects the agent to remember. Old messages contain historical context that may or may not be relevant to the current topic.
+
+Summarization is the key differentiator between intelligent trimming and simple truncation. When old messages are summarized rather than discarded, the agent retains awareness of what was discussed earlier without paying the full token cost. The summarizer itself is an LLM call, which adds latency and cost, so it should only be invoked when the history actually exceeds the token budget. The aggressive trim fallback ensures the conversation always stays within limits even when summarization is unavailable or insufficient -- this is the safety net that prevents API errors from oversized requests.
+
 ## Code Example
 
 ```go
@@ -220,13 +228,13 @@ func main() {
 
 ## Explanation
 
-1. **Priority-based trimming** — System messages and recent messages are prioritized. System messages contain important context, and recent messages are most relevant to the current conversation.
+1. **Priority-based categorization** -- Messages are split into three categories: system messages (always preserved because they define agent behavior), recent messages (the last N messages that form the active conversation window), and old messages (everything else, which is a candidate for summarization or removal). This categorization ensures the most important context survives trimming.
 
-2. **Summarization** — When old messages need to be trimmed, they can be summarized if a summarizer is available. This preserves key information while reducing token count.
+2. **Summarization as compression** -- Old messages are summarized into a single system message using an LLM call when a summarizer is available. This compresses potentially thousands of tokens of conversation history into a concise summary that preserves key facts and decisions. The summary is injected between system messages and recent messages, maintaining chronological coherence.
 
-3. **Aggressive trimming** — If summarization isn't possible or sufficient, aggressive trimming removes older non-system messages while maintaining the most recent context. This ensures the conversation always stays within token limits.
+3. **Aggressive trim as safety net** -- If summarization is unavailable (nil summarizer) or the summary itself is too large, aggressive trimming takes over. It works backwards from the most recent messages, adding them until the token budget is exhausted. System messages are always included first, guaranteeing that agent instructions survive even extreme trimming.
 
-Preserve system messages and recent context, then summarize or trim older messages. This maintains conversation coherence while respecting token limits.
+4. **OTel observability** -- Spans record the input message count, output message count, and number of trimmed messages. This data helps you tune the `maxTokens` and `keepRecent` parameters based on actual conversation patterns rather than guesswork. A high trim rate might indicate the need for a larger context window or more aggressive summarization.
 
 ## Testing
 

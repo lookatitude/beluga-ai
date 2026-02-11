@@ -3,7 +3,7 @@ title: Multi-provider Chat Integration
 description: Build applications that use multiple LLM providers interchangeably through Beluga AI's unified ChatModel interface.
 ---
 
-In a fast-moving AI landscape, locking into a single vendor creates risk. Beluga AI's `ChatModel` interface provides a unified abstraction that lets you swap providers with zero changes to application logic. Tool calls, streaming, and configuration all work identically across providers.
+In a fast-moving AI landscape, locking into a single vendor creates risk -- risk of outages, pricing changes, capability gaps, and vendor lock-in. Beluga AI addresses this by defining a single `ChatModel` interface that every provider implements identically. Tool calls, streaming, and configuration all work the same way regardless of whether you are talking to OpenAI, Anthropic, Google, or any other registered provider. This design follows the principle that application logic should never contain provider-specific code.
 
 ## What You Will Build
 
@@ -16,7 +16,9 @@ An application that uses OpenAI and Anthropic interchangeably, with normalized t
 
 ## Step 1: Create Models from the Registry
 
-Each provider registers itself via `init()`. Import the provider package and create models through the unified registry:
+Beluga AI uses the **registry pattern** (`Register()` + `New()` + `List()`) for all extensible components. Each provider package registers itself via Go's `init()` function, which means simply importing the package (with a blank identifier `_`) is enough to make the provider available at runtime. This design eliminates the need for hardcoded factory functions or manual wiring -- the registry handles discovery and instantiation.
+
+The `llm.New()` function looks up the provider by name and returns a `ChatModel` interface. From that point forward, all operations are provider-agnostic. The `llm.List()` function lets you discover which providers are available at runtime, which is useful for configuration-driven deployments where provider selection happens through environment variables or config files rather than code changes.
 
 ```go
 package main
@@ -82,7 +84,7 @@ func generate(ctx context.Context, model llm.ChatModel, prompt string) {
 
 ## Step 2: Normalized Tool Calling
 
-Define tools once — Beluga AI handles the provider-specific JSON format conversion:
+Each LLM provider uses a different JSON format for tool definitions and tool call responses. OpenAI uses a `functions` array, Anthropic uses a `tools` array with a different structure, and Google uses yet another format. Beluga AI normalizes all of this behind `schema.ToolDefinition` -- you define tools once using a standard JSON Schema format, and the provider adapter translates it into the wire format each API expects. This is why `BindTools` returns a new `ChatModel` rather than modifying the original: it wraps the model with tool-aware behavior while preserving immutability.
 
 ```go
 calcTool := schema.ToolDefinition{
@@ -107,7 +109,7 @@ claudeWithTools := claude.BindTools([]schema.ToolDefinition{calcTool})
 
 ## Step 3: Streaming Across Providers
 
-The `Stream` method returns `iter.Seq2[schema.StreamChunk, error]` for all providers:
+Beluga AI uses `iter.Seq2[schema.StreamChunk, error]` for all streaming operations. This is a Go 1.23+ iterator type that provides a pull-based consumption model with standard `for...range` syntax. Unlike channel-based streaming, iterators compose naturally, support early termination via `break`, and propagate context cancellation without goroutine leaks. Every provider implements the same streaming contract, so your streaming consumption code works identically regardless of the backend.
 
 ```go
 func streamResponse(ctx context.Context, model llm.ChatModel, prompt string) {
@@ -129,7 +131,7 @@ func streamResponse(ctx context.Context, model llm.ChatModel, prompt string) {
 
 ## Step 4: Provider Registry for Dynamic Selection
 
-Build a lookup map for runtime provider selection:
+In production systems, you often need to select a provider at runtime based on user configuration, request metadata, or cost constraints. A `ModelPool` provides a simple lookup layer on top of the registry-created models. This pattern separates model creation (which happens at startup) from model selection (which happens per-request), giving you flexibility to route different requests to different providers without changing application logic.
 
 ```go
 type ModelPool struct {
@@ -171,11 +173,11 @@ func handleRequest(ctx context.Context, pool *ModelPool, providerName, prompt st
 
 ## Verification
 
-1. Send the same prompt to OpenAI and Anthropic — verify both return valid responses.
-2. Bind the same tool to both models — verify both generate valid tool calls with the same schema.
-3. Stream from both providers — verify the `iter.Seq2` pattern works identically.
+1. Send the same prompt to OpenAI and Anthropic -- verify both return valid responses.
+2. Bind the same tool to both models -- verify both generate valid tool calls with the same schema.
+3. Stream from both providers -- verify the `iter.Seq2` pattern works identically.
 
 ## Next Steps
 
-- [Model Switching and Fallbacks](/tutorials/agents/model-switching) — Automate provider selection
-- [Adding a New LLM Provider](/tutorials/providers/new-llm-provider) — Register custom providers
+- [Model Switching and Fallbacks](/tutorials/agents/model-switching) -- Automate provider selection
+- [Adding a New LLM Provider](/tutorials/providers/new-llm-provider) -- Register custom providers

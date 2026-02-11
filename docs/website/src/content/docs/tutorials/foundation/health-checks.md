@@ -3,7 +3,7 @@ title: Health Checks for AI Services
 description: Implement health checks to monitor LLM providers, vector databases, and agent availability in production.
 ---
 
-Standard HTTP health checks only indicate whether a process is running. AI applications require deeper checks — is the LLM provider reachable? Is the vector database connected? Is the local model server responding? Custom health checks answer these questions.
+Standard HTTP health checks only indicate whether a process is running. AI applications require deeper checks — is the LLM provider reachable? Is the vector database connected? Is the local model server responding? These dependencies are external services with their own availability characteristics: LLM providers enforce rate limits and experience outages, vector databases can lose their indexes, and embedding services may silently return degraded results. Custom health checks answer these questions and surface problems before users encounter them.
 
 ## What You Will Build
 
@@ -15,6 +15,8 @@ A health check system that monitors LLM provider availability, aggregates compon
 - Understanding of Beluga AI's core architecture
 
 ## Step 1: Define Health Check Types
+
+The health check types follow Beluga AI's interface-first design principle — define a small interface (`HealthChecker`) and let each component implement it. The three-state model (`UP`, `DOWN`, `DEGRADED`) is deliberately simple because health endpoints are consumed by orchestrators (Kubernetes, load balancers) that make binary routing decisions. `DEGRADED` provides a middle ground for cases where the service works but at reduced capacity, such as when a fallback LLM provider is active instead of the primary.
 
 ```go
 package main
@@ -50,7 +52,7 @@ type HealthChecker interface {
 
 ## Step 2: Implement a Custom Health Checker
 
-Create a health checker for an LLM provider that verifies API connectivity:
+This health checker verifies LLM provider connectivity by sending a minimal request. The approach uses `WithMaxTokens(1)` to minimize cost while still exercising the full API path — authentication, model routing, and response generation. A simple TCP connection check would not catch authentication failures or model deprecation, both of which are common in production LLM deployments.
 
 ```go
 import (
@@ -97,7 +99,7 @@ func (c *LLMHealthChecker) CheckHealth(ctx context.Context) HealthResult {
 
 ## Step 3: Build a Health Registry
 
-Aggregate health checks from multiple components:
+The registry aggregates health checks from multiple components, following the same `Register()` + collection pattern used throughout Beluga AI. The `sync.RWMutex` protects concurrent access because health checks may be registered during application startup while the HTTP endpoint is already serving readiness probes. The `CheckAll` method uses a read lock so multiple health check requests can execute concurrently without blocking each other.
 
 ```go
 type HealthRegistry struct {
@@ -147,9 +149,11 @@ func (r *HealthRegistry) CheckAll(ctx context.Context) AggregateResult {
 }
 ```
 
+The aggregation logic uses worst-case promotion: any `DOWN` component marks the overall status as `DOWN`, and any `DEGRADED` component marks it as `DEGRADED` unless another component is already `DOWN`. This conservative approach ensures that orchestrators route traffic away from instances with failed dependencies.
+
 ## Step 4: Expose via HTTP
 
-Integrate the health registry with an HTTP endpoint:
+The health endpoint maps directly to Kubernetes liveness and readiness probes. Returning `503 Service Unavailable` when any component is `DOWN` causes load balancers to stop routing traffic to this instance, which is the desired behavior when an LLM provider or database is unreachable.
 
 ```go
 func healthHandler(registry *HealthRegistry) http.HandlerFunc {

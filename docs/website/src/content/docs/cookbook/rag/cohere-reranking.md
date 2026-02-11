@@ -1,6 +1,6 @@
 ---
 title: "Reranking with Cohere Rerank"
-description: "Improve retrieval quality by reranking initial search results using Cohere's cross-encoder rerank API."
+description: "Improve retrieval quality by reranking initial search results using Cohere's cross-encoder rerank API for better relevance scoring."
 ---
 
 # Reranking with Cohere Rerank
@@ -9,9 +9,11 @@ description: "Improve retrieval quality by reranking initial search results usin
 
 You need to improve retrieval quality by reranking initial search results using Cohere's rerank API, which can significantly improve relevance when your initial vector search returns many candidates.
 
+Standard vector search uses bi-encoders that embed queries and documents independently, then compare via cosine similarity. This is fast (sub-millisecond per comparison) but fundamentally limited: the query and document never "see" each other during encoding. Cross-encoder rerankers like Cohere's Rerank API process query-document pairs together, allowing the model to attend to fine-grained interactions between query terms and document content. Research consistently shows that cross-encoder reranking improves retrieval quality by 10-30% on standard benchmarks compared to bi-encoder search alone.
+
 ## Solution
 
-Implement a reranking wrapper that takes initial retrieval results, sends them to Cohere's rerank API, and returns reranked results with improved relevance scores. This works because Cohere's rerank API uses cross-encoders that consider query-document pairs together, providing better relevance than vector similarity alone.
+Implement a two-stage retrieval pipeline: first retrieve a broad candidate set using fast vector search, then rerank those candidates with a cross-encoder for better relevance ordering. The reranker wraps the base retriever, making reranking transparent to callers. If the rerank service is unavailable, the pipeline falls back to the original results, ensuring availability is not sacrificed for quality.
 
 ## Code Example
 
@@ -212,13 +214,13 @@ func main() {
 
 ## Explanation
 
-1. **Two-stage retrieval** — More documents are retrieved initially (initialK) than needed, then reranked to get the top results. This gives the reranker more candidates, improving final quality.
+1. **Two-stage retrieval** -- More documents are retrieved initially (initialK) than needed, then reranked to get the top results. This gives the cross-encoder a diverse candidate set to work with. A good rule of thumb is to retrieve 3-5x more candidates than the final count (e.g., retrieve 50, rerank to 10). The initial retrieval is fast (vector search), and the cross-encoder adds 100-500ms for the reranking step.
 
-2. **Reranking integration** — The base retriever is wrapped with reranking functionality, allowing reranking to be added to any retriever without modifying the base implementation.
+2. **Reranking as a wrapper** -- The base retriever is wrapped with reranking functionality using the decorator pattern. This means reranking can be added to any retriever without modifying the base implementation. The `RerankedRetriever` satisfies the same `Retriever` interface, so callers don't need to know reranking is happening -- it's transparent.
 
-3. **Fallback on errors** — If reranking fails, the original results are returned. This ensures retrieval still works even if the rerank service is unavailable.
+3. **Fallback on errors** -- If the Cohere rerank API is unavailable (network issues, rate limits, service outage), the original vector search results are returned. This ensures retrieval still works even without the rerank service, trading quality for availability. In production, you should monitor fallback rates to detect persistent reranker issues.
 
-> **Key insight:** Retrieve more candidates than you need, then rerank to the final count. This improves quality because reranking works best with a diverse candidate set.
+> **Key insight:** Retrieve more candidates than you need, then rerank to the final count. This improves quality because reranking works best with a diverse candidate set that includes both highly relevant and borderline documents.
 
 ## Testing
 
@@ -260,5 +262,5 @@ type HybridScorer struct {
 
 ## Related Recipes
 
-- [Parent Document Retrieval (PDR)](/cookbook/parent-document-retrieval) — Retrieve parent documents
-- [Vectorstores Advanced Meta-filtering](/cookbook/meta-filtering) — Advanced filtering
+- [Parent Document Retrieval (PDR)](/cookbook/parent-document-retrieval) -- Retrieve parent documents
+- [Vectorstores Advanced Meta-filtering](/cookbook/meta-filtering) -- Advanced filtering

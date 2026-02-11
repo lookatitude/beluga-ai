@@ -3,7 +3,7 @@ title: Modeling Multi-turn Conversations
 description: Build structured conversation flows using Beluga AI's schema message types and manage conversation history.
 ---
 
-LLMs are stateless — to maintain a conversation, you must send the full message history (or a relevant subset) with every request. Beluga AI's `schema` package provides structured message types that ensure correct role tagging, multimodal content support, and clean integration with any LLM provider.
+LLMs are stateless — to maintain a conversation, you must send the full message history (or a relevant subset) with every request. This is a fundamental architectural constraint, not a limitation of any particular provider. Beluga AI's `schema` package provides structured message types that ensure correct role tagging, multimodal content support, and clean integration with any LLM provider. Understanding how to build and manage message history is essential for any application that goes beyond single-shot queries.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A structured multi-turn conversation using typed messages, demonstrating how to 
 
 ## Message Roles
 
-Every message in a conversation has a role that tells the LLM how to interpret its content:
+Every message in a conversation has a role that tells the LLM how to interpret its content. These roles map to the fundamental participants in an AI interaction: the system (which sets rules), the human (who asks questions), the AI (which responds), and tools (which provide external data). The typed message constructors enforce correct role assignment, preventing common errors like accidentally tagging a system prompt as user input.
 
 | Role | Constant | Usage |
 |:---|:---|:---|
@@ -27,7 +27,7 @@ Every message in a conversation has a role that tells the LLM how to interpret i
 
 ## Step 1: Creating Messages
 
-Use the factory functions to create typed messages:
+Use the factory functions to create typed messages. These functions return concrete types (`*schema.SystemMessage`, `*schema.HumanMessage`, etc.) rather than the `schema.Message` interface, giving you access to type-specific fields when needed while still satisfying the interface for inclusion in message slices.
 
 ```go
 package main
@@ -64,7 +64,7 @@ Each message type stores content as `[]schema.ContentPart`, supporting multimoda
 
 ## Step 2: Building a Conversation
 
-A conversation is a `[]schema.Message` slice passed to the model:
+A conversation is a `[]schema.Message` slice passed to the model. The slice ordering matters — models process messages sequentially and expect a natural conversation flow: system instructions first, then alternating human/AI turns. This slice-based representation keeps conversations simple to construct, inspect, and serialize.
 
 ```go
 func buildConversation() []schema.Message {
@@ -79,7 +79,7 @@ func buildConversation() []schema.Message {
 
 ## Step 3: Sending to a ChatModel
 
-Pass the conversation history to any `ChatModel`:
+Pass the conversation history to any `ChatModel`. The model receives the full history and generates a response that accounts for all prior context. The `Usage` field on the response reports token consumption, which is important for cost tracking and context window management.
 
 ```go
 func chat(ctx context.Context, model llm.ChatModel) error {
@@ -103,7 +103,7 @@ func chat(ctx context.Context, model llm.ChatModel) error {
 
 ## Step 4: Managing a Conversation Loop
 
-Implement a multi-turn conversation by maintaining the message history across turns:
+Implement a multi-turn conversation by maintaining the message history across turns. Each iteration appends the user query and AI response to the same slice, building up the full conversation context. The model sees the entire history with each call, which allows it to reference earlier parts of the conversation and maintain coherence across turns.
 
 ```go
 func conversationLoop(ctx context.Context, model llm.ChatModel) error {
@@ -140,7 +140,7 @@ func conversationLoop(ctx context.Context, model llm.ChatModel) error {
 
 ## Step 5: Context Window Management
 
-As conversations grow, they consume more tokens. Implement a sliding window to keep the most recent messages while preserving the system prompt:
+As conversations grow, they consume more tokens. Every LLM has a finite context window, and exceeding it causes API errors. The sliding window approach below preserves system messages (which define the agent's behavior) while trimming older conversation turns. System messages are always kept because removing them would change the agent's persona mid-conversation, leading to inconsistent behavior.
 
 ```go
 func trimHistory(messages []schema.Message, maxMessages int) []schema.Message {
@@ -187,7 +187,7 @@ resp, err := model.Generate(ctx, messages)
 
 ## Working with Multimodal Content
 
-Messages can carry mixed content types:
+Messages can carry mixed content types. The `ContentPart` slice allows combining text and binary data in a single message, which is how vision-capable models receive images alongside text queries.
 
 ```go
 // Create a message with text and an image
@@ -204,7 +204,7 @@ humanMsg := &schema.HumanMessage{
 
 ## AI Messages with Tool Calls
 
-When a model requests tool invocations, the `AIMessage` carries `ToolCalls`:
+When a model requests tool invocations, the `AIMessage` carries `ToolCalls`. This is the mechanism behind agentic behavior — the model decides which tools to call and with what arguments, and your code executes them and feeds results back as `ToolMessage` entries. The `ID` field links each tool result back to the specific call that requested it.
 
 ```go
 // AI response with tool calls (returned by the model)

@@ -1,6 +1,6 @@
 ---
 title: "Processing Multiple Images per Prompt"
-description: "Process multiple images in a single prompt with proper context and relationship annotations."
+description: "Process multiple images in a single prompt with proper context, validation, and relationship annotations for comparison and synthesis tasks."
 ---
 
 # Processing Multiple Images per Prompt
@@ -9,9 +9,11 @@ description: "Process multiple images in a single prompt with proper context and
 
 You need to process multiple images in a single prompt, where each image provides different context and the LLM needs to understand relationships between images.
 
+Single-image prompts work for independent analysis, but many real-world tasks require the model to compare, correlate, or synthesize information across multiple images: comparing product designs, verifying document consistency, analyzing before/after states, or processing multi-page documents. Sending images in separate requests loses the relational context. The model needs to see all images together in one prompt to make relative judgments.
+
 ## Solution
 
-Implement multi-image processing that loads multiple images, formats them according to the model's requirements, includes them in the prompt with proper context, and processes the combined input. This works because multimodal LLMs support multiple images in a single request, and you can structure them appropriately.
+Implement multi-image processing that loads images from both file paths and URLs, validates the total count against model limits, constructs a multimodal message with all images, and includes annotations that help the LLM understand image relationships. The processor validates inputs before API calls to prevent errors from exceeding model capabilities (e.g., sending 20 images when the model supports 5).
 
 ## Code Example
 
@@ -155,13 +157,13 @@ func main() {
 
 ## Explanation
 
-1. **Image aggregation** — Images from both file paths and URLs are combined, providing flexibility in how images are provided.
+1. **Image aggregation** -- Images from both file paths and URLs are combined into a single prompt, providing flexibility in how images are sourced. File paths work for local images, while URLs support images hosted on CDNs or messaging platforms. Both sources are validated and loaded uniformly.
 
-2. **Validation** — The number of images is validated against model limits to prevent errors from exceeding model capabilities.
+2. **Validation** -- The number of images is validated against model limits before any loading or API calls. This prevents wasted work: loading 20 large images only to have the API reject the request is expensive. Early validation also provides clear error messages ("too many images: 20, max: 5") rather than cryptic API errors.
 
-3. **Message construction** — Multimodal messages are constructed with multiple image contents, allowing the LLM to process all images together.
+3. **Annotation support** -- The `AnnotateImages` method adds structured text annotations to help the LLM understand image relationships. Annotations like "Image 1: Product design v1" and "Image 2: Product design v2" give the model explicit context about what each image represents and what kind of comparison is expected. Without annotations, the model must infer image relationships purely from visual content.
 
-> **Key insight:** Structure multi-image prompts clearly. Use annotations or text to help the LLM understand relationships between images and what to look for.
+> **Key insight:** Structure multi-image prompts clearly with annotations. Use numbered labels or descriptions to help the LLM understand the role of each image and the expected analysis. The text prompt should explicitly state whether you want comparison, synthesis, or independent analysis of each image.
 
 ## Testing
 
@@ -179,7 +181,7 @@ func TestMultiImageProcessor_ProcessesMultipleImages(t *testing.T) {
 
 ### Image Sequencing
 
-Specify image order explicitly:
+Specify image order explicitly for sequential analysis:
 
 ```go
 type ImageWithContext struct {
@@ -191,7 +193,7 @@ type ImageWithContext struct {
 
 ### Image Relationships
 
-Model relationships between images:
+Model relationships between images for structured comparison:
 
 ```go
 type ImageRelationship struct {
@@ -202,5 +204,5 @@ type ImageRelationship struct {
 
 ## Related Recipes
 
-- [Capability-based Fallbacks](/cookbook/capability-fallbacks) — Handle capability limitations
-- [Voice Providers Guide](/guides/voice-providers) — For a deeper understanding of multimodal
+- [Capability-based Fallbacks](/cookbook/capability-fallbacks) -- Handle capability limitations across providers
+- [Voice Providers Guide](/guides/voice-providers) -- For a deeper understanding of multimodal pipelines

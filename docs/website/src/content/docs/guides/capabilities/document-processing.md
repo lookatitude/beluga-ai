@@ -1,43 +1,45 @@
 ---
 title: Document Loading & Processing
-description: Learn how to load, parse, and chunk documents at scale for RAG pipelines and knowledge bases.
+description: Load, parse, and chunk documents from multiple sources and formats for RAG pipelines and knowledge bases.
 ---
 
-Building AI systems that work with documents requires robust loading and processing pipelines. Beluga AI provides document loaders for multiple formats and intelligent text splitters that preserve semantic structure.
+Before documents can be embedded and searched in a RAG pipeline, they need to be loaded from their source format, cleaned, and split into chunks that embedding models can process. This ingestion stage is the foundation of any knowledge-powered AI system — the quality of your chunking strategy directly affects retrieval precision and, consequently, the quality of generated answers.
+
+Beluga AI provides document loaders for multiple formats (text, PDF, HTML, CSV, cloud storage) and intelligent text splitters that preserve semantic structure. The entire pipeline is designed for production scale: lazy loading for memory efficiency, batch processing for throughput, and comprehensive error handling for reliability.
 
 ## What You'll Learn
 
 This guide covers:
 - Loading documents from multiple sources (filesystem, PDF, HTML, cloud storage)
-- Using lazy loading for large datasets
-- Text splitting strategies (recursive, semantic, markdown-aware, code-aware)
-- Preserving document structure and metadata
-- Batch processing and error handling
-- Optimizing for RAG pipelines
+- Using lazy loading for large datasets that exceed available memory
+- Text splitting strategies and when to use each (recursive, semantic, markdown-aware, code-aware)
+- Preserving document structure and metadata through the pipeline
+- Batch processing with error handling and progress tracking
+- Optimizing chunk size and overlap for retrieval quality
 
 ## When Document Processing Matters
 
-Document processing is essential for:
-- **RAG systems** that need searchable knowledge bases
-- **Document intelligence** extracting data from files
-- **Content migration** moving legacy systems to AI-powered search
-- **Compliance** indexing regulated documents with metadata
-- **Knowledge management** making organizational documents discoverable
+Document processing is the first step in building any knowledge-powered AI feature:
+- **RAG systems** that need searchable knowledge bases built from internal documents
+- **Document intelligence** extracting structured data from files (invoices, contracts, reports)
+- **Content migration** moving legacy document stores to AI-powered semantic search
+- **Compliance** indexing regulated documents with metadata for auditing and access control
+- **Knowledge management** making organizational knowledge discoverable through natural language
 
 ## Prerequisites
 
 Before starting this guide:
-- Complete [RAG Pipeline](/guides/rag-pipeline) for context
-- Understand vector embeddings
+- Complete [RAG Pipeline](/guides/rag-pipeline) to understand where document processing fits in the pipeline
+- Understand vector embeddings and why documents need to be chunked
 - Familiarity with file I/O in Go
 
 ## Document Loaders
 
-Beluga AI supports multiple document loader types.
+Document loaders abstract the details of reading and parsing different file formats into a uniform `[]schema.Document` output. Each loader handles format-specific concerns — PDF text extraction, HTML tag stripping, CSV row parsing — so that downstream pipeline stages (splitting, embedding, storing) work with clean, structured documents regardless of the original format.
 
 ### Directory Loader
 
-Load all files from a directory recursively.
+The directory loader recursively walks a filesystem tree, loading all matching files. It supports extension filtering, path exclusions, depth limits, and parallel loading. This is the typical starting point for building a knowledge base from a collection of local files.
 
 ```go
 package main
@@ -96,7 +98,7 @@ func main() {
 
 ### PDF Loader
 
-Extract text from PDF documents.
+PDF is one of the most common document formats in enterprise environments, but extracting clean text from PDFs is notoriously difficult due to complex layouts, embedded fonts, and mixed content. The PDF loader handles text extraction with options for formatting preservation and page separation.
 
 ```go
 import (
@@ -123,7 +125,7 @@ func LoadPDF(filePath string) ([]schema.Document, error) {
 
 ### HTML Loader
 
-Parse HTML and extract clean text.
+Web pages contain significant noise — scripts, stylesheets, navigation elements — that degrades embedding quality. The HTML loader strips non-content elements and extracts clean text, optionally preserving page metadata (title, description, Open Graph tags) that can be used for filtering during retrieval.
 
 ```go
 import (
@@ -151,7 +153,7 @@ func LoadHTML(url string) ([]schema.Document, error) {
 
 ### S3 Loader
 
-Load documents from AWS S3 buckets.
+For cloud-native applications, documents often reside in object storage rather than local filesystems. The S3 loader handles bucket traversal, prefix filtering, and file type selection, integrating with the AWS SDK for authentication and access control.
 
 ```go
 import (
@@ -184,7 +186,7 @@ func LoadFromS3(bucket, prefix string) ([]schema.Document, error) {
 
 ## Lazy Loading for Large Datasets
 
-Loading millions of documents into memory is not feasible. Use lazy loading.
+Loading millions of documents into memory at once is not feasible — it would exhaust available RAM and potentially crash the process. Lazy loading solves this by returning an iterator that yields documents one at a time, processing each before loading the next. This keeps memory usage constant regardless of dataset size, making it suitable for ingesting entire document repositories.
 
 ```go
 func ProcessLargeDataset(dirPath string) error {
@@ -235,9 +237,11 @@ func processDocument(ctx context.Context, doc schema.Document) error {
 
 ## Text Splitting Strategies
 
+Choosing the right splitting strategy is one of the most impactful decisions in a RAG pipeline. Different content types have different structure — prose paragraphs, markdown headings, code functions, semantic topics — and a splitter that respects that structure produces chunks that are more semantically coherent and easier to retrieve accurately.
+
 ### Recursive Character Splitter
 
-General-purpose splitter with overlap for context preservation.
+The recursive character splitter is the recommended default for general-purpose text. It tries a hierarchy of separators (paragraph breaks, line breaks, spaces, then characters) and recursively splits at the highest-level separator that produces chunks within the size limit. The overlap parameter ensures that sentences at chunk boundaries are not lost.
 
 ```go
 import (
@@ -262,7 +266,7 @@ func SplitRecursive(doc schema.Document) ([]schema.Document, error) {
 
 ### Markdown-Aware Splitter
 
-Split on headers while preserving document structure.
+Markdown documents have explicit structure through headings. The markdown splitter leverages this structure by splitting at heading boundaries, ensuring that each chunk corresponds to a coherent section. When `IncludeHeaders` is enabled, each chunk includes its parent headings as context, so a chunk from a deeply nested section retains the full path of headings that scope its content.
 
 ```go
 import (
@@ -287,7 +291,7 @@ func SplitMarkdown(doc schema.Document) ([]schema.Document, error) {
 
 ### Code-Aware Splitter
 
-Preserve code block integrity and syntax structure.
+Splitting code at arbitrary character boundaries breaks function definitions, class bodies, and control flow structures, producing chunks that are syntactically invalid and semantically incoherent. The code-aware splitter parses language-specific syntax and splits at function or class boundaries, keeping logical units intact. This produces chunks that are meaningful for code search and explanation tasks.
 
 ```go
 import (
@@ -313,7 +317,7 @@ func SplitCode(doc schema.Document, language string) ([]schema.Document, error) 
 
 ### Semantic Splitter
 
-Split based on meaning using embeddings.
+Character-based splitting ignores the actual meaning of the text. Two adjacent paragraphs about completely different topics get merged into one chunk, diluting the embedding. The semantic splitter uses an embedding model to detect topic boundaries by measuring similarity between consecutive text segments. When similarity drops below the threshold, a new chunk begins. This produces chunks that are topically coherent, improving retrieval precision at the cost of an extra embedding pass during indexing.
 
 ```go
 import (
@@ -339,7 +343,7 @@ func SplitSemantic(ctx context.Context, doc schema.Document, embedder embeddings
 
 ## Metadata Enrichment
 
-Add metadata to improve retrieval and filtering.
+Metadata attached to documents flows through the entire pipeline — from loading through splitting to storage. Rich metadata enables filtered searches (e.g., "find documents from the engineering team written in 2024"), debugging (tracing a chunk back to its source file), and analytics (monitoring which document types are most frequently retrieved). Investing in metadata enrichment early in the pipeline pays dividends in retrieval quality and operational visibility.
 
 ```go
 func EnrichMetadata(doc schema.Document) schema.Document {
@@ -385,7 +389,7 @@ func detectLanguage(text string) string {
 
 ## Batch Processing Pipeline
 
-Process documents in batches with error handling and progress tracking.
+Production document ingestion requires batching for efficiency, error handling for resilience, and progress tracking for observability. Processing documents one at a time wastes API call overhead (embedding models accept batches), while loading everything at once risks memory exhaustion. The batch processing pattern below processes documents in configurable groups, accumulates statistics, and continues processing when individual documents fail.
 
 ```go
 type DocumentProcessor struct {
@@ -522,7 +526,7 @@ func (stats *ProcessingStats) Report() string {
 
 ## Custom Loaders
 
-Implement custom loaders for specialized formats.
+When built-in loaders do not cover your data source, you can implement custom loaders by satisfying the `Load(ctx context.Context) ([]schema.Document, error)` contract. Custom loaders integrate seamlessly with the rest of the pipeline — splitters, embedders, and vector stores do not care where the documents came from. The following example loads a CSV file, using one column as document content and the remaining columns as metadata.
 
 ```go
 type CSVLoader struct {
@@ -599,9 +603,11 @@ func (l *CSVLoader) Load(ctx context.Context) ([]schema.Document, error) {
 
 ## Optimizing for RAG Pipelines
 
-Best practices for document processing in RAG systems.
+The most impactful tuning parameters in a RAG pipeline are chunk size and overlap. Chunks that are too small lack context for the embedding model to capture meaning. Chunks that are too large dilute the embedding with multiple topics, reducing precision. The optimal size depends on your typical query length and content density.
 
 ### Chunk Size Optimization
+
+A useful heuristic is to size chunks at 2-3x the average query length. This ensures that the chunk's embedding captures enough context to match the query's intent without introducing unrelated content.
 
 ```go
 func OptimalChunkSize(avgQueryLength int) int {
@@ -622,6 +628,8 @@ func OptimalChunkSize(avgQueryLength int) int {
 
 ### Overlap Strategy
 
+Overlap ensures that sentences spanning chunk boundaries are not lost. A 10-20% overlap is typically sufficient to preserve context without significantly increasing storage requirements.
+
 ```go
 func CalculateOverlap(chunkSize int) int {
     // 10-20% overlap preserves context
@@ -639,6 +647,8 @@ func CalculateOverlap(chunkSize int) int {
 ```
 
 ### Metadata Filtering
+
+Adding hierarchical metadata derived from file paths enables scoped retrieval. For example, a knowledge base organized as `engineering/backend/auth.md` can be searched with metadata filters that restrict results to the `engineering` category or the `backend` subcategory, reducing noise from unrelated document categories.
 
 ```go
 // Add hierarchical metadata for filtering
@@ -663,7 +673,7 @@ func AddHierarchicalMetadata(doc schema.Document) schema.Document {
 
 ## Error Handling
 
-Robust error handling for production pipelines.
+Production document pipelines process thousands of files, and individual failures should not halt the entire pipeline. The error handling pattern below categorizes errors by pipeline phase (load, split, embed, store), distinguishes transient errors that can be retried from permanent failures, and logs enough context to diagnose problems after the fact.
 
 ```go
 type DocumentError struct {
@@ -710,7 +720,7 @@ func isRetryable(err error) bool {
 
 ## Production Best Practices
 
-When processing documents in production:
+The following checklist summarizes the key considerations for deploying document processing pipelines in production environments:
 
 1. **Use lazy loading** for datasets larger than available memory
 2. **Process in batches** to optimize API calls and database writes

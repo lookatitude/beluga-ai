@@ -3,7 +3,7 @@ title: Message Template Design
 description: Design effective prompt templates using Beluga AI's prompt package for type-safe, reusable LLM interactions.
 ---
 
-A prompt is the programming interface for an LLM. Just as you avoid hardcoding values in Go code, you should avoid hardcoding values in prompts. Beluga AI's `prompt` package separates instruction logic (templates) from data (variables), making prompts reusable, testable, and versionable.
+A prompt is the programming interface for an LLM. Just as you avoid hardcoding values in Go code, you should avoid hardcoding values in prompts. String concatenation for building prompts is fragile, difficult to test, and vulnerable to prompt injection. Beluga AI's `prompt` package separates instruction logic (templates) from data (variables), making prompts reusable, testable, and versionable. This separation follows the same principle as SQL parameterized queries — the template defines the structure, and variables fill in the data.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ Prompt templates ranging from simple string interpolation to multi-role chat seq
 
 ## Step 1: Basic String Templates
 
-Create a simple template with variable substitution:
+Create a simple template with variable substitution. Go's `text/template` package provides the foundation for prompt templates because it is part of the standard library, well-tested, and supports the logic constructs (conditionals, loops) needed for complex prompts.
 
 ```go
 package main
@@ -53,7 +53,7 @@ func main() {
 
 ## Step 2: Chat Message Templates
 
-Build structured multi-role conversations from templates:
+Build structured multi-role conversations from templates. The `ChatTemplate` struct separates the system prompt (which defines the agent's behavior) from the user prompt (which carries the query). This mirrors the message role structure that LLMs expect, where the system message sets constraints and the human message provides the task.
 
 ```go
 import "github.com/lookatitude/beluga-ai/schema"
@@ -117,7 +117,7 @@ resp, err := model.Generate(ctx, msgs)
 
 ## Step 3: Persona Definitions
 
-Define reusable personas as constants:
+Define reusable personas as constants. Persona constants centralize behavior definitions that would otherwise be scattered across agent configurations. When a persona needs updating — changing tone, adding constraints, or updating expertise — you modify one constant rather than finding every agent that embeds the same text.
 
 ```go
 const (
@@ -140,7 +140,7 @@ const (
 
 ## Step 4: Template Logic
 
-Since templates use Go's `text/template`, you can include conditionals and loops:
+Since templates use Go's `text/template`, you can include conditionals and loops. Template logic is useful when the prompt structure changes based on the data — for example, including a summary section only when requested, or iterating over a variable number of data points. This avoids building prompts through string concatenation, which is error-prone and difficult to maintain.
 
 ```go
 const reportTemplate = `Analyze the following data points:
@@ -166,7 +166,7 @@ vars := map[string]any{
 
 ## Step 5: Variable Validation
 
-Validate that all required variables are provided before executing:
+Validate that all required variables are provided before executing. Validation catches missing variables at template execution time rather than producing prompts with blank fields that confuse the LLM. The explicit `RequiredVars` approach provides clear error messages that identify which variable is missing, which is more useful than Go's template engine's generic "nil pointer" errors.
 
 ```go
 func validateVars(tmplText string, vars map[string]any) error {
@@ -201,7 +201,7 @@ func (t *ValidatedTemplate) Format(vars map[string]any) (string, error) {
 
 ## Security Note
 
-Always use template substitution — never string concatenation — to insert user input into prompts. Template execution prevents the most common prompt injection patterns by treating user input as data, not as template directives.
+Always use template substitution — never string concatenation — to insert user input into prompts. Template execution prevents the most common prompt injection patterns by treating user input as data, not as template directives. While template substitution is not a complete defense against prompt injection, it eliminates the class of attacks where user input alters the template structure itself.
 
 ## Verification
 

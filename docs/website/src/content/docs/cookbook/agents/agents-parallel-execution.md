@@ -11,6 +11,14 @@ You need to execute multiple agent steps in parallel when they don't depend on e
 
 Implement a parallel step executor that identifies independent steps, executes them concurrently with proper synchronization, and merges results. This works because many agent steps (like tool calls or data retrieval) can run independently, and Go's concurrency primitives allow safe parallel execution.
 
+## Why This Matters
+
+Agent workflows often consist of steps with varying dependencies. A naive sequential approach executes all steps one after another, even when many could run concurrently. For example, if an agent needs to search a database, call a weather API, and query a calendar service, running these sequentially triples the wall-clock time compared to running them in parallel.
+
+The challenge is correctly identifying which steps are independent and which have data dependencies. This recipe uses a dependency graph with topological ordering to determine which steps can safely run concurrently at each phase. Steps without dependencies run immediately, while dependent steps wait only for their specific prerequisites -- not for all prior steps to complete. This approach maximizes parallelism while maintaining correctness.
+
+Go's concurrency model (goroutines, `sync.WaitGroup`, channels) is well-suited for this pattern because goroutine creation is cheap, and mutexes protect shared result storage without significant overhead. The `sync.RWMutex` used here allows multiple goroutines to read completed results concurrently while writes are serialized, avoiding contention on the results map.
+
 ## Code Example
 
 ```go
@@ -192,13 +200,13 @@ func (m *MockRunnable) Stream(ctx context.Context, input any, options ...core.Op
 
 ## Explanation
 
-1. **Dependency resolution** — The executor builds a dependency graph and runs steps in topological order. Steps without dependencies can run immediately, while dependent steps wait for their prerequisites.
+1. **Dependency resolution** -- The executor builds a dependency graph and runs steps in topological order. Steps without dependencies can run immediately, while dependent steps wait for their prerequisites. Circular dependencies are detected and reported as errors, preventing infinite loops.
 
-2. **Parallel execution** — Steps that are ready at the same time execute concurrently. This maximizes parallelism while respecting dependencies.
+2. **Parallel execution** -- Steps that are ready at the same time execute concurrently using goroutines. This maximizes parallelism while respecting dependencies. The error channel collects failures from any goroutine, and the first error terminates the execution phase.
 
-3. **Result synchronization** — Mutexes ensure thread-safe storage of results from concurrent goroutines, preventing race conditions on shared state.
+3. **Result synchronization** -- A `sync.RWMutex` protects the shared results map and the executed tracking map. This prevents race conditions when concurrent goroutines store their results. The lock is held only for the brief duration of the map write, minimizing contention.
 
-Identify independent steps and execute them in parallel. Even with dependencies, you can often parallelize significant portions of agent workflows.
+4. **Observability** -- OpenTelemetry spans track the overall execution and report step counts, making it straightforward to identify bottlenecks in production workflows.
 
 ## Testing
 
@@ -221,7 +229,7 @@ func TestParallelStepExecutor_ExecutesInParallel(t *testing.T) {
 
 ### Step Timeout
 
-Add timeouts to individual steps:
+Add timeouts to individual steps to prevent slow operations from blocking the entire workflow:
 
 ```go
 func (pse *ParallelStepExecutor) ExecuteWithTimeout(ctx context.Context, stepTimeout time.Duration) (map[string]interface{}, error) {
@@ -231,7 +239,7 @@ func (pse *ParallelStepExecutor) ExecuteWithTimeout(ctx context.Context, stepTim
 
 ### Step Retry
 
-Retry failed steps:
+Retry failed steps before propagating the error, useful when steps call unreliable external services:
 
 ```go
 func (pse *ParallelStepExecutor) ExecuteWithRetry(ctx context.Context, maxRetries int) (map[string]interface{}, error) {
@@ -241,5 +249,5 @@ func (pse *ParallelStepExecutor) ExecuteWithRetry(ctx context.Context, maxRetrie
 
 ## Related Recipes
 
-- **[Handling Tool Failures](./agents-tool-failures)** — Robust error handling
-- **[Parallel Node Execution](./parallel-nodes)** — Parallel graph execution
+- **[Handling Tool Failures](/cookbook/agents/agents-tool-failures)** -- Robust error handling
+- **[Parallel Node Execution](/cookbook/infrastructure/parallel-nodes)** -- Parallel graph execution

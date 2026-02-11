@@ -1,15 +1,21 @@
 ---
 title: RAG Recipes
-description: Practical recipes for building retrieval-augmented generation pipelines.
+description: Practical recipes for building retrieval-augmented generation pipelines with Beluga AI, covering splitting, embedding, retrieval, and indexing strategies.
 sidebar:
   order: 0
 ---
+
+Retrieval-Augmented Generation (RAG) connects LLMs to external knowledge by retrieving relevant documents at query time. The quality of a RAG system depends on every stage of the pipeline: how documents are split into chunks, how those chunks are embedded and stored, how retrieval combines multiple signals, and how results are filtered and ranked. These recipes address common challenges at each stage, using Beluga AI's composable RAG components.
+
+Beluga AI's RAG pipeline follows the registry pattern (`Register()` + `New()` + `List()`) across all extensible components -- embedders, vector stores, retrievers, loaders, and splitters -- so you can swap implementations without changing application code. The default retrieval strategy uses hybrid search (vector similarity + BM25 keyword matching + Reciprocal Rank Fusion), which outperforms either approach alone across diverse query types.
 
 ## Parent Document Retrieval
 
 **Problem:** Small chunks improve embedding precision, but the LLM needs larger context to generate good answers. You want to retrieve small chunks but return their parent documents.
 
-**Solution:** Index small chunks with metadata pointing to their parent, then fetch parents at retrieval time.
+There is a fundamental tension in chunk sizing for RAG: smaller chunks produce more precise embeddings that match specific queries, but they strip away the surrounding context that the LLM needs to generate accurate, grounded answers. Parent Document Retrieval (PDR) resolves this by decoupling the retrieval unit (small chunks) from the generation unit (larger parent documents).
+
+**Solution:** Index small chunks with metadata pointing to their parent, then fetch parents at retrieval time. This two-level hierarchy gives you the best of both worlds: precision during search and richness during generation.
 
 ```go
 package main
@@ -80,6 +86,8 @@ func main() {
 }
 ```
 
+The manual approach above shows the underlying mechanics. In practice, Beluga AI provides a built-in `ParentDocumentRetriever` that handles the parent-child relationship management, deduplication, and score propagation automatically:
+
 **With the built-in `ParentDocumentRetriever`:**
 
 ```go
@@ -101,7 +109,9 @@ docs, err := ret.Retrieve(ctx, "query about architecture", 5)
 
 **Problem:** Initial vector search returns many candidates, but the ordering isn't optimal. You want to rerank results with a cross-encoder for better relevance.
 
-**Solution:** Use a reranker in the retriever pipeline to refine results after initial retrieval.
+Vector search uses bi-encoders that embed queries and documents independently, then compare via cosine similarity. This is fast but loses nuance because the query and document are never considered together. Cross-encoder rerankers like Cohere's Rerank API score each query-document pair jointly, capturing subtle relevance signals that bi-encoders miss. The tradeoff is latency: cross-encoders are slower, so they work best as a second stage applied to a smaller candidate set.
+
+**Solution:** Use a reranker in the retriever pipeline to refine results after initial retrieval. Retrieve more candidates than needed, then rerank to select the top results.
 
 ```go
 package main
@@ -190,7 +200,9 @@ func main() {
 
 **Problem:** Loading documents from multiple files or directories is slow when done sequentially.
 
-**Solution:** Use goroutines with a semaphore to load documents in parallel.
+Document loading is I/O-bound: the CPU spends most of its time waiting for disk reads. Sequential loading wastes this idle time, especially when loading hundreds or thousands of files. Go's goroutines make concurrent I/O straightforward, but unbounded parallelism can exhaust file descriptors or overwhelm the OS scheduler.
+
+**Solution:** Use goroutines with a semaphore to load documents in parallel. The semaphore (buffered channel) caps the number of concurrent file reads, balancing throughput against resource usage.
 
 ```go
 package main
@@ -277,7 +289,9 @@ func main() {
 
 **Problem:** Some documents in the pipeline are corrupt or in unexpected formats, causing the entire ingestion to fail.
 
-**Solution:** Wrap loaders with error handling that skips bad documents and logs failures.
+In production, document collections are rarely clean. Files may be truncated, encoded incorrectly, or contain binary data mixed with text. A single corrupt file should not halt an entire ingestion pipeline that would otherwise succeed for hundreds of valid documents. Error isolation at the document level keeps the pipeline running while providing visibility into which files failed and why.
+
+**Solution:** Wrap loaders with error handling that skips bad documents and logs failures. Returning an empty slice instead of an error for corrupt files allows the pipeline to continue processing remaining documents.
 
 ```go
 package main
@@ -354,7 +368,9 @@ func main() {
 
 **Problem:** Embedding documents one at a time is slow. You need to batch embeddings for throughput while respecting API rate limits.
 
-**Solution:** Chunk documents into batches and embed them with controlled concurrency.
+Embedding API calls have significant per-request overhead (network latency, connection setup, authentication). Sending one document per request means that overhead dominates total time. Batching amortizes this overhead across many documents. Most embedding providers support batch operations with limits (e.g., OpenAI allows up to 2048 inputs per batch), so batching also aligns with provider-optimal usage patterns.
+
+**Solution:** Chunk documents into batches and embed them with controlled concurrency. This reduces total API calls from N to N/batch_size while staying within provider rate limits.
 
 ```go
 package main
@@ -430,7 +446,9 @@ func main() {
 
 **Problem:** You need to filter vector search results by metadata (e.g., date range, category, access level) in addition to semantic similarity.
 
-**Solution:** Use the vector store's metadata filter when querying.
+Semantic similarity alone is not enough for production RAG. A query about "deployment patterns" should not return restricted security documents even if they are semantically similar. Metadata filtering applies hard constraints (access control, date ranges, categories) before or alongside vector similarity, ensuring results are both relevant and appropriate. Most vector stores support native metadata filtering, which is far more efficient than post-retrieval filtering because it reduces the candidate set before computing similarity scores.
+
+**Solution:** Use the vector store's metadata filter when querying. Beluga AI's vector store interface accepts filter options via the `WithFilter()` functional option pattern.
 
 ```go
 package main
@@ -505,7 +523,9 @@ func main() {
 
 **Problem:** Generic text splitters break code at arbitrary points, splitting functions mid-definition.
 
-**Solution:** Use `splitter.NewCode` which understands language-specific boundaries.
+When indexing code for RAG, the default character-based splitting produces chunks that start or end mid-function, making them nearly useless for retrieval. An embedding of half a function captures incomplete semantics. Code-aware splitting uses language-specific boundaries (function declarations, class definitions, method signatures) as split points, producing chunks that represent complete logical units.
+
+**Solution:** Use `splitter.NewCode` which understands language-specific boundaries. It respects function and class definitions, keeping related code together within each chunk.
 
 ```go
 package main
@@ -576,7 +596,9 @@ func (s *Server) Start() error {
 
 **Problem:** Splitting text at fixed character counts can break mid-sentence, degrading retrieval quality.
 
-**Solution:** Use sentence-aware splitting that respects natural boundaries.
+Each chunk in a RAG system becomes an independent unit for embedding and retrieval. When a chunk starts or ends mid-sentence, the embedding captures incomplete thoughts, and the retrieved context presented to the LLM is harder to interpret. Sentence-aware splitting ensures each chunk contains complete sentences, producing more coherent embeddings and more useful retrieval results.
+
+**Solution:** Use sentence-aware splitting that respects natural boundaries. Sentences are grouped together until the chunk size limit is reached, then a new chunk begins at the next sentence boundary.
 
 ```go
 package main
@@ -625,7 +647,9 @@ func main() {
 
 **Problem:** You need to reindex a large document collection and track progress, handling failures without restarting from scratch.
 
-**Solution:** Track indexed document IDs and support incremental reindexing.
+Reindexing a vector store with thousands or millions of documents is a long-running operation that can take minutes to hours. Without progress tracking, operators have no visibility into whether the system is working, how far along it is, or which documents failed. Batch-level failure tracking allows retrying only the failed subset rather than restarting from the beginning, which is critical for large collections where transient errors (network timeouts, rate limits) are expected.
+
+**Solution:** Track indexed document IDs and support incremental reindexing. Process documents in batches, recording successes and failures independently so failed batches can be retried.
 
 ```go
 package main
@@ -744,7 +768,9 @@ func main() {
 
 **Problem:** Neither pure vector search nor keyword search alone gives the best results. You want to combine both approaches.
 
-**Solution:** Use the built-in hybrid retriever which combines vector similarity with BM25 scoring via Reciprocal Rank Fusion.
+Vector search excels at finding semantically similar content but can miss documents with exact keyword matches that a user expects. Keyword search (BM25) finds exact matches but misses semantically related content phrased differently. Reciprocal Rank Fusion (RRF) combines the ranked results from both approaches by scoring documents based on their rank position in each result list, weighted by a constant k (default 60). This hybrid approach consistently outperforms either method alone across diverse query types, which is why Beluga AI uses it as the default retrieval strategy.
+
+**Solution:** Use the built-in hybrid retriever which combines vector similarity with BM25 scoring via Reciprocal Rank Fusion. The `WithFusionK()` option controls how much weight is given to rank positions.
 
 ```go
 package main

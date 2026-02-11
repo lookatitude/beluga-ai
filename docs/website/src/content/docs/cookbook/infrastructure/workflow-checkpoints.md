@@ -7,11 +7,21 @@ description: "Save and resume long-running workflows at strategic checkpoints fo
 
 ## Problem
 
-You need to save workflow state at checkpoints so you can resume long-running workflows after failures, interruptions, or deployments without losing progress.
+Long-running agentic workflows face inevitable interruptions. A workflow might run for minutes or hours, performing expensive operations like LLM calls, document processing, or external API requests. If the process crashes, the deployment is updated, or a transient error occurs midway, you lose all progress and must restart from the beginning.
+
+This creates two major problems. First, it wastes resources and time by re-executing completed work. Second, it creates a poor user experience when workflows fail near completion and users must wait for the entire workflow to re-run. For workflows involving multiple agents or expensive API calls, the cost of re-execution can be significant.
+
+The challenge is determining what state to save, when to save it, and how to restore it in a way that's both safe and efficient.
 
 ## Solution
 
-Implement a checkpoint system that saves workflow state at strategic points, stores checkpoints persistently, and can resume workflows from any checkpoint. This works because you can serialize workflow state, store it, and restore it to continue execution.
+Workflow checkpointing provides resilience by persisting workflow state at strategic points during execution. The key design decision is to checkpoint at logical boundaries, not after every operation. You checkpoint after completing significant units of work, like finishing an agent subtask, completing a document processing stage, or successfully calling an external API.
+
+This approach works because workflow state is typically serializable. You need to persist three pieces of information: which steps have completed, which step is currently executing, and the accumulated workflow data. When resuming, you deserialize this state and continue execution from the current step, skipping already-completed steps.
+
+The checkpoint store abstraction decouples state persistence from workflow logic. This allows you to start with an in-memory store for development, then switch to Redis or a database for production without changing workflow code. The store handles serialization, versioning, and retrieval.
+
+Strategic checkpointing balances safety with performance. Checkpointing too frequently adds overhead and increases storage costs. Checkpointing too rarely risks losing significant progress. The solution is to let each workflow step declare whether it warrants a checkpoint, typically based on whether it performs expensive or non-idempotent operations.
 
 ## Code Example
 
@@ -208,13 +218,13 @@ func main() {
 
 ## Explanation
 
-1. **State serialization** — Workflow state including completed steps, current step, and workflow data is stored, allowing exact resumption from where execution left off.
+1. **State serialization enables exact resumption** — By capturing the exact workflow state, including completed steps, the current step, and accumulated data, you can resume execution as if the failure never occurred. This is critical because workflows often pass data between steps. Without state serialization, you'd lose intermediate results and be unable to continue.
 
-2. **Strategic checkpointing** — Checkpoints are created at strategic points (marked by steps), not after every operation. This balances safety with performance.
+2. **Strategic checkpointing optimizes performance** — The `Checkpoint` boolean on each step allows fine-grained control over when to persist state. Checkpoint after expensive operations like LLM calls or external API requests, where re-execution would be costly. Skip checkpointing after cheap operations like in-memory transformations. This keeps checkpoint overhead low while protecting valuable work.
 
-3. **Resume capability** — When resuming, the checkpoint is loaded and execution continues from the current step. This makes workflows resilient to failures.
+3. **Resume capability provides failure resilience** — The ability to load a checkpoint and continue from the saved step means workflows survive process crashes, deployments, and transient errors. This is especially important for workflows that interact with users, where losing progress creates a poor experience. Checkpointing makes workflows feel more reliable because failures become invisible to users.
 
-> **Key insight:** Checkpoint at logical boundaries (after completing significant work), not after every operation. This provides safety without excessive overhead.
+4. **Separation of storage from execution** — The `CheckpointStore` interface abstracts storage, allowing you to choose different backends based on your needs. Use in-memory for tests, Redis for distributed systems, or PostgreSQL for durability. This separation also enables features like checkpoint history, point-in-time recovery, and workflow introspection without coupling to storage implementation.
 
 ## Testing
 

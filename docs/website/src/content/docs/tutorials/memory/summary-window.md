@@ -3,11 +3,11 @@ title: Summary and Window Memory Patterns
 description: Manage conversation context windows with sliding window, summarization, and hybrid memory strategies.
 ---
 
-LLMs have limited context windows. Sending the entire history of a year-long conversation will exceed token limits, increase cost, and dilute the model's attention. This tutorial covers three strategies for keeping memory lean and relevant: sliding window, summarization, and hybrid approaches.
+LLMs have limited context windows. Sending the entire history of a year-long conversation will exceed token limits, increase cost, and dilute the model's attention on recent context. Effective memory management is about keeping the most relevant information in the context window while discarding or compressing the rest. This tutorial covers three strategies with different trade-offs: sliding window for simplicity, summarization for infinite history, and a hybrid approach that combines the strengths of both. Beluga AI's memory system draws from the **MemGPT 3-tier model** (Core, Recall, Archival), and these patterns map to the Core and Recall tiers.
 
 ## What You Will Build
 
-Three memory management strategies — sliding window (last K messages), summarization (running summary), and a hybrid (summary + recent buffer) — suitable for different use cases.
+Three memory management strategies -- sliding window (last K messages), summarization (running summary), and a hybrid (summary + recent buffer) -- suitable for different use cases.
 
 ## Prerequisites
 
@@ -16,7 +16,9 @@ Three memory management strategies — sliding window (last K messages), summari
 
 ## Pattern 1: Sliding Window
 
-Keep only the last N messages. Predictable token usage and straightforward implementation:
+The simplest memory strategy: keep only the last N messages and discard everything older. This works because LLMs tend to pay most attention to recent messages, and for short tasks like Q&A, the last few exchanges contain all the context needed. The system message is stored separately and always prepended, ensuring the agent's persona and instructions are never evicted.
+
+The trade-off is clear: predictable token usage and zero latency overhead, but complete loss of older context. If a user says "My name is Alice" in message 5 and your window is 10, the agent will forget the name after 10 more exchanges.
 
 ```go
 package main
@@ -64,7 +66,9 @@ func (m *WindowMemory) GetMessages() []schema.Message {
 
 ## Pattern 2: Running Summary
 
-Maintain a running summary of the entire conversation using an LLM:
+A running summary preserves key facts from the entire conversation by periodically using an LLM to compress the buffer into a text summary. When the buffer reaches `maxBuffer` messages, the summarizer generates an updated summary that incorporates both the previous summary and the new messages, then flushes the buffer.
+
+This approach enables infinite conversation length -- no matter how many messages are exchanged, the context window only contains the system prompt, the summary, and the current buffer. The cost is an extra LLM call each time the buffer fills up, and the inherent lossiness of summarization (nuance, exact wording, and minor details may be lost). The summarizer prompt explicitly instructs the model to preserve names, preferences, and key decisions, which are the facts most likely to be needed later.
 
 ```go
 import (
@@ -165,7 +169,9 @@ func (m *SummaryMemory) GetMessages() []schema.Message {
 
 ## Pattern 3: Hybrid (Summary + Buffer)
 
-The production-recommended approach. Keep the last K messages verbatim for immediate context, and a summary of everything before that:
+The production-recommended approach combines the strengths of both strategies. The last K messages are kept verbatim for full-fidelity recent context (the current topic, exact phrasing, tool call details), while everything older is compressed into a running summary that preserves long-term facts (user preferences, decisions, identities).
+
+The hybrid memory summarizes the **older half** of the buffer when it overflows, rather than the entire buffer. This ensures that the most recent messages are never summarized prematurely -- they remain verbatim in the buffer where the model can reference exact details. The summary grows incrementally, adding new facts from each batch of summarized messages while retaining all previous summary content.
 
 ```go
 // HybridMemory combines a running summary with a recent message buffer.
@@ -238,5 +244,5 @@ This approach provides:
 
 ## Next Steps
 
-- [Redis Persistence](/tutorials/memory/redis-persistence) — Persist memory across restarts
-- [Research Agent](/tutorials/agents/research-agent) — Use memory in autonomous agents
+- [Redis Persistence](/tutorials/memory/redis-persistence) -- Persist memory across restarts
+- [Research Agent](/tutorials/agents/research-agent) -- Use memory in autonomous agents

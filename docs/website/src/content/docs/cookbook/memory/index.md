@@ -1,15 +1,21 @@
 ---
 title: Memory Recipes
-description: Practical recipes for managing agent memory with the MemGPT-inspired 3-tier system.
+description: Practical recipes for managing agent memory with the MemGPT-inspired 3-tier system, including TTL cleanup, context recovery, provider switching, and priority-based retrieval.
 sidebar:
   order: 0
 ---
+
+Agent memory determines what an agent knows and remembers across interactions. Beluga AI implements a MemGPT-inspired 3-tier memory architecture: **Core** memory (always in the LLM context, like persona and user facts), **Recall** memory (searchable conversation history), and **Archival** memory (vector-based long-term knowledge with optional graph relationships). These recipes address common memory management challenges: bounding growth, recovering context after failures, switching storage backends, and prioritizing what the agent remembers.
+
+All memory components follow the registry pattern (`Register()` + `New()` + `List()`), so you can swap between in-memory, Redis, PostgreSQL, or other stores without changing application code. Memory implementations use the standard `Memory` interface with `Save()`, `Load()`, `Search()`, and `Clear()` methods.
 
 ## TTL-Based Memory Cleanup
 
 **Problem:** Memory stores grow unbounded over time, consuming resources. You need automatic cleanup of old entries without disrupting active sessions.
 
-**Solution:** Implement a background cleanup goroutine that removes entries older than a configurable TTL.
+Without a cleanup mechanism, memory stores accumulate entries indefinitely. For long-running agents handling thousands of conversations, this leads to increasing storage costs, slower searches (more entries to scan), and potential privacy issues with stale data. TTL-based cleanup provides automatic, passive resource management that requires no manual intervention.
+
+**Solution:** Implement a background cleanup goroutine that removes entries older than a configurable TTL. The background goroutine runs at a configurable interval, checking entry timestamps and removing expired ones. This approach is non-blocking: the cleanup happens asynchronously without interrupting active memory operations.
 
 ```go
 package main
@@ -130,7 +136,9 @@ func main() {
 
 **Problem:** After a long conversation, you need to recover the most recent context window without loading the entire history.
 
-**Solution:** Use a sliding window that keeps the last N turns plus any pinned system messages.
+LLMs have finite context windows. Loading all 500 turns of a long conversation wastes tokens on early, less-relevant messages and may exceed the context limit entirely. A sliding window keeps only the most recent N turns, which are typically the most relevant for the current interaction. This bounds context size while preserving conversational continuity.
+
+**Solution:** Use a sliding window that keeps the last N turns plus any pinned system messages. The window automatically trims older messages as new ones are added, ensuring the memory footprint stays constant regardless of conversation length.
 
 ```go
 package main
@@ -225,7 +233,9 @@ func main() {
 
 **Problem:** You want to use in-memory storage during development and Redis or PostgreSQL in production, without changing application code.
 
-**Solution:** Use the registry pattern to select the store by name from configuration.
+Hardcoding a specific memory store creates tight coupling between your agent logic and the storage backend. In development, you want fast, zero-dependency in-memory storage. In production, you need durable, distributed storage like Redis or PostgreSQL. The registry pattern solves this by decoupling the interface from the implementation, allowing you to select the store by name at runtime.
+
+**Solution:** Use the registry pattern to select the store by name from configuration. Each memory provider registers itself via `init()`, and you select the provider at runtime using `memory.New(name, config)`. The `memory.List()` function discovers all available providers.
 
 ```go
 package main
@@ -302,7 +312,9 @@ func main() {
 
 **Problem:** You need to track relationships between entities (people, projects, concepts) that an agent learns during conversations.
 
-**Solution:** Use the graph memory tier to store entity-relationship triples.
+Flat recall memory stores messages but does not understand the relationships between entities mentioned in those messages. When a user says "Alice manages Bob" and later asks "Who is Bob's manager?", a simple keyword search may not connect these facts. Graph memory stores entity-relationship triples (subject-predicate-object) that can be traversed to answer relationship queries directly. This is part of Beluga AI's archival memory tier.
+
+**Solution:** Use the graph memory tier to store entity-relationship triples. The composite memory configuration enables the graph tier alongside core, recall, and archival tiers. The graph tier extracts entities and relationships from conversation turns automatically.
 
 ```go
 package main
@@ -371,7 +383,9 @@ func main() {
 
 **Problem:** Long conversations produce too much recall history to fit in the LLM's context window. You need to summarize older messages while keeping recent ones intact.
 
-**Solution:** Periodically compress older messages into summaries using the LLM itself.
+As conversations grow, the accumulated history can exceed the LLM's context window. Simply truncating old messages loses important context (user preferences, decisions made earlier). Compression uses the LLM itself to distill older messages into concise summaries, preserving key facts and decisions while dramatically reducing token count. Recent messages are kept verbatim because they contain the immediately relevant context.
+
+**Solution:** Periodically compress older messages into summaries using the LLM itself. When the message count exceeds a threshold, the oldest messages are summarized and replaced with a compact system message. Recent messages remain intact for full-fidelity context.
 
 ```go
 package main
@@ -494,7 +508,9 @@ func main() {
 
 **Problem:** You want to use core memory (always in context), recall memory (searchable history), and archival memory (vector-based) together.
 
-**Solution:** Use `CompositeMemory` which delegates to the appropriate tier.
+Each memory tier serves a different purpose. Core memory holds persistent facts (user name, preferences, persona) that should always be in the LLM's context. Recall memory provides searchable conversation history for recent interactions. Archival memory stores long-term knowledge in a vector store for semantic search. Using them together gives the agent both immediate context and long-term knowledge, following the MemGPT architecture.
+
+**Solution:** Use `CompositeMemory` which delegates to the appropriate tier based on the operation. `Save()` writes to recall (and optionally archival). `Load()` retrieves from core + recall. `Search()` queries the archival tier.
 
 ```go
 package main
@@ -558,7 +574,9 @@ func main() {
 
 **Problem:** In a multi-tenant application, each user session needs isolated memory that doesn't leak between users.
 
-**Solution:** Create per-session memory instances scoped by session ID.
+Without session isolation, one user's conversation history could bleed into another user's agent responses, causing confusion and potential data privacy violations. Each session needs its own memory instance with independent state. The challenge is managing the lifecycle of these instances: creating them on demand, caching them for performance, and cleaning them up when sessions end.
+
+**Solution:** Create per-session memory instances scoped by session ID. A `SessionMemoryManager` uses a double-checked locking pattern to safely create and cache memory instances. Cleanup removes the session's memory when it expires or the user disconnects.
 
 ```go
 package main
@@ -664,7 +682,9 @@ func main() {
 
 **Problem:** When loading context for an agent, you need to prioritize certain types of memories (e.g., user preferences over general conversation history).
 
-**Solution:** Implement a weighted retrieval strategy that scores memories by type and recency.
+Not all memories are equally valuable for a given interaction. System messages (core memory, persona) should almost always be included. Recent conversation turns are more relevant than older ones. Archival knowledge is useful but lower priority than direct conversation context. Without prioritization, the agent's context window fills with less-relevant older messages, pushing out the critical recent context and persistent facts. Priority-based retrieval ensures the most important memories always make it into the context.
+
+**Solution:** Implement a weighted retrieval strategy that scores memories by type and recency. Core memories (system messages) receive the highest weight, recent conversation turns are weighted next, and archival knowledge receives the lowest base weight. A recency decay factor ensures newer messages score higher than older ones within each tier.
 
 ```go
 package main

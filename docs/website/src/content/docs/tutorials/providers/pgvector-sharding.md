@@ -3,7 +3,7 @@ title: Production pgvector Sharding
 description: Configure PostgreSQL with pgvector for high-scale vector storage, including HNSW indexing and table partitioning.
 ---
 
-As vector datasets grow beyond 1 million records, single-table scans become too slow and HNSW indexes may not fit in RAM. Table partitioning (sharding) combined with proper indexing provides the foundation for production-scale vector search.
+As vector datasets grow beyond 1 million records, single-table scans become too slow and HNSW indexes may not fit in RAM. Table partitioning (sharding) combined with proper indexing provides the foundation for production-scale vector search. This approach leverages PostgreSQL's built-in partitioning, which means you retain full SQL capabilities (joins, transactions, aggregations) alongside vector search — a significant advantage over purpose-built vector databases that sacrifice query flexibility.
 
 ## What You Will Build
 
@@ -16,7 +16,7 @@ A production-grade pgvector setup with HNSW indexing, table partitioning by tena
 
 ## Step 1: Basic pgvector Setup
 
-Connect Beluga AI to PostgreSQL with pgvector:
+Connect Beluga AI to PostgreSQL with pgvector. The connection uses the same `vectorstore.New()` registry pattern as all other vector store providers, so switching from in-memory to pgvector requires only a provider name and configuration change.
 
 ```go
 package main
@@ -51,7 +51,7 @@ func main() {
 
 ## Step 2: Create the Schema
 
-Set up the table and HNSW index:
+Set up the table and HNSW index. HNSW (Hierarchical Navigable Small World) is preferred over IVFFlat for most workloads because it provides better recall with comparable latency and does not require a separate training step. The `vector_cosine_ops` operator class matches the cosine similarity metric used by most embedding models.
 
 ```sql
 -- Enable the vector extension
@@ -76,7 +76,7 @@ CREATE INDEX idx_documents_embedding
 
 ## Step 3: HNSW Parameter Tuning
 
-HNSW parameters control the trade-off between recall, latency, and memory:
+HNSW parameters control the trade-off between recall, latency, and memory. The defaults (`m=16`, `ef_construction=64`) provide a good balance for most workloads. Increase these values when recall is more important than build time or memory usage — for example, in applications where returning the wrong document has high cost (medical, legal, financial).
 
 | Parameter | Range | Effect |
 |:---|:---|:---|
@@ -98,7 +98,7 @@ LIMIT 10;
 
 ## Step 4: Table Partitioning (Sharding)
 
-For multi-tenant applications, partition by tenant to reduce search scope:
+For multi-tenant applications, partition by tenant to reduce search scope. Partitioning confines each query to a single partition's index rather than scanning the entire table, which reduces both latency and resource consumption. Each partition has its own HNSW index, so adding a new tenant creates a small, fast index rather than expanding a single large one.
 
 ```sql
 -- Create partitioned table
@@ -132,7 +132,7 @@ CREATE INDEX ON documents_tenant_2
 
 ## Step 5: Route Queries to Partitions
 
-In Beluga AI, route queries to specific partitions using dynamic table names or metadata filtering:
+In Beluga AI, route queries to specific partitions using dynamic table names or metadata filtering. Creating a per-tenant store instance is the simplest approach — it maps directly to the partitioned table and ensures complete data isolation between tenants.
 
 ```go
 // Per-tenant store
@@ -146,7 +146,7 @@ tenantStore, err := vectorstore.New("pgvector", config.ProviderConfig{
 
 ### Pre-warm the index
 
-Load the HNSW index into shared buffers at startup:
+Load the HNSW index into shared buffers at startup. This eliminates cold-start latency for the first queries after a database restart, which is important in auto-scaling environments where new database instances may serve traffic immediately.
 
 ```sql
 -- Requires pg_prewarm extension
@@ -156,7 +156,7 @@ SELECT pg_prewarm('idx_documents_embedding');
 
 ### Maintenance
 
-Run regular maintenance on vector tables:
+Run regular maintenance on vector tables. `VACUUM ANALYZE` updates the statistics that the query planner uses to choose efficient execution plans, and `REINDEX` rebuilds the HNSW graph after large batch inserts that may have degraded its structure.
 
 ```sql
 -- Update statistics for the query planner

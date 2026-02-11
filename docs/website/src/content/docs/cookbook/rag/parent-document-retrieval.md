@@ -1,6 +1,6 @@
 ---
 title: "Parent Document Retrieval (PDR)"
-description: "Retrieve fine-grained chunks for matching but return larger parent documents for generation context."
+description: "Retrieve fine-grained chunks for precise matching but return larger parent documents for richer generation context."
 ---
 
 # Parent Document Retrieval (PDR)
@@ -9,9 +9,11 @@ description: "Retrieve fine-grained chunks for matching but return larger parent
 
 You need to retrieve fine-grained chunks for initial matching but return larger parent documents for context, balancing retrieval precision with sufficient context for generation.
 
+There is a fundamental tension in chunk sizing for RAG systems. Small chunks (100-300 tokens) produce precise embeddings that match specific queries well, but they provide too little context for the LLM to generate grounded, accurate responses. Large chunks (1000+ tokens) provide rich context but produce diffuse embeddings that match too broadly. Parent Document Retrieval resolves this by maintaining two levels: small chunks for search precision and larger parent documents for generation context.
+
 ## Solution
 
-Implement Parent Document Retrieval (PDR) that stores documents hierarchically (small chunks for retrieval, parent documents for context), retrieves chunks first, then expands to parent documents. This works because small chunks improve retrieval precision, while parent documents provide necessary context.
+Implement Parent Document Retrieval (PDR) that stores documents hierarchically: small chunks are indexed in the vector store for retrieval, while a separate mapping links each chunk to its parent document. At query time, the system retrieves matching chunks, looks up their parent documents, deduplicates parents (since multiple chunks from the same parent may match), and returns the parents sorted by the best chunk score. This gives the LLM sufficient context while maintaining retrieval precision.
 
 ## Code Example
 
@@ -181,13 +183,13 @@ func main() {
 
 ## Explanation
 
-1. **Hierarchical storage** — Chunks are stored in the vector store for retrieval, while a mapping to parent documents is maintained. This allows precise chunk retrieval with comprehensive context in the response.
+1. **Hierarchical storage** -- Chunks are stored in the vector store for similarity search, while a separate mapping links chunk IDs to parent documents. This dual storage allows precise chunk-level retrieval with comprehensive parent-level context in the response. The vector store only indexes the small chunks, keeping the index efficient, while the parent store provides the richer context needed for generation.
 
-2. **Score propagation** — When multiple chunks from the same parent match, the best score is kept. This ensures parent documents with highly relevant chunks rank higher.
+2. **Score propagation** -- When multiple chunks from the same parent match a query, only the best score is kept for ranking. This prevents a parent with many low-relevance chunk matches from outranking a parent with one highly relevant chunk match. The best-score-wins approach ensures the final ranking reflects the strongest evidence for each parent document.
 
-3. **Deduplication** — Parent documents are deduplicated even when multiple chunks match, preventing the same parent document from appearing multiple times.
+3. **Deduplication** -- Parent documents are deduplicated using a map keyed by parent ID, even when multiple chunks match. Without deduplication, the same parent document could appear multiple times in results, wasting context window space. The map-based approach handles deduplication efficiently in O(n) time.
 
-> **Key insight:** Use small chunks for precise retrieval, but return parent documents for context. This gives you both retrieval quality and generation context.
+> **Key insight:** Use small chunks (100-300 tokens) for precise retrieval, but return parent documents (500-2000 tokens) for generation context. This gives you both retrieval quality and generation richness. The chunk-to-parent ratio is typically 3-10x.
 
 ## Testing
 
@@ -237,5 +239,5 @@ func (pdr *ParentDocumentRetriever) MergeOverlappingChunks(chunks []schema.Docum
 
 ## Related Recipes
 
-- [Reranking with Cohere Rerank](/cookbook/cohere-reranking) — Improve retrieval quality
-- [Textsplitters Advanced Code Splitting](/cookbook/textsplitters-advanced-code-splitting-tree-sitter) — Split documents intelligently
+- [Reranking with Cohere Rerank](/cookbook/cohere-reranking) -- Improve retrieval quality with cross-encoder reranking
+- [Advanced Code Splitting](/cookbook/code-splitting) -- Split documents intelligently at structural boundaries
